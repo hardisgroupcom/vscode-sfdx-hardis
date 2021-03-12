@@ -179,9 +179,19 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             id: "scratch:create",
             label: 'Resume scratch org creation',
             command: 'sfdx hardis:scratch:create'
+          },
+          {
+            id: "scratch:create:new",
+            label: 'Force creation of a new scratch org',
+            command: 'sfdx hardis:scratch:create --forcenew'
+          },
+          {
+            id: "org:configure:monitoring",
+            label: 'Configure org monitoring',
+            command: 'sfdx hardis:org:configure:monitoring'
           }
         ]
-      }
+      }      
     ];
     return hardisCommands
   }
