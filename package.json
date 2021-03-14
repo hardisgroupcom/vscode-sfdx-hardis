@@ -2,7 +2,7 @@
 	"name": "vscode-sfdx-hardis",
 	"displayName": "vscode-sfdx-hardis",
 	"description": "Vs Code Wrapper for sfdx-hardis tooling",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"icon": "resources/hardis-logo.png",
 	"publisher": "NicolasVuillamy",
 	"license": "AGPL-3.0",

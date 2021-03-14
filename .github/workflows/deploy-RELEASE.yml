@@ -13,7 +13,6 @@ on:
     # Want to run the automation when a release is created
     types: ["created"]
 
-name: Deploy Extension
 jobs:
   deploy:
     runs-on: ubuntu-latest
