@@ -1,7 +1,0 @@
-Results of prettier linter (version 2.2.1)
-See documentation on https://nvuillam.github.io/mega-linter/descriptors/yaml_prettier/
------------------------------------------------
-
-✅ [SUCCESS] .github/workflows/deploy-RELEASE.yml
-✅ [SUCCESS] .github/workflows/mega-linter.yml
-✅ [SUCCESS] .mega-linter.yml

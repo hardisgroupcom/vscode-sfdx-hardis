@@ -1,9 +1,0 @@
-Results of prettier linter (version 2.2.1)
-See documentation on https://nvuillam.github.io/mega-linter/descriptors/typescript_prettier/
------------------------------------------------
-
-✅ [SUCCESS] src/extension.ts - FIXED
-✅ [SUCCESS] src/hardis-commands-provider.ts - FIXED
-✅ [SUCCESS] src/test/runTest.ts - FIXED
-✅ [SUCCESS] src/test/suite/extension.test.ts - FIXED
-✅ [SUCCESS] src/test/suite/index.ts - FIXED

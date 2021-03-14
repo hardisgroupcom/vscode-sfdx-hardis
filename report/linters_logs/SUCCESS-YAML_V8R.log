@@ -1,7 +1,0 @@
-Results of v8r linter (version 0.5.0)
-See documentation on https://nvuillam.github.io/mega-linter/descriptors/yaml_v8r/
------------------------------------------------
-
-✅ [SUCCESS] .github/workflows/deploy-RELEASE.yml
-✅ [SUCCESS] .github/workflows/mega-linter.yml
-✅ [SUCCESS] .mega-linter.yml
