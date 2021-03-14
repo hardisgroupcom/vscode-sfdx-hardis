@@ -1,0 +1,7 @@
+Results of bash-exec linter (version 5.1.0)
+See documentation on https://nvuillam.github.io/mega-linter/descriptors/bash_bash_exec/
+-----------------------------------------------
+
+❌ [ERROR] dev.sh
+    Error: File:[dev.sh] is not executable
+

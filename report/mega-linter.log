@@ -1,0 +1,303 @@
+----------------------------------------------------------------------------------------------------
+------------------------------------------- Mega-Linter --------------------------------------------
+----------------------------------------------------------------------------------------------------
+ - Image Creation Date: 2021-03-14T01:53:28Z
+ - Image Revision: d9036b4
+ - Image Version: latest
+----------------------------------------------------------------------------------------------------
+The Mega-Linter documentation can be found at:
+ - https://nvuillam.github.io/mega-linter
+----------------------------------------------------------------------------------------------------
+GITHUB_REPOSITORY: hardisgroupcom/vscode-sfdx-hardis
+GITHUB_SHA: ca184605e815e3c3beb3aa3f8ca3ea2586ad9fd6
+GITHUB_TOKEN: v1.545a5de22e82b5261c9338f2408ee89860131e53
+GITHUB_RUN_ID: 651199777
+
+
+[Activation] EDITORCONFIG_EDITORCONFIG_CHECKER has been set inactive, as none of these files has been found: ['.editorconfig']
+[Activation] SWIFT_SWIFTLINT has been set inactive, as none of these files has been found: ['.swiftlint.yml']
+Skipped linters: ANSIBLE_ANSIBLE_LINT, EDITORCONFIG_EDITORCONFIG_CHECKER, JAVASCRIPT_PRETTIER, KUBERNETES_KUBEVAL, MARKDOWN_REMARK_LINT, SALESFORCE_SFDX_SCANNER, SWIFT_SWIFTLINT, TYPESCRIPT_STANDARD
+To receive reports as email, please set variable EMAIL_REPORTER_EMAIL
+Listing all files in directory [/github/workspace], then filter with:
+- File extensions: , .R, .RMD, .Rmd, .bash, .c, .c++, .cc, .cdxml, .clj, .cljc, .cljs, .coffee, .cpp, .cs, .css, .cu, .cuh, .cxx, .dart, .dash, .edn, .env, .feature, .go, .gradle, .graphql, .groovy, .gvy, .h, .h++, .hcl, .hh, .hpp, .htm, .html, .hxx, .java, .js, .json, .json5, .jsonc, .jsx, .ksh, .kt, .kts, .lua, .md, .nf, .p6, .php, .pl, .pl6, .pm, .pm6, .pp, .proto, .ps1, .ps1xml, .psd1, .psm1, .psrc, .pssc, .py, .r, .raku, .rakumod, .rakutest, .rb, .rs, .rst, .saas, .scala, .scss, .sh, .smk, .sql, .t, .tex, .tf, .ts, .tsx, .vb, .vue, .xml, .yaml, .yml
+- File names (regex): Dockerfile, Jenkinsfile, Snakefile
+- Excluding regex: (\.vscode)
+Kept [19] files on [45] found files
+
++----MATCHING LINTERS-------------------+----------------------+----------------+------------+
+| Descriptor | Linter                   | Criteria             | Matching files | Format/Fix |
++------------+--------------------------+----------------------+----------------+------------+
+| BASH       | bash-exec                | .sh|.bash|.dash|.ksh | 1              | no         |
+| BASH       | shellcheck               | .sh|.bash|.dash|.ksh | 1              | no         |
+| BASH       | shfmt                    | .sh|.bash|.dash|.ksh | 1              | yes        |
+| COPYPASTE  | jscpd                    |                      | project        | no         |
+| GIT        | git_diff                 |                      | project        | no         |
+| JSON       | jsonlint                 | .json                | 5              | no         |
+| JSON       | eslint-plugin-jsonc      | .json|.json5|.jsonc  | 5              | yes        |
+| JSON       | v8r                      | .json                | 5              | no         |
+| MARKDOWN   | markdownlint             | .md                  | 2              | yes        |
+| MARKDOWN   | markdown-link-check      | .md                  | 2              | no         |
+| MARKDOWN   | markdown-table-formatter | .md                  | 2              | yes        |
+| SPELL      | misspell                 |                      | 19             | yes        |
+| SPELL      | cspell                   |                      | 19             | no         |
+| TYPESCRIPT | eslint                   | .ts                  | 5              | yes        |
+| TYPESCRIPT | prettier                 | .ts                  | 5              | yes        |
+| YAML       | prettier                 | .yml|.yaml           | 3              | yes        |
+| YAML       | yamllint                 | .yml|.yaml           | 3              | no         |
+| YAML       | v8r                      | .yml|.yaml           | 3              | no         |
++------------+--------------------------+----------------------+----------------+------------+
+
+
+[1m### Processed [BASH] files[0m
+- Using [bash-exec v5.1.0] https://tiswww.case.edu/php/chet/bash/bashtop.html
+- Mega-Linter key: [BASH_EXEC]
+- Rules config: identified by [bash-exec]
+[31m[bash-exec] dev.sh - ERROR - 1 error(s)[0m
+[31m--Error detail:
+Error: File:[/github/workspace/dev.sh] is not executable
+[0m
+[33m✅ Linted [BASH] files with [bash-exec]: Found 1 non blocking error(s) - (0.01s)[0m
+[Text Reporter] Generated TEXT report: /github/workspace/report/linters_logs/ERROR-BASH_EXEC.log
+
+[1m### Processed [BASH] files[0m
+- Using [shellcheck v0.7.1] https://github.com/koalaman/shellcheck
+- Mega-Linter key: [BASH_SHELLCHECK]
+- Rules config: identified by [shellcheck]
+[shellcheck] dev.sh - SUCCESS - 0 error(s)
+[32m✅ Linted [BASH] files with [shellcheck] successfully - (0.03s)[0m
+[Text Reporter] Generated TEXT report: /github/workspace/report/linters_logs/SUCCESS-BASH_SHELLCHECK.log
+
+[1m### Processed [BASH] files[0m
+- Using [shfmt v3.2.4] https://github.com/mvdan/sh
+- Mega-Linter key: [BASH_SHFMT]
+- Rules config: identified by [shfmt]
+[36m[shfmt] dev.sh - SUCCESS - 0 error(s) - FIXED[0m
+[32m✅ Linted [BASH] files with [shfmt] successfully - (0.04s)[0m
+[Text Reporter] Generated TEXT report: /github/workspace/report/linters_logs/SUCCESS-BASH_SHFMT.log
+
+[1m### Processed [GIT] files[0m
+- Using [git_diff v2.30.2] https://git-scm.com
+- Mega-Linter key: [GIT_GIT_DIFF]
+- Rules config: identified by [git_diff]
+[32m✅ Linted [GIT] files with [git_diff] successfully - (0.01s)[0m
+[Text Reporter] Generated TEXT report: /github/workspace/report/linters_logs/SUCCESS-GIT_GIT_DIFF.log
+
+[1m### Processed [COPYPASTE] files[0m
+- Using [jscpd v3.3.25] https://github.com/kucherenko/jscpd/tree/master/packages/jscpd
+- Mega-Linter key: [COPYPASTE_JSCPD]
+- Rules config: [/github/workspace/.jscpd.json]
+[32m✅ Linted [COPYPASTE] files with [jscpd] successfully - (1.2s)[0m
+[Text Reporter] Generated TEXT report: /github/workspace/report/linters_logs/SUCCESS-COPYPASTE_JSCPD.log
+
+[1m### Processed [JSON] files[0m
+- Using [jsonlint v1.6.3] https://github.com/zaach/jsonlint
+- Mega-Linter key: [JSON_JSONLINT]
+- Rules config: identified by [jsonlint]
+[jsonlint] .cspell.json - SUCCESS - 0 error(s)
+[jsonlint] .eslintrc.json - SUCCESS - 0 error(s)
+[jsonlint] .jscpd.json - SUCCESS - 0 error(s)
+[jsonlint] package.json - SUCCESS - 0 error(s)
+[jsonlint] tsconfig.json - SUCCESS - 0 error(s)
+[32m✅ Linted [JSON] files with [jsonlint] successfully - (1.52s)[0m
+[Text Reporter] Generated TEXT report: /github/workspace/report/linters_logs/SUCCESS-JSON_JSONLINT.log
+
+[1m### Processed [MARKDOWN] files[0m
+- Using [markdownlint v0.27.1] https://github.com/DavidAnson/markdownlint
+- Mega-Linter key: [MARKDOWN_MARKDOWNLINT]
+- Rules config: [.markdown-lint.json]
+[markdownlint] CHANGELOG.md
+[markdownlint] README.md
+[32m✅ Linted [MARKDOWN] files with [markdownlint] successfully - (0.32s)[0m
+[Text Reporter] Generated TEXT report: /github/workspace/report/linters_logs/SUCCESS-MARKDOWN_MARKDOWNLINT.log
+Unable to get version for linter [eslint-plugin-jsonc]
+npm list eslint-plugin-jsonc returned output: (1) vscode-sfdx-hardis@0.0.2 /github/workspace
+└── (empty)
+
+
+Unable to extract version with regex re.compile('\\d+(\\.\\d+)+') from ERROR
+
+[1m### Processed [JSON] files[0m
+- Using [eslint-plugin-jsonc vERROR] https://ota-meshi.github.io/eslint-plugin-jsonc/
+- Mega-Linter key: [JSON_ESLINT_PLUGIN_JSONC]
+- Rules config: [.eslintrc-json.json]
+[eslint-plugin-jsonc] .cspell.json
+[eslint-plugin-jsonc] .eslintrc.json
+[eslint-plugin-jsonc] .jscpd.json
+[eslint-plugin-jsonc] package.json
+[eslint-plugin-jsonc] tsconfig.json
+[32m✅ Linted [JSON] files with [eslint-plugin-jsonc] successfully - (1.13s)[0m
+[Text Reporter] Generated TEXT report: /github/workspace/report/linters_logs/SUCCESS-JSON_ESLINT_PLUGIN_JSONC.log
+
+[1m### Processed [MARKDOWN] files[0m
+- Using [markdown-link-check v0.0.0] https://github.com/tcort/markdown-link-check
+- Mega-Linter key: [MARKDOWN_MARKDOWN_LINK_CHECK]
+- Rules config: [.markdown-link-check.json]
+[markdown-link-check] CHANGELOG.md - SUCCESS - 0 error(s)
+[31m[markdown-link-check] README.md - ERROR - 1 error(s)[0m
+[31m--Error detail:
+
+FILE: /github/workspace/README.md
+[✖] https://www.customer-platform.com/
+
+1 links checked.
+
+ERROR: 1 dead links found!
+[✖] https://www.customer-platform.com/ → Status: 503
+[0m
+[33m✅ Linted [MARKDOWN] files with [markdown-link-check]: Found 1 non blocking error(s) - (2.3s)[0m
+[Text Reporter] Generated TEXT report: /github/workspace/report/linters_logs/ERROR-MARKDOWN_MARKDOWN_LINK_CHECK.log
+
+[1m### Processed [MARKDOWN] files[0m
+- Using [markdown-table-formatter v1.0.4] https://www.npmjs.com/package/markdown-table-formatter
+- Mega-Linter key: [MARKDOWN_MARKDOWN_TABLE_FORMATTER]
+- Rules config: identified by [markdown-table-formatter]
+[markdown-table-formatter] CHANGELOG.md
+[markdown-table-formatter] README.md
+[32m✅ Linted [MARKDOWN] files with [markdown-table-formatter] successfully - (0.25s)[0m
+[Text Reporter] Generated TEXT report: /github/workspace/report/linters_logs/SUCCESS-MARKDOWN_MARKDOWN_TABLE_FORMATTER.log
+
+[1m### Processed [SPELL] files[0m
+- Using [misspell v0.3.4] https://github.com/client9/misspell
+- Mega-Linter key: [SPELL_MISSPELL]
+- Rules config: identified by [misspell]
+[misspell] .cspell.json
+[misspell] .eslintrc.json
+[misspell] .github/workflows/deploy-RELEASE.yml
+[misspell] .github/workflows/mega-linter.yml
+[misspell] .gitignore
+[misspell] .jscpd.json
+[misspell] .mega-linter.yml
+[misspell] .yarnrc
+[misspell] CHANGELOG.md
+[misspell] LICENSE
+[misspell] README.md
+[36m[misspell] dev.sh - FIXED[0m
+[misspell] package.json
+[misspell] src/extension.ts
+[misspell] src/hardis-commands-provider.ts
+[misspell] src/test/runTest.ts
+[misspell] src/test/suite/extension.test.ts
+[misspell] src/test/suite/index.ts
+[misspell] tsconfig.json
+[32m✅ Linted [SPELL] files with [misspell] successfully - (0.07s)[0m
+[Text Reporter] Generated TEXT report: /github/workspace/report/linters_logs/SUCCESS-SPELL_MISSPELL.log
+
+[1m### Processed [JSON] files[0m
+- Using [v8r v0.5.0] https://github.com/chris48s/v8r
+- Mega-Linter key: [JSON_V8R]
+- Rules config: identified by [v8r]
+[v8r] .cspell.json - SUCCESS - 0 error(s)
+[v8r] .eslintrc.json - SUCCESS - 0 error(s)
+[v8r] .jscpd.json - SUCCESS - 0 error(s)
+[v8r] package.json - SUCCESS - 0 error(s)
+[v8r] tsconfig.json - SUCCESS - 0 error(s)
+[32m✅ Linted [JSON] files with [v8r] successfully - (4.88s)[0m
+[Text Reporter] Generated TEXT report: /github/workspace/report/linters_logs/SUCCESS-JSON_V8R.log
+
+[1m### Processed [SPELL] files[0m
+- Using [cspell v4.1.3] https://github.com/streetsidesoftware/cspell/tree/master/packages/cspell
+- Mega-Linter key: [SPELL_CSPELL]
+- Rules config: [/github/workspace/.cspell.json]
+[cspell] .cspell.json
+[cspell] .eslintrc.json
+[cspell] .github/workflows/deploy-RELEASE.yml
+[cspell] .github/workflows/mega-linter.yml
+[cspell] .gitignore
+[cspell] .jscpd.json
+[cspell] .mega-linter.yml
+[cspell] .yarnrc
+[cspell] CHANGELOG.md
+[cspell] LICENSE
+[cspell] README.md
+[cspell] dev.sh
+[cspell] package.json
+[cspell] src/extension.ts
+[cspell] src/hardis-commands-provider.ts
+[cspell] src/test/runTest.ts
+[cspell] src/test/suite/extension.test.ts
+[cspell] src/test/suite/index.ts
+[cspell] tsconfig.json
+[32m✅ Linted [SPELL] files with [cspell] successfully - (4.09s)[0m
+[Text Reporter] Generated TEXT report: /github/workspace/report/linters_logs/SUCCESS-SPELL_CSPELL.log
+
+[1m### Processed [TYPESCRIPT] files[0m
+- Using [eslint v7.22.0] https://eslint.org
+- Mega-Linter key: [TYPESCRIPT_ES]
+- Rules config: [/github/workspace/.eslintrc.json]
+[eslint] src/extension.ts
+[eslint] src/hardis-commands-provider.ts
+[eslint] src/test/runTest.ts
+[eslint] src/test/suite/extension.test.ts
+[eslint] src/test/suite/index.ts
+[32m✅ Linted [TYPESCRIPT] files with [eslint] successfully - (2.5s)[0m
+
+[1m### Processed [YAML] files[0m
+- Using [prettier v2.2.1] https://prettier.io/
+- Mega-Linter key: [YAML_PRETTIER]
+- Rules config: identified by [prettier]
+[prettier] .github/workflows/deploy-RELEASE.yml - SUCCESS - 0 error(s)
+[prettier] .github/workflows/mega-linter.yml - SUCCESS - 0 error(s)
+[prettier] .mega-linter.yml - SUCCESS - 0 error(s)
+[32m✅ Linted [YAML] files with [prettier] successfully - (1.71s)[0m
+[Text Reporter] Generated TEXT report: /github/workspace/report/linters_logs/SUCCESS-TYPESCRIPT_ES.log
+[Text Reporter] Generated TEXT report: /github/workspace/report/linters_logs/SUCCESS-YAML_PRETTIER.log
+
+[1m### Processed [YAML] files[0m
+- Using [yamllint v1.26.0] https://yamllint.readthedocs.io/
+- Mega-Linter key: [YAML_YAMLLINT]
+- Rules config: [.yaml-lint.yml]
+[yamllint] .github/workflows/deploy-RELEASE.yml - SUCCESS - 0 error(s)
+[yamllint] .github/workflows/mega-linter.yml - SUCCESS - 0 error(s)
+[yamllint] .mega-linter.yml - SUCCESS - 0 error(s)
+[32m✅ Linted [YAML] files with [yamllint] successfully - (0.39s)[0m
+[Text Reporter] Generated TEXT report: /github/workspace/report/linters_logs/SUCCESS-YAML_YAMLLINT.log
+
+[1m### Processed [YAML] files[0m
+- Using [v8r v0.5.0] https://github.com/chris48s/v8r
+- Mega-Linter key: [YAML_V8R]
+- Rules config: identified by [v8r]
+[v8r] .github/workflows/deploy-RELEASE.yml - SUCCESS - 0 error(s)
+[v8r] .github/workflows/mega-linter.yml - SUCCESS - 0 error(s)
+[v8r] .mega-linter.yml - SUCCESS - 0 error(s)
+[32m✅ Linted [YAML] files with [v8r] successfully - (2.66s)[0m
+[Text Reporter] Generated TEXT report: /github/workspace/report/linters_logs/SUCCESS-YAML_V8R.log
+
+[1m### Processed [TYPESCRIPT] files[0m
+- Using [prettier v2.2.1] https://prettier.io/
+- Mega-Linter key: [TYPESCRIPT_PRETTIER]
+- Rules config: identified by [prettier]
+[36m[prettier] src/extension.ts - SUCCESS - 0 error(s) - FIXED[0m
+[36m[prettier] src/hardis-commands-provider.ts - SUCCESS - 0 error(s) - FIXED[0m
+[36m[prettier] src/test/runTest.ts - SUCCESS - 0 error(s) - FIXED[0m
+[36m[prettier] src/test/suite/extension.test.ts - SUCCESS - 0 error(s) - FIXED[0m
+[36m[prettier] src/test/suite/index.ts - SUCCESS - 0 error(s) - FIXED[0m
+[32m✅ Linted [TYPESCRIPT] files with [prettier] successfully - (5.25s)[0m
+[Text Reporter] Generated TEXT report: /github/workspace/report/linters_logs/SUCCESS-TYPESCRIPT_PRETTIER.log
+
++----SUMMARY----+--------------------------+---------+-------+--------+--------------+
+| Descriptor    | Linter                   |   Files | Fixed | Errors | Elapsed time |
++---------------+--------------------------+---------+-------+--------+--------------+
+| ◬ BASH        | bash-exec                |       1 |       |      1 |        0.01s |
+| ✅ BASH       | shellcheck               |       1 |       |      0 |        0.03s |
+| ✅ BASH       | shfmt                    |       1 |     1 |      0 |        0.04s |
+| ✅ COPYPASTE  | jscpd                    | project |       |      0 |         1.2s |
+| ✅ GIT        | git_diff                 | project |       |      0 |        0.01s |
+| ✅ JSON       | eslint-plugin-jsonc      |       5 |     0 |      0 |        1.13s |
+| ✅ JSON       | jsonlint                 |       5 |       |      0 |        1.52s |
+| ✅ JSON       | v8r                      |       5 |       |      0 |        4.88s |
+| ✅ MARKDOWN   | markdownlint             |       2 |     0 |      0 |        0.32s |
+| ◬ MARKDOWN    | markdown-link-check      |       2 |       |      1 |         2.3s |
+| ✅ MARKDOWN   | markdown-table-formatter |       2 |     0 |      0 |        0.25s |
+| ✅ SPELL      | cspell                   |      19 |       |      0 |        4.09s |
+| ✅ SPELL      | misspell                 |      19 |     1 |      0 |        0.07s |
+| ✅ TYPESCRIPT | eslint                   |       5 |     0 |      0 |         2.5s |
+| ✅ TYPESCRIPT | prettier                 |       5 |     5 |      0 |        5.25s |
+| ✅ YAML       | prettier                 |       3 |     0 |      0 |        1.71s |
+| ✅ YAML       | v8r                      |       3 |       |      0 |        2.66s |
+| ✅ YAML       | yamllint                 |       3 |       |      0 |        0.39s |
++---------------+--------------------------+---------+-------+--------+--------------+
+
+[GitHub Comment Reporter] No pull request was found, so no comment has been posted
+[Updated Sources Reporter] copied 6 fixed source files in folder /github/workspace/report/updated_sources.
+Download it from artifacts then copy-paste it in your local repo to apply linters updates
+◬ Successfully linted all files, but with ignored errors

@@ -1,0 +1,15 @@
+Results of markdown-link-check linter (version 0.0.0)
+See documentation on https://nvuillam.github.io/mega-linter/descriptors/markdown_markdown_link_check/
+-----------------------------------------------
+
+✅ [SUCCESS] CHANGELOG.md
+❌ [ERROR] README.md
+    
+    FILE: README.md
+    [✖] https://www.customer-platform.com/
+    
+    1 links checked.
+    
+    ERROR: 1 dead links found!
+    [✖] https://www.customer-platform.com/ → Status: 503
+

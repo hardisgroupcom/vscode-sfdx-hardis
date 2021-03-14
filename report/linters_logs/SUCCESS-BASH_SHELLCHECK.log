@@ -1,0 +1,5 @@
+Results of shellcheck linter (version 0.7.1)
+See documentation on https://nvuillam.github.io/mega-linter/descriptors/bash_shellcheck/
+-----------------------------------------------
+
+✅ [SUCCESS] dev.sh
