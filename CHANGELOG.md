@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.0.3] 2021-03-14
+
 - Reorganize commands tree and add icons & descriptions
 - Add Mega-Linter on project
 
