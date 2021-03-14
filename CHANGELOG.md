@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Reorganize commands tree and add icons & descriptions
+- Add Mega-Linter on project
+
 ## [0.0.2] 2021-03-13
 
 - Add commands to configure org monitoring
