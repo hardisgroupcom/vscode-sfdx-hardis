@@ -138,12 +138,14 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
           {
             id: "org:select",
             label: 'Select a Salesforce org',
+            description: 'Select an org (scratch or not) that you want your VsCode project to be currently linked to',
             command: 'sfdx hardis:org:select',
             icon: 'select.svg'
           },
           {
             id: "org:select:devhub",
             label: 'Select a Salesforce DevHub',
+            description: 'Select an org that sfdx-hardis will use as Dev Hub',
             command: 'sfdx hardis:org:select --devhub',
             icon: 'select.svg'
           },
@@ -151,46 +153,67 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             id: "org:logout",
             label: 'Logout from current Org and DevHub',
             command: 'sfdx auth:logout --noprompt || true && sfdx config:unset defaultusername defaultdevhubusername -g && sfdx config:unset defaultusername defaultdevhubusername || true',
+            description: 'Log out from everything :)',
             icon: 'logout.svg'
           },
           {
             id: "org:test:apex",
             label: 'Run Apex tests on Salesforce org',
             command: 'sfdx hardis:org:test:apex',
+            description: 'Runs all apex tests on the selected org. Will trigger error if minimum apex code coverage is not reached',
             icon: 'test.svg'
           },
         ]
       },
       {
-        id: "config",
-        label: "SFDX Hardis Configuration",
+        id: "config-scratch",
+        label: "Scratch org Configuration",
         commands: [
-          {
-            id: "configure:auth:deployment",
-            label: 'Configure CI authentication with Org',
-            description: 'Assisted configuration to connect a protected branch and its related release org during CI',
-            command: 'sfdx hardis:project:configure:auth'
-          },
-          {
-            id: "configure:auth:devhub",
-            label: 'Configure CI authentication with DevHub Org',
-            command: 'sfdx hardis:project:configure:auth --devhub'
-          },
           {
             id: "package:install",
             label: 'Install a package',
             description: 'This will update project .sfdx-hardis.yml so the package will always be installed in new scratch orgs and future deployments',
+            icon: 'package.svg',
             command: 'sfdx hardis:package:install'
           },
           {
             id: "data:tree:export",
             label: 'Regenerate scratch org initialisation data',
+            description: 'Uses requests defined in sfdx-hardis.yml to export data from org and store it in project files, so it can be loaded during each scratch org initialization',
+            icon: 'data.svg',
             command: 'sfdx hardis:data:tree:export'
+          }
+        ]
+      },
+      {
+        id: "config-deploy",
+        label: "Deployment Configuration",
+        commands: [
+          {
+            id: "configure:auth:deployment",
+            label: 'Configure CI authentication with Org',
+            description: 'Assisted configuration to connect a protected branch and its related release org during CI',
+            icon: 'configure.svg',
+            command: 'sfdx hardis:project:configure:auth'
           },
+          {
+            id: "configure:auth:devhub",
+            label: 'Configure CI authentication with DevHub Org',
+            icon: "configure.svg",
+            description: 'Assisted configuration to connect to a Dev Hub org during CI',
+            command: 'sfdx hardis:project:configure:auth --devhub'
+          }
+        ]
+      },
+      {
+        id: "config-monitoring",
+        label: "Monitoring Configuration",
+        commands: [
           {
             id: "org:configure:monitoring",
             label: 'Configure org monitoring',
             description: "To run only on a repo dedicated to monitoring (start from a blank repo)",
+            icon: 'monitoring.svg',
             command: 'sfdx hardis:org:configure:monitoring'
           }
         ]
@@ -203,12 +226,14 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             id: "scratch:create",
             label: 'Resume scratch org creation',
             description: 'If during Work:New you had an error, you can resume the scratch org creation',
+            icon: 'salesforce.svg',
             command: 'sfdx hardis:scratch:create'
           },
           {
             id: "scratch:create:new",
             label: 'Force creation of a new scratch org',
             description: 'Create a new scratch org for the current work',
+            icon: 'salesforce.svg',
             command: 'sfdx hardis:scratch:create --forcenew'
           }
         ]
