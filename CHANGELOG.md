@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.0.5] 2021-03-17
+
+- Better terminal management
+
 ## [0.0.4] 2021-03-16
 
 - Add Open command in Work menu
