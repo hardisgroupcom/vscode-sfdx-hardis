@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.0.4] 2021-03-16
+
+- Add Open command in Work menu
+- Scrolldown terminal when running a command
+
 ## [0.0.3] 2021-03-14
 
 - Reorganize commands tree and add icons & descriptions

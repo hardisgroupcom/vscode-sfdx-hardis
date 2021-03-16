@@ -120,6 +120,14 @@ export class HardisCommandsProvider
             command: "sfdx hardis:work:refresh",
             icon: "refresh.svg",
           },
+          {
+            id: "org:open-scratch",
+            label: "Open my scratch org in browser",
+            description:
+              "Opens your currently selected scratch org or other org",
+            command: "sfdx force:org:open",
+            icon: "salesforce.svg",
+          },
         ],
       },
       {
