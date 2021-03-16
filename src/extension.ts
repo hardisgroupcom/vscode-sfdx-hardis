@@ -43,11 +43,14 @@ export function activate(context: vscode.ExtensionContext) {
     "vscode-sfdx-hardis.execute-command",
     (sfdxHardisCommand: string) => {
       // Filter killed terminals
-      terminalStack = terminalStack.filter(terminal => vscode.window.terminals.filter(vsTerminal => vsTerminal.processId === terminal.processId).length > 0)
+      terminalStack = terminalStack.filter(
+        (terminal) =>
+          vscode.window.terminals.filter(
+            (vsTerminal) => vsTerminal.processId === terminal.processId
+          ).length > 0
+      );
       // Create new terminal if necessary
-      if (terminalStack.length === 0 || 
-        vscode.window.terminals.length === 0 
-        ) {
+      if (terminalStack.length === 0 || vscode.window.terminals.length === 0) {
         // Check bash is the default terminal if we are on windows
         if (process.platform === "win32") {
           const terminalConfig = vscode.workspace.getConfiguration("terminal");
