@@ -23,6 +23,7 @@ export function activate(context: vscode.ExtensionContext) {
     const terminal = getLatestTerminal();
     // Show and focus terminal
     terminal.show(false);
+
     // Run command on terminal only if there is not already a command running
     if (terminalIsRunning) {
       vscode.window.showErrorMessage(
@@ -33,6 +34,8 @@ export function activate(context: vscode.ExtensionContext) {
     }
     // terminalIsRunning = true; //Comment until we find a way to detect that a command is running or not
     terminal.sendText(command);
+    // Scrolldown the terminal
+    vscode.commands.executeCommand("workbench.action.terminal.scrollToBottom");
   }
 
   // Execute SFDX Hardis command
@@ -125,7 +128,7 @@ export function activate(context: vscode.ExtensionContext) {
   // Request user to install/upgrade dependencies
   vscode.window
     .showInformationMessage(
-      "Do you want to install/upgrade SFDX Hardis dependent tools ?",
+      "Do you want to install/upgrade SFDX Hardis dependent tools ? \n(If your install is recent, you probably do not need to do that)",
       "Yes",
       "No"
     )
