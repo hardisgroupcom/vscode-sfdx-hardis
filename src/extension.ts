@@ -77,10 +77,10 @@ export function activate(context: vscode.ExtensionContext) {
           }
         }
         /* Create terminal
-			const terminalOptions: vscode.TerminalOptions = {
-				name: 'SFDX Hardis',
-				cwd: (vscode.workspace.workspaceFolders) ? vscode.workspace.workspaceFolders[0].uri.path : process.cwd()
-			};*/
+      const terminalOptions: vscode.TerminalOptions = {
+        name: 'SFDX Hardis',
+        cwd: (vscode.workspace.workspaceFolders) ? vscode.workspace.workspaceFolders[0].uri.path : process.cwd()
+      };*/
         //const newTerminal = vscode.window.createTerminal(terminalOptions);
         vscode.commands.executeCommand(
           "workbench.action.terminal.newInActiveWorkspace",
@@ -103,26 +103,7 @@ export function activate(context: vscode.ExtensionContext) {
   );
   context.subscriptions.push(disposable);
 
-  // Install dependencies command
-  const disposableInstall = vscode.commands.registerCommand(
-    "vscode-sfdx-hardis.install",
-    () => {
-      const commands = [
-        "npm install sfdx-cli@7.85.1 -g",
-        "echo y|sfdx plugins:install sfdx-hardis",
-        "echo y|sfdx plugins:install sfdx-essentials",
-        "echo y|sfdx plugins:install sfpowerkit",
-        "echo y|sfdx plugins:install sfdx-git-delta",
-      ];
-      vscode.commands.executeCommand(
-        "vscode-sfdx-hardis.execute-command",
-        commands.join("\n")
-      );
-    }
-  );
-  context.subscriptions.push(disposableInstall);
-
-  // Register Hardis Commands tree data provider
+  // Register Hardis Commands & Status tree data providers
   let currentWorkspaceFolderUri = ".";
   if ((vscode.workspace.workspaceFolders?.length || 0) > 0) {
     currentWorkspaceFolderUri = (vscode.workspace.workspaceFolders || [])[0].uri
@@ -134,25 +115,16 @@ export function activate(context: vscode.ExtensionContext) {
   );
   context.subscriptions.push(disposableTreeCommands);
 
+  const hardisStatusProvider = new HardisStatusProvider(currentWorkspaceFolderUri);
   const disposableTreeInfo = vscode.window.registerTreeDataProvider(
     "sfdx-hardis-status",
-    new HardisStatusProvider(currentWorkspaceFolderUri)
+    hardisStatusProvider
+  );
+  vscode.commands.registerCommand('vscode-sfdx-hardis.refreshStatusView', () =>
+    hardisStatusProvider.refresh()
   );
   context.subscriptions.push(disposableTreeInfo);
-
-  // Request user to install/upgrade dependencies
-  vscode.window
-    .showInformationMessage(
-      "Do you want to install/upgrade SFDX Hardis dependent tools ? \n(If your install is recent, you probably do not need to do that)",
-      "Yes",
-      "No"
-    )
-    .then((selection) => {
-      if (selection === "Yes") {
-        vscode.commands.executeCommand("vscode-sfdx-hardis.install");
-      }
-    });
 }
 
 // this method is called when your extension is deactivated
-export function deactivate() {}
+export function deactivate() { }

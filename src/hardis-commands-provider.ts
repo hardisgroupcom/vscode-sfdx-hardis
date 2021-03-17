@@ -40,6 +40,9 @@ export class HardisCommandsProvider
       if (item.description) {
         options.description = item.description;
       }
+      if (item.tooltip) {
+        options.tooltip = item.tooltip;
+      }
       items.push(
         new CommandTreeItem(
           item.label,
@@ -100,6 +103,14 @@ export class HardisCommandsProvider
               "Create a new environment to develop or configure with a scratch org",
           },
           {
+            id: "org:open-scratch",
+            label: "Open my scratch org in browser",
+            tooltip:
+              "Opens your currently selected scratch org or other org",
+            command: "sfdx force:org:open",
+            icon: "salesforce.svg",
+          },
+          {
             id: "hardis:work:save",
             label: "Save my current task",
             command: "sfdx hardis:work:save",
@@ -109,11 +120,11 @@ export class HardisCommandsProvider
           },
           {
             id: "hardis:work:resetselection",
-            label: "Change the selection of the items I want to save",
+            label: "Reset list of published items",
             command: "sfdx hardis:work:resetselection",
             icon: "reset.svg",
             tooltip:
-              "If you made a wrong selection of items to publish, you can reset the selection",
+              "If you made a wrong selection of items to publish, you can reset the selection and save it again",
           },
           {
             id: "hardis:work:refresh",
@@ -122,37 +133,6 @@ export class HardisCommandsProvider
               "If your colleagues published their work, makes sure that your work is up to date with their latest developments/configurations",
             command: "sfdx hardis:work:refresh",
             icon: "refresh.svg",
-          },
-          {
-            id: "org:open-scratch",
-            label: "Open my scratch org in browser",
-            tooltip:
-              "Opens your currently selected scratch org or other org",
-            command: "sfdx force:org:open",
-            icon: "salesforce.svg",
-          },
-        ],
-      },
-      {
-        id: "synchro",
-        label: "Synchronization",
-        defaultExpand: true,
-        commands: [
-          {
-            id: "scratch:push-from-git-to-org",
-            label: "Push from Git to Salesforce org",
-            tooltip:
-              "Propagates your local updates within Vs Code into your remote Salesforce scratch org",
-            command: "sfdx force:source:push -g -w 60 --forceoverwrite",
-            icon: "push.svg",
-          },
-          {
-            id: "scratch:pull-from-org-to-git",
-            label: "Pull from Salesforce org to Git",
-            tooltip:
-              "Retrieve locally the updates made on the remote Salesforce scratch org",
-            command: "sfdx force:source:pull -w 60 --forceoverwrite",
-            icon: "pull.svg",
           },
         ],
       },
@@ -169,6 +149,46 @@ export class HardisCommandsProvider
             icon: "salesforce.svg",
           },
           {
+            id: "scratch:push-from-git-to-org",
+            label: "Push from Git to Salesforce org",
+            tooltip:
+              "Propagates your local updates within Vs Code into your remote Salesforce scratch org",
+            command: "sfdx force:source:push -g -w 60 --forceoverwrite",
+            icon: "push.svg",
+          },
+          {
+            id: "scratch:pull-from-org-to-git",
+            label: "Pull from Salesforce org to Git",
+            tooltip:
+              "Retrieve locally the updates made on the remote Salesforce scratch org",
+            command: "sfdx force:source:pull -w 60 --forceoverwrite",
+            icon: "pull.svg",
+          },
+          {
+            id: "org:test:apex",
+            label: "Run Apex tests on Salesforce org",
+            command: "sfdx hardis:org:test:apex",
+            tooltip:
+              "Runs all apex tests on the selected org. Will trigger error if minimum apex code coverage is not reached",
+            icon: "test.svg",
+          },
+          {
+            id: "org:password:generate",
+            label: "Generate new password",
+            command: "sfdx force:user:password:generate",
+            tooltip:
+              "Generates a new password for your current scratch org user",
+            icon: "password.svg",
+          },
+          {
+            id: "org:logout",
+            label: "Logout from current Org and DevHub",
+            command:
+              "sfdx auth:logout --noprompt || true && sfdx config:unset defaultusername defaultdevhubusername -g && sfdx config:unset defaultusername defaultdevhubusername || true",
+            tooltip: "Log out from everything :)",
+            icon: "logout.svg",
+          },
+          {
             id: "org:select",
             label: "Select a Salesforce org",
             tooltip:
@@ -182,22 +202,6 @@ export class HardisCommandsProvider
             tooltip: "Select an org that sfdx-hardis will use as Dev Hub",
             command: "sfdx hardis:org:select --devhub",
             icon: "select.svg",
-          },
-          {
-            id: "org:logout",
-            label: "Logout from current Org and DevHub",
-            command:
-              "sfdx auth:logout --noprompt || true && sfdx config:unset defaultusername defaultdevhubusername -g && sfdx config:unset defaultusername defaultdevhubusername || true",
-            tooltip: "Log out from everything :)",
-            icon: "logout.svg",
-          },
-          {
-            id: "org:test:apex",
-            label: "Run Apex tests on Salesforce org",
-            command: "sfdx hardis:org:test:apex",
-            tooltip:
-              "Runs all apex tests on the selected org. Will trigger error if minimum apex code coverage is not reached",
-            icon: "test.svg",
           },
         ],
       },
@@ -328,7 +332,7 @@ class CommandTreeItem extends vscode.TreeItem {
         this.description = options.description;
       }
       if (options.tooltip) {
-        this.tooltip = options.description;
+        this.tooltip = options.tooltip;
       }
     }
   }

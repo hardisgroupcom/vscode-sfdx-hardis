@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
-import { execSfdxJson } from "./utils";
+import { execCommand, execSfdxJson } from "./utils";
 
 export class HardisStatusProvider
   implements vscode.TreeDataProvider<StatusTreeItem> {
@@ -33,7 +33,7 @@ export class HardisStatusProvider
     const items: StatusTreeItem[] = [];
     const topicItems: any[] = topic.id === 'status-org' ? await this.getOrgItems() :
       topic.id === 'status-git' ? await this.getGitItems() :
-        topic.id === 'status-git' ? await this.getInstallItems() : []
+        topic.id === 'status-plugins' ? await this.getPluginsItems() : []
       ;
     for (const item of topicItems) {
       const options: any = {};
@@ -42,6 +42,9 @@ export class HardisStatusProvider
       }
       if (item.description) {
         options.description = item.description;
+      }
+      if (item.tooltip) {
+        options.tooltip = item.tooltip;
       }
       items.push(
         new StatusTreeItem(
@@ -63,16 +66,16 @@ export class HardisStatusProvider
     if (orgInfoResult.result) {
       const orgInfo = orgInfoResult.result;
       if (orgInfo.expirationDate) {
-        items.push({ id: 'org-info-expiration-date', label: `Expires on ${orgInfo.expirationDate}`, tooltip: 'You org will be available until this date' })
+        items.push({ id: 'org-info-expiration-date', label: `Expires on ${orgInfo.expirationDate}`, tooltip: 'You org will be available until this date' });
       }
       if (orgInfo.alias !== 'MY_ORG') {
-        items.push({ id: 'org-info-alias', label: `${orgInfo.alias}`, tooltip: 'Alias of the org that you are currently connected to from Vs Code' })
+        items.push({ id: 'org-info-alias', label: `${orgInfo.alias}`, tooltip: 'Alias of the org that you are currently connected to from Vs Code' });
       }
       if (orgInfo.username) {
-        items.push({ id: 'org-info-instance-url', label: `${orgInfo.username}`, tooltip: 'URL of your remote Salesforce org' })
+        items.push({ id: 'org-info-instance-url', label: `${orgInfo.username}`, tooltip: 'URL of your remote Salesforce org' });
       }
       if (orgInfo.instanceUrl) {
-        items.push({ id: 'org-info-username', label: `${orgInfo.instanceUrl}`, tooltip: 'Username on your remote Salesforce org' })
+        items.push({ id: 'org-info-username', label: `${orgInfo.instanceUrl}`, tooltip: 'Username on your remote Salesforce org' });
       }
     }
     return items;
@@ -88,17 +91,44 @@ export class HardisStatusProvider
       if (repo?.state?.HEAD) {
         const head = repo.state.HEAD;
         const { name: branch } = head;
-        items.push({ id: 'git-info-branch', label: `Branch: ${branch}`, description: 'This is the git branch you are currently working on' })
+        items.push({ id: 'git-info-branch', label: `Branch: ${branch}`, description: 'This is the git branch you are currently working on' });
       }
       else {
-        items.push({ id: 'git-info-branch', label: `Unknown`, description: 'Git is not ready yet, or your folder is not a repository' })
+        items.push({ id: 'git-info-branch', label: `Unknown`, description: 'Git is not ready yet, or your folder is not a repository' });
       }
     }
     return items;
   }
 
-  private async getInstallItems(): Promise<any[]> {
-    return []
+  private async getPluginsItems(): Promise<any[]> {
+    const items = [];
+    const plugins = [
+      { name: "sfdx-hardis" },
+      { name: "sfdx-essentials" },
+      { name: "sfpowerkit" },
+      { name: "sfdx-git-delta" }
+    ];
+    // get currently installed plugins
+    const sfdxPlugins = (await execCommand('sfdx plugins', this, { output: true, fail: false })).stdout;
+    for (const plugin of plugins) {
+      // Check latest plugin version
+      const latestPluginVersion = (await execCommand(`npm show ${plugin.name} version`, this, { fail: false })).stdout;
+      const pluginItem = {
+        id: `plugin-info-${plugin.name}`,
+        label: plugin.name,
+        command: "",
+        tooltip: `Latest version of SFDX plugin ${plugin.name} is installed`,
+        icon: "success.svg"
+      };
+      if (!sfdxPlugins.includes(`${plugin.name} ${latestPluginVersion}`)) {
+        pluginItem.label += ' (outdated)';
+        pluginItem.command = `echo y|sfdx plugins:install ${plugin.name}`;
+        pluginItem.tooltip = `Click to upgrade SFDX plugin ${plugin.name} to ${latestPluginVersion}`;
+        pluginItem.icon = "warning.svg";
+      }
+      items.push(pluginItem);
+    }
+    return items;
   }
 
   /**
@@ -118,6 +148,9 @@ export class HardisStatusProvider
       if (item.description) {
         options.description = item.description;
       }
+      if (item.tooltip) {
+        options.tooltip = item.tooltip;
+      }
       const expanded = item.defaultExpand
         ? vscode.TreeItemCollapsibleState.Expanded
         : vscode.TreeItemCollapsibleState.Collapsed;
@@ -128,6 +161,15 @@ export class HardisStatusProvider
     return items;
   }
 
+  // Manage refresh
+  private _onDidChangeTreeData: vscode.EventEmitter<StatusTreeItem | undefined | null | void> = new vscode.EventEmitter<StatusTreeItem | undefined | null | void>();
+  readonly onDidChangeTreeData: vscode.Event<StatusTreeItem | undefined | null | void> = this._onDidChangeTreeData.event;
+
+  refresh(): void {
+    this._onDidChangeTreeData.fire();
+  }
+
+  // List status topics
   private listTopics(): any {
     const topics = [
       {
@@ -143,9 +185,9 @@ export class HardisStatusProvider
         defaultExpand: true,
       },
       {
-        id: "status-install",
-        label: "Install",
-        icon: "install.svg",
+        id: "status-plugins",
+        label: "Plugins",
+        icon: "plugins.svg",
         defaultExpand: true,
       },
     ];
@@ -168,7 +210,7 @@ class StatusTreeItem extends vscode.TreeItem {
   ) {
     super(label, collapsibleState);
     this.id = id;
-    if (hardisCommand !== "" && hardisCommand != null) {
+    if (hardisCommand !== "" && hardisCommand !== null) {
       this.command = {
         title: label,
         command: "vscode-sfdx-hardis.execute-command",

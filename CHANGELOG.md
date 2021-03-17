@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+## [0.0.6] 2021-03-17
+
+- Reorganize commands menu + icons
+  - New command **Generate new password**
+- New view **Status**, with refresh button
+  - Scratch org info
+  - Git info
+  - Plugins info (allows to upgrade if updated)
+- Remove install prompt at launch (replaced by Status -> Plugins)
+
 ## [0.0.5] 2021-03-17
 
 - Better terminal management
