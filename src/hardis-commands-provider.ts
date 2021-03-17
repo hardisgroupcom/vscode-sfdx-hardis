@@ -65,7 +65,7 @@ export class HardisCommandsProvider
       const options = {
         icon: { light: "user.svg", dark: "user.svg" },
         description: "",
-        tooltip: ""
+        tooltip: "",
       };
       if (item.icon) {
         options.icon = { light: item.icon, dark: item.icon };
@@ -105,8 +105,7 @@ export class HardisCommandsProvider
           {
             id: "org:open-scratch",
             label: "Open my scratch org in browser",
-            tooltip:
-              "Opens your currently selected scratch org or other org",
+            tooltip: "Opens your currently selected scratch org or other org",
             command: "sfdx force:org:open",
             icon: "salesforce.svg",
           },
@@ -143,8 +142,7 @@ export class HardisCommandsProvider
           {
             id: "org:open",
             label: "Open Salesforce org in browser",
-            tooltip:
-              "Opens your currently selected scratch org or other org",
+            tooltip: "Opens your currently selected scratch org or other org",
             command: "sfdx force:org:open",
             icon: "salesforce.svg",
           },
@@ -299,7 +297,7 @@ class CommandTreeItem extends vscode.TreeItem {
     public readonly options = {
       icon: { light: "salesforce.svg", dark: "salesforce.svg" },
       description: "",
-      tooltip: ""
+      tooltip: "",
     }
   ) {
     super(label, collapsibleState);

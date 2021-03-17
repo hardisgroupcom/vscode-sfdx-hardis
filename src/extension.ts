@@ -115,16 +115,18 @@ export function activate(context: vscode.ExtensionContext) {
   );
   context.subscriptions.push(disposableTreeCommands);
 
-  const hardisStatusProvider = new HardisStatusProvider(currentWorkspaceFolderUri);
+  const hardisStatusProvider = new HardisStatusProvider(
+    currentWorkspaceFolderUri
+  );
   const disposableTreeInfo = vscode.window.registerTreeDataProvider(
     "sfdx-hardis-status",
     hardisStatusProvider
   );
-  vscode.commands.registerCommand('vscode-sfdx-hardis.refreshStatusView', () =>
+  vscode.commands.registerCommand("vscode-sfdx-hardis.refreshStatusView", () =>
     hardisStatusProvider.refresh()
   );
   context.subscriptions.push(disposableTreeInfo);
 }
 
 // this method is called when your extension is deactivated
-export function deactivate() { }
+export function deactivate() {}
