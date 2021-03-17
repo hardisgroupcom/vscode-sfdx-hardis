@@ -1,5 +1,4 @@
 import * as vscode from "vscode";
-import * as fs from "fs";
 import * as path from "path";
 
 export class HardisCommandsProvider
@@ -63,12 +62,16 @@ export class HardisCommandsProvider
       const options = {
         icon: { light: "user.svg", dark: "user.svg" },
         description: "",
+        tooltip: ""
       };
       if (item.icon) {
         options.icon = { light: item.icon, dark: item.icon };
       }
       if (item.description) {
         options.description = item.description;
+      }
+      if (item.tooltip) {
+        options.description = item.tooltip;
       }
       const expanded = item.defaultExpand
         ? vscode.TreeItemCollapsibleState.Expanded
@@ -93,7 +96,7 @@ export class HardisCommandsProvider
             label: "Start a new task",
             command: "sfdx hardis:work:new",
             icon: "new.svg",
-            description:
+            tooltip:
               "Create a new environment to develop or configure with a scratch org",
           },
           {
@@ -101,7 +104,7 @@ export class HardisCommandsProvider
             label: "Save my current task",
             command: "sfdx hardis:work:save",
             icon: "save.svg",
-            description:
+            tooltip:
               "Save to server you current work, and propose to create a merge request",
           },
           {
@@ -109,13 +112,13 @@ export class HardisCommandsProvider
             label: "Change the selection of the items I want to save",
             command: "sfdx hardis:work:resetselection",
             icon: "reset.svg",
-            description:
+            tooltip:
               "If you made a wrong selection of items to publish, you can reset the selection",
           },
           {
             id: "hardis:work:refresh",
             label: "Refresh git branch & org with newest updates",
-            description:
+            tooltip:
               "If your colleagues published their work, makes sure that your work is up to date with their latest developments/configurations",
             command: "sfdx hardis:work:refresh",
             icon: "refresh.svg",
@@ -123,7 +126,7 @@ export class HardisCommandsProvider
           {
             id: "org:open-scratch",
             label: "Open my scratch org in browser",
-            description:
+            tooltip:
               "Opens your currently selected scratch org or other org",
             command: "sfdx force:org:open",
             icon: "salesforce.svg",
@@ -138,7 +141,7 @@ export class HardisCommandsProvider
           {
             id: "scratch:push-from-git-to-org",
             label: "Push from Git to Salesforce org",
-            description:
+            tooltip:
               "Propagates your local updates within Vs Code into your remote Salesforce scratch org",
             command: "sfdx force:source:push -g -w 60 --forceoverwrite",
             icon: "push.svg",
@@ -146,7 +149,7 @@ export class HardisCommandsProvider
           {
             id: "scratch:pull-from-org-to-git",
             label: "Pull from Salesforce org to Git",
-            description:
+            tooltip:
               "Retrieve locally the updates made on the remote Salesforce scratch org",
             command: "sfdx force:source:pull -w 60 --forceoverwrite",
             icon: "pull.svg",
@@ -160,7 +163,7 @@ export class HardisCommandsProvider
           {
             id: "org:open",
             label: "Open Salesforce org in browser",
-            description:
+            tooltip:
               "Opens your currently selected scratch org or other org",
             command: "sfdx force:org:open",
             icon: "salesforce.svg",
@@ -168,7 +171,7 @@ export class HardisCommandsProvider
           {
             id: "org:select",
             label: "Select a Salesforce org",
-            description:
+            tooltip:
               "Select an org (scratch or not) that you want your VsCode project to be currently linked to",
             command: "sfdx hardis:org:select",
             icon: "select.svg",
@@ -176,7 +179,7 @@ export class HardisCommandsProvider
           {
             id: "org:select:devhub",
             label: "Select a Salesforce DevHub",
-            description: "Select an org that sfdx-hardis will use as Dev Hub",
+            tooltip: "Select an org that sfdx-hardis will use as Dev Hub",
             command: "sfdx hardis:org:select --devhub",
             icon: "select.svg",
           },
@@ -185,14 +188,14 @@ export class HardisCommandsProvider
             label: "Logout from current Org and DevHub",
             command:
               "sfdx auth:logout --noprompt || true && sfdx config:unset defaultusername defaultdevhubusername -g && sfdx config:unset defaultusername defaultdevhubusername || true",
-            description: "Log out from everything :)",
+            tooltip: "Log out from everything :)",
             icon: "logout.svg",
           },
           {
             id: "org:test:apex",
             label: "Run Apex tests on Salesforce org",
             command: "sfdx hardis:org:test:apex",
-            description:
+            tooltip:
               "Runs all apex tests on the selected org. Will trigger error if minimum apex code coverage is not reached",
             icon: "test.svg",
           },
@@ -205,7 +208,7 @@ export class HardisCommandsProvider
           {
             id: "package:install",
             label: "Install a package",
-            description:
+            tooltip:
               "This will update project .sfdx-hardis.yml so the package will always be installed in new scratch orgs and future deployments",
             icon: "package.svg",
             command: "sfdx hardis:package:install",
@@ -213,7 +216,7 @@ export class HardisCommandsProvider
           {
             id: "data:tree:export",
             label: "Regenerate scratch org initialisation data",
-            description:
+            tooltip:
               "Uses requests defined in sfdx-hardis.yml to export data from org and store it in project files, so it can be loaded during each scratch org initialization",
             icon: "data.svg",
             command: "sfdx hardis:data:tree:export",
@@ -227,7 +230,7 @@ export class HardisCommandsProvider
           {
             id: "configure:auth:deployment",
             label: "Configure CI authentication with Org",
-            description:
+            tooltip:
               "Assisted configuration to connect a protected branch and its related release org during CI",
             icon: "configure.svg",
             command: "sfdx hardis:project:configure:auth",
@@ -236,7 +239,7 @@ export class HardisCommandsProvider
             id: "configure:auth:devhub",
             label: "Configure CI authentication with DevHub Org",
             icon: "configure.svg",
-            description:
+            tooltip:
               "Assisted configuration to connect to a Dev Hub org during CI",
             command: "sfdx hardis:project:configure:auth --devhub",
           },
@@ -249,7 +252,7 @@ export class HardisCommandsProvider
           {
             id: "org:configure:monitoring",
             label: "Configure org monitoring",
-            description:
+            tooltip:
               "To run only on a repo dedicated to monitoring (start from a blank repo)",
             icon: "monitoring.svg",
             command: "sfdx hardis:org:configure:monitoring",
@@ -263,7 +266,7 @@ export class HardisCommandsProvider
           {
             id: "scratch:create",
             label: "Resume scratch org creation",
-            description:
+            tooltip:
               "If during Work:New you had an error, you can resume the scratch org creation",
             icon: "salesforce.svg",
             command: "sfdx hardis:scratch:create",
@@ -271,7 +274,7 @@ export class HardisCommandsProvider
           {
             id: "scratch:create:new",
             label: "Force creation of a new scratch org",
-            description: "Create a new scratch org for the current work",
+            tooltip: "Create a new scratch org for the current work",
             icon: "salesforce.svg",
             command: "sfdx hardis:scratch:create --forcenew",
           },
@@ -292,6 +295,7 @@ class CommandTreeItem extends vscode.TreeItem {
     public readonly options = {
       icon: { light: "salesforce.svg", dark: "salesforce.svg" },
       description: "",
+      tooltip: ""
     }
   ) {
     super(label, collapsibleState);
@@ -322,6 +326,8 @@ class CommandTreeItem extends vscode.TreeItem {
       }
       if (options.description) {
         this.description = options.description;
+      }
+      if (options.tooltip) {
         this.tooltip = options.description;
       }
     }

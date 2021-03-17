@@ -3,6 +3,7 @@
 import * as vscode from "vscode";
 //import *  from './commands/vscode-sfdx-hardis.execute-command';
 import { HardisCommandsProvider } from "./hardis-commands-provider";
+import { HardisStatusProvider } from "./hardis-status-provider";
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -127,11 +128,17 @@ export function activate(context: vscode.ExtensionContext) {
     currentWorkspaceFolderUri = (vscode.workspace.workspaceFolders || [])[0].uri
       .path;
   }
-  const disposableTree = vscode.window.registerTreeDataProvider(
+  const disposableTreeCommands = vscode.window.registerTreeDataProvider(
     "sfdx-hardis-commands",
     new HardisCommandsProvider(currentWorkspaceFolderUri)
   );
-  context.subscriptions.push(disposableTree);
+  context.subscriptions.push(disposableTreeCommands);
+
+  const disposableTreeInfo = vscode.window.registerTreeDataProvider(
+    "sfdx-hardis-status",
+    new HardisStatusProvider(currentWorkspaceFolderUri)
+  );
+  context.subscriptions.push(disposableTreeInfo);
 
   // Request user to install/upgrade dependencies
   vscode.window
