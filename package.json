@@ -2,7 +2,7 @@
 	"name": "vscode-sfdx-hardis",
 	"displayName": "SFDX Hardis",
 	"description": "Vs Code Wrapper for sfdx-hardis tooling",
-	"version": "0.0.5",
+	"version": "0.0.6",
 	"icon": "resources/hardis-logo.png",
 	"publisher": "NicolasVuillamy",
 	"license": "AGPL-3.0",
@@ -27,13 +27,13 @@
 				"title": "Execute sfdx-hardis command"
 			},
 			{
-                "command": "vscode-sfdx-hardis.refreshStatusView",
-                "title": "Refresh Status",
-                "icon": {
-                    "light": "resources/refresh-button.svg",
-                    "dark": "resources/refresh-button.svg"
-                }
-            }
+				"command": "vscode-sfdx-hardis.refreshStatusView",
+				"title": "Refresh Status",
+				"icon": {
+					"light": "resources/refresh-button.svg",
+					"dark": "resources/refresh-button.svg"
+				}
+			}
 		],
 		"viewsContainers": {
 			"activitybar": [
@@ -57,12 +57,12 @@
 			]
 		},
 		"menus": {
-            "view/title": [
-                {
-                    "command": "vscode-sfdx-hardis.refreshStatusView",
-                    "when": "view == sfdx-hardis-status",
-                    "group": "navigation"
-                }
+			"view/title": [
+				{
+					"command": "vscode-sfdx-hardis.refreshStatusView",
+					"when": "view == sfdx-hardis-status",
+					"group": "navigation"
+				}
 			]
 		}
 	},
