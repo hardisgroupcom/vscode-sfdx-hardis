@@ -1,6 +1,5 @@
 import * as c from "chalk";
 import * as child from "child_process";
-import * as ora from "ora";
 import * as util from "util";
 import * as vscode from "vscode";
 const exec = util.promisify(child.exec);
@@ -21,10 +20,6 @@ export async function execCommand(
   // Call command (disable color before for json parsing)
   const prevForceColor = process.env.FORCE_COLOR;
   process.env.FORCE_COLOR = "0";
-  const spinner = ora({ text: commandLog, spinner: "moon" }).start();
-  if (options.spinner === false) {
-    spinner.stop();
-  }
   const execOptions: any = {
     maxBuffer: 10000 * 10000,
     cwd: options.cwd || vscode.workspace.rootPath,
@@ -32,9 +27,7 @@ export async function execCommand(
   };
   try {
     commandResult = await exec(command, execOptions);
-    spinner.succeed();
   } catch (e) {
-    spinner.fail();
     process.env.FORCE_COLOR = prevForceColor;
     // Display error in red if not json
     if (!command.includes("--json") || options.fail) {
