@@ -90,14 +90,14 @@ export class HardisStatusProvider
       if (orgInfo.username) {
         items.push({
           id: "org-info-instance-url",
-          label: `${orgInfo.username}`,
+          label: `${orgInfo.instanceUrl}`,
           tooltip: "URL of your remote Salesforce org",
         });
       }
       if (orgInfo.instanceUrl) {
         items.push({
           id: "org-info-username",
-          label: `${orgInfo.instanceUrl}`,
+          label: `${orgInfo.username}`,
           tooltip: "Username on your remote Salesforce org",
         });
       }
@@ -118,14 +118,14 @@ export class HardisStatusProvider
         items.push({
           id: "git-info-branch",
           label: `Branch: ${branch}`,
-          description: "This is the git branch you are currently working on",
+          tooltip: "This is the git branch you are currently working on",
         });
       } else {
         items.push({
           id: "git-info-branch",
           label: `Unknown`,
-          description:
-            "Git is not ready yet, or your folder is not a repository",
+          tooltip:
+            `Git is not ready yet, or your folder is not a repository (maybe click on the refresh button near "Status" ?)`,
         });
       }
     }
@@ -252,6 +252,12 @@ class StatusTreeItem extends vscode.TreeItem {
   ) {
     super(label, collapsibleState);
     this.id = id;
+    if (options.description) {
+      this.description = options.description;
+    }
+    if (options.tooltip) {
+      this.tooltip = options.tooltip;
+    }
     if (hardisCommand !== "" && hardisCommand !== null) {
       this.command = {
         title: label,
@@ -275,12 +281,6 @@ class StatusTreeItem extends vscode.TreeItem {
           "resources",
           this.iconPath.dark.toString()
         );
-      }
-      if (options.description) {
-        this.description = options.description;
-      }
-      if (options.tooltip) {
-        this.tooltip = options.tooltip;
       }
     }
   }
