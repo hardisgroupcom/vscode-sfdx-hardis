@@ -5,7 +5,7 @@ import { execCommand, execSfdxJson } from "./utils";
 
 export class HardisStatusProvider
   implements vscode.TreeDataProvider<StatusTreeItem> {
-  constructor(private workspaceRoot: string) { }
+  constructor(private workspaceRoot: string) {}
 
   getTreeItem(element: StatusTreeItem): vscode.TreeItem {
     return element;
@@ -35,10 +35,10 @@ export class HardisStatusProvider
       topic.id === "status-org"
         ? await this.getOrgItems()
         : topic.id === "status-git"
-          ? await this.getGitItems()
-          : topic.id === "status-plugins"
-            ? await this.getPluginsItems()
-            : [];
+        ? await this.getGitItems()
+        : topic.id === "status-plugins"
+        ? await this.getPluginsItems()
+        : [];
     for (const item of topicItems) {
       const options: any = {};
       if (item.icon) {
@@ -124,8 +124,7 @@ export class HardisStatusProvider
         items.push({
           id: "git-info-branch",
           label: `Unknown`,
-          tooltip:
-            `Git is not ready yet, or your folder is not a repository (maybe click on the refresh button near "Status" ?)`,
+          tooltip: `Git is not ready yet, or your folder is not a repository (maybe click on the refresh button near "Status" ?)`,
         });
       }
     }
@@ -170,13 +169,21 @@ export class HardisStatusProvider
     }
     if (outdated.length > 0) {
       vscode.window
-        .showInformationMessage('Some plugins are not up to date, please click to upgrade, then wait for the process to be completed before performing actions', 'Upgrade plugins')
-        .then(selection => {
-          if (selection === 'Upgrade plugins') {
-            const command = outdated.map(plugin => `echo y|sfdx plugins:install ${plugin.name}`).join(' && ');
-            vscode.commands.executeCommand("vscode-sfdx-hardis.execute-command", command);
+        .showInformationMessage(
+          "Some plugins are not up to date, please click to upgrade, then wait for the process to be completed before performing actions",
+          "Upgrade plugins"
+        )
+        .then((selection) => {
+          if (selection === "Upgrade plugins") {
+            const command = outdated
+              .map((plugin) => `echo y|sfdx plugins:install ${plugin.name}`)
+              .join(" && ");
+            vscode.commands.executeCommand(
+              "vscode-sfdx-hardis.execute-command",
+              command
+            );
           }
-        })
+        });
     }
     return items;
   }
