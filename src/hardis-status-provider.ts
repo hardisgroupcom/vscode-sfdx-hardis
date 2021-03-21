@@ -5,7 +5,7 @@ import { execCommand, execSfdxJson } from "./utils";
 
 export class HardisStatusProvider
   implements vscode.TreeDataProvider<StatusTreeItem> {
-  constructor(private workspaceRoot: string) {}
+  constructor(private workspaceRoot: string) { }
 
   getTreeItem(element: StatusTreeItem): vscode.TreeItem {
     return element;
@@ -35,10 +35,10 @@ export class HardisStatusProvider
       topic.id === "status-org"
         ? await this.getOrgItems()
         : topic.id === "status-git"
-        ? await this.getGitItems()
-        : topic.id === "status-plugins"
-        ? await this.getPluginsItems()
-        : [];
+          ? await this.getGitItems()
+          : topic.id === "status-plugins"
+            ? await this.getPluginsItems()
+            : [];
     for (const item of topicItems) {
       const options: any = {};
       if (item.icon) {
@@ -140,6 +140,7 @@ export class HardisStatusProvider
       { name: "sfpowerkit" },
       { name: "sfdx-git-delta" },
     ];
+    const outdated: any[] = [];
     // get currently installed plugins
     const sfdxPlugins = (
       await execCommand("sfdx plugins", this, { output: true, fail: false })
@@ -163,8 +164,19 @@ export class HardisStatusProvider
         pluginItem.command = `echo y|sfdx plugins:install ${plugin.name}`;
         pluginItem.tooltip = `Click to upgrade SFDX plugin ${plugin.name} to ${latestPluginVersion}`;
         pluginItem.icon = "warning.svg";
+        outdated.push(plugin);
       }
       items.push(pluginItem);
+    }
+    if (outdated.length > 0) {
+      vscode.window
+        .showInformationMessage('Some plugins are not up to date, please click to upgrade, then wait for the process to be completed before performing actions', 'Upgrade plugins')
+        .then(selection => {
+          if (selection === 'Upgrade plugins') {
+            const command = outdated.map(plugin => `echo y|sfdx plugins:install ${plugin.name}`).join(' && ');
+            vscode.commands.executeCommand("vscode-sfdx-hardis.execute-command", command);
+          }
+        })
     }
     return items;
   }

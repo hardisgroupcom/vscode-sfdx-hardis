@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.0.8] 2021-03-21
+
+- Display a message to upgrade sfdx plugins when necessary
+- Fix tooltips
+
 ## [0.0.6] 2021-03-17
 
 - Reorganize commands menu + icons
