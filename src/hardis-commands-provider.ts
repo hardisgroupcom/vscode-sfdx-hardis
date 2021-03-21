@@ -302,6 +302,12 @@ class CommandTreeItem extends vscode.TreeItem {
   ) {
     super(label, collapsibleState);
     this.id = id;
+    if (options.description) {
+      this.description = options.description;
+    }
+    if (options.tooltip) {
+      this.tooltip = options.tooltip;
+    }
     if (hardisCommand !== "") {
       this.command = {
         title: label,
@@ -325,12 +331,6 @@ class CommandTreeItem extends vscode.TreeItem {
           "resources",
           this.iconPath.dark.toString()
         );
-      }
-      if (options.description) {
-        this.description = options.description;
-      }
-      if (options.tooltip) {
-        this.tooltip = options.tooltip;
       }
     }
   }
