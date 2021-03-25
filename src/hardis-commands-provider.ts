@@ -280,6 +280,20 @@ export class HardisCommandsProvider
             icon: "salesforce.svg",
             command: "sfdx hardis:scratch:create --forcenew",
           },
+          {
+            id: "org:retrieve:sources:dx",
+            label: "Retrieve DX sources from an org",
+            tooltip: "Retrieve locally all the metadatas of a remote salesfore org, in DX project format",
+            icon: "pull.svg",
+            command: "sfdx hardis:org:retrieve:sources:dx",
+          },
+          {
+            id: "org:retrieve:sources:metadata",
+            label: "Retrieve Metadata sources from an org",
+            tooltip: "Retrieve locally all the metadatas of a remote salesfore org, in metadata format",
+            icon: "pull.svg",
+            command: "sfdx hardis:org:retrieve:sources:metadata",
+          },
         ],
       },
     ];
