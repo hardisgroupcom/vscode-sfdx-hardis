@@ -138,6 +138,7 @@ export class HardisStatusProvider
       { name: "sfdx-essentials" },
       { name: "sfpowerkit" },
       { name: "sfdx-git-delta" },
+      { name: "texei-sfdx-plugin" },
     ];
     const outdated: any[] = [];
     // get currently installed plugins
