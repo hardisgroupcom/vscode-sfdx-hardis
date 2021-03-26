@@ -231,7 +231,7 @@ export class HardisCommandsProvider
         commands: [
           {
             id: "configure:auth:deployment",
-            label: "Configure CI authentication with Org",
+            label: "Configure Org CI authentication",
             tooltip:
               "Assisted configuration to connect a protected branch and its related release org during CI",
             icon: "configure.svg",
@@ -239,7 +239,7 @@ export class HardisCommandsProvider
           },
           {
             id: "configure:auth:devhub",
-            label: "Configure CI authentication with DevHub Org",
+            label: "Configure DevHub CI authentication",
             icon: "configure.svg",
             tooltip:
               "Assisted configuration to connect to a Dev Hub org during CI",
@@ -293,6 +293,20 @@ export class HardisCommandsProvider
             tooltip: "Retrieve locally all the metadatas of a remote salesfore org, in metadata format",
             icon: "pull.svg",
             command: "sfdx hardis:org:retrieve:sources:metadata",
+          },
+        ],
+      },
+      {
+        id: "production",
+        label: "Production",
+        commands: [
+          {
+            id: "org:purge:flow",
+            label: "Purge obsolete flows",
+            tooltip:
+              "Purge all flows with status Obsolete in your org, so you are not bothered by the 50 versions limits",
+            icon: "flow.svg",
+            command: "sfdx hardis:org:purge:flow",
           },
         ],
       },
