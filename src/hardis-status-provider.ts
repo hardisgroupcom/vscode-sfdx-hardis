@@ -137,6 +137,7 @@ export class HardisStatusProvider
       { name: "sfdx-hardis" },
       { name: "sfdx-essentials" },
       { name: "sfpowerkit" },
+      { name: 'sfdmu'},
       { name: "sfdx-git-delta" },
       { name: "texei-sfdx-plugin" },
     ];

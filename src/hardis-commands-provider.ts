@@ -216,12 +216,20 @@ export class HardisCommandsProvider
             command: "sfdx hardis:package:install",
           },
           {
-            id: "data:tree:export",
-            label: "Regenerate scratch org initialisation data",
+            id: "org:data:export",
+            label: "Export scratch org initialisation data",
             tooltip:
-              "Uses requests defined in sfdx-hardis.yml to export data from org and store it in project files, so it can be loaded during each scratch org initialization",
+              "Export data from org and store it in project files, so it can be loaded during each scratch org initialization",
             icon: "data.svg",
-            command: "sfdx hardis:data:tree:export",
+            command: "sfdx hardis:org:data:export",
+          },
+          {
+            id: "org:data:import",
+            label: "Import scratch org initialisation data",
+            tooltip:
+              "Import data into org from project files",
+            icon: "data.svg",
+            command: "sfdx hardis:org:data:import",
           },
         ],
       },
