@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-## [0.1.1] 2021-03-27
+## [0.1.2] 2021-03-27
 
 - More commands in menu: Export scratch org data and import scratch org data
 - Add sfdmu dependency 
