@@ -2,10 +2,16 @@
 
 ## [Unreleased]
 
+## [0.1.3] 2021-03-28
+
+- Clean sfdx project from unwanted references
+
 ## [0.1.2] 2021-03-27
 
-- More commands in menu: Export scratch org data and import scratch org data
-- Add sfdmu dependency 
+- More commands in menu
+  - Export scratch org data
+  - import scratch org data
+- Add sfdmu dependency
 
 ## [0.1.0] 2021-03-26
 
