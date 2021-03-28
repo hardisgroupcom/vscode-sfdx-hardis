@@ -226,8 +226,7 @@ export class HardisCommandsProvider
           {
             id: "org:data:import",
             label: "Import scratch org initialisation data",
-            tooltip:
-              "Import data into org from project files",
+            tooltip: "Import data into org from project files",
             icon: "data.svg",
             command: "sfdx hardis:org:data:import",
           },
@@ -291,7 +290,8 @@ export class HardisCommandsProvider
           {
             id: "project:clean:references",
             label: "Clean SFDX project from references",
-            tooltip: "Remove from project the references to items that you don't want to publish",
+            tooltip:
+              "Remove from project the references to items that you don't want to publish",
             icon: "clean.svg",
             command: "sfdx hardis:project:clean:references",
           },
