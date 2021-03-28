@@ -151,7 +151,7 @@ export class HardisCommandsProvider
             label: "Push from Git to Salesforce org",
             tooltip:
               "Propagates your local updates within Vs Code into your remote Salesforce scratch org",
-            command: "sfdx force:source:push -g -w 60 --forceoverwrite",
+            command: "sfdx hardis:scratch:push",
             icon: "push.svg",
           },
           {
@@ -159,7 +159,7 @@ export class HardisCommandsProvider
             label: "Pull from Salesforce org to Git",
             tooltip:
               "Retrieve locally the updates made on the remote Salesforce scratch org",
-            command: "sfdx force:source:pull -w 60 --forceoverwrite",
+            command: "sfdx hardis:scratch:pull",
             icon: "pull.svg",
           },
           {
@@ -179,14 +179,6 @@ export class HardisCommandsProvider
             icon: "password.svg",
           },
           {
-            id: "org:logout",
-            label: "Logout from current Org and DevHub",
-            command:
-              "sfdx auth:logout --noprompt || true && sfdx config:unset defaultusername defaultdevhubusername -g && sfdx config:unset defaultusername defaultdevhubusername || true",
-            tooltip: "Log out from everything :)",
-            icon: "logout.svg",
-          },
-          {
             id: "org:select",
             label: "Select a Salesforce org",
             tooltip:
@@ -200,6 +192,14 @@ export class HardisCommandsProvider
             tooltip: "Select an org that sfdx-hardis will use as Dev Hub",
             command: "sfdx hardis:org:select --devhub",
             icon: "select.svg",
+          },
+          {
+            id: "org:logout",
+            label: "Logout from current Org and DevHub",
+            command:
+              "sfdx auth:logout --noprompt || true && sfdx config:unset defaultusername defaultdevhubusername -g && sfdx config:unset defaultusername defaultdevhubusername || true",
+            tooltip: "Log out from everything :)",
+            icon: "logout.svg",
           },
         ],
       },
@@ -287,6 +287,13 @@ export class HardisCommandsProvider
             tooltip: "Create a new scratch org for the current work",
             icon: "salesforce.svg",
             command: "sfdx hardis:scratch:create --forcenew",
+          },
+          {
+            id: "project:clean:references",
+            label: "Clean SFDX project from references",
+            tooltip: "Remove from project the references to items that you don't want to publish",
+            icon: "clean.svg",
+            command: "sfdx hardis:project:clean:references",
           },
           {
             id: "org:retrieve:sources:dx",
