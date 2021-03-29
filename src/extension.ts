@@ -129,21 +129,20 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(disposableTreeInfo);
 
   // Manage WebSocket server to communicate with sfdx-hardis cli plugin
-  let disposableWebSocketServer: any = null ;
+  let disposableWebSocketServer: any = null;
 
-  function startWebSocketServer(){
+  function startWebSocketServer() {
     disposableWebSocketServer = new WebSocketServer();
     context.subscriptions.push(disposableWebSocketServer);
   }
 
-  function manageWebSocketServer(){
+  function manageWebSocketServer() {
     const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
-    if (config.get("userInput") === 'ui') {
+    if (config.get("userInput") === "ui") {
       if (disposableWebSocketServer === null) {
         startWebSocketServer();
       }
-    }
-    else {
+    } else {
       if (disposableWebSocketServer !== null) {
         disposableWebSocketServer.dispose();
       }
@@ -153,10 +152,9 @@ export function activate(context: vscode.ExtensionContext) {
   manageWebSocketServer();
 
   // Catch event configuration changes
-  vscode.workspace.onDidChangeConfiguration(event => {
+  vscode.workspace.onDidChangeConfiguration((event) => {
     manageWebSocketServer();
   });
-
 }
 
 // this method is called when your extension is deactivated

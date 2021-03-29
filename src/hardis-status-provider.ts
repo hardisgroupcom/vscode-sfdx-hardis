@@ -146,7 +146,7 @@ export class HardisStatusProvider
       await execCommand("sfdx plugins", this, { output: true, fail: false })
     ).stdout;
     // Check installed plugins status version
-    const pluginPromises = plugins.map(async(plugin) => {
+    const pluginPromises = plugins.map(async (plugin) => {
       // Check latest plugin version
       const latestPluginVersion = (
         await execCommand(`npm show ${plugin.name} version`, this, {
@@ -190,7 +190,7 @@ export class HardisStatusProvider
           }
         });
     }
-    return items.sort((a:any, b:any) => (a.label > b.label) ? 1 : -1);
+    return items.sort((a: any, b: any) => (a.label > b.label ? 1 : -1));
   }
 
   /**
