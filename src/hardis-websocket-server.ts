@@ -1,4 +1,5 @@
 import stripAnsi = require("strip-ansi");
+import * as http from "http";
 import * as WebSocket from "ws";
 import * as vscode from "vscode";
 
@@ -10,9 +11,14 @@ export class WebSocketServer {
   private clients: any = {};
 
   constructor() {
-    this.wss = new WebSocket.Server({ port: PORT });
+    const server = http.createServer();
+    this.wss = new WebSocket.Server({ server:server });
     globalWss = this;
     this.listen();
+    //start our server
+    server.listen(PORT, () => {
+      console.log(`Data stream server started on port ${PORT}`);
+    });
   }
 
   static sendMessage(data: any) {

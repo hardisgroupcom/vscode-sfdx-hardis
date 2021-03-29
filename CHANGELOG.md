@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.2.2] 2021-03-29
+
+- Fix WebSocket on Windows
+
 ## [0.2.0] 2021-03-29
 
 - WebSocket Server to communicate with sfdx-hardis CLI with VsCode UI
