@@ -1,5 +1,4 @@
 import * as vscode from "vscode";
-import * as fs from "fs";
 import * as path from "path";
 import { execCommand, execSfdxJson } from "./utils";
 
@@ -132,7 +131,7 @@ export class HardisStatusProvider
   }
 
   private async getPluginsItems(): Promise<any[]> {
-    const items = [];
+    const items: any = [];
     const plugins = [
       { name: "sfdx-hardis" },
       { name: "sfdx-essentials" },
@@ -146,7 +145,8 @@ export class HardisStatusProvider
     const sfdxPlugins = (
       await execCommand("sfdx plugins", this, { output: true, fail: false })
     ).stdout;
-    for (const plugin of plugins) {
+    // Check installed plugins status version
+    const pluginPromises = plugins.map(async (plugin) => {
       // Check latest plugin version
       const latestPluginVersion = (
         await execCommand(`npm show ${plugin.name} version`, this, {
@@ -168,7 +168,10 @@ export class HardisStatusProvider
         outdated.push(plugin);
       }
       items.push(pluginItem);
-    }
+    });
+    // Await parallel promises to be completed
+    await Promise.all(pluginPromises);
+    // Propose user to upgrade if necessary
     if (outdated.length > 0) {
       vscode.window
         .showInformationMessage(
@@ -187,7 +190,7 @@ export class HardisStatusProvider
           }
         });
     }
-    return items;
+    return items.sort((a: any, b: any) => (a.label > b.label ? 1 : -1));
   }
 
   /**

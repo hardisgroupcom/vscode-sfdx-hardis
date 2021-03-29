@@ -4,6 +4,7 @@ import * as vscode from "vscode";
 //import *  from './commands/vscode-sfdx-hardis.execute-command';
 import { HardisCommandsProvider } from "./hardis-commands-provider";
 import { HardisStatusProvider } from "./hardis-status-provider";
+import { WebSocketServer } from "./hardis-websocket-server";
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -126,6 +127,34 @@ export function activate(context: vscode.ExtensionContext) {
     hardisStatusProvider.refresh()
   );
   context.subscriptions.push(disposableTreeInfo);
+
+  // Manage WebSocket server to communicate with sfdx-hardis cli plugin
+  let disposableWebSocketServer: any = null;
+
+  function startWebSocketServer() {
+    disposableWebSocketServer = new WebSocketServer();
+    context.subscriptions.push(disposableWebSocketServer);
+  }
+
+  function manageWebSocketServer() {
+    const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+    if (config.get("userInput") === "ui") {
+      if (disposableWebSocketServer === null) {
+        startWebSocketServer();
+      }
+    } else {
+      if (disposableWebSocketServer !== null) {
+        disposableWebSocketServer.dispose();
+      }
+    }
+  }
+
+  manageWebSocketServer();
+
+  // Catch event configuration changes
+  vscode.workspace.onDidChangeConfiguration((event) => {
+    manageWebSocketServer();
+  });
 }
 
 // this method is called when your extension is deactivated
