@@ -2,7 +2,7 @@
 	"name": "vscode-sfdx-hardis",
 	"displayName": "SFDX Hardis",
 	"description": "Vs Code Wrapper for sfdx-hardis tooling",
-	"version": "0.1.3",
+	"version": "0.2.0",
 	"icon": "resources/hardis-logo.png",
 	"publisher": "NicolasVuillamy",
 	"license": "AGPL-3.0",
@@ -27,8 +27,14 @@
 				"vsCodeSfdxHardis.userInput": {
 					"type": "string",
 					"default": "ui",
-					"enum": ["ui","console"],
-					"enumDescriptions": ["Visual Studio Code User Interface","Command line"],
+					"enum": [
+						"ui",
+						"console"
+					],
+					"enumDescriptions": [
+						"Visual Studio Code User Interface",
+						"Command line"
+					],
 					"description": "Defines if user input is in VsCode UI or in console"
 				}
 			}
