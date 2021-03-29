@@ -21,6 +21,18 @@
 	],
 	"main": "./out/extension.js",
 	"contributes": {
+		"configuration": {
+			"title": "SFDX Hardis",
+			"properties": {
+				"vsCodeSfdxHardis.userInput": {
+					"type": "string",
+					"default": "ui",
+					"enum": ["ui","console"],
+					"enumDescriptions": ["Visual Studio Code User Interface","Command line"],
+					"description": "Defines if user input is in VsCode UI or in console"
+				}
+			}
+		},
 		"commands": [
 			{
 				"command": "vscode-sfdx-hardis.execute-command",
@@ -91,10 +103,13 @@
 	},
 	"dependencies": {
 		"@types/fs-extra": "^9.0.8",
+		"@types/ws": "^7.4.0",
 		"chalk": "^4.1.0",
 		"fs-extra": "^9.1.0",
+		"strip-ansi": "^6.0.0",
 		"vsce": "^1.87.0",
-		"which": "^2.0.2"
+		"which": "^2.0.2",
+		"ws": "^7.4.4"
 	},
 	"extensionDependencies": [
 		"vscode.git"

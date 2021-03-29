@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.2.0] 2021-03-29
+
+- WebSocket Server to communicate with sfdx-hardis CLI with VsCode UI
+- VsCode Setting **vsCodeSfdxHardis.userInput**: select if user input is with VsCode ui (default) or console input
+- Send statusRefresh event to VsCode SFDX Hardis when context is changing (select, new scratch org...)
+
 ## [0.1.3] 2021-03-28
 
 - Clean sfdx project from unwanted references
