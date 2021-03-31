@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- Automatically refresh Status TreeView every 30 minutes
+- Shorten long messages in UI prompts
+- Display plugins versions
+- Add refresh button for Commands TreeView
+
 ## [0.2.2] 2021-03-29
 
 - Fix WebSocket on Windows

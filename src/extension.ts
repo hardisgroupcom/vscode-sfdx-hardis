@@ -6,6 +6,8 @@ import { HardisCommandsProvider } from "./hardis-commands-provider";
 import { HardisStatusProvider } from "./hardis-status-provider";
 import { WebSocketServer } from "./hardis-websocket-server";
 
+let refreshInterval: any = null;
+
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
@@ -110,12 +112,20 @@ export function activate(context: vscode.ExtensionContext) {
     currentWorkspaceFolderUri = (vscode.workspace.workspaceFolders || [])[0].uri
       .path;
   }
+  const hardisCommandsProvider = new HardisCommandsProvider(
+    currentWorkspaceFolderUri
+  );
   const disposableTreeCommands = vscode.window.registerTreeDataProvider(
     "sfdx-hardis-commands",
-    new HardisCommandsProvider(currentWorkspaceFolderUri)
+    hardisCommandsProvider
+  );
+  vscode.commands.registerCommand(
+    "vscode-sfdx-hardis.refreshCommandsView",
+    () => hardisCommandsProvider.refresh()
   );
   context.subscriptions.push(disposableTreeCommands);
 
+  // Register Status TreeView
   const hardisStatusProvider = new HardisStatusProvider(
     currentWorkspaceFolderUri
   );
@@ -155,7 +165,17 @@ export function activate(context: vscode.ExtensionContext) {
   vscode.workspace.onDidChangeConfiguration((event) => {
     manageWebSocketServer();
   });
+
+  // Refresh Status every 30 mn
+  refreshInterval = setInterval(() => {
+    vscode.commands.executeCommand("vscode-sfdx-hardis.refreshStatusView");
+  }, 1800000);
 }
 
 // this method is called when your extension is deactivated
-export function deactivate() {}
+export function deactivate() {
+  // Clear refresh interval
+  if (refreshInterval) {
+    clearInterval(refreshInterval);
+  }
+}
