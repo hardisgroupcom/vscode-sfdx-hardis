@@ -56,6 +56,18 @@ export class HardisCommandsProvider
     return items;
   }
 
+  // Manage refresh
+  private _onDidChangeTreeData: vscode.EventEmitter<
+    CommandTreeItem | undefined | null | void
+  > = new vscode.EventEmitter<CommandTreeItem | undefined | null | void>();
+  readonly onDidChangeTreeData: vscode.Event<
+    CommandTreeItem | undefined | null | void
+  > = this._onDidChangeTreeData.event;
+
+  refresh(): void {
+    this._onDidChangeTreeData.fire();
+  }
+
   /**
    * List all topics
    */

@@ -54,6 +54,8 @@ export class WebSocketServer {
     // Request user input
     else if (data.event === "prompts") {
       const prompt = data.prompts[0];
+      const maxLenMessage = 1000 ;
+      prompt.message = prompt.message > maxLenMessage ? prompt.message.substring(0, maxLenMessage) + "..." : prompt.message;
       // Text
       if (prompt.type === "text") {
         const inputBoxOptions: vscode.InputBoxOptions = {
