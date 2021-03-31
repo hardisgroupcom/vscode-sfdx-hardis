@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.2.3] 2021-03-31
+
 - Automatically refresh Status TreeView every 30 minutes
 - Shorten long messages in UI prompts
 - Display plugins versions
