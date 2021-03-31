@@ -153,14 +153,13 @@ export class HardisStatusProvider
           fail: false,
         })
       ).stdout;
-      let pluginLabel = plugin.name ;
-      const regexVersion = new RegExp(`${plugin.name} (.*)`,'gm');
+      let pluginLabel = plugin.name;
+      const regexVersion = new RegExp(`${plugin.name} (.*)`, "gm");
       const versionMatches = [...sfdxPlugins.matchAll(regexVersion)];
       if (versionMatches.length > 0) {
         pluginLabel += ` v${versionMatches[0][1]}`;
-      }
-      else {
-        pluginLabel += ' (missing)'
+      } else {
+        pluginLabel += " (missing)";
       }
       const pluginItem = {
         id: `plugin-info-${plugin.name}`,
@@ -170,7 +169,9 @@ export class HardisStatusProvider
         icon: "success.svg",
       };
       if (!sfdxPlugins.includes(`${plugin.name} ${latestPluginVersion}`)) {
-        pluginItem.label = pluginItem.label.includes("missing") ? pluginItem.label: pluginItem.label+ '(outdated)';
+        pluginItem.label = pluginItem.label.includes("missing")
+          ? pluginItem.label
+          : pluginItem.label + "(outdated)";
         pluginItem.command = `echo y|sfdx plugins:install ${plugin.name}`;
         pluginItem.tooltip = `Click to upgrade SFDX plugin ${plugin.name} to ${latestPluginVersion}`;
         pluginItem.icon = "warning.svg";
