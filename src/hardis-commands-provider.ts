@@ -339,6 +339,36 @@ export class HardisCommandsProvider
           },
         ],
       },
+      {
+        id: "packaging",
+        label: "Packaging",
+        commands: [
+          {
+            id: "hardis:package:create",
+            label: "Create a new package",
+            tooltip:
+              "Second generation packages, nlocked or managed",
+            icon: "package.svg",
+            command: "sfdx hardis:package:create",
+          },
+          {
+            id: "hardis:package:version:list",
+            label: "List package versions",
+            tooltip:
+              "Create a new versions of a package",
+            icon: "package.svg",
+            command: "sfdx hardis:package:version:list",
+          },
+          {
+            id: "hardis:package:version:create",
+            label: "Create a new package version",
+            tooltip:
+              "Create a new versions of a package",
+            icon: "package.svg",
+            command: "sfdx hardis:package:version:create",
+          },
+        ],
+      },
     ];
     return hardisCommands;
   }

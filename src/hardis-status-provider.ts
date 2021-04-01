@@ -169,7 +169,7 @@ export class HardisStatusProvider
         icon: "success.svg",
       };
       if (!sfdxPlugins.includes(`${plugin.name} ${latestPluginVersion}`)) {
-        pluginItem.label = pluginItem.label.includes("missing")
+        pluginItem.label = pluginItem.label.includes("missing") && !pluginItem.label.includes("(link)")
           ? pluginItem.label
           : pluginItem.label + "(outdated)";
         pluginItem.command = `echo y|sfdx plugins:install ${plugin.name}`;
