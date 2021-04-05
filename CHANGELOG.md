@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Hyperlink to git repository in Status TreeView
+
 ## [0.2.4] 2020-04-01
 
 - Add packaging commands

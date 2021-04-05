@@ -216,8 +216,8 @@ export class HardisCommandsProvider
         ],
       },
       {
-        id: "config-scratch",
-        label: "Scratch org Configuration",
+        id: "config-commands",
+        label: "Configuration",
         commands: [
           {
             id: "package:install",
@@ -242,12 +242,6 @@ export class HardisCommandsProvider
             icon: "data.svg",
             command: "sfdx hardis:org:data:import",
           },
-        ],
-      },
-      {
-        id: "config-deploy",
-        label: "Deployment Configuration",
-        commands: [
           {
             id: "configure:auth:deployment",
             label: "Configure Org CI authentication",
@@ -264,12 +258,6 @@ export class HardisCommandsProvider
               "Assisted configuration to connect to a Dev Hub org during CI",
             command: "sfdx hardis:project:configure:auth --devhub",
           },
-        ],
-      },
-      {
-        id: "config-monitoring",
-        label: "Monitoring Configuration",
-        commands: [
           {
             id: "org:configure:monitoring",
             label: "Configure org monitoring",

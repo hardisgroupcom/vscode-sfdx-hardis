@@ -45,6 +45,10 @@
 				"title": "Execute sfdx-hardis command"
 			},
 			{
+				"command": "vscode-sfdx-hardis.openExternal",
+				"title": "Open external url"
+			},
+			{
 				"command": "vscode-sfdx-hardis.refreshStatusView",
 				"title": "Refresh Status",
 				"icon": {
