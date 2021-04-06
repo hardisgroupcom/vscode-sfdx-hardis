@@ -93,3 +93,15 @@ export async function execSfdxJson(
   }
   return await execCommand(command, commandThis, options);
 }
+
+export function getWorkspaceRoot() {
+  let currentWorkspaceFolderUri = ".";
+  if ((vscode.workspace.workspaceFolders?.length || 0) > 0) {
+    currentWorkspaceFolderUri = (vscode.workspace.workspaceFolders || [])[0].uri
+      .path;
+  }
+  if (currentWorkspaceFolderUri.startsWith("/")) {
+    currentWorkspaceFolderUri = currentWorkspaceFolderUri.substr(1);
+  }
+  return currentWorkspaceFolderUri;
+}

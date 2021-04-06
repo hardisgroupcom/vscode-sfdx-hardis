@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [0.2.5] 2020-04-06
+
+- Hyperlink to git repository in Status TreeView
+- Async start of WebSocket server
+- Add command to Simulate SFDX Deployment
+
 ## [0.2.4] 2020-04-01
 
 - Add packaging commands

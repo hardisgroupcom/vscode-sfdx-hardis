@@ -5,6 +5,7 @@ import * as vscode from "vscode";
 import { HardisCommandsProvider } from "./hardis-commands-provider";
 import { HardisStatusProvider } from "./hardis-status-provider";
 import { WebSocketServer } from "./hardis-websocket-server";
+import { getWorkspaceRoot } from "./utils";
 
 let refreshInterval: any = null;
 
@@ -107,11 +108,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(disposable);
 
   // Register Hardis Commands & Status tree data providers
-  let currentWorkspaceFolderUri = ".";
-  if ((vscode.workspace.workspaceFolders?.length || 0) > 0) {
-    currentWorkspaceFolderUri = (vscode.workspace.workspaceFolders || [])[0].uri
-      .path;
-  }
+  const currentWorkspaceFolderUri = getWorkspaceRoot();
   const hardisCommandsProvider = new HardisCommandsProvider(
     currentWorkspaceFolderUri
   );
@@ -122,6 +119,10 @@ export function activate(context: vscode.ExtensionContext) {
   vscode.commands.registerCommand(
     "vscode-sfdx-hardis.refreshCommandsView",
     () => hardisCommandsProvider.refresh()
+  );
+  context.subscriptions.push(disposableTreeCommands);
+  vscode.commands.registerCommand("vscode-sfdx-hardis.openExternal", (url) =>
+    vscode.env.openExternal(url)
   );
   context.subscriptions.push(disposableTreeCommands);
 
@@ -142,8 +143,11 @@ export function activate(context: vscode.ExtensionContext) {
   let disposableWebSocketServer: any = null;
 
   function startWebSocketServer() {
-    disposableWebSocketServer = new WebSocketServer();
-    context.subscriptions.push(disposableWebSocketServer);
+    return new Promise((resolve) => {
+      disposableWebSocketServer = new WebSocketServer();
+      context.subscriptions.push(disposableWebSocketServer);
+      resolve(disposableWebSocketServer);
+    });
   }
 
   function manageWebSocketServer() {

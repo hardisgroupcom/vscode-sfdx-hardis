@@ -111,12 +111,41 @@ export class HardisStatusProvider
       const gitExtension = gitExtensionAll.exports;
       const api = gitExtension.getAPI(1);
       const repo = api.repositories[0];
+      if (repo?.state?.remotes) {
+        const origin = repo.state.remotes.filter(
+          (remote: any) => remote.name === "origin"
+        )[0];
+        if (origin) {
+          items.push({
+            id: "git-info-repo",
+            label: `Repo: ${origin.fetchUrl
+              .split("/")
+              .pop()
+              .replace(".git", "")}`,
+            command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
+              origin.fetchUrl
+            )}`,
+            icon: "git.svg",
+            tooltip: "This is the git repository you are currently working on",
+          });
+        } else {
+          items.push({
+            id: "git-info-repo",
+            label: `Git not ready: click to refresh`,
+            command: `vscode-sfdx-hardis.refreshStatusView`,
+            icon: "git.svg",
+            tooltip:
+              "Git was not ready when SFDX Hardis has been run, please click to refresh",
+          });
+        }
+      }
       if (repo?.state?.HEAD) {
         const head = repo.state.HEAD;
         const { name: branch } = head;
         items.push({
           id: "git-info-branch",
           label: `Branch: ${branch}`,
+          icon: "git-branch.svg",
           tooltip: "This is the git branch you are currently working on",
         });
       } else {
@@ -141,6 +170,40 @@ export class HardisStatusProvider
       { name: "texei-sfdx-plugin" },
     ];
     const outdated: any[] = [];
+    // check sfdx-cli version
+    const sfdxCliVersionStdOut: string = (
+      await execCommand("sfdx --version", this, { output: true, fail: false })
+    ).stdout;
+    const sfdxCliVersionMatch = /sfdx-cli\/([^\s]+)/gm.exec(
+      sfdxCliVersionStdOut
+    );
+    let sfdxCliVersion = "(missing)";
+    if (sfdxCliVersionMatch) {
+      sfdxCliVersion = sfdxCliVersionMatch[1];
+    }
+    const latestSfdxCliVersion = (
+      await execCommand(`npm show sfdx-cli version`, this, {
+        fail: false,
+      })
+    ).stdout.trim();
+    const sfdxCliItem = {
+      id: `sfdx-cli-info`,
+      label: `sfdx-cli v${sfdxCliVersion}`,
+      command: "",
+      tooltip: `Latest version of sfdx-cli is installed`,
+      icon: "success.svg",
+    };
+    if (sfdxCliVersion !== latestSfdxCliVersion) {
+      sfdxCliItem.label =
+        sfdxCliItem.label.includes("missing") &&
+        !sfdxCliItem.label.includes("(link)")
+          ? sfdxCliItem.label
+          : sfdxCliItem.label + " (upgrade available)";
+      sfdxCliItem.command = `npm install sfdx-cli -g`;
+      sfdxCliItem.tooltip = `Click to upgrade sfdx-cli to ${latestSfdxCliVersion}`;
+      sfdxCliItem.icon = "warning.svg";
+    }
+    items.push(sfdxCliItem);
     // get currently installed plugins
     const sfdxPlugins = (
       await execCommand("sfdx plugins", this, { output: true, fail: false })
@@ -169,9 +232,11 @@ export class HardisStatusProvider
         icon: "success.svg",
       };
       if (!sfdxPlugins.includes(`${plugin.name} ${latestPluginVersion}`)) {
-        pluginItem.label = pluginItem.label.includes("missing") && !pluginItem.label.includes("(link)")
-          ? pluginItem.label
-          : pluginItem.label + "(outdated)";
+        pluginItem.label =
+          pluginItem.label.includes("missing") &&
+          !pluginItem.label.includes("(link)")
+            ? pluginItem.label
+            : pluginItem.label + " (upgrade available)";
         pluginItem.command = `echo y|sfdx plugins:install ${plugin.name}`;
         pluginItem.tooltip = `Click to upgrade SFDX plugin ${plugin.name} to ${latestPluginVersion}`;
         pluginItem.icon = "warning.svg";
@@ -293,12 +358,21 @@ class StatusTreeItem extends vscode.TreeItem {
       this.tooltip = options.tooltip;
     }
     if (hardisCommand !== "" && hardisCommand !== null) {
-      this.command = {
-        title: label,
-        command: "vscode-sfdx-hardis.execute-command",
-        arguments: [hardisCommand],
-      };
-      this.hardisCommand = hardisCommand;
+      if (hardisCommand.startsWith("vscode-sfdx-hardis")) {
+        this.command = {
+          title: label,
+          command: hardisCommand.split(" ")[0],
+          arguments: [hardisCommand.split(" ")[1]],
+        };
+      } else {
+        this.command = {
+          title: label,
+          command: "vscode-sfdx-hardis.execute-command",
+          arguments: [hardisCommand],
+        };
+        this.hardisCommand = hardisCommand;
+      }
+
       if (options.icon) {
         this.iconPath = options.icon;
         this.iconPath.light = path.join(

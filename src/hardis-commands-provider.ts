@@ -216,8 +216,8 @@ export class HardisCommandsProvider
         ],
       },
       {
-        id: "config-scratch",
-        label: "Scratch org Configuration",
+        id: "config-commands",
+        label: "Configuration",
         commands: [
           {
             id: "package:install",
@@ -242,12 +242,6 @@ export class HardisCommandsProvider
             icon: "data.svg",
             command: "sfdx hardis:org:data:import",
           },
-        ],
-      },
-      {
-        id: "config-deploy",
-        label: "Deployment Configuration",
-        commands: [
           {
             id: "configure:auth:deployment",
             label: "Configure Org CI authentication",
@@ -264,12 +258,6 @@ export class HardisCommandsProvider
               "Assisted configuration to connect to a Dev Hub org during CI",
             command: "sfdx hardis:project:configure:auth --devhub",
           },
-        ],
-      },
-      {
-        id: "config-monitoring",
-        label: "Monitoring Configuration",
-        commands: [
           {
             id: "org:configure:monitoring",
             label: "Configure org monitoring",
@@ -306,6 +294,14 @@ export class HardisCommandsProvider
               "Remove from project the references to items that you don't want to publish",
             icon: "clean.svg",
             command: "sfdx hardis:project:clean:references",
+          },
+          {
+            id: "project:deploy:sources:dx:check",
+            label: "Simulate SFDX deployment",
+            tooltip:
+              "Simulates deployment from local SFDX source to target org",
+            icon: "test.svg",
+            command: "sfdx hardis:project:deploy:sources:dx --check",
           },
           {
             id: "org:retrieve:sources:dx",
@@ -346,24 +342,21 @@ export class HardisCommandsProvider
           {
             id: "hardis:package:create",
             label: "Create a new package",
-            tooltip:
-              "Second generation packages, nlocked or managed",
+            tooltip: "Second generation packages, unlocked or managed",
             icon: "package.svg",
             command: "sfdx hardis:package:create",
           },
           {
             id: "hardis:package:version:list",
             label: "List package versions",
-            tooltip:
-              "Create a new versions of a package",
+            tooltip: "Create a new versions of a package",
             icon: "package.svg",
             command: "sfdx hardis:package:version:list",
           },
           {
             id: "hardis:package:version:create",
             label: "Create a new package version",
-            tooltip:
-              "Create a new versions of a package",
+            tooltip: "Create a new versions of a package",
             icon: "package.svg",
             command: "sfdx hardis:package:version:create",
           },
