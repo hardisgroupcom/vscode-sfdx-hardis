@@ -296,6 +296,14 @@ export class HardisCommandsProvider
             command: "sfdx hardis:project:clean:references",
           },
           {
+            id: "project:deploy:sources:dx:check",
+            label: "Simulate SFDX deployment",
+            tooltip:
+              "Simulates deployment from local SFDX source to target org",
+            icon: "test.svg",
+            command: "sfdx hardis:project:deploy:sources:dx --check",
+          },
+          {
             id: "org:retrieve:sources:dx",
             label: "Retrieve DX sources from an org",
             tooltip:
@@ -335,7 +343,7 @@ export class HardisCommandsProvider
             id: "hardis:package:create",
             label: "Create a new package",
             tooltip:
-              "Second generation packages, nlocked or managed",
+              "Second generation packages, unlocked or managed",
             icon: "package.svg",
             command: "sfdx hardis:package:create",
           },

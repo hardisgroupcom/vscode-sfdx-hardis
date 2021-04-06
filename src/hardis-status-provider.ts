@@ -113,13 +113,24 @@ export class HardisStatusProvider
       const repo = api.repositories[0];
       if (repo?.state?.remotes) {
         const origin = repo.state.remotes.filter((remote: any) => remote.name === 'origin')[0];
-        items.push({
-          id: "git-info-repo",
-          label: `Repo: ${origin.fetchUrl.split('/').pop().replace('.git','')}`,
-          command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(origin.fetchUrl)}`,
-          icon: "git.svg",
-          tooltip: "This is the git repository you are currently working on",
-        });        
+        if (origin) {
+          items.push({
+            id: "git-info-repo",
+            label: `Repo: ${origin.fetchUrl.split('/').pop().replace('.git','')}`,
+            command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(origin.fetchUrl)}`,
+            icon: "git.svg",
+            tooltip: "This is the git repository you are currently working on",
+          });
+        }
+        else {
+          items.push({
+            id: "git-info-repo",
+            label: `Git not ready: click to refresh`,
+            command: `vscode-sfdx-hardis.refreshStatusView`,
+            icon: "git.svg",
+            tooltip: "Git was not ready when SFDX Hardis has been run, please click to refresh",
+          });          
+        }
       }
       if (repo?.state?.HEAD) {
         const head = repo.state.HEAD;
@@ -161,7 +172,7 @@ export class HardisStatusProvider
     if (sfdxCliVersionMatch) {
       sfdxCliVersion = sfdxCliVersionMatch[1];
     }
-    const latestsfdxCliVersion = (
+    const latestSfdxCliVersion = (
       await execCommand(`npm show sfdx-cli version`, this, {
         fail: false,
       })
@@ -173,12 +184,12 @@ export class HardisStatusProvider
       tooltip: `Latest version of sfdx-cli is installed`,
       icon: "success.svg",
     };
-    if (sfdxCliVersion !== latestsfdxCliVersion) {
+    if (sfdxCliVersion !== latestSfdxCliVersion) {
       sfdxCliItem.label = sfdxCliItem.label.includes("missing") && !sfdxCliItem.label.includes("(link)")
         ? sfdxCliItem.label
         : sfdxCliItem.label + " (upgrade available)";
       sfdxCliItem.command = `npm install sfdx-cli -g`;
-      sfdxCliItem.tooltip = `Click to upgrade sfdx-cli to ${latestsfdxCliVersion}`;
+      sfdxCliItem.tooltip = `Click to upgrade sfdx-cli to ${latestSfdxCliVersion}`;
       sfdxCliItem.icon = "warning.svg";
     }
     items.push(sfdxCliItem);

@@ -144,8 +144,11 @@ export function activate(context: vscode.ExtensionContext) {
   let disposableWebSocketServer: any = null;
 
   function startWebSocketServer() {
-    disposableWebSocketServer = new WebSocketServer();
-    context.subscriptions.push(disposableWebSocketServer);
+    return new Promise((resolve) => {
+      disposableWebSocketServer = new WebSocketServer();
+      context.subscriptions.push(disposableWebSocketServer);
+      resolve(disposableWebSocketServer)
+    });
   }
 
   function manageWebSocketServer() {
