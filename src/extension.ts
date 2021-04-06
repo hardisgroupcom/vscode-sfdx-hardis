@@ -108,7 +108,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(disposable);
 
   // Register Hardis Commands & Status tree data providers
-  const currentWorkspaceFolderUri = getWorkspaceRoot()
+  const currentWorkspaceFolderUri = getWorkspaceRoot();
   const hardisCommandsProvider = new HardisCommandsProvider(
     currentWorkspaceFolderUri
   );
@@ -121,9 +121,8 @@ export function activate(context: vscode.ExtensionContext) {
     () => hardisCommandsProvider.refresh()
   );
   context.subscriptions.push(disposableTreeCommands);
-  vscode.commands.registerCommand(
-    "vscode-sfdx-hardis.openExternal",
-    (url) => vscode.env.openExternal(url)
+  vscode.commands.registerCommand("vscode-sfdx-hardis.openExternal", (url) =>
+    vscode.env.openExternal(url)
   );
   context.subscriptions.push(disposableTreeCommands);
 
@@ -147,7 +146,7 @@ export function activate(context: vscode.ExtensionContext) {
     return new Promise((resolve) => {
       disposableWebSocketServer = new WebSocketServer();
       context.subscriptions.push(disposableWebSocketServer);
-      resolve(disposableWebSocketServer)
+      resolve(disposableWebSocketServer);
     });
   }
 
