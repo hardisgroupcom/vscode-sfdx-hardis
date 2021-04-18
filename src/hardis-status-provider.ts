@@ -4,7 +4,7 @@ import { execCommand, execSfdxJson } from "./utils";
 
 export class HardisStatusProvider
   implements vscode.TreeDataProvider<StatusTreeItem> {
-  constructor(private workspaceRoot: string) {}
+  constructor(private workspaceRoot: string) { }
 
   getTreeItem(element: StatusTreeItem): vscode.TreeItem {
     return element;
@@ -32,12 +32,14 @@ export class HardisStatusProvider
     const items: StatusTreeItem[] = [];
     const topicItems: any[] =
       topic.id === "status-org"
-        ? await this.getOrgItems()
-        : topic.id === "status-git"
-        ? await this.getGitItems()
-        : topic.id === "status-plugins"
-        ? await this.getPluginsItems()
-        : [];
+        ? await this.getOrgItems({ devHub: false }) :
+        topic.id === "status-org-devhub"
+          ? await this.getOrgItems({ devHub: true })
+          : topic.id === "status-git"
+            ? await this.getGitItems()
+            : topic.id === "status-plugins"
+              ? await this.getPluginsItems()
+              : [];
     for (const item of topicItems) {
       const options: any = {};
       if (item.icon) {
@@ -62,44 +64,65 @@ export class HardisStatusProvider
     return items;
   }
 
-  private async getOrgItems(): Promise<any[]> {
-    const items = [];
-    const orgDisplayCommand = "sfdx force:org:display";
+  private async getOrgItems(options: any = {}): Promise<any[]> {
+    const items: any = [];
+    let devHubUsername = '';
+    let orgDisplayCommand = "sfdx force:org:display";
+    if (options.devHub) {
+      const devHubAliasCommand = "sfdx force:config:get defaultdevhubusername";
+      const devHubAliasRes = await execSfdxJson(devHubAliasCommand, this, { fail: false, output: false });
+      if (devHubAliasRes && devHubAliasRes.result && devHubAliasRes.result[0] && devHubAliasRes.result[0].value) {
+        devHubUsername = devHubAliasRes.result[0].value
+        orgDisplayCommand += ` --targetusername ${devHubUsername}`
+      }
+      else {
+        items.push({
+          id: "org-not-connected-devhub",
+          label: `No DevHub org selected`,
+          tooltip: "Use command 'Select a Salesforce DebHub' to select one",
+          command: "sfdx hardis:org:select --devhub",
+          icon: "salesforce.svg",
+        });
+        return items;
+      }
+    }
     const orgInfoResult = await execSfdxJson(orgDisplayCommand, this, {
       fail: false,
       output: false,
     });
-    if (orgInfoResult.result) {
-      const orgInfo = orgInfoResult.result;
-      if (orgInfo.expirationDate) {
-        items.push({
-          id: "org-info-expiration-date",
-          label: `Expires on ${orgInfo.expirationDate}`,
-          tooltip: "You org will be available until this date",
-        });
-      }
-      if (orgInfo.alias !== "MY_ORG") {
-        items.push({
-          id: "org-info-alias",
-          label: `${orgInfo.alias}`,
-          tooltip:
-            "Alias of the org that you are currently connected to from Vs Code",
-        });
-      }
+    if (orgInfoResult.result || orgInfoResult.id) {
+      const orgInfo = orgInfoResult.result || orgInfoResult;
       if (orgInfo.username) {
         items.push({
-          id: "org-info-instance-url",
+          id: "org-info-instance-url" + ((options.devHub) ? '-devhub' : ''),
           label: `${orgInfo.instanceUrl}`,
           tooltip: "URL of your remote Salesforce org",
+          command: "sfdx force:org:open" + ((options.devHub) ? ` --targetusername ${devHubUsername}` : ''),
+          icon: "salesforce.svg",
         });
       }
       if (orgInfo.instanceUrl) {
         items.push({
-          id: "org-info-username",
+          id: "org-info-username" + ((options.devHub) ? '-devhub' : ''),
           label: `${orgInfo.username}`,
           tooltip: "Username on your remote Salesforce org",
         });
       }
+      if (orgInfo.expirationDate) {
+        items.push({
+          id: "org-info-expiration-date" + ((options.devHub) ? '-devhub' : ''),
+          label: `Expires on ${orgInfo.expirationDate}`,
+          tooltip: "You org will be available until this date",
+        });
+      }
+    }
+    else {
+      items.push({
+        id: "org-not-connected",
+        label: `No org selected`,
+        tooltip: "Click to select an org",
+        command: "sfdx hardis:org:select",
+      });
     }
     return items;
   }
@@ -196,7 +219,7 @@ export class HardisStatusProvider
     if (sfdxCliVersion !== latestSfdxCliVersion) {
       sfdxCliItem.label =
         sfdxCliItem.label.includes("missing") &&
-        !sfdxCliItem.label.includes("(link)")
+          !sfdxCliItem.label.includes("(link)")
           ? sfdxCliItem.label
           : sfdxCliItem.label + " (upgrade available)";
       sfdxCliItem.command = `npm install sfdx-cli -g`;
@@ -234,7 +257,7 @@ export class HardisStatusProvider
       if (!sfdxPlugins.includes(`${plugin.name} ${latestPluginVersion}`)) {
         pluginItem.label =
           pluginItem.label.includes("missing") &&
-          !pluginItem.label.includes("(link)")
+            !pluginItem.label.includes("(link)")
             ? pluginItem.label
             : pluginItem.label + " (upgrade available)";
         pluginItem.command = `echo y|sfdx plugins:install ${plugin.name}`;
@@ -329,6 +352,12 @@ export class HardisStatusProvider
         id: "status-plugins",
         label: "Plugins",
         icon: "plugins.svg",
+        defaultExpand: true,
+      },
+      {
+        id: "status-org-devhub",
+        label: "Current Dev Hub org",
+        icon: "salesforce.svg",
         defaultExpand: true,
       },
     ];

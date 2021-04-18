@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.2.6] 2020-04-06
+
+- Display devHub org info in status TreeView
+
 ## [0.2.5] 2020-04-06
 
 - Hyperlink to git repository in Status TreeView
