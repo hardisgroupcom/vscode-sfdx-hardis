@@ -3,7 +3,7 @@ import * as path from "path";
 
 export class HardisCommandsProvider
   implements vscode.TreeDataProvider<CommandTreeItem> {
-  constructor(private workspaceRoot: string) {}
+  constructor(private workspaceRoot: string) { }
 
   getTreeItem(element: CommandTreeItem): vscode.TreeItem {
     return element;
@@ -318,6 +318,14 @@ export class HardisCommandsProvider
               "Retrieve locally all the metadatas of a remote salesforce org, in metadata format",
             icon: "pull.svg",
             command: "sfdx hardis:org:retrieve:sources:metadata",
+          },
+          {
+            id: "project:create",
+            label: "Create a new SFDX project",
+            tooltip:
+              "Create and initialize a new SFDX project",
+            icon: "new.svg",
+            command: "sfdx hardis:project:create",
           },
         ],
       },
