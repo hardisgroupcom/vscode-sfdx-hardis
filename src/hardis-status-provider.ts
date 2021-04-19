@@ -4,7 +4,7 @@ import { execCommand, execSfdxJson } from "./utils";
 
 export class HardisStatusProvider
   implements vscode.TreeDataProvider<StatusTreeItem> {
-  constructor(private workspaceRoot: string) { }
+  constructor(private workspaceRoot: string) {}
 
   getTreeItem(element: StatusTreeItem): vscode.TreeItem {
     return element;
@@ -32,14 +32,14 @@ export class HardisStatusProvider
     const items: StatusTreeItem[] = [];
     const topicItems: any[] =
       topic.id === "status-org"
-        ? await this.getOrgItems({ devHub: false }) :
-        topic.id === "status-org-devhub"
-          ? await this.getOrgItems({ devHub: true })
-          : topic.id === "status-git"
-            ? await this.getGitItems()
-            : topic.id === "status-plugins"
-              ? await this.getPluginsItems()
-              : [];
+        ? await this.getOrgItems({ devHub: false })
+        : topic.id === "status-org-devhub"
+        ? await this.getOrgItems({ devHub: true })
+        : topic.id === "status-git"
+        ? await this.getGitItems()
+        : topic.id === "status-plugins"
+        ? await this.getPluginsItems()
+        : [];
     for (const item of topicItems) {
       const options: any = {};
       if (item.icon) {
@@ -66,16 +66,23 @@ export class HardisStatusProvider
 
   private async getOrgItems(options: any = {}): Promise<any[]> {
     const items: any = [];
-    let devHubUsername = '';
+    let devHubUsername = "";
     let orgDisplayCommand = "sfdx force:org:display";
     if (options.devHub) {
       const devHubAliasCommand = "sfdx force:config:get defaultdevhubusername";
-      const devHubAliasRes = await execSfdxJson(devHubAliasCommand, this, { fail: false, output: false });
-      if (devHubAliasRes && devHubAliasRes.result && devHubAliasRes.result[0] && devHubAliasRes.result[0].value) {
-        devHubUsername = devHubAliasRes.result[0].value
-        orgDisplayCommand += ` --targetusername ${devHubUsername}`
-      }
-      else {
+      const devHubAliasRes = await execSfdxJson(devHubAliasCommand, this, {
+        fail: false,
+        output: false,
+      });
+      if (
+        devHubAliasRes &&
+        devHubAliasRes.result &&
+        devHubAliasRes.result[0] &&
+        devHubAliasRes.result[0].value
+      ) {
+        devHubUsername = devHubAliasRes.result[0].value;
+        orgDisplayCommand += ` --targetusername ${devHubUsername}`;
+      } else {
         items.push({
           id: "org-not-connected-devhub",
           label: `No DevHub org selected`,
@@ -94,29 +101,30 @@ export class HardisStatusProvider
       const orgInfo = orgInfoResult.result || orgInfoResult;
       if (orgInfo.username) {
         items.push({
-          id: "org-info-instance-url" + ((options.devHub) ? '-devhub' : ''),
+          id: "org-info-instance-url" + (options.devHub ? "-devhub" : ""),
           label: `${orgInfo.instanceUrl}`,
           tooltip: "URL of your remote Salesforce org",
-          command: "sfdx force:org:open" + ((options.devHub) ? ` --targetusername ${devHubUsername}` : ''),
+          command:
+            "sfdx force:org:open" +
+            (options.devHub ? ` --targetusername ${devHubUsername}` : ""),
           icon: "salesforce.svg",
         });
       }
       if (orgInfo.instanceUrl) {
         items.push({
-          id: "org-info-username" + ((options.devHub) ? '-devhub' : ''),
+          id: "org-info-username" + (options.devHub ? "-devhub" : ""),
           label: `${orgInfo.username}`,
           tooltip: "Username on your remote Salesforce org",
         });
       }
       if (orgInfo.expirationDate) {
         items.push({
-          id: "org-info-expiration-date" + ((options.devHub) ? '-devhub' : ''),
+          id: "org-info-expiration-date" + (options.devHub ? "-devhub" : ""),
           label: `Expires on ${orgInfo.expirationDate}`,
           tooltip: "You org will be available until this date",
         });
       }
-    }
-    else {
+    } else {
       items.push({
         id: "org-not-connected",
         label: `No org selected`,
@@ -175,9 +183,15 @@ export class HardisStatusProvider
           tooltip: "This is the git branch you are currently working on",
         });
         // Merge request info
-        const mergeRequestRes = await execSfdxJson('sfdx hardis:config:get --level user', this, { fail: false, output: true });
+        const mergeRequestRes = await execSfdxJson(
+          "sfdx hardis:config:get --level user",
+          this,
+          { fail: false, output: true }
+        );
         if (mergeRequestRes?.result?.config?.mergeRequests) {
-          const mergeRequests = mergeRequestRes.result.config.mergeRequests.filter((mr: any) => mr.branch === branch);
+          const mergeRequests = mergeRequestRes.result.config.mergeRequests.filter(
+            (mr: any) => mr.branch === branch
+          );
           // Existing merge request
           if (mergeRequests[0] && mergeRequests[0].id) {
             items.push({
@@ -187,7 +201,7 @@ export class HardisStatusProvider
               tooltip: "Click to open merge request in browser",
               command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
                 mergeRequests[0].url
-              )}`
+              )}`,
             });
           }
           // Create merge request URL
@@ -199,7 +213,7 @@ export class HardisStatusProvider
               tooltip: "Click to create merge request in browser",
               command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
                 mergeRequests[0].urlCreate
-              )}`
+              )}`,
             });
           }
           // No merge request found
@@ -208,7 +222,7 @@ export class HardisStatusProvider
               id: "git-merge-request-none",
               label: `Merge Request: Unknown`,
               icon: "merge.svg",
-              tooltip: "No merge request, or not created from this computer"
+              tooltip: "No merge request, or not created from this computer",
             });
           }
         }
@@ -260,7 +274,7 @@ export class HardisStatusProvider
     if (sfdxCliVersion !== latestSfdxCliVersion) {
       sfdxCliItem.label =
         sfdxCliItem.label.includes("missing") &&
-          !sfdxCliItem.label.includes("(link)")
+        !sfdxCliItem.label.includes("(link)")
           ? sfdxCliItem.label
           : sfdxCliItem.label + " (upgrade available)";
       sfdxCliItem.command = `npm install sfdx-cli -g`;
@@ -298,7 +312,7 @@ export class HardisStatusProvider
       if (!sfdxPlugins.includes(`${plugin.name} ${latestPluginVersion}`)) {
         pluginItem.label =
           pluginItem.label.includes("missing") &&
-            !pluginItem.label.includes("(link)")
+          !pluginItem.label.includes("(link)")
             ? pluginItem.label
             : pluginItem.label + " (upgrade available)";
         pluginItem.command = `echo y|sfdx plugins:install ${plugin.name}`;
