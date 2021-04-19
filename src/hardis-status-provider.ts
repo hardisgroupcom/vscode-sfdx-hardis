@@ -32,7 +32,9 @@ export class HardisStatusProvider
     const items: StatusTreeItem[] = [];
     const topicItems: any[] =
       topic.id === "status-org"
-        ? await this.getOrgItems()
+        ? await this.getOrgItems({ devHub: false })
+        : topic.id === "status-org-devhub"
+        ? await this.getOrgItems({ devHub: true })
         : topic.id === "status-git"
         ? await this.getGitItems()
         : topic.id === "status-plugins"
@@ -62,44 +64,73 @@ export class HardisStatusProvider
     return items;
   }
 
-  private async getOrgItems(): Promise<any[]> {
-    const items = [];
-    const orgDisplayCommand = "sfdx force:org:display";
+  private async getOrgItems(options: any = {}): Promise<any[]> {
+    const items: any = [];
+    let devHubUsername = "";
+    let orgDisplayCommand = "sfdx force:org:display";
+    if (options.devHub) {
+      const devHubAliasCommand = "sfdx force:config:get defaultdevhubusername";
+      const devHubAliasRes = await execSfdxJson(devHubAliasCommand, this, {
+        fail: false,
+        output: false,
+      });
+      if (
+        devHubAliasRes &&
+        devHubAliasRes.result &&
+        devHubAliasRes.result[0] &&
+        devHubAliasRes.result[0].value
+      ) {
+        devHubUsername = devHubAliasRes.result[0].value;
+        orgDisplayCommand += ` --targetusername ${devHubUsername}`;
+      } else {
+        items.push({
+          id: "org-not-connected-devhub",
+          label: `No DevHub org selected`,
+          tooltip: "Use command 'Select a Salesforce DebHub' to select one",
+          command: "sfdx hardis:org:select --devhub",
+          icon: "salesforce.svg",
+        });
+        return items;
+      }
+    }
     const orgInfoResult = await execSfdxJson(orgDisplayCommand, this, {
       fail: false,
       output: false,
     });
-    if (orgInfoResult.result) {
-      const orgInfo = orgInfoResult.result;
-      if (orgInfo.expirationDate) {
-        items.push({
-          id: "org-info-expiration-date",
-          label: `Expires on ${orgInfo.expirationDate}`,
-          tooltip: "You org will be available until this date",
-        });
-      }
-      if (orgInfo.alias !== "MY_ORG") {
-        items.push({
-          id: "org-info-alias",
-          label: `${orgInfo.alias}`,
-          tooltip:
-            "Alias of the org that you are currently connected to from Vs Code",
-        });
-      }
+    if (orgInfoResult.result || orgInfoResult.id) {
+      const orgInfo = orgInfoResult.result || orgInfoResult;
       if (orgInfo.username) {
         items.push({
-          id: "org-info-instance-url",
+          id: "org-info-instance-url" + (options.devHub ? "-devhub" : ""),
           label: `${orgInfo.instanceUrl}`,
           tooltip: "URL of your remote Salesforce org",
+          command:
+            "sfdx force:org:open" +
+            (options.devHub ? ` --targetusername ${devHubUsername}` : ""),
+          icon: "salesforce.svg",
         });
       }
       if (orgInfo.instanceUrl) {
         items.push({
-          id: "org-info-username",
+          id: "org-info-username" + (options.devHub ? "-devhub" : ""),
           label: `${orgInfo.username}`,
           tooltip: "Username on your remote Salesforce org",
         });
       }
+      if (orgInfo.expirationDate) {
+        items.push({
+          id: "org-info-expiration-date" + (options.devHub ? "-devhub" : ""),
+          label: `Expires on ${orgInfo.expirationDate}`,
+          tooltip: "You org will be available until this date",
+        });
+      }
+    } else {
+      items.push({
+        id: "org-not-connected",
+        label: `No org selected`,
+        tooltip: "Click to select an org",
+        command: "sfdx hardis:org:select",
+      });
     }
     return items;
   }
@@ -115,6 +146,7 @@ export class HardisStatusProvider
         const origin = repo.state.remotes.filter(
           (remote: any) => remote.name === "origin"
         )[0];
+        // Display repo
         if (origin) {
           items.push({
             id: "git-info-repo",
@@ -126,7 +158,7 @@ export class HardisStatusProvider
               origin.fetchUrl
             )}`,
             icon: "git.svg",
-            tooltip: "This is the git repository you are currently working on",
+            tooltip: "Click to open git repo in browser - " + origin.fetchUrl,
           });
         } else {
           items.push({
@@ -139,7 +171,9 @@ export class HardisStatusProvider
           });
         }
       }
+      // Display branch & merge request info
       if (repo?.state?.HEAD) {
+        // branch info
         const head = repo.state.HEAD;
         const { name: branch } = head;
         items.push({
@@ -148,11 +182,55 @@ export class HardisStatusProvider
           icon: "git-branch.svg",
           tooltip: "This is the git branch you are currently working on",
         });
+        // Merge request info
+        const mergeRequestRes = await execSfdxJson(
+          "sfdx hardis:config:get --level user",
+          this,
+          { fail: false, output: true }
+        );
+        if (mergeRequestRes?.result?.config?.mergeRequests) {
+          const mergeRequests = mergeRequestRes.result.config.mergeRequests.filter(
+            (mr: any) => mr.branch === branch
+          );
+          // Existing merge request
+          if (mergeRequests[0] && mergeRequests[0].id) {
+            items.push({
+              id: "git-merge-request-url",
+              label: `Merge Request: ${mergeRequests[0].id}`,
+              icon: "merge.svg",
+              tooltip: "Click to open merge request in browser",
+              command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
+                mergeRequests[0].url
+              )}`,
+            });
+          }
+          // Create merge request URL
+          else if (mergeRequests[0] && mergeRequests[0].urlCreate) {
+            items.push({
+              id: "git-merge-request-create-url",
+              label: `Merge Request: Click to create`,
+              icon: "merge.svg",
+              tooltip: "Click to create merge request in browser",
+              command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
+                mergeRequests[0].urlCreate
+              )}`,
+            });
+          }
+          // No merge request found
+          else {
+            items.push({
+              id: "git-merge-request-none",
+              label: `Merge Request: Unknown`,
+              icon: "merge.svg",
+              tooltip: "No merge request, or not created from this computer",
+            });
+          }
+        }
       } else {
         items.push({
           id: "git-info-branch",
           label: `Unknown`,
-          tooltip: `Git is not ready yet, or your folder is not a repository (maybe click on the refresh button near "Status" ?)`,
+          tooltip: `Git was not ready yet, or your folder is not a repository (maybe click on the refresh button near "Status" ?)`,
         });
       }
     }
@@ -329,6 +407,12 @@ export class HardisStatusProvider
         id: "status-plugins",
         label: "Plugins",
         icon: "plugins.svg",
+        defaultExpand: true,
+      },
+      {
+        id: "status-org-devhub",
+        label: "Current Dev Hub org",
+        icon: "salesforce.svg",
         defaultExpand: true,
       },
     ];

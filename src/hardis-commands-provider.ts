@@ -319,6 +319,13 @@ export class HardisCommandsProvider
             icon: "pull.svg",
             command: "sfdx hardis:org:retrieve:sources:metadata",
           },
+          {
+            id: "project:create",
+            label: "Create a new SFDX project",
+            tooltip: "Create and initialize a new SFDX project",
+            icon: "new.svg",
+            command: "sfdx hardis:project:create",
+          },
         ],
       },
       {

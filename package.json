@@ -1,140 +1,140 @@
 {
-	"name": "vscode-sfdx-hardis",
-	"displayName": "SFDX Hardis",
-	"description": "Vs Code Wrapper for sfdx-hardis tooling",
-	"version": "0.2.5",
-	"icon": "resources/hardis-logo.png",
-	"publisher": "NicolasVuillamy",
-	"license": "AGPL-3.0",
-	"engines": {
-		"vscode": "^1.54.0"
-	},
-	"categories": [
-		"Other"
-	],
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/hardisgroupcom/vscode-sfdx-hardis.git"
-	},
-	"activationEvents": [
-		"onView:sfdx-hardis-commands"
-	],
-	"main": "./out/extension.js",
-	"contributes": {
-		"configuration": {
-			"title": "SFDX Hardis",
-			"properties": {
-				"vsCodeSfdxHardis.userInput": {
-					"type": "string",
-					"default": "ui",
-					"enum": [
-						"ui",
-						"console"
-					],
-					"enumDescriptions": [
-						"Visual Studio Code User Interface",
-						"Command line"
-					],
-					"description": "Defines if user input is in VsCode UI or in console"
-				}
-			}
-		},
-		"commands": [
-			{
-				"command": "vscode-sfdx-hardis.execute-command",
-				"title": "Execute sfdx-hardis command"
-			},
-			{
-				"command": "vscode-sfdx-hardis.openExternal",
-				"title": "Open external url"
-			},
-			{
-				"command": "vscode-sfdx-hardis.refreshStatusView",
-				"title": "Refresh Status",
-				"icon": {
-					"light": "resources/refresh-button.svg",
-					"dark": "resources/refresh-button.svg"
-				}
-			},
-			{
-				"command": "vscode-sfdx-hardis.refreshCommandsView",
-				"title": "Refresh Commands",
-				"icon": {
-					"light": "resources/refresh-button.svg",
-					"dark": "resources/refresh-button.svg"
-				}
-			}
-		],
-		"viewsContainers": {
-			"activitybar": [
-				{
-					"id": "sfdx-hardis-explorer",
-					"title": "SFDX Hardis",
-					"icon": "resources/hardis-logo.svg"
-				}
-			]
-		},
-		"views": {
-			"sfdx-hardis-explorer": [
-				{
-					"id": "sfdx-hardis-commands",
-					"name": "Commands"
-				},
-				{
-					"id": "sfdx-hardis-status",
-					"name": "Status"
-				}
-			]
-		},
-		"menus": {
-			"view/title": [
-				{
-					"command": "vscode-sfdx-hardis.refreshStatusView",
-					"when": "view == sfdx-hardis-status",
-					"group": "navigation"
-				},
-				{
-					"command": "vscode-sfdx-hardis.refreshCommandsView",
-					"when": "view == sfdx-hardis-commands",
-					"group": "navigation"
-				}
-			]
-		}
-	},
-	"scripts": {
-		"vscode:prepublish": "yarn run compile",
-		"compile": "tsc -p ./",
-		"watch": "tsc -watch -p ./",
-		"pretest": "yarn run compile && yarn run lint",
-		"lint": "eslint src --ext ts",
-		"lint:fix": "eslint src --ext ts --fix",
-		"test": "node ./out/test/runTest.js"
-	},
-	"devDependencies": {
-		"@types/glob": "^7.1.3",
-		"@types/mocha": "^8.0.4",
-		"@types/node": "^14.14.35",
-		"@types/vscode": "^1.54.0",
-		"@types/which": "^2.0.0",
-		"@typescript-eslint/eslint-plugin": "^4.14.1",
-		"@typescript-eslint/parser": "^4.14.1",
-		"eslint": "^7.19.0",
-		"glob": "^7.1.6",
-		"mocha": "^8.2.1",
-		"typescript": "^4.1.3",
-		"vscode-test": "^1.5.0"
-	},
-	"dependencies": {
-		"@types/fs-extra": "^9.0.8",
-		"@types/ws": "^7.4.0",
-		"chalk": "^4.1.0",
-		"fs-extra": "^9.1.0",
-		"strip-ansi": "^6.0.0",
-		"vsce": "^1.87.0",
-		"which": "^2.0.2",
-		"ws": "^7.4.4"
-	},
-	"extensionDependencies": [
-		"vscode.git"
-	]
+  "name": "vscode-sfdx-hardis",
+  "displayName": "SFDX Hardis",
+  "description": "Vs Code Wrapper for sfdx-hardis tooling",
+  "version": "0.2.5",
+  "icon": "resources/hardis-logo.png",
+  "publisher": "NicolasVuillamy",
+  "license": "AGPL-3.0",
+  "engines": {
+    "vscode": "^1.54.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hardisgroupcom/vscode-sfdx-hardis.git"
+  },
+  "activationEvents": [
+    "onView:sfdx-hardis-commands"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "SFDX Hardis",
+      "properties": {
+        "vsCodeSfdxHardis.userInput": {
+          "type": "string",
+          "default": "ui",
+          "enum": [
+            "ui",
+            "console"
+          ],
+          "enumDescriptions": [
+            "Visual Studio Code User Interface",
+            "Command line"
+          ],
+          "description": "Defines if user input is in VsCode UI or in console"
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "vscode-sfdx-hardis.execute-command",
+        "title": "Execute sfdx-hardis command"
+      },
+      {
+        "command": "vscode-sfdx-hardis.openExternal",
+        "title": "Open external url"
+      },
+      {
+        "command": "vscode-sfdx-hardis.refreshStatusView",
+        "title": "Refresh Status",
+        "icon": {
+          "light": "resources/refresh-button.svg",
+          "dark": "resources/refresh-button.svg"
+        }
+      },
+      {
+        "command": "vscode-sfdx-hardis.refreshCommandsView",
+        "title": "Refresh Commands",
+        "icon": {
+          "light": "resources/refresh-button.svg",
+          "dark": "resources/refresh-button.svg"
+        }
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "sfdx-hardis-explorer",
+          "title": "SFDX Hardis",
+          "icon": "resources/hardis-logo.svg"
+        }
+      ]
+    },
+    "views": {
+      "sfdx-hardis-explorer": [
+        {
+          "id": "sfdx-hardis-commands",
+          "name": "Commands"
+        },
+        {
+          "id": "sfdx-hardis-status",
+          "name": "Status"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "vscode-sfdx-hardis.refreshStatusView",
+          "when": "view == sfdx-hardis-status",
+          "group": "navigation"
+        },
+        {
+          "command": "vscode-sfdx-hardis.refreshCommandsView",
+          "when": "view == sfdx-hardis-commands",
+          "group": "navigation"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "yarn run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "yarn run compile && yarn run lint",
+    "lint": "eslint src --ext ts",
+    "lint:fix": "eslint src --ext ts --fix",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/glob": "^7.1.3",
+    "@types/mocha": "^8.0.4",
+    "@types/node": "^14.14.35",
+    "@types/vscode": "^1.54.0",
+    "@types/which": "^2.0.0",
+    "@typescript-eslint/eslint-plugin": "^4.14.1",
+    "@typescript-eslint/parser": "^4.14.1",
+    "eslint": "^7.19.0",
+    "glob": "^7.1.6",
+    "mocha": "^8.2.1",
+    "typescript": "^4.1.3",
+    "vscode-test": "^1.5.0"
+  },
+  "dependencies": {
+    "@types/fs-extra": "^9.0.8",
+    "@types/ws": "^7.4.0",
+    "chalk": "^4.1.0",
+    "fs-extra": "^9.1.0",
+    "strip-ansi": "^6.0.0",
+    "vsce": "^1.87.0",
+    "which": "^2.0.2",
+    "ws": "^7.4.4"
+  },
+  "extensionDependencies": [
+    "vscode.git"
+  ]
 }
