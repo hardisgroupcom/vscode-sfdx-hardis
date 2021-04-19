@@ -138,6 +138,7 @@ export class HardisStatusProvider
         const origin = repo.state.remotes.filter(
           (remote: any) => remote.name === "origin"
         )[0];
+        // Display repo
         if (origin) {
           items.push({
             id: "git-info-repo",
@@ -149,7 +150,7 @@ export class HardisStatusProvider
               origin.fetchUrl
             )}`,
             icon: "git.svg",
-            tooltip: "This is the git repository you are currently working on",
+            tooltip: "Click to open git repo in browser - " + origin.fetchUrl,
           });
         } else {
           items.push({
@@ -162,7 +163,9 @@ export class HardisStatusProvider
           });
         }
       }
+      // Display branch & merge request info
       if (repo?.state?.HEAD) {
+        // branch info
         const head = repo.state.HEAD;
         const { name: branch } = head;
         items.push({
@@ -171,11 +174,49 @@ export class HardisStatusProvider
           icon: "git-branch.svg",
           tooltip: "This is the git branch you are currently working on",
         });
+        // Merge request info
+        const mergeRequestRes = await execSfdxJson('sfdx hardis:config:get --level user', this, { fail: false, output: true });
+        if (mergeRequestRes?.result?.config?.mergeRequests) {
+          const mergeRequests = mergeRequestRes.result.config.mergeRequests.filter((mr: any) => mr.branch === branch);
+          // Existing merge request
+          if (mergeRequests[0] && mergeRequests[0].id) {
+            items.push({
+              id: "git-merge-request-url",
+              label: `Merge Request: ${mergeRequests[0].id}`,
+              icon: "merge.svg",
+              tooltip: "Click to open merge request in browser",
+              command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
+                mergeRequests[0].url
+              )}`
+            });
+          }
+          // Create merge request URL
+          else if (mergeRequests[0] && mergeRequests[0].urlCreate) {
+            items.push({
+              id: "git-merge-request-create-url",
+              label: `Merge Request: Click to create`,
+              icon: "merge.svg",
+              tooltip: "Click to create merge request in browser",
+              command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
+                mergeRequests[0].urlCreate
+              )}`
+            });
+          }
+          // No merge request found
+          else {
+            items.push({
+              id: "git-merge-request-none",
+              label: `Merge Request: Unknown`,
+              icon: "merge.svg",
+              tooltip: "No merge request, or not created from this computer"
+            });
+          }
+        }
       } else {
         items.push({
           id: "git-info-branch",
           label: `Unknown`,
-          tooltip: `Git is not ready yet, or your folder is not a repository (maybe click on the refresh button near "Status" ?)`,
+          tooltip: `Git was not ready yet, or your folder is not a repository (maybe click on the refresh button near "Status" ?)`,
         });
       }
     }

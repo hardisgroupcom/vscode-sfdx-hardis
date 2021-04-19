@@ -2,9 +2,11 @@
 
 ## [Unreleased]
 
-## [0.2.6] 2020-04-06
+## [0.2.6] 2020-04-20
 
 - Display devHub org info in status TreeView
+- Add command hardis:project:create in menu
+- Display merge request info in status (beta)
 
 ## [0.2.5] 2020-04-06
 
