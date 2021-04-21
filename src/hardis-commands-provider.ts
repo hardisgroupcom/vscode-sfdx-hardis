@@ -270,7 +270,7 @@ export class HardisCommandsProvider
       },
       {
         id: "utils",
-        label: "Utils",
+        label: "Developer Utils",
         commands: [
           {
             id: "scratch:create",
