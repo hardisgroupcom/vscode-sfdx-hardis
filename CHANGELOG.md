@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.3.0] 2020-04-21
+
+- Reorganize commands: assisted mode and expert mode
+
 ## [0.2.6] 2020-04-20
 
 - Display devHub org info in status TreeView

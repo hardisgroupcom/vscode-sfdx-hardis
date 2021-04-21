@@ -102,7 +102,7 @@ export class HardisCommandsProvider
     const hardisCommands = [
       {
         id: "work",
-        label: "Work on a task",
+        label: "Work on a task (assisted mode)",
         icon: "user.svg",
         defaultExpand: true,
         commands: [
@@ -159,20 +159,12 @@ export class HardisCommandsProvider
             icon: "salesforce.svg",
           },
           {
-            id: "scratch:push-from-git-to-org",
-            label: "Push from Git to Salesforce org",
+            id: "package:install",
+            label: "Install a package",
             tooltip:
-              "Propagates your local updates within Vs Code into your remote Salesforce scratch org",
-            command: "sfdx hardis:scratch:push",
-            icon: "push.svg",
-          },
-          {
-            id: "scratch:pull-from-org-to-git",
-            label: "Pull from Salesforce org to Git",
-            tooltip:
-              "Retrieve locally the updates made on the remote Salesforce scratch org",
-            command: "sfdx hardis:scratch:pull",
-            icon: "pull.svg",
+              "This will update project .sfdx-hardis.yml so the package will always be installed in new scratch orgs and future deployments",
+            icon: "package.svg",
+            command: "sfdx hardis:package:install",
           },
           {
             id: "org:test:apex",
@@ -216,61 +208,8 @@ export class HardisCommandsProvider
         ],
       },
       {
-        id: "config-commands",
-        label: "Configuration",
-        commands: [
-          {
-            id: "package:install",
-            label: "Install a package",
-            tooltip:
-              "This will update project .sfdx-hardis.yml so the package will always be installed in new scratch orgs and future deployments",
-            icon: "package.svg",
-            command: "sfdx hardis:package:install",
-          },
-          {
-            id: "org:data:export",
-            label: "Export scratch org initialisation data",
-            tooltip:
-              "Export data from org and store it in project files, so it can be loaded during each scratch org initialization",
-            icon: "data.svg",
-            command: "sfdx hardis:org:data:export",
-          },
-          {
-            id: "org:data:import",
-            label: "Import scratch org initialisation data",
-            tooltip: "Import data into org from project files",
-            icon: "data.svg",
-            command: "sfdx hardis:org:data:import",
-          },
-          {
-            id: "configure:auth:deployment",
-            label: "Configure Org CI authentication",
-            tooltip:
-              "Assisted configuration to connect a protected branch and its related release org during CI",
-            icon: "configure.svg",
-            command: "sfdx hardis:project:configure:auth",
-          },
-          {
-            id: "configure:auth:devhub",
-            label: "Configure DevHub CI authentication",
-            icon: "configure.svg",
-            tooltip:
-              "Assisted configuration to connect to a Dev Hub org during CI",
-            command: "sfdx hardis:project:configure:auth --devhub",
-          },
-          {
-            id: "org:configure:monitoring",
-            label: "Configure org monitoring",
-            tooltip:
-              "To run only on a repo dedicated to monitoring (start from a blank repo)",
-            icon: "monitoring.svg",
-            command: "sfdx hardis:org:configure:monitoring",
-          },
-        ],
-      },
-      {
-        id: "utils",
-        label: "Utils",
+        id: "work-dev",
+        label: "Work on a task (expert mode)",
         commands: [
           {
             id: "scratch:create",
@@ -286,6 +225,45 @@ export class HardisCommandsProvider
             tooltip: "Create a new scratch org for the current work",
             icon: "salesforce.svg",
             command: "sfdx hardis:scratch:create --forcenew",
+          },
+          {
+            id: "scratch:push-from-git-to-org",
+            label: "Push from Git to Salesforce org",
+            tooltip:
+              "Propagates your local updates within Vs Code into your remote Salesforce scratch org",
+            command: "sfdx hardis:scratch:push",
+            icon: "push.svg",
+          },
+          {
+            id: "scratch:pull-from-org-to-git",
+            label: "Pull from Salesforce org to Git",
+            tooltip:
+              "Retrieve locally the updates made on the remote Salesforce scratch org",
+            command: "sfdx hardis:scratch:pull",
+            icon: "pull.svg",
+          },
+          {
+            id: "hardis:work:save-expert",
+            label: "Save my current task (no pull and no git)",
+            command: "sfdx hardis:work:save --nopull --nogit",
+            icon: "save.svg",
+            tooltip:
+              "Do all the work:save operations except scratch pull and git operations",
+          },
+          {
+            id: "org:data:export",
+            label: "Export scratch org initialisation data",
+            tooltip:
+              "Export data from org and store it in project files, so it can be loaded during each scratch org initialization",
+            icon: "data.svg",
+            command: "sfdx hardis:org:data:export",
+          },
+          {
+            id: "org:data:import",
+            label: "Import scratch org initialisation data",
+            tooltip: "Import data into org from project files",
+            icon: "data.svg",
+            command: "sfdx hardis:org:data:import",
           },
           {
             id: "project:clean:references",
@@ -305,7 +283,7 @@ export class HardisCommandsProvider
           },
           {
             id: "org:retrieve:sources:dx",
-            label: "Retrieve DX sources from an org",
+            label: "Retrieve ALL DX sources from an org",
             tooltip:
               "Retrieve locally all the metadatas of a remote salesforce org, in DX project format",
             icon: "pull.svg",
@@ -313,7 +291,7 @@ export class HardisCommandsProvider
           },
           {
             id: "org:retrieve:sources:metadata",
-            label: "Retrieve Metadata sources from an org",
+            label: "Retrieve ALL Metadata sources from an org",
             tooltip:
               "Retrieve locally all the metadatas of a remote salesforce org, in metadata format",
             icon: "pull.svg",
@@ -339,6 +317,36 @@ export class HardisCommandsProvider
               "Purge all flows with status Obsolete in your org, so you are not bothered by the 50 versions limits",
             icon: "flow.svg",
             command: "sfdx hardis:org:purge:flow",
+          },
+        ],
+      },
+      {
+        id: "config-commands",
+        label: "Configuration",
+        commands: [
+          {
+            id: "configure:auth:deployment",
+            label: "Configure Org CI authentication",
+            tooltip:
+              "Assisted configuration to connect a protected branch and its related release org during CI",
+            icon: "configure.svg",
+            command: "sfdx hardis:project:configure:auth",
+          },
+          {
+            id: "configure:auth:devhub",
+            label: "Configure DevHub CI authentication",
+            icon: "configure.svg",
+            tooltip:
+              "Assisted configuration to connect to a Dev Hub org during CI",
+            command: "sfdx hardis:project:configure:auth --devhub",
+          },
+          {
+            id: "org:configure:monitoring",
+            label: "Configure org monitoring",
+            tooltip:
+              "To run only on a repo dedicated to monitoring (start from a blank repo)",
+            icon: "monitoring.svg",
+            command: "sfdx hardis:org:configure:monitoring",
           },
         ],
       },
