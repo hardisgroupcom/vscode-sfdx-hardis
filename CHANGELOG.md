@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.3.1] 2020-04-26
+
+- Quickfix display PR in status
+
 ## [0.3.0] 2020-04-21
 
 - Reorganize commands: assisted mode and expert mode
