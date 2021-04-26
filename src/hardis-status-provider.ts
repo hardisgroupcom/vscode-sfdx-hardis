@@ -190,7 +190,10 @@ export class HardisStatusProvider
         );
         if (mergeRequestRes?.result?.config?.mergeRequests) {
           const mergeRequests = mergeRequestRes.result.config.mergeRequests.filter(
-            (mr: any) => mr.branch === branch
+            (mr: any) =>
+              mr !== null &&
+              mr.branch === branch &&
+              (mr.url !== null || mr.urlCreate !== null)
           );
           // Existing merge request
           if (mergeRequests[0] && mergeRequests[0].id) {
