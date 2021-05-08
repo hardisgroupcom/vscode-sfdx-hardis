@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.4.0] 2020-05-21
+
+- Get random port for sfdx-hardis WebSocket server and send it to CLI commands
+
 ## [0.3.1] 2020-04-26
 
 - Quickfix display PR in status
