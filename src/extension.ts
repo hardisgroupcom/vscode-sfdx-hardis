@@ -161,11 +161,17 @@ export function activate(context: vscode.ExtensionContext) {
   async function manageWebSocketServer() {
     const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
     if (config.get("userInput") === "ui") {
-      if (disposableWebSocketServer === null || disposableWebSocketServer === undefined) {
+      if (
+        disposableWebSocketServer === null ||
+        disposableWebSocketServer === undefined
+      ) {
         startWebSocketServer();
       }
     } else {
-      if (disposableWebSocketServer !== null && disposableWebSocketServer !== undefined) {
+      if (
+        disposableWebSocketServer !== null &&
+        disposableWebSocketServer !== undefined
+      ) {
         disposableWebSocketServer.dispose();
       }
     }
