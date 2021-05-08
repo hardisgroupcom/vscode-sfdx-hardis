@@ -8,7 +8,7 @@ import { WebSocketServer } from "./hardis-websocket-server";
 import { getWorkspaceRoot } from "./utils";
 
 let refreshInterval: any = null;
-let disposableWebSocketServer: WebSocketServer ;
+let disposableWebSocketServer: WebSocketServer;
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -39,7 +39,11 @@ export function activate(context: vscode.ExtensionContext) {
       return;
     }
     // terminalIsRunning = true; //Comment until we find a way to detect that a command is running or not
-    if (command.startsWith('sfdx hardis:') && disposableWebSocketServer && disposableWebSocketServer.websocketHostPort !== null) {
+    if (
+      command.startsWith("sfdx hardis:") &&
+      disposableWebSocketServer &&
+      disposableWebSocketServer.websocketHostPort !== null
+    ) {
       command += ` --websocket ${disposableWebSocketServer.websocketHostPort}`;
     }
     terminal.sendText(command);

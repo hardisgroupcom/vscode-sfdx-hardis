@@ -8,7 +8,7 @@ let globalWss: WebSocketServer | null;
 
 export class WebSocketServer {
   public websocketHostPort: any = null;
-  private server: any = null ;
+  private server: any = null;
   private wss: WebSocket.Server;
   private clients: any = {};
 
@@ -22,8 +22,8 @@ export class WebSocketServer {
     let port = DEFAULT_PORT;
     if (port === 2702) {
       // Define random port
-      const portastic = require('portastic');
-      const availablePorts = await portastic.find({ min: 2702, max: 2784});
+      const portastic = require("portastic");
+      const availablePorts = await portastic.find({ min: 2702, max: 2784 });
       port = availablePorts[Math.floor(Math.random() * availablePorts.length)];
     }
     this.listen();
