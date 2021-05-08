@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Fix Merge Request display
+
 ## [0.4.0] 2020-05-21
 
 - Get random port for sfdx-hardis WebSocket server and send it to CLI commands
