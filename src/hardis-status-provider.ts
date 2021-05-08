@@ -199,9 +199,11 @@ export class HardisStatusProvider
           if (mergeRequests[0] && mergeRequests[0].url) {
             items.push({
               id: "git-merge-request-url",
-              label: 'Merge Request: Open',
+              label: "Merge Request: Open",
               icon: "merge.svg",
-              tooltip: "Click to open merge request in browser\n"+ mergeRequests[0].url,
+              tooltip:
+                "Click to open merge request in browser\n" +
+                mergeRequests[0].url,
               command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
                 mergeRequests[0].url
               )}`,
@@ -211,9 +213,11 @@ export class HardisStatusProvider
           else if (mergeRequests[0] && mergeRequests[0].urlCreate) {
             items.push({
               id: "git-merge-request-create-url",
-              label: 'Merge Request: Create',
+              label: "Merge Request: Create",
               icon: "merge.svg",
-              tooltip: "Click to create merge request in browser\n" + mergeRequests[0].urlCreate,
+              tooltip:
+                "Click to create merge request in browser\n" +
+                mergeRequests[0].urlCreate,
               command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
                 mergeRequests[0].urlCreate
               )}`,
