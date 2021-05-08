@@ -8,6 +8,7 @@ import { WebSocketServer } from "./hardis-websocket-server";
 import { getWorkspaceRoot } from "./utils";
 
 let refreshInterval: any = null;
+let disposableWebSocketServer: WebSocketServer ;
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -38,6 +39,9 @@ export function activate(context: vscode.ExtensionContext) {
       return;
     }
     // terminalIsRunning = true; //Comment until we find a way to detect that a command is running or not
+    if (command.startsWith('sfdx hardis:') && disposableWebSocketServer && disposableWebSocketServer.websocketHostPort !== null) {
+      command += ` --websocket ${disposableWebSocketServer.websocketHostPort}`;
+    }
     terminal.sendText(command);
     // Scrolldown the terminal
     vscode.commands.executeCommand("workbench.action.terminal.scrollToBottom");
@@ -140,17 +144,17 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(disposableTreeInfo);
 
   // Manage WebSocket server to communicate with sfdx-hardis cli plugin
-  let disposableWebSocketServer: any = null;
 
   function startWebSocketServer() {
     return new Promise((resolve) => {
       disposableWebSocketServer = new WebSocketServer();
+      disposableWebSocketServer.start();
       context.subscriptions.push(disposableWebSocketServer);
       resolve(disposableWebSocketServer);
     });
   }
 
-  function manageWebSocketServer() {
+  async function manageWebSocketServer() {
     const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
     if (config.get("userInput") === "ui") {
       if (disposableWebSocketServer === null) {

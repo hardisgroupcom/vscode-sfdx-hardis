@@ -3,21 +3,34 @@ import * as http from "http";
 import * as WebSocket from "ws";
 import * as vscode from "vscode";
 
-const PORT = parseInt(process.env.SFDX_HARDIS_WEBSOCKET_PORT || "2702");
+const DEFAULT_PORT = parseInt(process.env.SFDX_HARDIS_WEBSOCKET_PORT || "2702");
 let globalWss: WebSocketServer | null;
 
 export class WebSocketServer {
+  public websocketHostPort: any = null;
+  private server: any = null ;
   private wss: WebSocket.Server;
   private clients: any = {};
 
   constructor() {
-    const server = http.createServer();
-    this.wss = new WebSocket.Server({ server: server });
+    this.server = http.createServer();
+    this.wss = new WebSocket.Server({ server: this.server });
     globalWss = this;
+  }
+
+  async start() {
+    let port = DEFAULT_PORT;
+    if (port === 2702) {
+      // Define random port
+      const portastic = require('portastic');
+      const availablePorts = await portastic.find({ min: 2702, max: 2784});
+      port = availablePorts[Math.floor(Math.random() * availablePorts.length)];
+    }
     this.listen();
     //start our server
-    server.listen(PORT, () => {
-      console.log(`Data stream server started on port ${PORT}`);
+    this.server.listen(port, () => {
+      this.websocketHostPort = `localhost:${port}`;
+      console.log(`Data stream server started on port ${port}`);
     });
   }
 

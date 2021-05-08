@@ -129,6 +129,7 @@
     "@types/ws": "^7.4.0",
     "chalk": "^4.1.0",
     "fs-extra": "^9.1.0",
+    "portastic": "^1.0.1",
     "strip-ansi": "^6.0.0",
     "vsce": "^1.87.0",
     "which": "^2.0.2",
