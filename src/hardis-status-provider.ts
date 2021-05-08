@@ -196,12 +196,14 @@ export class HardisStatusProvider
               (mr.url !== null || mr.urlCreate !== null)
           );
           // Existing merge request
-          if (mergeRequests[0] && mergeRequests[0].id) {
+          if (mergeRequests[0] && mergeRequests[0].url) {
             items.push({
               id: "git-merge-request-url",
-              label: `Merge Request: ${mergeRequests[0].id}`,
+              label: "Merge Request: Open",
               icon: "merge.svg",
-              tooltip: "Click to open merge request in browser",
+              tooltip:
+                "Click to open merge request in browser\n" +
+                mergeRequests[0].url,
               command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
                 mergeRequests[0].url
               )}`,
@@ -211,21 +213,14 @@ export class HardisStatusProvider
           else if (mergeRequests[0] && mergeRequests[0].urlCreate) {
             items.push({
               id: "git-merge-request-create-url",
-              label: `Merge Request: Click to create`,
+              label: "Merge Request: Create",
               icon: "merge.svg",
-              tooltip: "Click to create merge request in browser",
+              tooltip:
+                "Click to create merge request in browser\n" +
+                mergeRequests[0].urlCreate,
               command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
                 mergeRequests[0].urlCreate
               )}`,
-            });
-          }
-          // No merge request found
-          else {
-            items.push({
-              id: "git-merge-request-none",
-              label: `Merge Request: Unknown`,
-              icon: "merge.svg",
-              tooltip: "No merge request, or not created from this computer",
             });
           }
         }
