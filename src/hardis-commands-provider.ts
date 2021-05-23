@@ -158,6 +158,30 @@ export class HardisCommandsProvider
             command: "sfdx force:org:open",
             icon: "salesforce.svg",
           },
+
+          {
+            id: "org:select",
+            label: "Select a Salesforce org",
+            tooltip:
+              "Select an org (scratch or not) that you want your VsCode project to be currently linked to",
+            command: "sfdx hardis:org:select",
+            icon: "select.svg",
+          },
+          {
+            id: "org:select:devhub",
+            label: "Select a Salesforce DevHub",
+            tooltip: "Select an org that sfdx-hardis will use as Dev Hub",
+            command: "sfdx hardis:org:select --devhub",
+            icon: "select.svg",
+          },
+          {
+            id: "org:logout",
+            label: "Logout from current Org and DevHub",
+            command:
+              "sfdx auth:logout --noprompt || true && sfdx config:unset defaultusername defaultdevhubusername -g && sfdx config:unset defaultusername defaultdevhubusername || true",
+            tooltip: "Log out from everything :)",
+            icon: "logout.svg",
+          },
           {
             id: "package:install",
             label: "Install a package",
@@ -182,29 +206,6 @@ export class HardisCommandsProvider
               "Generates a new password for your current scratch org user",
             icon: "password.svg",
           },
-          {
-            id: "org:select",
-            label: "Select a Salesforce org",
-            tooltip:
-              "Select an org (scratch or not) that you want your VsCode project to be currently linked to",
-            command: "sfdx hardis:org:select",
-            icon: "select.svg",
-          },
-          {
-            id: "org:select:devhub",
-            label: "Select a Salesforce DevHub",
-            tooltip: "Select an org that sfdx-hardis will use as Dev Hub",
-            command: "sfdx hardis:org:select --devhub",
-            icon: "select.svg",
-          },
-          {
-            id: "org:logout",
-            label: "Logout from current Org and DevHub",
-            command:
-              "sfdx auth:logout --noprompt || true && sfdx config:unset defaultusername defaultdevhubusername -g && sfdx config:unset defaultusername defaultdevhubusername || true",
-            tooltip: "Log out from everything :)",
-            icon: "logout.svg",
-          },
         ],
       },
       {
@@ -213,7 +214,7 @@ export class HardisCommandsProvider
         commands: [
           {
             id: "scratch:create",
-            label: "Resume scratch org creation",
+            label: "Create scratch org (or resume creation)",
             tooltip:
               "If during Work:New you had an error, you can resume the scratch org creation",
             icon: "salesforce.svg",
@@ -221,7 +222,7 @@ export class HardisCommandsProvider
           },
           {
             id: "scratch:create:new",
-            label: "Force creation of a new scratch org",
+            label: "Create scratch org (force new)",
             tooltip: "Create a new scratch org for the current work",
             icon: "salesforce.svg",
             command: "sfdx hardis:scratch:create --forcenew",

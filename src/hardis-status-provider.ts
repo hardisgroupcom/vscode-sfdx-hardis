@@ -129,7 +129,7 @@ export class HardisStatusProvider
         id: "org-not-connected",
         label: `No org selected`,
         tooltip: "Click to select an org",
-        command: "sfdx hardis:org:select",
+        command: "sfdx hardis:org:select" + (options.devHub ? " --devhub" : ""),
       });
     }
     return items;
@@ -224,12 +224,6 @@ export class HardisStatusProvider
             });
           }
         }
-      } else {
-        items.push({
-          id: "git-info-branch",
-          label: `Unknown`,
-          tooltip: `Git was not ready yet, or your folder is not a repository (maybe click on the refresh button near "Status" ?)`,
-        });
       }
     }
     return items;
