@@ -2,35 +2,40 @@
 
 ## [Unreleased]
 
-## [0.4.1] 2020-05-09
+## [0.4.2] 2021-05-23
+
+- Do not force to use git bash as terminal
+- Do not display Unknown branch menu item
+
+## [0.4.1] 2021-05-09
 
 - Fix Merge Request display
 
-## [0.4.0] 2020-05-08
+## [0.4.0] 2021-05-08
 
 - Get random port for sfdx-hardis WebSocket server and send it to CLI commands
 
-## [0.3.1] 2020-04-26
+## [0.3.1] 2021-04-26
 
 - Quickfix display PR in status
 
-## [0.3.0] 2020-04-21
+## [0.3.0] 2021-04-21
 
 - Reorganize commands: assisted mode and expert mode
 
-## [0.2.6] 2020-04-20
+## [0.2.6] 2021-04-20
 
 - Display devHub org info in status TreeView
 - Add command hardis:project:create in menu
 - Display merge request info in status (beta)
 
-## [0.2.5] 2020-04-06
+## [0.2.5] 2021-04-06
 
 - Hyperlink to git repository in Status TreeView
 - Async start of WebSocket server
 - Add command to Simulate SFDX Deployment
 
-## [0.2.4] 2020-04-01
+## [0.2.4] 2021-04-01
 
 - Add packaging commands
 

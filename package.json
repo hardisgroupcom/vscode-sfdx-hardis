@@ -36,6 +36,11 @@
             "Command line"
           ],
           "description": "Defines if user input is in VsCode UI or in console"
+        },
+        "vsCodeSfdxHardis.disableGitBashCheck": {
+          "type": "boolean",
+          "default": false,
+          "description": "Disable check of Git Bash as default terminal"
         }
       }
     },
