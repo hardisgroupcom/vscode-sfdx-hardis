@@ -2,7 +2,8 @@ import * as vscode from "vscode";
 import * as path from "path";
 
 export class HardisCommandsProvider
-  implements vscode.TreeDataProvider<CommandTreeItem> {
+  implements vscode.TreeDataProvider<CommandTreeItem>
+{
   constructor(private workspaceRoot: string) {}
 
   getTreeItem(element: CommandTreeItem): vscode.TreeItem {

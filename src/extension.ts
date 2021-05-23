@@ -48,7 +48,7 @@ export function activate(context: vscode.ExtensionContext) {
     }
     // Adapt command to powershell if necessary
     if (terminal?.name?.includes("powershell")) {
-      command = command.replace(/ && /g," ; ").replace(/echo y/g,'echo "y"');
+      command = command.replace(/ && /g, " ; ").replace(/echo y/g, 'echo "y"');
     }
     terminal.sendText(command);
     // Scrolldown the terminal
@@ -71,9 +71,11 @@ export function activate(context: vscode.ExtensionContext) {
         // Check bash is the default terminal if we are on windows
         if (process.platform === "win32") {
           const terminalConfig = vscode.workspace.getConfiguration("terminal");
-          const selectedTerminal = terminalConfig.integrated?.shell?.windows || "";
+          const selectedTerminal =
+            terminalConfig.integrated?.shell?.windows || "";
           if (!selectedTerminal.includes("bash")) {
-            const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+            const config =
+              vscode.workspace.getConfiguration("vsCodeSfdxHardis");
             if (config.get("disableGitBashCheck") !== true) {
               vscode.commands.executeCommand(
                 "workbench.action.terminal.selectDefaultShell"
@@ -89,12 +91,10 @@ export function activate(context: vscode.ExtensionContext) {
                     vscode.env.openExternal(
                       vscode.Uri.parse("https://git-scm.com/downloads")
                     );
-                  }
-                  else {
-                    vscode.window
-                    .showInformationMessage(
+                  } else {
+                    vscode.window.showInformationMessage(
                       "If you do not want to see this message anymore, set VsCode setting vsCodeSfdxHardis.disableGitBashCheck to true"
-                    );                    
+                    );
                   }
                 });
               return;

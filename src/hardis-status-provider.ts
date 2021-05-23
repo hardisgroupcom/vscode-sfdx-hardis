@@ -3,7 +3,8 @@ import * as path from "path";
 import { execCommand, execSfdxJson } from "./utils";
 
 export class HardisStatusProvider
-  implements vscode.TreeDataProvider<StatusTreeItem> {
+  implements vscode.TreeDataProvider<StatusTreeItem>
+{
   constructor(private workspaceRoot: string) {}
 
   getTreeItem(element: StatusTreeItem): vscode.TreeItem {
@@ -189,12 +190,13 @@ export class HardisStatusProvider
           { fail: false, output: true }
         );
         if (mergeRequestRes?.result?.config?.mergeRequests) {
-          const mergeRequests = mergeRequestRes.result.config.mergeRequests.filter(
-            (mr: any) =>
-              mr !== null &&
-              mr.branch === branch &&
-              (mr.url !== null || mr.urlCreate !== null)
-          );
+          const mergeRequests =
+            mergeRequestRes.result.config.mergeRequests.filter(
+              (mr: any) =>
+                mr !== null &&
+                mr.branch === branch &&
+                (mr.url !== null || mr.urlCreate !== null)
+            );
           // Existing merge request
           if (mergeRequests[0] && mergeRequests[0].url) {
             items.push({
