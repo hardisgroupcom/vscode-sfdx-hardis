@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.5.0] 2020-05-25
+
+- Button to open new terminal, to run sfdx commands in parallel
+
 ## [0.4.2] 2021-05-23
 
 - Do not force to use git bash as terminal
