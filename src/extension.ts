@@ -137,11 +137,25 @@ export function activate(context: vscode.ExtensionContext) {
     "sfdx-hardis-commands",
     hardisCommandsProvider
   );
+  context.subscriptions.push(disposableTreeCommands);
+  // Refresh commands tree
   vscode.commands.registerCommand(
     "vscode-sfdx-hardis.refreshCommandsView",
     () => hardisCommandsProvider.refresh()
   );
-  context.subscriptions.push(disposableTreeCommands);
+  // New terminal command
+  vscode.commands.registerCommand("vscode-sfdx-hardis.newTerminal", () => {
+    vscode.commands.executeCommand(
+      "workbench.action.terminal.newInActiveWorkspace",
+      "SFDX Hardis"
+    );
+    new Promise((resolve) => setTimeout(resolve, 4000)).then(() => {
+      const newTerminal =
+        vscode.window.terminals[vscode.window.terminals.length - 1];
+      terminalStack.push(newTerminal);
+    });
+  });
+  // Open external command
   vscode.commands.registerCommand("vscode-sfdx-hardis.openExternal", (url) =>
     vscode.env.openExternal(url)
   );

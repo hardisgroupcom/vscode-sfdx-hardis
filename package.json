@@ -68,6 +68,14 @@
           "light": "resources/refresh-button.svg",
           "dark": "resources/refresh-button.svg"
         }
+      },
+      {
+        "command": "vscode-sfdx-hardis.newTerminal",
+        "title": "New SFDX Hardis terminal",
+        "icon": {
+          "light": "resources/add-button.svg",
+          "dark": "resources/add-button.svg"
+        }
       }
     ],
     "viewsContainers": {
@@ -100,6 +108,11 @@
         },
         {
           "command": "vscode-sfdx-hardis.refreshCommandsView",
+          "when": "view == sfdx-hardis-commands",
+          "group": "navigation"
+        },
+        {
+          "command": "vscode-sfdx-hardis.newTerminal",
           "when": "view == sfdx-hardis-commands",
           "group": "navigation"
         }
