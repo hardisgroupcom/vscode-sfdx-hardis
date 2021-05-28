@@ -54,6 +54,10 @@
         "title": "Open external url"
       },
       {
+        "command": "vscode-sfdx-hardis.openKeyFile",
+        "title": "Open key configuration file"
+      },
+      {
         "command": "vscode-sfdx-hardis.refreshStatusView",
         "title": "Refresh Status",
         "icon": {
