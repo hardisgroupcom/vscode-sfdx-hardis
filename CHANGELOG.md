@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.6.0] 2020-05-28
+
+- Shortcut command to open configuration files
+
 ## [0.5.0] 2020-05-25
 
 - Button to open new terminal, to run sfdx commands in parallel

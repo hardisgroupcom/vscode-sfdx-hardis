@@ -159,7 +159,6 @@ export class HardisCommandsProvider
             command: "sfdx force:org:open",
             icon: "salesforce.svg",
           },
-
           {
             id: "org:select",
             label: "Select a Salesforce org",
@@ -309,23 +308,16 @@ export class HardisCommandsProvider
         ],
       },
       {
-        id: "production",
-        label: "Production",
-        commands: [
-          {
-            id: "org:purge:flow",
-            label: "Purge obsolete flows",
-            tooltip:
-              "Purge all flows with status Obsolete in your org, so you are not bothered by the 50 versions limits",
-            icon: "flow.svg",
-            command: "sfdx hardis:org:purge:flow",
-          },
-        ],
-      },
-      {
         id: "config-commands",
         label: "Configuration",
         commands: [
+          {
+            id: "open-key-file",
+            label: "Open config file",
+            tooltip: "Shortcut to main configuration files",
+            icon: "file.svg",
+            command: "vscode-sfdx-hardis.openKeyFile",
+          },
           {
             id: "configure:auth:deployment",
             label: "Configure Org CI authentication",
@@ -379,6 +371,20 @@ export class HardisCommandsProvider
           },
         ],
       },
+      {
+        id: "production",
+        label: "Production",
+        commands: [
+          {
+            id: "org:purge:flow",
+            label: "Purge obsolete flows",
+            tooltip:
+              "Purge all flows with status Obsolete in your org, so you are not bothered by the 50 versions limits",
+            icon: "flow.svg",
+            command: "sfdx hardis:org:purge:flow",
+          },
+        ],
+      },
     ];
     return hardisCommands;
   }
@@ -405,13 +411,21 @@ class CommandTreeItem extends vscode.TreeItem {
     if (options.tooltip) {
       this.tooltip = options.tooltip;
     }
-    if (hardisCommand !== "") {
-      this.command = {
-        title: label,
-        command: "vscode-sfdx-hardis.execute-command",
-        arguments: [hardisCommand],
-      };
-      this.hardisCommand = hardisCommand;
+    if (hardisCommand !== "" && hardisCommand !== null) {
+      if (hardisCommand.startsWith("vscode-sfdx-hardis")) {
+        this.command = {
+          title: label,
+          command: hardisCommand.split(" ")[0],
+          arguments: [hardisCommand.split(" ")[1]],
+        };
+      } else {
+        this.command = {
+          title: label,
+          command: "vscode-sfdx-hardis.execute-command",
+          arguments: [hardisCommand],
+        };
+        this.hardisCommand = hardisCommand;
+      }
       if (options.icon) {
         this.iconPath = options.icon;
         this.iconPath.light = path.join(
