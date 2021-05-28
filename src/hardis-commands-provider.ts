@@ -314,8 +314,7 @@ export class HardisCommandsProvider
           {
             id: "open-key-file",
             label: "Open config file",
-            tooltip:
-              "Shortcut to main configuration files",
+            tooltip: "Shortcut to main configuration files",
             icon: "file.svg",
             command: "vscode-sfdx-hardis.openKeyFile",
           },
