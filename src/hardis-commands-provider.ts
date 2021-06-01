@@ -308,6 +308,34 @@ export class HardisCommandsProvider
         ],
       },
       {
+        id: "debug",
+        label: "Debugger",
+        commands: [
+          {
+            id: "hardis:debug:activate",
+            label: "Activate debug logs tracing",
+            tooltip:
+              "Activate tracing of logs to use the local replay debugger",
+            icon: "toggle-on.svg",
+            command: "vscode-sfdx-hardis.debug.activate",
+          },
+          {
+            id: "hardis:debug:run",
+            label: "Run debugger",
+            tooltip: "Run debugger on an apex log file",
+            icon: "debug.svg",
+            command: "vscode-sfdx-hardis.debug.launch",
+          },
+          {
+            id: "hardis:debug:deactivate",
+            label: "Deactivate ",
+            tooltip: "Deactivate debugger",
+            icon: "toggle-off.svg",
+            command: "vscode-sfdx-hardis.debug.deactivate",
+          },
+        ],
+      },
+      {
         id: "config-commands",
         label: "Configuration",
         commands: [

@@ -47,15 +47,27 @@
     "commands": [
       {
         "command": "vscode-sfdx-hardis.execute-command",
-        "title": "Execute sfdx-hardis command"
+        "title": "SFDX Hardis: Execute sfdx-hardis command"
       },
       {
         "command": "vscode-sfdx-hardis.openExternal",
-        "title": "Open external url"
+        "title": "SFDX Hardis: Open external url"
       },
       {
         "command": "vscode-sfdx-hardis.openKeyFile",
-        "title": "Open key configuration file"
+        "title": "SFDX Hardis: Open key configuration file"
+      },
+      {
+        "command": "vscode-sfdx-hardis.debug.activate",
+        "title": "SFDX Hardis: Activate debug logs tracing"
+      },
+      {
+        "command": "vscode-sfdx-hardis.debug.launch",
+        "title": "SFDX Hardis: Run apex replay debugger"
+      },
+      {
+        "command": "vscode-sfdx-hardis.debug.deactivate",
+        "title": "SFDX Hardis: Deactivate debug logs tracing"
       },
       {
         "command": "vscode-sfdx-hardis.refreshStatusView",
@@ -71,6 +83,14 @@
         "icon": {
           "light": "resources/refresh-button.svg",
           "dark": "resources/refresh-button.svg"
+        }
+      },
+      {
+        "command": "vscode-sfdx-hardis.debug.launch",
+        "title": "Run apex replay debugger",
+        "icon": {
+          "light": "resources/debug.svg",
+          "dark": "resources/debug.svg"
         }
       },
       {
@@ -108,6 +128,11 @@
         {
           "command": "vscode-sfdx-hardis.refreshStatusView",
           "when": "view == sfdx-hardis-status",
+          "group": "navigation"
+        },
+        {
+          "command": "vscode-sfdx-hardis.debug.launch",
+          "when": "view == sfdx-hardis-commands",
           "group": "navigation"
         },
         {

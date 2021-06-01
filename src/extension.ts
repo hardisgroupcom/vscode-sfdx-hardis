@@ -5,6 +5,7 @@ import * as path from "path";
 import * as vscode from "vscode";
 //import *  from './commands/vscode-sfdx-hardis.execute-command';
 import { HardisCommandsProvider } from "./hardis-commands-provider";
+import { HardisDebugger } from "./hardis-debugger";
 import { HardisStatusProvider } from "./hardis-status-provider";
 import { WebSocketServer } from "./hardis-websocket-server";
 import { getWorkspaceRoot } from "./utils";
@@ -162,6 +163,10 @@ export function activate(context: vscode.ExtensionContext) {
   vscode.commands.registerCommand("vscode-sfdx-hardis.openExternal", (url) =>
     vscode.env.openExternal(url)
   );
+
+  // Initialize Hardis Debugger commands
+  const hardisDebugger = new HardisDebugger();
+  context.subscriptions.push(hardisDebugger);
 
   // Open key file command
   vscode.commands.registerCommand(
