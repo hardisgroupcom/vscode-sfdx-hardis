@@ -314,7 +314,8 @@ export class HardisCommandsProvider
           {
             id: "hardis:debug:activate",
             label: "Activate debug logs tracing",
-            tooltip: "Activate tracing of logs to use the local replay debugger",
+            tooltip:
+              "Activate tracing of logs to use the local replay debugger",
             icon: "toggle-on.svg",
             command: "vscode-sfdx-hardis.debug.activate",
           },
@@ -332,7 +333,7 @@ export class HardisCommandsProvider
             icon: "toggle-off.svg",
             command: "vscode-sfdx-hardis.debug.deactivate",
           },
-        ]
+        ],
       },
       {
         id: "config-commands",
