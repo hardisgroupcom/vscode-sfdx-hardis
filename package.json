@@ -131,6 +131,11 @@
           "group": "navigation"
         },
         {
+          "command": "vscode-sfdx-hardis.debug.launch",
+          "when": "view == sfdx-hardis-commands",
+          "group": "navigation"
+        },
+        {
           "command": "vscode-sfdx-hardis.refreshCommandsView",
           "when": "view == sfdx-hardis-commands",
           "group": "navigation"
