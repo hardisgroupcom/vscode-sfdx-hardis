@@ -2,9 +2,13 @@
 
 ## [Unreleased]
 
+## [0.8.0] 2020-06-03
+
+- Add command: **Clean SFDX project from references not in org**
+
 ## [0.7.0] 2020-06-02
 
-- Debugger commands
+- Add Debugger commands
 
 ## [0.6.0] 2020-05-28
 
