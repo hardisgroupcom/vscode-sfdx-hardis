@@ -268,11 +268,19 @@ export class HardisCommandsProvider
           },
           {
             id: "project:clean:references",
-            label: "Clean SFDX project from references",
+            label: "Clean SFDX project from defined references",
             tooltip:
               "Remove from project the references to items that you don't want to publish",
             icon: "clean.svg",
             command: "sfdx hardis:project:clean:references",
+          },
+          {
+            id: "project:clean:orgmissingitems",
+            label: "Clean SFDX project from references not in org",
+            tooltip:
+              "Clean SFDX project from references not present in target deployment org",
+            icon: "clean.svg",
+            command: "sfdx hardis:project:clean:orgmissingitems",
           },
           {
             id: "project:deploy:sources:dx:check",
