@@ -31,7 +31,7 @@ export class HardisStatusProvider
    */
   private async getTopicElements(topic: any): Promise<StatusTreeItem[]> {
     const items: StatusTreeItem[] = [];
-    console.time("TreeViewItem_init_"+topic.id);
+    console.time("TreeViewItem_init_" + topic.id);
     const topicItems: any[] =
       topic.id === "status-org"
         ? await this.getOrgItems({ devHub: false })
@@ -42,7 +42,7 @@ export class HardisStatusProvider
         : topic.id === "status-plugins"
         ? await this.getPluginsItems()
         : [];
-    console.timeEnd("TreeViewItem_init_"+topic.id);
+    console.timeEnd("TreeViewItem_init_" + topic.id);
     for (const item of topicItems) {
       const options: any = {};
       if (item.icon) {
@@ -129,10 +129,10 @@ export class HardisStatusProvider
       }
       items.push({
         id: "select-another-org" + (options.devHub ? "-devhub" : ""),
-        label: `Select another `+(options.devHub ? "DevHub Org" : "Org"),
+        label: `Select another ` + (options.devHub ? "DevHub Org" : "Org"),
         tooltip: "Click to select an org",
         command: "sfdx hardis:org:select" + (options.devHub ? " --devhub" : ""),
-        icon: "select.svg"
+        icon: "select.svg",
       });
     } else {
       items.push({
@@ -140,7 +140,7 @@ export class HardisStatusProvider
         label: `Select an org`,
         tooltip: "Click to select and authenticate to an org",
         command: "sfdx hardis:org:select" + (options.devHub ? " --devhub" : ""),
-        icon: "select.svg"
+        icon: "select.svg",
       });
     }
     return items;

@@ -8,7 +8,7 @@
   - Retrieve Apex sources from org
   - Purge apex logs
 - Trace performances
-- Shortcuts to select org & dev hub 
+- Shortcuts to select org & dev hub
 
 ## [0.8.0] 2020-06-03
 
