@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [0.9.0] 2020-06-12
+
+- New command for debugger
+  - Retrieve Apex sources from org
+  - Purge apex logs
+- Trace performances
+- Shortcuts to select org & dev hub 
+
 ## [0.8.0] 2020-06-03
 
 - Add command: **Clean SFDX project from references not in org**
