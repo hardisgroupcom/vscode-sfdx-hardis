@@ -335,11 +335,28 @@ export class HardisCommandsProvider
             command: "vscode-sfdx-hardis.debug.launch",
           },
           {
+            id: "hardis:debug:importapex",
+            label: "Retrieve Apex sources from org",
+            tooltip:
+              "Retrieve sources from your org so you can use the replay debugger",
+            icon: "pull.svg",
+            command:
+              "sfdx hardis:org:retrieve:sources:dx -k ApexClass,ApexTrigger,ApexPage",
+          },
+          {
             id: "hardis:debug:deactivate",
-            label: "Deactivate ",
-            tooltip: "Deactivate debugger",
+            label: "Deactivate debug logs tracing ",
+            tooltip:
+              "Deactivate tracing of logs to use the local replay debugger",
             icon: "toggle-off.svg",
             command: "vscode-sfdx-hardis.debug.deactivate",
+          },
+          {
+            id: "org:purge:apexlog",
+            label: "Purge Apex Logs",
+            tooltip: "Purge all apex logs of default org",
+            icon: "file.svg",
+            command: "sfdx hardis:org:purge:apexlog",
           },
         ],
       },

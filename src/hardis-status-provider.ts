@@ -31,6 +31,7 @@ export class HardisStatusProvider
    */
   private async getTopicElements(topic: any): Promise<StatusTreeItem[]> {
     const items: StatusTreeItem[] = [];
+    console.time("TreeViewItem_init_" + topic.id);
     const topicItems: any[] =
       topic.id === "status-org"
         ? await this.getOrgItems({ devHub: false })
@@ -41,6 +42,7 @@ export class HardisStatusProvider
         : topic.id === "status-plugins"
         ? await this.getPluginsItems()
         : [];
+    console.timeEnd("TreeViewItem_init_" + topic.id);
     for (const item of topicItems) {
       const options: any = {};
       if (item.icon) {
@@ -86,10 +88,10 @@ export class HardisStatusProvider
       } else {
         items.push({
           id: "org-not-connected-devhub",
-          label: `No DevHub org selected`,
-          tooltip: "Use command 'Select a Salesforce DebHub' to select one",
+          label: `Select a DevHub org`,
+          tooltip: "Click to select and authenticate to a DevHub org",
           command: "sfdx hardis:org:select --devhub",
-          icon: "salesforce.svg",
+          icon: "select.svg",
         });
         return items;
       }
@@ -125,12 +127,20 @@ export class HardisStatusProvider
           tooltip: "You org will be available until this date",
         });
       }
-    } else {
       items.push({
-        id: "org-not-connected",
-        label: `No org selected`,
+        id: "select-another-org" + (options.devHub ? "-devhub" : ""),
+        label: `Select another ` + (options.devHub ? "DevHub Org" : "Org"),
         tooltip: "Click to select an org",
         command: "sfdx hardis:org:select" + (options.devHub ? " --devhub" : ""),
+        icon: "select.svg",
+      });
+    } else {
+      items.push({
+        id: "org-not-connected" + (options.devHub ? "-devhub" : ""),
+        label: `Select an org`,
+        tooltip: "Click to select and authenticate to an org",
+        command: "sfdx hardis:org:select" + (options.devHub ? " --devhub" : ""),
+        icon: "select.svg",
       });
     }
     return items;

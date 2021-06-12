@@ -13,9 +13,11 @@ export class WebSocketServer {
   private clients: any = {};
 
   constructor() {
+    console.time("WebSocketServer_init");
     this.server = http.createServer();
     this.wss = new WebSocket.Server({ server: this.server });
     globalWss = this;
+    console.timeEnd("WebSocketServer_init");
   }
 
   async start() {
@@ -28,9 +30,11 @@ export class WebSocketServer {
     }
     this.listen();
     //start our server
+    console.time("WebSocketServer_listen");
     this.server.listen(port, () => {
       this.websocketHostPort = `localhost:${port}`;
       console.log(`Data stream server started on port ${port}`);
+      console.timeEnd("WebSocketServer_listen");
     });
   }
 

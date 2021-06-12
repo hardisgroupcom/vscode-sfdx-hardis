@@ -16,6 +16,7 @@ let disposableWebSocketServer: WebSocketServer;
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+  console.time("Hardis_Activate");
   // Use the console to output diagnostic information (console.log) and errors (console.error)
   // This line of code will only be executed once when your extension is activated
   console.log("VsCode SFDX Hardis has been activated");
@@ -288,6 +289,8 @@ export function activate(context: vscode.ExtensionContext) {
   refreshInterval = setInterval(() => {
     vscode.commands.executeCommand("vscode-sfdx-hardis.refreshStatusView");
   }, 1800000);
+
+  console.timeEnd("Hardis_Activate");
 }
 
 // this method is called when your extension is deactivated
