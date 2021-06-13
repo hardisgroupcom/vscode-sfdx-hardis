@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.9.1] 2020-06-13
+
 - Allow "Don't ask again" option for Git Bash prompt
 
 ## [0.9.0] 2020-06-12
