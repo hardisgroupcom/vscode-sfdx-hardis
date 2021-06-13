@@ -86,14 +86,18 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Refresh commands if a sfdx-Project.json has been added
   vscode.workspace.onDidCreateFiles((event) => {
-    if (event.files.filter(uri => uri.fsPath.includes('sfdx-project.json'))) {
+    if (event.files.filter((uri) => uri.fsPath.includes("sfdx-project.json"))) {
       vscode.commands.executeCommand("vscode-sfdx-hardis.refreshCommandsView");
     }
   });
 
   // Refresh commands if a sfdx-Project.json has been added
   vscode.workspace.onDidRenameFiles((event) => {
-    if (event.files.filter(rename => rename.newUri.fsPath.includes('sfdx-project.json'))) {
+    if (
+      event.files.filter((rename) =>
+        rename.newUri.fsPath.includes("sfdx-project.json")
+      )
+    ) {
       vscode.commands.executeCommand("vscode-sfdx-hardis.refreshCommandsView");
     }
   });
