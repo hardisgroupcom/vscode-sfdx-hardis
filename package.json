@@ -54,6 +54,10 @@
         "title": "SFDX Hardis: Open external url"
       },
       {
+        "command": "vscode-sfdx-hardis.showMessage",
+        "title": "SFDX Hardis: Show message"
+      },
+      {
         "command": "vscode-sfdx-hardis.openKeyFile",
         "title": "SFDX Hardis: Open key configuration file"
       },

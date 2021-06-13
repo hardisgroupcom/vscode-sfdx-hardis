@@ -68,6 +68,10 @@ export class WebSocketServer {
     else if (data.event === "refreshStatus") {
       vscode.commands.executeCommand("vscode-sfdx-hardis.refreshStatusView");
     }
+    // Request to refresh commands box
+    else if (data.event === "refreshCommands") {
+      vscode.commands.executeCommand("vscode-sfdx-hardis.refreshCommandsView");
+    }
     // Request user input
     else if (data.event === "prompts") {
       const prompt = data.prompts[0];

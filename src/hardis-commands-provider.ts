@@ -1,10 +1,11 @@
 import * as vscode from "vscode";
 import * as path from "path";
+import { hasSfdxProjectJson } from "./utils";
 
 export class HardisCommandsProvider
   implements vscode.TreeDataProvider<CommandTreeItem>
 {
-  constructor(private workspaceRoot: string) {}
+  constructor(private workspaceRoot: string) { }
 
   getTreeItem(element: CommandTreeItem): vscode.TreeItem {
     return element;
@@ -13,11 +14,11 @@ export class HardisCommandsProvider
   getChildren(element?: CommandTreeItem): Thenable<CommandTreeItem[]> {
     if (!this.workspaceRoot) {
       vscode.window.showInformationMessage(
-        "No commands available until you open a Salesforce project"
+        "No commands available until you open a folder"
       );
       return Promise.resolve([]);
     }
-
+    hasSfdxProjectJson({ recalc: true });
     if (element) {
       return Promise.resolve(this.getTopicCommands(element));
     } else {
@@ -43,6 +44,9 @@ export class HardisCommandsProvider
       }
       if (item.tooltip) {
         options.tooltip = item.tooltip;
+      }
+      if (item.requiresProject) {
+        options.requiresProject = item.requiresProject;
       }
       items.push(
         new CommandTreeItem(
@@ -79,6 +83,7 @@ export class HardisCommandsProvider
         icon: { light: "user.svg", dark: "user.svg" },
         description: "",
         tooltip: "",
+        requiresProject: false
       };
       if (item.icon) {
         options.icon = { light: item.icon, dark: item.icon };
@@ -88,6 +93,9 @@ export class HardisCommandsProvider
       }
       if (item.tooltip) {
         options.description = item.tooltip;
+      }
+      if (item.requiresProject) {
+        options.requiresProject = item.requiresProject;
       }
       const expanded = item.defaultExpand
         ? vscode.TreeItemCollapsibleState.Expanded
@@ -114,6 +122,7 @@ export class HardisCommandsProvider
             icon: "new.svg",
             tooltip:
               "Create a new environment to develop or configure with a scratch org",
+            requiresProject: true
           },
           {
             id: "org:open-scratch",
@@ -129,6 +138,7 @@ export class HardisCommandsProvider
             icon: "save.svg",
             tooltip:
               "Save to server you current work, and propose to create a merge request",
+            requiresProject: true
           },
           {
             id: "hardis:work:resetselection",
@@ -137,6 +147,7 @@ export class HardisCommandsProvider
             icon: "reset.svg",
             tooltip:
               "If you made a wrong selection of items to publish, you can reset the selection and save it again",
+            requiresProject: true
           },
           {
             id: "hardis:work:refresh",
@@ -145,6 +156,7 @@ export class HardisCommandsProvider
               "If your colleagues published their work, makes sure that your work is up to date with their latest developments/configurations",
             command: "sfdx hardis:work:refresh",
             icon: "refresh.svg",
+            requiresProject: true
           },
         ],
       },
@@ -189,6 +201,7 @@ export class HardisCommandsProvider
               "This will update project .sfdx-hardis.yml so the package will always be installed in new scratch orgs and future deployments",
             icon: "package.svg",
             command: "sfdx hardis:package:install",
+            requiresProject: true
           },
           {
             id: "org:test:apex",
@@ -197,6 +210,7 @@ export class HardisCommandsProvider
             tooltip:
               "Runs all apex tests on the selected org. Will trigger error if minimum apex code coverage is not reached",
             icon: "test.svg",
+            requiresProject: true
           },
           {
             id: "org:password:generate",
@@ -205,6 +219,7 @@ export class HardisCommandsProvider
             tooltip:
               "Generates a new password for your current scratch org user",
             icon: "password.svg",
+            requiresProject: true
           },
         ],
       },
@@ -219,6 +234,7 @@ export class HardisCommandsProvider
               "If during Work:New you had an error, you can resume the scratch org creation",
             icon: "salesforce.svg",
             command: "sfdx hardis:scratch:create",
+            requiresProject: true
           },
           {
             id: "scratch:create:new",
@@ -226,6 +242,7 @@ export class HardisCommandsProvider
             tooltip: "Create a new scratch org for the current work",
             icon: "salesforce.svg",
             command: "sfdx hardis:scratch:create --forcenew",
+            requiresProject: true
           },
           {
             id: "scratch:push-from-git-to-org",
@@ -234,6 +251,7 @@ export class HardisCommandsProvider
               "Propagates your local updates within Vs Code into your remote Salesforce scratch org",
             command: "sfdx hardis:scratch:push",
             icon: "push.svg",
+            requiresProject: true
           },
           {
             id: "scratch:pull-from-org-to-git",
@@ -242,6 +260,7 @@ export class HardisCommandsProvider
               "Retrieve locally the updates made on the remote Salesforce scratch org",
             command: "sfdx hardis:scratch:pull",
             icon: "pull.svg",
+            requiresProject: true
           },
           {
             id: "hardis:work:save-expert",
@@ -250,6 +269,7 @@ export class HardisCommandsProvider
             icon: "save.svg",
             tooltip:
               "Do all the work:save operations except scratch pull and git operations",
+            requiresProject: true
           },
           {
             id: "org:data:export",
@@ -258,6 +278,7 @@ export class HardisCommandsProvider
               "Export data from org and store it in project files, so it can be loaded during each scratch org initialization",
             icon: "data.svg",
             command: "sfdx hardis:org:data:export",
+            requiresProject: true
           },
           {
             id: "org:data:import",
@@ -265,6 +286,7 @@ export class HardisCommandsProvider
             tooltip: "Import data into org from project files",
             icon: "data.svg",
             command: "sfdx hardis:org:data:import",
+            requiresProject: true
           },
           {
             id: "project:clean:references",
@@ -273,6 +295,7 @@ export class HardisCommandsProvider
               "Remove from project the references to items that you don't want to publish",
             icon: "clean.svg",
             command: "sfdx hardis:project:clean:references",
+            requiresProject: true
           },
           {
             id: "project:clean:orgmissingitems",
@@ -281,6 +304,7 @@ export class HardisCommandsProvider
               "Clean SFDX project from references not present in target deployment org",
             icon: "clean.svg",
             command: "sfdx hardis:project:clean:orgmissingitems",
+            requiresProject: true
           },
           {
             id: "project:deploy:sources:dx:check",
@@ -289,6 +313,7 @@ export class HardisCommandsProvider
               "Simulates deployment from local SFDX source to target org",
             icon: "test.svg",
             command: "sfdx hardis:project:deploy:sources:dx --check",
+            requiresProject: true
           },
           {
             id: "org:retrieve:sources:dx",
@@ -326,6 +351,7 @@ export class HardisCommandsProvider
               "Activate tracing of logs to use the local replay debugger",
             icon: "toggle-on.svg",
             command: "vscode-sfdx-hardis.debug.activate",
+            requiresProject: true
           },
           {
             id: "hardis:debug:run",
@@ -333,6 +359,7 @@ export class HardisCommandsProvider
             tooltip: "Run debugger on an apex log file",
             icon: "debug.svg",
             command: "vscode-sfdx-hardis.debug.launch",
+            requiresProject: true
           },
           {
             id: "hardis:debug:importapex",
@@ -341,7 +368,7 @@ export class HardisCommandsProvider
               "Retrieve sources from your org so you can use the replay debugger",
             icon: "pull.svg",
             command:
-              "sfdx hardis:org:retrieve:sources:dx -k ApexClass,ApexTrigger,ApexPage",
+              "sfdx hardis:org:retrieve:sources:dx -k ApexClass,ApexTrigger,ApexPage"
           },
           {
             id: "hardis:debug:deactivate",
@@ -350,13 +377,14 @@ export class HardisCommandsProvider
               "Deactivate tracing of logs to use the local replay debugger",
             icon: "toggle-off.svg",
             command: "vscode-sfdx-hardis.debug.deactivate",
+            requiresProject: true
           },
           {
             id: "org:purge:apexlog",
             label: "Purge Apex Logs",
             tooltip: "Purge all apex logs of default org",
             icon: "file.svg",
-            command: "sfdx hardis:org:purge:apexlog",
+            command: "sfdx hardis:org:purge:apexlog"
           },
         ],
       },
@@ -378,6 +406,7 @@ export class HardisCommandsProvider
               "Assisted configuration to connect a protected branch and its related release org during CI",
             icon: "configure.svg",
             command: "sfdx hardis:project:configure:auth",
+            requiresProject: true
           },
           {
             id: "configure:auth:devhub",
@@ -386,6 +415,7 @@ export class HardisCommandsProvider
             tooltip:
               "Assisted configuration to connect to a Dev Hub org during CI",
             command: "sfdx hardis:project:configure:auth --devhub",
+            requiresProject: true
           },
           {
             id: "org:configure:monitoring",
@@ -407,6 +437,7 @@ export class HardisCommandsProvider
             tooltip: "Second generation packages, unlocked or managed",
             icon: "package.svg",
             command: "sfdx hardis:package:create",
+            requiresProject: true
           },
           {
             id: "hardis:package:version:list",
@@ -414,6 +445,7 @@ export class HardisCommandsProvider
             tooltip: "Create a new versions of a package",
             icon: "package.svg",
             command: "sfdx hardis:package:version:list",
+            requiresProject: true
           },
           {
             id: "hardis:package:version:create",
@@ -421,6 +453,7 @@ export class HardisCommandsProvider
             tooltip: "Create a new versions of a package",
             icon: "package.svg",
             command: "sfdx hardis:package:version:create",
+            requiresProject: true
           },
         ],
       },
@@ -443,6 +476,8 @@ export class HardisCommandsProvider
   }
 }
 
+
+
 // Build a tree item from data
 class CommandTreeItem extends vscode.TreeItem {
   constructor(
@@ -454,6 +489,7 @@ class CommandTreeItem extends vscode.TreeItem {
       icon: { light: "salesforce.svg", dark: "salesforce.svg" },
       description: "",
       tooltip: "",
+      requiresProject: false
     }
   ) {
     super(label, collapsibleState);
@@ -496,6 +532,17 @@ class CommandTreeItem extends vscode.TreeItem {
           this.iconPath.dark.toString()
         );
       }
+    }
+    // Manage unavailable command
+    if (options.requiresProject === true && !hasSfdxProjectJson()) {
+      this.command = {
+        title: "SFDX project is required to run this command",
+        command: "vscode-sfdx-hardis.showMessage",
+        arguments: [
+          "You need a SFDX project to run this command. Open one with File -> Open folder, or create one with 'Create SFDX project' or 'Retrieve DX Sources from org' commands",
+          "error"
+        ]
+      };
     }
   }
 }
