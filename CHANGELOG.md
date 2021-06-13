@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Allow "Don't ask again" option for Git Bash prompt
+
 ## [0.9.0] 2020-06-12
 
 - New command for debugger

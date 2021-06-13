@@ -86,18 +86,21 @@ export function activate(context: vscode.ExtensionContext) {
               );
               vscode.window
                 .showInformationMessage(
-                  "You need git bash selected as default terminal shell (do it in the opened dialog at the top of the screen)",
+                  "It is recommended to use Git Bash as default terminal shell (do it in the opened dialog at the top of the screen)",
                   "Download Git Bash",
-                  "Ignore"
+                  "Ignore",
+                  "Don't ask again"
                 )
                 .then((selection) => {
                   if (selection === "Download Git Bash") {
                     vscode.env.openExternal(
                       vscode.Uri.parse("https://git-scm.com/downloads")
                     );
+                  } else if (selection === "Don't ask again") {
+                    config.update("disableGitBashCheck", true);
                   } else {
                     vscode.window.showInformationMessage(
-                      "If you do not want to see this message anymore, set VsCode setting vsCodeSfdxHardis.disableGitBashCheck to true"
+                      "If you do not want to see this message anymore, set VsCode setting vsCodeSfdxHardis.disableGitBashCheck to true, or click on Don't ask again"
                     );
                   }
                 });
