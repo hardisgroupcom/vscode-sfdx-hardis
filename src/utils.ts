@@ -1,5 +1,7 @@
 import * as c from "chalk";
 import * as child from "child_process";
+import * as fs from "fs-extra";
+import * as path from "path";
 import * as util from "util";
 import * as vscode from "vscode";
 const exec = util.promisify(child.exec);
@@ -104,4 +106,16 @@ export function getWorkspaceRoot() {
     currentWorkspaceFolderUri = currentWorkspaceFolderUri.substr(1);
   }
   return currentWorkspaceFolderUri;
+}
+
+let sfdxProjectJsonFound: boolean | null = null;
+export function hasSfdxProjectJson(
+  options: { recalc: boolean } = { recalc: false }
+) {
+  if (sfdxProjectJsonFound === null || options.recalc === true) {
+    sfdxProjectJsonFound = fs.existsSync(
+      path.join(getWorkspaceRoot(), "sfdx-project.json")
+    );
+  }
+  return sfdxProjectJsonFound;
 }

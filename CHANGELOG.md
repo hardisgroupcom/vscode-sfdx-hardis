@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+## [1.0.0] 2020-06-14
+
+- Fix Git Bash terminal check
+- Split extension.ts file for better code organization
+- Disable commands requiring a SFDX Project
+- Refresh VsCode Window when a SFDX Project is created to activate Salesforce Extensions
+
 ## [0.9.1] 2020-06-13
 
 - Allow "Don't ask again" option for Git Bash prompt
