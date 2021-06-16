@@ -323,7 +323,7 @@ export class HardisCommandsProvider
             command: "sfdx hardis:project:generate:gitdelta",
             requiresProject: true,
           },
-          
+
           {
             id: "project:deploy:sources:dx:check",
             label: "Simulate SFDX deployment",
