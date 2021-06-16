@@ -66,6 +66,7 @@
     "forcenew",
     "forceoverwrite",
     "genrsa",
+    "gitdelta",
     "gitlab",
     "globby",
     "hardcode",

@@ -187,6 +187,14 @@ export class HardisCommandsProvider
             icon: "select.svg",
           },
           {
+            id: "org:connect",
+            label: "Connect to a Salesforce org",
+            tooltip:
+              "Connects to a Salesforce org without setting it as defaultusername",
+            command: "sfdx hardis:org:connect",
+            icon: "select.svg",
+          },
+          {
             id: "org:logout",
             label: "Logout from current Org and DevHub",
             command:
@@ -306,6 +314,16 @@ export class HardisCommandsProvider
             command: "sfdx hardis:project:clean:orgmissingitems",
             requiresProject: true,
           },
+          {
+            id: "project:generate:gitdelta",
+            label: "Generate package.xml git delta",
+            tooltip:
+              "Generate package.xml & destructiveChanges.xml using git delta between 2 commit hashes",
+            icon: "git.svg",
+            command: "sfdx hardis:project:generate:gitdelta",
+            requiresProject: true,
+          },
+
           {
             id: "project:deploy:sources:dx:check",
             label: "Simulate SFDX deployment",
