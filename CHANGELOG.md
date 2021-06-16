@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [1.1.0] 2020-06-16
+
+- New commands
+  - Generate package.xml from git diff
+  - Connect to an org (without set default username)
+
 ## [1.0.0] 2020-06-14
 
 - Fix Git Bash terminal check
