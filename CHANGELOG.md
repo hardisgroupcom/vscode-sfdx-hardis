@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.2.0] 2020-06-17
+
+- Workaround to decode Outlook365 SafeLink encrypted Urls
+
 ## [1.1.0] 2020-06-16
 
 - New commands

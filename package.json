@@ -54,6 +54,14 @@
         "title": "SFDX Hardis: Open external url"
       },
       {
+        "command": "vscode-sfdx-hardis.openValidationLink",
+        "title": "SFDX Hardis: Open encrypted Salesforce account validation / reset password URL",
+        "icon": {
+          "light": "resources/password.svg",
+          "dark": "resources/password.svg"
+        }
+      },
+      {
         "command": "vscode-sfdx-hardis.showMessage",
         "title": "SFDX Hardis: Show message"
       },
@@ -129,6 +137,11 @@
     },
     "menus": {
       "view/title": [
+        {
+          "command": "vscode-sfdx-hardis.openValidationLink",
+          "when": "view == sfdx-hardis-commands",
+          "group": "navigation"
+        },
         {
           "command": "vscode-sfdx-hardis.refreshStatusView",
           "when": "view == sfdx-hardis-status",
