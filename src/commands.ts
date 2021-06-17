@@ -230,19 +230,18 @@ export class Commands {
         const inputBoxOptions: vscode.InputBoxOptions = {
           prompt: "Please paste your Salesforce validation link here",
           placeHolder: "Enter Outlook encoded link here",
-          ignoreFocusOut: true
+          ignoreFocusOut: true,
         };
         const encodedUrl = await vscode.window.showInputBox(inputBoxOptions);
         const afterUrl = encodedUrl?.split("url=")[1];
         const beforeAndAmp = afterUrl?.split("&amp")[0];
-        const decodedUrl = decodeURIComponent(beforeAndAmp || '');
-        if (decodedUrl !== '') {
+        const decodedUrl = decodeURIComponent(beforeAndAmp || "");
+        if (decodedUrl !== "") {
           vscode.commands.executeCommand(
             "vscode-sfdx-hardis.openExternal",
             decodedUrl
           );
-        }
-        else {
+        } else {
           vscode.window.showErrorMessage(
             "This URL is not a valid Outlook validation link",
             "Close"
