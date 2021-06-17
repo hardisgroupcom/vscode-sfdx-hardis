@@ -24,6 +24,7 @@ export class Commands {
 
   registerCommands() {
     this.registerExecuteCommand();
+    this.registerOpenValidationLink();
     this.registerNewTerminalCommand();
     this.registerRefreshCommandsView();
     this.registerRefreshStatusView();
@@ -215,6 +216,36 @@ export class Commands {
           vscode.window.showErrorMessage(msg);
         } else {
           vscode.window.showInformationMessage(msg);
+        }
+      }
+    );
+    this.disposables.push(disposable);
+  }
+
+  registerOpenValidationLink() {
+    // Open external command
+    const disposable = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.openValidationLink",
+      async () => {
+        const inputBoxOptions: vscode.InputBoxOptions = {
+          prompt: "Please paste your Salesforce validation link here",
+          placeHolder: "Enter Outlook encoded link here",
+          ignoreFocusOut: true,
+        };
+        const encodedUrl = await vscode.window.showInputBox(inputBoxOptions);
+        const afterUrl = encodedUrl?.split("url=")[1];
+        const beforeAndAmp = afterUrl?.split("&amp")[0];
+        const decodedUrl = decodeURIComponent(beforeAndAmp || "");
+        if (decodedUrl !== "") {
+          vscode.commands.executeCommand(
+            "vscode-sfdx-hardis.openExternal",
+            decodedUrl
+          );
+        } else {
+          vscode.window.showErrorMessage(
+            "This URL is not a valid Outlook validation link",
+            "Close"
+          );
         }
       }
     );
