@@ -18,6 +18,7 @@ export async function execCommand(
   }
 ): Promise<any> {
   const commandLog = `[sfdx-hardis][command] ${c.bold(c.grey(command))}`;
+  console.time(command);
   let commandResult = null;
   // Call command (disable color before for json parsing)
   const prevForceColor = process.env.FORCE_COLOR;
@@ -30,6 +31,7 @@ export async function execCommand(
   try {
     commandResult = await exec(command, execOptions);
   } catch (e) {
+    console.timeEnd(command);
     process.env.FORCE_COLOR = prevForceColor;
     // Display error in red if not json
     if (!command.includes("--json") || options.fail) {
@@ -42,6 +44,7 @@ export async function execCommand(
       errorMessage: `[sfdx-hardis][ERROR] Error processing command\n$${e.stdout}\n${e.stderr}`,
     };
   }
+  console.timeEnd(command);
   // Display output if requested, for better user understanding of the logs
   if (options.output || options.debug) {
     console.log(c.italic(c.grey(commandResult.stdout.toString())));

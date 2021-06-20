@@ -102,11 +102,13 @@ export class WebSocketServer {
         const quickpick = vscode.window.createQuickPick<vscode.QuickPickItem>();
         const value = await new Promise<any>((resolve) => {
           quickpick.ignoreFocusOut = true;
-          (quickpick.title = stripAnsi(prompt.message)),
-            (quickpick.canSelectMany = prompt.type === "multiselect");
+          quickpick.title = stripAnsi(prompt.message);
+          quickpick.canSelectMany = prompt.type === "multiselect";
           quickpick.items = prompt.choices.map((choice: any) => {
             const quickPickItem: vscode.QuickPickItem = {
-              label: stripAnsi(choice.title),
+              label: stripAnsi(
+                choice.title
+              ) /*+ ((choice.selected === true && prompt.type === "select" && !choice.title.includes('(default)')) ? ' (default) ' : '')*/,
               detail: stripAnsi(choice.description || ""),
               picked: choice.selected === true,
             };

@@ -1,6 +1,8 @@
 import * as vscode from "vscode";
+import * as npmApi from "npm-api";
 import * as path from "path";
 import { execCommand, execSfdxJson } from "./utils";
+const npm = new npmApi();
 
 export class HardisStatusProvider
   implements vscode.TreeDataProvider<StatusTreeItem>
@@ -263,11 +265,7 @@ export class HardisStatusProvider
     if (sfdxCliVersionMatch) {
       sfdxCliVersion = sfdxCliVersionMatch[1];
     }
-    const latestSfdxCliVersion = (
-      await execCommand(`npm show sfdx-cli version`, this, {
-        fail: false,
-      })
-    ).stdout.trim();
+    const latestSfdxCliVersion = await npm.repo("sfdx-cli").prop("version");
     const sfdxCliItem = {
       id: `sfdx-cli-info`,
       label: `sfdx-cli v${sfdxCliVersion}`,
@@ -293,11 +291,7 @@ export class HardisStatusProvider
     // Check installed plugins status version
     const pluginPromises = plugins.map(async (plugin) => {
       // Check latest plugin version
-      const latestPluginVersion = (
-        await execCommand(`npm show ${plugin.name} version`, this, {
-          fail: false,
-        })
-      ).stdout;
+      const latestPluginVersion = await npm.repo(plugin.name).prop("version");
       let pluginLabel = plugin.name;
       const regexVersion = new RegExp(`${plugin.name} (.*)`, "gm");
       const versionMatches = [...sfdxPlugins.matchAll(regexVersion)];
@@ -317,12 +311,14 @@ export class HardisStatusProvider
         pluginItem.label =
           pluginItem.label.includes("missing") &&
           !pluginItem.label.includes("(link)")
-            ? pluginItem.label
+            ? pluginItem.label.replace("(link)", "(localdev)")
             : pluginItem.label + " (upgrade available)";
         pluginItem.command = `echo y|sfdx plugins:install ${plugin.name}`;
         pluginItem.tooltip = `Click to upgrade SFDX plugin ${plugin.name} to ${latestPluginVersion}`;
-        pluginItem.icon = "warning.svg";
-        outdated.push(plugin);
+        if (!pluginItem.label.includes("(localdev)")) {
+          pluginItem.icon = "warning.svg";
+          outdated.push(plugin);
+        }
       }
       items.push(pluginItem);
     });
