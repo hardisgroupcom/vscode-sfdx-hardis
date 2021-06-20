@@ -106,7 +106,9 @@ export class WebSocketServer {
           quickpick.canSelectMany = prompt.type === "multiselect";
           quickpick.items = prompt.choices.map((choice: any) => {
             const quickPickItem: vscode.QuickPickItem = {
-              label: stripAnsi(choice.title) /*+ ((choice.selected === true && prompt.type === "select" && !choice.title.includes('(default)')) ? ' (default) ' : '')*/,
+              label: stripAnsi(
+                choice.title
+              ) /*+ ((choice.selected === true && prompt.type === "select" && !choice.title.includes('(default)')) ? ' (default) ' : '')*/,
               detail: stripAnsi(choice.description || ""),
               picked: choice.selected === true,
             };

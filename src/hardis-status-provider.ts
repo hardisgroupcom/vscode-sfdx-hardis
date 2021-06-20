@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import * as npmApi from 'npm-api';
+import * as npmApi from "npm-api";
 import * as path from "path";
 import { execCommand, execSfdxJson } from "./utils";
 const npm = new npmApi();
@@ -7,7 +7,7 @@ const npm = new npmApi();
 export class HardisStatusProvider
   implements vscode.TreeDataProvider<StatusTreeItem>
 {
-  constructor(private workspaceRoot: string) { }
+  constructor(private workspaceRoot: string) {}
 
   getTreeItem(element: StatusTreeItem): vscode.TreeItem {
     return element;
@@ -38,12 +38,12 @@ export class HardisStatusProvider
       topic.id === "status-org"
         ? await this.getOrgItems({ devHub: false })
         : topic.id === "status-org-devhub"
-          ? await this.getOrgItems({ devHub: true })
-          : topic.id === "status-git"
-            ? await this.getGitItems()
-            : topic.id === "status-plugins"
-              ? await this.getPluginsItems()
-              : [];
+        ? await this.getOrgItems({ devHub: true })
+        : topic.id === "status-git"
+        ? await this.getGitItems()
+        : topic.id === "status-plugins"
+        ? await this.getPluginsItems()
+        : [];
     console.timeEnd("TreeViewItem_init_" + topic.id);
     for (const item of topicItems) {
       const options: any = {};
@@ -276,7 +276,7 @@ export class HardisStatusProvider
     if (sfdxCliVersion !== latestSfdxCliVersion) {
       sfdxCliItem.label =
         sfdxCliItem.label.includes("missing") &&
-          !sfdxCliItem.label.includes("(link)")
+        !sfdxCliItem.label.includes("(link)")
           ? sfdxCliItem.label
           : sfdxCliItem.label + " (upgrade available)";
       sfdxCliItem.command = `npm install sfdx-cli -g`;
@@ -310,12 +310,12 @@ export class HardisStatusProvider
       if (!sfdxPlugins.includes(`${plugin.name} ${latestPluginVersion}`)) {
         pluginItem.label =
           pluginItem.label.includes("missing") &&
-            !pluginItem.label.includes("(link)")
-            ? pluginItem.label.replace('(link)', "(localdev)")
+          !pluginItem.label.includes("(link)")
+            ? pluginItem.label.replace("(link)", "(localdev)")
             : pluginItem.label + " (upgrade available)";
         pluginItem.command = `echo y|sfdx plugins:install ${plugin.name}`;
         pluginItem.tooltip = `Click to upgrade SFDX plugin ${plugin.name} to ${latestPluginVersion}`;
-        if (!pluginItem.label.includes('(localdev)')) {
+        if (!pluginItem.label.includes("(localdev)")) {
           pluginItem.icon = "warning.svg";
           outdated.push(plugin);
         }

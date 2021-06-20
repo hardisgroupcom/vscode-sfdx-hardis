@@ -1,1 +1,1 @@
-declare module "npm-api"
+declare module "npm-api";
