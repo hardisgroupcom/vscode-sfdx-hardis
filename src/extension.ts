@@ -51,10 +51,12 @@ export function activate(context: vscode.ExtensionContext) {
   // Manage WebSocket server to communicate with sfdx-hardis cli plugin
   function startWebSocketServer() {
     return new Promise((resolve) => {
-      commands.disposableWebSocketServer = new WebSocketServer();
-      commands.disposableWebSocketServer.start();
-      context.subscriptions.push(commands.disposableWebSocketServer);
-      resolve(commands.disposableWebSocketServer);
+      setTimeout(() => { // Wait a while to run WebSocket server, as it can be time consuming
+        commands.disposableWebSocketServer = new WebSocketServer();
+        commands.disposableWebSocketServer.start();
+        context.subscriptions.push(commands.disposableWebSocketServer);
+        resolve(commands.disposableWebSocketServer);
+      }, 5000);
     });
   }
 

@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.2.1] 2020-06-20
+
+- Try to improve startup performances
+
 ## [1.2.0] 2020-06-17
 
 - Workaround to decode Outlook365 SafeLink encrypted Urls
