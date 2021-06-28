@@ -1,7 +1,7 @@
 {
   "name": "vscode-sfdx-hardis",
   "displayName": "SFDX Hardis",
-  "description": "Vs Code Wrapper for sfdx-hardis tooling",
+  "description": "Handle Salesforce DX and Git without knowing Salesforce DX or Git !",
   "version": "1.2.1",
   "icon": "resources/hardis-logo.png",
   "publisher": "NicolasVuillamy",
