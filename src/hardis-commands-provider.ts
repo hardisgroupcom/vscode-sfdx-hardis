@@ -321,7 +321,6 @@ export class HardisCommandsProvider
               "Generate package.xml & destructiveChanges.xml using git delta between 2 commit hashes",
             icon: "git.svg",
             command: "sfdx hardis:project:generate:gitdelta",
-            requiresProject: true,
           },
 
           {
