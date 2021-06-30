@@ -5,7 +5,7 @@ import { hasSfdxProjectJson } from "./utils";
 export class HardisCommandsProvider
   implements vscode.TreeDataProvider<CommandTreeItem>
 {
-  constructor(private workspaceRoot: string) { }
+  constructor(private workspaceRoot: string) {}
 
   getTreeItem(element: CommandTreeItem): vscode.TreeItem {
     return element;
@@ -111,8 +111,7 @@ export class HardisCommandsProvider
             options
           )
         );
-      }
-      else {
+      } else {
         items.push(
           new CommandTreeItem(item.label, item.id, "", expanded, options)
         );

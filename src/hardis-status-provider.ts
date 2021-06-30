@@ -126,7 +126,7 @@ export class HardisStatusProvider
       if (orgInfo.expirationDate) {
         const expiration = moment(orgInfo.expirationDate);
         const today = moment();
-        const daysBeforeExpiration = expiration.diff(today,'days');
+        const daysBeforeExpiration = expiration.diff(today, "days");
         const item: any = {
           id: "org-info-expiration-date" + (options.devHub ? "-devhub" : ""),
           label: `Expires on ${orgInfo.expirationDate}`,
@@ -136,13 +136,11 @@ export class HardisStatusProvider
           item.icon = "warning-red.svg";
           item.tooltip = `You org expired on ${orgInfo.expirationDate}. You need to create a new one.`;
           vscode.window.showErrorMessage(item.tooltip);
-        }
-        else if (daysBeforeExpiration < 3) {
+        } else if (daysBeforeExpiration < 3) {
           item.icon = "warning-red.svg";
           item.tooltip = `You scratch org will expire in ${daysBeforeExpiration} days !!! Save your scratch org content and create a new one or your work will be lost !!!`;
           vscode.window.showErrorMessage(item.tooltip);
-        }
-        else if (daysBeforeExpiration < 7) {
+        } else if (daysBeforeExpiration < 7) {
           item.icon = "warning.svg";
           item.tooltip = `Your scratch org will expire in ${daysBeforeExpiration} days. You should soon create a new scratch org to avoid loosing your work`;
           vscode.window.showWarningMessage(item.tooltip);
