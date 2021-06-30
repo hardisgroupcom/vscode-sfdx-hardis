@@ -5,7 +5,7 @@ import { hasSfdxProjectJson } from "./utils";
 export class HardisCommandsProvider
   implements vscode.TreeDataProvider<CommandTreeItem>
 {
-  constructor(private workspaceRoot: string) {}
+  constructor(private workspaceRoot: string) { }
 
   getTreeItem(element: CommandTreeItem): vscode.TreeItem {
     return element;
@@ -126,8 +126,8 @@ export class HardisCommandsProvider
           },
           {
             id: "org:open-scratch",
-            label: "Open my scratch org in browser",
-            tooltip: "Opens your currently selected scratch org or other org",
+            label: "Open my org in browser",
+            tooltip: "Opens your currently selected scratch org or other org in web browser",
             command: "sfdx force:org:open",
             icon: "salesforce.svg",
           },
@@ -156,77 +156,6 @@ export class HardisCommandsProvider
               "If your colleagues published their work, makes sure that your work is up to date with their latest developments/configurations",
             command: "sfdx hardis:work:refresh",
             icon: "refresh.svg",
-            requiresProject: true,
-          },
-        ],
-      },
-      {
-        id: "org",
-        label: "Salesforce Org",
-        commands: [
-          {
-            id: "org:open",
-            label: "Open Salesforce org in browser",
-            tooltip: "Opens your currently selected scratch org or other org",
-            command: "sfdx force:org:open",
-            icon: "salesforce.svg",
-          },
-          {
-            id: "org:select",
-            label: "Select a Salesforce org",
-            tooltip:
-              "Select an org (scratch or not) that you want your VsCode project to be currently linked to",
-            command: "sfdx hardis:org:select",
-            icon: "select.svg",
-          },
-          {
-            id: "org:select:devhub",
-            label: "Select a Salesforce DevHub",
-            tooltip: "Select an org that sfdx-hardis will use as Dev Hub",
-            command: "sfdx hardis:org:select --devhub",
-            icon: "select.svg",
-          },
-          {
-            id: "org:connect",
-            label: "Connect to a Salesforce org",
-            tooltip:
-              "Connects to a Salesforce org without setting it as defaultusername",
-            command: "sfdx hardis:org:connect",
-            icon: "select.svg",
-          },
-          {
-            id: "org:logout",
-            label: "Logout from current Org and DevHub",
-            command:
-              "sfdx auth:logout --noprompt || true && sfdx config:unset defaultusername defaultdevhubusername -g && sfdx config:unset defaultusername defaultdevhubusername || true",
-            tooltip: "Log out from everything :)",
-            icon: "logout.svg",
-          },
-          {
-            id: "package:install",
-            label: "Install a package",
-            tooltip:
-              "This will update project .sfdx-hardis.yml so the package will always be installed in new scratch orgs and future deployments",
-            icon: "package.svg",
-            command: "sfdx hardis:package:install",
-            requiresProject: true,
-          },
-          {
-            id: "org:test:apex",
-            label: "Run Apex tests on Salesforce org",
-            command: "sfdx hardis:org:test:apex",
-            tooltip:
-              "Runs all apex tests on the selected org. Will trigger error if minimum apex code coverage is not reached",
-            icon: "test.svg",
-            requiresProject: true,
-          },
-          {
-            id: "org:password:generate",
-            label: "Generate new password",
-            command: "sfdx force:user:password:generate",
-            tooltip:
-              "Generates a new password for your current scratch org user",
-            icon: "password.svg",
             requiresProject: true,
           },
         ],
@@ -280,6 +209,15 @@ export class HardisCommandsProvider
             requiresProject: true,
           },
           {
+            id: "package:install",
+            label: "Install a package",
+            tooltip:
+              "This will update project .sfdx-hardis.yml so the package will always be installed in new scratch orgs and future deployments",
+            icon: "package.svg",
+            command: "sfdx hardis:package:install",
+            requiresProject: true,
+          },
+          {
             id: "org:data:export",
             label: "Export scratch org initialisation data",
             tooltip:
@@ -315,14 +253,14 @@ export class HardisCommandsProvider
             requiresProject: true,
           },
           {
-            id: "project:generate:gitdelta",
-            label: "Generate package.xml git delta",
+            id: "org:test:apex",
+            label: "Run Apex tests on Salesforce org",
+            command: "sfdx hardis:org:test:apex",
             tooltip:
-              "Generate package.xml & destructiveChanges.xml using git delta between 2 commit hashes",
-            icon: "git.svg",
-            command: "sfdx hardis:project:generate:gitdelta",
+              "Runs all apex tests on the selected org. Will trigger error if minimum apex code coverage is not reached",
+            icon: "test.svg",
+            requiresProject: true,
           },
-
           {
             id: "project:deploy:sources:dx:check",
             label: "Simulate SFDX deployment",
@@ -331,6 +269,53 @@ export class HardisCommandsProvider
             icon: "test.svg",
             command: "sfdx hardis:project:deploy:sources:dx --check",
             requiresProject: true,
+          },
+          {
+            id: "org:password:generate",
+            label: "Generate new password",
+            command: "sfdx force:user:password:generate",
+            tooltip:
+              "Generates a new password for your current scratch org user",
+            icon: "password.svg",
+            requiresProject: true,
+          },
+          {
+            id: "org:connect",
+            label: "Connect to a Salesforce org",
+            tooltip:
+              "Connects to a Salesforce org without setting it as defaultusername",
+            command: "sfdx hardis:org:connect",
+            icon: "select.svg",
+          },
+          {
+            id: "org:logout",
+            label: "Logout from current Org and DevHub",
+            command:
+              "sfdx auth:logout --noprompt || true && sfdx config:unset defaultusername defaultdevhubusername -g && sfdx config:unset defaultusername defaultdevhubusername || true",
+            tooltip: "Log out from everything :)",
+            icon: "logout.svg",
+          },
+        ]
+      },
+      {
+        id: "operations",
+        label: "Operations",
+        commands: [
+          {
+            id: "project:generate:gitdelta",
+            label: "Generate package.xml git delta",
+            tooltip:
+              "Generate package.xml & destructiveChanges.xml using git delta between 2 commit hashes",
+            icon: "git.svg",
+            command: "sfdx hardis:project:generate:gitdelta",
+          },
+          {
+            id: "org:retrieve:sources:dx2",
+            label: "Retrieve DX sources from an org (package.xml)",
+            tooltip:
+              "Retrieve locally the SFDX sources of an org, using a package.xml",
+            icon: "pull.svg",
+            command: "sfdx hardis:org:retrieve:sources:dx2",
           },
           {
             id: "org:retrieve:sources:dx",
