@@ -125,6 +125,7 @@
     "oclif",
     "orgmissingitems",
     "orgs",
+    "packageconfig",
     "packagexml",
     "passin",
     "passout",

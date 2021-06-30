@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import * as npmApi from "npm-api";
 import * as path from "path";
+import moment = require("moment");
 import { execCommand, execSfdxJson } from "./utils";
 const npm = new npmApi();
 
@@ -123,11 +124,28 @@ export class HardisStatusProvider
         });
       }
       if (orgInfo.expirationDate) {
-        items.push({
+        const expiration = moment(orgInfo.expirationDate);
+        const today = moment();
+        const daysBeforeExpiration = expiration.diff(today, "days");
+        const item: any = {
           id: "org-info-expiration-date" + (options.devHub ? "-devhub" : ""),
           label: `Expires on ${orgInfo.expirationDate}`,
-          tooltip: "You org will be available until this date",
-        });
+          tooltip: `You org will expire in ${daysBeforeExpiration} days`,
+        };
+        if (daysBeforeExpiration < 0) {
+          item.icon = "warning-red.svg";
+          item.tooltip = `You org expired on ${orgInfo.expirationDate}. You need to create a new one.`;
+          vscode.window.showErrorMessage(item.tooltip);
+        } else if (daysBeforeExpiration < 3) {
+          item.icon = "warning-red.svg";
+          item.tooltip = `You scratch org will expire in ${daysBeforeExpiration} days !!! Save your scratch org content and create a new one or your work will be lost !!!`;
+          vscode.window.showErrorMessage(item.tooltip);
+        } else if (daysBeforeExpiration < 7) {
+          item.icon = "warning.svg";
+          item.tooltip = `Your scratch org will expire in ${daysBeforeExpiration} days. You should soon create a new scratch org to avoid loosing your work`;
+          vscode.window.showWarningMessage(item.tooltip);
+        }
+        items.push(item);
       }
       items.push({
         id: "select-another-org" + (options.devHub ? "-devhub" : ""),

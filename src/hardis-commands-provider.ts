@@ -100,9 +100,22 @@ export class HardisCommandsProvider
       const expanded = item.defaultExpand
         ? vscode.TreeItemCollapsibleState.Expanded
         : vscode.TreeItemCollapsibleState.Collapsed;
-      items.push(
-        new CommandTreeItem(item.label, item.id, "", expanded, options)
-      );
+      // Create menu or flat element
+      if (item.command) {
+        items.push(
+          new CommandTreeItem(
+            item.label,
+            item.id,
+            item.command,
+            vscode.TreeItemCollapsibleState.None,
+            options
+          )
+        );
+      } else {
+        items.push(
+          new CommandTreeItem(item.label, item.id, "", expanded, options)
+        );
+      }
     }
     return items;
   }
@@ -422,6 +435,14 @@ export class HardisCommandsProvider
             command: "sfdx hardis:org:retrieve:sources:metadata",
           },
           {
+            id: "org:retrieve:packageconfig",
+            label: "Retrieve package configuration",
+            tooltip:
+              "Retrieve package configuration from an org and propose to update project sfdx-hardis configuration",
+            icon: "package.svg",
+            command: "sfdx hardis:org:retrieve:packageconfig",
+          },
+          {
             id: "project:create",
             label: "Create a new SFDX project",
             tooltip: "Create and initialize a new SFDX project",
@@ -473,6 +494,14 @@ export class HardisCommandsProvider
             command: "sfdx hardis:org:purge:flow",
           },
         ],
+      },
+      {
+        id: "help",
+        label: "Need Help ?",
+        icon: "help.svg",
+        command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
+          "https://www.customer-platform.com/"
+        )}`,
       },
     ];
     return hardisCommands;
