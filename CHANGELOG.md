@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [1.3.0] 2020-06-30
+
+- Reorder menus, using new section Operations
+- Fix bug: Git delta does not require a SFDX project
+
 ## [1.2.1] 2020-06-20
 
 - Try to improve startup performances
