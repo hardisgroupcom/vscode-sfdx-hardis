@@ -5,7 +5,7 @@ import { hasSfdxProjectJson } from "./utils";
 export class HardisCommandsProvider
   implements vscode.TreeDataProvider<CommandTreeItem>
 {
-  constructor(private workspaceRoot: string) { }
+  constructor(private workspaceRoot: string) {}
 
   getTreeItem(element: CommandTreeItem): vscode.TreeItem {
     return element;
@@ -127,7 +127,8 @@ export class HardisCommandsProvider
           {
             id: "org:open-scratch",
             label: "Open my org in browser",
-            tooltip: "Opens your currently selected scratch org or other org in web browser",
+            tooltip:
+              "Opens your currently selected scratch org or other org in web browser",
             command: "sfdx force:org:open",
             icon: "salesforce.svg",
           },
@@ -295,51 +296,6 @@ export class HardisCommandsProvider
             tooltip: "Log out from everything :)",
             icon: "logout.svg",
           },
-        ]
-      },
-      {
-        id: "operations",
-        label: "Operations",
-        commands: [
-          {
-            id: "project:generate:gitdelta",
-            label: "Generate package.xml git delta",
-            tooltip:
-              "Generate package.xml & destructiveChanges.xml using git delta between 2 commit hashes",
-            icon: "git.svg",
-            command: "sfdx hardis:project:generate:gitdelta",
-          },
-          {
-            id: "org:retrieve:sources:dx2",
-            label: "Retrieve DX sources from an org (package.xml)",
-            tooltip:
-              "Retrieve locally the SFDX sources of an org, using a package.xml",
-            icon: "pull.svg",
-            command: "sfdx hardis:org:retrieve:sources:dx2",
-          },
-          {
-            id: "org:retrieve:sources:dx",
-            label: "Retrieve ALL DX sources from an org",
-            tooltip:
-              "Retrieve locally all the metadatas of a remote salesforce org, in DX project format",
-            icon: "pull.svg",
-            command: "sfdx hardis:org:retrieve:sources:dx",
-          },
-          {
-            id: "org:retrieve:sources:metadata",
-            label: "Retrieve ALL Metadata sources from an org",
-            tooltip:
-              "Retrieve locally all the metadatas of a remote salesforce org, in metadata format",
-            icon: "pull.svg",
-            command: "sfdx hardis:org:retrieve:sources:metadata",
-          },
-          {
-            id: "project:create",
-            label: "Create a new SFDX project",
-            tooltip: "Create and initialize a new SFDX project",
-            icon: "new.svg",
-            command: "sfdx hardis:project:create",
-          },
         ],
       },
       {
@@ -426,6 +382,51 @@ export class HardisCommandsProvider
               "To run only on a repo dedicated to monitoring (start from a blank repo)",
             icon: "monitoring.svg",
             command: "sfdx hardis:org:configure:monitoring",
+          },
+        ],
+      },
+      {
+        id: "operations",
+        label: "Operations",
+        commands: [
+          {
+            id: "project:generate:gitdelta",
+            label: "Generate package.xml git delta",
+            tooltip:
+              "Generate package.xml & destructiveChanges.xml using git delta between 2 commit hashes",
+            icon: "git.svg",
+            command: "sfdx hardis:project:generate:gitdelta",
+          },
+          {
+            id: "org:retrieve:sources:dx2",
+            label: "Retrieve DX sources from an org (package.xml)",
+            tooltip:
+              "Retrieve locally the SFDX sources of an org, using a package.xml",
+            icon: "pull.svg",
+            command: "sfdx hardis:org:retrieve:sources:dx2",
+          },
+          {
+            id: "org:retrieve:sources:dx",
+            label: "Retrieve ALL DX sources from an org",
+            tooltip:
+              "Retrieve locally all the metadatas of a remote salesforce org, in DX project format",
+            icon: "pull.svg",
+            command: "sfdx hardis:org:retrieve:sources:dx",
+          },
+          {
+            id: "org:retrieve:sources:metadata",
+            label: "Retrieve ALL Metadata sources from an org",
+            tooltip:
+              "Retrieve locally all the metadatas of a remote salesforce org, in metadata format",
+            icon: "pull.svg",
+            command: "sfdx hardis:org:retrieve:sources:metadata",
+          },
+          {
+            id: "project:create",
+            label: "Create a new SFDX project",
+            tooltip: "Create and initialize a new SFDX project",
+            icon: "new.svg",
+            command: "sfdx hardis:project:create",
           },
         ],
       },
