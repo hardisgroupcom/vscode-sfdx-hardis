@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.3.1] 2020-06-30
+
+- Display warning to user when a scratch org will expire soon
+
 ## [1.3.0] 2020-06-30
 
 - Reorder menus, using new section Operations
