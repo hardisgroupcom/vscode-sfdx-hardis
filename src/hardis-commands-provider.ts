@@ -306,8 +306,16 @@ export class HardisCommandsProvider
             label: "Logout from current Org and DevHub",
             command:
               "sfdx auth:logout --noprompt || true && sfdx config:unset defaultusername defaultdevhubusername -g && sfdx config:unset defaultusername defaultdevhubusername || true",
-            tooltip: "Log out from everything :)",
+            tooltip: "Log out from orgs :)",
             icon: "logout.svg",
+          },
+          {
+            id: "git:login",
+            label: "Login again to git",
+            command:
+              "echo 'If you see and error, execute the same commands in PowerShell run as administrator' && git config --system --unset credential.helper && git config credential.helper store && git fetch",
+            tooltip: "Use this command in case you have git login errors",
+            icon: "git.svg",
           },
         ],
       },

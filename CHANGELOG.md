@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.3.2] 2020-07-01
+
+Command "Login again to git"
+
 ## [1.3.1] 2020-06-30
 
 - Display warning to user when a scratch org will expire soon
