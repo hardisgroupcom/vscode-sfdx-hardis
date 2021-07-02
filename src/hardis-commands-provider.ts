@@ -460,8 +460,7 @@ export class HardisCommandsProvider
           {
             id: "hardis:scratch:delete",
             label: "Delete scratch org(s)",
-            tooltip:
-              "Prompts user for scratch orgs to mark for deletion",
+            tooltip: "Prompts user for scratch orgs to mark for deletion",
             icon: "trash.svg",
             command: "sfdx hardis:scratch:delete",
           },
