@@ -2,9 +2,13 @@
 
 ## [Unreleased]
 
+## [1.3.3] 2020-07-02
+
+- Command Delete scratch org(s)
+
 ## [1.3.2] 2020-07-01
 
-Command "Login again to git"
+- Command "Login again to git"
 
 ## [1.3.1] 2020-06-30
 

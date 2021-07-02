@@ -457,6 +457,14 @@ export class HardisCommandsProvider
             icon: "new.svg",
             command: "sfdx hardis:project:create",
           },
+          {
+            id: "hardis:scratch:delete",
+            label: "Delete scratch org(s)",
+            tooltip:
+              "Prompts user for scratch orgs to mark for deletion",
+            icon: "trash.svg",
+            command: "sfdx hardis:scratch:delete",
+          },
         ],
       },
       {
