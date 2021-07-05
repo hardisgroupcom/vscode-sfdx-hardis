@@ -515,7 +515,7 @@ export class HardisCommandsProvider
         label: "Need Help ?",
         icon: "help.svg",
         command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
-          "https://www.customer-platform.com/"
+          "https://www.customer-platform.com/societe/contact"
         )}`,
       },
     ];

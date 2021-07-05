@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.3.4] 2020-07-05
+
+- Update url to Hardis Customer Platform Web Site
+
 ## [1.3.3] 2020-07-02
 
 - Command Delete scratch org(s)
