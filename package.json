@@ -67,7 +67,11 @@
       },
       {
         "command": "vscode-sfdx-hardis.openKeyFile",
-        "title": "SFDX Hardis: Open key configuration file"
+        "title": "SFDX Hardis: Open key configuration file",
+        "icon": {
+          "light": "resources/file.svg",
+          "dark": "resources/file.svg"
+        }
       },
       {
         "command": "vscode-sfdx-hardis.debug.activate",
@@ -154,6 +158,11 @@
         },
         {
           "command": "vscode-sfdx-hardis.refreshCommandsView",
+          "when": "view == sfdx-hardis-commands",
+          "group": "navigation"
+        },
+        {
+          "command": "vscode-sfdx-hardis.openKeyFile",
           "when": "view == sfdx-hardis-commands",
           "group": "navigation"
         },

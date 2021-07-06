@@ -2,9 +2,11 @@
 
 ## [Unreleased]
 
-## [1.3.4] 2020-07-05
+## [1.4.0] 2020-07-05
 
 - Update url to Hardis Customer Platform Web Site
+- Update documentation
+- Shortcut to config files + more config files available
 
 ## [1.3.3] 2020-07-02
 
