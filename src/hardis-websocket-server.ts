@@ -2,6 +2,7 @@ import stripAnsi = require("strip-ansi");
 import * as http from "http";
 import * as WebSocket from "ws";
 import * as vscode from "vscode";
+import { getWorkspaceRoot } from "./utils";
 
 const DEFAULT_PORT = parseInt(process.env.SFDX_HARDIS_WEBSOCKET_PORT || "2702");
 let globalWss: WebSocketServer | null;
@@ -72,6 +73,16 @@ export class WebSocketServer {
     else if (data.event === "refreshCommands") {
       vscode.commands.executeCommand("vscode-sfdx-hardis.refreshCommandsView");
     }
+    // Request to open a file in editor
+    else if (data.event === "openFile") {
+      const currentWorkspaceFolderUri = getWorkspaceRoot();
+      var openPath = vscode.Uri.parse(
+        "file:///" + currentWorkspaceFolderUri + "/" + data.file
+      );
+      vscode.workspace.openTextDocument(openPath).then((doc) => {
+        vscode.window.showTextDocument(doc);
+      });
+    }
     // Request user input
     else if (data.event === "prompts") {
       const prompt = data.prompts[0];
@@ -114,21 +125,24 @@ export class WebSocketServer {
             };
             return quickPickItem;
           });
+          // Show quickpick item
           quickpick.show();
-          quickpick.onDidHide(() => resolve(["exitNow"])),
-            quickpick.onDidAccept(() => {
-              if (quickpick.selectedItems.length > 0) {
-                const values = quickpick.selectedItems.map((item) => {
-                  return prompt.choices.filter((choice: any) => {
-                    return item.label === stripAnsi(choice.title);
-                  })[0].value;
-                });
-                resolve(values);
-              } else if (prompt.type === "multiselect") {
-                resolve([]);
-              }
-              resolve(["exitNow"]);
-            });
+          // Handle user selection
+          quickpick.onDidAccept(() => {
+            if (quickpick.selectedItems.length > 0) {
+              const values = quickpick.selectedItems.map((item) => {
+                return prompt.choices.filter((choice: any) => {
+                  return item.label === stripAnsi(choice.title);
+                })[0].value;
+              });
+              resolve(values);
+            } else if (prompt.type === "multiselect") {
+              resolve([]);
+            }
+            resolve(["exitNow"]);
+          });
+          // Handle ESCAPE key
+          quickpick.onDidHide(() => resolve(["exitNow"]));
         });
         const response: any = {};
         response[`${prompt.name}`] =

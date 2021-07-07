@@ -232,23 +232,6 @@ export class HardisCommandsProvider
             requiresProject: true,
           },
           {
-            id: "org:data:export",
-            label: "Export scratch org initialisation data",
-            tooltip:
-              "Export data from org and store it in project files, so it can be loaded during each scratch org initialization",
-            icon: "data.svg",
-            command: "sfdx hardis:org:data:export",
-            requiresProject: true,
-          },
-          {
-            id: "org:data:import",
-            label: "Import scratch org initialisation data",
-            tooltip: "Import data into org from project files",
-            icon: "data.svg",
-            command: "sfdx hardis:org:data:import",
-            requiresProject: true,
-          },
-          {
             id: "project:clean:references",
             label: "Clean SFDX project from defined references",
             tooltip:
@@ -318,6 +301,35 @@ export class HardisCommandsProvider
             icon: "git.svg",
           },
         ],
+      },
+      { id: "data",
+        label: "Data Import & Export",
+        commands: [
+          {
+            id: "org:data:export",
+            label: "Export data with SFDMU",
+            tooltip:
+              "Export data from org and store it in project files, so it can be imported during each scratch org initialization or deployment to org",
+            icon: "data.svg",
+            command: "sfdx hardis:org:data:export",
+            requiresProject: true,
+          },
+          {
+            id: "org:data:import",
+            label: "Import data with SFDMU",
+            tooltip: "Import data into org from project files",
+            icon: "data.svg",
+            command: "sfdx hardis:org:data:import",
+            requiresProject: true,
+          }, 
+          {
+            id: "org:data:configure",
+            label: "Create data import/export configuration",
+            tooltip: "Initializes a new SFDMU project",
+            icon: "configure.svg",
+            command: "sfdx hardis:org:configure:data"
+          }
+        ]
       },
       {
         id: "debug",
