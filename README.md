@@ -80,9 +80,9 @@ General sfdx operations
 
 ### Packaging
 
-Simplify creation and maintenance of packagingv2 packages (unlocked or managed)
+Simplify creation and maintenance of packaging V2 packages (unlocked or managed)
 
-- Create packagingV2 packages
+- Create packaging V2 packages
 - Manage package versions
 
 ![screenshot](resources/menu-packaging.jpg)
