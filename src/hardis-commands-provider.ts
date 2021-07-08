@@ -302,7 +302,8 @@ export class HardisCommandsProvider
           },
         ],
       },
-      { id: "data",
+      {
+        id: "data",
         label: "Data Import & Export",
         commands: [
           {
@@ -321,15 +322,15 @@ export class HardisCommandsProvider
             icon: "data.svg",
             command: "sfdx hardis:org:data:import",
             requiresProject: true,
-          }, 
+          },
           {
             id: "org:data:configure",
             label: "Create data import/export configuration",
             tooltip: "Initializes a new SFDMU project",
             icon: "configure.svg",
-            command: "sfdx hardis:org:configure:data"
-          }
-        ]
+            command: "sfdx hardis:org:configure:data",
+          },
+        ],
       },
       {
         id: "debug",
