@@ -276,6 +276,9 @@ export class Commands {
             label: "Scratch org creation definition file",
           },
           { file: "sfdx-project.json", label: "Sfdx Project config file" },
+          { file: ".forceignore", label: "Files ignored by SFDX" },
+          { file: ".gitignore", label: "Files ignored by Git" },
+          { file: ".mega-linter.yml", label: "Mega-Linter configuration" },
         ];
         const quickpick = vscode.window.createQuickPick<vscode.QuickPickItem>();
         const currentWorkspaceFolderUri = getWorkspaceRoot();

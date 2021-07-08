@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [1.4.0] 2020-07-05
+
+- Update url to Hardis Customer Platform Web Site
+- Update documentation
+- Shortcut to config files + more config files available
+- Data menu
+- Handle new WebSocket event `openFile`
+
 ## [1.3.3] 2020-07-02
 
 - Command Delete scratch org(s)
