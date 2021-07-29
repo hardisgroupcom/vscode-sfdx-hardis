@@ -8,6 +8,7 @@ import { HardisDebugger } from "./hardis-debugger";
 import { HardisStatusProvider } from "./hardis-status-provider";
 import { WebSocketServer } from "./hardis-websocket-server";
 import { getWorkspaceRoot } from "./utils";
+import { WelcomePanel } from "./webviews/welcome";
 
 let refreshInterval: any = null;
 
@@ -19,6 +20,10 @@ export function activate(context: vscode.ExtensionContext) {
   // This line of code will only be executed once when your extension is activated
   console.log("VsCode SFDX Hardis has been activated");
   const currentWorkspaceFolderUri = getWorkspaceRoot();
+
+  // Initialize Welcome Webview
+  const welcomeWebview = new WelcomePanel();
+  context.subscriptions.push(...welcomeWebview.disposables);
 
   // Register Commands tree data provider
   const hardisCommandsProvider = new HardisCommandsProvider(
@@ -46,7 +51,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Initialize Hardis Debugger commands
   const hardisDebugger = new HardisDebugger();
-  context.subscriptions.push(hardisDebugger);
+  context.subscriptions.push(...hardisDebugger.disposables);
 
   // Manage WebSocket server to communicate with sfdx-hardis cli plugin
   function startWebSocketServer() {

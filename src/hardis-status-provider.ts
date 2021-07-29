@@ -291,7 +291,9 @@ export class HardisStatusProvider
       tooltip: `Latest version of sfdx-cli is installed`,
       icon: "success.svg",
     };
+    let sfdxCliOutdated = false ;
     if (sfdxCliVersion !== latestSfdxCliVersion) {
+      sfdxCliOutdated = true ;
       sfdxCliItem.label =
         sfdxCliItem.label.includes("missing") &&
         !sfdxCliItem.label.includes("(link)")
@@ -345,15 +347,18 @@ export class HardisStatusProvider
     // Propose user to upgrade if necessary
     if (outdated.length > 0) {
       vscode.window
-        .showInformationMessage(
+        .showWarningMessage(
           "Some plugins are not up to date, please click to upgrade, then wait for the process to be completed before performing actions",
           "Upgrade plugins"
         )
         .then((selection) => {
           if (selection === "Upgrade plugins") {
-            const command = outdated
+            let command = outdated
               .map((plugin) => `echo y|sfdx plugins:install ${plugin.name}`)
               .join(" && ");
+            if (sfdxCliOutdated === true) {
+              command = 'npm install sfdx-cli -g && '+command ;
+            }
             vscode.commands.executeCommand(
               "vscode-sfdx-hardis.execute-command",
               command

@@ -46,6 +46,10 @@
     },
     "commands": [
       {
+        "command": "vscode-sfdx-hardis.welcome",
+        "title": "SFDX Hardis: Welcome"
+      },
+      {
         "command": "vscode-sfdx-hardis.execute-command",
         "title": "SFDX Hardis: Execute sfdx-hardis command"
       },

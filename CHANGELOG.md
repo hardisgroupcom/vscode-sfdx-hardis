@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [1.5.0] 2020-07-30
+
+- Welcome page v0
+- Define outdated plugins message as warning
+- Add sfdx-cli update command in the outdated plugins update command
+
 ## [1.4.0] 2020-07-05
 
 - Update url to Hardis Customer Platform Web Site
