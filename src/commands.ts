@@ -100,7 +100,7 @@ export class Commands {
                   "workbench.action.terminal.selectDefaultShell"
                 );
                 vscode.window
-                  .showInformationMessage(
+                  .showWarningMessage(
                     "It is recommended to use Git Bash as default terminal shell (do it in the opened dialog at the top of the screen)",
                     "Download Git Bash",
                     "Ignore",
