@@ -291,9 +291,9 @@ export class HardisStatusProvider
       tooltip: `Latest version of sfdx-cli is installed`,
       icon: "success.svg",
     };
-    let sfdxCliOutdated = false ;
+    let sfdxCliOutdated = false;
     if (sfdxCliVersion !== latestSfdxCliVersion) {
-      sfdxCliOutdated = true ;
+      sfdxCliOutdated = true;
       sfdxCliItem.label =
         sfdxCliItem.label.includes("missing") &&
         !sfdxCliItem.label.includes("(link)")
@@ -357,7 +357,7 @@ export class HardisStatusProvider
               .map((plugin) => `echo y|sfdx plugins:install ${plugin.name}`)
               .join(" && ");
             if (sfdxCliOutdated === true) {
-              command = 'npm install sfdx-cli -g && '+command ;
+              command = "npm install sfdx-cli -g && " + command;
             }
             vscode.commands.executeCommand(
               "vscode-sfdx-hardis.execute-command",

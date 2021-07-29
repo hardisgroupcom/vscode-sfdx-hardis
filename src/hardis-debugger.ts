@@ -8,18 +8,24 @@ export class HardisDebugger {
   }
 
   private registerCommands() {
-    const cmdActivate = vscode.commands.registerCommand("vscode-sfdx-hardis.debug.activate", () => {
-      this.activateDebugger();
-    });
+    const cmdActivate = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.debug.activate",
+      () => {
+        this.activateDebugger();
+      }
+    );
     const cmdDeactivate = vscode.commands.registerCommand(
       "vscode-sfdx-hardis.debug.deactivate",
       () => {
         this.deactivateDebugger();
       }
     );
-    const cmdLaunch = vscode.commands.registerCommand("vscode-sfdx-hardis.debug.launch", () => {
-      this.launchDebugger();
-    });
+    const cmdLaunch = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.debug.launch",
+      () => {
+        this.launchDebugger();
+      }
+    );
     this.disposables.push(...[cmdActivate, cmdDeactivate, cmdLaunch]);
   }
 
@@ -56,7 +62,5 @@ export class HardisDebugger {
     vscode.commands.executeCommand("sfdx.launch.replay.debugger.logfile", uri);
   }
 
-  dispose() { 
-    
-  }
+  dispose() {}
 }

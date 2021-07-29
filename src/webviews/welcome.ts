@@ -1,40 +1,40 @@
-import * as  fs from "fs-extra";
+import * as fs from "fs-extra";
 import * as vscode from "vscode";
 
 export class WelcomePanel {
-    disposables: vscode.Disposable[] = [];
+  disposables: vscode.Disposable[] = [];
 
-    constructor() {
-        this.registerCommands();
-    }
+  constructor() {
+    this.registerCommands();
+  }
 
-    registerCommands() {
-        this.registerWelcomeCommand();
-    }
+  registerCommands() {
+    this.registerWelcomeCommand();
+  }
 
-    registerWelcomeCommand() {
-        const disposable = vscode.commands.registerCommand(
-            "vscode-sfdx-hardis.welcome",
-            () => this.displayWelcomePanel()
-        );
-        this.disposables.push(disposable);
-    }
+  registerWelcomeCommand() {
+    const disposable = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.welcome",
+      () => this.displayWelcomePanel()
+    );
+    this.disposables.push(disposable);
+  }
 
-    displayWelcomePanel() {
-        // Create and show panel
-        const panel = vscode.window.createWebviewPanel(
-            'sfdxHardisWelcome',
-            'SFDX Hardis: Welcome',
-            vscode.ViewColumn.One,
-            {}
-        );
+  displayWelcomePanel() {
+    // Create and show panel
+    const panel = vscode.window.createWebviewPanel(
+      "sfdxHardisWelcome",
+      "SFDX Hardis: Welcome",
+      vscode.ViewColumn.One,
+      {}
+    );
 
-        // And set its HTML content
-        panel.webview.html = this.getWebviewContent();
-    }
+    // And set its HTML content
+    panel.webview.html = this.getWebviewContent();
+  }
 
-    getWebviewContent() {
-        return `
+  getWebviewContent() {
+    return `
 <!DOCTYPE html>
 <html lang="en">
 
@@ -68,5 +68,5 @@ export class WelcomePanel {
 
 </html>
 `;
-    }
+  }
 }
