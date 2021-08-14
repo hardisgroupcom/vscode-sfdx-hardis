@@ -524,6 +524,20 @@ export class HardisCommandsProvider
         ],
       },
       {
+        id: "audit",
+        label: "Audit",
+        commands: [
+          {
+            id: "org:diagnose:legacyapi",
+            label: "Detect legacy API use",
+            tooltip:
+              "Detects if deprected APIs are your in a production org",
+            icon: "old.svg",
+            command: "sfdx hardis:org:diagnose:legacyapi",
+          },
+        ],
+      },
+      {
         id: "help",
         label: "Need Help ?",
         icon: "help.svg",
