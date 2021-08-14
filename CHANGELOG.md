@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.5.1] 2020-08-14
+
+- Add Audit menu and command **Detect legacy API use**
+
 ## [1.5.0] 2020-07-30
 
 - Welcome page v0
