@@ -530,8 +530,7 @@ export class HardisCommandsProvider
           {
             id: "org:diagnose:legacyapi",
             label: "Detect legacy API use",
-            tooltip:
-              "Detects if deprected APIs are your in a production org",
+            tooltip: "Detects if deprected APIs are your in a production org",
             icon: "old.svg",
             command: "sfdx hardis:org:diagnose:legacyapi",
           },
