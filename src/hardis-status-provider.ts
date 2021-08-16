@@ -5,6 +5,9 @@ import moment = require("moment");
 import { execCommand, execSfdxJson } from "./utils";
 const npm = new npmApi();
 
+let nodeInstallOk = false;
+let gitInstallOk = false;
+
 export class HardisStatusProvider
   implements vscode.TreeDataProvider<StatusTreeItem>
 {
@@ -263,6 +266,69 @@ export class HardisStatusProvider
 
   private async getPluginsItems(): Promise<any[]> {
     const items: any = [];
+
+    // Check node.js version
+    if (nodeInstallOk === false) {
+      const nodeVersionStdOut: string = (
+        await execCommand("node --version", this, { output: true, fail: false })
+      ).stdout;
+      const nodeVersionMatch = /v([0-9]+)\./gm.exec(nodeVersionStdOut);
+      if (!nodeVersionMatch) {
+        vscode.window
+          .showWarningMessage(
+            "You need Node.js installed on your computer. Please download and install it (version 14 minimum)",
+            "Download and install Node.js LTS"
+          )
+          .then((selection) => {
+            if (selection === "Download and install Node.js LTS") {
+              vscode.env.openExternal(
+                vscode.Uri.parse("https://nodejs.org/en/")
+              );
+            }
+          });
+      } else if (parseInt(nodeVersionMatch[1]) < 14.0) {
+        vscode.window
+          .showWarningMessage(
+            `You have a too old version (${nodeVersionMatch[1]}) of Node.js installed on your computer. Please download and install it (version 14 minimum)`,
+            "Download and install Node.js LTS"
+          )
+          .then((selection) => {
+            if (selection === "Download and install Node.js LTS") {
+              vscode.env.openExternal(
+                vscode.Uri.parse("https://nodejs.org/en/")
+              );
+            }
+          });
+      } else {
+        nodeInstallOk = true;
+      }
+    }
+
+    // Check git version
+    if (gitInstallOk === false) {
+      const gitVersionStdOut: string = (
+        await execCommand("git --version", this, { output: true, fail: false })
+      ).stdout;
+      const gitVersionMatch = /git version ([0-9]+)\./gm.exec(gitVersionStdOut);
+      if (!gitVersionMatch) {
+        vscode.window
+          .showWarningMessage(
+            "You need Git installed on your computer. Please download and install it (select GIT BASH in options)",
+            "Download and install Git"
+          )
+          .then((selection) => {
+            if (selection === "Download and install Git") {
+              vscode.env.openExternal(
+                vscode.Uri.parse("https://git-scm.com/downloads")
+              );
+            }
+          });
+      } else {
+        gitInstallOk = true;
+      }
+    }
+
+    // Check sfdx related installs
     const plugins = [
       { name: "sfdx-hardis" },
       { name: "sfdx-essentials" },
@@ -359,6 +425,7 @@ export class HardisStatusProvider
             if (sfdxCliOutdated === true) {
               command = "npm install sfdx-cli -g && " + command;
             }
+            command = command + ` && sfdx hardis:work:ws --event refreshStatus`;
             vscode.commands.executeCommand(
               "vscode-sfdx-hardis.execute-command",
               command
