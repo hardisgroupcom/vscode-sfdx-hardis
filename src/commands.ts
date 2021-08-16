@@ -52,7 +52,8 @@ export class Commands {
     }
     // terminalIsRunning = true; //Comment until we find a way to detect that a command is running or not
     if (
-      (command.startsWith("sfdx hardis:") || command.endsWith('sfdx hardis:work:ws --event refreshStatus')) &&
+      (command.startsWith("sfdx hardis:") ||
+        command.endsWith("sfdx hardis:work:ws --event refreshStatus")) &&
       this.disposableWebSocketServer &&
       this.disposableWebSocketServer.websocketHostPort !== null
     ) {
@@ -60,7 +61,9 @@ export class Commands {
     }
     // Adapt command to powershell if necessary
     if (terminal?.name?.includes("powershell")) {
-      command = command.replace(/ && /g, " ; ").replace(/echo y/g, "Write-Output 'y'");
+      command = command
+        .replace(/ && /g, " ; ")
+        .replace(/echo y/g, "Write-Output 'y'");
     }
     terminal.sendText(command);
     // Scrolldown the terminal

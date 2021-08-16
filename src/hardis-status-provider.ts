@@ -11,7 +11,7 @@ let gitInstallOk = false;
 export class HardisStatusProvider
   implements vscode.TreeDataProvider<StatusTreeItem>
 {
-  constructor(private workspaceRoot: string) { }
+  constructor(private workspaceRoot: string) {}
 
   getTreeItem(element: StatusTreeItem): vscode.TreeItem {
     return element;
@@ -42,12 +42,12 @@ export class HardisStatusProvider
       topic.id === "status-org"
         ? await this.getOrgItems({ devHub: false })
         : topic.id === "status-org-devhub"
-          ? await this.getOrgItems({ devHub: true })
-          : topic.id === "status-git"
-            ? await this.getGitItems()
-            : topic.id === "status-plugins"
-              ? await this.getPluginsItems()
-              : [];
+        ? await this.getOrgItems({ devHub: true })
+        : topic.id === "status-git"
+        ? await this.getGitItems()
+        : topic.id === "status-plugins"
+        ? await this.getPluginsItems()
+        : [];
     console.timeEnd("TreeViewItem_init_" + topic.id);
     for (const item of topicItems) {
       const options: any = {};
@@ -266,73 +266,69 @@ export class HardisStatusProvider
 
   private async getPluginsItems(): Promise<any[]> {
     const items: any = [];
-    
+
     // Check node.js version
     if (nodeInstallOk === false) {
       const nodeVersionStdOut: string = (
         await execCommand("node --version", this, { output: true, fail: false })
       ).stdout;
-      const nodeVersionMatch = /v([0-9]+)\./gm.exec(
-        nodeVersionStdOut
-      );
+      const nodeVersionMatch = /v([0-9]+)\./gm.exec(nodeVersionStdOut);
       if (!nodeVersionMatch) {
         vscode.window
           .showWarningMessage(
             "You need Node.js installed on your computer. Please download and install it (version 14 minimum)",
             "Download and install Node.js LTS"
-          ).then((selection) => {
+          )
+          .then((selection) => {
             if (selection === "Download and install Node.js LTS") {
               vscode.env.openExternal(
                 vscode.Uri.parse("https://nodejs.org/en/")
               );
             }
           });
-      }
-      else if (parseInt(nodeVersionMatch[1]) < 14.0) {
+      } else if (parseInt(nodeVersionMatch[1]) < 14.0) {
         vscode.window
           .showWarningMessage(
             `You have a too old version (${nodeVersionMatch[1]}) of Node.js installed on your computer. Please download and install it (version 14 minimum)`,
             "Download and install Node.js LTS"
-          ).then((selection) => {
+          )
+          .then((selection) => {
             if (selection === "Download and install Node.js LTS") {
               vscode.env.openExternal(
                 vscode.Uri.parse("https://nodejs.org/en/")
               );
             }
           });
-      }
-      else {
-        nodeInstallOk = true ;
+      } else {
+        nodeInstallOk = true;
       }
     }
 
     // Check git version
     if (gitInstallOk === false) {
-    const gitVersionStdOut: string = (
-      await execCommand("git --version", this, { output: true, fail: false })
-    ).stdout;
-    const gitVersionMatch = /git version ([0-9]+)\./gm.exec(
-      gitVersionStdOut
-    );
-    if (!gitVersionMatch) {
-      vscode.window
-        .showWarningMessage(
-          "You need Git installed on your computer. Please download and install it (select GIT BASH in options)",
-          "Download and install Git"
-        ).then((selection) => {
-          if (selection === "Download and install Git") {
-            vscode.env.openExternal(
-              vscode.Uri.parse("https://git-scm.com/downloads")
-            );
-          }
-        });
+      const gitVersionStdOut: string = (
+        await execCommand("git --version", this, { output: true, fail: false })
+      ).stdout;
+      const gitVersionMatch = /git version ([0-9]+)\./gm.exec(gitVersionStdOut);
+      if (!gitVersionMatch) {
+        vscode.window
+          .showWarningMessage(
+            "You need Git installed on your computer. Please download and install it (select GIT BASH in options)",
+            "Download and install Git"
+          )
+          .then((selection) => {
+            if (selection === "Download and install Git") {
+              vscode.env.openExternal(
+                vscode.Uri.parse("https://git-scm.com/downloads")
+              );
+            }
+          });
+      } else {
+        gitInstallOk = true;
+      }
     }
-    else {
-      gitInstallOk = true ;
-    }
-  }
 
-  // Check sfdx related installs
+    // Check sfdx related installs
     const plugins = [
       { name: "sfdx-hardis" },
       { name: "sfdx-essentials" },
@@ -366,7 +362,7 @@ export class HardisStatusProvider
       sfdxCliOutdated = true;
       sfdxCliItem.label =
         sfdxCliItem.label.includes("missing") &&
-          !sfdxCliItem.label.includes("(link)")
+        !sfdxCliItem.label.includes("(link)")
           ? sfdxCliItem.label
           : sfdxCliItem.label + " (upgrade available)";
       sfdxCliItem.command = `npm install sfdx-cli -g`;
@@ -400,7 +396,7 @@ export class HardisStatusProvider
       if (!sfdxPlugins.includes(`${plugin.name} ${latestPluginVersion}`)) {
         pluginItem.label =
           pluginItem.label.includes("missing") &&
-            !pluginItem.label.includes("(link)")
+          !pluginItem.label.includes("(link)")
             ? pluginItem.label.replace("(link)", "(localdev)")
             : pluginItem.label + " (upgrade available)";
         pluginItem.command = `echo y|sfdx plugins:install ${plugin.name}`;
