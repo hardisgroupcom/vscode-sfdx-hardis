@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [1.6.0] 2020-08-16
+
+- Check that minimum versions of Node.js and Git are installed at extension startup
+- Refresh status section after installing updates
+
 ## [1.5.1] 2020-08-14
 
 - Add Audit menu and command **Detect legacy API use**
