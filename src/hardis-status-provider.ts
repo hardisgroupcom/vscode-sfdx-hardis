@@ -269,9 +269,15 @@ export class HardisStatusProvider
 
     // Check node.js version
     if (nodeInstallOk === false) {
-      const nodeVersionStdOut: string = (
-        await execCommand("node --version", this, { output: true, fail: false })
-      ).stdout || process.env.NODE_PATH || 'error';
+      const nodeVersionStdOut: string =
+        (
+          await execCommand("node --version", this, {
+            output: true,
+            fail: false,
+          })
+        ).stdout ||
+        process.env.NODE_PATH ||
+        "error";
       const nodeVersionMatch = /v([0-9]+)\./gm.exec(nodeVersionStdOut);
       if (!nodeVersionMatch) {
         vscode.window
@@ -308,7 +314,7 @@ export class HardisStatusProvider
     if (gitInstallOk === false) {
       const gitVersionStdOut: string = (
         await execCommand("git --version", this, { output: true, fail: false })
-      ).stdout;
+      ).stdout || "error";
       const gitVersionMatch = /git version ([0-9]+)\./gm.exec(gitVersionStdOut);
       if (!gitVersionMatch) {
         vscode.window

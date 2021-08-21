@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.6.1] 2020-08-22
+
+- Fix error when checking version of Node.js on systems using nvm
+
 ## [1.6.0] 2020-08-16
 
 - Check that minimum versions of Node.js and Git are installed at extension startup
