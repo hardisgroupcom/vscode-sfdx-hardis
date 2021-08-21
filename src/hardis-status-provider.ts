@@ -312,9 +312,13 @@ export class HardisStatusProvider
 
     // Check git version
     if (gitInstallOk === false) {
-      const gitVersionStdOut: string = (
-        await execCommand("git --version", this, { output: true, fail: false })
-      ).stdout || "error";
+      const gitVersionStdOut: string =
+        (
+          await execCommand("git --version", this, {
+            output: true,
+            fail: false,
+          })
+        ).stdout || "error";
       const gitVersionMatch = /git version ([0-9]+)\./gm.exec(gitVersionStdOut);
       if (!gitVersionMatch) {
         vscode.window
