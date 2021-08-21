@@ -271,7 +271,7 @@ export class HardisStatusProvider
     if (nodeInstallOk === false) {
       const nodeVersionStdOut: string = (
         await execCommand("node --version", this, { output: true, fail: false })
-      ).stdout;
+      ).stdout || process.env.NODE_PATH || 'error';
       const nodeVersionMatch = /v([0-9]+)\./gm.exec(nodeVersionStdOut);
       if (!nodeVersionMatch) {
         vscode.window
