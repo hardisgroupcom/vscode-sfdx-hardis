@@ -30,13 +30,15 @@ export async function execCommand(
   };
   try {
     commandResult = await exec(command, execOptions);
-  } catch (e) {
+  } catch (e: any) {
     console.timeEnd(command);
     process.env.FORCE_COLOR = prevForceColor;
     // Display error in red if not json
-    if (!command.includes("--json") || options.fail) {
-      console.error(c.red(`${e.stdout}\n${e.stderr}`));
-      throw e;
+    if (!command.includes("--json") || options.fail === true) {
+      if (options.fail === true) {
+        console.error(c.red(`${e.stdout}\n${e.stderr}`));
+        throw e;
+      }
     }
     // if --json, we should not have a crash, so return status 1 + output log
     return {
@@ -72,7 +74,7 @@ export async function execCommand(
       );
     }
     return parsedResult;
-  } catch (e) {
+  } catch (e: any) {
     // Manage case when json is not parsable
     return {
       status: 1,
