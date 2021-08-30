@@ -108,6 +108,28 @@ export class WebSocketServer {
           });
         });
       }
+      // Text
+      else if (prompt.type === "number") {
+        const inputBoxOptions: vscode.InputBoxOptions = {
+          prompt: stripAnsi(prompt.message),
+          placeHolder: stripAnsi(prompt.placeholder) || "",
+          ignoreFocusOut: true,
+          value: prompt.initial ? prompt.initial.toString() : null,
+        };
+        vscode.window.showInputBox(inputBoxOptions).then((value) => {
+          const response: any = {};
+          response[`${prompt.name}`] =
+            typeof value === "string"
+              ? prompt.isFloat
+                ? parseFloat(value)
+                : parseInt(value)
+              : value;
+          this.sendResponse(ws, {
+            event: "promptsResponse",
+            promptsResponse: [response],
+          });
+        });
+      }
       // Select / Multiselect
       else if (prompt.type === "select" || prompt.type === "multiselect") {
         const quickpick = vscode.window.createQuickPick<vscode.QuickPickItem>();
@@ -152,6 +174,8 @@ export class WebSocketServer {
           promptsResponse: [response],
         });
         quickpick.dispose();
+      } else {
+        throw new Error(`WSS: prompt type ${prompt.type} not taken in account`);
       }
     }
   }

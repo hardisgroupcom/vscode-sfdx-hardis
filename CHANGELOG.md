@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [1.7.0] 2020-08-30
+
+- New commands to export Files from an org, and to configure such export
+- Freeze / Unfreeze users management (to safely deploy in production)
+- Scratch Orgs Pools management
+
 ## [1.6.1] 2020-08-22
 
 - Fix error when checking version of Node.js on systems using nvm

@@ -304,7 +304,7 @@ export class HardisCommandsProvider
       },
       {
         id: "data",
-        label: "Data Import & Export",
+        label: "Data & files Import/Export",
         commands: [
           {
             id: "org:data:export",
@@ -329,6 +329,21 @@ export class HardisCommandsProvider
             tooltip: "Initializes a new SFDMU project",
             icon: "configure.svg",
             command: "sfdx hardis:org:configure:data",
+          },
+          {
+            id: "org:files:export",
+            label: "Export files from org",
+            tooltip: "Export files from org based on a configuration",
+            icon: "file.svg",
+            command: "sfdx hardis:org:files:export",
+            requiresProject: true,
+          },
+          {
+            id: "org:files:configure",
+            label: "Create files export configuration",
+            tooltip: "Initializes a new file export project",
+            icon: "configure.svg",
+            command: "sfdx hardis:org:configure:files",
           },
         ],
       },
@@ -417,6 +432,14 @@ export class HardisCommandsProvider
             icon: "monitoring.svg",
             command: "sfdx hardis:org:configure:monitoring",
           },
+          {
+            id: "scratch:pool:create",
+            label: "Configure scratch orgs pool",
+            tooltip:
+              "Define a scratch org pool to have scratch orgs ready to be used for development or CI",
+            icon: "pool.svg",
+            command: "sfdx hardis:scratch:pool:create",
+          },
         ],
       },
       {
@@ -494,7 +517,7 @@ export class HardisCommandsProvider
           {
             id: "hardis:package:version:list",
             label: "List package versions",
-            tooltip: "Create a new versions of a package",
+            tooltip: "List all package versions associated to Dev Hub org",
             icon: "package.svg",
             command: "sfdx hardis:package:version:list",
             requiresProject: true,
@@ -502,7 +525,7 @@ export class HardisCommandsProvider
           {
             id: "hardis:package:version:create",
             label: "Create a new package version",
-            tooltip: "Create a new versions of a package",
+            tooltip: "Create a new version of a package",
             icon: "package.svg",
             command: "sfdx hardis:package:version:create",
             requiresProject: true,
@@ -513,6 +536,21 @@ export class HardisCommandsProvider
         id: "production",
         label: "Production",
         commands: [
+          {
+            id: "org:user:freeze",
+            label: "Freeze users",
+            tooltip:
+              "Freeze all users of an org except admins to deploy safely",
+            icon: "freeze.svg",
+            command: "sfdx hardis:org:user:freeze",
+          },
+          {
+            id: "org:user:unfreeze",
+            label: "Unfreeze users",
+            tooltip: "Unfreeze all users of an org after a safe deployment",
+            icon: "unfreeze.svg",
+            command: "sfdx hardis:org:user:unfreeze",
+          },
           {
             id: "org:purge:flow",
             label: "Purge obsolete flows",
