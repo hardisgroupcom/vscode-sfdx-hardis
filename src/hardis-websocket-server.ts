@@ -118,7 +118,12 @@ export class WebSocketServer {
         };
         vscode.window.showInputBox(inputBoxOptions).then((value) => {
           const response: any = {};
-          response[`${prompt.name}`] = typeof value === 'string' ? (prompt.isFloat ? parseFloat(value) : parseInt(value)) : value;
+          response[`${prompt.name}`] =
+            typeof value === "string"
+              ? prompt.isFloat
+                ? parseFloat(value)
+                : parseInt(value)
+              : value;
           this.sendResponse(ws, {
             event: "promptsResponse",
             promptsResponse: [response],
@@ -169,8 +174,7 @@ export class WebSocketServer {
           promptsResponse: [response],
         });
         quickpick.dispose();
-      }
-      else {
+      } else {
         throw new Error(`WSS: prompt type ${prompt.type} not taken in account`);
       }
     }

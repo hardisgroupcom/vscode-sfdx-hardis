@@ -333,8 +333,7 @@ export class HardisCommandsProvider
           {
             id: "org:files:export",
             label: "Export files from org",
-            tooltip:
-              "Export files from org based on a configuration",
+            tooltip: "Export files from org based on a configuration",
             icon: "file.svg",
             command: "sfdx hardis:org:files:export",
             requiresProject: true,
@@ -440,7 +439,7 @@ export class HardisCommandsProvider
               "Define a scratch org pool to have scratch orgs ready to be used for development or CI",
             icon: "pool.svg",
             command: "sfdx hardis:scratch:pool:create",
-          }
+          },
         ],
       },
       {
@@ -548,11 +547,10 @@ export class HardisCommandsProvider
           {
             id: "org:user:unfreeze",
             label: "Unfreeze users",
-            tooltip:
-              "Unfreeze all users of an org after a safe deployment",
+            tooltip: "Unfreeze all users of an org after a safe deployment",
             icon: "unfreeze.svg",
             command: "sfdx hardis:org:user:unfreeze",
-          },          
+          },
           {
             id: "org:purge:flow",
             label: "Purge obsolete flows",

@@ -11,7 +11,7 @@ let gitInstallOk = false;
 export class HardisStatusProvider
   implements vscode.TreeDataProvider<StatusTreeItem>
 {
-  constructor(private workspaceRoot: string) { }
+  constructor(private workspaceRoot: string) {}
 
   getTreeItem(element: StatusTreeItem): vscode.TreeItem {
     return element;
@@ -37,18 +37,18 @@ export class HardisStatusProvider
    */
   private async getTopicElements(topic: any): Promise<StatusTreeItem[]> {
     const items: StatusTreeItem[] = [];
-    console.debug("Starting TreeViewItem_init_" + topic.id+" ...");
+    console.debug("Starting TreeViewItem_init_" + topic.id + " ...");
     console.time("TreeViewItem_init_" + topic.id);
     const topicItems: any[] =
       topic.id === "status-org"
         ? await this.getOrgItems({ devHub: false })
         : topic.id === "status-org-devhub"
-          ? await this.getOrgItems({ devHub: true })
-          : topic.id === "status-git"
-            ? await this.getGitItems()
-            : topic.id === "status-plugins"
-              ? await this.getPluginsItems()
-              : [];
+        ? await this.getOrgItems({ devHub: true })
+        : topic.id === "status-git"
+        ? await this.getGitItems()
+        : topic.id === "status-plugins"
+        ? await this.getPluginsItems()
+        : [];
     console.timeEnd("TreeViewItem_init_" + topic.id);
     for (const item of topicItems) {
       const options: any = {};
@@ -153,8 +153,16 @@ export class HardisStatusProvider
       }
       // Scratch org pool info
       if (options.devHub) {
-        const poolViewRes = await execSfdxJson("sfdx hardis:scratch:pool:view", this, { output: false, fail: false });
-        if (poolViewRes?.status === 0 && ( poolViewRes?.result?.availableScratchOrgs || poolViewRes?.result?.availableScratchOrgs === 0)) {
+        const poolViewRes = await execSfdxJson(
+          "sfdx hardis:scratch:pool:view",
+          this,
+          { output: false, fail: false }
+        );
+        if (
+          poolViewRes?.status === 0 &&
+          (poolViewRes?.result?.availableScratchOrgs ||
+            poolViewRes?.result?.availableScratchOrgs === 0)
+        ) {
           items.push({
             id: "scratch-org-pool-view",
             label: `Pool: ${poolViewRes.result.availableScratchOrgs} available (max ${poolViewRes.result.maxScratchOrgs})`,
@@ -386,7 +394,7 @@ export class HardisStatusProvider
       sfdxCliOutdated = true;
       sfdxCliItem.label =
         sfdxCliItem.label.includes("missing") &&
-          !sfdxCliItem.label.includes("(link)")
+        !sfdxCliItem.label.includes("(link)")
           ? sfdxCliItem.label
           : sfdxCliItem.label + " (upgrade available)";
       sfdxCliItem.command = `npm install sfdx-cli -g`;
@@ -420,7 +428,7 @@ export class HardisStatusProvider
       if (!sfdxPlugins.includes(`${plugin.name} ${latestPluginVersion}`)) {
         pluginItem.label =
           pluginItem.label.includes("missing") &&
-            !pluginItem.label.includes("(link)")
+          !pluginItem.label.includes("(link)")
             ? pluginItem.label.replace("(link)", "(localdev)")
             : pluginItem.label + " (upgrade available)";
         pluginItem.command = `echo y|sfdx plugins:install ${plugin.name}`;
