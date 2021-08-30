@@ -113,7 +113,7 @@ export function activate(context: vscode.ExtensionContext) {
   // Refresh Status every 30 mn
   refreshInterval = setInterval(() => {
     vscode.commands.executeCommand("vscode-sfdx-hardis.refreshStatusView");
-  }, 1800000);
+  }, 3600000);
 
   console.timeEnd("Hardis_Activate");
 }
