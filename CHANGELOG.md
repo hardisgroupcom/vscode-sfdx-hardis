@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.7.1] 2020-08-31
+
+- Fix crash when Node.js is installed but not sfdx-cli
+
 ## [1.7.0] 2020-08-30
 
 - New commands to export Files from an org, and to configure such export

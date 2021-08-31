@@ -304,7 +304,7 @@ export class HardisStatusProvider
       if (!nodeVersionMatch) {
         vscode.window
           .showWarningMessage(
-            "You need Node.js installed on your computer. Please download and install it (version 14 minimum)",
+            "You need Node.js installed on your computer. Please download and install it (version 14 minimum), then restart VsCode",
             "Download and install Node.js LTS"
           )
           .then((selection) => {
@@ -317,7 +317,7 @@ export class HardisStatusProvider
       } else if (parseInt(nodeVersionMatch[1]) < 14.0) {
         vscode.window
           .showWarningMessage(
-            `You have a too old version (${nodeVersionMatch[1]}) of Node.js installed on your computer. Please download and install it (version 14 minimum)`,
+            `You have a too old version (${nodeVersionMatch[1]}) of Node.js installed on your computer. Please download and install it (version 14 minimum), then restart VsCode`,
             "Download and install Node.js LTS"
           )
           .then((selection) => {
@@ -345,7 +345,7 @@ export class HardisStatusProvider
       if (!gitVersionMatch) {
         vscode.window
           .showWarningMessage(
-            "You need Git installed on your computer. Please download and install it (select GIT BASH in options)",
+            "You need Git installed on your computer. Please download and install it (select GIT BASH in options), then restart VsCode",
             "Download and install Git"
           )
           .then((selection) => {
@@ -405,7 +405,7 @@ export class HardisStatusProvider
     // get currently installed plugins
     const sfdxPlugins = (
       await execCommand("sfdx plugins", this, { output: true, fail: false })
-    ).stdout;
+    ).stdout || '';
     // Check installed plugins status version
     const pluginPromises = plugins.map(async (plugin) => {
       // Check latest plugin version
