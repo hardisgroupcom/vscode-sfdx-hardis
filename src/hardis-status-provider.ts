@@ -3,6 +3,7 @@ import * as npmApi from "npm-api";
 import * as path from "path";
 import moment = require("moment");
 import { execCommand, execSfdxJson } from "./utils";
+import { Logger } from "./logger";
 const npm = new npmApi();
 
 let nodeInstallOk = false;
@@ -37,7 +38,7 @@ export class HardisStatusProvider
    */
   private async getTopicElements(topic: any): Promise<StatusTreeItem[]> {
     const items: StatusTreeItem[] = [];
-    console.debug("Starting TreeViewItem_init_" + topic.id + " ...");
+    Logger.log("Starting TreeViewItem_init_" + topic.id + " ...");
     console.time("TreeViewItem_init_" + topic.id);
     const topicItems: any[] =
       topic.id === "status-org"
@@ -50,6 +51,7 @@ export class HardisStatusProvider
         ? await this.getPluginsItems()
         : [];
     console.timeEnd("TreeViewItem_init_" + topic.id);
+    Logger.log("Completed TreeViewItem_init_" + topic.id);
     for (const item of topicItems) {
       const options: any = {};
       if (item.icon) {
@@ -151,26 +153,36 @@ export class HardisStatusProvider
         }
         items.push(item);
       }
-      // Scratch org pool info
+
       if (options.devHub) {
-        const poolViewRes = await execSfdxJson(
-          "sfdx hardis:scratch:pool:view",
+        // Scratch org pool info
+        const configRes = await execSfdxJson(
+          "sfdx hardis:config:get --level project",
           this,
-          { output: false, fail: false }
+          { fail: false, output: true }
         );
-        if (
-          poolViewRes?.status === 0 &&
-          (poolViewRes?.result?.availableScratchOrgs ||
-            poolViewRes?.result?.availableScratchOrgs === 0)
-        ) {
-          items.push({
-            id: "scratch-org-pool-view",
-            label: `Pool: ${poolViewRes.result.availableScratchOrgs} available (max ${poolViewRes.result.maxScratchOrgs})`,
-            tooltip: "View content of scratch org pool",
-            command: "sfdx hardis:scratch:pool:view",
-            icon: "pool.svg",
-          });
+        // Get pool info only if defined in config
+        if (configRes?.result?.config?.poolConfig) {
+          const poolViewRes = await execSfdxJson(
+            "sfdx hardis:scratch:pool:view",
+            this,
+            { output: false, fail: false }
+          );
+          if (
+            poolViewRes?.status === 0 &&
+            (poolViewRes?.result?.availableScratchOrgs ||
+              poolViewRes?.result?.availableScratchOrgs === 0)
+          ) {
+            items.push({
+              id: "scratch-org-pool-view",
+              label: `Pool: ${poolViewRes.result.availableScratchOrgs} available (max ${poolViewRes.result.maxScratchOrgs})`,
+              tooltip: "View content of scratch org pool",
+              command: "sfdx hardis:scratch:pool:view",
+              icon: "pool.svg",
+            });
+          }
         }
+
       }
       items.push({
         id: "select-another-org" + (options.devHub ? "-devhub" : ""),

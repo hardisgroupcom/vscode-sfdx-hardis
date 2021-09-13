@@ -4,6 +4,7 @@ import * as fs from "fs-extra";
 import * as path from "path";
 import * as util from "util";
 import * as vscode from "vscode";
+import { Logger } from "./logger";
 const exec = util.promisify(child.exec);
 
 // Execute command
@@ -17,7 +18,6 @@ export async function execCommand(
     spinner: true,
   }
 ): Promise<any> {
-  const commandLog = `[sfdx-hardis][command] ${c.bold(c.grey(command))}`;
   console.time(command);
   let commandResult = null;
   // Call command (disable color before for json parsing)
@@ -28,6 +28,7 @@ export async function execCommand(
     cwd: options.cwd || vscode.workspace.rootPath,
     env: process.env,
   };
+  Logger.log('[vscode-sfdx-hardis][command] '+command);
   try {
     commandResult = await exec(command, execOptions);
   } catch (e: any) {
@@ -36,7 +37,7 @@ export async function execCommand(
     // Display error in red if not json
     if (!command.includes("--json") || options.fail === true) {
       if (options.fail === true) {
-        console.error(c.red(`${e.stdout}\n${e.stderr}`));
+        Logger.log(`ERROR: ${e.stdout}\n${e.stderr}`);
         throw e;
       }
     }
@@ -49,7 +50,7 @@ export async function execCommand(
   console.timeEnd(command);
   // Display output if requested, for better user understanding of the logs
   if (options.output || options.debug) {
-    console.log(c.italic(c.grey(commandResult.stdout.toString())));
+    Logger.log(commandResult.stdout.toString());
   }
   // Return status 0 if not --json
   process.env.FORCE_COLOR = prevForceColor;
@@ -69,7 +70,7 @@ export async function execCommand(
       );
     }
     if (commandResult.stderr && commandResult.stderr.length > 2) {
-      console.warn(
+      Logger.log(
         "[sfdx-hardis][WARNING] stderr: " + c.yellow(commandResult.stderr)
       );
     }
