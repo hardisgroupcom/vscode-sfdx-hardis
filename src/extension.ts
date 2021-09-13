@@ -7,6 +7,7 @@ import { HardisCommandsProvider } from "./hardis-commands-provider";
 import { HardisDebugger } from "./hardis-debugger";
 import { HardisStatusProvider } from "./hardis-status-provider";
 import { WebSocketServer } from "./hardis-websocket-server";
+import { Logger } from "./logger";
 import { getWorkspaceRoot } from "./utils";
 import { WelcomePanel } from "./webviews/welcome";
 
@@ -15,11 +16,13 @@ let refreshInterval: any = null;
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+  new Logger(vscode.window);
   console.time("Hardis_Activate");
   // Use the console to output diagnostic information (console.log) and errors (console.error)
   // This line of code will only be executed once when your extension is activated
-  console.log("VsCode SFDX Hardis has been activated");
+  Logger.log("VsCode SFDX Hardis has been activated");
   const currentWorkspaceFolderUri = getWorkspaceRoot();
+
 
   // Initialize Welcome Webview
   const welcomeWebview = new WelcomePanel();

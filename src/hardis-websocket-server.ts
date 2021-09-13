@@ -3,6 +3,7 @@ import * as http from "http";
 import * as WebSocket from "ws";
 import * as vscode from "vscode";
 import { getWorkspaceRoot } from "./utils";
+import { Logger } from "./logger";
 
 const DEFAULT_PORT = parseInt(process.env.SFDX_HARDIS_WEBSOCKET_PORT || "2702");
 let globalWss: WebSocketServer | null;
@@ -34,7 +35,7 @@ export class WebSocketServer {
     console.time("WebSocketServer_listen");
     this.server.listen(port, () => {
       this.websocketHostPort = `localhost:${port}`;
-      console.log(`Data stream server started on port ${port}`);
+      Logger.log(`Data stream server started on port ${port}`);
       console.timeEnd("WebSocketServer_listen");
     });
   }
@@ -55,7 +56,7 @@ export class WebSocketServer {
 
   async receiveMessage(ws: any, data: any) {
     if (process.env.DEBUG) {
-      console.log("received: %s", data);
+      Logger.log("received:" + data);
     }
     // Client initialization
     if (data.event === "initClient") {

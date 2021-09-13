@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [1.7.2] 2020-09-13
+
+- Add logger Output panel
+- Do not get pool info when there is none configured
+
 ## [1.7.1] 2020-08-31
 
 - Fix crash when Node.js is installed but not sfdx-cli
