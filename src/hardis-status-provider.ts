@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import * as npmApi from "npm-api";
 import * as path from "path";
 import moment = require("moment");
-import { execCommand, execSfdxJson } from "./utils";
+import { execCommand, execSfdxJson, RECOMMENDED_SFDX_CLI_VERSION } from "./utils";
 import { Logger } from "./logger";
 const npm = new npmApi();
 
@@ -394,23 +394,25 @@ export class HardisStatusProvider
       sfdxCliVersion = sfdxCliVersionMatch[1];
     }
     const latestSfdxCliVersion = await npm.repo("sfdx-cli").prop("version");
+    const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+    const recommendedSfdxCliVersion = config.get("ignoreSfdxCliRecommendedVersion") === true ? latestSfdxCliVersion: RECOMMENDED_SFDX_CLI_VERSION || latestSfdxCliVersion ;
     const sfdxCliItem = {
       id: `sfdx-cli-info`,
       label: `sfdx-cli v${sfdxCliVersion}`,
       command: "",
-      tooltip: `Latest version of sfdx-cli is installed`,
+      tooltip: `Recommended version of sfdx-cli is installed`,
       icon: "success.svg",
     };
     let sfdxCliOutdated = false;
-    if (sfdxCliVersion !== latestSfdxCliVersion) {
+    if (sfdxCliVersion !== recommendedSfdxCliVersion) {
       sfdxCliOutdated = true;
       sfdxCliItem.label =
         sfdxCliItem.label.includes("missing") &&
         !sfdxCliItem.label.includes("(link)")
           ? sfdxCliItem.label
           : sfdxCliItem.label + " (upgrade available)";
-      sfdxCliItem.command = `npm install sfdx-cli -g`;
-      sfdxCliItem.tooltip = `Click to upgrade sfdx-cli to ${latestSfdxCliVersion}`;
+      sfdxCliItem.command = `npm install sfdx-cli@${recommendedSfdxCliVersion} -g`;
+      sfdxCliItem.tooltip = `Click to upgrade sfdx-cli to ${recommendedSfdxCliVersion}`;
       sfdxCliItem.icon = "warning.svg";
     }
     items.push(sfdxCliItem);
