@@ -7,6 +7,8 @@ import * as vscode from "vscode";
 import { Logger } from "./logger";
 const exec = util.promisify(child.exec);
 
+export const RECOMMENDED_SFDX_CLI_VERSION = '7.111.6';
+
 // Execute command
 export async function execCommand(
   command: string,

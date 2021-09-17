@@ -41,6 +41,11 @@
           "type": "boolean",
           "default": false,
           "description": "Disable check of Git Bash as default terminal"
+        },
+        "vsCodeSfdxHardis.ignoreSfdxCliRecommendedVersion": {
+          "type": "boolean",
+          "default": false,
+          "description": "Ignore sfdx-cli version recommended by sfdx-Hardis, and use latest sfdx-cli version"
         }
       }
     },

@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.8.0] 2020-09-17
+
+- Manage recommended version for sfdx-cli (can be overridden with VsCode setting `vsCodeSfdxHardis.ignoreSfdxCliRecommendedVersion`)
+
 ## [1.7.2] 2020-09-13
 
 - Add logger Output panel
