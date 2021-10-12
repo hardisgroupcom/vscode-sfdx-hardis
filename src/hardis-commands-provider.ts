@@ -5,7 +5,7 @@ import { hasSfdxProjectJson } from "./utils";
 export class HardisCommandsProvider
   implements vscode.TreeDataProvider<CommandTreeItem>
 {
-  constructor(private workspaceRoot: string) {}
+  constructor(private workspaceRoot: string) { }
 
   getTreeItem(element: CommandTreeItem): vscode.TreeItem {
     return element;
@@ -274,7 +274,6 @@ export class HardisCommandsProvider
             tooltip:
               "Generates a new password for your current scratch org user",
             icon: "password.svg",
-            requiresProject: true,
           },
           {
             id: "org:connect",
@@ -312,16 +311,14 @@ export class HardisCommandsProvider
             tooltip:
               "Export data from org and store it in project files, so it can be imported during each scratch org initialization or deployment to org",
             icon: "data.svg",
-            command: "sfdx hardis:org:data:export",
-            requiresProject: true,
+            command: "sfdx hardis:org:data:export"
           },
           {
             id: "org:data:import",
             label: "Import data with SFDMU",
             tooltip: "Import data into org from project files",
             icon: "data.svg",
-            command: "sfdx hardis:org:data:import",
-            requiresProject: true,
+            command: "sfdx hardis:org:data:import"
           },
           {
             id: "org:data:configure",
@@ -335,8 +332,7 @@ export class HardisCommandsProvider
             label: "Export files from org",
             tooltip: "Export files from org based on a configuration",
             icon: "file.svg",
-            command: "sfdx hardis:org:files:export",
-            requiresProject: true,
+            command: "sfdx hardis:org:files:export"
           },
           {
             id: "org:files:configure",
@@ -357,16 +353,14 @@ export class HardisCommandsProvider
             tooltip:
               "Activate tracing of logs to use the local replay debugger",
             icon: "toggle-on.svg",
-            command: "vscode-sfdx-hardis.debug.activate",
-            requiresProject: true,
+            command: "vscode-sfdx-hardis.debug.activate"
           },
           {
             id: "hardis:debug:run",
             label: "Run debugger",
             tooltip: "Run debugger on an apex log file",
             icon: "debug.svg",
-            command: "vscode-sfdx-hardis.debug.launch",
-            requiresProject: true,
+            command: "vscode-sfdx-hardis.debug.launch"
           },
           {
             id: "hardis:debug:importapex",
@@ -383,8 +377,7 @@ export class HardisCommandsProvider
             tooltip:
               "Deactivate tracing of logs to use the local replay debugger",
             icon: "toggle-off.svg",
-            command: "vscode-sfdx-hardis.debug.deactivate",
-            requiresProject: true,
+            command: "vscode-sfdx-hardis.debug.deactivate"
           },
           {
             id: "org:purge:apexlog",
