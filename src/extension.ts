@@ -23,7 +23,6 @@ export function activate(context: vscode.ExtensionContext) {
   Logger.log("VsCode SFDX Hardis has been activated");
   const currentWorkspaceFolderUri = getWorkspaceRoot();
 
-
   // Initialize Welcome Webview
   const welcomeWebview = new WelcomePanel();
   context.subscriptions.push(...welcomeWebview.disposables);
