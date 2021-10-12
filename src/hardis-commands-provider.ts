@@ -274,7 +274,6 @@ export class HardisCommandsProvider
             tooltip:
               "Generates a new password for your current scratch org user",
             icon: "password.svg",
-            requiresProject: true,
           },
           {
             id: "org:connect",
@@ -313,7 +312,6 @@ export class HardisCommandsProvider
               "Export data from org and store it in project files, so it can be imported during each scratch org initialization or deployment to org",
             icon: "data.svg",
             command: "sfdx hardis:org:data:export",
-            requiresProject: true,
           },
           {
             id: "org:data:import",
@@ -321,7 +319,6 @@ export class HardisCommandsProvider
             tooltip: "Import data into org from project files",
             icon: "data.svg",
             command: "sfdx hardis:org:data:import",
-            requiresProject: true,
           },
           {
             id: "org:data:configure",
@@ -336,7 +333,6 @@ export class HardisCommandsProvider
             tooltip: "Export files from org based on a configuration",
             icon: "file.svg",
             command: "sfdx hardis:org:files:export",
-            requiresProject: true,
           },
           {
             id: "org:files:configure",
@@ -358,7 +354,6 @@ export class HardisCommandsProvider
               "Activate tracing of logs to use the local replay debugger",
             icon: "toggle-on.svg",
             command: "vscode-sfdx-hardis.debug.activate",
-            requiresProject: true,
           },
           {
             id: "hardis:debug:run",
@@ -366,7 +361,6 @@ export class HardisCommandsProvider
             tooltip: "Run debugger on an apex log file",
             icon: "debug.svg",
             command: "vscode-sfdx-hardis.debug.launch",
-            requiresProject: true,
           },
           {
             id: "hardis:debug:importapex",
@@ -384,7 +378,6 @@ export class HardisCommandsProvider
               "Deactivate tracing of logs to use the local replay debugger",
             icon: "toggle-off.svg",
             command: "vscode-sfdx-hardis.debug.deactivate",
-            requiresProject: true,
           },
           {
             id: "org:purge:apexlog",

@@ -7,7 +7,7 @@ import * as vscode from "vscode";
 import { Logger } from "./logger";
 const exec = util.promisify(child.exec);
 
-export const RECOMMENDED_SFDX_CLI_VERSION = '7.111.6';
+export const RECOMMENDED_SFDX_CLI_VERSION = "7.111.6";
 
 // Execute command
 export async function execCommand(
@@ -30,7 +30,7 @@ export async function execCommand(
     cwd: options.cwd || vscode.workspace.rootPath,
     env: process.env,
   };
-  Logger.log('[vscode-sfdx-hardis][command] '+command);
+  Logger.log("[vscode-sfdx-hardis][command] " + command);
   try {
     commandResult = await exec(command, execOptions);
   } catch (e: any) {

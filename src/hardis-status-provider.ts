@@ -2,7 +2,11 @@ import * as vscode from "vscode";
 import * as npmApi from "npm-api";
 import * as path from "path";
 import moment = require("moment");
-import { execCommand, execSfdxJson, RECOMMENDED_SFDX_CLI_VERSION } from "./utils";
+import {
+  execCommand,
+  execSfdxJson,
+  RECOMMENDED_SFDX_CLI_VERSION,
+} from "./utils";
 import { Logger } from "./logger";
 const npm = new npmApi();
 
@@ -182,7 +186,6 @@ export class HardisStatusProvider
             });
           }
         }
-
       }
       items.push({
         id: "select-another-org" + (options.devHub ? "-devhub" : ""),
@@ -395,7 +398,10 @@ export class HardisStatusProvider
     }
     const latestSfdxCliVersion = await npm.repo("sfdx-cli").prop("version");
     const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
-    const recommendedSfdxCliVersion = config.get("ignoreSfdxCliRecommendedVersion") === true ? latestSfdxCliVersion: RECOMMENDED_SFDX_CLI_VERSION || latestSfdxCliVersion ;
+    const recommendedSfdxCliVersion =
+      config.get("ignoreSfdxCliRecommendedVersion") === true
+        ? latestSfdxCliVersion
+        : RECOMMENDED_SFDX_CLI_VERSION || latestSfdxCliVersion;
     const sfdxCliItem = {
       id: `sfdx-cli-info`,
       label: `sfdx-cli v${sfdxCliVersion}`,
@@ -417,9 +423,9 @@ export class HardisStatusProvider
     }
     items.push(sfdxCliItem);
     // get currently installed plugins
-    const sfdxPlugins = (
-      await execCommand("sfdx plugins", this, { output: true, fail: false })
-    ).stdout || '';
+    const sfdxPlugins =
+      (await execCommand("sfdx plugins", this, { output: true, fail: false }))
+        .stdout || "";
     // Check installed plugins status version
     const pluginPromises = plugins.map(async (plugin) => {
       // Check latest plugin version

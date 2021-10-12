@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.8.1] 2020-10-12
+
+- Remove check for SFDX project existence for some commands that do not require it.
+
 ## [1.8.0] 2020-09-17
 
 - Manage recommended version for sfdx-cli (can be overridden with VsCode setting `vsCodeSfdxHardis.ignoreSfdxCliRecommendedVersion`)
