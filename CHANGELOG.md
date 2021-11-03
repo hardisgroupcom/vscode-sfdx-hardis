@@ -2,49 +2,54 @@
 
 ## [Unreleased]
 
-## [1.8.1] 2020-10-12
+## [1.8.2] 2021-11-03
+
+- Manage compatibility with repositories cloned with SSH
+- Upgrade MegaLinter to v5
+
+## [1.8.1] 2021-10-12
 
 - Remove check for SFDX project existence for some commands that do not require it.
 
-## [1.8.0] 2020-09-17
+## [1.8.0] 2021-09-17
 
 - Manage recommended version for sfdx-cli (can be overridden with VsCode setting `vsCodeSfdxHardis.ignoreSfdxCliRecommendedVersion`)
 
-## [1.7.2] 2020-09-13
+## [1.7.2] 2021-09-13
 
 - Add logger Output panel
 - Do not get pool info when there is none configured
 
-## [1.7.1] 2020-08-31
+## [1.7.1] 2021-08-31
 
 - Fix crash when Node.js is installed but not sfdx-cli
 
-## [1.7.0] 2020-08-30
+## [1.7.0] 2021-08-30
 
 - New commands to export Files from an org, and to configure such export
 - Freeze / Unfreeze users management (to safely deploy in production)
 - Scratch Orgs Pools management
 
-## [1.6.1] 2020-08-22
+## [1.6.1] 2021-08-22
 
 - Fix error when checking version of Node.js on systems using nvm
 
-## [1.6.0] 2020-08-16
+## [1.6.0] 2021-08-16
 
 - Check that minimum versions of Node.js and Git are installed at extension startup
 - Refresh status section after installing updates
 
-## [1.5.1] 2020-08-14
+## [1.5.1] 2021-08-14
 
 - Add Audit menu and command **Detect legacy API use**
 
-## [1.5.0] 2020-07-30
+## [1.5.0] 2021-07-30
 
 - Welcome page v0
 - Define outdated plugins message as warning
 - Add sfdx-cli update command in the outdated plugins update command
 
-## [1.4.0] 2020-07-05
+## [1.4.0] 2021-07-05
 
 - Update url to Hardis Customer Platform Web Site
 - Update documentation
@@ -52,49 +57,49 @@
 - Data menu
 - Handle new WebSocket event `openFile`
 
-## [1.3.3] 2020-07-02
+## [1.3.3] 2021-07-02
 
 - Command Delete scratch org(s)
 
-## [1.3.2] 2020-07-01
+## [1.3.2] 2021-07-01
 
 - Command "Login again to git"
 
-## [1.3.1] 2020-06-30
+## [1.3.1] 2021-06-30
 
 - Display warning to user when a scratch org will expire soon
 
-## [1.3.0] 2020-06-30
+## [1.3.0] 2021-06-30
 
 - Reorder menus, using new section Operations
 - Fix bug: Git delta does not require a SFDX project
 
-## [1.2.1] 2020-06-20
+## [1.2.1] 2021-06-20
 
 - Try to improve startup performances
 
-## [1.2.0] 2020-06-17
+## [1.2.0] 2021-06-17
 
 - Workaround to decode Outlook365 SafeLink encrypted Urls
 
-## [1.1.0] 2020-06-16
+## [1.1.0] 2021-06-16
 
 - New commands
   - Generate package.xml from git diff
   - Connect to an org (without set default username)
 
-## [1.0.0] 2020-06-14
+## [1.0.0] 2021-06-14
 
 - Fix Git Bash terminal check
 - Split extension.ts file for better code organization
 - Disable commands requiring a SFDX Project
 - Refresh VsCode Window when a SFDX Project is created to activate Salesforce Extensions
 
-## [0.9.1] 2020-06-13
+## [0.9.1] 2021-06-13
 
 - Allow "Don't ask again" option for Git Bash prompt
 
-## [0.9.0] 2020-06-12
+## [0.9.0] 2021-06-12
 
 - New command for debugger
   - Retrieve Apex sources from org
@@ -102,19 +107,19 @@
 - Trace performances
 - Shortcuts to select org & dev hub
 
-## [0.8.0] 2020-06-03
+## [0.8.0] 2021-06-03
 
 - Add command: **Clean SFDX project from references not in org**
 
-## [0.7.0] 2020-06-02
+## [0.7.0] 2021-06-02
 
 - Add Debugger commands
 
-## [0.6.0] 2020-05-28
+## [0.6.0] 2021-05-28
 
 - Shortcut command to open configuration files
 
-## [0.5.0] 2020-05-25
+## [0.5.0] 2021-05-25
 
 - Button to open new terminal, to run sfdx commands in parallel
 
