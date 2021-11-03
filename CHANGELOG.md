@@ -5,6 +5,7 @@
 ## [1.8.2] 2021-11-03
 
 - Manage compatibility with repositories cloned with SSH
+- Upgrade MegaLinter to v5
 
 ## [1.8.1] 2021-10-12
 
