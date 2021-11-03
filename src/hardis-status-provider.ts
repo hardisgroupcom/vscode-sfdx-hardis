@@ -132,7 +132,7 @@ export class HardisStatusProvider
           id: "org-info-username" + (options.devHub ? "-devhub" : ""),
           label: `${orgInfo.username}`,
           tooltip: "Username on your remote Salesforce org",
-          icon: "org-user.svg"
+          icon: "org-user.svg",
         });
       }
       if (orgInfo.expirationDate) {
@@ -225,10 +225,7 @@ export class HardisStatusProvider
           const httpGitUrl = parsedGitUrl.toString("https") || origin.fetchUrl;
           items.push({
             id: "git-info-repo",
-            label: `Repo: ${httpGitUrl
-              .split("/")
-              .pop()
-              .replace(".git", "")}`,
+            label: `Repo: ${httpGitUrl.split("/").pop().replace(".git", "")}`,
             command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
               httpGitUrl
             )}`,
