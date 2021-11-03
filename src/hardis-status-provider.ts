@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import * as npmApi from "npm-api";
 import * as path from "path";
+import * as GitUrlParse from "git-url-parse";
 import moment = require("moment");
 import {
   execCommand,
@@ -131,6 +132,7 @@ export class HardisStatusProvider
           id: "org-info-username" + (options.devHub ? "-devhub" : ""),
           label: `${orgInfo.username}`,
           tooltip: "Username on your remote Salesforce org",
+          icon: "org-user.svg"
         });
       }
       if (orgInfo.expirationDate) {
@@ -219,17 +221,19 @@ export class HardisStatusProvider
         )[0];
         // Display repo
         if (origin) {
+          const parsedGitUrl = GitUrlParse(origin.fetchUrl);
+          const httpGitUrl = parsedGitUrl.toString("https") || origin.fetchUrl;
           items.push({
             id: "git-info-repo",
-            label: `Repo: ${origin.fetchUrl
+            label: `Repo: ${httpGitUrl
               .split("/")
               .pop()
               .replace(".git", "")}`,
             command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
-              origin.fetchUrl
+              httpGitUrl
             )}`,
             icon: "git.svg",
-            tooltip: "Click to open git repo in browser - " + origin.fetchUrl,
+            tooltip: "Click to open git repo in browser - " + httpGitUrl,
           });
         } else {
           items.push({
