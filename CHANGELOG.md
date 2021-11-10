@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.8.3] 2021-11-10
+
+- sfdx-cli bugs has been solved: Remove recommended sfdx version
+
 ## [1.8.2] 2021-11-03
 
 - Manage compatibility with repositories cloned with SSH
