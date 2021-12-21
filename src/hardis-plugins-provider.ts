@@ -14,7 +14,7 @@ let gitInstallOk = false;
 export class HardisPluginsProvider
   implements vscode.TreeDataProvider<StatusTreeItem>
 {
-  constructor(private workspaceRoot: string) {}
+  constructor(private workspaceRoot: string) { }
 
   getTreeItem(element: StatusTreeItem): vscode.TreeItem {
     return element;
@@ -43,8 +43,10 @@ export class HardisPluginsProvider
     Logger.log("Starting TreeViewItem_init_" + topic.id + " ...");
     console.time("TreeViewItem_init_" + topic.id);
     const topicItems: any[] =
-         topic.id === "status-plugins"
-        ? await this.getPluginsItems()
+      topic.id === "status-plugins-sfdx"
+        ? await this.getPluginsItems():
+        topic.id === "status-plugins-core"
+        ? await this.getCoreItems()
         : [];
     console.timeEnd("TreeViewItem_init_" + topic.id);
     Logger.log("Completed TreeViewItem_init_" + topic.id);
@@ -72,11 +74,18 @@ export class HardisPluginsProvider
     return items;
   }
 
-  private async getPluginsItems(): Promise<any[]> {
+  private async getCoreItems(): Promise<any[]> {
     const items: any = [];
-
+    const nodeItem = {
+      id: `plugin-info-node`,
+      label: "Node.js",
+      command: "",
+      tooltip: `Node.js is installed`,
+      icon: "success.svg",
+    };
     // Check node.js version
     if (nodeInstallOk === false) {
+
       const nodeVersionStdOut: string =
         (
           await execCommand("node --version", this, {
@@ -88,6 +97,11 @@ export class HardisPluginsProvider
         "error";
       const nodeVersionMatch = /v([0-9]+)\./gm.exec(nodeVersionStdOut);
       if (!nodeVersionMatch) {
+        nodeItem.icon = "warning.svg";
+        nodeItem.tooltip = "Node.js is missing";
+        nodeItem.command = `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
+          "https://nodejs.org/en/"
+        )}`,
         vscode.window
           .showWarningMessage(
             "You need Node.js installed on your computer. Please download and install it (version 14 minimum), then restart VsCode",
@@ -101,6 +115,12 @@ export class HardisPluginsProvider
             }
           });
       } else if (parseInt(nodeVersionMatch[1]) < 14.0) {
+        nodeItem.label += ' v' + nodeVersionMatch;
+        nodeItem.icon = "warning.svg";
+        nodeItem.tooltip = "Node.js is outdated";
+        nodeItem.command = `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
+          "https://nodejs.org/en/"
+        )}`,
         vscode.window
           .showWarningMessage(
             `You have a too old version (${nodeVersionMatch[1]}) of Node.js installed on your computer. Please download and install it (version 14 minimum), then restart VsCode`,
@@ -117,8 +137,16 @@ export class HardisPluginsProvider
         nodeInstallOk = true;
       }
     }
+    items.push(nodeItem);
 
     // Check git version
+    const gitItem = {
+      id: `plugin-info-git`,
+      label: "Git",
+      command: "",
+      tooltip: `Git is installed`,
+      icon: "success.svg",
+    };
     if (gitInstallOk === false) {
       const gitVersionStdOut: string =
         (
@@ -129,6 +157,11 @@ export class HardisPluginsProvider
         ).stdout || "error";
       const gitVersionMatch = /git version ([0-9]+)\./gm.exec(gitVersionStdOut);
       if (!gitVersionMatch) {
+        gitItem.icon = "warning.svg";
+        gitItem.tooltip = "Git is missing";
+        gitItem.command = `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
+          "https://git-scm.com/downloads"
+        )}`,
         vscode.window
           .showWarningMessage(
             "You need Git installed on your computer. Please download and install it (select GIT BASH in options), then restart VsCode",
@@ -145,6 +178,12 @@ export class HardisPluginsProvider
         gitInstallOk = true;
       }
     }
+    items.push(gitItem);
+    return items;
+  }
+
+  private async getPluginsItems(): Promise<any[]> {
+    const items: any = [];
 
     // Check sfdx related installs
     const plugins = [
@@ -185,7 +224,7 @@ export class HardisPluginsProvider
       sfdxCliOutdated = true;
       sfdxCliItem.label =
         sfdxCliItem.label.includes("missing") &&
-        !sfdxCliItem.label.includes("(link)")
+          !sfdxCliItem.label.includes("(link)")
           ? sfdxCliItem.label
           : sfdxCliItem.label + " (upgrade available)";
       sfdxCliItem.command = `npm install sfdx-cli@${recommendedSfdxCliVersion} -g`;
@@ -200,12 +239,12 @@ export class HardisPluginsProvider
     // Check installed plugins status version
     const pluginPromises = plugins.map(async (plugin) => {
       // Check latest plugin version
-      let latestPluginVersion ;
+      let latestPluginVersion;
       try {
-       latestPluginVersion = await npm.repo(plugin.name).prop("version");
+        latestPluginVersion = await npm.repo(plugin.name).prop("version");
       } catch (e) {
         console.error(`Error while fetching latest version for ${plugin.name}`);
-        return ;
+        return;
       }
       let pluginLabel = plugin.name;
       const regexVersion = new RegExp(`${plugin.name} (.*)`, "gm");
@@ -225,7 +264,7 @@ export class HardisPluginsProvider
       if (!sfdxPlugins.includes(`${plugin.name} ${latestPluginVersion}`)) {
         pluginItem.label =
           pluginItem.label.includes("missing") &&
-          !pluginItem.label.includes("(link)")
+            !pluginItem.label.includes("(link)")
             ? pluginItem.label.replace("(link)", "(localdev)")
             : pluginItem.label + " (upgrade available)";
         pluginItem.command = `echo y|sfdx plugins:install ${plugin.name} && sfdx hardis:work:ws --event refreshPlugins`;
@@ -311,8 +350,14 @@ export class HardisPluginsProvider
   private listTopics(): any {
     const topics = [
       {
-        id: "status-plugins",
-        label: "Plugins",
+        id: "status-plugins-sfdx",
+        label: "SFDX",
+        icon: "plugins.svg",
+        defaultExpand: true,
+      },
+      {
+        id: "status-plugins-core",
+        label: "Core",
         icon: "plugins.svg",
         defaultExpand: true,
       },

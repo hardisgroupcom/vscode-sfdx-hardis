@@ -136,6 +136,10 @@
         }
       },
       {
+        "command": "vscode-sfdx-hardis.toggleCheckpoint",
+        "title": "SFDX Hardis: Toggle checkpoint"
+      },
+      {
         "command": "vscode-sfdx-hardis.newTerminal",
         "title": "New SFDX Hardis terminal",
         "icon": {
@@ -165,7 +169,7 @@
         },
         {
           "id": "sfdx-hardis-plugins",
-          "name": "Plugins"
+          "name": "Dependencies"
         }
       ]
     },
@@ -205,6 +209,13 @@
           "command": "vscode-sfdx-hardis.newTerminal",
           "when": "view == sfdx-hardis-commands",
           "group": "navigation"
+        }
+      ],
+      "editor/context": [
+        {
+          "when": "resourceExtname == .cls",
+          "command": "vscode-sfdx-hardis.toggleCheckpoint",
+          "group": "z_commands"
         }
       ]
     }
