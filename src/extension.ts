@@ -5,6 +5,7 @@ import { Commands } from "./commands";
 //import *  from './commands/vscode-sfdx-hardis.execute-command';
 import { HardisCommandsProvider } from "./hardis-commands-provider";
 import { HardisDebugger } from "./hardis-debugger";
+import { HardisPluginsProvider } from "./hardis-plugins-provider";
 import { HardisStatusProvider } from "./hardis-status-provider";
 import { WebSocketServer } from "./hardis-websocket-server";
 import { Logger } from "./logger";
@@ -47,8 +48,18 @@ export function activate(context: vscode.ExtensionContext) {
   );
   context.subscriptions.push(disposableTreeInfo);
 
+  // Register Status TreeView
+  const hardisPluginsProvider = new HardisPluginsProvider(
+    currentWorkspaceFolderUri
+  );
+  const disposableTreePlugins = vscode.window.registerTreeDataProvider(
+    "sfdx-hardis-plugins",
+    hardisPluginsProvider
+  );
+  context.subscriptions.push(disposableTreePlugins);
+
   // Register common commands
-  const commands = new Commands(hardisCommandsProvider, hardisStatusProvider);
+  const commands = new Commands(hardisCommandsProvider, hardisStatusProvider, hardisPluginsProvider);
   context.subscriptions.push(...commands.disposables);
 
   // Initialize Hardis Debugger commands

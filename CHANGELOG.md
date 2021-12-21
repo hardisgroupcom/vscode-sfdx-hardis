@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.9.0] 2021-12-21
+
+- Split status and plugins panel to improve UI performances
+
 ## [1.8.3] 2021-11-10
 
 - sfdx-cli bugs has been solved: Remove recommended sfdx version

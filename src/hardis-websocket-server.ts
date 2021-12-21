@@ -74,6 +74,10 @@ export class WebSocketServer {
     else if (data.event === "refreshCommands") {
       vscode.commands.executeCommand("vscode-sfdx-hardis.refreshCommandsView");
     }
+    // Request to refresh commands box
+    else if (data.event === "refreshPlugins") {
+      vscode.commands.executeCommand("vscode-sfdx-hardis.refreshPluginsView");
+    }
     // Request to open a file in editor
     else if (data.event === "openFile") {
       const currentWorkspaceFolderUri = getWorkspaceRoot();

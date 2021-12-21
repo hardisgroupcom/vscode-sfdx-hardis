@@ -112,6 +112,14 @@
         }
       },
       {
+        "command": "vscode-sfdx-hardis.refreshPluginsView",
+        "title": "Refresh Plugins Panel",
+        "icon": {
+          "light": "resources/refresh-button.svg",
+          "dark": "resources/refresh-button.svg"
+        }
+      },
+      {
         "command": "vscode-sfdx-hardis.refreshCommandsView",
         "title": "Refresh Commands",
         "icon": {
@@ -154,6 +162,10 @@
         {
           "id": "sfdx-hardis-status",
           "name": "Status"
+        },
+        {
+          "id": "sfdx-hardis-plugins",
+          "name": "Plugins"
         }
       ]
     },
@@ -167,6 +179,11 @@
         {
           "command": "vscode-sfdx-hardis.refreshStatusView",
           "when": "view == sfdx-hardis-status",
+          "group": "navigation"
+        },
+        {
+          "command": "vscode-sfdx-hardis.refreshPluginsView",
+          "when": "view == sfdx-hardis-plugins",
           "group": "navigation"
         },
         {
