@@ -1,10 +1,7 @@
 import * as vscode from "vscode";
 import * as npmApi from "npm-api";
 import * as path from "path";
-import {
-  execCommand,
-  RECOMMENDED_SFDX_CLI_VERSION,
-} from "./utils";
+import { execCommand, RECOMMENDED_SFDX_CLI_VERSION } from "./utils";
 import { Logger } from "./logger";
 const npm = new npmApi();
 
@@ -14,7 +11,7 @@ let gitInstallOk = false;
 export class HardisPluginsProvider
   implements vscode.TreeDataProvider<StatusTreeItem>
 {
-  constructor(private workspaceRoot: string) { }
+  constructor(private workspaceRoot: string) {}
 
   getTreeItem(element: StatusTreeItem): vscode.TreeItem {
     return element;
@@ -44,8 +41,8 @@ export class HardisPluginsProvider
     console.time("TreeViewItem_init_" + topic.id);
     const topicItems: any[] =
       topic.id === "status-plugins-sfdx"
-        ? await this.getPluginsItems():
-        topic.id === "status-plugins-core"
+        ? await this.getPluginsItems()
+        : topic.id === "status-plugins-core"
         ? await this.getCoreItems()
         : [];
     console.timeEnd("TreeViewItem_init_" + topic.id);
@@ -85,7 +82,6 @@ export class HardisPluginsProvider
     };
     // Check node.js version
     if (nodeInstallOk === false) {
-
       const nodeVersionStdOut: string =
         (
           await execCommand("node --version", this, {
@@ -99,40 +95,40 @@ export class HardisPluginsProvider
       if (!nodeVersionMatch) {
         nodeItem.icon = "warning.svg";
         nodeItem.tooltip = "Node.js is missing";
-        nodeItem.command = `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
+        (nodeItem.command = `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
           "https://nodejs.org/en/"
-        )}`,
-        vscode.window
-          .showWarningMessage(
-            "You need Node.js installed on your computer. Please download and install it (version 14 minimum), then restart VsCode",
-            "Download and install Node.js LTS"
-          )
-          .then((selection) => {
-            if (selection === "Download and install Node.js LTS") {
-              vscode.env.openExternal(
-                vscode.Uri.parse("https://nodejs.org/en/")
-              );
-            }
-          });
+        )}`),
+          vscode.window
+            .showWarningMessage(
+              "You need Node.js installed on your computer. Please download and install it (version 14 minimum), then restart VsCode",
+              "Download and install Node.js LTS"
+            )
+            .then((selection) => {
+              if (selection === "Download and install Node.js LTS") {
+                vscode.env.openExternal(
+                  vscode.Uri.parse("https://nodejs.org/en/")
+                );
+              }
+            });
       } else if (parseInt(nodeVersionMatch[1]) < 14.0) {
-        nodeItem.label += ' v' + nodeVersionMatch;
+        nodeItem.label += " v" + nodeVersionMatch;
         nodeItem.icon = "warning.svg";
         nodeItem.tooltip = "Node.js is outdated";
-        nodeItem.command = `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
+        (nodeItem.command = `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
           "https://nodejs.org/en/"
-        )}`,
-        vscode.window
-          .showWarningMessage(
-            `You have a too old version (${nodeVersionMatch[1]}) of Node.js installed on your computer. Please download and install it (version 14 minimum), then restart VsCode`,
-            "Download and install Node.js LTS"
-          )
-          .then((selection) => {
-            if (selection === "Download and install Node.js LTS") {
-              vscode.env.openExternal(
-                vscode.Uri.parse("https://nodejs.org/en/")
-              );
-            }
-          });
+        )}`),
+          vscode.window
+            .showWarningMessage(
+              `You have a too old version (${nodeVersionMatch[1]}) of Node.js installed on your computer. Please download and install it (version 14 minimum), then restart VsCode`,
+              "Download and install Node.js LTS"
+            )
+            .then((selection) => {
+              if (selection === "Download and install Node.js LTS") {
+                vscode.env.openExternal(
+                  vscode.Uri.parse("https://nodejs.org/en/")
+                );
+              }
+            });
       } else {
         nodeInstallOk = true;
       }
@@ -159,21 +155,21 @@ export class HardisPluginsProvider
       if (!gitVersionMatch) {
         gitItem.icon = "warning.svg";
         gitItem.tooltip = "Git is missing";
-        gitItem.command = `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
+        (gitItem.command = `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
           "https://git-scm.com/downloads"
-        )}`,
-        vscode.window
-          .showWarningMessage(
-            "You need Git installed on your computer. Please download and install it (select GIT BASH in options), then restart VsCode",
-            "Download and install Git"
-          )
-          .then((selection) => {
-            if (selection === "Download and install Git") {
-              vscode.env.openExternal(
-                vscode.Uri.parse("https://git-scm.com/downloads")
-              );
-            }
-          });
+        )}`),
+          vscode.window
+            .showWarningMessage(
+              "You need Git installed on your computer. Please download and install it (select GIT BASH in options), then restart VsCode",
+              "Download and install Git"
+            )
+            .then((selection) => {
+              if (selection === "Download and install Git") {
+                vscode.env.openExternal(
+                  vscode.Uri.parse("https://git-scm.com/downloads")
+                );
+              }
+            });
       } else {
         gitInstallOk = true;
       }
@@ -224,7 +220,7 @@ export class HardisPluginsProvider
       sfdxCliOutdated = true;
       sfdxCliItem.label =
         sfdxCliItem.label.includes("missing") &&
-          !sfdxCliItem.label.includes("(link)")
+        !sfdxCliItem.label.includes("(link)")
           ? sfdxCliItem.label
           : sfdxCliItem.label + " (upgrade available)";
       sfdxCliItem.command = `npm install sfdx-cli@${recommendedSfdxCliVersion} -g`;
@@ -264,7 +260,7 @@ export class HardisPluginsProvider
       if (!sfdxPlugins.includes(`${plugin.name} ${latestPluginVersion}`)) {
         pluginItem.label =
           pluginItem.label.includes("missing") &&
-            !pluginItem.label.includes("(link)")
+          !pluginItem.label.includes("(link)")
             ? pluginItem.label.replace("(link)", "(localdev)")
             : pluginItem.label + " (upgrade available)";
         pluginItem.command = `echo y|sfdx plugins:install ${plugin.name} && sfdx hardis:work:ws --event refreshPlugins`;
@@ -293,7 +289,8 @@ export class HardisPluginsProvider
             if (sfdxCliOutdated === true) {
               command = "npm install sfdx-cli -g && " + command;
             }
-            command = command + ` && sfdx hardis:work:ws --event refreshPlugins`;
+            command =
+              command + ` && sfdx hardis:work:ws --event refreshPlugins`;
             vscode.commands.executeCommand(
               "vscode-sfdx-hardis.execute-command",
               command

@@ -34,22 +34,26 @@ export class HardisDebugger {
         this.toggleCheckpoint();
       }
     );
-    this.disposables.push(...[cmdActivate, cmdDeactivate, cmdLaunch,cmdToggleCheckpoint]);
+    this.disposables.push(
+      ...[cmdActivate, cmdDeactivate, cmdLaunch, cmdToggleCheckpoint]
+    );
   }
 
   private registerHandlers() {
     const breakpointsHandler = vscode.debug.onDidChangeBreakpoints(
       async (breakpointChangeEvent) => {
-          let requiresCheckpointUpload = false ;
-          for (const breakpoint of breakpointChangeEvent.added || breakpointChangeEvent.changed || []) {
-            if (breakpoint?.condition === 'checkpoint') {
-              requiresCheckpointUpload = true ;
-              break ;
-            }
+        let requiresCheckpointUpload = false;
+        for (const breakpoint of breakpointChangeEvent.added ||
+          breakpointChangeEvent.changed ||
+          []) {
+          if (breakpoint?.condition === "checkpoint") {
+            requiresCheckpointUpload = true;
+            break;
           }
-          if (requiresCheckpointUpload === true ) {
-            await this.runSfdxExtensionCommand("sfdx.create.checkpoints");
-          }
+        }
+        if (requiresCheckpointUpload === true) {
+          await this.runSfdxExtensionCommand("sfdx.create.checkpoints");
+        }
       }
     );
     this.disposables.push(breakpointsHandler);
@@ -108,21 +112,20 @@ export class HardisDebugger {
             if (selection === "Retrieve Apex sources from org") {
               vscode.commands.executeCommand(
                 "vscode-sfdx-hardis.execute-command",
-                "sfdx hardis:org:retrieve:sources:dx -k ApexClass,ApexTrigger,ApexPage");
+                "sfdx hardis:org:retrieve:sources:dx -k ApexClass,ApexTrigger,ApexPage"
+              );
             }
-          });        
-      }
-      else {
+          });
+      } else {
         // Salesforce extension command not found
-        vscode.window
-          .showWarningMessage(
-            `Salesforce Extension pack command not found. If it is installed, just wait for it to be initialized :)`
-          );
+        vscode.window.showWarningMessage(
+          `Salesforce Extension pack command not found. If it is installed, just wait for it to be initialized :)`
+        );
       }
       return null;
     }
     return res;
   }
 
-  dispose() { }
+  dispose() {}
 }

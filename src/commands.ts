@@ -9,7 +9,7 @@ import { getWorkspaceRoot } from "./utils";
 
 export class Commands {
   hardisCommandsProvider: HardisCommandsProvider | null = null;
-  hardisStatusProvider: HardisStatusProvider | null = null; 
+  hardisStatusProvider: HardisStatusProvider | null = null;
   hardisPluginsProvider: HardisPluginsProvider | null = null;
   disposables: vscode.Disposable[] = [];
   terminalStack: vscode.Terminal[] = [];

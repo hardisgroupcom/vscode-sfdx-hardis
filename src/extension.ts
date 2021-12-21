@@ -59,7 +59,11 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(disposableTreePlugins);
 
   // Register common commands
-  const commands = new Commands(hardisCommandsProvider, hardisStatusProvider, hardisPluginsProvider);
+  const commands = new Commands(
+    hardisCommandsProvider,
+    hardisStatusProvider,
+    hardisPluginsProvider
+  );
   context.subscriptions.push(...commands.disposables);
 
   // Initialize Hardis Debugger commands

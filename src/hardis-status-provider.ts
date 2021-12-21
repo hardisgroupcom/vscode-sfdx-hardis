@@ -2,9 +2,7 @@ import * as vscode from "vscode";
 import * as path from "path";
 import * as GitUrlParse from "git-url-parse";
 import moment = require("moment");
-import {
-  execSfdxJson,
-} from "./utils";
+import { execSfdxJson } from "./utils";
 import { Logger } from "./logger";
 
 export class HardisStatusProvider
