@@ -1,10 +1,12 @@
 import * as vscode from "vscode";
+import { hasSfdxProjectJson } from "./utils";
 
 export class HardisDebugger {
   disposables: vscode.Disposable[] = [];
 
   constructor() {
     this.registerCommands();
+    this.registerHandlers();
   }
 
   private registerCommands() {
@@ -26,19 +28,51 @@ export class HardisDebugger {
         this.launchDebugger();
       }
     );
-    this.disposables.push(...[cmdActivate, cmdDeactivate, cmdLaunch]);
+    const cmdToggleCheckpoint = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.toggleCheckpoint",
+      () => {
+        this.toggleCheckpoint();
+      }
+    );
+    this.disposables.push(
+      ...[cmdActivate, cmdDeactivate, cmdLaunch, cmdToggleCheckpoint]
+    );
   }
 
-  private activateDebugger() {
-    vscode.commands.executeCommand("sfdx.force.start.apex.debug.logging");
+  private registerHandlers() {
+    const breakpointsHandler = vscode.debug.onDidChangeBreakpoints(
+      async (breakpointChangeEvent) => {
+        let requiresCheckpointUpload = false;
+        for (const breakpoint of breakpointChangeEvent.added ||
+          breakpointChangeEvent.changed ||
+          []) {
+          if (breakpoint?.condition === "checkpoint") {
+            requiresCheckpointUpload = true;
+            break;
+          }
+        }
+        if (requiresCheckpointUpload === true) {
+          await this.runSfdxExtensionCommand("sfdx.create.checkpoints");
+        }
+      }
+    );
+    this.disposables.push(breakpointsHandler);
   }
 
-  private deactivateDebugger() {
-    vscode.commands.executeCommand("sfdx.force.stop.apex.debug.logging");
+  private async activateDebugger() {
+    await this.runSfdxExtensionCommand("sfdx.force.start.apex.debug.logging");
+  }
+
+  private async deactivateDebugger() {
+    await this.runSfdxExtensionCommand("sfdx.force.stop.apex.debug.logging");
+  }
+
+  private async toggleCheckpoint() {
+    await this.runSfdxExtensionCommand("sfdx.toggle.checkpoint");
   }
 
   private async launchDebugger() {
-    await vscode.commands.executeCommand("sfdx.force.apex.log.get");
+    await this.runSfdxExtensionCommand("sfdx.force.apex.log.get");
     let launched = false;
     const listener = vscode.window.onDidChangeActiveTextEditor((textEditor) => {
       if (textEditor && textEditor?.document?.uri?.fsPath.endsWith(".log")) {
@@ -60,6 +94,37 @@ export class HardisDebugger {
 
   private debugLogFile(uri: vscode.Uri) {
     vscode.commands.executeCommand("sfdx.launch.replay.debugger.logfile", uri);
+  }
+
+  private async runSfdxExtensionCommand(command: string) {
+    let res;
+    try {
+      res = await vscode.commands.executeCommand(command);
+    } catch (e) {
+      if (!hasSfdxProjectJson({ recalc: true })) {
+        // Missing apex sources
+        vscode.window
+          .showWarningMessage(
+            "No local apex sources found. Click to retrieve them :)",
+            "Retrieve Apex sources from org"
+          )
+          .then((selection) => {
+            if (selection === "Retrieve Apex sources from org") {
+              vscode.commands.executeCommand(
+                "vscode-sfdx-hardis.execute-command",
+                "sfdx hardis:org:retrieve:sources:dx -k ApexClass,ApexTrigger,ApexPage"
+              );
+            }
+          });
+      } else {
+        // Salesforce extension command not found
+        vscode.window.showWarningMessage(
+          `Salesforce Extension pack command not found. If it is installed, just wait for it to be initialized :)`
+        );
+      }
+      return null;
+    }
+    return res;
   }
 
   dispose() {}

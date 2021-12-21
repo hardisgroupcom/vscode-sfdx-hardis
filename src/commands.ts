@@ -3,11 +3,14 @@ import * as path from "path";
 import * as fs from "fs-extra";
 import { HardisCommandsProvider } from "./hardis-commands-provider";
 import { HardisStatusProvider } from "./hardis-status-provider";
+import { HardisPluginsProvider } from "./hardis-plugins-provider";
 import { WebSocketServer } from "./hardis-websocket-server";
 import { getWorkspaceRoot } from "./utils";
+
 export class Commands {
   hardisCommandsProvider: HardisCommandsProvider | null = null;
   hardisStatusProvider: HardisStatusProvider | null = null;
+  hardisPluginsProvider: HardisPluginsProvider | null = null;
   disposables: vscode.Disposable[] = [];
   terminalStack: vscode.Terminal[] = [];
   terminalIsRunning = false;
@@ -15,10 +18,12 @@ export class Commands {
 
   constructor(
     hardisCommandsProvider: HardisCommandsProvider,
-    hardisStatusProvider: HardisStatusProvider
+    hardisStatusProvider: HardisStatusProvider,
+    hardisPluginsProvider: HardisPluginsProvider
   ) {
     this.hardisCommandsProvider = hardisCommandsProvider;
     this.hardisStatusProvider = hardisStatusProvider;
+    this.hardisPluginsProvider = hardisPluginsProvider;
     this.registerCommands();
   }
 
@@ -28,6 +33,7 @@ export class Commands {
     this.registerNewTerminalCommand();
     this.registerRefreshCommandsView();
     this.registerRefreshStatusView();
+    this.registerRefreshPluginsView();
     this.registerOpenExternal();
     this.registerOpenKeyFile();
     this.registerShowMessage();
@@ -53,7 +59,7 @@ export class Commands {
     // terminalIsRunning = true; //Comment until we find a way to detect that a command is running or not
     if (
       (command.startsWith("sfdx hardis:") ||
-        command.endsWith("sfdx hardis:work:ws --event refreshStatus")) &&
+        command.includes("sfdx hardis:work:ws --event")) &&
       this.disposableWebSocketServer &&
       this.disposableWebSocketServer.websocketHostPort !== null
     ) {
@@ -178,6 +184,14 @@ export class Commands {
     const disposable = vscode.commands.registerCommand(
       "vscode-sfdx-hardis.refreshStatusView",
       () => this.hardisStatusProvider?.refresh()
+    );
+    this.disposables.push(disposable);
+  }
+
+  registerRefreshPluginsView() {
+    const disposable = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.refreshPluginsView",
+      () => this.hardisPluginsProvider?.refresh()
     );
     this.disposables.push(disposable);
   }

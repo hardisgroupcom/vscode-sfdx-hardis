@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [1.9.0] 2021-12-21
+
+- Split status and plugins panel to improve UI performances
+- Easy user handling for debugger commands (propose to download Apex sources if not present)
+- Context menu to toggle Apex checkpoints, and automatically upload them to org when added
+
 ## [1.8.3] 2021-11-10
 
 - sfdx-cli bugs has been solved: Remove recommended sfdx version
