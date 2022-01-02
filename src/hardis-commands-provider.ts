@@ -307,7 +307,7 @@ export class HardisCommandsProvider
         commands: [
           {
             id: "org:data:export",
-            label: "Export data with SFDMU",
+            label: "Export data from org with SFDMU",
             tooltip:
               "Export data from org and store it in project files, so it can be imported during each scratch org initialization or deployment to org",
             icon: "data.svg",
@@ -315,7 +315,7 @@ export class HardisCommandsProvider
           },
           {
             id: "org:data:import",
-            label: "Import data with SFDMU",
+            label: "Import data to org with SFDMU",
             tooltip: "Import data into org from project files",
             icon: "data.svg",
             command: "sfdx hardis:org:data:import",
