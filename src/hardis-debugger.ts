@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import { hasSfdxProjectJson } from "./utils";
 
 export class HardisDebugger {
-  isDebugLogsActive = false ;
+  isDebugLogsActive = false;
   disposables: vscode.Disposable[] = [];
 
   constructor() {
@@ -43,12 +43,12 @@ export class HardisDebugger {
   private registerHandlers() {
     const breakpointsHandler = vscode.debug.onDidChangeBreakpoints(
       async (breakpointChangeEvent) => {
-        let requiresActivateDebugLogs = false ;
+        let requiresActivateDebugLogs = false;
         let requiresCheckpointUpload = false;
         for (const breakpoint of breakpointChangeEvent.added ||
           breakpointChangeEvent.changed ||
           []) {
-          requiresActivateDebugLogs = true ;
+          requiresActivateDebugLogs = true;
           if (breakpoint?.condition === "checkpoint") {
             requiresCheckpointUpload = true;
             break;
@@ -67,12 +67,12 @@ export class HardisDebugger {
 
   private async activateDebugger() {
     await this.runSfdxExtensionCommand("sfdx.force.start.apex.debug.logging");
-    this.isDebugLogsActive = true ;
+    this.isDebugLogsActive = true;
   }
 
   private async deactivateDebugger() {
     await this.runSfdxExtensionCommand("sfdx.force.stop.apex.debug.logging");
-    this.isDebugLogsActive = false ;
+    this.isDebugLogsActive = false;
   }
 
   private async toggleCheckpoint() {
@@ -81,7 +81,7 @@ export class HardisDebugger {
 
   private async manageDebugLogsActivation() {
     if (this.isDebugLogsActive) {
-      return ;
+      return;
     }
     await this.activateDebugger();
   }
