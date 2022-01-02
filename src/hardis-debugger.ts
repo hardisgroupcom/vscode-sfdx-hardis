@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { hasSfdxProjectJson } from "./utils";
 
 export class HardisDebugger {
+  isDebugLogsActive = false;
   disposables: vscode.Disposable[] = [];
 
   constructor() {
@@ -42,14 +43,19 @@ export class HardisDebugger {
   private registerHandlers() {
     const breakpointsHandler = vscode.debug.onDidChangeBreakpoints(
       async (breakpointChangeEvent) => {
+        let requiresActivateDebugLogs = false;
         let requiresCheckpointUpload = false;
         for (const breakpoint of breakpointChangeEvent.added ||
           breakpointChangeEvent.changed ||
           []) {
+          requiresActivateDebugLogs = true;
           if (breakpoint?.condition === "checkpoint") {
             requiresCheckpointUpload = true;
             break;
           }
+        }
+        if (requiresActivateDebugLogs) {
+          await this.manageDebugLogsActivation();
         }
         if (requiresCheckpointUpload === true) {
           await this.runSfdxExtensionCommand("sfdx.create.checkpoints");
@@ -61,14 +67,23 @@ export class HardisDebugger {
 
   private async activateDebugger() {
     await this.runSfdxExtensionCommand("sfdx.force.start.apex.debug.logging");
+    this.isDebugLogsActive = true;
   }
 
   private async deactivateDebugger() {
     await this.runSfdxExtensionCommand("sfdx.force.stop.apex.debug.logging");
+    this.isDebugLogsActive = false;
   }
 
   private async toggleCheckpoint() {
     await this.runSfdxExtensionCommand("sfdx.toggle.checkpoint");
+  }
+
+  private async manageDebugLogsActivation() {
+    if (this.isDebugLogsActive) {
+      return;
+    }
+    await this.activateDebugger();
   }
 
   private async launchDebugger() {

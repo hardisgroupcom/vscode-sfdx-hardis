@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.9.2] 2022-01-02
+
+- Automatically activate debug logs when adding or updating a breakpoint
+
 ## [1.9.1] 2022-01-02
 
 - Update labels and articles links

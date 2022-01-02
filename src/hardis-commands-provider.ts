@@ -348,14 +348,6 @@ export class HardisCommandsProvider
         label: "Debugger",
         commands: [
           {
-            id: "hardis:debug:activate",
-            label: "Activate debug logs tracing",
-            tooltip:
-              "Activate tracing of logs to use the local replay debugger",
-            icon: "toggle-on.svg",
-            command: "vscode-sfdx-hardis.debug.activate",
-          },
-          {
             id: "hardis:debug:run",
             label: "Run debugger",
             tooltip: "Run debugger on an apex log file",
@@ -363,13 +355,12 @@ export class HardisCommandsProvider
             command: "vscode-sfdx-hardis.debug.launch",
           },
           {
-            id: "hardis:debug:importapex",
-            label: "Retrieve Apex sources from org",
+            id: "hardis:debug:activate",
+            label: "Activate debug logs tracing",
             tooltip:
-              "Retrieve sources from your org so you can use the replay debugger",
-            icon: "pull.svg",
-            command:
-              "sfdx hardis:org:retrieve:sources:dx -k ApexClass,ApexTrigger,ApexPage",
+              "Activate tracing of logs to use the local replay debugger",
+            icon: "toggle-on.svg",
+            command: "vscode-sfdx-hardis.debug.activate",
           },
           {
             id: "hardis:debug:deactivate",
@@ -385,6 +376,15 @@ export class HardisCommandsProvider
             tooltip: "Purge all apex logs of default org",
             icon: "file.svg",
             command: "sfdx hardis:org:purge:apexlog",
+          },
+          {
+            id: "hardis:debug:importapex",
+            label: "Retrieve Apex sources from org",
+            tooltip:
+              "Retrieve sources from your org so you can use the replay debugger",
+            icon: "pull.svg",
+            command:
+              "sfdx hardis:org:retrieve:sources:dx -k ApexClass,ApexTrigger,ApexPage",
           },
         ],
       },
