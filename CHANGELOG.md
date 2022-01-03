@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.9.3] 2022-01-03
+
+- Check for Salesforce Extensions pack installation. If not propose to install it.
+
 ## [1.9.2] 2022-01-02
 
 - Automatically activate debug logs when adding or updating a breakpoint

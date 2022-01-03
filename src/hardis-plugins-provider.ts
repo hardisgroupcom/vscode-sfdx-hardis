@@ -44,6 +44,8 @@ export class HardisPluginsProvider
         ? await this.getPluginsItems()
         : topic.id === "status-plugins-core"
         ? await this.getCoreItems()
+        : topic.id === "status-vscode-extensions"
+        ? await this.getExtensionsItems()
         : [];
     console.timeEnd("TreeViewItem_init_" + topic.id);
     Logger.log("Completed TreeViewItem_init_" + topic.id);
@@ -301,6 +303,48 @@ export class HardisPluginsProvider
     return items.sort((a: any, b: any) => (a.label > b.label ? 1 : -1));
   }
 
+  // Check for required VsCode extensions
+  private async getExtensionsItems(): Promise<any[]> {
+    const items: any = [];
+    const extensions = [
+      {
+        id: "salesforce.salesforcedx-vscode",
+        label: "Salesforce Extensions Pack",
+      },
+    ];
+    for (const extension of extensions) {
+      const extensionItem = {
+        id: extension.id,
+        label: extension.label,
+        command: "",
+        tooltip: `${extension.label} is installed`,
+        icon: "success.svg",
+      };
+      const extInstance = vscode.extensions.getExtension(extension.id);
+      if (!extInstance) {
+        extensionItem.command = `code --install-extension ${extension.id}`;
+        extensionItem.tooltip = `Click to install VsCode Extension ${extension.label}`;
+        extensionItem.icon = "warning.svg";
+        vscode.window
+          .showWarningMessage(
+            `VsCode extension ${extension.label} is missing, click to install it`,
+            `Install ${extension.label}`
+          )
+          .then((selection) => {
+            if (selection === `Install ${extension.label}`) {
+              vscode.commands.executeCommand(
+                "vscode-sfdx-hardis.execute-command",
+                extensionItem.command
+              );
+            }
+          });
+      }
+      items.push(extensionItem);
+    }
+
+    return items;
+  }
+
   /**
    * List all topics
    */
@@ -355,6 +399,12 @@ export class HardisPluginsProvider
       {
         id: "status-plugins-core",
         label: "Core",
+        icon: "plugins.svg",
+        defaultExpand: true,
+      },
+      {
+        id: "status-vscode-extensions",
+        label: "VsCode Extensions",
         icon: "plugins.svg",
         defaultExpand: true,
       },
