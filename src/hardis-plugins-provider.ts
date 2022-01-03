@@ -11,7 +11,7 @@ let gitInstallOk = false;
 export class HardisPluginsProvider
   implements vscode.TreeDataProvider<StatusTreeItem>
 {
-  constructor(private workspaceRoot: string) {}
+  constructor(private workspaceRoot: string) { }
 
   getTreeItem(element: StatusTreeItem): vscode.TreeItem {
     return element;
@@ -43,8 +43,10 @@ export class HardisPluginsProvider
       topic.id === "status-plugins-sfdx"
         ? await this.getPluginsItems()
         : topic.id === "status-plugins-core"
-        ? await this.getCoreItems()
-        : [];
+          ? await this.getCoreItems()
+          : topic.id === "status-vscode-extensions"
+            ? await this.getExtensionsItems()
+            : [];
     console.timeEnd("TreeViewItem_init_" + topic.id);
     Logger.log("Completed TreeViewItem_init_" + topic.id);
     for (const item of topicItems) {
@@ -220,7 +222,7 @@ export class HardisPluginsProvider
       sfdxCliOutdated = true;
       sfdxCliItem.label =
         sfdxCliItem.label.includes("missing") &&
-        !sfdxCliItem.label.includes("(link)")
+          !sfdxCliItem.label.includes("(link)")
           ? sfdxCliItem.label
           : sfdxCliItem.label + " (upgrade available)";
       sfdxCliItem.command = `npm install sfdx-cli@${recommendedSfdxCliVersion} -g`;
@@ -260,7 +262,7 @@ export class HardisPluginsProvider
       if (!sfdxPlugins.includes(`${plugin.name} ${latestPluginVersion}`)) {
         pluginItem.label =
           pluginItem.label.includes("missing") &&
-          !pluginItem.label.includes("(link)")
+            !pluginItem.label.includes("(link)")
             ? pluginItem.label.replace("(link)", "(localdev)")
             : pluginItem.label + " (upgrade available)";
         pluginItem.command = `echo y|sfdx plugins:install ${plugin.name} && sfdx hardis:work:ws --event refreshPlugins`;
@@ -299,6 +301,48 @@ export class HardisPluginsProvider
         });
     }
     return items.sort((a: any, b: any) => (a.label > b.label ? 1 : -1));
+  }
+
+  // Check for required VsCode extensions
+  private async getExtensionsItems(): Promise<any[]> {
+    const items: any = [];
+    const extensions = [
+      {
+        id: "salesforce.salesforcedx-vscode",
+        label: "Salesforce Extensions Pack"
+      }
+    ];
+    for (const extension of extensions) {
+      const extensionItem = {
+        id: extension.id,
+        label: extension.label,
+        command: "",
+        tooltip: `${extension.label} is installed`,
+        icon: "success.svg",
+      };
+      const extInstance = vscode.extensions.getExtension(extension.id);
+      if (!extInstance) {
+        extensionItem.command = `code --install-extension ${extension.id}`;
+        extensionItem.tooltip = `Click to install VsCode Extension ${extension.label}`;
+        extensionItem.icon = "warning.svg";
+        vscode.window
+          .showWarningMessage(
+            `VsCode extension ${extension.label} is missing, click to install it`,
+            `Install ${extension.label}`
+          )
+          .then((selection) => {
+            if (selection === `Install ${extension.label}`) {
+              vscode.commands.executeCommand(
+                "vscode-sfdx-hardis.execute-command",
+                extensionItem.command
+              );              
+            }
+          });
+      }
+      items.push(extensionItem);
+    }
+
+    return items;
   }
 
   /**
@@ -355,6 +399,12 @@ export class HardisPluginsProvider
       {
         id: "status-plugins-core",
         label: "Core",
+        icon: "plugins.svg",
+        defaultExpand: true,
+      },
+      {
+        id: "status-vscode-extensions",
+        label: "VsCode Extensions",
         icon: "plugins.svg",
         defaultExpand: true,
       },
