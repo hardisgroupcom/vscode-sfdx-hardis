@@ -406,7 +406,6 @@ export class HardisCommandsProvider
               "Assisted configuration to connect a protected branch and its related release org during CI",
             icon: "configure.svg",
             command: "sfdx hardis:project:configure:auth",
-            requiresProject: true,
           },
           {
             id: "configure:auth:devhub",

@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.9.4] 2022-01-07
+
+- Fix: Configure org for CI does not require a sfdx project
+
 ## [1.9.3] 2022-01-03
 
 - Check for Salesforce Extensions pack installation. If not propose to install it.
