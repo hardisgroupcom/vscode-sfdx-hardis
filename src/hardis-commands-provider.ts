@@ -5,7 +5,7 @@ import { execSfdxJson, hasSfdxProjectJson } from "./utils";
 export class HardisCommandsProvider
   implements vscode.TreeDataProvider<CommandTreeItem>
 {
-  private allTopicsAndCommands: any  = null;
+  private allTopicsAndCommands: any = null;
   constructor(private workspaceRoot: string) {}
 
   getTreeItem(element: CommandTreeItem): vscode.TreeItem {
@@ -80,7 +80,7 @@ export class HardisCommandsProvider
    */
   private async listTopics(): Promise<CommandTreeItem[]> {
     const items: CommandTreeItem[] = [];
-    for (const item of (await this.listTopicAndCommands())) {
+    for (const item of await this.listTopicAndCommands()) {
       const options = {
         icon: { light: "user.svg", dark: "user.svg" },
         description: "",
@@ -123,13 +123,14 @@ export class HardisCommandsProvider
   }
 
   private getAllTopicsAndCommands(): any {
-     return this.allTopicsAndCommands ;
+    return this.allTopicsAndCommands;
   }
 
   private async listTopicAndCommands(): Promise<any> {
     if (this.allTopicsAndCommands !== null) {
       return this.allTopicsAndCommands;
-    }let hardisCommands = [
+    }
+    let hardisCommands = [
       {
         id: "work",
         label: "Work on a task (assisted mode)",
@@ -583,9 +584,9 @@ export class HardisCommandsProvider
         )}`,
       },
     ];
-    this.allTopicsAndCommands = hardisCommands ;
+    this.allTopicsAndCommands = hardisCommands;
     hardisCommands = await this.completeWithCustomCommands(hardisCommands);
-    return hardisCommands ;
+    return hardisCommands;
   }
 
   // Add custom commands defined within .sfdx-hardis.yml
