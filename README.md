@@ -108,6 +108,45 @@ Production operations
 
 ![screenshot](resources/menu-production.jpg)
 
+### Custom commands
+
+You can **define your own custom commands** that will appear at the bottom of the menu.
+
+![screenshot](resources/custom-commands.jpg)
+
+- Create or update existing file `config/.sfdx-hardis.yml` in your project, and add property **customCommands** , that will contain other menus and commands under each of them.
+
+- Icons can be any of the [SVG files in this folder](https://github.com/hardisgroupcom/vscode-sfdx-hardis/tree/master/resources)
+
+- Once updated, please refresh the VsCode Sfdx Hardis Commands panel to see the changes.
+
+Example of `config/.sfdx-hardis.yml`:
+
+```yaml
+customCommands:
+  - id: custom-menu
+    label: Custom commands
+    commands:
+      - id: generate-manifest-xml
+        label: Generate manifest
+        icon: file.svg
+        tooltip: Generates a manifest package.xml using local sfdx source files
+        command: sfdx force:source:manifest:create --sourcepath force-app --manifestname myNewManifest
+      - id: list-all-orgs
+        label: List all orgs
+        icon: salesforce.svg
+        tooltip: List all orgs that has already been authenticated using sfdx
+        command: sfdx force:org:list --all
+  - id: custom-menu-2
+    label: Another custom menu
+    commands:
+      - id: echo
+        label: Echo something
+        icon: user.svg
+        tooltip: Useless commands just to show that we can use not sfdx commands too
+        command: echo "Something"
+```
+
 ## Dependencies
 
 [**sfdx-hardis**](https://github.com/hardisgroupcom/sfdx-hardis) partially relies on the following SFDX Open-Source packages
