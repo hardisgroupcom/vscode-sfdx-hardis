@@ -1,10 +1,11 @@
 import * as vscode from "vscode";
 import * as path from "path";
-import { hasSfdxProjectJson } from "./utils";
+import { execSfdxJson, hasSfdxProjectJson } from "./utils";
 
 export class HardisCommandsProvider
   implements vscode.TreeDataProvider<CommandTreeItem>
 {
+  private allTopicsAndCommands: any = null;
   constructor(private workspaceRoot: string) {}
 
   getTreeItem(element: CommandTreeItem): vscode.TreeItem {
@@ -22,7 +23,7 @@ export class HardisCommandsProvider
     if (element) {
       return Promise.resolve(this.getTopicCommands(element));
     } else {
-      return Promise.resolve(this.listTopics());
+      return this.listTopics();
     }
   }
 
@@ -31,7 +32,7 @@ export class HardisCommandsProvider
    */
   private getTopicCommands(topic: any): CommandTreeItem[] {
     const items: CommandTreeItem[] = [];
-    const matchingTopic = this.listTopicAndCommands().filter(
+    const matchingTopic = this.getAllTopicsAndCommands().filter(
       (topicItem: CommandTreeItem) => topicItem.id === topic.id
     )[0];
     for (const item of matchingTopic.commands) {
@@ -70,15 +71,16 @@ export class HardisCommandsProvider
   > = this._onDidChangeTreeData.event;
 
   refresh(): void {
+    this.allTopicsAndCommands = null;
     this._onDidChangeTreeData.fire();
   }
 
   /**
    * List all topics
    */
-  private listTopics(): CommandTreeItem[] {
+  private async listTopics(): Promise<CommandTreeItem[]> {
     const items: CommandTreeItem[] = [];
-    for (const item of this.listTopicAndCommands()) {
+    for (const item of await this.listTopicAndCommands()) {
       const options = {
         icon: { light: "user.svg", dark: "user.svg" },
         description: "",
@@ -120,8 +122,15 @@ export class HardisCommandsProvider
     return items;
   }
 
-  private listTopicAndCommands(): any {
-    const hardisCommands = [
+  private getAllTopicsAndCommands(): any {
+    return this.allTopicsAndCommands;
+  }
+
+  private async listTopicAndCommands(): Promise<any> {
+    if (this.allTopicsAndCommands !== null) {
+      return this.allTopicsAndCommands;
+    }
+    let hardisCommands = [
       {
         id: "work",
         label: "Work on a task (assisted mode)",
@@ -575,6 +584,23 @@ export class HardisCommandsProvider
         )}`,
       },
     ];
+    this.allTopicsAndCommands = hardisCommands;
+    hardisCommands = await this.completeWithCustomCommands(hardisCommands);
+    return hardisCommands;
+  }
+
+  // Add custom commands defined within .sfdx-hardis.yml
+  private async completeWithCustomCommands(hardisCommands: Array<any>) {
+    const configRes = await execSfdxJson(
+      "sfdx hardis:config:get --level project",
+      this,
+      { fail: false, output: true }
+    );
+    if (configRes?.result?.config?.customCommands) {
+      const lastElement = hardisCommands.pop();
+      hardisCommands.push(...configRes.result.config.customCommands);
+      hardisCommands.push(lastElement);
+    }
     return hardisCommands;
   }
 }

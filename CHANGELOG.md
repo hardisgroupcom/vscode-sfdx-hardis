@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.10.0] 2022-03-15
+
+- Allow to add custom commands in VsCode SFDX Hardis menu
+
 ## [1.9.4] 2022-01-07
 
 - Fix: Configure org for CI does not require a sfdx project
