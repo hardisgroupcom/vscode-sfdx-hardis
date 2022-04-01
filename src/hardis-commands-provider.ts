@@ -6,7 +6,7 @@ export class HardisCommandsProvider
   implements vscode.TreeDataProvider<CommandTreeItem>
 {
   private allTopicsAndCommands: any = null;
-  constructor(private workspaceRoot: string) {}
+  constructor(private workspaceRoot: string) { }
 
   getTreeItem(element: CommandTreeItem): vscode.TreeItem {
     return element;
@@ -155,8 +155,17 @@ export class HardisCommandsProvider
             icon: "salesforce.svg",
           },
           {
+            id: "scratch:pull-from-org-to-git",
+            label: "Pull from Salesforce org to local files",
+            tooltip:
+              "Retrieve locally the updates made on the remote Salesforce scratch org",
+            command: "sfdx hardis:scratch:pull",
+            icon: "pull.svg",
+            requiresProject: true,
+          },
+          {
             id: "hardis:work:save",
-            label: "Save my current task",
+            label: "Save / Publish my current task",
             command: "sfdx hardis:work:save",
             icon: "save.svg",
             tooltip:
@@ -165,20 +174,11 @@ export class HardisCommandsProvider
           },
           {
             id: "hardis:work:resetselection",
-            label: "Reset list of published items",
+            label: "Reset selected list of items to merge",
             command: "sfdx hardis:work:resetselection",
             icon: "reset.svg",
             tooltip:
-              "If you made a wrong selection of items to publish, you can reset the selection and save it again",
-            requiresProject: true,
-          },
-          {
-            id: "hardis:work:refresh",
-            label: "Refresh git branch & org with newest updates",
-            tooltip:
-              "If your colleagues published their work, makes sure that your work is up to date with their latest developments/configurations",
-            command: "sfdx hardis:work:refresh",
-            icon: "refresh.svg",
+              "If you made a wrong selection of items to merge, you can reset the selection and save it again",
             requiresProject: true,
           },
         ],
@@ -188,47 +188,12 @@ export class HardisCommandsProvider
         label: "Work on a task (expert mode)",
         commands: [
           {
-            id: "scratch:create",
-            label: "Create scratch org (or resume creation)",
-            tooltip:
-              "If during Work:New you had an error, you can resume the scratch org creation",
-            icon: "salesforce.svg",
-            command: "sfdx hardis:scratch:create",
-            requiresProject: true,
-          },
-          {
-            id: "scratch:create:new",
-            label: "Create scratch org (force new)",
-            tooltip: "Create a new scratch org for the current work",
-            icon: "salesforce.svg",
-            command: "sfdx hardis:scratch:create --forcenew",
-            requiresProject: true,
-          },
-          {
             id: "scratch:push-from-git-to-org",
-            label: "Push from Git to Salesforce org",
+            label: "Push from local files to Salesforce org",
             tooltip:
               "Propagates your local updates within Vs Code into your remote Salesforce scratch org",
             command: "sfdx hardis:scratch:push",
             icon: "push.svg",
-            requiresProject: true,
-          },
-          {
-            id: "scratch:pull-from-org-to-git",
-            label: "Pull from Salesforce org to Git",
-            tooltip:
-              "Retrieve locally the updates made on the remote Salesforce scratch org",
-            command: "sfdx hardis:scratch:pull",
-            icon: "pull.svg",
-            requiresProject: true,
-          },
-          {
-            id: "hardis:work:save-expert",
-            label: "Save my current task (no pull and no git)",
-            command: "sfdx hardis:work:save --nopull --nogit",
-            icon: "save.svg",
-            tooltip:
-              "Do all the work:save operations except scratch pull and git operations",
             requiresProject: true,
           },
           {
@@ -238,6 +203,24 @@ export class HardisCommandsProvider
               "This will update project .sfdx-hardis.yml so the package will always be installed in new scratch orgs and future deployments",
             icon: "package.svg",
             command: "sfdx hardis:package:install",
+            requiresProject: true,
+          },
+          {
+            id: "org:test:apex",
+            label: "Run Apex tests on Salesforce org",
+            command: "sfdx hardis:org:test:apex",
+            tooltip:
+              "Runs all apex tests on the selected org. Will trigger error if minimum apex code coverage is not reached",
+            icon: "test.svg",
+            requiresProject: true,
+          },
+          {
+            id: "project:deploy:sources:dx:check",
+            label: "Simulate SFDX deployment",
+            tooltip:
+              "Simulates deployment from local SFDX source to target org",
+            icon: "test.svg",
+            command: "sfdx hardis:project:deploy:sources:dx --check",
             requiresProject: true,
           },
           {
@@ -259,21 +242,20 @@ export class HardisCommandsProvider
             requiresProject: true,
           },
           {
-            id: "org:test:apex",
-            label: "Run Apex tests on Salesforce org",
-            command: "sfdx hardis:org:test:apex",
+            id: "scratch:create",
+            label: "Create scratch org (or resume creation)",
             tooltip:
-              "Runs all apex tests on the selected org. Will trigger error if minimum apex code coverage is not reached",
-            icon: "test.svg",
+              "If during Work:New you had an error, you can resume the scratch org creation",
+            icon: "salesforce.svg",
+            command: "sfdx hardis:scratch:create",
             requiresProject: true,
           },
           {
-            id: "project:deploy:sources:dx:check",
-            label: "Simulate SFDX deployment",
-            tooltip:
-              "Simulates deployment from local SFDX source to target org",
-            icon: "test.svg",
-            command: "sfdx hardis:project:deploy:sources:dx --check",
+            id: "scratch:create:new",
+            label: "Create scratch org (force new)",
+            tooltip: "Create a new scratch org for the current work",
+            icon: "salesforce.svg",
+            command: "sfdx hardis:scratch:create --forcenew",
             requiresProject: true,
           },
           {
@@ -307,6 +289,15 @@ export class HardisCommandsProvider
               "echo 'If you see and error, execute the same commands in PowerShell run as administrator' && git config --system --unset credential.helper && git config credential.helper store && git fetch",
             tooltip: "Use this command in case you have git login errors",
             icon: "git.svg",
+          },
+          {
+            id: "hardis:work:save-expert",
+            label: "Save my current task (no pull and no git)",
+            command: "sfdx hardis:work:save --nopull --nogit",
+            icon: "save.svg",
+            tooltip:
+              "Do all the work:save operations except scratch pull and git operations",
+            requiresProject: true,
           },
         ],
       },
@@ -398,6 +389,62 @@ export class HardisCommandsProvider
         ],
       },
       {
+        id: "operations",
+        label: "Operations",
+        commands: [
+          {
+            id: "org:user:freeze",
+            label: "Freeze users",
+            tooltip:
+              "Freeze all users of an org except admins to deploy safely",
+            icon: "freeze.svg",
+            command: "sfdx hardis:org:user:freeze",
+          },
+          {
+            id: "org:user:unfreeze",
+            label: "Unfreeze users",
+            tooltip: "Unfreeze all users of an org after a safe deployment",
+            icon: "unfreeze.svg",
+            command: "sfdx hardis:org:user:unfreeze",
+          },
+          {
+            id: "org:purge:flow",
+            label: "Purge obsolete flows versions",
+            tooltip:
+              "Purge all flows with status Obsolete in your org, so you are not bothered by the 50 versions limits",
+            icon: "flow.svg",
+            command: "sfdx hardis:org:purge:flow",
+          },
+          {
+            id: "hardis:scratch:delete",
+            label: "Delete scratch org(s)",
+            tooltip: "Prompts user for scratch orgs to mark for deletion",
+            icon: "trash.svg",
+            command: "sfdx hardis:scratch:delete",
+          },
+          {
+            id: "hardis:org:user:activateinvalid",
+            label: "Activate .invalid user emails in sandbox",
+            tooltip: "Removes the .invalid of all users emails in a sandbox",
+            icon: "user.svg",
+            command: "sfdx hardis:org:user:activateinvalid",
+          },
+        ],
+      },
+      {
+        id: "audit",
+        label: "Audit",
+        commands: [
+          {
+            id: "org:diagnose:legacyapi",
+            label: "Detect legacy API use",
+            tooltip: "Detects if deprected APIs are your in a production org",
+            icon: "old.svg",
+            command: "sfdx hardis:org:diagnose:legacyapi",
+          },
+        ],
+      },
+      {
         id: "config-commands",
         label: "Configuration",
         commands: [
@@ -407,6 +454,14 @@ export class HardisCommandsProvider
             tooltip: "Shortcut to main configuration files",
             icon: "file.svg",
             command: "vscode-sfdx-hardis.openKeyFile",
+          },
+          {
+            id: "org:retrieve:packageconfig",
+            label: "Retrieve packages configuration from org",
+            tooltip:
+              "Retrieve package configuration from an org and propose to update project sfdx-hardis configuration",
+            icon: "package.svg",
+            command: "sfdx hardis:org:retrieve:packageconfig",
           },
           {
             id: "configure:auth:deployment",
@@ -441,65 +496,12 @@ export class HardisCommandsProvider
             icon: "pool.svg",
             command: "sfdx hardis:scratch:pool:create",
           },
-        ],
-      },
-      {
-        id: "operations",
-        label: "Operations",
-        commands: [
-          {
-            id: "project:generate:gitdelta",
-            label: "Generate package.xml git delta",
-            tooltip:
-              "Generate package.xml & destructiveChanges.xml using git delta between 2 commit hashes",
-            icon: "git.svg",
-            command: "sfdx hardis:project:generate:gitdelta",
-          },
-          {
-            id: "org:retrieve:sources:dx2",
-            label: "Retrieve DX sources from an org (package.xml)",
-            tooltip:
-              "Retrieve locally the SFDX sources of an org, using a package.xml",
-            icon: "pull.svg",
-            command: "sfdx hardis:org:retrieve:sources:dx2",
-          },
-          {
-            id: "org:retrieve:sources:dx",
-            label: "Retrieve ALL DX sources from an org",
-            tooltip:
-              "Retrieve locally all the metadatas of a remote salesforce org, in DX project format",
-            icon: "pull.svg",
-            command: "sfdx hardis:org:retrieve:sources:dx",
-          },
-          {
-            id: "org:retrieve:sources:metadata",
-            label: "Retrieve ALL Metadata sources from an org",
-            tooltip:
-              "Retrieve locally all the metadatas of a remote salesforce org, in metadata format",
-            icon: "pull.svg",
-            command: "sfdx hardis:org:retrieve:sources:metadata",
-          },
-          {
-            id: "org:retrieve:packageconfig",
-            label: "Retrieve package configuration",
-            tooltip:
-              "Retrieve package configuration from an org and propose to update project sfdx-hardis configuration",
-            icon: "package.svg",
-            command: "sfdx hardis:org:retrieve:packageconfig",
-          },
           {
             id: "project:create",
             label: "Create a new SFDX project",
             tooltip: "Create and initialize a new SFDX project",
             icon: "new.svg",
             command: "sfdx hardis:project:create",
-          },
-          {
-            id: "hardis:scratch:delete",
-            label: "Delete scratch org(s)",
-            tooltip: "Prompts user for scratch orgs to mark for deletion",
-            icon: "trash.svg",
-            command: "sfdx hardis:scratch:delete",
           },
         ],
       },
@@ -534,55 +536,73 @@ export class HardisCommandsProvider
         ],
       },
       {
-        id: "production",
-        label: "Production",
+        id: "nerdy_stuff",
+        label: "Nerdy stuff",
         commands: [
           {
-            id: "org:user:freeze",
-            label: "Freeze users",
+            id: "project:generate:gitdelta",
+            label: "Generate package.xml git delta",
             tooltip:
-              "Freeze all users of an org except admins to deploy safely",
-            icon: "freeze.svg",
-            command: "sfdx hardis:org:user:freeze",
+              "Generate package.xml & destructiveChanges.xml using git delta between 2 commit hashes",
+            icon: "git.svg",
+            command: "sfdx hardis:project:generate:gitdelta",
           },
           {
-            id: "org:user:unfreeze",
-            label: "Unfreeze users",
-            tooltip: "Unfreeze all users of an org after a safe deployment",
-            icon: "unfreeze.svg",
-            command: "sfdx hardis:org:user:unfreeze",
-          },
-          {
-            id: "org:purge:flow",
-            label: "Purge obsolete flows",
+            id: "org:retrieve:sources:dx2",
+            label: "Retrieve DX sources from an org (package.xml)",
             tooltip:
-              "Purge all flows with status Obsolete in your org, so you are not bothered by the 50 versions limits",
-            icon: "flow.svg",
-            command: "sfdx hardis:org:purge:flow",
+              "Retrieve locally the SFDX sources of an org, using a package.xml",
+            icon: "pull.svg",
+            command: "sfdx hardis:org:retrieve:sources:dx2",
           },
-        ],
-      },
-      {
-        id: "audit",
-        label: "Audit",
-        commands: [
           {
-            id: "org:diagnose:legacyapi",
-            label: "Detect legacy API use",
-            tooltip: "Detects if deprected APIs are your in a production org",
-            icon: "old.svg",
-            command: "sfdx hardis:org:diagnose:legacyapi",
+            id: "org:retrieve:sources:dx",
+            label: "Retrieve ALL DX sources from an org",
+            tooltip:
+              "Retrieve locally all the metadatas of a remote salesforce org, in DX project format",
+            icon: "pull.svg",
+            command: "sfdx hardis:org:retrieve:sources:dx",
+          },
+          {
+            id: "org:retrieve:sources:metadata",
+            label: "Retrieve ALL Metadata sources from an org",
+            tooltip:
+              "Retrieve locally all the metadatas of a remote salesforce org, in metadata format",
+            icon: "pull.svg",
+            command: "sfdx hardis:org:retrieve:sources:metadata",
           },
         ],
       },
       {
         id: "help",
-        label: "Need Help ?",
-        icon: "help.svg",
-        command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
-          "https://www.customer-platform.com/societe/contact"
-        )}`,
-      },
+        label: "Help",
+        commands: [
+          {
+            id: "question",
+            label: "Post an issue / question",
+            icon: "help.svg",
+            command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
+              "https://github.com/hardisgroupcom/sfdx-hardis/issues"
+            )}`,
+          },
+          {
+            id: "help:commands",
+            label: "All sfdx-hardis commands",
+            icon: "help.svg",
+            command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
+              "https://hardisgroupcom.github.io/sfdx-hardis/commands/"
+            )}`,
+          },
+          {
+            id: "hardis",
+            label: "Hardis-Group Website",
+            icon: "help.svg",
+            command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
+              "https://www.customer-platform.com"
+            )}`,
+          },
+        ]
+      }
     ];
     this.allTopicsAndCommands = hardisCommands;
     hardisCommands = await this.completeWithCustomCommands(hardisCommands);
