@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-## [1.11.0] 2022-04-01
+## [1.11.0] 2022-04-03
 
 - Reorder menus and commands
 
