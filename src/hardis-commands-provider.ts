@@ -299,6 +299,22 @@ export class HardisCommandsProvider
               "Do all the work:save operations except scratch pull and git operations",
             requiresProject: true,
           },
+          {
+            id: "force:source:tracking:clear",
+            label: "Clear local sfdx tracking files",
+            tooltip:
+              "Removes all local information about updats you already pulled from org",
+            icon: "trash.svg",
+            command: "sfdx force:source:tracking:clear",
+          },
+          {
+            id: "force:source:tracking:reset",
+            label: "Clear local and remote sfdx tracking files",
+            tooltip:
+              "Removes all local and remote information about updats you already pulled from org",
+            icon: "warning.svg",
+            command: "sfdx force:source:tracking:reset",
+          },
         ],
       },
       {
@@ -570,6 +586,22 @@ export class HardisCommandsProvider
               "Retrieve locally all the metadatas of a remote salesforce org, in metadata format",
             icon: "pull.svg",
             command: "sfdx hardis:org:retrieve:sources:metadata",
+          },
+          {
+            id: "force:source:tracking:clear",
+            label: "Clear local sfdx tracking files",
+            tooltip:
+              "Removes all local information about updats you already pulled from org",
+            icon: "trash.svg",
+            command: "sfdx force:source:tracking:clear",
+          },
+          {
+            id: "force:source:tracking:reset",
+            label: "Clear local and remote sfdx tracking files",
+            tooltip:
+              "Removes all local and remote information about updats you already pulled from org",
+            icon: "trash.svg",
+            command: "sfdx force:source:tracking:reset",
           },
         ],
       },
