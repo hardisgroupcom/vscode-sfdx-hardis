@@ -6,7 +6,7 @@ export class HardisCommandsProvider
   implements vscode.TreeDataProvider<CommandTreeItem>
 {
   private allTopicsAndCommands: any = null;
-  constructor(private workspaceRoot: string) { }
+  constructor(private workspaceRoot: string) {}
 
   getTreeItem(element: CommandTreeItem): vscode.TreeItem {
     return element;
@@ -617,8 +617,8 @@ export class HardisCommandsProvider
               "https://www.customer-platform.com"
             )}`,
           },
-        ]
-      }
+        ],
+      },
     ];
     this.allTopicsAndCommands = hardisCommands;
     hardisCommands = await this.completeWithCustomCommands(hardisCommands);
