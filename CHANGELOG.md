@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.11.0] 2022-04-01
+
+- Reorder menus and commands
+
 ## [1.10.0] 2022-03-15
 
 - Allow to add custom commands in VsCode SFDX Hardis menu
