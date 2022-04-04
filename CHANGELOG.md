@@ -4,7 +4,7 @@
 
 ## [1.11.1] 2022-04-04
 
-- Status panel: Display Node.js & git versions 
+- Status panel: Display Node.js & git versions
 
 ## [1.11.0] 2022-04-03
 
