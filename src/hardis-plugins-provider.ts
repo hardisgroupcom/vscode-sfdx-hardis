@@ -93,7 +93,7 @@ export class HardisPluginsProvider
         ).stdout ||
         process.env.NODE_PATH ||
         "error";
-      const nodeVersionMatch = /v([0-9]+)\./gm.exec(nodeVersionStdOut);
+      const nodeVersionMatch = /v([0-9]+)\.(.*)/gm.exec(nodeVersionStdOut);
       if (!nodeVersionMatch) {
         nodeItem.icon = "warning.svg";
         nodeItem.tooltip = "Node.js is missing";
@@ -132,6 +132,8 @@ export class HardisPluginsProvider
               }
             });
       } else {
+        nodeItem.label +=
+          " v" + nodeVersionMatch[1] + "." + nodeVersionMatch.slice(2).join("");
         nodeInstallOk = true;
       }
     }
@@ -153,7 +155,9 @@ export class HardisPluginsProvider
             fail: false,
           })
         ).stdout || "error";
-      const gitVersionMatch = /git version ([0-9]+)\./gm.exec(gitVersionStdOut);
+      const gitVersionMatch = /git version ([0-9]+)\.(.*)/gm.exec(
+        gitVersionStdOut
+      );
       if (!gitVersionMatch) {
         gitItem.icon = "warning.svg";
         gitItem.tooltip = "Git is missing";
@@ -173,6 +177,8 @@ export class HardisPluginsProvider
               }
             });
       } else {
+        gitItem.label +=
+          " v" + gitVersionMatch[1] + "." + gitVersionMatch.slice(2).join("");
         gitInstallOk = true;
       }
     }
