@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [1.12.0] 2022-04-08
+
+- New configuration item **vsCodeSfdxHardis.disableDefaultOrgAuthenticationCheck**: Disable default org authentication checks by adding `--skipauth` argument to sfdx-hardis commands (improves performances for expert users)
+- Improve status panel tooltips to display full org instanceUrl and username
+
 ## [1.11.1] 2022-04-04
 
 - Status panel: Display Node.js & git versions

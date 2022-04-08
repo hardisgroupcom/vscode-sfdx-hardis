@@ -275,31 +275,6 @@ export class HardisCommandsProvider
             icon: "select.svg",
           },
           {
-            id: "org:logout",
-            label: "Logout from current Org and DevHub",
-            command:
-              "sfdx auth:logout --noprompt || true && sfdx config:unset defaultusername defaultdevhubusername -g && sfdx config:unset defaultusername defaultdevhubusername || true",
-            tooltip: "Log out from orgs :)",
-            icon: "logout.svg",
-          },
-          {
-            id: "git:login",
-            label: "Login again to git",
-            command:
-              "echo 'If you see and error, execute the same commands in PowerShell run as administrator' && git config --system --unset credential.helper && git config credential.helper store && git fetch",
-            tooltip: "Use this command in case you have git login errors",
-            icon: "git.svg",
-          },
-          {
-            id: "hardis:work:save-expert",
-            label: "Save my current task (no pull and no git)",
-            command: "sfdx hardis:work:save --nopull --nogit",
-            icon: "save.svg",
-            tooltip:
-              "Do all the work:save operations except scratch pull and git operations",
-            requiresProject: true,
-          },
-          {
             id: "force:source:tracking:clear",
             label: "Clear local sfdx tracking files",
             tooltip:
@@ -314,6 +289,15 @@ export class HardisCommandsProvider
               "Removes all local and remote information about updates you already pulled from org",
             icon: "warning.svg",
             command: "sfdx force:source:tracking:reset",
+          },
+          {
+            id: "hardis:work:save-expert",
+            label: "Save my current task (no source:pull and no git)",
+            command: "sfdx hardis:work:save --nopull --nogit",
+            icon: "save.svg",
+            tooltip:
+              "Do all the work:save operations except scratch pull and git operations",
+            requiresProject: true,
           },
         ],
       },
@@ -586,6 +570,22 @@ export class HardisCommandsProvider
               "Retrieve locally all the metadatas of a remote salesforce org, in metadata format",
             icon: "pull.svg",
             command: "sfdx hardis:org:retrieve:sources:metadata",
+          },
+          {
+            id: "org:logout",
+            label: "Logout from current Org and DevHub",
+            command:
+              "sfdx auth:logout --noprompt || true && sfdx config:unset defaultusername defaultdevhubusername -g && sfdx config:unset defaultusername defaultdevhubusername || true",
+            tooltip: "Log out from orgs :)",
+            icon: "logout.svg",
+          },
+          {
+            id: "git:login",
+            label: "Login again to git",
+            command:
+              "echo 'If you see and error, execute the same commands in PowerShell run as administrator' && git config --system --unset credential.helper && git config credential.helper store && git fetch",
+            tooltip: "Use this command in case you have git login errors",
+            icon: "git.svg",
           },
         ],
       },

@@ -57,6 +57,14 @@ export class Commands {
       return;
     }
     // terminalIsRunning = true; //Comment until we find a way to detect that a command is running or not
+    if (command.startsWith("sfdx hardis:")) {
+      // Add --skipauth argument when necessary
+      const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+      if(  config.get("disableDefaultOrgAuthenticationCheck") === true) {
+        command += ` --skipauth`;
+      }
+    }
+    // Add --websocket argument when necessary
     if (
       (command.startsWith("sfdx hardis:") ||
         command.includes("sfdx hardis:work:ws --event")) &&

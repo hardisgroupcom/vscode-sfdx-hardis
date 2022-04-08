@@ -109,7 +109,11 @@ export class HardisStatusProvider
         items.push({
           id: "org-info-instance-url" + (options.devHub ? "-devhub" : ""),
           label: `${orgInfo.instanceUrl}`,
-          tooltip: "URL of your remote Salesforce org",
+          tooltip:
+            "Click to open your " +
+            (options.devHub ? "Dev Hub" : "default") +
+            " org: " +
+            orgInfo.instanceUrl,
           command:
             "sfdx force:org:open" +
             (options.devHub ? ` --targetusername ${devHubUsername}` : ""),
@@ -120,7 +124,8 @@ export class HardisStatusProvider
         items.push({
           id: "org-info-username" + (options.devHub ? "-devhub" : ""),
           label: `${orgInfo.username}`,
-          tooltip: "Username on your remote Salesforce org",
+          tooltip:
+            "Username on your remote Salesforce org: " + orgInfo.username,
           icon: "org-user.svg",
         });
       }
