@@ -60,7 +60,7 @@ export class Commands {
     if (command.startsWith("sfdx hardis:")) {
       // Add --skipauth argument when necessary
       const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
-      if(  config.get("disableDefaultOrgAuthenticationCheck") === true) {
+      if (config.get("disableDefaultOrgAuthenticationCheck") === true) {
         command += ` --skipauth`;
       }
     }
