@@ -46,6 +46,11 @@
           ],
           "description": "Defines if user input is in VsCode UI or in console"
         },
+        "vsCodeSfdxHardis.disableDefaultOrgAuthenticationCheck": {
+          "type": "boolean",
+          "default": false,
+          "description": "Disable default org authentication checks by adding --skipauth argument to sfdx-hardis commands (improves performances for expert users)"
+        },
         "vsCodeSfdxHardis.disableGitBashCheck": {
           "type": "boolean",
           "default": false,
