@@ -35,6 +35,7 @@ export class Commands {
     this.registerRefreshStatusView();
     this.registerRefreshPluginsView();
     this.registerOpenExternal();
+    this.registerOpenCommandHelp();
     this.registerOpenKeyFile();
     this.registerShowMessage();
   }
@@ -228,6 +229,15 @@ export class Commands {
     const disposable = vscode.commands.registerCommand(
       "vscode-sfdx-hardis.openExternal",
       (url) => vscode.env.openExternal(url)
+    );
+    this.disposables.push(disposable);
+  }
+
+  registerOpenCommandHelp() {
+    // Open external command
+    const disposable = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.openCommandHelp",
+      (item) => vscode.env.openExternal(item.options.helpUrl)
     );
     this.disposables.push(disposable);
   }

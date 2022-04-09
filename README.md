@@ -17,16 +17,18 @@ But there are so many base commands and so many useful plugins that it's easy to
 
 VsCode SFDX-Hardis aims to simplify the use of Salesforce DX with an intuitive UI and ready to use pre-integrated commands.
 
-![screenshot](resources/extension-screenshot.jpg)
+![screenshot](resources/extension-demo.gif)
 
 Here are some articles with examples of use of [sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis/)
 
 - English
-  - [Handle Salesforce API versions Deprecation like a pro](https://nicolas.vuillamy.fr/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238)
-  - [How to mass download notes and attachments files from a Salesforce org](https://nicolas.vuillamy.fr/how-to-mass-download-notes-and-attachments-files-from-a-salesforce-org-83a028824afd)
-  - [How to freeze / unfreeze users during a Salesforce deployment](https://medium.com/@dimitrimonge/freeze-unfreeze-users-during-salesforce-deployment-8a1488bf8dd3)
-  - [How to detect bad words in Salesforce records using SFDX Data Loader and sfdx-hardis](https://nicolas.vuillamy.fr/how-to-detect-bad-words-in-salesforce-records-using-sfdx-data-loader-and-sfdx-hardis-171db40a9bac)
-  - [Reactivate all the sandbox users with .invalid emails in 3 clicks](https://nicolas.vuillamy.fr/reactivate-all-the-sandbox-users-with-invalid-emails-in-3-clicks-2265af4e3a3d)
+
+[![Handle Salesforce API versions Deprecation like a pro](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-deprecated-api.jpg)](https://nicolas.vuillamy.fr/handle-salesforce-api-versions-deprecation-like-a-pro-335065f52238)
+[![How to mass download notes and attachments files from a Salesforce org](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-mass-download.jpg)](https://nicolas.vuillamy.fr/how-to-mass-download-notes-and-attachments-files-from-a-salesforce-org-83a028824afd)
+[![How to freeze / unfreeze users during a Salesforce deployment](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-freeze.jpg)](https://medium.com/@dimitrimonge/freeze-unfreeze-users-during-salesforce-deployment-8a1488bf8dd3)
+[![How to detect bad words in Salesforce records using SFDX Data Loader and sfdx-hardis](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-badwords.jpg)](https://nicolas.vuillamy.fr/how-to-detect-bad-words-in-salesforce-records-using-sfdx-data-loader-and-sfdx-hardis-171db40a9bac)
+[![Reactivate all the sandbox users with .invalid emails in 3 clicks](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/article-invalid-email.jpg)](https://nicolas.vuillamy.fr/reactivate-all-the-sandbox-users-with-invalid-emails-in-3-clicks-2265af4e3a3d)
+
 
 - French
   - [Versions d'API Salesforce décommissionnées: Que faire ?](https://leblog.hardis-group.com/portfolio/versions-dapi-salesforce-decommissionnees-que-faire/)
@@ -39,81 +41,103 @@ Integration between VsCode SFDX Hardis UI and sfdx-hardis CLI, so you don't need
 
 ### Work on a task (simple)
 
-Base commands allowing to a consulting profile to work on a SFDX project without knowing SFDX or Git
-
-- Git branch & Scratch org initialization
-- Assisted git add
-- Automated generation of package.xml and destructiveChanges.xml
-- Merge request management
-
 ![screenshot](resources/menu-assisted.jpg)
+
+Base commands allowing to a consultant profile to work on a SFDX project without knowledge about SFDX or Git
+
+- [Start a new task](https://hardisgroupcom.github.io/sfdx-hardis/hardis/work/new/)
+- Open my org in browser
+- [Pull from Salesforce org to local files](https://hardisgroupcom.github.io/sfdx-hardis/hardis/scratch/pull/)
+- [Save / Publish my current task](https://hardisgroupcom.github.io/sfdx-hardis/hardis/work/save/)
+- [Reset selected list of items to merge](https://hardisgroupcom.github.io/sfdx-hardis/hardis/work/resetselection/)
 
 ### Work on a task (Expert)
 
+![screenshot](resources/menu-expert.jpg)
+
 Advanced commands allowing a technical profile to work on a sfdx project without knowing SFDX or Git
 
-- Initialization of SFDX project from an org (including packages installation)
-- Cleaning of sfdx sources to prevent deployment errors
-
-![screenshot](resources/menu-expert.jpg)
+- [Push from local files to Salesforce org](https://hardisgroupcom.github.io/sfdx-hardis/hardis/scratch/push/)
+- [Install a package](https://hardisgroupcom.github.io/sfdx-hardis/hardis/package/install/)
+- [Run Apex tests on Salesforce org](https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/test/apex/)
+- [Simulate SFDX Deployment](https://hardisgroupcom.github.io/sfdx-hardis/hardis/project/deploy/sources/dx/)
+- [Clean SFDX Project from defined references](https://hardisgroupcom.github.io/sfdx-hardis/hardis/project/clean/references/)
+- [Clean SFDX Project from references not in target org](https://hardisgroupcom.github.io/sfdx-hardis/hardis/project/clean/orgmissingitems/)
+- [Create scratch org (or resume creation)](https://hardisgroupcom.github.io/sfdx-hardis/hardis/scratch/create/)
+- [Create scratch org (force new)](https://hardisgroupcom.github.io/sfdx-hardis/hardis/scratch/create/)
+- [Generate new password](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_scratch_orgs_passwd.htm)
+- [Connect to a Salesforce org](https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/connect/)
+- [Clear local sfdx tracking files](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_tracking_clear)
+- [Clear local and remote sfdx tracking files](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_tracking_reset)
 
 ### Data Import & Export
 
-Manage data import / export using [Salesforce Data Move Utility](https://github.com/forcedotcom/SFDX-Data-Move-Utility)
-
-- Configure data import / export
-- Perform data import / export
-
 ![screenshot](resources/menu-data.jpg)
+
+Manages data and files import / export using [Salesforce Data Move Utility](https://github.com/forcedotcom/SFDX-Data-Move-Utility)
+
+- [Export data from org with SFDMU](https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/data/export/)
+- [Import data to org with SFDMU](https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/data/import/)
+- [Create data import/export configuration](https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/configure/data/)
+- [Export files from org](https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/files/export/)
+- [Create files export configuration](https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/configure/files/)
 
 ### Debugger
 
-Ease sources execution debugging of any type of org
-
 ![screenshot](resources/menu-debugger.jpg)
 
-### Configuration
-
-Configuration helpers
-
-- Configure deployment for CI
-- Configure DevHub for CI
-- Shortcut to configuration files
-
-![screenshot](resources/menu-configuration.jpg)
+Ease sources execution debugging of any type of org
 
 ### Operations
 
-General sfdx operations
-
-- Initialize sfdx project
-- Generate package.xml from delta between 2 commits, using [sfdx-git-delta](https://github.com/scolladon/sfdx-git-delta)
-- Metadata / sfdx sources operations
-
 ![screenshot](resources/menu-operations.jpg)
 
+Handy operations on Salesforce org
+
+- [Freeze users](https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/user/freeze/)
+- [Unfreeze users](https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/user/unfreeze/)
+- [Purge obsolete flows versions](https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/purge/flow/)
+- [Delete scratch org(s)](https://hardisgroupcom.github.io/sfdx-hardis/hardis/scratch/delete/)
+- [Activate .invalid user emails in sandbox](https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/user/activateinvalid/)
+
+### Audit
+
+![screenshot](resources/menu-audit.jpg)
+
+Audit Tools for your orgs
+
+- [Detect legacy API versions usage](https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/diagnose/legacyapi/)
+
+### Configuration
+
+![screenshot](resources/menu-configuration.jpg)
+
+Configuration helpers
+
+- Shortcuts to configuration files
+- Configure deployment for CI
+- Configure DevHub for CI
+
 ### Packaging
+
+![screenshot](resources/menu-packaging.jpg)
 
 Simplify creation and maintenance of packaging V2 packages (unlocked or managed)
 
 - Create packaging V2 packages
 - Manage package versions
 
-![screenshot](resources/menu-packaging.jpg)
+### Nerdy stuff
 
-### Production
+![screenshot](resources/menu-nerdy-stuff.jpg)
 
-Production operations
-
-- Purge production elements
-
-![screenshot](resources/menu-production.jpg)
+Use at your own risk :)
 
 ### Custom commands
 
-You can **define your own custom commands** that will appear at the bottom of the menu.
-
 ![screenshot](resources/custom-commands.jpg)
+
+You can **define your own custom commands** that will appear at the bottom of the menu.
 
 - Create or update existing file `config/.sfdx-hardis.yml` in your project, and add property **customCommands** , that will contain other menus and commands under each of them.
 

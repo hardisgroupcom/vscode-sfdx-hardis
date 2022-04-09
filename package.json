@@ -151,6 +151,14 @@
           "light": "resources/add-button.svg",
           "dark": "resources/add-button.svg"
         }
+      },
+      {
+        "command": "vscode-sfdx-hardis.openCommandHelp",
+        "title": "View command help",
+        "icon": {
+          "light": "resources/help.svg",
+          "dark": "resources/help.svg"
+        }
       }
     ],
     "viewsContainers": {
@@ -221,6 +229,12 @@
           "when": "resourceExtname == .cls",
           "command": "vscode-sfdx-hardis.toggleCheckpoint",
           "group": "z_commands"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "vscode-sfdx-hardis.openCommandHelp",
+          "when": "viewItem =~ /SFDXHARDIS_CONTEXT\\b/"
         }
       ]
     }

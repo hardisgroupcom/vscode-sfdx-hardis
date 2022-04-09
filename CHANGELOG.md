@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [1.13.0] 2022-04-09
+
+- Update documentation
+- Contextual menus on commands to open documentation
+
 ## [1.12.0] 2022-04-08
 
 - New configuration item **vsCodeSfdxHardis.disableDefaultOrgAuthenticationCheck**: Disable default org authentication checks by adding `--skipauth` argument to sfdx-hardis commands (improves performances for expert users)
