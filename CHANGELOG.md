@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [1.14.0] 2022-04-09
+
+- New contextual menus
+  - Commands: View command details
+  - Dependencies: View dependency documentation
+
 ## [1.13.0] 2022-04-09
 
 - Update documentation

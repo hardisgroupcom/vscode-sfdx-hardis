@@ -60,6 +60,9 @@ export class HardisPluginsProvider
       if (item.tooltip) {
         options.tooltip = item.tooltip;
       }
+      if (item.helpUrl) {
+        options.helpUrl = item.helpUrl;
+      }
       items.push(
         new StatusTreeItem(
           item.label,
@@ -81,6 +84,7 @@ export class HardisPluginsProvider
       command: "",
       tooltip: `Node.js is installed`,
       icon: "success.svg",
+      helpUrl: "https://nodejs.org/en/",
     };
     // Check node.js version
     if (nodeInstallOk === false) {
@@ -146,6 +150,7 @@ export class HardisPluginsProvider
       command: "",
       tooltip: `Git is installed`,
       icon: "success.svg",
+      helpUrl: "https://git-scm.com/",
     };
     if (gitInstallOk === false) {
       const gitVersionStdOut: string =
@@ -191,12 +196,27 @@ export class HardisPluginsProvider
 
     // Check sfdx related installs
     const plugins = [
-      { name: "sfdx-hardis" },
-      { name: "sfdx-essentials" },
-      { name: "sfpowerkit" },
-      { name: "sfdmu" },
-      { name: "sfdx-git-delta" },
-      { name: "texei-sfdx-plugin" },
+      {
+        name: "sfdx-hardis",
+        helpUrl: "https://hardisgroupcom.github.io/sfdx-hardis/",
+      },
+      {
+        name: "sfdx-essentials",
+        helpUrl: "https://nvuillam.github.io/sfdx-essentials/",
+      },
+      {
+        name: "sfpowerkit",
+        helpUrl: "https://github.com/Accenture/sfpowerkit",
+      },
+      { name: "sfdmu", helpUrl: "https://help.sfdmu.com/" },
+      {
+        name: "sfdx-git-delta",
+        helpUrl: "https://github.com/scolladon/sfdx-git-delta",
+      },
+      {
+        name: "texei-sfdx-plugin",
+        helpUrl: "https://texei.github.io/texei-sfdx-plugin/",
+      },
     ];
     const outdated: any[] = [];
     // check sfdx-cli version
@@ -222,6 +242,8 @@ export class HardisPluginsProvider
       command: "",
       tooltip: `Recommended version of sfdx-cli is installed`,
       icon: "success.svg",
+      helpUrl:
+        "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference.htm",
     };
     let sfdxCliOutdated = false;
     if (sfdxCliVersion !== recommendedSfdxCliVersion) {
@@ -264,6 +286,7 @@ export class HardisPluginsProvider
         command: "",
         tooltip: `Latest version of SFDX plugin ${plugin.name} is installed`,
         icon: "success.svg",
+        helpUrl: plugin.helpUrl,
       };
       if (!sfdxPlugins.includes(`${plugin.name} ${latestPluginVersion}`)) {
         pluginItem.label =
@@ -361,6 +384,7 @@ export class HardisPluginsProvider
         icon: { light: "user.svg", dark: "user.svg" },
         description: "",
         tooltip: "",
+        helpUrl: "",
       };
       if (item.icon) {
         options.icon = { light: item.icon, dark: item.icon };
@@ -370,6 +394,9 @@ export class HardisPluginsProvider
       }
       if (item.tooltip) {
         options.tooltip = item.tooltip;
+      }
+      if (options.helpUrl) {
+        options.helpUrl = item.helpUrl;
       }
       const expanded = item.defaultExpand
         ? vscode.TreeItemCollapsibleState.Expanded
@@ -430,6 +457,7 @@ class StatusTreeItem extends vscode.TreeItem {
       icon: { light: "salesforce.svg", dark: "salesforce.svg" },
       description: "",
       tooltip: "",
+      helpUrl: "",
     }
   ) {
     super(label, collapsibleState);
@@ -474,5 +502,9 @@ class StatusTreeItem extends vscode.TreeItem {
         );
       }
     }
+    // Manage context menu tag
+    this.contextValue = options.helpUrl
+      ? "SFDXHARDIS_CONTEXT_PLUGIN"
+      : undefined;
   }
 }

@@ -153,8 +153,24 @@
         }
       },
       {
+        "command": "vscode-sfdx-hardis.showCommandDetail",
+        "title": "Show command detail",
+        "icon": {
+          "light": "resources/help.svg",
+          "dark": "resources/help.svg"
+        }
+      },
+      {
         "command": "vscode-sfdx-hardis.openCommandHelp",
         "title": "View command help",
+        "icon": {
+          "light": "resources/help.svg",
+          "dark": "resources/help.svg"
+        }
+      },
+      {
+        "command": "vscode-sfdx-hardis.openPluginHelp",
+        "title": "View dependency documentation",
         "icon": {
           "light": "resources/help.svg",
           "dark": "resources/help.svg"
@@ -233,8 +249,16 @@
       ],
       "view/item/context": [
         {
+          "command": "vscode-sfdx-hardis.showCommandDetail",
+          "when": "viewItem =~ /SFDXHARDIS_CONTEXT_COMMAND\\b/"
+        },
+        {
           "command": "vscode-sfdx-hardis.openCommandHelp",
-          "when": "viewItem =~ /SFDXHARDIS_CONTEXT\\b/"
+          "when": "viewItem =~ /SFDXHARDIS_CONTEXT_COMMAND\\b/"
+        },
+        {
+          "command": "vscode-sfdx-hardis.openPluginHelp",
+          "when": "viewItem =~ /SFDXHARDIS_CONTEXT_PLUGIN\\b/"
         }
       ]
     }
