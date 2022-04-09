@@ -240,7 +240,8 @@ export class Commands {
     const disposable = vscode.commands.registerCommand(
       "vscode-sfdx-hardis.showCommandDetail",
       (item) => {
-        const commandDetail = item.tooltip + "\n\nCommand: " + item.hardisCommand;
+        const commandDetail =
+          item.tooltip + "\n\nCommand: " + item.hardisCommand;
         const messageButtons = ["Run command"];
         if (item.options.helpUrl) {
           messageButtons.push("Open Online Help");
