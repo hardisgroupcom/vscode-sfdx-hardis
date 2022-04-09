@@ -49,6 +49,9 @@ export class HardisCommandsProvider
       if (item.requiresProject) {
         options.requiresProject = item.requiresProject;
       }
+      if (item.helpUrl) {
+        options.helpUrl = item.helpUrl;
+      }
       items.push(
         new CommandTreeItem(
           item.label,
@@ -86,6 +89,7 @@ export class HardisCommandsProvider
         description: "",
         tooltip: "",
         requiresProject: false,
+        helpUrl: "",
       };
       if (item.icon) {
         options.icon = { light: item.icon, dark: item.icon };
@@ -98,6 +102,9 @@ export class HardisCommandsProvider
       }
       if (item.requiresProject) {
         options.requiresProject = item.requiresProject;
+      }
+      if (item.requiresProject) {
+        options.helpUrl = item.helpUrl;
       }
       const expanded = item.defaultExpand
         ? vscode.TreeItemCollapsibleState.Expanded
@@ -145,6 +152,8 @@ export class HardisCommandsProvider
             tooltip:
               "Create a new environment to develop or configure with a scratch org",
             requiresProject: true,
+            helpUrl:
+              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/work/new/",
           },
           {
             id: "org:open-scratch",
@@ -153,6 +162,8 @@ export class HardisCommandsProvider
               "Opens your currently selected scratch org or other org in web browser",
             command: "sfdx force:org:open",
             icon: "salesforce.svg",
+            helpUrl:
+              "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_org.htm#cli_reference_force_org_open",
           },
           {
             id: "scratch:pull-from-org-to-git",
@@ -162,6 +173,8 @@ export class HardisCommandsProvider
             command: "sfdx hardis:scratch:pull",
             icon: "pull.svg",
             requiresProject: true,
+            helpUrl:
+              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/scratch/pull/",
           },
           {
             id: "hardis:work:save",
@@ -171,6 +184,8 @@ export class HardisCommandsProvider
             tooltip:
               "Save to server you current work, and propose to create a merge request",
             requiresProject: true,
+            helpUrl:
+              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/work/save/",
           },
           {
             id: "hardis:work:resetselection",
@@ -180,6 +195,8 @@ export class HardisCommandsProvider
             tooltip:
               "If you made a wrong selection of items to merge, you can reset the selection and save it again",
             requiresProject: true,
+            helpUrl:
+              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/work/resetselection/",
           },
         ],
       },
@@ -195,6 +212,8 @@ export class HardisCommandsProvider
             command: "sfdx hardis:scratch:push",
             icon: "push.svg",
             requiresProject: true,
+            helpUrl:
+              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/scratch/push/",
           },
           {
             id: "package:install",
@@ -204,6 +223,8 @@ export class HardisCommandsProvider
             icon: "package.svg",
             command: "sfdx hardis:package:install",
             requiresProject: true,
+            helpUrl:
+              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/package/install/",
           },
           {
             id: "org:test:apex",
@@ -213,6 +234,8 @@ export class HardisCommandsProvider
               "Runs all apex tests on the selected org. Will trigger error if minimum apex code coverage is not reached",
             icon: "test.svg",
             requiresProject: true,
+            helpUrl:
+              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/test/apex/",
           },
           {
             id: "project:deploy:sources:dx:check",
@@ -222,6 +245,8 @@ export class HardisCommandsProvider
             icon: "test.svg",
             command: "sfdx hardis:project:deploy:sources:dx --check",
             requiresProject: true,
+            helpUrl:
+              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/project/deploy/sources/dx/",
           },
           {
             id: "project:clean:references",
@@ -231,6 +256,8 @@ export class HardisCommandsProvider
             icon: "clean.svg",
             command: "sfdx hardis:project:clean:references",
             requiresProject: true,
+            helpUrl:
+              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/project/clean/references/",
           },
           {
             id: "project:clean:orgmissingitems",
@@ -240,6 +267,8 @@ export class HardisCommandsProvider
             icon: "clean.svg",
             command: "sfdx hardis:project:clean:orgmissingitems",
             requiresProject: true,
+            helpUrl:
+              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/project/clean/orgmissingitems/",
           },
           {
             id: "scratch:create",
@@ -249,6 +278,8 @@ export class HardisCommandsProvider
             icon: "salesforce.svg",
             command: "sfdx hardis:scratch:create",
             requiresProject: true,
+            helpUrl:
+              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/scratch/create/",
           },
           {
             id: "scratch:create:new",
@@ -257,6 +288,8 @@ export class HardisCommandsProvider
             icon: "salesforce.svg",
             command: "sfdx hardis:scratch:create --forcenew",
             requiresProject: true,
+            helpUrl:
+              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/scratch/create/",
           },
           {
             id: "org:password:generate",
@@ -265,6 +298,8 @@ export class HardisCommandsProvider
             tooltip:
               "Generates a new password for your current scratch org user",
             icon: "password.svg",
+            helpUrl:
+              "https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_scratch_orgs_passwd.htm",
           },
           {
             id: "org:connect",
@@ -273,6 +308,8 @@ export class HardisCommandsProvider
               "Connects to a Salesforce org without setting it as defaultusername",
             command: "sfdx hardis:org:connect",
             icon: "select.svg",
+            helpUrl:
+              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/connect/",
           },
           {
             id: "force:source:tracking:clear",
@@ -281,6 +318,8 @@ export class HardisCommandsProvider
               "Removes all local information about updates you already pulled from org",
             icon: "trash.svg",
             command: "sfdx force:source:tracking:clear",
+            helpUrl:
+              "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_tracking_clear",
           },
           {
             id: "force:source:tracking:reset",
@@ -289,6 +328,8 @@ export class HardisCommandsProvider
               "Removes all local and remote information about updates you already pulled from org",
             icon: "warning.svg",
             command: "sfdx force:source:tracking:reset",
+            helpUrl:
+              "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_tracking_reset",
           },
           {
             id: "hardis:work:save-expert",
@@ -298,6 +339,8 @@ export class HardisCommandsProvider
             tooltip:
               "Do all the work:save operations except scratch pull and git operations",
             requiresProject: true,
+            helpUrl:
+              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/work/save/",
           },
         ],
       },
@@ -312,6 +355,8 @@ export class HardisCommandsProvider
               "Export data from org and store it in project files, so it can be imported during each scratch org initialization or deployment to org",
             icon: "data.svg",
             command: "sfdx hardis:org:data:export",
+            helpUrl:
+              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/data/export/",
           },
           {
             id: "org:data:import",
@@ -319,6 +364,8 @@ export class HardisCommandsProvider
             tooltip: "Import data into org from project files",
             icon: "data.svg",
             command: "sfdx hardis:org:data:import",
+            helpUrl:
+              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/data/import/",
           },
           {
             id: "org:data:configure",
@@ -326,6 +373,8 @@ export class HardisCommandsProvider
             tooltip: "Initializes a new SFDMU project",
             icon: "configure.svg",
             command: "sfdx hardis:org:configure:data",
+            helpUrl:
+              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/configure/data/",
           },
           {
             id: "org:files:export",
@@ -333,6 +382,8 @@ export class HardisCommandsProvider
             tooltip: "Export files from org based on a configuration",
             icon: "file.svg",
             command: "sfdx hardis:org:files:export",
+            helpUrl:
+              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/files/export/",
           },
           {
             id: "org:files:configure",
@@ -340,6 +391,8 @@ export class HardisCommandsProvider
             tooltip: "Initializes a new file export project",
             icon: "configure.svg",
             command: "sfdx hardis:org:configure:files",
+            helpUrl:
+              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/configure/files/",
           },
         ],
       },
@@ -399,6 +452,8 @@ export class HardisCommandsProvider
               "Freeze all users of an org except admins to deploy safely",
             icon: "freeze.svg",
             command: "sfdx hardis:org:user:freeze",
+            helpUrl:
+              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/user/freeze/",
           },
           {
             id: "org:user:unfreeze",
@@ -406,6 +461,8 @@ export class HardisCommandsProvider
             tooltip: "Unfreeze all users of an org after a safe deployment",
             icon: "unfreeze.svg",
             command: "sfdx hardis:org:user:unfreeze",
+            helpUrl:
+              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/user/unfreeze/",
           },
           {
             id: "org:purge:flow",
@@ -414,6 +471,8 @@ export class HardisCommandsProvider
               "Purge all flows with status Obsolete in your org, so you are not bothered by the 50 versions limits",
             icon: "flow.svg",
             command: "sfdx hardis:org:purge:flow",
+            helpUrl:
+              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/purge/flow/",
           },
           {
             id: "hardis:scratch:delete",
@@ -421,6 +480,8 @@ export class HardisCommandsProvider
             tooltip: "Prompts user for scratch orgs to mark for deletion",
             icon: "trash.svg",
             command: "sfdx hardis:scratch:delete",
+            helpUrl:
+              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/scratch/delete/",
           },
           {
             id: "hardis:org:user:activateinvalid",
@@ -428,6 +489,8 @@ export class HardisCommandsProvider
             tooltip: "Removes the .invalid of all users emails in a sandbox",
             icon: "user.svg",
             command: "sfdx hardis:org:user:activateinvalid",
+            helpUrl:
+              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/user/activateinvalid/",
           },
         ],
       },
@@ -437,10 +500,12 @@ export class HardisCommandsProvider
         commands: [
           {
             id: "org:diagnose:legacyapi",
-            label: "Detect legacy API use",
+            label: "Detect legacy API versions usage",
             tooltip: "Detects if deprected APIs are your in a production org",
             icon: "old.svg",
             command: "sfdx hardis:org:diagnose:legacyapi",
+            helpUrl:
+              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/diagnose/legacyapi/",
           },
         ],
       },
@@ -653,6 +718,7 @@ class CommandTreeItem extends vscode.TreeItem {
       description: "",
       tooltip: "",
       requiresProject: false,
+      helpUrl: "",
     }
   ) {
     super(label, collapsibleState);
@@ -707,5 +773,7 @@ class CommandTreeItem extends vscode.TreeItem {
         ],
       };
     }
+    // Manage context menu tag
+    this.contextValue = options.helpUrl ? "SFDXHARDIS_CONTEXT" : undefined;
   }
 }
