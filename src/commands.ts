@@ -35,7 +35,9 @@ export class Commands {
     this.registerRefreshStatusView();
     this.registerRefreshPluginsView();
     this.registerOpenExternal();
+    this.registerShowCommandDetail();
     this.registerOpenCommandHelp();
+    this.registerOpenPluginHelp();
     this.registerOpenKeyFile();
     this.registerShowMessage();
   }
@@ -233,10 +235,54 @@ export class Commands {
     this.disposables.push(disposable);
   }
 
+  registerShowCommandDetail() {
+    // Popup info about a command
+    const disposable = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.showCommandDetail",
+      (item) => {
+        const commandDetail = item.tooltip + "\n\nCommand: " + item.hardisCommand;
+        const messageButtons = ["Run command"];
+        if (item.options.helpUrl) {
+          messageButtons.push("Open Online Help");
+        }
+        // messageButtons.push("Close"); // a cancel button is already automatically added by VsCode
+        vscode.window
+          .showInformationMessage(
+            commandDetail,
+            { modal: true },
+            ...messageButtons
+          )
+          .then((selection) => {
+            if (selection === "Run command") {
+              vscode.commands.executeCommand(
+                "vscode-sfdx-hardis.execute-command",
+                item.hardisCommand
+              );
+            } else if (selection === "Open Online Help") {
+              vscode.commands.executeCommand(
+                "vscode-sfdx-hardis.openCommandHelp",
+                item
+              );
+            }
+          });
+      }
+    );
+    this.disposables.push(disposable);
+  }
+
   registerOpenCommandHelp() {
     // Open external command
     const disposable = vscode.commands.registerCommand(
       "vscode-sfdx-hardis.openCommandHelp",
+      (item) => vscode.env.openExternal(item.options.helpUrl)
+    );
+    this.disposables.push(disposable);
+  }
+
+  registerOpenPluginHelp() {
+    // Open external command
+    const disposable = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.openPluginHelp",
       (item) => vscode.env.openExternal(item.options.helpUrl)
     );
     this.disposables.push(disposable);

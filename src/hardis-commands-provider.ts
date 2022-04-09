@@ -774,6 +774,6 @@ class CommandTreeItem extends vscode.TreeItem {
       };
     }
     // Manage context menu tag
-    this.contextValue = options.helpUrl ? "SFDXHARDIS_CONTEXT" : undefined;
+    this.contextValue = options.helpUrl || this.hardisCommand ? "SFDXHARDIS_CONTEXT_COMMAND" : undefined;
   }
 }
