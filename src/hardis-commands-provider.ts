@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import * as path from "path";
 import { execSfdxJson, hasSfdxProjectJson } from "./utils";
 import axios from "axios";
-import * as fs from 'fs-extra';
+import * as fs from "fs-extra";
 import * as yaml from "js-yaml";
 
 let REMOTE_CONFIGS: any = {};

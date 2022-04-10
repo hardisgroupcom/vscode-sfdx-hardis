@@ -278,9 +278,10 @@ export class Commands {
       (item) => {
         if (item.options.helpUrl) {
           vscode.env.openExternal(item.options.helpUrl);
-        }
-        else {
-          vscode.window.showInformationMessage("No help url has been defined for this command");
+        } else {
+          vscode.window.showInformationMessage(
+            "No help url has been defined for this command"
+          );
         }
       }
     );
