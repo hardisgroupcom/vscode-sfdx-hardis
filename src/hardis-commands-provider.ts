@@ -1,11 +1,12 @@
 import * as vscode from "vscode";
 import * as path from "path";
-import { execSfdxJson, hasSfdxProjectJson } from "./utils";
-import axios from "axios";
-import * as fs from "fs-extra";
-import * as yaml from "js-yaml";
-
-let REMOTE_CONFIGS: any = {};
+import {
+  execSfdxJson,
+  hasSfdxProjectJson,
+  loadExternalSfdxHardisConfiguration,
+  loadProjectSfdxHardisConfig,
+  resetCache,
+} from "./utils";
 
 export class HardisCommandsProvider
   implements vscode.TreeDataProvider<CommandTreeItem>
@@ -80,7 +81,7 @@ export class HardisCommandsProvider
 
   refresh(): void {
     this.allTopicsAndCommands = null;
-    REMOTE_CONFIGS = {};
+    resetCache();
     this._onDidChangeTreeData.fire();
   }
 
@@ -698,30 +699,20 @@ export class HardisCommandsProvider
 
   // Add custom commands defined within .sfdx-hardis.yml
   private async completeWithCustomCommands(hardisCommands: Array<any>) {
-    const configRes = await execSfdxJson(
-      "sfdx hardis:config:get --level project",
-      this,
-      { fail: false, output: true }
-    );
+    const projectConfig = await loadProjectSfdxHardisConfig();
     // Commands defined in local .sfdx-hardis.yml
-    if (configRes?.result?.config?.customCommands) {
+    if (projectConfig.customCommands) {
       const customCommandsPosition =
-        configRes?.result?.config?.customCommandsPosition || "last";
+        projectConfig.customCommandsPosition || "last";
       hardisCommands = this.addCommands(
-        configRes.result.config.customCommands,
+        projectConfig.customCommands,
         customCommandsPosition,
         hardisCommands
       );
     }
     // Commands defined in remote config file .sfdx-hardis.yml
-    const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
-    if (config.get("customCommandsConfiguration")) {
-      // load config
-      const customCommandsConfiguration: string =
-        config.get("customCommandsConfiguration") || "";
-      const remoteConfig = customCommandsConfiguration.startsWith("http")
-        ? await this.loadFromRemoteConfigFile(customCommandsConfiguration)
-        : this.loadFromLocalConfigFile(customCommandsConfiguration);
+    const remoteConfig = await loadExternalSfdxHardisConfiguration();
+    if (remoteConfig.customCommands) {
       // add in commands
       const customCommandsPosition =
         remoteConfig.customCommandsPosition || "last";
@@ -749,31 +740,6 @@ export class HardisCommandsProvider
       hardisCommands = customCommands.concat(hardisCommands);
     }
     return hardisCommands;
-  }
-
-  // Fetch remote config file
-  private async loadFromRemoteConfigFile(url: string) {
-    if (REMOTE_CONFIGS[url]) {
-      return REMOTE_CONFIGS[url];
-    }
-    const remoteConfigResp = await axios.get(url);
-    if (remoteConfigResp.status !== 200) {
-      throw new Error(
-        "[sfdx-hardis] Unable to read remote configuration file at " +
-          url +
-          "\n" +
-          JSON.stringify(remoteConfigResp)
-      );
-    }
-    const remoteConfig = yaml.load(remoteConfigResp.data);
-    REMOTE_CONFIGS[url] = remoteConfig;
-    return remoteConfig;
-  }
-
-  // Read filesystem config file
-  private loadFromLocalConfigFile(file: string) {
-    const localConfig = yaml.load(fs.readFileSync(file).toString());
-    return localConfig;
   }
 }
 

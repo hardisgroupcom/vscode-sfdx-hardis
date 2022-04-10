@@ -1,13 +1,23 @@
+import axios from "axios";
 import * as c from "chalk";
 import * as child from "child_process";
 import * as fs from "fs-extra";
 import * as path from "path";
 import * as util from "util";
 import * as vscode from "vscode";
+import * as yaml from "js-yaml";
 import { Logger } from "./logger";
 const exec = util.promisify(child.exec);
 
 export const RECOMMENDED_SFDX_CLI_VERSION = null; //"7.111.6";
+
+let REMOTE_CONFIGS: any = {};
+let PROJECT_CONFIG: any = null;
+
+export function resetCache() {
+  REMOTE_CONFIGS = {};
+  PROJECT_CONFIG = null;
+}
 
 // Execute command
 export async function execCommand(
@@ -126,4 +136,56 @@ export function hasSfdxProjectJson(
     );
   }
   return sfdxProjectJsonFound;
+}
+
+export async function loadProjectSfdxHardisConfig() {
+  if (PROJECT_CONFIG) {
+    return PROJECT_CONFIG;
+  }
+  const configRes = await execSfdxJson(
+    "sfdx hardis:config:get --level project",
+    null,
+    { fail: false, output: true }
+  );
+  PROJECT_CONFIG = configRes?.result?.config || {};
+  return PROJECT_CONFIG;
+}
+
+export async function loadExternalSfdxHardisConfiguration() {
+  const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+  if (config.get("customCommandsConfiguration")) {
+    // load config
+    const customCommandsConfiguration: string =
+      config.get("customCommandsConfiguration") || "";
+    const remoteConfig = customCommandsConfiguration.startsWith("http")
+      ? await loadFromRemoteConfigFile(customCommandsConfiguration)
+      : loadFromLocalConfigFile(customCommandsConfiguration);
+    return remoteConfig;
+  }
+  return {};
+}
+
+// Fetch remote config file
+async function loadFromRemoteConfigFile(url: string) {
+  if (REMOTE_CONFIGS[url]) {
+    return REMOTE_CONFIGS[url];
+  }
+  const remoteConfigResp = await axios.get(url);
+  if (remoteConfigResp.status !== 200) {
+    throw new Error(
+      "[sfdx-hardis] Unable to read remote configuration file at " +
+        url +
+        "\n" +
+        JSON.stringify(remoteConfigResp)
+    );
+  }
+  const remoteConfig = yaml.load(remoteConfigResp.data);
+  REMOTE_CONFIGS[url] = remoteConfig;
+  return remoteConfig;
+}
+
+// Read filesystem config file
+async function loadFromLocalConfigFile(file: string) {
+  const localConfig = yaml.load(fs.readFileSync(file).toString());
+  return localConfig;
 }

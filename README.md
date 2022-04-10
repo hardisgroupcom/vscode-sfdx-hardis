@@ -23,7 +23,7 @@ VsCode SFDX-Hardis aims to simplify the use of Salesforce DX with an intuitive U
 - [Assisted UI](#assisted-ui)
   - [Work on a task (simple)](#work-on-a-task-simple)
   - [Work on a task (Expert)](#work-on-a-task-expert)
-  - [Data Import & Export](#data-import--export)
+  - [Data Import & Export](#data-import-export)
   - [Debugger](#debugger)
   - [Operations](#operations)
   - [Audit](#audit)
@@ -31,6 +31,7 @@ VsCode SFDX-Hardis aims to simplify the use of Salesforce DX with an intuitive U
   - [Packaging](#packaging)
   - [Nerdy stuff](#nerdy-stuff)
 - [Custom commands](#custom-commands)
+- [Custom plugins](#custom-plugins)
 - [Dependencies](#dependencies)
 - [Who we are](#who-we-are)
 
@@ -163,7 +164,7 @@ You can **define your own custom commands** that will appear at the beginning or
 - Icons can be any of the [SVG files in this folder](https://github.com/hardisgroupcom/vscode-sfdx-hardis/tree/master/resources)
 - Once updated, please refresh the VsCode Sfdx Hardis Commands panel to see the changes.
 
-Example of `config/.sfdx-hardis.yml`:
+Example in `config/.sfdx-hardis.yml`:
 
 ```yaml
 customCommandsPosition: first  # can be first or last
@@ -190,6 +191,28 @@ customCommands:
         icon: user.svg
         tooltip: Useless commands just to show that we can use not sfdx commands too
         command: echo "Something"
+```
+
+## Custom plugins
+
+![screenshot](resources/custom-plugins.jpg)
+
+You can **define your own custom plugins** that will appear in dependencies panel
+
+- In `.sfdx-hardis.yml` file, and add property **customPlugins** , that will contain other menus and commands under each of them. It can be defined:
+  - Locally in you project, in `config/.sfdx-hardis.yml` file
+  - In a `.sfdx-hardis.yml` file, in VsCode setting `custom plugins` _(ex: `C:\myfolder\.sfdx-hardis.yml`)_
+  - In a remote  `.sfdx-hardis.yml` file, in VsCode setting `custom plugins` _(ex: `http://my.server.com/.sfdx-hardis.yml`)_
+- Once updated, please refresh the VsCode Sfdx Hardis Dependencies panel to see the changes.
+
+Example in `config/.sfdx-hardis.yml`:
+
+```yaml
+plugins:
+  - name: mo-dx-plugin
+    helpUrl: https://github.com/msrivastav13/mo-dx-plugin
+  - name: shane-sfdx-plugins
+    helpUrl: https://github.com/mshanemc/shane-sfdx-plugins
 ```
 
 ## Dependencies
