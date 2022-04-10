@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.16.0] 2022-04-10
+
+- Allow custom plugins
+
 ## [1.15.0] 2022-04-10
 
 - Allow custom commands to be remotely defined using Vs code setting `customCommandsConfiguration`

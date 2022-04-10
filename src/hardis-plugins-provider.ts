@@ -1,7 +1,13 @@
 import * as vscode from "vscode";
 import * as npmApi from "npm-api";
 import * as path from "path";
-import { execCommand, RECOMMENDED_SFDX_CLI_VERSION } from "./utils";
+import {
+  execCommand,
+  loadExternalSfdxHardisConfiguration,
+  loadProjectSfdxHardisConfig,
+  RECOMMENDED_SFDX_CLI_VERSION,
+  resetCache,
+} from "./utils";
 import { Logger } from "./logger";
 const npm = new npmApi();
 
@@ -218,6 +224,13 @@ export class HardisPluginsProvider
         helpUrl: "https://texei.github.io/texei-sfdx-plugin/",
       },
     ];
+    // Complete with local config plugins
+    const projectConfig = await loadProjectSfdxHardisConfig();
+    plugins.push(...(projectConfig.customPlugins || []));
+    // Complete with remote config plugins
+    const remoteConfig = await loadExternalSfdxHardisConfiguration();
+    plugins.push(...(remoteConfig.customPlugins || []));
+
     const outdated: any[] = [];
     // check sfdx-cli version
     const sfdxCliVersionStdOut: string = (
@@ -417,6 +430,7 @@ export class HardisPluginsProvider
   > = this._onDidChangeTreeData.event;
 
   refresh(): void {
+    resetCache();
     this._onDidChangeTreeData.fire();
   }
 
