@@ -275,7 +275,15 @@ export class Commands {
     // Open external command
     const disposable = vscode.commands.registerCommand(
       "vscode-sfdx-hardis.openCommandHelp",
-      (item) => vscode.env.openExternal(item.options.helpUrl)
+      (item) => {
+        if (item.options.helpUrl) {
+          vscode.env.openExternal(item.options.helpUrl);
+        } else {
+          vscode.window.showInformationMessage(
+            "No help url has been defined for this command"
+          );
+        }
+      }
     );
     this.disposables.push(disposable);
   }

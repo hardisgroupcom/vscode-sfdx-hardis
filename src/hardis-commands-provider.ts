@@ -1,6 +1,11 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import { execSfdxJson, hasSfdxProjectJson } from "./utils";
+import axios from "axios";
+import * as fs from "fs-extra";
+import * as yaml from "js-yaml";
+
+let REMOTE_CONFIGS: any = {};
 
 export class HardisCommandsProvider
   implements vscode.TreeDataProvider<CommandTreeItem>
@@ -75,6 +80,7 @@ export class HardisCommandsProvider
 
   refresh(): void {
     this.allTopicsAndCommands = null;
+    REMOTE_CONFIGS = {};
     this._onDidChangeTreeData.fire();
   }
 
@@ -685,8 +691,8 @@ export class HardisCommandsProvider
         ],
       },
     ];
-    this.allTopicsAndCommands = hardisCommands;
     hardisCommands = await this.completeWithCustomCommands(hardisCommands);
+    this.allTopicsAndCommands = hardisCommands;
     return hardisCommands;
   }
 
@@ -697,12 +703,77 @@ export class HardisCommandsProvider
       this,
       { fail: false, output: true }
     );
+    // Commands defined in local .sfdx-hardis.yml
     if (configRes?.result?.config?.customCommands) {
-      const lastElement = hardisCommands.pop();
-      hardisCommands.push(...configRes.result.config.customCommands);
-      hardisCommands.push(lastElement);
+      const customCommandsPosition =
+        configRes?.result?.config?.customCommandsPosition || "last";
+      hardisCommands = this.addCommands(
+        configRes.result.config.customCommands,
+        customCommandsPosition,
+        hardisCommands
+      );
+    }
+    // Commands defined in remote config file .sfdx-hardis.yml
+    const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+    if (config.get("customCommandsConfiguration")) {
+      // load config
+      const customCommandsConfiguration: string =
+        config.get("customCommandsConfiguration") || "";
+      const remoteConfig = customCommandsConfiguration.startsWith("http")
+        ? await this.loadFromRemoteConfigFile(customCommandsConfiguration)
+        : this.loadFromLocalConfigFile(customCommandsConfiguration);
+      // add in commands
+      const customCommandsPosition =
+        remoteConfig.customCommandsPosition || "last";
+      hardisCommands = this.addCommands(
+        remoteConfig.customCommands,
+        customCommandsPosition,
+        hardisCommands
+      );
     }
     return hardisCommands;
+  }
+
+  private addCommands(
+    customCommands: Array<any>,
+    customCommandsPosition: string,
+    hardisCommands: Array<any>
+  ) {
+    if (customCommandsPosition === "last") {
+      // Last position
+      const lastElement = hardisCommands.pop();
+      hardisCommands.push(...customCommands);
+      hardisCommands.push(lastElement);
+    } else {
+      // First position
+      hardisCommands = customCommands.concat(hardisCommands);
+    }
+    return hardisCommands;
+  }
+
+  // Fetch remote config file
+  private async loadFromRemoteConfigFile(url: string) {
+    if (REMOTE_CONFIGS[url]) {
+      return REMOTE_CONFIGS[url];
+    }
+    const remoteConfigResp = await axios.get(url);
+    if (remoteConfigResp.status !== 200) {
+      throw new Error(
+        "[sfdx-hardis] Unable to read remote configuration file at " +
+          url +
+          "\n" +
+          JSON.stringify(remoteConfigResp)
+      );
+    }
+    const remoteConfig = yaml.load(remoteConfigResp.data);
+    REMOTE_CONFIGS[url] = remoteConfig;
+    return remoteConfig;
+  }
+
+  // Read filesystem config file
+  private loadFromLocalConfigFile(file: string) {
+    const localConfig = yaml.load(fs.readFileSync(file).toString());
+    return localConfig;
   }
 }
 
