@@ -16,7 +16,7 @@ let PROJECT_CONFIG: any = null;
 
 export function resetCache() {
   REMOTE_CONFIGS = {};
-  PROJECT_CONFIG = null ;
+  PROJECT_CONFIG = null;
 }
 
 // Execute command
