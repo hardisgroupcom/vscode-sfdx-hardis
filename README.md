@@ -9,7 +9,7 @@
 [![GitHub stars](https://img.shields.io/github/stars/hardisgroupcom/vscode-sfdx-hardis.png?label=Star&maxAge=2592000)](https://github.com/hardisgroupcom/vscode-sfdx-hardis/stargazers/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.png?style=flat-square)](http://makeapullrequest.com)
 
-## Easy Salesforce DX projects management, even if you don't know Salesforce DX or git
+**Easy Salesforce DX projects management, even if you don't know Salesforce DX or git**
 
 Salesforce DX is great.
 
@@ -18,6 +18,23 @@ But there are so many base commands and so many useful plugins that it's easy to
 VsCode SFDX-Hardis aims to simplify the use of Salesforce DX with an intuitive UI and ready to use pre-integrated commands.
 
 ![screenshot](resources/extension-demo.gif)
+
+- [Articles](#articles)
+- [Assisted UI](#assisted-ui)
+	- [Work on a task (simple)](#work-on-a-task-simple)
+	- [Work on a task (Expert)](#work-on-a-task-expert)
+	- [Data Import & Export](#data-import--export)
+	- [Debugger](#debugger)
+	- [Operations](#operations)
+	- [Audit](#audit)
+	- [Configuration](#configuration)
+	- [Packaging](#packaging)
+	- [Nerdy stuff](#nerdy-stuff)
+- [Custom commands](#custom-commands)
+- [Dependencies](#dependencies)
+- [Who we are](#who-we-are)
+
+## Articles
 
 Here are some articles with examples of use of [sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis/)
 
@@ -133,21 +150,23 @@ Simplify creation and maintenance of packaging V2 packages (unlocked or managed)
 
 Use at your own risk :)
 
-### Custom commands
+## Custom commands
 
 ![screenshot](resources/custom-commands.jpg)
 
-You can **define your own custom commands** that will appear at the bottom of the menu.
+You can **define your own custom commands** that will appear at the beginning or the bottom of the menu.
 
-- Create or update existing file `config/.sfdx-hardis.yml` in your project, and add property **customCommands** , that will contain other menus and commands under each of them.
-
+- In `.sfdx-hardis.yml` file, and add property **customCommands** , that will contain other menus and commands under each of them. It can be defined:
+  - Locally in you project, in `config/.sfdx-hardis.yml` file
+  - In a `.sfdx-hardis.yml` file, in VsCode setting `custom commands` _(ex: `C:\myfolder\.sfdx-hardis.yml`)_
+  - In a remote  `.sfdx-hardis.yml` file, in VsCode setting `custom commands` _(ex: `http://my.server.com/.sfdx-hardis.yml`)_
 - Icons can be any of the [SVG files in this folder](https://github.com/hardisgroupcom/vscode-sfdx-hardis/tree/master/resources)
-
 - Once updated, please refresh the VsCode Sfdx Hardis Commands panel to see the changes.
 
 Example of `config/.sfdx-hardis.yml`:
 
 ```yaml
+customCommandsPosition: first  # can be first or last
 customCommands:
   - id: custom-menu
     label: Custom commands
@@ -157,6 +176,7 @@ customCommands:
         icon: file.svg
         tooltip: Generates a manifest package.xml using local sfdx source files
         command: sfdx force:source:manifest:create --sourcepath force-app --manifestname myNewManifest
+        helpUrl: https://megalinter.github.io/
       - id: list-all-orgs
         label: List all orgs
         icon: salesforce.svg

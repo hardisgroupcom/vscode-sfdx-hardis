@@ -46,6 +46,10 @@
           ],
           "description": "Defines if user input is in VsCode UI or in console"
         },
+        "vsCodeSfdxHardis.customCommandsConfiguration": {
+          "type": "string",
+          "description": "Absolute path or URL to a .sfdx-hardis.yml file that contains custom commands for the menu\nSee https://github.com/hardisgroupcom/vscode-sfdx-hardis#custom-commands"
+        },
         "vsCodeSfdxHardis.disableDefaultOrgAuthenticationCheck": {
           "type": "boolean",
           "default": false,
@@ -289,11 +293,14 @@
   },
   "dependencies": {
     "@types/fs-extra": "^9.0.8",
+    "@types/js-yaml": "^4.0.5",
     "@types/moment": "^2.13.0",
     "@types/ws": "^7.4.0",
+    "axios": "^0.26.1",
     "chalk": "^4.1.0",
     "fs-extra": "^9.1.0",
     "git-url-parse": "^11.6.0",
+    "js-yaml": "^4.1.0",
     "moment": "^2.29.1",
     "npm-api": "^1.0.1",
     "portastic": "^1.0.1",

@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [1.15.0] 2022-04-10
+
+- Allow custom commands to be remotely defined using Vs code setting `customCommandsConfiguration`
+- Fix bug when there is no help URL defined on a command
+
 ## [1.14.0] 2022-04-09
 
 - New contextual menus
