@@ -29,6 +29,12 @@ export class HardisDebugger {
         this.launchDebugger();
       }
     );
+    const cmdLogTail = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.debug.logtail",
+      () => {
+        this.launchLogTail();
+      }
+    );
     const cmdToggleCheckpoint = vscode.commands.registerCommand(
       "vscode-sfdx-hardis.toggleCheckpoint",
       () => {
@@ -105,6 +111,48 @@ export class HardisDebugger {
         listener.dispose();
       }
     }, 5000);
+  }
+
+  private async launchLogTail() {
+    await this.manageDebugLogsActivation();
+
+    const quickpick = vscode.window.createQuickPick<vscode.QuickPickItem>();
+    const value = await new Promise<any>((resolve) => {
+      quickpick.ignoreFocusOut = true;
+      quickpick.title = "Please select the type of logs you want to display";
+      quickpick.canSelectMany = false;
+      quickpick.items = [
+        { label: "Only logs from System.debug()" },
+        { label: "All logs" },
+      ];
+      // Show quickpick item
+      quickpick.show();
+      // Handle user selection
+      quickpick.onDidAccept(() => {
+        if (quickpick.selectedItems.length > 0) {
+          const value =
+            quickpick.selectedItems[0].label === "All logs"
+              ? "all"
+              : "USER_DEBUG";
+          resolve(value);
+        }
+      });
+      // Handle ESCAPE key
+      quickpick.onDidHide(() => resolve(["exitNow"]));
+    });
+    quickpick.dispose();
+
+    if (value === "exitNow") {
+      return;
+    }
+    let logTailCommand = "sfdx force:apex:log:tail --color";
+    if (value === "USER_DEBUG") {
+      logTailCommand += " | grep USER_DEBUG";
+    }
+    vscode.commands.executeCommand(
+      "vscode-sfdx-hardis.execute-command",
+      logTailCommand
+    );
   }
 
   private debugLogFile(uri: vscode.Uri) {
