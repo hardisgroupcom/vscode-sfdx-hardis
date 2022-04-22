@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.17.0] 2022-04-22
+
+- New command: Display live logs in terminal
+
 ## [1.16.0] 2022-04-10
 
 - Allow custom plugins

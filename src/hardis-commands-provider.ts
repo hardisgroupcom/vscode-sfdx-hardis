@@ -438,6 +438,15 @@ export class HardisCommandsProvider
             command: "sfdx hardis:org:purge:apexlog",
           },
           {
+            id: "org:apex:log:tail",
+            label: "Display live logs in terminal",
+            tooltip: "Display apex logs in console while they are generated",
+            icon: "log.svg",
+            command: "vscode-sfdx-hardis.debug.logtail",
+            helpUrl:
+              "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_apex.htm#cli_reference_force_apex_log_tail",
+          },
+          {
             id: "hardis:debug:importapex",
             label: "Retrieve Apex sources from org",
             tooltip:
