@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import * as path from "path";
 import * as GitUrlParse from "git-url-parse";
 import moment = require("moment");
-import { execSfdxJson, loadProjectSfdxHardisConfig } from "./utils";
+import { execSfdxJson, loadProjectSfdxHardisConfig, resetCache } from "./utils";
 import { Logger } from "./logger";
 
 export class HardisStatusProvider
@@ -331,6 +331,7 @@ export class HardisStatusProvider
   > = this._onDidChangeTreeData.event;
 
   refresh(): void {
+    resetCache();
     this._onDidChangeTreeData.fire();
   }
 

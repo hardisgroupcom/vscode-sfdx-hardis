@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.18.1] 2022-05-01
+
+- Reset cache when refreshing status panel
+
 ## [1.18.0] 2022-05-01
 
 - Improve startup performances
