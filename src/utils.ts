@@ -29,7 +29,7 @@ export function preLoadCache() {
     "npm show sfpowerkit version",
     "npm show sfdmu version",
     "npm show sfdx-git-delta version",
-    "npm show texei-sfdx-plugin version"
+    "npm show texei-sfdx-plugin version",
   ];
   for (const cmd of cliCommands) {
     preLoadPromises.push(execCommand(cmd, {}, {}));
