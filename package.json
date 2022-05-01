@@ -2,7 +2,7 @@
   "name": "vscode-sfdx-hardis",
   "displayName": "SFDX Hardis",
   "description": "Handle Salesforce DX and Git without knowing Salesforce DX or Git !",
-  "version": "1.17.0",
+  "version": "1.18.0",
   "icon": "resources/hardis-logo.png",
   "publisher": "NicolasVuillamy",
   "license": "AGPL-3.0",
