@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import * as path from "path";
 import * as GitUrlParse from "git-url-parse";
 import moment = require("moment");
-import { execSfdxJson } from "./utils";
+import { execSfdxJson, loadProjectSfdxHardisConfig } from "./utils";
 import { Logger } from "./logger";
 
 export class HardisStatusProvider
@@ -156,13 +156,9 @@ export class HardisStatusProvider
 
       if (options.devHub) {
         // Scratch org pool info
-        const configRes = await execSfdxJson(
-          "sfdx hardis:config:get --level project",
-          this,
-          { fail: false, output: true }
-        );
+        const config = await loadProjectSfdxHardisConfig();
         // Get pool info only if defined in config
-        if (configRes?.result?.config?.poolConfig) {
+        if (config?.poolConfig) {
           const poolViewRes = await execSfdxJson(
             "sfdx hardis:scratch:pool:view",
             this,

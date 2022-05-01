@@ -13,10 +13,46 @@ export const RECOMMENDED_SFDX_CLI_VERSION = null; //"7.111.6";
 
 let REMOTE_CONFIGS: any = {};
 let PROJECT_CONFIG: any = null;
+let COMMANDS_RESULTS: any = {};
+
+export function preLoadCache() {
+  console.time("sfdxHardisPreload");
+  const preLoadPromises = [];
+  const cliCommands = [
+    "node --version",
+    "git --version",
+    "sfdx --version",
+    "sfdx plugins",
+    "npm show sfdx-cli version",
+    "npm show sfdx-hardis version",
+    "npm show sfdx-essentials version",
+    "npm show sfpowerkit version",
+    "npm show sfdmu version",
+    "npm show sfdx-git-delta version",
+    "npm show texei-sfdx-plugin version"
+  ];
+  for (const cmd of cliCommands) {
+    preLoadPromises.push(execCommand(cmd, {}, {}));
+  }
+  const sfdxJsonCommands = [
+    "sfdx force:org:display",
+    "sfdx force:config:get defaultdevhubusername",
+    "sfdx hardis:config:get --level project",
+    "sfdx hardis:scratch:pool:view",
+    "sfdx hardis:config:get --level user",
+  ];
+  for (const cmd of sfdxJsonCommands) {
+    preLoadPromises.push(execSfdxJson(cmd, {}, {}));
+  }
+  Promise.all(preLoadPromises).then(() => {
+    console.timeEnd("sfdxHardisPreload");
+  });
+}
 
 export function resetCache() {
   REMOTE_CONFIGS = {};
   PROJECT_CONFIG = null;
+  COMMANDS_RESULTS = {};
 }
 
 // Execute command
@@ -30,7 +66,6 @@ export async function execCommand(
     spinner: true,
   }
 ): Promise<any> {
-  console.time(command);
   let commandResult = null;
   // Call command (disable color before for json parsing)
   const prevForceColor = process.env.FORCE_COLOR;
@@ -40,9 +75,22 @@ export async function execCommand(
     cwd: options.cwd || vscode.workspace.rootPath,
     env: process.env,
   };
-  Logger.log("[vscode-sfdx-hardis][command] " + command);
   try {
-    commandResult = await exec(command, execOptions);
+    if (COMMANDS_RESULTS[command]) {
+      // use cache
+      commandResult =
+        COMMANDS_RESULTS[command].result ??
+        (await COMMANDS_RESULTS[command].promise);
+    } else {
+      // no cache
+      Logger.log("[vscode-sfdx-hardis][command] " + command);
+      console.time(command);
+      const commandResultPromise = exec(command, execOptions);
+      COMMANDS_RESULTS[command] = { promise: commandResultPromise };
+      commandResult = await commandResultPromise;
+      COMMANDS_RESULTS[command] = { result: commandResult };
+      console.timeEnd(command);
+    }
   } catch (e: any) {
     console.timeEnd(command);
     process.env.FORCE_COLOR = prevForceColor;
@@ -59,7 +107,6 @@ export async function execCommand(
       errorMessage: `[sfdx-hardis][ERROR] Error processing command\n$${e.stdout}\n${e.stderr}`,
     };
   }
-  console.timeEnd(command);
   // Display output if requested, for better user understanding of the logs
   if (options.output || options.debug) {
     Logger.log(commandResult.stdout.toString());
