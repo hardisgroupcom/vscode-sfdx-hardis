@@ -9,7 +9,7 @@ import { HardisPluginsProvider } from "./hardis-plugins-provider";
 import { HardisStatusProvider } from "./hardis-status-provider";
 import { WebSocketServer } from "./hardis-websocket-server";
 import { Logger } from "./logger";
-import { getWorkspaceRoot } from "./utils";
+import { getWorkspaceRoot, preLoadCache } from "./utils";
 import { WelcomePanel } from "./webviews/welcome";
 
 let refreshInterval: any = null;
@@ -23,6 +23,9 @@ export function activate(context: vscode.ExtensionContext) {
   // This line of code will only be executed once when your extension is activated
   Logger.log("VsCode SFDX Hardis has been activated");
   const currentWorkspaceFolderUri = getWorkspaceRoot();
+
+  // Call cli commands before their result is used, to improve startup performances
+  preLoadCache();
 
   // Initialize Welcome Webview
   const welcomeWebview = new WelcomePanel();
@@ -127,10 +130,11 @@ export function activate(context: vscode.ExtensionContext) {
     }
   });
 
-  // Refresh Status every 30 mn
+  // Refresh Plugins and Status every 6h
   refreshInterval = setInterval(() => {
     vscode.commands.executeCommand("vscode-sfdx-hardis.refreshStatusView");
-  }, 3600000);
+    vscode.commands.executeCommand("vscode-sfdx-hardis.refreshPluginsView");
+  }, 21600000);
 
   console.timeEnd("Hardis_Activate");
 }

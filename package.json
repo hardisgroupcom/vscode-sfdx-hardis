@@ -306,7 +306,6 @@
     "git-url-parse": "^11.6.0",
     "js-yaml": "^4.1.0",
     "moment": "^2.29.1",
-    "npm-api": "^1.0.1",
     "portastic": "^1.0.1",
     "strip-ansi": "^6.0.0",
     "vsce": "^1.87.0",

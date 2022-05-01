@@ -1,5 +1,4 @@
 import * as vscode from "vscode";
-import * as npmApi from "npm-api";
 import * as path from "path";
 import {
   execCommand,
@@ -9,7 +8,6 @@ import {
   resetCache,
 } from "./utils";
 import { Logger } from "./logger";
-const npm = new npmApi();
 
 let nodeInstallOk = false;
 let gitInstallOk = false;
@@ -197,6 +195,15 @@ export class HardisPluginsProvider
     return items;
   }
 
+  private async getNpmRepoLatestVersion(repo: string) {
+    const res = await execCommand(`npm show ${repo} version`, this, {
+      output: false,
+      fail: true,
+      debug: false,
+    });
+    return res.stdout || "";
+  }
+
   private async getPluginsItems(): Promise<any[]> {
     const items: any = [];
 
@@ -243,7 +250,7 @@ export class HardisPluginsProvider
     if (sfdxCliVersionMatch) {
       sfdxCliVersion = sfdxCliVersionMatch[1];
     }
-    const latestSfdxCliVersion = await npm.repo("sfdx-cli").prop("version");
+    const latestSfdxCliVersion = await this.getNpmRepoLatestVersion("sfdx-cli");
     const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
     const recommendedSfdxCliVersion =
       config.get("ignoreSfdxCliRecommendedVersion") === true
@@ -272,15 +279,19 @@ export class HardisPluginsProvider
     }
     items.push(sfdxCliItem);
     // get currently installed plugins
+    console.time(`Version-sfdx-plugins`);
     const sfdxPlugins =
       (await execCommand("sfdx plugins", this, { output: true, fail: false }))
         .stdout || "";
+    console.timeEnd(`Version-sfdx-plugins`);
     // Check installed plugins status version
     const pluginPromises = plugins.map(async (plugin) => {
       // Check latest plugin version
       let latestPluginVersion;
       try {
-        latestPluginVersion = await npm.repo(plugin.name).prop("version");
+        console.time(`Version-npm-repo ${plugin.name}`);
+        latestPluginVersion = await this.getNpmRepoLatestVersion(plugin.name);
+        console.timeEnd(`Version-npm-repo ${plugin.name}`);
       } catch (e) {
         console.error(`Error while fetching latest version for ${plugin.name}`);
         return;

@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [1.18.0] 2022-05-01
+
+- Improve startup performances
+- Do not refresh status & dependencies panels every 60mn ... but every 6h :)
+
 ## [1.17.0] 2022-04-22
 
 - New command: Display live logs in terminal
