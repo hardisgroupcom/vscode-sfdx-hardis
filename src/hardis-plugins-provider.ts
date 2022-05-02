@@ -15,7 +15,7 @@ let gitInstallOk = false;
 export class HardisPluginsProvider
   implements vscode.TreeDataProvider<StatusTreeItem>
 {
-  constructor(private workspaceRoot: string) { }
+  constructor(private workspaceRoot: string) {}
 
   getTreeItem(element: StatusTreeItem): vscode.TreeItem {
     return element;
@@ -47,10 +47,10 @@ export class HardisPluginsProvider
       topic.id === "status-plugins-sfdx"
         ? await this.getPluginsItems()
         : topic.id === "status-plugins-core"
-          ? await this.getCoreItems()
-          : topic.id === "status-vscode-extensions"
-            ? await this.getExtensionsItems()
-            : [];
+        ? await this.getCoreItems()
+        : topic.id === "status-vscode-extensions"
+        ? await this.getExtensionsItems()
+        : [];
     console.timeEnd("TreeViewItem_init_" + topic.id);
     Logger.log("Completed TreeViewItem_init_" + topic.id);
     for (const item of topicItems) {
@@ -270,7 +270,7 @@ export class HardisPluginsProvider
       sfdxCliOutdated = true;
       sfdxCliItem.label =
         sfdxCliItem.label.includes("missing") &&
-          !sfdxCliItem.label.includes("(link)")
+        !sfdxCliItem.label.includes("(link)")
           ? sfdxCliItem.label
           : sfdxCliItem.label + " (upgrade available)";
       sfdxCliItem.command = `npm install sfdx-cli@${recommendedSfdxCliVersion} -g`;
@@ -315,7 +315,7 @@ export class HardisPluginsProvider
       if (!sfdxPlugins.includes(`${plugin.name} ${latestPluginVersion}`)) {
         pluginItem.label =
           pluginItem.label.includes("missing") &&
-            !pluginItem.label.includes("(link)")
+          !pluginItem.label.includes("(link)")
             ? pluginItem.label.replace("(link)", "(localdev)")
             : pluginItem.label + " (upgrade available)";
         pluginItem.command = `echo y|sfdx plugins:install ${plugin.name} && sfdx hardis:work:ws --event refreshPlugins`;
