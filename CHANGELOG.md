@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.18.2] 2022-05-02
+
+- Fix upgrade dependency command bug
+
 ## [1.18.1] 2022-05-01
 
 - Reset cache when refreshing status panel

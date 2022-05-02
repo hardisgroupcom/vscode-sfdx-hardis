@@ -201,7 +201,7 @@ export class HardisPluginsProvider
       fail: true,
       debug: false,
     });
-    return res.stdout || "";
+    return res.stdout ? res.stdout.trim() : "";
   }
 
   private async getPluginsItems(): Promise<any[]> {
