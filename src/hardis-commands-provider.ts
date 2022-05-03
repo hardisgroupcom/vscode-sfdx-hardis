@@ -12,7 +12,7 @@ export class HardisCommandsProvider
   implements vscode.TreeDataProvider<CommandTreeItem>
 {
   private allTopicsAndCommands: any = null;
-  constructor(private workspaceRoot: string) {}
+  constructor(private workspaceRoot: string) { }
 
   getTreeItem(element: CommandTreeItem): vscode.TreeItem {
     return element;
@@ -317,6 +317,16 @@ export class HardisCommandsProvider
             icon: "select.svg",
             helpUrl:
               "https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/connect/",
+          },
+          {
+            id: "source:retrieve",
+            label: "Select and retrieve sfdx sources from org",
+            tooltip:
+              "Allows user to select a list of metadata types and process the retrieve from an org",
+            command: "sfdx hardis:source:retrieve",
+            icon: "pull.svg",
+            helpUrl:
+              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/source/retrieve/",
           },
           {
             id: "force:source:tracking:clear",
