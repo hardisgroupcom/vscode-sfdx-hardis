@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.19.0] 2022-05-03
+
+- New command **Select and retrieve sfdx sources**
+
 ## [1.18.2] 2022-05-02
 
 - Fix upgrade dependency command bug
