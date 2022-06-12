@@ -654,8 +654,7 @@ export class HardisCommandsProvider
           {
             id: "package:mergexml",
             label: "Merge package.xml files",
-            tooltip:
-              "Merge package.xml files located in manifest folder",
+            tooltip: "Merge package.xml files located in manifest folder",
             icon: "merge.svg",
             command: "sfdx hardis:package:mergexml",
           },
