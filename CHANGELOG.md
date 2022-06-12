@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.20.0] 2022-06-12
+
+- New command **Merge package.xml files**
+
 ## [1.19.0] 2022-05-03
 
 - New command **Select and retrieve sfdx sources**

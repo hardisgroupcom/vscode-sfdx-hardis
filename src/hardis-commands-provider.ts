@@ -257,25 +257,14 @@ export class HardisCommandsProvider
           },
           {
             id: "project:clean:references",
-            label: "Clean SFDX project from defined references",
+            label: "Clean SFDX project sources",
             tooltip:
-              "Remove from project the references to items that you don't want to publish",
+              "Select and apply lots of cleaning commands provided by sfdx-hardis",
             icon: "clean.svg",
             command: "sfdx hardis:project:clean:references",
             requiresProject: true,
             helpUrl:
               "https://hardisgroupcom.github.io/sfdx-hardis/hardis/project/clean/references/",
-          },
-          {
-            id: "project:clean:orgmissingitems",
-            label: "Clean SFDX project from references not in org",
-            tooltip:
-              "Clean SFDX project from references not present in target deployment org",
-            icon: "clean.svg",
-            command: "sfdx hardis:project:clean:orgmissingitems",
-            requiresProject: true,
-            helpUrl:
-              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/project/clean/orgmissingitems/",
           },
           {
             id: "scratch:create",
@@ -661,6 +650,13 @@ export class HardisCommandsProvider
               "Retrieve locally all the metadatas of a remote salesforce org, in metadata format",
             icon: "pull.svg",
             command: "sfdx hardis:org:retrieve:sources:metadata",
+          },
+          {
+            id: "package:mergexml",
+            label: "Merge package.xml files",
+            tooltip: "Merge package.xml files located in manifest folder",
+            icon: "merge.svg",
+            command: "sfdx hardis:package:mergexml",
           },
           {
             id: "org:logout",
