@@ -95,13 +95,15 @@ export class HardisDebugger {
   private async launchDebugger() {
     await this.runSfdxExtensionCommand("sfdx.force.apex.log.get");
     let launched = false;
+    // Wait for user to select a log
     const listener = vscode.window.onDidChangeActiveTextEditor((textEditor) => {
       if (textEditor && textEditor?.document?.uri?.fsPath.endsWith(".log")) {
         launched = true;
         this.debugLogFile(textEditor.document.uri);
-        listener.dispose();
       }
+      listener.dispose();
     });
+    // Launch debugger from active log file opened in text editor
     setTimeout(() => {
       if (
         launched === false &&
