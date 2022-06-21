@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.20.1] 2022-06-21
+
+- Fix multiple clicks on the Apex debugger button that caused multiple debug sessions to be started
+
 ## [1.20.0] 2022-06-12
 
 - New command **Merge package.xml files**
