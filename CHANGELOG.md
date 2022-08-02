@@ -36,7 +36,7 @@
 ## [1.18.0] 2022-05-01
 
 - Improve startup performances
-- Do not refresh status & dependencies panels every 60mn ... but every 6h :)
+- Do not refresh status & dependencies panels every 60mn… but every 6h :)
 
 ## [1.17.0] 2022-04-22
 
@@ -278,7 +278,7 @@
 
 - WebSocket Server to communicate with sfdx-hardis CLI with VsCode UI
 - VsCode Setting **vsCodeSfdxHardis.userInput**: select if user input is with VsCode ui (default) or console input
-- Send statusRefresh event to VsCode SFDX Hardis when context is changing (select, new scratch org...)
+- Send statusRefresh event to VsCode SFDX Hardis when context is changing (select, new scratch org…)
 
 ## [0.1.3] 2021-03-28
 

@@ -11,9 +11,7 @@
 
 **Easy Salesforce DX projects management, even if you don't know Salesforce DX or git**
 
-Salesforce DX is great.
-
-But there are so many base commands and so many useful plugins that it's easy to get lost.
+Salesforce DX is great, but there are so many base commands and so many useful plugins that it's easy to get lost.
 
 VsCode SFDX-Hardis aims to simplify the use of Salesforce DX with an intuitive UI and ready to use pre-integrated commands.
 
