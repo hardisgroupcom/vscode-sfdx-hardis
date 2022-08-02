@@ -544,7 +544,8 @@ export class HardisCommandsProvider
           {
             id: "project:audit:duplicatefiles",
             label: "Detect duplicate sfdx files",
-            tooltip: "Detects if duplicate files are within in your SFDX project",
+            tooltip:
+              "Detects if duplicate files are within in your SFDX project",
             icon: "old.svg",
             command: "sfdx hardis:project:audit:duplicatefiles",
             helpUrl:
@@ -553,7 +554,8 @@ export class HardisCommandsProvider
           {
             id: "project:audit:apiversion",
             label: "Extract API versions of sources",
-            tooltip: "Browse all project files and summarize API versions of elements",
+            tooltip:
+              "Browse all project files and summarize API versions of elements",
             icon: "old.svg",
             command: "sfdx hardis:project:audit:apiversion",
             helpUrl:
