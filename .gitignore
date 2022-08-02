@@ -6,3 +6,5 @@ node_modules
 
 report/
 yarn-error.log
+
+megalinter-reports/

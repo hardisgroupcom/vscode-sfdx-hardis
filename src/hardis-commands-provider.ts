@@ -318,6 +318,16 @@ export class HardisCommandsProvider
               "https://hardisgroupcom.github.io/sfdx-hardis/hardis/source/retrieve/",
           },
           {
+            id: "org:retrieve:sources:analytics",
+            label: "Retrieve all CRM analytics sources",
+            tooltip:
+              "Allows user to select a list of metadata types and process the retrieve from an org",
+            command: "sfdx hardis:org:retrieve:sources:analytics",
+            icon: "pull.svg",
+            helpUrl:
+              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/retrieve/sources/analytics/",
+          },
+          {
             id: "force:source:tracking:clear",
             label: "Clear local sfdx tracking files",
             tooltip:
@@ -372,6 +382,15 @@ export class HardisCommandsProvider
             command: "sfdx hardis:org:data:import",
             helpUrl:
               "https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/data/import/",
+          },
+          {
+            id: "org:data:delete",
+            label: "Delete data from org with SFDMU",
+            tooltip: "Delete data from org using SFDMU config files",
+            icon: "trash.svg",
+            command: "sfdx hardis:org:data:delete",
+            helpUrl:
+              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/data/delete/",
           },
           {
             id: "org:data:configure",
@@ -521,6 +540,44 @@ export class HardisCommandsProvider
             command: "sfdx hardis:org:diagnose:legacyapi",
             helpUrl:
               "https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/diagnose/legacyapi/",
+          },
+          {
+            id: "project:audit:duplicatefiles",
+            label: "Detect duplicate sfdx files",
+            tooltip:
+              "Detects if duplicate files are within in your SFDX project",
+            icon: "old.svg",
+            command: "sfdx hardis:project:audit:duplicatefiles",
+            helpUrl:
+              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/audit/duplicatefiles/",
+          },
+          {
+            id: "project:audit:apiversion",
+            label: "Extract API versions of sources",
+            tooltip:
+              "Browse all project files and summarize API versions of elements",
+            icon: "old.svg",
+            command: "sfdx hardis:project:audit:apiversion",
+            helpUrl:
+              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/audit/apiversion/",
+          },
+          {
+            id: "project:audit:callincallout",
+            label: "List call'in and call'outs",
+            tooltip: "Browse sources to list inbound and outbound calls",
+            icon: "old.svg",
+            command: "sfdx hardis:project:audit:callincallout",
+            helpUrl:
+              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/audit/callincallout/",
+          },
+          {
+            id: "project:audit:remotesites",
+            label: "List remote sites",
+            tooltip: "Browse sources to list remote sites",
+            icon: "old.svg",
+            command: "sfdx hardis:project:audit:remotesites",
+            helpUrl:
+              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/audit/remotesites/",
           },
         ],
       },
