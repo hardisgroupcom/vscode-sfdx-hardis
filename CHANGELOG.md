@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+## [1.21.0] 2022-08-02
+
+- New audit commands
+  - Detect duplicate sfdx files
+  - Extract API versions of sources
+  - List call'in and call'outs
+  - List remote sites
+- New other commands
+  - Retrieve analytics sources
+  - Delete data using SFDMU command
+
 ## [1.20.1] 2022-06-21
 
 - Fix multiple clicks on the Apex debugger button that caused multiple debug sessions to be started
