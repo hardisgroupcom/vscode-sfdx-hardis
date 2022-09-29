@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.21.1] 2022-09-29
+
+- Update node.js version check to 16.0 minimum
+
 ## [1.21.0] 2022-08-02
 
 - New audit commands
