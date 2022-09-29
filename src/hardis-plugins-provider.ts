@@ -120,7 +120,7 @@ export class HardisPluginsProvider
                 );
               }
             });
-      } else if (parseInt(nodeVersionMatch[1]) < 14.0) {
+      } else if (parseInt(nodeVersionMatch[1]) < 16.0) {
         nodeItem.label += " v" + nodeVersionMatch;
         nodeItem.icon = "warning.svg";
         nodeItem.tooltip = "Node.js is outdated";
@@ -129,7 +129,7 @@ export class HardisPluginsProvider
         )}`),
           vscode.window
             .showWarningMessage(
-              `You have a too old version (${nodeVersionMatch[1]}) of Node.js installed on your computer. Please download and install it (version 14 minimum), then restart VsCode`,
+              `You have a too old version (${nodeVersionMatch[1]}) of Node.js installed on your computer. Please download and install it (version 16 minimum), then restart VsCode`,
               "Download and install Node.js LTS"
             )
             .then((selection) => {
