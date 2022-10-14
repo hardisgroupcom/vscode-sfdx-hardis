@@ -557,7 +557,8 @@ export class HardisCommandsProvider
             tooltip:
               "Detects if duplicate values for given keys are within in your SFDX metadata files",
             icon: "old.svg",
-            command: "sfdx hardis:project:metadata:findduplicates -f force-app/**/*.xml",
+            command:
+              "sfdx hardis:project:metadata:findduplicates -f force-app/**/*.xml",
             helpUrl:
               "https://hardisgroupcom.github.io/sfdx-hardis/hardis/project/metadata/duplicatefiles/",
           },
