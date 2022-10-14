@@ -552,6 +552,16 @@ export class HardisCommandsProvider
               "https://hardisgroupcom.github.io/sfdx-hardis/hardis/audit/duplicatefiles/",
           },
           {
+            id: "project:metadata:findduplicates",
+            label: "Detect duplicate values in metadata files",
+            tooltip:
+              "Detects if duplicate values for given keys are within in your SFDX metadata files",
+            icon: "old.svg",
+            command: "sfdx hardis:project:metadata:findduplicates -f force-app/**/*.xml",
+            helpUrl:
+              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/project/metadata/duplicatefiles/",
+          },
+          {
             id: "project:audit:apiversion",
             label: "Extract API versions of sources",
             tooltip:
