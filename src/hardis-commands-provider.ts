@@ -546,7 +546,7 @@ export class HardisCommandsProvider
             label: "Detect duplicate sfdx files",
             tooltip:
               "Detects if duplicate files are within in your SFDX project",
-            icon: "old.svg",
+            icon: "duplicate.svg",
             command: "sfdx hardis:project:audit:duplicatefiles",
             helpUrl:
               "https://hardisgroupcom.github.io/sfdx-hardis/hardis/audit/duplicatefiles/",
@@ -556,7 +556,7 @@ export class HardisCommandsProvider
             label: "Detect duplicate values in metadata files",
             tooltip:
               "Detects if duplicate values for given keys are within in your SFDX metadata files",
-            icon: "old.svg",
+            icon: "duplicate.svg",
             command:
               "sfdx hardis:project:metadata:findduplicates -f force-app/**/*.xml",
             helpUrl:
@@ -567,7 +567,7 @@ export class HardisCommandsProvider
             label: "Extract API versions of sources",
             tooltip:
               "Browse all project files and summarize API versions of elements",
-            icon: "old.svg",
+            icon: "extract.svg",
             command: "sfdx hardis:project:audit:apiversion",
             helpUrl:
               "https://hardisgroupcom.github.io/sfdx-hardis/hardis/audit/apiversion/",
@@ -576,7 +576,7 @@ export class HardisCommandsProvider
             id: "project:audit:callincallout",
             label: "List call'in and call'outs",
             tooltip: "Browse sources to list inbound and outbound calls",
-            icon: "old.svg",
+            icon: "http.svg",
             command: "sfdx hardis:project:audit:callincallout",
             helpUrl:
               "https://hardisgroupcom.github.io/sfdx-hardis/hardis/audit/callincallout/",
@@ -585,7 +585,7 @@ export class HardisCommandsProvider
             id: "project:audit:remotesites",
             label: "List remote sites",
             tooltip: "Browse sources to list remote sites",
-            icon: "old.svg",
+            icon: "remote.svg",
             command: "sfdx hardis:project:audit:remotesites",
             helpUrl:
               "https://hardisgroupcom.github.io/sfdx-hardis/hardis/audit/remotesites/",
