@@ -217,10 +217,6 @@ export class HardisPluginsProvider
         name: "sfdx-essentials",
         helpUrl: "https://nvuillam.github.io/sfdx-essentials/",
       },
-      {
-        name: "sfpowerkit",
-        helpUrl: "https://github.com/Accenture/sfpowerkit",
-      },
       { name: "sfdmu", helpUrl: "https://help.sfdmu.com/" },
       {
         name: "sfdx-git-delta",

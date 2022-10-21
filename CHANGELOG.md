@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+## [1.22.0] 2022-10-21
+
+- Remove dependency to sfpowerkit
+
+## [1.21.2] 2022-10-19
+
+- Add find duplicates command
+- Change icons for audit commands
+
 ## [1.21.1] 2022-09-29
 
 - Update node.js version check to 16.0 minimum
