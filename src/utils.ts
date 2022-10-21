@@ -26,7 +26,6 @@ export function preLoadCache() {
     "npm show sfdx-cli version",
     "npm show sfdx-hardis version",
     "npm show sfdx-essentials version",
-    "npm show sfpowerkit version",
     "npm show sfdmu version",
     "npm show sfdx-git-delta version",
     "npm show texei-sfdx-plugin version",
