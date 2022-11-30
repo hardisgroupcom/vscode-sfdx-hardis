@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.23.0] 2022-11-30
+
+- New command Detect missing permissions (`sfdx hardis:lint:access`)
+
 ## [1.22.0] 2022-10-21
 
 - Remove dependency to sfpowerkit

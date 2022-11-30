@@ -563,6 +563,17 @@ export class HardisCommandsProvider
               "https://hardisgroupcom.github.io/sfdx-hardis/hardis/project/metadata/duplicatefiles/",
           },
           {
+            id: "hardis:lint:access",
+            label: "Detect missing permissions",
+            tooltip:
+              "Detects if custom fields or apex classes are existing in source but not authorized on any Profile or Permission Set",
+            icon: "password.svg",
+            command:
+              "sfdx hardis:lint:access",
+            helpUrl:
+              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/lint/access/",
+          },
+          {
             id: "project:audit:apiversion",
             label: "Extract API versions of sources",
             tooltip:
