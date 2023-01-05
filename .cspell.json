@@ -193,6 +193,7 @@
     "venv",
     "vsix",
     "webviews",
-    "yamllint"
+    "yamllint",
+    "yarnrc"
   ]
 }
