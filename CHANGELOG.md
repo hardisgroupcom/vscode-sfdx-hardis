@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [1.24.0] 2023-02-17
+
+- Update documentation
+- Fix issue when configure monitoring ([#80](https://github.com/hardisgroupcom/vscode-sfdx-hardis/issues/80))
+
 ## [1.23.0] 2022-11-30
 
 - New command Detect missing permissions (`sfdx hardis:lint:access`)
