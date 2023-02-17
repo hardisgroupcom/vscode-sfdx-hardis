@@ -1,4 +1,4 @@
-[![Hardis Group Logo](docs/assets/images/hardis-banner.jpg)](https://www.hardis-group.com/en/services-solutions/services/integration/salesforce-consulting-and-integration)
+[![Cloudity Banner](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/cloudity-banner-1.jpg)](https://www.hardis-group.com/en/services-solutions/services/integration/salesforce-consulting-and-integration)
 
 # VsCode SFDX Hardis
 
@@ -16,6 +16,8 @@ Salesforce DX is great, but there are so many base commands and so many useful p
 VsCode SFDX-Hardis aims to simplify the use of Salesforce DX with an intuitive UI and ready to use pre-integrated commands.
 
 ![screenshot](resources/extension-demo.gif)
+
+_Graciously provided by [Cloudity](https://cloudity.com/)_
 
 - [Articles](#articles)
 - [Assisted UI](#assisted-ui)
