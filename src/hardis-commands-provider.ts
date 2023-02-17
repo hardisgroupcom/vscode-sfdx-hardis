@@ -776,10 +776,10 @@ export class HardisCommandsProvider
           },
           {
             id: "hardis",
-            label: "Hardis-Group Website",
+            label: "Cloudity Website",
             icon: "help.svg",
             command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
-              "https://www.customer-platform.com"
+              "https://www.cloudity.com?ref=sfdxhardis"
             )}`,
           },
         ],
