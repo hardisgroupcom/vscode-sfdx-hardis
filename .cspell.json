@@ -16,6 +16,7 @@
     "Affero",
     "BETAID",
     "Callout",
+    "Cloudity",
     "Codecov",
     "Devhub",
     "EAAU",
@@ -50,6 +51,7 @@
     "callout",
     "callouts",
     "cicd",
+    "cloudity",
     "codecov",
     "codestyle",
     "columnify",
@@ -71,8 +73,8 @@
     "failiferror",
     "fflib",
     "fichiers",
-    "findduplicates",
     "filteredmetadatas",
+    "findduplicates",
     "fkirc",
     "flowwww",
     "forceignore",
@@ -193,6 +195,7 @@
     "venv",
     "vsix",
     "webviews",
-    "yamllint"
+    "yamllint",
+    "yarnrc"
   ]
 }
