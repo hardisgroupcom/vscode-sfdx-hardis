@@ -15,9 +15,9 @@ Salesforce DX is great, but there are so many base commands and so many useful p
 
 VsCode SFDX-Hardis aims to simplify the use of Salesforce DX with an intuitive UI and ready to use pre-integrated commands.
 
-![screenshot](resources/extension-demo.gif)
+_Graciously provided by [**Cloudity**](https://cloudity.com/)_
 
-_Graciously provided by [Cloudity](https://cloudity.com/)_
+![screenshot](resources/extension-demo.gif)
 
 - [Articles](#articles)
 - [Assisted UI](#assisted-ui)
