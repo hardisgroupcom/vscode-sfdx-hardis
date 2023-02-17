@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.24.1] 2023-02-17
+
+- Cloudity rebranding
+
 ## [1.24.0] 2023-02-17
 
 - Update documentation
