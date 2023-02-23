@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.24.2] 2023-02-23
+
+- Fix issue about sfdx project detection on Linux
+
 ## [1.24.1] 2023-02-17
 
 - Cloudity rebranding
