@@ -167,7 +167,10 @@ export function getWorkspaceRoot() {
     currentWorkspaceFolderUri = (vscode.workspace.workspaceFolders || [])[0].uri
       .path;
   }
-  if (process.platform === 'win32' && currentWorkspaceFolderUri.startsWith("/")) {
+  if (
+    process.platform === "win32" &&
+    currentWorkspaceFolderUri.startsWith("/")
+  ) {
     currentWorkspaceFolderUri = currentWorkspaceFolderUri.substr(1);
   }
   return currentWorkspaceFolderUri;
@@ -221,9 +224,9 @@ async function loadFromRemoteConfigFile(url: string) {
   if (remoteConfigResp.status !== 200) {
     throw new Error(
       "[sfdx-hardis] Unable to read remote configuration file at " +
-      url +
-      "\n" +
-      JSON.stringify(remoteConfigResp)
+        url +
+        "\n" +
+        JSON.stringify(remoteConfigResp)
     );
   }
   const remoteConfig = yaml.load(remoteConfigResp.data);
