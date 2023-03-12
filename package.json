@@ -106,10 +106,6 @@
         "title": "SFDX Hardis: Activate debug logs tracing"
       },
       {
-        "command": "vscode-sfdx-hardis.debug.launch",
-        "title": "SFDX Hardis: Run apex replay debugger"
-      },
-      {
         "command": "vscode-sfdx-hardis.debug.logtail",
         "title": "SFDX Hardis: Display live logs in terminal"
       },

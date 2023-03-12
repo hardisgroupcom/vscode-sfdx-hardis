@@ -85,9 +85,9 @@ export class HardisPluginsProvider
     const nodeItem = {
       id: `plugin-info-node`,
       label: "Node.js",
-      command: "",
+      command: `echo "Nothing to do here :)"`,
       tooltip: `Node.js is installed`,
-      icon: "success.svg",
+      icon: "ok.svg",
       helpUrl: "https://nodejs.org/en/",
     };
     // Check node.js version
@@ -103,7 +103,7 @@ export class HardisPluginsProvider
         "error";
       const nodeVersionMatch = /v([0-9]+)\.(.*)/gm.exec(nodeVersionStdOut);
       if (!nodeVersionMatch) {
-        nodeItem.icon = "warning.svg";
+        nodeItem.icon = "missing.svg";
         nodeItem.tooltip = "Node.js is missing";
         (nodeItem.command = `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
           "https://nodejs.org/en/"
@@ -151,9 +151,9 @@ export class HardisPluginsProvider
     const gitItem = {
       id: `plugin-info-git`,
       label: "Git",
-      command: "",
+      command: `echo "Nothing to do here :)"`,
       tooltip: `Git is installed`,
-      icon: "success.svg",
+      icon: "ok.svg",
       helpUrl: "https://git-scm.com/",
     };
     if (gitInstallOk === false) {
@@ -168,7 +168,7 @@ export class HardisPluginsProvider
         gitVersionStdOut
       );
       if (!gitVersionMatch) {
-        gitItem.icon = "warning.svg";
+        gitItem.icon = "missing.svg";
         gitItem.tooltip = "Git is missing";
         (gitItem.command = `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
           "https://git-scm.com/downloads"
@@ -255,9 +255,9 @@ export class HardisPluginsProvider
     const sfdxCliItem = {
       id: `sfdx-cli-info`,
       label: `sfdx-cli v${sfdxCliVersion}`,
-      command: "",
+      command: `echo "Nothing to do here :)"`,
       tooltip: `Recommended version of sfdx-cli is installed`,
-      icon: "success.svg",
+      icon: "ok.svg",
       helpUrl:
         "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference.htm",
     };
@@ -293,19 +293,21 @@ export class HardisPluginsProvider
         return;
       }
       let pluginLabel = plugin.name;
+      let isPluginMissing = false;
       const regexVersion = new RegExp(`${plugin.name} (.*)`, "gm");
       const versionMatches = [...sfdxPlugins.matchAll(regexVersion)];
       if (versionMatches.length > 0) {
         pluginLabel += ` v${versionMatches[0][1]}`;
       } else {
         pluginLabel += " (missing)";
+        isPluginMissing = true;
       }
       const pluginItem = {
         id: `plugin-info-${plugin.name}`,
         label: pluginLabel,
-        command: "",
+        command: `echo "Nothing to do here :)"`,
         tooltip: `Latest version of SFDX plugin ${plugin.name} is installed`,
-        icon: "success.svg",
+        icon: "ok.svg",
         helpUrl: plugin.helpUrl,
       };
       if (!sfdxPlugins.includes(`${plugin.name} ${latestPluginVersion}`)) {
@@ -317,7 +319,7 @@ export class HardisPluginsProvider
         pluginItem.command = `echo y|sfdx plugins:install ${plugin.name} && sfdx hardis:work:ws --event refreshPlugins`;
         pluginItem.tooltip = `Click to upgrade SFDX plugin ${plugin.name} to ${latestPluginVersion}`;
         if (!pluginItem.label.includes("(localdev)")) {
-          pluginItem.icon = "warning.svg";
+          pluginItem.icon = isPluginMissing ? "missing.svg" : "warning.svg";
           outdated.push(plugin);
         }
       }
@@ -365,9 +367,9 @@ export class HardisPluginsProvider
       const extensionItem = {
         id: extension.id,
         label: extension.label,
-        command: "",
+        command: `echo "Nothing to do here :)"`,
         tooltip: `${extension.label} is installed`,
-        icon: "success.svg",
+        icon: "ok.svg",
       };
       const extInstance = vscode.extensions.getExtension(extension.id);
       if (!extInstance) {
