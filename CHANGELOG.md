@@ -6,6 +6,7 @@
 
 - Remove duplicate command vscode-sfdx-hardis.debug.launch
 - Refactor icons for dependencies tab (up to date, to upgrade, missing)
+- Add [salesforcedevops.net](https://salesforcedevops.net/index.php/2023/03/01/sfdx-hardis-open-source-salesforce-release-management/) article in README
 
 ## [1.24.3] 2023-02-27
 
