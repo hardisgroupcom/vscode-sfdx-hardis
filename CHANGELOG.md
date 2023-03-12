@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [1.25.0] 2023-03-12
+
+- Remove duplicate command vscode-sfdx-hardis.debug.launch
+- Refactor icons for dependencies tab (up to date, to upgrade, missing)
+
 ## [1.24.3] 2023-02-27
 
 - New logo
