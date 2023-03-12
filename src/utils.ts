@@ -1,8 +1,7 @@
 import axios from "axios";
-import * as c from "chalk";
+import c from "chalk";
 import * as child from "child_process";
 import * as fs from "fs-extra";
-import * as os from "os";
 import * as path from "path";
 import * as util from "util";
 import * as vscode from "vscode";

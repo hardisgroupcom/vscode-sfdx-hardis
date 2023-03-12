@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import * as path from "path";
-import * as GitUrlParse from "git-url-parse";
+import GitUrlParse from "git-url-parse";
 import moment = require("moment");
 import { execSfdxJson, loadProjectSfdxHardisConfig, resetCache } from "./utils";
 import { Logger } from "./logger";
