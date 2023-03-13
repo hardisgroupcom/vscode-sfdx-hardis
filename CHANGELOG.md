@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- Display hammer-wrench icon in dependencies section when a plugin is locally developped
+- Display hammer-wrench icon in dependencies section when a plugin is locally developed
 
 ## [1.25.0] 2023-03-12
 

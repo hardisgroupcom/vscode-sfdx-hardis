@@ -325,7 +325,7 @@ export class HardisPluginsProvider
       }
       if (pluginItem.label.includes("(link)")) {
         pluginItem.icon = "hammer-wrench.svg";
-        pluginItem.tooltip = `You are using locally developped version of ${plugin.name}`;
+        pluginItem.tooltip = `You are using locally developed version of ${plugin.name}`;
       }
       items.push(pluginItem);
     });
