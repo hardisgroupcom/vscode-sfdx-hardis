@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Display hammer-wrench icon in dependencies section when a plugin is locally developped
+
 ## [1.25.0] 2023-03-12
 
 - Remove duplicate command vscode-sfdx-hardis.debug.launch
