@@ -323,6 +323,10 @@ export class HardisPluginsProvider
           outdated.push(plugin);
         }
       }
+      if (pluginItem.label.includes("(link)")) {
+        pluginItem.icon = "hammer-wrench.svg";
+        pluginItem.tooltip = `You are using locally developed version of ${plugin.name}`;
+      }
       items.push(pluginItem);
     });
     // Await parallel promises to be completed
