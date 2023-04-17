@@ -11,6 +11,7 @@ import { WebSocketServer } from "./hardis-websocket-server";
 import { Logger } from "./logger";
 import { getWorkspaceRoot, preLoadCache } from "./utils";
 import { WelcomePanel } from "./webviews/welcome";
+import { HardisColors } from "./hardis-colors";
 
 let refreshInterval: any = null;
 
@@ -69,6 +70,10 @@ export function activate(context: vscode.ExtensionContext) {
   );
   context.subscriptions.push(...commands.disposables);
 
+  const hardisColors = new HardisColors();
+  context.subscriptions.push(hardisColors);
+  hardisColors.init();
+    
   // Initialize Hardis Debugger commands
   const hardisDebugger = new HardisDebugger();
   context.subscriptions.push(...hardisDebugger.disposables);

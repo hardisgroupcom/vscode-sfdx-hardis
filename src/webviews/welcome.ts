@@ -45,7 +45,7 @@ export class WelcomePanel {
 </head>
 
 <body>
-    <img src="https://github.com/hardisgroupcom/vscode-sfdx-hardis/raw/master/docs/assets/images/hardis-banner.jpg" />
+    <img src="https://github.com/hardisgroupcom/vscode-sfdx-hardis/raw/main/docs/assets/images/hardis-banner.jpg" />
 
     <p>This extension runs CLI commands, so it relies on locally installed applications and sfdx plugins</p>
 

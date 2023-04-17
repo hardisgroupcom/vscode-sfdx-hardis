@@ -4,9 +4,9 @@
 # https://help.github.com/en/articles/workflow-syntax-for-github-actions
 #
 
-#######################################
-# Start the job on all push to master #
-#######################################
+##################################################
+# Start the job when a GitHub release is created #
+##################################################
 name: "Build & Deploy - RELEASE"
 on:
   release:

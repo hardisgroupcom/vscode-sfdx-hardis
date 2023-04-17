@@ -1,20 +1,29 @@
 import axios from "axios";
 import * as c from "chalk";
-import * as child from "child_process";
+import * as childProcess from "child_process";
 import * as fs from "fs-extra";
-import * as os from "os";
 import * as path from "path";
-import * as util from "util";
+
 import * as vscode from "vscode";
 import * as yaml from "js-yaml";
 import { Logger } from "./logger";
-const exec = util.promisify(child.exec);
 
 export const RECOMMENDED_SFDX_CLI_VERSION = null; //"7.111.6";
 
 let REMOTE_CONFIGS: any = {};
 let PROJECT_CONFIG: any = null;
 let COMMANDS_RESULTS: any = {};
+
+export async function execShell(cmd: string, execOptions: any) {
+  return new Promise<any>((resolve, reject) => {
+    childProcess.exec(cmd, execOptions, (error, stdout, stderr) => {
+      if (error) {
+        return reject(error);
+      }
+      return resolve({ stdout: stdout, stderr: stderr });
+    });
+  });
+}
 
 export function preLoadCache() {
   console.time("sfdxHardisPreload");
@@ -85,7 +94,7 @@ export async function execCommand(
       // no cache
       Logger.log("[vscode-sfdx-hardis][command] " + command);
       console.time(command);
-      const commandResultPromise = exec(command, execOptions);
+      const commandResultPromise = await execShell(command, execOptions);
       COMMANDS_RESULTS[command] = { promise: commandResultPromise };
       commandResult = await commandResultPromise;
       COMMANDS_RESULTS[command] = { result: commandResult };
