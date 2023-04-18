@@ -26,6 +26,9 @@
     "type": "git",
     "url": "https://github.com/hardisgroupcom/vscode-sfdx-hardis.git"
   },
+  "activationEvents": [
+    "onView:sfdx-hardis-commands"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "configuration": {
