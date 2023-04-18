@@ -169,7 +169,7 @@ export class HardisColors {
         );
         if (isMajorOrg) {
           vscode.window.showWarningMessage(
-            "🦙 Your default org is a MAJOR org, be careful because CI Server are supposed to deploy here, not you :)",
+            "🦙 Your default org is a MAJOR org, be careful because the CI/CD Server is supposed to deploy here, not you :)",
             "Close"
           );
           return forcedColor || "#a66004"; // orange !
