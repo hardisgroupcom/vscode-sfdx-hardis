@@ -92,6 +92,14 @@
         }
       },
       {
+        "command": "vscode-sfdx-hardis.selectColorForOrg",
+        "title": "SFDX Hardis: Select color for current default org",
+        "icon": {
+          "light": "resources/colorPicker.svg",
+          "dark": "resources/colorPicker.svg"
+        }
+      },
+      {
         "command": "vscode-sfdx-hardis.showMessage",
         "title": "SFDX Hardis: Show message"
       },
@@ -214,6 +222,12 @@
         {
           "command": "vscode-sfdx-hardis.openValidationLink",
           "when": "view == sfdx-hardis-commands",
+          "group": "navigation"
+        },
+        
+        {
+          "command": "vscode-sfdx-hardis.selectColorForOrg",
+          "when": "view == sfdx-hardis-status",
           "group": "navigation"
         },
         {

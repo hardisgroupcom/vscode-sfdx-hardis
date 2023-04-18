@@ -22,6 +22,10 @@ _Graciously provided by [**Cloudity**](https://cloudity.com/), and based on sfdx
 ![screenshot](resources/extension-demo.gif)
 
 - [Articles](#articles)
+- [Panels](#panels)
+  - [Commands](#commands)
+  - [Status](#status)
+  - [Dependencies](#dependencies)
 - [Assisted UI](#assisted-ui)
   - [Work on a task (simple)](#work-on-a-task-simple)
   - [Work on a task (Expert)](#work-on-a-task-expert)
@@ -34,7 +38,7 @@ _Graciously provided by [**Cloudity**](https://cloudity.com/), and based on sfdx
   - [Nerdy stuff](#nerdy-stuff)
 - [Custom commands](#custom-commands)
 - [Custom plugins](#custom-plugins)
-- [Dependencies](#dependencies)
+- [Open Source Dependencies](#open-source-dependencies)
 - [Who we are](#who-we-are)
 
 ## Articles
@@ -55,6 +59,37 @@ Here are some articles with examples of use of [sfdx-hardis](https://hardisgroup
   - [Versions d'API Salesforce décommissionnées: Que faire ?](https://leblog.hardis-group.com/portfolio/versions-dapi-salesforce-decommissionnees-que-faire/)
   - [Exporter en masse les fichiers d’une org Salesforce](https://leblog.hardis-group.com/portfolio/exporter-en-masse-les-fichiers-dune-org-salesforce/)
   - [Suspendre l’accès aux utilisateurs lors d’une mise en production Salesforce](https://leblog.hardis-group.com/portfolio/suspendre-lacces-aux-utilisateurs-lors-dune-mise-en-production-salesforce/)
+
+## Panels
+
+The extension contains 3 panels
+
+- Commands launcher
+- Status
+- Dependency management
+
+### Commands
+
+This panel contain all the useful commands to process with clicks only.
+
+It also has shortcut buttons
+
+- Refresh commands panel
+- Run debugger
+- Decrypt an Outlook clickjack URL
+- Open a configuration file (`.sfdx-hardis.yml`,`package.xml`... )
+
+### Status
+
+This panel displays the selected org, dev hub org and git info (repo, branch)
+
+It also allows to associate a custom VsCode Theme color to the current default org, using a shortcut button.
+
+### Dependencies
+
+This panel checks all required dependencies, and if they are up to date.
+
+If some a missing or with deprecated versions, a message is displayed to invite the user to click to install / upgrade sfdx dependencies
 
 ## Assisted UI
 
@@ -152,7 +187,7 @@ Simplify creation and maintenance of packaging V2 packages (unlocked or managed)
 
 ![screenshot](resources/menu-nerdy-stuff.jpg)
 
-Use at your own risk :)
+Various commands for advanced sfdx nerds, try them :)
 
 ## Custom commands
 
@@ -218,7 +253,7 @@ plugins:
     helpUrl: https://github.com/mshanemc/shane-sfdx-plugins
 ```
 
-## Dependencies
+## Open Source Dependencies
 
 [**sfdx-hardis**](https://github.com/hardisgroupcom/sfdx-hardis) partially relies on the following SFDX Open-Source packages
 
