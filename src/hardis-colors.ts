@@ -87,13 +87,13 @@ export class HardisColors {
       async () => {
         if (this.currentDefaultOrgDomain) {
           const sfdxHardisConfig = await readSfdxHardisConfig();
-          const orgCustomColors = sfdxHardisConfig.orgCustomColors || {};
+          const customOrgColors = sfdxHardisConfig.customOrgColors || {};
           const color = await this.promptColor(this.currentDefaultOrgDomain);
           if (!color) {
             return;
           }
-          orgCustomColors[this.currentDefaultOrgDomain] = color;
-          await writeSfdxHardisConfig("orgCustomColors", orgCustomColors);
+          customOrgColors[this.currentDefaultOrgDomain] = color;
+          await writeSfdxHardisConfig("customOrgColors", customOrgColors);
           this.applyColor(color);
         } else {
           vscode.window.showWarningMessage(
@@ -147,9 +147,9 @@ export class HardisColors {
     // Get user customized color directly in config/.sfdx-hardis.yml
     let forcedColor = null ;
     const sfdxHardisConfig = await readSfdxHardisConfig();
-    const orgCustomColors = sfdxHardisConfig.orgCustomColors || {};
-    if (orgCustomColors[this.currentDefaultOrgDomain || ""]) {
-      forcedColor = orgCustomColors[this.currentDefaultOrgDomain || ""];
+    const customOrgColors = sfdxHardisConfig.customOrgColors || {};
+    if (customOrgColors[this.currentDefaultOrgDomain || ""]) {
+      forcedColor = customOrgColors[this.currentDefaultOrgDomain || ""];
     }
     // https://salesforce.stackexchange.com/questions/297452/determine-if-authorized-org-with-salesforcedx-is-developer-or-production
     // Detect if sandbox or not
