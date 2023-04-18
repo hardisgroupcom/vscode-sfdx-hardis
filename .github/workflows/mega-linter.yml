@@ -4,10 +4,10 @@
 name: Mega-Linter
 
 on:
-  # Trigger mega-linter at every push. Action will also be visible from Pull Requests to master
+  # Trigger mega-linter at every push. Action will also be visible from Pull Requests to main
   push: # Comment this line to trigger action only on pull-requests (not recommended if you don't pay for GH Actions)
   pull_request:
-    branches: [master, main]
+    branches: [main]
 
 env: # Comment env block if you do not want to apply fixes
   # Apply linter fixes configuration
@@ -40,14 +40,14 @@ jobs:
         env:
           # All available variables are described in documentation
           # https://oxsecurity.github.io/megalinter/configuration/
-          VALIDATE_ALL_CODEBASE: true # Set ${{ github.event_name == &#39;push&#39; &amp;&amp; github.ref == &#39;refs/heads/master&#39; }} to validate only diff with master branch
+          VALIDATE_ALL_CODEBASE: true # Set ${{ github.event_name == &#39;push&#39; &amp;&amp; github.ref == &#39;refs/heads/main&#39; }} to validate only diff with main branch
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # ADD YOUR CUSTOM ENV VARIABLES HERE TO OVERRIDE VALUES OF .mega-linter.yml AT THE ROOT OF YOUR REPOSITORY
 
       # Upload Mega-Linter artifacts
       - name: Archive production artifacts
         if: ${{ success() }} || ${{ failure() }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: Mega-Linter reports
           path: |
@@ -72,11 +72,13 @@ jobs:
 
       # Push new commit if applicable (for now works only on PR from same repository, not from forks)
       - name: Prepare commit
-        if: steps.ml.outputs.has_updated_sources == 1 && (env.APPLY_FIXES_EVENT == 'all' || env.APPLY_FIXES_EVENT == github.event_name) && env.APPLY_FIXES_MODE == 'commit' && github.ref != 'refs/heads/master' && github.event.pull_request.head.repo.full_name == github.repository && !contains(github.event.head_commit.message, 'skip fix')
+        if: steps.ml.outputs.has_updated_sources == 1 && (env.APPLY_FIXES_EVENT == 'all' || env.APPLY_FIXES_EVENT == github.event_name) && env.APPLY_FIXES_MODE == 'commit' && github.ref != 'refs/heads/main' && github.event.pull_request.head.repo.full_name == github.repository && !contains(github.event.head_commit.message, 'skip fix')
         run: sudo chown -Rc $UID .git/
       - name: Commit and push applied linter fixes
-        if: steps.ml.outputs.has_updated_sources == 1 && (env.APPLY_FIXES_EVENT == 'all' || env.APPLY_FIXES_EVENT == github.event_name) && env.APPLY_FIXES_MODE == 'commit' && github.ref != 'refs/heads/master' && github.event.pull_request.head.repo.full_name == github.repository && !contains(github.event.head_commit.message, 'skip fix')
+        if: steps.ml.outputs.has_updated_sources == 1 && (env.APPLY_FIXES_EVENT == 'all' || env.APPLY_FIXES_EVENT == github.event_name) && env.APPLY_FIXES_MODE == 'commit' && github.ref != 'refs/heads/main' && github.event.pull_request.head.repo.full_name == github.repository && !contains(github.event.head_commit.message, 'skip fix')
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
           branch: ${{ github.event.pull_request.head.ref || github.head_ref || github.ref }}
           commit_message: "[Mega-Linter] Apply linters fixes"
+          commit_user_name: megalinter-bot
+          commit_user_email: nicolas.vuillamy@ox.security

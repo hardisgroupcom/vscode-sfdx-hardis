@@ -26,9 +26,6 @@
     "type": "git",
     "url": "https://github.com/hardisgroupcom/vscode-sfdx-hardis.git"
   },
-  "activationEvents": [
-    "onView:sfdx-hardis-commands"
-  ],
   "main": "./out/extension.js",
   "contributes": {
     "configuration": {
@@ -61,6 +58,11 @@
           "default": false,
           "description": "Disable check of Git Bash as default terminal"
         },
+        "vsCodeSfdxHardis.disableVsCodeColors": {
+          "type": "boolean",
+          "default": false,
+          "description": "Disable coloration of VsCode depending on the org type selected"
+        },
         "vsCodeSfdxHardis.ignoreSfdxCliRecommendedVersion": {
           "type": "boolean",
           "default": false,
@@ -87,6 +89,14 @@
         "icon": {
           "light": "resources/password.svg",
           "dark": "resources/password.svg"
+        }
+      },
+      {
+        "command": "vscode-sfdx-hardis.selectColorForOrg",
+        "title": "SFDX Hardis: Select color for current default org",
+        "icon": {
+          "light": "resources/colorPicker.svg",
+          "dark": "resources/colorPicker.svg"
         }
       },
       {
@@ -212,6 +222,11 @@
         {
           "command": "vscode-sfdx-hardis.openValidationLink",
           "when": "view == sfdx-hardis-commands",
+          "group": "navigation"
+        },
+        {
+          "command": "vscode-sfdx-hardis.selectColorForOrg",
+          "when": "view == sfdx-hardis-status",
           "group": "navigation"
         },
         {

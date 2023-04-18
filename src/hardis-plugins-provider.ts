@@ -24,7 +24,7 @@ export class HardisPluginsProvider
   getChildren(element?: StatusTreeItem): Thenable<StatusTreeItem[]> {
     if (!this.workspaceRoot) {
       vscode.window.showInformationMessage(
-        "No info available until you open a Salesforce project"
+        "🦙 No info available until you open a Salesforce project"
       );
       return Promise.resolve([]);
     }
@@ -110,7 +110,7 @@ export class HardisPluginsProvider
         )}`),
           vscode.window
             .showWarningMessage(
-              "You need Node.js installed on your computer. Please download and install it (version 14 minimum), then restart VsCode",
+              "🦙 You need Node.js installed on your computer. Please download and install it (version 14 minimum), then restart VsCode",
               "Download and install Node.js LTS"
             )
             .then((selection) => {
@@ -129,7 +129,7 @@ export class HardisPluginsProvider
         )}`),
           vscode.window
             .showWarningMessage(
-              `You have a too old version (${nodeVersionMatch[1]}) of Node.js installed on your computer. Please download and install it (version 16 minimum), then restart VsCode`,
+              `🦙 You have a too old version (${nodeVersionMatch[1]}) of Node.js installed on your computer. Please download and install it (version 16 minimum), then restart VsCode`,
               "Download and install Node.js LTS"
             )
             .then((selection) => {
@@ -175,7 +175,7 @@ export class HardisPluginsProvider
         )}`),
           vscode.window
             .showWarningMessage(
-              "You need Git installed on your computer. Please download and install it (select GIT BASH in options), then restart VsCode",
+              "🦙 You need Git installed on your computer. Please download and install it (select GIT BASH in options), then restart VsCode",
               "Download and install Git"
             )
             .then((selection) => {
@@ -335,7 +335,7 @@ export class HardisPluginsProvider
     if (outdated.length > 0) {
       vscode.window
         .showWarningMessage(
-          "Some plugins are not up to date, please click to upgrade, then wait for the process to be completed before performing actions",
+          "🦙 Some plugins are not up to date, please click to upgrade, then wait for the process to be completed before performing actions",
           "Upgrade plugins"
         )
         .then((selection) => {
@@ -382,7 +382,7 @@ export class HardisPluginsProvider
         extensionItem.icon = "warning.svg";
         vscode.window
           .showWarningMessage(
-            `VsCode extension ${extension.label} is missing, click to install it`,
+            `🦙 VsCode extension ${extension.label} is missing, click to install it`,
             `Install ${extension.label}`
           )
           .then((selection) => {

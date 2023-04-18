@@ -2,7 +2,12 @@ import * as vscode from "vscode";
 import * as path from "path";
 import * as GitUrlParse from "git-url-parse";
 import moment = require("moment");
-import { execSfdxJson, loadProjectSfdxHardisConfig, resetCache } from "./utils";
+import {
+  execSfdxJson,
+  loadProjectSfdxHardisConfig,
+  resetCache,
+  setOrgCache,
+} from "./utils";
 import { Logger } from "./logger";
 
 export class HardisStatusProvider
@@ -17,7 +22,7 @@ export class HardisStatusProvider
   getChildren(element?: StatusTreeItem): Thenable<StatusTreeItem[]> {
     if (!this.workspaceRoot) {
       vscode.window.showInformationMessage(
-        "No info available until you open a Salesforce project"
+        "🦙 No info available until you open a Salesforce project"
       );
       return Promise.resolve([]);
     }
@@ -105,6 +110,7 @@ export class HardisStatusProvider
     });
     if (orgInfoResult.result || orgInfoResult.id) {
       const orgInfo = orgInfoResult.result || orgInfoResult;
+      setOrgCache(orgInfo);
       if (orgInfo.username) {
         items.push({
           id: "org-info-instance-url" + (options.devHub ? "-devhub" : ""),
@@ -141,15 +147,15 @@ export class HardisStatusProvider
         if (daysBeforeExpiration < 0) {
           item.icon = "warning-red.svg";
           item.tooltip = `You org expired on ${orgInfo.expirationDate}. You need to create a new one.`;
-          vscode.window.showErrorMessage(item.tooltip);
+          vscode.window.showErrorMessage(`🦙 ${item.tooltip}`, "Close");
         } else if (daysBeforeExpiration < 3) {
           item.icon = "warning-red.svg";
           item.tooltip = `You scratch org will expire in ${daysBeforeExpiration} days !!! Save your scratch org content and create a new one or your work will be lost !!!`;
-          vscode.window.showErrorMessage(item.tooltip);
+          vscode.window.showErrorMessage(`🦙 ${item.tooltip}`, "Close");
         } else if (daysBeforeExpiration < 7) {
           item.icon = "warning.svg";
           item.tooltip = `Your scratch org will expire in ${daysBeforeExpiration} days. You should soon create a new scratch org to avoid loosing your work`;
-          vscode.window.showWarningMessage(item.tooltip);
+          vscode.window.showWarningMessage(`🦙 ${item.tooltip}`, "Close");
         }
         items.push(item);
       }

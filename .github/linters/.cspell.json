@@ -5,7 +5,8 @@
     "**/.git/**",
     ".vscode",
     "package-lock.json",
-    "report"
+    "report",
+    "megalinter-reports"
   ],
   "language": "en",
   "version": "0.1",
@@ -51,6 +52,7 @@
     "callout",
     "callouts",
     "cicd",
+    "clickjack",
     "cloudity",
     "codecov",
     "codestyle",
@@ -152,6 +154,7 @@
     "packagexml",
     "passin",
     "passout",
+    "perfs",
     "pmdconfig",
     "portastic",
     "postpack",
