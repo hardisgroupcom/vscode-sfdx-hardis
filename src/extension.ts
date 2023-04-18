@@ -114,11 +114,11 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Catch event configuration changes
   vscode.workspace.onDidChangeConfiguration((event) => {
-    if (event.affectsConfiguration('vsCodeSfdxHardis')) {
-      if (event.affectsConfiguration('vsCodeSfdxHardis.userInput')) {
+    if (event.affectsConfiguration("vsCodeSfdxHardis")) {
+      if (event.affectsConfiguration("vsCodeSfdxHardis.userInput")) {
         manageWebSocketServer();
       }
-      if (event.affectsConfiguration('vsCodeSfdxHardis.disableVsCodeColors')) {
+      if (event.affectsConfiguration("vsCodeSfdxHardis.disableVsCodeColors")) {
         hardisColors.init();
       }
     }

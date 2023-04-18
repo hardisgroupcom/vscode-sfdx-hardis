@@ -2,7 +2,12 @@ import * as vscode from "vscode";
 import * as path from "path";
 import * as GitUrlParse from "git-url-parse";
 import moment = require("moment");
-import { execSfdxJson, loadProjectSfdxHardisConfig, resetCache, setOrgCache } from "./utils";
+import {
+  execSfdxJson,
+  loadProjectSfdxHardisConfig,
+  resetCache,
+  setOrgCache,
+} from "./utils";
 import { Logger } from "./logger";
 
 export class HardisStatusProvider
@@ -142,15 +147,15 @@ export class HardisStatusProvider
         if (daysBeforeExpiration < 0) {
           item.icon = "warning-red.svg";
           item.tooltip = `You org expired on ${orgInfo.expirationDate}. You need to create a new one.`;
-          vscode.window.showErrorMessage(`🦙 ${item.tooltip}`,"Close");
+          vscode.window.showErrorMessage(`🦙 ${item.tooltip}`, "Close");
         } else if (daysBeforeExpiration < 3) {
           item.icon = "warning-red.svg";
           item.tooltip = `You scratch org will expire in ${daysBeforeExpiration} days !!! Save your scratch org content and create a new one or your work will be lost !!!`;
-          vscode.window.showErrorMessage(`🦙 ${item.tooltip}`,"Close");
+          vscode.window.showErrorMessage(`🦙 ${item.tooltip}`, "Close");
         } else if (daysBeforeExpiration < 7) {
           item.icon = "warning.svg";
           item.tooltip = `Your scratch org will expire in ${daysBeforeExpiration} days. You should soon create a new scratch org to avoid loosing your work`;
-          vscode.window.showWarningMessage(`🦙 ${item.tooltip}`,"Close");
+          vscode.window.showWarningMessage(`🦙 ${item.tooltip}`, "Close");
         }
         items.push(item);
       }

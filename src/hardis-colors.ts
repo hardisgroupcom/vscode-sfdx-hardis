@@ -145,7 +145,7 @@ export class HardisColors {
   // Get org color :)
   async getCurrentDefaultOrgColor() {
     // Get user customized color directly in config/.sfdx-hardis.yml
-    let forcedColor = null ;
+    let forcedColor = null;
     const sfdxHardisConfig = await readSfdxHardisConfig();
     const customOrgColors = sfdxHardisConfig.customOrgColors || {};
     if (customOrgColors[this.currentDefaultOrgDomain || ""]) {

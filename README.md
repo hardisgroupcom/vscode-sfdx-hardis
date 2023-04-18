@@ -84,14 +84,14 @@ It also has shortcut buttons
 This panel displays the selected org, dev hub org and git info (repo, branch)
 
 It manage VsCode Theme colors depending on selected org
-  - Automated
-    - Production: red
-    - Sandbox of major org (where you are not supposed to deploy ^^): orange
-    - Sandbox or scratch org for dev/config: green
-    - Other (Dev Org, Trial org...): blue
-  - Notes
-    - If you don't want this feature, use `vsCodeSfdxHardis.disableVsCodeColors` VsCode setting
-    - It also allows to associate a custom VsCode Theme color to the current default org, using a shortcut button
+- Automated
+  - Production: red
+  - Sandbox of major org (where you are not supposed to deploy ^^): orange
+  - Sandbox or scratch org for dev/config: green
+  - Other (Dev Org, Trial org...): blue
+- Notes
+  - If you don't want this feature, use `vsCodeSfdxHardis.disableVsCodeColors` VsCode setting
+  - It also allows to associate a custom VsCode Theme color to the current default org, using a shortcut button
 
 ### Dependencies
 

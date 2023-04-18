@@ -226,7 +226,9 @@ export function findInOrgCache(orgCriteria: any) {
   return null;
 }
 
-export async function getUsernameInstanceUrl(username: string): Promise<string | null> {
+export async function getUsernameInstanceUrl(
+  username: string
+): Promise<string | null> {
   // username - instances cache
   if (USER_INSTANCE_URL_CACHE[username]) {
     return USER_INSTANCE_URL_CACHE[username];
@@ -237,10 +239,14 @@ export async function getUsernameInstanceUrl(username: string): Promise<string |
     return orgInCache.instanceUrl;
   }
   // request org
-  const orgInfoResult = await execSfdxJson(`sfdx force:org:display --targetusername ${username}`, null, {
-    fail: false,
-    output: false,
-  });
+  const orgInfoResult = await execSfdxJson(
+    `sfdx force:org:display --targetusername ${username}`,
+    null,
+    {
+      fail: false,
+      output: false,
+    }
+  );
   if (orgInfoResult.result) {
     const orgInfo = orgInfoResult.result || orgInfoResult;
     setOrgCache(orgInfo);
@@ -288,9 +294,9 @@ async function loadFromRemoteConfigFile(url: string) {
   if (remoteConfigResp.status !== 200) {
     throw new Error(
       "[sfdx-hardis] Unable to read remote configuration file at " +
-      url +
-      "\n" +
-      JSON.stringify(remoteConfigResp)
+        url +
+        "\n" +
+        JSON.stringify(remoteConfigResp)
     );
   }
   const remoteConfig = yaml.load(remoteConfigResp.data);
@@ -300,7 +306,10 @@ async function loadFromRemoteConfigFile(url: string) {
 
 export async function readSfdxHardisConfig(): Promise<any> {
   if (vscode.workspace.workspaceFolders) {
-    const configFile = path.join(vscode.workspace.workspaceFolders[0].uri.fsPath, `config/.sfdx-hardis.yml`);
+    const configFile = path.join(
+      vscode.workspace.workspaceFolders[0].uri.fsPath,
+      `config/.sfdx-hardis.yml`
+    );
     if (fs.existsSync(configFile)) {
       return await loadFromLocalConfigFile(configFile);
     }
@@ -308,9 +317,15 @@ export async function readSfdxHardisConfig(): Promise<any> {
   return {};
 }
 
-export async function writeSfdxHardisConfig(key: string, value: any): Promise<any> {
+export async function writeSfdxHardisConfig(
+  key: string,
+  value: any
+): Promise<any> {
   if (vscode.workspace.workspaceFolders) {
-    const configFile = path.join(vscode.workspace.workspaceFolders[0].uri.fsPath, `config/.sfdx-hardis.yml`);
+    const configFile = path.join(
+      vscode.workspace.workspaceFolders[0].uri.fsPath,
+      `config/.sfdx-hardis.yml`
+    );
     await fs.ensureDir(path.dirname(configFile));
     const config = await readSfdxHardisConfig();
     config[key] = value;

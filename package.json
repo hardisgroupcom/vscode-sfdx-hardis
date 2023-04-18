@@ -224,7 +224,6 @@
           "when": "view == sfdx-hardis-commands",
           "group": "navigation"
         },
-        
         {
           "command": "vscode-sfdx-hardis.selectColorForOrg",
           "when": "view == sfdx-hardis-status",
