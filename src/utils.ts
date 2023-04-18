@@ -13,6 +13,8 @@ export const RECOMMENDED_SFDX_CLI_VERSION = null; //"7.111.6";
 let REMOTE_CONFIGS: any = {};
 let PROJECT_CONFIG: any = null;
 let COMMANDS_RESULTS: any = {};
+let ORGS_INFO_CACHE: any[] = [];
+let USER_INSTANCE_URL_CACHE: any = {};
 
 export async function execShell(cmd: string, execOptions: any) {
   return new Promise<any>((resolve, reject) => {
@@ -197,6 +199,59 @@ export function hasSfdxProjectJson(
   return sfdxProjectJsonFound;
 }
 
+// Cache org info so it can be reused later with better perfs
+export function setOrgCache(newOrgInfo: any) {
+  ORGS_INFO_CACHE = ORGS_INFO_CACHE.map((orgInfo) => {
+    if (
+      orgInfo.username === newOrgInfo.username ||
+      orgInfo.instanceUrl === newOrgInfo.instanceUrl
+    ) {
+      return newOrgInfo;
+    }
+    return orgInfo;
+  });
+}
+
+// Get from org cache
+export function findInOrgCache(orgCriteria: any) {
+  for (const orgInfo of ORGS_INFO_CACHE) {
+    if (
+      orgInfo.username === orgCriteria.username ||
+      orgInfo.instanceUrl === orgCriteria.instanceUrl ||
+      orgInfo.instanceUrl === `${orgCriteria.instanceUrl}/`
+    ) {
+      return orgInfo;
+    }
+  }
+  return null;
+}
+
+export async function getUsernameInstanceUrl(username: string): Promise<string|null> {
+  // username - instances cache
+  if (USER_INSTANCE_URL_CACHE[username]) {
+    return USER_INSTANCE_URL_CACHE[username];
+  }
+  // org cache
+  const orgInCache = findInOrgCache({username: username});
+  if (orgInCache) {
+    return orgInCache.instanceUrl ;
+  }
+  // request org
+  const orgInfoResult = await execSfdxJson(`sfdx force:org:display --targetusername ${username}`, null, {
+    fail: false,
+    output: false,
+  });
+  if (orgInfoResult.result) {
+    const orgInfo = orgInfoResult.result || orgInfoResult;
+    setOrgCache(orgInfo);
+    if (orgInfo.instanceUrl) {
+      USER_INSTANCE_URL_CACHE[username] = orgInfo.instanceUrl;
+      return orgInfo.instanceUrl;
+    }
+  }
+  return null ;
+}
+
 export async function loadProjectSfdxHardisConfig() {
   if (PROJECT_CONFIG) {
     return PROJECT_CONFIG;
@@ -248,3 +303,5 @@ async function loadFromLocalConfigFile(file: string) {
   const localConfig = yaml.load(fs.readFileSync(file).toString());
   return localConfig;
 }
+
+// Set in list of orgs cache

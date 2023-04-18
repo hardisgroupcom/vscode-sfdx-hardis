@@ -1,7 +1,17 @@
 import * as vscode from "vscode";
 import * as fs from "fs-extra";
 import * as path from "path";
-import { execSfdxJson, hasSfdxProjectJson } from "./utils";
+import { execSfdxJson, getUsernameInstanceUrl, hasSfdxProjectJson } from "./utils";
+
+const PRODUCTION_EDITIONS = [
+  "Team Edition",
+  "Professional Edition",
+  "Enterprise Edition",
+  "Personal Edition",
+  "Unlimited Edition",
+  "Contact Manager Edition",
+  "Base Edition",
+];
 
 export class HardisColors {
   sfdxConfigPaths = [".sf/config.json", ".sfdx/sfdx-config.json"];
@@ -74,13 +84,21 @@ export class HardisColors {
     if (orgRes?.result?.records?.length === 1) {
       const org = orgRes.result.records[0];
       if (org.IsSandbox === true) {
-          // We are in a sandbox
-          return "#1a660a"; // green !
-      }
-      else if (org.OrganizationType === 'Enterprise Edition') {
+        // We are in a dev sandbox or scratch org !
+        const isMajorOrg = await this.isMajorOrg(this.currentDefaultOrg || "");
+        if (isMajorOrg) {
+          vscode.window.showWarningMessage(
+            "Your default org is a MAJOR org, be careful because CI Server are supposed to deploy here, not you :)"
+          );
+          return "#a66004"; // orange !
+        }
+        return "#04590c"; // green !
+      } else if (PRODUCTION_EDITIONS.includes(org.OrganizationType)) {
         // We are in production !!
-        vscode.window.showWarningMessage("Your default org is a PRODUCTION org, be careful what you do :)");
-        return "#c73a24"; // red !
+        vscode.window.showWarningMessage(
+          "Your default org is a PRODUCTION org, be careful what you do :)"
+        );
+        return "#8c1004"; // red !
       }
       // Dev org, trial org...
       return "#2f53a8"; // blue
@@ -104,6 +122,15 @@ export class HardisColors {
         vscode.ConfigurationTarget.Workspace
       );
     }
+  }
+
+  async isMajorOrg(orgUsername: string) {
+    const orgInstanceUrl = await getUsernameInstanceUrl(orgUsername);
+    const majorOrgInstanceUrls: any[] = ["https://hardis-group--demointeg.sandbox.my.salesforce.com"];
+    if (majorOrgInstanceUrls.includes(orgInstanceUrl)) {
+      return true;
+    }
+    return false;
   }
 
   // Remove custom colors when quitting the extension or VsCode

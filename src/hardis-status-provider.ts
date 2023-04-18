@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import * as path from "path";
 import * as GitUrlParse from "git-url-parse";
 import moment = require("moment");
-import { execSfdxJson, loadProjectSfdxHardisConfig, resetCache } from "./utils";
+import { execSfdxJson, loadProjectSfdxHardisConfig, resetCache, setOrgCache } from "./utils";
 import { Logger } from "./logger";
 
 export class HardisStatusProvider
@@ -105,6 +105,7 @@ export class HardisStatusProvider
     });
     if (orgInfoResult.result || orgInfoResult.id) {
       const orgInfo = orgInfoResult.result || orgInfoResult;
+      setOrgCache(orgInfo);
       if (orgInfo.username) {
         items.push({
           id: "org-info-instance-url" + (options.devHub ? "-devhub" : ""),
