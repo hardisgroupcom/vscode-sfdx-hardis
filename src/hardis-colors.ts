@@ -215,7 +215,7 @@ export class HardisColors {
     return false;
   }
 
-  // Use instanceUrl list where deployments are made by CI server, not manually (their auth config is in .sfdh-hardis config)
+  // Use instanceUrl list where deployments are made by CI server, not manually (their auth config is in .sfdx-hardis config)
   async listMajorOrgsInstanceUrls() {
     // Use cache
     if (this.majorOrgInstanceUrls.length > 0) {
