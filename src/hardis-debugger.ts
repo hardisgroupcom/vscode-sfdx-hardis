@@ -170,7 +170,7 @@ export class HardisDebugger {
         // Missing apex sources
         vscode.window
           .showWarningMessage(
-            "No local apex sources found. Click to retrieve them :)",
+            "🦙 No local apex sources found. Click to retrieve them :)",
             "Retrieve Apex sources from org"
           )
           .then((selection) => {
@@ -184,7 +184,8 @@ export class HardisDebugger {
       } else {
         // Salesforce extension command not found
         vscode.window.showWarningMessage(
-          `Salesforce Extension pack command not found. If it is installed, just wait for it to be initialized :)`
+          `🦙 Salesforce Extension pack command not found. If it is installed, just wait for it to be initialized :)`,
+          "Close"
         );
       }
       return null;

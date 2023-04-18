@@ -226,15 +226,15 @@ export function findInOrgCache(orgCriteria: any) {
   return null;
 }
 
-export async function getUsernameInstanceUrl(username: string): Promise<string|null> {
+export async function getUsernameInstanceUrl(username: string): Promise<string | null> {
   // username - instances cache
   if (USER_INSTANCE_URL_CACHE[username]) {
     return USER_INSTANCE_URL_CACHE[username];
   }
   // org cache
-  const orgInCache = findInOrgCache({username: username});
+  const orgInCache = findInOrgCache({ username: username });
   if (orgInCache) {
-    return orgInCache.instanceUrl ;
+    return orgInCache.instanceUrl;
   }
   // request org
   const orgInfoResult = await execSfdxJson(`sfdx force:org:display --targetusername ${username}`, null, {
@@ -249,7 +249,7 @@ export async function getUsernameInstanceUrl(username: string): Promise<string|n
       return orgInfo.instanceUrl;
     }
   }
-  return null ;
+  return null;
 }
 
 export async function loadProjectSfdxHardisConfig() {
@@ -288,9 +288,9 @@ async function loadFromRemoteConfigFile(url: string) {
   if (remoteConfigResp.status !== 200) {
     throw new Error(
       "[sfdx-hardis] Unable to read remote configuration file at " +
-        url +
-        "\n" +
-        JSON.stringify(remoteConfigResp)
+      url +
+      "\n" +
+      JSON.stringify(remoteConfigResp)
     );
   }
   const remoteConfig = yaml.load(remoteConfigResp.data);
@@ -298,10 +298,33 @@ async function loadFromRemoteConfigFile(url: string) {
   return remoteConfig;
 }
 
-// Read filesystem config file
-async function loadFromLocalConfigFile(file: string) {
-  const localConfig = yaml.load(fs.readFileSync(file).toString());
-  return localConfig;
+export async function readSfdxHardisConfig(): Promise<any> {
+  if (vscode.workspace.workspaceFolders) {
+    const configFile = path.join(vscode.workspace.workspaceFolders[0].uri.fsPath, `config/.sfdx-hardis*.yml`);
+    if (fs.existsSync(configFile)) {
+      return await loadFromLocalConfigFile(configFile);
+    }
+  }
+  return {};
 }
 
-// Set in list of orgs cache
+export async function writeSfdxHardisConfig(key: string, value: any): Promise<any> {
+  if (vscode.workspace.workspaceFolders) {
+    const configFile = path.join(vscode.workspace.workspaceFolders[0].uri.fsPath, `config/.sfdx-hardis*.yml`);
+    await fs.ensureDir(path.dirname(configFile));
+    const config = await readSfdxHardisConfig();
+    config[key] = value;
+    await fs.writeFile(configFile, yaml.dump(config));
+  }
+  return {};
+}
+
+// Read filesystem config file
+export async function loadFromLocalConfigFile(file: string): Promise<any> {
+  try {
+    const localConfig = yaml.load(fs.readFileSync(file).toString());
+    return localConfig;
+  } catch (e) {
+    return {};
+  }
+}

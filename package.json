@@ -26,9 +26,6 @@
     "type": "git",
     "url": "https://github.com/hardisgroupcom/vscode-sfdx-hardis.git"
   },
-  "activationEvents": [
-    "onView:sfdx-hardis-commands"
-  ],
   "main": "./out/extension.js",
   "contributes": {
     "configuration": {
@@ -60,6 +57,11 @@
           "type": "boolean",
           "default": false,
           "description": "Disable check of Git Bash as default terminal"
+        },
+        "vsCodeSfdxHardis.disableVsCodeColors": {
+          "type": "boolean",
+          "default": false,
+          "description": "Disable coloration of VsCode depending on the org type selected"
         },
         "vsCodeSfdxHardis.ignoreSfdxCliRecommendedVersion": {
           "type": "boolean",

@@ -73,7 +73,7 @@ export function activate(context: vscode.ExtensionContext) {
   const hardisColors = new HardisColors();
   context.subscriptions.push(hardisColors);
   hardisColors.init();
-    
+
   // Initialize Hardis Debugger commands
   const hardisDebugger = new HardisDebugger();
   context.subscriptions.push(...hardisDebugger.disposables);
@@ -114,7 +114,14 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Catch event configuration changes
   vscode.workspace.onDidChangeConfiguration((event) => {
-    manageWebSocketServer();
+    if (event.affectsConfiguration('vsCodeSfdxHardis')) {
+      if (event.affectsConfiguration('vsCodeSfdxHardis.userInput')) {
+        manageWebSocketServer();
+      }
+      if (event.affectsConfiguration('vsCodeSfdxHardis.disableVsCodeColors')) {
+        hardisColors.init();
+      }
+    }
   });
 
   // Refresh commands if a sfdx-Project.json has been added

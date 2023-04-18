@@ -2,8 +2,14 @@
 
 ## [Unreleased]
 
-## [1.26.0] 2023-04-17
+## [1.26.0] 2023-04-18
 
+- Manage VsCode Theme colors depending on selected org 
+  - Production: red
+  - Sandbox of major org (where you are not supposed to deploy ^^): orange
+  - Sandbox or scratch org for dev/config: green
+  - Other (Dev Org, Trial org...): blue
+  - If you don't want this feature, use `vsCodeSfdxHardis.disableVsCodeColors` VsCode setting)
 - Rename master branch into main
 
 ## [1.25.1] 2023-03-13

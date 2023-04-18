@@ -21,7 +21,7 @@ export class HardisCommandsProvider
   getChildren(element?: CommandTreeItem): Thenable<CommandTreeItem[]> {
     if (!this.workspaceRoot) {
       vscode.window.showInformationMessage(
-        "No commands available until you open a folder"
+        "🦙 No commands available until you open a folder"
       );
       return Promise.resolve([]);
     }

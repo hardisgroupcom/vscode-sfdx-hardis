@@ -54,7 +54,7 @@ export class Commands {
     // Run command on terminal only if there is not already a command running
     if (this.terminalIsRunning) {
       vscode.window.showErrorMessage(
-        "Wait for the current command to be completed before running a new one :)",
+        "🦙 Wait for the current command to be completed before running a new one :)",
         "Close"
       );
       return;
@@ -124,7 +124,7 @@ export class Commands {
                 );
                 vscode.window
                   .showWarningMessage(
-                    "It is recommended to use Git Bash as default terminal shell (do it in the opened dialog at the top of the screen)",
+                    "🦙 It is recommended to use Git Bash as default terminal shell (do it in the opened dialog at the top of the screen)",
                     "Download Git Bash",
                     "Ignore",
                     "Don't ask again"
@@ -138,7 +138,7 @@ export class Commands {
                       config.update("disableGitBashCheck", true);
                     } else {
                       vscode.window.showInformationMessage(
-                        "If you do not want to see this message anymore, set VsCode setting vsCodeSfdxHardis.disableGitBashCheck to true, or click on Don't ask again"
+                        "🦙 If you do not want to see this message anymore, set VsCode setting vsCodeSfdxHardis.disableGitBashCheck to true, or click on Don't ask again"
                       );
                     }
                   });
@@ -252,7 +252,7 @@ export class Commands {
         // messageButtons.push("Close"); // a cancel button is already automatically added by VsCode
         vscode.window
           .showInformationMessage(
-            commandDetail,
+            `🦙 ${commandDetail}`,
             { modal: true },
             ...messageButtons
           )
@@ -283,7 +283,7 @@ export class Commands {
           vscode.env.openExternal(item.options.helpUrl);
         } else {
           vscode.window.showInformationMessage(
-            "No help url has been defined for this command"
+            "🦙 No help url has been defined for this command"
           );
         }
       }
@@ -336,7 +336,7 @@ export class Commands {
           );
         } else {
           vscode.window.showErrorMessage(
-            "This URL is not a valid Outlook validation link",
+            "🦙 This URL is not a valid Outlook validation link",
             "Close"
           );
         }

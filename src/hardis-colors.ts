@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import * as fs from "fs-extra";
 import * as path from "path";
-import { execSfdxJson, getUsernameInstanceUrl, hasSfdxProjectJson } from "./utils";
+import { execSfdxJson, getUsernameInstanceUrl, hasSfdxProjectJson, loadFromLocalConfigFile, readSfdxHardisConfig, writeSfdxHardisConfig } from "./utils";
 
 const PRODUCTION_EDITIONS = [
   "Team Edition",
@@ -16,16 +16,28 @@ const PRODUCTION_EDITIONS = [
 export class HardisColors {
   sfdxConfigPaths = [".sf/config.json", ".sfdx/sfdx-config.json"];
   disposables: vscode.Disposable[] = [];
+  majorOrgInstanceUrls: string[] = [];
   currentDefaultOrg: string | undefined = undefined;
-  currentDefaultOrgDomain: string | undefined = undefined;
+  currentDefaultOrgDomain: string | undefined | null = undefined;
 
   // Initialize file watchers only if we are in a sfdx project
-  constructor() {}
+  constructor() { }
 
   async init() {
-    if (hasSfdxProjectJson() && vscode.workspace.workspaceFolders) {
-      this.applyColor(null);
+    this.dispose();
+    const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+
+    // Manage color only if not disabled and in a sfdx project context
+    if (hasSfdxProjectJson() && vscode.workspace.workspaceFolders && config.get("disableVsCodeColors") !== true) {
+      // Watch config files
       this.registerFileSystemWatchers();
+      await this.initColor();
+    }
+  }
+
+  // Set color at initialization by reading sfdx local file(s)
+  async initColor() {
+    if (vscode.workspace.workspaceFolders) {
       for (const sfdxConfigPath of this.sfdxConfigPaths) {
         const sfdxConfigFullPath = path.join(
           vscode.workspace.workspaceFolders[0].uri.fsPath,
@@ -36,8 +48,6 @@ export class HardisColors {
           break;
         }
       }
-    } else {
-      this.dispose();
     }
   }
 
@@ -58,6 +68,30 @@ export class HardisColors {
     }
   }
 
+  registerColorPickerCommand() {
+    // Refresh commands tree
+    const disposable = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.selectColorForOrg",
+      async () => {
+        if (this.currentDefaultOrgDomain) {
+          const sfdxHardisConfig = await readSfdxHardisConfig();
+          const orgCustomColors = sfdxHardisConfig.orgCustomColors || {};
+          const color = "#eb34de";
+          orgCustomColors[this.currentDefaultOrgDomain] = color;
+          await writeSfdxHardisConfig("orgCustomColors", color);
+          await this.initColor();
+        }
+        else {
+          vscode.window.showWarningMessage(
+            "🦙 You need to select a default org to define a color for it :)",
+            "Close"
+          );
+        }
+      }
+    );
+    this.disposables.push(disposable);
+  }
+
   // Read file and check if it has to be colored
   async manageColor(file: string) {
     const fileContent = await fs.readJSON(file);
@@ -65,6 +99,7 @@ export class HardisColors {
       fileContent["target-org"] || fileContent["defaultusername"];
     if (fileDefaultOrg !== this.currentDefaultOrg) {
       this.currentDefaultOrg = fileDefaultOrg;
+      this.currentDefaultOrgDomain = await getUsernameInstanceUrl(this.currentDefaultOrg || "");
       const orgColor = await this.getCurrentDefaultOrgColor();
       this.applyColor(orgColor);
     }
@@ -72,6 +107,12 @@ export class HardisColors {
 
   // Get org color :)
   async getCurrentDefaultOrgColor() {
+    // Get user customized color directly in config/.sfdx-hardis.yml
+    const sfdxHardisConfig = await readSfdxHardisConfig();
+    const orgCustomColors = sfdxHardisConfig.orgCustomColors || {};
+    if (orgCustomColors[this.currentDefaultOrgDomain || ""]) {
+      return orgCustomColors[this.currentDefaultOrgDomain || ""];
+    }
     // https://salesforce.stackexchange.com/questions/297452/determine-if-authorized-org-with-salesforcedx-is-developer-or-production
     // Detect if sandbox or not
     const orgRes = await execSfdxJson(
@@ -88,7 +129,8 @@ export class HardisColors {
         const isMajorOrg = await this.isMajorOrg(this.currentDefaultOrg || "");
         if (isMajorOrg) {
           vscode.window.showWarningMessage(
-            "Your default org is a MAJOR org, be careful because CI Server are supposed to deploy here, not you :)"
+            "🦙 Your default org is a MAJOR org, be careful because CI Server are supposed to deploy here, not you :)",
+            "Close"
           );
           return "#a66004"; // orange !
         }
@@ -96,7 +138,8 @@ export class HardisColors {
       } else if (PRODUCTION_EDITIONS.includes(org.OrganizationType)) {
         // We are in production !!
         vscode.window.showWarningMessage(
-          "Your default org is a PRODUCTION org, be careful what you do :)"
+          "🦙 Your default org is a PRODUCTION org, be careful what you do :)",
+          "Close"
         );
         return "#8c1004"; // red !
       }
@@ -124,17 +167,45 @@ export class HardisColors {
     }
   }
 
-  async isMajorOrg(orgUsername: string) {
-    const orgInstanceUrl = await getUsernameInstanceUrl(orgUsername);
-    const majorOrgInstanceUrls: any[] = ["https://hardis-group--demointeg.sandbox.my.salesforce.com"];
+  async isMajorOrg(orgInstanceUrl: string) {
+    const majorOrgInstanceUrls = await this.listMajorOrgsInstanceUrls();
     if (majorOrgInstanceUrls.includes(orgInstanceUrl)) {
       return true;
     }
     return false;
   }
 
+  // Use instanceUrl list where deployments are made by CI server, not manually (their auth config is in .sfdh-hardis config)
+  async listMajorOrgsInstanceUrls() {
+    // Use cache
+    if (this.majorOrgInstanceUrls.length > 0) {
+      return this.majorOrgInstanceUrls;
+    }
+    // Read config files
+    if (vscode.workspace.workspaceFolders) {
+      const sfdxHardisConfigFilesPattern = new vscode.RelativePattern(
+        vscode.workspace.workspaceFolders[0],
+        `**/.sfdx-hardis*.yml`
+      );
+      const fileUris = await vscode.workspace.findFiles(sfdxHardisConfigFilesPattern);
+      const orgInstanceUrls = [];
+      for (const fileUri of fileUris) {
+        const sfdxHardisConfig = await loadFromLocalConfigFile(fileUri.fsPath);
+        if (sfdxHardisConfig.instanceUrl) {
+          orgInstanceUrls.push(sfdxHardisConfig.instanceUrl);
+        }
+      }
+      this.majorOrgInstanceUrls = orgInstanceUrls;
+      return this.majorOrgInstanceUrls;
+    }
+    return [];
+  }
+
   // Remove custom colors when quitting the extension or VsCode
   dispose() {
+    this.currentDefaultOrg = undefined;
+    this.currentDefaultOrgDomain = undefined;
+    this.majorOrgInstanceUrls = [];
     this.disposables.map((disposable) => disposable.dispose());
     this.applyColor(null);
   }
