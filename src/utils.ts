@@ -4,6 +4,7 @@ import * as childProcess from "child_process";
 import * as fs from "fs-extra";
 import * as path from "path";
 
+import { Worker } from "worker_threads";
 import * as vscode from "vscode";
 import * as yaml from "js-yaml";
 import { Logger } from "./logger";
@@ -16,15 +17,38 @@ let COMMANDS_RESULTS: any = {};
 let ORGS_INFO_CACHE: any[] = [];
 let USER_INSTANCE_URL_CACHE: any = {};
 
-export async function execShell(cmd: string, execOptions: any) {
-  return new Promise<any>((resolve, reject) => {
-    childProcess.exec(cmd, execOptions, (error, stdout, stderr) => {
-      if (error) {
-        return reject(error);
-      }
-      return resolve({ stdout: stdout, stderr: stderr });
+export async function execShell(
+  cmd: string,
+  execOptions: any,
+  withWorker = true
+) {
+  if (withWorker) {
+    // Use worker to perform CLI command
+    return new Promise<any>((resolve, reject) => {
+      const worker = new Worker(path.join(__dirname, "worker.js"), {
+        workerData: {
+          cliCommand: { cmd: cmd, execOptions: JSON.stringify(execOptions) },
+          path: "./worker.ts",
+        },
+      });
+      worker.on("message", (result) => {
+        if (result.error) {
+          reject(result.error);
+        }
+        resolve({ stdout: result.stdout, stderr: result.stderr });
+      });
     });
-  });
+  } else {
+    // Use main process to perform CLI command
+    return new Promise<any>((resolve, reject) => {
+      childProcess.exec(cmd, execOptions, (error, stdout, stderr) => {
+        if (error) {
+          return reject(error);
+        }
+        return resolve({ stdout: stdout, stderr: stderr });
+      });
+    });
+  }
 }
 
 export function preLoadCache() {
@@ -49,7 +73,6 @@ export function preLoadCache() {
     "sfdx force:org:display",
     "sfdx force:config:get defaultdevhubusername",
     "sfdx hardis:config:get --level project",
-    "sfdx hardis:scratch:pool:view",
     "sfdx hardis:config:get --level user",
   ];
   for (const cmd of sfdxJsonCommands) {
@@ -89,6 +112,9 @@ export async function execCommand(
   try {
     if (COMMANDS_RESULTS[command]) {
       // use cache
+      Logger.log(
+        `[vscode-sfdx-hardis][command] Waiting for promise already started for command ${command}`
+      );
       commandResult =
         COMMANDS_RESULTS[command].result ??
         (await COMMANDS_RESULTS[command].promise);
