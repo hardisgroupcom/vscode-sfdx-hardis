@@ -25,7 +25,7 @@ export async function execShell(
   if (withWorker) {
     // Use worker to perform CLI command
     return new Promise<any>((resolve, reject) => {
-      const worker = new Worker(path.join(__dirname, 'worker.js'), {
+      const worker = new Worker(path.join(__dirname, "worker.js"), {
         workerData: {
           cliCommand: { cmd: cmd, execOptions: JSON.stringify(execOptions) },
           path: "./worker.ts",
@@ -112,7 +112,9 @@ export async function execCommand(
   try {
     if (COMMANDS_RESULTS[command]) {
       // use cache
-      Logger.log(`[vscode-sfdx-hardis][command] Waiting for promise already started for command ${command}`);
+      Logger.log(
+        `[vscode-sfdx-hardis][command] Waiting for promise already started for command ${command}`
+      );
       commandResult =
         COMMANDS_RESULTS[command].result ??
         (await COMMANDS_RESULTS[command].promise);
