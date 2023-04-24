@@ -275,19 +275,15 @@ export class HardisPluginsProvider
     }
     items.push(sfdxCliItem);
     // get currently installed plugins
-    console.time(`Version-sfdx-plugins`);
     const sfdxPlugins =
       (await execCommand("sfdx plugins", this, { output: true, fail: false }))
         .stdout || "";
-    console.timeEnd(`Version-sfdx-plugins`);
     // Check installed plugins status version
     const pluginPromises = plugins.map(async (plugin) => {
       // Check latest plugin version
       let latestPluginVersion;
       try {
-        console.time(`Version-npm-repo ${plugin.name}`);
         latestPluginVersion = await this.getNpmRepoLatestVersion(plugin.name);
-        console.timeEnd(`Version-npm-repo ${plugin.name}`);
       } catch (e) {
         console.error(`Error while fetching latest version for ${plugin.name}`);
         return;

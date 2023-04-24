@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+## [1.27.0] 2023-04-24
+
+- Activate extension everytime VsCode opens in a Salesforce project
+- Optimize extension startup time by calling CLI commands with worker_threads
+- Remove duplicate console.time and console.timeEnd
+- Remove pool info from preloaded commands
+
 ## [1.26.0] 2023-04-18
 
 - Manage VsCode Theme colors depending on selected org
