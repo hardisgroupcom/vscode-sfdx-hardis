@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [1.27.1] 2023-04-25
+
+- Optimization of extension startup using multithread does not work on all computers
+  - Disable it by default
+  - Enable it by activating setting **vsCodeSfdxHardis.enableMultithread**
+
 ## [1.27.0] 2023-04-24
 
 - Activate extension everytime VsCode opens in a Salesforce project

@@ -16,13 +16,23 @@ let PROJECT_CONFIG: any = null;
 let COMMANDS_RESULTS: any = {};
 let ORGS_INFO_CACHE: any[] = [];
 let USER_INSTANCE_URL_CACHE: any = {};
+let MULTITHREAD_ACTIVE: boolean | null = null;
 
-export async function execShell(
-  cmd: string,
-  execOptions: any,
-  withWorker = true
-) {
-  if (withWorker) {
+export function isMultithreadActive() {
+  if (MULTITHREAD_ACTIVE !== null) {
+    return MULTITHREAD_ACTIVE;
+  }
+  const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+  if (config?.enableMultithread === true) {
+    MULTITHREAD_ACTIVE = true;
+    return true;
+  }
+  MULTITHREAD_ACTIVE = false;
+  return false;
+}
+
+export async function execShell(cmd: string, execOptions: any) {
+  if (isMultithreadActive()) {
     // Use worker to perform CLI command
     return new Promise<any>((resolve, reject) => {
       const worker = new Worker(path.join(__dirname, "worker.js"), {
