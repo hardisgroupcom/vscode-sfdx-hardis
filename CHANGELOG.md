@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [1.27.2] 2023-04-25
+
+- Refresh status panel when default org is changed with another way than sfdx-hardis command
+- Performance optimizations by avoiding doubling WebSocket servers
+
 ## [1.27.1] 2023-04-25
 
 - Optimization of extension startup using multithread does not work on all computers
