@@ -31,10 +31,7 @@ export function isMultithreadActive() {
   return false;
 }
 
-export async function execShell(
-  cmd: string,
-  execOptions: any
-) {
+export async function execShell(cmd: string, execOptions: any) {
   if (isMultithreadActive()) {
     // Use worker to perform CLI command
     return new Promise<any>((resolve, reject) => {
@@ -333,9 +330,9 @@ async function loadFromRemoteConfigFile(url: string) {
   if (remoteConfigResp.status !== 200) {
     throw new Error(
       "[sfdx-hardis] Unable to read remote configuration file at " +
-      url +
-      "\n" +
-      JSON.stringify(remoteConfigResp)
+        url +
+        "\n" +
+        JSON.stringify(remoteConfigResp)
     );
   }
   const remoteConfig = yaml.load(remoteConfigResp.data);
