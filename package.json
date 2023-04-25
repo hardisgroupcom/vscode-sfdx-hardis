@@ -69,6 +69,11 @@
           "default": false,
           "description": "Disable coloration of VsCode depending on the org type selected"
         },
+        "vsCodeSfdxHardis.enableMultithread": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable multithread commands to improve performances (does not work on all computers, disable it if you have a crash while starting SFDX Hardis)"
+        },
         "vsCodeSfdxHardis.ignoreSfdxCliRecommendedVersion": {
           "type": "boolean",
           "default": false,
