@@ -22,7 +22,7 @@ export function activate(context: vscode.ExtensionContext) {
   console.time("Hardis_Activate");
   // Use the console to output diagnostic information (console.log) and errors (console.error)
   // This line of code will only be executed once when your extension is activated
-  Logger.log("VsCode SFDX Hardis has been activated");
+  Logger.log("VsCode SFDX Hardis activation is starting...");
   const currentWorkspaceFolderUri = getWorkspaceRoot();
 
   // Call cli commands before their result is used, to improve startup performances
@@ -70,6 +70,7 @@ export function activate(context: vscode.ExtensionContext) {
   );
   context.subscriptions.push(...commands.disposables);
 
+  // Initialize colors
   const hardisColors = new HardisColors();
   context.subscriptions.push(hardisColors);
   hardisColors.init();
@@ -82,6 +83,10 @@ export function activate(context: vscode.ExtensionContext) {
   function startWebSocketServer() {
     return new Promise((resolve) => {
       setTimeout(() => {
+        // Kill previously launched server if existing
+        if (commands.disposableWebSocketServer) {
+          commands.disposableWebSocketServer.dispose();
+        }
         // Wait a while to run WebSocket server, as it can be time consuming
         commands.disposableWebSocketServer = new WebSocketServer();
         commands.disposableWebSocketServer.start();
@@ -98,7 +103,9 @@ export function activate(context: vscode.ExtensionContext) {
         commands.disposableWebSocketServer === null ||
         commands.disposableWebSocketServer === undefined
       ) {
-        startWebSocketServer();
+        startWebSocketServer()
+          .then(() => Logger.log("sfdx-hardis Websocket OK"))
+          .catch((e) => Logger.log("sfdx-hardis Websocket KO: " + e.message));
       }
     } else {
       if (

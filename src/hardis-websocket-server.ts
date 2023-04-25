@@ -10,7 +10,7 @@ let globalWss: WebSocketServer | null;
 
 export class WebSocketServer {
   public websocketHostPort: any = null;
-  private server: any = null;
+  private server: http.Server;
   private wss: WebSocket.Server;
   private clients: any = {};
 
@@ -198,7 +198,12 @@ export class WebSocketServer {
   }
 
   dispose() {
-    this.wss.close();
-    globalWss = null;
+    try {
+      this.wss.close();
+      this.server.close();
+      globalWss = null;
+    } catch {
+      Logger.log("[sfdx-hardis] Error while closing WebSocket Server");
+    }
   }
 }

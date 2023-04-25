@@ -26,11 +26,13 @@ export class HardisColors {
   majorOrgInstanceUrls: string[] = [];
   currentDefaultOrg: string | undefined = undefined;
   currentDefaultOrgDomain: string | undefined | null = undefined;
+  initializing: boolean = true;
 
   // Initialize file watchers only if we are in a sfdx project
   constructor() {}
 
   async init() {
+    this.initializing = true;
     this.reset();
     const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
 
@@ -44,6 +46,7 @@ export class HardisColors {
       this.registerFileSystemWatchers();
       this.registerColorPickerCommand();
       await this.initColor();
+      this.initializing = false;
     }
   }
 
@@ -139,6 +142,10 @@ export class HardisColors {
       );
       const orgColor = await this.getCurrentDefaultOrgColor();
       this.applyColor(orgColor);
+      // Refresh status panel when colors is changed except at initialization
+      if (this.initializing === false) {
+        vscode.commands.executeCommand("vscode-sfdx-hardis.refreshStatusView");
+      }
     }
   }
 
