@@ -220,7 +220,7 @@ export class HardisStatusProvider
       ["58.0", "Summer '23"],
       ["59.0", "Winter '24"],
       ["60.0", "Spring '24"],
-      ["61.0", "Spring '24"],
+      ["61.0", "Summer '24"],
     ]);
     return matches.get(apiVersion) || "NEXT";
   }
