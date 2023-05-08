@@ -212,7 +212,7 @@ export class HardisStatusProvider
   }
 
   private getVersionLabel(apiVersion: string): string {
-    const corresp: Map<string, string> = new Map([
+    const matches: Map<string, string> = new Map([
       ["54.0","Spring '22"],
       ["55.0","Summer '22"],
       ["56.0","Winter '23"],
@@ -222,7 +222,7 @@ export class HardisStatusProvider
       ["60.0", "Spring '24"],
       ["61.0", "Spring '24"],
     ]);
-    return corresp.get(apiVersion) || "NEXT";
+    return matches.get(apiVersion) || "NEXT";
   }
 
   private async getGitItems(): Promise<any[]> {
