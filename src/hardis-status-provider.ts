@@ -135,6 +135,13 @@ export class HardisStatusProvider
           icon: "org-user.svg",
         });
       }
+      if (orgInfo.apiVersion) {
+        const versionLabel = this.getVersionLabel(orgInfo.apiVersion);
+        items.push({
+          id: "org-info-api-version" + (options.devHub ? "-devhub" : ""),
+          label: `${versionLabel} - v${orgInfo.apiVersion}`,
+        });
+      }
       if (orgInfo.expirationDate) {
         const expiration = moment(orgInfo.expirationDate);
         const today = moment();
@@ -202,6 +209,20 @@ export class HardisStatusProvider
       });
     }
     return items;
+  }
+
+  private getVersionLabel(apiVersion: string): string {
+    const corresp: Map<string, string> = new Map([
+      ["54.0","Spring '22"],
+      ["55.0","Summer '22"],
+      ["56.0","Winter '23"],
+      ["57.0","Spring '23"],
+      ["58.0", "Summer '23"],
+      ["59.0", "Winter '24"],
+      ["60.0", "Spring '24"],
+      ["61.0", "Spring '24"],
+    ]);
+    return corresp.get(apiVersion) || "NEXT";
   }
 
   private async getGitItems(): Promise<any[]> {

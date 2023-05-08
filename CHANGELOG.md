@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.28.0] 2023-05-08
+
+- Display apiVersion and release name in Status panel
+
 ## [1.27.2] 2023-04-25
 
 - Refresh status panel when default org is changed with another way than sfdx-hardis command
