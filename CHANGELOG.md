@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [1.29.0] 2023-05-14
+
+- Org API version & status in the same item than expiration date
+- Direct link to open User Settings Home
+- Direct link to open Setup Home
+- Update icons: User, Apex tests, Simulate Deployment
+- Remove `https://` from the displayed org URL, are they all are HTTPS
+
 ## [1.28.0] 2023-05-08
 
 - Display apiVersion and release name in Status panel

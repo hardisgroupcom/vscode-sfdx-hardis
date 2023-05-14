@@ -111,10 +111,10 @@ export class HardisStatusProvider
     if (orgInfoResult.result || orgInfoResult.id) {
       const orgInfo = orgInfoResult.result || orgInfoResult;
       setOrgCache(orgInfo);
-      if (orgInfo.username) {
+      if (orgInfo.instanceUrl) {
         items.push({
           id: "org-info-instance-url" + (options.devHub ? "-devhub" : ""),
-          label: `${orgInfo.instanceUrl}`,
+          label: `${orgInfo.instanceUrl.replace("https://", "")}`,
           tooltip:
             "Click to open your " +
             (options.devHub ? "Dev Hub" : "default") +
@@ -126,45 +126,64 @@ export class HardisStatusProvider
           icon: "salesforce.svg",
         });
       }
-      if (orgInfo.instanceUrl) {
+      if (orgInfo.username) {
         items.push({
           id: "org-info-username" + (options.devHub ? "-devhub" : ""),
           label: `${orgInfo.username}`,
           tooltip:
             "Username on your remote Salesforce org: " + orgInfo.username,
-          icon: "org-user.svg",
+          command:
+            "sfdx force:org:open" +
+            (options.devHub ? ` --targetusername ${devHubUsername}` : "") +
+            " --path lightning/settings/personal/PersonalInformation/home",
+          icon: "sf-user.svg",
         });
       }
+      const orgDetailItem = {
+        id: "org-info-expiration-date" + (options.devHub ? "-devhub" : ""),
+        label: "",
+        icon: "sf-setup.svg",
+        tooltip: "",
+        command:
+          "sfdx force:org:open" +
+          (options.devHub ? ` --targetusername ${devHubUsername}` : "")+
+          ' --path lightning/setup/SetupOneHome/home',
+      };
       if (orgInfo.apiVersion) {
         const versionLabel = this.getVersionLabel(orgInfo.apiVersion);
-        items.push({
-          id: "org-info-api-version" + (options.devHub ? "-devhub" : ""),
-          label: `${versionLabel} - v${orgInfo.apiVersion}`,
-        });
+        orgDetailItem.label += `${versionLabel} - v${orgInfo.apiVersion}`;
       }
       if (orgInfo.expirationDate) {
         const expiration = moment(orgInfo.expirationDate);
         const today = moment();
         const daysBeforeExpiration = expiration.diff(today, "days");
-        const item: any = {
-          id: "org-info-expiration-date" + (options.devHub ? "-devhub" : ""),
-          label: `Expires on ${orgInfo.expirationDate}`,
-          tooltip: `You org will expire in ${daysBeforeExpiration} days`,
-        };
+        orgDetailItem.label += ` (exp: ${orgInfo.expirationDate})`;
+        orgDetailItem.tooltip += `You org will expire in ${daysBeforeExpiration} days`;
         if (daysBeforeExpiration < 0) {
-          item.icon = "warning-red.svg";
-          item.tooltip = `You org expired on ${orgInfo.expirationDate}. You need to create a new one.`;
-          vscode.window.showErrorMessage(`🦙 ${item.tooltip}`, "Close");
+          orgDetailItem.icon = "warning-red.svg";
+          orgDetailItem.tooltip = `You org expired on ${orgInfo.expirationDate}. You need to create a new one.`;
+          vscode.window.showErrorMessage(
+            `🦙 ${orgDetailItem.tooltip}`,
+            "Close"
+          );
         } else if (daysBeforeExpiration < 3) {
-          item.icon = "warning-red.svg";
-          item.tooltip = `You scratch org will expire in ${daysBeforeExpiration} days !!! Save your scratch org content and create a new one or your work will be lost !!!`;
-          vscode.window.showErrorMessage(`🦙 ${item.tooltip}`, "Close");
+          orgDetailItem.icon = "warning-red.svg";
+          orgDetailItem.tooltip = `You scratch org will expire in ${daysBeforeExpiration} days !!! Save your scratch org content and create a new one or your work will be lost !!!`;
+          vscode.window.showErrorMessage(
+            `🦙 ${orgDetailItem.tooltip}`,
+            "Close"
+          );
         } else if (daysBeforeExpiration < 7) {
-          item.icon = "warning.svg";
-          item.tooltip = `Your scratch org will expire in ${daysBeforeExpiration} days. You should soon create a new scratch org to avoid loosing your work`;
-          vscode.window.showWarningMessage(`🦙 ${item.tooltip}`, "Close");
+          orgDetailItem.icon = "warning.svg";
+          orgDetailItem.tooltip = `Your scratch org will expire in ${daysBeforeExpiration} days. You should soon create a new scratch org to avoid loosing your work`;
+          vscode.window.showWarningMessage(
+            `🦙 ${orgDetailItem.tooltip}`,
+            "Close"
+          );
         }
-        items.push(item);
+      }
+      if (orgDetailItem.label !== "") {
+        items.push(orgDetailItem);
       }
 
       if (options.devHub) {

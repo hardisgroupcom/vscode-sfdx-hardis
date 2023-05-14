@@ -248,7 +248,7 @@ export class HardisCommandsProvider
             label: "Simulate SFDX deployment",
             tooltip:
               "Simulates deployment from local SFDX source to target org",
-            icon: "test.svg",
+            icon: "test-deploy.svg",
             command: "sfdx hardis:project:deploy:sources:dx --check",
             requiresProject: true,
             helpUrl:
