@@ -146,8 +146,8 @@ export class HardisStatusProvider
         tooltip: "",
         command:
           "sfdx force:org:open" +
-          (options.devHub ? ` --targetusername ${devHubUsername}` : "")+
-          ' --path lightning/setup/SetupOneHome/home',
+          (options.devHub ? ` --targetusername ${devHubUsername}` : "") +
+          " --path lightning/setup/SetupOneHome/home",
       };
       if (orgInfo.apiVersion) {
         const versionLabel = this.getVersionLabel(orgInfo.apiVersion);
