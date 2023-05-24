@@ -251,8 +251,10 @@ export class HardisStatusProvider
     if (git && (await git.checkIsRepo()) === true) {
       let gitRemotesOrigins: any = [];
       try {
-       const gitRemotes = await git.getRemotes(true);
-       const gitRemotesOrigins = gitRemotes.filter(remote => remote.name === "origin");
+        const gitRemotes = await git.getRemotes(true);
+        const gitRemotesOrigins = gitRemotes.filter(
+          (remote) => remote.name === "origin"
+        );
       } catch (e) {
         console.warn("[vscode-sfdx-hardis] No git repository found");
       }
@@ -261,10 +263,14 @@ export class HardisStatusProvider
         // Display repo
         if (origin) {
           const parsedGitUrl = GitUrlParse(origin.refs.fetch);
-          let httpGitUrl = parsedGitUrl.toString("https") || origin?.refs?.fetch || "";
+          let httpGitUrl =
+            parsedGitUrl.toString("https") || origin?.refs?.fetch || "";
           items.push({
             id: "git-info-repo",
-            label: `Repo: ${(httpGitUrl.split("/").pop()|| "").replace(".git", "")}`,
+            label: `Repo: ${(httpGitUrl.split("/").pop() || "").replace(
+              ".git",
+              ""
+            )}`,
             command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
               httpGitUrl
             )}`,
@@ -283,7 +289,7 @@ export class HardisStatusProvider
         }
       }
       // Display branch & merge request info
-      const currentBranch = await git.revparse(['--abbrev-ref','HEAD']);
+      const currentBranch = await git.revparse(["--abbrev-ref", "HEAD"]);
       if (currentBranch) {
         // branch info
         items.push({
