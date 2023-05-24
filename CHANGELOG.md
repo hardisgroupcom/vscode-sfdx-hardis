@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.30.0] 2023-05-24
+
+- Accelerate startup of the extension by using low-level git commands instead of waiting for VsCode Git Extension
+
 ## [1.29.0] 2023-05-14
 
 - Org API version & status in the same item than expiration date
