@@ -9,6 +9,7 @@ import {
   setOrgCache,
 } from "./utils";
 import { Logger } from "./logger";
+import simpleGit from "simple-git";
 
 export class HardisStatusProvider
   implements vscode.TreeDataProvider<StatusTreeItem>
@@ -246,22 +247,24 @@ export class HardisStatusProvider
 
   private async getGitItems(): Promise<any[]> {
     const items = [];
-    const gitExtensionAll = vscode.extensions.getExtension("vscode.git");
-    if (gitExtensionAll) {
-      const gitExtension = gitExtensionAll.exports;
-      const api = gitExtension.getAPI(1);
-      const repo = api.repositories[0];
-      if (repo?.state?.remotes) {
-        const origin = repo.state.remotes.filter(
-          (remote: any) => remote.name === "origin"
-        )[0];
+    const git = simpleGit(this.workspaceRoot);
+    if (git && (await git.checkIsRepo()) === true) {
+      let gitRemotesOrigins: any = [];
+      try {
+       const gitRemotes = await git.getRemotes(true);
+       const gitRemotesOrigins = gitRemotes.filter(remote => remote.name === "origin");
+      } catch (e) {
+        console.warn("[vscode-sfdx-hardis] No git repository found");
+      }
+      if (gitRemotesOrigins.length > 0) {
+        const origin = gitRemotesOrigins[0];
         // Display repo
         if (origin) {
-          const parsedGitUrl = GitUrlParse(origin.fetchUrl);
-          const httpGitUrl = parsedGitUrl.toString("https") || origin.fetchUrl;
+          const parsedGitUrl = GitUrlParse(origin.refs.fetch);
+          let httpGitUrl = parsedGitUrl.toString("https") || origin?.refs?.fetch || "";
           items.push({
             id: "git-info-repo",
-            label: `Repo: ${httpGitUrl.split("/").pop().replace(".git", "")}`,
+            label: `Repo: ${(httpGitUrl.split("/").pop()|| "").replace(".git", "")}`,
             command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
               httpGitUrl
             )}`,
@@ -280,13 +283,12 @@ export class HardisStatusProvider
         }
       }
       // Display branch & merge request info
-      if (repo?.state?.HEAD) {
+      const currentBranch = await git.revparse(['--abbrev-ref','HEAD']);
+      if (currentBranch) {
         // branch info
-        const head = repo.state.HEAD;
-        const { name: branch } = head;
         items.push({
           id: "git-info-branch",
-          label: `Branch: ${branch}`,
+          label: `Branch: ${currentBranch}`,
           icon: "git-branch.svg",
           tooltip: "This is the git branch you are currently working on",
         });
@@ -301,7 +303,7 @@ export class HardisStatusProvider
             mergeRequestRes.result.config.mergeRequests.filter(
               (mr: any) =>
                 mr !== null &&
-                mr.branch === branch &&
+                mr.branch === currentBranch &&
                 (mr.url !== null || mr.urlCreate !== null)
             );
           // Existing merge request
