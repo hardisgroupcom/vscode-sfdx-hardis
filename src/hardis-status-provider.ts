@@ -16,7 +16,7 @@ export class HardisStatusProvider
 {
   constructor(private workspaceRoot: string) {}
 
-  getTreeItem(element: StatusTreeItem): vscode.TreeItem {
+  getTreeItem(element: StatusTreeItem): vscode.TreeItem {   
     return element;
   }
 
