@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [1.31.0] 2023-05-30
+
+- New command **Nerdy Stuff -> Generate org full package.xml**
+- Upgrade MegaLinter to v7
+- Manage CI permissions for release
+
 ## [1.30.0] 2023-05-24
 
 - Accelerate startup of the extension by using low-level git commands instead of waiting for VsCode Git Extension

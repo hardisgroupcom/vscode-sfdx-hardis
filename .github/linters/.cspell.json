@@ -153,6 +153,7 @@
     "oxsecurity",
     "packageconfig",
     "packagexml",
+    "packagexmlfull",
     "passin",
     "passout",
     "perfs",

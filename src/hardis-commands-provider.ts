@@ -705,6 +705,13 @@ export class HardisCommandsProvider
             command: "sfdx hardis:project:generate:gitdelta",
           },
           {
+            id: "org:generate:packagexmlfull",
+            label: "Generate org full package.xml",
+            tooltip: "Generate full package.xml from any org",
+            icon: "package.svg",
+            command: "sfdx hardis:org:generate:packagexmlfull",
+          },
+          {
             id: "org:retrieve:sources:dx2",
             label: "Retrieve DX sources from an org (package.xml)",
             tooltip:

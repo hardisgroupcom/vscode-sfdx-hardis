@@ -16,6 +16,9 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions: read-all
+    environment:
+      name: release
     steps:
       - uses: actions/checkout@v3
       - run: yarn
