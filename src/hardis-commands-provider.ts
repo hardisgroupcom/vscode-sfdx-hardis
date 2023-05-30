@@ -707,8 +707,7 @@ export class HardisCommandsProvider
           {
             id: "org:generate:packagexmlfull",
             label: "Generate org full package.xml",
-            tooltip:
-              "Generate full package.xml from any org",
+            tooltip: "Generate full package.xml from any org",
             icon: "package.svg",
             command: "sfdx hardis:org:generate:packagexmlfull",
           },
