@@ -252,7 +252,7 @@ export class HardisStatusProvider
       let gitRemotesOrigins: any = [];
       try {
         const gitRemotes = await git.getRemotes(true);
-        const gitRemotesOrigins = gitRemotes.filter(
+        gitRemotesOrigins = gitRemotes.filter(
           (remote) => remote.name === "origin"
         );
       } catch (e) {
