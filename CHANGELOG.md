@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.31.1] 2023-05-31
+
+- Fix git repository display in Status panel
+
 ## [1.31.0] 2023-05-30
 
 - New command **Nerdy Stuff -> Generate org full package.xml**
