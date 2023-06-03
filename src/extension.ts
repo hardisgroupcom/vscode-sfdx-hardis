@@ -1,7 +1,7 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
-import TelemetryReporter from '@vscode/extension-telemetry';
+import TelemetryReporter from "@vscode/extension-telemetry";
 import { Commands } from "./commands";
 //import *  from './commands/vscode-sfdx-hardis.execute-command';
 import { HardisCommandsProvider } from "./hardis-commands-provider";
@@ -22,7 +22,7 @@ let reporter;
 export function activate(context: vscode.ExtensionContext) {
   new Logger(vscode.window);
   console.time("Hardis_Activate");
-  const timeInit=Date.now();
+  const timeInit = Date.now();
   // Use the console to output diagnostic information (console.log) and errors (console.error)
   // This line of code will only be executed once when your extension is activated
   Logger.log("VsCode SFDX Hardis activation is starting...");
@@ -166,8 +166,8 @@ export function activate(context: vscode.ExtensionContext) {
   }, 21600000);
 
   console.timeEnd("Hardis_Activate");
-  const timeSpent=(timeInit-Date.now())/1000;
-  reporter.sendTelemetryEvent('startup', { }, { 'startupTimeSeconds': timeSpent });
+  const timeSpent = (timeInit - Date.now()) / 1000;
+  reporter.sendTelemetryEvent("startup", {}, { startupTimeSeconds: timeSpent });
 }
 
 // this method is called when your extension is deactivated
