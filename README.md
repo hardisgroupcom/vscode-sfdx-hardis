@@ -93,6 +93,8 @@ It manage VsCode Theme colors depending on selected org
   - If you don't want this feature, use `vsCodeSfdxHardis.disableVsCodeColors` VsCode setting
   - It also allows to associate a custom VsCode Theme color to the current default org, using a shortcut button
 
+[![Colors Video](https://img.youtube.com/vi/6WU4rezC2GM/0.jpg)](https://www.youtube.com/watch?v=6WU4rezC2GM)
+
 ### Dependencies
 
 This panel checks all required dependencies, and if they are up to date.
