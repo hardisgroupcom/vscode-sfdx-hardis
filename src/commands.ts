@@ -6,13 +6,11 @@ import { HardisStatusProvider } from "./hardis-status-provider";
 import { HardisPluginsProvider } from "./hardis-plugins-provider";
 import { WebSocketServer } from "./hardis-websocket-server";
 import { getWorkspaceRoot } from "./utils";
-import TelemetryReporter from "@vscode/extension-telemetry";
 
 export class Commands {
   hardisCommandsProvider: HardisCommandsProvider | null = null;
   hardisStatusProvider: HardisStatusProvider | null = null;
   hardisPluginsProvider: HardisPluginsProvider | null = null;
-  reporter: TelemetryReporter | null = null;
   disposables: vscode.Disposable[] = [];
   terminalStack: vscode.Terminal[] = [];
   terminalIsRunning = false;
@@ -21,13 +19,11 @@ export class Commands {
   constructor(
     hardisCommandsProvider: HardisCommandsProvider,
     hardisStatusProvider: HardisStatusProvider,
-    hardisPluginsProvider: HardisPluginsProvider,
-    reporter: TelemetryReporter
+    hardisPluginsProvider: HardisPluginsProvider
   ) {
     this.hardisCommandsProvider = hardisCommandsProvider;
     this.hardisStatusProvider = hardisStatusProvider;
     this.hardisPluginsProvider = hardisPluginsProvider;
-    this.reporter = reporter;
     this.registerCommands();
   }
 
@@ -92,14 +88,6 @@ export class Commands {
     terminal.sendText(command);
     // Scrolldown the terminal
     vscode.commands.executeCommand("workbench.action.terminal.scrollToBottom");
-    // Telemetry: Send only the 2 first portions of the command
-    // Examples: "sfdx hardis:work:new" , "sfdx plugins:install"
-    if (this.reporter) {
-      const truncatedCommand = command.split(" ").slice(0, 2).join(" ");
-      this.reporter.sendTelemetryEvent("command", {
-        command: truncatedCommand,
-      });
-    }
   }
 
   registerExecuteCommand() {
