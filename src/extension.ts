@@ -1,6 +1,7 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
+import TelemetryReporter from "@vscode/extension-telemetry";
 import { Commands } from "./commands";
 //import *  from './commands/vscode-sfdx-hardis.execute-command';
 import { HardisCommandsProvider } from "./hardis-commands-provider";
@@ -14,15 +15,23 @@ import { WelcomePanel } from "./webviews/welcome";
 import { HardisColors } from "./hardis-colors";
 
 let refreshInterval: any = null;
+let reporter;
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
   new Logger(vscode.window);
   console.time("Hardis_Activate");
+  const timeInit = Date.now();
   // Use the console to output diagnostic information (console.log) and errors (console.error)
   // This line of code will only be executed once when your extension is activated
   Logger.log("VsCode SFDX Hardis activation is starting...");
+
+  // Anonymous telemetry respecting VsCode Guidelines -> https://code.visualstudio.com/api/extension-guides/telemetry
+  reporter = new TelemetryReporter("cf83e6dc-2621-4cb6-b92b-30905d1c8476");
+  context.subscriptions.push(reporter);
+
+  // Get current workspace
   const currentWorkspaceFolderUri = getWorkspaceRoot();
 
   // Call cli commands before their result is used, to improve startup performances
@@ -66,7 +75,8 @@ export function activate(context: vscode.ExtensionContext) {
   const commands = new Commands(
     hardisCommandsProvider,
     hardisStatusProvider,
-    hardisPluginsProvider
+    hardisPluginsProvider,
+    reporter
   );
   context.subscriptions.push(...commands.disposables);
 
@@ -156,6 +166,8 @@ export function activate(context: vscode.ExtensionContext) {
   }, 21600000);
 
   console.timeEnd("Hardis_Activate");
+  const timeSpent = (timeInit - Date.now()) / 1000;
+  reporter.sendTelemetryEvent("startup", {}, { startupTimeSeconds: timeSpent });
 }
 
 // this method is called when your extension is deactivated
