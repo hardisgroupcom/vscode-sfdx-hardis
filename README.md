@@ -39,6 +39,7 @@ _Graciously provided by [**Cloudity**](https://cloudity.com/), and based on sfdx
 - [Custom commands](#custom-commands)
 - [Custom plugins](#custom-plugins)
 - [Open Source Dependencies](#open-source-dependencies)
+- [Telemetry](#telemetry)
 - [Who we are](#who-we-are)
 
 ## Articles
@@ -271,6 +272,20 @@ plugins:
 - [SFDX Essentials](https://github.com/nvuillam/sfdx-essentials)
 - [SFDX Git Delta](https://github.com/scolladon/sfdx-git-delta)
 - [Texei Sfdx Plugin](https://github.com/texei/texei-sfdx-plugin)
+
+## Telemetry
+
+In order to know what commands are the more used, anonymous telemetry is sent to Azure Applications Insight
+
+[@vscode/extension-telemetry](https://www.npmjs.com/package/@vscode/extension-telemetry) is used and strictly respects the [VsCode Telemetry Guidelines](https://code.visualstudio.com/api/extension-guides/telemetry)
+
+We collect the following custom events:
+
+- VsCode SFDX Hardis startup time
+- Commands run (only the 2 first portions of the command, for example `sfdx hardis:work:new` or `sfdx plugins:install`)
+  - We don't want to know anything about the arguments sent or the output, that's your business, not ours :)
+
+If you don't want to send anonymous usage stats, you can [disable Telemetry in Visual Studio Code](https://code.visualstudio.com/docs/getstarted/telemetry#_disable-telemetry-reporting)
 
 ## Who we are
 
