@@ -5,7 +5,7 @@
 ## [1.32.0] 2023-04-06
 
 - Bundle extension with esbuild to improve performances
-- Add [anonymous telemetry](https://github.com/hardisgroupcom/vscode-sfdx-hardis/tree/features/bundle#telemetry) respecting VsCode Extensions Guidelines
+- Add [anonymous telemetry](https://github.com/hardisgroupcom/vscode-sfdx-hardis/tree/main#telemetry) respecting VsCode Extensions Guidelines
 - Add colors video demo in README
 
 ## [1.31.1] 2023-05-31
