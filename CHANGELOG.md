@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.32.2] 2023-04-06
+
+- Manage bundle of worker.js with esbuild
+
 ## [1.32.1] 2023-04-06
 
 - Revert Bundle because of worker.js crash
