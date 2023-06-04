@@ -23,7 +23,10 @@ export function isMultithreadActive() {
     return MULTITHREAD_ACTIVE;
   }
   const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
-  if (config?.enableMultithread === true && fs.existsSync(path.join(__dirname, "worker.js"))) {
+  if (
+    config?.enableMultithread === true &&
+    fs.existsSync(path.join(__dirname, "worker.js"))
+  ) {
     MULTITHREAD_ACTIVE = true;
     return true;
   }
