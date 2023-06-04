@@ -39,6 +39,7 @@ _Graciously provided by [**Cloudity**](https://cloudity.com/), and based on sfdx
 - [Custom commands](#custom-commands)
 - [Custom plugins](#custom-plugins)
 - [Open Source Dependencies](#open-source-dependencies)
+- [Telemetry](#telemetry)
 - [Who we are](#who-we-are)
 
 ## Articles
@@ -92,6 +93,8 @@ It manage VsCode Theme colors depending on selected org
 - Notes
   - If you don't want this feature, use `vsCodeSfdxHardis.disableVsCodeColors` VsCode setting
   - It also allows to associate a custom VsCode Theme color to the current default org, using a shortcut button
+
+[![Colors Video](https://img.youtube.com/vi/6WU4rezC2GM/0.jpg)](https://www.youtube.com/watch?v=6WU4rezC2GM)
 
 ### Dependencies
 
@@ -270,7 +273,21 @@ plugins:
 - [SFDX Git Delta](https://github.com/scolladon/sfdx-git-delta)
 - [Texei Sfdx Plugin](https://github.com/texei/texei-sfdx-plugin)
 
+## Telemetry
+
+In order to know what commands are the more used, anonymous telemetry is sent to Azure Applications Insight
+
+[@vscode/extension-telemetry](https://www.npmjs.com/package/@vscode/extension-telemetry) is used and strictly respects the [VsCode Telemetry Guidelines](https://code.visualstudio.com/api/extension-guides/telemetry)
+
+We collect the following custom events:
+
+- VsCode SFDX Hardis startup time
+- Commands run (only the 2 first portions of the command, for example `sfdx hardis:work:new` or `sfdx plugins:install`)
+  - We don't want to know anything about the arguments sent or the output, that's your business, not ours :)
+
+If you don't want to send anonymous usage stats, you can [disable Telemetry in Visual Studio Code](https://code.visualstudio.com/docs/getstarted/telemetry#_disable-telemetry-reporting)
+
 ## Who we are
 
-Powered by [Hardis Group](https://www.customer-platform.com/)
+Powered by [Cloudity](https://www.cloudity.com/) and the Trailblazer Community
 
