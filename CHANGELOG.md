@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.32.1] 2023-04-06
+
+- Revert Bundle because of worker.js crash
+
 ## [1.32.0] 2023-04-06
 
 - Bundle extension with esbuild to improve performances

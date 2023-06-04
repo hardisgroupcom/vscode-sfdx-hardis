@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import * as path from "path";
-import GitUrlParse from "git-url-parse";
+import * as GitUrlParse from "git-url-parse";
 import moment = require("moment");
 import {
   execSfdxJson,

@@ -295,11 +295,9 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run -S esbuild-base -- --minify",
-    "esbuild-base": "rimraf out && esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node",
+    "vscode:prepublish": "yarn run compile",
     "compile": "tsc -p ./",
-    "build": "npm run -S esbuild-base -- --sourcemap",
-    "watch": "npm run -S esbuild-base -- --sourcemap --watch",
+    "watch": "tsc -watch -p ./",
     "pretest": "yarn run compile && yarn run lint",
     "lint": "eslint src --ext ts",
     "lint:fix": "eslint src --ext ts --fix",
@@ -314,7 +312,6 @@
     "@types/which": "^2.0.0",
     "@typescript-eslint/eslint-plugin": "^4.14.1",
     "@typescript-eslint/parser": "^4.14.1",
-    "esbuild": "^0.17.19",
     "eslint": "^7.19.0",
     "glob": "^7.1.6",
     "mocha": "^8.2.1",
