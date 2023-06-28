@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.33.0] 2023-28-06
+
+- Detect when sfdx has been wrongly installed using Windows Installer instead of Node.js / NPM
+
 ## [1.32.2] 2023-04-06
 
 - Manage bundle of worker.js with esbuild

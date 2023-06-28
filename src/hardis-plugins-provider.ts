@@ -8,6 +8,7 @@ import {
   resetCache,
 } from "./utils";
 import { Logger } from "./logger";
+import which from "which";
 
 let nodeInstallOk = false;
 let gitInstallOk = false;
@@ -263,15 +264,30 @@ export class HardisPluginsProvider
     };
     let sfdxCliOutdated = false;
     if (sfdxCliVersion !== recommendedSfdxCliVersion) {
-      sfdxCliOutdated = true;
-      sfdxCliItem.label =
-        sfdxCliItem.label.includes("missing") &&
-        !sfdxCliItem.label.includes("(link)")
-          ? sfdxCliItem.label
-          : sfdxCliItem.label + " (upgrade available)";
-      sfdxCliItem.command = `npm install sfdx-cli@${recommendedSfdxCliVersion} -g`;
-      sfdxCliItem.tooltip = `Click to upgrade sfdx-cli to ${recommendedSfdxCliVersion}`;
-      sfdxCliItem.icon = "warning.svg";
+      // Check if sfdx is installed using npm and not the windows installer
+      let sfdxPath = "";
+      try {
+        sfdxPath = await which("sfdx");
+      } catch (_e) {
+        sfdxPath = "missing";
+      }
+      if (!sfdxPath.includes("npm") && sfdxPath !== "missing") {
+        sfdxCliItem.label = sfdxCliItem.label + " (WRONGLY INSTALLED)";
+        sfdxCliItem.command = `echo "You need to install Salesforce DX using Node.JS. First, you need to uninstall Salesforce DX using Windows -> Programs -> Uninstall"`;
+        sfdxCliItem.tooltip = `First, you need to uninstall Salesforce DX from Windows -> Programs`;
+        sfdxCliItem.icon = "error.svg";
+      } else {
+        // sfdx-cli is just outdated
+        sfdxCliOutdated = true;
+        sfdxCliItem.label =
+          sfdxCliItem.label.includes("missing") &&
+          !sfdxCliItem.label.includes("(link)")
+            ? sfdxCliItem.label
+            : sfdxCliItem.label + " (upgrade available)";
+        sfdxCliItem.command = `npm install sfdx-cli@${recommendedSfdxCliVersion} -g`;
+        sfdxCliItem.tooltip = `Click to upgrade sfdx-cli to ${recommendedSfdxCliVersion}`;
+        sfdxCliItem.icon = "warning.svg";
+      }
     }
     items.push(sfdxCliItem);
     // get currently installed plugins
