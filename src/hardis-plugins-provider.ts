@@ -271,7 +271,11 @@ export class HardisPluginsProvider
       } catch (_e) {
         sfdxPath = "missing";
       }
-      if (!sfdxPath.includes("npm") && sfdxPath !== "missing") {
+      if (
+        !sfdxPath.includes("npm") &&
+        !sfdxPath.includes("nodejs") &&
+        sfdxPath !== "missing"
+      ) {
         sfdxCliItem.label = sfdxCliItem.label + " (WRONGLY INSTALLED)";
         sfdxCliItem.command = `echo "You need to install Salesforce DX using Node.JS. First, you need to uninstall Salesforce DX using Windows -> Programs -> Uninstall"`;
         sfdxCliItem.tooltip = `First, you need to uninstall Salesforce DX from Windows -> Programs`;
