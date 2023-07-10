@@ -2,7 +2,11 @@
 
 ## [Unreleased]
 
-## [1.33.0] 2023-28-06
+## [1.33.1] 2023-07-10
+
+- Fix issue when sfdx is installed in nodejs folder
+
+## [1.33.0] 2023-06-28
 
 - Detect when sfdx has been wrongly installed using Windows Installer instead of Node.js / NPM
 
