@@ -240,14 +240,23 @@ export class HardisPluginsProvider
     const sfdxCliVersionStdOut: string = (
       await execCommand("sfdx --version", this, { output: true, fail: false })
     ).stdout;
-    const sfdxCliVersionMatch = /sfdx-cli\/([^\s]+)/gm.exec(
-      sfdxCliVersionStdOut
-    );
+    let sfdxCliVersionMatch = /sfdx-cli\/([^\s]+)/gm.exec(sfdxCliVersionStdOut);
     let sfdxCliVersion = "(missing)";
+    let legacySfdx = false;
     if (sfdxCliVersionMatch) {
       sfdxCliVersion = sfdxCliVersionMatch[1];
+      legacySfdx = true;
+    } else {
+      sfdxCliVersionMatch = /@salesforce\/cli\/([^\s]+)/gm.exec(
+        sfdxCliVersionStdOut
+      );
+      if (sfdxCliVersionMatch) {
+        sfdxCliVersion = sfdxCliVersionMatch[1];
+      }
     }
-    const latestSfdxCliVersion = await this.getNpmRepoLatestVersion("sfdx-cli");
+    const latestSfdxCliVersion = await this.getNpmRepoLatestVersion(
+      "@salesforce/cli"
+    );
     const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
     const recommendedSfdxCliVersion =
       config.get("ignoreSfdxCliRecommendedVersion") === true
@@ -255,9 +264,9 @@ export class HardisPluginsProvider
         : RECOMMENDED_SFDX_CLI_VERSION || latestSfdxCliVersion;
     const sfdxCliItem = {
       id: `sfdx-cli-info`,
-      label: `sfdx-cli v${sfdxCliVersion}`,
+      label: `@salesforce/cli v${sfdxCliVersion}`,
       command: `echo "Nothing to do here :)"`,
-      tooltip: `Recommended version of sfdx-cli is installed`,
+      tooltip: `Recommended version of @salesforce/cli is installed`,
       icon: "ok.svg",
       helpUrl:
         "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference.htm",
@@ -271,7 +280,12 @@ export class HardisPluginsProvider
       } catch (_e) {
         sfdxPath = "missing";
       }
-      if (
+      if (legacySfdx) {
+        sfdxCliItem.label = "Upgrade to @salesforce/cli";
+        sfdxCliItem.command = `npm uninstall sfdx-cli --global && npm install @salesforce/cli --global`;
+        sfdxCliItem.tooltip = `sfdx is now located in sf CLI, please click to make the upgrade`;
+        sfdxCliItem.icon = "error.svg";
+      } else if (
         !sfdxPath.includes("npm") &&
         !sfdxPath.includes("nodejs") &&
         sfdxPath !== "missing"
@@ -288,8 +302,8 @@ export class HardisPluginsProvider
           !sfdxCliItem.label.includes("(link)")
             ? sfdxCliItem.label
             : sfdxCliItem.label + " (upgrade available)";
-        sfdxCliItem.command = `npm install sfdx-cli@${recommendedSfdxCliVersion} -g`;
-        sfdxCliItem.tooltip = `Click to upgrade sfdx-cli to ${recommendedSfdxCliVersion}`;
+        sfdxCliItem.command = `npm install @salesforce/cli@${recommendedSfdxCliVersion} -g`;
+        sfdxCliItem.tooltip = `Click to upgrade @salesforce/cli to ${recommendedSfdxCliVersion}`;
         sfdxCliItem.icon = "warning.svg";
       }
     }
@@ -359,8 +373,14 @@ export class HardisPluginsProvider
             let command = outdated
               .map((plugin) => `echo y|sfdx plugins:install ${plugin.name}`)
               .join(" && ");
-            if (sfdxCliOutdated === true) {
-              command = "npm install sfdx-cli -g && " + command;
+            if (legacySfdx) {
+              command =
+                "npm uninstall sfdx-cli --global && npm install @salesforce/cli --global && " +
+                plugins
+                  .map((plugin) => `echo y|sfdx plugins:install ${plugin.name}`)
+                  .join(" && ");
+            } else if (sfdxCliOutdated === true) {
+              command = "npm install @salesforce/cli -g && " + command;
             }
             command =
               command + ` && sfdx hardis:work:ws --event refreshPlugins`;

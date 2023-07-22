@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [1.34.0] 2023-07-22
+
+- Automatically uninstall sfdx-cli then install @salesforce/cli to follow [Salesforce recommendations]([Title](https://developer.salesforce.com/docs/atlas.en-us.sfdx_setup.meta/sfdx_setup/sfdx_setup_move_to_sf_v2.htm))
+
 ## [1.33.1] 2023-07-10
 
 - Fix issue when sfdx is installed in nodejs folder
