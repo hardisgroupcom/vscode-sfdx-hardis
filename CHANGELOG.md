@@ -6,6 +6,7 @@
 
 - Automatically **uninstall sfdx-cli** then **install @salesforce/cli** to follow [Salesforce recommendations]([Title](https://developer.salesforce.com/docs/atlas.en-us.sfdx_setup.meta/sfdx_setup/sfdx_setup_move_to_sf_v2.htm))
 - Fix false positive error when nvm has been used to install @salesforce/cli (thanks @anthonygiuliano :))
+- Upgrade MegaLinter
 
 ## [1.33.1] 2023-07-10
 
