@@ -82,7 +82,7 @@ export class WebSocketServer {
     else if (data.event === "openFile") {
       const currentWorkspaceFolderUri = getWorkspaceRoot();
       var openPath = vscode.Uri.parse(
-        "file:///" + currentWorkspaceFolderUri + "/" + data.file
+        "file:///" + currentWorkspaceFolderUri + "/" + data.file,
       );
       vscode.workspace.openTextDocument(openPath).then((doc) => {
         vscode.window.showTextDocument(doc);
@@ -145,7 +145,7 @@ export class WebSocketServer {
           quickpick.items = prompt.choices.map((choice: any) => {
             const quickPickItem: vscode.QuickPickItem = {
               label: stripAnsi(
-                choice.title
+                choice.title,
               ) /*+ ((choice.selected === true && prompt.type === "select" && !choice.title.includes('(default)')) ? ' (default) ' : '')*/,
               detail: stripAnsi(choice.description || ""),
               picked: choice.selected === true,

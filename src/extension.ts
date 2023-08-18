@@ -43,31 +43,31 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Register Commands tree data provider
   const hardisCommandsProvider = new HardisCommandsProvider(
-    currentWorkspaceFolderUri
+    currentWorkspaceFolderUri,
   );
   const disposableTreeCommands = vscode.window.registerTreeDataProvider(
     "sfdx-hardis-commands",
-    hardisCommandsProvider
+    hardisCommandsProvider,
   );
   context.subscriptions.push(disposableTreeCommands);
 
   // Register Status TreeView
   const hardisStatusProvider = new HardisStatusProvider(
-    currentWorkspaceFolderUri
+    currentWorkspaceFolderUri,
   );
   const disposableTreeInfo = vscode.window.registerTreeDataProvider(
     "sfdx-hardis-status",
-    hardisStatusProvider
+    hardisStatusProvider,
   );
   context.subscriptions.push(disposableTreeInfo);
 
   // Register Status TreeView
   const hardisPluginsProvider = new HardisPluginsProvider(
-    currentWorkspaceFolderUri
+    currentWorkspaceFolderUri,
   );
   const disposableTreePlugins = vscode.window.registerTreeDataProvider(
     "sfdx-hardis-plugins",
-    hardisPluginsProvider
+    hardisPluginsProvider,
   );
   context.subscriptions.push(disposableTreePlugins);
 
@@ -76,7 +76,7 @@ export function activate(context: vscode.ExtensionContext) {
     hardisCommandsProvider,
     hardisStatusProvider,
     hardisPluginsProvider,
-    reporter
+    reporter,
   );
   context.subscriptions.push(...commands.disposables);
 
@@ -152,7 +152,7 @@ export function activate(context: vscode.ExtensionContext) {
   vscode.workspace.onDidRenameFiles((event) => {
     if (
       event.files.filter((rename) =>
-        rename.newUri.fsPath.includes("sfdx-project.json")
+        rename.newUri.fsPath.includes("sfdx-project.json"),
       )
     ) {
       vscode.commands.executeCommand("vscode-sfdx-hardis.refreshCommandsView");

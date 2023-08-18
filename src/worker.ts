@@ -16,6 +16,6 @@ if (workerData.cliCommand) {
           parentPort.postMessage({ stdout: stdout, stderr: stderr });
         }
       }
-    }
+    },
   );
 }

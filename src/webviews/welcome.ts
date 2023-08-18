@@ -15,7 +15,7 @@ export class WelcomePanel {
   registerWelcomeCommand() {
     const disposable = vscode.commands.registerCommand(
       "vscode-sfdx-hardis.welcome",
-      () => this.displayWelcomePanel()
+      () => this.displayWelcomePanel(),
     );
     this.disposables.push(disposable);
   }
@@ -26,7 +26,7 @@ export class WelcomePanel {
       "sfdxHardisWelcome",
       "SFDX Hardis: Welcome",
       vscode.ViewColumn.One,
-      {}
+      {},
     );
 
     // And set its HTML content
