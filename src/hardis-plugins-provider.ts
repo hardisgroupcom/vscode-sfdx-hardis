@@ -288,6 +288,7 @@ export class HardisPluginsProvider
       } else if (
         !sfdxPath.includes("npm") &&
         !sfdxPath.includes("nodejs") &&
+        !sfdxPath.includes("nvm") &&
         sfdxPath !== "missing"
       ) {
         sfdxCliItem.label = sfdxCliItem.label + " (WRONGLY INSTALLED)";
