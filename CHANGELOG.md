@@ -4,7 +4,10 @@
 
 ## [2.0.0] 2023-08-18
 
+**BREAKING CHANGE**: Only for some CI scripts, please read [sfdx-hardis v4.0.0 release notes](https://github.com/hardisgroupcom/sfdx-hardis/releases/tag/v4.0.0)
+
 - Automatically **uninstall sfdx-cli** then **install @salesforce/cli** to follow [Salesforce recommendations](https://developer.salesforce.com/docs/atlas.en-us.sfdx_setup.meta/sfdx_setup/sfdx_setup_move_to_sf_v2.htm)
+- Add @salesforce/plugin-packaging in default plugins
 - Fix false positive error when nvm has been used to install @salesforce/cli (thanks @anthonygiuliano :))
 - Upgrade npm dependencies
 - Upgrade MegaLinter
