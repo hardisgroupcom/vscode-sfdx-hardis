@@ -15,34 +15,34 @@ export class HardisDebugger {
       "vscode-sfdx-hardis.debug.activate",
       () => {
         this.activateDebugger();
-      }
+      },
     );
     const cmdDeactivate = vscode.commands.registerCommand(
       "vscode-sfdx-hardis.debug.deactivate",
       () => {
         this.deactivateDebugger();
-      }
+      },
     );
     const cmdLaunch = vscode.commands.registerCommand(
       "vscode-sfdx-hardis.debug.launch",
       () => {
         this.launchDebugger();
-      }
+      },
     );
     const cmdLogTail = vscode.commands.registerCommand(
       "vscode-sfdx-hardis.debug.logtail",
       () => {
         this.launchLogTail();
-      }
+      },
     );
     const cmdToggleCheckpoint = vscode.commands.registerCommand(
       "vscode-sfdx-hardis.toggleCheckpoint",
       () => {
         this.toggleCheckpoint();
-      }
+      },
     );
     this.disposables.push(
-      ...[cmdActivate, cmdDeactivate, cmdLaunch, cmdToggleCheckpoint]
+      ...[cmdActivate, cmdDeactivate, cmdLaunch, cmdToggleCheckpoint],
     );
   }
 
@@ -66,7 +66,7 @@ export class HardisDebugger {
         if (requiresCheckpointUpload === true) {
           await this.runSfdxExtensionCommand("sfdx.create.checkpoints");
         }
-      }
+      },
     );
     this.disposables.push(breakpointsHandler);
   }
@@ -153,7 +153,7 @@ export class HardisDebugger {
     }
     vscode.commands.executeCommand(
       "vscode-sfdx-hardis.execute-command",
-      logTailCommand
+      logTailCommand,
     );
   }
 
@@ -171,13 +171,13 @@ export class HardisDebugger {
         vscode.window
           .showWarningMessage(
             "🦙 No local apex sources found. Click to retrieve them :)",
-            "Retrieve Apex sources from org"
+            "Retrieve Apex sources from org",
           )
           .then((selection) => {
             if (selection === "Retrieve Apex sources from org") {
               vscode.commands.executeCommand(
                 "vscode-sfdx-hardis.execute-command",
-                "sfdx hardis:org:retrieve:sources:dx -k ApexClass,ApexTrigger,ApexPage"
+                "sfdx hardis:org:retrieve:sources:dx -k ApexClass,ApexTrigger,ApexPage",
               );
             }
           });
@@ -185,7 +185,7 @@ export class HardisDebugger {
         // Salesforce extension command not found
         vscode.window.showWarningMessage(
           `🦙 Salesforce Extension pack command not found. If it is installed, just wait for it to be initialized :)`,
-          "Close"
+          "Close",
         );
       }
       return null;

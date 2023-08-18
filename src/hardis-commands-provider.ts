@@ -20,7 +20,7 @@ export class HardisCommandsProvider
   getChildren(element?: CommandTreeItem): Thenable<CommandTreeItem[]> {
     if (!this.workspaceRoot) {
       vscode.window.showInformationMessage(
-        "🦙 No commands available until you open a folder"
+        "🦙 No commands available until you open a folder",
       );
       return Promise.resolve([]);
     }
@@ -38,7 +38,7 @@ export class HardisCommandsProvider
   private getTopicCommands(topic: any): CommandTreeItem[] {
     const items: CommandTreeItem[] = [];
     const matchingTopic = this.getAllTopicsAndCommands().filter(
-      (topicItem: CommandTreeItem) => topicItem.id === topic.id
+      (topicItem: CommandTreeItem) => topicItem.id === topic.id,
     )[0];
     for (const item of matchingTopic.commands) {
       const options: any = {};
@@ -63,8 +63,8 @@ export class HardisCommandsProvider
           item.id,
           item.command,
           vscode.TreeItemCollapsibleState.None,
-          options
-        )
+          options,
+        ),
       );
     }
     return items;
@@ -123,12 +123,12 @@ export class HardisCommandsProvider
             item.id,
             item.command,
             vscode.TreeItemCollapsibleState.None,
-            options
-          )
+            options,
+          ),
         );
       } else {
         items.push(
-          new CommandTreeItem(item.label, item.id, "", expanded, options)
+          new CommandTreeItem(item.label, item.id, "", expanded, options),
         );
       }
     }
@@ -769,7 +769,7 @@ export class HardisCommandsProvider
             label: "Post an issue / question",
             icon: "help.svg",
             command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
-              "https://github.com/hardisgroupcom/sfdx-hardis/issues"
+              "https://github.com/hardisgroupcom/sfdx-hardis/issues",
             )}`,
           },
           {
@@ -777,7 +777,7 @@ export class HardisCommandsProvider
             label: "All sfdx-hardis commands",
             icon: "help.svg",
             command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
-              "https://hardisgroupcom.github.io/sfdx-hardis/commands/"
+              "https://hardisgroupcom.github.io/sfdx-hardis/commands/",
             )}`,
           },
           {
@@ -785,7 +785,7 @@ export class HardisCommandsProvider
             label: "Cloudity Website",
             icon: "help.svg",
             command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
-              "https://www.cloudity.com?ref=sfdxhardis"
+              "https://www.cloudity.com?ref=sfdxhardis",
             )}`,
           },
         ],
@@ -806,7 +806,7 @@ export class HardisCommandsProvider
       hardisCommands = this.addCommands(
         projectConfig.customCommands,
         customCommandsPosition,
-        hardisCommands
+        hardisCommands,
       );
     }
     // Commands defined in remote config file .sfdx-hardis.yml
@@ -818,7 +818,7 @@ export class HardisCommandsProvider
       hardisCommands = this.addCommands(
         remoteConfig.customCommands,
         customCommandsPosition,
-        hardisCommands
+        hardisCommands,
       );
     }
     return hardisCommands;
@@ -827,7 +827,7 @@ export class HardisCommandsProvider
   private addCommands(
     customCommands: Array<any>,
     customCommandsPosition: string,
-    hardisCommands: Array<any>
+    hardisCommands: Array<any>,
   ) {
     if (customCommandsPosition === "last") {
       // Last position
@@ -855,7 +855,7 @@ class CommandTreeItem extends vscode.TreeItem {
       tooltip: "",
       requiresProject: false,
       helpUrl: "",
-    }
+    },
   ) {
     super(label, collapsibleState);
     this.id = id;
@@ -887,14 +887,14 @@ class CommandTreeItem extends vscode.TreeItem {
           "..",
           "..",
           "resources",
-          this.iconPath.light.toString()
+          this.iconPath.light.toString(),
         );
         this.iconPath.dark = path.join(
           __filename,
           "..",
           "..",
           "resources",
-          this.iconPath.dark.toString()
+          this.iconPath.dark.toString(),
         );
       }
     }
