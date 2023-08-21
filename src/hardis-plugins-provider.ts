@@ -212,6 +212,7 @@ export class HardisPluginsProvider
     const plugins = [
       {
         name: "@salesforce/plugin-packaging",
+        altName: "packaging",
         helpUrl: "https://www.npmjs.com/package/@salesforce/plugin-packaging",
       },
       {
@@ -329,7 +330,10 @@ export class HardisPluginsProvider
       }
       let pluginLabel = plugin.name;
       let isPluginMissing = false;
-      const regexVersion = new RegExp(`${plugin.name} (.*)`, "gm");
+      const regexVersion = new RegExp(
+        `${plugin.altName || plugin.name} (.*)`,
+        "gm",
+      );
       const versionMatches = [...sfdxPlugins.matchAll(regexVersion)];
       if (versionMatches.length > 0) {
         pluginLabel += ` v${versionMatches[0][1]}`;
@@ -345,7 +349,12 @@ export class HardisPluginsProvider
         icon: "ok.svg",
         helpUrl: plugin.helpUrl,
       };
-      if (!sfdxPlugins.includes(`${plugin.name} ${latestPluginVersion}`)) {
+      if (
+        !sfdxPlugins.includes(`${plugin.name} ${latestPluginVersion}`) &&
+        !sfdxPlugins.includes(
+          `${plugin.altName || "nope"} ${latestPluginVersion}`,
+        )
+      ) {
         pluginItem.label =
           pluginItem.label.includes("missing") &&
           !pluginItem.label.includes("(link)")
