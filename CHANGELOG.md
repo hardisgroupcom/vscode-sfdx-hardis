@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [2.0.1] 2023-08-21
+
+- Fix false positive warning display with @salesforce/plugin-packaging
+
 ## [2.0.0] 2023-08-18
 
 **BREAKING CHANGE**: Only for some CI scripts, please read [sfdx-hardis v4.0.1 release notes](https://github.com/hardisgroupcom/sfdx-hardis/releases/tag/v4.0.1)
