@@ -23,10 +23,11 @@ const PRODUCTION_EDITIONS = [
 export class HardisColors {
   sfdxConfigPaths = [".sf/config.json", ".sfdx/sfdx-config.json"];
   disposables: vscode.Disposable[] = [];
-  majorOrgInstanceUrls: string[] = [];
+  majorOrgInstanceUrls: any[] = [];
   currentDefaultOrg: string | undefined = undefined;
   currentDefaultOrgDomain: string | undefined | null = undefined;
   initializing: boolean = true;
+  majorOrgBranch: string | undefined = undefined;
 
   // Initialize file watchers only if we are in a sfdx project
   constructor() {}
@@ -176,7 +177,7 @@ export class HardisColors {
         );
         if (isMajorOrg) {
           vscode.window.showWarningMessage(
-            "🦙 Your default org is a MAJOR org, be careful because the CI/CD Server is supposed to deploy here, not you :)",
+            `🦙 Your default org is a MAJOR org linked to git branch ${this.majorOrgBranch}, be careful because the CI/CD Server is supposed to deploy there, not you :)`,
             "Close",
           );
           return forcedColor || "#a66004"; // orange !
@@ -215,8 +216,13 @@ export class HardisColors {
   }
 
   async isMajorOrg(orgInstanceUrl: string) {
+    this.majorOrgBranch = undefined;
     const majorOrgInstanceUrls = await this.listMajorOrgsInstanceUrls();
-    if (majorOrgInstanceUrls.includes(orgInstanceUrl)) {
+    const matchOrgs = majorOrgInstanceUrls.filter(
+      (org) => org.instanceUrl === orgInstanceUrl,
+    );
+    if (matchOrgs) {
+      this.majorOrgBranch = matchOrgs[0].branch;
       return true;
     }
     return false;
@@ -241,7 +247,15 @@ export class HardisColors {
       for (const fileUri of fileUris) {
         const sfdxHardisConfig = await loadFromLocalConfigFile(fileUri.fsPath);
         if (sfdxHardisConfig.instanceUrl) {
-          orgInstanceUrls.push(sfdxHardisConfig.instanceUrl.replace(/\/$/, "")); // remove trailing slash if here
+          let branch = "";
+          const m = /.*\.sfdx-hardis\.(.*)\.yml/gm.exec(fileUri.fsPath);
+          if (m && m[1]) {
+            branch = m[1];
+          }
+          orgInstanceUrls.push({
+            branch: branch,
+            instanceUrl: sfdxHardisConfig.instanceUrl.replace(/\/$/, ""),
+          }); // remove trailing slash if here
         }
       }
       this.majorOrgInstanceUrls = orgInstanceUrls;
