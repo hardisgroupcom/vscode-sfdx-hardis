@@ -23,10 +23,11 @@ const PRODUCTION_EDITIONS = [
 export class HardisColors {
   sfdxConfigPaths = [".sf/config.json", ".sfdx/sfdx-config.json"];
   disposables: vscode.Disposable[] = [];
-  majorOrgInstanceUrls: string[] = [];
+  majorOrgInstanceUrls: any[] = [];
   currentDefaultOrg: string | undefined = undefined;
   currentDefaultOrgDomain: string | undefined | null = undefined;
   initializing: boolean = true;
+  majorOrgBranch: string | undefined = undefined;
 
   // Initialize file watchers only if we are in a sfdx project
   constructor() {}
@@ -56,7 +57,7 @@ export class HardisColors {
       for (const sfdxConfigPath of this.sfdxConfigPaths) {
         const sfdxConfigFullPath = path.join(
           vscode.workspace.workspaceFolders[0].uri.fsPath,
-          sfdxConfigPath,
+          sfdxConfigPath
         );
         if (fs.existsSync(sfdxConfigFullPath)) {
           await this.manageColor(sfdxConfigFullPath);
@@ -73,8 +74,8 @@ export class HardisColors {
         const watcher = vscode.workspace.createFileSystemWatcher(
           new vscode.RelativePattern(
             vscode.workspace.workspaceFolders[0],
-            `**/${sfdxConfigPath}`,
-          ),
+            `**/${sfdxConfigPath}`
+          )
         );
         watcher.onDidCreate((uri) => this.manageColor(uri.fsPath));
         watcher.onDidChange((uri) => this.manageColor(uri.fsPath));
@@ -101,10 +102,10 @@ export class HardisColors {
         } else {
           vscode.window.showWarningMessage(
             "🦙 You need to select a default org to define a color for it :)",
-            "Close",
+            "Close"
           );
         }
-      },
+      }
     );
     this.disposables.push(disposable);
   }
@@ -138,7 +139,7 @@ export class HardisColors {
     if (fileDefaultOrg !== this.currentDefaultOrg) {
       this.currentDefaultOrg = fileDefaultOrg;
       this.currentDefaultOrgDomain = await getUsernameInstanceUrl(
-        this.currentDefaultOrg || "",
+        this.currentDefaultOrg || ""
       );
       const orgColor = await this.getCurrentDefaultOrgColor();
       this.applyColor(orgColor);
@@ -165,19 +166,19 @@ export class HardisColors {
       {
         fail: false,
         output: true,
-      },
+      }
     );
     if (orgRes?.result?.records?.length === 1) {
       const org = orgRes.result.records[0];
       if (org.IsSandbox === true) {
         // We are in a dev sandbox or scratch org !
         const isMajorOrg = await this.isMajorOrg(
-          this.currentDefaultOrgDomain || "",
+          this.currentDefaultOrgDomain || ""
         );
         if (isMajorOrg) {
           vscode.window.showWarningMessage(
-            "🦙 Your default org is a MAJOR org, be careful because the CI/CD Server is supposed to deploy here, not you :)",
-            "Close",
+            `🦙 Your default org is a MAJOR org linked to git branch ${this.majorOrgBranch}, be careful because the CI/CD Server is supposed to deploy there, not you :)`,
+            "Close"
           );
           return forcedColor || "#a66004"; // orange !
         }
@@ -186,7 +187,7 @@ export class HardisColors {
         // We are in production !!
         vscode.window.showWarningMessage(
           "🦙 Your default org is a PRODUCTION org, be careful what you do :)",
-          "Close",
+          "Close"
         );
         return forcedColor || "#8c1004"; // red !
       }
@@ -202,21 +203,26 @@ export class HardisColors {
     if (vscode.workspace.workspaceFolders) {
       const config = vscode.workspace.getConfiguration();
       const colorCustomization: any = config.get(
-        "workbench.colorCustomizations",
+        "workbench.colorCustomizations"
       );
       colorCustomization["statusBar.background"] = color || undefined;
       colorCustomization["activityBar.background"] = color || undefined;
       config.update(
         "workbench.colorCustomizations",
         colorCustomization,
-        vscode.ConfigurationTarget.Workspace,
+        vscode.ConfigurationTarget.Workspace
       );
     }
   }
 
   async isMajorOrg(orgInstanceUrl: string) {
+    this.majorOrgBranch = undefined;
     const majorOrgInstanceUrls = await this.listMajorOrgsInstanceUrls();
-    if (majorOrgInstanceUrls.includes(orgInstanceUrl)) {
+    const matchOrgs = majorOrgInstanceUrls.filter(
+      (org) => org.instanceUrl === orgInstanceUrl
+    );
+    if (matchOrgs) {
+      this.majorOrgBranch = matchOrgs[0].branch;
       return true;
     }
     return false;
@@ -232,16 +238,24 @@ export class HardisColors {
     if (vscode.workspace.workspaceFolders) {
       const sfdxHardisConfigFilesPattern = new vscode.RelativePattern(
         vscode.workspace.workspaceFolders[0],
-        `**/.sfdx-hardis*.yml`,
+        `**/.sfdx-hardis*.yml`
       );
       const fileUris = await vscode.workspace.findFiles(
-        sfdxHardisConfigFilesPattern,
+        sfdxHardisConfigFilesPattern
       );
       const orgInstanceUrls = [];
       for (const fileUri of fileUris) {
         const sfdxHardisConfig = await loadFromLocalConfigFile(fileUri.fsPath);
         if (sfdxHardisConfig.instanceUrl) {
-          orgInstanceUrls.push(sfdxHardisConfig.instanceUrl.replace(/\/$/, "")); // remove trailing slash if here
+          let branch = "";
+          const m = /.*\.sfdx-hardis\.(.*)\.yml/gm.exec(fileUri.fsPath);
+          if (m && m[1]) {
+            branch = m[1];
+          }
+          orgInstanceUrls.push({
+            branch: branch,
+            instanceUrl: sfdxHardisConfig.instanceUrl.replace(/\/$/, ""),
+          }); // remove trailing slash if here
         }
       }
       this.majorOrgInstanceUrls = orgInstanceUrls;

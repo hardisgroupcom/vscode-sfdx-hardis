@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [2.1.0] 2023-09-06
+
+- Display the branch name when default org is associated to a major branch
+
 ## [2.0.1] 2023-08-21
 
 - Fix false positive warning display with @salesforce/plugin-packaging
