@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { hasSfdxProjectJson } from "./utils";
+import { Logger } from "./logger";
 
 export class HardisDebugger {
   isDebugLogsActive = false;
@@ -72,12 +73,12 @@ export class HardisDebugger {
   }
 
   private async activateDebugger() {
-    await this.runSfdxExtensionCommand("sfdx.force.start.apex.debug.logging");
+    await this.runSfdxExtensionCommand("sfdx.start.apex.debug.logging");
     this.isDebugLogsActive = true;
   }
 
   private async deactivateDebugger() {
-    await this.runSfdxExtensionCommand("sfdx.force.stop.apex.debug.logging");
+    await this.runSfdxExtensionCommand("sfdx.stop.apex.debug.logging");
     this.isDebugLogsActive = false;
   }
 
@@ -165,7 +166,9 @@ export class HardisDebugger {
     let res;
     try {
       res = await vscode.commands.executeCommand(command);
-    } catch (e) {
+    } catch (e: any) {
+      Logger.log(`Error while running VsCode command ${command}`);
+      Logger.log(`Error detail: ${e.message}`);
       if (!hasSfdxProjectJson({ recalc: true })) {
         // Missing apex sources
         vscode.window
@@ -184,7 +187,9 @@ export class HardisDebugger {
       } else {
         // Salesforce extension command not found
         vscode.window.showWarningMessage(
-          `🦙 Salesforce Extension pack command not found. If it is installed, just wait for it to be initialized :)`,
+          `🦙 Salesforce Extension pack command error. If it is installed, just wait for it to be initialized :)\nDetail: ${
+            e.message || JSON.stringify(e)
+          }`,
           "Close",
         );
       }
