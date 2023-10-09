@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [2.1.1] 2023-10-09
+
+- Add more details in case there is an issue while calling a SF Extension pack core extension
+
 ## [2.1.0] 2023-09-06
 
 - Display the branch name when default org is associated to a major branch
