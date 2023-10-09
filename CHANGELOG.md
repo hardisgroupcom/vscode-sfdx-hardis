@@ -2,8 +2,9 @@
 
 ## [Unreleased]
 
-## [2.1.1] 2023-10-09
+## [2.2.0] 2023-10-09
 
+- Update VsCode commands to call Replay Debugger, as they changed in Core VsCode extension
 - Add more details in case there is an issue while calling a SF Extension pack core extension
 
 ## [2.1.0] 2023-09-06

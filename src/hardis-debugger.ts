@@ -73,12 +73,12 @@ export class HardisDebugger {
   }
 
   private async activateDebugger() {
-    await this.runSfdxExtensionCommand("sfdx.force.start.apex.debug.logging");
+    await this.runSfdxExtensionCommand("sfdx.start.apex.debug.logging");
     this.isDebugLogsActive = true;
   }
 
   private async deactivateDebugger() {
-    await this.runSfdxExtensionCommand("sfdx.force.stop.apex.debug.logging");
+    await this.runSfdxExtensionCommand("sfdx.stop.apex.debug.logging");
     this.isDebugLogsActive = false;
   }
 
