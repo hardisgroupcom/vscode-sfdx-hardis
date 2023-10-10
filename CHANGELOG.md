@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [2.3.0] 2023-10-10
+
+- Allow to send a command to run again from sfdx-hardis plugin
+
 ## [2.2.0] 2023-10-09
 
 - Update VsCode commands to call Replay Debugger, as they changed in Core VsCode extension
