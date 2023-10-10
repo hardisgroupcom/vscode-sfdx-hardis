@@ -1,4 +1,4 @@
-import stripAnsi = require("strip-ansi");
+import stripAnsi from "strip-ansi";
 import * as http from "http";
 import * as WebSocket from "ws";
 import * as vscode from "vscode";
