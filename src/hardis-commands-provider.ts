@@ -639,7 +639,7 @@ export class HardisCommandsProvider
           },
           {
             id: "org:configure:monitoring",
-            label: "Configure org monitoring",
+            label: "Configure Org Monitoring",
             tooltip:
               "To run only on a repo dedicated to monitoring (start from a blank repo)",
             icon: "monitoring.svg",

@@ -69,7 +69,8 @@ export class Commands {
       const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
       if (
         config.get("disableDefaultOrgAuthenticationCheck") === true &&
-        !command.includes("hardis:org:configure:monitoring")
+        !command.includes("hardis:org:configure:monitoring") &&
+        !command.includes("--skipauth")
       ) {
         command += ` --skipauth`;
       }
@@ -79,7 +80,8 @@ export class Commands {
       (command.startsWith("sfdx hardis:") ||
         command.includes("sfdx hardis:work:ws --event")) &&
       this.disposableWebSocketServer &&
-      this.disposableWebSocketServer.websocketHostPort !== null
+      this.disposableWebSocketServer.websocketHostPort !== null &&
+      !command.includes("--websocket")
     ) {
       command += ` --websocket ${this.disposableWebSocketServer.websocketHostPort}`;
     }
