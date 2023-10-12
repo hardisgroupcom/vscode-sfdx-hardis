@@ -1,8 +1,8 @@
-# Change Log
+# Changelog
 
 ## [Unreleased]
 
-## [2.3.0] 2023-10-10
+## [2.3.0] 2023-10-12
 
 - Allow to send a command to run again from sfdx-hardis plugin
 - Add installation tutorial in README
