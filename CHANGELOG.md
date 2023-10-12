@@ -5,6 +5,8 @@
 ## [2.3.0] 2023-10-10
 
 - Allow to send a command to run again from sfdx-hardis plugin
+- Add installation tutorial in README
+- Add Dreamforce presentation in README
 
 ## [2.2.0] 2023-10-09
 

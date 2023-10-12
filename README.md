@@ -17,10 +17,15 @@ VsCode SFDX-Hardis aims to simplify the use of Salesforce DX with an intuitive U
 
 You can also use it to [setup and use a complete CI/CD pipeline](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/) for your Salesforce project.
 
-_Graciously provided by [**Cloudity**](https://cloudity.com/), and based on sfdx plugin [sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis/)_
+_Graciously provided by [**Cloudity**](https://cloudity.com/), and based on sfdx plugin [**sfdx-hardis**](https://sfdx-hardis.cloudity.com/)_
 
 ![screenshot](resources/extension-demo.gif)
 
+[_Presented at Dreamforce !_](https://reg.salesforce.com/flow/plus/df23/sessioncatalog/page/catalog/session/1684196389783001OqEl)
+
+[![Dreamforce presentation](https://img.youtube.com/vi/o0Mm9F07UFs/0.jpg)](https://www.youtube.com/watch?v=o0Mm9F07UFs)
+
+- [Installation](#installation)
 - [Articles](#articles)
 - [Panels](#panels)
   - [Commands](#commands)
@@ -41,6 +46,12 @@ _Graciously provided by [**Cloudity**](https://cloudity.com/), and based on sfdx
 - [Open Source Dependencies](#open-source-dependencies)
 - [Telemetry](#telemetry)
 - [Who we are](#who-we-are)
+
+## Installation
+
+To install VsCode sfdx-hardis and all its dependencies, just follow the instructions in the following video !
+
+[![Installation tutorial](https://img.youtube.com/vi/LA8m-t7CjHA/0.jpg)](https://www.youtube.com/watch?v=LA8m-t7CjHA)
 
 ## Articles
 
