@@ -81,12 +81,18 @@ export class WebSocketServer {
     // Request to refresh commands box
     else if (data.event === "runSfdxHardisCommand") {
       const sfdxHardisCommand = data?.sfdxHardisCommand || "";
-      if (((!sfdxHardisCommand.startsWith("sfdx hardis")) && (!sfdxHardisCommand.startsWith("sf hardis")))
-        || sfdxHardisCommand.includes("&&")) {
+      if (
+        (!sfdxHardisCommand.startsWith("sfdx hardis") &&
+          !sfdxHardisCommand.startsWith("sf hardis")) ||
+        sfdxHardisCommand.includes("&&")
+      ) {
         Logger.log("You can only run sfdx hardis commands from WebSocket");
         return;
       }
-      vscode.commands.executeCommand("vscode-sfdx-hardis.execute-command", data.sfdxHardisCommand);
+      vscode.commands.executeCommand(
+        "vscode-sfdx-hardis.execute-command",
+        data.sfdxHardisCommand,
+      );
     }
     // Request to open a file in editor
     else if (data.event === "openFile") {
