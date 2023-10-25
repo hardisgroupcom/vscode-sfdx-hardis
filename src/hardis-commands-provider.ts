@@ -781,6 +781,14 @@ export class HardisCommandsProvider
             )}`,
           },
           {
+            id: "help:cicd",
+            label: "DevOps - CI/CD",
+            icon: "help.svg",
+            command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
+              "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/",
+            )}`,
+          },
+          {
             id: "hardis",
             label: "Cloudity Website",
             icon: "help.svg",
