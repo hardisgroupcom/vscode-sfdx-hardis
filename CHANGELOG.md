@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [2.3.1] 2023-10-25
+
+- Publish extension on Open VSX
+- Add menu to sfdx-hardis CI/CD Home
+
 ## [2.3.0] 2023-10-12
 
 - Allow to send a command to run again from sfdx-hardis plugin
