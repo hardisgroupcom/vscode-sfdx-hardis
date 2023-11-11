@@ -327,7 +327,7 @@
     "@types/moment": "^2.13.0",
     "@types/ws": "^7.4.0",
     "@vscode/extension-telemetry": "^0.8.0",
-    "axios": "^0.26.1",
+    "axios": "^1.6.0",
     "chalk": "^4.1.0",
     "fs-extra": "^9.1.0",
     "git-url-parse": "^11.6.0",
