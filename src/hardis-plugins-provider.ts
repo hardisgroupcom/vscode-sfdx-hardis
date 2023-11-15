@@ -217,7 +217,7 @@ export class HardisPluginsProvider
       },
       {
         name: "sfdx-hardis",
-        helpUrl: "https://hardisgroupcom.github.io/sfdx-hardis/",
+        helpUrl: "https://sfdx-hardis.cloudity.com/",
       },
       {
         name: "sfdx-essentials",

@@ -159,7 +159,7 @@ export class HardisCommandsProvider
               "Create a new environment to develop or configure with a scratch org",
             requiresProject: true,
             helpUrl:
-              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/work/new/",
+              "https://sfdx-hardis.cloudity.com/hardis/work/new/",
           },
           {
             id: "org:open-scratch",
@@ -180,7 +180,7 @@ export class HardisCommandsProvider
             icon: "pull.svg",
             requiresProject: true,
             helpUrl:
-              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/scratch/pull/",
+              "https://sfdx-hardis.cloudity.com/hardis/scratch/pull/",
           },
           {
             id: "hardis:work:save",
@@ -191,7 +191,7 @@ export class HardisCommandsProvider
               "Save to server you current work, and propose to create a merge request",
             requiresProject: true,
             helpUrl:
-              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/work/save/",
+              "https://sfdx-hardis.cloudity.com/hardis/work/save/",
           },
           {
             id: "hardis:work:resetselection",
@@ -202,7 +202,7 @@ export class HardisCommandsProvider
               "If you made a wrong selection of items to merge, you can reset the selection and save it again",
             requiresProject: true,
             helpUrl:
-              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/work/resetselection/",
+              "https://sfdx-hardis.cloudity.com/hardis/work/resetselection/",
           },
         ],
       },
@@ -219,7 +219,7 @@ export class HardisCommandsProvider
             icon: "push.svg",
             requiresProject: true,
             helpUrl:
-              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/scratch/push/",
+              "https://sfdx-hardis.cloudity.com/hardis/scratch/push/",
           },
           {
             id: "package:install",
@@ -230,7 +230,7 @@ export class HardisCommandsProvider
             command: "sfdx hardis:package:install",
             requiresProject: true,
             helpUrl:
-              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/package/install/",
+              "https://sfdx-hardis.cloudity.com/hardis/package/install/",
           },
           {
             id: "org:test:apex",
@@ -241,7 +241,7 @@ export class HardisCommandsProvider
             icon: "test.svg",
             requiresProject: true,
             helpUrl:
-              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/test/apex/",
+              "https://sfdx-hardis.cloudity.com/hardis/org/test/apex/",
           },
           {
             id: "project:deploy:sources:dx:check",
@@ -252,7 +252,7 @@ export class HardisCommandsProvider
             command: "sfdx hardis:project:deploy:sources:dx --check",
             requiresProject: true,
             helpUrl:
-              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/project/deploy/sources/dx/",
+              "https://sfdx-hardis.cloudity.com/hardis/project/deploy/sources/dx/",
           },
           {
             id: "project:clean:references",
@@ -263,7 +263,7 @@ export class HardisCommandsProvider
             command: "sfdx hardis:project:clean:references",
             requiresProject: true,
             helpUrl:
-              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/project/clean/references/",
+              "https://sfdx-hardis.cloudity.com/hardis/project/clean/references/",
           },
           {
             id: "scratch:create",
@@ -274,7 +274,7 @@ export class HardisCommandsProvider
             command: "sfdx hardis:scratch:create",
             requiresProject: true,
             helpUrl:
-              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/scratch/create/",
+              "https://sfdx-hardis.cloudity.com/hardis/scratch/create/",
           },
           {
             id: "scratch:create:new",
@@ -284,7 +284,7 @@ export class HardisCommandsProvider
             command: "sfdx hardis:scratch:create --forcenew",
             requiresProject: true,
             helpUrl:
-              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/scratch/create/",
+              "https://sfdx-hardis.cloudity.com/hardis/scratch/create/",
           },
           {
             id: "org:password:generate",
@@ -304,7 +304,7 @@ export class HardisCommandsProvider
             command: "sfdx hardis:org:connect",
             icon: "select.svg",
             helpUrl:
-              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/connect/",
+              "https://sfdx-hardis.cloudity.com/hardis/org/connect/",
           },
           {
             id: "source:retrieve",
@@ -314,7 +314,7 @@ export class HardisCommandsProvider
             command: "sfdx hardis:source:retrieve",
             icon: "pull.svg",
             helpUrl:
-              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/source/retrieve/",
+              "https://sfdx-hardis.cloudity.com/hardis/source/retrieve/",
           },
           {
             id: "org:retrieve:sources:analytics",
@@ -324,7 +324,7 @@ export class HardisCommandsProvider
             command: "sfdx hardis:org:retrieve:sources:analytics",
             icon: "pull.svg",
             helpUrl:
-              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/retrieve/sources/analytics/",
+              "https://sfdx-hardis.cloudity.com/hardis/org/retrieve/sources/analytics/",
           },
           {
             id: "force:source:tracking:clear",
@@ -355,7 +355,7 @@ export class HardisCommandsProvider
               "Do all the work:save operations except scratch pull and git operations",
             requiresProject: true,
             helpUrl:
-              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/work/save/",
+              "https://sfdx-hardis.cloudity.com/hardis/work/save/",
           },
         ],
       },
@@ -371,7 +371,7 @@ export class HardisCommandsProvider
             icon: "data.svg",
             command: "sfdx hardis:org:data:export",
             helpUrl:
-              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/data/export/",
+              "https://sfdx-hardis.cloudity.com/hardis/org/data/export/",
           },
           {
             id: "org:data:import",
@@ -380,7 +380,7 @@ export class HardisCommandsProvider
             icon: "data.svg",
             command: "sfdx hardis:org:data:import",
             helpUrl:
-              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/data/import/",
+              "https://sfdx-hardis.cloudity.com/hardis/org/data/import/",
           },
           {
             id: "org:data:delete",
@@ -389,7 +389,7 @@ export class HardisCommandsProvider
             icon: "trash.svg",
             command: "sfdx hardis:org:data:delete",
             helpUrl:
-              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/data/delete/",
+              "https://sfdx-hardis.cloudity.com/hardis/org/data/delete/",
           },
           {
             id: "org:data:configure",
@@ -398,7 +398,7 @@ export class HardisCommandsProvider
             icon: "configure.svg",
             command: "sfdx hardis:org:configure:data",
             helpUrl:
-              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/configure/data/",
+              "https://sfdx-hardis.cloudity.com/hardis/org/configure/data/",
           },
           {
             id: "org:files:export",
@@ -407,7 +407,7 @@ export class HardisCommandsProvider
             icon: "file.svg",
             command: "sfdx hardis:org:files:export",
             helpUrl:
-              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/files/export/",
+              "https://sfdx-hardis.cloudity.com/hardis/org/files/export/",
           },
           {
             id: "org:files:configure",
@@ -416,7 +416,7 @@ export class HardisCommandsProvider
             icon: "configure.svg",
             command: "sfdx hardis:org:configure:files",
             helpUrl:
-              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/configure/files/",
+              "https://sfdx-hardis.cloudity.com/hardis/org/configure/files/",
           },
         ],
       },
@@ -486,7 +486,7 @@ export class HardisCommandsProvider
             icon: "freeze.svg",
             command: "sfdx hardis:org:user:freeze",
             helpUrl:
-              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/user/freeze/",
+              "https://sfdx-hardis.cloudity.com/hardis/org/user/freeze/",
           },
           {
             id: "org:user:unfreeze",
@@ -495,7 +495,7 @@ export class HardisCommandsProvider
             icon: "unfreeze.svg",
             command: "sfdx hardis:org:user:unfreeze",
             helpUrl:
-              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/user/unfreeze/",
+              "https://sfdx-hardis.cloudity.com/hardis/org/user/unfreeze/",
           },
           {
             id: "org:purge:flow",
@@ -505,7 +505,7 @@ export class HardisCommandsProvider
             icon: "flow.svg",
             command: "sfdx hardis:org:purge:flow",
             helpUrl:
-              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/purge/flow/",
+              "https://sfdx-hardis.cloudity.com/hardis/org/purge/flow/",
           },
           {
             id: "hardis:scratch:delete",
@@ -514,7 +514,7 @@ export class HardisCommandsProvider
             icon: "trash.svg",
             command: "sfdx hardis:scratch:delete",
             helpUrl:
-              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/scratch/delete/",
+              "https://sfdx-hardis.cloudity.com/hardis/scratch/delete/",
           },
           {
             id: "hardis:org:user:activateinvalid",
@@ -523,7 +523,7 @@ export class HardisCommandsProvider
             icon: "user.svg",
             command: "sfdx hardis:org:user:activateinvalid",
             helpUrl:
-              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/user/activateinvalid/",
+              "https://sfdx-hardis.cloudity.com/hardis/org/user/activateinvalid/",
           },
         ],
       },
@@ -538,7 +538,7 @@ export class HardisCommandsProvider
             icon: "old.svg",
             command: "sfdx hardis:org:diagnose:legacyapi",
             helpUrl:
-              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/diagnose/legacyapi/",
+              "https://sfdx-hardis.cloudity.com/hardis/org/diagnose/legacyapi/",
           },
           {
             id: "project:audit:duplicatefiles",
@@ -548,7 +548,7 @@ export class HardisCommandsProvider
             icon: "duplicate.svg",
             command: "sfdx hardis:project:audit:duplicatefiles",
             helpUrl:
-              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/audit/duplicatefiles/",
+              "https://sfdx-hardis.cloudity.com/hardis/audit/duplicatefiles/",
           },
           {
             id: "project:metadata:findduplicates",
@@ -559,7 +559,7 @@ export class HardisCommandsProvider
             command:
               "sfdx hardis:project:metadata:findduplicates -f force-app/**/*.xml",
             helpUrl:
-              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/project/metadata/duplicatefiles/",
+              "https://sfdx-hardis.cloudity.com/hardis/project/metadata/duplicatefiles/",
           },
           {
             id: "hardis:lint:access",
@@ -569,7 +569,7 @@ export class HardisCommandsProvider
             icon: "password.svg",
             command: "sfdx hardis:lint:access",
             helpUrl:
-              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/lint/access/",
+              "https://sfdx-hardis.cloudity.com/hardis/lint/access/",
           },
           {
             id: "project:audit:apiversion",
@@ -579,7 +579,7 @@ export class HardisCommandsProvider
             icon: "extract.svg",
             command: "sfdx hardis:project:audit:apiversion",
             helpUrl:
-              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/audit/apiversion/",
+              "https://sfdx-hardis.cloudity.com/hardis/audit/apiversion/",
           },
           {
             id: "project:audit:callincallout",
@@ -588,7 +588,7 @@ export class HardisCommandsProvider
             icon: "http.svg",
             command: "sfdx hardis:project:audit:callincallout",
             helpUrl:
-              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/audit/callincallout/",
+              "https://sfdx-hardis.cloudity.com/hardis/audit/callincallout/",
           },
           {
             id: "project:audit:remotesites",
@@ -597,8 +597,20 @@ export class HardisCommandsProvider
             icon: "remote.svg",
             command: "sfdx hardis:project:audit:remotesites",
             helpUrl:
-              "https://hardisgroupcom.github.io/sfdx-hardis/hardis/audit/remotesites/",
+              "https://sfdx-hardis.cloudity.com/hardis/audit/remotesites/",
           },
+          {
+            id: "hardis:org:diagnose:audittrail",
+            label: "Suspicious Audit Trail Activities",
+            tooltip: "Detect setup actions in major orgs that are identified as Suspicious",
+            icon: "monitoring.svg",
+            command: "sfdx hardis:org:diagnose:audittrail",
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/org/diagnose/audittrail/",
+          },
+
+          
+
         ],
       },
       {
@@ -777,7 +789,7 @@ export class HardisCommandsProvider
             label: "All sfdx-hardis commands",
             icon: "help.svg",
             command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
-              "https://hardisgroupcom.github.io/sfdx-hardis/commands/",
+              "https://sfdx-hardis.cloudity.com/commands/",
             )}`,
           },
           {
