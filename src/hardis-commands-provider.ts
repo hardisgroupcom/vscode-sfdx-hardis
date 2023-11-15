@@ -601,8 +601,8 @@ export class HardisCommandsProvider
           },
           {
             id: "hardis:org:diagnose:audittrail",
-            label: "Suspiscious Audit Trail Activities",
-            tooltip: "Detect setup actions in major orgs that are identified as suspiscious",
+            label: "Suspicious Audit Trail Activities",
+            tooltip: "Detect setup actions in major orgs that are identified as Suspicious",
             icon: "monitoring.svg",
             command: "sfdx hardis:org:diagnose:audittrail",
             helpUrl:
