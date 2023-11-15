@@ -55,7 +55,7 @@ To install VsCode sfdx-hardis and all its dependencies, just follow the instruct
 
 ## Articles
 
-Here are some articles with examples of use of [sfdx-hardis](https://hardisgroupcom.github.io/sfdx-hardis/)
+Here are some articles with examples of use of [sfdx-hardis](https://sfdx-hardis.cloudity.com/)
 
 - English
 
@@ -123,11 +123,11 @@ Integration between VsCode SFDX Hardis UI and sfdx-hardis CLI, so you don't need
 
 Base commands allowing to a consultant profile to work on a SFDX project without knowledge about SFDX or Git
 
-- [Start a new task](https://hardisgroupcom.github.io/sfdx-hardis/hardis/work/new/)
+- [Start a new task](https://sfdx-hardis.cloudity.com/hardis/work/new/)
 - Open my org in browser
-- [Pull from Salesforce org to local files](https://hardisgroupcom.github.io/sfdx-hardis/hardis/scratch/pull/)
-- [Save / Publish my current task](https://hardisgroupcom.github.io/sfdx-hardis/hardis/work/save/)
-- [Reset selected list of items to merge](https://hardisgroupcom.github.io/sfdx-hardis/hardis/work/resetselection/)
+- [Pull from Salesforce org to local files](https://sfdx-hardis.cloudity.com/hardis/scratch/pull/)
+- [Save / Publish my current task](https://sfdx-hardis.cloudity.com/hardis/work/save/)
+- [Reset selected list of items to merge](https://sfdx-hardis.cloudity.com/hardis/work/resetselection/)
 
 ### Work on a task (Expert)
 
@@ -135,16 +135,16 @@ Base commands allowing to a consultant profile to work on a SFDX project without
 
 Advanced commands allowing a technical profile to work on a sfdx project without knowing SFDX or Git
 
-- [Push from local files to Salesforce org](https://hardisgroupcom.github.io/sfdx-hardis/hardis/scratch/push/)
-- [Install a package](https://hardisgroupcom.github.io/sfdx-hardis/hardis/package/install/)
-- [Run Apex tests on Salesforce org](https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/test/apex/)
-- [Simulate SFDX Deployment](https://hardisgroupcom.github.io/sfdx-hardis/hardis/project/deploy/sources/dx/)
-- [Clean SFDX Project from defined references](https://hardisgroupcom.github.io/sfdx-hardis/hardis/project/clean/references/)
-- [Clean SFDX Project from references not in target org](https://hardisgroupcom.github.io/sfdx-hardis/hardis/project/clean/orgmissingitems/)
-- [Create scratch org (or resume creation)](https://hardisgroupcom.github.io/sfdx-hardis/hardis/scratch/create/)
-- [Create scratch org (force new)](https://hardisgroupcom.github.io/sfdx-hardis/hardis/scratch/create/)
+- [Push from local files to Salesforce org](https://sfdx-hardis.cloudity.com/hardis/scratch/push/)
+- [Install a package](https://sfdx-hardis.cloudity.com/hardis/package/install/)
+- [Run Apex tests on Salesforce org](https://sfdx-hardis.cloudity.com/hardis/org/test/apex/)
+- [Simulate SFDX Deployment](https://sfdx-hardis.cloudity.com/hardis/project/deploy/sources/dx/)
+- [Clean SFDX Project from defined references](https://sfdx-hardis.cloudity.com/hardis/project/clean/references/)
+- [Clean SFDX Project from references not in target org](https://sfdx-hardis.cloudity.com/hardis/project/clean/orgmissingitems/)
+- [Create scratch org (or resume creation)](https://sfdx-hardis.cloudity.com/hardis/scratch/create/)
+- [Create scratch org (force new)](https://sfdx-hardis.cloudity.com/hardis/scratch/create/)
 - [Generate new password](https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_scratch_orgs_passwd.htm)
-- [Connect to a Salesforce org](https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/connect/)
+- [Connect to a Salesforce org](https://sfdx-hardis.cloudity.com/hardis/org/connect/)
 - [Clear local sfdx tracking files](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_tracking_clear)
 - [Clear local and remote sfdx tracking files](https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_tracking_reset)
 
@@ -154,11 +154,11 @@ Advanced commands allowing a technical profile to work on a sfdx project without
 
 Manages data and files import / export using [Salesforce Data Move Utility](https://github.com/forcedotcom/SFDX-Data-Move-Utility)
 
-- [Export data from org with SFDMU](https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/data/export/)
-- [Import data to org with SFDMU](https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/data/import/)
-- [Create data import/export configuration](https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/configure/data/)
-- [Export files from org](https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/files/export/)
-- [Create files export configuration](https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/configure/files/)
+- [Export data from org with SFDMU](https://sfdx-hardis.cloudity.com/hardis/org/data/export/)
+- [Import data to org with SFDMU](https://sfdx-hardis.cloudity.com/hardis/org/data/import/)
+- [Create data import/export configuration](https://sfdx-hardis.cloudity.com/hardis/org/configure/data/)
+- [Export files from org](https://sfdx-hardis.cloudity.com/hardis/org/files/export/)
+- [Create files export configuration](https://sfdx-hardis.cloudity.com/hardis/org/configure/files/)
 
 ### Debugger
 
@@ -172,11 +172,11 @@ Ease sources execution debugging of any type of org
 
 Handy operations on Salesforce org
 
-- [Freeze users](https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/user/freeze/)
-- [Unfreeze users](https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/user/unfreeze/)
-- [Purge obsolete flows versions](https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/purge/flow/)
-- [Delete scratch org(s)](https://hardisgroupcom.github.io/sfdx-hardis/hardis/scratch/delete/)
-- [Activate .invalid user emails in sandbox](https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/user/activateinvalid/)
+- [Freeze users](https://sfdx-hardis.cloudity.com/hardis/org/user/freeze/)
+- [Unfreeze users](https://sfdx-hardis.cloudity.com/hardis/org/user/unfreeze/)
+- [Purge obsolete flows versions](https://sfdx-hardis.cloudity.com/hardis/org/purge/flow/)
+- [Delete scratch org(s)](https://sfdx-hardis.cloudity.com/hardis/scratch/delete/)
+- [Activate .invalid user emails in sandbox](https://sfdx-hardis.cloudity.com/hardis/org/user/activateinvalid/)
 
 ### Audit
 
@@ -184,7 +184,7 @@ Handy operations on Salesforce org
 
 Audit Tools for your orgs
 
-- [Detect legacy API versions usage](https://hardisgroupcom.github.io/sfdx-hardis/hardis/org/diagnose/legacyapi/)
+- [Detect legacy API versions usage](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/legacyapi/)
 
 ### Configuration
 

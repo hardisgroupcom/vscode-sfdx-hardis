@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [2.4.0] 2023-11-15
+
+- Add command **Audit -> Suspiscious Audit Trail Activities**
+- Update URLs to doc with https://sfdx-hardis.cloudity.com/
+
 ## [2.3.1] 2023-10-25
 
 - Publish extension on Open VSX
