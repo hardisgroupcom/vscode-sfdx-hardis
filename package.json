@@ -64,6 +64,11 @@
           "default": false,
           "description": "Disable check of Git Bash as default terminal"
         },
+        "vsCodeSfdxHardis.disableGitMergeRequiredCheck": {
+          "type": "boolean",
+          "default": false,
+          "description": "Disable check if parent branch might need to be merged into current branch"
+        },
         "vsCodeSfdxHardis.disableVsCodeColors": {
           "type": "boolean",
           "default": false,

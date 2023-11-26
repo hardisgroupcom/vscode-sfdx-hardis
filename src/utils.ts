@@ -384,11 +384,26 @@ export async function loadFromLocalConfigFile(file: string): Promise<any> {
   }
 }
 
-export async function getGitParentBranch(git: SimpleGit) {
+export async function getGitParentBranch() {
   try {
-    const gitLogRes = await git.show();
-    if (gitLogRes) {
-      return gitLogRes.replace("origin/", "");
+    const outputFromGit = (
+      await simpleGit({ trimmed: true }).raw("show-branch", "-a")
+    ).split("\n");
+    const rev = await simpleGit({ trimmed: true }).raw(
+      "rev-parse",
+      "--abbrev-ref",
+      "HEAD"
+    );
+    const allLinesNormalized = outputFromGit.map((line) =>
+      line.trim().replace(/\].*/, "")
+    );
+    const indexOfCurrentBranch = allLinesNormalized.indexOf(`* [${rev}`);
+    if (indexOfCurrentBranch > -1) {
+      const parentBranch = allLinesNormalized[indexOfCurrentBranch + 1].replace(
+        /^.*\[/,
+        ""
+      );
+      return parentBranch;
     }
   } catch (e) {
     return null;

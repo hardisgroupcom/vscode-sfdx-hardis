@@ -296,25 +296,38 @@ export class HardisStatusProvider
         let gitLabel = `Branch: ${currentBranch}`;
         let gitTooltip = "This is the git branch you are currently working on";
         let gitCommand = "";
-        try {
-          // Fetch all branches to be up to date
-          await git.fetch(["--all"]);
-          // Check if parent git branch has been updated since its creation
-          const parentGitBranch = await getGitParentBranch(git);
-          const gitDiff = await git.diff([
-            parentGitBranch || "",
-            `origin/${parentGitBranch}`,
-          ]);
-          if (gitDiff.length > 0) {
-            gitIcon = "warning.svg";
-            gitLabel = `Branch: ${currentBranch} (not up to date with origin/${parentGitBranch})`;
-            gitTooltip = `You could merge origin/${parentGitBranch} into your local ${currentBranch} to get the latest updates merged by your colleagues :) This is recommended but not mandatory, ask your release manager for help :)`;
-            gitCommand = `vscode-sfdx-hardis.openExternal https://sfdx-hardis.cloudity.com/salesforce-ci-cd-merge-parent-branch/`;
+        const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+        if (currentBranch.includes("/") && config.get("disableGitMergeRequiredCheck") !== true) {
+          // Check if current branch is not up to date with origin parent branch
+          try {
+            // Fetch parent branch to make it up to date
+            const parentGitBranch = (await getGitParentBranch()) || "";
+            await git.fetch("origin", parentGitBranch);
+            // Get parent branch latest commit
+            const parentLatestCommit = await git.revparse(
+              `origin/${parentGitBranch}`
+            );
+            // Check if there is a commit in current branch containing the ref of the latest parent branch commit
+            const currentBranchCommits = await git.log([currentBranch]);
+            if (
+              !currentBranchCommits.all.some((currentBranchCommit) =>
+                currentBranchCommit.message.includes(parentLatestCommit)
+              )
+            ) {
+              // Display message if a merge might be required
+              gitIcon = "warning.svg";
+              gitLabel = `Branch: ${currentBranch} (not up to date with origin/${parentGitBranch})`;
+              gitTooltip = `There have been new commit(s) into parent branch origin/${parentGitBranch} since you created ${currentBranch}.
+You might need to merge origin/${parentGitBranch} into your local branch.
+After merging, refresh VsCode SFDX-Hardis status panel to discard this warning
+Note: Disable disableGitMergeRequiredCheck in settings to skip this check.`;
+              gitCommand = `vscode-sfdx-hardis.openExternal https://sfdx-hardis.cloudity.com/salesforce-ci-cd-merge-parent-branch/`;
+            }
+          } catch (e) {
+            console.warn(
+              "Unable to check if remote parent git branch is up to date"
+            );
           }
-        } catch (e) {
-          console.warn(
-            "Unable to check if remote parent git branch is up to date"
-          );
         }
         // branch info
         items.push({

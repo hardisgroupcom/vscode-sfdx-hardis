@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [2.5.0] 2023-11-26
+
+- Check if it might be required to merge origin parent branch into current work branch.
+
 ## [2.4.0] 2023-11-15
 
 - Add command **Audit -> Suspicious Audit Trail Activities**
