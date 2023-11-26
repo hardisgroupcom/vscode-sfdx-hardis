@@ -297,7 +297,10 @@ export class HardisStatusProvider
         let gitTooltip = "This is the git branch you are currently working on";
         let gitCommand = "";
         const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
-        if (currentBranch.includes("/") && config.get("disableGitMergeRequiredCheck") !== true) {
+        if (
+          currentBranch.includes("/") &&
+          config.get("disableGitMergeRequiredCheck") !== true
+        ) {
           // Check if current branch is not up to date with origin parent branch
           try {
             // Fetch parent branch to make it up to date
@@ -307,18 +310,26 @@ export class HardisStatusProvider
             const parentLatestCommit = await git.revparse(
               `origin/${parentGitBranch}`
             );
+            // Check if parent branch has been updated since we created the branch
+            const gitDiff = await git.diff([
+              parentGitBranch || "",
+              `origin/${parentGitBranch}`,
+            ]);
             // Check if there is a commit in current branch containing the ref of the latest parent branch commit
             const currentBranchCommits = await git.log([currentBranch]);
             if (
-              !currentBranchCommits.all.some((currentBranchCommit) =>
-                currentBranchCommit.message.includes(parentLatestCommit)
-              )
+              (gitDiff.length > 0 && currentBranchCommits?.all.length === 0) ||
+              (currentBranchCommits?.all &&
+                currentBranchCommits?.all.length > 0 &&
+                !currentBranchCommits.all.some((currentBranchCommit) =>
+                  currentBranchCommit.message.includes(parentLatestCommit)
+                ))
             ) {
               // Display message if a merge might be required
               gitIcon = "warning.svg";
               gitLabel = `Branch: ${currentBranch} (not up to date with origin/${parentGitBranch})`;
-              gitTooltip = `There have been new commit(s) into parent branch origin/${parentGitBranch} since you created ${currentBranch}.
-You might need to merge origin/${parentGitBranch} into your local branch.
+              gitTooltip = `EXPERIMENTAL: There have been new commit(s) into parent branch origin/${parentGitBranch} since you created ${currentBranch}.
+You might need to merge origin/${parentGitBranch} into your current local branch ${currentBranch}.
 After merging, refresh VsCode SFDX-Hardis status panel to discard this warning
 Note: Disable disableGitMergeRequiredCheck in settings to skip this check.`;
               gitCommand = `vscode-sfdx-hardis.openExternal https://sfdx-hardis.cloudity.com/salesforce-ci-cd-merge-parent-branch/`;
