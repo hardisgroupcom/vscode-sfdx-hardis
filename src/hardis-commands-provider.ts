@@ -572,6 +572,16 @@ export class HardisCommandsProvider
               "https://sfdx-hardis.cloudity.com/hardis/lint/access/",
           },
           {
+            id: "hardis:org:diagnose:unusedlicenses",
+            label: "Detect unused licenses",
+            tooltip:
+              "Detects if there are unused licenses in the org, and offers to delete them",
+            icon: "dollar.svg",
+            command: "sfdx hardis:org:diagnose:unusedlicenses",
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unusedlicenses/",
+          },
+          {
             id: "project:audit:apiversion",
             label: "Extract API versions of sources",
             tooltip:
