@@ -24,7 +24,7 @@ export class HardisStatusProvider
   getChildren(element?: StatusTreeItem): Thenable<StatusTreeItem[]> {
     if (!this.workspaceRoot) {
       vscode.window.showInformationMessage(
-        "🦙 No info available until you open a Salesforce project"
+        "🦙 No info available until you open a Salesforce project",
       );
       return Promise.resolve([]);
     }
@@ -47,10 +47,10 @@ export class HardisStatusProvider
       topic.id === "status-org"
         ? await this.getOrgItems({ devHub: false })
         : topic.id === "status-org-devhub"
-        ? await this.getOrgItems({ devHub: true })
-        : topic.id === "status-git"
-        ? await this.getGitItems()
-        : [];
+          ? await this.getOrgItems({ devHub: true })
+          : topic.id === "status-git"
+            ? await this.getGitItems()
+            : [];
     console.timeEnd("TreeViewItem_init_" + topic.id);
     Logger.log("Completed TreeViewItem_init_" + topic.id);
     for (const item of topicItems) {
@@ -70,8 +70,8 @@ export class HardisStatusProvider
           item.id,
           item.command || null,
           vscode.TreeItemCollapsibleState.None,
-          options
-        )
+          options,
+        ),
       );
     }
     return items;
@@ -166,21 +166,21 @@ export class HardisStatusProvider
           orgDetailItem.tooltip = `You org expired on ${orgInfo.expirationDate}. You need to create a new one.`;
           vscode.window.showErrorMessage(
             `🦙 ${orgDetailItem.tooltip}`,
-            "Close"
+            "Close",
           );
         } else if (daysBeforeExpiration < 3) {
           orgDetailItem.icon = "warning-red.svg";
           orgDetailItem.tooltip = `You scratch org will expire in ${daysBeforeExpiration} days !!! Save your scratch org content and create a new one or your work will be lost !!!`;
           vscode.window.showErrorMessage(
             `🦙 ${orgDetailItem.tooltip}`,
-            "Close"
+            "Close",
           );
         } else if (daysBeforeExpiration < 7) {
           orgDetailItem.icon = "warning.svg";
           orgDetailItem.tooltip = `Your scratch org will expire in ${daysBeforeExpiration} days. You should soon create a new scratch org to avoid loosing your work`;
           vscode.window.showWarningMessage(
             `🦙 ${orgDetailItem.tooltip}`,
-            "Close"
+            "Close",
           );
         }
       }
@@ -196,7 +196,7 @@ export class HardisStatusProvider
           const poolViewRes = await execSfdxJson(
             "sfdx hardis:scratch:pool:view",
             this,
-            { output: false, fail: false }
+            { output: false, fail: false },
           );
           if (
             poolViewRes?.status === 0 &&
@@ -254,7 +254,7 @@ export class HardisStatusProvider
       try {
         const gitRemotes = await git.getRemotes(true);
         gitRemotesOrigins = gitRemotes.filter(
-          (remote) => remote.name === "origin"
+          (remote) => remote.name === "origin",
         );
       } catch (e) {
         console.warn("[vscode-sfdx-hardis] No git repository found");
@@ -270,10 +270,10 @@ export class HardisStatusProvider
             id: "git-info-repo",
             label: `Repo: ${(httpGitUrl.split("/").pop() || "").replace(
               ".git",
-              ""
+              "",
             )}`,
             command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
-              httpGitUrl
+              httpGitUrl,
             )}`,
             icon: "git.svg",
             tooltip: "Click to open git repo in browser - " + httpGitUrl,
@@ -308,7 +308,7 @@ export class HardisStatusProvider
             await git.fetch("origin", parentGitBranch);
             // Get parent branch latest commit
             const parentLatestCommit = await git.revparse(
-              `origin/${parentGitBranch}`
+              `origin/${parentGitBranch}`,
             );
             // Check if parent branch has been updated since we created the branch
             const gitDiff = await git.diff([
@@ -322,7 +322,7 @@ export class HardisStatusProvider
               (currentBranchCommits?.all &&
                 currentBranchCommits?.all.length > 0 &&
                 !currentBranchCommits.all.some((currentBranchCommit) =>
-                  currentBranchCommit.message.includes(parentLatestCommit)
+                  currentBranchCommit.message.includes(parentLatestCommit),
                 ))
             ) {
               // Display message if a merge might be required
@@ -336,7 +336,7 @@ Note: Disable disableGitMergeRequiredCheck in settings to skip this check.`;
             }
           } catch (e) {
             console.warn(
-              "Unable to check if remote parent git branch is up to date"
+              "Unable to check if remote parent git branch is up to date",
             );
           }
         }
@@ -352,7 +352,7 @@ Note: Disable disableGitMergeRequiredCheck in settings to skip this check.`;
         const mergeRequestRes = await execSfdxJson(
           "sfdx hardis:config:get --level user",
           this,
-          { fail: false, output: true }
+          { fail: false, output: true },
         );
         if (mergeRequestRes?.result?.config?.mergeRequests) {
           const mergeRequests =
@@ -360,7 +360,7 @@ Note: Disable disableGitMergeRequiredCheck in settings to skip this check.`;
               (mr: any) =>
                 mr !== null &&
                 mr.branch === currentBranch &&
-                (mr.url !== null || mr.urlCreate !== null)
+                (mr.url !== null || mr.urlCreate !== null),
             );
           // Existing merge request
           if (mergeRequests[0] && mergeRequests[0].url) {
@@ -372,7 +372,7 @@ Note: Disable disableGitMergeRequiredCheck in settings to skip this check.`;
                 "Click to open merge request in browser\n" +
                 mergeRequests[0].url,
               command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
-                mergeRequests[0].url
+                mergeRequests[0].url,
               )}`,
             });
           }
@@ -386,7 +386,7 @@ Note: Disable disableGitMergeRequiredCheck in settings to skip this check.`;
                 "Click to create merge request in browser\n" +
                 mergeRequests[0].urlCreate,
               command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
-                mergeRequests[0].urlCreate
+                mergeRequests[0].urlCreate,
               )}`,
             });
           }
@@ -420,7 +420,7 @@ Note: Disable disableGitMergeRequiredCheck in settings to skip this check.`;
         ? vscode.TreeItemCollapsibleState.Expanded
         : vscode.TreeItemCollapsibleState.Collapsed;
       items.push(
-        new StatusTreeItem(item.label, item.id, "", expanded, options)
+        new StatusTreeItem(item.label, item.id, "", expanded, options),
       );
     }
     return items;
@@ -476,7 +476,7 @@ class StatusTreeItem extends vscode.TreeItem {
       icon: { light: "salesforce.svg", dark: "salesforce.svg" },
       description: "",
       tooltip: "",
-    }
+    },
   ) {
     super(label, collapsibleState);
     this.id = id;
@@ -509,14 +509,14 @@ class StatusTreeItem extends vscode.TreeItem {
           "..",
           "..",
           "resources",
-          this.iconPath.light.toString()
+          this.iconPath.light.toString(),
         );
         this.iconPath.dark = path.join(
           __filename,
           "..",
           "..",
           "resources",
-          this.iconPath.dark.toString()
+          this.iconPath.dark.toString(),
         );
       }
     }
