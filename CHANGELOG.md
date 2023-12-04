@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [2.6.0] 2023-12-04
+
+- Add new audit command [**Detect unused licenses**](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unusedlicenses/): Detects if there are unused licenses in the org, and offers to delete them
+
 ## [2.5.0] 2023-11-26
 
 - Check if it might be required to merge origin parent branch into current work branch.
@@ -9,7 +13,7 @@
 ## [2.4.0] 2023-11-15
 
 - Add command **Audit -> Suspicious Audit Trail Activities**
-- Update URLs to doc with https://sfdx-hardis.cloudity.com/
+- Update URLs to doc with <https://sfdx-hardis.cloudity.com/>
 
 ## [2.3.1] 2023-10-25
 
