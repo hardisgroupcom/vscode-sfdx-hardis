@@ -5,6 +5,7 @@ import moment = require("moment");
 import {
   execSfdxJson,
   getGitParentBranch,
+  getSfdxProjectJson,
   loadProjectSfdxHardisConfig,
   resetCache,
   setOrgCache,
@@ -154,6 +155,12 @@ export class HardisStatusProvider
       if (orgInfo.apiVersion) {
         const versionLabel = this.getVersionLabel(orgInfo.apiVersion);
         orgDetailItem.label += `${versionLabel} - v${orgInfo.apiVersion}`;
+        const sfdxProjectJson = getSfdxProjectJson();
+        if (sfdxProjectJson?.sourceApiVersion !== orgInfo.apiVersion) {
+          orgDetailItem.label += " ⚠️";
+          orgDetailItem.tooltip = `You org is with api version ${orgInfo.apiVersion} whereas your sfdx project is using api version ${sfdxProjectJson?.sourceApiVersion}.
+Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if your production org is still using a previous version, you won't be able to deploy in it !)`;
+        }
       }
       if (orgInfo.expirationDate) {
         const expiration = moment(orgInfo.expirationDate);

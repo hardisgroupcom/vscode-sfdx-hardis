@@ -239,6 +239,13 @@ export function hasSfdxProjectJson(
   return sfdxProjectJsonFound;
 }
 
+export function getSfdxProjectJson() {
+  if (hasSfdxProjectJson()) {
+    return JSON.parse(fs.readFileSync(path.join(getWorkspaceRoot(), "sfdx-project.json")).toString());
+  }
+  return {};
+}
+
 // Cache org info so it can be reused later with better perfs
 export function setOrgCache(newOrgInfo: any) {
   ORGS_INFO_CACHE = ORGS_INFO_CACHE.map((orgInfo) => {

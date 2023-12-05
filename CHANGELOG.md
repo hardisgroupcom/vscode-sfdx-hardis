@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [2.7.0] 2023-12-05
+
+- Warning icon if mismatch detected between org and sfdx project api versions
+
 ## [2.6.0] 2023-12-04
 
 - Add new audit command [**Detect unused licenses**](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unusedlicenses/): Detects if there are unused licenses in the org, and offers to delete them
