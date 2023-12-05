@@ -241,7 +241,11 @@ export function hasSfdxProjectJson(
 
 export function getSfdxProjectJson() {
   if (hasSfdxProjectJson()) {
-    return JSON.parse(fs.readFileSync(path.join(getWorkspaceRoot(), "sfdx-project.json")).toString());
+    return JSON.parse(
+      fs
+        .readFileSync(path.join(getWorkspaceRoot(), "sfdx-project.json"))
+        .toString(),
+    );
   }
   return {};
 }
