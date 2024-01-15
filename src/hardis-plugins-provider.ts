@@ -48,10 +48,10 @@ export class HardisPluginsProvider
       topic.id === "status-plugins-sfdx"
         ? await this.getPluginsItems()
         : topic.id === "status-plugins-core"
-        ? await this.getCoreItems()
-        : topic.id === "status-vscode-extensions"
-        ? await this.getExtensionsItems()
-        : [];
+          ? await this.getCoreItems()
+          : topic.id === "status-vscode-extensions"
+            ? await this.getExtensionsItems()
+            : [];
     console.timeEnd("TreeViewItem_init_" + topic.id);
     Logger.log("Completed TreeViewItem_init_" + topic.id);
     for (const item of topicItems) {
@@ -217,7 +217,7 @@ export class HardisPluginsProvider
       },
       {
         name: "sfdx-hardis",
-        helpUrl: "https://hardisgroupcom.github.io/sfdx-hardis/",
+        helpUrl: "https://sfdx-hardis.cloudity.com/",
       },
       {
         name: "sfdx-essentials",
@@ -259,9 +259,8 @@ export class HardisPluginsProvider
         sfdxCliVersion = sfdxCliVersionMatch[1];
       }
     }
-    const latestSfdxCliVersion = await this.getNpmRepoLatestVersion(
-      "@salesforce/cli",
-    );
+    const latestSfdxCliVersion =
+      await this.getNpmRepoLatestVersion("@salesforce/cli");
     const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
     const recommendedSfdxCliVersion =
       config.get("ignoreSfdxCliRecommendedVersion") === true

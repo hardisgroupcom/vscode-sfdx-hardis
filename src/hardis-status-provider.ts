@@ -4,6 +4,8 @@ import GitUrlParse from "git-url-parse";
 import moment = require("moment");
 import {
   execSfdxJson,
+  getGitParentBranch,
+  getSfdxProjectJson,
   loadProjectSfdxHardisConfig,
   resetCache,
   setOrgCache,
@@ -46,10 +48,10 @@ export class HardisStatusProvider
       topic.id === "status-org"
         ? await this.getOrgItems({ devHub: false })
         : topic.id === "status-org-devhub"
-        ? await this.getOrgItems({ devHub: true })
-        : topic.id === "status-git"
-        ? await this.getGitItems()
-        : [];
+          ? await this.getOrgItems({ devHub: true })
+          : topic.id === "status-git"
+            ? await this.getGitItems()
+            : [];
     console.timeEnd("TreeViewItem_init_" + topic.id);
     Logger.log("Completed TreeViewItem_init_" + topic.id);
     for (const item of topicItems) {
@@ -153,6 +155,12 @@ export class HardisStatusProvider
       if (orgInfo.apiVersion) {
         const versionLabel = this.getVersionLabel(orgInfo.apiVersion);
         orgDetailItem.label += `${versionLabel} - v${orgInfo.apiVersion}`;
+        const sfdxProjectJson = getSfdxProjectJson();
+        if (sfdxProjectJson?.sourceApiVersion !== orgInfo.apiVersion) {
+          orgDetailItem.label += " ⚠️";
+          orgDetailItem.tooltip = `You org is with api version ${orgInfo.apiVersion} whereas your sfdx project is using api version ${sfdxProjectJson?.sourceApiVersion}.
+Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if your production org is still using a previous version, you won't be able to deploy in it !)`;
+        }
       }
       if (orgInfo.expirationDate) {
         const expiration = moment(orgInfo.expirationDate);
@@ -291,12 +299,61 @@ export class HardisStatusProvider
       // Display branch & merge request info
       const currentBranch = await git.revparse(["--abbrev-ref", "HEAD"]);
       if (currentBranch) {
+        let gitIcon = "git-branch.svg";
+        let gitLabel = `Branch: ${currentBranch}`;
+        let gitTooltip = "This is the git branch you are currently working on";
+        let gitCommand = "";
+        const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+        if (
+          currentBranch.includes("/") &&
+          config.get("disableGitMergeRequiredCheck") !== true
+        ) {
+          // Check if current branch is not up to date with origin parent branch
+          try {
+            // Fetch parent branch to make it up to date
+            const parentGitBranch = (await getGitParentBranch()) || "";
+            await git.fetch("origin", parentGitBranch);
+            // Get parent branch latest commit
+            const parentLatestCommit = await git.revparse(
+              `origin/${parentGitBranch}`,
+            );
+            // Check if parent branch has been updated since we created the branch
+            const gitDiff = await git.diff([
+              parentGitBranch || "",
+              `origin/${parentGitBranch}`,
+            ]);
+            // Check if there is a commit in current branch containing the ref of the latest parent branch commit
+            const currentBranchCommits = await git.log([currentBranch]);
+            if (
+              (gitDiff.length > 0 && currentBranchCommits?.all.length === 0) ||
+              (currentBranchCommits?.all &&
+                currentBranchCommits?.all.length > 0 &&
+                !currentBranchCommits.all.some((currentBranchCommit) =>
+                  currentBranchCommit.message.includes(parentLatestCommit),
+                ))
+            ) {
+              // Display message if a merge might be required
+              gitIcon = "warning.svg";
+              gitLabel = `Branch: ${currentBranch} (not up to date with origin/${parentGitBranch})`;
+              gitTooltip = `EXPERIMENTAL: There have been new commit(s) into parent branch origin/${parentGitBranch} since you created ${currentBranch}.
+You might need to merge origin/${parentGitBranch} into your current local branch ${currentBranch}.
+After merging, refresh VsCode SFDX-Hardis status panel to discard this warning
+Note: Disable disableGitMergeRequiredCheck in settings to skip this check.`;
+              gitCommand = `vscode-sfdx-hardis.openExternal https://sfdx-hardis.cloudity.com/salesforce-ci-cd-merge-parent-branch/`;
+            }
+          } catch (e) {
+            console.warn(
+              "Unable to check if remote parent git branch is up to date",
+            );
+          }
+        }
         // branch info
         items.push({
           id: "git-info-branch",
-          label: `Branch: ${currentBranch}`,
-          icon: "git-branch.svg",
-          tooltip: "This is the git branch you are currently working on",
+          label: gitLabel,
+          icon: gitIcon,
+          tooltip: gitTooltip,
+          command: gitCommand,
         });
         // Merge request info
         const mergeRequestRes = await execSfdxJson(

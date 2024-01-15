@@ -3,6 +3,7 @@ import * as c from "chalk";
 import * as childProcess from "child_process";
 import * as fs from "fs-extra";
 import * as path from "path";
+import simpleGit, { SimpleGit } from "simple-git";
 
 import { Worker } from "worker_threads";
 import * as vscode from "vscode";
@@ -238,6 +239,17 @@ export function hasSfdxProjectJson(
   return sfdxProjectJsonFound;
 }
 
+export function getSfdxProjectJson() {
+  if (hasSfdxProjectJson()) {
+    return JSON.parse(
+      fs
+        .readFileSync(path.join(getWorkspaceRoot(), "sfdx-project.json"))
+        .toString(),
+    );
+  }
+  return {};
+}
+
 // Cache org info so it can be reused later with better perfs
 export function setOrgCache(newOrgInfo: any) {
   ORGS_INFO_CACHE = ORGS_INFO_CACHE.map((orgInfo) => {
@@ -381,4 +393,31 @@ export async function loadFromLocalConfigFile(file: string): Promise<any> {
   } catch (e) {
     return {};
   }
+}
+
+export async function getGitParentBranch() {
+  try {
+    const outputFromGit = (
+      await simpleGit({ trimmed: true }).raw("show-branch", "-a")
+    ).split("\n");
+    const rev = await simpleGit({ trimmed: true }).raw(
+      "rev-parse",
+      "--abbrev-ref",
+      "HEAD",
+    );
+    const allLinesNormalized = outputFromGit.map((line) =>
+      line.trim().replace(/\].*/, ""),
+    );
+    const indexOfCurrentBranch = allLinesNormalized.indexOf(`* [${rev}`);
+    if (indexOfCurrentBranch > -1) {
+      const parentBranch = allLinesNormalized[indexOfCurrentBranch + 1].replace(
+        /^.*\[/,
+        "",
+      );
+      return parentBranch;
+    }
+  } catch (e) {
+    return null;
+  }
+  return null;
 }
