@@ -839,6 +839,10 @@ export class HardisCommandsProvider
     customCommandsPosition: string,
     hardisCommands: Array<any>,
   ) {
+    customCommands = customCommands.map(customCommand => {
+      customCommand.icon = customCommand.icon ?? "cloudity-logo.svg";
+      return customCommand;
+    });
     if (customCommandsPosition === "last") {
       // Last position
       const lastElement = hardisCommands.pop();
