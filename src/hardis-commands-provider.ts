@@ -839,6 +839,16 @@ export class HardisCommandsProvider
     customCommandsPosition: string,
     hardisCommands: Array<any>,
   ) {
+    // Add default icon to commands if not set
+    customCommands = customCommands.map((customCommandMenu) => {
+      customCommandMenu.commands = customCommandMenu.commands.map(
+        (customCommand: any) => {
+          customCommand.icon = customCommand.icon ?? "cloudity-logo.svg";
+          return customCommand;
+        },
+      );
+      return customCommandMenu;
+    });
     if (customCommandsPosition === "last") {
       // Last position
       const lastElement = hardisCommands.pop();

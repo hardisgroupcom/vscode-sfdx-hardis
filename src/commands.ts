@@ -70,7 +70,8 @@ export class Commands {
       if (
         config.get("disableDefaultOrgAuthenticationCheck") === true &&
         !command.includes("hardis:org:configure:monitoring") &&
-        !command.includes("--skipauth")
+        !command.includes("--skipauth") &&
+        !command.includes("&&")
       ) {
         command += ` --skipauth`;
       }
@@ -81,7 +82,8 @@ export class Commands {
         command.includes("sfdx hardis:work:ws --event")) &&
       this.disposableWebSocketServer &&
       this.disposableWebSocketServer.websocketHostPort !== null &&
-      !command.includes("--websocket")
+      !command.includes("--websocket") &&
+      !command.includes("&&")
     ) {
       command += ` --websocket ${this.disposableWebSocketServer.websocketHostPort}`;
     }
