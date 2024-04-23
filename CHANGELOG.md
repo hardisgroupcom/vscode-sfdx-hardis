@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [2.8.0] 2024-23-04
+
+- Fix calls to core SF extensions pack that switched from sfdx to sf commands
+
 ## [2.7.1] 2024-10-04
 
 - Do not add --skipauth or --websocket if a launched command contains **&&**
