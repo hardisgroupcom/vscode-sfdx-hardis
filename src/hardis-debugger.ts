@@ -65,7 +65,7 @@ export class HardisDebugger {
           await this.manageDebugLogsActivation();
         }
         if (requiresCheckpointUpload === true) {
-          await this.runSfdxExtensionCommand("sfdx.create.checkpoints");
+          await this.runSfdxExtensionCommand("sf.create.checkpoints");
         }
       },
     );
@@ -73,17 +73,17 @@ export class HardisDebugger {
   }
 
   private async activateDebugger() {
-    await this.runSfdxExtensionCommand("sfdx.start.apex.debug.logging");
+    await this.runSfdxExtensionCommand("sf.start.apex.debug.logging");
     this.isDebugLogsActive = true;
   }
 
   private async deactivateDebugger() {
-    await this.runSfdxExtensionCommand("sfdx.stop.apex.debug.logging");
+    await this.runSfdxExtensionCommand("sf.stop.apex.debug.logging");
     this.isDebugLogsActive = false;
   }
 
   private async toggleCheckpoint() {
-    await this.runSfdxExtensionCommand("sfdx.toggle.checkpoint");
+    await this.runSfdxExtensionCommand("sf.toggle.checkpoint");
   }
 
   private async manageDebugLogsActivation() {
@@ -94,7 +94,7 @@ export class HardisDebugger {
   }
 
   private async launchDebugger() {
-    await this.runSfdxExtensionCommand("sfdx.force.apex.log.get");
+    await this.runSfdxExtensionCommand("sf.apex.log.get");
     let launched = false;
     // Wait for user to select a log
     const listener = vscode.window.onDidChangeActiveTextEditor((textEditor) => {
@@ -159,7 +159,10 @@ export class HardisDebugger {
   }
 
   private debugLogFile(uri: vscode.Uri) {
-    vscode.commands.executeCommand("sfdx.launch.replay.debugger.logfile", uri);
+    vscode.commands.executeCommand(
+      "sf.launch.apex.replay.debugger.with.current.file",
+      uri,
+    );
   }
 
   private async runSfdxExtensionCommand(command: string) {
