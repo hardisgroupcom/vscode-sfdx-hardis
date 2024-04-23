@@ -159,7 +159,10 @@ export class HardisDebugger {
   }
 
   private debugLogFile(uri: vscode.Uri) {
-    vscode.commands.executeCommand("sf.launch.apex.replay.debugger.with.current.file", uri);
+    vscode.commands.executeCommand(
+      "sf.launch.apex.replay.debugger.with.current.file",
+      uri,
+    );
   }
 
   private async runSfdxExtensionCommand(command: string) {
