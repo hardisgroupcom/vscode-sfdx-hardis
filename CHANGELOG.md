@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+## [2.8.0] 2024-23-04
+
+- Fix calls to core SF extensions pack that switched from sfdx to sf commands
+
+## [2.7.1] 2024-10-04
+
+- Do not add --skipauth or --websocket if a launched command contains **&&**
+- Add default icon for custom commands if not defined in .sfdx-hardis.yml
+
 ## [2.7.0] 2023-12-05
 
 - Warning icon if mismatch detected between org and sfdx project api versions
