@@ -2,11 +2,15 @@
 
 ## [Unreleased]
 
-## [2.8.0] 2024-23-04
+## [2.9.0] 2024-05-14
+
+- New command to detect active users that do not use their Salesforce account :)
+
+## [2.8.0] 2024-04-23
 
 - Fix calls to core SF extensions pack that switched from sfdx to sf commands
 
-## [2.7.1] 2024-10-04
+## [2.7.1] 2024-04-10
 
 - Do not add --skipauth or --websocket if a launched command contains **&&**
 - Add default icon for custom commands if not defined in .sfdx-hardis.yml
