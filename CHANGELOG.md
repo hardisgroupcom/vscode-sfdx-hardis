@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [2.10.0] 2024-07-14
+
+- Add new menu for command sfdx hardis:org:files:import
+
 ## [2.9.0] 2024-05-14
 
 - New command to detect active users that do not use their Salesforce account :)

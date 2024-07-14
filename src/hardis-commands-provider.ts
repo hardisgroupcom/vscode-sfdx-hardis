@@ -396,6 +396,15 @@ export class HardisCommandsProvider
               "https://sfdx-hardis.cloudity.com/hardis/org/files/export/",
           },
           {
+            id: "org:files:import",
+            label: "Import files into org",
+            tooltip: "Import files into org based on a configuration",
+            icon: "file.svg",
+            command: "sfdx hardis:org:files:import",
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/org/files/import/",
+          },
+          {
             id: "org:files:configure",
             label: "Create files export configuration",
             tooltip: "Initializes a new file export project",
@@ -566,13 +575,13 @@ export class HardisCommandsProvider
           {
             id: "hardis:org:diagnose:unusedusers",
             label: "Detect Inactive Active Users",
-            tooltip: 
+            tooltip:
               "Identify active users who haven't logged in recently to the org",
             icon: "dollar.svg",
             command: "sfdx hardis:org:diagnose:unusedusers",
-            helpUrl: 
+            helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unusedusers/",
-          },          
+          },
           {
             id: "project:audit:apiversion",
             label: "Extract API versions of sources",
