@@ -396,6 +396,15 @@ export class HardisCommandsProvider
               "https://sfdx-hardis.cloudity.com/hardis/org/files/export/",
           },
           {
+            id: "org:files:import",
+            label: "Import files into org",
+            tooltip: "Import files into org based on a configuration",
+            icon: "file.svg",
+            command: "sfdx hardis:org:files:import",
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/org/files/import/",
+          },
+          {
             id: "org:files:configure",
             label: "Create files export configuration",
             tooltip: "Initializes a new file export project",
