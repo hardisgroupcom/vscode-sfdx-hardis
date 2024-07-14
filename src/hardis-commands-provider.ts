@@ -575,13 +575,13 @@ export class HardisCommandsProvider
           {
             id: "hardis:org:diagnose:unusedusers",
             label: "Detect Inactive Active Users",
-            tooltip: 
+            tooltip:
               "Identify active users who haven't logged in recently to the org",
             icon: "dollar.svg",
             command: "sfdx hardis:org:diagnose:unusedusers",
-            helpUrl: 
+            helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unusedusers/",
-          },          
+          },
           {
             id: "project:audit:apiversion",
             label: "Extract API versions of sources",
