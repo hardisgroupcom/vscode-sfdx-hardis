@@ -121,7 +121,7 @@ export class HardisPluginsProvider
                 );
               }
             });
-      } else if (parseInt(nodeVersionMatch[1]) < 16.0) {
+      } else if (parseInt(nodeVersionMatch[1]) < 20.0) {
         nodeItem.label += " v" + nodeVersionMatch;
         nodeItem.icon = "warning.svg";
         nodeItem.tooltip = "Node.js is outdated";

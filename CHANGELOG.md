@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [2.11.0] 2024-08-02
+
+- Upgrade minimum NodeJS version to v20
+
 ## [2.10.0] 2024-07-14
 
 - Add new menu for command sfdx hardis:org:files:import
