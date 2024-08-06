@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [2.12.0] 2024-08-06
+
+- Refactor menus to group Monitoring commands
+- Fix warning message about Node version
+- Upgrade GitHub Actions versions
+
 ## [2.11.0] 2024-08-02
 
 - Upgrade minimum NodeJS version to v20

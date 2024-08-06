@@ -172,9 +172,9 @@ export class HardisCommandsProvider
           },
           {
             id: "scratch:pull-from-org-to-git",
-            label: "Pull from Salesforce org to local files",
+            label: "Pull from SF Org to local Git files",
             tooltip:
-              "Retrieve locally the updates made on the remote Salesforce scratch org",
+              "Retrieve locally the updates made on the remote Salesforce scratch or sandbox org",
             command: "sfdx hardis:scratch:pull",
             icon: "pull.svg",
             requiresProject: true,
@@ -226,16 +226,6 @@ export class HardisCommandsProvider
             command: "sfdx hardis:package:install",
             requiresProject: true,
             helpUrl: "https://sfdx-hardis.cloudity.com/hardis/package/install/",
-          },
-          {
-            id: "org:test:apex",
-            label: "Run Apex tests on Salesforce org",
-            command: "sfdx hardis:org:test:apex",
-            tooltip:
-              "Runs all apex tests on the selected org. Will trigger error if minimum apex code coverage is not reached",
-            icon: "test.svg",
-            requiresProject: true,
-            helpUrl: "https://sfdx-hardis.cloudity.com/hardis/org/test/apex/",
           },
           {
             id: "project:deploy:sources:dx:check",
@@ -520,18 +510,122 @@ export class HardisCommandsProvider
         ],
       },
       {
-        id: "audit",
-        label: "Audit",
+        id: "monitoring",
+        label: "Monitoring",
         commands: [
           {
+            id: "hardis:org:monitor:backup",
+            label: "Retrieve all metadatas",
+            tooltip: "Retrieves all relevant Metadata of an org",
+            icon: "backup.svg",
+            command: "sfdx hardis:org:monitor:backup",
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/",
+          },
+          {
+            id: "hardis:org:diagnose:audittrail",
+            label: "Suspicious Audit Trail Activities",
+            tooltip:
+              "Detect setup actions in major orgs that are identified as Suspicious",
+            icon: "monitoring.svg",
+            command: "sfdx hardis:org:diagnose:audittrail",
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/org/diagnose/audittrail/",
+          },
+          {
+            id: "org:test:apex",
+            label: "Run Apex tests",
+            command: "sfdx hardis:org:test:apex",
+            tooltip:
+              "Runs all apex tests on the selected org. Will trigger error if minimum apex code coverage is not reached",
+            icon: "test.svg",
+            requiresProject: true,
+            helpUrl: "https://sfdx-hardis.cloudity.com/hardis/org/test/apex/",
+          },
+          {
+            id: "hardis:org:monitor:limits",
+            label: "Check Org Limits",
+            command: "sfdx hardis:org:monitor:limits",
+            tooltip:
+              "Checks if limits are reached or soon reached in the default Salesforce org",
+            icon: "gauge.svg",
+            requiresProject: true,
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/org/monitor/limits/",
+          },
+          {
             id: "org:diagnose:legacyapi",
-            label: "Detect legacy API versions usage",
+            label: "Legacy API versions usage",
             tooltip: "Detects if deprected APIs are your in a production org",
             icon: "old.svg",
             command: "sfdx hardis:org:diagnose:legacyapi",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/org/diagnose/legacyapi/",
           },
+          {
+            id: "hardis:org:diagnose:unusedusers",
+            label: "Unused Users",
+            tooltip:
+              "Identify active users who haven't logged in recently to the org",
+            icon: "dollar.svg",
+            command: "sfdx hardis:org:diagnose:unusedusers",
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/salesforce-monitoring-inactive-users/",
+          },
+          {
+            id: "hardis:org:diagnose:unusedlicenses",
+            label: "Unused PS Licenses (beta)",
+            tooltip:
+              "Detects if there are unused permission set licenses in the org, and offers to delete them",
+            icon: "dollar.svg",
+            command: "sfdx hardis:org:diagnose:unusedlicenses",
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unusedlicenses/",
+          },
+          {
+            id: "hardis:lint:access",
+            label: "Metadata without access",
+            tooltip:
+              "Detects if custom fields or apex classes are existing in source but not authorized on any Profile or Permission Set",
+            icon: "password.svg",
+            command: "sfdx hardis:lint:access",
+            helpUrl: "https://sfdx-hardis.cloudity.com/hardis/lint/access/",
+          },
+          {
+            id: "hardis:lint:unusedmetadatas",
+            label: "Unused Metadatas",
+            tooltip:
+              "Check if elements (custom labels and custom permissions) are used in the project",
+            icon: "trash.svg",
+            command: "sfdx hardis:lint:unusedmetadatas",
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/lint/unusedmetadatas/",
+          },
+          {
+            id: "hardis:lint:metadatastatus",
+            label: "Inactive Metadatas",
+            tooltip:
+              "Check if flows or validation rules are inactive, so should be deleted",
+            icon: "trash.svg",
+            command: "sfdx hardis:lint:metadatastatus",
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/lint/metadatastatus/",
+          },
+          {
+            id: "hardis:lint:missingattributes",
+            label: "Missing descriptions",
+            tooltip: "Check if metadatas have missing descriptions",
+            icon: "doc.svg",
+            command: "sfdx hardis:lint:missingattributes",
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/lint/missingattributes/",
+          },
+        ],
+      },
+      {
+        id: "audit",
+        label: "Audit",
+        commands: [
           {
             id: "project:audit:duplicatefiles",
             label: "Detect duplicate sfdx files",
@@ -552,35 +646,6 @@ export class HardisCommandsProvider
               "sfdx hardis:project:metadata:findduplicates -f force-app/**/*.xml",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/project/metadata/duplicatefiles/",
-          },
-          {
-            id: "hardis:lint:access",
-            label: "Detect missing permissions",
-            tooltip:
-              "Detects if custom fields or apex classes are existing in source but not authorized on any Profile or Permission Set",
-            icon: "password.svg",
-            command: "sfdx hardis:lint:access",
-            helpUrl: "https://sfdx-hardis.cloudity.com/hardis/lint/access/",
-          },
-          {
-            id: "hardis:org:diagnose:unusedlicenses",
-            label: "Detect unused licenses",
-            tooltip:
-              "Detects if there are unused licenses in the org, and offers to delete them",
-            icon: "dollar.svg",
-            command: "sfdx hardis:org:diagnose:unusedlicenses",
-            helpUrl:
-              "https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unusedlicenses/",
-          },
-          {
-            id: "hardis:org:diagnose:unusedusers",
-            label: "Detect Inactive Active Users",
-            tooltip:
-              "Identify active users who haven't logged in recently to the org",
-            icon: "dollar.svg",
-            command: "sfdx hardis:org:diagnose:unusedusers",
-            helpUrl:
-              "https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unusedusers/",
           },
           {
             id: "project:audit:apiversion",
@@ -609,16 +674,6 @@ export class HardisCommandsProvider
             command: "sfdx hardis:project:audit:remotesites",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/audit/remotesites/",
-          },
-          {
-            id: "hardis:org:diagnose:audittrail",
-            label: "Suspicious Audit Trail Activities",
-            tooltip:
-              "Detect setup actions in major orgs that are identified as Suspicious",
-            icon: "monitoring.svg",
-            command: "sfdx hardis:org:diagnose:audittrail",
-            helpUrl:
-              "https://sfdx-hardis.cloudity.com/hardis/org/diagnose/audittrail/",
           },
         ],
       },
