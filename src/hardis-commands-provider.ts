@@ -512,7 +512,7 @@ export class HardisCommandsProvider
       {
         id: "monitoring",
         label: "Monitoring",
-        commands: [ 
+        commands: [
           {
             id: "hardis:org:monitor:backup",
             label: "Retrieve all metadatas",
@@ -550,7 +550,8 @@ export class HardisCommandsProvider
               "Checks if limits are reached or soon reached in the default Salesforce org",
             icon: "gauge.svg",
             requiresProject: true,
-            helpUrl: "https://sfdx-hardis.cloudity.com/hardis/org/monitor/limits/",
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/org/monitor/limits/",
           },
           {
             id: "org:diagnose:legacyapi",
@@ -597,7 +598,8 @@ export class HardisCommandsProvider
               "Check if elements (custom labels and custom permissions) are used in the project",
             icon: "trash.svg",
             command: "sfdx hardis:lint:unusedmetadatas",
-            helpUrl: "https://sfdx-hardis.cloudity.com/hardis/lint/unusedmetadatas/",
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/lint/unusedmetadatas/",
           },
           {
             id: "hardis:lint:metadatastatus",
@@ -606,19 +608,20 @@ export class HardisCommandsProvider
               "Check if flows or validation rules are inactive, so should be deleted",
             icon: "trash.svg",
             command: "sfdx hardis:lint:metadatastatus",
-            helpUrl: "https://sfdx-hardis.cloudity.com/hardis/lint/metadatastatus/",
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/lint/metadatastatus/",
           },
           {
             id: "hardis:lint:missingattributes",
             label: "Missing descriptions",
-            tooltip:
-              "Check if metadatas have missing descriptions",
+            tooltip: "Check if metadatas have missing descriptions",
             icon: "doc.svg",
             command: "sfdx hardis:lint:missingattributes",
-            helpUrl: "https://sfdx-hardis.cloudity.com/hardis/lint/missingattributes/",
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/lint/missingattributes/",
           },
-        ]
-      },     
+        ],
+      },
       {
         id: "audit",
         label: "Audit",
