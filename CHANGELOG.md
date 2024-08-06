@@ -6,6 +6,7 @@
 
 - Refactor menus to group Monitoring commands
 - Fix warning message about Node version
+- Upgrade GitHub Actions version
 
 ## [2.11.0] 2024-08-02
 
