@@ -291,7 +291,7 @@ export class HardisPluginsProvider
         sfdxCliItem.icon = "error.svg";
       } else if (
         !sfdxPath.includes("npm") &&
-        !sfdxPath.includes("nodejs") &&
+        !sfdxPath.includes("node") &&
         !sfdxPath.includes("nvm") &&
         sfdxPath !== "missing"
       ) {

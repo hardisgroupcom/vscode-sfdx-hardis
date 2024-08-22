@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Accept SF folder name containing `node` in case of custom NodeJs installation folder
+
 ## [2.12.0] 2024-08-06
 
 - Refactor menus to group Monitoring commands
