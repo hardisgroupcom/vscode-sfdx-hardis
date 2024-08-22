@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [2.12.1] 2024-08-22
+
 - Accept SF folder name containing `node` in case of custom NodeJs installation folder
 
 ## [2.12.0] 2024-08-06
