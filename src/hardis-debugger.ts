@@ -183,7 +183,7 @@ export class HardisDebugger {
             if (selection === "Retrieve Apex sources from org") {
               vscode.commands.executeCommand(
                 "vscode-sfdx-hardis.execute-command",
-                "sfdx hardis:org:retrieve:sources:dx -k ApexClass,ApexTrigger,ApexPage",
+                "sf hardis:org:retrieve:sources:dx -k ApexClass,ApexTrigger,ApexPage",
               );
             }
           });

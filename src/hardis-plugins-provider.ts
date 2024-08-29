@@ -359,7 +359,7 @@ export class HardisPluginsProvider
           !pluginItem.label.includes("(link)")
             ? pluginItem.label.replace("(link)", "(localdev)")
             : pluginItem.label + " (upgrade available)";
-        pluginItem.command = `echo y|sfdx plugins:install ${plugin.name} && sfdx hardis:work:ws --event refreshPlugins`;
+        pluginItem.command = `echo y|sf plugins:install ${plugin.name} && sf hardis:work:ws --event refreshPlugins`;
         pluginItem.tooltip = `Click to upgrade SFDX plugin ${plugin.name} to ${latestPluginVersion}`;
         if (!pluginItem.label.includes("(localdev)")) {
           pluginItem.icon = isPluginMissing ? "missing.svg" : "warning.svg";
@@ -396,7 +396,7 @@ export class HardisPluginsProvider
               command = "npm install @salesforce/cli -g && " + command;
             }
             command =
-              command + ` && sfdx hardis:work:ws --event refreshPlugins`;
+              command + ` && sf hardis:work:ws --event refreshPlugins`;
             vscode.commands.executeCommand(
               "vscode-sfdx-hardis.execute-command",
               command,

@@ -101,7 +101,7 @@ export class HardisStatusProvider
           id: "org-not-connected-devhub",
           label: `Select a DevHub org`,
           tooltip: "Click to select and authenticate to a DevHub org",
-          command: "sfdx hardis:org:select --devhub",
+          command: "sf hardis:org:select --devhub",
           icon: "select.svg",
         });
         return items;
@@ -201,7 +201,7 @@ Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if you
         // Get pool info only if defined in config
         if (config?.poolConfig) {
           const poolViewRes = await execSfdxJson(
-            "sfdx hardis:scratch:pool:view",
+            "sf hardis:scratch:pool:view",
             this,
             { output: false, fail: false },
           );
@@ -214,7 +214,7 @@ Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if you
               id: "scratch-org-pool-view",
               label: `Pool: ${poolViewRes.result.availableScratchOrgs} available (max ${poolViewRes.result.maxScratchOrgs})`,
               tooltip: "View content of scratch org pool",
-              command: "sfdx hardis:scratch:pool:view",
+              command: "sf hardis:scratch:pool:view",
               icon: "pool.svg",
             });
           }
@@ -224,7 +224,7 @@ Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if you
         id: "select-another-org" + (options.devHub ? "-devhub" : ""),
         label: `Select another ` + (options.devHub ? "DevHub Org" : "Org"),
         tooltip: "Click to select an org",
-        command: "sfdx hardis:org:select" + (options.devHub ? " --devhub" : ""),
+        command: "sf hardis:org:select" + (options.devHub ? " --devhub" : ""),
         icon: "select.svg",
       });
     } else {
@@ -232,7 +232,7 @@ Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if you
         id: "org-not-connected" + (options.devHub ? "-devhub" : ""),
         label: `Select an org`,
         tooltip: "Click to select and authenticate to an org",
-        command: "sfdx hardis:org:select" + (options.devHub ? " --devhub" : ""),
+        command: "sf hardis:org:select" + (options.devHub ? " --devhub" : ""),
         icon: "select.svg",
       });
     }
@@ -357,7 +357,7 @@ Note: Disable disableGitMergeRequiredCheck in settings to skip this check.`;
         });
         // Merge request info
         const mergeRequestRes = await execSfdxJson(
-          "sfdx hardis:config:get --level user",
+          "sf hardis:config:get --level user",
           this,
           { fail: false, output: true },
         );

@@ -64,7 +64,7 @@ export class Commands {
       return;
     }
     // terminalIsRunning = true; //Comment until we find a way to detect that a command is running or not
-    if (command.startsWith("sfdx hardis:")) {
+    if (command.startsWith("sf hardis")) {
       // Add --skipauth argument when necessary
       const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
       if (
@@ -78,8 +78,8 @@ export class Commands {
     }
     // Add --websocket argument when necessary
     if (
-      (command.startsWith("sfdx hardis:") ||
-        command.includes("sfdx hardis:work:ws --event")) &&
+      (command.startsWith("sf hardis") ||
+        command.includes("sf hardis:work:ws --event")) &&
       this.disposableWebSocketServer &&
       this.disposableWebSocketServer.websocketHostPort !== null &&
       !command.includes("--websocket") &&
@@ -97,7 +97,7 @@ export class Commands {
     // Scrolldown the terminal
     vscode.commands.executeCommand("workbench.action.terminal.scrollToBottom");
     // Telemetry: Send only the 2 first portions of the command
-    // Examples: "sfdx hardis:work:new" , "sfdx plugins:install"
+    // Examples: "sf hardis:work:new" , "sf plugins:install"
     if (this.reporter) {
       const truncatedCommand = command.split(" ").slice(0, 2).join(" ");
       this.reporter.sendTelemetryEvent("command", {

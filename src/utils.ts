@@ -86,8 +86,8 @@ export function preLoadCache() {
   const sfdxJsonCommands = [
     "sfdx force:org:display",
     "sfdx force:config:get defaultdevhubusername",
-    "sfdx hardis:config:get --level project",
-    "sfdx hardis:config:get --level user",
+    "sf hardis:config:get --level project",
+    "sf hardis:config:get --level user",
   ];
   for (const cmd of sfdxJsonCommands) {
     preLoadPromises.push(execSfdxJson(cmd, {}, {}));
@@ -314,7 +314,7 @@ export async function loadProjectSfdxHardisConfig() {
     return PROJECT_CONFIG;
   }
   const configRes = await execSfdxJson(
-    "sfdx hardis:config:get --level project",
+    "sf hardis:config:get --level project",
     null,
     { fail: false, output: true },
   );

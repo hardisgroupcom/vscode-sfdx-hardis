@@ -153,7 +153,7 @@ export class HardisCommandsProvider
           {
             id: "hardis:work:new",
             label: "Start a new task",
-            command: "sfdx hardis:work:new",
+            command: "sf hardis:work:new",
             icon: "new.svg",
             tooltip:
               "Create a new environment to develop or configure with a scratch org",
@@ -175,7 +175,7 @@ export class HardisCommandsProvider
             label: "Pull from SF Org to local Git files",
             tooltip:
               "Retrieve locally the updates made on the remote Salesforce scratch or sandbox org",
-            command: "sfdx hardis:scratch:pull",
+            command: "sf hardis:scratch:pull",
             icon: "pull.svg",
             requiresProject: true,
             helpUrl: "https://sfdx-hardis.cloudity.com/hardis/scratch/pull/",
@@ -183,7 +183,7 @@ export class HardisCommandsProvider
           {
             id: "hardis:work:save",
             label: "Save / Publish my current task",
-            command: "sfdx hardis:work:save",
+            command: "sf hardis:work:save",
             icon: "save.svg",
             tooltip:
               "Save to server you current work, and propose to create a merge request",
@@ -193,7 +193,7 @@ export class HardisCommandsProvider
           {
             id: "hardis:work:resetselection",
             label: "Reset selected list of items to merge",
-            command: "sfdx hardis:work:resetselection",
+            command: "sf hardis:work:resetselection",
             icon: "reset.svg",
             tooltip:
               "If you made a wrong selection of items to merge, you can reset the selection and save it again",
@@ -212,7 +212,7 @@ export class HardisCommandsProvider
             label: "Push from local files to Salesforce org",
             tooltip:
               "Propagates your local updates within Vs Code into your remote Salesforce scratch org",
-            command: "sfdx hardis:scratch:push",
+            command: "sf hardis:scratch:push",
             icon: "push.svg",
             requiresProject: true,
             helpUrl: "https://sfdx-hardis.cloudity.com/hardis/scratch/push/",
@@ -223,7 +223,7 @@ export class HardisCommandsProvider
             tooltip:
               "This will update project .sfdx-hardis.yml so the package will always be installed in new scratch orgs and future deployments",
             icon: "package.svg",
-            command: "sfdx hardis:package:install",
+            command: "sf hardis:package:install",
             requiresProject: true,
             helpUrl: "https://sfdx-hardis.cloudity.com/hardis/package/install/",
           },
@@ -233,7 +233,7 @@ export class HardisCommandsProvider
             tooltip:
               "Simulates deployment from local SFDX source to target org",
             icon: "test-deploy.svg",
-            command: "sfdx hardis:project:deploy:sources:dx --check",
+            command: "sf hardis:project:deploy:sources:dx --check",
             requiresProject: true,
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/project/deploy/sources/dx/",
@@ -244,7 +244,7 @@ export class HardisCommandsProvider
             tooltip:
               "Select and apply lots of cleaning commands provided by sfdx-hardis",
             icon: "clean.svg",
-            command: "sfdx hardis:project:clean:references",
+            command: "sf hardis:project:clean:references",
             requiresProject: true,
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/project/clean/references/",
@@ -255,7 +255,7 @@ export class HardisCommandsProvider
             tooltip:
               "If during Work:New you had an error, you can resume the scratch org creation",
             icon: "salesforce.svg",
-            command: "sfdx hardis:scratch:create",
+            command: "sf hardis:scratch:create",
             requiresProject: true,
             helpUrl: "https://sfdx-hardis.cloudity.com/hardis/scratch/create/",
           },
@@ -264,7 +264,7 @@ export class HardisCommandsProvider
             label: "Create scratch org (force new)",
             tooltip: "Create a new scratch org for the current work",
             icon: "salesforce.svg",
-            command: "sfdx hardis:scratch:create --forcenew",
+            command: "sf hardis:scratch:create --forcenew",
             requiresProject: true,
             helpUrl: "https://sfdx-hardis.cloudity.com/hardis/scratch/create/",
           },
@@ -283,7 +283,7 @@ export class HardisCommandsProvider
             label: "Connect to a Salesforce org",
             tooltip:
               "Connects to a Salesforce org without setting it as defaultusername",
-            command: "sfdx hardis:org:connect",
+            command: "sf hardis:org:connect",
             icon: "select.svg",
             helpUrl: "https://sfdx-hardis.cloudity.com/hardis/org/connect/",
           },
@@ -292,7 +292,7 @@ export class HardisCommandsProvider
             label: "Select and retrieve sfdx sources from org",
             tooltip:
               "Allows user to select a list of metadata types and process the retrieve from an org",
-            command: "sfdx hardis:source:retrieve",
+            command: "sf hardis:source:retrieve",
             icon: "pull.svg",
             helpUrl: "https://sfdx-hardis.cloudity.com/hardis/source/retrieve/",
           },
@@ -301,7 +301,7 @@ export class HardisCommandsProvider
             label: "Retrieve all CRM analytics sources",
             tooltip:
               "Allows user to select a list of metadata types and process the retrieve from an org",
-            command: "sfdx hardis:org:retrieve:sources:analytics",
+            command: "sf hardis:org:retrieve:sources:analytics",
             icon: "pull.svg",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/org/retrieve/sources/analytics/",
@@ -329,7 +329,7 @@ export class HardisCommandsProvider
           {
             id: "hardis:work:save-expert",
             label: "Save my current task (no source:pull and no git)",
-            command: "sfdx hardis:work:save --nopull --nogit",
+            command: "sf hardis:work:save --nopull --nogit",
             icon: "save.svg",
             tooltip:
               "Do all the work:save operations except scratch pull and git operations",
@@ -348,7 +348,7 @@ export class HardisCommandsProvider
             tooltip:
               "Export data from org and store it in project files, so it can be imported during each scratch org initialization or deployment to org",
             icon: "data.svg",
-            command: "sfdx hardis:org:data:export",
+            command: "sf hardis:org:data:export",
             helpUrl: "https://sfdx-hardis.cloudity.com/hardis/org/data/export/",
           },
           {
@@ -356,7 +356,7 @@ export class HardisCommandsProvider
             label: "Import data to org with SFDMU",
             tooltip: "Import data into org from project files",
             icon: "data.svg",
-            command: "sfdx hardis:org:data:import",
+            command: "sf hardis:org:data:import",
             helpUrl: "https://sfdx-hardis.cloudity.com/hardis/org/data/import/",
           },
           {
@@ -364,7 +364,7 @@ export class HardisCommandsProvider
             label: "Delete data from org with SFDMU",
             tooltip: "Delete data from org using SFDMU config files",
             icon: "trash.svg",
-            command: "sfdx hardis:org:data:delete",
+            command: "sf hardis:org:data:delete",
             helpUrl: "https://sfdx-hardis.cloudity.com/hardis/org/data/delete/",
           },
           {
@@ -372,7 +372,7 @@ export class HardisCommandsProvider
             label: "Create data import/export configuration",
             tooltip: "Initializes a new SFDMU project",
             icon: "configure.svg",
-            command: "sfdx hardis:org:configure:data",
+            command: "sf hardis:org:configure:data",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/org/configure/data/",
           },
@@ -381,7 +381,7 @@ export class HardisCommandsProvider
             label: "Export files from org",
             tooltip: "Export files from org based on a configuration",
             icon: "file.svg",
-            command: "sfdx hardis:org:files:export",
+            command: "sf hardis:org:files:export",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/org/files/export/",
           },
@@ -390,7 +390,7 @@ export class HardisCommandsProvider
             label: "Import files into org",
             tooltip: "Import files into org based on a configuration",
             icon: "file.svg",
-            command: "sfdx hardis:org:files:import",
+            command: "sf hardis:org:files:import",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/org/files/import/",
           },
@@ -399,7 +399,7 @@ export class HardisCommandsProvider
             label: "Create files export configuration",
             tooltip: "Initializes a new file export project",
             icon: "configure.svg",
-            command: "sfdx hardis:org:configure:files",
+            command: "sf hardis:org:configure:files",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/org/configure/files/",
           },
@@ -437,7 +437,7 @@ export class HardisCommandsProvider
             label: "Purge Apex Logs",
             tooltip: "Purge all apex logs of default org",
             icon: "file.svg",
-            command: "sfdx hardis:org:purge:apexlog",
+            command: "sf hardis:org:purge:apexlog",
           },
           {
             id: "org:apex:log:tail",
@@ -455,7 +455,7 @@ export class HardisCommandsProvider
               "Retrieve sources from your org so you can use the replay debugger",
             icon: "pull.svg",
             command:
-              "sfdx hardis:org:retrieve:sources:dx -k ApexClass,ApexTrigger,ApexPage",
+              "sf hardis:org:retrieve:sources:dx -k ApexClass,ApexTrigger,ApexPage",
           },
         ],
       },
@@ -469,7 +469,7 @@ export class HardisCommandsProvider
             tooltip:
               "Freeze all users of an org except admins to deploy safely",
             icon: "freeze.svg",
-            command: "sfdx hardis:org:user:freeze",
+            command: "sf hardis:org:user:freeze",
             helpUrl: "https://sfdx-hardis.cloudity.com/hardis/org/user/freeze/",
           },
           {
@@ -477,7 +477,7 @@ export class HardisCommandsProvider
             label: "Unfreeze users",
             tooltip: "Unfreeze all users of an org after a safe deployment",
             icon: "unfreeze.svg",
-            command: "sfdx hardis:org:user:unfreeze",
+            command: "sf hardis:org:user:unfreeze",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/org/user/unfreeze/",
           },
@@ -487,7 +487,7 @@ export class HardisCommandsProvider
             tooltip:
               "Purge all flows with status Obsolete in your org, so you are not bothered by the 50 versions limits",
             icon: "flow.svg",
-            command: "sfdx hardis:org:purge:flow",
+            command: "sf hardis:org:purge:flow",
             helpUrl: "https://sfdx-hardis.cloudity.com/hardis/org/purge/flow/",
           },
           {
@@ -495,7 +495,7 @@ export class HardisCommandsProvider
             label: "Delete scratch org(s)",
             tooltip: "Prompts user for scratch orgs to mark for deletion",
             icon: "trash.svg",
-            command: "sfdx hardis:scratch:delete",
+            command: "sf hardis:scratch:delete",
             helpUrl: "https://sfdx-hardis.cloudity.com/hardis/scratch/delete/",
           },
           {
@@ -503,7 +503,7 @@ export class HardisCommandsProvider
             label: "Activate .invalid user emails in sandbox",
             tooltip: "Removes the .invalid of all users emails in a sandbox",
             icon: "user.svg",
-            command: "sfdx hardis:org:user:activateinvalid",
+            command: "sf hardis:org:user:activateinvalid",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/org/user/activateinvalid/",
           },
@@ -518,7 +518,7 @@ export class HardisCommandsProvider
             label: "Retrieve all metadatas",
             tooltip: "Retrieves all relevant Metadata of an org",
             icon: "backup.svg",
-            command: "sfdx hardis:org:monitor:backup",
+            command: "sf hardis:org:monitor:backup",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/",
           },
@@ -528,14 +528,14 @@ export class HardisCommandsProvider
             tooltip:
               "Detect setup actions in major orgs that are identified as Suspicious",
             icon: "monitoring.svg",
-            command: "sfdx hardis:org:diagnose:audittrail",
+            command: "sf hardis:org:diagnose:audittrail",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/org/diagnose/audittrail/",
           },
           {
             id: "org:test:apex",
             label: "Run Apex tests",
-            command: "sfdx hardis:org:test:apex",
+            command: "sf hardis:org:test:apex",
             tooltip:
               "Runs all apex tests on the selected org. Will trigger error if minimum apex code coverage is not reached",
             icon: "test.svg",
@@ -545,7 +545,7 @@ export class HardisCommandsProvider
           {
             id: "hardis:org:monitor:limits",
             label: "Check Org Limits",
-            command: "sfdx hardis:org:monitor:limits",
+            command: "sf hardis:org:monitor:limits",
             tooltip:
               "Checks if limits are reached or soon reached in the default Salesforce org",
             icon: "gauge.svg",
@@ -558,7 +558,7 @@ export class HardisCommandsProvider
             label: "Legacy API versions usage",
             tooltip: "Detects if deprected APIs are your in a production org",
             icon: "old.svg",
-            command: "sfdx hardis:org:diagnose:legacyapi",
+            command: "sf hardis:org:diagnose:legacyapi",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/org/diagnose/legacyapi/",
           },
@@ -568,7 +568,7 @@ export class HardisCommandsProvider
             tooltip:
               "Identify active users who haven't logged in recently to the org",
             icon: "dollar.svg",
-            command: "sfdx hardis:org:diagnose:unusedusers",
+            command: "sf hardis:org:diagnose:unusedusers",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/salesforce-monitoring-inactive-users/",
           },
@@ -578,7 +578,7 @@ export class HardisCommandsProvider
             tooltip:
               "Detects if there are unused permission set licenses in the org, and offers to delete them",
             icon: "dollar.svg",
-            command: "sfdx hardis:org:diagnose:unusedlicenses",
+            command: "sf hardis:org:diagnose:unusedlicenses",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unusedlicenses/",
           },
@@ -588,7 +588,7 @@ export class HardisCommandsProvider
             tooltip:
               "Detects if custom fields or apex classes are existing in source but not authorized on any Profile or Permission Set",
             icon: "password.svg",
-            command: "sfdx hardis:lint:access",
+            command: "sf hardis:lint:access",
             helpUrl: "https://sfdx-hardis.cloudity.com/hardis/lint/access/",
           },
           {
@@ -597,7 +597,7 @@ export class HardisCommandsProvider
             tooltip:
               "Check if elements (custom labels and custom permissions) are used in the project",
             icon: "trash.svg",
-            command: "sfdx hardis:lint:unusedmetadatas",
+            command: "sf hardis:lint:unusedmetadatas",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/lint/unusedmetadatas/",
           },
@@ -607,7 +607,7 @@ export class HardisCommandsProvider
             tooltip:
               "Check if flows or validation rules are inactive, so should be deleted",
             icon: "trash.svg",
-            command: "sfdx hardis:lint:metadatastatus",
+            command: "sf hardis:lint:metadatastatus",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/lint/metadatastatus/",
           },
@@ -616,7 +616,7 @@ export class HardisCommandsProvider
             label: "Missing descriptions",
             tooltip: "Check if metadatas have missing descriptions",
             icon: "doc.svg",
-            command: "sfdx hardis:lint:missingattributes",
+            command: "sf hardis:lint:missingattributes",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/lint/missingattributes/",
           },
@@ -632,7 +632,7 @@ export class HardisCommandsProvider
             tooltip:
               "Detects if duplicate files are within in your SFDX project",
             icon: "duplicate.svg",
-            command: "sfdx hardis:project:audit:duplicatefiles",
+            command: "sf hardis:project:audit:duplicatefiles",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/audit/duplicatefiles/",
           },
@@ -643,7 +643,7 @@ export class HardisCommandsProvider
               "Detects if duplicate values for given keys are within in your SFDX metadata files",
             icon: "duplicate.svg",
             command:
-              "sfdx hardis:project:metadata:findduplicates -f force-app/**/*.xml",
+              "sf hardis:project:metadata:findduplicates -f force-app/**/*.xml",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/project/metadata/duplicatefiles/",
           },
@@ -653,7 +653,7 @@ export class HardisCommandsProvider
             tooltip:
               "Browse all project files and summarize API versions of elements",
             icon: "extract.svg",
-            command: "sfdx hardis:project:audit:apiversion",
+            command: "sf hardis:project:audit:apiversion",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/audit/apiversion/",
           },
@@ -662,7 +662,7 @@ export class HardisCommandsProvider
             label: "List call'in and call'outs",
             tooltip: "Browse sources to list inbound and outbound calls",
             icon: "http.svg",
-            command: "sfdx hardis:project:audit:callincallout",
+            command: "sf hardis:project:audit:callincallout",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/audit/callincallout/",
           },
@@ -671,7 +671,7 @@ export class HardisCommandsProvider
             label: "List remote sites",
             tooltip: "Browse sources to list remote sites",
             icon: "remote.svg",
-            command: "sfdx hardis:project:audit:remotesites",
+            command: "sf hardis:project:audit:remotesites",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/audit/remotesites/",
           },
@@ -694,7 +694,7 @@ export class HardisCommandsProvider
             tooltip:
               "Retrieve package configuration from an org and propose to update project sfdx-hardis configuration",
             icon: "package.svg",
-            command: "sfdx hardis:org:retrieve:packageconfig",
+            command: "sf hardis:org:retrieve:packageconfig",
           },
           {
             id: "configure:auth:deployment",
@@ -702,7 +702,7 @@ export class HardisCommandsProvider
             tooltip:
               "Assisted configuration to connect a protected branch and its related release org during CI",
             icon: "configure.svg",
-            command: "sfdx hardis:project:configure:auth",
+            command: "sf hardis:project:configure:auth",
           },
           {
             id: "configure:auth:devhub",
@@ -710,7 +710,7 @@ export class HardisCommandsProvider
             icon: "configure.svg",
             tooltip:
               "Assisted configuration to connect to a Dev Hub org during CI",
-            command: "sfdx hardis:project:configure:auth --devhub",
+            command: "sf hardis:project:configure:auth --devhub",
             requiresProject: true,
           },
           {
@@ -719,7 +719,7 @@ export class HardisCommandsProvider
             tooltip:
               "To run only on a repo dedicated to monitoring (start from a blank repo)",
             icon: "monitoring.svg",
-            command: "sfdx hardis:org:configure:monitoring",
+            command: "sf hardis:org:configure:monitoring",
           },
           {
             id: "scratch:pool:create",
@@ -727,14 +727,14 @@ export class HardisCommandsProvider
             tooltip:
               "Define a scratch org pool to have scratch orgs ready to be used for development or CI",
             icon: "pool.svg",
-            command: "sfdx hardis:scratch:pool:create",
+            command: "sf hardis:scratch:pool:create",
           },
           {
             id: "project:create",
             label: "Create a new SFDX project",
             tooltip: "Create and initialize a new SFDX project",
             icon: "new.svg",
-            command: "sfdx hardis:project:create",
+            command: "sf hardis:project:create",
           },
         ],
       },
@@ -747,7 +747,7 @@ export class HardisCommandsProvider
             label: "Create a new package",
             tooltip: "Second generation packages, unlocked or managed",
             icon: "package.svg",
-            command: "sfdx hardis:package:create",
+            command: "sf hardis:package:create",
             requiresProject: true,
           },
           {
@@ -755,7 +755,7 @@ export class HardisCommandsProvider
             label: "List package versions",
             tooltip: "List all package versions associated to Dev Hub org",
             icon: "package.svg",
-            command: "sfdx hardis:package:version:list",
+            command: "sf hardis:package:version:list",
             requiresProject: true,
           },
           {
@@ -763,7 +763,7 @@ export class HardisCommandsProvider
             label: "Create a new package version",
             tooltip: "Create a new version of a package",
             icon: "package.svg",
-            command: "sfdx hardis:package:version:create",
+            command: "sf hardis:package:version:create",
             requiresProject: true,
           },
         ],
@@ -778,14 +778,14 @@ export class HardisCommandsProvider
             tooltip:
               "Generate package.xml & destructiveChanges.xml using git delta between 2 commit hashes",
             icon: "git.svg",
-            command: "sfdx hardis:project:generate:gitdelta",
+            command: "sf hardis:project:generate:gitdelta",
           },
           {
             id: "org:generate:packagexmlfull",
             label: "Generate org full package.xml",
             tooltip: "Generate full package.xml from any org",
             icon: "package.svg",
-            command: "sfdx hardis:org:generate:packagexmlfull",
+            command: "sf hardis:org:generate:packagexmlfull",
           },
           {
             id: "org:retrieve:sources:dx2",
@@ -793,7 +793,7 @@ export class HardisCommandsProvider
             tooltip:
               "Retrieve locally the SFDX sources of an org, using a package.xml",
             icon: "pull.svg",
-            command: "sfdx hardis:org:retrieve:sources:dx2",
+            command: "sf hardis:org:retrieve:sources:dx2",
           },
           {
             id: "org:retrieve:sources:dx",
@@ -801,7 +801,7 @@ export class HardisCommandsProvider
             tooltip:
               "Retrieve locally all the metadatas of a remote salesforce org, in DX project format",
             icon: "pull.svg",
-            command: "sfdx hardis:org:retrieve:sources:dx",
+            command: "sf hardis:org:retrieve:sources:dx",
           },
           {
             id: "org:retrieve:sources:metadata",
@@ -809,14 +809,14 @@ export class HardisCommandsProvider
             tooltip:
               "Retrieve locally all the metadatas of a remote salesforce org, in metadata format",
             icon: "pull.svg",
-            command: "sfdx hardis:org:retrieve:sources:metadata",
+            command: "sf hardis:org:retrieve:sources:metadata",
           },
           {
             id: "package:mergexml",
             label: "Merge package.xml files",
             tooltip: "Merge package.xml files located in manifest folder",
             icon: "merge.svg",
-            command: "sfdx hardis:package:mergexml",
+            command: "sf hardis:package:mergexml",
           },
           {
             id: "org:logout",
