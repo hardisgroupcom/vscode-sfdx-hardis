@@ -89,123 +89,98 @@
     "commands": [
       {
         "command": "vscode-sfdx-hardis.welcome",
-        "title": "SFDX Hardis: Welcome"
+        "title": "SFDX Hardis: Welcome",
+        "icon": "$(home)"
       },
       {
         "command": "vscode-sfdx-hardis.execute-command",
-        "title": "SFDX Hardis: Execute sfdx-hardis command"
+        "title": "SFDX Hardis: Execute sfdx-hardis command",
+        "icon": "$(run)"
       },
       {
         "command": "vscode-sfdx-hardis.openExternal",
-        "title": "SFDX Hardis: Open external url"
+        "title": "SFDX Hardis: Open external url",
+        "icon": "$(link-external)"
       },
       {
         "command": "vscode-sfdx-hardis.openValidationLink",
         "title": "SFDX Hardis: Open encrypted Salesforce account validation / reset password URL",
-        "icon": {
-          "light": "resources/password.svg",
-          "dark": "resources/password.svg"
-        }
+        "icon": "$(unlock)"
       },
       {
         "command": "vscode-sfdx-hardis.selectColorForOrg",
         "title": "SFDX Hardis: Select color for current default org",
-        "icon": {
-          "light": "resources/colorPicker.svg",
-          "dark": "resources/colorPicker.svg"
-        }
+        "icon": "$(symbol-color)"
       },
       {
         "command": "vscode-sfdx-hardis.showMessage",
-        "title": "SFDX Hardis: Show message"
+        "title": "SFDX Hardis: Show message",
+        "icon": "$(extensions-info-message)"
       },
       {
         "command": "vscode-sfdx-hardis.openKeyFile",
         "title": "SFDX Hardis: Open key configuration file",
-        "icon": {
-          "light": "resources/file.svg",
-          "dark": "resources/file.svg"
-        }
+        "icon": "$(settings-editor-label-icon)"
       },
       {
         "command": "vscode-sfdx-hardis.debug.activate",
-        "title": "SFDX Hardis: Activate debug logs tracing"
+        "title": "SFDX Hardis: Activate debug logs tracing",
+        "icon": "$(breakpoints-activate)"
       },
       {
         "command": "vscode-sfdx-hardis.debug.logtail",
-        "title": "SFDX Hardis: Display live logs in terminal"
+        "title": "SFDX Hardis: Display live logs in terminal",
+        "icon": "$(inspect)"
       },
       {
         "command": "vscode-sfdx-hardis.debug.deactivate",
-        "title": "SFDX Hardis: Deactivate debug logs tracing"
+        "title": "SFDX Hardis: Deactivate debug logs tracing",
+        "icon": "$(debug-disconnect)"
       },
       {
         "command": "vscode-sfdx-hardis.refreshStatusView",
         "title": "Refresh Status",
-        "icon": {
-          "light": "resources/refresh-button.svg",
-          "dark": "resources/refresh-button.svg"
-        }
+        "icon": "$(refresh)"
       },
       {
         "command": "vscode-sfdx-hardis.refreshPluginsView",
         "title": "Refresh Plugins Panel",
-        "icon": {
-          "light": "resources/refresh-button.svg",
-          "dark": "resources/refresh-button.svg"
-        }
+        "icon": "$(refresh)"
       },
       {
         "command": "vscode-sfdx-hardis.refreshCommandsView",
         "title": "Refresh Commands",
-        "icon": {
-          "light": "resources/refresh-button.svg",
-          "dark": "resources/refresh-button.svg"
-        }
+        "icon": "$(refresh)"
       },
       {
         "command": "vscode-sfdx-hardis.debug.launch",
         "title": "Run apex replay debugger",
-        "icon": {
-          "light": "resources/debug.svg",
-          "dark": "resources/debug.svg"
-        }
+        "icon": "$(debug-console)"
       },
       {
         "command": "vscode-sfdx-hardis.toggleCheckpoint",
-        "title": "SFDX Hardis: Toggle checkpoint"
+        "title": "SFDX Hardis: Toggle checkpoint",
+        "icon": "$(debug-breakpoint-conditional)"
       },
       {
         "command": "vscode-sfdx-hardis.newTerminal",
         "title": "New SFDX Hardis terminal",
-        "icon": {
-          "light": "resources/add-button.svg",
-          "dark": "resources/add-button.svg"
-        }
+        "icon": "$(terminal-new)"
       },
       {
         "command": "vscode-sfdx-hardis.showCommandDetail",
         "title": "Show command detail",
-        "icon": {
-          "light": "resources/help.svg",
-          "dark": "resources/help.svg"
-        }
+        "icon": "$(info)"
       },
       {
         "command": "vscode-sfdx-hardis.openCommandHelp",
         "title": "View command help",
-        "icon": {
-          "light": "resources/help.svg",
-          "dark": "resources/help.svg"
-        }
+        "icon": "$(remote-explorer-documentation)"
       },
       {
         "command": "vscode-sfdx-hardis.openPluginHelp",
         "title": "View dependency documentation",
-        "icon": {
-          "light": "resources/help.svg",
-          "dark": "resources/help.svg"
-        }
+        "icon": "$(remote-explorer-documentation)"
       }
     ],
     "viewsContainers": {
