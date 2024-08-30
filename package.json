@@ -29,8 +29,7 @@
   "activationEvents": [
     "workspaceContains:sfdx-project.json",
     "workspaceContains:.sf/config.json",
-    "workspaceContains:.sfdx/sfdx-config.json",
-    "onView:sfdx-hardis-commands"
+    "workspaceContains:.sfdx/sfdx-config.json"
   ],
   "main": "./out/extension.js",
   "contributes": {
