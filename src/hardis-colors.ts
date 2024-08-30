@@ -30,7 +30,7 @@ export class HardisColors {
   majorOrgBranch: string | undefined = undefined;
 
   // Initialize file watchers only if we are in a sfdx project
-  constructor() {}
+  constructor() { }
 
   async init() {
     this.initializing = true;
@@ -207,11 +207,14 @@ export class HardisColors {
       );
       colorCustomization["statusBar.background"] = color || undefined;
       colorCustomization["activityBar.background"] = color || undefined;
-      config.update(
-        "workbench.colorCustomizations",
-        colorCustomization,
-        vscode.ConfigurationTarget.Workspace,
-      );
+      // Do not update config file with blank color if there wasn't a previous config
+      if (color || Object.keys(colorCustomization).length > 0) {
+        config.update(
+          "workbench.colorCustomizations",
+          colorCustomization,
+          vscode.ConfigurationTarget.Workspace,
+        );
+      }
     }
   }
 

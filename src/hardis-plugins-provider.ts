@@ -14,9 +14,8 @@ let nodeInstallOk = false;
 let gitInstallOk = false;
 
 export class HardisPluginsProvider
-  implements vscode.TreeDataProvider<StatusTreeItem>
-{
-  constructor(private workspaceRoot: string) {}
+  implements vscode.TreeDataProvider<StatusTreeItem> {
+  constructor(private workspaceRoot: string) { }
 
   getTreeItem(element: StatusTreeItem): vscode.TreeItem {
     return element;
@@ -300,7 +299,7 @@ export class HardisPluginsProvider
         sfdxCliOutdated = true;
         sfdxCliItem.label =
           sfdxCliItem.label.includes("missing") &&
-          !sfdxCliItem.label.includes("(link)")
+            !sfdxCliItem.label.includes("(link)")
             ? sfdxCliItem.label
             : sfdxCliItem.label + " (upgrade available)";
         sfdxCliItem.command = `npm install @salesforce/cli@${recommendedSfdxCliVersion} -g`;
@@ -351,10 +350,9 @@ export class HardisPluginsProvider
         )
       ) {
         pluginItem.label =
-          pluginItem.label.includes("missing") &&
-          !pluginItem.label.includes("(link)")
-            ? pluginItem.label.replace("(link)", "(localdev)")
-            : pluginItem.label + " (upgrade available)";
+          pluginItem.label.includes("(link)") ? pluginItem.label.replace("(link)", "(localdev)") :
+            pluginItem.label.includes("missing") ? pluginItem.label :
+              pluginItem.label + " (upgrade available)";
         pluginItem.command = `echo y|sf plugins:install ${plugin.name} && sf hardis:work:ws --event refreshPlugins`;
         pluginItem.tooltip = `Click to upgrade SFDX plugin ${plugin.name} to ${latestPluginVersion}`;
         if (!pluginItem.label.includes("(localdev)")) {
