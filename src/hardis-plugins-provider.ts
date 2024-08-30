@@ -360,7 +360,7 @@ export class HardisPluginsProvider
           outdated.push(plugin);
         }
       }
-      if (pluginItem.label.includes("(link)")) {
+      if (pluginItem.label.includes("(localdev)")) {
         pluginItem.icon = "hammer-wrench.svg";
         pluginItem.tooltip = `You are using locally developed version of ${plugin.name}`;
       }
