@@ -71,8 +71,8 @@ export function preLoadCache() {
   const cliCommands = [
     "node --version",
     "git --version",
-    "sfdx --version",
-    "sfdx plugins",
+    "sf --version",
+    "sf plugins",
     "npm show sfdx-cli version",
     "npm show sfdx-hardis version",
     "npm show sfdx-essentials version",
@@ -84,9 +84,8 @@ export function preLoadCache() {
     preLoadPromises.push(execCommand(cmd, {}, {}));
   }
   const sfdxJsonCommands = [
-    "sfdx force:org:display",
-    "sfdx force:config:get defaultdevhubusername",
-    "sf hardis:config:get --level project",
+    "sf org display",
+    "sf config get target-dev-hub",
     "sf hardis:config:get --level user",
   ];
   for (const cmd of sfdxJsonCommands) {
@@ -291,7 +290,7 @@ export async function getUsernameInstanceUrl(
   }
   // request org
   const orgInfoResult = await execSfdxJson(
-    `sfdx force:org:display --targetusername ${username}`,
+    `sf org display --target-org ${username}`,
     null,
     {
       fail: false,

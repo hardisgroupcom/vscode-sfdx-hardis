@@ -162,7 +162,7 @@ export class HardisColors {
     // https://salesforce.stackexchange.com/questions/297452/determine-if-authorized-org-with-salesforcedx-is-developer-or-production
     // Detect if sandbox or not
     const orgRes = await execSfdxJson(
-      `sfdx force:data:soql:query -q "SELECT IsSandbox,OrganizationType FROM Organization LIMIT 1" --target-org ${this.currentDefaultOrg}`,
+      `sf data query -query "SELECT IsSandbox,OrganizationType FROM Organization LIMIT 1" --target-org ${this.currentDefaultOrg}`,
       {
         fail: false,
         output: true,

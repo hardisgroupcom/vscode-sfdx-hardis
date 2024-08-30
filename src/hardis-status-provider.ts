@@ -81,9 +81,9 @@ export class HardisStatusProvider
   private async getOrgItems(options: any = {}): Promise<any[]> {
     const items: any = [];
     let devHubUsername = "";
-    let orgDisplayCommand = "sfdx force:org:display";
+    let orgDisplayCommand = "sf org display";
     if (options.devHub) {
-      const devHubAliasCommand = "sfdx force:config:get defaultdevhubusername";
+      const devHubAliasCommand = "sf config get target-org";
       const devHubAliasRes = await execSfdxJson(devHubAliasCommand, this, {
         fail: false,
         output: false,
@@ -124,8 +124,8 @@ export class HardisStatusProvider
             " org: " +
             orgInfo.instanceUrl,
           command:
-            "sfdx force:org:open" +
-            (options.devHub ? ` --targetusername ${devHubUsername}` : ""),
+            "sf org open" +
+            (options.devHub ? ` --target-org ${devHubUsername}` : ""),
           icon: "salesforce.svg",
         });
       }
@@ -136,8 +136,8 @@ export class HardisStatusProvider
           tooltip:
             "Username on your remote Salesforce org: " + orgInfo.username,
           command:
-            "sfdx force:org:open" +
-            (options.devHub ? ` --targetusername ${devHubUsername}` : "") +
+            "sf org open" +
+            (options.devHub ? ` --target-org ${devHubUsername}` : "") +
             " --path lightning/settings/personal/PersonalInformation/home",
           icon: "sf-user.svg",
         });
@@ -148,8 +148,8 @@ export class HardisStatusProvider
         icon: "sf-setup.svg",
         tooltip: "",
         command:
-          "sfdx force:org:open" +
-          (options.devHub ? ` --targetusername ${devHubUsername}` : "") +
+          "sf org open" +
+          (options.devHub ? ` --target-org ${devHubUsername}` : "") +
           " --path lightning/setup/SetupOneHome/home",
       };
       if (orgInfo.apiVersion) {

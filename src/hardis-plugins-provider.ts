@@ -219,10 +219,6 @@ export class HardisPluginsProvider
         name: "sfdx-hardis",
         helpUrl: "https://sfdx-hardis.cloudity.com/",
       },
-      {
-        name: "sfdx-essentials",
-        helpUrl: "https://nvuillam.github.io/sfdx-essentials/",
-      },
       { name: "sfdmu", helpUrl: "https://help.sfdmu.com/" },
       {
         name: "sfdx-git-delta",
@@ -243,7 +239,7 @@ export class HardisPluginsProvider
     const outdated: any[] = [];
     // check sfdx-cli version
     const sfdxCliVersionStdOut: string = (
-      await execCommand("sfdx --version", this, { output: true, fail: false })
+      await execCommand("sf --version", this, { output: true, fail: false })
     ).stdout;
     let sfdxCliVersionMatch = /sfdx-cli\/([^\s]+)/gm.exec(sfdxCliVersionStdOut);
     let sfdxCliVersion = "(missing)";
@@ -273,21 +269,21 @@ export class HardisPluginsProvider
       tooltip: `Recommended version of @salesforce/cli is installed`,
       icon: "ok.svg",
       helpUrl:
-        "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference.htm",
+        "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_unified.htm",
     };
     let sfdxCliOutdated = false;
     if (sfdxCliVersion !== recommendedSfdxCliVersion) {
       // Check if sfdx is installed using npm and not the windows installer
       let sfdxPath = "";
       try {
-        sfdxPath = await which("sfdx");
+        sfdxPath = await which("sf");
       } catch (_e) {
         sfdxPath = "missing";
       }
       if (legacySfdx) {
         sfdxCliItem.label = "Upgrade to @salesforce/cli";
         sfdxCliItem.command = `npm uninstall sfdx-cli --global && npm install @salesforce/cli --global`;
-        sfdxCliItem.tooltip = `sfdx is now located in sf CLI, please click to make the upgrade`;
+        sfdxCliItem.tooltip = `sfdx is deprecated: Install the latest Salesforce CLI, please click to make the upgrade`;
         sfdxCliItem.icon = "error.svg";
       } else if (
         !sfdxPath.includes("npm") &&
@@ -296,8 +292,8 @@ export class HardisPluginsProvider
         sfdxPath !== "missing"
       ) {
         sfdxCliItem.label = sfdxCliItem.label + " (WRONGLY INSTALLED)";
-        sfdxCliItem.command = `echo "You need to install Salesforce DX using Node.JS. First, you need to uninstall Salesforce DX using Windows -> Programs -> Uninstall"`;
-        sfdxCliItem.tooltip = `First, you need to uninstall Salesforce DX from Windows -> Programs`;
+        sfdxCliItem.command = `echo "You need to install Salesforce CLI using Node.JS. First, you need to uninstall Salesforce DX / Salesforce CI using Windows -> Programs -> Uninstall"`;
+        sfdxCliItem.tooltip = `First, you need to uninstall Salesforce DX / Salesforce CLI from Windows -> Programs -> Uninstall program`;
         sfdxCliItem.icon = "error.svg";
       } else {
         // sfdx-cli is just outdated
@@ -315,7 +311,7 @@ export class HardisPluginsProvider
     items.push(sfdxCliItem);
     // get currently installed plugins
     const sfdxPlugins =
-      (await execCommand("sfdx plugins", this, { output: true, fail: false }))
+      (await execCommand("sf plugins", this, { output: true, fail: false }))
         .stdout || "";
     // Check installed plugins status version
     const pluginPromises = plugins.map(async (plugin) => {
@@ -384,13 +380,13 @@ export class HardisPluginsProvider
         .then((selection) => {
           if (selection === "Upgrade plugins") {
             let command = outdated
-              .map((plugin) => `echo y|sfdx plugins:install ${plugin.name}`)
+              .map((plugin) => `echo y|sf plugins:install ${plugin.name}`)
               .join(" && ");
             if (legacySfdx) {
               command =
                 "npm uninstall sfdx-cli --global && npm install @salesforce/cli --global && " +
                 plugins
-                  .map((plugin) => `echo y|sfdx plugins:install ${plugin.name}`)
+                  .map((plugin) => `echo y|sf plugins:install ${plugin.name}`)
                   .join(" && ");
             } else if (sfdxCliOutdated === true) {
               command = "npm install @salesforce/cli -g && " + command;

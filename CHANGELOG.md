@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Migrate all sfdx calls into SF Cli calls to match SFDX Hardis v5
+- Remove sfdx-essentials dependency
+
 ## [2.12.1] 2024-08-22
 
 - Accept SF folder name containing `node` in case of custom NodeJs installation folder

@@ -165,7 +165,7 @@ export class HardisCommandsProvider
             label: "Open my org in browser",
             tooltip:
               "Opens your currently selected scratch org or other org in web browser",
-            command: "sfdx force:org:open",
+            command: "sf org open",
             icon: "salesforce.svg",
             helpUrl:
               "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_org.htm#cli_reference_force_org_open",
@@ -271,7 +271,7 @@ export class HardisCommandsProvider
           {
             id: "org:password:generate",
             label: "Generate new password",
-            command: "sfdx force:user:password:generate",
+            command: "sf org generate password",
             tooltip:
               "Generates a new password for your current scratch org user",
             icon: "password.svg",
@@ -312,9 +312,9 @@ export class HardisCommandsProvider
             tooltip:
               "Removes all local information about updates you already pulled from org",
             icon: "trash.svg",
-            command: "sfdx force:source:tracking:clear",
+            command: "sf project delete tracking",
             helpUrl:
-              "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_tracking_clear",
+              "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_project_commands_unified.htm#cli_reference_project_delete_tracking_unified",
           },
           {
             id: "force:source:tracking:reset",
@@ -322,9 +322,9 @@ export class HardisCommandsProvider
             tooltip:
               "Removes all local and remote information about updates you already pulled from org",
             icon: "warning.svg",
-            command: "sfdx force:source:tracking:reset",
+            command: "sf project reset tracking",
             helpUrl:
-              "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_source.htm#cli_reference_force_source_tracking_reset",
+              "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_project_commands_unified.htm#cli_reference_project_reset_tracking_unified",
           },
           {
             id: "hardis:work:save-expert",
@@ -822,9 +822,10 @@ export class HardisCommandsProvider
             id: "org:logout",
             label: "Logout from current Org and DevHub",
             command:
-              "sfdx auth:logout --noprompt || true && sfdx config:unset defaultusername defaultdevhubusername -g && sfdx config:unset defaultusername defaultdevhubusername || true",
+              "sf org logout --noprompt || true && sf config:unset target-org target-dev-hub -g && sf config:unset target-org target-dev-hub || true",
             tooltip: "Log out from orgs :)",
             icon: "logout.svg",
+            helpText: "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_org_commands_unified.htm#cli_reference_org_logout_unified"
           },
           {
             id: "git:login",
@@ -841,11 +842,11 @@ export class HardisCommandsProvider
         label: "Help",
         commands: [
           {
-            id: "question",
-            label: "Post an issue / question",
+            id: "contact:us",
+            label: "Contact Us",
             icon: "help.svg",
             command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
-              "https://github.com/hardisgroupcom/sfdx-hardis/issues",
+              "https://cloudity.com/#form",
             )}`,
           },
           {
@@ -862,6 +863,14 @@ export class HardisCommandsProvider
             icon: "help.svg",
             command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
               "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/",
+            )}`,
+          },
+          {
+            id: "question",
+            label: "Post an issue on GitHub",
+            icon: "help.svg",
+            command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
+              "https://github.com/hardisgroupcom/sfdx-hardis/issues",
             )}`,
           },
           {

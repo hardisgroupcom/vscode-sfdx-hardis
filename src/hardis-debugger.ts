@@ -148,7 +148,7 @@ export class HardisDebugger {
     if (value === "exitNow") {
       return;
     }
-    let logTailCommand = "sfdx force:apex:log:tail --color";
+    let logTailCommand = "sf apex tail log --color";
     if (value === "USER_DEBUG") {
       logTailCommand += " | grep USER_DEBUG";
     }
