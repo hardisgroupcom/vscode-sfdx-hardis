@@ -125,6 +125,11 @@
         "icon": "$(key)"
       },
       {
+        "command": "vscode-sfdx-hardis.openExtensionSettings",
+        "title": "SFDX Hardis: Open extension settings",
+        "icon": "$(gear)"
+      },
+      {
         "command": "vscode-sfdx-hardis.selectColorForOrg",
         "title": "SFDX Hardis: Select color for current default org",
         "icon": "$(symbol-color)"
@@ -133,7 +138,7 @@
         "command": "vscode-sfdx-hardis.selectExtensionTheme",
         "title": "SFDX Hardis: Select display theme of SFDX Hardis extension",
         "icon": "$(symbol-color)"
-      },      
+      },
       {
         "command": "vscode-sfdx-hardis.showMessage",
         "title": "SFDX Hardis: Show message",
@@ -233,23 +238,13 @@
     "menus": {
       "view/title": [
         {
-          "command": "vscode-sfdx-hardis.openValidationLink",
+          "command": "vscode-sfdx-hardis.openExtensionSettings",
           "when": "view == sfdx-hardis-commands",
           "group": "navigation"
         },
         {
-          "command": "vscode-sfdx-hardis.selectColorForOrg",
-          "when": "view == sfdx-hardis-status",
-          "group": "navigation"
-        },
-        {
-          "command": "vscode-sfdx-hardis.refreshStatusView",
-          "when": "view == sfdx-hardis-status",
-          "group": "navigation"
-        },
-        {
-          "command": "vscode-sfdx-hardis.refreshPluginsView",
-          "when": "view == sfdx-hardis-plugins",
+          "command": "vscode-sfdx-hardis.openValidationLink",
+          "when": "view == sfdx-hardis-commands",
           "group": "navigation"
         },
         {
@@ -270,6 +265,21 @@
         {
           "command": "vscode-sfdx-hardis.newTerminal",
           "when": "view == sfdx-hardis-commands",
+          "group": "navigation"
+        },
+        {
+          "command": "vscode-sfdx-hardis.selectColorForOrg",
+          "when": "view == sfdx-hardis-status",
+          "group": "navigation"
+        },
+        {
+          "command": "vscode-sfdx-hardis.refreshStatusView",
+          "when": "view == sfdx-hardis-status",
+          "group": "navigation"
+        },
+        {
+          "command": "vscode-sfdx-hardis.refreshPluginsView",
+          "when": "view == sfdx-hardis-plugins",
           "group": "navigation"
         }
       ],
@@ -338,7 +348,7 @@
     "portastic": "^1.0.1",
     "simple-git": "^3.18.0",
     "strip-ansi": "^6.0.0",
-    "vsce": "^1.87.0",
+    "vsce": "^2.15.0",
     "which": "^2.0.2",
     "ws": "^7.4.4"
   }

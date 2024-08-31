@@ -35,6 +35,7 @@ export class Commands {
   registerCommands() {
     this.registerExecuteCommand();
     this.registerOpenValidationLink();
+    this.registerOpenExtensionSettings();
     this.registerNewTerminalCommand();
     this.registerRefreshCommandsView();
     this.registerRefreshStatusView();
@@ -376,6 +377,17 @@ export class Commands {
     this.disposables.push(disposable);
   }
 
+  registerOpenExtensionSettings() {
+    // Open external command
+    const disposable = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.openExtensionSettings",
+      async () => {
+        vscode.commands.executeCommand("workbench.action.openGlobalSettings", {query: "Hardis"});
+      }
+    );
+    this.disposables.push(disposable);
+  }
+  
   registerOpenKeyFile() {
     // Open key file command
     vscode.commands.registerCommand(

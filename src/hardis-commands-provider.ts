@@ -753,22 +753,22 @@ export class HardisCommandsProvider
           },
         ],
       },
-      {
+    /*  {
         id: "extension-settings",
         label: "Extension settings",
         commands: [
-          /*{ Not working yet because of refresh issues
+          { Not working yet because of refresh issues
             id: "extension:settings:theme",
             label: "Select theme for menus",
             command: `vscode-sfdx-hardis.selectExtensionTheme`,
-          },*/
+          },
           {
             id: "extension:settings:all",
             label: "Open all SFDX Hardis Settings",
             command: `workbench.action.openGlobalSettings hardis`,
           },
         ],
-      },
+      },*/
       {
         id: "help",
         label: "Help",
