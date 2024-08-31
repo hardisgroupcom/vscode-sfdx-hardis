@@ -81,7 +81,7 @@
         "vsCodeSfdxHardis.ignoreSfdxCliRecommendedVersion": {
           "type": "boolean",
           "default": false,
-          "description": "Ignore sfdx-cli version recommended by sfdx-Hardis, and use latest sfdx-cli version"
+          "description": "Ignore @salesforce/cli version recommended by sfdx-Hardis, and use latest @aslesforce/cli version"
         },
         "vsCodeSfdxHardis.theme.emojisInSections": {
           "type": "boolean",

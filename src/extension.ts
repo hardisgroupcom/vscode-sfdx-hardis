@@ -142,7 +142,10 @@ export function activate(context: vscode.ExtensionContext) {
       }
     }
     // Change theme
-    if (event.affectsConfiguration("vsCodeSfdxHardis.theme")) {
+    if (
+      event.affectsConfiguration("vsCodeSfdxHardis.theme.menuIconType") ||
+      event.affectsConfiguration("vsCodeSfdxHardis.theme.emojisInSections")
+    ) {
       vscode.commands.executeCommand(
         "vscode-sfdx-hardis.refreshCommandsView",
         true

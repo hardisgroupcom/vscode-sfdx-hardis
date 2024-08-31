@@ -501,6 +501,7 @@ export class HardisPluginsProvider
     if (!keepCache) {
       resetCache();
     }
+    this.themeUtils = new ThemeUtils();
     this._onDidChangeTreeData.fire();
   }
 

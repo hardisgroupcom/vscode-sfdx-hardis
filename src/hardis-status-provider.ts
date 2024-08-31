@@ -453,6 +453,7 @@ Note: Disable disableGitMergeRequiredCheck in settings to skip this check.`;
     if (!keepCache) {
       resetCache();
     }
+    this.themeUtils = new ThemeUtils();
     this._onDidChangeTreeData.fire();
   }
 

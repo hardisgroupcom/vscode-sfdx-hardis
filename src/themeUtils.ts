@@ -104,17 +104,24 @@ export class ThemeUtils {
       return;
     }
     // Update configuration
-    const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
-    await config.update(
-      "theme.menuIconType",
-      menuIconType,
-      vscode.ConfigurationTarget.Global
-    );
-    await config.update(
-      "theme.emojisInSections",
-      emojisInSections === "With Emojis" ? true : false,
-      vscode.ConfigurationTarget.Global
-    );
+    const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis.theme");
+    if (config.get("menuIconType") !== menuIconType) {
+      await config.update(
+        "menuIconType",
+        menuIconType,
+        vscode.ConfigurationTarget.Global
+      );
+    }
+    if (
+      config.get("emojisInSections") !==
+      (emojisInSections === "With Emojis" ? true : false)
+    ) {
+      await config.update(
+        "emojisInSections",
+        emojisInSections === "With Emojis" ? true : false,
+        vscode.ConfigurationTarget.Global
+      );
+    }
   }
 
   public getAllTopicEmojis(): any {
@@ -222,6 +229,10 @@ export class ThemeUtils {
       "extension:settings:theme": {
         vscode: "symbol-color",
         hardis: "colorPicker.svg",
+      },
+      "extension:settings:all": {
+        vscode: "settings-editor-label-icon",
+        hardis: "configure.svg",
       },
       "contact:us": { vscode: "", hardis: "help.svg" },
       "help:commands": { vscode: "", hardis: "help.svg" },
