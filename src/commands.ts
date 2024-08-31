@@ -7,6 +7,7 @@ import { HardisPluginsProvider } from "./hardis-plugins-provider";
 import { WebSocketServer } from "./hardis-websocket-server";
 import { getWorkspaceRoot } from "./utils";
 import TelemetryReporter from "@vscode/extension-telemetry";
+import { ThemeUtils } from "./themeUtils";
 
 export class Commands {
   hardisCommandsProvider: HardisCommandsProvider | null = null;
@@ -22,7 +23,7 @@ export class Commands {
     hardisCommandsProvider: HardisCommandsProvider,
     hardisStatusProvider: HardisStatusProvider,
     hardisPluginsProvider: HardisPluginsProvider,
-    reporter: TelemetryReporter,
+    reporter: TelemetryReporter
   ) {
     this.hardisCommandsProvider = hardisCommandsProvider;
     this.hardisStatusProvider = hardisStatusProvider;
@@ -44,6 +45,7 @@ export class Commands {
     this.registerOpenPluginHelp();
     this.registerOpenKeyFile();
     this.registerShowMessage();
+    this.registerSelectExtensionTheme();
   }
 
   getLatestTerminal() {
@@ -59,7 +61,7 @@ export class Commands {
     if (this.terminalIsRunning) {
       vscode.window.showErrorMessage(
         "🦙 Wait for the current command to be completed before running a new one :)",
-        "Close",
+        "Close"
       );
       return;
     }
@@ -115,8 +117,8 @@ export class Commands {
         this.terminalStack = this.terminalStack.filter(
           (terminal) =>
             vscode.window.terminals.filter(
-              (vsTerminal) => vsTerminal.processId === terminal.processId,
-            ).length > 0,
+              (vsTerminal) => vsTerminal.processId === terminal.processId
+            ).length > 0
         );
         // Create new terminal if necessary
         if (
@@ -136,25 +138,25 @@ export class Commands {
                 vscode.workspace.getConfiguration("vsCodeSfdxHardis");
               if (config.get("disableGitBashCheck") !== true) {
                 vscode.commands.executeCommand(
-                  "workbench.action.terminal.selectDefaultShell",
+                  "workbench.action.terminal.selectDefaultShell"
                 );
                 vscode.window
                   .showWarningMessage(
                     "🦙 It is recommended to use Git Bash as default terminal shell (do it in the opened dialog at the top of the screen)",
                     "Download Git Bash",
                     "Ignore",
-                    "Don't ask again",
+                    "Don't ask again"
                   )
                   .then((selection) => {
                     if (selection === "Download Git Bash") {
                       vscode.env.openExternal(
-                        vscode.Uri.parse("https://git-scm.com/downloads"),
+                        vscode.Uri.parse("https://git-scm.com/downloads")
                       );
                     } else if (selection === "Don't ask again") {
                       config.update("disableGitBashCheck", true);
                     } else {
                       vscode.window.showInformationMessage(
-                        "🦙 If you do not want to see this message anymore, set VsCode setting vsCodeSfdxHardis.disableGitBashCheck to true, or click on Don't ask again",
+                        "🦙 If you do not want to see this message anymore, set VsCode setting vsCodeSfdxHardis.disableGitBashCheck to true, or click on Don't ask again"
                       );
                     }
                   });
@@ -170,7 +172,7 @@ export class Commands {
           //const newTerminal = vscode.window.createTerminal(terminalOptions);
           vscode.commands.executeCommand(
             "workbench.action.terminal.newInActiveWorkspace",
-            "SFDX Hardis",
+            "SFDX Hardis"
           );
           new Promise((resolve) => setTimeout(resolve, 4000)).then(() => {
             /* vscode.commands.executeCommand(
@@ -185,7 +187,7 @@ export class Commands {
           // Run command in active terminal
           this.runCommandInTerminal(sfdxHardisCommand);
         }
-      },
+      }
     );
     this.disposables.push(disposable);
   }
@@ -194,18 +196,18 @@ export class Commands {
     // Refresh commands tree
     const disposable = vscode.commands.registerCommand(
       "vscode-sfdx-hardis.refreshCommandsView",
-      () => {
-        this.hardisCommandsProvider?.refresh();
+      (keepCache: boolean = false) => {
+        this.hardisCommandsProvider?.refresh(keepCache);
         // Reload window if Salesforce Extensions are not active
         const toReload = vscode.extensions.all.filter(
           (extension) =>
             extension.id === "salesforce.salesforcedx-vscode-core" &&
-            extension.isActive === false,
+            extension.isActive === false
         );
-        if (toReload.length > 0) {
+        if (toReload.length > 0 && keepCache === false) {
           vscode.commands.executeCommand("workbench.action.reloadWindow");
         }
-      },
+      }
     );
     this.disposables.push(disposable);
   }
@@ -213,7 +215,8 @@ export class Commands {
   registerRefreshStatusView() {
     const disposable = vscode.commands.registerCommand(
       "vscode-sfdx-hardis.refreshStatusView",
-      () => this.hardisStatusProvider?.refresh(),
+      (keepCache: boolean = false) =>
+        this.hardisStatusProvider?.refresh(keepCache)
     );
     this.disposables.push(disposable);
   }
@@ -221,7 +224,8 @@ export class Commands {
   registerRefreshPluginsView() {
     const disposable = vscode.commands.registerCommand(
       "vscode-sfdx-hardis.refreshPluginsView",
-      () => this.hardisPluginsProvider?.refresh(),
+      (keepCache: boolean = false) =>
+        this.hardisPluginsProvider?.refresh(keepCache)
     );
     this.disposables.push(disposable);
   }
@@ -233,14 +237,14 @@ export class Commands {
       () => {
         vscode.commands.executeCommand(
           "workbench.action.terminal.newInActiveWorkspace",
-          "SFDX Hardis",
+          "SFDX Hardis"
         );
         new Promise((resolve) => setTimeout(resolve, 4000)).then(() => {
           const newTerminal =
             vscode.window.terminals[vscode.window.terminals.length - 1];
           this.terminalStack.push(newTerminal);
         });
-      },
+      }
     );
     this.disposables.push(disposable);
   }
@@ -249,7 +253,7 @@ export class Commands {
     // Open external command
     const disposable = vscode.commands.registerCommand(
       "vscode-sfdx-hardis.openExternal",
-      (url) => vscode.env.openExternal(url),
+      (url) => vscode.env.openExternal(url)
     );
     this.disposables.push(disposable);
   }
@@ -270,22 +274,22 @@ export class Commands {
           .showInformationMessage(
             `🦙 ${commandDetail}`,
             { modal: true },
-            ...messageButtons,
+            ...messageButtons
           )
           .then((selection) => {
             if (selection === "Run command") {
               vscode.commands.executeCommand(
                 "vscode-sfdx-hardis.execute-command",
-                item.hardisCommand,
+                item.hardisCommand
               );
             } else if (selection === "Open Online Help") {
               vscode.commands.executeCommand(
                 "vscode-sfdx-hardis.openCommandHelp",
-                item,
+                item
               );
             }
           });
-      },
+      }
     );
     this.disposables.push(disposable);
   }
@@ -299,10 +303,10 @@ export class Commands {
           vscode.env.openExternal(item.options.helpUrl);
         } else {
           vscode.window.showInformationMessage(
-            "🦙 No help url has been defined for this command",
+            "🦙 No help url has been defined for this command"
           );
         }
-      },
+      }
     );
     this.disposables.push(disposable);
   }
@@ -311,7 +315,7 @@ export class Commands {
     // Open external command
     const disposable = vscode.commands.registerCommand(
       "vscode-sfdx-hardis.openPluginHelp",
-      (item) => vscode.env.openExternal(item.options.helpUrl),
+      (item) => vscode.env.openExternal(item.options.helpUrl)
     );
     this.disposables.push(disposable);
   }
@@ -326,7 +330,7 @@ export class Commands {
         } else {
           vscode.window.showInformationMessage(msg);
         }
-      },
+      }
     );
     this.disposables.push(disposable);
   }
@@ -348,15 +352,26 @@ export class Commands {
         if (decodedUrl !== "") {
           vscode.commands.executeCommand(
             "vscode-sfdx-hardis.openExternal",
-            decodedUrl,
+            decodedUrl
           );
         } else {
           vscode.window.showErrorMessage(
             "🦙 This URL is not a valid Outlook validation link",
-            "Close",
+            "Close"
           );
         }
-      },
+      }
+    );
+    this.disposables.push(disposable);
+  }
+
+  registerSelectExtensionTheme() {
+    // Open external command
+    const disposable = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.selectExtensionTheme",
+      async () => {
+        await ThemeUtils.promptUpdateConfiguration();
+      }
     );
     this.disposables.push(disposable);
   }
@@ -397,7 +412,7 @@ export class Commands {
             (quickpick.canSelectMany = false);
           quickpick.items = keyFileList
             .filter((choice: any) =>
-              fs.existsSync(currentWorkspaceFolderUri + path.sep + choice.file),
+              fs.existsSync(currentWorkspaceFolderUri + path.sep + choice.file)
             )
             .map((choice: any) => {
               const quickPickItem: vscode.QuickPickItem = {
@@ -423,13 +438,13 @@ export class Commands {
         quickpick.dispose();
         if (value) {
           var openPath = vscode.Uri.parse(
-            "file:///" + currentWorkspaceFolderUri + "/" + value,
+            "file:///" + currentWorkspaceFolderUri + "/" + value
           );
           vscode.workspace.openTextDocument(openPath).then((doc) => {
             vscode.window.showTextDocument(doc);
           });
         }
-      },
+      }
     );
   }
 }

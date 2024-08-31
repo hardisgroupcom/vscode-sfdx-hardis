@@ -1,5 +1,4 @@
 import * as vscode from "vscode";
-import * as path from "path";
 import {
   execCommand,
   loadExternalSfdxHardisConfiguration,
@@ -9,13 +8,18 @@ import {
 } from "./utils";
 import { Logger } from "./logger";
 import which from "which";
+import { ThemeUtils } from "./themeUtils";
 
 let nodeInstallOk = false;
 let gitInstallOk = false;
 
 export class HardisPluginsProvider
-  implements vscode.TreeDataProvider<StatusTreeItem> {
-  constructor(private workspaceRoot: string) { }
+  implements vscode.TreeDataProvider<StatusTreeItem>
+{
+  protected themeUtils: ThemeUtils;
+  constructor(private workspaceRoot: string) {
+    this.themeUtils = new ThemeUtils();
+  }
 
   getTreeItem(element: StatusTreeItem): vscode.TreeItem {
     return element;
@@ -24,7 +28,7 @@ export class HardisPluginsProvider
   getChildren(element?: StatusTreeItem): Thenable<StatusTreeItem[]> {
     if (!this.workspaceRoot) {
       vscode.window.showInformationMessage(
-        "🦙 No info available until you open a Salesforce project",
+        "🦙 No info available until you open a Salesforce project"
       );
       return Promise.resolve([]);
     }
@@ -47,16 +51,16 @@ export class HardisPluginsProvider
       topic.id === "status-plugins-sfdx"
         ? await this.getPluginsItems()
         : topic.id === "status-plugins-core"
-          ? await this.getCoreItems()
-          : topic.id === "status-vscode-extensions"
-            ? await this.getExtensionsItems()
-            : [];
+        ? await this.getCoreItems()
+        : topic.id === "status-vscode-extensions"
+        ? await this.getExtensionsItems()
+        : [];
     console.timeEnd("TreeViewItem_init_" + topic.id);
     Logger.log("Completed TreeViewItem_init_" + topic.id);
     for (const item of topicItems) {
       const options: any = {};
-      if (item.icon) {
-        options.icon = item.icon;
+      if (item.status) {
+        options.status = item.status;
       }
       if (item.description) {
         options.description = item.description;
@@ -73,8 +77,9 @@ export class HardisPluginsProvider
           item.id,
           item.command || null,
           vscode.TreeItemCollapsibleState.None,
-          options,
-        ),
+          this.themeUtils,
+          options
+        )
       );
     }
     return items;
@@ -87,7 +92,7 @@ export class HardisPluginsProvider
       label: "Node.js",
       command: `echo "Nothing to do here :)"`,
       tooltip: `Node.js is installed`,
-      icon: "ok.svg",
+      status: "dependency-ok",
       helpUrl: "https://nodejs.org/en/",
     };
     // Check node.js version
@@ -103,39 +108,39 @@ export class HardisPluginsProvider
         "error";
       const nodeVersionMatch = /v([0-9]+)\.(.*)/gm.exec(nodeVersionStdOut);
       if (!nodeVersionMatch) {
-        nodeItem.icon = "missing.svg";
+        nodeItem.status = "dependency-missing";
         nodeItem.tooltip = "Node.js is missing";
         (nodeItem.command = `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
-          "https://nodejs.org/en/",
+          "https://nodejs.org/en/"
         )}`),
           vscode.window
             .showWarningMessage(
               "🦙 You need Node.js installed on your computer. Please download and install it (version 14 minimum), then restart VsCode",
-              "Download and install Node.js LTS",
+              "Download and install Node.js LTS"
             )
             .then((selection) => {
               if (selection === "Download and install Node.js LTS") {
                 vscode.env.openExternal(
-                  vscode.Uri.parse("https://nodejs.org/en/"),
+                  vscode.Uri.parse("https://nodejs.org/en/")
                 );
               }
             });
       } else if (parseInt(nodeVersionMatch[1]) < 20.0) {
         nodeItem.label += " v" + nodeVersionMatch[1];
-        nodeItem.icon = "warning.svg";
+        nodeItem.status = "dependency-warning";
         nodeItem.tooltip = "Node.js is outdated";
         (nodeItem.command = `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
-          "https://nodejs.org/en/",
+          "https://nodejs.org/en/"
         )}`),
           vscode.window
             .showWarningMessage(
               `🦙 You have a too old version (${nodeVersionMatch[1]}) of Node.js installed on your computer. Please download and install it (version 20 minimum), then restart VsCode`,
-              "Download and install Node.js LTS",
+              "Download and install Node.js LTS"
             )
             .then((selection) => {
               if (selection === "Download and install Node.js LTS") {
                 vscode.env.openExternal(
-                  vscode.Uri.parse("https://nodejs.org/en/"),
+                  vscode.Uri.parse("https://nodejs.org/en/")
                 );
               }
             });
@@ -153,7 +158,7 @@ export class HardisPluginsProvider
       label: "Git",
       command: `echo "Nothing to do here :)"`,
       tooltip: `Git is installed`,
-      icon: "ok.svg",
+      status: "dependency-ok",
       helpUrl: "https://git-scm.com/",
     };
     if (gitInstallOk === false) {
@@ -165,23 +170,23 @@ export class HardisPluginsProvider
           })
         ).stdout || "error";
       const gitVersionMatch = /git version ([0-9]+)\.(.*)/gm.exec(
-        gitVersionStdOut,
+        gitVersionStdOut
       );
       if (!gitVersionMatch) {
-        gitItem.icon = "missing.svg";
+        gitItem.status = "dependency-missing";
         gitItem.tooltip = "Git is missing";
         (gitItem.command = `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
-          "https://git-scm.com/downloads",
+          "https://git-scm.com/downloads"
         )}`),
           vscode.window
             .showWarningMessage(
               "🦙 You need Git installed on your computer. Please download and install it (select GIT BASH in options), then restart VsCode",
-              "Download and install Git",
+              "Download and install Git"
             )
             .then((selection) => {
               if (selection === "Download and install Git") {
                 vscode.env.openExternal(
-                  vscode.Uri.parse("https://git-scm.com/downloads"),
+                  vscode.Uri.parse("https://git-scm.com/downloads")
                 );
               }
             });
@@ -248,14 +253,15 @@ export class HardisPluginsProvider
       legacySfdx = true;
     } else {
       sfdxCliVersionMatch = /@salesforce\/cli\/([^\s]+)/gm.exec(
-        sfdxCliVersionStdOut,
+        sfdxCliVersionStdOut
       );
       if (sfdxCliVersionMatch) {
         sfdxCliVersion = sfdxCliVersionMatch[1];
       }
     }
-    const latestSfdxCliVersion =
-      await this.getNpmRepoLatestVersion("@salesforce/cli");
+    const latestSfdxCliVersion = await this.getNpmRepoLatestVersion(
+      "@salesforce/cli"
+    );
     const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
     const recommendedSfdxCliVersion =
       config.get("ignoreSfdxCliRecommendedVersion") === true
@@ -266,7 +272,7 @@ export class HardisPluginsProvider
       label: `@salesforce/cli v${sfdxCliVersion}`,
       command: `echo "Nothing to do here :)"`,
       tooltip: `Recommended version of @salesforce/cli is installed`,
-      icon: "ok.svg",
+      status: "dependency-ok",
       helpUrl:
         "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_unified.htm",
     };
@@ -283,7 +289,7 @@ export class HardisPluginsProvider
         sfdxCliItem.label = "Upgrade to @salesforce/cli";
         sfdxCliItem.command = `npm uninstall sfdx-cli --global && npm install @salesforce/cli --global`;
         sfdxCliItem.tooltip = `sfdx is deprecated: Install the latest Salesforce CLI, please click to make the upgrade`;
-        sfdxCliItem.icon = "error.svg";
+        sfdxCliItem.status = "dependency-error";
       } else if (
         !sfdxPath.includes("npm") &&
         !sfdxPath.includes("node") &&
@@ -293,18 +299,18 @@ export class HardisPluginsProvider
         sfdxCliItem.label = sfdxCliItem.label + " (WRONGLY INSTALLED)";
         sfdxCliItem.command = `echo "You need to install Salesforce CLI using Node.JS. First, you need to uninstall Salesforce DX / Salesforce CI using Windows -> Programs -> Uninstall"`;
         sfdxCliItem.tooltip = `First, you need to uninstall Salesforce DX / Salesforce CLI from Windows -> Programs -> Uninstall program`;
-        sfdxCliItem.icon = "error.svg";
+        sfdxCliItem.status = "dependency-error";
       } else {
         // sfdx-cli is just outdated
         sfdxCliOutdated = true;
         sfdxCliItem.label =
           sfdxCliItem.label.includes("missing") &&
-            !sfdxCliItem.label.includes("(link)")
+          !sfdxCliItem.label.includes("(link)")
             ? sfdxCliItem.label
             : sfdxCliItem.label + " (upgrade available)";
         sfdxCliItem.command = `npm install @salesforce/cli@${recommendedSfdxCliVersion} -g`;
         sfdxCliItem.tooltip = `Click to upgrade @salesforce/cli to ${recommendedSfdxCliVersion}`;
-        sfdxCliItem.icon = "warning.svg";
+        sfdxCliItem.status = "dependency-warning";
       }
     }
     items.push(sfdxCliItem);
@@ -326,7 +332,7 @@ export class HardisPluginsProvider
       let isPluginMissing = false;
       const regexVersion = new RegExp(
         `${plugin.altName || plugin.name} (.*)`,
-        "gm",
+        "gm"
       );
       const versionMatches = [...sfdxPlugins.matchAll(regexVersion)];
       if (versionMatches.length > 0) {
@@ -340,28 +346,31 @@ export class HardisPluginsProvider
         label: pluginLabel,
         command: `echo "Nothing to do here :)"`,
         tooltip: `Latest version of SFDX plugin ${plugin.name} is installed`,
-        icon: "ok.svg",
+        status: "dependency-ok",
         helpUrl: plugin.helpUrl,
       };
       if (
         !sfdxPlugins.includes(`${plugin.name} ${latestPluginVersion}`) &&
         !sfdxPlugins.includes(
-          `${plugin.altName || "nope"} ${latestPluginVersion}`,
+          `${plugin.altName || "nope"} ${latestPluginVersion}`
         )
       ) {
-        pluginItem.label =
-          pluginItem.label.includes("(link)") ? pluginItem.label.replace("(link)", "(localdev)") :
-            pluginItem.label.includes("missing") ? pluginItem.label :
-              pluginItem.label + " (upgrade available)";
+        pluginItem.label = pluginItem.label.includes("(link)")
+          ? pluginItem.label.replace("(link)", "(localdev)")
+          : pluginItem.label.includes("missing")
+          ? pluginItem.label
+          : pluginItem.label + " (upgrade available)";
         pluginItem.command = `echo y|sf plugins:install ${plugin.name} && sf hardis:work:ws --event refreshPlugins`;
         pluginItem.tooltip = `Click to upgrade SFDX plugin ${plugin.name} to ${latestPluginVersion}`;
         if (!pluginItem.label.includes("(localdev)")) {
-          pluginItem.icon = isPluginMissing ? "missing.svg" : "warning.svg";
+          pluginItem.status = isPluginMissing
+            ? "dependency-missing"
+            : "dependency-warning";
           outdated.push(plugin);
         }
       }
       if (pluginItem.label.includes("(localdev)")) {
-        pluginItem.icon = "hammer-wrench.svg";
+        pluginItem.status = "dependency-local";
         pluginItem.tooltip = `You are using locally developed version of ${plugin.name}`;
       }
       items.push(pluginItem);
@@ -373,7 +382,7 @@ export class HardisPluginsProvider
       vscode.window
         .showWarningMessage(
           "🦙 Some plugins are not up to date, please click to upgrade, then wait for the process to be completed before performing actions",
-          "Upgrade plugins",
+          "Upgrade plugins"
         )
         .then((selection) => {
           if (selection === "Upgrade plugins") {
@@ -389,11 +398,10 @@ export class HardisPluginsProvider
             } else if (sfdxCliOutdated === true) {
               command = "npm install @salesforce/cli -g && " + command;
             }
-            command =
-              command + ` && sf hardis:work:ws --event refreshPlugins`;
+            command = command + ` && sf hardis:work:ws --event refreshPlugins`;
             vscode.commands.executeCommand(
               "vscode-sfdx-hardis.execute-command",
-              command,
+              command
             );
           }
         });
@@ -416,23 +424,23 @@ export class HardisPluginsProvider
         label: extension.label,
         command: `echo "Nothing to do here :)"`,
         tooltip: `${extension.label} is installed`,
-        icon: "ok.svg",
+        status: "dependency-ok",
       };
       const extInstance = vscode.extensions.getExtension(extension.id);
       if (!extInstance) {
         extensionItem.command = `code --install-extension ${extension.id}`;
         extensionItem.tooltip = `Click to install VsCode Extension ${extension.label}`;
-        extensionItem.icon = "warning.svg";
+        extensionItem.status = "dependency-warning";
         vscode.window
           .showWarningMessage(
             `🦙 VsCode extension ${extension.label} is missing, click to install it`,
-            `Install ${extension.label}`,
+            `Install ${extension.label}`
           )
           .then((selection) => {
             if (selection === `Install ${extension.label}`) {
               vscode.commands.executeCommand(
                 "vscode-sfdx-hardis.execute-command",
-                extensionItem.command,
+                extensionItem.command
               );
             }
           });
@@ -450,14 +458,11 @@ export class HardisPluginsProvider
     const items: StatusTreeItem[] = [];
     for (const item of this.listTopics()) {
       const options = {
-        icon: { id: "", color: "" },
         description: "",
         tooltip: "",
         helpUrl: "",
+        status: "dependency-ok",
       };
-      if (item.icon) {
-        options.icon = item.icon;
-      }
       if (item.description) {
         options.description = item.description;
       }
@@ -471,7 +476,14 @@ export class HardisPluginsProvider
         ? vscode.TreeItemCollapsibleState.Expanded
         : vscode.TreeItemCollapsibleState.Collapsed;
       items.push(
-        new StatusTreeItem(item.label, item.id, "", expanded, options),
+        new StatusTreeItem(
+          item.label,
+          item.id,
+          "",
+          expanded,
+          this.themeUtils,
+          options
+        )
       );
     }
     return items;
@@ -485,8 +497,10 @@ export class HardisPluginsProvider
     StatusTreeItem | undefined | null | void
   > = this._onDidChangeTreeData.event;
 
-  refresh(): void {
-    resetCache();
+  refresh(keepCache: boolean): void {
+    if (!keepCache) {
+      resetCache();
+    }
     this._onDidChangeTreeData.fire();
   }
 
@@ -496,22 +510,22 @@ export class HardisPluginsProvider
       {
         id: "status-plugins-sfdx",
         label: "SFDX",
-        icon: "plugins.svg",
         defaultExpand: true,
       },
       {
         id: "status-plugins-core",
         label: "Core",
-        icon: "plugins.svg",
         defaultExpand: true,
       },
       {
         id: "status-vscode-extensions",
         label: "VsCode Extensions",
-        icon: "plugins.svg",
         defaultExpand: true,
       },
-    ];
+    ].map((topic) => {
+      topic.label = this.themeUtils.buildSectionLabel(topic.id, topic.label);
+      return topic;
+    });
     return topics;
   }
 }
@@ -523,12 +537,13 @@ class StatusTreeItem extends vscode.TreeItem {
     public readonly id: string,
     public readonly hardisCommand: string,
     public readonly collapsibleState: vscode.TreeItemCollapsibleState,
+    public readonly themeUtils: ThemeUtils,
     public readonly options = {
-      icon: { id: "", color: "" },
+      status: "",
       description: "",
       tooltip: "",
       helpUrl: "",
-    },
+    }
   ) {
     super(label, collapsibleState);
     this.id = id;
@@ -554,22 +569,8 @@ class StatusTreeItem extends vscode.TreeItem {
         this.hardisCommand = hardisCommand;
       }
 
-      if (options.icon) {
-        this.iconPath = options.icon;
-        /* this.iconPath.light = path.join(
-          __filename,
-          "..",
-          "..",
-          "resources",
-          this.iconPath.light.toString(),
-        );
-        this.iconPath.dark = path.join(
-          __filename,
-          "..",
-          "..",
-          "resources",
-          this.iconPath.dark.toString(),
-        ); */
+      if (options.status) {
+        this.iconPath = this.themeUtils.getCommandIconPath(options.status);
       }
     }
     // Manage context menu tag

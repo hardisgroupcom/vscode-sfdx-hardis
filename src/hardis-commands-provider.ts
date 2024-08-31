@@ -79,9 +79,11 @@ export class HardisCommandsProvider
     CommandTreeItem | undefined | null | void
   > = this._onDidChangeTreeData.event;
 
-  refresh(): void {
+  refresh(keepCache: boolean): void {
     this.allTopicsAndCommands = null;
-    resetCache();
+    if (!keepCache) {
+      resetCache();
+    }
     this._onDidChangeTreeData.fire();
   }
 
@@ -467,7 +469,7 @@ export class HardisCommandsProvider
         ],
       },
       {
-        id: "monitoring",
+        id: "org-monitoring",
         label: "Org Monitoring",
         commands: [
           {
@@ -747,6 +749,17 @@ export class HardisCommandsProvider
             command:
               "echo 'If you see and error, execute the same commands in PowerShell run as administrator' && git config --system --unset credential.helper && git config credential.helper store && git fetch",
             tooltip: "Use this command in case you have git login errors",
+          },
+        ],
+      },
+      {
+        id: "extension-settings",
+        label: "Extension settings",
+        commands: [
+          {
+            id: "extension:settings:theme",
+            label: "Select theme for menus",
+            command: `vscode-sfdx-hardis.selectExtensionTheme`,
           },
         ],
       },

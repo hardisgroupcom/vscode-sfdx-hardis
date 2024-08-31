@@ -82,6 +82,24 @@
           "type": "boolean",
           "default": false,
           "description": "Ignore sfdx-cli version recommended by sfdx-Hardis, and use latest sfdx-cli version"
+        },
+        "vsCodeSfdxHardis.theme.emojisInSections": {
+          "type": "boolean",
+          "default": true,
+          "description": "Display emojis in menu section titles"
+        },
+        "vsCodeSfdxHardis.theme.menuIconType": {
+          "type": "string",
+          "default": "hardis",
+          "enum": [
+            "hardis",
+            "vscode"
+          ],
+          "enumDescriptions": [
+            "Colored SVG Icons",
+            "Standard Visual Studio Code Icons"
+          ],
+          "description": "Theme of SFDX-Hardis menu icons"
         }
       }
     },
@@ -111,6 +129,11 @@
         "title": "SFDX Hardis: Select color for current default org",
         "icon": "$(symbol-color)"
       },
+      {
+        "command": "vscode-sfdx-hardis.selectExtensionTheme",
+        "title": "SFDX Hardis: Select display theme of SFDX Hardis extension",
+        "icon": "$(symbol-color)"
+      },      
       {
         "command": "vscode-sfdx-hardis.showMessage",
         "title": "SFDX Hardis: Show message",
