@@ -403,9 +403,18 @@ export class Commands {
             label: "List of all deployed metadatas",
           },
           {
+            file: "manifest/destructiveChanges.xml",
+            label: "List of all deleted metadatas",
+          },
+          {
+            file: "manifest/package-no-overwrite.xml",
+            label:
+              "List of metadatas that will be deployed only if they are not already existing in the target org",
+          },
+          {
             file: "manifest/packageDeployOnce.xml",
             label:
-              "List of metadatas that will be deployed only if not existing in the target org",
+              "List of metadatas that will be deployed only if they are not already existing in the target org",
           },
           {
             file: "config/project-scratch-def.json",

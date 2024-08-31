@@ -146,7 +146,7 @@
       },
       {
         "command": "vscode-sfdx-hardis.openKeyFile",
-        "title": "SFDX Hardis: Open key configuration file",
+        "title": "SFDX Hardis: Quick open SFDX project configuration files",
         "icon": "$(settings-editor-label-icon)"
       },
       {

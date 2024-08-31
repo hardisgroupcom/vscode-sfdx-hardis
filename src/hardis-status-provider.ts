@@ -254,6 +254,8 @@ Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if you
       ["59.0", "Winter '24"],
       ["60.0", "Spring '24"],
       ["61.0", "Summer '24"],
+      ["62.0", "Winter '25"],
+      ["63.0", "Spring '25"],
     ]);
     return matches.get(apiVersion) || "NEXT";
   }
@@ -463,19 +465,16 @@ Note: Disable disableGitMergeRequiredCheck in settings to skip this check.`;
       {
         id: "status-org",
         label: "Current Org",
-        icon: "salesforce.svg",
         defaultExpand: true,
       },
       {
         id: "status-git",
         label: "Git Status",
-        icon: "git.svg",
         defaultExpand: true,
       },
       {
         id: "status-org-devhub",
         label: "Current Dev Hub org",
-        icon: "salesforce.svg",
         defaultExpand: true,
       },
     ];
