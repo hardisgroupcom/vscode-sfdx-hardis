@@ -20,7 +20,7 @@ export class HardisCommandsProvider
   getChildren(element?: CommandTreeItem): Thenable<CommandTreeItem[]> {
     if (!this.workspaceRoot) {
       vscode.window.showInformationMessage(
-        "🦙 No commands available until you open a folder",
+        "🦙 No commands available until you open a folder"
       );
       return Promise.resolve([]);
     }
@@ -38,12 +38,12 @@ export class HardisCommandsProvider
   private getTopicCommands(topic: any): CommandTreeItem[] {
     const items: CommandTreeItem[] = [];
     const matchingTopic = this.getAllTopicsAndCommands().filter(
-      (topicItem: CommandTreeItem) => topicItem.id === topic.id,
+      (topicItem: CommandTreeItem) => topicItem.id === topic.id
     )[0];
     for (const item of matchingTopic.commands) {
       const options: any = {};
       if (item.icon) {
-        options.icon = { light: item.icon, dark: item.icon };
+        options.icon = item.icon;
       }
       if (item.description) {
         options.description = item.description;
@@ -63,8 +63,8 @@ export class HardisCommandsProvider
           item.id,
           item.command,
           vscode.TreeItemCollapsibleState.None,
-          options,
-        ),
+          options
+        )
       );
     }
     return items;
@@ -91,14 +91,14 @@ export class HardisCommandsProvider
     const items: CommandTreeItem[] = [];
     for (const item of await this.listTopicAndCommands()) {
       const options = {
-        icon: { light: "user.svg", dark: "user.svg" },
+        icon: { id: "", color: "" },
         description: "",
         tooltip: "",
         requiresProject: false,
         helpUrl: "",
       };
       if (item.icon) {
-        options.icon = { light: item.icon, dark: item.icon };
+        options.icon = item.icon;
       }
       if (item.description) {
         options.description = item.description;
@@ -123,12 +123,12 @@ export class HardisCommandsProvider
             item.id,
             item.command,
             vscode.TreeItemCollapsibleState.None,
-            options,
-          ),
+            options
+          )
         );
       } else {
         items.push(
-          new CommandTreeItem(item.label, item.id, "", expanded, options),
+          new CommandTreeItem(item.label, item.id, "", expanded, options)
         );
       }
     }
@@ -146,37 +146,27 @@ export class HardisCommandsProvider
     let hardisCommands = [
       {
         id: "work",
-        label: "Work on a task (assisted mode)",
-        icon: "user.svg",
+        label: "🙂 CI/CD (simple)",
+        icon: new vscode.ThemeIcon("smiley"),
         defaultExpand: true,
         commands: [
           {
             id: "hardis:work:new",
             label: "Start a new task",
             command: "sf hardis:work:new",
-            icon: "new.svg",
+            icon: new vscode.ThemeIcon("new-file"),
             tooltip:
-              "Create a new environment to develop or configure with a scratch org",
+              "Start to work, it will:\n- Create a new git branch where it is needed to \n- Allow to select or create a Salesforce org to work in (sandbox or scratch)",
             requiresProject: true,
             helpUrl: "https://sfdx-hardis.cloudity.com/hardis/work/new/",
-          },
-          {
-            id: "org:open-scratch",
-            label: "Open my org in browser",
-            tooltip:
-              "Opens your currently selected scratch org or other org in web browser",
-            command: "sf org open",
-            icon: "salesforce.svg",
-            helpUrl:
-              "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_org.htm#cli_reference_force_org_open",
           },
           {
             id: "scratch:pull-from-org-to-git",
             label: "Pull from SF Org to local Git files",
             tooltip:
-              "Retrieve locally the updates made on the remote Salesforce scratch or sandbox org",
+              "Once you have made your configuration in your org Setup, click here to download your updates.\nThen, you can commit the updates you want to publish (use VsCode Git extension)\nThen you can run command \"Save / Publish my current task\"\nNote: if you don't see all your updates, you can manually retrieve it using VsCode Extension \"Org Browser\"(Salesforce logo)",
             command: "sf hardis:scratch:pull",
-            icon: "pull.svg",
+            icon: new vscode.ThemeIcon("cloud-download"),
             requiresProject: true,
             helpUrl: "https://sfdx-hardis.cloudity.com/hardis/scratch/pull/",
           },
@@ -184,9 +174,9 @@ export class HardisCommandsProvider
             id: "hardis:work:save",
             label: "Save / Publish my current task",
             command: "sf hardis:work:save",
-            icon: "save.svg",
+            icon: new vscode.ThemeIcon("save"),
             tooltip:
-              "Save to server you current work, and propose to create a merge request",
+              "Once you performed your commit(s), click here to prepare your Pull Request. It will:\n- Automatically update package.xml and destructiveChanges.xml\n- Clean metadatas before publishing them (for example remove flow positions or remove object & field access from Profiles)",
             requiresProject: true,
             helpUrl: "https://sfdx-hardis.cloudity.com/hardis/work/save/",
           },
@@ -194,9 +184,9 @@ export class HardisCommandsProvider
             id: "hardis:work:resetselection",
             label: "Reset selected list of items to merge",
             command: "sf hardis:work:resetselection",
-            icon: "reset.svg",
+            icon: new vscode.ThemeIcon("history"),
             tooltip:
-              "If you made a wrong selection of items to merge, you can reset the selection and save it again",
+              "You already pushed a commit but you selected updates that you do not want to deploy ?\nIn that case, click here and you'll be able to select again what you want to commit.\nAfter creating new commits, click on \"Save / Publish my current task\"",
             requiresProject: true,
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/work/resetselection/",
@@ -205,7 +195,7 @@ export class HardisCommandsProvider
       },
       {
         id: "work-dev",
-        label: "Work on a task (expert mode)",
+        label: "😎 CI/CD (advanced)",
         commands: [
           {
             id: "scratch:push-from-git-to-org",
@@ -213,7 +203,7 @@ export class HardisCommandsProvider
             tooltip:
               "Propagates your local updates within Vs Code into your remote Salesforce scratch org",
             command: "sf hardis:scratch:push",
-            icon: "push.svg",
+            icon: new vscode.ThemeIcon("cloud-upload"),
             requiresProject: true,
             helpUrl: "https://sfdx-hardis.cloudity.com/hardis/scratch/push/",
           },
@@ -222,29 +212,26 @@ export class HardisCommandsProvider
             label: "Install a package",
             tooltip:
               "This will update project .sfdx-hardis.yml so the package will always be installed in new scratch orgs and future deployments",
-            icon: "package.svg",
+            icon: new vscode.ThemeIcon("package"),
             command: "sf hardis:package:install",
             requiresProject: true,
             helpUrl: "https://sfdx-hardis.cloudity.com/hardis/package/install/",
           },
           {
-            id: "project:deploy:sources:dx:check",
-            label: "Simulate SFDX deployment",
+            id: "org:retrieve:packageconfig",
+            label: "Retrieve packages configuration from org",
             tooltip:
-              "Simulates deployment from local SFDX source to target org",
-            icon: "test-deploy.svg",
-            command: "sf hardis:project:deploy:sources:dx --check",
-            requiresProject: true,
-            helpUrl:
-              "https://sfdx-hardis.cloudity.com/hardis/project/deploy/sources/dx/",
+              "Retrieve package configuration from an org and propose to update project sfdx-hardis configuration",
+              icon: new vscode.ThemeIcon("package"),
+            command: "sf hardis:org:retrieve:packageconfig",
           },
           {
             id: "project:clean:references",
             label: "Clean SFDX project sources",
             tooltip:
               "Select and apply lots of cleaning commands provided by sfdx-hardis",
-            icon: "clean.svg",
-            command: "sf hardis:project:clean:references",
+            icon: new vscode.ThemeIcon("flame"),
+            command: "sf hardis:project:clean:references", 
             requiresProject: true,
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/project/clean/references/",
@@ -254,7 +241,7 @@ export class HardisCommandsProvider
             label: "Create scratch org (or resume creation)",
             tooltip:
               "If during Work:New you had an error, you can resume the scratch org creation",
-            icon: "salesforce.svg",
+              icon: new vscode.ThemeIcon("file-directory-create"),
             command: "sf hardis:scratch:create",
             requiresProject: true,
             helpUrl: "https://sfdx-hardis.cloudity.com/hardis/scratch/create/",
@@ -263,7 +250,7 @@ export class HardisCommandsProvider
             id: "scratch:create:new",
             label: "Create scratch org (force new)",
             tooltip: "Create a new scratch org for the current work",
-            icon: "salesforce.svg",
+            icon: new vscode.ThemeIcon("file-directory-create"),
             command: "sf hardis:scratch:create --forcenew",
             requiresProject: true,
             helpUrl: "https://sfdx-hardis.cloudity.com/hardis/scratch/create/",
@@ -274,7 +261,7 @@ export class HardisCommandsProvider
             command: "sf org generate password",
             tooltip:
               "Generates a new password for your current scratch org user",
-            icon: "password.svg",
+            icon: new vscode.ThemeIcon("lock"),
             helpUrl:
               "https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_scratch_orgs_passwd.htm",
           },
@@ -284,7 +271,7 @@ export class HardisCommandsProvider
             tooltip:
               "Connects to a Salesforce org without setting it as defaultusername",
             command: "sf hardis:org:connect",
-            icon: "select.svg",
+            icon: new vscode.ThemeIcon("globe"),
             helpUrl: "https://sfdx-hardis.cloudity.com/hardis/org/connect/",
           },
           {
@@ -293,7 +280,7 @@ export class HardisCommandsProvider
             tooltip:
               "Allows user to select a list of metadata types and process the retrieve from an org",
             command: "sf hardis:source:retrieve",
-            icon: "pull.svg",
+            icon: new vscode.ThemeIcon("cloud-download"),
             helpUrl: "https://sfdx-hardis.cloudity.com/hardis/source/retrieve/",
           },
           {
@@ -302,7 +289,7 @@ export class HardisCommandsProvider
             tooltip:
               "Allows user to select a list of metadata types and process the retrieve from an org",
             command: "sf hardis:org:retrieve:sources:analytics",
-            icon: "pull.svg",
+            icon: new vscode.ThemeIcon("pie-chart"), 
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/org/retrieve/sources/analytics/",
           },
@@ -311,7 +298,7 @@ export class HardisCommandsProvider
             label: "Clear local sfdx tracking files",
             tooltip:
               "Removes all local information about updates you already pulled from org",
-            icon: "trash.svg",
+            icon: new vscode.ThemeIcon("trash"), 
             command: "sf project delete tracking",
             helpUrl:
               "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_project_commands_unified.htm#cli_reference_project_delete_tracking_unified",
@@ -321,33 +308,24 @@ export class HardisCommandsProvider
             label: "Clear local and remote sfdx tracking files",
             tooltip:
               "Removes all local and remote information about updates you already pulled from org",
-            icon: "warning.svg",
+            icon: new vscode.ThemeIcon("warning"), 
             command: "sf project reset tracking",
             helpUrl:
               "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_project_commands_unified.htm#cli_reference_project_reset_tracking_unified",
-          },
-          {
-            id: "hardis:work:save-expert",
-            label: "Save my current task (no source:pull and no git)",
-            command: "sf hardis:work:save --nopull --nogit",
-            icon: "save.svg",
-            tooltip:
-              "Do all the work:save operations except scratch pull and git operations",
-            requiresProject: true,
-            helpUrl: "https://sfdx-hardis.cloudity.com/hardis/work/save/",
           },
         ],
       },
       {
         id: "data",
-        label: "Data & files Import/Export",
+        label: "🚚 Data Import/Export",
+        icon: new vscode.ThemeIcon("database"),
         commands: [
           {
             id: "org:data:export",
             label: "Export data from org with SFDMU",
             tooltip:
               "Export data from org and store it in project files, so it can be imported during each scratch org initialization or deployment to org",
-            icon: "data.svg",
+            icon: new vscode.ThemeIcon("cloud-download"),
             command: "sf hardis:org:data:export",
             helpUrl: "https://sfdx-hardis.cloudity.com/hardis/org/data/export/",
           },
@@ -355,7 +333,7 @@ export class HardisCommandsProvider
             id: "org:data:import",
             label: "Import data to org with SFDMU",
             tooltip: "Import data into org from project files",
-            icon: "data.svg",
+            icon: new vscode.ThemeIcon("cloud-upload"),
             command: "sf hardis:org:data:import",
             helpUrl: "https://sfdx-hardis.cloudity.com/hardis/org/data/import/",
           },
@@ -363,7 +341,7 @@ export class HardisCommandsProvider
             id: "org:data:delete",
             label: "Delete data from org with SFDMU",
             tooltip: "Delete data from org using SFDMU config files",
-            icon: "trash.svg",
+            icon: new vscode.ThemeIcon("trash"),
             command: "sf hardis:org:data:delete",
             helpUrl: "https://sfdx-hardis.cloudity.com/hardis/org/data/delete/",
           },
@@ -371,16 +349,23 @@ export class HardisCommandsProvider
             id: "org:data:configure",
             label: "Create data import/export configuration",
             tooltip: "Initializes a new SFDMU project",
-            icon: "configure.svg",
+            icon: new vscode.ThemeIcon("gear"),
             command: "sf hardis:org:configure:data",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/org/configure/data/",
           },
+        ],
+      },
+      {
+        id: "files",
+        label: "📂 Files Import/Export",
+        icon: new vscode.ThemeIcon("files"),
+        commands: [
           {
             id: "org:files:export",
             label: "Export files from org",
             tooltip: "Export files from org based on a configuration",
-            icon: "file.svg",
+            icon: new vscode.ThemeIcon("cloud-download"),
             command: "sf hardis:org:files:export",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/org/files/export/",
@@ -389,7 +374,7 @@ export class HardisCommandsProvider
             id: "org:files:import",
             label: "Import files into org",
             tooltip: "Import files into org based on a configuration",
-            icon: "file.svg",
+            icon: new vscode.ThemeIcon("cloud-upload"),
             command: "sf hardis:org:files:import",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/org/files/import/",
@@ -398,7 +383,7 @@ export class HardisCommandsProvider
             id: "org:files:configure",
             label: "Create files export configuration",
             tooltip: "Initializes a new file export project",
-            icon: "configure.svg",
+            icon: new vscode.ThemeIcon("gear"),
             command: "sf hardis:org:configure:files",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/org/configure/files/",
@@ -407,13 +392,13 @@ export class HardisCommandsProvider
       },
       {
         id: "debug",
-        label: "Debugger",
+        label: "🐞 Debugger",
         commands: [
           {
             id: "hardis:debug:run",
             label: "Run debugger",
             tooltip: "Run debugger on an apex log file",
-            icon: "debug.svg",
+            icon: new vscode.ThemeIcon("debug-console"),
             command: "vscode-sfdx-hardis.debug.launch",
           },
           {
@@ -421,7 +406,7 @@ export class HardisCommandsProvider
             label: "Activate debug logs tracing",
             tooltip:
               "Activate tracing of logs to use the local replay debugger",
-            icon: "toggle-on.svg",
+            icon: new vscode.ThemeIcon("breakpoints-activate"), 
             command: "vscode-sfdx-hardis.debug.activate",
           },
           {
@@ -429,21 +414,21 @@ export class HardisCommandsProvider
             label: "Deactivate debug logs tracing ",
             tooltip:
               "Deactivate tracing of logs to use the local replay debugger",
-            icon: "toggle-off.svg",
+              icon: new vscode.ThemeIcon("debug-disconnect"),
             command: "vscode-sfdx-hardis.debug.deactivate",
           },
           {
             id: "org:purge:apexlog",
             label: "Purge Apex Logs",
             tooltip: "Purge all apex logs of default org",
-            icon: "file.svg",
+            icon: new vscode.ThemeIcon("trash"),
             command: "sf hardis:org:purge:apexlog",
           },
           {
             id: "org:apex:log:tail",
             label: "Display live logs in terminal",
             tooltip: "Display apex logs in console while they are generated",
-            icon: "log.svg",
+            icon: new vscode.ThemeIcon("inspect"),
             command: "vscode-sfdx-hardis.debug.logtail",
             helpUrl:
               "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_apex.htm#cli_reference_force_apex_log_tail",
@@ -453,7 +438,7 @@ export class HardisCommandsProvider
             label: "Retrieve Apex sources from org",
             tooltip:
               "Retrieve sources from your org so you can use the replay debugger",
-            icon: "pull.svg",
+              icon: new vscode.ThemeIcon("cloud-download"),
             command:
               "sf hardis:org:retrieve:sources:dx -k ApexClass,ApexTrigger,ApexPage",
           },
@@ -461,7 +446,7 @@ export class HardisCommandsProvider
       },
       {
         id: "operations",
-        label: "Operations",
+        label: "🛠️ Org Operations",
         commands: [
           {
             id: "org:user:freeze",
@@ -511,7 +496,7 @@ export class HardisCommandsProvider
       },
       {
         id: "monitoring",
-        label: "Monitoring",
+        label: "🔬 Org Monitoring",
         commands: [
           {
             id: "hardis:org:monitor:backup",
@@ -624,7 +609,7 @@ export class HardisCommandsProvider
       },
       {
         id: "audit",
-        label: "Audit",
+        label: "⚗️ Metadata Analysis",
         commands: [
           {
             id: "project:audit:duplicatefiles",
@@ -679,23 +664,8 @@ export class HardisCommandsProvider
       },
       {
         id: "config-commands",
-        label: "Configuration",
+        label: "⚙️ Setup configuration",
         commands: [
-          {
-            id: "open-key-file",
-            label: "Open config file",
-            tooltip: "Shortcut to main configuration files",
-            icon: "file.svg",
-            command: "vscode-sfdx-hardis.openKeyFile",
-          },
-          {
-            id: "org:retrieve:packageconfig",
-            label: "Retrieve packages configuration from org",
-            tooltip:
-              "Retrieve package configuration from an org and propose to update project sfdx-hardis configuration",
-            icon: "package.svg",
-            command: "sf hardis:org:retrieve:packageconfig",
-          },
           {
             id: "configure:auth:deployment",
             label: "Configure Org CI authentication",
@@ -740,7 +710,7 @@ export class HardisCommandsProvider
       },
       {
         id: "packaging",
-        label: "Packaging",
+        label: "📦 Packaging",
         commands: [
           {
             id: "hardis:package:create",
@@ -770,7 +740,7 @@ export class HardisCommandsProvider
       },
       {
         id: "nerdy_stuff",
-        label: "Nerdy stuff",
+        label: "🤓 Nerdy stuff",
         commands: [
           {
             id: "project:generate:gitdelta",
@@ -825,7 +795,8 @@ export class HardisCommandsProvider
               "sf org logout --noprompt || true && sf config:unset target-org target-dev-hub -g && sf config:unset target-org target-dev-hub || true",
             tooltip: "Log out from orgs :)",
             icon: "logout.svg",
-            helpText: "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_org_commands_unified.htm#cli_reference_org_logout_unified"
+            helpText:
+              "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_org_commands_unified.htm#cli_reference_org_logout_unified",
           },
           {
             id: "git:login",
@@ -839,14 +810,14 @@ export class HardisCommandsProvider
       },
       {
         id: "help",
-        label: "Help",
+        label: "♾️ Help",
         commands: [
           {
             id: "contact:us",
             label: "Contact Us",
             icon: "help.svg",
             command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
-              "https://cloudity.com/#form",
+              "https://cloudity.com/#form"
             )}`,
           },
           {
@@ -854,7 +825,7 @@ export class HardisCommandsProvider
             label: "All sfdx-hardis commands",
             icon: "help.svg",
             command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
-              "https://sfdx-hardis.cloudity.com/commands/",
+              "https://sfdx-hardis.cloudity.com/commands/"
             )}`,
           },
           {
@@ -862,7 +833,7 @@ export class HardisCommandsProvider
             label: "DevOps - CI/CD",
             icon: "help.svg",
             command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
-              "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/",
+              "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/"
             )}`,
           },
           {
@@ -870,7 +841,7 @@ export class HardisCommandsProvider
             label: "Post an issue on GitHub",
             icon: "help.svg",
             command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
-              "https://github.com/hardisgroupcom/sfdx-hardis/issues",
+              "https://github.com/hardisgroupcom/sfdx-hardis/issues"
             )}`,
           },
           {
@@ -878,7 +849,7 @@ export class HardisCommandsProvider
             label: "Cloudity Website",
             icon: "help.svg",
             command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
-              "https://www.cloudity.com?ref=sfdxhardis",
+              "https://www.cloudity.com?ref=sfdxhardis"
             )}`,
           },
         ],
@@ -899,7 +870,7 @@ export class HardisCommandsProvider
       hardisCommands = this.addCommands(
         projectConfig.customCommands,
         customCommandsPosition,
-        hardisCommands,
+        hardisCommands
       );
     }
     // Commands defined in remote config file .sfdx-hardis.yml
@@ -911,7 +882,7 @@ export class HardisCommandsProvider
       hardisCommands = this.addCommands(
         remoteConfig.customCommands,
         customCommandsPosition,
-        hardisCommands,
+        hardisCommands
       );
     }
     return hardisCommands;
@@ -920,7 +891,7 @@ export class HardisCommandsProvider
   private addCommands(
     customCommands: Array<any>,
     customCommandsPosition: string,
-    hardisCommands: Array<any>,
+    hardisCommands: Array<any>
   ) {
     // Add default icon to commands if not set
     customCommands = customCommands.map((customCommandMenu) => {
@@ -928,7 +899,7 @@ export class HardisCommandsProvider
         (customCommand: any) => {
           customCommand.icon = customCommand.icon ?? "cloudity-logo.svg";
           return customCommand;
-        },
+        }
       );
       return customCommandMenu;
     });
@@ -953,12 +924,12 @@ class CommandTreeItem extends vscode.TreeItem {
     public readonly hardisCommand: string,
     public readonly collapsibleState: vscode.TreeItemCollapsibleState,
     public readonly options = {
-      icon: { light: "salesforce.svg", dark: "salesforce.svg" },
+      icon: { id: "", color: "" },
       description: "",
       tooltip: "",
       requiresProject: false,
       helpUrl: "",
-    },
+    }
   ) {
     super(label, collapsibleState);
     this.id = id;
@@ -984,21 +955,27 @@ class CommandTreeItem extends vscode.TreeItem {
         this.hardisCommand = hardisCommand;
       }
       if (options.icon) {
-        this.iconPath = options.icon;
-        this.iconPath.light = path.join(
-          __filename,
-          "..",
-          "..",
-          "resources",
-          this.iconPath.light.toString(),
-        );
-        this.iconPath.dark = path.join(
-          __filename,
-          "..",
-          "..",
-          "resources",
-          this.iconPath.dark.toString(),
-        );
+        if (String(options.icon).endsWith(".svg")) {
+          const iconWithPath = {
+            light: path.join(
+              __filename,
+              "..",
+              "..",
+              "resources",
+              String(options.icon)
+            ),
+            dark: path.join(
+              __filename,
+              "..",
+              "..",
+              "resources",
+              String(options.icon)
+            ),
+          };
+          this.iconPath = iconWithPath;
+        } else {
+          this.iconPath = options.icon;
+        }
       }
     }
     // Manage unavailable command

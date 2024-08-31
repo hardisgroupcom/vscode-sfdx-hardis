@@ -104,7 +104,7 @@
       {
         "command": "vscode-sfdx-hardis.openValidationLink",
         "title": "SFDX Hardis: Open encrypted Salesforce account validation / reset password URL",
-        "icon": "$(unlock)"
+        "icon": "$(key)"
       },
       {
         "command": "vscode-sfdx-hardis.selectColorForOrg",

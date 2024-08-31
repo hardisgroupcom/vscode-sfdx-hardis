@@ -56,7 +56,7 @@ export class HardisPluginsProvider
     for (const item of topicItems) {
       const options: any = {};
       if (item.icon) {
-        options.icon = { light: item.icon, dark: item.icon };
+        options.icon = item.icon;
       }
       if (item.description) {
         options.description = item.description;
@@ -450,13 +450,13 @@ export class HardisPluginsProvider
     const items: StatusTreeItem[] = [];
     for (const item of this.listTopics()) {
       const options = {
-        icon: { light: "user.svg", dark: "user.svg" },
+        icon: { id: "", color: "" },
         description: "",
         tooltip: "",
         helpUrl: "",
       };
       if (item.icon) {
-        options.icon = { light: item.icon, dark: item.icon };
+        options.icon = item.icon;
       }
       if (item.description) {
         options.description = item.description;
@@ -524,7 +524,7 @@ class StatusTreeItem extends vscode.TreeItem {
     public readonly hardisCommand: string,
     public readonly collapsibleState: vscode.TreeItemCollapsibleState,
     public readonly options = {
-      icon: { light: "salesforce.svg", dark: "salesforce.svg" },
+      icon: { id: "", color: "" },
       description: "",
       tooltip: "",
       helpUrl: "",
@@ -556,7 +556,7 @@ class StatusTreeItem extends vscode.TreeItem {
 
       if (options.icon) {
         this.iconPath = options.icon;
-        this.iconPath.light = path.join(
+        /* this.iconPath.light = path.join(
           __filename,
           "..",
           "..",
@@ -569,7 +569,7 @@ class StatusTreeItem extends vscode.TreeItem {
           "..",
           "resources",
           this.iconPath.dark.toString(),
-        );
+        ); */
       }
     }
     // Manage context menu tag

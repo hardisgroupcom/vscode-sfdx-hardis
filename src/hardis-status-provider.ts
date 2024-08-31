@@ -57,7 +57,7 @@ export class HardisStatusProvider
     for (const item of topicItems) {
       const options: any = {};
       if (item.icon) {
-        options.icon = { light: item.icon, dark: item.icon };
+        options.icon = item.icon;
       }
       if (item.description) {
         options.description = item.description;
@@ -410,12 +410,12 @@ Note: Disable disableGitMergeRequiredCheck in settings to skip this check.`;
     const items: StatusTreeItem[] = [];
     for (const item of this.listTopics()) {
       const options = {
-        icon: { light: "user.svg", dark: "user.svg" },
+        icon: { id: "", color: "" },
         description: "",
         tooltip: "",
       };
       if (item.icon) {
-        options.icon = { light: item.icon, dark: item.icon };
+        options.icon = item.icon;
       }
       if (item.description) {
         options.description = item.description;
@@ -451,19 +451,19 @@ Note: Disable disableGitMergeRequiredCheck in settings to skip this check.`;
     const topics = [
       {
         id: "status-org",
-        label: "Current Org",
+        label: "☁️ Current Org",
         icon: "salesforce.svg",
         defaultExpand: true,
       },
       {
         id: "status-git",
-        label: "Git Status",
+        label: "🌱 Git Status",
         icon: "git.svg",
         defaultExpand: true,
       },
       {
         id: "status-org-devhub",
-        label: "Current Dev Hub org",
+        label: "⚓ Current Dev Hub org",
         icon: "salesforce.svg",
         defaultExpand: true,
       },
@@ -480,7 +480,7 @@ class StatusTreeItem extends vscode.TreeItem {
     public readonly hardisCommand: string,
     public readonly collapsibleState: vscode.TreeItemCollapsibleState,
     public readonly options = {
-      icon: { light: "salesforce.svg", dark: "salesforce.svg" },
+      icon: { id: "", color: "" },
       description: "",
       tooltip: "",
     },
@@ -511,7 +511,7 @@ class StatusTreeItem extends vscode.TreeItem {
 
       if (options.icon) {
         this.iconPath = options.icon;
-        this.iconPath.light = path.join(
+      /*  this.iconPath.light = path.join(
           __filename,
           "..",
           "..",
@@ -524,7 +524,7 @@ class StatusTreeItem extends vscode.TreeItem {
           "..",
           "resources",
           this.iconPath.dark.toString(),
-        );
+        ); */
       }
     }
   }
