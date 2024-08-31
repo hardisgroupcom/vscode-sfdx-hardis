@@ -98,7 +98,7 @@ export class HardisColors {
           }
           customOrgColors[this.currentDefaultOrgDomain] = color;
           await writeSfdxHardisConfig("customOrgColors", customOrgColors);
-          this.applyColor(color);
+          await this.applyColor(color);
         } else {
           vscode.window.showWarningMessage(
             "🦙 You need to select a default org to define a color for it :)",
@@ -142,10 +142,10 @@ export class HardisColors {
         this.currentDefaultOrg || "",
       );
       const orgColor = await this.getCurrentDefaultOrgColor();
-      this.applyColor(orgColor);
+      await this.applyColor(orgColor);
       // Refresh status panel when colors is changed except at initialization
       if (this.initializing === false) {
-        vscode.commands.executeCommand("vscode-sfdx-hardis.refreshStatusView");
+        vscode.commands.executeCommand("vscode-sfdx-hardis.refreshStatusView", true);
       }
     }
   }
@@ -199,7 +199,7 @@ export class HardisColors {
   }
 
   // Apply color to current VsCode Workspace config
-  applyColor(color: string | null) {
+async applyColor(color: string | null) {
     if (vscode.workspace.workspaceFolders) {
       const config = vscode.workspace.getConfiguration();
       const colorCustomization: any = config.get(
@@ -209,7 +209,7 @@ export class HardisColors {
       colorCustomization["activityBar.background"] = color || undefined;
       // Do not update config file with blank color if there wasn't a previous config
       if (color || Object.keys(colorCustomization).length > 0) {
-        config.update(
+        await config.update(
           "workbench.colorCustomizations",
           colorCustomization,
           vscode.ConfigurationTarget.Workspace,

@@ -147,13 +147,13 @@ export class Commands {
                     "Ignore",
                     "Don't ask again"
                   )
-                  .then((selection) => {
+                  .then(async (selection) => {
                     if (selection === "Download Git Bash") {
                       vscode.env.openExternal(
                         vscode.Uri.parse("https://git-scm.com/downloads")
                       );
                     } else if (selection === "Don't ask again") {
-                      config.update("disableGitBashCheck", true);
+                      await config.update("disableGitBashCheck", true);
                     } else {
                       vscode.window.showInformationMessage(
                         "🦙 If you do not want to see this message anymore, set VsCode setting vsCodeSfdxHardis.disableGitBashCheck to true, or click on Don't ask again"
