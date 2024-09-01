@@ -1,8 +1,7 @@
-import stripAnsi from "strip-ansi";
 import * as http from "http";
 import * as WebSocket from "ws";
 import * as vscode from "vscode";
-import { getWorkspaceRoot } from "./utils";
+import { getWorkspaceRoot, stripAnsi } from "./utils";
 import { Logger } from "./logger";
 
 const DEFAULT_PORT = parseInt(process.env.SFDX_HARDIS_WEBSOCKET_PORT || "2702");
