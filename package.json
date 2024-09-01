@@ -89,12 +89,12 @@
         },
         "vsCodeSfdxHardis.theme.emojisInSections": {
           "type": "boolean",
-          "default": true,
+          "default": false,
           "description": "Display emojis in menu section titles"
         },
         "vsCodeSfdxHardis.theme.menuIconType": {
           "type": "string",
-          "default": "hardis",
+          "default": "vscode",
           "enum": [
             "hardis",
             "vscode"
