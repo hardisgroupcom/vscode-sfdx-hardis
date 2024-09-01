@@ -781,23 +781,30 @@ export class HardisCommandsProvider
         commands: [
           {
             id: "contact:us",
-            label: "Contact Us",
+            label: "Contact us to get help :)",
             command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
               "https://cloudity.com/#form"
             )}`,
           },
           {
-            id: "help:commands",
-            label: "All sfdx-hardis commands",
+            id: "help:cicd",
+            label: "DevOps - CI/CD Documentation",
             command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
-              "https://sfdx-hardis.cloudity.com/commands/"
+              "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/"
             )}`,
           },
           {
-            id: "help:cicd",
-            label: "DevOps - CI/CD",
+            id: "help:org-monitoring",
+            label: "Org Monitoring Documentation",
             command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
-              "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/"
+              "https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/"
+            )}`,
+          },
+          {
+            id: "help:commands",
+            label: "All sfdx-hardis commands documentation",
+            command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
+              "https://sfdx-hardis.cloudity.com/commands/"
             )}`,
           },
           {
