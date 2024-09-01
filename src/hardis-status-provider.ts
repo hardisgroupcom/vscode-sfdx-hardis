@@ -88,7 +88,7 @@ export class HardisStatusProvider
     let devHubUsername = "";
     let orgDisplayCommand = "sf org display";
     if (options.devHub) {
-      const devHubAliasCommand = "sf config get target-org";
+      const devHubAliasCommand = "sf config get target-dev-hub";
       const devHubAliasRes = await execSfdxJson(devHubAliasCommand, this, {
         fail: false,
         output: false,
@@ -100,7 +100,7 @@ export class HardisStatusProvider
         devHubAliasRes.result[0].value
       ) {
         devHubUsername = devHubAliasRes.result[0].value;
-        orgDisplayCommand += ` --targetusername ${devHubUsername}`;
+        orgDisplayCommand += ` -- ${devHubUsername}`;
       } else {
         items.push({
           id: "org-not-connected-devhub",
@@ -144,13 +144,13 @@ export class HardisStatusProvider
             "sf org open" +
             (options.devHub ? ` --target-org ${devHubUsername}` : "") +
             " --path lightning/settings/personal/PersonalInformation/home",
-          iconId: "sf-user.svg",
+          iconId: "org:user",
         });
       }
       const orgDetailItem = {
         id: "org-info-expiration-date" + (options.devHub ? "-devhub" : ""),
         label: "",
-        iconId: "sf-setup.svg",
+        iconId: "org:setup",
         tooltip: "",
         command:
           "sf org open" +

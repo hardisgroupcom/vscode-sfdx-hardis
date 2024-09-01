@@ -5,6 +5,10 @@
   "version": "2.12.1",
   "icon": "resources/sfdx-hardis-logo-square.png",
   "publisher": "NicolasVuillamy",
+  "author": {
+    "name": "Nicolas Vuillamy, Cloudity and friends",
+    "email": "nicolas.vuillamy@gmail.com"
+  },
   "license": "AGPL-3.0",
   "engines": {
     "vscode": "^1.54.0"
