@@ -109,7 +109,7 @@ export class ThemeUtils {
       await config.update(
         "menuIconType",
         menuIconType,
-        vscode.ConfigurationTarget.Global
+        vscode.ConfigurationTarget.Global,
       );
     }
     if (
@@ -119,7 +119,7 @@ export class ThemeUtils {
       await config.update(
         "emojisInSections",
         emojisInSections === "With Emojis" ? true : false,
-        vscode.ConfigurationTarget.Global
+        vscode.ConfigurationTarget.Global,
       );
     }
   }
@@ -186,10 +186,10 @@ export class ThemeUtils {
       "org:connect": { vscode: "globe", hardis: "select.svg" },
       "org:connect:devhub": { vscode: "globe", hardis: "select.svg" },
       "org:expired": { vscode: "error", hardis: "error.svg" },
-      "org:expired:soon":  { vscode: "warning", hardis: "warning.svg" },
+      "org:expired:soon": { vscode: "warning", hardis: "warning.svg" },
       "org:user": { vscode: "account", hardis: "sf-user.svg" },
       "org:setup": { vscode: "gear", hardis: "sf-setup.svg" },
-      "org:pool": { vscode: "radio-tower", hardis: "pool.svg" }, 
+      "org:pool": { vscode: "radio-tower", hardis: "pool.svg" },
       "source:retrieve": { vscode: "cloud-download", hardis: "pull.svg" },
       "org:retrieve:sources:analytics": {
         vscode: "pie-chart",
@@ -226,7 +226,10 @@ export class ThemeUtils {
       "org:user:unfreeze": { vscode: "rocket", hardis: "unfreeze.svg" },
       "org:purge:flow": { vscode: "trash", hardis: "flow.svg" },
       "hardis:scratch:delete": { vscode: "trash", hardis: "trash.svg" },
-      "hardis:org:user:activateinvalid": { vscode: "account", hardis: "user.svg" },
+      "hardis:org:user:activateinvalid": {
+        vscode: "account",
+        hardis: "user.svg",
+      },
       "hardis:org:monitor:backup": { vscode: "save-all", hardis: "backup.svg" },
       "hardis:org:diagnose:audittrail": {
         vscode: "eye-watch",
@@ -235,7 +238,10 @@ export class ThemeUtils {
       "org:test:apex": { vscode: "testing-run-all-icon", hardis: "test.svg" },
       "hardis:org:monitor:limits": { vscode: "eye-watch", hardis: "gauge.svg" },
       "org:diagnose:legacyapi": { vscode: "watch", hardis: "old.svg" },
-      "hardis:org:diagnose:unusedusers": { vscode: "person", hardis: "dollar.svg" },
+      "hardis:org:diagnose:unusedusers": {
+        vscode: "person",
+        hardis: "dollar.svg",
+      },
       "hardis:org:diagnose:unusedlicenses": {
         vscode: "cloud",
         hardis: "dollar.svg",
@@ -244,7 +250,10 @@ export class ThemeUtils {
       "hardis:lint:unusedmetadatas": { vscode: "law", hardis: "trash.svg" },
       "hardis:lint:metadatastatus": { vscode: "law", hardis: "flow.svg" },
       "hardis:lint:missingattributes": { vscode: "law", hardis: "doc.svg" },
-      "project:audit:duplicatefiles": { vscode: "law", hardis: "duplicate.svg" },
+      "project:audit:duplicatefiles": {
+        vscode: "law",
+        hardis: "duplicate.svg",
+      },
       "project:metadata:findduplicates": {
         vscode: "workspace-unknown",
         hardis: "duplicate.svg",
@@ -258,13 +267,31 @@ export class ThemeUtils {
       "scratch:pool:create": { vscode: "gear", hardis: "pool.svg" },
       "project:create": { vscode: "new-folder", hardis: "new.svg" },
       "hardis:package:create": { vscode: "plus", hardis: "package.svg" },
-      "hardis:package:version:list": { vscode: "list-unordered", hardis: "package.svg" },
-      "hardis:package:version:create": { vscode: "plus", hardis: "package.svg" },
+      "hardis:package:version:list": {
+        vscode: "list-unordered",
+        hardis: "package.svg",
+      },
+      "hardis:package:version:create": {
+        vscode: "plus",
+        hardis: "package.svg",
+      },
       "project:generate:gitdelta": { vscode: "git-branch", hardis: "git.svg" },
-      "org:generate:packagexmlfull": { vscode: "explorer-view-icon", hardis: "package.svg" },
-      "org:retrieve:sources:dx2": { vscode: "cloud-download", hardis: "pull.svg" },
-      "org:retrieve:sources:dx": { vscode: "cloud-download", hardis: "pull.svg" },
-      "org:retrieve:sources:metadata": { vscode: "cloud-download", hardis: "pull.svg" },
+      "org:generate:packagexmlfull": {
+        vscode: "explorer-view-icon",
+        hardis: "package.svg",
+      },
+      "org:retrieve:sources:dx2": {
+        vscode: "cloud-download",
+        hardis: "pull.svg",
+      },
+      "org:retrieve:sources:dx": {
+        vscode: "cloud-download",
+        hardis: "pull.svg",
+      },
+      "org:retrieve:sources:metadata": {
+        vscode: "cloud-download",
+        hardis: "pull.svg",
+      },
       "package:mergexml": { vscode: "files", hardis: "merge.svg" },
       "org:logout": { vscode: "log-out", hardis: "logout.svg" },
       "git:login": { vscode: "log-in", hardis: "git.svg" },
@@ -285,7 +312,7 @@ export class ThemeUtils {
       "dependency-missing": { vscode: "error", hardis: "missing.svg" },
       "dependency-warning": { vscode: "warning", hardis: "warning.svg" },
       "dependency-error": { vscode: "error", hardis: "error.svg" },
-      "dependency-local": { vscode: "gear", hardis: "hammer-wrench.svg" }
+      "dependency-local": { vscode: "gear", hardis: "hammer-wrench.svg" },
     };
   }
 }
