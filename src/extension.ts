@@ -104,8 +104,8 @@ export function activate(context: vscode.ExtensionContext) {
         context.subscriptions.push(commands.disposableWebSocketServer);
         resolve(commands.disposableWebSocketServer); 
         } catch (e: any) {
-          Logger.log("Error while launching WebSocker Server: "+e.message);
-          vscode.window.showWarningMessage("Local WebSocket Server wwas unable to start.\nUser prompts will be in the terminal.");
+          Logger.log("Error while launching WebSocket Server: "+e.message);
+          vscode.window.showWarningMessage("Local WebSocket Server was unable to start.\nUser prompts will be in the terminal.");
         }
       }, 5000);
     });

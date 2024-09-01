@@ -77,7 +77,7 @@ export class ThemeUtils {
     });
     const quickpick2 = vscode.window.createQuickPick<vscode.QuickPickItem>();
     const emojisChoices: vscode.QuickPickItem[] = [
-      { label: "With Emojis", detail: "Display section titles with emojos" },
+      { label: "With Emojis", detail: "Display section titles with emojis" },
       { label: "Without Emojis", detail: "Hide emojis in section title" },
     ];
     const emojisInSections = await new Promise<any>((resolve, reject) => {
