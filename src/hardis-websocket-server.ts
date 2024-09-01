@@ -1,4 +1,5 @@
 import * as http from "http";
+import getPort, { portNumbers } from 'get-port';
 import { WebSocketServer} from "ws";
 import * as vscode from "vscode";
 import { getWorkspaceRoot, stripAnsi } from "./utils";
@@ -24,10 +25,8 @@ export class LocalWebSocketServer {
   async start() {
     let port = DEFAULT_PORT;
     if (port === 2702) {
-      // Define random port
-      const portastic = require("portastic");
-      const availablePorts = await portastic.find({ min: 2702, max: 2784 });
-      port = availablePorts[Math.floor(Math.random() * availablePorts.length)];
+      // Define random port if not forced by the user with env var SFDX_HARDIS_WEBSOCKET_PORT
+      port = await getPort({port: portNumbers(2702, 2784)});
     }
     this.listen();
     //start our server
@@ -115,7 +114,7 @@ export class LocalWebSocketServer {
       if (prompt.type === "text") {
         const inputBoxOptions: vscode.InputBoxOptions = {
           prompt: stripAnsi(prompt.message),
-          placeHolder: stripAnsi(prompt.placeholder) || "",
+          placeHolder: stripAnsi(prompt.placeholder || ""),
           ignoreFocusOut: true,
           value: prompt.initial,
         };
@@ -132,7 +131,7 @@ export class LocalWebSocketServer {
       else if (prompt.type === "number") {
         const inputBoxOptions: vscode.InputBoxOptions = {
           prompt: stripAnsi(prompt.message),
-          placeHolder: stripAnsi(prompt.placeholder) || "",
+          placeHolder: stripAnsi(prompt.placeholder || ""),
           ignoreFocusOut: true,
           value: prompt.initial ? prompt.initial.toString() : null,
         };

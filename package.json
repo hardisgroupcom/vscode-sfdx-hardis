@@ -346,10 +346,10 @@
     "axios": "^0.28.0",
     "chalk": "^4.1.0",
     "fs-extra": "^9.1.0",
+    "get-port": "^7.1.0",
     "git-url-parse": "^11.6.0",
     "js-yaml": "^4.1.0",
     "moment": "^2.29.1",
-    "portastic": "^1.0.1",
     "simple-git": "^3.18.0",
     "which": "^4.0.0",
     "ws": "^8.18.0"

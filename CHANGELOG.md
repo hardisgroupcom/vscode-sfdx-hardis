@@ -10,6 +10,8 @@
 - Remove sfdx-essentials dependency
 - Fix: Do not update VsCode local config file with blank color if there wasn't a previous config value
 - Add `destructiveChanges.xml` and `package-no-overwrite.xml` in Quick Open config files menu
+- Upgrade NPM package dependencies
+- Replace portastic by get-port (better maintenance)
 
 ## [2.12.1] 2024-08-22
 
