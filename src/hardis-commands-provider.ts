@@ -238,6 +238,21 @@ export class HardisCommandsProvider
               "https://sfdx-hardis.cloudity.com/hardis/project/clean/references/",
           },
           {
+            id: "force:source:tracking:clear",
+            label: "Clear local sfdx tracking files",
+            tooltip:
+              "Removes all local information about updates you already pulled from org",
+            command: "sf project delete tracking",
+            helpUrl:
+              "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_project_commands_unified.htm#cli_reference_project_delete_tracking_unified",
+          },
+        ],
+      },
+      {
+        id: "cicd-misc",
+        label: "CI/CD (misc)",
+        commands: [
+          {
             id: "scratch:create",
             label: "Create scratch org (or resume creation)",
             tooltip:
@@ -289,15 +304,6 @@ export class HardisCommandsProvider
               "https://sfdx-hardis.cloudity.com/hardis/org/retrieve/sources/analytics/",
           },
           {
-            id: "force:source:tracking:clear",
-            label: "Clear local sfdx tracking files",
-            tooltip:
-              "Removes all local information about updates you already pulled from org",
-            command: "sf project delete tracking",
-            helpUrl:
-              "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_project_commands_unified.htm#cli_reference_project_delete_tracking_unified",
-          },
-          {
             id: "force:source:tracking:reset",
             label: "Clear local and remote sfdx tracking files",
             tooltip:
@@ -306,7 +312,24 @@ export class HardisCommandsProvider
             helpUrl:
               "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_project_commands_unified.htm#cli_reference_project_reset_tracking_unified",
           },
-        ],
+          {
+            id: "org:logout",
+            label: "Logout from current Org and DevHub",
+            command:
+              "sf org logout --noprompt || true && sf config:unset target-org target-dev-hub -g && sf config:unset target-org target-dev-hub || true",
+            tooltip: "Log out from orgs :)",
+
+            helpText:
+              "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_org_commands_unified.htm#cli_reference_org_logout_unified",
+          },
+          {
+            id: "git:login",
+            label: "Login again to git",
+            command:
+              "echo 'If you see and error, execute the same commands in PowerShell run as administrator' && git config --system --unset credential.helper && git config credential.helper store && git fetch",
+            tooltip: "Use this command in case you have git login errors",
+          },
+        ]
       },
       {
         id: "data",
@@ -733,23 +756,6 @@ export class HardisCommandsProvider
             label: "Merge package.xml files",
             tooltip: "Merge package.xml files located in manifest folder",
             command: "sf hardis:package:mergexml",
-          },
-          {
-            id: "org:logout",
-            label: "Logout from current Org and DevHub",
-            command:
-              "sf org logout --noprompt || true && sf config:unset target-org target-dev-hub -g && sf config:unset target-org target-dev-hub || true",
-            tooltip: "Log out from orgs :)",
-
-            helpText:
-              "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_org_commands_unified.htm#cli_reference_org_logout_unified",
-          },
-          {
-            id: "git:login",
-            label: "Login again to git",
-            command:
-              "echo 'If you see and error, execute the same commands in PowerShell run as administrator' && git config --system --unset credential.helper && git config credential.helper store && git fetch",
-            tooltip: "Use this command in case you have git login errors",
           },
         ],
       },

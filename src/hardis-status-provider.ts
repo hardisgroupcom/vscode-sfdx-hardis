@@ -60,8 +60,8 @@ export class HardisStatusProvider
     Logger.log("Completed TreeViewItem_init_" + topic.id);
     for (const item of topicItems) {
       const options: any = {};
-      if (item.icon) {
-        options.icon = item.icon;
+      if (item.iconId) {
+        options.iconId = item.iconId;
       }
       if (item.description) {
         options.description = item.description;
@@ -107,7 +107,7 @@ export class HardisStatusProvider
           label: `Select a DevHub org`,
           tooltip: "Click to select and authenticate to a DevHub org",
           command: "sf hardis:org:select --devhub",
-          icon: "select.svg",
+          iconId: "org:connect:devhub",
         });
         return items;
       }
@@ -131,7 +131,7 @@ export class HardisStatusProvider
           command:
             "sf org open" +
             (options.devHub ? ` --target-org ${devHubUsername}` : ""),
-          icon: "salesforce.svg",
+          iconId: "org",
         });
       }
       if (orgInfo.username) {
@@ -144,13 +144,13 @@ export class HardisStatusProvider
             "sf org open" +
             (options.devHub ? ` --target-org ${devHubUsername}` : "") +
             " --path lightning/settings/personal/PersonalInformation/home",
-          icon: "sf-user.svg",
+          iconId: "sf-user.svg",
         });
       }
       const orgDetailItem = {
         id: "org-info-expiration-date" + (options.devHub ? "-devhub" : ""),
         label: "",
-        icon: "sf-setup.svg",
+        iconId: "sf-setup.svg",
         tooltip: "",
         command:
           "sf org open" +
@@ -174,21 +174,21 @@ Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if you
         orgDetailItem.label += ` (exp: ${orgInfo.expirationDate})`;
         orgDetailItem.tooltip += `You org will expire in ${daysBeforeExpiration} days`;
         if (daysBeforeExpiration < 0) {
-          orgDetailItem.icon = "warning-red.svg";
+          orgDetailItem.iconId = "org:expired";
           orgDetailItem.tooltip = `You org expired on ${orgInfo.expirationDate}. You need to create a new one.`;
           vscode.window.showErrorMessage(
             `🦙 ${orgDetailItem.tooltip}`,
             "Close"
           );
         } else if (daysBeforeExpiration < 3) {
-          orgDetailItem.icon = "warning-red.svg";
+          orgDetailItem.iconId = "org:expired:soon";
           orgDetailItem.tooltip = `You scratch org will expire in ${daysBeforeExpiration} days !!! Save your scratch org content and create a new one or your work will be lost !!!`;
           vscode.window.showErrorMessage(
             `🦙 ${orgDetailItem.tooltip}`,
             "Close"
           );
         } else if (daysBeforeExpiration < 7) {
-          orgDetailItem.icon = "warning.svg";
+          orgDetailItem.iconId = "org:expired:soon";
           orgDetailItem.tooltip = `Your scratch org will expire in ${daysBeforeExpiration} days. You should soon create a new scratch org to avoid loosing your work`;
           vscode.window.showWarningMessage(
             `🦙 ${orgDetailItem.tooltip}`,
@@ -220,7 +220,7 @@ Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if you
               label: `Pool: ${poolViewRes.result.availableScratchOrgs} available (max ${poolViewRes.result.maxScratchOrgs})`,
               tooltip: "View content of scratch org pool",
               command: "sf hardis:scratch:pool:view",
-              icon: "pool.svg",
+              iconId: "org:pool",
             });
           }
         }
@@ -230,7 +230,7 @@ Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if you
         label: `Select another ` + (options.devHub ? "DevHub Org" : "Org"),
         tooltip: "Click to select an org",
         command: "sf hardis:org:select" + (options.devHub ? " --devhub" : ""),
-        icon: "select.svg",
+        iconId: "org:connect",
       });
     } else {
       items.push({
@@ -238,7 +238,7 @@ Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if you
         label: `Select an org`,
         tooltip: "Click to select and authenticate to an org",
         command: "sf hardis:org:select" + (options.devHub ? " --devhub" : ""),
-        icon: "select.svg",
+        iconId: "org:connect",
       });
     }
     return items;
@@ -289,7 +289,7 @@ Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if you
             command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
               httpGitUrl
             )}`,
-            icon: "git.svg",
+            iconId: "git:repo",
             tooltip: "Click to open git repo in browser - " + httpGitUrl,
           });
         } else {
@@ -297,7 +297,7 @@ Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if you
             id: "git-info-repo",
             label: `Git not ready: click to refresh`,
             command: `vscode-sfdx-hardis.refreshStatusView`,
-            icon: "git.svg",
+            iconId: "git:repo",
             tooltip:
               "Git was not ready when SFDX Hardis has been run, please click to refresh",
           });
@@ -306,7 +306,7 @@ Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if you
       // Display branch & merge request info
       const currentBranch = await git.revparse(["--abbrev-ref", "HEAD"]);
       if (currentBranch) {
-        let gitIcon = "git-branch.svg";
+        let gitIconId = "git:branch";
         let gitLabel = `Branch: ${currentBranch}`;
         let gitTooltip = "This is the git branch you are currently working on";
         let gitCommand = "";
@@ -340,7 +340,7 @@ Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if you
                 ))
             ) {
               // Display message if a merge might be required
-              gitIcon = "warning.svg";
+              gitIconId = "git:branch:warning";
               gitLabel = `Branch: ${currentBranch} (not up to date with origin/${parentGitBranch})`;
               gitTooltip = `EXPERIMENTAL: There have been new commit(s) into parent branch origin/${parentGitBranch} since you created ${currentBranch}.
 You might need to merge origin/${parentGitBranch} into your current local branch ${currentBranch}.
@@ -358,7 +358,7 @@ Note: Disable disableGitMergeRequiredCheck in settings to skip this check.`;
         items.push({
           id: "git-info-branch",
           label: gitLabel,
-          icon: gitIcon,
+          iconId: gitIconId,
           tooltip: gitTooltip,
           command: gitCommand,
         });
@@ -381,7 +381,7 @@ Note: Disable disableGitMergeRequiredCheck in settings to skip this check.`;
             items.push({
               id: "git-merge-request-url",
               label: "Merge Request: Open",
-              icon: "merge.svg",
+              icon: "git:pull-request",
               tooltip:
                 "Click to open merge request in browser\n" +
                 mergeRequests[0].url,
@@ -419,6 +419,7 @@ Note: Disable disableGitMergeRequiredCheck in settings to skip this check.`;
       const options = {
         description: "",
         tooltip: "",
+        iconId: ""
       };
       if (item.description) {
         options.description = item.description;
@@ -491,6 +492,7 @@ class StatusTreeItem extends vscode.TreeItem {
     public readonly collapsibleState: vscode.TreeItemCollapsibleState,
     public readonly themeUtils: ThemeUtils,
     public readonly options = {
+      iconId: "",
       description: "",
       tooltip: "",
     }
@@ -518,7 +520,7 @@ class StatusTreeItem extends vscode.TreeItem {
         };
         this.hardisCommand = hardisCommand;
       }
-      this.iconPath = this.themeUtils.getCommandIconPath(this.id);
+      this.iconPath = this.themeUtils.getCommandIconPath(this.options.iconId);
     }
   }
 }
