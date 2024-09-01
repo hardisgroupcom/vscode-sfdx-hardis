@@ -1,22 +1,22 @@
 import * as http from "http";
-import * as WebSocket from "ws";
+import { WebSocketServer} from "ws";
 import * as vscode from "vscode";
 import { getWorkspaceRoot, stripAnsi } from "./utils";
 import { Logger } from "./logger";
 
 const DEFAULT_PORT = parseInt(process.env.SFDX_HARDIS_WEBSOCKET_PORT || "2702");
-let globalWss: WebSocketServer | null;
+let globalWss: LocalWebSocketServer | null;
 
-export class WebSocketServer {
+export class LocalWebSocketServer {
   public websocketHostPort: any = null;
   private server: http.Server;
-  private wss: WebSocket.Server;
+  private wss: WebSocketServer;
   private clients: any = {};
 
   constructor() {
     console.time("WebSocketServer_init");
     this.server = http.createServer();
-    this.wss = new WebSocket.Server({ server: this.server });
+    this.wss = new WebSocketServer({ server: this.server });
     globalWss = this;
     console.timeEnd("WebSocketServer_init");
   }

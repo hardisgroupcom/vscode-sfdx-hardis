@@ -4,7 +4,7 @@ import * as fs from "fs-extra";
 import { HardisCommandsProvider } from "./hardis-commands-provider";
 import { HardisStatusProvider } from "./hardis-status-provider";
 import { HardisPluginsProvider } from "./hardis-plugins-provider";
-import { WebSocketServer } from "./hardis-websocket-server";
+import { LocalWebSocketServer } from "./hardis-websocket-server";
 import { getWorkspaceRoot } from "./utils";
 import TelemetryReporter from "@vscode/extension-telemetry";
 import { ThemeUtils } from "./themeUtils";
@@ -17,7 +17,7 @@ export class Commands {
   disposables: vscode.Disposable[] = [];
   terminalStack: vscode.Terminal[] = [];
   terminalIsRunning = false;
-  disposableWebSocketServer: WebSocketServer | null = null;
+  disposableWebSocketServer: LocalWebSocketServer | null = null;
 
   constructor(
     hardisCommandsProvider: HardisCommandsProvider,

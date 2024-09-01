@@ -8,7 +8,7 @@ import { HardisCommandsProvider } from "./hardis-commands-provider";
 import { HardisDebugger } from "./hardis-debugger";
 import { HardisPluginsProvider } from "./hardis-plugins-provider";
 import { HardisStatusProvider } from "./hardis-status-provider";
-import { WebSocketServer } from "./hardis-websocket-server";
+import { LocalWebSocketServer } from "./hardis-websocket-server";
 import { Logger } from "./logger";
 import { getWorkspaceRoot, preLoadCache } from "./utils";
 import { WelcomePanel } from "./webviews/welcome";
@@ -98,10 +98,15 @@ export function activate(context: vscode.ExtensionContext) {
           commands.disposableWebSocketServer.dispose();
         }
         // Wait a while to run WebSocket server, as it can be time consuming
-        commands.disposableWebSocketServer = new WebSocketServer();
+        try {
+        commands.disposableWebSocketServer = new LocalWebSocketServer();
         commands.disposableWebSocketServer.start();
         context.subscriptions.push(commands.disposableWebSocketServer);
-        resolve(commands.disposableWebSocketServer);
+        resolve(commands.disposableWebSocketServer); 
+        } catch (e: any) {
+          Logger.log("Error while launching WebSocker Server: "+e.message);
+          vscode.window.showWarningMessage("Local WebSocket Server wwas unable to start.\nUser prompts will be in the terminal.");
+        }
       }, 5000);
     });
   }
