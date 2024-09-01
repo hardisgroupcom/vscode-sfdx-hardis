@@ -139,7 +139,7 @@ export class HardisStatusProvider
           id: "org-info-username" + (options.devHub ? "-devhub" : ""),
           label: `${orgInfo.username}`,
           tooltip:
-            "Username on your remote Salesforce org: " + orgInfo.username,
+            "Username on your remote Salesforce org: " + orgInfo.username+"\nClick to Open User Settings in Salesforce",
           command:
             "sf org open" +
             (options.devHub ? ` --target-org ${devHubUsername}` : "") +
@@ -151,7 +151,7 @@ export class HardisStatusProvider
         id: "org-info-expiration-date" + (options.devHub ? "-devhub" : ""),
         label: "",
         iconId: "org:setup",
-        tooltip: "",
+        tooltip: "Click to open Setup in Salesforce",
         command:
           "sf org open" +
           (options.devHub ? ` --target-org ${devHubUsername}` : "") +
@@ -381,7 +381,7 @@ Note: Disable disableGitMergeRequiredCheck in settings to skip this check.`;
             items.push({
               id: "git-merge-request-url",
               label: "Merge Request: Open",
-              icon: "git:pull-request",
+              iconId: "git:pull-request",
               tooltip:
                 "Click to open merge request in browser\n" +
                 mergeRequests[0].url,
