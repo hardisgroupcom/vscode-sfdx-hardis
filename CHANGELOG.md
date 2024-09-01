@@ -2,16 +2,18 @@
 
 ## [Unreleased]
 
-- Migrate all sfdx calls into SF Cli calls to match SFDX Hardis v5
-- New to customize appearance of SFDX Hardis panels:
+- Migrate all sfdx calls into SF CLI calls to match SFDX Hardis v5
+- New configuration variables to customize appearance of SFDX Hardis panels:
   - Select icons theme: Hardis (legacy) or Visual Studio Code (new)
   - Display / Hide emojis in menu sections titles
 - Reorganize sections and menus
-- Remove sfdx-essentials dependency
+- Remove sfdx-essentials plugin dependency
 - Fix: Do not update VsCode local config file with blank color if there wasn't a previous config value
 - Add `destructiveChanges.xml` and `package-no-overwrite.xml` in Quick Open config files menu
-- Upgrade NPM package dependencies
-- Replace portastic by get-port (better maintenance)
+- NPM dependencies updates
+  - Upgrade all package dependencies
+  - Remove sort-array dependency
+  - Replace portastic by get-port (better speed & maintenance)
 
 ## [2.12.1] 2024-08-22
 
