@@ -47,6 +47,7 @@ export class Commands {
     this.registerOpenKeyFile();
     this.registerShowMessage();
     this.registerSelectExtensionTheme();
+    this.registerSimulateDeployment();
   }
 
   getLatestTerminal() {
@@ -385,6 +386,22 @@ export class Commands {
         vscode.commands.executeCommand("workbench.action.openGlobalSettings", {
           query: "Hardis",
         });
+      },
+    );
+    this.disposables.push(disposable);
+  }
+
+  registerSimulateDeployment() {
+    // Open external command
+    const disposable = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.simulateMetadataDeployment",
+      async (uri: vscode.Uri) => {
+        const relativePath = vscode.workspace.asRelativePath(uri);
+        const command = `sf hardis:project:deploy:simulate --source-dir ${relativePath}`;
+        vscode.commands.executeCommand(
+          "vscode-sfdx-hardis.execute-command",
+          command,
+        );
       },
     );
     this.disposables.push(disposable);

@@ -6,6 +6,7 @@
 - New configuration variables to customize appearance of SFDX Hardis panels:
   - Select icons theme: Hardis (legacy) or Visual Studio Code (new)
   - Display / Hide emojis in menu sections titles
+- New contextual menu command **SFDX Hardis: Simulate Metadata deployment**, to safely check deployment errors to any target SF Org.
 - Reorganize sections and menus
 - Remove sfdx-essentials plugin dependency
 - Fix: Do not update VsCode local config file with blank color if there wasn't a previous config value

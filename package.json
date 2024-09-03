@@ -33,7 +33,8 @@
   "activationEvents": [
     "workspaceContains:sfdx-project.json",
     "workspaceContains:.sf/config.json",
-    "workspaceContains:.sfdx/sfdx-config.json"
+    "workspaceContains:.sfdx/sfdx-config.json",
+    "onLanguage:apex"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -117,6 +118,11 @@
         "command": "vscode-sfdx-hardis.execute-command",
         "title": "SFDX Hardis: Execute sfdx-hardis command",
         "icon": "$(run)"
+      },
+      {
+        "command": "vscode-sfdx-hardis.simulateMetadataDeployment",
+        "title": "SFDX Hardis: Simulate Metadata Deployment",
+        "icon": "$(cloud-upload)"
       },
       {
         "command": "vscode-sfdx-hardis.openExternal",
@@ -240,6 +246,13 @@
       ]
     },
     "menus": {
+      "explorer/context": [
+        {
+          "command": "vscode-sfdx-hardis.simulateMetadataDeployment",
+          "when": "resourceExtname == '.cls' || resourceExtname == '.trigger' || resourceExtname == '.xml' || explorerResourceIsFolder",
+          "group": "z_sfdxhardis@5"
+        }
+      ],
       "view/title": [
         {
           "command": "vscode-sfdx-hardis.openExtensionSettings",
@@ -289,9 +302,14 @@
       ],
       "editor/context": [
         {
+          "command": "vscode-sfdx-hardis.simulateMetadataDeployment",
+          "when": "resourceExtname == '.cls' || resourceExtname == '.trigger' || resourceExtname == '.xml' || explorerResourceIsFolder",
+          "group": "z_sfdxhardis@5"
+        },
+        {
           "when": "resourceExtname == .cls",
           "command": "vscode-sfdx-hardis.toggleCheckpoint",
-          "group": "z_commands"
+          "group": "z_sfdxhardis@8"
         }
       ],
       "view/item/context": [
