@@ -8,9 +8,10 @@
   - Display / Hide emojis in menu sections titles
 - New contextual menu command **SFDX Hardis: Simulate Metadata deployment**, to safely check deployment errors to any target SF Org.
 - Reorganize sections and menus
-- Remove sfdx-essentials plugin dependency
-- Fix: Do not update VsCode local config file with blank color if there wasn't a previous config value
 - Add `destructiveChanges.xml` and `package-no-overwrite.xml` in Quick Open config files menu
+- Fix: Do not update VsCode local config file with blank color if there wasn't a previous config value
+- Fix: Refresh Status panel after upgrading plugins
+- Remove sfdx-essentials plugin dependency
 - NPM dependencies updates
   - Upgrade all package dependencies
   - Remove sort-array dependency

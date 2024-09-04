@@ -87,7 +87,7 @@ export class Commands {
       this.disposableWebSocketServer &&
       this.disposableWebSocketServer.websocketHostPort !== null &&
       !command.includes("--websocket") &&
-      !command.includes("&&")
+      (!command.includes("&&") || command.endsWith("sf hardis:work:ws --event refreshPlugins"))
     ) {
       command += ` --websocket ${this.disposableWebSocketServer.websocketHostPort}`;
     }
