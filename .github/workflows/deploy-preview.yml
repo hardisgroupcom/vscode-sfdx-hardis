@@ -1,0 +1,33 @@
+---
+#
+# Documentation:
+# https://help.github.com/en/articles/workflow-syntax-for-github-actions
+#
+
+##################################################
+# Start the job when a GitHub release is created #
+##################################################
+name: "Build & Deploy - PREVIEW"
+on:
+  push:
+    # Want to run the automation when a release is created
+    branches: ["preview-release"]
+
+permissions: read-all
+
+jobs:
+  deploy:
+    name: Deploy on VsCode MarketPlace
+    runs-on: ubuntu-latest
+    permissions: read-all
+    environment:
+      name: release
+    steps:
+      - uses: actions/checkout@v4
+      - run: yarn
+      - uses: lannonbr/vsce-action@master
+        with:
+          args: "publish --pre-release -p $VSCE_TOKEN"
+        env:
+          VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
+

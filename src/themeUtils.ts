@@ -44,8 +44,8 @@ export class ThemeUtils {
   } {
     const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis.theme");
     return {
-      emojisInSections: config.get("emojisInSections", true),
-      menuIconType: config.get("menuIconType", "hardis"),
+      emojisInSections: config.get("emojisInSections", false),
+      menuIconType: config.get("menuIconType", "vscode"),
     };
   }
 
