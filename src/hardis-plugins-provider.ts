@@ -14,8 +14,7 @@ let nodeInstallOk = false;
 let gitInstallOk = false;
 
 export class HardisPluginsProvider
-  implements vscode.TreeDataProvider<StatusTreeItem>
-{
+  implements vscode.TreeDataProvider<StatusTreeItem> {
   protected themeUtils: ThemeUtils;
   constructor(private workspaceRoot: string) {
     this.themeUtils = new ThemeUtils();
@@ -304,7 +303,7 @@ export class HardisPluginsProvider
         sfdxCliOutdated = true;
         sfdxCliItem.label =
           sfdxCliItem.label.includes("missing") &&
-          !sfdxCliItem.label.includes("(link)")
+            !sfdxCliItem.label.includes("(link)")
             ? sfdxCliItem.label
             : sfdxCliItem.label + " (upgrade available)";
         sfdxCliItem.command = `npm install @salesforce/cli@${recommendedSfdxCliVersion} -g`;
@@ -354,18 +353,21 @@ export class HardisPluginsProvider
           `${plugin.altName || "nope"} ${latestPluginVersion}`,
         )
       ) {
-        pluginItem.label = pluginItem.label.includes("(link)")
-          ? pluginItem.label.replace("(link)", "(localdev)")
-          : pluginItem.label.includes("missing")
-            ? pluginItem.label
-            : pluginItem.label + " (upgrade available)";
+        pluginItem.label =
+          pluginItem.label.includes("(beta)") || pluginItem.label.includes("(alpha)") ? pluginItem.label + " (PREVIEW)" :
+            pluginItem.label.includes("(link)") ? pluginItem.label.replace("(link)", "(localdev)")
+              : pluginItem.label.includes("missing") ? pluginItem.label
+                : pluginItem.label + " (upgrade available)";
         pluginItem.command = `echo y|sf plugins:install ${plugin.name} && sf hardis:work:ws --event refreshPlugins`;
         pluginItem.tooltip = `Click to upgrade SFDX plugin ${plugin.name} to ${latestPluginVersion}`;
         if (!pluginItem.label.includes("(localdev)")) {
-          pluginItem.status = isPluginMissing
-            ? "dependency-missing"
-            : "dependency-warning";
-          outdated.push(plugin);
+          pluginItem.status =
+            isPluginMissing ? "dependency-missing" :
+              pluginItem.label.includes("(PREVIEW)") ? "dependency-preview"
+                : "dependency-warning";
+          if (!pluginItem.label.includes("(PREVIEW)")) {
+            outdated.push(plugin);
+          }
         }
       }
       if (pluginItem.label.includes("(localdev)")) {
