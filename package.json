@@ -1,8 +1,8 @@
 {
   "name": "vscode-sfdx-hardis",
-  "displayName": "SFDX Hardis by Cloudity",
+  "displayName": "SFDX Hardis by Cloudity (PREVIEW, use with sfdx-hardis@alpha)",
   "description": "Handle Salesforce DX and Git without knowing Salesforce DX or Git !",
-  "version": "2.12.1",
+  "version": "3.0.0",
   "icon": "resources/sfdx-hardis-logo-square.png",
   "publisher": "NicolasVuillamy",
   "author": {
@@ -11,7 +11,7 @@
   },
   "license": "AGPL-3.0",
   "engines": {
-    "vscode": "^1.54.0"
+    "vscode": "^1.88.0"
   },
   "categories": [
     "Other"
