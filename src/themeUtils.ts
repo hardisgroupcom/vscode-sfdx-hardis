@@ -310,7 +310,7 @@ export class ThemeUtils {
       hardis: { vscode: "info", hardis: "help.svg" },
       "dependency-ok": { vscode: "check", hardis: "ok.svg" },
       "dependency-missing": { vscode: "error", hardis: "missing.svg" },
-      "dependency-warning": { vscode: "warning", hardis: "warning.svg" }, 
+      "dependency-warning": { vscode: "warning", hardis: "warning.svg" },
       "dependency-preview": { vscode: "gear", hardis: "hammer-wrench.svg" },
       "dependency-error": { vscode: "error", hardis: "error.svg" },
       "dependency-local": { vscode: "gear", hardis: "hammer-wrench.svg" },
