@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Migrate all sfdx calls into SF CLI calls to match SFDX Hardis v5
+- Improve panel menus loading time x10
 - New configuration variables to customize appearance of SFDX Hardis panels:
   - Select icons theme: Hardis (legacy) or Visual Studio Code (new)
   - Display / Hide emojis in menu sections titles
