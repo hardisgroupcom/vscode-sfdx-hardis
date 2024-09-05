@@ -18,6 +18,7 @@ let COMMANDS_RESULTS: any = {};
 let ORGS_INFO_CACHE: any[] = [];
 let USER_INSTANCE_URL_CACHE: any = {};
 let MULTITHREAD_ACTIVE: boolean | null = null;
+let CACHE_IS_PRELOADED: boolean = false;
 
 export function isMultithreadActive() {
   if (MULTITHREAD_ACTIVE !== null) {
@@ -65,6 +66,13 @@ export async function execShell(cmd: string, execOptions: any) {
   }
 }
 
+export function isCachePreloaded() {
+  if (CACHE_IS_PRELOADED === true) {
+    return true;
+  }
+  return false;
+}
+
 export function preLoadCache() {
   console.time("sfdxHardisPreload");
   const preLoadPromises = [];
@@ -75,7 +83,6 @@ export function preLoadCache() {
     "sf plugins",
     "npm show sfdx-cli version",
     "npm show sfdx-hardis version",
-    "npm show sfdx-essentials version",
     "npm show sfdmu version",
     "npm show sfdx-git-delta version",
     "npm show texei-sfdx-plugin version",
@@ -86,6 +93,7 @@ export function preLoadCache() {
   const sfdxJsonCommands = [
     "sf org display",
     "sf config get target-dev-hub",
+    "sf hardis:config:get --level project",
     "sf hardis:config:get --level user",
   ];
   for (const cmd of sfdxJsonCommands) {
@@ -93,6 +101,9 @@ export function preLoadCache() {
   }
   Promise.all(preLoadPromises).then(() => {
     console.timeEnd("sfdxHardisPreload");
+    CACHE_IS_PRELOADED = true;
+    vscode.commands.executeCommand("vscode-sfdx-hardis.refreshStatusView", true);
+    vscode.commands.executeCommand("vscode-sfdx-hardis.refreshPluginsView", true);
   });
 }
 

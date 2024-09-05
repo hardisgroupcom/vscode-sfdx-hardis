@@ -314,6 +314,7 @@ export class ThemeUtils {
       "dependency-preview": { vscode: "gear", hardis: "hammer-wrench.svg" },
       "dependency-error": { vscode: "error", hardis: "error.svg" },
       "dependency-local": { vscode: "gear", hardis: "hammer-wrench.svg" },
+      "loading": { vscode: "loading~spin", hardis: "refresh.svg" },
     };
   }
 }
