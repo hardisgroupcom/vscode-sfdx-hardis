@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import {
   hasSfdxProjectJson,
+  isProjectSfdxConfigLoaded,
   loadExternalSfdxHardisConfiguration,
   loadProjectSfdxHardisConfig,
   resetCache,
@@ -23,7 +24,7 @@ export class HardisCommandsProvider
   getChildren(element?: CommandTreeItem): Thenable<CommandTreeItem[]> {
     if (!this.workspaceRoot) {
       vscode.window.showInformationMessage(
-        "🦙 No commands available until you open a folder",
+        "🦙 No commands available until you open a folder"
       );
       return Promise.resolve([]);
     }
@@ -41,7 +42,7 @@ export class HardisCommandsProvider
   private getTopicCommands(topic: any): CommandTreeItem[] {
     const items: CommandTreeItem[] = [];
     const matchingTopic = this.getAllTopicsAndCommands().filter(
-      (topicItem: CommandTreeItem) => topicItem.id === topic.id,
+      (topicItem: CommandTreeItem) => topicItem.id === topic.id
     )[0];
     for (const item of matchingTopic.commands) {
       const options: any = {};
@@ -64,8 +65,8 @@ export class HardisCommandsProvider
           item.command,
           vscode.TreeItemCollapsibleState.None,
           this.themeUtils,
-          options,
-        ),
+          options
+        )
       );
     }
     return items;
@@ -125,8 +126,8 @@ export class HardisCommandsProvider
             item.command,
             vscode.TreeItemCollapsibleState.None,
             this.themeUtils,
-            options,
-          ),
+            options
+          )
         );
       } else {
         // This is a section
@@ -137,8 +138,8 @@ export class HardisCommandsProvider
             "",
             expanded,
             this.themeUtils,
-            options,
-          ),
+            options
+          )
         );
       }
     }
@@ -783,42 +784,42 @@ export class HardisCommandsProvider
             id: "contact:us",
             label: "Contact us to get help :)",
             command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
-              "https://cloudity.com/#form",
+              "https://cloudity.com/#form"
             )}`,
           },
           {
             id: "help:cicd",
             label: "DevOps - CI/CD Documentation",
             command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
-              "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/",
+              "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/"
             )}`,
           },
           {
             id: "help:org-monitoring",
             label: "Org Monitoring Documentation",
             command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
-              "https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/",
+              "https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/"
             )}`,
           },
           {
             id: "help:commands",
             label: "All sfdx-hardis commands documentation",
             command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
-              "https://sfdx-hardis.cloudity.com/commands/",
+              "https://sfdx-hardis.cloudity.com/commands/"
             )}`,
           },
           {
             id: "question",
             label: "Post an issue on GitHub",
             command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
-              "https://github.com/hardisgroupcom/sfdx-hardis/issues",
+              "https://github.com/hardisgroupcom/sfdx-hardis/issues"
             )}`,
           },
           {
             id: "hardis",
             label: "Cloudity Website",
             command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
-              "https://www.cloudity.com?ref=sfdxhardis",
+              "https://www.cloudity.com?ref=sfdxhardis"
             )}`,
           },
         ],
@@ -831,6 +832,17 @@ export class HardisCommandsProvider
 
   // Add custom commands defined within .sfdx-hardis.yml
   private async completeWithCustomCommands(hardisCommands: Array<any>) {
+    // Handle faster display by getting config in background then refresh the commands panel
+    if (!isProjectSfdxConfigLoaded()) {
+      loadProjectSfdxHardisConfig().then(() =>
+        vscode.commands.executeCommand(
+          "vscode-sfdx-hardis.refreshCommandsView",
+          true
+        )
+      );
+      return hardisCommands;
+    }
+    // Here config will already be loaded in cache
     const projectConfig = await loadProjectSfdxHardisConfig();
     // Commands defined in local .sfdx-hardis.yml
     if (projectConfig.customCommands) {
@@ -839,7 +851,7 @@ export class HardisCommandsProvider
       hardisCommands = this.addCommands(
         projectConfig.customCommands,
         customCommandsPosition,
-        hardisCommands,
+        hardisCommands
       );
     }
     // Commands defined in remote config file .sfdx-hardis.yml
@@ -851,7 +863,7 @@ export class HardisCommandsProvider
       hardisCommands = this.addCommands(
         remoteConfig.customCommands,
         customCommandsPosition,
-        hardisCommands,
+        hardisCommands
       );
     }
     return hardisCommands;
@@ -860,7 +872,7 @@ export class HardisCommandsProvider
   private addCommands(
     customCommands: Array<any>,
     customCommandsPosition: string,
-    hardisCommands: Array<any>,
+    hardisCommands: Array<any>
   ) {
     // Add default icon to commands if not set
     customCommands = customCommands.map((customCommandMenu) => {
@@ -868,7 +880,7 @@ export class HardisCommandsProvider
         (customCommand: any) => {
           customCommand.icon = customCommand.icon ?? "cloudity-logo.svg";
           return customCommand;
-        },
+        }
       );
       return customCommandMenu;
     });
@@ -898,7 +910,7 @@ class CommandTreeItem extends vscode.TreeItem {
       tooltip: "",
       requiresProject: false,
       helpUrl: "",
-    },
+    }
   ) {
     super(label, collapsibleState);
     this.id = id;

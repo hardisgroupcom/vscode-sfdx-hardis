@@ -308,6 +308,13 @@ export async function getUsernameInstanceUrl(
   return null;
 }
 
+export function isProjectSfdxConfigLoaded() {
+  if (PROJECT_CONFIG) {
+    return true;
+  }
+  return false;
+}
+
 export async function loadProjectSfdxHardisConfig() {
   if (PROJECT_CONFIG) {
     return PROJECT_CONFIG;
