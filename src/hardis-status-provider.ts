@@ -4,11 +4,14 @@ import GitUrlParse from "git-url-parse";
 import moment = require("moment");
 import {
   execSfdxJson,
+  getGitMenusItems,
   getGitParentBranch,
   getSfdxProjectJson,
   isCachePreloaded,
+  isGitMenusItemsLoaded,
   loadProjectSfdxHardisConfig,
   resetCache,
+  setGitMenusItems,
   setOrgCache,
 } from "./utils";
 import { Logger } from "./logger";
@@ -284,7 +287,30 @@ Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if you
   }
 
   private async getGitItems(): Promise<any[]> {
-    const items = [];
+    // Load in background
+    if (!isGitMenusItemsLoaded()) {
+      this.loadGitMenus().then((items) => {
+        setGitMenusItems(items);
+        vscode.commands.executeCommand(
+          "vscode-sfdx-hardis.refreshStatusView",
+          true
+        );
+      });
+      const gitWaitingItems: any = [];
+      gitWaitingItems.push({
+        id: "git-info-loading",
+        label: `Loading git info...`,
+        iconId: "loading",
+      });
+      return gitWaitingItems;
+    }
+    // Git items are loaded
+    const items: any[] = getGitMenusItems() as any[];
+    return items;
+  }
+
+  private async loadGitMenus() {
+    const items: any = [];
     const git = simpleGit(this.workspaceRoot);
     if (git && (await git.checkIsRepo()) === true) {
       let gitRemotesOrigins: any = [];
@@ -414,6 +440,7 @@ Note: Disable disableGitMergeRequiredCheck in settings to skip this check.`;
                 )}`,
               });
             }
+
             // Create merge request URL
             else if (mergeRequests[0] && mergeRequests[0].urlCreate) {
               items.push({
@@ -545,6 +572,8 @@ class StatusTreeItem extends vscode.TreeItem {
         };
         this.hardisCommand = hardisCommand;
       }
+    }
+    if (this.options?.iconId) {
       this.iconPath = this.themeUtils.getCommandIconPath(this.options.iconId);
     }
   }

@@ -526,7 +526,7 @@ export class HardisPluginsProvider
         description: "",
         tooltip: "",
         helpUrl: "",
-        status: "dependency-ok",
+        status: "",
       };
       if (item.description) {
         options.description = item.description;
@@ -635,7 +635,7 @@ class StatusTreeItem extends vscode.TreeItem {
         this.hardisCommand = hardisCommand;
       }
     }
-    if (options.status) {
+    if (options?.status) {
       this.iconPath = this.themeUtils.getCommandIconPath(options.status);
     }
     // Manage context menu tag
