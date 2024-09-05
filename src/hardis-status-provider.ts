@@ -6,6 +6,7 @@ import {
   execSfdxJson,
   getGitParentBranch,
   getSfdxProjectJson,
+  isCachePreloaded,
   loadProjectSfdxHardisConfig,
   resetCache,
   setOrgCache,
@@ -29,7 +30,7 @@ export class HardisStatusProvider
   getChildren(element?: StatusTreeItem): Thenable<StatusTreeItem[]> {
     if (!this.workspaceRoot) {
       vscode.window.showInformationMessage(
-        "🦙 No info available until you open a Salesforce project",
+        "🦙 No info available until you open a Salesforce project"
       );
       return Promise.resolve([]);
     }
@@ -52,10 +53,10 @@ export class HardisStatusProvider
       topic.id === "status-org"
         ? await this.getOrgItems({ devHub: false })
         : topic.id === "status-org-devhub"
-          ? await this.getOrgItems({ devHub: true })
-          : topic.id === "status-git"
-            ? await this.getGitItems()
-            : [];
+        ? await this.getOrgItems({ devHub: true })
+        : topic.id === "status-git"
+        ? await this.getGitItems()
+        : [];
     console.timeEnd("TreeViewItem_init_" + topic.id);
     Logger.log("Completed TreeViewItem_init_" + topic.id);
     for (const item of topicItems) {
@@ -76,8 +77,8 @@ export class HardisStatusProvider
           item.command || null,
           vscode.TreeItemCollapsibleState.None,
           this.themeUtils,
-          options,
-        ),
+          options
+        )
       );
     }
     return items;
@@ -85,6 +86,26 @@ export class HardisStatusProvider
 
   private async getOrgItems(options: any = {}): Promise<any[]> {
     const items: any = [];
+    if (!isCachePreloaded()) {
+      items.push(
+        options.devHub
+          ? {
+              id: "org-info-devhub-loading",
+              label: `DevHub info is loading...`,
+              tooltip: "Click to select and authenticate to a DevHub org",
+              command: "sf hardis:org:select --devhub",
+              iconId: "loading",
+            }
+          : {
+              id: "org-info-loading",
+              label: `Default org info is loading...`,
+              tooltip: "Click to select a default org",
+              command: "sf hardis:org:select",
+              iconId: "loading",
+            }
+      );
+      return items;
+    }
     let devHubUsername = "";
     let orgDisplayCommand = "sf org display";
     if (options.devHub) {
@@ -180,21 +201,21 @@ Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if you
           orgDetailItem.tooltip = `You org expired on ${orgInfo.expirationDate}. You need to create a new one.`;
           vscode.window.showErrorMessage(
             `🦙 ${orgDetailItem.tooltip}`,
-            "Close",
+            "Close"
           );
         } else if (daysBeforeExpiration < 3) {
           orgDetailItem.iconId = "org:expired:soon";
           orgDetailItem.tooltip = `You scratch org will expire in ${daysBeforeExpiration} days !!! Save your scratch org content and create a new one or your work will be lost !!!`;
           vscode.window.showErrorMessage(
             `🦙 ${orgDetailItem.tooltip}`,
-            "Close",
+            "Close"
           );
         } else if (daysBeforeExpiration < 7) {
           orgDetailItem.iconId = "org:expired:soon";
           orgDetailItem.tooltip = `Your scratch org will expire in ${daysBeforeExpiration} days. You should soon create a new scratch org to avoid loosing your work`;
           vscode.window.showWarningMessage(
             `🦙 ${orgDetailItem.tooltip}`,
-            "Close",
+            "Close"
           );
         }
       }
@@ -210,7 +231,7 @@ Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if you
           const poolViewRes = await execSfdxJson(
             "sf hardis:scratch:pool:view",
             this,
-            { output: false, fail: false },
+            { output: false, fail: false }
           );
           if (
             poolViewRes?.status === 0 &&
@@ -270,7 +291,7 @@ Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if you
       try {
         const gitRemotes = await git.getRemotes(true);
         gitRemotesOrigins = gitRemotes.filter(
-          (remote) => remote.name === "origin",
+          (remote) => remote.name === "origin"
         );
       } catch (e) {
         console.warn("[vscode-sfdx-hardis] No git repository found");
@@ -286,10 +307,10 @@ Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if you
             id: "git-info-repo",
             label: `Repo: ${(httpGitUrl.split("/").pop() || "").replace(
               ".git",
-              "",
+              ""
             )}`,
             command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
-              httpGitUrl,
+              httpGitUrl
             )}`,
             iconId: "git:repo",
             tooltip: "Click to open git repo in browser - " + httpGitUrl,
@@ -324,7 +345,7 @@ Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if you
             await git.fetch("origin", parentGitBranch);
             // Get parent branch latest commit
             const parentLatestCommit = await git.revparse(
-              `origin/${parentGitBranch}`,
+              `origin/${parentGitBranch}`
             );
             // Check if parent branch has been updated since we created the branch
             const gitDiff = await git.diff([
@@ -338,7 +359,7 @@ Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if you
               (currentBranchCommits?.all &&
                 currentBranchCommits?.all.length > 0 &&
                 !currentBranchCommits.all.some((currentBranchCommit) =>
-                  currentBranchCommit.message.includes(parentLatestCommit),
+                  currentBranchCommit.message.includes(parentLatestCommit)
                 ))
             ) {
               // Display message if a merge might be required
@@ -352,7 +373,7 @@ Note: Disable disableGitMergeRequiredCheck in settings to skip this check.`;
             }
           } catch (e) {
             console.warn(
-              "Unable to check if remote parent git branch is up to date",
+              "Unable to check if remote parent git branch is up to date"
             );
           }
         }
@@ -364,47 +385,49 @@ Note: Disable disableGitMergeRequiredCheck in settings to skip this check.`;
           tooltip: gitTooltip,
           command: gitCommand,
         });
-        // Merge request info
-        const mergeRequestRes = await execSfdxJson(
-          "sf hardis:config:get --level user",
-          this,
-          { fail: false, output: true },
-        );
-        if (mergeRequestRes?.result?.config?.mergeRequests) {
-          const mergeRequests =
-            mergeRequestRes.result.config.mergeRequests.filter(
-              (mr: any) =>
-                mr !== null &&
-                mr.branch === currentBranch &&
-                (mr.url !== null || mr.urlCreate !== null),
-            );
-          // Existing merge request
-          if (mergeRequests[0] && mergeRequests[0].url) {
-            items.push({
-              id: "git-merge-request-url",
-              label: "Merge Request: Open",
-              iconId: "git:pull-request",
-              tooltip:
-                "Click to open merge request in browser\n" +
-                mergeRequests[0].url,
-              command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
-                mergeRequests[0].url,
-              )}`,
-            });
-          }
-          // Create merge request URL
-          else if (mergeRequests[0] && mergeRequests[0].urlCreate) {
-            items.push({
-              id: "git-merge-request-create-url",
-              label: "Merge Request: Create",
-              icon: "merge.svg",
-              tooltip:
-                "Click to create merge request in browser\n" +
-                mergeRequests[0].urlCreate,
-              command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
-                mergeRequests[0].urlCreate,
-              )}`,
-            });
+        if (isCachePreloaded()) {
+          // Merge request info
+          const mergeRequestRes = await execSfdxJson(
+            "sf hardis:config:get --level user",
+            this,
+            { fail: false, output: true }
+          );
+          if (mergeRequestRes?.result?.config?.mergeRequests) {
+            const mergeRequests =
+              mergeRequestRes.result.config.mergeRequests.filter(
+                (mr: any) =>
+                  mr !== null &&
+                  mr.branch === currentBranch &&
+                  (mr.url !== null || mr.urlCreate !== null)
+              );
+            // Existing merge request
+            if (mergeRequests[0] && mergeRequests[0].url) {
+              items.push({
+                id: "git-merge-request-url",
+                label: "Merge Request: Open",
+                iconId: "git:pull-request",
+                tooltip:
+                  "Click to open merge request in browser\n" +
+                  mergeRequests[0].url,
+                command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
+                  mergeRequests[0].url
+                )}`,
+              });
+            }
+            // Create merge request URL
+            else if (mergeRequests[0] && mergeRequests[0].urlCreate) {
+              items.push({
+                id: "git-merge-request-create-url",
+                label: "Merge Request: Create",
+                icon: "merge.svg",
+                tooltip:
+                  "Click to create merge request in browser\n" +
+                  mergeRequests[0].urlCreate,
+                command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
+                  mergeRequests[0].urlCreate
+                )}`,
+              });
+            }
           }
         }
       }
@@ -439,8 +462,8 @@ Note: Disable disableGitMergeRequiredCheck in settings to skip this check.`;
           "",
           expanded,
           this.themeUtils,
-          options,
-        ),
+          options
+        )
       );
     }
     return items;
@@ -497,7 +520,7 @@ class StatusTreeItem extends vscode.TreeItem {
       iconId: "",
       description: "",
       tooltip: "",
-    },
+    }
   ) {
     super(label, collapsibleState);
     this.id = id;
