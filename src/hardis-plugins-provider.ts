@@ -418,7 +418,7 @@ export class HardisPluginsProvider
       items.push(pluginItem);
     });
     // Await parallel promises to be completed
-    await Promise.all(pluginPromises);
+    await Promise.allSettled(pluginPromises);
     // Propose user to upgrade if necessary
     if (outdated.length > 0) {
       vscode.window

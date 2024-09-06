@@ -100,7 +100,7 @@ export function preLoadCache() {
   for (const cmd of sfdxJsonCommands) {
     preLoadPromises.push(execSfdxJson(cmd, {}, {}));
   }
-  Promise.all(preLoadPromises).then(() => {
+  Promise.allSettled(preLoadPromises).then(() => {
     console.timeEnd("sfdxHardisPreload");
     CACHE_IS_PRELOADED = true;
     vscode.commands.executeCommand(
@@ -119,6 +119,7 @@ export function resetCache() {
   PROJECT_CONFIG = null;
   COMMANDS_RESULTS = {};
   GIT_MENUS = [];
+  Logger.log("[vscode-sfdx-hardis] Reset cache");
 }
 
 // Execute command
