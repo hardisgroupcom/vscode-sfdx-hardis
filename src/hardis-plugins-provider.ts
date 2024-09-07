@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import {
   execCommand,
+  getNpmLatestVersion,
   isCachePreloaded,
   isProjectSfdxConfigLoaded,
   loadExternalSfdxHardisConfiguration,
@@ -216,15 +217,6 @@ export class HardisPluginsProvider
     return items;
   }
 
-  private async getNpmRepoLatestVersion(repo: string) {
-    const res = await execCommand(`npm show ${repo} version`, this, {
-      output: false,
-      fail: true,
-      debug: false,
-    });
-    return res.stdout ? res.stdout.trim() : "";
-  }
-
   private async getPluginsItems(): Promise<any[]> {
     const items: any = [];
 
@@ -293,9 +285,17 @@ export class HardisPluginsProvider
         sfdxCliVersion = sfdxCliVersionMatch[1];
       }
     }
-    const latestSfdxCliVersion = await this.getNpmRepoLatestVersion(
-      "@salesforce/cli"
-    );
+
+    let latestSfdxCliVersion;
+    try {
+      latestSfdxCliVersion = await getNpmLatestVersion(
+        "@salesforce/cli"
+      );
+    } catch (e) {
+      console.error(`Error while fetching latest version for @salesforce/cli`);
+      return [];
+    }
+
     const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
     const recommendedSfdxCliVersion =
       config.get("ignoreSfdxCliRecommendedVersion") === true
@@ -357,7 +357,7 @@ export class HardisPluginsProvider
       // Check latest plugin version
       let latestPluginVersion;
       try {
-        latestPluginVersion = await this.getNpmRepoLatestVersion(plugin.name);
+        latestPluginVersion = await getNpmLatestVersion(plugin.name);
       } catch (e) {
         console.error(`Error while fetching latest version for ${plugin.name}`);
         return;

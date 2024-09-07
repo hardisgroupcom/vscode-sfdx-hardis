@@ -15,6 +15,7 @@ export const RECOMMENDED_SFDX_CLI_VERSION = null; //"7.111.6";
 let REMOTE_CONFIGS: any = {};
 let PROJECT_CONFIG: any = null;
 let COMMANDS_RESULTS: any = {};
+let NPM_VERSIONS_CACHE: any = {};
 let GIT_MENUS: any[] | null = null;
 let ORGS_INFO_CACHE: any[] = [];
 let USER_INSTANCE_URL_CACHE: any = {};
@@ -82,11 +83,6 @@ export function preLoadCache() {
     "git --version",
     "sf --version",
     "sf plugins",
-    "npm show sfdx-cli version",
-    "npm show sfdx-hardis version",
-    "npm show sfdmu version",
-    "npm show sfdx-git-delta version",
-    "npm show texei-sfdx-plugin version",
   ];
   for (const cmd of cliCommands) {
     preLoadPromises.push(execCommand(cmd, {}, {}));
@@ -99,6 +95,17 @@ export function preLoadCache() {
   ];
   for (const cmd of sfdxJsonCommands) {
     preLoadPromises.push(execSfdxJson(cmd, {}, {}));
+  }
+  const npmPackages = [
+    "@salesforce/cli",
+    "@salesforce/plugin-packaging",
+    "sfdx-hardis",
+    "sfdmu",
+    "sfdx-git-delta",
+    "texei-sfdx-plugin",
+  ];
+  for (const npmPackage of npmPackages) {
+    preLoadPromises.push(getNpmLatestVersion(npmPackage));
   }
   Promise.allSettled(preLoadPromises).then(() => {
     console.timeEnd("sfdxHardisPreload");
@@ -114,11 +121,26 @@ export function preLoadCache() {
   });
 }
 
+export async function getNpmLatestVersion(
+  packageName: string
+): Promise<string> {
+  if (NPM_VERSIONS_CACHE[packageName]) {
+    return NPM_VERSIONS_CACHE[packageName];
+  }
+  const versionRes = await axios.get(
+    "https://registry.npmjs.org/" + packageName + "/latest"
+  );
+  const version = versionRes.data.version;
+  NPM_VERSIONS_CACHE[packageName] = version;
+  return version;
+}
+
 export function resetCache() {
   REMOTE_CONFIGS = {};
   PROJECT_CONFIG = null;
   COMMANDS_RESULTS = {};
-  GIT_MENUS = [];
+  NPM_VERSIONS_CACHE = {};
+  GIT_MENUS = null;
   Logger.log("[vscode-sfdx-hardis] Reset cache");
 }
 
