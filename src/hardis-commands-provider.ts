@@ -436,7 +436,7 @@ export class HardisCommandsProvider
             tooltip: "Display apex logs in console while they are generated",
             command: "vscode-sfdx-hardis.debug.logtail",
             helpUrl:
-              "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_force_apex.htm#cli_reference_force_apex_log_tail",
+              "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_apex_commands_unified.htm#cli_reference_apex_tail_log_unified",
           },
           {
             id: "hardis:debug:importapex",
