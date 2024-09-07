@@ -109,7 +109,7 @@ export class ThemeUtils {
       await config.update(
         "menuIconType",
         menuIconType,
-        vscode.ConfigurationTarget.Global,
+        vscode.ConfigurationTarget.Global
       );
     }
     if (
@@ -119,7 +119,7 @@ export class ThemeUtils {
       await config.update(
         "emojisInSections",
         emojisInSections === "With Emojis" ? true : false,
-        vscode.ConfigurationTarget.Global,
+        vscode.ConfigurationTarget.Global
       );
     }
   }
@@ -306,6 +306,7 @@ export class ThemeUtils {
       "contact:us": { vscode: "question", hardis: "help.svg" },
       "help:commands": { vscode: "list-unordered", hardis: "help.svg" },
       "help:cicd": { vscode: "github-action", hardis: "help.svg" },
+      "help:org-monitoring": { vscode: "eye-watch", hardis: "monitoring.svg" },
       question: { vscode: "question", hardis: "help.svg" },
       hardis: { vscode: "info", hardis: "help.svg" },
       "dependency-ok": { vscode: "check", hardis: "ok.svg" },
@@ -314,7 +315,7 @@ export class ThemeUtils {
       "dependency-preview": { vscode: "gear", hardis: "hammer-wrench.svg" },
       "dependency-error": { vscode: "error", hardis: "error.svg" },
       "dependency-local": { vscode: "gear", hardis: "hammer-wrench.svg" },
-      "loading": { vscode: "loading~spin", hardis: "refresh.svg" },
+      loading: { vscode: "loading~spin", hardis: "refresh.svg" },
     };
   }
 }
