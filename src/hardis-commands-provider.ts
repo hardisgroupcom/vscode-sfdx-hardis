@@ -534,6 +534,16 @@ export class HardisCommandsProvider
               "https://sfdx-hardis.cloudity.com/hardis/org/monitor/limits/",
           },
           {
+            id: "hardis:org:diagnose:releaseupdates",
+            label: "Check Release Updates",
+            command: "sf hardis:org:diagnose:releaseupdates",
+            tooltip:
+              "Checks if some Release Updates must be verified in the org",
+            requiresProject: true,
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/org/diagnose/releaseupdates/",
+          },
+          {
             id: "org:diagnose:legacyapi",
             label: "Legacy API versions usage",
             tooltip: "Detects if deprected APIs are your in a production org",
