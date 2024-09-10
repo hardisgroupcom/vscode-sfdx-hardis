@@ -112,23 +112,23 @@ export function preLoadCache() {
     CACHE_IS_PRELOADED = true;
     vscode.commands.executeCommand(
       "vscode-sfdx-hardis.refreshStatusView",
-      true
+      true,
     );
     vscode.commands.executeCommand(
       "vscode-sfdx-hardis.refreshPluginsView",
-      true
+      true,
     );
   });
 }
 
 export async function getNpmLatestVersion(
-  packageName: string
+  packageName: string,
 ): Promise<string> {
   if (NPM_VERSIONS_CACHE[packageName]) {
     return NPM_VERSIONS_CACHE[packageName];
   }
   const versionRes = await axios.get(
-    "https://registry.npmjs.org/" + packageName + "/latest"
+    "https://registry.npmjs.org/" + packageName + "/latest",
   );
   const version = versionRes.data.version;
   NPM_VERSIONS_CACHE[packageName] = version;
@@ -153,7 +153,7 @@ export async function execCommand(
     output: false,
     debug: false,
     spinner: true,
-  }
+  },
 ): Promise<any> {
   let commandResult = null;
   // Call command (disable color before for json parsing)
@@ -168,7 +168,7 @@ export async function execCommand(
     if (COMMANDS_RESULTS[command]) {
       // use cache
       Logger.log(
-        `[vscode-sfdx-hardis][command] Waiting for promise already started for command ${command}`
+        `[vscode-sfdx-hardis][command] Waiting for promise already started for command ${command}`,
       );
       commandResult =
         COMMANDS_RESULTS[command].result ??
@@ -217,12 +217,12 @@ export async function execCommand(
     const parsedResult = JSON.parse(commandResult.stdout.toString());
     if (options.fail && parsedResult.status && parsedResult.status > 0) {
       throw new Error(
-        c.red(`[sfdx-hardis][ERROR] Command failed: ${commandResult}`)
+        c.red(`[sfdx-hardis][ERROR] Command failed: ${commandResult}`),
       );
     }
     if (commandResult.stderr && commandResult.stderr.length > 2) {
       Logger.log(
-        "[sfdx-hardis][WARNING] stderr: " + c.yellow(commandResult.stderr)
+        "[sfdx-hardis][WARNING] stderr: " + c.yellow(commandResult.stderr),
       );
     }
     return parsedResult;
@@ -231,7 +231,7 @@ export async function execCommand(
     return {
       status: 1,
       errorMessage: c.red(
-        `[sfdx-hardis][ERROR] Error parsing JSON in command result: ${e.message}\n${commandResult.stdout}\n${commandResult.stderr})`
+        `[sfdx-hardis][ERROR] Error parsing JSON in command result: ${e.message}\n${commandResult.stdout}\n${commandResult.stderr})`,
       ),
     };
   }
@@ -245,7 +245,7 @@ export async function execSfdxJson(
     fail: false,
     output: false,
     debug: false,
-  }
+  },
 ): Promise<any> {
   if (!command.includes("--json")) {
     command += " --json";
@@ -270,11 +270,11 @@ export function getWorkspaceRoot() {
 
 let sfdxProjectJsonFound: boolean | null = null;
 export function hasSfdxProjectJson(
-  options: { recalc: boolean } = { recalc: false }
+  options: { recalc: boolean } = { recalc: false },
 ) {
   if (sfdxProjectJsonFound === null || options.recalc === true) {
     sfdxProjectJsonFound = fs.existsSync(
-      path.join(getWorkspaceRoot(), "sfdx-project.json")
+      path.join(getWorkspaceRoot(), "sfdx-project.json"),
     );
   }
   return sfdxProjectJsonFound;
@@ -285,7 +285,7 @@ export function getSfdxProjectJson() {
     return JSON.parse(
       fs
         .readFileSync(path.join(getWorkspaceRoot(), "sfdx-project.json"))
-        .toString()
+        .toString(),
     );
   }
   return {};
@@ -319,7 +319,7 @@ export function findInOrgCache(orgCriteria: any) {
 }
 
 export async function getUsernameInstanceUrl(
-  username: string
+  username: string,
 ): Promise<string | null> {
   // username - instances cache
   if (USER_INSTANCE_URL_CACHE[username]) {
@@ -337,7 +337,7 @@ export async function getUsernameInstanceUrl(
     {
       fail: false,
       output: false,
-    }
+    },
   );
   if (orgInfoResult.result) {
     const orgInfo = orgInfoResult.result || orgInfoResult;
@@ -379,7 +379,7 @@ export async function loadProjectSfdxHardisConfig() {
   const configRes = await execSfdxJson(
     "sf hardis:config:get --level project",
     null,
-    { fail: false, output: true }
+    { fail: false, output: true },
   );
   PROJECT_CONFIG = configRes?.result?.config || {};
   return PROJECT_CONFIG;
@@ -410,7 +410,7 @@ async function loadFromRemoteConfigFile(url: string) {
       "[sfdx-hardis] Unable to read remote configuration file at " +
         url +
         "\n" +
-        JSON.stringify(remoteConfigResp)
+        JSON.stringify(remoteConfigResp),
     );
   }
   const remoteConfig = yaml.load(remoteConfigResp.data);
@@ -422,7 +422,7 @@ export async function readSfdxHardisConfig(): Promise<any> {
   if (vscode.workspace.workspaceFolders) {
     const configFile = path.join(
       vscode.workspace.workspaceFolders[0].uri.fsPath,
-      `config/.sfdx-hardis.yml`
+      `config/.sfdx-hardis.yml`,
     );
     if (fs.existsSync(configFile)) {
       return await loadFromLocalConfigFile(configFile);
@@ -433,12 +433,12 @@ export async function readSfdxHardisConfig(): Promise<any> {
 
 export async function writeSfdxHardisConfig(
   key: string,
-  value: any
+  value: any,
 ): Promise<any> {
   if (vscode.workspace.workspaceFolders) {
     const configFile = path.join(
       vscode.workspace.workspaceFolders[0].uri.fsPath,
-      `config/.sfdx-hardis.yml`
+      `config/.sfdx-hardis.yml`,
     );
     await fs.ensureDir(path.dirname(configFile));
     const config = await readSfdxHardisConfig();
@@ -466,16 +466,16 @@ export async function getGitParentBranch() {
     const rev = await simpleGit({ trimmed: true }).raw(
       "rev-parse",
       "--abbrev-ref",
-      "HEAD"
+      "HEAD",
     );
     const allLinesNormalized = outputFromGit.map((line) =>
-      line.trim().replace(/\].*/, "")
+      line.trim().replace(/\].*/, ""),
     );
     const indexOfCurrentBranch = allLinesNormalized.indexOf(`* [${rev}`);
     if (indexOfCurrentBranch > -1) {
       const parentBranch = allLinesNormalized[indexOfCurrentBranch + 1].replace(
         /^.*\[/,
-        ""
+        "",
       );
       return parentBranch;
     }

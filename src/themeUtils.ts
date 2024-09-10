@@ -109,7 +109,7 @@ export class ThemeUtils {
       await config.update(
         "menuIconType",
         menuIconType,
-        vscode.ConfigurationTarget.Global
+        vscode.ConfigurationTarget.Global,
       );
     }
     if (
@@ -119,7 +119,7 @@ export class ThemeUtils {
       await config.update(
         "emojisInSections",
         emojisInSections === "With Emojis" ? true : false,
-        vscode.ConfigurationTarget.Global
+        vscode.ConfigurationTarget.Global,
       );
     }
   }
