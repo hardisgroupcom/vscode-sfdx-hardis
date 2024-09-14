@@ -11,6 +11,7 @@ import * as yaml from "js-yaml";
 import { Logger } from "./logger";
 
 export const RECOMMENDED_SFDX_CLI_VERSION = null; //"7.111.6";
+export const NODE_JS_MINIMUM_VERSION = 20.0;
 
 let REMOTE_CONFIGS: any = {};
 let PROJECT_CONFIG: any = null;
