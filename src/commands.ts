@@ -398,7 +398,7 @@ export class Commands {
       "vscode-sfdx-hardis.simulateMetadataDeployment",
       async (uri: vscode.Uri) => {
         const relativePath = vscode.workspace.asRelativePath(uri);
-        const command = `sf hardis:project:deploy:simulate --source-dir ${relativePath}`;
+        const command = `sf hardis:project:deploy:simulate --source-dir "${relativePath}"`;
         vscode.commands.executeCommand(
           "vscode-sfdx-hardis.execute-command",
           command,
