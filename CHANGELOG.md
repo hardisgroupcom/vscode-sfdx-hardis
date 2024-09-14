@@ -11,6 +11,7 @@
 - Reorganize sections and menus
 - Add `destructiveChanges.xml` and `package-no-overwrite.xml` in Quick Open config files menu-
 - New command **Org Monitoring -> Release Updates**
+- Default color is "no color", not green
 - Fix: Do not update VsCode local config file with blank color if there wasn't a previous config value
 - Fix: Refresh Status panel after upgrading plugins
 - Remove sfdx-essentials plugin dependency
