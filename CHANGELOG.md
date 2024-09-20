@@ -14,6 +14,7 @@
 - Default color is "no color", not green
 - Fix: Do not update VsCode local config file with blank color if there wasn't a previous config value
 - Fix: Refresh Status panel after upgrading plugins
+- Fix: Do not display dependency warning if Salesforce Extension Pack (Expanded) is installed
 - Remove sfdx-essentials plugin dependency
 - NPM dependencies updates
   - Upgrade all package dependencies

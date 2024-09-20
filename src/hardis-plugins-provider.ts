@@ -490,7 +490,10 @@ export class HardisPluginsProvider
         tooltip: `${extension.label} is installed`,
         status: "dependency-ok",
       };
-      const extInstance = vscode.extensions.getExtension(extension.id);
+      let extInstance = vscode.extensions.getExtension(extension.id);
+      if (!extInstance && extension.id === "salesforce.salesforcedx-vscode") {
+        extInstance = vscode.extensions.getExtension("salesforce.salesforcedx-vscode-expanded");
+      }
       if (!extInstance) {
         extensionItem.command = `code --install-extension ${extension.id}`;
         extensionItem.tooltip = `Click to install VsCode Extension ${extension.label}`;
