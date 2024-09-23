@@ -11,13 +11,17 @@ import * as yaml from "js-yaml";
 import { Logger } from "./logger";
 
 export const RECOMMENDED_SFDX_CLI_VERSION = null; //"7.111.6";
+export const NODE_JS_MINIMUM_VERSION = 20.0;
 
 let REMOTE_CONFIGS: any = {};
 let PROJECT_CONFIG: any = null;
 let COMMANDS_RESULTS: any = {};
+let NPM_VERSIONS_CACHE: any = {};
+let GIT_MENUS: any[] | null = null;
 let ORGS_INFO_CACHE: any[] = [];
 let USER_INSTANCE_URL_CACHE: any = {};
 let MULTITHREAD_ACTIVE: boolean | null = null;
+let CACHE_IS_PRELOADED: boolean = false;
 
 export function isMultithreadActive() {
   if (MULTITHREAD_ACTIVE !== null) {
@@ -65,42 +69,80 @@ export async function execShell(cmd: string, execOptions: any) {
   }
 }
 
+export function isCachePreloaded() {
+  if (CACHE_IS_PRELOADED === true) {
+    return true;
+  }
+  return false;
+}
+
 export function preLoadCache() {
   console.time("sfdxHardisPreload");
   const preLoadPromises = [];
   const cliCommands = [
     "node --version",
     "git --version",
-    "sfdx --version",
-    "sfdx plugins",
-    "npm show sfdx-cli version",
-    "npm show sfdx-hardis version",
-    "npm show sfdx-essentials version",
-    "npm show sfdmu version",
-    "npm show sfdx-git-delta version",
-    "npm show texei-sfdx-plugin version",
+    "sf --version",
+    "sf plugins",
   ];
   for (const cmd of cliCommands) {
     preLoadPromises.push(execCommand(cmd, {}, {}));
   }
   const sfdxJsonCommands = [
-    "sfdx force:org:display",
-    "sfdx force:config:get defaultdevhubusername",
-    "sfdx hardis:config:get --level project",
-    "sfdx hardis:config:get --level user",
+    "sf org display",
+    "sf config get target-dev-hub",
+    "sf hardis:config:get --level project",
+    "sf hardis:config:get --level user",
   ];
   for (const cmd of sfdxJsonCommands) {
     preLoadPromises.push(execSfdxJson(cmd, {}, {}));
   }
-  Promise.all(preLoadPromises).then(() => {
+  const npmPackages = [
+    "@salesforce/cli",
+    "@salesforce/plugin-packaging",
+    "sfdx-hardis",
+    "sfdmu",
+    "sfdx-git-delta",
+    "texei-sfdx-plugin",
+  ];
+  for (const npmPackage of npmPackages) {
+    preLoadPromises.push(getNpmLatestVersion(npmPackage));
+  }
+  Promise.allSettled(preLoadPromises).then(() => {
     console.timeEnd("sfdxHardisPreload");
+    CACHE_IS_PRELOADED = true;
+    vscode.commands.executeCommand(
+      "vscode-sfdx-hardis.refreshStatusView",
+      true,
+    );
+    vscode.commands.executeCommand(
+      "vscode-sfdx-hardis.refreshPluginsView",
+      true,
+    );
   });
+}
+
+export async function getNpmLatestVersion(
+  packageName: string,
+): Promise<string> {
+  if (NPM_VERSIONS_CACHE[packageName]) {
+    return NPM_VERSIONS_CACHE[packageName];
+  }
+  const versionRes = await axios.get(
+    "https://registry.npmjs.org/" + packageName + "/latest",
+  );
+  const version = versionRes.data.version;
+  NPM_VERSIONS_CACHE[packageName] = version;
+  return version;
 }
 
 export function resetCache() {
   REMOTE_CONFIGS = {};
   PROJECT_CONFIG = null;
   COMMANDS_RESULTS = {};
+  NPM_VERSIONS_CACHE = {};
+  GIT_MENUS = null;
+  Logger.log("[vscode-sfdx-hardis] Reset cache");
 }
 
 // Execute command
@@ -291,7 +333,7 @@ export async function getUsernameInstanceUrl(
   }
   // request org
   const orgInfoResult = await execSfdxJson(
-    `sfdx force:org:display --targetusername ${username}`,
+    `sf org display --target-org ${username}`,
     null,
     {
       fail: false,
@@ -309,12 +351,34 @@ export async function getUsernameInstanceUrl(
   return null;
 }
 
+export function isGitMenusItemsLoaded(): boolean {
+  if (GIT_MENUS) {
+    return true;
+  }
+  return false;
+}
+
+export function getGitMenusItems(): any[] | null {
+  return GIT_MENUS;
+}
+
+export function setGitMenusItems(menuItems: any): void {
+  GIT_MENUS = menuItems;
+}
+
+export function isProjectSfdxConfigLoaded() {
+  if (PROJECT_CONFIG) {
+    return true;
+  }
+  return false;
+}
+
 export async function loadProjectSfdxHardisConfig() {
   if (PROJECT_CONFIG) {
     return PROJECT_CONFIG;
   }
   const configRes = await execSfdxJson(
-    "sfdx hardis:config:get --level project",
+    "sf hardis:config:get --level project",
     null,
     { fail: false, output: true },
   );
@@ -420,4 +484,14 @@ export async function getGitParentBranch() {
     return null;
   }
   return null;
+}
+
+const ansiPattern = [
+  "[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]+)*|[a-zA-Z\\d]+(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?\\u0007)",
+  "(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PR-TZcf-nq-uy=><~]))",
+].join("|");
+const ansiRegex = new RegExp(ansiPattern, "g");
+
+export function stripAnsi(str: string) {
+  return (str || "").replace(ansiRegex, "");
 }

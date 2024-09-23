@@ -1,23 +1,23 @@
-import stripAnsi from "strip-ansi";
 import * as http from "http";
-import * as WebSocket from "ws";
+import getPort, { portNumbers } from "get-port";
+import { WebSocketServer } from "ws";
 import * as vscode from "vscode";
-import { getWorkspaceRoot } from "./utils";
+import { getWorkspaceRoot, stripAnsi } from "./utils";
 import { Logger } from "./logger";
 
 const DEFAULT_PORT = parseInt(process.env.SFDX_HARDIS_WEBSOCKET_PORT || "2702");
-let globalWss: WebSocketServer | null;
+let globalWss: LocalWebSocketServer | null;
 
-export class WebSocketServer {
+export class LocalWebSocketServer {
   public websocketHostPort: any = null;
   private server: http.Server;
-  private wss: WebSocket.Server;
+  private wss: WebSocketServer;
   private clients: any = {};
 
   constructor() {
     console.time("WebSocketServer_init");
     this.server = http.createServer();
-    this.wss = new WebSocket.Server({ server: this.server });
+    this.wss = new WebSocketServer({ server: this.server });
     globalWss = this;
     console.timeEnd("WebSocketServer_init");
   }
@@ -25,10 +25,8 @@ export class WebSocketServer {
   async start() {
     let port = DEFAULT_PORT;
     if (port === 2702) {
-      // Define random port
-      const portastic = require("portastic");
-      const availablePorts = await portastic.find({ min: 2702, max: 2784 });
-      port = availablePorts[Math.floor(Math.random() * availablePorts.length)];
+      // Define random port if not forced by the user with env var SFDX_HARDIS_WEBSOCKET_PORT
+      port = await getPort({ port: portNumbers(2702, 2784) });
     }
     this.listen();
     //start our server
@@ -116,7 +114,7 @@ export class WebSocketServer {
       if (prompt.type === "text") {
         const inputBoxOptions: vscode.InputBoxOptions = {
           prompt: stripAnsi(prompt.message),
-          placeHolder: stripAnsi(prompt.placeholder) || "",
+          placeHolder: stripAnsi(prompt.placeholder || ""),
           ignoreFocusOut: true,
           value: prompt.initial,
         };
@@ -133,7 +131,7 @@ export class WebSocketServer {
       else if (prompt.type === "number") {
         const inputBoxOptions: vscode.InputBoxOptions = {
           prompt: stripAnsi(prompt.message),
-          placeHolder: stripAnsi(prompt.placeholder) || "",
+          placeHolder: stripAnsi(prompt.placeholder || ""),
           ignoreFocusOut: true,
           value: prompt.initial ? prompt.initial.toString() : null,
         };

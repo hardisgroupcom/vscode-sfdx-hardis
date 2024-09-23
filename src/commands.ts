@@ -4,9 +4,10 @@ import * as fs from "fs-extra";
 import { HardisCommandsProvider } from "./hardis-commands-provider";
 import { HardisStatusProvider } from "./hardis-status-provider";
 import { HardisPluginsProvider } from "./hardis-plugins-provider";
-import { WebSocketServer } from "./hardis-websocket-server";
+import { LocalWebSocketServer } from "./hardis-websocket-server";
 import { getWorkspaceRoot } from "./utils";
 import TelemetryReporter from "@vscode/extension-telemetry";
+import { ThemeUtils } from "./themeUtils";
 
 export class Commands {
   hardisCommandsProvider: HardisCommandsProvider | null = null;
@@ -16,7 +17,7 @@ export class Commands {
   disposables: vscode.Disposable[] = [];
   terminalStack: vscode.Terminal[] = [];
   terminalIsRunning = false;
-  disposableWebSocketServer: WebSocketServer | null = null;
+  disposableWebSocketServer: LocalWebSocketServer | null = null;
 
   constructor(
     hardisCommandsProvider: HardisCommandsProvider,
@@ -34,6 +35,7 @@ export class Commands {
   registerCommands() {
     this.registerExecuteCommand();
     this.registerOpenValidationLink();
+    this.registerOpenExtensionSettings();
     this.registerNewTerminalCommand();
     this.registerRefreshCommandsView();
     this.registerRefreshStatusView();
@@ -44,6 +46,8 @@ export class Commands {
     this.registerOpenPluginHelp();
     this.registerOpenKeyFile();
     this.registerShowMessage();
+    this.registerSelectExtensionTheme();
+    this.registerSimulateDeployment();
   }
 
   getLatestTerminal() {
@@ -64,7 +68,7 @@ export class Commands {
       return;
     }
     // terminalIsRunning = true; //Comment until we find a way to detect that a command is running or not
-    if (command.startsWith("sfdx hardis:")) {
+    if (command.startsWith("sf hardis")) {
       // Add --skipauth argument when necessary
       const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
       if (
@@ -78,12 +82,13 @@ export class Commands {
     }
     // Add --websocket argument when necessary
     if (
-      (command.startsWith("sfdx hardis:") ||
-        command.includes("sfdx hardis:work:ws --event")) &&
+      (command.startsWith("sf hardis") ||
+        command.includes("sf hardis:work:ws --event")) &&
       this.disposableWebSocketServer &&
       this.disposableWebSocketServer.websocketHostPort !== null &&
       !command.includes("--websocket") &&
-      !command.includes("&&")
+      (!command.includes("&&") ||
+        command.endsWith("sf hardis:work:ws --event refreshPlugins"))
     ) {
       command += ` --websocket ${this.disposableWebSocketServer.websocketHostPort}`;
     }
@@ -97,7 +102,7 @@ export class Commands {
     // Scrolldown the terminal
     vscode.commands.executeCommand("workbench.action.terminal.scrollToBottom");
     // Telemetry: Send only the 2 first portions of the command
-    // Examples: "sfdx hardis:work:new" , "sfdx plugins:install"
+    // Examples: "sf hardis:work:new" , "sf plugins:install"
     if (this.reporter) {
       const truncatedCommand = command.split(" ").slice(0, 2).join(" ");
       this.reporter.sendTelemetryEvent("command", {
@@ -145,13 +150,13 @@ export class Commands {
                     "Ignore",
                     "Don't ask again",
                   )
-                  .then((selection) => {
+                  .then(async (selection) => {
                     if (selection === "Download Git Bash") {
                       vscode.env.openExternal(
                         vscode.Uri.parse("https://git-scm.com/downloads"),
                       );
                     } else if (selection === "Don't ask again") {
-                      config.update("disableGitBashCheck", true);
+                      await config.update("disableGitBashCheck", true);
                     } else {
                       vscode.window.showInformationMessage(
                         "🦙 If you do not want to see this message anymore, set VsCode setting vsCodeSfdxHardis.disableGitBashCheck to true, or click on Don't ask again",
@@ -194,15 +199,15 @@ export class Commands {
     // Refresh commands tree
     const disposable = vscode.commands.registerCommand(
       "vscode-sfdx-hardis.refreshCommandsView",
-      () => {
-        this.hardisCommandsProvider?.refresh();
+      (keepCache: boolean = false) => {
+        this.hardisCommandsProvider?.refresh(keepCache);
         // Reload window if Salesforce Extensions are not active
         const toReload = vscode.extensions.all.filter(
           (extension) =>
             extension.id === "salesforce.salesforcedx-vscode-core" &&
             extension.isActive === false,
         );
-        if (toReload.length > 0) {
+        if (toReload.length > 0 && keepCache === false) {
           vscode.commands.executeCommand("workbench.action.reloadWindow");
         }
       },
@@ -213,7 +218,8 @@ export class Commands {
   registerRefreshStatusView() {
     const disposable = vscode.commands.registerCommand(
       "vscode-sfdx-hardis.refreshStatusView",
-      () => this.hardisStatusProvider?.refresh(),
+      (keepCache: boolean = false) =>
+        this.hardisStatusProvider?.refresh(keepCache),
     );
     this.disposables.push(disposable);
   }
@@ -221,7 +227,8 @@ export class Commands {
   registerRefreshPluginsView() {
     const disposable = vscode.commands.registerCommand(
       "vscode-sfdx-hardis.refreshPluginsView",
-      () => this.hardisPluginsProvider?.refresh(),
+      (keepCache: boolean = false) =>
+        this.hardisPluginsProvider?.refresh(keepCache),
     );
     this.disposables.push(disposable);
   }
@@ -361,6 +368,46 @@ export class Commands {
     this.disposables.push(disposable);
   }
 
+  registerSelectExtensionTheme() {
+    // Open external command
+    const disposable = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.selectExtensionTheme",
+      async () => {
+        await ThemeUtils.promptUpdateConfiguration();
+      },
+    );
+    this.disposables.push(disposable);
+  }
+
+  registerOpenExtensionSettings() {
+    // Open external command
+    const disposable = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.openExtensionSettings",
+      async () => {
+        vscode.commands.executeCommand("workbench.action.openGlobalSettings", {
+          query: "Hardis",
+        });
+      },
+    );
+    this.disposables.push(disposable);
+  }
+
+  registerSimulateDeployment() {
+    // Open external command
+    const disposable = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.simulateMetadataDeployment",
+      async (uri: vscode.Uri) => {
+        const relativePath = vscode.workspace.asRelativePath(uri);
+        const command = `sf hardis:project:deploy:simulate --source-dir "${relativePath}"`;
+        vscode.commands.executeCommand(
+          "vscode-sfdx-hardis.execute-command",
+          command,
+        );
+      },
+    );
+    this.disposables.push(disposable);
+  }
+
   registerOpenKeyFile() {
     // Open key file command
     vscode.commands.registerCommand(
@@ -376,9 +423,18 @@ export class Commands {
             label: "List of all deployed metadatas",
           },
           {
+            file: "manifest/destructiveChanges.xml",
+            label: "List of all deleted metadatas",
+          },
+          {
+            file: "manifest/package-no-overwrite.xml",
+            label:
+              "List of metadatas that will be deployed only if they are not already existing in the target org",
+          },
+          {
             file: "manifest/packageDeployOnce.xml",
             label:
-              "List of metadatas that will be deployed only if not existing in the target org",
+              "List of metadatas that will be deployed only if they are not already existing in the target org",
           },
           {
             file: "config/project-scratch-def.json",

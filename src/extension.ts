@@ -8,7 +8,7 @@ import { HardisCommandsProvider } from "./hardis-commands-provider";
 import { HardisDebugger } from "./hardis-debugger";
 import { HardisPluginsProvider } from "./hardis-plugins-provider";
 import { HardisStatusProvider } from "./hardis-status-provider";
-import { WebSocketServer } from "./hardis-websocket-server";
+import { LocalWebSocketServer } from "./hardis-websocket-server";
 import { Logger } from "./logger";
 import { getWorkspaceRoot, preLoadCache } from "./utils";
 import { WelcomePanel } from "./webviews/welcome";
@@ -98,10 +98,17 @@ export function activate(context: vscode.ExtensionContext) {
           commands.disposableWebSocketServer.dispose();
         }
         // Wait a while to run WebSocket server, as it can be time consuming
-        commands.disposableWebSocketServer = new WebSocketServer();
-        commands.disposableWebSocketServer.start();
-        context.subscriptions.push(commands.disposableWebSocketServer);
-        resolve(commands.disposableWebSocketServer);
+        try {
+          commands.disposableWebSocketServer = new LocalWebSocketServer();
+          commands.disposableWebSocketServer.start();
+          context.subscriptions.push(commands.disposableWebSocketServer);
+          resolve(commands.disposableWebSocketServer);
+        } catch (e: any) {
+          Logger.log("Error while launching WebSocket Server: " + e.message);
+          vscode.window.showWarningMessage(
+            "Local WebSocket Server was unable to start.\nUser prompts will be in the terminal.",
+          );
+        }
       }, 5000);
     });
   }
@@ -132,12 +139,32 @@ export function activate(context: vscode.ExtensionContext) {
   // Catch event configuration changes
   vscode.workspace.onDidChangeConfiguration((event) => {
     if (event.affectsConfiguration("vsCodeSfdxHardis")) {
+      // Change user input
       if (event.affectsConfiguration("vsCodeSfdxHardis.userInput")) {
         manageWebSocketServer();
       }
+      // Enable / Disable org colors
       if (event.affectsConfiguration("vsCodeSfdxHardis.disableVsCodeColors")) {
         hardisColors.init();
       }
+    }
+    // Change theme
+    if (
+      event.affectsConfiguration("vsCodeSfdxHardis.theme.menuIconType") ||
+      event.affectsConfiguration("vsCodeSfdxHardis.theme.emojisInSections")
+    ) {
+      vscode.commands.executeCommand(
+        "vscode-sfdx-hardis.refreshCommandsView",
+        true,
+      );
+      vscode.commands.executeCommand(
+        "vscode-sfdx-hardis.refreshStatusView",
+        true,
+      );
+      vscode.commands.executeCommand(
+        "vscode-sfdx-hardis.refreshPluginsView",
+        true,
+      );
     }
   });
 
@@ -156,6 +183,8 @@ export function activate(context: vscode.ExtensionContext) {
       )
     ) {
       vscode.commands.executeCommand("vscode-sfdx-hardis.refreshCommandsView");
+      vscode.commands.executeCommand("vscode-sfdx-hardis.refreshStatusView");
+      vscode.commands.executeCommand("vscode-sfdx-hardis.refreshPluginsView");
     }
   });
 

@@ -4,19 +4,27 @@ import GitUrlParse from "git-url-parse";
 import moment = require("moment");
 import {
   execSfdxJson,
+  getGitMenusItems,
   getGitParentBranch,
   getSfdxProjectJson,
+  isCachePreloaded,
+  isGitMenusItemsLoaded,
   loadProjectSfdxHardisConfig,
   resetCache,
+  setGitMenusItems,
   setOrgCache,
 } from "./utils";
 import { Logger } from "./logger";
 import simpleGit from "simple-git";
+import { ThemeUtils } from "./themeUtils";
 
 export class HardisStatusProvider
   implements vscode.TreeDataProvider<StatusTreeItem>
 {
-  constructor(private workspaceRoot: string) {}
+  public themeUtils: ThemeUtils;
+  constructor(private workspaceRoot: string) {
+    this.themeUtils = new ThemeUtils();
+  }
 
   getTreeItem(element: StatusTreeItem): vscode.TreeItem {
     return element;
@@ -56,8 +64,8 @@ export class HardisStatusProvider
     Logger.log("Completed TreeViewItem_init_" + topic.id);
     for (const item of topicItems) {
       const options: any = {};
-      if (item.icon) {
-        options.icon = { light: item.icon, dark: item.icon };
+      if (item.iconId) {
+        options.iconId = item.iconId;
       }
       if (item.description) {
         options.description = item.description;
@@ -71,6 +79,7 @@ export class HardisStatusProvider
           item.id,
           item.command || null,
           vscode.TreeItemCollapsibleState.None,
+          this.themeUtils,
           options,
         ),
       );
@@ -80,10 +89,30 @@ export class HardisStatusProvider
 
   private async getOrgItems(options: any = {}): Promise<any[]> {
     const items: any = [];
+    if (!isCachePreloaded()) {
+      items.push(
+        options.devHub
+          ? {
+              id: "org-info-devhub-loading",
+              label: `DevHub info is loading...`,
+              tooltip: "Click to select and authenticate to a DevHub org",
+              command: "sf hardis:org:select --devhub",
+              iconId: "loading",
+            }
+          : {
+              id: "org-info-loading",
+              label: `Default org info is loading...`,
+              tooltip: "Click to select a default org",
+              command: "sf hardis:org:select",
+              iconId: "loading",
+            },
+      );
+      return items;
+    }
     let devHubUsername = "";
-    let orgDisplayCommand = "sfdx force:org:display";
+    let orgDisplayCommand = "sf org display";
     if (options.devHub) {
-      const devHubAliasCommand = "sfdx force:config:get defaultdevhubusername";
+      const devHubAliasCommand = "sf config get target-dev-hub";
       const devHubAliasRes = await execSfdxJson(devHubAliasCommand, this, {
         fail: false,
         output: false,
@@ -95,14 +124,14 @@ export class HardisStatusProvider
         devHubAliasRes.result[0].value
       ) {
         devHubUsername = devHubAliasRes.result[0].value;
-        orgDisplayCommand += ` --targetusername ${devHubUsername}`;
+        orgDisplayCommand += ` -- ${devHubUsername}`;
       } else {
         items.push({
           id: "org-not-connected-devhub",
           label: `Select a DevHub org`,
           tooltip: "Click to select and authenticate to a DevHub org",
-          command: "sfdx hardis:org:select --devhub",
-          icon: "select.svg",
+          command: "sf hardis:org:select --devhub",
+          iconId: "org:connect:devhub",
         });
         return items;
       }
@@ -124,9 +153,9 @@ export class HardisStatusProvider
             " org: " +
             orgInfo.instanceUrl,
           command:
-            "sfdx force:org:open" +
-            (options.devHub ? ` --targetusername ${devHubUsername}` : ""),
-          icon: "salesforce.svg",
+            "sf org open" +
+            (options.devHub ? ` --target-org ${devHubUsername}` : ""),
+          iconId: "org",
         });
       }
       if (orgInfo.username) {
@@ -134,22 +163,24 @@ export class HardisStatusProvider
           id: "org-info-username" + (options.devHub ? "-devhub" : ""),
           label: `${orgInfo.username}`,
           tooltip:
-            "Username on your remote Salesforce org: " + orgInfo.username,
+            "Username on your remote Salesforce org: " +
+            orgInfo.username +
+            "\nClick to Open User Settings in Salesforce",
           command:
-            "sfdx force:org:open" +
-            (options.devHub ? ` --targetusername ${devHubUsername}` : "") +
+            "sf org open" +
+            (options.devHub ? ` --target-org ${devHubUsername}` : "") +
             " --path lightning/settings/personal/PersonalInformation/home",
-          icon: "sf-user.svg",
+          iconId: "org:user",
         });
       }
       const orgDetailItem = {
         id: "org-info-expiration-date" + (options.devHub ? "-devhub" : ""),
         label: "",
-        icon: "sf-setup.svg",
-        tooltip: "",
+        iconId: "org:setup",
+        tooltip: "Click to open Setup in Salesforce",
         command:
-          "sfdx force:org:open" +
-          (options.devHub ? ` --targetusername ${devHubUsername}` : "") +
+          "sf org open" +
+          (options.devHub ? ` --target-org ${devHubUsername}` : "") +
           " --path lightning/setup/SetupOneHome/home",
       };
       if (orgInfo.apiVersion) {
@@ -169,21 +200,21 @@ Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if you
         orgDetailItem.label += ` (exp: ${orgInfo.expirationDate})`;
         orgDetailItem.tooltip += `You org will expire in ${daysBeforeExpiration} days`;
         if (daysBeforeExpiration < 0) {
-          orgDetailItem.icon = "warning-red.svg";
+          orgDetailItem.iconId = "org:expired";
           orgDetailItem.tooltip = `You org expired on ${orgInfo.expirationDate}. You need to create a new one.`;
           vscode.window.showErrorMessage(
             `🦙 ${orgDetailItem.tooltip}`,
             "Close",
           );
         } else if (daysBeforeExpiration < 3) {
-          orgDetailItem.icon = "warning-red.svg";
+          orgDetailItem.iconId = "org:expired:soon";
           orgDetailItem.tooltip = `You scratch org will expire in ${daysBeforeExpiration} days !!! Save your scratch org content and create a new one or your work will be lost !!!`;
           vscode.window.showErrorMessage(
             `🦙 ${orgDetailItem.tooltip}`,
             "Close",
           );
         } else if (daysBeforeExpiration < 7) {
-          orgDetailItem.icon = "warning.svg";
+          orgDetailItem.iconId = "org:expired:soon";
           orgDetailItem.tooltip = `Your scratch org will expire in ${daysBeforeExpiration} days. You should soon create a new scratch org to avoid loosing your work`;
           vscode.window.showWarningMessage(
             `🦙 ${orgDetailItem.tooltip}`,
@@ -201,7 +232,7 @@ Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if you
         // Get pool info only if defined in config
         if (config?.poolConfig) {
           const poolViewRes = await execSfdxJson(
-            "sfdx hardis:scratch:pool:view",
+            "sf hardis:scratch:pool:view",
             this,
             { output: false, fail: false },
           );
@@ -214,8 +245,8 @@ Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if you
               id: "scratch-org-pool-view",
               label: `Pool: ${poolViewRes.result.availableScratchOrgs} available (max ${poolViewRes.result.maxScratchOrgs})`,
               tooltip: "View content of scratch org pool",
-              command: "sfdx hardis:scratch:pool:view",
-              icon: "pool.svg",
+              command: "sf hardis:scratch:pool:view",
+              iconId: "org:pool",
             });
           }
         }
@@ -224,16 +255,16 @@ Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if you
         id: "select-another-org" + (options.devHub ? "-devhub" : ""),
         label: `Select another ` + (options.devHub ? "DevHub Org" : "Org"),
         tooltip: "Click to select an org",
-        command: "sfdx hardis:org:select" + (options.devHub ? " --devhub" : ""),
-        icon: "select.svg",
+        command: "sf hardis:org:select" + (options.devHub ? " --devhub" : ""),
+        iconId: "org:connect",
       });
     } else {
       items.push({
         id: "org-not-connected" + (options.devHub ? "-devhub" : ""),
         label: `Select an org`,
         tooltip: "Click to select and authenticate to an org",
-        command: "sfdx hardis:org:select" + (options.devHub ? " --devhub" : ""),
-        icon: "select.svg",
+        command: "sf hardis:org:select" + (options.devHub ? " --devhub" : ""),
+        iconId: "org:connect",
       });
     }
     return items;
@@ -249,12 +280,37 @@ Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if you
       ["59.0", "Winter '24"],
       ["60.0", "Spring '24"],
       ["61.0", "Summer '24"],
+      ["62.0", "Winter '25"],
+      ["63.0", "Spring '25"],
     ]);
     return matches.get(apiVersion) || "NEXT";
   }
 
   private async getGitItems(): Promise<any[]> {
-    const items = [];
+    // Load in background
+    if (!isGitMenusItemsLoaded()) {
+      this.loadGitMenus().then((items) => {
+        setGitMenusItems(items);
+        vscode.commands.executeCommand(
+          "vscode-sfdx-hardis.refreshStatusView",
+          true,
+        );
+      });
+      const gitWaitingItems: any = [];
+      gitWaitingItems.push({
+        id: "git-info-loading",
+        label: `Loading git info...`,
+        iconId: "loading",
+      });
+      return gitWaitingItems;
+    }
+    // Git items are loaded
+    const items: any[] = getGitMenusItems() as any[];
+    return items;
+  }
+
+  private async loadGitMenus() {
+    const items: any = [];
     const git = simpleGit(this.workspaceRoot);
     if (git && (await git.checkIsRepo()) === true) {
       let gitRemotesOrigins: any = [];
@@ -282,7 +338,7 @@ Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if you
             command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
               httpGitUrl,
             )}`,
-            icon: "git.svg",
+            iconId: "git:repo",
             tooltip: "Click to open git repo in browser - " + httpGitUrl,
           });
         } else {
@@ -290,7 +346,7 @@ Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if you
             id: "git-info-repo",
             label: `Git not ready: click to refresh`,
             command: `vscode-sfdx-hardis.refreshStatusView`,
-            icon: "git.svg",
+            iconId: "git:repo",
             tooltip:
               "Git was not ready when SFDX Hardis has been run, please click to refresh",
           });
@@ -299,7 +355,7 @@ Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if you
       // Display branch & merge request info
       const currentBranch = await git.revparse(["--abbrev-ref", "HEAD"]);
       if (currentBranch) {
-        let gitIcon = "git-branch.svg";
+        let gitIconId = "git:branch";
         let gitLabel = `Branch: ${currentBranch}`;
         let gitTooltip = "This is the git branch you are currently working on";
         let gitCommand = "";
@@ -333,7 +389,7 @@ Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if you
                 ))
             ) {
               // Display message if a merge might be required
-              gitIcon = "warning.svg";
+              gitIconId = "git:branch:warning";
               gitLabel = `Branch: ${currentBranch} (not up to date with origin/${parentGitBranch})`;
               gitTooltip = `EXPERIMENTAL: There have been new commit(s) into parent branch origin/${parentGitBranch} since you created ${currentBranch}.
 You might need to merge origin/${parentGitBranch} into your current local branch ${currentBranch}.
@@ -351,51 +407,54 @@ Note: Disable disableGitMergeRequiredCheck in settings to skip this check.`;
         items.push({
           id: "git-info-branch",
           label: gitLabel,
-          icon: gitIcon,
+          iconId: gitIconId,
           tooltip: gitTooltip,
           command: gitCommand,
         });
-        // Merge request info
-        const mergeRequestRes = await execSfdxJson(
-          "sfdx hardis:config:get --level user",
-          this,
-          { fail: false, output: true },
-        );
-        if (mergeRequestRes?.result?.config?.mergeRequests) {
-          const mergeRequests =
-            mergeRequestRes.result.config.mergeRequests.filter(
-              (mr: any) =>
-                mr !== null &&
-                mr.branch === currentBranch &&
-                (mr.url !== null || mr.urlCreate !== null),
-            );
-          // Existing merge request
-          if (mergeRequests[0] && mergeRequests[0].url) {
-            items.push({
-              id: "git-merge-request-url",
-              label: "Merge Request: Open",
-              icon: "merge.svg",
-              tooltip:
-                "Click to open merge request in browser\n" +
-                mergeRequests[0].url,
-              command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
-                mergeRequests[0].url,
-              )}`,
-            });
-          }
-          // Create merge request URL
-          else if (mergeRequests[0] && mergeRequests[0].urlCreate) {
-            items.push({
-              id: "git-merge-request-create-url",
-              label: "Merge Request: Create",
-              icon: "merge.svg",
-              tooltip:
-                "Click to create merge request in browser\n" +
-                mergeRequests[0].urlCreate,
-              command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
-                mergeRequests[0].urlCreate,
-              )}`,
-            });
+        if (isCachePreloaded()) {
+          // Merge request info
+          const mergeRequestRes = await execSfdxJson(
+            "sf hardis:config:get --level user",
+            this,
+            { fail: false, output: true },
+          );
+          if (mergeRequestRes?.result?.config?.mergeRequests) {
+            const mergeRequests =
+              mergeRequestRes.result.config.mergeRequests.filter(
+                (mr: any) =>
+                  mr !== null &&
+                  mr.branch === currentBranch &&
+                  (mr.url !== null || mr.urlCreate !== null),
+              );
+            // Existing merge request
+            if (mergeRequests[0] && mergeRequests[0].url) {
+              items.push({
+                id: "git-merge-request-url",
+                label: "Merge Request: Open",
+                iconId: "git:pull-request",
+                tooltip:
+                  "Click to open merge request in browser\n" +
+                  mergeRequests[0].url,
+                command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
+                  mergeRequests[0].url,
+                )}`,
+              });
+            }
+
+            // Create merge request URL
+            else if (mergeRequests[0] && mergeRequests[0].urlCreate) {
+              items.push({
+                id: "git-merge-request-create-url",
+                label: "Merge Request: Create",
+                icon: "merge.svg",
+                tooltip:
+                  "Click to create merge request in browser\n" +
+                  mergeRequests[0].urlCreate,
+                command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
+                  mergeRequests[0].urlCreate,
+                )}`,
+              });
+            }
           }
         }
       }
@@ -410,13 +469,10 @@ Note: Disable disableGitMergeRequiredCheck in settings to skip this check.`;
     const items: StatusTreeItem[] = [];
     for (const item of this.listTopics()) {
       const options = {
-        icon: { light: "user.svg", dark: "user.svg" },
         description: "",
         tooltip: "",
+        iconId: "",
       };
-      if (item.icon) {
-        options.icon = { light: item.icon, dark: item.icon };
-      }
       if (item.description) {
         options.description = item.description;
       }
@@ -427,7 +483,14 @@ Note: Disable disableGitMergeRequiredCheck in settings to skip this check.`;
         ? vscode.TreeItemCollapsibleState.Expanded
         : vscode.TreeItemCollapsibleState.Collapsed;
       items.push(
-        new StatusTreeItem(item.label, item.id, "", expanded, options),
+        new StatusTreeItem(
+          item.label,
+          item.id,
+          "",
+          expanded,
+          this.themeUtils,
+          options,
+        ),
       );
     }
     return items;
@@ -441,8 +504,11 @@ Note: Disable disableGitMergeRequiredCheck in settings to skip this check.`;
     StatusTreeItem | undefined | null | void
   > = this._onDidChangeTreeData.event;
 
-  refresh(): void {
-    resetCache();
+  refresh(keepCache: boolean): void {
+    if (!keepCache) {
+      resetCache();
+    }
+    this.themeUtils = new ThemeUtils();
     this._onDidChangeTreeData.fire();
   }
 
@@ -452,19 +518,16 @@ Note: Disable disableGitMergeRequiredCheck in settings to skip this check.`;
       {
         id: "status-org",
         label: "Current Org",
-        icon: "salesforce.svg",
         defaultExpand: true,
       },
       {
         id: "status-git",
         label: "Git Status",
-        icon: "git.svg",
         defaultExpand: true,
       },
       {
         id: "status-org-devhub",
         label: "Current Dev Hub org",
-        icon: "salesforce.svg",
         defaultExpand: true,
       },
     ];
@@ -479,8 +542,9 @@ class StatusTreeItem extends vscode.TreeItem {
     public readonly id: string,
     public readonly hardisCommand: string,
     public readonly collapsibleState: vscode.TreeItemCollapsibleState,
+    public readonly themeUtils: ThemeUtils,
     public readonly options = {
-      icon: { light: "salesforce.svg", dark: "salesforce.svg" },
+      iconId: "",
       description: "",
       tooltip: "",
     },
@@ -508,24 +572,9 @@ class StatusTreeItem extends vscode.TreeItem {
         };
         this.hardisCommand = hardisCommand;
       }
-
-      if (options.icon) {
-        this.iconPath = options.icon;
-        this.iconPath.light = path.join(
-          __filename,
-          "..",
-          "..",
-          "resources",
-          this.iconPath.light.toString(),
-        );
-        this.iconPath.dark = path.join(
-          __filename,
-          "..",
-          "..",
-          "resources",
-          this.iconPath.dark.toString(),
-        );
-      }
+    }
+    if (this.options?.iconId) {
+      this.iconPath = this.themeUtils.getCommandIconPath(this.options.iconId);
     }
   }
 }

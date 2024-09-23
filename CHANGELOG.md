@@ -2,6 +2,27 @@
 
 ## [Unreleased]
 
+## [5.0.0] 2024-09-23
+
+- Migrate all sfdx calls into SF CLI calls to match SFDX Hardis v5
+- Improve panel menus loading time x10
+- New configuration variables to customize appearance of SFDX Hardis panels:
+  - Select icons theme: Hardis (legacy) or Visual Studio Code (new)
+  - Display / Hide emojis in menu sections titles
+- New contextual menu command **SFDX Hardis: Simulate Metadata deployment**, to safely check deployment errors to any target SF Org.
+- Reorganize sections and menus
+- Add `destructiveChanges.xml` and `package-no-overwrite.xml` in Quick Open config files menu-
+- New command **Org Monitoring -> Release Updates**
+- Default color is "no color", not green
+- Fix: Do not update VsCode local config file with blank color if there wasn't a previous config value
+- Fix: Refresh Status panel after upgrading plugins
+- Fix: Do not display dependency warning if Salesforce Extension Pack (Expanded) is installed
+- Remove sfdx-essentials plugin dependency
+- NPM dependencies updates
+  - Upgrade all package dependencies
+  - Remove sort-array dependency
+  - Replace portastic by get-port (better speed & maintenance)
+
 ## [2.12.1] 2024-08-22
 
 - Accept SF folder name containing `node` in case of custom NodeJs installation folder

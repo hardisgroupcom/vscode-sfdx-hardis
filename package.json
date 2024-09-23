@@ -2,12 +2,16 @@
   "name": "vscode-sfdx-hardis",
   "displayName": "SFDX Hardis by Cloudity",
   "description": "Handle Salesforce DX and Git without knowing Salesforce DX or Git !",
-  "version": "2.12.1",
+  "version": "3.0.9",
   "icon": "resources/sfdx-hardis-logo-square.png",
   "publisher": "NicolasVuillamy",
+  "author": {
+    "name": "Nicolas Vuillamy, Cloudity and friends",
+    "email": "nicolas.vuillamy@gmail.com"
+  },
   "license": "AGPL-3.0",
   "engines": {
-    "vscode": "^1.54.0"
+    "vscode": "^1.88.0"
   },
   "categories": [
     "Other"
@@ -30,7 +34,7 @@
     "workspaceContains:sfdx-project.json",
     "workspaceContains:.sf/config.json",
     "workspaceContains:.sfdx/sfdx-config.json",
-    "onView:sfdx-hardis-commands"
+    "onLanguage:apex"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -82,130 +86,138 @@
         "vsCodeSfdxHardis.ignoreSfdxCliRecommendedVersion": {
           "type": "boolean",
           "default": false,
-          "description": "Ignore sfdx-cli version recommended by sfdx-Hardis, and use latest sfdx-cli version"
+          "description": "Ignore @salesforce/cli version recommended by sfdx-Hardis, and use latest @salesforce/cli version"
+        },
+        "vsCodeSfdxHardis.theme.emojisInSections": {
+          "type": "boolean",
+          "default": false,
+          "description": "Display emojis in menu section titles"
+        },
+        "vsCodeSfdxHardis.theme.menuIconType": {
+          "type": "string",
+          "default": "vscode",
+          "enum": [
+            "hardis",
+            "vscode"
+          ],
+          "enumDescriptions": [
+            "Colored SVG Icons",
+            "Standard Visual Studio Code Icons"
+          ],
+          "description": "Theme of SFDX-Hardis menu icons"
         }
       }
     },
     "commands": [
       {
         "command": "vscode-sfdx-hardis.welcome",
-        "title": "SFDX Hardis: Welcome"
+        "title": "SFDX Hardis: Welcome",
+        "icon": "$(home)"
       },
       {
         "command": "vscode-sfdx-hardis.execute-command",
-        "title": "SFDX Hardis: Execute sfdx-hardis command"
+        "title": "SFDX Hardis: Execute sfdx-hardis command",
+        "icon": "$(run)"
+      },
+      {
+        "command": "vscode-sfdx-hardis.simulateMetadataDeployment",
+        "title": "SFDX Hardis: Simulate Metadata Deployment",
+        "icon": "$(cloud-upload)"
       },
       {
         "command": "vscode-sfdx-hardis.openExternal",
-        "title": "SFDX Hardis: Open external url"
+        "title": "SFDX Hardis: Open external url",
+        "icon": "$(link-external)"
       },
       {
         "command": "vscode-sfdx-hardis.openValidationLink",
         "title": "SFDX Hardis: Open encrypted Salesforce account validation / reset password URL",
-        "icon": {
-          "light": "resources/password.svg",
-          "dark": "resources/password.svg"
-        }
+        "icon": "$(key)"
+      },
+      {
+        "command": "vscode-sfdx-hardis.openExtensionSettings",
+        "title": "SFDX Hardis: Open extension settings",
+        "icon": "$(gear)"
       },
       {
         "command": "vscode-sfdx-hardis.selectColorForOrg",
         "title": "SFDX Hardis: Select color for current default org",
-        "icon": {
-          "light": "resources/colorPicker.svg",
-          "dark": "resources/colorPicker.svg"
-        }
+        "icon": "$(symbol-color)"
+      },
+      {
+        "command": "vscode-sfdx-hardis.selectExtensionTheme",
+        "title": "SFDX Hardis: Select display theme of SFDX Hardis extension",
+        "icon": "$(symbol-color)"
       },
       {
         "command": "vscode-sfdx-hardis.showMessage",
-        "title": "SFDX Hardis: Show message"
+        "title": "SFDX Hardis: Show message",
+        "icon": "$(extensions-info-message)"
       },
       {
         "command": "vscode-sfdx-hardis.openKeyFile",
-        "title": "SFDX Hardis: Open key configuration file",
-        "icon": {
-          "light": "resources/file.svg",
-          "dark": "resources/file.svg"
-        }
+        "title": "SFDX Hardis: Quick open SFDX project configuration files",
+        "icon": "$(settings-editor-label-icon)"
       },
       {
         "command": "vscode-sfdx-hardis.debug.activate",
-        "title": "SFDX Hardis: Activate debug logs tracing"
+        "title": "SFDX Hardis: Activate debug logs tracing",
+        "icon": "$(breakpoints-activate)"
       },
       {
         "command": "vscode-sfdx-hardis.debug.logtail",
-        "title": "SFDX Hardis: Display live logs in terminal"
+        "title": "SFDX Hardis: Display live logs in terminal",
+        "icon": "$(inspect)"
       },
       {
         "command": "vscode-sfdx-hardis.debug.deactivate",
-        "title": "SFDX Hardis: Deactivate debug logs tracing"
+        "title": "SFDX Hardis: Deactivate debug logs tracing",
+        "icon": "$(debug-disconnect)"
       },
       {
         "command": "vscode-sfdx-hardis.refreshStatusView",
         "title": "Refresh Status",
-        "icon": {
-          "light": "resources/refresh-button.svg",
-          "dark": "resources/refresh-button.svg"
-        }
+        "icon": "$(refresh)"
       },
       {
         "command": "vscode-sfdx-hardis.refreshPluginsView",
         "title": "Refresh Plugins Panel",
-        "icon": {
-          "light": "resources/refresh-button.svg",
-          "dark": "resources/refresh-button.svg"
-        }
+        "icon": "$(refresh)"
       },
       {
         "command": "vscode-sfdx-hardis.refreshCommandsView",
         "title": "Refresh Commands",
-        "icon": {
-          "light": "resources/refresh-button.svg",
-          "dark": "resources/refresh-button.svg"
-        }
+        "icon": "$(refresh)"
       },
       {
         "command": "vscode-sfdx-hardis.debug.launch",
         "title": "Run apex replay debugger",
-        "icon": {
-          "light": "resources/debug.svg",
-          "dark": "resources/debug.svg"
-        }
+        "icon": "$(debug-console)"
       },
       {
         "command": "vscode-sfdx-hardis.toggleCheckpoint",
-        "title": "SFDX Hardis: Toggle checkpoint"
+        "title": "SFDX Hardis: Toggle checkpoint",
+        "icon": "$(debug-breakpoint-conditional)"
       },
       {
         "command": "vscode-sfdx-hardis.newTerminal",
         "title": "New SFDX Hardis terminal",
-        "icon": {
-          "light": "resources/add-button.svg",
-          "dark": "resources/add-button.svg"
-        }
+        "icon": "$(terminal-new)"
       },
       {
         "command": "vscode-sfdx-hardis.showCommandDetail",
         "title": "Show command detail",
-        "icon": {
-          "light": "resources/help.svg",
-          "dark": "resources/help.svg"
-        }
+        "icon": "$(info)"
       },
       {
         "command": "vscode-sfdx-hardis.openCommandHelp",
         "title": "View command help",
-        "icon": {
-          "light": "resources/help.svg",
-          "dark": "resources/help.svg"
-        }
+        "icon": "$(remote-explorer-documentation)"
       },
       {
         "command": "vscode-sfdx-hardis.openPluginHelp",
         "title": "View dependency documentation",
-        "icon": {
-          "light": "resources/help.svg",
-          "dark": "resources/help.svg"
-        }
+        "icon": "$(remote-explorer-documentation)"
       }
     ],
     "viewsContainers": {
@@ -234,25 +246,22 @@
       ]
     },
     "menus": {
+      "explorer/context": [
+        {
+          "command": "vscode-sfdx-hardis.simulateMetadataDeployment",
+          "when": "resourceExtname == '.cls' || resourceExtname == '.trigger' || resourceExtname == '.xml' || explorerResourceIsFolder",
+          "group": "z_sfdxhardis@5"
+        }
+      ],
       "view/title": [
         {
-          "command": "vscode-sfdx-hardis.openValidationLink",
+          "command": "vscode-sfdx-hardis.openExtensionSettings",
           "when": "view == sfdx-hardis-commands",
           "group": "navigation"
         },
         {
-          "command": "vscode-sfdx-hardis.selectColorForOrg",
-          "when": "view == sfdx-hardis-status",
-          "group": "navigation"
-        },
-        {
-          "command": "vscode-sfdx-hardis.refreshStatusView",
-          "when": "view == sfdx-hardis-status",
-          "group": "navigation"
-        },
-        {
-          "command": "vscode-sfdx-hardis.refreshPluginsView",
-          "when": "view == sfdx-hardis-plugins",
+          "command": "vscode-sfdx-hardis.openValidationLink",
+          "when": "view == sfdx-hardis-commands",
           "group": "navigation"
         },
         {
@@ -274,13 +283,33 @@
           "command": "vscode-sfdx-hardis.newTerminal",
           "when": "view == sfdx-hardis-commands",
           "group": "navigation"
+        },
+        {
+          "command": "vscode-sfdx-hardis.selectColorForOrg",
+          "when": "view == sfdx-hardis-status",
+          "group": "navigation"
+        },
+        {
+          "command": "vscode-sfdx-hardis.refreshStatusView",
+          "when": "view == sfdx-hardis-status",
+          "group": "navigation"
+        },
+        {
+          "command": "vscode-sfdx-hardis.refreshPluginsView",
+          "when": "view == sfdx-hardis-plugins",
+          "group": "navigation"
         }
       ],
       "editor/context": [
         {
+          "command": "vscode-sfdx-hardis.simulateMetadataDeployment",
+          "when": "resourceExtname == '.cls' || resourceExtname == '.trigger' || resourceExtname == '.xml' || explorerResourceIsFolder",
+          "group": "z_sfdxhardis@5"
+        },
+        {
           "when": "resourceExtname == .cls",
           "command": "vscode-sfdx-hardis.toggleCheckpoint",
-          "group": "z_commands"
+          "group": "z_sfdxhardis@8"
         }
       ],
       "view/item/context": [
@@ -311,14 +340,18 @@
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
     "@types/git-url-parse": "^9.0.1",
     "@types/glob": "^7.1.3",
+    "@types/js-yaml": "^4.0.9",
     "@types/mocha": "^8.0.4",
     "@types/node": "^14.14.35",
     "@types/vscode": "^1.54.0",
     "@types/which": "^2.0.0",
+    "@types/ws": "^8.5.12",
     "@typescript-eslint/eslint-plugin": "^4.14.1",
     "@typescript-eslint/parser": "^4.14.1",
+    "@vscode/vsce": "^3.0.0",
     "esbuild": "^0.17.19",
     "eslint": "^7.19.0",
     "glob": "^7.1.6",
@@ -327,22 +360,16 @@
     "vscode-test": "^1.5.0"
   },
   "dependencies": {
-    "@types/fs-extra": "^9.0.8",
-    "@types/js-yaml": "^4.0.5",
-    "@types/moment": "^2.13.0",
-    "@types/ws": "^8.0.0",
     "@vscode/extension-telemetry": "^0.8.0",
     "axios": "^0.28.0",
     "chalk": "^4.1.0",
     "fs-extra": "^9.1.0",
+    "get-port": "^7.1.0",
     "git-url-parse": "^11.6.0",
     "js-yaml": "^4.1.0",
     "moment": "^2.29.1",
-    "portastic": "^1.0.1",
     "simple-git": "^3.18.0",
-    "strip-ansi": "^6.0.0",
-    "vsce": "^2.0.0",
-    "which": "^2.0.2",
-    "ws": "^8.0.0"
+    "which": "^4.0.0",
+    "ws": "^8.18.0"
   }
 }

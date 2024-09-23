@@ -148,7 +148,7 @@ export class HardisDebugger {
     if (value === "exitNow") {
       return;
     }
-    let logTailCommand = "sfdx force:apex:log:tail --color";
+    let logTailCommand = "sf apex tail log --color";
     if (value === "USER_DEBUG") {
       logTailCommand += " | grep USER_DEBUG";
     }
@@ -183,7 +183,7 @@ export class HardisDebugger {
             if (selection === "Retrieve Apex sources from org") {
               vscode.commands.executeCommand(
                 "vscode-sfdx-hardis.execute-command",
-                "sfdx hardis:org:retrieve:sources:dx -k ApexClass,ApexTrigger,ApexPage",
+                "sf hardis:org:retrieve:sources:dx -k ApexClass,ApexTrigger,ApexPage",
               );
             }
           });

@@ -98,7 +98,7 @@ export class HardisColors {
           }
           customOrgColors[this.currentDefaultOrgDomain] = color;
           await writeSfdxHardisConfig("customOrgColors", customOrgColors);
-          this.applyColor(color);
+          await this.applyColor(color);
         } else {
           vscode.window.showWarningMessage(
             "🦙 You need to select a default org to define a color for it :)",
@@ -142,10 +142,13 @@ export class HardisColors {
         this.currentDefaultOrg || "",
       );
       const orgColor = await this.getCurrentDefaultOrgColor();
-      this.applyColor(orgColor);
+      await this.applyColor(orgColor);
       // Refresh status panel when colors is changed except at initialization
       if (this.initializing === false) {
-        vscode.commands.executeCommand("vscode-sfdx-hardis.refreshStatusView");
+        vscode.commands.executeCommand(
+          "vscode-sfdx-hardis.refreshStatusView",
+          true,
+        );
       }
     }
   }
@@ -162,7 +165,7 @@ export class HardisColors {
     // https://salesforce.stackexchange.com/questions/297452/determine-if-authorized-org-with-salesforcedx-is-developer-or-production
     // Detect if sandbox or not
     const orgRes = await execSfdxJson(
-      `sfdx force:data:soql:query -q "SELECT IsSandbox,OrganizationType FROM Organization LIMIT 1" --target-org ${this.currentDefaultOrg}`,
+      `sf data query --query "SELECT IsSandbox,OrganizationType FROM Organization LIMIT 1" --target-org ${this.currentDefaultOrg}`,
       {
         fail: false,
         output: true,
@@ -182,7 +185,7 @@ export class HardisColors {
           );
           return forcedColor || "#a66004"; // orange !
         }
-        return forcedColor || "#04590c"; // green !
+        return forcedColor || null; // green !
       } else if (PRODUCTION_EDITIONS.includes(org.OrganizationType)) {
         // We are in production !!
         vscode.window.showWarningMessage(
@@ -199,19 +202,36 @@ export class HardisColors {
   }
 
   // Apply color to current VsCode Workspace config
-  applyColor(color: string | null) {
+  async applyColor(color: string | null) {
     if (vscode.workspace.workspaceFolders) {
       const config = vscode.workspace.getConfiguration();
       const colorCustomization: any = config.get(
         "workbench.colorCustomizations",
       );
-      colorCustomization["statusBar.background"] = color || undefined;
-      colorCustomization["activityBar.background"] = color || undefined;
-      config.update(
-        "workbench.colorCustomizations",
-        colorCustomization,
-        vscode.ConfigurationTarget.Workspace,
-      );
+      if (color !== null) {
+        colorCustomization["statusBar.background"] = color;
+        colorCustomization["activityBar.background"] = color;
+        // Do not update config file with blank color if there wasn't a previous config
+        await config.update(
+          "workbench.colorCustomizations",
+          colorCustomization,
+          vscode.ConfigurationTarget.Workspace,
+        );
+      } else if (
+        colorCustomization["statusBar.background"] ||
+        colorCustomization["activityBar.background"]
+      ) {
+        // Remove colors
+        colorCustomization["statusBar.background"] = null;
+        colorCustomization["activityBar.background"] = null;
+        if (Object.keys(colorCustomization).length > 0) {
+          await config.update(
+            "workbench.colorCustomizations",
+            {},
+            vscode.ConfigurationTarget.Workspace,
+          );
+        }
+      }
     }
   }
 
@@ -221,7 +241,7 @@ export class HardisColors {
     const matchOrgs = majorOrgInstanceUrls.filter(
       (org) => org.instanceUrl === orgInstanceUrl,
     );
-    if (matchOrgs) {
+    if (matchOrgs.length > 0) {
       this.majorOrgBranch = matchOrgs[0].branch;
       return true;
     }

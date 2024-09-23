@@ -47,7 +47,7 @@ export class WelcomePanel {
 <body>
     <img src="https://github.com/hardisgroupcom/vscode-sfdx-hardis/raw/main/docs/assets/images/hardis-banner.jpg" />
 
-    <p>This extension runs CLI commands, so it relies on locally installed applications and sfdx plugins</p>
+    <p>This extension runs CLI commands, so it relies on locally installed applications and SF CLI plugins</p>
 
     <ul>
         <li><a href="https://nodejs.org/en/">Node.js</a> (must be manually installed)</li>

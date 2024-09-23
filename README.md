@@ -23,7 +23,7 @@ _Graciously provided by [**Cloudity**](https://cloudity.com/), and based on sfdx
 
 [_Presented at Dreamforce !_](https://reg.salesforce.com/flow/plus/df23/sessioncatalog/page/catalog/session/1684196389783001OqEl)
 
-[![Dreamforce presentation](https://img.youtube.com/vi/o0Mm9F07UFs/0.jpg)](https://www.youtube.com/watch?v=o0Mm9F07UFs)
+[![Dreamforce presentation](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/play-dreamforce-session.png)](https://www.youtube.com/watch?v=o0Mm9F07UFs)
 
 - [Installation](#installation)
 - [Articles](#articles)
@@ -51,7 +51,7 @@ _Graciously provided by [**Cloudity**](https://cloudity.com/), and based on sfdx
 
 To install VsCode sfdx-hardis and all its dependencies, just follow the instructions in the following video !
 
-[![Installation tutorial](https://img.youtube.com/vi/LA8m-t7CjHA/0.jpg)](https://www.youtube.com/watch?v=LA8m-t7CjHA)
+[![Installation tutorial](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/play-install-tuto.png)](https://www.youtube.com/watch?v=LA8m-t7CjHA)
 
 ## Articles
 
@@ -282,7 +282,6 @@ plugins:
 [**sfdx-hardis**](https://github.com/hardisgroupcom/sfdx-hardis) partially relies on the following SFDX Open-Source packages
 
 - [Salesforce Data Move Utility](https://github.com/forcedotcom/SFDX-Data-Move-Utility)
-- [SFDX Essentials](https://github.com/nvuillam/sfdx-essentials)
 - [SFDX Git Delta](https://github.com/scolladon/sfdx-git-delta)
 - [Texei Sfdx Plugin](https://github.com/texei/texei-sfdx-plugin)
 
