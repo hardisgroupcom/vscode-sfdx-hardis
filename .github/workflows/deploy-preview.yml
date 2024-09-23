@@ -30,4 +30,3 @@ jobs:
           args: "publish --pre-release -p $VSCE_TOKEN"
         env:
           VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
-
