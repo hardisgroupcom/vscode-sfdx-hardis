@@ -204,6 +204,10 @@ export class ThemeUtils {
       "org:data:import": { vscode: "cloud-upload", hardis: "data.svg" },
       "org:data:delete": { vscode: "trash", hardis: "trash.svg" },
       "org:data:configure": { vscode: "gear", hardis: "configure.svg" },
+      "org:multi-org-query": {
+        vscode: "multiple-windows",
+        hardis: "salesforce.svg",
+      },
       "org:files:export": { vscode: "cloud-download", hardis: "file.svg" },
       "org:files:import": { vscode: "cloud-upload", hardis: "file.svg" },
       "org:files:configure": { vscode: "gear", hardis: "configure.svg" },
