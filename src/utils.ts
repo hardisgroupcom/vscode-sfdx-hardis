@@ -1,5 +1,5 @@
 import axios from "axios";
-import * as c from "chalk";
+import c from "chalk";
 import * as childProcess from "child_process";
 import * as fs from "fs-extra";
 import * as path from "path";
