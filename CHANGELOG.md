@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [5.1.1] 2024-11-02
+
+- Fix: import chalk as ES Module
+
 ## [5.1.0] 2024-11-02
 
 - Add command **Data -> Multi-org SOQL Query & Report**
