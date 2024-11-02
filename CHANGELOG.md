@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [5.1.0] 2024-11-02
+
+- Add command **Data -> Multi-org SOQL Query & Report**
+- Fix typos
+- Upgrade dependencies
+
 ## [5.0.0] 2024-09-23
 
 - Migrate all sfdx calls into SF CLI calls to match SFDX Hardis v5
