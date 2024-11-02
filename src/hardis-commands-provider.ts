@@ -370,7 +370,8 @@ export class HardisCommandsProvider
           {
             id: "hardis:org:multi-org-query",
             label: "Multi-org SOQL Query & Report",
-            tooltip: "Executes a SOQL query in multiple orgs and generate a single report from it",
+            tooltip:
+              "Executes a SOQL query in multiple orgs and generate a single report from it",
             command: "sf hardis:org:multi-org-query",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/org/multi-org-query/",
