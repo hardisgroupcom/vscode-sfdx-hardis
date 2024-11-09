@@ -539,7 +539,8 @@ export class HardisCommandsProvider
             tooltip:
               "Generates markdown pages with SF Project content: List of metadatas, installed packages...",
             requiresProject: true,
-            helpUrl: "https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/",
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/",
           },
           {
             id: "hardis:org:monitor:limits",

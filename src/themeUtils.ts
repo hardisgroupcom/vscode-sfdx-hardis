@@ -240,7 +240,10 @@ export class ThemeUtils {
         hardis: "monitoring.svg",
       },
       "org:test:apex": { vscode: "testing-run-all-icon", hardis: "test.svg" },
-      "hardis:org:diagnose:unused-apex-classes": { vscode: "code", hardis: "old.svg" },
+      "hardis:org:diagnose:unused-apex-classes": {
+        vscode: "code",
+        hardis: "old.svg",
+      },
       "hardis:doc:project2markdown": { vscode: "book", hardis: "doc.svg" },
       "hardis:org:monitor:limits": { vscode: "eye-watch", hardis: "gauge.svg" },
       "org:diagnose:legacyapi": { vscode: "watch", hardis: "old.svg" },
