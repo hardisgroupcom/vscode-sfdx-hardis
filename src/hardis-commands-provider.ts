@@ -533,6 +533,15 @@ export class HardisCommandsProvider
             helpUrl: "https://sfdx-hardis.cloudity.com/hardis/org/test/apex/",
           },
           {
+            id: "hardis:doc:project2markdown",
+            label: "Generate Project Documentation",
+            command: "sf hardis:doc:project2markdown",
+            tooltip:
+              "Generates markdown pages with SF Project content: List of metadatas, installed packages...",
+            requiresProject: true,
+            helpUrl: "https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/",
+          },
+          {
             id: "hardis:org:monitor:limits",
             label: "Check Org Limits",
             command: "sf hardis:org:monitor:limits",
@@ -577,6 +586,15 @@ export class HardisCommandsProvider
             command: "sf hardis:org:diagnose:unusedlicenses",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unusedlicenses/",
+          },
+          {
+            id: "hardis:org:diagnose:unused-apex-classes",
+            label: "Unused Apex Classes",
+            tooltip:
+              "List all async Apex classes (Batch,Queueable,Schedulable) that has not been called for more than 365 days, and could probably be deleted",
+            command: "sf hardis:org:diagnose:unused-apex-classes",
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unused-apex-classes/",
           },
           {
             id: "hardis:lint:access",
