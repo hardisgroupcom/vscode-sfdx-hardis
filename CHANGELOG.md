@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [5.2.0] 2024-11-09
+
+- New monitoring commands
+  - [Generate Project Documentation](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/)
+  - [Detected Unused Apex Classes](https://sfdx-hardis.cloudity.com/salesforce-monitoring-unused-apex-classes/)
+
 ## [5.1.1] 2024-11-02
 
 - Fix: import chalk as ES Module
