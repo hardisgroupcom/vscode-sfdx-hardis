@@ -333,9 +333,9 @@ export class HardisCommandsProvider
           {
             id: "git:pull-requests:extract",
             label: "Extract pull requests",
-            command:
-              "sf hardis:git:pull-requests:extract",
-            tooltip: "Extract Pull Requests and associated ticketing system references in a CSV / Excel file",
+            command: "sf hardis:git:pull-requests:extract",
+            tooltip:
+              "Extract Pull Requests and associated ticketing system references in a CSV / Excel file",
           },
         ],
       },
