@@ -330,6 +330,13 @@ export class HardisCommandsProvider
               "echo 'If you see and error, execute the same commands in PowerShell run as administrator' && git config --system --unset credential.helper && git config credential.helper store && git fetch",
             tooltip: "Use this command in case you have git login errors",
           },
+          {
+            id: "git:pull-requests:extract",
+            label: "Extract pull requests",
+            command:
+              "sf hardis:git:pull-requests:extract",
+            tooltip: "Extract Pull Requests and associated ticketing system references in a CSV / Excel file",
+          },
         ],
       },
       {

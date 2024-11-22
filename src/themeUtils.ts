@@ -308,6 +308,7 @@ export class ThemeUtils {
       "package:mergexml": { vscode: "files", hardis: "merge.svg" },
       "org:logout": { vscode: "log-out", hardis: "logout.svg" },
       "git:login": { vscode: "log-in", hardis: "git.svg" },
+      "git:pull-requests:extract": { vscode: "git-pull-request", hardis: "doc.svg" },
       "extension:settings:theme": {
         vscode: "symbol-color",
         hardis: "colorPicker.svg",
