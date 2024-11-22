@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [5.3.0] 2024-11-22
+
+- New command [Extract Pull Requests](https://sfdx-hardis.cloudity.com/hardis/git/pull-requests/extract/) in CI/CD (Misc) menu
+- New shortcut to open reports folder
+
 ## [5.2.0] 2024-11-09
 
 - New monitoring commands

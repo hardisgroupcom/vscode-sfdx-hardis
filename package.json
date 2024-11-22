@@ -135,6 +135,11 @@
         "icon": "$(key)"
       },
       {
+        "command": "vscode-sfdx-hardis.openReportsFolder",
+        "title": "SFDX Hardis: Open reports folder",
+        "icon": "$(output)"
+      },
+      {
         "command": "vscode-sfdx-hardis.openExtensionSettings",
         "title": "SFDX Hardis: Open extension settings",
         "icon": "$(gear)"
@@ -254,6 +259,11 @@
         }
       ],
       "view/title": [
+        {
+          "command": "vscode-sfdx-hardis.openReportsFolder",
+          "when": "view == sfdx-hardis-commands",
+          "group": "navigation"
+        },
         {
           "command": "vscode-sfdx-hardis.openExtensionSettings",
           "when": "view == sfdx-hardis-commands",

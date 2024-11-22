@@ -8,6 +8,7 @@ import { LocalWebSocketServer } from "./hardis-websocket-server";
 import { getWorkspaceRoot } from "./utils";
 import TelemetryReporter from "@vscode/extension-telemetry";
 import { ThemeUtils } from "./themeUtils";
+import { exec } from "child_process";
 
 export class Commands {
   hardisCommandsProvider: HardisCommandsProvider | null = null;
@@ -35,6 +36,7 @@ export class Commands {
   registerCommands() {
     this.registerExecuteCommand();
     this.registerOpenValidationLink();
+    this.registerOpenReportsFolder();
     this.registerOpenExtensionSettings();
     this.registerNewTerminalCommand();
     this.registerRefreshCommandsView();
@@ -387,6 +389,30 @@ export class Commands {
         vscode.commands.executeCommand("workbench.action.openGlobalSettings", {
           query: "Hardis",
         });
+      },
+    );
+    this.disposables.push(disposable);
+  }
+
+  registerOpenReportsFolder() {
+    const disposable = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.openReportsFolder",
+      async () => {
+        const reportFolderPath = path.join(
+          vscode.workspace?.workspaceFolders?.at(0)?.uri.fsPath ||
+            process.cwd(),
+          "hardis-report",
+        );
+        const platform = process.platform;
+        if (platform === "win32") {
+          exec(`explorer "${reportFolderPath}"`);
+        } else if (platform === "darwin") {
+          exec(`open "${reportFolderPath}"`);
+        } else if (platform === "linux") {
+          exec(`xdg-open "${reportFolderPath}"`);
+        } else {
+          vscode.window.showErrorMessage(`Unsupported platform ${platform}`);
+        }
       },
     );
     this.disposables.push(disposable);
