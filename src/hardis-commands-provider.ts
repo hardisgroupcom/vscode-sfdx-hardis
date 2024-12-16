@@ -981,6 +981,9 @@ class CommandTreeItem extends vscode.TreeItem {
           command: "vscode-sfdx-hardis.execute-command",
           arguments: [hardisCommand],
         };
+        this.tooltip = this.tooltip
+          ? this.tooltip + "\nCommand: " + hardisCommand
+          : hardisCommand;
         this.hardisCommand = hardisCommand;
       }
       this.iconPath = this.themeUtils.getCommandIconPath(this.id);

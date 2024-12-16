@@ -5,6 +5,7 @@
 ## [5.4.0] 2024-12-16
 
 - Add context menu to Generate Package.xml documentation
+- Display command in tooltip
 
 ## [5.3.0] 2024-11-22
 
