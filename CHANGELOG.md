@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [5.4.0] 2024-12-16
+
+- Add context menu to Generate Package.xml documentation
+
 ## [5.3.0] 2024-11-22
 
 - New command [Extract Pull Requests](https://sfdx-hardis.cloudity.com/hardis/git/pull-requests/extract/) in CI/CD (Misc) menu
