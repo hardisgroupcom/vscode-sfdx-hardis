@@ -125,6 +125,11 @@
         "icon": "$(cloud-upload)"
       },
       {
+        "command": "vscode-sfdx-hardis.generatePackageXmlDoc",
+        "title": "SFDX Hardis: Generate package.xml Documentation",
+        "icon": "$(book)"
+      },
+      {
         "command": "vscode-sfdx-hardis.openExternal",
         "title": "SFDX Hardis: Open external url",
         "icon": "$(link-external)"
@@ -256,6 +261,11 @@
           "command": "vscode-sfdx-hardis.simulateMetadataDeployment",
           "when": "resourceExtname == '.cls' || resourceExtname == '.trigger' || resourceExtname == '.xml' || explorerResourceIsFolder",
           "group": "z_sfdxhardis@5"
+        },
+        {
+          "command": "vscode-sfdx-hardis.generatePackageXmlDoc",
+          "when": "resourceExtname == '.xml'",
+          "group": "z_sfdxhardis@10"
         }
       ],
       "view/title": [
@@ -317,9 +327,14 @@
           "group": "z_sfdxhardis@5"
         },
         {
-          "when": "resourceExtname == .cls",
           "command": "vscode-sfdx-hardis.toggleCheckpoint",
+          "when": "resourceExtname == .cls",
           "group": "z_sfdxhardis@8"
+        },
+        {
+          "command": "vscode-sfdx-hardis.generatePackageXmlDoc",
+          "when": "resourceExtname == '.xml'",
+          "group": "z_sfdxhardis@10"
         }
       ],
       "view/item/context": [

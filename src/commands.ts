@@ -50,6 +50,7 @@ export class Commands {
     this.registerShowMessage();
     this.registerSelectExtensionTheme();
     this.registerSimulateDeployment();
+    this.registerGeneratePackageXmlDoc();
   }
 
   getLatestTerminal() {
@@ -425,6 +426,22 @@ export class Commands {
       async (uri: vscode.Uri) => {
         const relativePath = vscode.workspace.asRelativePath(uri);
         const command = `sf hardis:project:deploy:simulate --source-dir "${relativePath}"`;
+        vscode.commands.executeCommand(
+          "vscode-sfdx-hardis.execute-command",
+          command,
+        );
+      },
+    );
+    this.disposables.push(disposable);
+  }
+
+  registerGeneratePackageXmlDoc() {
+    // Open external command
+    const disposable = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.generatePackageXmlDoc",
+      async (uri: vscode.Uri) => {
+        const relativePath = vscode.workspace.asRelativePath(uri);
+        const command = `sf hardis:doc:packagexml2markdown --inputfile "${relativePath}"`;
         vscode.commands.executeCommand(
           "vscode-sfdx-hardis.execute-command",
           command,
