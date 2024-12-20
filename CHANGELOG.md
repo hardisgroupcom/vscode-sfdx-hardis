@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- New command to **generate flow markdown documentation**
+- New command to **display visual flow differences**
+
 ## [5.4.0] 2024-12-16
 
 - Add context menu to Generate Package.xml documentation
