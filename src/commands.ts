@@ -460,7 +460,9 @@ export class Commands {
       async (uri: vscode.Uri) => {
         const relativePath = vscode.workspace.asRelativePath(uri);
         if (!relativePath.endsWith(".flow-meta.xml")) {
-          vscode.window.showWarningMessage("This command only works with Flow files :)");
+          vscode.window.showWarningMessage(
+            "This command only works with Flow files :)",
+          );
           return;
         }
         const command = `sf hardis:doc:flow2markdown --inputfile "${relativePath}"`;
@@ -480,7 +482,9 @@ export class Commands {
       async (uri: vscode.Uri) => {
         const relativePath = vscode.workspace.asRelativePath(uri);
         if (!relativePath.endsWith(".flow-meta.xml")) {
-          vscode.window.showWarningMessage("This command only works with Flow files :)");
+          vscode.window.showWarningMessage(
+            "This command only works with Flow files :)",
+          );
           return;
         }
         const command = `sf hardis:project:generate:flow-git-diff --flow "${relativePath}"`;
