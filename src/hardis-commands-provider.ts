@@ -540,16 +540,6 @@ export class HardisCommandsProvider
             helpUrl: "https://sfdx-hardis.cloudity.com/hardis/org/test/apex/",
           },
           {
-            id: "hardis:doc:project2markdown",
-            label: "Generate Project Documentation",
-            command: "sf hardis:doc:project2markdown",
-            tooltip:
-              "Generates markdown pages with SF Project content: List of metadatas, installed packages...",
-            requiresProject: true,
-            helpUrl:
-              "https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/",
-          },
-          {
             id: "hardis:org:monitor:limits",
             label: "Check Org Limits",
             command: "sf hardis:org:monitor:limits",
@@ -758,6 +748,42 @@ export class HardisCommandsProvider
             requiresProject: true,
           },
         ],
+      },
+      {
+        id: "doc",
+        label: "Documentation",
+        commands: [
+          {
+            id: "hardis:doc:project2markdown",
+            label: "Generate Project Documentation",
+            command: "sf hardis:doc:project2markdown",
+            tooltip:
+              "Generates markdown pages with SF Project content: List of metadatas, installed packages...",
+            requiresProject: true,
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/",
+          },
+          {
+            id: "hardis:doc:flow2markdown",
+            label: "Generate Flow Documentation",
+            command: "sf hardis:doc:flow2markdown",
+            tooltip:
+              "Generates Visual Documentation for a Flow",
+            requiresProject: true,
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/doc/flow2markdown/",
+          },
+          {
+            id: "hardis:project:generate:flow-git-diff",
+            label: "Generate Flow Visual Git Diff",
+            command: "sf hardis:project:generate:flow-git-diff",
+            tooltip:
+              "Generates Visual Documentation of the differences betwwen versions of a Flow",
+            requiresProject: true,
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/project/generate/flow-git-diff/",
+          },
+        ]
       },
       {
         id: "nerdy-stuff",

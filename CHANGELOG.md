@@ -2,8 +2,9 @@
 
 ## [Unreleased]
 
-- New command to **generate flow markdown documentation**
-- New command to **display visual flow differences**
+- New Documentation menu section
+- New command to [**Generate Flow Markdown Documentation**](https://sfdx-hardis.cloudity.com/hardis/doc/flow2markdown/)
+- New command to [**Generate Flow Visual Git Diff**](https://sfdx-hardis.cloudity.com/hardis/project/generate/flow-git-diff/)
 
 ## [5.4.0] 2024-12-16
 
