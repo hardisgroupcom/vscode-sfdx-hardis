@@ -245,6 +245,10 @@ export class ThemeUtils {
         hardis: "old.svg",
       },
       "hardis:doc:project2markdown": { vscode: "book", hardis: "doc.svg" },
+      "hardis:doc:project2markdown-history": { vscode: "book", hardis: "doc.svg" },
+      "hardis:doc:flow2markdown": { vscode: "git-branch", hardis: "doc.svg" },
+      "hardis:doc:flow2markdown-history": { vscode: "git-branch", hardis: "doc.svg" },
+      "hardis:project:generate:flow-git-diff": { vscode: "diff", hardis: "doc.svg" },
       "hardis:org:monitor:limits": { vscode: "eye-watch", hardis: "gauge.svg" },
       "org:diagnose:legacyapi": { vscode: "watch", hardis: "old.svg" },
       "hardis:org:diagnose:unusedusers": {
