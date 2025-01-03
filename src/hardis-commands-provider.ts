@@ -777,8 +777,7 @@ export class HardisCommandsProvider
             id: "hardis:doc:flow2markdown",
             label: "Generate Flow Documentation",
             command: "sf hardis:doc:flow2markdown",
-            tooltip:
-              "Generates Visual Documentation for a Flow",
+            tooltip: "Generates Visual Documentation for a Flow",
             requiresProject: true,
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/doc/flow2markdown/",
@@ -786,7 +785,8 @@ export class HardisCommandsProvider
           {
             id: "hardis-run-doc",
             label: "Run Local HTML Doc Pages",
-            command: "pip install mkdocs-material mdx_truly_sane_lists && mkdocs serve",
+            command:
+              "pip install mkdocs-material mdx_truly_sane_lists && mkdocs serve",
             tooltip:
               "Run Documentation local web server, then open http://127.0.0.1:8000/",
             requiresProject: true,
@@ -797,8 +797,7 @@ export class HardisCommandsProvider
             id: "hardis:doc:flow2markdown-history",
             label: "Generate Flow Documentation (with history)",
             command: "sf hardis:doc:flow2markdown --with-history",
-            tooltip:
-              "Generates Visual Documentation for a Flow",
+            tooltip: "Generates Visual Documentation for a Flow",
             requiresProject: true,
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/doc/flow2markdown/",
@@ -813,7 +812,7 @@ export class HardisCommandsProvider
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/project/generate/flow-git-diff/",
           },
-        ]
+        ],
       },
       {
         id: "nerdy-stuff",
