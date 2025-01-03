@@ -751,7 +751,7 @@ export class HardisCommandsProvider
       },
       {
         id: "doc",
-        label: "Documentation",
+        label: "Documentation Generation",
         commands: [
           {
             id: "hardis:doc:project2markdown",
@@ -782,6 +782,16 @@ export class HardisCommandsProvider
             requiresProject: true,
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/doc/flow2markdown/",
+          },
+          {
+            id: "hardis-run-doc",
+            label: "Run Local HTML Doc Pages",
+            command: "pip install mkdocs-material mdx_truly_sane_lists && mkdocs serve",
+            tooltip:
+              "Run Documentation local web server, then open http://127.0.0.1:8000/",
+            requiresProject: true,
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/salesforce-project-documentation/",
           },
           {
             id: "hardis:doc:flow2markdown-history",
