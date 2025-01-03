@@ -51,6 +51,8 @@ export class Commands {
     this.registerSelectExtensionTheme();
     this.registerSimulateDeployment();
     this.registerGeneratePackageXmlDoc();
+    this.registerGenerateFlowDocumentation();
+    this.registerGenerateFlowVisualGitDiff();
   }
 
   getLatestTerminal() {
@@ -450,6 +452,52 @@ export class Commands {
     );
     this.disposables.push(disposable);
   }
+
+  registerGenerateFlowDocumentation() {
+    // Open external command
+    const disposable = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.generateFlowDocumentation",
+      async (uri: vscode.Uri) => {
+        const relativePath = vscode.workspace.asRelativePath(uri);
+        if (!relativePath.endsWith(".flow-meta.xml")) {
+          vscode.window.showWarningMessage(
+            "This command only works with Flow files :)",
+          );
+          return;
+        }
+        const command = `sf hardis:doc:flow2markdown --inputfile "${relativePath}"`;
+        vscode.commands.executeCommand(
+          "vscode-sfdx-hardis.execute-command",
+          command,
+        );
+      },
+    );
+    this.disposables.push(disposable);
+  }
+
+  /* jscpd:ignore-start */
+  registerGenerateFlowVisualGitDiff() {
+    // Open external command
+    const disposable = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.flowVisualGitDiff",
+      async (uri: vscode.Uri) => {
+        const relativePath = vscode.workspace.asRelativePath(uri);
+        if (!relativePath.endsWith(".flow-meta.xml")) {
+          vscode.window.showWarningMessage(
+            "This command only works with Flow files :)",
+          );
+          return;
+        }
+        const command = `sf hardis:project:generate:flow-git-diff --flow "${relativePath}"`;
+        vscode.commands.executeCommand(
+          "vscode-sfdx-hardis.execute-command",
+          command,
+        );
+      },
+    );
+    this.disposables.push(disposable);
+  }
+  /* jscpd:ignore-end */
 
   registerOpenKeyFile() {
     // Open key file command

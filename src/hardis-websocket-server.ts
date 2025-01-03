@@ -100,6 +100,11 @@ export class LocalWebSocketServer {
       );
       vscode.workspace.openTextDocument(openPath).then((doc) => {
         vscode.window.showTextDocument(doc);
+        if (data.file.endsWith(".md")) {
+          new Promise((resolve) => setTimeout(resolve, 500)).then(() => {
+            vscode.commands.executeCommand("markdown.showPreview", doc);
+          });
+        }
       });
     }
     // Request user input

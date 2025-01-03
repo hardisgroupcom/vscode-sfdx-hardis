@@ -2,6 +2,16 @@
 
 ## [Unreleased]
 
+- Add your updates here :)
+
+## [5.5.0] 2024-01-03
+
+- New Documentation menu section
+  - [Generate SF project documentation](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/) (including Visual Flows)
+  - New command to [**Generate Flow Markdown Documentation**](https://sfdx-hardis.cloudity.com/hardis/doc/flow2markdown/)
+  - New command to [**Generate Flow Visual Git Diff**](https://sfdx-hardis.cloudity.com/hardis/project/generate/flow-git-diff/)
+  - New command to run local Web Server with Documentation HTML pages
+
 ## [5.4.0] 2024-12-16
 
 - Add context menu to Generate Package.xml documentation

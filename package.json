@@ -130,6 +130,16 @@
         "icon": "$(book)"
       },
       {
+        "command": "vscode-sfdx-hardis.generateFlowDocumentation",
+        "title": "SFDX Hardis: Generate Flow Documentation",
+        "icon": "$(book)"
+      },
+      {
+        "command": "vscode-sfdx-hardis.flowVisualGitDiff",
+        "title": "SFDX Hardis: Flow Visual Git Diff",
+        "icon": "$(diff)"
+      },
+      {
         "command": "vscode-sfdx-hardis.openExternal",
         "title": "SFDX Hardis: Open external url",
         "icon": "$(link-external)"
@@ -266,6 +276,16 @@
           "command": "vscode-sfdx-hardis.generatePackageXmlDoc",
           "when": "resourceExtname == '.xml'",
           "group": "z_sfdxhardis@10"
+        },
+        {
+          "command": "vscode-sfdx-hardis.generateFlowDocumentation",
+          "when": "resourceExtname == '.xml'",
+          "group": "z_sfdxhardis@15"
+        },
+        {
+          "command": "vscode-sfdx-hardis.flowVisualGitDiff",
+          "when": "resourceExtname == '.xml'",
+          "group": "z_sfdxhardis@20"
         }
       ],
       "view/title": [
@@ -335,6 +355,16 @@
           "command": "vscode-sfdx-hardis.generatePackageXmlDoc",
           "when": "resourceExtname == '.xml'",
           "group": "z_sfdxhardis@10"
+        },
+        {
+          "command": "vscode-sfdx-hardis.generateFlowDocumentation",
+          "when": "resourceExtname == '.xml'",
+          "group": "z_sfdxhardis@15"
+        },
+        {
+          "command": "vscode-sfdx-hardis.flowVisualGitDiff",
+          "when": "resourceExtname == '.xml'",
+          "group": "z_sfdxhardis@20"
         }
       ],
       "view/item/context": [

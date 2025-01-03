@@ -540,16 +540,6 @@ export class HardisCommandsProvider
             helpUrl: "https://sfdx-hardis.cloudity.com/hardis/org/test/apex/",
           },
           {
-            id: "hardis:doc:project2markdown",
-            label: "Generate Project Documentation",
-            command: "sf hardis:doc:project2markdown",
-            tooltip:
-              "Generates markdown pages with SF Project content: List of metadatas, installed packages...",
-            requiresProject: true,
-            helpUrl:
-              "https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/",
-          },
-          {
             id: "hardis:org:monitor:limits",
             label: "Check Org Limits",
             command: "sf hardis:org:monitor:limits",
@@ -756,6 +746,71 @@ export class HardisCommandsProvider
             tooltip: "Create a new version of a package",
             command: "sf hardis:package:version:create",
             requiresProject: true,
+          },
+        ],
+      },
+      {
+        id: "doc",
+        label: "Documentation Generation",
+        commands: [
+          {
+            id: "hardis:doc:project2markdown",
+            label: "Generate Project Documentation",
+            command: "sf hardis:doc:project2markdown",
+            tooltip:
+              "Generates markdown pages with SF Project content: List of metadatas, installed packages...",
+            requiresProject: true,
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/",
+          },
+          {
+            id: "hardis:doc:project2markdown-history",
+            label: "Generate Project Documentation (with history)",
+            command: "sf hardis:doc:project2markdown --with-history",
+            tooltip:
+              "Generates markdown pages with SF Project content: List of metadatas, installed packages..., with Flow Diff History",
+            requiresProject: true,
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/",
+          },
+          {
+            id: "hardis:doc:flow2markdown",
+            label: "Generate Flow Documentation",
+            command: "sf hardis:doc:flow2markdown",
+            tooltip: "Generates Visual Documentation for a Flow",
+            requiresProject: true,
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/doc/flow2markdown/",
+          },
+          {
+            id: "hardis-run-doc",
+            label: "Run Local HTML Doc Pages",
+            command:
+              "pip install mkdocs-material mdx_truly_sane_lists && mkdocs serve",
+            tooltip:
+              "Run Documentation local web server, then open http://127.0.0.1:8000/",
+            requiresProject: true,
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/salesforce-project-documentation/",
+          },
+          {
+            id: "hardis:doc:flow2markdown-history",
+            label: "Generate Flow Documentation (with history)",
+            command: "sf hardis:doc:flow2markdown --with-history",
+            tooltip: "Generates Visual Documentation for a Flow",
+            requiresProject: true,
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/doc/flow2markdown/",
+          },
+          {
+            id: "hardis:project:generate:flow-git-diff",
+            label: "Generate Flow Visual Git Diff",
+            command: "sf hardis:project:generate:flow-git-diff",
+            tooltip:
+              "Generates Visual Documentation of the differences between versions of a Flow",
+            requiresProject: true,
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/project/generate/flow-git-diff/",
           },
         ],
       },
