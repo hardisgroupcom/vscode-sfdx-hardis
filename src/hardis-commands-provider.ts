@@ -808,7 +808,7 @@ export class HardisCommandsProvider
             label: "Generate Flow Visual Git Diff",
             command: "sf hardis:project:generate:flow-git-diff",
             tooltip:
-              "Generates Visual Documentation of the differences betwwen versions of a Flow",
+              "Generates Visual Documentation of the differences between versions of a Flow",
             requiresProject: true,
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/project/generate/flow-git-diff/",

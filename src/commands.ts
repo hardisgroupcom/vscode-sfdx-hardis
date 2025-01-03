@@ -475,6 +475,7 @@ export class Commands {
     this.disposables.push(disposable);
   }
 
+  /* jscpd:ignore-start */
   registerGenerateFlowVisualGitDiff() {
     // Open external command
     const disposable = vscode.commands.registerCommand(
@@ -496,6 +497,7 @@ export class Commands {
     );
     this.disposables.push(disposable);
   }
+  /* jscpd:ignore-end */
 
   registerOpenKeyFile() {
     // Open key file command
