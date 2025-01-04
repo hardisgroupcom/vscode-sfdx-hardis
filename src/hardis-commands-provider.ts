@@ -790,7 +790,7 @@ export class HardisCommandsProvider
             command:
               "sf hardis:doc:mkdocs-to-salesforce",
             tooltip:
-              "Generates HTML Doc and Uploads it to Salesorce as a static resource with a VfPage & a CustomTab. You need Python on your computer :)",
+              "Generates HTML Doc and Uploads it to Salesforce as a static resource with a VfPage & a CustomTab. You need Python on your computer :)",
             requiresProject: true,
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/doc/mkdocs-to-salesforce/",
