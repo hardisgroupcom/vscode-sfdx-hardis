@@ -787,8 +787,7 @@ export class HardisCommandsProvider
           {
             id: "hardis-upload-doc",
             label: "Upload HTML Doc to Salesforce",
-            command:
-              "sf hardis:doc:mkdocs-to-salesforce",
+            command: "sf hardis:doc:mkdocs-to-salesforce",
             tooltip:
               "Generates HTML Doc and Uploads it to Salesforce as a static resource with a VfPage & a CustomTab. You need Python on your computer :)",
             requiresProject: true,
