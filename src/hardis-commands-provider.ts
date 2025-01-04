@@ -785,6 +785,16 @@ export class HardisCommandsProvider
               "https://sfdx-hardis.cloudity.com/salesforce-project-documentation/",
           },
           {
+            id: "hardis-upload-doc",
+            label: "Upload HTML Doc to Salesforce",
+            command: "sf hardis:doc:mkdocs-to-salesforce",
+            tooltip:
+              "Generates HTML Doc and Uploads it to Salesforce as a static resource with a VfPage & a CustomTab. You need Python on your computer :)",
+            requiresProject: true,
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/doc/mkdocs-to-salesforce/",
+          },
+          {
             id: "hardis:doc:flow2markdown",
             label: "Generate Flow Documentation",
             command: "sf hardis:doc:flow2markdown",
