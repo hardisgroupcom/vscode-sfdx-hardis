@@ -249,6 +249,10 @@ export class ThemeUtils {
         vscode: "book",
         hardis: "doc.svg",
       },
+      "hardis-upload-doc": {
+        vscode: "cloud-upload",
+        hardis: "push.svg",
+      },
       "hardis:doc:flow2markdown": { vscode: "git-branch", hardis: "doc.svg" },
       "hardis:doc:flow2markdown-history": {
         vscode: "git-branch",
