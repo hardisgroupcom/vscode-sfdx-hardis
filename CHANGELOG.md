@@ -4,6 +4,10 @@
 
 - Add your updates here :)
 
+## [5.6.1] 2024-01-10
+
+- Update python commands so they work on any type of python installation, including Windows
+
 ## [5.6.0] 2024-01-04
 
 - New command [hardis:doc:mkdocs-to-salesforce](https://sfdx-hardis.cloudity.com/hardis/doc/mkdocs-to-salesforce/) to upload HTML doc as static resource to your Salesforce org
