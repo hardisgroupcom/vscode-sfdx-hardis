@@ -327,10 +327,13 @@ export class HardisPluginsProvider
         !sfdxPath.includes("npm") &&
         !sfdxPath.includes("node") &&
         !sfdxPath.includes("nvm") &&
-        !(sfdxPath.includes("/usr/local/bin") && process.platform === "darwin") && 
+        !(
+          sfdxPath.includes("/usr/local/bin") && process.platform === "darwin"
+        ) &&
         sfdxPath !== "missing"
       ) {
-        sfdxCliItem.label = sfdxCliItem.label + " (WRONGLY INSTALLED in "+sfdxPath+ ")";
+        sfdxCliItem.label =
+          sfdxCliItem.label + " (WRONGLY INSTALLED in " + sfdxPath + ")";
         sfdxCliItem.command = `echo "You need to install Salesforce CLI using Node.JS. First, you need to uninstall Salesforce DX / Salesforce CI using Windows -> Programs -> Uninstall (or equivalent on MAC)"`;
         sfdxCliItem.tooltip = `First, you need to uninstall Salesforce DX / Salesforce CLI from Windows -> Programs -> Uninstall program (or equivalent on MAC)`;
         sfdxCliItem.status = "dependency-error";
