@@ -4,6 +4,11 @@
 
 - Add your updates here :)
 
+## [5.6.2] 2024-01-21
+
+- Fix wrong message for Mac users when sf is installed in /usr/local/bin , which is ok :)
+- Arrange documentation menu
+
 ## [5.6.1] 2024-01-10
 
 - Update python commands so they work on any type of python installation, including Windows

@@ -755,7 +755,7 @@ export class HardisCommandsProvider
         commands: [
           {
             id: "hardis:doc:project2markdown",
-            label: "Generate Project Documentation",
+            label: "Project Documentation",
             command: "sf hardis:doc:project2markdown",
             tooltip:
               "Generates markdown pages with SF Project content: List of metadatas, installed packages...",
@@ -765,7 +765,7 @@ export class HardisCommandsProvider
           },
           {
             id: "hardis:doc:project2markdown-history",
-            label: "Generate Project Documentation (with history)",
+            label: "Project Documentation (with history)",
             command: "sf hardis:doc:project2markdown --with-history",
             tooltip:
               "Generates markdown pages with SF Project content: List of metadatas, installed packages..., with Flow Diff History",
@@ -796,7 +796,7 @@ export class HardisCommandsProvider
           },
           {
             id: "hardis:doc:flow2markdown",
-            label: "Generate Flow Documentation",
+            label: "Single Flow Documentation",
             command: "sf hardis:doc:flow2markdown",
             tooltip: "Generates Visual Documentation for a Flow",
             requiresProject: true,
@@ -804,17 +804,8 @@ export class HardisCommandsProvider
               "https://sfdx-hardis.cloudity.com/hardis/doc/flow2markdown/",
           },
           {
-            id: "hardis:doc:flow2markdown-history",
-            label: "Generate Flow Documentation (with history)",
-            command: "sf hardis:doc:flow2markdown --with-history",
-            tooltip: "Generates Visual Documentation for a Flow",
-            requiresProject: true,
-            helpUrl:
-              "https://sfdx-hardis.cloudity.com/hardis/doc/flow2markdown/",
-          },
-          {
             id: "hardis:project:generate:flow-git-diff",
-            label: "Generate Flow Visual Git Diff",
+            label: "Single Flow Visual Git Diff",
             command: "sf hardis:project:generate:flow-git-diff",
             tooltip:
               "Generates Visual Documentation of the differences between versions of a Flow",
