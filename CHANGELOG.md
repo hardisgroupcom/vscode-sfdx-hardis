@@ -4,6 +4,10 @@
 
 - Add your updates here :)
 
+## [5.6.3] 2024-02-03
+
+- Add mkdocs-exclude-search to mkdocs plugins
+
 ## [5.6.2] 2024-01-21
 
 - Fix wrong message for Mac users when sf is installed in /usr/local/bin , which is ok :)
