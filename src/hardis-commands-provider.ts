@@ -342,8 +342,10 @@ export class HardisCommandsProvider
             label: "Generate bypass custom permissions and permission sets",
             command: "sf hardis:project:generate:bypass",
             requiresProject: true,
-            tooltip: "Generates bypass custom permissions and permission sets for specified sObjects and automations (Flows, Triggers, and Validation Rules)",
-            helpUrl: "https://sfdx-hardis.cloudity.com/hardis/project/generate/bypass/"
+            tooltip:
+              "Generates bypass custom permissions and permission sets for specified sObjects and automations (Flows, Triggers, and Validation Rules)",
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/project/generate/bypass/",
           },
         ],
       },
