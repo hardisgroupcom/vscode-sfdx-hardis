@@ -262,6 +262,10 @@ export class ThemeUtils {
         vscode: "diff",
         hardis: "doc.svg",
       },
+      "project:generate:bypass": {
+        vscode: "settings-sync-view-icon",
+        hardis: "sync.svg",
+      },
       "hardis:org:monitor:limits": { vscode: "eye-watch", hardis: "gauge.svg" },
       "org:diagnose:legacyapi": { vscode: "watch", hardis: "old.svg" },
       "hardis:org:diagnose:unusedusers": {

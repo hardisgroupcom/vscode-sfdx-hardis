@@ -4,6 +4,8 @@
 
 - Add your updates here :)
 
+- New command [hardis:project:generate:bypass](https://sfdx-hardis.cloudity.com/hardis/project/generate/bypass/) : Generates bypass custom permissions and permission sets for specified sObjects and automations
+
 ## [5.6.3] 2024-02-03
 
 - Add mkdocs-exclude-search to mkdocs plugins

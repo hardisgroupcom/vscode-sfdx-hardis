@@ -337,6 +337,16 @@ export class HardisCommandsProvider
             tooltip:
               "Extract Pull Requests and associated ticketing system references in a CSV / Excel file",
           },
+          {
+            id: "project:generate:bypass",
+            label: "Generate bypass custom permissions and permission sets",
+            command: "sf hardis:project:generate:bypass",
+            requiresProject: true,
+            tooltip:
+              "Generates bypass custom permissions and permission sets for specified sObjects and automations (Flows, Triggers, and Validation Rules)",
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/project/generate/bypass/",
+          },
         ],
       },
       {
