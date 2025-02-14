@@ -53,6 +53,7 @@
     "apexlog",
     "apiversion",
     "audittrail",
+    "automations",
     "bestpractices",
     "buildargs",
     "callincallout",
