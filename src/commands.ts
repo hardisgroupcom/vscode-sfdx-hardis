@@ -52,6 +52,7 @@ export class Commands {
     this.registerSimulateDeployment();
     this.registerGeneratePackageXmlDoc();
     this.registerGenerateFlowDocumentation();
+    this.registerGenerateFullFlowDocumentation();
     this.registerGenerateFlowVisualGitDiff();
   }
 
@@ -466,6 +467,28 @@ export class Commands {
           return;
         }
         const command = `sf hardis:doc:flow2markdown --inputfile "${relativePath}"`;
+        vscode.commands.executeCommand(
+          "vscode-sfdx-hardis.execute-command",
+          command,
+        );
+      },
+    );
+    this.disposables.push(disposable);
+  }
+
+  registerGenerateFullFlowDocumentation() {
+    // Open external command
+    const disposable = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.generateFullFlowDocumentation",
+      async (uri: vscode.Uri) => {
+        const relativePath = vscode.workspace.asRelativePath(uri);
+        if (!relativePath.endsWith(".flow-meta.xml")) {
+          vscode.window.showWarningMessage(
+            "This command only works with Flow files :)",
+          );
+          return;
+        }
+        const command = `sf hardis:doc:flow-full-docs --inputfile "${relativePath}"`;
         vscode.commands.executeCommand(
           "vscode-sfdx-hardis.execute-command",
           command,

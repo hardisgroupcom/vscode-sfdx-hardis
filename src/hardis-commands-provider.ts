@@ -814,6 +814,15 @@ export class HardisCommandsProvider
               "https://sfdx-hardis.cloudity.com/hardis/doc/flow2markdown/",
           },
           {
+            id: "hardis:doc:flow-full-docs",
+            label: "Full Flow Documentation",
+            command: "sf hardis:doc:fullflowdocs",
+            tooltip: "Generates Visual Documentation for multiple Flows in Markdown and PDF",
+            requiresProject: true,
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/doc/", /** TODO: add help URL */
+          },
+          {
             id: "hardis:project:generate:flow-git-diff",
             label: "Single Flow Visual Git Diff",
             command: "sf hardis:project:generate:flow-git-diff",
