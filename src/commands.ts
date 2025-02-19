@@ -52,7 +52,7 @@ export class Commands {
     this.registerSimulateDeployment();
     this.registerGeneratePackageXmlDoc();
     this.registerGenerateFlowDocumentation();
-    this.registerGenerateFullFlowDocumentation();
+    this.registerGeneratePdfFlowDocumentation();
     this.registerGenerateFlowVisualGitDiff();
   }
 
@@ -476,10 +476,10 @@ export class Commands {
     this.disposables.push(disposable);
   }
 
-  registerGenerateFullFlowDocumentation() {
+  registerGeneratePdfFlowDocumentation() {
     // Open external command
     const disposable = vscode.commands.registerCommand(
-      "vscode-sfdx-hardis.generateFullFlowDocumentation",
+      "vscode-sfdx-hardis.generatePdfFlowDocumentation",
       async (uri: vscode.Uri) => {
         const relativePath = vscode.workspace.asRelativePath(uri);
         if (!relativePath.endsWith(".flow-meta.xml")) {
@@ -488,7 +488,7 @@ export class Commands {
           );
           return;
         }
-        const command = `sf hardis:doc:flow-full-docs --inputfile "${relativePath}"`;
+        const command = `sf hardis:doc:flows-to-pdf --inputfile "${relativePath}"`;
         vscode.commands.executeCommand(
           "vscode-sfdx-hardis.execute-command",
           command,

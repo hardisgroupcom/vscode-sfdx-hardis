@@ -814,10 +814,10 @@ export class HardisCommandsProvider
               "https://sfdx-hardis.cloudity.com/hardis/doc/flow2markdown/",
           },
           {
-            id: "hardis:doc:flow-full-docs",
-            label: "Full Flow Documentation",
-            command: "sf hardis:doc:fullflowdocs",
-            tooltip: "Generates Visual Documentation for multiple Flows in Markdown and PDF",
+            id: "hardis:doc:flows-to-pdf",
+            label: "PDF Flows Documentation",
+            command: "sf hardis:doc:flows-to-pdf",
+            tooltip: "Generates Visual Documentation for multiple Flows in PDF and Markdown",
             requiresProject: true,
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/doc/", /** TODO: add help URL */
