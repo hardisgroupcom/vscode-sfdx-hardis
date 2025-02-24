@@ -488,7 +488,7 @@ export class Commands {
           );
           return;
         }
-        const command = `sf hardis:doc:flows-to-pdf --inputfile "${relativePath}"`;
+        const command = `sf hardis:doc:flow2markdown --pdf --inputfile "${relativePath}"`;
         vscode.commands.executeCommand(
           "vscode-sfdx-hardis.execute-command",
           command,

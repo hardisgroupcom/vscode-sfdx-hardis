@@ -774,6 +774,16 @@ export class HardisCommandsProvider
               "https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/",
           },
           {
+            id: "hardis:doc:project2markdown-pdf",
+            label: "Project Documentation (with PDF)",
+            command: "sf hardis:doc:project2markdown --pdf",
+            tooltip:
+              "Generates markdown and PDF pages with SF Project content: List of metadatas, installed packages...",
+            requiresProject: true,
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/",
+          },
+          {
             id: "hardis:doc:project2markdown-history",
             label: "Project Documentation (with history)",
             command: "sf hardis:doc:project2markdown --with-history",
@@ -806,21 +816,21 @@ export class HardisCommandsProvider
           },
           {
             id: "hardis:doc:flow2markdown",
-            label: "Single Flow Documentation",
+            label: "Multiple Flows Documentation",
             command: "sf hardis:doc:flow2markdown",
-            tooltip: "Generates Visual Documentation for a Flow",
+            tooltip: "Generates Visual Documentation for selected Flows",
             requiresProject: true,
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/doc/flow2markdown/",
           },
           {
-            id: "hardis:doc:flows-to-pdf",
-            label: "PDF Flows Documentation",
-            command: "sf hardis:doc:flows-to-pdf",
-            tooltip: "Generates Visual Documentation for multiple Flows in PDF and Markdown",
+            id: "hardis:doc:flow2markdown-pdf",
+            label: "Multiple Flows Documentation (with PDF)",
+            command: "sf hardis:doc:flow2markdown --pdf",
+            tooltip: "Generates Markdown and PDF Documentation for selected Flows ",
             requiresProject: true,
             helpUrl:
-              "https://sfdx-hardis.cloudity.com/hardis/doc/", /** TODO: add help URL */
+              "https://sfdx-hardis.cloudity.com/hardis/doc/flow2markdown/",
           },
           {
             id: "hardis:project:generate:flow-git-diff",
