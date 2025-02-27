@@ -816,7 +816,7 @@ export class HardisCommandsProvider
           },
           {
             id: "hardis:doc:flow2markdown",
-            label: "Single Flow Documentation",
+            label: "Flows Documentation",
             command: "sf hardis:doc:flow2markdown",
             tooltip: "Generates Visual Documentation for a Flow",
             requiresProject: true,
@@ -825,7 +825,7 @@ export class HardisCommandsProvider
           },
           {
             id: "hardis:doc:flow2markdown-pdf",
-            label: "Single Flow Documentation + PDF",
+            label: "Flows Documentation + PDF",
             command: "sf hardis:doc:flow2markdown --pdf",
             tooltip: "Generates Visual Documentation for a Flow + PDF file",
             requiresProject: true,
