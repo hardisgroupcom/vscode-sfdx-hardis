@@ -4,7 +4,7 @@
 
 - Add your updates here :)
 
-- Add anothing python commands combination to locally run documentation
+- Add another python commands combination to locally run documentation
 
 ## [5.7.0] 2024-02-14
 
