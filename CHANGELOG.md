@@ -4,6 +4,9 @@
 
 - Add your updates here :)
 
+## [5.8.0] 2024-02-27
+
+- Add PDF generation commands
 - Add another python commands combination to locally run documentation
 
 ## [5.7.0] 2024-02-14
