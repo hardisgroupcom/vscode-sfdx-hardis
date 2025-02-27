@@ -4,6 +4,8 @@
 
 - Add your updates here :)
 
+- Add another python commands combination to locally run documentation
+
 ## [5.7.0] 2024-02-14
 
 - New command [hardis:project:generate:bypass](https://sfdx-hardis.cloudity.com/hardis/project/generate/bypass/) : Generates bypass custom permissions and permission sets for specified sObjects and automations
