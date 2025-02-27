@@ -787,7 +787,7 @@ export class HardisCommandsProvider
             id: "hardis-run-doc",
             label: "Run Local HTML Doc Pages",
             command:
-              "(pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists && mkdocs serve) || (python -m install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists && python -m mkdocs serve) || (py -m pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists && py -m mkdocs serve)",
+              "(pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists && mkdocs serve) || (python -m install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists && python -m mkdocs serve) || (py -m pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists && py -m mkdocs serve) || (pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists && python -m mkdocs serve -v)",
             tooltip:
               "Run Documentation local web server, then open http://127.0.0.1:8000/ . You need Python on your computer :)",
             requiresProject: true,
