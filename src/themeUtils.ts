@@ -255,7 +255,10 @@ export class ThemeUtils {
         hardis: "push.svg",
       },
       "hardis:doc:flow2markdown": { vscode: "git-branch", hardis: "doc.svg" },
-      "hardis:doc:flow2markdown-pdf": { vscode: "git-branch", hardis: "doc.svg" },
+      "hardis:doc:flow2markdown-pdf": {
+        vscode: "git-branch",
+        hardis: "doc.svg",
+      },
       "hardis:doc:flow2markdown-history": {
         vscode: "git-branch",
         hardis: "doc.svg",
