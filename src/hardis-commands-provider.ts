@@ -774,6 +774,16 @@ export class HardisCommandsProvider
               "https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/",
           },
           {
+            id: "hardis:doc:project2markdown-pdf",
+            label: "Project Documentation + PDF",
+            command: "sf hardis:doc:project2markdown --pdf",
+            tooltip:
+              "Generates markdown pages with SF Project content: List of metadatas, installed packages... + PDF files",
+            requiresProject: true,
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/",
+          },
+          {
             id: "hardis:doc:project2markdown-history",
             label: "Project Documentation (with history)",
             command: "sf hardis:doc:project2markdown --with-history",
@@ -806,9 +816,18 @@ export class HardisCommandsProvider
           },
           {
             id: "hardis:doc:flow2markdown",
-            label: "Single Flow Documentation",
+            label: "Flows Documentation",
             command: "sf hardis:doc:flow2markdown",
             tooltip: "Generates Visual Documentation for a Flow",
+            requiresProject: true,
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/doc/flow2markdown/",
+          },
+          {
+            id: "hardis:doc:flow2markdown-pdf",
+            label: "Flows Documentation + PDF",
+            command: "sf hardis:doc:flow2markdown --pdf",
+            tooltip: "Generates Visual Documentation for a Flow + PDF file",
             requiresProject: true,
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/doc/flow2markdown/",
