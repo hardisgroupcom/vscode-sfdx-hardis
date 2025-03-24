@@ -689,10 +689,10 @@ export class HardisCommandsProvider
               "https://sfdx-hardis.cloudity.com/hardis/audit/remotesites/",
           },
           {
-            id: "hardis:misc:clabel-translations",
+            id: "hardis:misc:custom-label-translations",
             label: "Extract Custom Label Translations",
             tooltip: "Extract selected custom labels from all language translation files",
-            command: "sf hardis:misc:clabel-translations",
+            command: "sf hardis:misc:custom-label-translations",
             helpUrl: "",
           },
         ],
