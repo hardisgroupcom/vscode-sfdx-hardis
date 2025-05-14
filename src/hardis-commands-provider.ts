@@ -688,6 +688,13 @@ export class HardisCommandsProvider
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/audit/remotesites/",
           },
+          {
+            id: "hardis:misc:custom-label-translations",
+            label: "Extract Custom Label Translations",
+            tooltip: "Extract selected custom labels, or of a given Lightning Web Component (LWC), from all language translation files",
+            command: "sf hardis:misc:custom-label-translations",
+            helpUrl: "https://sfdx-hardis.cloudity.com/hardis/misc/custom-label-translations/",
+          },
         ],
       },
       {
