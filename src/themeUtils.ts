@@ -300,7 +300,10 @@ export class ThemeUtils {
       "project:audit:apiversion": { vscode: "law", hardis: "extract.svg" },
       "project:audit:callincallout": { vscode: "law", hardis: "http.svg" },
       "project:audit:remotesites": { vscode: "law", hardis: "remote.svg" },
-      "hards:misc:custom-label-translations": { vscode: "law", hardis: "extract.svg" },
+      "hards:misc:custom-label-translations": {
+        vscode: "law",
+        hardis: "extract.svg",
+      },
       "configure:auth:deployment": { vscode: "gear", hardis: "configure.svg" },
       "configure:auth:devhub": { vscode: "gear", hardis: "configure.svg" },
       "org:configure:monitoring": { vscode: "gear", hardis: "monitoring.svg" },
