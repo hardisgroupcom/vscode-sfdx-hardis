@@ -4,6 +4,10 @@
 
 - Add your updates here :)
 
+## [5.8.1] 2024-03-04
+
+- Do not display error message if sf is installed via CodeBuilder
+
 ## [5.8.0] 2024-02-27
 
 - Add PDF generation commands
