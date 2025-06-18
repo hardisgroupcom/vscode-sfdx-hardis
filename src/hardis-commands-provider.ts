@@ -851,6 +851,22 @@ export class HardisCommandsProvider
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/project/generate/flow-git-diff/",
           },
+          {
+            id: "hardis:doc:override-prompts",
+            label: "Override Prompt Templates",
+            command: "sf hardis:doc:override-prompts",
+            tooltip: "Override and customize documentation prompt templates for your project",
+            requiresProject: true,
+            helpUrl: "https://sfdx-hardis.cloudity.com/hardis/doc/override-prompts/"
+          },
+          {
+            id: "hardis:doc:override-prompts-overwrite",
+            label: "Override Prompt Templates (Overwrite local)",
+            command: "sf hardis:doc:override-prompts --overwrite",
+            tooltip: "Override and customize documentation prompt templates for your project (Overwrites local files)",
+            requiresProject: true,
+            helpUrl: "https://sfdx-hardis.cloudity.com/hardis/doc/override-prompts/"
+          }
         ],
       },
       {

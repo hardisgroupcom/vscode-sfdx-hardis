@@ -267,6 +267,14 @@ export class ThemeUtils {
         vscode: "diff",
         hardis: "doc.svg",
       },
+      "hardis:doc:override-prompts": {
+        vscode: "settings-gear",
+        hardis: "configure.svg",
+      },
+      "hardis:doc:override-prompts-overwrite": {
+        vscode: "settings-gear",
+        hardis: "configure.svg",
+      },
       "project:generate:bypass": {
         vscode: "settings-sync-view-icon",
         hardis: "sync.svg",
