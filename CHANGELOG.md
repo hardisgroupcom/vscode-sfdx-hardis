@@ -4,6 +4,10 @@
 
 - Add your updates here :)
 
+## [5.9.0] 2024-06-18
+
+- New command Doc -> [Override prompt templates](https://sfdx-hardis.cloudity.com/hardis/doc/override-prompts/)
+
 ## [5.8.0] 2024-02-27
 
 - Add PDF generation commands
