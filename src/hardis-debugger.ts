@@ -121,8 +121,7 @@ export class HardisDebugger {
         this.debugLogFile(vscode.window.activeTextEditor.document.uri);
         listener.dispose();
         clearInterval(interval);
-      }
-      else if (launched === true) {
+      } else if (launched === true) {
         clearInterval(interval);
       }
     }, 500);
