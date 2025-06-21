@@ -7,6 +7,7 @@
 - Improve performances when running debugger
 - Add a test CI/CD workflow
 - Add a copilot instructions file
+- Replace deprecated vscode-test with @vscode/test-electron
 
 ## [5.9.0] 2024-06-18
 
