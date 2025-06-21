@@ -253,15 +253,18 @@
       "sfdx-hardis-explorer": [
         {
           "id": "sfdx-hardis-commands",
-          "name": "Commands"
+          "name": "Commands",
+          "icon": "resources/cloudity-logo.svg"
         },
         {
           "id": "sfdx-hardis-status",
-          "name": "Status"
+          "name": "Status",
+          "icon": "resources/cloudity-logo.svg"
         },
         {
           "id": "sfdx-hardis-plugins",
-          "name": "Dependencies"
+          "name": "Dependencies",
+          "icon": "resources/cloudity-logo.svg"
         }
       ]
     },
@@ -390,11 +393,12 @@
     "build": "npm run -S esbuild-base -- --sourcemap",
     "watch": "npm run -S esbuild-base -- --sourcemap --watch",
     "pretest": "yarn run compile && yarn run lint",
-    "lint": "eslint src --ext ts",
-    "lint:fix": "eslint src --ext ts --fix",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
+    "@eslint/js": "^9.29.0",
     "@types/fs-extra": "^11.0.4",
     "@types/git-url-parse": "^9.0.1",
     "@types/glob": "^8.0.0",
@@ -406,13 +410,14 @@
     "@types/ws": "^8.5.12",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
+    "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^3.0.0",
     "esbuild": "^0.25.0",
     "eslint": "^9.0.0",
     "glob": "^11.0.0",
+    "lru-cache": "^7.18.3",
     "mocha": "^10.0.0",
-    "typescript": "^5.0.0",
-    "vscode-test": "^1.5.0"
+    "typescript": "^5.0.0"
   },
   "dependencies": {
     "@vscode/extension-telemetry": "^0.8.0",

@@ -29,10 +29,7 @@ export class ThemeUtils {
       : this.allCommandIcons["default"][this.menuIconType];
     if (icon.endsWith(".svg")) {
       // Use SVG
-      return {
-        light: path.join(__filename, "..", "..", "resources", String(icon)),
-        dark: path.join(__filename, "..", "..", "resources", String(icon)),
-      };
+      return path.join(__filename, "..", "..", "resources", String(icon));
     }
     // Or use vscode Theme icon
     return new vscode.ThemeIcon(icon);
@@ -55,7 +52,7 @@ export class ThemeUtils {
       { label: "vscode", detail: "Standard Visual Studio Code Icons" },
     ];
     const quickpick = vscode.window.createQuickPick<vscode.QuickPickItem>();
-    const menuIconType = await new Promise<any>((resolve, reject) => {
+    const menuIconType = await new Promise<any>((resolve) => {
       quickpick.ignoreFocusOut = true;
       quickpick.title = "Please select a theme to use";
       quickpick.canSelectMany = false;
@@ -80,7 +77,7 @@ export class ThemeUtils {
       { label: "With Emojis", detail: "Display section titles with emojis" },
       { label: "Without Emojis", detail: "Hide emojis in section title" },
     ];
-    const emojisInSections = await new Promise<any>((resolve, reject) => {
+    const emojisInSections = await new Promise<any>((resolve) => {
       quickpick2.ignoreFocusOut = true;
       quickpick2.title = "Please select a theme to use";
       quickpick2.canSelectMany = false;
