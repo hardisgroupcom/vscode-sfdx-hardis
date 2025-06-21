@@ -126,7 +126,7 @@ export class HardisColors {
     try {
       const color = await vscode.window.showInputBox(inputBoxOptions);
       return color;
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       return null;
     }
@@ -156,10 +156,10 @@ export class HardisColors {
 
   describeOrgColors() {
     return {
-      "production": "#8c1004", // red
-      "major": "#a66004", // orange
-      "dev": "#2f53a8", // blue
-    }
+      production: "#8c1004", // red
+      major: "#a66004", // orange
+      dev: "#2f53a8", // blue
+    };
   }
 
   // Get org color :)
@@ -214,11 +214,12 @@ export class HardisColors {
   async applyColor(color: string | null) {
     if (vscode.workspace.workspaceFolders) {
       const config = vscode.workspace.getConfiguration();
-      let colorCustomization = config.get(
-        "workbench.colorCustomizations",
-      );
+      let colorCustomization = config.get("workbench.colorCustomizations");
       // Ensure colorCustomization is an object
-      if (typeof colorCustomization !== "object" || colorCustomization === null) {
+      if (
+        typeof colorCustomization !== "object" ||
+        colorCustomization === null
+      ) {
         colorCustomization = {};
       }
       const colorCustomObj = colorCustomization as Record<string, any>;
@@ -237,13 +238,21 @@ export class HardisColors {
         colorCustomObj["activityBar.background"]
       ) {
         // Restore colors if found, or delete them
-        if (colorCustomObj["statusBar.background"] && colorCustomObj["statusBar.backgroundPrevious"]) {
-          colorCustomObj["statusBar.background"] = colorCustomObj["statusBar.backgroundPrevious"];
+        if (
+          colorCustomObj["statusBar.background"] &&
+          colorCustomObj["statusBar.backgroundPrevious"]
+        ) {
+          colorCustomObj["statusBar.background"] =
+            colorCustomObj["statusBar.backgroundPrevious"];
         } else {
           delete colorCustomObj["statusBar.background"];
         }
-        if (colorCustomObj["activityBar.background"] && colorCustomObj["activityBar.backgroundPrevious"]) {
-          colorCustomObj["activityBar.background"] = colorCustomObj["activityBar.backgroundPrevious"];
+        if (
+          colorCustomObj["activityBar.background"] &&
+          colorCustomObj["activityBar.backgroundPrevious"]
+        ) {
+          colorCustomObj["activityBar.background"] =
+            colorCustomObj["activityBar.backgroundPrevious"];
         } else {
           delete colorCustomObj["activityBar.background"];
         }
@@ -308,14 +317,22 @@ export class HardisColors {
 
   savePreviousCustomizedColors(colorCustomObj: Record<string, any>) {
     if (
-      colorCustomObj["statusBar.background"] && !Object.values(this.describeOrgColors()).includes(colorCustomObj["statusBar.background"])
+      colorCustomObj["statusBar.background"] &&
+      !Object.values(this.describeOrgColors()).includes(
+        colorCustomObj["statusBar.background"],
+      )
     ) {
-      colorCustomObj["statusBar.backgroundPrevious"] = colorCustomObj["statusBar.background"];
+      colorCustomObj["statusBar.backgroundPrevious"] =
+        colorCustomObj["statusBar.background"];
     }
     if (
-      colorCustomObj["activityBar.background"] && !Object.values(this.describeOrgColors()).includes(colorCustomObj["activityBar.background"])
+      colorCustomObj["activityBar.background"] &&
+      !Object.values(this.describeOrgColors()).includes(
+        colorCustomObj["activityBar.background"],
+      )
     ) {
-      colorCustomObj["activityBar.backgroundPrevious"] = colorCustomObj["activityBar.background"];
+      colorCustomObj["activityBar.backgroundPrevious"] =
+        colorCustomObj["activityBar.background"];
     }
   }
 
