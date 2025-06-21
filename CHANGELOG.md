@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- Add your updates here :)
+- Do not display error message if sf is installed via CodeBuilder
 
 ## [5.9.0] 2024-06-18
 

@@ -327,6 +327,7 @@ export class HardisPluginsProvider
         !sfdxPath.includes("npm") &&
         !sfdxPath.includes("node") &&
         !sfdxPath.includes("nvm") &&
+        !sfdxPath.includes("/home/codebuilder/.sf/bin/sf") &&
         !(
           sfdxPath.includes("/usr/local/bin") && process.platform === "darwin"
         ) &&
