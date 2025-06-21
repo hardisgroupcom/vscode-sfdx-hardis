@@ -253,15 +253,18 @@
       "sfdx-hardis-explorer": [
         {
           "id": "sfdx-hardis-commands",
-          "name": "Commands"
+          "name": "Commands",
+          "icon": "resources/cloudity-logo.svg"
         },
         {
           "id": "sfdx-hardis-status",
-          "name": "Status"
+          "name": "Status",
+          "icon": "resources/cloudity-logo.svg"
         },
         {
           "id": "sfdx-hardis-plugins",
-          "name": "Dependencies"
+          "name": "Dependencies",
+          "icon": "resources/cloudity-logo.svg"
         }
       ]
     },
