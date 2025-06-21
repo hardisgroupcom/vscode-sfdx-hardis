@@ -2,11 +2,11 @@
 
 ## [Unreleased]
 
-- Add your updates here :)
-
-## [5.8.1] 2024-03-04
-
 - Do not display error message if sf is installed via CodeBuilder
+
+## [5.9.0] 2024-06-18
+
+- New command Doc -> [Override prompt templates](https://sfdx-hardis.cloudity.com/hardis/doc/override-prompts/)
 
 ## [5.8.0] 2024-02-27
 
