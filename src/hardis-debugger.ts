@@ -55,6 +55,13 @@ export class HardisDebugger {
         for (const breakpoint of breakpointChangeEvent.added ||
           breakpointChangeEvent.changed ||
           []) {
+          // Pass if breakpoint is not a SourceBreakpoint on Apex class
+          if (
+            !(breakpoint instanceof vscode.SourceBreakpoint) ||
+            !breakpoint.location.uri.fsPath.endsWith(".cls")
+          ) {
+            continue;
+          }
           requiresActivateDebugLogs = true;
           if (breakpoint?.condition === "checkpoint") {
             requiresCheckpointUpload = true;
@@ -105,15 +112,20 @@ export class HardisDebugger {
       listener.dispose();
     });
     // Launch debugger from active log file opened in text editor
-    setTimeout(() => {
+    const interval = setInterval(() => {
       if (
         launched === false &&
         vscode.window.activeTextEditor?.document?.uri?.fsPath.endsWith(".log")
       ) {
+        launched = true;
         this.debugLogFile(vscode.window.activeTextEditor.document.uri);
         listener.dispose();
+        clearInterval(interval);
       }
-    }, 5000);
+      else if (launched === true) {
+        clearInterval(interval);
+      }
+    }, 500);
   }
 
   private async launchLogTail() {
