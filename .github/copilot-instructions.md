@@ -9,7 +9,7 @@ This is a **Visual Studio Code extension** that provides an intuitive UI for **S
 - Main CLI dependency: `sfdx-hardis` plugin for Salesforce CLI
 - Target users: Both beginner consultants and expert developers
 - License: AGPL-3.0
-- Documentation: https://sfdx-hardis.cloudity.com/
+- Documentation: <https://sfdx-hardis.cloudity.com/>
 
 ## Architecture
 
@@ -290,10 +290,10 @@ if (prompt.type === "select") {
 ## Documentation and Support
 
 ### Help Resources
-- Main documentation: https://sfdx-hardis.cloudity.com/
-- Command reference: https://sfdx-hardis.cloudity.com/commands/
-- CI/CD guides: https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/
-- GitHub issues: https://github.com/hardisgroupcom/sfdx-hardis/issues
+- Main documentation: <https://sfdx-hardis.cloudity.com/>
+- Command reference: <https://sfdx-hardis.cloudity.com/commands/>
+- CI/CD guides: <https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/>
+- GitHub issues: <https://github.com/hardisgroupcom/sfdx-hardis/issues>
 
 ### Contributing Guidelines
 - Maintain user-friendly approach for non-technical users

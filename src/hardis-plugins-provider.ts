@@ -290,7 +290,7 @@ export class HardisPluginsProvider
     let latestSfdxCliVersion;
     try {
       latestSfdxCliVersion = await getNpmLatestVersion("@salesforce/cli");
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       console.error(`Error while fetching latest version for @salesforce/cli`);
       return [];
@@ -316,7 +316,7 @@ export class HardisPluginsProvider
       let sfdxPath = "";
       try {
         sfdxPath = await which("sf");
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (_e) {
         sfdxPath = "missing";
       }
@@ -364,7 +364,7 @@ export class HardisPluginsProvider
       let latestPluginVersion;
       try {
         latestPluginVersion = await getNpmLatestVersion(plugin.name);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (e) {
         console.error(`Error while fetching latest version for ${plugin.name}`);
         return;

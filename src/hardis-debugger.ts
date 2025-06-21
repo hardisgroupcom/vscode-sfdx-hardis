@@ -43,7 +43,13 @@ export class HardisDebugger {
       },
     );
     this.disposables.push(
-      ...[cmdActivate, cmdDeactivate, cmdLaunch,cmdLogTail, cmdToggleCheckpoint],
+      ...[
+        cmdActivate,
+        cmdDeactivate,
+        cmdLaunch,
+        cmdLogTail,
+        cmdToggleCheckpoint,
+      ],
     );
   }
 

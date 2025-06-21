@@ -1,11 +1,11 @@
-import js from '@eslint/js';
-import typescript from '@typescript-eslint/eslint-plugin';
-import typescriptParser from '@typescript-eslint/parser';
+import js from '@eslint/js'
+import typescript from '@typescript-eslint/eslint-plugin'
+import typescriptParser from '@typescript-eslint/parser'
 
 export default [
   // Base JavaScript recommended rules
   js.configs.recommended,
-  
+
   // TypeScript configuration
   {
     files: ['src/**/*.ts'],
@@ -33,7 +33,7 @@ export default [
         clearInterval: 'readonly',
         setImmediate: 'readonly',
         clearImmediate: 'readonly',
-        
+
         // VS Code extension globals
         Thenable: 'readonly'
       }
@@ -41,7 +41,7 @@ export default [
     plugins: {
       '@typescript-eslint': typescript
     },
-    rules: {      // TypeScript-specific rules with relaxed naming for object literals
+    rules: { // TypeScript-specific rules with relaxed naming for object literals
       '@typescript-eslint/naming-convention': [
         'warn',
         {
@@ -74,22 +74,22 @@ export default [
           format: ['camelCase', 'PascalCase'] // Allow both for imports (types and values)
         }
       ],
-      
+
       // General JavaScript/TypeScript rules
-      'curly': 'warn',
-      'eqeqeq': 'warn',
+      curly: 'warn',
+      eqeqeq: 'warn',
       'no-throw-literal': 'warn',
-      'semi': 'off',
-      
+      semi: 'off',
+
       // Disable some rules that might conflict with TypeScript
       'no-unused-vars': 'off',
-      '@typescript-eslint/no-unused-vars': ['warn', { 
-        'argsIgnorePattern': '^_',
-        'varsIgnorePattern': '^_' 
+      '@typescript-eslint/no-unused-vars': ['warn', {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_'
       }]
     }
   },
-  
+
   // Test files configuration
   {
     files: ['src/test/**/*.ts'],
@@ -114,7 +114,7 @@ export default [
         setInterval: 'readonly',
         clearTimeout: 'readonly',
         clearInterval: 'readonly',
-        
+
         // Mocha globals for test files
         describe: 'readonly',
         it: 'readonly',
@@ -124,7 +124,7 @@ export default [
         afterEach: 'readonly',
         suite: 'readonly',
         test: 'readonly',
-        
+
         // VS Code extension globals
         Thenable: 'readonly'
       }
@@ -132,7 +132,7 @@ export default [
     plugins: {
       '@typescript-eslint': typescript
     },
-    rules: {      // Same rules as main TypeScript files
+    rules: { // Same rules as main TypeScript files
       '@typescript-eslint/naming-convention': [
         'warn',
         {
@@ -165,18 +165,18 @@ export default [
           format: ['camelCase', 'PascalCase'] // Allow both for imports (types and values)
         }
       ],
-      'curly': 'warn',
-      'eqeqeq': 'warn',
+      curly: 'warn',
+      eqeqeq: 'warn',
       'no-throw-literal': 'warn',
-      'semi': 'off',
+      semi: 'off',
       'no-unused-vars': 'off',
-      '@typescript-eslint/no-unused-vars': ['warn', { 
-        'argsIgnorePattern': '^_',
-        'varsIgnorePattern': '^_' 
+      '@typescript-eslint/no-unused-vars': ['warn', {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_'
       }]
     }
   },
-  
+
   // JavaScript worker files configuration
   {
     files: ['src/**/*.js'],
@@ -201,13 +201,13 @@ export default [
       }
     },
     rules: {
-      'curly': 'warn',
-      'eqeqeq': 'warn',
+      curly: 'warn',
+      eqeqeq: 'warn',
       'no-throw-literal': 'warn',
-      'semi': 'off'
+      semi: 'off'
     }
   },
-  
+
   // Ignore patterns
   {
     ignores: [
@@ -218,4 +218,4 @@ export default [
       'vscode-sfdx-hardis-*.vsix'
     ]
   }
-];
+]
