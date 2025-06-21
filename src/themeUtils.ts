@@ -29,10 +29,7 @@ export class ThemeUtils {
       : this.allCommandIcons["default"][this.menuIconType];
     if (icon.endsWith(".svg")) {
       // Use SVG
-      return {
-        light: path.join(__filename, "..", "..", "resources", String(icon)),
-        dark: path.join(__filename, "..", "..", "resources", String(icon)),
-      };
+      return path.join(__filename, "..", "..", "resources", String(icon));
     }
     // Or use vscode Theme icon
     return new vscode.ThemeIcon(icon);
