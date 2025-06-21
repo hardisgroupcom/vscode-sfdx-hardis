@@ -5,6 +5,8 @@
 - Do not display error message if sf is installed via CodeBuilder
 - Debugger: perform SF related actions only if the breakpoint detected is on an Apex Class
 - Improve performances when running debugger
+- Add a test CI/CD workflow
+- Add a copilot instructions file
 
 ## [5.9.0] 2024-06-18
 
