@@ -11,6 +11,7 @@
     "**/.idea/**",
     "**/report/**",
     "**/*.svg",
-    "**/*-provider.ts"
+    "**/*-provider.ts",
+    "**/eslint.config.js"
   ]
 }
