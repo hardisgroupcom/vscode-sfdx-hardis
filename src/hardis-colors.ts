@@ -126,6 +126,7 @@ export class HardisColors {
     try {
       const color = await vscode.window.showInputBox(inputBoxOptions);
       return color;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       return null;
     }
@@ -151,6 +152,14 @@ export class HardisColors {
         );
       }
     }
+  }
+
+  describeOrgColors() {
+    return {
+      production: "#8c1004", // red
+      major: "#a66004", // orange
+      dev: "#2f53a8", // blue
+    };
   }
 
   // Get org color :)
@@ -183,7 +192,7 @@ export class HardisColors {
             `🦙 Your default org is a MAJOR org linked to git branch ${this.majorOrgBranch}, be careful because the CI/CD Server is supposed to deploy there, not you :)`,
             "Close",
           );
-          return forcedColor || "#a66004"; // orange !
+          return forcedColor || this.describeOrgColors()["major"]; // orange !
         }
         return forcedColor || null; // green !
       } else if (PRODUCTION_EDITIONS.includes(org.OrganizationType)) {
@@ -192,10 +201,10 @@ export class HardisColors {
           "🦙 Your default org is a PRODUCTION org, be careful what you do :)",
           "Close",
         );
-        return forcedColor || "#8c1004"; // red !
+        return forcedColor || this.describeOrgColors()["production"]; // red !
       }
       // Dev org, trial org...
-      return forcedColor || "#2f53a8"; // blue
+      return forcedColor || this.describeOrgColors()["dev"]; // blue
     }
     // Default color
     return forcedColor || null;
@@ -205,32 +214,54 @@ export class HardisColors {
   async applyColor(color: string | null) {
     if (vscode.workspace.workspaceFolders) {
       const config = vscode.workspace.getConfiguration();
-      const colorCustomization: any = config.get(
-        "workbench.colorCustomizations",
-      );
+      let colorCustomization = config.get("workbench.colorCustomizations");
+      // Ensure colorCustomization is an object
+      if (
+        typeof colorCustomization !== "object" ||
+        colorCustomization === null
+      ) {
+        colorCustomization = {};
+      }
+      const colorCustomObj = colorCustomization as Record<string, any>;
+      this.savePreviousCustomizedColors(colorCustomObj);
       if (color !== null) {
-        colorCustomization["statusBar.background"] = color;
-        colorCustomization["activityBar.background"] = color;
+        colorCustomObj["statusBar.background"] = color;
+        colorCustomObj["activityBar.background"] = color;
         // Do not update config file with blank color if there wasn't a previous config
         await config.update(
           "workbench.colorCustomizations",
-          colorCustomization,
+          colorCustomObj,
           vscode.ConfigurationTarget.Workspace,
         );
       } else if (
-        colorCustomization["statusBar.background"] ||
-        colorCustomization["activityBar.background"]
+        colorCustomObj["statusBar.background"] ||
+        colorCustomObj["activityBar.background"]
       ) {
-        // Remove colors
-        colorCustomization["statusBar.background"] = null;
-        colorCustomization["activityBar.background"] = null;
-        if (Object.keys(colorCustomization).length > 0) {
-          await config.update(
-            "workbench.colorCustomizations",
-            {},
-            vscode.ConfigurationTarget.Workspace,
-          );
+        // Restore colors if found, or delete them
+        if (
+          colorCustomObj["statusBar.background"] &&
+          colorCustomObj["statusBar.backgroundPrevious"]
+        ) {
+          colorCustomObj["statusBar.background"] =
+            colorCustomObj["statusBar.backgroundPrevious"];
+        } else {
+          delete colorCustomObj["statusBar.background"];
         }
+        if (
+          colorCustomObj["activityBar.background"] &&
+          colorCustomObj["activityBar.backgroundPrevious"]
+        ) {
+          colorCustomObj["activityBar.background"] =
+            colorCustomObj["activityBar.backgroundPrevious"];
+        } else {
+          delete colorCustomObj["activityBar.background"];
+        }
+        // Remove colors
+        await config.update(
+          "workbench.colorCustomizations",
+          colorCustomObj,
+          vscode.ConfigurationTarget.Workspace,
+        );
       }
     }
   }
@@ -284,12 +315,36 @@ export class HardisColors {
     return [];
   }
 
+  savePreviousCustomizedColors(colorCustomObj: Record<string, any>) {
+    if (
+      colorCustomObj["statusBar.background"] &&
+      !Object.values(this.describeOrgColors()).includes(
+        colorCustomObj["statusBar.background"],
+      )
+    ) {
+      colorCustomObj["statusBar.backgroundPrevious"] =
+        colorCustomObj["statusBar.background"];
+    }
+    if (
+      colorCustomObj["activityBar.background"] &&
+      !Object.values(this.describeOrgColors()).includes(
+        colorCustomObj["activityBar.background"],
+      )
+    ) {
+      colorCustomObj["activityBar.backgroundPrevious"] =
+        colorCustomObj["activityBar.background"];
+    }
+  }
+
   reset() {
     this.currentDefaultOrg = undefined;
     this.currentDefaultOrgDomain = undefined;
     this.majorOrgInstanceUrls = [];
     this.disposables.map((disposable) => disposable.dispose());
-    this.applyColor(null);
+    const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+    if (!config.get("disableVsCodeColors") === true) {
+      this.applyColor(null);
+    }
   }
 
   // Remove custom colors when quitting the extension or VsCode
