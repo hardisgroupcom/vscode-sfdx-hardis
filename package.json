@@ -390,11 +390,12 @@
     "build": "npm run -S esbuild-base -- --sourcemap",
     "watch": "npm run -S esbuild-base -- --sourcemap --watch",
     "pretest": "yarn run compile && yarn run lint",
-    "lint": "eslint src --ext ts",
-    "lint:fix": "eslint src --ext ts --fix",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
+    "@eslint/js": "^9.29.0",
     "@types/fs-extra": "^11.0.4",
     "@types/git-url-parse": "^9.0.1",
     "@types/glob": "^8.0.0",
