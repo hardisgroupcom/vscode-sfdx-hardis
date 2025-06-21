@@ -222,7 +222,7 @@ export class HardisColors {
         colorCustomization = {};
       }
       const colorCustomObj = colorCustomization as Record<string, any>;
-      this.savePreviouscustomizedColors(colorCustomObj);
+      this.savePreviousCustomizedColors(colorCustomObj);
       if (color !== null) {
         colorCustomObj["statusBar.background"] = color;
         colorCustomObj["activityBar.background"] = color;
@@ -306,7 +306,7 @@ export class HardisColors {
     return [];
   }
 
-  savePreviouscustomizedColors(colorCustomObj: Record<string, any>) {
+  savePreviousCustomizedColors(colorCustomObj: Record<string, any>) {
     if (
       colorCustomObj["statusBar.background"] && !Object.values(this.describeOrgColors()).includes(colorCustomObj["statusBar.background"])
     ) {
