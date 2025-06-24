@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [5.9.1] 2024-06-25
+
+- Add newest api version labels
+
 ## [5.9.0] 2024-06-21
 
 - Do not display error message if sf is installed via CodeBuilder
