@@ -283,8 +283,9 @@ Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if you
       ["62.0", "Winter '25"],
       ["63.0", "Spring '25"],
       ["64.0", "Summer '25"],
-      ["65.0", "Winter '25"],
-      ["66.0", "Spring '25"],
+      ["65.0", "Winter '26"],
+      ["66.0", "Spring '26"],
+      ["67.0", "Summer '26"],
     ]);
     return matches.get(apiVersion) || "NEXT";
   }
