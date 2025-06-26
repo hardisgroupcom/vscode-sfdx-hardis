@@ -2,11 +2,11 @@
 
 ## [Unreleased]
 
-## [5.9.1] 2024-06-25
+## [5.10.1] 2024-06-27
 
 - Add newest api version labels
 
-## [5.9.0] 2024-06-21
+## [5.10.0] 2024-06-21
 
 - Do not display error message if sf is installed via CodeBuilder
 - Debugger: perform SF related actions only if the breakpoint detected is on an Apex Class
