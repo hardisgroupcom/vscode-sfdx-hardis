@@ -422,7 +422,7 @@
   },
   "dependencies": {
     "@vscode/extension-telemetry": "^0.8.0",
-    "axios": "^1.8.2",
+    "axios": "^1.11.0",
     "chalk": "^5.0.0",
     "fs-extra": "^11.0.0",
     "get-port": "^7.1.0",
