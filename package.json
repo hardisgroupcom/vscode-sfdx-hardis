@@ -387,11 +387,11 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run -S esbuild-base -- --minify",
-    "esbuild-base": "rimraf out && esbuild ./src/worker.ts --bundle --outfile=out/worker.js --external:vscode --format=cjs --platform=node && esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node",
+    "vscode:prepublish": "npm run package",
     "compile": "tsc -p ./",
-    "build": "npm run -S esbuild-base -- --sourcemap",
-    "watch": "npm run -S esbuild-base -- --sourcemap --watch",
+    "build": "webpack",
+    "watch": "webpack --watch",
+    "package": "webpack --mode production --devtool hidden-source-map",
     "pretest": "yarn run compile && yarn run lint",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
@@ -412,13 +412,14 @@
     "@typescript-eslint/parser": "^8.0.0",
     "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^3.0.0",
-    "esbuild": "^0.25.0",
     "eslint": "^9.0.0",
     "glob": "^11.0.0",
     "lru-cache": "^7.18.3",
     "mocha": "^10.0.0",
-    "rimraf": "^6.0.1",
-    "typescript": "^5.0.0"
+    "ts-loader": "^9.5.2",
+    "typescript": "^5.0.0",
+    "webpack": "^5.101.0",
+    "webpack-cli": "^6.0.1"
   },
   "dependencies": {
     "@vscode/extension-telemetry": "^0.8.0",

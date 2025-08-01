@@ -19,7 +19,7 @@ This is a **Visual Studio Code extension** that provides an intuitive UI for **S
 - **Salesforce CLI (`sf`)** - Modern CLI commands (not legacy `sfdx`)
 - **Node.js Worker Threads** - Performance optimization
 - **WebSocket Server** - Real-time communication with CLI
-- **esbuild** - Bundling and build system
+- **webpack** - Bundling and build system
 - **yarn** - NPM packages manager (so use `yarn` commands instead of `npm`)
 
 ### Main Components

@@ -215,7 +215,8 @@ export default [
       'node_modules/**',
       '**/*.d.ts',
       '.vscode-test/**',
-      'vscode-sfdx-hardis-*.vsix'
+      'vscode-sfdx-hardis-*.vsix',
+      'webpack.config.js'
     ]
   }
 ]
