@@ -1,11 +1,14 @@
 import * as vscode from "vscode";
 
+type MessageListener = (messageType: string, data: any) => void;
+
 export class LwcUiPanel {
   private static currentPanels: Map<string, LwcUiPanel> = new Map();
   private readonly panel: vscode.WebviewPanel;
   private readonly extensionUri: vscode.Uri;
   private lwcId: string;
   private disposables: vscode.Disposable[] = [];
+  private messageListeners: MessageListener[] = [];
 
   private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, lwcId: string) {
     this.panel = panel;
@@ -22,23 +25,24 @@ export class LwcUiPanel {
     // Handle messages from the webview
     this.panel.webview.onDidReceiveMessage(
       (message) => {
-        // Instead of dispatching a DOM event, use VS Code's command system to broadcast the message
-        vscode.commands.executeCommand("sfdxHardis.lwcUiMessage", message);
+        // Notify local listeners first
+        this.notifyMessageListeners(message);
       },
       null,
       this.disposables
     );
   }
 
-  public static display(extensionUri: vscode.Uri, lwcId: string) {
+  public static display(extensionUri: vscode.Uri, lwcId: string): LwcUiPanel {
     const column = vscode.window.activeTextEditor
       ? vscode.window.activeTextEditor.viewColumn
       : undefined;
 
     // If we already have a panel, show it.
     if (LwcUiPanel.currentPanels.has(lwcId)) {
-      LwcUiPanel.currentPanels.get(lwcId)!.panel.reveal(column);
-      return LwcUiPanel.currentPanels.get(lwcId);
+      const existingPanel = LwcUiPanel.currentPanels.get(lwcId)!;
+      existingPanel.panel.reveal(column);
+      return existingPanel;
     }
 
     // Otherwise, create a new panel.
@@ -58,7 +62,9 @@ export class LwcUiPanel {
       }
     );
 
-    LwcUiPanel.currentPanels.set(lwcId, new LwcUiPanel(panel, extensionUri, lwcId));
+    const lwcUiPanel = new LwcUiPanel(panel, extensionUri, lwcId);
+    LwcUiPanel.currentPanels.set(lwcId, lwcUiPanel);
+    return lwcUiPanel;
   }
 
   public dispose() {
@@ -73,6 +79,43 @@ export class LwcUiPanel {
         x.dispose();
       }
     }
+    
+    // Clear message listeners
+    this.messageListeners = [];
+  }
+
+  /**
+   * Register a message listener for this panel
+   * @param listener Function that will be called when a message is received
+   * @returns Function to unregister the listener
+   */
+  public onMessage(listener: MessageListener): () => void {
+    this.messageListeners.push(listener);
+    
+    // Return unsubscribe function
+    return () => {
+      const index = this.messageListeners.indexOf(listener);
+      if (index > -1) {
+        this.messageListeners.splice(index, 1);
+      }
+    };
+  }
+
+  /**
+   * Notify all registered message listeners
+   * @param message The message received from the webview
+   */
+  private notifyMessageListeners(message: any): void {
+    const messageType = message.type || 'unknown';
+    const data = message.data || message;
+    
+    this.messageListeners.forEach(listener => {
+      try {
+        listener(messageType, data);
+      } catch (error) {
+        console.error('Error in LWC UI message listener:', error);
+      }
+    });
   }
 
   private update() {

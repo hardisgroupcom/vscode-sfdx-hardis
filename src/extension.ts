@@ -79,7 +79,30 @@ export function activate(context: vscode.ExtensionContext) {
   // Register LWC Demo command
   const lwcUiCommand = vscode.commands.registerCommand(
     "vscode-sfdx-hardis.lwcUi",
-    () => LwcUiPanel.display(context.extensionUri, "s-hello-world")
+    () => {
+      const lwcPanel = LwcUiPanel.display(context.extensionUri, "s-hello-world");
+      
+      // Example of how to use the onMessage listener
+      lwcPanel.onMessage((messageType, data) => {
+        Logger.log(`LWC UI Message - Type: ${messageType}`);
+        Logger.log(`LWC UI Message - Data: ${JSON.stringify(data)}`);
+        
+        // Handle different message types
+        switch (messageType) {
+          case 'button-click':
+            Logger.log('Button was clicked in LWC UI');
+            break;
+          case 'form-submit':
+            Logger.log('Form was submitted in LWC UI');
+            break;
+          default:
+            Logger.log(`Unknown message type: ${messageType}`);
+        }
+      });
+      
+      // Note: The onMessage method returns an unsubscribe function that can be 
+      // stored and called later to remove the listener when needed
+    }
   );
   context.subscriptions.push(lwcUiCommand);
 
