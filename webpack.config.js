@@ -140,6 +140,10 @@ const lwcWebviewConfig = {
         {
           from: path.resolve(__dirname, 'node_modules/@salesforce-ux/design-system/assets/icons'),
           to: 'assets/icons'
+        },
+        {
+          from: path.resolve(__dirname, 'node_modules/@salesforce-ux/design-system/assets/icons/utility-sprite/svg/symbols.svg'),
+          to: 'assets/utility-symbols.svg'
         }
       ]
     })

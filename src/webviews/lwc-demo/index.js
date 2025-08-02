@@ -6,6 +6,7 @@ import HelloWorld from 's/helloWorld';
 if (typeof window !== 'undefined') {
   window.lwcRuntimeFlags = window.lwcRuntimeFlags || {};
   window.lwcRuntimeFlags.ENABLE_SYNTHETIC_SHADOW_SUPPORT_FOR_TEMPLATE = true;
+  window.lwcRuntimeFlags.ENABLE_SYNTHETIC_SHADOW_SUPPORT_FOR_STYLE = true;
 }
 
 console.log('LWC Demo script starting with synthetic shadow DOM...');
@@ -34,15 +35,20 @@ function initializeLWC() {
     
     console.log('✅ LWC component mounted successfully!');
     
-    // Inject SLDS styles into the component's shadow root after mounting
+    // Inject SLDS resources into the shadow DOM after mounting
     setTimeout(async () => {
-      await injectSLDSStyles(element);
+      await injectSLDSResources(element);
       
       console.log('Component HTML after mount:', appContainer.innerHTML);
       console.log('Component children count:', appContainer.children.length);
       if (appContainer.children.length > 0) {
         console.log('✅ LWC component is visible in DOM');
         console.log('Component tag name:', appContainer.children[0].tagName);
+        
+        // Check if SLDS styles are being applied by looking for computed styles
+        const computedStyle = window.getComputedStyle(appContainer.children[0]);
+        console.log('Component display style:', computedStyle.display);
+        console.log('Component font-family:', computedStyle.fontFamily);
       } else {
         console.warn('⚠️ LWC component not visible in DOM');
       }
@@ -54,50 +60,57 @@ function initializeLWC() {
   }
 }
 
-// Function to inject SLDS styles into the component's shadow root
-async function injectSLDSStyles(element) {
+// Function to inject SLDS styles and SVG sprites into the component's shadow root
+async function injectSLDSResources(element) {
   try {
     // Get the shadow root of the LWC element
     const shadowRoot = element.shadowRoot || element;
     
     if (shadowRoot) {
-      // Get the SLDS CSS link from the document head to use the correct webview URI
-      const documentSldsLink = document.querySelector('link[href*="slds.css"]');
+      console.log('Found shadow root, injecting SLDS resources...');
       
+      // 1. Inject SLDS CSS link
+      const documentSldsLink = document.querySelector('link[href*="slds.css"]');
       if (documentSldsLink) {
-        console.log('Found SLDS link, fetching CSS content...');
-        
+        const sldsLink = document.createElement('link');
+        sldsLink.rel = 'stylesheet';
+        sldsLink.href = documentSldsLink.href;
+        shadowRoot.appendChild(sldsLink);
+        console.log('✅ SLDS CSS link injected into shadow root');
+      }
+      
+      // 2. Fetch and inject the actual SLDS utility symbols SVG
+      const utilitySymbolsUri = window.SLDS_UTILITY_SYMBOLS_URI;
+      if (utilitySymbolsUri) {
         try {
-          // Fetch the CSS content
-          const response = await fetch(documentSldsLink.href);
-          const cssContent = await response.text();
+          console.log('Fetching SLDS utility symbols from:', utilitySymbolsUri);
+          const response = await fetch(utilitySymbolsUri);
+          const svgContent = await response.text();
           
-          // Create a style element with the CSS content
-          const styleElement = document.createElement('style');
-          styleElement.textContent = cssContent;
+          // Create a container div for the SVG sprites
+          const svgContainer = document.createElement('div');
+          svgContainer.innerHTML = svgContent;
+          svgContainer.style.display = 'none';
+          svgContainer.id = 'slds-utility-sprites-shadow';
           
-          // Inject the style element into the shadow root
-          shadowRoot.appendChild(styleElement);
-          console.log('✅ SLDS styles injected as style element into shadow root');
+          // Inject the SVG sprites into the shadow root
+          shadowRoot.appendChild(svgContainer);
+          console.log('✅ SLDS utility symbols injected into shadow root');
           
         } catch (fetchError) {
-          console.error('❌ Error fetching SLDS CSS:', fetchError);
-          
-          // Fallback: try link element approach
-          const sldsLink = document.createElement('link');
-          sldsLink.rel = 'stylesheet';
-          sldsLink.href = documentSldsLink.href;
-          shadowRoot.appendChild(sldsLink);
-          console.log('✅ SLDS styles injected as link fallback');
+          console.error('❌ Error fetching SLDS utility symbols:', fetchError);
         }
       } else {
-        console.warn('⚠️ Could not find SLDS link in document head');
+        console.warn('⚠️ SLDS utility symbols URI not found');
       }
+      
+      console.log('✅ SLDS resources injection completed');
+      
     } else {
       console.warn('⚠️ No shadow root found, using document-level styles');
     }
   } catch (error) {
-    console.error('❌ Error injecting SLDS styles:', error);
+    console.error('❌ Error injecting SLDS resources:', error);
   }
 }
 

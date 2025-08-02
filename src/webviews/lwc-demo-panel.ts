@@ -102,6 +102,17 @@ export class LwcDemoPanel {
       )
     );
 
+    // Get path to SLDS SVG sprites
+    const sldsUtilitySymbolsUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(
+        this.extensionUri,
+        'out',
+        'webviews',
+        'assets',
+        'utility-symbols.svg'
+      )
+    );
+
     // Use a nonce to only allow specific scripts to be run
     const nonce = getNonce();
 
@@ -109,7 +120,7 @@ export class LwcDemoPanel {
       <html lang="en">
       <head>
         <meta charset="UTF-8">
-        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; img-src ${webview.cspSource} https:; script-src 'nonce-${nonce}' 'unsafe-eval' 'unsafe-inline';">
+        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; connect-src ${webview.cspSource}; img-src ${webview.cspSource} https:; script-src 'nonce-${nonce}' 'unsafe-eval' 'unsafe-inline';">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         
         <link href="${sldsStylesUri}" rel="stylesheet">
@@ -130,8 +141,23 @@ export class LwcDemoPanel {
             margin: 0 auto;
           }
         </style>
+        <script nonce="${nonce}">
+          // Configure LWC runtime for synthetic shadow DOM
+          window.lwcRuntimeFlags = {
+            ENABLE_SYNTHETIC_SHADOW_SUPPORT_FOR_TEMPLATE: true,
+            ENABLE_SYNTHETIC_SHADOW_SUPPORT_FOR_STYLE: true
+          };
+          
+          // Make SLDS utility symbols URI available globally
+          window.SLDS_UTILITY_SYMBOLS_URI = '${sldsUtilitySymbolsUri}';
+          
+          // Ensure SLDS is loaded before LWC initialization
+          window.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, SLDS styles should be available');
+          });
+        </script>
       </head>
-      <body>
+      <body class="slds-scope">
         <div id="app"></div>
         
         <!-- Hidden SVG sprites for SLDS icons -->
