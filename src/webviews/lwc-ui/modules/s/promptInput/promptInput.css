@@ -109,6 +109,16 @@
     margin-top: 4px;
 }
 
+.button-description-below {
+    font-size: 14px;
+    color: #666666;
+    line-height: 1.4;
+    margin-top: 8px;
+    font-style: italic;
+    display: block;
+    width: 100%;
+}
+
 /* For single column on small screens */
 @media (max-width: 600px) {
     .select-option-button {
@@ -228,29 +238,28 @@ lightning-combobox {
 
 /* Fix text input styling to make values appear dark */
 lightning-input {
-    --slds-c-input-color-text: #181818;
-    --slds-c-input-text-color: #181818;
-    --slds-c-input-color-text-default: #181818;
+    --slds-c-input-color-text: #181818 !important;
+    --slds-c-input-text-color: #181818 !important;
+    --slds-c-input-color-text-default: #181818 !important;
+    --slds-c-input-color-text-focus: #181818 !important;
+    --slds-c-input-color-text-active: #181818 !important;
 }
 
 /* Ensure text input values are visible and not grayed in all states */
 lightning-input input,
-lightning-input .slds-input {
+lightning-input .slds-input,
+lightning-input input:focus,
+lightning-input .slds-input:focus,
+lightning-input input:active,
+lightning-input .slds-input:active {
     color: #181818 !important;
     font-weight: 500 !important;
+    opacity: 1 !important;
 }
 
 /* Specific focus and content states */
-lightning-input input:focus,
-lightning-input .slds-input:focus,
 lightning-input input:not(:placeholder-shown),
-lightning-input .slds-input:not(:placeholder-shown) {
-    color: #181818 !important;
-    opacity: 1 !important;
-    font-weight: 500 !important;
-}
-
-/* Override any framework styles that might gray out text */
+lightning-input .slds-input:not(:placeholder-shown),
 lightning-input input[value]:not([value=""]),
 lightning-input .slds-input[value]:not([value=""]) {
     color: #181818 !important;
@@ -260,10 +269,38 @@ lightning-input .slds-input[value]:not([value=""]) {
 
 /* Ensure focused inputs with content remain dark */
 lightning-input:focus-within input,
-lightning-input:focus-within .slds-input {
+lightning-input:focus-within .slds-input,
+lightning-input.slds-has-focus input,
+lightning-input.slds-has-focus .slds-input {
     color: #181818 !important;
     opacity: 1 !important;
     font-weight: 500 !important;
+}
+
+/* Target all possible input elements within lightning-input */
+lightning-input input[type="text"],
+lightning-input input[type="number"],
+lightning-input .slds-input[type="text"],
+lightning-input .slds-input[type="number"] {
+    color: #181818 !important;
+    font-weight: 500 !important;
+    opacity: 1 !important;
+}
+
+/* Override any SLDS placeholder-like styling */
+lightning-input .slds-input::-webkit-input-placeholder {
+    color: #9e9e9e !important;
+    opacity: 0.6 !important;
+}
+
+lightning-input .slds-input::-moz-placeholder {
+    color: #9e9e9e !important;
+    opacity: 0.6 !important;
+}
+
+lightning-input .slds-input:-ms-input-placeholder {
+    color: #9e9e9e !important;
+    opacity: 0.6 !important;
 }
 
 /* Specific styling for prompt combobox */
@@ -287,6 +324,16 @@ lightning-input:focus-within .slds-input {
     --slds-c-input-color-text: #181818 !important;
     --slds-c-input-text-color: #181818 !important;
     --slds-c-input-color-text-default: #181818 !important;
+    --slds-c-input-color-text-focus: #181818 !important;
+    --slds-c-input-color-text-active: #181818 !important;
+}
+
+/* Global override for all input elements in this component */
+:host input,
+:host .slds-input {
+    color: #181818 !important;
+    font-weight: 500 !important;
+    opacity: 1 !important;
 }
 
 lightning-button {

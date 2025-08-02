@@ -62,7 +62,7 @@
                                     class="select-option-button">
                                     <div class="button-label">{option.label}</div>
                                     <template if:true={option.description}>
-                                        <div class="button-description">{option.description}</div>
+                                        <div class="button-description-below">{option.description}</div>
                                     </template>
                                 </button>
                             </template>
@@ -85,6 +85,8 @@
                             options={selectOptions}
                             value={selectedValue}
                             onchange={handleSelectChange}
+                            onselect={handleSelectChange}
+                            onclick={handleComboboxClick}
                             onkeydown={handleKeyDown}
                             class="prompt-combobox">
                         </lightning-combobox>
