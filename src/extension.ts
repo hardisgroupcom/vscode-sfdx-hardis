@@ -125,7 +125,7 @@ export function activate(context: vscode.ExtensionContext) {
         }
         // Wait a while to run WebSocket server, as it can be time consuming
         try {
-          commands.disposableWebSocketServer = new LocalWebSocketServer();
+          commands.disposableWebSocketServer = new LocalWebSocketServer(context);
           commands.disposableWebSocketServer.start();
           context.subscriptions.push(commands.disposableWebSocketServer);
           resolve(commands.disposableWebSocketServer);
@@ -141,7 +141,8 @@ export function activate(context: vscode.ExtensionContext) {
 
   async function manageWebSocketServer() {
     const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
-    if (config.get("userInput") === "ui") {
+    const userInput = config.get("userInput");
+    if (userInput === "ui-lwc" || userInput === "ui") {
       if (
         commands.disposableWebSocketServer === null ||
         commands.disposableWebSocketServer === undefined

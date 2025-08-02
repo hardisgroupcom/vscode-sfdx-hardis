@@ -4,21 +4,24 @@ import { WebSocketServer } from "ws";
 import * as vscode from "vscode";
 import { getWorkspaceRoot, stripAnsi } from "./utils";
 import { Logger } from "./logger";
+import { LwcUiPanel } from "./webviews/lwc-ui-panel";
 
 const DEFAULT_PORT = parseInt(process.env.SFDX_HARDIS_WEBSOCKET_PORT || "2702");
 let globalWss: LocalWebSocketServer | null;
 
 export class LocalWebSocketServer {
   public websocketHostPort: any = null;
+  private context: vscode.ExtensionContext ;
   private server: http.Server;
   private wss: WebSocketServer;
   private clients: any = {};
 
-  constructor() {
+  constructor(context: vscode.ExtensionContext) {
     console.time("WebSocketServer_init");
     this.server = http.createServer();
     this.wss = new WebSocketServer({ server: this.server });
     globalWss = this;
+    this.context = context || null;
     console.timeEnd("WebSocketServer_init");
   }
 
@@ -110,6 +113,22 @@ export class LocalWebSocketServer {
     // Request user input
     else if (data.event === "prompts") {
       const prompt = data.prompts[0];
+      const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+      // If user input is set to LWC UI, use the LWC UI panel
+      if (config.get("userInput") === "ui-lwc") {
+        const lwcPanel = LwcUiPanel.display(this.context.extensionUri, "s-prompt-input", {prompt: prompt});
+        lwcPanel.onMessage((messageType, data) => {
+          if (messageType === "submit") {
+            // The data should contain the response object with the prompt name as key
+            this.sendResponse(ws, {
+              event: "promptsResponse",
+              promptsResponse: [data],
+            });
+          }
+        });
+        return;
+      }
+
       const maxLenMessage = 1000;
       prompt.message =
         prompt.message > maxLenMessage

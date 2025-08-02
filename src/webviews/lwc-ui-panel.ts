@@ -9,11 +9,13 @@ export class LwcUiPanel {
   private lwcId: string;
   private disposables: vscode.Disposable[] = [];
   private messageListeners: MessageListener[] = [];
+  private initializationData: any = null;
 
-  private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, lwcId: string) {
+  private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, lwcId: string, initData?: any) {
     this.panel = panel;
     this.extensionUri = extensionUri;
     this.lwcId = lwcId;
+    this.initializationData = initData || null;
 
     // Set the webview's initial html content
     this.update();
@@ -31,9 +33,16 @@ export class LwcUiPanel {
       null,
       this.disposables
     );
+
+    // Send initialization data to the webview after a short delay to ensure it's ready
+    if (this.initializationData) {
+      setTimeout(() => {
+        this.sendInitializationData(this.initializationData);
+      }, 100);
+    }
   }
 
-  public static display(extensionUri: vscode.Uri, lwcId: string): LwcUiPanel {
+  public static display(extensionUri: vscode.Uri, lwcId: string, initData?: any): LwcUiPanel {
     const column = vscode.window.activeTextEditor
       ? vscode.window.activeTextEditor.viewColumn
       : undefined;
@@ -42,6 +51,10 @@ export class LwcUiPanel {
     if (LwcUiPanel.currentPanels.has(lwcId)) {
       const existingPanel = LwcUiPanel.currentPanels.get(lwcId)!;
       existingPanel.panel.reveal(column);
+      // Send initialization data if provided
+      if (initData) {
+        existingPanel.sendInitializationData(initData);
+      }
       return existingPanel;
     }
 
@@ -62,7 +75,7 @@ export class LwcUiPanel {
       }
     );
 
-    const lwcUiPanel = new LwcUiPanel(panel, extensionUri, lwcId);
+    const lwcUiPanel = new LwcUiPanel(panel, extensionUri, lwcId, initData);
     LwcUiPanel.currentPanels.set(lwcId, lwcUiPanel);
     return lwcUiPanel;
   }
@@ -82,6 +95,26 @@ export class LwcUiPanel {
     
     // Clear message listeners
     this.messageListeners = [];
+  }
+
+  /**
+   * Send initialization data to the webview
+   * @param data The data to send to the webview for initialization
+   */
+  public sendInitializationData(data: any): void {
+    this.initializationData = data;
+    this.panel.webview.postMessage({
+      type: 'initialize',
+      data: data
+    });
+  }
+
+  /**
+   * Send a message to the webview
+   * @param message The message to send
+   */
+  public sendMessage(message: any): void {
+    this.panel.webview.postMessage(message);
   }
 
   /**
@@ -169,7 +202,7 @@ export class LwcUiPanel {
         <title>SFDX Hardis LWC UI</title>
       </head>
       <body class="slds-scope">
-        <div id="app" data-lwc-id="${this.lwcId}"></div>
+        <div id="app" data-lwc-id="${this.lwcId}" data-init-data='${JSON.stringify(this.initializationData || {})}'></div>
         
         <script nonce="${nonce}" src="${scriptUri}"></script>
       </body>

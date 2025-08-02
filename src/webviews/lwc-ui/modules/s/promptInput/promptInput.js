@@ -11,6 +11,28 @@ export default class PromptInput extends LightningElement {
     connectedCallback() {
         // Listen for prompt events from parent
         this.addEventListener('promptrequest', this.handlePromptRequest.bind(this));
+        
+        // Make component available globally for VS Code message handling
+        if (typeof window !== 'undefined') {
+            window.promptInputComponent = this;
+        }
+    }
+
+    disconnectedCallback() {
+        // Clean up global reference
+        if (typeof window !== 'undefined' && window.promptInputComponent === this) {
+            window.promptInputComponent = null;
+        }
+    }
+
+    @api
+    initialize(initData) {
+        // Handle initialization from VS Code
+        if (initData && initData.prompt) {
+            this.showPrompt({ prompts: [initData.prompt] });
+        } else if (initData && initData.prompts) {
+            this.showPrompt(initData);
+        }
     }
 
     @api
@@ -176,7 +198,15 @@ export default class PromptInput extends LightningElement {
     }
 
     dispatchPromptResponse(response) {
-        // Dispatch custom event to parent component
+        // Send message to VS Code via the global API
+        if (typeof window !== 'undefined' && window.sendMessageToVSCode) {
+            window.sendMessageToVSCode({
+                type: 'submit',
+                data: response
+            });
+        }
+        
+        // Also dispatch custom event to parent component for local handling
         const responseEvent = new CustomEvent('promptresponse', {
             detail: {
                 event: 'promptsResponse',
