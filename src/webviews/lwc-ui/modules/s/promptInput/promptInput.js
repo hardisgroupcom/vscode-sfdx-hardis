@@ -5,6 +5,8 @@ export default class PromptInput extends LightningElement {
     @track currentPrompt = null;
     @track inputValue = '';
     @track selectedValues = [];
+    @track selectedValue = ''; // Single value for select input
+    @track selectedOptionDescription = ''; // Description for selected option
     @track isVisible = false;
     @track error = null;
 
@@ -16,6 +18,24 @@ export default class PromptInput extends LightningElement {
         // Make component available globally for VS Code message handling
         if (typeof window !== 'undefined') {
             window.promptInputComponent = this;
+        }
+    }
+
+    renderedCallback() {
+        // Update the prompt message content manually to properly handle HTML entities
+        const messageElement = this.template.querySelector('.prompt-message-content');
+        if (messageElement && this.currentPrompt && this.currentPrompt.message) {
+            messageElement.textContent = this.decodeHtmlEntities(this.currentPrompt.message);
+        }
+        
+        // Focus the first input element when the prompt becomes visible
+        if (this.isVisible && this.currentPrompt) {
+            setTimeout(() => {
+                const firstInput = this.template.querySelector('lightning-input, lightning-combobox');
+                if (firstInput && typeof firstInput.focus === 'function') {
+                    firstInput.focus();
+                }
+            }, 100);
         }
     }
 
@@ -53,7 +73,12 @@ export default class PromptInput extends LightningElement {
             // Set initial values
             if (this.currentPrompt.type === 'text' || this.currentPrompt.type === 'number') {
                 this.inputValue = this.currentPrompt.initial || '';
-            } else if (this.currentPrompt.type === 'select' || this.currentPrompt.type === 'multiselect') {
+            } else if (this.currentPrompt.type === 'select') {
+                // For single select, find the first selected choice
+                const selectedChoice = this.currentPrompt.choices && this.currentPrompt.choices.find(choice => choice.selected);
+                this.selectedValue = selectedChoice ? selectedChoice.value : '';
+                this.selectedOptionDescription = selectedChoice ? this.decodeHtmlEntities(selectedChoice.description || '') : '';
+            } else if (this.currentPrompt.type === 'multiselect') {
                 this.selectedValues = this.currentPrompt.choices && this.currentPrompt.choices
                     .filter(choice => choice.selected)
                     .map(choice => choice.value) || [];
@@ -72,6 +97,8 @@ export default class PromptInput extends LightningElement {
     resetValues() {
         this.inputValue = '';
         this.selectedValues = [];
+        this.selectedValue = '';
+        this.selectedOptionDescription = '';
         this.error = null;
     }
 
@@ -92,11 +119,23 @@ export default class PromptInput extends LightningElement {
     }
 
     get promptMessage() {
-        return this.currentPrompt && this.currentPrompt.message || '';
+        const message = this.currentPrompt && this.currentPrompt.message || '';
+        return this.decodeHtmlEntities(message);
     }
 
     get promptPlaceholder() {
-        return this.currentPrompt && this.currentPrompt.placeholder || '';
+        const placeholder = this.currentPrompt && this.currentPrompt.placeholder || '';
+        return this.decodeHtmlEntities(placeholder);
+    }
+
+    // Helper method to decode HTML entities
+    decodeHtmlEntities(text) {
+        if (!text || typeof text !== 'string') return text;
+        
+        // Create a temporary element to decode HTML entities
+        const textarea = document.createElement('textarea');
+        textarea.innerHTML = text;
+        return textarea.value;
     }
 
     get promptName() {
@@ -112,9 +151,9 @@ export default class PromptInput extends LightningElement {
         if (!this.currentPrompt || !this.currentPrompt.choices) return [];
         
         return this.currentPrompt.choices.map(choice => ({
-            label: choice.title,
+            label: this.decodeHtmlEntities(choice.title),
             value: choice.value,
-            description: choice.description || '',
+            description: this.decodeHtmlEntities(choice.description || ''),
             selected: choice.selected || false
         }));
     }
@@ -123,9 +162,9 @@ export default class PromptInput extends LightningElement {
         if (!this.currentPrompt || !this.currentPrompt.choices) return [];
         
         return this.currentPrompt.choices.map(choice => ({
-            label: choice.title,
+            label: this.decodeHtmlEntities(choice.title),
             value: choice.value,
-            description: choice.description || '',
+            description: this.decodeHtmlEntities(choice.description || ''),
             checked: this.selectedValues.includes(choice.value)
         }));
     }
@@ -146,9 +185,28 @@ export default class PromptInput extends LightningElement {
         this.error = null;
     }
 
+    handleKeyDown(event) {
+        // Submit on Enter key press
+        if (event.key === 'Enter' || event.keyCode === 13) {
+            event.preventDefault();
+            this.handleSubmit();
+        }
+        // Cancel on Escape key press
+        else if (event.key === 'Escape' || event.keyCode === 27) {
+            event.preventDefault();
+            this.handleCancel();
+        }
+    }
+
     handleSelectChange(event) {
-        this.selectedValues = [event.target.value];
+        this.selectedValue = event.target.value;
         this.error = null;
+        
+        // Find and set the description for the selected option
+        if (this.currentPrompt && this.currentPrompt.choices) {
+            const selectedChoice = this.currentPrompt.choices.find(choice => choice.value === this.selectedValue);
+            this.selectedOptionDescription = selectedChoice ? this.decodeHtmlEntities(selectedChoice.description || '') : '';
+        }
     }
 
     handleMultiselectChange(event) {
@@ -174,7 +232,11 @@ export default class PromptInput extends LightningElement {
 
     handleCancel() {
         const response = {};
-        response[this.promptName] = this.isMultiselectInput ? [] : 'exitNow';
+        if (this.isMultiselectInput) {
+            response[this.promptName] = [];
+        } else {
+            response[this.promptName] = 'exitNow';
+        }
         this.dispatchPromptResponse(response);
     }
 
@@ -196,10 +258,10 @@ export default class PromptInput extends LightningElement {
                 response[promptName] = numValue;
             }
         } else if (this.isSelectInput) {
-            if (this.selectedValues.length === 0) {
+            if (!this.selectedValue || this.selectedValue === '') {
                 response[promptName] = 'exitNow';
             } else {
-                response[promptName] = this.selectedValues[0];
+                response[promptName] = this.selectedValue;
             }
         } else if (this.isMultiselectInput) {
             response[promptName] = this.selectedValues;

@@ -1,46 +1,39 @@
 <template>
-    <!-- Debug info -->
-    <div class="slds-p-around_small" style="background: #f3f3f3; border: 1px solid #ccc; margin-bottom: 1rem;">
-        <p>Debug - isVisible: {isVisible}</p>
-        <p>Debug - currentPrompt: {currentPrompt}</p>
-        <p>Debug - promptMessage: {promptMessage}</p>
-    </div>
-
     <template if:true={isVisible}>
-        <div class="prompt-container">
-            <lightning-card title="Input Required" icon-name="utility:question">
-                <div class="slds-p-around_medium">
-                    <!-- Prompt Message -->
-                    <div class="slds-m-bottom_medium">
-                        <p class="slds-text-body_regular prompt-message">
-                            {promptMessage}
-                        </p>
-                    </div>
+        <div class="prompt-inline-container" onkeydown={handleKeyDown}>
+            <div class="prompt-card">
+                <!-- Prompt Message -->
+                <div class="prompt-header">
+                    <span class="prompt-message-content"></span>
+                </div>
 
-                    <!-- Error Message -->
-                    <template if:true={error}>
-                        <div class="slds-m-bottom_medium">
-                            <div class="slds-notify slds-notify_alert slds-theme_alert-texture slds-theme_error" role="alert">
-                                <span class="slds-assistive-text">Error</span>
-                                <h2>{error}</h2>
-                            </div>
+                <!-- Error Message -->
+                <template if:true={error}>
+                    <div class="error-message">
+                        <div class="slds-notify slds-notify_alert slds-theme_error" role="alert">
+                            <span class="slds-assistive-text">Error</span>
+                            <span>{error}</span>
                         </div>
-                    </template>
+                    </div>
+                </template>
 
-                    <!-- Text Input -->
-                    <template if:true={isTextInput}>
+                <!-- Text Input -->
+                <template if:true={isTextInput}>
+                    <div class="input-section">
                         <lightning-input
                             type="text"
                             label="Your Input"
                             placeholder={promptPlaceholder}
                             value={inputValue}
                             onchange={handleInputChange}
-                            class="slds-m-bottom_medium">
+                            onkeydown={handleKeyDown}>
                         </lightning-input>
-                    </template>
+                    </div>
+                </template>
 
-                    <!-- Number Input -->
-                    <template if:true={isNumberInput}>
+                <!-- Number Input -->
+                <template if:true={isNumberInput}>
+                    <div class="input-section">
                         <lightning-input
                             type="number"
                             label="Your Input"
@@ -48,41 +41,51 @@
                             value={inputValue}
                             step={numberStep}
                             onchange={handleInputChange}
-                            class="slds-m-bottom_medium">
+                            onkeydown={handleKeyDown}>
                         </lightning-input>
-                    </template>
+                    </div>
+                </template>
 
-                    <!-- Select Input -->
-                    <template if:true={isSelectInput}>
+                <!-- Select Input -->
+                <template if:true={isSelectInput}>
+                    <div class="input-section">
                         <lightning-combobox
                             label="Select an option"
                             placeholder="Choose an option..."
                             options={selectOptions}
-                            value={selectedValues}
+                            value={selectedValue}
                             onchange={handleSelectChange}
-                            class="slds-m-bottom_medium">
+                            onkeydown={handleKeyDown}>
                         </lightning-combobox>
-                    </template>
+                        <!-- Display description for selected option -->
+                        <template if:true={selectedOptionDescription}>
+                            <div class="option-description">
+                                {selectedOptionDescription}
+                            </div>
+                        </template>
+                    </div>
+                </template>
 
-                    <!-- Multiselect Input -->
-                    <template if:true={isMultiselectInput}>
+                <!-- Multiselect Input -->
+                <template if:true={isMultiselectInput}>
+                    <div class="input-section">
                         <fieldset class="slds-form-element">
                             <legend class="slds-form-element__legend slds-form-element__label">
                                 Select options (multiple allowed)
                             </legend>
                             <div class="slds-form-element__control">
                                 <template for:each={multiselectOptions} for:item="option">
-                                    <div key={option.value} class="slds-checkbox slds-m-bottom_x-small">
+                                    <div key={option.value} class="checkbox-option">
                                         <lightning-input
                                             type="checkbox"
                                             label={option.label}
                                             value={option.value}
                                             checked={option.checked}
                                             onchange={handleMultiselectChange}
-                                            class="checkbox-option">
+                                            onkeydown={handleKeyDown}>
                                         </lightning-input>
                                         <template if:true={option.description}>
-                                            <div class="slds-text-body_small slds-text-color_weak slds-m-left_large">
+                                            <div class="option-description-small">
                                                 {option.description}
                                             </div>
                                         </template>
@@ -90,29 +93,32 @@
                                 </template>
                             </div>
                         </fieldset>
-                    </template>
+                    </div>
+                </template>
 
-                    <!-- Action Buttons -->
-                    <div class="slds-m-top_large">
-                        <div class="slds-button-group" role="group">
-                            <lightning-button
-                                variant="brand"
-                                label="Submit"
-                                icon-name="utility:check"
-                                onclick={handleSubmit}
-                                class="submit-button">
-                            </lightning-button>
-                            <lightning-button
-                                variant="neutral"
-                                label="Cancel"
-                                icon-name="utility:close"
-                                onclick={handleCancel}
-                                class="cancel-button">
-                            </lightning-button>
-                        </div>
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                    <div class="keyboard-hint">
+                        Press Enter to submit, Esc to cancel
+                    </div>
+                    <div class="action-buttons-right">
+                        <lightning-button
+                            variant="brand"
+                            label="Submit"
+                            icon-name="utility:check"
+                            onclick={handleSubmit}
+                            class="action-button">
+                        </lightning-button>
+                        <lightning-button
+                            variant="neutral"
+                            label="Cancel"
+                            icon-name="utility:close"
+                            onclick={handleCancel}
+                            class="action-button">
+                        </lightning-button>
                     </div>
                 </div>
-            </lightning-card>
+            </div>
         </div>
     </template>
 </template>

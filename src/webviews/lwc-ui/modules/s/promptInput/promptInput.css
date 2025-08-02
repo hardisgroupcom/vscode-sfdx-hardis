@@ -1,96 +1,161 @@
-/* Prompt Input Component Styles */
+/* Prompt Input Component Styles - Inline Design */
 :host {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Inline container - no modal */
+.prompt-inline-container {
+    width: 100%;
+    padding: 16px;
+    box-sizing: border-box;
+}
+
+.prompt-card {
+    background: #ffffff;
+    border: 1px solid #dddbda;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    max-width: 100%;
+    box-sizing: border-box;
+    position: relative;
+}
+
+.prompt-card:focus-within {
+    border-color: #0176d3;
+    box-shadow: 0 2px 8px rgba(1, 118, 211, 0.2);
+}
+
+/* Prompt header */
+.prompt-header {
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.prompt-message-content {
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 1.4;
+    color: #181818;
+    display: block;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+/* Error message */
+.error-message {
+    margin-bottom: 16px;
+}
+
+/* Input sections */
+.input-section {
+    margin-bottom: 16px;
+}
+
+/* Option description */
+.option-description {
+    margin-top: 8px;
+    padding: 8px 12px;
+    background-color: #f8f9fa;
+    border-left: 3px solid #0176d3;
+    border-radius: 4px;
+    font-size: 14px;
+    color: #444444;
+    line-height: 1.4;
+}
+
+.option-description-small {
+    margin-top: 4px;
+    margin-left: 24px;
+    font-size: 13px;
+    color: #666666;
+    line-height: 1.3;
+}
+
+/* Checkbox options */
+.checkbox-option {
+    margin-bottom: 12px;
+}
+
+/* Action buttons */
+.action-buttons {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid #e5e5e5;
+    display: flex;
+    gap: 12px;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.keyboard-hint {
+    font-size: 12px;
+    color: #666666;
+    font-style: italic;
+}
+
+.action-buttons-right {
+    display: flex;
+    gap: 12px;
+}
+
+.action-button {
+    min-width: 80px;
+}
+
+/* Responsive design */
+@media (max-width: 600px) {
+    .prompt-inline-container {
+        padding: 12px;
+    }
+    
+    .prompt-card {
+        padding: 16px;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+        gap: 12px;
+        align-items: stretch;
+    }
+    
+    .keyboard-hint {
+        text-align: center;
+        order: 1;
+    }
+    
+    .action-buttons-right {
+        flex-direction: column;
+        gap: 8px;
+        order: 0;
+    }
+    
+    .action-button {
+        width: 100%;
+    }
+}
+
+/* Ensure no horizontal scrolling */
+* {
+    box-sizing: border-box;
+    max-width: 100%;
+}
+
+/* Form element overrides */
+.slds-form-element {
+    margin-bottom: 0;
+}
+
+/* Lightning component overrides to prevent overflow */
+lightning-input,
+lightning-combobox {
     display: block;
     width: 100%;
 }
 
-.prompt-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-    padding: 1rem;
-}
-
-.prompt-container lightning-card {
-    max-width: 600px;
-    width: 100%;
-    max-height: 80vh;
-    overflow-y: auto;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-}
-
-.prompt-message {
-    font-size: 1.1rem;
-    line-height: 1.5;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-}
-
-.checkbox-option {
-    margin-bottom: 0.5rem;
-}
-
-.slds-button-group {
-    display: flex;
-    gap: 0.5rem;
-    justify-content: flex-end;
-}
-
-.slds-button-group lightning-button {
-    margin: 0;
-}
-
-/* Ensure proper spacing for form elements */
-.slds-form-element {
-    margin-bottom: 1rem;
-}
-
-.slds-checkbox {
-    margin-bottom: 0.25rem;
-}
-
-/* Custom scrollbar for better UX */
-.prompt-container lightning-card::-webkit-scrollbar {
-    width: 8px;
-}
-
-.prompt-container lightning-card::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 4px;
-}
-
-.prompt-container lightning-card::-webkit-scrollbar-thumb {
-    background: #888;
-    border-radius: 4px;
-}
-
-.prompt-container lightning-card::-webkit-scrollbar-thumb:hover {
-    background: #555;
-}
-
-/* Responsive design */
-@media (max-width: 768px) {
-    .prompt-container {
-        padding: 0.5rem;
-    }
-    
-    .prompt-container lightning-card {
-        max-width: 100%;
-        max-height: 90vh;
-    }
-    
-    .slds-button-group {
-        flex-direction: column;
-    }
-    
-    .slds-button-group lightning-button {
-        width: 100%;
-    }
+lightning-button {
+    display: inline-block;
 }

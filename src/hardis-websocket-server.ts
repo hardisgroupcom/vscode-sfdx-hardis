@@ -124,6 +124,7 @@ export class LocalWebSocketServer {
               event: "promptsResponse",
               promptsResponse: [data],
             });
+            lwcPanel.dispose();
           }
         });
         return;
