@@ -129,35 +129,29 @@ export class LwcDemoPanel {
             max-width: 800px;
             margin: 0 auto;
           }
-          
-          /* Fallback content styling */
-          .loading {
-            text-align: center;
-            padding: 2rem;
-            color: #666;
-          }
         </style>
       </head>
       <body>
-        <div id="app">
-          <div class="loading">Loading LWC Demo...</div>
-        </div>
+        <div id="app"></div>
         
-        <script nonce="${nonce}">
-          // Debug logging
-          console.log('Webview loading...');
-          window.addEventListener('error', (e) => {
-            console.error('Webview error:', e);
-          });
-          
-          // Add a timeout to show if script fails to load
-          setTimeout(() => {
-            const loadingDiv = document.querySelector('.loading');
-            if (loadingDiv && loadingDiv.textContent === 'Loading LWC Demo...') {
-              loadingDiv.innerHTML = 'Script failed to load. Check browser console for errors.';
-            }
-          }, 5000);
-        </script>
+        <!-- Hidden SVG sprites for SLDS icons -->
+        <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+          <defs>
+            <symbol id="utility-announcement" viewBox="0 0 520 520">
+              <path d="M430 190c-17-54-64-90-120-90s-103 36-120 90h-40c-28 0-50 22-50 50v80c0 28 22 50 50 50h40c17 54 64 90 120 90s103-36 120-90h40c28 0 50-22 50-50v-80c0-28-22-50-50-50h-40zm-120 180c-33 0-60-27-60-60v-40c0-33 27-60 60-60s60 27 60 60v40c0 33-27 60-60 60z"/>
+            </symbol>
+            <symbol id="utility-add" viewBox="0 0 520 520">
+              <path d="M460 230H290V60c0-17-13-30-30-30s-30 13-30 30v170H60c-17 0-30 13-30 30s13 30 30 30h170v170c0 17 13 30 30 30s30-13 30-30V290h170c17 0 30-13 30-30s-13-30-30-30z"/>
+            </symbol>
+            <symbol id="utility-dash" viewBox="0 0 520 520">
+              <path d="M460 230H60c-17 0-30 13-30 30s13 30 30 30h400c17 0 30-13 30-30s-13-30-30-30z"/>
+            </symbol>
+            <symbol id="utility-refresh" viewBox="0 0 520 520">
+              <path d="M260 60c-55 0-105 22-141 58l-26-26c-6-6-15-6-21 0s-6 15 0 21l70 70c6 6 15 6 21 0l70-70c6-6 6-15 0-21s-15-6-21 0l-25 25c27-27 64-43 104-43 80 0 145 65 145 145s-65 145-145 145c-62 0-115-39-135-94-3-8-12-12-20-9s-12 12-9 20c26 71 93 123 174 123 100 0 180-80 180-180S360 60 260 60z"/>
+            </symbol>
+          </defs>
+        </svg>
+        
         <script nonce="${nonce}" src="${scriptUri}"></script>
       </body>
       </html>`;

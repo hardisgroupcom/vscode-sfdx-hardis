@@ -1,4 +1,5 @@
 const path = require('path');
+const webpack = require('webpack');
 const LwcWebpackPlugin = require('lwc-webpack-plugin');
 
 /** @type {import('webpack').Configuration} */
@@ -87,6 +88,9 @@ const lwcWebviewConfig = {
   },
   resolve: {
     extensions: ['.js', '.ts'],
+    fallback: {
+      "process": require.resolve("process/browser"),
+    }
   },
   module: {
     rules: [
@@ -103,11 +107,7 @@ const lwcWebviewConfig = {
               presets: ['@babel/preset-env'],
               plugins: [
                 ['@lwc/babel-plugin-component', {
-                  modules: [
-                    {
-                      dir: path.resolve(__dirname, 'src/webviews/lwc-demo/modules'),
-                    }
-                  ]
+                  namespace: 's'
                 }]
               ]
             }
@@ -117,6 +117,9 @@ const lwcWebviewConfig = {
     ]
   },
   plugins: [
+    new webpack.ProvidePlugin({
+      process: 'process/browser',
+    }),
     new LwcWebpackPlugin({
       modules: [
         {
