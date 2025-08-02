@@ -82,10 +82,10 @@ const lwcWebviewConfig = {
   target: 'web',
   mode: 'none',
   
-  entry: './src/webviews/lwc-demo/index.js',
+  entry: './src/webviews/lwc-ui/index.js',
   output: {
     path: path.resolve(__dirname, 'out', 'webviews'),
-    filename: 'lwc-demo.js',
+    filename: 'lwc-ui.js',
   },
   resolve: {
     extensions: ['.js', '.ts'],
@@ -98,7 +98,7 @@ const lwcWebviewConfig = {
       {
         test: /\.js$/,
         include: [
-          path.resolve(__dirname, 'src/webviews/lwc-demo'),
+          path.resolve(__dirname, 'src/webviews/lwc-ui'),
           path.resolve(__dirname, 'src/webviews'),
         ],
         use: [
@@ -124,7 +124,7 @@ const lwcWebviewConfig = {
     new LwcWebpackPlugin({
       modules: [
         {
-          dir: path.resolve(__dirname, 'src/webviews/lwc-demo/modules'),
+          dir: path.resolve(__dirname, 'src/webviews/lwc-ui/modules'),
         },
         {
           npm: 'lightning-base-components'

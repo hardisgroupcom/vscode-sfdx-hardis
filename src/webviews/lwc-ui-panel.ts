@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 
-export class LwcDemoPanel {
-  private static currentPanel: LwcDemoPanel | undefined;
+export class LwcUiPanel {
+  private static currentPanel: LwcUiPanel | undefined;
   private readonly panel: vscode.WebviewPanel;
   private readonly extensionUri: vscode.Uri;
   private disposables: vscode.Disposable[] = [];
@@ -37,15 +37,15 @@ export class LwcDemoPanel {
       : undefined;
 
     // If we already have a panel, show it.
-    if (LwcDemoPanel.currentPanel) {
-      LwcDemoPanel.currentPanel.panel.reveal(column);
+    if (LwcUiPanel.currentPanel) {
+      LwcUiPanel.currentPanel.panel.reveal(column);
       return;
     }
 
     // Otherwise, create a new panel.
     const panel = vscode.window.createWebviewPanel(
-      "lwcDemo",
-      "SFDX Hardis LWC Demo",
+      "lwcUi",
+      "SFDX Hardis LWC UI",
       column || vscode.ViewColumn.One,
       {
         // Enable javascript in the webview
@@ -59,11 +59,11 @@ export class LwcDemoPanel {
       }
     );
 
-    LwcDemoPanel.currentPanel = new LwcDemoPanel(panel, extensionUri);
+    LwcUiPanel.currentPanel = new LwcUiPanel(panel, extensionUri);
   }
 
   public dispose() {
-    LwcDemoPanel.currentPanel = undefined;
+    LwcUiPanel.currentPanel = undefined;
 
     // Clean up our resources
     this.panel.dispose();
@@ -79,14 +79,14 @@ export class LwcDemoPanel {
   private update() {
     const webview = this.panel.webview;
 
-    this.panel.title = "SFDX Hardis LWC Demo";
+    this.panel.title = "SFDX Hardis LWC UI";
     this.panel.webview.html = this.getHtmlForWebview(webview);
   }
 
   private getHtmlForWebview(webview: vscode.Webview) {
     // Get the local path to main script run in the webview, then convert it to a uri we can use in the webview.
     const scriptUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this.extensionUri, 'out', 'webviews', 'lwc-demo.js')
+      vscode.Uri.joinPath(this.extensionUri, 'out', 'webviews', 'lwc-ui.js')
     );
 
     // Get path to SLDS CSS (copied by webpack)
@@ -124,7 +124,7 @@ export class LwcDemoPanel {
         <link href="${sldsStylesUri}" rel="stylesheet">
         <link rel="icons" href="${sldsIconsUri}">
         
-        <title>SFDX Hardis LWC Demo</title>
+        <title>SFDX Hardis LWC UI</title>
       </head>
       <body class="slds-scope">
         <div id="app"></div>

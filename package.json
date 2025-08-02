@@ -160,8 +160,8 @@
         "icon": "$(gear)"
       },
       {
-        "command": "vscode-sfdx-hardis.lwcDemo",
-        "title": "SFDX Hardis: LWC Demo",
+        "command": "vscode-sfdx-hardis.lwcUi",
+        "title": "SFDX Hardis: LWC UI",
         "icon": "$(preview)"
       },
       {
@@ -308,7 +308,7 @@
           "group": "navigation"
         },
         {
-          "command": "vscode-sfdx-hardis.lwcDemo",
+          "command": "vscode-sfdx-hardis.lwcUi",
           "when": "view == sfdx-hardis-commands",
           "group": "navigation"
         },

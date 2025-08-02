@@ -1,9 +1,9 @@
-// LWC Demo Webview Entry Point - Simplified following Skyline patterns
+// LWC UI Webview Entry Point - Simplified following Skyline patterns
 import '@lwc/synthetic-shadow';
 import { createElement } from 'lwc';
 import HelloWorld from 's/helloWorld';
 
-console.log('LWC Demo initializing...');
+console.log('LWC UI initializing...');
 
 // Wait for DOM to be ready
 document.addEventListener('DOMContentLoaded', () => {
