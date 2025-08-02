@@ -1,0 +1,30 @@
+/* Custom styles for the Hello World LWC component */
+:host {
+    display: block;
+    height: 100vh;
+    padding: 1rem;
+    background: var(--slds-g-color-neutral-base-95, #f3f3f3);
+}
+
+.demo-container {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.slds-card {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.counter-display {
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--slds-g-color-brand-base-60, #1b96ff);
+}
+
+.feature-list {
+    text-align: left;
+}
+
+.demo-button {
+    margin: 0.25rem;
+}

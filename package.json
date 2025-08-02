@@ -160,6 +160,11 @@
         "icon": "$(gear)"
       },
       {
+        "command": "vscode-sfdx-hardis.lwcDemo",
+        "title": "SFDX Hardis: LWC Demo",
+        "icon": "$(preview)"
+      },
+      {
         "command": "vscode-sfdx-hardis.selectColorForOrg",
         "title": "SFDX Hardis: Select color for current default org",
         "icon": "$(symbol-color)"
@@ -303,6 +308,11 @@
           "group": "navigation"
         },
         {
+          "command": "vscode-sfdx-hardis.lwcDemo",
+          "when": "view == sfdx-hardis-commands",
+          "group": "navigation"
+        },
+        {
           "command": "vscode-sfdx-hardis.openValidationLink",
           "when": "view == sfdx-hardis-commands",
           "group": "navigation"
@@ -398,7 +408,14 @@
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
+    "@babel/core": "^7.28.0",
+    "@babel/preset-env": "^7.28.0",
     "@eslint/js": "^9.29.0",
+    "@lwc/babel-plugin-component": "^8.20.2",
+    "@lwc/engine-dom": "^8.20.2",
+    "@lwc/module-resolver": "^8.20.2",
+    "@lwc/synthetic-shadow": "^8.20.2",
+    "@salesforce-ux/design-system": "^2.27.2",
     "@types/fs-extra": "^11.0.4",
     "@types/git-url-parse": "^9.0.1",
     "@types/glob": "^8.0.0",
@@ -412,10 +429,15 @@
     "@typescript-eslint/parser": "^8.0.0",
     "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^3.0.0",
+    "babel-loader": "^10.0.0",
+    "css-loader": "^7.1.2",
     "eslint": "^9.0.0",
     "glob": "^11.0.0",
     "lru-cache": "^7.18.3",
+    "lwc": "^8.20.2",
+    "lwc-webpack-plugin": "^3.1.0",
     "mocha": "^10.0.0",
+    "style-loader": "^4.0.0",
     "ts-loader": "^9.5.2",
     "typescript": "^5.0.0",
     "webpack": "^5.101.0",

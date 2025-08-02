@@ -12,6 +12,7 @@ import { LocalWebSocketServer } from "./hardis-websocket-server";
 import { Logger } from "./logger";
 import { getWorkspaceRoot, preLoadCache } from "./utils";
 import { WelcomePanel } from "./webviews/welcome";
+import { LwcDemoPanel } from "./webviews/lwc-demo-panel";
 import { HardisColors } from "./hardis-colors";
 
 let refreshInterval: any = null;
@@ -79,6 +80,13 @@ export function activate(context: vscode.ExtensionContext) {
     reporter,
   );
   context.subscriptions.push(...commands.disposables);
+
+  // Register LWC Demo command
+  const lwcDemoCommand = vscode.commands.registerCommand(
+    'vscode-sfdx-hardis.lwcDemo',
+    () => LwcDemoPanel.createOrShow(context.extensionUri)
+  );
+  context.subscriptions.push(lwcDemoCommand);
 
   // Initialize colors
   const hardisColors = new HardisColors();

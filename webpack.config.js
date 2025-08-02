@@ -1,4 +1,5 @@
 const path = require('path');
+const LwcWebpackPlugin = require('lwc-webpack-plugin');
 
 /** @type {import('webpack').Configuration} */
 const extensionConfig = {
@@ -74,4 +75,60 @@ const workerConfig = {
   },
 };
 
-module.exports = [extensionConfig, workerConfig];
+/** @type {import('webpack').Configuration} */
+const lwcWebviewConfig = {
+  target: 'web',
+  mode: 'none',
+  
+  entry: './src/webviews/lwc-demo/index.js',
+  output: {
+    path: path.resolve(__dirname, 'out', 'webviews'),
+    filename: 'lwc-demo.js',
+  },
+  resolve: {
+    extensions: ['.js', '.ts'],
+  },
+  module: {
+    rules: [
+      {
+        test: /\.js$/,
+        include: [
+          path.resolve(__dirname, 'src/webviews/lwc-demo'),
+          path.resolve(__dirname, 'src/webviews'),
+        ],
+        use: [
+          {
+            loader: 'babel-loader',
+            options: {
+              presets: ['@babel/preset-env'],
+              plugins: [
+                ['@lwc/babel-plugin-component', {
+                  modules: [
+                    {
+                      dir: path.resolve(__dirname, 'src/webviews/lwc-demo/modules'),
+                    }
+                  ]
+                }]
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  },
+  plugins: [
+    new LwcWebpackPlugin({
+      modules: [
+        {
+          dir: path.resolve(__dirname, 'src/webviews/lwc-demo/modules'),
+        }
+      ]
+    }),
+  ],
+  devtool: 'source-map',
+  infrastructureLogging: {
+    level: "log",
+  },
+};
+
+module.exports = [extensionConfig, workerConfig, lwcWebviewConfig];
