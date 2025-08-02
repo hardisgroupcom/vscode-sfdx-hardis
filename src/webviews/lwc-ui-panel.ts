@@ -59,10 +59,12 @@ export class LwcUiPanel {
       return existingPanel;
     }
 
+
+
     // Otherwise, create a new panel.
     const panel = vscode.window.createWebviewPanel(
       "lwcUi",
-      "SFDX Hardis LWC UI",
+      "SFDX Hardis",
       column || vscode.ViewColumn.One,
       {
         // Enable javascript in the webview
@@ -77,8 +79,19 @@ export class LwcUiPanel {
     );
 
     const lwcUiPanel = new LwcUiPanel(panel, extensionUri, lwcId, initData);
+    lwcUiPanel.setPanelTitleFromLwcId();
     LwcUiPanel.currentPanels.set(lwcId, lwcUiPanel);
     return lwcUiPanel;
+  }
+
+  public setPanelTitleFromLwcId() {
+    const lwcDefinitions: {
+      [key: string]: string;
+    } = {
+      "s-prompt-input": "Prompt Input"
+    };
+    const panelTitle = lwcDefinitions[this.lwcId] || "SFDX Hardis";
+    this.panel.title = panelTitle;
   }
 
   public dispose() {

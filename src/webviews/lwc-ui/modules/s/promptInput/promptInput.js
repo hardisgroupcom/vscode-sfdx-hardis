@@ -31,19 +31,28 @@ export default class PromptInput extends LightningElement {
         // Focus the first input element when the prompt becomes visible
         if (this.isVisible && this.currentPrompt) {
             setTimeout(() => {
-                const firstInput = this.template.querySelector('lightning-input, lightning-combobox');
+                let firstInput;
+                
+                // For button select, focus the first button
+                if (this.isSelectWithButtons) {
+                    firstInput = this.template.querySelector('.select-option-button');
+                } else {
+                    // For other inputs, focus the input/combobox
+                    firstInput = this.template.querySelector('lightning-input, lightning-combobox');
+                }
+                
                 if (firstInput && typeof firstInput.focus === 'function') {
                     firstInput.focus();
                 }
                 
                 // Force refresh combobox value to ensure it displays properly
-                if (this.isSelectInput && this.selectedValue) {
+                if (this.isSelectWithCombobox && this.selectedValue) {
                     const combobox = this.template.querySelector('lightning-combobox');
                     if (combobox) {
                         combobox.value = this.selectedValue;
                     }
                 }
-            }, 100);
+            }, 150);
         }
     }
 
@@ -136,6 +145,14 @@ export default class PromptInput extends LightningElement {
         return this.currentPrompt && this.currentPrompt.type === 'select';
     }
 
+    get isSelectWithButtons() {
+        return this.isSelectInput && this.currentPrompt.choices && this.currentPrompt.choices.length <= 5;
+    }
+
+    get isSelectWithCombobox() {
+        return this.isSelectInput && this.currentPrompt.choices && this.currentPrompt.choices.length > 5;
+    }
+
     get isMultiselectInput() {
         return this.currentPrompt && this.currentPrompt.type === 'multiselect';
     }
@@ -224,7 +241,9 @@ export default class PromptInput extends LightningElement {
     }
 
     handleInputChange(event) {
-        this.inputValue = event.target.value;
+        // Try to get the value from both event.target.value and event.detail.value
+        const newValue = event.detail?.value ?? event.target?.value ?? '';
+        this.inputValue = newValue;
         this.error = null;
     }
 
@@ -232,6 +251,21 @@ export default class PromptInput extends LightningElement {
         // Submit on Enter key press
         if (event.key === 'Enter' || event.keyCode === 13) {
             event.preventDefault();
+            
+            // For text/number inputs, ensure we capture the current value before submitting
+            if (this.isTextInput || this.isNumberInput) {
+                // Get the current value from the lightning-input element
+                const lightningInput = event.currentTarget;
+                if (lightningInput && lightningInput.value !== undefined) {
+                    this.inputValue = lightningInput.value;
+                }
+            }
+            
+            // For button select, if no button is selected yet, do nothing
+            if (this.isSelectWithButtons && !this.selectedValue) {
+                return;
+            }
+            
             this.handleSubmit();
         }
         // Cancel on Escape key press
@@ -239,10 +273,35 @@ export default class PromptInput extends LightningElement {
             event.preventDefault();
             this.handleCancel();
         }
+        // For button select, handle arrow key navigation
+        else if (this.isSelectWithButtons && (event.key === 'ArrowDown' || event.key === 'ArrowUp' || event.key === 'ArrowLeft' || event.key === 'ArrowRight')) {
+            this.handleButtonNavigation(event);
+        }
+    }
+
+    handleButtonNavigation(event) {
+        event.preventDefault();
+        const buttons = this.template.querySelectorAll('.select-option-button');
+        const currentButton = event.currentTarget.closest('.select-option-button');
+        const currentIndex = Array.from(buttons).indexOf(currentButton);
+        
+        let nextIndex = currentIndex;
+        
+        if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
+            nextIndex = (currentIndex + 1) % buttons.length;
+        } else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+            nextIndex = currentIndex > 0 ? currentIndex - 1 : buttons.length - 1;
+        }
+        
+        if (buttons[nextIndex]) {
+            buttons[nextIndex].focus();
+        }
     }
 
     handleSelectChange(event) {
-        this.selectedValue = event.target.value;
+        // Try to get the value from both event.target.value and event.detail.value
+        const newValue = event.detail?.value ?? event.target?.value ?? '';
+        this.selectedValue = newValue;
         this.error = null;
         
         // Find and set the description for the selected option
@@ -250,13 +309,26 @@ export default class PromptInput extends LightningElement {
             const selectedChoice = this.currentPrompt.choices.find(choice => choice.value === this.selectedValue);
             this.selectedOptionDescription = selectedChoice ? this.decodeHtmlEntities(selectedChoice.description || '') : '';
         }
+    }
+
+    handleButtonSelect(event) {
+        // Use currentTarget to get the button element, not the clicked child element
+        const button = event.currentTarget;
+        const selectedValue = button.dataset.value;
         
-        // Force the combobox to update its display
-        const combobox = this.template.querySelector('lightning-combobox');
-        if (combobox) {
-            // This ensures the value is properly reflected in the UI
-            combobox.value = this.selectedValue;
+        this.selectedValue = selectedValue;
+        this.error = null;
+        
+        // Find and set the description for the selected option
+        if (this.currentPrompt && this.currentPrompt.choices) {
+            const selectedChoice = this.currentPrompt.choices.find(choice => choice.value === selectedValue);
+            this.selectedOptionDescription = selectedChoice ? this.decodeHtmlEntities(selectedChoice.description || '') : '';
         }
+        
+        // Auto-submit when button is clicked
+        setTimeout(() => {
+            this.handleSubmit();
+        }, 100);
     }
 
     handleMultiselectChange(event) {
@@ -273,10 +345,28 @@ export default class PromptInput extends LightningElement {
 
     handleSubmit() {
         try {
+            // Ensure we have the latest input value before submitting
+            this.updateInputValueFromDOM();
+            
             const response = this.buildResponse();
             this.dispatchPromptResponse(response);
         } catch (error) {
             this.error = error.message;
+        }
+    }
+
+    // Helper method to get the current value from the DOM input elements
+    updateInputValueFromDOM() {
+        if (this.isTextInput || this.isNumberInput) {
+            const lightningInput = this.template.querySelector('lightning-input');
+            if (lightningInput && lightningInput.value !== undefined) {
+                this.inputValue = lightningInput.value;
+            }
+        } else if (this.isSelectWithCombobox) {
+            const lightningCombobox = this.template.querySelector('lightning-combobox');
+            if (lightningCombobox && lightningCombobox.value !== undefined) {
+                this.selectedValue = lightningCombobox.value;
+            }
         }
     }
 

@@ -144,7 +144,7 @@ export class LocalWebSocketServer {
                   currentLwcPanel = null;
                 }
                 lwcPanelDisposeTimer = null;
-              }, 5000);
+              }, 2000);
             }
           });
         } else {

@@ -26,6 +26,7 @@
                             placeholder={promptPlaceholder}
                             value={inputValue}
                             onchange={handleInputChange}
+                            oninput={handleInputChange}
                             onkeydown={handleKeyDown}>
                         </lightning-input>
                     </div>
@@ -41,13 +42,42 @@
                             value={inputValue}
                             step={numberStep}
                             onchange={handleInputChange}
+                            oninput={handleInputChange}
                             onkeydown={handleKeyDown}>
                         </lightning-input>
                     </div>
                 </template>
 
-                <!-- Select Input -->
-                <template if:true={isSelectInput}>
+                <!-- Select Input with Buttons (10 or fewer choices) -->
+                <template if:true={isSelectWithButtons}>
+                    <div class="input-section">
+                        <div class="select-buttons-container">
+                            <template for:each={selectOptions} for:item="option">
+                                <button
+                                    key={option.value}
+                                    type="button"
+                                    data-value={option.value}
+                                    onclick={handleButtonSelect}
+                                    onkeydown={handleKeyDown}
+                                    class="select-option-button">
+                                    <div class="button-label">{option.label}</div>
+                                    <template if:true={option.description}>
+                                        <div class="button-description">{option.description}</div>
+                                    </template>
+                                </button>
+                            </template>
+                        </div>
+                        <!-- Display description for selected option -->
+                        <template if:true={selectedOptionDescription}>
+                            <div class="option-description">
+                                {selectedOptionDescription}
+                            </div>
+                        </template>
+                    </div>
+                </template>
+
+                <!-- Select Input with Combobox (more than 10 choices) -->
+                <template if:true={isSelectWithCombobox}>
                     <div class="input-section">
                         <lightning-combobox
                             label="Select an option"
@@ -97,28 +127,48 @@
                     </div>
                 </template>
 
-                <!-- Action Buttons -->
-                <div class="action-buttons">
-                    <div class="keyboard-hint">
-                        Press Enter to submit, Esc to cancel
+                <!-- Action Buttons (hidden for button select since buttons auto-submit) -->
+                <template if:false={isSelectWithButtons}>
+                    <div class="action-buttons">
+                        <div class="keyboard-hint">
+                            Press Enter to validate, Esc to cancel
+                        </div>
+                        <div class="action-buttons-right">
+                            <lightning-button
+                                variant="brand"
+                                label="Validate"
+                                icon-name="utility:check"
+                                onclick={handleSubmit}
+                                class="action-button">
+                            </lightning-button>
+                            <lightning-button
+                                variant="neutral"
+                                label="Cancel"
+                                icon-name="utility:close"
+                                onclick={handleCancel}
+                                class="action-button">
+                            </lightning-button>
+                        </div>
                     </div>
-                    <div class="action-buttons-right">
-                        <lightning-button
-                            variant="brand"
-                            label="Submit"
-                            icon-name="utility:check"
-                            onclick={handleSubmit}
-                            class="action-button">
-                        </lightning-button>
-                        <lightning-button
-                            variant="neutral"
-                            label="Cancel"
-                            icon-name="utility:close"
-                            onclick={handleCancel}
-                            class="action-button">
-                        </lightning-button>
+                </template>
+
+                <!-- Cancel button only for button select -->
+                <template if:true={isSelectWithButtons}>
+                    <div class="action-buttons">
+                        <div class="keyboard-hint">
+                            Click an option to select, or press Esc to cancel
+                        </div>
+                        <div class="action-buttons-right">
+                            <lightning-button
+                                variant="neutral"
+                                label="Cancel"
+                                icon-name="utility:close"
+                                onclick={handleCancel}
+                                class="action-button">
+                            </lightning-button>
+                        </div>
                     </div>
-                </div>
+                </template>
             </div>
         </div>
     </template>
