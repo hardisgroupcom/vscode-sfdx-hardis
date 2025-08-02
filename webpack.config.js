@@ -1,6 +1,7 @@
 const path = require('path');
 const webpack = require('webpack');
 const LwcWebpackPlugin = require('lwc-webpack-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 /** @type {import('webpack').Configuration} */
 const extensionConfig = {
@@ -125,8 +126,23 @@ const lwcWebviewConfig = {
         {
           dir: path.resolve(__dirname, 'src/webviews/lwc-demo/modules'),
         }
-      ]
+      ],
+      mode: 'development',
+      experimentalSyntheticShadow: true,
+      experimentalDynamicComponent: true
     }),
+    new CopyWebpackPlugin({
+      patterns: [
+        {
+          from: path.resolve(__dirname, 'node_modules/@salesforce-ux/design-system/assets/styles/salesforce-lightning-design-system.min.css'),
+          to: 'assets/slds.css'
+        },
+        {
+          from: path.resolve(__dirname, 'node_modules/@salesforce-ux/design-system/assets/icons'),
+          to: 'assets/icons'
+        }
+      ]
+    })
   ],
   devtool: 'source-map',
   infrastructureLogging: {

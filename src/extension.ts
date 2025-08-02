@@ -11,7 +11,6 @@ import { HardisStatusProvider } from "./hardis-status-provider";
 import { LocalWebSocketServer } from "./hardis-websocket-server";
 import { Logger } from "./logger";
 import { getWorkspaceRoot, preLoadCache } from "./utils";
-import { WelcomePanel } from "./webviews/welcome";
 import { LwcDemoPanel } from "./webviews/lwc-demo-panel";
 import { HardisColors } from "./hardis-colors";
 
@@ -37,10 +36,6 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Call cli commands before their result is used, to improve startup performances
   preLoadCache();
-
-  // Initialize Welcome Webview
-  const welcomeWebview = new WelcomePanel();
-  context.subscriptions.push(...welcomeWebview.disposables);
 
   // Register Commands tree data provider
   const hardisCommandsProvider = new HardisCommandsProvider(
