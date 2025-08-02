@@ -9,6 +9,7 @@ export default class PromptInput extends LightningElement {
     @track error = null;
 
     connectedCallback() {
+        console.log("PromptInput connectedCallback");
         // Listen for prompt events from parent
         this.addEventListener('promptrequest', this.handlePromptRequest.bind(this));
         
@@ -19,6 +20,7 @@ export default class PromptInput extends LightningElement {
     }
 
     disconnectedCallback() {
+        console.log("PromptInput disconnectedCallback");
         // Clean up global reference
         if (typeof window !== 'undefined' && window.promptInputComponent === this) {
             window.promptInputComponent = null;
@@ -27,6 +29,7 @@ export default class PromptInput extends LightningElement {
 
     @api
     initialize(initData) {
+        console.log("PromptInput initialize called with:", initData);
         // Handle initialization from VS Code
         if (initData && initData.prompt) {
             this.showPrompt({ prompts: [initData.prompt] });
@@ -37,11 +40,14 @@ export default class PromptInput extends LightningElement {
 
     @api
     showPrompt(promptData) {
+        console.log("PromptInput showPrompt called with:", promptData);
         this.promptData = promptData;
         this.currentPrompt = promptData.prompts && promptData.prompts[0] || null;
         this.isVisible = true;
         this.error = null;
         this.resetValues();
+        
+        console.log("Setting isVisible to true, currentPrompt:", this.currentPrompt);
         
         if (this.currentPrompt) {
             // Set initial values
@@ -95,6 +101,11 @@ export default class PromptInput extends LightningElement {
 
     get promptName() {
         return this.currentPrompt && this.currentPrompt.name || '';
+    }
+
+    get isVisibleDebug() {
+        console.log("isVisible getter called, value:", this.isVisible);
+        return this.isVisible;
     }
 
     get selectOptions() {

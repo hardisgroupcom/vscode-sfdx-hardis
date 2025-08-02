@@ -189,6 +189,11 @@ export class LwcUiPanel {
     // Use a nonce to only allow specific scripts to be run
     const nonce = getNonce();
 
+    // Safely serialize initialization data
+    const initDataJson = this.initializationData 
+      ? JSON.stringify(this.initializationData).replace(/'/g, '&#39;').replace(/"/g, '&quot;')
+      : '{}';
+
     return `<!DOCTYPE html>
       <html lang="en">
       <head>
@@ -200,9 +205,13 @@ export class LwcUiPanel {
         <link rel="icons" href="${sldsIconsUri}">
         
         <title>SFDX Hardis LWC UI</title>
+        <style>
+          body { margin: 0; padding: 0; }
+          #app { width: 100%; height: 100vh; }
+        </style>
       </head>
       <body class="slds-scope">
-        <div id="app" data-lwc-id="${this.lwcId}" data-init-data='${JSON.stringify(this.initializationData || {})}'></div>
+        <div id="app" data-lwc-id="${this.lwcId}" data-init-data="${initDataJson}"></div>
         
         <script nonce="${nonce}" src="${scriptUri}"></script>
       </body>

@@ -46,27 +46,49 @@ document.addEventListener("DOMContentLoaded", async () => {
       // Get lwc to instanciate
       const lwcId = appContainer.getAttribute("data-lwc-id");
       const initDataAttr = appContainer.getAttribute("data-init-data");
-      const initData = initDataAttr ? JSON.parse(initDataAttr) : null;
       
       console.log(`LWC ID: ${lwcId}`);
-      console.log(`Init data:`, initData);
+      
+      let initData = null;
+      if (initDataAttr && initDataAttr !== '{}') {
+        try {
+          // Decode HTML entities first
+          const decodedData = initDataAttr.replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+          initData = JSON.parse(decodedData);
+        } catch (parseError) {
+          console.error('Error parsing init data:', parseError);
+        }
+      }
 
       // Create the LWC element
-      const element = createElement(lwcId, { is: lwcIdAndClasses[lwcId] });
+      const lwcClass = lwcIdAndClasses[lwcId];
+      if (!lwcClass) {
+        console.error(`❌ No LWC class found for ID: ${lwcId}`);
+        return;
+      }
+
+      const element = createElement(lwcId, { is: lwcClass });
       
       // Store reference for message handling
       window.lwcComponentInstance = element;
 
+      // Add element to DOM first
       appContainer.appendChild(element);
       console.log("✅ LWC component mounted successfully!");
       
-      // Initialize the component if it has initialization data
-      if (initData && typeof element.initialize === 'function') {
-        element.initialize(initData);
-      } else if (initData && typeof element.showPrompt === 'function') {
-        // For prompt input component
-        element.showPrompt(initData);
-      }
+      // Wait a bit for the component to fully initialize
+      setTimeout(() => {
+        // Initialize the component if it has initialization data
+        if (initData) {
+          if (typeof element.initialize === 'function') {
+            element.initialize(initData);
+          } else if (typeof element.showPrompt === 'function') {
+            // For prompt input component
+            element.showPrompt(initData);
+          }
+        }
+      }, 100);
+      
     } else {
       console.error("❌ App container not found");
     }

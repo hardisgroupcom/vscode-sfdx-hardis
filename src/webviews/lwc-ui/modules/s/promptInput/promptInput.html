@@ -1,4 +1,11 @@
 <template>
+    <!-- Debug info -->
+    <div class="slds-p-around_small" style="background: #f3f3f3; border: 1px solid #ccc; margin-bottom: 1rem;">
+        <p>Debug - isVisible: {isVisible}</p>
+        <p>Debug - currentPrompt: {currentPrompt}</p>
+        <p>Debug - promptMessage: {promptMessage}</p>
+    </div>
+
     <template if:true={isVisible}>
         <div class="prompt-container">
             <lightning-card title="Input Required" icon-name="utility:question">
