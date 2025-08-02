@@ -39,31 +39,31 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Register Commands tree data provider
   const hardisCommandsProvider = new HardisCommandsProvider(
-    currentWorkspaceFolderUri,
+    currentWorkspaceFolderUri
   );
   const disposableTreeCommands = vscode.window.registerTreeDataProvider(
     "sfdx-hardis-commands",
-    hardisCommandsProvider,
+    hardisCommandsProvider
   );
   context.subscriptions.push(disposableTreeCommands);
 
   // Register Status TreeView
   const hardisStatusProvider = new HardisStatusProvider(
-    currentWorkspaceFolderUri,
+    currentWorkspaceFolderUri
   );
   const disposableTreeInfo = vscode.window.registerTreeDataProvider(
     "sfdx-hardis-status",
-    hardisStatusProvider,
+    hardisStatusProvider
   );
   context.subscriptions.push(disposableTreeInfo);
 
   // Register Status TreeView
   const hardisPluginsProvider = new HardisPluginsProvider(
-    currentWorkspaceFolderUri,
+    currentWorkspaceFolderUri
   );
   const disposableTreePlugins = vscode.window.registerTreeDataProvider(
     "sfdx-hardis-plugins",
-    hardisPluginsProvider,
+    hardisPluginsProvider
   );
   context.subscriptions.push(disposableTreePlugins);
 
@@ -72,14 +72,14 @@ export function activate(context: vscode.ExtensionContext) {
     hardisCommandsProvider,
     hardisStatusProvider,
     hardisPluginsProvider,
-    reporter,
+    reporter
   );
   context.subscriptions.push(...commands.disposables);
 
   // Register LWC Demo command
   const lwcUiCommand = vscode.commands.registerCommand(
-    'vscode-sfdx-hardis.lwcUi',
-    () => LwcUiPanel.createOrShow(context.extensionUri)
+    "vscode-sfdx-hardis.lwcUi",
+    () => LwcUiPanel.display(context.extensionUri, "s-hello-world")
   );
   context.subscriptions.push(lwcUiCommand);
 
@@ -109,7 +109,7 @@ export function activate(context: vscode.ExtensionContext) {
         } catch (e: any) {
           Logger.log("Error while launching WebSocket Server: " + e.message);
           vscode.window.showWarningMessage(
-            "Local WebSocket Server was unable to start.\nUser prompts will be in the terminal.",
+            "Local WebSocket Server was unable to start.\nUser prompts will be in the terminal."
           );
         }
       }, 5000);
@@ -158,15 +158,15 @@ export function activate(context: vscode.ExtensionContext) {
     ) {
       vscode.commands.executeCommand(
         "vscode-sfdx-hardis.refreshCommandsView",
-        true,
+        true
       );
       vscode.commands.executeCommand(
         "vscode-sfdx-hardis.refreshStatusView",
-        true,
+        true
       );
       vscode.commands.executeCommand(
         "vscode-sfdx-hardis.refreshPluginsView",
-        true,
+        true
       );
     }
   });
@@ -182,7 +182,7 @@ export function activate(context: vscode.ExtensionContext) {
   vscode.workspace.onDidRenameFiles((event) => {
     if (
       event.files.filter((rename) =>
-        rename.newUri.fsPath.includes("sfdx-project.json"),
+        rename.newUri.fsPath.includes("sfdx-project.json")
       )
     ) {
       vscode.commands.executeCommand("vscode-sfdx-hardis.refreshCommandsView");

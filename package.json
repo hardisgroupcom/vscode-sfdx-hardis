@@ -43,12 +43,14 @@
       "properties": {
         "vsCodeSfdxHardis.userInput": {
           "type": "string",
-          "default": "ui",
+          "default": "ui-lwc",
           "enum": [
+            "ui-lwc",
             "ui",
             "console"
           ],
           "enumDescriptions": [
+            "Visual Studio Code LWC User Interface",
             "Visual Studio Code User Interface",
             "Command line"
           ],

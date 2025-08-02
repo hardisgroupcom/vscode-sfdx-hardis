@@ -1,14 +1,16 @@
 import * as vscode from "vscode";
 
 export class LwcUiPanel {
-  private static currentPanel: LwcUiPanel | undefined;
+  private static currentPanels: Map<string, LwcUiPanel> = new Map();
   private readonly panel: vscode.WebviewPanel;
   private readonly extensionUri: vscode.Uri;
+  private lwcId: string;
   private disposables: vscode.Disposable[] = [];
 
-  private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
+  private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, lwcId: string) {
     this.panel = panel;
     this.extensionUri = extensionUri;
+    this.lwcId = lwcId;
 
     // Set the webview's initial html content
     this.update();
@@ -20,26 +22,23 @@ export class LwcUiPanel {
     // Handle messages from the webview
     this.panel.webview.onDidReceiveMessage(
       (message) => {
-        switch (message.command) {
-          case "alert":
-            vscode.window.showErrorMessage(message.text);
-            return;
-        }
+        // Instead of dispatching a DOM event, use VS Code's command system to broadcast the message
+        vscode.commands.executeCommand("sfdxHardis.lwcUiMessage", message);
       },
       null,
       this.disposables
     );
   }
 
-  public static createOrShow(extensionUri: vscode.Uri) {
+  public static display(extensionUri: vscode.Uri, lwcId: string) {
     const column = vscode.window.activeTextEditor
       ? vscode.window.activeTextEditor.viewColumn
       : undefined;
 
     // If we already have a panel, show it.
-    if (LwcUiPanel.currentPanel) {
-      LwcUiPanel.currentPanel.panel.reveal(column);
-      return;
+    if (LwcUiPanel.currentPanels.has(lwcId)) {
+      LwcUiPanel.currentPanels.get(lwcId)!.panel.reveal(column);
+      return LwcUiPanel.currentPanels.get(lwcId);
     }
 
     // Otherwise, create a new panel.
@@ -51,7 +50,7 @@ export class LwcUiPanel {
         // Enable javascript in the webview
         enableScripts: true,
 
-        // And restrict the webview to only loading content from our extension's `media` directory.
+        // Restrict the webview to only loading content from our extension's `media` directory.
         localResourceRoots: [
           vscode.Uri.joinPath(extensionUri, "out", "webviews"),
           vscode.Uri.joinPath(extensionUri, "node_modules", "@salesforce-ux", "design-system"),
@@ -59,11 +58,11 @@ export class LwcUiPanel {
       }
     );
 
-    LwcUiPanel.currentPanel = new LwcUiPanel(panel, extensionUri);
+    LwcUiPanel.currentPanels.set(lwcId, new LwcUiPanel(panel, extensionUri, lwcId));
   }
 
   public dispose() {
-    LwcUiPanel.currentPanel = undefined;
+    LwcUiPanel.currentPanels.delete(this.lwcId);
 
     // Clean up our resources
     this.panel.dispose();
@@ -127,7 +126,7 @@ export class LwcUiPanel {
         <title>SFDX Hardis LWC UI</title>
       </head>
       <body class="slds-scope">
-        <div id="app"></div>
+        <div id="app" data-lwc-id="${this.lwcId}"></div>
         
         <script nonce="${nonce}" src="${scriptUri}"></script>
       </body>
