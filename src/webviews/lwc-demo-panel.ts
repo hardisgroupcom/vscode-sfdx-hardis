@@ -100,17 +100,14 @@ export class LwcDemoPanel {
       )
     );
 
-    // Get path to SLDS SVG sprites (copied by webpack in the icons directory)
-    const sldsUtilitySymbolsUri = webview.asWebviewUri(
+    // Get path to SLDS icons directory (copied by webpack)
+    const sldsIconsUri = webview.asWebviewUri(
       vscode.Uri.joinPath(
         this.extensionUri,
         'out',
         'webviews',
         'assets',
-        'icons',
-        'utility-sprite',
-        'svg',
-        'symbols.svg'
+        'icons'
       )
     );
 
@@ -125,38 +122,9 @@ export class LwcDemoPanel {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         
         <link href="${sldsStylesUri}" rel="stylesheet">
+        <link rel="icons" href="${sldsIconsUri}">
         
         <title>SFDX Hardis LWC Demo</title>
-        
-        <style>
-          body {
-            margin: 0;
-            padding: 20px;
-            font-family: 'Salesforce Sans', Arial, sans-serif;
-            background: #f3f3f3;
-            min-height: 100vh;
-          }
-          
-          #app {
-            max-width: 800px;
-            margin: 0 auto;
-          }
-        </style>
-        <script nonce="${nonce}">
-          // Configure LWC runtime for synthetic shadow DOM
-          window.lwcRuntimeFlags = {
-            ENABLE_SYNTHETIC_SHADOW_SUPPORT_FOR_TEMPLATE: true,
-            ENABLE_SYNTHETIC_SHADOW_SUPPORT_FOR_STYLE: true
-          };
-          
-          // Make SLDS utility symbols URI available globally
-          window.SLDS_UTILITY_SYMBOLS_URI = '${sldsUtilitySymbolsUri}';
-          
-          // Ensure SLDS is loaded before LWC initialization
-          window.addEventListener('DOMContentLoaded', function() {
-            console.log('DOM loaded, SLDS styles should be available');
-          });
-        </script>
       </head>
       <body class="slds-scope">
         <div id="app"></div>

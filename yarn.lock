@@ -3943,6 +3943,11 @@ lie@~3.3.0:
   dependencies:
     immediate "~3.0.5"
 
+lightning-base-components@^1.27.2-alpha:
+  version "1.27.2-alpha"
+  resolved "https://registry.yarnpkg.com/lightning-base-components/-/lightning-base-components-1.27.2-alpha.tgz#a6cde01e2f271f54d7d6afc4df53d20cd987977d"
+  integrity sha512-YyxdAVEsECA2JqZnlsBxqPpBEdElfQa88qs5zY+eYHUdjZ/aE15OV0kjcoBB8o/46Z39jkyn+b1Aiy1wDZoqLw==
+
 line-column@~1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/line-column/-/line-column-1.0.2.tgz#d25af2936b6f4849172b312e4792d1d987bc34a2"

@@ -1,4 +1,4 @@
-/* Custom styles for the Hello World LWC component */
+/* Simple styles for the Hello World LWC component */
 :host {
     display: block;
     width: 100%;
@@ -9,9 +9,26 @@
     box-sizing: border-box;
 }
 
-/* Ensure component inherits SLDS styles */
-.slds-card {
+/* Ensure Lightning Card component has proper styling */
+lightning-card {
     max-width: 800px;
     margin: 0 auto;
-    /* Remove any overrides that might block SLDS styles */
+    display: block;
+}
+
+/* Custom styling for lightning buttons in button group */
+.slds-button-group {
+    display: flex;
+    gap: 0.125rem;
+}
+
+.slds-button-group lightning-button {
+    margin: 0;
+}
+
+/* Ensure proper spacing for the counter display */
+.counter-display {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--slds-g-color-brand-base-10, #1589ee);
 }

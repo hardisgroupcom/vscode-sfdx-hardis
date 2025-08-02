@@ -125,6 +125,9 @@ const lwcWebviewConfig = {
       modules: [
         {
           dir: path.resolve(__dirname, 'src/webviews/lwc-demo/modules'),
+        },
+        {
+          npm: 'lightning-base-components'
         }
       ],
       mode: 'development',

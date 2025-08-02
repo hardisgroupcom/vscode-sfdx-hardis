@@ -1,79 +1,84 @@
 <template>
-    <div class="slds-card slds-p-around_medium">
-        <div class="slds-card__header slds-grid">
-            <header class="slds-media slds-media_center slds-has-flexi-truncate">
-                <div class="slds-media__figure">
-                    <span class="slds-icon_container slds-icon-utility-announcement" title="Announcement">
-                        <svg class="slds-icon slds-icon-text-default slds-icon_small" aria-hidden="true">
-                            <use href="#utility-announcement"></use>
-                        </svg>
-                        <span class="slds-assistive-text">Announcement</span>
-                    </span>
+    <lightning-card title="SFDX Hardis LWC Demo" icon-name="utility:announcement">
+        <div class="slds-text-align_center slds-p-around_large">
+            <h1 class="slds-text-heading_large slds-m-bottom_medium slds-text-color_brand">
+                {greeting}
+            </h1>
+            
+            <div class="slds-box slds-theme_default slds-m-bottom_medium">
+                <p class="slds-text-body_regular slds-m-bottom_small">
+                    This is a Lightning Web Component running inside a VS Code webview!
+                </p>
+                <p class="slds-text-body_small slds-text-color_weak">
+                    Built with Lightning Base Components
+                </p>
+            </div>
+
+            <div class="slds-m-vertical_large">
+                <div class="slds-grid slds-grid_align-center slds-grid_vertical-align-center slds-m-bottom_medium">
+                    <div class="slds-col">
+                        <span class="counter-display">
+                            Counter: {counter}
+                        </span>
+                    </div>
                 </div>
-                <div class="slds-media__body">
-                    <h2 class="slds-card__header-title">
-                        <span class="slds-text-heading_small">SFDX Hardis LWC Demo</span>
-                    </h2>
-                </div>
-            </header>
-        </div>
-        
-        <div class="slds-card__body slds-card__body_inner">
-            <div class="slds-text-align_center slds-p-around_large">
-                <h1 class="slds-text-heading_large slds-m-bottom_medium slds-text-color_brand">
-                    {greeting}
-                </h1>
                 
-                <div class="slds-box slds-theme_default slds-m-bottom_medium">
-                    <p class="slds-text-body_regular slds-m-bottom_small">
-                        This is a Lightning Web Component running inside a VS Code webview!
-                    </p>
-                    <p class="slds-text-body_small slds-text-color_weak">
-                        Built with Salesforce Lightning Design System
-                    </p>
+                <div class="slds-button-group" role="group">
+                    <lightning-button 
+                        variant="brand" 
+                        label="Increment" 
+                        icon-name="utility:add"
+                        onclick={handleIncrement}>
+                    </lightning-button>
+                    <lightning-button 
+                        variant="neutral" 
+                        label="Decrement" 
+                        icon-name="utility:dash"
+                        onclick={handleDecrement}>
+                    </lightning-button>
+                    <lightning-button 
+                        variant="brand-outline" 
+                        label="Reset" 
+                        icon-name="utility:refresh"
+                        onclick={handleReset}>
+                    </lightning-button>
                 </div>
-
-                <div class="slds-m-vertical_large">
-                    <div class="slds-grid slds-grid_align-center slds-grid_vertical-align-center slds-m-bottom_medium">
-                        <div class="slds-col">
-                            <span class="slds-text-heading_medium slds-text-color_brand">
-                                Counter: {counter}
-                            </span>
-                        </div>
+                
+                <!-- Test different icon categories -->
+                <div class="slds-m-top_large">
+                    <h3 class="slds-text-heading_small slds-m-bottom_small">Icon Categories Test</h3>
+                    <div class="slds-button-group slds-wrap" role="group">
+                        <lightning-button 
+                            variant="neutral" 
+                            label="Utility Icon" 
+                            icon-name="utility:apps"
+                            class="slds-m-bottom_small">
+                        </lightning-button>
+                        <lightning-button 
+                            variant="neutral" 
+                            label="Standard Icon" 
+                            icon-name="standard:account"
+                            class="slds-m-bottom_small">
+                        </lightning-button>
+                        <lightning-button 
+                            variant="neutral" 
+                            label="Action Icon" 
+                            icon-name="action:new_account"
+                            class="slds-m-bottom_small">
+                        </lightning-button>
                     </div>
-                    
-                    <div class="slds-button-group" role="group">
-                        <button class="slds-button slds-button_brand" onclick={handleIncrement}>
-                            <svg class="slds-button__icon slds-button__icon_left" aria-hidden="true">
-                                <use href="#utility-add"></use>
-                            </svg>
-                            Increment
-                        </button>
-                        <button class="slds-button slds-button_neutral" onclick={handleDecrement}>
-                            <svg class="slds-button__icon slds-button__icon_left" aria-hidden="true">
-                                <use href="#utility-dash"></use>
-                            </svg>
-                            Decrement
-                        </button>
-                        <button class="slds-button slds-button_outline-brand" onclick={handleReset}>
-                            <svg class="slds-button__icon slds-button__icon_left" aria-hidden="true">
-                                <use href="#utility-refresh"></use>
-                            </svg>
-                            Reset
-                        </button>
-                    </div>
-                </div>
-
-                <div class="slds-box slds-theme_info slds-m-top_large">
-                    <h3 class="slds-text-heading_small slds-m-bottom_small">Features</h3>
-                    <ul class="slds-list_dotted slds-text-body_small">
-                        <li>Lightning Web Components framework</li>
-                        <li>Salesforce Lightning Design System</li>
-                        <li>Reactive data binding</li>
-                        <li>VS Code webview integration</li>
-                    </ul>
                 </div>
             </div>
+
+            <div class="slds-box slds-theme_info slds-m-top_large">
+                <h3 class="slds-text-heading_small slds-m-bottom_small">Features</h3>
+                <ul class="slds-list_dotted slds-text-body_small">
+                    <li>Lightning Web Components framework</li>
+                    <li>Lightning Base Components from npm</li>
+                    <li>Reactive data binding</li>
+                    <li>VS Code webview integration</li>
+                </ul>
+            </div>
         </div>
-    </div>
+    </lightning-card>
 </template>

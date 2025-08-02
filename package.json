@@ -452,6 +452,7 @@
     "get-port": "^7.1.0",
     "git-url-parse": "^11.6.0",
     "js-yaml": "^4.1.0",
+    "lightning-base-components": "^1.27.2-alpha",
     "moment": "^2.29.1",
     "process": "^0.11.10",
     "simple-git": "^3.18.0",
