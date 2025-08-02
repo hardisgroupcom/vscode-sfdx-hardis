@@ -8,6 +8,8 @@ import { LwcUiPanel } from "./webviews/lwc-ui-panel";
 
 const DEFAULT_PORT = parseInt(process.env.SFDX_HARDIS_WEBSOCKET_PORT || "2702");
 let globalWss: LocalWebSocketServer | null;
+let currentLwcPanel: LwcUiPanel | null = null;
+let lwcPanelDisposeTimer: ReturnType<typeof setTimeout> | null = null;
 
 export class LocalWebSocketServer {
   public websocketHostPort: any = null;
@@ -114,19 +116,41 @@ export class LocalWebSocketServer {
     else if (data.event === "prompts") {
       const prompt = data.prompts[0];
       const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+      
       // If user input is set to LWC UI, use the LWC UI panel
       if (config.get("userInput") === "ui-lwc") {
-        const lwcPanel = LwcUiPanel.display(this.context.extensionUri, "s-prompt-input", {prompt: prompt});
-        lwcPanel.onMessage((messageType, data) => {
-          if (messageType === "submit") {
-            // The data should contain the response object with the prompt name as key
-            this.sendResponse(ws, {
-              event: "promptsResponse",
-              promptsResponse: [data],
-            });
-            lwcPanel.dispose();
-          }
-        });
+        // Clear any existing dispose timer since we have a new prompt
+        if (lwcPanelDisposeTimer) {
+          clearTimeout(lwcPanelDisposeTimer);
+          lwcPanelDisposeTimer = null;
+        }
+
+        // Create or reuse the LWC panel
+        if (!currentLwcPanel || currentLwcPanel.isDisposed()) {
+          currentLwcPanel = LwcUiPanel.display(this.context.extensionUri, "s-prompt-input", {prompt: prompt});
+          
+          currentLwcPanel.onMessage((messageType, data) => {
+            if (messageType === "submit") {
+              // The data should contain the response object with the prompt name as key
+              this.sendResponse(ws, {
+                event: "promptsResponse",
+                promptsResponse: [data],
+              });
+              
+              // Set a timer to dispose the panel after 5 seconds if no new prompts arrive
+              lwcPanelDisposeTimer = setTimeout(() => {
+                if (currentLwcPanel && !currentLwcPanel.isDisposed()) {
+                  currentLwcPanel.dispose();
+                  currentLwcPanel = null;
+                }
+                lwcPanelDisposeTimer = null;
+              }, 5000);
+            }
+          });
+        } else {
+          // Panel exists, just update it with new prompt data
+          currentLwcPanel.sendInitializationData({prompt: prompt});
+        }
         return;
       }
 
@@ -238,6 +262,18 @@ export class LocalWebSocketServer {
 
   dispose() {
     try {
+      // Clean up any pending LWC panel disposal timer
+      if (lwcPanelDisposeTimer) {
+        clearTimeout(lwcPanelDisposeTimer);
+        lwcPanelDisposeTimer = null;
+      }
+      
+      // Dispose current LWC panel if exists
+      if (currentLwcPanel && !currentLwcPanel.isDisposed()) {
+        currentLwcPanel.dispose();
+        currentLwcPanel = null;
+      }
+      
       this.wss.close();
       this.server.close();
       globalWss = null;

@@ -10,6 +10,7 @@ export class LwcUiPanel {
   private disposables: vscode.Disposable[] = [];
   private messageListeners: MessageListener[] = [];
   private initializationData: any = null;
+  private _isDisposed: boolean = false;
 
   private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, lwcId: string, initData?: any) {
     this.panel = panel;
@@ -81,6 +82,11 @@ export class LwcUiPanel {
   }
 
   public dispose() {
+    if (this._isDisposed) {
+      return;
+    }
+    
+    this._isDisposed = true;
     LwcUiPanel.currentPanels.delete(this.lwcId);
 
     // Clean up our resources
@@ -95,6 +101,10 @@ export class LwcUiPanel {
     
     // Clear message listeners
     this.messageListeners = [];
+  }
+
+  public isDisposed(): boolean {
+    return this._isDisposed;
   }
 
   /**

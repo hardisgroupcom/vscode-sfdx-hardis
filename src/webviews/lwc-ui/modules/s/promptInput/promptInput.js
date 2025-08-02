@@ -35,6 +35,14 @@ export default class PromptInput extends LightningElement {
                 if (firstInput && typeof firstInput.focus === 'function') {
                     firstInput.focus();
                 }
+                
+                // Force refresh combobox value to ensure it displays properly
+                if (this.isSelectInput && this.selectedValue) {
+                    const combobox = this.template.querySelector('lightning-combobox');
+                    if (combobox) {
+                        combobox.value = this.selectedValue;
+                    }
+                }
             }, 100);
         }
     }
@@ -76,8 +84,22 @@ export default class PromptInput extends LightningElement {
             } else if (this.currentPrompt.type === 'select') {
                 // For single select, find the first selected choice
                 const selectedChoice = this.currentPrompt.choices && this.currentPrompt.choices.find(choice => choice.selected);
-                this.selectedValue = selectedChoice ? selectedChoice.value : '';
-                this.selectedOptionDescription = selectedChoice ? this.decodeHtmlEntities(selectedChoice.description || '') : '';
+                if (selectedChoice) {
+                    this.selectedValue = selectedChoice.value;
+                    this.selectedOptionDescription = this.decodeHtmlEntities(selectedChoice.description || '');
+                    
+                    // Ensure the reactive system picks up the change
+                    setTimeout(() => {
+                        const combobox = this.template.querySelector('lightning-combobox');
+                        if (combobox) {
+                            combobox.value = this.selectedValue;
+                        }
+                    }, 50);
+                } else {
+                    // If no choice is pre-selected, default to empty
+                    this.selectedValue = '';
+                    this.selectedOptionDescription = '';
+                }
             } else if (this.currentPrompt.type === 'multiselect') {
                 this.selectedValues = this.currentPrompt.choices && this.currentPrompt.choices
                     .filter(choice => choice.selected)
@@ -128,14 +150,35 @@ export default class PromptInput extends LightningElement {
         return this.decodeHtmlEntities(placeholder);
     }
 
-    // Helper method to decode HTML entities
+    // Helper method to decode HTML entities and strip ANSI codes
     decodeHtmlEntities(text) {
         if (!text || typeof text !== 'string') return text;
         
+        // Strip ANSI color codes and escape sequences
+        let cleanText = this.stripAnsiCodes(text);
+        
         // Create a temporary element to decode HTML entities
         const textarea = document.createElement('textarea');
-        textarea.innerHTML = text;
+        textarea.innerHTML = cleanText;
         return textarea.value;
+    }
+
+    // Helper method to strip ANSI color codes
+    stripAnsiCodes(text) {
+        if (!text || typeof text !== 'string') return text;
+        
+        // Remove ANSI escape sequences
+        return text
+            .replace(/\x1b\[[0-9;]*m/g, '') // Standard ANSI codes like \x1b[96m
+            .replace(/\[9[0-7]m/g, '')      // Color codes like [96m
+            .replace(/\[3[0-9]m/g, '')      // Color codes like [39m
+            .replace(/\[1m/g, '')           // Bold
+            .replace(/\[0m/g, '')           // Reset
+            .replace(/\[22m/g, '')          // Normal intensity
+            .replace(/\[2[0-9]m/g, '')      // Various codes
+            .replace(/\[4[0-9]m/g, '')      // Background colors
+            .replace(/\[[0-9]+m/g, '')      // Any remaining numeric codes
+            .replace(/\[[0-9;]+m/g, '');    // Multiple codes
     }
 
     get promptName() {
@@ -206,6 +249,13 @@ export default class PromptInput extends LightningElement {
         if (this.currentPrompt && this.currentPrompt.choices) {
             const selectedChoice = this.currentPrompt.choices.find(choice => choice.value === this.selectedValue);
             this.selectedOptionDescription = selectedChoice ? this.decodeHtmlEntities(selectedChoice.description || '') : '';
+        }
+        
+        // Force the combobox to update its display
+        const combobox = this.template.querySelector('lightning-combobox');
+        if (combobox) {
+            // This ensures the value is properly reflected in the UI
+            combobox.value = this.selectedValue;
         }
     }
 

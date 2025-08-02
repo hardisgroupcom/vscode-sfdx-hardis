@@ -156,6 +156,20 @@ lightning-combobox {
     width: 100%;
 }
 
+/* Specific styling for prompt combobox */
+.prompt-combobox {
+    --slds-c-combobox-color-text: #181818;
+    --slds-c-input-color-text: #181818;
+    --slds-c-input-text-color: #181818;
+}
+
+/* Ensure the combobox input text is dark and visible */
+.prompt-combobox lightning-combobox,
+.prompt-combobox {
+    color: #181818;
+    font-weight: 500;
+}
+
 lightning-button {
     display: inline-block;
 }

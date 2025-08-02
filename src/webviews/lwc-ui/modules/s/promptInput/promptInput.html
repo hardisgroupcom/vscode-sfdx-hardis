@@ -55,7 +55,8 @@
                             options={selectOptions}
                             value={selectedValue}
                             onchange={handleSelectChange}
-                            onkeydown={handleKeyDown}>
+                            onkeydown={handleKeyDown}
+                            class="prompt-combobox">
                         </lightning-combobox>
                         <!-- Display description for selected option -->
                         <template if:true={selectedOptionDescription}>
