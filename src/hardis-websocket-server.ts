@@ -123,9 +123,14 @@ export class LocalWebSocketServer {
         // Get or create the panel for prompt input
         const panel = panelManager.getOrCreatePanel(lwcId, {prompt: prompt});
         
+        // Track if a response has been sent to prevent duplicate responses
+        let responseSent = false;
+        
         // Set up message handling for this specific prompt
         const messageUnsubscribe = panel.onMessage((messageType: string, data: any) => {
-          if (messageType === "submit") {
+          if (messageType === "submit" && !responseSent) {
+            responseSent = true;
+            
             // The data should contain the response object with the prompt name as key
             this.sendResponse(ws, {
               event: "promptsResponse",
@@ -139,6 +144,28 @@ export class LocalWebSocketServer {
             messageUnsubscribe();
           }
         });
+        
+        // Set up disposal callback to handle panel closure without submission
+        const onDisposalCallback = () => {
+          if (!responseSent) {
+            responseSent = true;
+            
+            // Send exitNow response like when escape key is pressed in quickpick
+            const exitResponse: any = {};
+            exitResponse[`${prompt.name}`] = "exitNow";
+            
+            this.sendResponse(ws, {
+              event: "promptsResponse",
+              promptsResponse: [exitResponse],
+            });
+            
+            // Unsubscribe from messages
+            messageUnsubscribe();
+          }
+        };
+        
+        // Register the disposal callback with the panel manager
+        panelManager.setDisposalCallback(lwcId, onDisposalCallback);
         
         return;
       }

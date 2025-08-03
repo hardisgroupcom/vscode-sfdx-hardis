@@ -9,6 +9,7 @@ export class LwcPanelManager {
   private static instance: LwcPanelManager | null = null;
   private activePanels: Map<string, LwcUiPanel> = new Map();
   private panelDisposeTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
+  private disposalCallbacks: Map<string, () => void> = new Map();
   private context: vscode.ExtensionContext;
 
   private constructor(context: vscode.ExtensionContext) {
@@ -62,6 +63,17 @@ export class LwcPanelManager {
     // Set up disposal handling
     const originalDispose = panel.dispose.bind(panel);
     panel.dispose = () => {
+      // Call disposal callback if registered
+      const callback = this.disposalCallbacks.get(lwcId);
+      if (callback) {
+        try {
+          callback();
+        } catch (error) {
+          console.error("Error in disposal callback:", error);
+        }
+        this.disposalCallbacks.delete(lwcId);
+      }
+      
       // Clean up our references when panel is disposed
       this.activePanels.delete(lwcId);
       this.clearDisposeTimer(lwcId);
@@ -104,6 +116,15 @@ export class LwcPanelManager {
   }
 
   /**
+   * Set a disposal callback for a specific panel
+   * @param lwcId The LWC component identifier
+   * @param callback Function to call when the panel is disposed
+   */
+  public setDisposalCallback(lwcId: string, callback: () => void): void {
+    this.disposalCallbacks.set(lwcId, callback);
+  }
+
+  /**
    * Clear the dispose timer for a specific panel
    * @param lwcId The LWC component identifier
    */
@@ -121,6 +142,7 @@ export class LwcPanelManager {
    */
   public disposePanel(lwcId: string): void {
     this.clearDisposeTimer(lwcId);
+    this.disposalCallbacks.delete(lwcId);
     const panel = this.activePanels.get(lwcId);
     if (panel && !panel.isDisposed()) {
       panel.dispose();
@@ -134,6 +156,9 @@ export class LwcPanelManager {
     // Clear all timers
     this.panelDisposeTimers.forEach((timer) => clearTimeout(timer));
     this.panelDisposeTimers.clear();
+
+    // Clear all disposal callbacks
+    this.disposalCallbacks.clear();
 
     // Dispose all panels
     this.activePanels.forEach((panel) => {
