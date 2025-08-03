@@ -137,12 +137,8 @@ const lwcWebviewConfig = {
     new CopyWebpackPlugin({
       patterns: [
         {
-          from: path.resolve(__dirname, 'node_modules/@salesforce-ux/design-system/assets/styles/salesforce-lightning-design-system.min.css'),
-          to: 'assets/slds.css'
-        },
-        {
-          from: path.resolve(__dirname, 'node_modules/@salesforce-ux/design-system/assets/icons'),
-          to: 'assets/icons'
+          from: path.resolve(__dirname, 'node_modules/@salesforce-ux/design-system/assets'),
+          to: 'assets'
         }
       ]
     })

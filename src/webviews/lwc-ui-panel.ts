@@ -12,7 +12,12 @@ export class LwcUiPanel {
   private initializationData: any = null;
   private _isDisposed: boolean = false;
 
-  private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, lwcId: string, initData?: any) {
+  private constructor(
+    panel: vscode.WebviewPanel,
+    extensionUri: vscode.Uri,
+    lwcId: string,
+    initData?: any
+  ) {
     this.panel = panel;
     this.extensionUri = extensionUri;
     this.lwcId = lwcId;
@@ -43,7 +48,11 @@ export class LwcUiPanel {
     }
   }
 
-  public static display(extensionUri: vscode.Uri, lwcId: string, initData?: any): LwcUiPanel {
+  public static display(
+    extensionUri: vscode.Uri,
+    lwcId: string,
+    initData?: any
+  ): LwcUiPanel {
     const column = vscode.window.activeTextEditor
       ? vscode.window.activeTextEditor.viewColumn
       : undefined;
@@ -59,8 +68,6 @@ export class LwcUiPanel {
       return existingPanel;
     }
 
-
-
     // Otherwise, create a new panel.
     const panel = vscode.window.createWebviewPanel(
       "lwcUi",
@@ -73,7 +80,12 @@ export class LwcUiPanel {
         // Restrict the webview to only loading content from our extension's `media` directory.
         localResourceRoots: [
           vscode.Uri.joinPath(extensionUri, "out", "webviews"),
-          vscode.Uri.joinPath(extensionUri, "node_modules", "@salesforce-ux", "design-system"),
+          vscode.Uri.joinPath(
+            extensionUri,
+            "node_modules",
+            "@salesforce-ux",
+            "design-system"
+          ),
         ],
       }
     );
@@ -88,7 +100,7 @@ export class LwcUiPanel {
     const lwcDefinitions: {
       [key: string]: string;
     } = {
-      "s-prompt-input": "Prompt Input"
+      "s-prompt-input": "Prompt Input",
     };
     const panelTitle = lwcDefinitions[this.lwcId] || "SFDX Hardis";
     this.panel.title = panelTitle;
@@ -98,7 +110,7 @@ export class LwcUiPanel {
     if (this._isDisposed) {
       return;
     }
-    
+
     this._isDisposed = true;
     LwcUiPanel.currentPanels.delete(this.lwcId);
 
@@ -111,7 +123,7 @@ export class LwcUiPanel {
         x.dispose();
       }
     }
-    
+
     // Clear message listeners
     this.messageListeners = [];
   }
@@ -127,8 +139,8 @@ export class LwcUiPanel {
   public sendInitializationData(data: any): void {
     this.initializationData = data;
     this.panel.webview.postMessage({
-      type: 'initialize',
-      data: data
+      type: "initialize",
+      data: data,
     });
   }
 
@@ -147,7 +159,7 @@ export class LwcUiPanel {
    */
   public onMessage(listener: MessageListener): () => void {
     this.messageListeners.push(listener);
-    
+
     // Return unsubscribe function
     return () => {
       const index = this.messageListeners.indexOf(listener);
@@ -162,14 +174,14 @@ export class LwcUiPanel {
    * @param message The message received from the webview
    */
   private notifyMessageListeners(message: any): void {
-    const messageType = message.type || 'unknown';
+    const messageType = message.type || "unknown";
     const data = message.data || message;
-    
-    this.messageListeners.forEach(listener => {
+
+    this.messageListeners.forEach((listener) => {
       try {
         listener(messageType, data);
       } catch (error) {
-        console.error('Error in LWC UI message listener:', error);
+        console.error("Error in LWC UI message listener:", error);
       }
     });
   }
@@ -184,38 +196,35 @@ export class LwcUiPanel {
   private getHtmlForWebview(webview: vscode.Webview) {
     // Get the local path to main script run in the webview, then convert it to a uri we can use in the webview.
     const scriptUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this.extensionUri, 'out', 'webviews', 'lwc-ui.js')
+      vscode.Uri.joinPath(this.extensionUri, "out", "webviews", "lwc-ui.js")
     );
 
     // Get path to SLDS CSS (copied by webpack)
     const sldsStylesUri = webview.asWebviewUri(
       vscode.Uri.joinPath(
         this.extensionUri,
-        'out',
-        'webviews',
-        'assets',
-        'slds.css'
+        "out",
+        "webviews",
+        "assets",
+        "styles",
+        "salesforce-lightning-design-system.min.css"
       )
     );
 
     // Get path to SLDS icons directory (copied by webpack)
     const sldsIconsUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(
-        this.extensionUri,
-        'out',
-        'webviews',
-        'assets',
-        'icons'
-      )
+      vscode.Uri.joinPath(this.extensionUri, "out", "webviews","assets", "icons")
     );
 
     // Use a nonce to only allow specific scripts to be run
     const nonce = getNonce();
 
     // Safely serialize initialization data
-    const initDataJson = this.initializationData 
-      ? JSON.stringify(this.initializationData).replace(/'/g, '&#39;').replace(/"/g, '&quot;')
-      : '{}';
+    const initDataJson = this.initializationData
+      ? JSON.stringify(this.initializationData)
+          .replace(/'/g, "&#39;")
+          .replace(/"/g, "&quot;")
+      : "{}";
 
     return `<!DOCTYPE html>
       <html lang="en">
@@ -224,7 +233,7 @@ export class LwcUiPanel {
         <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; connect-src ${webview.cspSource}; img-src ${webview.cspSource} https:; script-src 'nonce-${nonce}' 'unsafe-eval' 'unsafe-inline';">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         
-        <link href="${sldsStylesUri}" rel="stylesheet">
+        <link href="${sldsStylesUri}" rel="stylesheet" type="text/css">
         <link rel="icons" href="${sldsIconsUri}">
         
         <title>SFDX Hardis LWC UI</title>
@@ -243,8 +252,9 @@ export class LwcUiPanel {
 }
 
 function getNonce() {
-  let text = '';
-  const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let text = "";
+  const possible =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   for (let i = 0; i < 32; i++) {
     text += possible.charAt(Math.floor(Math.random() * possible.length));
   }
