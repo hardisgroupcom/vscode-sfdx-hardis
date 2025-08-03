@@ -1,176 +1,184 @@
 <template>
     <template if:true={isVisible}>
-        <div class="prompt-inline-container" onkeydown={handleKeyDown}>
-            <div class="prompt-card">
-                <!-- Prompt Message -->
-                <div class="prompt-header">
-                    <span class="prompt-message-content"></span>
-                </div>
-
-                <!-- Error Message -->
-                <template if:true={error}>
-                    <div class="error-message">
-                        <div class="slds-notify slds-notify_alert slds-theme_error" role="alert">
-                            <span class="slds-assistive-text">Error</span>
-                            <span>{error}</span>
-                        </div>
+        <div class="slds-p-around_medium" onkeydown={handleKeyDown}>
+            <div class="slds-card slds-card_boundary">
+                <div class="slds-card__body slds-card__body_inner">
+                    <!-- Prompt Message -->
+                    <div class="slds-m-bottom_medium slds-p-bottom_small slds-border_bottom">
+                        <span class="slds-text-heading_small slds-text-color_default prompt-message-content"></span>
                     </div>
-                </template>
 
-                <!-- Text Input -->
-                <template if:true={isTextInput}>
-                    <div class="input-section">
-                        <lightning-input
-                            type="text"
-                            label="Your Input"
-                            placeholder={promptPlaceholder}
-                            value={inputValue}
-                            onchange={handleInputChange}
-                            oninput={handleInputChange}
-                            onkeydown={handleKeyDown}>
-                        </lightning-input>
-                    </div>
-                </template>
-
-                <!-- Number Input -->
-                <template if:true={isNumberInput}>
-                    <div class="input-section">
-                        <lightning-input
-                            type="number"
-                            label="Your Input"
-                            placeholder={promptPlaceholder}
-                            value={inputValue}
-                            step={numberStep}
-                            onchange={handleInputChange}
-                            oninput={handleInputChange}
-                            onkeydown={handleKeyDown}>
-                        </lightning-input>
-                    </div>
-                </template>
-
-                <!-- Select Input with Buttons (10 or fewer choices) -->
-                <template if:true={isSelectWithButtons}>
-                    <div class="input-section">
-                        <div class="select-buttons-container">
-                            <template for:each={selectOptions} for:item="option">
-                                <button
-                                    key={option.value}
-                                    type="button"
-                                    data-value={option.value}
-                                    onclick={handleButtonSelect}
-                                    onkeydown={handleKeyDown}
-                                    class="select-option-button">
-                                    <div class="button-label">{option.label}</div>
-                                    <template if:true={option.description}>
-                                        <div class="button-description-below">{option.description}</div>
-                                    </template>
-                                </button>
-                            </template>
-                        </div>
-                        <!-- Display description for selected option -->
-                        <template if:true={selectedOptionDescription}>
-                            <div class="option-description">
-                                {selectedOptionDescription}
+                    <!-- Error Message -->
+                    <template if:true={error}>
+                        <div class="slds-m-bottom_medium">
+                            <div class="slds-notify slds-notify_alert slds-theme_error" role="alert">
+                                <span class="slds-assistive-text">Error</span>
+                                <span>{error}</span>
                             </div>
-                        </template>
-                    </div>
-                </template>
+                        </div>
+                    </template>
 
-                <!-- Select Input with Combobox (more than 10 choices) -->
-                <template if:true={isSelectWithCombobox}>
-                    <div class="input-section">
-                        <lightning-combobox
-                            label="Select an option"
-                            placeholder="Choose an option..."
-                            options={selectOptions}
-                            value={selectedValue}
-                            onchange={handleSelectChange}
-                            onselect={handleSelectChange}
-                            onclick={handleComboboxClick}
-                            onkeydown={handleKeyDown}
-                            class="prompt-combobox">
-                        </lightning-combobox>
-                        <!-- Display description for selected option -->
-                        <template if:true={selectedOptionDescription}>
-                            <div class="option-description">
-                                {selectedOptionDescription}
-                            </div>
-                        </template>
-                    </div>
-                </template>
+                    <!-- Text Input -->
+                    <template if:true={isTextInput}>
+                        <div class="slds-m-bottom_medium">
+                            <lightning-input
+                                type="text"
+                                label="Your Input"
+                                placeholder={promptPlaceholder}
+                                value={inputValue}
+                                onchange={handleInputChange}
+                                oninput={handleInputChange}
+                                onkeydown={handleKeyDown}>
+                            </lightning-input>
+                        </div>
+                    </template>
 
-                <!-- Multiselect Input -->
-                <template if:true={isMultiselectInput}>
-                    <div class="input-section">
-                        <fieldset class="slds-form-element">
-                            <legend class="slds-form-element__legend slds-form-element__label">
-                                Select options (multiple allowed)
-                            </legend>
-                            <div class="slds-form-element__control">
-                                <template for:each={multiselectOptions} for:item="option">
-                                    <div key={option.value} class="checkbox-option">
-                                        <lightning-input
-                                            type="checkbox"
-                                            label={option.label}
-                                            value={option.value}
-                                            checked={option.checked}
-                                            onchange={handleMultiselectChange}
-                                            onkeydown={handleKeyDown}>
-                                        </lightning-input>
-                                        <template if:true={option.description}>
-                                            <div class="option-description-small">
-                                                {option.description}
+                    <!-- Number Input -->
+                    <template if:true={isNumberInput}>
+                        <div class="slds-m-bottom_medium">
+                            <lightning-input
+                                type="number"
+                                label="Your Input"
+                                placeholder={promptPlaceholder}
+                                value={inputValue}
+                                step={numberStep}
+                                onchange={handleInputChange}
+                                oninput={handleInputChange}
+                                onkeydown={handleKeyDown}>
+                            </lightning-input>
+                        </div>
+                    </template>
+
+                    <!-- Select Input with Buttons (5 or fewer choices) -->
+                    <template if:true={isSelectWithButtons}>
+                        <div class="slds-m-bottom_medium">
+                            <div class="slds-grid slds-grid_vertical slds-gutters_large">
+                                <template for:each={selectOptions} for:item="option">
+                                    <div key={option.value} class="slds-col slds-m-bottom_small">
+                                        <button
+                                            type="button"
+                                            data-value={option.value}
+                                            onclick={handleButtonSelect}
+                                            onkeydown={handleKeyDown}
+                                            class="slds-button slds-button_neutral slds-button_stretch select-option-button slds-p-around_medium">
+                                            <div class="slds-grid slds-grid_vertical slds-grid_align-start slds-text-align_left">
+                                                <div class="slds-col slds-text-heading_small slds-m-bottom_x-small">{option.label}</div>
+                                                <template if:true={option.description}>
+                                                    <div class="slds-col slds-text-body_small slds-text-color_weak slds-text-align_left">{option.description}</div>
+                                                </template>
                                             </div>
-                                        </template>
+                                        </button>
                                     </div>
                                 </template>
                             </div>
-                        </fieldset>
-                    </div>
-                </template>
+                            <!-- Display description for selected option -->
+                            <template if:true={selectedOptionDescription}>
+                                <div class="slds-box slds-box_x-small slds-theme_shade slds-m-top_small">
+                                    <div class="slds-text-body_small">{selectedOptionDescription}</div>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
 
-                <!-- Action Buttons (hidden for button select since buttons auto-submit) -->
-                <template if:false={isSelectWithButtons}>
-                    <div class="action-buttons">
-                        <div class="keyboard-hint">
-                            Press Enter to validate, Esc to cancel
+                    <!-- Select Input with Combobox (more than 5 choices) -->
+                    <template if:true={isSelectWithCombobox}>
+                        <div class="slds-m-bottom_medium">
+                            <lightning-combobox
+                                label="Select an option"
+                                placeholder="Choose an option..."
+                                options={selectOptions}
+                                value={selectedValue}
+                                onchange={handleSelectChange}
+                                onselect={handleSelectChange}
+                                onclick={handleComboboxClick}
+                                onkeydown={handleKeyDown}
+                                class="prompt-combobox">
+                            </lightning-combobox>
+                            <!-- Display description for selected option -->
+                            <template if:true={selectedOptionDescription}>
+                                <div class="slds-m-top_small">
+                                    <div class="slds-text-body_small slds-text-color_weak">{selectedOptionDescription}</div>
+                                </div>
+                            </template>
                         </div>
-                        <div class="action-buttons-right">
-                            <lightning-button
-                                variant="brand"
-                                label="Validate"
-                                icon-name="utility:check"
-                                onclick={handleSubmit}
-                                class="action-button">
-                            </lightning-button>
-                            <lightning-button
-                                variant="neutral"
-                                label="Cancel"
-                                icon-name="utility:close"
-                                onclick={handleCancel}
-                                class="action-button">
-                            </lightning-button>
-                        </div>
-                    </div>
-                </template>
+                    </template>
 
-                <!-- Cancel button only for button select -->
-                <template if:true={isSelectWithButtons}>
-                    <div class="action-buttons">
-                        <div class="keyboard-hint">
-                            Click an option to select, or press Esc to cancel
+                    <!-- Multiselect Input -->
+                    <template if:true={isMultiselectInput}>
+                        <div class="slds-m-bottom_medium">
+                            <fieldset class="slds-form-element">
+                                <legend class="slds-form-element__legend slds-form-element__label">
+                                    Select options (multiple allowed)
+                                </legend>
+                                <div class="slds-form-element__control">
+                                    <template for:each={multiselectOptions} for:item="option">
+                                        <div key={option.value} class="slds-m-bottom_small">
+                                            <lightning-input
+                                                type="checkbox"
+                                                label={option.label}
+                                                value={option.value}
+                                                checked={option.checked}
+                                                onchange={handleMultiselectChange}
+                                                onkeydown={handleKeyDown}>
+                                            </lightning-input>
+                                            <template if:true={option.description}>
+                                                <div class="slds-text-body_small slds-text-color_weak slds-m-left_large slds-m-top_x-small">
+                                                    {option.description}
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
+                            </fieldset>
                         </div>
-                        <div class="action-buttons-right">
-                            <lightning-button
-                                variant="neutral"
-                                label="Cancel"
-                                icon-name="utility:close"
-                                onclick={handleCancel}
-                                class="action-button">
-                            </lightning-button>
+                    </template>
+
+                    <!-- Action Buttons (hidden for button select since buttons auto-submit) -->
+                    <template if:false={isSelectWithButtons}>
+                        <div class="slds-border_top slds-p-top_medium slds-grid slds-grid_align-spread slds-grid_vertical-align-center">
+                            <div class="slds-col">
+                                <div class="slds-text-body_small slds-text-color_weak">
+                                    Press Enter to validate, Esc to cancel
+                                </div>
+                            </div>
+                            <div class="slds-col slds-no-flex">
+                                <div class="slds-button-group" role="group">
+                                    <lightning-button
+                                        variant="brand"
+                                        label="Validate"
+                                        icon-name="utility:check"
+                                        onclick={handleSubmit}>
+                                    </lightning-button>
+                                    <lightning-button
+                                        variant="neutral"
+                                        label="Cancel"
+                                        icon-name="utility:close"
+                                        onclick={handleCancel}>
+                                    </lightning-button>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </template>
+                    </template>
+
+                    <!-- Cancel button only for button select -->
+                    <template if:true={isSelectWithButtons}>
+                        <div class="slds-border_top slds-p-top_medium slds-grid slds-grid_align-spread slds-grid_vertical-align-center">
+                            <div class="slds-col">
+                                <div class="slds-text-body_small slds-text-color_weak">
+                                    Click an option to select, or press Esc to cancel
+                                </div>
+                            </div>
+                            <div class="slds-col slds-no-flex">
+                                <lightning-button
+                                    variant="neutral"
+                                    label="Cancel"
+                                    icon-name="utility:close"
+                                    onclick={handleCancel}>
+                                </lightning-button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
             </div>
         </div>
     </template>
