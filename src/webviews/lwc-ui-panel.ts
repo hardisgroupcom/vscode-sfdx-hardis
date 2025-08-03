@@ -68,6 +68,7 @@ export class LwcUiPanel {
         // Restrict the webview to only loading content from our extension's `media` directory.
         localResourceRoots: [
           vscode.Uri.joinPath(extensionUri, "out", "webviews"),
+          vscode.Uri.joinPath(extensionUri, "out", "assets"), // Add assets directory
           vscode.Uri.joinPath(
             extensionUri,
             "node_modules",
@@ -198,7 +199,6 @@ export class LwcUiPanel {
       vscode.Uri.joinPath(
         this.extensionUri,
         "out",
-        "webviews",
         "assets",
         "styles",
         "salesforce-lightning-design-system.min.css"
@@ -207,7 +207,7 @@ export class LwcUiPanel {
 
     // Get path to SLDS icons directory (copied by webpack)
     const sldsIconsUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this.extensionUri, "out", "webviews","assets", "icons")
+      vscode.Uri.joinPath(this.extensionUri, "out", "assets", "icons")
     );
 
     // Use a nonce to only allow specific scripts to be run
@@ -224,11 +224,10 @@ export class LwcUiPanel {
       <html lang="en">
       <head>
         <meta charset="UTF-8">
-        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; connect-src ${webview.cspSource}; img-src ${webview.cspSource} https:; script-src 'nonce-${nonce}' 'unsafe-eval' 'unsafe-inline';">
+        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; connect-src ${webview.cspSource}; img-src ${webview.cspSource} https: data:; font-src ${webview.cspSource}; script-src 'nonce-${nonce}' 'unsafe-eval' 'unsafe-inline';">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         
         <link href="${sldsStylesUri}" rel="stylesheet" type="text/css">
-        <link rel="icons" href="${sldsIconsUri}">
         
         <title>SFDX Hardis LWC UI</title>
         <style>
@@ -239,6 +238,10 @@ export class LwcUiPanel {
       <body class="slds-scope">
         <div id="app" data-lwc-id="${this.lwcId}" data-init-data="${initDataJson}"></div>
         
+        <script nonce="${nonce}">
+          // Set SLDS icons path for LWC components
+          window.SLDS_ICONS_PATH = "${sldsIconsUri}";
+        </script>
         <script nonce="${nonce}" src="${scriptUri}"></script>
       </body>
       </html>`;

@@ -138,7 +138,8 @@ const lwcWebviewConfig = {
       patterns: [
         {
           from: path.resolve(__dirname, 'node_modules/@salesforce-ux/design-system/assets'),
-          to: 'assets'
+          to: path.resolve(__dirname, 'out/assets'), // Copy to out/assets instead of out/webviews/assets
+          noErrorOnMissing: true
         }
       ]
     })
