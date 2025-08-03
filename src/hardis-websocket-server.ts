@@ -61,11 +61,11 @@ export class LocalWebSocketServer {
     if (process.env.DEBUG) {
       Logger.log("received:" + data);
     }
-    // Client initialization
+    // Command initialization
     if (data.event === "initClient") {
       this.clients[data.context.id] = { context: data.context, ws: ws };
     }
-    // Client initialization
+    // Command end
     if (data.event === "clientClose") {
       delete this.clients[data.context.id];
     }
