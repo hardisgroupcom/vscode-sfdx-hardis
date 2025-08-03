@@ -9,6 +9,7 @@ import { HardisDebugger } from "./hardis-debugger";
 import { HardisPluginsProvider } from "./hardis-plugins-provider";
 import { HardisStatusProvider } from "./hardis-status-provider";
 import { LocalWebSocketServer } from "./hardis-websocket-server";
+import { LwcPanelManager } from "./lwc-panel-manager";
 import { Logger } from "./logger";
 import { getWorkspaceRoot, preLoadCache } from "./utils";
 import { LwcUiPanel } from "./webviews/lwc-ui-panel";
@@ -105,6 +106,9 @@ export function activate(context: vscode.ExtensionContext) {
     }
   );
   context.subscriptions.push(lwcUiCommand);
+
+  // Initialize LWC Panel Manager
+  LwcPanelManager.getInstance(context);
 
   // Initialize colors
   const hardisColors = new HardisColors();

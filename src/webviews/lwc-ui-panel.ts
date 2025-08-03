@@ -3,7 +3,6 @@ import * as vscode from "vscode";
 type MessageListener = (messageType: string, data: any) => void;
 
 export class LwcUiPanel {
-  private static currentPanels: Map<string, LwcUiPanel> = new Map();
   private readonly panel: vscode.WebviewPanel;
   private readonly extensionUri: vscode.Uri;
   private lwcId: string;
@@ -57,18 +56,7 @@ export class LwcUiPanel {
       ? vscode.window.activeTextEditor.viewColumn
       : undefined;
 
-    // If we already have a panel, show it.
-    if (LwcUiPanel.currentPanels.has(lwcId)) {
-      const existingPanel = LwcUiPanel.currentPanels.get(lwcId)!;
-      existingPanel.panel.reveal(column);
-      // Send initialization data if provided
-      if (initData) {
-        existingPanel.sendInitializationData(initData);
-      }
-      return existingPanel;
-    }
-
-    // Otherwise, create a new panel.
+    // Create a new panel
     const panel = vscode.window.createWebviewPanel(
       "lwcUi",
       "SFDX Hardis",
@@ -92,7 +80,6 @@ export class LwcUiPanel {
 
     const lwcUiPanel = new LwcUiPanel(panel, extensionUri, lwcId, initData);
     lwcUiPanel.setPanelTitleFromLwcId();
-    LwcUiPanel.currentPanels.set(lwcId, lwcUiPanel);
     return lwcUiPanel;
   }
 
@@ -112,7 +99,6 @@ export class LwcUiPanel {
     }
 
     this._isDisposed = true;
-    LwcUiPanel.currentPanels.delete(this.lwcId);
 
     // Clean up our resources
     this.panel.dispose();
@@ -130,6 +116,14 @@ export class LwcUiPanel {
 
   public isDisposed(): boolean {
     return this._isDisposed;
+  }
+
+  /**
+   * Reveal the panel (bring it to focus)
+   * @param column Optional column to reveal the panel in
+   */
+  public reveal(column?: vscode.ViewColumn): void {
+    this.panel.reveal(column);
   }
 
   /**
