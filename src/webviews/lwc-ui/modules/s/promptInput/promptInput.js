@@ -159,6 +159,16 @@ export default class PromptInput extends LightningElement {
         return this.decodeHtmlEntities(placeholder);
     }
 
+    get comboboxPlaceholder() {
+        const placeholder = this.promptPlaceholder;
+        return placeholder || 'Choose an option...';
+    }
+
+    get promptDescription() {
+        const description = this.currentPrompt && this.currentPrompt.description || '';
+        return this.decodeHtmlEntities(description);
+    }
+
     // Helper method to decode HTML entities and strip ANSI codes
     decodeHtmlEntities(text) {
         if (!text || typeof text !== 'string') return text;

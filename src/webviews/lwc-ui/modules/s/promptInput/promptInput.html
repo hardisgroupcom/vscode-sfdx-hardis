@@ -5,7 +5,17 @@
                 <div class="slds-card__body slds-card__body_inner">
                     <!-- Prompt Message -->
                     <div class="slds-m-bottom_medium slds-p-bottom_small slds-border_bottom">
-                        <span class="slds-text-heading_small slds-text-color_default prompt-message-content"></span>
+                        <div class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center">
+                            <div class="slds-col">
+                                <span class="slds-text-heading_small slds-text-color_default prompt-message-content"></span>
+                            </div>
+                            <!-- Help text icon for description -->
+                            <template if:true={promptDescription}>
+                                <div class="slds-col slds-no-flex">
+                                    <lightning-helptext content={promptDescription}></lightning-helptext>
+                                </div>
+                            </template>
+                        </div>
                     </div>
 
                     <!-- Error Message -->
@@ -85,7 +95,7 @@
                         <div class="slds-m-bottom_medium">
                             <lightning-combobox
                                 label="Select an option"
-                                placeholder="Choose an option..."
+                                placeholder={comboboxPlaceholder}
                                 options={selectOptions}
                                 value={selectedValue}
                                 onchange={handleSelectChange}

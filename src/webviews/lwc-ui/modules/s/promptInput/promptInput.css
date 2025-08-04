@@ -40,3 +40,21 @@ lightning-combobox {
     display: block;
     width: 100%;
 }
+
+/* Make the helptext icon bigger */
+lightning-helptext {
+    --slds-c-icon-size-medium: 1.25rem; /* Increase icon size from default 1rem to 1.25rem */
+}
+
+/* Alternative approach - target the help icon directly */
+lightning-helptext::part(icon) {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+}
+
+/* Target the SVG icon inside helptext for better compatibility */
+lightning-helptext .slds-button__icon,
+lightning-helptext lightning-icon {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+}
