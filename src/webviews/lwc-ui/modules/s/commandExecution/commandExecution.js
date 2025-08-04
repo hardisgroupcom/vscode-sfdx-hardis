@@ -213,7 +213,7 @@ export default class CommandExecution extends LightningElement {
         // Add log line for sub-command start (this will be replaced when sub-command ends)
         this.addLogLine({
             logType: 'log',
-            message: `⏳ Running: ${subCommand.command}`,
+            message: `Running: ${subCommand.command}`,
             timestamp: subCommand.startTime,
             isSubCommand: true,
             subCommandId: subCommand.id
@@ -240,12 +240,11 @@ export default class CommandExecution extends LightningElement {
         if (!subCommand) return;
 
         const duration = this.calculateDuration(subCommand.startTime, subCommand.endTime);
-        const statusIcon = subCommandData.success ? '✅' : '❌';
         
         // Replace the sub-command start log line with the completed one
         this.replaceSubCommandLog(subCommand.id, {
             logType: subCommandData.success ? 'success' : 'error',
-            message: `${statusIcon} ${subCommandData.success ? 'Completed' : 'Failed'}: ${subCommandData.command} (${duration})`,
+            message: `${subCommandData.command} (${duration})`,
             timestamp: subCommand.endTime,
             isSubCommand: true,
             subCommandId: subCommand.id
@@ -563,12 +562,8 @@ export default class CommandExecution extends LightningElement {
     }
 
     shouldUseSpinner(log) {
-        // Use spinner for running sub-commands (those that start with ⏳ or contain "Running:")
-        if (log.isSubCommand && log.message && (
-            log.message.includes('⏳ Running:') || 
-            log.message.includes('Running:') ||
-            log.message.startsWith('⏳')
-        )) {
+        // Use spinner for running sub-commands (those that contain "Running:")
+        if (log.isSubCommand && log.message && log.message.includes('Running:')) {
             return true;
         }
         return false;
