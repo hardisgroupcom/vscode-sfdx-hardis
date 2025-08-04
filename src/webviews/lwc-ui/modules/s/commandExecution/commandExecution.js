@@ -115,9 +115,15 @@ export default class CommandExecution extends LightningElement {
     }
 
     closeCurrentSection() {
-        if (this.currentSection && this.currentSection.logs.length > 0) {
+        if (this.currentSection) {
             this.currentSection.endTime = new Date();
             this.currentSection.isActive = false;
+            
+            // Keep empty sections but mark them as non-expandable
+            if (this.currentSection.logs.length === 0) {
+                this.currentSection.isExpanded = false;
+                this.currentSection.isEmpty = true;
+            }
         }
     }
 
@@ -345,22 +351,11 @@ export default class CommandExecution extends LightningElement {
                                section.isActive ? 'utility:clock' : 'utility:success',
             sectionStatusClass: section.hasError ? 'slds-text-color_error' : 
                                section.isActive ? 'slds-text-color_weak' : 'slds-text-color_success',
-            toggleIcon: section.isExpanded ? 'utility:chevronup' : 'utility:chevrondown'
+            toggleIcon: section.isExpanded ? 'utility:chevronup' : 'utility:chevrondown',
+            hasLogs: section.logs && section.logs.length > 0,
+            showToggle: section.logs && section.logs.length > 0,
+            isEmpty: section.isEmpty || (section.logs && section.logs.length === 0)
         }));
-    }
-
-    get subCommandsCount() {
-        return this.currentSubCommands.length;
-    }
-
-    get completedSubCommandsCount() {
-        return this.currentSubCommands.filter(sc => sc.endTime !== null).length;
-    }
-
-    get progressBarStyle() {
-        if (this.subCommandsCount === 0) return 'width: 0%';
-        const percentage = (this.completedSubCommandsCount / this.subCommandsCount) * 100;
-        return `width: ${percentage}%`;
     }
 
     get toggleIcon() {
@@ -477,7 +472,7 @@ export default class CommandExecution extends LightningElement {
         const sectionId = event.target.dataset.sectionId;
         if (sectionId) {
             this.logSections = this.logSections.map(section => {
-                if (section.id === sectionId) {
+                if (section.id === sectionId && section.logs && section.logs.length > 0) {
                     return { ...section, isExpanded: !section.isExpanded };
                 }
                 return section;

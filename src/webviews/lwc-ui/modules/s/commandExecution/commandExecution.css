@@ -15,7 +15,7 @@
 .log-sections {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.25rem;
 }
 
 .log-section {
@@ -25,7 +25,6 @@
 }
 
 .section-header {
-  padding: 0.5rem;
   cursor: pointer;
   border-radius: 0.25rem;
   transition: background-color 0.2s ease;
@@ -36,19 +35,20 @@
 }
 
 .section-title {
-  font-weight: 600;
+  font-weight: 500;
+  font-size: 0.875rem;
 }
 
 .section-logs {
   border-top: 1px solid #e5e9ef;
-  padding-top: 0.5rem;
 }
 
 .section-logs > div {
-  padding: 0.25rem 0.5rem;
+  padding: 0.125rem 0.25rem;
   border-radius: 0.125rem;
   border-left: 3px solid transparent;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.125rem;
+  font-size: 0.8125rem;
 }
 
 .log-lines {
