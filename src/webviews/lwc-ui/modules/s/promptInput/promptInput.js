@@ -273,12 +273,56 @@ export default class PromptInput extends LightningElement {
     get multiselectOptions() {
         if (!this.currentPrompt || !this.currentPrompt.choices) return [];
         
-        return this.currentPrompt.choices.map(choice => ({
-            label: this.decodeHtmlEntities(choice.title),
-            value: choice.value,
-            description: this.decodeHtmlEntities(choice.description || ''),
-            checked: this.selectedValues.includes(choice.value)
-        }));
+        // Initialize the mapping for multiselect
+        this.choiceValueMapping = {};
+        
+        const options = this.currentPrompt.choices.map((choice, index) => {
+            // Create string identifiers for multiselect like we do for single select
+            let stringIdentifier;
+            
+            if (typeof choice.value === 'string') {
+                stringIdentifier = choice.value;
+            } else {
+                stringIdentifier = `choice${index + 1}`;
+            }
+            
+            // Ensure unique identifier
+            let uniqueIdentifier = stringIdentifier;
+            let counter = 1;
+            const existingIds = this.currentPrompt.choices.slice(0, index).map((c, i) => 
+                typeof c.value === 'string' ? c.value : `choice${i + 1}`
+            );
+            while (existingIds.includes(uniqueIdentifier)) {
+                uniqueIdentifier = `${stringIdentifier}_${counter}`;
+                counter++;
+            }
+            
+            // Store the mapping from string identifier to original value
+            this.choiceValueMapping[uniqueIdentifier] = choice.value;
+            
+            const isChecked = this.selectedValues.includes(uniqueIdentifier);
+            
+            const option = {
+                label: this.decodeHtmlEntities(choice.title),
+                value: uniqueIdentifier, // Use string identifier instead of original value
+                originalValue: choice.value, // Keep reference to original value
+                description: this.decodeHtmlEntities(choice.description || ''),
+                checked: isChecked
+            };
+            
+            console.log('multiselectOptions - choice:', {
+                originalValue: choice.value,
+                stringIdentifier: uniqueIdentifier,
+                selectedValues: this.selectedValues,
+                isChecked: isChecked,
+                choiceLabel: choice.title
+            });
+            
+            return option;
+        });
+        
+        console.log('multiselectOptions getter called, selectedValues:', this.selectedValues);
+        return options;
     }
 
     get inputType() {
@@ -290,6 +334,31 @@ export default class PromptInput extends LightningElement {
 
     get numberStep() {
         return this.currentPrompt && this.currentPrompt.isFloat ? '0.01' : '1';
+    }
+
+    get allItemsSelected() {
+        if (!this.currentPrompt || !this.currentPrompt.choices) return false;
+        const totalChoices = this.currentPrompt.choices.length;
+        const selectedCount = this.selectedValues.length;
+        const result = selectedCount === totalChoices && selectedCount > 0;
+        
+        console.log('allItemsSelected getter called:', {
+            totalChoices,
+            selectedCount,
+            result,
+            selectedValues: this.selectedValues
+        });
+        
+        return result;
+    }
+
+    get noItemsSelected() {
+        const result = this.selectedValues.length === 0;
+        console.log('noItemsSelected getter called:', {
+            selectedLength: this.selectedValues.length,
+            result
+        });
+        return result;
     }
 
     handleInputChange(event) {
@@ -397,6 +466,35 @@ export default class PromptInput extends LightningElement {
         this.error = null;
     }
 
+    handleSelectAll() {
+        if (!this.currentPrompt || !this.currentPrompt.choices) return;
+        
+        // Select all choice values using string identifiers
+        const allIdentifiers = this.currentPrompt.choices.map((choice, index) => {
+            if (typeof choice.value === 'string') {
+                return choice.value;
+            } else {
+                return `choice${index + 1}`;
+            }
+        });
+        
+        console.log('handleSelectAll called, identifiers:', allIdentifiers);
+        this.selectedValues = allIdentifiers;
+        this.error = null;
+        console.log('handleSelectAll called, selectedValues after:', this.selectedValues);
+    }
+
+    handleUnselectAll() {
+        // Clear all selections with debugging
+        console.log('handleUnselectAll called, before:', this.selectedValues);
+        this.selectedValues = [];
+        this.error = null;
+        console.log('handleUnselectAll called, after:', this.selectedValues);
+        
+        // Force reactivity by creating a new array reference
+        this.selectedValues = [...this.selectedValues];
+    }
+
     handleSubmit() {
         try {
             // Ensure we have the latest input value before submitting
@@ -474,7 +572,29 @@ export default class PromptInput extends LightningElement {
                 }
             }
         } else if (this.isMultiselectInput) {
-            response[promptName] = this.selectedValues;
+            // Map string identifiers back to original values and create safe, serializable copies
+            const safeValues = this.selectedValues.map(identifier => {
+                // Get the original value using the string identifier
+                const originalValue = this.choiceValueMapping[identifier];
+                
+                if (originalValue !== undefined) {
+                    if (typeof originalValue === 'object' && originalValue !== null) {
+                        try {
+                            // Create a clean serializable copy
+                            return JSON.parse(JSON.stringify(originalValue));
+                        } catch (error) {
+                            // Fall back to string identifier if serialization fails
+                            return identifier;
+                        }
+                    } else {
+                        return originalValue;
+                    }
+                } else {
+                    // Fallback to the identifier itself if mapping not found
+                    return identifier;
+                }
+            });
+            response[promptName] = safeValues;
         }
         
         return response;

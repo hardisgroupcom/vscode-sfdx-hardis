@@ -120,6 +120,27 @@
                                 <legend class="slds-form-element__legend slds-form-element__label">
                                     Select options (multiple allowed)
                                 </legend>
+                                <!-- Select All / Unselect All buttons -->
+                                <div class="slds-m-bottom_small">
+                                    <div class="slds-button-group" role="group">
+                                        <lightning-button
+                                            variant="neutral"
+                                            label="Select All"
+                                            size="small"
+                                            icon-name="utility:check"
+                                            disabled={allItemsSelected}
+                                            onclick={handleSelectAll}>
+                                        </lightning-button>
+                                        <lightning-button
+                                            variant="neutral"
+                                            label="Unselect All"
+                                            size="small"
+                                            icon-name="utility:clear"
+                                            disabled={noItemsSelected}
+                                            onclick={handleUnselectAll}>
+                                        </lightning-button>
+                                    </div>
+                                </div>
                                 <div class="slds-form-element__control">
                                     <template for:each={multiselectOptions} for:item="option">
                                         <div key={option.value} class="slds-m-bottom_small">
