@@ -139,7 +139,19 @@
                               <div class="slds-media__body">
                                 <div class="slds-grid">
                                   <div class="slds-col slds-size_11-of-12">
-                                    <div class="log-message">{logLine.message}</div>
+                                    <template if:true={logLine.isAnswer}>
+                                      <div class="log-message">
+                                        <template if:true={logLine.formattedMessage}>
+                                          <pre class="answer-formatted">{logLine.formattedMessage}</pre>
+                                        </template>
+                                        <template if:false={logLine.formattedMessage}>
+                                          {logLine.message}
+                                        </template>
+                                      </div>
+                                    </template>
+                                    <template if:false={logLine.isAnswer}>
+                                      <div class="log-message">{logLine.message}</div>
+                                    </template>
                                   </div>
                                   <div class="slds-col slds-size_1-of-12 slds-text-align_right">
                                     <div class="log-timestamp slds-text-body_small slds-text-color_weak">
@@ -165,20 +177,6 @@
                 No logs available yet...
               </p>
             </div>
-          </template>
-        </div>
-      </div>
-    </template>
-
-    <!-- Footer with command info -->
-    <template if:true={commandContext}>
-      <div class="slds-card__footer">
-        <div class="slds-text-body_small slds-text-color_weak">
-          <template if:true={commandContext.cwd}>
-            <div><strong>Working directory:</strong> {commandContext.cwd}</div>
-          </template>
-          <template if:true={commandContext.command}>
-            <div><strong>Command:</strong> {commandContext.command}</div>
           </template>
         </div>
       </div>

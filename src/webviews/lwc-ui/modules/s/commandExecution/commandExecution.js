@@ -11,6 +11,7 @@ export default class CommandExecution extends LightningElement {
     @track endTime = null;
     @track currentSubCommands = [];
     @track isExpanded = true;
+    @track isWaitingForAnswer = false;
 
     connectedCallback() {
         // Make component available globally for VS Code message handling
@@ -69,6 +70,7 @@ export default class CommandExecution extends LightningElement {
         this.currentSection = null;
         this.isCompleted = false;
         this.hasError = false;
+        this.isWaitingForAnswer = false;
         this.startTime = new Date();
         this.endTime = null;
         this.currentSubCommands = [];
@@ -91,8 +93,22 @@ export default class CommandExecution extends LightningElement {
                 (logData.timestamp instanceof Date ? logData.timestamp : new Date(logData.timestamp)) : 
                 new Date(),
             isSubCommand: logData.isSubCommand || false,
-            subCommandId: logData.subCommandId || null
+            subCommandId: logData.subCommandId || null,
+            isQuestion: logData.isQuestion || false,
+            isAnswer: this.isWaitingForAnswer
         };
+
+        // Handle question/answer logic
+        if (logLine.isQuestion) {
+            this.isWaitingForAnswer = true;
+        } else if (this.isWaitingForAnswer && !logLine.isQuestion) {
+            // This is an answer
+            logLine.isAnswer = true;
+            this.isWaitingForAnswer = false;
+            
+            // Try to parse and prettify JSON answers
+            logLine.formattedMessage = this.formatAnswerMessage(logLine.message);
+        }
 
         // If this is an action log, close current section and start a new one
         if (logLine.logType === 'action') {
@@ -132,7 +148,7 @@ export default class CommandExecution extends LightningElement {
             id: this.generateId(),
             actionLog: {
                 ...actionLog,
-                iconName: this.getLogTypeIcon(actionLog.logType),
+                iconName: this.getLogTypeIcon(actionLog.logType, actionLog.isQuestion, actionLog.isAnswer),
                 formattedTimestamp: this.formatTimestamp(actionLog.timestamp),
                 cssClass: this.getLogTypeClass(actionLog.logType)
             },
@@ -141,7 +157,8 @@ export default class CommandExecution extends LightningElement {
             endTime: null,
             isActive: true,
             isExpanded: true,
-            hasError: false
+            hasError: false,
+            isQuestion: actionLog.isQuestion || false
         };
 
         this.currentSection = newSection;
@@ -161,7 +178,7 @@ export default class CommandExecution extends LightningElement {
 
         const formattedLog = {
             ...logLine,
-            iconName: this.getLogTypeIcon(logLine.logType),
+            iconName: this.getLogTypeIcon(logLine.logType, logLine.isQuestion, logLine.isAnswer),
             formattedTimestamp: this.formatTimestamp(logLine.timestamp),
             cssClass: this.getLogTypeClass(logLine.logType)
         };
@@ -250,7 +267,7 @@ export default class CommandExecution extends LightningElement {
                     logType: newLogData.logType,
                     message: newLogData.message,
                     timestamp: newLogData.timestamp,
-                    iconName: this.getLogTypeIcon(newLogData.logType),
+                    iconName: this.getLogTypeIcon(newLogData.logType, newLogData.isQuestion, newLogData.isAnswer),
                     formattedTimestamp: this.formatTimestamp(newLogData.timestamp),
                     cssClass: this.getLogTypeClass(newLogData.logType)
                 };
@@ -285,6 +302,15 @@ export default class CommandExecution extends LightningElement {
     completeCommand(success = true) {
         this.isCompleted = true;
         this.endTime = new Date();
+        
+        // Mark current section as complete
+        if (this.currentSection) {
+            this.currentSection.endTime = this.endTime;
+            this.currentSection.isActive = false;
+            if (!success) {
+                this.currentSection.hasError = true;
+            }
+        }
         
         const duration = this.calculateDuration(this.startTime, this.endTime);
         const logType = success ? 'success' : 'error';
@@ -337,7 +363,7 @@ export default class CommandExecution extends LightningElement {
             .filter(log => log.message.trim() !== '')
             .map(log => ({
                 ...log,
-                iconName: this.getLogTypeIcon(log.logType),
+                iconName: this.getLogTypeIcon(log.logType, log.isQuestion, log.isAnswer),
                 formattedTimestamp: this.formatTimestamp(log.timestamp),
                 cssClass: this.getLogTypeClass(log.logType)
             }));
@@ -347,7 +373,8 @@ export default class CommandExecution extends LightningElement {
         return this.logSections.map(section => ({
             ...section,
             duration: this.calculateSectionDuration(section),
-            sectionStatusIcon: section.hasError ? 'utility:error' : 
+            sectionStatusIcon: section.isQuestion ? 'utility:question' :
+                               section.hasError ? 'utility:error' : 
                                section.isActive ? 'utility:clock' : 'utility:success',
             sectionStatusClass: section.hasError ? 'slds-text-color_error' : 
                                section.isActive ? 'slds-text-color_weak' : 'slds-text-color_success',
@@ -415,6 +442,74 @@ export default class CommandExecution extends LightningElement {
             .trim();
     }
 
+    formatAnswerMessage(message) {
+        // Try to parse as JSON and make it human-readable
+        try {
+            const parsed = JSON.parse(message);
+            return this.makeJsonHumanReadable(parsed);
+        } catch (e) {
+            // Not valid JSON, return original message
+            return message;
+        }
+    }
+
+    makeJsonHumanReadable(obj) {
+        if (obj === null) return 'No value';
+        if (obj === undefined) return 'Not defined';
+        if (typeof obj === 'boolean') return obj ? 'Yes' : 'No';
+        if (typeof obj === 'string') return obj;
+        if (typeof obj === 'number') return obj.toString();
+        
+        if (Array.isArray(obj)) {
+            if (obj.length === 0) return 'No items';
+            if (obj.length === 1) return this.makeJsonHumanReadable(obj[0]);
+            
+            // For arrays, create a readable list
+            const items = obj.map((item, index) => {
+                const readable = this.makeJsonHumanReadable(item);
+                return `${index + 1}. ${readable}`;
+            }).join('\n');
+            
+            return `${obj.length} items:\n${items}`;
+        }
+        
+        if (typeof obj === 'object') {
+            const entries = Object.entries(obj);
+            if (entries.length === 0) return 'No properties';
+            
+            // Convert object properties to human-readable format
+            const readable = entries.map(([key, value]) => {
+                const humanKey = this.humanizeKey(key);
+                const humanValue = this.makeJsonHumanReadable(value);
+                
+                // Handle different value types with appropriate formatting
+                if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+                    return `${humanKey}:\n  ${humanValue.split('\n').join('\n  ')}`;
+                } else {
+                    return `${humanKey}: ${humanValue}`;
+                }
+            }).join('\n');
+            
+            return readable;
+        }
+        
+        return obj.toString();
+    }
+
+    humanizeKey(key) {
+        // Convert camelCase, snake_case, or kebab-case to human-readable format
+        return key
+            .replace(/([a-z])([A-Z])/g, '$1 $2') // camelCase
+            .replace(/[_-]/g, ' ') // snake_case and kebab-case
+            .toLowerCase()
+            .replace(/^\w/, c => c.toUpperCase()) // Capitalize first letter
+            .replace(/\bid\b/gi, 'ID') // Special case for ID
+            .replace(/\burl\b/gi, 'URL') // Special case for URL
+            .replace(/\bapi\b/gi, 'API') // Special case for API
+            .replace(/\bsfdx\b/gi, 'SFDX') // Special case for SFDX
+            .replace(/\bsf\b/gi, 'SF'); // Special case for SF
+    }
+
     generateId() {
         return 'log_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
     }
@@ -435,7 +530,14 @@ export default class CommandExecution extends LightningElement {
         }
     }
 
-    getLogTypeIcon(logType) {
+    getLogTypeIcon(logType, isQuestion = false, isAnswer = false) {
+        if (isQuestion) {
+            return 'utility:question';
+        }
+        if (isAnswer) {
+            return 'utility:reply';
+        }
+        
         switch (logType) {
             case 'error':
                 return 'utility:error';

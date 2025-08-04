@@ -114,7 +114,8 @@ export class LocalWebSocketServer {
           data: {
             logType: data.logType,
             message: data.message,
-            timestamp: new Date()
+            timestamp: new Date(),
+            isQuestion: data.isQuestion || false
           }
         });
       }

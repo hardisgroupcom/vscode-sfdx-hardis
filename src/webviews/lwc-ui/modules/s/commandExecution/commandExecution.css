@@ -213,3 +213,18 @@
     background: #5a5a5a;
   }
 }
+
+/* Answer formatting styles */
+.answer-formatted {
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 0.25rem;
+  padding: 0.5rem;
+  margin: 0;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.8rem;
+  line-height: 1.3;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-x: auto;
+}
