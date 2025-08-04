@@ -65,6 +65,9 @@ export class LwcUiPanel {
         // Enable javascript in the webview
         enableScripts: true,
 
+        // Retain context when hidden to preserve component state when switching tabs
+        retainContextWhenHidden: true,
+
         // Restrict the webview to only loading content from our extension's `media` directory.
         localResourceRoots: [
           vscode.Uri.joinPath(extensionUri, "out", "webviews"),
