@@ -3,12 +3,19 @@
     <!-- Header -->
     <div class="slds-card__header">
       <div class="slds-media slds-media_center slds-has-flexi-truncate">
-        <div class="slds-media__figure">
-          <lightning-icon 
-            icon-name={statusIcon}
-            size="small"
-            class={statusClass}>
-          </lightning-icon>
+        <div class="slds-media__figure" style="width: 2rem;">
+          <template if:true={useSpinner}>
+            <div class="slds-is-relative" style="height: 2rem;">
+              <lightning-spinner alternative-text="Loading..." size="small"></lightning-spinner>
+            </div>
+          </template>
+          <template if:false={useSpinner}>
+            <lightning-icon 
+              icon-name={statusIcon}
+              size="small"
+              class={statusClass}>
+            </lightning-icon>
+          </template>
         </div>
         <div class="slds-media__body">
           <h2 class="slds-card__header-title">
@@ -56,12 +63,19 @@
                     <template if:true={section.showToggle}>
                       <div onclick={handleToggleSection} style="cursor: pointer;">
                         <div class="slds-media slds-media_center">
-                          <div class="slds-media__figure">
-                            <lightning-icon 
-                              icon-name={section.sectionStatusIcon}
-                              size="x-small"
-                              class={section.sectionStatusClass}>
-                            </lightning-icon>
+                          <div class="slds-media__figure" style="width: 1rem;">
+                            <template if:true={section.sectionUseSpinner}>
+                              <div class="slds-is-relative" style="height: 1rem;">
+                                <lightning-spinner alternative-text="Running..." size="x-small"></lightning-spinner>
+                              </div>
+                            </template>
+                            <template if:false={section.sectionUseSpinner}>
+                              <lightning-icon 
+                                icon-name={section.sectionStatusIcon}
+                                size="x-small"
+                                class={section.sectionStatusClass}>
+                              </lightning-icon>
+                            </template>
                           </div>
                           <div class="slds-media__body">
                             <div class="slds-grid">
@@ -97,12 +111,19 @@
                     
                     <template if:false={section.showToggle}>
                       <div class="slds-media slds-media_center">
-                        <div class="slds-media__figure">
-                          <lightning-icon 
-                            icon-name={section.sectionStatusIcon}
-                            size="x-small"
-                            class={section.sectionStatusClass}>
-                          </lightning-icon>
+                        <div class="slds-media__figure" style="width: 1rem;">
+                          <template if:true={section.sectionUseSpinner}>
+                            <div class="slds-is-relative" style="height: 1rem;">
+                              <lightning-spinner alternative-text="Running..." size="x-small"></lightning-spinner>
+                            </div>
+                          </template>
+                          <template if:false={section.sectionUseSpinner}>
+                            <lightning-icon 
+                              icon-name={section.sectionStatusIcon}
+                              size="x-small"
+                              class={section.sectionStatusClass}>
+                            </lightning-icon>
+                          </template>
                         </div>
                         <div class="slds-media__body">
                           <div class="slds-grid">
@@ -129,12 +150,19 @@
                         <template for:each={section.logs} for:item="logLine">
                           <div key={logLine.id} class={logLine.cssClass} data-log-type={logLine.logType}>
                             <div class="slds-media slds-media_small">
-                              <div class="slds-media__figure">
-                                <lightning-icon 
-                                  icon-name={logLine.iconName}
-                                  size="xx-small"
-                                  class="log-icon">
-                                </lightning-icon>
+                              <div class="slds-media__figure" style="width: 0.75rem;">
+                                <template if:true={logLine.useSpinner}>
+                                  <div class="slds-is-relative" style="height: 0.75rem;">
+                                    <lightning-spinner alternative-text="Running..." size="xx-small"></lightning-spinner>
+                                  </div>
+                                </template>
+                                <template if:false={logLine.useSpinner}>
+                                  <lightning-icon 
+                                    icon-name={logLine.iconName}
+                                    size="xx-small"
+                                    class="log-icon">
+                                  </lightning-icon>
+                                </template>
                               </div>
                               <div class="slds-media__body">
                                 <div class="slds-grid">

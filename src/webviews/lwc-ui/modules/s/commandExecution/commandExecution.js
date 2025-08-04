@@ -149,6 +149,7 @@ export default class CommandExecution extends LightningElement {
             actionLog: {
                 ...actionLog,
                 iconName: this.getLogTypeIcon(actionLog.logType, actionLog.isQuestion, actionLog.isAnswer),
+                useSpinner: this.shouldUseSpinner(actionLog),
                 formattedTimestamp: this.formatTimestamp(actionLog.timestamp),
                 cssClass: this.getLogTypeClass(actionLog.logType)
             },
@@ -179,6 +180,7 @@ export default class CommandExecution extends LightningElement {
         const formattedLog = {
             ...logLine,
             iconName: this.getLogTypeIcon(logLine.logType, logLine.isQuestion, logLine.isAnswer),
+            useSpinner: this.shouldUseSpinner(logLine),
             formattedTimestamp: this.formatTimestamp(logLine.timestamp),
             cssClass: this.getLogTypeClass(logLine.logType)
         };
@@ -268,6 +270,7 @@ export default class CommandExecution extends LightningElement {
                     message: newLogData.message,
                     timestamp: newLogData.timestamp,
                     iconName: this.getLogTypeIcon(newLogData.logType, newLogData.isQuestion, newLogData.isAnswer),
+                    useSpinner: this.shouldUseSpinner({...this.currentSection.logs[logIndex], ...newLogData}),
                     formattedTimestamp: this.formatTimestamp(newLogData.timestamp),
                     cssClass: this.getLogTypeClass(newLogData.logType)
                 };
@@ -346,9 +349,13 @@ export default class CommandExecution extends LightningElement {
 
     get statusIcon() {
         if (!this.isCompleted) {
-            return 'utility:clock';
+            return null; // Will use spinner instead
         }
         return this.hasError ? 'utility:error' : 'utility:success';
+    }
+
+    get useSpinner() {
+        return !this.isCompleted;
     }
 
     get statusClass() {
@@ -364,6 +371,7 @@ export default class CommandExecution extends LightningElement {
             .map(log => ({
                 ...log,
                 iconName: this.getLogTypeIcon(log.logType, log.isQuestion, log.isAnswer),
+                useSpinner: this.shouldUseSpinner(log),
                 formattedTimestamp: this.formatTimestamp(log.timestamp),
                 cssClass: this.getLogTypeClass(log.logType)
             }));
@@ -375,7 +383,8 @@ export default class CommandExecution extends LightningElement {
             duration: this.calculateSectionDuration(section),
             sectionStatusIcon: section.isQuestion ? 'utility:question' :
                                section.hasError ? 'utility:error' : 
-                               section.isActive ? 'utility:clock' : 'utility:success',
+                               section.isActive ? null : 'utility:success', // null for active = use spinner
+            sectionUseSpinner: section.isActive && !section.isQuestion,
             sectionStatusClass: section.hasError ? 'slds-text-color_error' : 
                                section.isActive ? 'slds-text-color_weak' : 'slds-text-color_success',
             toggleIcon: section.isExpanded ? 'utility:chevronup' : 'utility:chevrondown',
@@ -551,6 +560,18 @@ export default class CommandExecution extends LightningElement {
             default:
                 return 'utility:info';
         }
+    }
+
+    shouldUseSpinner(log) {
+        // Use spinner for running sub-commands (those that start with ⏳ or contain "Running:")
+        if (log.isSubCommand && log.message && (
+            log.message.includes('⏳ Running:') || 
+            log.message.includes('Running:') ||
+            log.message.startsWith('⏳')
+        )) {
+            return true;
+        }
+        return false;
     }
 
     formatTimestamp(timestamp) {
