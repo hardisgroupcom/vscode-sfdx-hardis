@@ -62,10 +62,82 @@ export class LocalWebSocketServer {
     // Command initialization
     if (data.event === "initClient") {
       this.clients[data.context.id] = { context: data.context, ws: ws };
+      
+      // Create a new command execution panel for this command
+      const panelManager = LwcPanelManager.getInstance(this.context);
+      const lwcId = `s-command-execution-${data.context.id}`;
+      
+      // Create a unique panel for each command
+      const panel = panelManager.getOrCreatePanel(lwcId, data.context);
+      
+      // Store panel reference for this command context
+      this.clients[data.context.id].panel = panel;
+      this.clients[data.context.id].lwcId = lwcId;
+      
+      // Set the panel title to include command info
+      const commandName = data.context.command || 'SFDX Hardis Command';
+      panel.updateTitle(`${commandName} - Running`);
+      
+      // Initialize the command in the panel
+      panel.sendMessage({
+        type: "initializeCommand",
+        data: data.context
+      });
     }
     // Command end
-    if (data.event === "clientClose") {
-      delete this.clients[data.context.id];
+    if (data.event === "closeClient" || data.event === "clientClose") {
+      const clientData = this.clients[data.context?.id];
+      if (clientData?.panel) {
+        // Mark command as completed in the panel
+        clientData.panel.sendMessage({
+          type: "completeCommand",
+          data: { success: true }
+        });
+        
+        // Update panel title to show completion
+        const commandName = clientData.context.command || 'SFDX Hardis Command';
+        clientData.panel.updateTitle(`${commandName} - Completed`);
+        
+        // Schedule panel disposal after a delay to allow user to review logs
+        // const panelManager = LwcPanelManager.getInstance(this.context);
+        // panelManager.scheduleDisposal(clientData.lwcId, 10000); // 10 seconds
+      }
+      delete this.clients[data.context?.id];
+    }
+    // Command log line
+    else if (data.event === "commandLogLine") {
+      // Find the client context for this log line using the context ID
+      const clientData = this.clients[data.context?.id];
+      if (clientData?.panel) {
+        clientData.panel.sendMessage({
+          type: "addLogLine",
+          data: {
+            logType: data.logType,
+            message: data.message,
+            timestamp: new Date()
+          }
+        });
+      }
+    }
+    // Sub-command start
+    else if (data.event === "commandSubCommandStart") {
+      const clientData = this.clients[data.context?.id];
+      if (clientData?.panel) {
+        clientData.panel.sendMessage({
+          type: "addSubCommandStart",
+          data: data.data
+        });
+      }
+    }
+    // Sub-command end
+    else if (data.event === "commandSubCommandEnd") {
+      const clientData = this.clients[data.context?.id];
+      if (clientData?.panel) {
+        clientData.panel.sendMessage({
+          type: "addSubCommandEnd",
+          data: data.data
+        });
+      }
     }
     // Request to refresh status box
     else if (data.event === "refreshStatus") {

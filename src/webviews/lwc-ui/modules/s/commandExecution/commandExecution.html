@@ -1,0 +1,127 @@
+<template>
+  <div class="command-execution slds-card">
+    <!-- Header -->
+    <div class="slds-card__header">
+      <div class="slds-media slds-media_center slds-has-flexi-truncate">
+        <div class="slds-media__figure">
+          <lightning-icon 
+            icon-name={statusIcon}
+            size="small"
+            class={statusClass}>
+          </lightning-icon>
+        </div>
+        <div class="slds-media__body">
+          <h2 class="slds-card__header-title">
+            <span class="slds-text-heading_small">{commandTitle}</span>
+          </h2>
+          <template if:true={commandDuration}>
+            <p class="slds-text-body_small slds-text-color_weak">
+              Duration: {commandDuration}
+            </p>
+          </template>
+        </div>
+        <div class="slds-media__figure slds-media__figure_reverse">
+          <lightning-button-group>
+            <lightning-button-icon
+              icon-name={toggleIcon}
+              variant="border-filled"
+              alternative-text="Toggle logs"
+              title="Toggle logs visibility"
+              onclick={handleToggleExpanded}>
+            </lightning-button-icon>
+            <template if:true={isCompleted}>
+              <lightning-button-icon
+                icon-name="utility:clear"
+                variant="border-filled"
+                alternative-text="Clear logs"
+                title="Clear detailed logs"
+                onclick={handleClearLogs}>
+              </lightning-button-icon>
+            </template>
+          </lightning-button-group>
+        </div>
+      </div>
+    </div>
+
+    <!-- Progress info for sub-commands -->
+    <template if:true={subCommandsCount}>
+      <div class="slds-card__body slds-card__body_inner">
+        <div class="slds-grid slds-gutters slds-wrap">
+          <div class="slds-col slds-size_1-of-2">
+            <div class="slds-text-body_small">
+              <strong>Sub-commands:</strong> {completedSubCommandsCount} / {subCommandsCount}
+            </div>
+          </div>
+          <div class="slds-col slds-size_1-of-2">
+            <template if:false={isCompleted}>
+              <div class="slds-progress-bar slds-progress-bar_medium" role="progressbar" aria-valuemin="0">
+                <span class="slds-progress-bar__value" style="{progressBarStyle}">
+                  <span class="slds-assistive-text">Progress: {completedSubCommandsCount} of {subCommandsCount}</span>
+                </span>
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <!-- Log container -->
+    <template if:true={isExpanded}>
+      <div class="slds-card__body slds-card__body_inner">
+        <div class="log-container slds-scrollable_y" style="max-height: 400px;">
+          <template if:true={filteredLogLines.length}>
+            <div class="log-lines">
+              <template for:each={filteredLogLines} for:item="logLine">
+                <div key={logLine.id} class={logLine.logType} data-log-type={logLine.logType}>
+                  <div class="slds-media slds-media_small">
+                    <div class="slds-media__figure">
+                      <lightning-icon 
+                        icon-name={logLine.iconName}
+                        size="xx-small"
+                        class="log-icon">
+                      </lightning-icon>
+                    </div>
+                    <div class="slds-media__body">
+                      <div class="slds-grid">
+                        <div class="slds-col slds-size_11-of-12">
+                          <div class="log-message">{logLine.message}</div>
+                        </div>
+                        <div class="slds-col slds-size_1-of-12 slds-text-align_right">
+                          <div class="log-timestamp slds-text-body_small slds-text-color_weak">
+                            {logLine.formattedTimestamp}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </template>
+          
+          <template if:false={filteredLogLines.length}>
+            <div class="slds-text-align_center slds-p-around_medium">
+              <p class="slds-text-body_regular slds-text-color_weak">
+                No logs available yet...
+              </p>
+            </div>
+          </template>
+        </div>
+      </div>
+    </template>
+
+    <!-- Footer with command info -->
+    <template if:true={commandContext}>
+      <div class="slds-card__footer">
+        <div class="slds-text-body_small slds-text-color_weak">
+          <template if:true={commandContext.cwd}>
+            <div><strong>Working directory:</strong> {commandContext.cwd}</div>
+          </template>
+          <template if:true={commandContext.command}>
+            <div><strong>Command:</strong> {commandContext.command}</div>
+          </template>
+        </div>
+      </div>
+    </template>
+  </div>
+</template>

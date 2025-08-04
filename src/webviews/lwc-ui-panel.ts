@@ -87,11 +87,20 @@ export class LwcUiPanel {
     return lwcUiPanel;
   }
 
+  /**
+   * Update the panel title
+   * @param title New title for the panel
+   */
+  public updateTitle(title: string): void {
+    this.panel.title = title;
+  }
+
   public setPanelTitleFromLwcId() {
     const lwcDefinitions: {
       [key: string]: string;
     } = {
       "s-prompt-input": "Prompt Input",
+      "s-command-execution": "Command Execution",
     };
     const panelTitle = lwcDefinitions[this.lwcId] || "SFDX Hardis";
     this.panel.title = panelTitle;

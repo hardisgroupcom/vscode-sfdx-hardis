@@ -1,0 +1,153 @@
+.command-execution {
+  margin-bottom: 1rem;
+}
+
+.log-container {
+  background-color: #f4f6f9;
+  border: 1px solid #d8dde6;
+  border-radius: 0.25rem;
+  padding: 0.5rem;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.log-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.log-lines > div {
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.125rem;
+  border-left: 3px solid transparent;
+}
+
+/* Log type styling */
+.log-lines > div[data-log-type="error"] {
+  background-color: #fef5f5;
+  border-left-color: #e53e3e;
+  color: #742a2a;
+}
+
+.log-lines > div[data-log-type="warning"] {
+  background-color: #fffbf0;
+  border-left-color: #dd6b20;
+  color: #744210;
+}
+
+.log-lines > div[data-log-type="success"] {
+  background-color: #f0fff4;
+  border-left-color: #38a169;
+  color: #22543d;
+}
+
+.log-lines > div[data-log-type="action"] {
+  background-color: #ebf8ff;
+  border-left-color: #3182ce;
+  color: #2c5282;
+}
+
+.log-lines > div[data-log-type="log"] {
+  background-color: #f7fafc;
+  border-left-color: #a0aec0;
+  color: #4a5568;
+}
+
+.log-message {
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.log-timestamp {
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.log-icon {
+  margin-top: 0.125rem;
+}
+
+/* Custom progress bar colors */
+.slds-progress-bar__value {
+  background-color: #1589ee;
+}
+
+/* Scrollbar styling */
+.log-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.log-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.log-container::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.log-container::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Status icon colors */
+.slds-text-color_success .slds-icon {
+  fill: #04844b;
+}
+
+.slds-text-color_error .slds-icon {
+  fill: #ba0517;
+}
+
+.slds-text-color_weak .slds-icon {
+  fill: #706e6b;
+}
+
+/* Dark theme support */
+@media (prefers-color-scheme: dark) {
+  .log-container {
+    background-color: #1a1a1a;
+    border-color: #3a3a3a;
+    color: #e5e5e5;
+  }
+
+  .log-lines > div[data-log-type="error"] {
+    background-color: #2d1b1b;
+    color: #ff6b6b;
+  }
+
+  .log-lines > div[data-log-type="warning"] {
+    background-color: #2d2419;
+    color: #ffa726;
+  }
+
+  .log-lines > div[data-log-type="success"] {
+    background-color: #1b2d1b;
+    color: #66bb6a;
+  }
+
+  .log-lines > div[data-log-type="action"] {
+    background-color: #1b2636;
+    color: #42a5f5;
+  }
+
+  .log-lines > div[data-log-type="log"] {
+    background-color: #222222;
+    color: #bdbdbd;
+  }
+
+  .log-container::-webkit-scrollbar-track {
+    background: #2a2a2a;
+  }
+
+  .log-container::-webkit-scrollbar-thumb {
+    background: #4a4a4a;
+  }
+
+  .log-container::-webkit-scrollbar-thumb:hover {
+    background: #5a5a5a;
+  }
+}

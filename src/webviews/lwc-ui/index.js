@@ -2,12 +2,14 @@ import "@lwc/synthetic-shadow";
 import { createElement } from "lwc";
 import HelloWorld from "s/helloWorld";
 import PromptInput from "s/promptInput";
+import CommandExecution from "s/commandExecution";
 
 console.log("LWC UI initializing...");
 
 const lwcIdAndClasses = {
   "s-hello-world": HelloWorld,
-  "s-prompt-input": PromptInput
+  "s-prompt-input": PromptInput,
+  "s-command-execution": CommandExecution
 }
 
 // Communication bridge between VS Code webview and LWC components
@@ -32,6 +34,11 @@ window.addEventListener('message', event => {
       // For prompt input component
       window.lwcComponentInstance.showPrompt(message.data);
     }
+  }
+  
+  // Handle messages for command execution component
+  if (window.lwcComponentInstance && typeof window.lwcComponentInstance.handleMessage === 'function') {
+    window.lwcComponentInstance.handleMessage(message.type, message.data);
   }
 });
 
@@ -61,7 +68,17 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
 
       // Create the LWC element
-      const lwcClass = lwcIdAndClasses[lwcId];
+      // Handle dynamic IDs by extracting the base component name
+      let lwcClass = lwcIdAndClasses[lwcId];
+      if (!lwcClass) {
+        // Try to find a matching base component (e.g., s-command-execution-41208 -> s-command-execution)
+        const baseId = Object.keys(lwcIdAndClasses).find(id => lwcId.startsWith(id));
+        if (baseId) {
+          lwcClass = lwcIdAndClasses[baseId];
+          console.log(`Found base component ${baseId} for dynamic ID ${lwcId}`);
+        }
+      }
+      
       if (!lwcClass) {
         console.error(`❌ No LWC class found for ID: ${lwcId}`);
         return;
