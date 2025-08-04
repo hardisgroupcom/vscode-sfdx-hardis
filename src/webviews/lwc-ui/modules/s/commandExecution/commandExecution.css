@@ -12,6 +12,45 @@
   line-height: 1.4;
 }
 
+.log-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.log-section {
+  background-color: #ffffff;
+  border: 1px solid #d8dde6;
+  border-radius: 0.25rem;
+}
+
+.section-header {
+  padding: 0.5rem;
+  cursor: pointer;
+  border-radius: 0.25rem;
+  transition: background-color 0.2s ease;
+}
+
+.section-header:hover {
+  background-color: #f8f9fa;
+}
+
+.section-title {
+  font-weight: 600;
+}
+
+.section-logs {
+  border-top: 1px solid #e5e9ef;
+  padding-top: 0.5rem;
+}
+
+.section-logs > div {
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.125rem;
+  border-left: 3px solid transparent;
+  margin-bottom: 0.25rem;
+}
+
 .log-lines {
   display: flex;
   flex-direction: column;
@@ -25,30 +64,35 @@
 }
 
 /* Log type styling */
+.section-logs > div[data-log-type="error"],
 .log-lines > div[data-log-type="error"] {
   background-color: #fef5f5;
   border-left-color: #e53e3e;
   color: #742a2a;
 }
 
+.section-logs > div[data-log-type="warning"],
 .log-lines > div[data-log-type="warning"] {
   background-color: #fffbf0;
   border-left-color: #dd6b20;
   color: #744210;
 }
 
+.section-logs > div[data-log-type="success"],
 .log-lines > div[data-log-type="success"] {
   background-color: #f0fff4;
   border-left-color: #38a169;
   color: #22543d;
 }
 
+.section-logs > div[data-log-type="action"],
 .log-lines > div[data-log-type="action"] {
   background-color: #ebf8ff;
   border-left-color: #3182ce;
   color: #2c5282;
 }
 
+.section-logs > div[data-log-type="log"],
 .log-lines > div[data-log-type="log"] {
   background-color: #f7fafc;
   border-left-color: #a0aec0;
@@ -114,26 +158,44 @@
     color: #e5e5e5;
   }
 
+  .log-section {
+    background-color: #2a2a2a;
+    border-color: #4a4a4a;
+  }
+
+  .section-header:hover {
+    background-color: #3a3a3a;
+  }
+
+  .section-logs {
+    border-top-color: #4a4a4a;
+  }
+
+  .section-logs > div[data-log-type="error"],
   .log-lines > div[data-log-type="error"] {
     background-color: #2d1b1b;
     color: #ff6b6b;
   }
 
+  .section-logs > div[data-log-type="warning"],
   .log-lines > div[data-log-type="warning"] {
     background-color: #2d2419;
     color: #ffa726;
   }
 
+  .section-logs > div[data-log-type="success"],
   .log-lines > div[data-log-type="success"] {
     background-color: #1b2d1b;
     color: #66bb6a;
   }
 
+  .section-logs > div[data-log-type="action"],
   .log-lines > div[data-log-type="action"] {
     background-color: #1b2636;
     color: #42a5f5;
   }
 
+  .section-logs > div[data-log-type="log"],
   .log-lines > div[data-log-type="log"] {
     background-color: #222222;
     color: #bdbdbd;

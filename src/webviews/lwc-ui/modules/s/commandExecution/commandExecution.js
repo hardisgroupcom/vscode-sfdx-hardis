@@ -3,6 +3,8 @@ import { LightningElement, track, api } from 'lwc';
 export default class CommandExecution extends LightningElement {
     @track commandContext = null;
     @track logLines = [];
+    @track logSections = [];
+    @track currentSection = null;
     @track isCompleted = false;
     @track hasError = false;
     @track startTime = null;
@@ -36,6 +38,8 @@ export default class CommandExecution extends LightningElement {
 
     @api
     handleMessage(messageType, data) {
+        console.log('CommandExecution handleMessage:', messageType, data);
+        
         switch (messageType) {
             case 'initializeCommand':
                 this.initializeCommand(data);
@@ -61,16 +65,18 @@ export default class CommandExecution extends LightningElement {
     initializeCommand(context) {
         this.commandContext = context;
         this.logLines = [];
+        this.logSections = [];
+        this.currentSection = null;
         this.isCompleted = false;
         this.hasError = false;
         this.startTime = new Date();
         this.endTime = null;
         this.currentSubCommands = [];
         
-        // Add initial log line
+        // Add initial "Initializing" action log
         this.addLogLine({
             logType: 'action',
-            message: `Command started: ${context.command || 'Unknown command'}`,
+            message: `Initializing ${context.command || 'SFDX Hardis Command'}`,
             timestamp: this.startTime
         });
     }
@@ -81,9 +87,21 @@ export default class CommandExecution extends LightningElement {
             id: this.generateId(),
             logType: logData.logType || 'log',
             message: this.cleanMessage(logData.message || ''),
-            timestamp: logData.timestamp || new Date(),
-            isSubCommand: false
+            timestamp: logData.timestamp ? 
+                (logData.timestamp instanceof Date ? logData.timestamp : new Date(logData.timestamp)) : 
+                new Date(),
+            isSubCommand: logData.isSubCommand || false,
+            subCommandId: logData.subCommandId || null
         };
+
+        // If this is an action log, close current section and start a new one
+        if (logLine.logType === 'action') {
+            this.closeCurrentSection();
+            this.startNewSection(logLine);
+        } else {
+            // Add log to current section
+            this.addLogToCurrentSection(logLine);
+        }
 
         this.logLines = [...this.logLines, logLine];
         
@@ -94,6 +112,63 @@ export default class CommandExecution extends LightningElement {
 
         // Auto-scroll to bottom after adding new log
         this.scrollToBottom();
+    }
+
+    closeCurrentSection() {
+        if (this.currentSection && this.currentSection.logs.length > 0) {
+            this.currentSection.endTime = new Date();
+            this.currentSection.isActive = false;
+        }
+    }
+
+    startNewSection(actionLog) {
+        const newSection = {
+            id: this.generateId(),
+            actionLog: {
+                ...actionLog,
+                iconName: this.getLogTypeIcon(actionLog.logType),
+                formattedTimestamp: this.formatTimestamp(actionLog.timestamp),
+                cssClass: this.getLogTypeClass(actionLog.logType)
+            },
+            logs: [],
+            startTime: actionLog.timestamp,
+            endTime: null,
+            isActive: true,
+            isExpanded: true,
+            hasError: false
+        };
+
+        this.currentSection = newSection;
+        this.logSections = [...this.logSections, newSection];
+    }
+
+    addLogToCurrentSection(logLine) {
+        if (!this.currentSection) {
+            // If no current section, create a default one
+            this.startNewSection({
+                id: this.generateId(),
+                logType: 'action',
+                message: 'Logs',
+                timestamp: new Date()
+            });
+        }
+
+        const formattedLog = {
+            ...logLine,
+            iconName: this.getLogTypeIcon(logLine.logType),
+            formattedTimestamp: this.formatTimestamp(logLine.timestamp),
+            cssClass: this.getLogTypeClass(logLine.logType)
+        };
+
+        this.currentSection.logs = [...this.currentSection.logs, formattedLog];
+        
+        // Update section error state
+        if (logLine.logType === 'error') {
+            this.currentSection.hasError = true;
+        }
+
+        // Update the sections array to trigger reactivity
+        this.logSections = [...this.logSections];
     }
 
     @api
@@ -110,11 +185,13 @@ export default class CommandExecution extends LightningElement {
 
         this.currentSubCommands = [...this.currentSubCommands, subCommand];
 
-        // Add log line for sub-command start
+        // Add log line for sub-command start (this will be replaced when sub-command ends)
         this.addLogLine({
-            logType: 'action',
-            message: `Sub-command started: ${subCommand.command}`,
-            timestamp: subCommand.startTime
+            logType: 'log',
+            message: `⏳ Running: ${subCommand.command}`,
+            timestamp: subCommand.startTime,
+            isSubCommand: true,
+            subCommandId: subCommand.id
         });
     }
 
@@ -133,22 +210,68 @@ export default class CommandExecution extends LightningElement {
         });
 
         this.currentSubCommands = updatedSubCommands;
+        
+        const subCommand = updatedSubCommands.find(sc => sc.command === subCommandData.command);
+        if (!subCommand) return;
 
-        // Add log line for sub-command end
-        const logType = subCommandData.success ? 'success' : 'error';
-        const duration = this.calculateDuration(
-            this.currentSubCommands.find(sc => sc.command === subCommandData.command)?.startTime,
-            new Date()
-        );
-
-        this.addLogLine({
-            logType: logType,
-            message: `Sub-command ${subCommandData.success ? 'completed' : 'failed'}: ${subCommandData.command} (${duration})`,
-            timestamp: new Date()
+        const duration = this.calculateDuration(subCommand.startTime, subCommand.endTime);
+        const statusIcon = subCommandData.success ? '✅' : '❌';
+        
+        // Replace the sub-command start log line with the completed one
+        this.replaceSubCommandLog(subCommand.id, {
+            logType: subCommandData.success ? 'success' : 'error',
+            message: `${statusIcon} ${subCommandData.success ? 'Completed' : 'Failed'}: ${subCommandData.command} (${duration})`,
+            timestamp: subCommand.endTime,
+            isSubCommand: true,
+            subCommandId: subCommand.id
         });
 
         if (!subCommandData.success) {
             this.hasError = true;
+        }
+    }
+
+    replaceSubCommandLog(subCommandId, newLogData) {
+        // Find and replace the sub-command log in the current section
+        if (this.currentSection && this.currentSection.logs) {
+            const logIndex = this.currentSection.logs.findIndex(log => 
+                log.isSubCommand && log.subCommandId === subCommandId
+            );
+            
+            if (logIndex !== -1) {
+                const updatedLog = {
+                    ...this.currentSection.logs[logIndex],
+                    logType: newLogData.logType,
+                    message: newLogData.message,
+                    timestamp: newLogData.timestamp,
+                    iconName: this.getLogTypeIcon(newLogData.logType),
+                    formattedTimestamp: this.formatTimestamp(newLogData.timestamp),
+                    cssClass: this.getLogTypeClass(newLogData.logType)
+                };
+                
+                this.currentSection.logs[logIndex] = updatedLog;
+                
+                // Update section error state if needed
+                if (newLogData.logType === 'error') {
+                    this.currentSection.hasError = true;
+                }
+                
+                // Update the sections array to trigger reactivity
+                this.logSections = [...this.logSections];
+            }
+        }
+        
+        // Also update the main logLines array
+        const mainLogIndex = this.logLines.findIndex(log => 
+            log.isSubCommand && log.subCommandId === subCommandId
+        );
+        
+        if (mainLogIndex !== -1) {
+            this.logLines[mainLogIndex] = {
+                ...this.logLines[mainLogIndex],
+                ...newLogData
+            };
+            this.logLines = [...this.logLines];
         }
     }
 
@@ -214,6 +337,18 @@ export default class CommandExecution extends LightningElement {
             }));
     }
 
+    get logSectionsForDisplay() {
+        return this.logSections.map(section => ({
+            ...section,
+            duration: this.calculateSectionDuration(section),
+            sectionStatusIcon: section.hasError ? 'utility:error' : 
+                               section.isActive ? 'utility:clock' : 'utility:success',
+            sectionStatusClass: section.hasError ? 'slds-text-color_error' : 
+                               section.isActive ? 'slds-text-color_weak' : 'slds-text-color_success',
+            toggleIcon: section.isExpanded ? 'utility:chevronup' : 'utility:chevrondown'
+        }));
+    }
+
     get subCommandsCount() {
         return this.currentSubCommands.length;
     }
@@ -235,7 +370,14 @@ export default class CommandExecution extends LightningElement {
     calculateDuration(startTime, endTime) {
         if (!startTime || !endTime) return '';
         
-        const diff = endTime.getTime() - startTime.getTime();
+        // Ensure we have Date objects
+        const start = startTime instanceof Date ? startTime : new Date(startTime);
+        const end = endTime instanceof Date ? endTime : new Date(endTime);
+        
+        // Check if dates are valid
+        if (isNaN(start.getTime()) || isNaN(end.getTime())) return '';
+        
+        const diff = end.getTime() - start.getTime();
         const seconds = Math.floor(diff / 1000);
         const minutes = Math.floor(seconds / 60);
         const hours = Math.floor(minutes / 60);
@@ -247,6 +389,17 @@ export default class CommandExecution extends LightningElement {
         } else {
             return `${seconds}s`;
         }
+    }
+
+    calculateSectionDuration(section) {
+        if (!section.startTime) return '';
+        
+        const startTime = section.startTime instanceof Date ? section.startTime : new Date(section.startTime);
+        const endTime = section.endTime ? 
+            (section.endTime instanceof Date ? section.endTime : new Date(section.endTime)) : 
+            new Date();
+            
+        return this.calculateDuration(startTime, endTime);
     }
 
     cleanMessage(message) {
@@ -306,12 +459,30 @@ export default class CommandExecution extends LightningElement {
     formatTimestamp(timestamp) {
         if (!timestamp) return '';
         
-        const date = new Date(timestamp);
-        return date.toLocaleTimeString();
+        try {
+            const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
+            if (isNaN(date.getTime())) return '';
+            return date.toLocaleTimeString();
+        } catch (error) {
+            console.error('Error formatting timestamp:', error, timestamp);
+            return '';
+        }
     }
 
     handleToggleExpanded() {
         this.isExpanded = !this.isExpanded;
+    }
+
+    handleToggleSection(event) {
+        const sectionId = event.target.dataset.sectionId;
+        if (sectionId) {
+            this.logSections = this.logSections.map(section => {
+                if (section.id === sectionId) {
+                    return { ...section, isExpanded: !section.isExpanded };
+                }
+                return section;
+            });
+        }
     }
 
     handleClearLogs() {
@@ -322,6 +493,13 @@ export default class CommandExecution extends LightningElement {
                     log.message.includes('Command completed') || 
                     log.message.includes('Command failed')
                 )
+            );
+            
+            // Also clear sections except for command start/end
+            this.logSections = this.logSections.filter(section => 
+                section.actionLog.message.includes('Command started') || 
+                section.actionLog.message.includes('Command completed') || 
+                section.actionLog.message.includes('Command failed')
             );
         }
     }
