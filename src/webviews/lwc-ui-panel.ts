@@ -210,9 +210,6 @@ export class LwcUiPanel {
       vscode.Uri.joinPath(this.extensionUri, "out", "assets", "icons")
     );
 
-    // Use a nonce to only allow specific scripts to be run
-    const nonce = getNonce();
-
     // Safely serialize initialization data
     const initDataJson = this.initializationData
       ? JSON.stringify(this.initializationData)
@@ -224,10 +221,10 @@ export class LwcUiPanel {
       <html lang="en">
       <head>
         <meta charset="UTF-8">
-        <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; connect-src ${webview.cspSource}; img-src ${webview.cspSource} https: data:; font-src ${webview.cspSource}; script-src 'nonce-${nonce}' 'unsafe-eval' 'unsafe-inline';">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         
         <link href="${sldsStylesUri}" rel="stylesheet" type="text/css">
+        <link rel="icons" href=${sldsIconsUri} />
         
         <title>SFDX Hardis LWC UI</title>
         <style>
@@ -238,22 +235,12 @@ export class LwcUiPanel {
       <body class="slds-scope">
         <div id="app" data-lwc-id="${this.lwcId}" data-init-data="${initDataJson}"></div>
         
-        <script nonce="${nonce}">
+        <script>
           // Set SLDS icons path for LWC components
           window.SLDS_ICONS_PATH = "${sldsIconsUri}";
         </script>
-        <script nonce="${nonce}" src="${scriptUri}"></script>
+        <script src="${scriptUri}"></script>
       </body>
       </html>`;
   }
-}
-
-function getNonce() {
-  let text = "";
-  const possible =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  for (let i = 0; i < 32; i++) {
-    text += possible.charAt(Math.floor(Math.random() * possible.length));
-  }
-  return text;
 }
