@@ -8,6 +8,7 @@ export default class PromptInput extends LightningElement {
     @track selectedValue = ''; // Single value for select input (string identifier)
     @track selectedOptionDescription = ''; // Description for selected option
     @track isVisible = false;
+    @track isSubmitting = false; // Track if submission is in progress
     @track error = null;
     @track choiceValueMapping = {}; // Map string identifiers to original choice values
     _hasInitialFocus = false; // Track if initial focus has been set
@@ -110,6 +111,7 @@ export default class PromptInput extends LightningElement {
     @api
     hidePrompt() {
         this.isVisible = false;
+        this.isSubmitting = false;
         this.currentPrompt = null;
         this.promptData = null;
         this.resetValues();
@@ -121,6 +123,7 @@ export default class PromptInput extends LightningElement {
         this.selectedValue = '';
         this.selectedOptionDescription = '';
         this.error = null;
+        this.isSubmitting = false;
         this.choiceValueMapping = {};
         this._hasInitialFocus = false; // Reset focus flag
     }
@@ -496,7 +499,15 @@ export default class PromptInput extends LightningElement {
     }
 
     handleSubmit() {
+        // Prevent multiple submissions
+        if (this.isSubmitting) {
+            return;
+        }
+
         try {
+            // Show spinner immediately
+            this.isSubmitting = true;
+            
             // Ensure we have the latest input value before submitting
             this.updateInputValueFromDOM();
             
@@ -504,6 +515,7 @@ export default class PromptInput extends LightningElement {
             this.dispatchPromptResponse(response);
         } catch (error) {
             this.error = error.message;
+            this.isSubmitting = false; // Hide spinner on error
         }
     }
 
@@ -519,6 +531,11 @@ export default class PromptInput extends LightningElement {
     }
 
     handleCancel() {
+        // Prevent cancel during submission
+        if (this.isSubmitting) {
+            return;
+        }
+
         const response = {};
         if (this.isMultiselectInput) {
             response[this.promptName] = [];
@@ -620,7 +637,10 @@ export default class PromptInput extends LightningElement {
         });
         
         this.dispatchEvent(responseEvent);
-        this.hidePrompt();
+        
+        // Don't hide the prompt immediately - let the parent handle hiding
+        // after the response is processed. The spinner will show until then.
+        // this.hidePrompt();
     }
 
     handlePromptRequest(event) {
