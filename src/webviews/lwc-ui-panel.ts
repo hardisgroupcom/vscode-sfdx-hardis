@@ -86,6 +86,9 @@ export class LwcUiPanel {
       }
     );
 
+    // Set custom icon for the panel tab
+    panel.iconPath = vscode.Uri.joinPath(extensionUri, "resources", "cloudity-logo.svg");
+
     const lwcUiPanel = new LwcUiPanel(panel, extensionUri, lwcId, initData);
     lwcUiPanel.setPanelTitleFromLwcId();
     return lwcUiPanel;
