@@ -129,6 +129,19 @@ export default class CommandExecution extends LightningElement {
             isAnswer: this.isWaitingForAnswer
         };
 
+        // Detect if this is a sub-command and determine its running state
+        if (logLine.isSubCommand || (logLine.message && logLine.message.includes('Running:'))) {
+            logLine.isSubCommand = true;
+            logLine.isRunning = logLine.message && logLine.message.includes('Running:');
+            
+            // If this is a completion message, mark as not running
+            if (logLine.message && (logLine.message.includes('completed') || logLine.message.includes('finished') || logLine.message.includes('done'))) {
+                logLine.isRunning = false;
+            }
+        } else {
+            logLine.isRunning = false;
+        }
+
         // Handle question/answer logic
         if (logLine.isQuestion) {
             this.isWaitingForAnswer = true;
@@ -222,7 +235,9 @@ export default class CommandExecution extends LightningElement {
             iconVariant: iconInfo.variant,
             useSpinner: this.shouldUseSpinner(logLine),
             formattedTimestamp: this.formatTimestamp(logLine.timestamp),
-            cssClass: this.getLogTypeClass(logLine.logType)
+            cssClass: this.getLogTypeClass(logLine.logType),
+            isSubCommand: logLine.isSubCommand || false,
+            isRunning: logLine.isRunning || false
         };
 
         this.currentSection.logs = [...this.currentSection.logs, formattedLog];
@@ -304,16 +319,24 @@ export default class CommandExecution extends LightningElement {
             
             if (logIndex !== -1) {
                 const iconInfo = this.getLogTypeIcon(newLogData.logType, newLogData.isQuestion, newLogData.isAnswer);
+                const baseLog = {...this.currentSection.logs[logIndex], ...newLogData};
+                
+                // Detect running state for updated sub-command
+                const isRunning = newLogData.message && newLogData.message.includes('Running:') && 
+                                !(newLogData.message.includes('completed') || newLogData.message.includes('finished') || newLogData.message.includes('done'));
+                
                 const updatedLog = {
-                    ...this.currentSection.logs[logIndex],
+                    ...baseLog,
                     logType: newLogData.logType,
                     message: newLogData.message,
                     timestamp: newLogData.timestamp,
                     iconName: iconInfo.iconName,
                     iconVariant: iconInfo.variant,
-                    useSpinner: this.shouldUseSpinner({...this.currentSection.logs[logIndex], ...newLogData}),
+                    useSpinner: this.shouldUseSpinner(baseLog),
                     formattedTimestamp: this.formatTimestamp(newLogData.timestamp),
-                    cssClass: this.getLogTypeClass(newLogData.logType)
+                    cssClass: this.getLogTypeClass(newLogData.logType),
+                    isSubCommand: true,
+                    isRunning: isRunning
                 };
                 
                 this.currentSection.logs[logIndex] = updatedLog;
@@ -527,31 +550,32 @@ export default class CommandExecution extends LightningElement {
             if (obj.length === 0) return 'No items';
             if (obj.length === 1) return this.makeJsonHumanReadable(obj[0]);
             
-            // For arrays, create a readable list
+            // For arrays, create a readable list with HTML line breaks
             const items = obj.map((item, index) => {
                 const readable = this.makeJsonHumanReadable(item);
                 return `${index + 1}. ${readable}`;
-            }).join('\n');
+            }).join('<br/>');
             
-            return `${obj.length} items:\n${items}`;
+            return `${obj.length} items:<br/>${items}`;
         }
         
         if (typeof obj === 'object') {
             const entries = Object.entries(obj);
             if (entries.length === 0) return 'No properties';
             
-            // Convert object properties to human-readable format
+            // Convert object properties to human-readable format with HTML
             const readable = entries.map(([key, value]) => {
                 const humanKey = this.humanizeKey(key);
                 const humanValue = this.makeJsonHumanReadable(value);
                 
-                // Handle different value types with appropriate formatting
+                // Handle different value types with appropriate HTML formatting
                 if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-                    return `${humanKey}:\n  ${humanValue.split('\n').join('\n  ')}`;
+                    const indentedValue = humanValue.split('<br/>').join('<br/>&nbsp;&nbsp;');
+                    return `${humanKey}:<br/>&nbsp;&nbsp;${indentedValue}`;
                 } else {
                     return `${humanKey}: ${humanValue}`;
                 }
-            }).join('\n');
+            }).join('<br/>');
             
             return readable;
         }

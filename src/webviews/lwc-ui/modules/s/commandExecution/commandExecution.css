@@ -99,6 +99,35 @@
   color: #4a5568;
 }
 
+/* Sub-command styling */
+.section-logs > div[data-is-subcommand="true"][data-is-running="true"],
+.log-lines > div[data-is-subcommand="true"][data-is-running="true"] {
+  background-color: #fff7e6;
+  border-left-color: #ff8c00;
+  border-left-width: 4px;
+  font-weight: 600;
+  animation: pulse-subcommand 2s infinite;
+  box-shadow: 0 2px 4px rgba(255, 140, 0, 0.2);
+}
+
+.section-logs > div[data-is-subcommand="true"][data-is-running="false"],
+.log-lines > div[data-is-subcommand="true"][data-is-running="false"] {
+  background-color: #f0f9ff;
+  border-left-color: #0ea5e9;
+  border-left-width: 3px;
+  font-weight: 500;
+  border-radius: 0.25rem;
+}
+
+@keyframes pulse-subcommand {
+  0%, 100% {
+    background-color: #fff7e6;
+  }
+  50% {
+    background-color: #ffedd5;
+  }
+}
+
 .log-message {
   word-break: break-word;
   white-space: pre-wrap;
@@ -181,6 +210,20 @@
   .log-lines > div[data-log-type="log"] {
     background-color: #222222;
     color: #bdbdbd;
+  }
+
+  /* Dark theme sub-command styling */
+  .section-logs > div[data-is-subcommand="true"][data-is-running="true"],
+  .log-lines > div[data-is-subcommand="true"][data-is-running="true"] {
+    background-color: #3d2f1f;
+    border-left-color: #ff8c00;
+    box-shadow: 0 2px 4px rgba(255, 140, 0, 0.3);
+  }
+
+  .section-logs > div[data-is-subcommand="true"][data-is-running="false"],
+  .log-lines > div[data-is-subcommand="true"][data-is-running="false"] {
+    background-color: #1e2a3a;
+    border-left-color: #0ea5e9;
   }
 
   .log-container::-webkit-scrollbar-track {

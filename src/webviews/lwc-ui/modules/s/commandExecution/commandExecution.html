@@ -157,7 +157,7 @@
                     <template if:true={section.hasLogs}>
                       <div class="section-logs slds-m-top_x-small slds-m-left_medium slds-m-right_x-small slds-m-bottom_x-small">
                         <template for:each={section.logs} for:item="logLine">
-                          <div key={logLine.id} class={logLine.cssClass} data-log-type={logLine.logType}>
+                          <div key={logLine.id} class={logLine.cssClass} data-log-type={logLine.logType} data-is-subcommand={logLine.isSubCommand} data-is-running={logLine.isRunning}>
                             <div class="slds-media slds-media_small">
                               <div class="slds-media__figure" style="width: 0.75rem;">
                                 <template if:true={logLine.useSpinner}>
@@ -183,7 +183,10 @@
                                     <template if:true={logLine.isAnswer}>
                                       <div class="log-message">
                                         <template if:true={logLine.formattedMessage}>
-                                          <pre class="answer-formatted">{logLine.formattedMessage}</pre>
+                                          <lightning-formatted-rich-text 
+                                            value={logLine.formattedMessage}
+                                            disable-linkify="true">
+                                          </lightning-formatted-rich-text>
                                         </template>
                                         <template if:false={logLine.formattedMessage}>
                                           {logLine.message}
