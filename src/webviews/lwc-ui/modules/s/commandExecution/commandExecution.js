@@ -20,9 +20,7 @@ export default class CommandExecution extends LightningElement {
         if (typeof window !== 'undefined') {
             window.commandExecutionComponent = this;
         }
-        
         // Auto-scroll to bottom when component is first connected
-        // Use a small delay to ensure DOM is fully rendered
         setTimeout(() => this.scrollToBottom(), 100);
     }
 
@@ -109,9 +107,7 @@ export default class CommandExecution extends LightningElement {
                 title: data.title,
                 timestamp: new Date()
             };
-            
             this.reportFiles = [...this.reportFiles, reportFile];
-            
             // Auto-scroll to bottom after adding new report file
             this.scrollToBottom();
         }
@@ -565,7 +561,8 @@ export default class CommandExecution extends LightningElement {
 
     cleanMessage(message) {
         if (!message || typeof message !== 'string') return '';
-        
+        // Remove leading 🦙 from questions
+        message = message.replace(/^🦙\s*/, '');
         // Remove ANSI escape codes
         return message
             .replace(/\x1b\[[0-9;]*m/g, '') // Standard ANSI codes
@@ -733,47 +730,13 @@ export default class CommandExecution extends LightningElement {
         }
     }
 
-    handleToggleSection(event) {
-        const sectionId = event.target.dataset.sectionId;
-        if (sectionId) {
-            this.logSections = this.logSections.map(section => {
-                if (section.id === sectionId && section.logs && section.logs.length > 0) {
-                    const wasCollapsed = !section.isExpanded;
-                    const updatedSection = { ...section, isExpanded: !section.isExpanded };
-                    
-                    // If section was expanded (content became visible), scroll to bottom
-                    if (wasCollapsed && updatedSection.isExpanded) {
-                        // Use a small delay to ensure DOM has updated with the new content
-                        setTimeout(() => this.scrollToBottom(), 100);
-                    }
-                    
-                    return updatedSection;
-                }
-                return section;
-            });
-        }
-    }
+    // handleToggleSection removed: sections are always expanded
 
-    scrollToBottom(focusContainer = false) {
-        // Use requestAnimationFrame for better performance and timing
+    scrollToBottom() {
         requestAnimationFrame(() => {
-            const logContainer = this.template.querySelector('.log-container');
-            if (logContainer) {
-                try {
-                    // Use smooth scrolling behavior if supported
-                    logContainer.scrollTo({
-                        top: logContainer.scrollHeight,
-                        behavior: 'smooth'
-                    });
-                } catch (error) {
-                    // Fallback for browsers that don't support smooth scrolling
-                    logContainer.scrollTop = logContainer.scrollHeight;
-                }
-                
-                // Optionally focus the container to ensure it's visible and responsive
-                if (focusContainer) {
-                    logContainer.focus();
-                }
+            const rootContainer = this.template.querySelector('.command-execution');
+            if (rootContainer) {
+                rootContainer.scrollTop = rootContainer.scrollHeight;
             }
         });
     }
