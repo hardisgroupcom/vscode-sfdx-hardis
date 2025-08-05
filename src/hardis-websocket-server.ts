@@ -1,5 +1,4 @@
 import * as http from "http";
-import * as path from "path";
 import getPort, { portNumbers } from "get-port";
 import { WebSocketServer } from "ws";
 import * as vscode from "vscode";
@@ -74,17 +73,6 @@ export class LocalWebSocketServer {
       // Store panel reference for this command context
       this.clients[data.context.id].panel = panel;
       this.clients[data.context.id].lwcId = lwcId;
-      
-      // Set up message listeners for file operations
-      panel.onMessage((messageType: string, messageData: any) => {
-        if (messageType === "downloadFile") {
-          this.handleFileDownload(messageData.filePath, messageData.fileName);
-        } else if (messageType === "openFile") {
-          this.handleFileOpen(messageData.filePath);
-        } else if (messageType === "checkFileExists") {
-          this.handleFileExistsCheck(panel, messageData.filePath, messageData.fileType);
-        }
-      });
       
       // Set the panel title to include command info
       const commandName = data.context.command || 'SFDX Hardis Command';
@@ -372,125 +360,6 @@ export class LocalWebSocketServer {
       globalWss = null;
     } catch {
       Logger.log("[sfdx-hardis] Error while closing WebSocket Server");
-    }
-  }
-
-  /**
-   * Handle file download request from webview
-   * @param filePath Path to the file to download
-   * @param fileName Name of the file for download
-   */
-  private async handleFileDownload(filePath: string, fileName: string) {
-    try {
-      let resolvedPath = filePath;
-      
-      // If it's a relative path, resolve it relative to the workspace
-      if (!path.isAbsolute(filePath)) {
-        const workspaceFolders = vscode.workspace.workspaceFolders;
-        if (workspaceFolders && workspaceFolders.length > 0) {
-          resolvedPath = path.join(workspaceFolders[0].uri.fsPath, filePath);
-          console.log(`Resolved relative path for download: ${filePath} -> ${resolvedPath}`);
-        }
-      }
-      
-      // Check if file exists
-      const fileUri = vscode.Uri.file(resolvedPath);
-      await vscode.workspace.fs.stat(fileUri);
-      
-      // Show save dialog
-      const saveUri = await vscode.window.showSaveDialog({
-        defaultUri: vscode.Uri.file(fileName),
-        filters: {
-          'Excel Files': ['xlsx', 'xls'],
-          'CSV Files': ['csv'],
-          'All Files': ['*']
-        }
-      });
-      
-      if (saveUri) {
-        // Copy the file to the selected location
-        await vscode.workspace.fs.copy(fileUri, saveUri, { overwrite: true });
-        vscode.window.showInformationMessage(`File downloaded successfully to ${saveUri.fsPath}`);
-      }
-    } catch (error) {
-      console.error('Error downloading file:', error);
-      vscode.window.showErrorMessage(`Failed to download file: ${error}`);
-    }
-  }
-
-  /**
-   * Handle file open request from webview
-   * @param filePath Path to the file to open
-   */
-  private async handleFileOpen(filePath: string) {
-    try {
-      let resolvedPath = filePath;
-      
-      // If it's a relative path, resolve it relative to the workspace
-      if (!path.isAbsolute(filePath)) {
-        const workspaceFolders = vscode.workspace.workspaceFolders;
-        if (workspaceFolders && workspaceFolders.length > 0) {
-          resolvedPath = path.join(workspaceFolders[0].uri.fsPath, filePath);
-          console.log(`Resolved relative path for open: ${filePath} -> ${resolvedPath}`);
-        }
-      }
-      
-      // Check if file exists
-      const fileUri = vscode.Uri.file(resolvedPath);
-      await vscode.workspace.fs.stat(fileUri);
-      
-      // Open the file in VS Code
-      const document = await vscode.workspace.openTextDocument(fileUri);
-      await vscode.window.showTextDocument(document);
-    } catch (error) {
-      console.error('Error opening file:', error);
-      vscode.window.showErrorMessage(`Failed to open file: ${error}`);
-    }
-  }
-
-  /**
-   * Handle file existence check request from webview
-   * @param panel The LWC panel to send response to
-   * @param filePath Path to the file to check
-   * @param fileType Type of the file (csv or excel)
-   */
-  private async handleFileExistsCheck(panel: any, filePath: string, fileType: string) {
-    try {
-      let resolvedPath = filePath;
-      
-      // If it's a relative path, resolve it relative to the workspace
-      if (!path.isAbsolute(filePath)) {
-        const workspaceFolders = vscode.workspace.workspaceFolders;
-        if (workspaceFolders && workspaceFolders.length > 0) {
-          resolvedPath = path.join(workspaceFolders[0].uri.fsPath, filePath);
-          console.log(`Resolved relative path: ${filePath} -> ${resolvedPath}`);
-        }
-      }
-      
-      // Check if file exists
-      const fileUri = vscode.Uri.file(resolvedPath);
-      await vscode.workspace.fs.stat(fileUri);
-      
-      // File exists, send positive response with resolved path
-      panel.sendMessage({
-        type: "fileExistsResponse",
-        data: {
-          filePath: resolvedPath, // Send back the resolved path
-          fileType: fileType,
-          exists: true
-        }
-      });
-    } catch {
-      // File doesn't exist or other error, send negative response
-      console.log(`File does not exist: ${filePath}`);
-      panel.sendMessage({
-        type: "fileExistsResponse",
-        data: {
-          filePath: filePath,
-          fileType: fileType,
-          exists: false
-        }
-      });
     }
   }
 }
