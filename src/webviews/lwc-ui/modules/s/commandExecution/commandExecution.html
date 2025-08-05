@@ -49,7 +49,7 @@
 
     <!-- Log container -->
     <div class="slds-card__body slds-card__body_inner" style="flex: 1; display: flex; flex-direction: column;">
-      <div class="log-container slds-scrollable_y">
+      <div class="log-container slds-scrollable_y" tabindex="0" role="log" aria-live="polite" aria-label="Command execution logs">
         <template if:true={logSectionsForDisplay.length}>
           <div class="log-sections">
             <template for:each={logSectionsForDisplay} for:item="section">

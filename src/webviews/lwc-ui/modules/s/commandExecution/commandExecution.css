@@ -16,6 +16,13 @@
   flex: 1;
   overflow-y: auto;
   min-height: 200px;
+  scroll-behavior: smooth;
+  position: relative;
+}
+
+.log-container:focus {
+  outline: 2px solid #0176d3;
+  outline-offset: -2px;
 }
 
 .log-sections {

@@ -20,6 +20,10 @@ export default class CommandExecution extends LightningElement {
         if (typeof window !== 'undefined') {
             window.commandExecutionComponent = this;
         }
+        
+        // Auto-scroll to bottom when component is first connected
+        // Use a small delay to ensure DOM is fully rendered
+        setTimeout(() => this.scrollToBottom(), 100);
     }
 
     disconnectedCallback() {
@@ -107,6 +111,9 @@ export default class CommandExecution extends LightningElement {
             };
             
             this.reportFiles = [...this.reportFiles, reportFile];
+            
+            // Auto-scroll to bottom after adding new report file
+            this.scrollToBottom();
         }
     }
 
@@ -222,6 +229,9 @@ export default class CommandExecution extends LightningElement {
 
         this.currentSection = newSection;
         this.logSections = [...this.logSections, newSection];
+        
+        // Auto-scroll to bottom after adding new section
+        this.scrollToBottom();
     }
 
     addLogToCurrentSection(logLine) {
@@ -256,6 +266,9 @@ export default class CommandExecution extends LightningElement {
 
         // Update the sections array to trigger reactivity
         this.logSections = [...this.logSections];
+        
+        // Auto-scroll to bottom after adding new log to section
+        this.scrollToBottom();
     }
 
     @api
@@ -363,6 +376,9 @@ export default class CommandExecution extends LightningElement {
                 
                 // Update the sections array to trigger reactivity
                 this.logSections = [...this.logSections];
+                
+                // Auto-scroll to bottom after updating sub-command log
+                this.scrollToBottom();
             }
         }
         
@@ -722,21 +738,44 @@ export default class CommandExecution extends LightningElement {
         if (sectionId) {
             this.logSections = this.logSections.map(section => {
                 if (section.id === sectionId && section.logs && section.logs.length > 0) {
-                    return { ...section, isExpanded: !section.isExpanded };
+                    const wasCollapsed = !section.isExpanded;
+                    const updatedSection = { ...section, isExpanded: !section.isExpanded };
+                    
+                    // If section was expanded (content became visible), scroll to bottom
+                    if (wasCollapsed && updatedSection.isExpanded) {
+                        // Use a small delay to ensure DOM has updated with the new content
+                        setTimeout(() => this.scrollToBottom(), 100);
+                    }
+                    
+                    return updatedSection;
                 }
                 return section;
             });
         }
     }
 
-    scrollToBottom() {
-        // Use setTimeout to ensure DOM has updated
-        setTimeout(() => {
+    scrollToBottom(focusContainer = false) {
+        // Use requestAnimationFrame for better performance and timing
+        requestAnimationFrame(() => {
             const logContainer = this.template.querySelector('.log-container');
             if (logContainer) {
-                logContainer.scrollTop = logContainer.scrollHeight;
+                try {
+                    // Use smooth scrolling behavior if supported
+                    logContainer.scrollTo({
+                        top: logContainer.scrollHeight,
+                        behavior: 'smooth'
+                    });
+                } catch (error) {
+                    // Fallback for browsers that don't support smooth scrolling
+                    logContainer.scrollTop = logContainer.scrollHeight;
+                }
+                
+                // Optionally focus the container to ensure it's visible and responsive
+                if (focusContainer) {
+                    logContainer.focus();
+                }
             }
-        }, 50);
+        });
     }
 
     get hasDocumentation() {
