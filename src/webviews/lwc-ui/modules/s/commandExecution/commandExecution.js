@@ -63,7 +63,15 @@ export default class CommandExecution extends LightningElement {
     @api
     initializeCommand(context) {
         this.commandContext = context;
-        this.commandDocUrl = context.commandDocUrl || null;
+        
+        // Only set commandDocUrl if it's provided, preserve existing value otherwise
+        if (context.commandDocUrl) {
+            this.commandDocUrl = context.commandDocUrl;
+        } else if (!this.commandDocUrl) {
+            // Only set to null if we don't already have a URL
+            this.commandDocUrl = null;
+        }
+        
         this.logLines = [];
         this.logSections = [];
         this.currentSection = null;
