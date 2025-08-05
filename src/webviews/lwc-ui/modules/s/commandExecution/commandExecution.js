@@ -84,10 +84,10 @@ export default class CommandExecution extends LightningElement {
         this.latestExcelFile = null;
         this.detectedFiles = [];
         
-        // Add initial "Initializing" action log
+        // Add initial "Started" action log
         this.addLogLine({
             logType: 'action',
-            message: `Initializing ${context.command || 'SFDX Hardis Command'}`,
+            message: `Started ${context.command || 'SFDX Hardis Command'}`,
             timestamp: this.startTime
         });
     }
