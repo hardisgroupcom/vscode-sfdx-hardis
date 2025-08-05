@@ -220,6 +220,28 @@
             </div>
           </template>
         </div>
+        
+        <!-- Report Files Section -->
+        <template if:true={hasReportFiles}>
+          <div class="report-files-section slds-p-around_small slds-border_top">
+            <h3 class="slds-text-heading_small slds-m-bottom_x-small">Report Files</h3>
+            <div class="slds-grid slds-wrap slds-gutters_x-small">
+              <template for:each={reportFiles} for:item="reportFile">
+                <div key={reportFile.id} class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-large-size_1-of-3">
+                  <lightning-button
+                    variant="brand"
+                    label={reportFile.title}
+                    icon-name="utility:file"
+                    data-file-path={reportFile.file}
+                    onclick={handleOpenReportFile}
+                    title="Open report file"
+                    class="slds-m-bottom_x-small">
+                  </lightning-button>
+                </div>
+              </template>
+            </div>
+          </div>
+        </template>
       </div>
   </div>
 </template>

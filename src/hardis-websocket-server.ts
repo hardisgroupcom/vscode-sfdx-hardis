@@ -154,6 +154,19 @@ export class LocalWebSocketServer {
         });
       }
     }
+    // Report file
+    else if (data.event === "reportFile") {
+      const clientData = this.clients[data.context?.id];
+      if (clientData?.panel) {
+        clientData.panel.sendMessage({
+          type: "reportFile",
+          data: {
+            file: data.file,
+            title: data.title
+          }
+        });
+      }
+    }
     // Request to refresh status box
     else if (data.event === "refreshStatus") {
       vscode.commands.executeCommand("vscode-sfdx-hardis.refreshStatusView");

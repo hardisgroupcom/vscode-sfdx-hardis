@@ -3,6 +3,7 @@ import { LightningElement, track, api } from 'lwc';
 export default class CommandExecution extends LightningElement {
     @track commandContext = null;
     @track commandDocUrl = null;
+    @track reportFiles = []; // Track report files
     @track logLines = [];
     @track logSections = [];
     @track currentSection = null;
@@ -55,6 +56,9 @@ export default class CommandExecution extends LightningElement {
             case 'completeCommand':
                 this.completeCommand(data);
                 break;
+            case 'reportFile':
+                this.addReportFile(data);
+                break;
             default:
                 console.log('Unknown message type:', messageType, data);
         }
@@ -72,6 +76,7 @@ export default class CommandExecution extends LightningElement {
             this.commandDocUrl = null;
         }
         
+        this.reportFiles = []; // Reset report files for new command
         this.logLines = [];
         this.logSections = [];
         this.currentSection = null;
@@ -88,6 +93,20 @@ export default class CommandExecution extends LightningElement {
             message: `Started ${context.command || 'SFDX Hardis Command'}`,
             timestamp: this.startTime
         });
+    }
+
+    @api
+    addReportFile(data) {
+        if (data && data.file && data.title) {
+            const reportFile = {
+                id: this.generateId(),
+                file: data.file,
+                title: data.title,
+                timestamp: new Date()
+            };
+            
+            this.reportFiles = [...this.reportFiles, reportFile];
+        }
     }
 
     @api
@@ -658,6 +677,25 @@ export default class CommandExecution extends LightningElement {
                 });
             } else {
                 console.error('VS Code API not available for opening documentation');
+            }
+        }
+    }
+
+    get hasReportFiles() {
+        return this.reportFiles && this.reportFiles.length > 0;
+    }
+
+    handleOpenReportFile(event) {
+        const filePath = event.target.dataset.filePath;
+        if (filePath) {
+            // Use the VS Code webview API to send message
+            if (typeof window !== 'undefined' && window.sendMessageToVSCode) {
+                window.sendMessageToVSCode({
+                    type: 'openFile',
+                    data: { filePath: filePath }
+                });
+            } else {
+                console.error('VS Code API not available for opening report file');
             }
         }
     }
