@@ -13,6 +13,7 @@ export default class CommandExecution extends LightningElement {
     @track endTime = null;
     @track currentSubCommands = [];
     @track isWaitingForAnswer = false;
+    @track latestQuestionId = null;
     
     connectedCallback() {
         // Make component available globally for VS Code message handling
@@ -148,10 +149,13 @@ export default class CommandExecution extends LightningElement {
         // Handle question/answer logic
         if (logLine.isQuestion) {
             this.isWaitingForAnswer = true;
+            // Track the latest question ID
+            this.latestQuestionId = logLine.id;
         } else if (this.isWaitingForAnswer && !logLine.isQuestion) {
             // This is an answer
             logLine.isAnswer = true;
             this.isWaitingForAnswer = false;
+            this.latestQuestionId = null;
             
             // Try to parse and prettify JSON answers
             logLine.formattedMessage = this.formatAnswerMessage(logLine.message);
@@ -500,7 +504,7 @@ export default class CommandExecution extends LightningElement {
                 { iconName: 'utility:error', variant: 'error' } : 
                 section.isActive ? null : 
                 { iconName: 'utility:success', variant: 'success' }, // null for active = use spinner
-            sectionUseSpinner: section.isActive || (section.isQuestion && this.isWaitingForAnswer),
+            sectionUseSpinner: section.isActive || (section.isQuestion && this.isWaitingForAnswer && this.isLatestQuestionSection(section)),
             sectionStatusClass: section.hasError ? 'slds-text-color_error' : 
                                section.isActive ? 'slds-text-color_weak' : 'slds-text-color_success',
             hasLogs: section.logs && section.logs.length > 0,
@@ -678,11 +682,26 @@ export default class CommandExecution extends LightningElement {
         if (log.isSubCommand && log.message && log.message.includes('Running:')) {
             return true;
         }
-        // Use spinner for questions that are waiting for an answer
-        if (log.isQuestion && this.isWaitingForAnswer) {
+        // Use spinner ONLY for the latest question that is waiting for an answer
+        if (log.isQuestion && this.isWaitingForAnswer && log.id === this.latestQuestionId) {
             return true;
         }
         return false;
+    }
+
+    isLatestQuestionSection(section) {
+        // Check if this section contains the latest question
+        if (!this.latestQuestionId || !section.isQuestion) {
+            return false;
+        }
+        
+        // Check if the section's action log is the latest question
+        if (section.actionLog && section.actionLog.id === this.latestQuestionId) {
+            return true;
+        }
+        
+        // Check if any log in the section is the latest question
+        return section.logs && section.logs.some(log => log.id === this.latestQuestionId);
     }
 
     formatTimestamp(timestamp) {
