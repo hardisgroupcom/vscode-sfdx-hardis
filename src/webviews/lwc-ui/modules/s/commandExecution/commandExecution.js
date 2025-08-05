@@ -403,13 +403,13 @@ export default class CommandExecution extends LightningElement {
         return this.logSections.map(section => ({
             ...section,
             duration: this.calculateSectionDuration(section),
-            sectionStatusIcon: section.isQuestion ? 
+            sectionStatusIcon: section.isQuestion && !this.isWaitingForAnswer ? 
                 { iconName: 'utility:question', variant: 'brand' } :
                 section.hasError ? 
                 { iconName: 'utility:error', variant: 'error' } : 
                 section.isActive ? null : 
                 { iconName: 'utility:success', variant: 'success' }, // null for active = use spinner
-            sectionUseSpinner: section.isActive && !section.isQuestion,
+            sectionUseSpinner: section.isActive || (section.isQuestion && this.isWaitingForAnswer),
             sectionStatusClass: section.hasError ? 'slds-text-color_error' : 
                                section.isActive ? 'slds-text-color_weak' : 'slds-text-color_success',
             toggleIcon: section.isExpanded ? 'utility:chevronup' : 'utility:chevrondown',
