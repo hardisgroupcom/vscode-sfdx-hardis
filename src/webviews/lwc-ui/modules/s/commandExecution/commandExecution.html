@@ -33,6 +33,17 @@
             </p>
           </template>
         </div>
+        <template if:true={hasDocumentation}>
+          <div class="slds-media__figure slds-media__figure_reverse">
+            <lightning-button
+              variant="neutral"
+              label="Documentation"
+              icon-name="utility:help"
+              onclick={handleOpenDocumentation}
+              title="Open command documentation">
+            </lightning-button>
+          </div>
+        </template>
       </div>
     </div>
 

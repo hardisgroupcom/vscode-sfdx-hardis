@@ -2,6 +2,7 @@ import { LightningElement, track, api } from 'lwc';
 
 export default class CommandExecution extends LightningElement {
     @track commandContext = null;
+    @track commandDocUrl = null;
     @track logLines = [];
     @track logSections = [];
     @track currentSection = null;
@@ -62,6 +63,7 @@ export default class CommandExecution extends LightningElement {
     @api
     initializeCommand(context) {
         this.commandContext = context;
+        this.commandDocUrl = context.commandDocUrl || null;
         this.logLines = [];
         this.logSections = [];
         this.currentSection = null;
@@ -630,5 +632,20 @@ export default class CommandExecution extends LightningElement {
         }, 50);
     }
 
+    get hasDocumentation() {
+        return this.commandDocUrl && this.commandDocUrl.trim() !== '';
+    }
+
+    handleOpenDocumentation() {
+        if (this.commandDocUrl) {
+            // Send message to VS Code to open the documentation URL
+            if (typeof window !== 'undefined' && window.sendMessageToVSCode) {
+                window.sendMessageToVSCode({
+                    type: 'openUrl',
+                    data: { url: this.commandDocUrl }
+                });
+            }
+        }
+    }
 
 }

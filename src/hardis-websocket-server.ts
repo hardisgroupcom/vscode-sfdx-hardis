@@ -86,11 +86,17 @@ export class LocalWebSocketServer {
       const commandName = data.context.command || 'SFDX Hardis Command';
       panel.updateTitle(`${commandName} - Running`);
       
-      // Initialize the command in the panel
-      panel.sendMessage({
+      // Initialize the command in the panel, including commandDocUrl if available
+      const initData: any = {
         type: "initializeCommand",
         data: data.context
-      });
+      };
+      
+      if (data.commandDocUrl) {
+        initData.data.commandDocUrl = data.commandDocUrl;
+      }
+      
+      panel.sendMessage(initData);
     }
     // Command end
     if (data.event === "closeClient" || data.event === "clientClose") {
