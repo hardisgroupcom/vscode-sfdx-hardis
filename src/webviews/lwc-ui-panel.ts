@@ -317,9 +317,20 @@ export class LwcUiPanel {
       const fileUri = vscode.Uri.file(resolvedPath);
       await vscode.workspace.fs.stat(fileUri);
       
-      // Open the file in VS Code
-      const document = await vscode.workspace.openTextDocument(fileUri);
-      await vscode.window.showTextDocument(document);
+      // Check if it's an Excel file (or other binary file) that should be opened externally
+      const fileExtension = path.extname(resolvedPath).toLowerCase();
+      const binaryExtensions = ['.xlsx', '.xls', '.xlsm', '.xlsb', '.pdf', '.doc', '.docx', '.ppt', '.pptx'];
+      
+      if (binaryExtensions.includes(fileExtension)) {
+        // Open with default Windows application
+        await vscode.env.openExternal(fileUri);
+        console.log(`Opened file with default application: ${resolvedPath}`);
+      } else {
+        // Open the file in VS Code for text files
+        const document = await vscode.workspace.openTextDocument(fileUri);
+        await vscode.window.showTextDocument(document);
+        console.log(`Opened file in VS Code: ${resolvedPath}`);
+      }
     } catch (error) {
       console.error('Error opening file:', error);
       vscode.window.showErrorMessage(`Failed to open file: ${error}`);

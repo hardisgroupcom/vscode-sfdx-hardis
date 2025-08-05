@@ -685,6 +685,14 @@ export default class CommandExecution extends LightningElement {
         return this.reportFiles && this.reportFiles.length > 0;
     }
 
+    get reportFilesCount() {
+        return this.reportFiles ? this.reportFiles.length : 0;
+    }
+
+    get reportFilesCountPlural() {
+        return this.reportFilesCount === 1 ? '' : 's';
+    }
+
     handleOpenReportFile(event) {
         const filePath = event.target.dataset.filePath;
         if (filePath) {
