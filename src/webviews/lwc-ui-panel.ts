@@ -199,6 +199,9 @@ export class LwcUiPanel {
         case 'openFile':
           await this.handleFileOpen(data.filePath);
           break;
+        case 'openExternal':
+          await this.handleOpenExternal(data.url || data);
+          break;
       }
     } catch (error) {
       console.error(`Error handling built-in message ${messageType}:`, error);
@@ -320,6 +323,20 @@ export class LwcUiPanel {
     } catch (error) {
       console.error('Error opening file:', error);
       vscode.window.showErrorMessage(`Failed to open file: ${error}`);
+    }
+  }
+
+  /**
+   * Handle external URL open request from webview
+   * @param url URL to open in external browser
+   */
+  private async handleOpenExternal(url: string): Promise<void> {
+    try {
+      const uri = vscode.Uri.parse(url);
+      await vscode.env.openExternal(uri);
+    } catch (error) {
+      console.error('Error opening external URL:', error);
+      vscode.window.showErrorMessage(`Failed to open URL: ${url}`);
     }
   }
 

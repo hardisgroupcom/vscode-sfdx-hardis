@@ -638,12 +638,14 @@ export default class CommandExecution extends LightningElement {
 
     handleOpenDocumentation() {
         if (this.commandDocUrl) {
-            // Send message to VS Code to open the documentation URL
+            // Use the VS Code webview API to send message
             if (typeof window !== 'undefined' && window.sendMessageToVSCode) {
                 window.sendMessageToVSCode({
-                    type: 'openUrl',
+                    type: 'openExternal',
                     data: { url: this.commandDocUrl }
                 });
+            } else {
+                console.error('VS Code API not available for opening documentation');
             }
         }
     }
