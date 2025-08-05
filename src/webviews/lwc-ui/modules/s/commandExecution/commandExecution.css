@@ -113,11 +113,6 @@
   margin-top: 0.125rem;
 }
 
-/* Custom progress bar colors */
-.slds-progress-bar__value {
-  background-color: #1589ee;
-}
-
 /* Scrollbar styling */
 .log-container::-webkit-scrollbar {
   width: 8px;
@@ -135,19 +130,6 @@
 
 .log-container::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
-}
-
-/* Status icon colors */
-.slds-text-color_success .slds-icon {
-  fill: #04844b;
-}
-
-.slds-text-color_error .slds-icon {
-  fill: #ba0517;
-}
-
-.slds-text-color_weak .slds-icon {
-  fill: #706e6b;
 }
 
 /* Dark theme support */

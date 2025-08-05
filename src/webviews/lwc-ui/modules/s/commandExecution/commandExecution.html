@@ -6,15 +6,21 @@
         <div class="slds-media__figure" style="width: 2rem;">
           <template if:true={useSpinner}>
             <div class="slds-is-relative" style="height: 2rem;">
-              <lightning-spinner alternative-text="Loading..." size="small"></lightning-spinner>
+              <lightning-spinner 
+                alternative-text="Loading..." 
+                size="small"
+                variant="brand">
+              </lightning-spinner>
             </div>
           </template>
           <template if:false={useSpinner}>
-            <lightning-icon 
-              icon-name={statusIcon}
-              size="small"
-              class={statusClass}>
-            </lightning-icon>
+            <template if:true={statusIcon}>
+              <lightning-icon 
+                icon-name={statusIcon.iconName}
+                variant={statusIcon.variant}
+                size="small">
+              </lightning-icon>
+            </template>
           </template>
         </div>
         <div class="slds-media__body">
@@ -66,15 +72,21 @@
                           <div class="slds-media__figure" style="width: 1rem;">
                             <template if:true={section.sectionUseSpinner}>
                               <div class="slds-is-relative" style="height: 1rem;">
-                                <lightning-spinner alternative-text="Running..." size="x-small"></lightning-spinner>
+                                <lightning-spinner 
+                                  alternative-text="Running..." 
+                                  size="x-small"
+                                  variant="brand">
+                                </lightning-spinner>
                               </div>
                             </template>
                             <template if:false={section.sectionUseSpinner}>
-                              <lightning-icon 
-                                icon-name={section.sectionStatusIcon}
-                                size="x-small"
-                                class={section.sectionStatusClass}>
-                              </lightning-icon>
+                              <template if:true={section.sectionStatusIcon}>
+                                <lightning-icon 
+                                  icon-name={section.sectionStatusIcon.iconName}
+                                  variant={section.sectionStatusIcon.variant}
+                                  size="x-small">
+                                </lightning-icon>
+                              </template>
                             </template>
                           </div>
                           <div class="slds-media__body">
@@ -101,8 +113,9 @@
                           <div class="slds-media__figure slds-media__figure_reverse">
                             <lightning-icon 
                               icon-name={section.toggleIcon}
+                              variant="inverse"
                               size="x-small"
-                              class="slds-text-color_weak section-toggle">
+                              class="section-toggle">
                             </lightning-icon>
                           </div>
                         </div>
@@ -114,15 +127,21 @@
                         <div class="slds-media__figure" style="width: 1rem;">
                           <template if:true={section.sectionUseSpinner}>
                             <div class="slds-is-relative" style="height: 1rem;">
-                              <lightning-spinner alternative-text="Running..." size="x-small"></lightning-spinner>
+                              <lightning-spinner 
+                                alternative-text="Running..." 
+                                size="x-small"
+                                variant="brand">
+                              </lightning-spinner>
                             </div>
                           </template>
                           <template if:false={section.sectionUseSpinner}>
-                            <lightning-icon 
-                              icon-name={section.sectionStatusIcon}
-                              size="x-small"
-                              class={section.sectionStatusClass}>
-                            </lightning-icon>
+                            <template if:true={section.sectionStatusIcon}>
+                              <lightning-icon 
+                                icon-name={section.sectionStatusIcon.iconName}
+                                variant={section.sectionStatusIcon.variant}
+                                size="x-small">
+                              </lightning-icon>
+                            </template>
                           </template>
                         </div>
                         <div class="slds-media__body">
@@ -153,14 +172,18 @@
                               <div class="slds-media__figure" style="width: 0.75rem;">
                                 <template if:true={logLine.useSpinner}>
                                   <div class="slds-is-relative" style="height: 0.75rem;">
-                                    <lightning-spinner alternative-text="Running..." size="xx-small"></lightning-spinner>
+                                    <lightning-spinner 
+                                      alternative-text="Running..." 
+                                      size="xx-small"
+                                      variant="brand">
+                                    </lightning-spinner>
                                   </div>
                                 </template>
                                 <template if:false={logLine.useSpinner}>
                                   <lightning-icon 
                                     icon-name={logLine.iconName}
-                                    size="xx-small"
-                                    class="log-icon">
+                                    variant={logLine.iconVariant}
+                                    size="xx-small">
                                   </lightning-icon>
                                 </template>
                               </div>

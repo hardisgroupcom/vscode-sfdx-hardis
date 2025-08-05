@@ -81,6 +81,11 @@ export default class CommandExecution extends LightningElement {
 
     @api
     addLogLine(logData) {
+        // Skip logs that contain "Please see detailed .* log in" pattern
+        if (logData.message && /Please see detailed .* log in/i.test(logData.message)) {
+            return;
+        }
+        
         const logLine = {
             id: this.generateId(),
             logType: logData.logType || 'log',
@@ -140,11 +145,13 @@ export default class CommandExecution extends LightningElement {
     }
 
     startNewSection(actionLog) {
+        const iconInfo = this.getLogTypeIcon(actionLog.logType, actionLog.isQuestion, actionLog.isAnswer);
         const newSection = {
             id: this.generateId(),
             actionLog: {
                 ...actionLog,
-                iconName: this.getLogTypeIcon(actionLog.logType, actionLog.isQuestion, actionLog.isAnswer),
+                iconName: iconInfo.iconName,
+                iconVariant: iconInfo.variant,
                 useSpinner: this.shouldUseSpinner(actionLog),
                 formattedTimestamp: this.formatTimestamp(actionLog.timestamp),
                 cssClass: this.getLogTypeClass(actionLog.logType)
@@ -173,9 +180,11 @@ export default class CommandExecution extends LightningElement {
             });
         }
 
+        const iconInfo = this.getLogTypeIcon(logLine.logType, logLine.isQuestion, logLine.isAnswer);
         const formattedLog = {
             ...logLine,
-            iconName: this.getLogTypeIcon(logLine.logType, logLine.isQuestion, logLine.isAnswer),
+            iconName: iconInfo.iconName,
+            iconVariant: iconInfo.variant,
             useSpinner: this.shouldUseSpinner(logLine),
             formattedTimestamp: this.formatTimestamp(logLine.timestamp),
             cssClass: this.getLogTypeClass(logLine.logType)
@@ -259,12 +268,14 @@ export default class CommandExecution extends LightningElement {
             );
             
             if (logIndex !== -1) {
+                const iconInfo = this.getLogTypeIcon(newLogData.logType, newLogData.isQuestion, newLogData.isAnswer);
                 const updatedLog = {
                     ...this.currentSection.logs[logIndex],
                     logType: newLogData.logType,
                     message: newLogData.message,
                     timestamp: newLogData.timestamp,
-                    iconName: this.getLogTypeIcon(newLogData.logType, newLogData.isQuestion, newLogData.isAnswer),
+                    iconName: iconInfo.iconName,
+                    iconVariant: iconInfo.variant,
                     useSpinner: this.shouldUseSpinner({...this.currentSection.logs[logIndex], ...newLogData}),
                     formattedTimestamp: this.formatTimestamp(newLogData.timestamp),
                     cssClass: this.getLogTypeClass(newLogData.logType)
@@ -356,7 +367,9 @@ export default class CommandExecution extends LightningElement {
         if (!this.isCompleted) {
             return null; // Will use spinner instead
         }
-        return this.hasError ? 'utility:error' : 'utility:success';
+        return this.hasError ? 
+            { iconName: 'utility:error', variant: 'error' } : 
+            { iconName: 'utility:success', variant: 'success' };
     }
 
     get useSpinner() {
@@ -373,22 +386,29 @@ export default class CommandExecution extends LightningElement {
     get filteredLogLines() {
         return this.logLines
             .filter(log => log.message.trim() !== '')
-            .map(log => ({
-                ...log,
-                iconName: this.getLogTypeIcon(log.logType, log.isQuestion, log.isAnswer),
-                useSpinner: this.shouldUseSpinner(log),
-                formattedTimestamp: this.formatTimestamp(log.timestamp),
-                cssClass: this.getLogTypeClass(log.logType)
-            }));
+            .map(log => {
+                const iconInfo = this.getLogTypeIcon(log.logType, log.isQuestion, log.isAnswer);
+                return {
+                    ...log,
+                    iconName: iconInfo.iconName,
+                    iconVariant: iconInfo.variant,
+                    useSpinner: this.shouldUseSpinner(log),
+                    formattedTimestamp: this.formatTimestamp(log.timestamp),
+                    cssClass: this.getLogTypeClass(log.logType)
+                };
+            });
     }
 
     get logSectionsForDisplay() {
         return this.logSections.map(section => ({
             ...section,
             duration: this.calculateSectionDuration(section),
-            sectionStatusIcon: section.isQuestion ? 'utility:question' :
-                               section.hasError ? 'utility:error' : 
-                               section.isActive ? null : 'utility:success', // null for active = use spinner
+            sectionStatusIcon: section.isQuestion ? 
+                { iconName: 'utility:question', variant: 'brand' } :
+                section.hasError ? 
+                { iconName: 'utility:error', variant: 'error' } : 
+                section.isActive ? null : 
+                { iconName: 'utility:success', variant: 'success' }, // null for active = use spinner
             sectionUseSpinner: section.isActive && !section.isQuestion,
             sectionStatusClass: section.hasError ? 'slds-text-color_error' : 
                                section.isActive ? 'slds-text-color_weak' : 'slds-text-color_success',
@@ -546,30 +566,34 @@ export default class CommandExecution extends LightningElement {
 
     getLogTypeIcon(logType, isQuestion = false, isAnswer = false) {
         if (isQuestion) {
-            return 'utility:question';
+            return { iconName: 'utility:question', variant: 'brand' };
         }
         if (isAnswer) {
-            return 'utility:reply';
+            return { iconName: 'utility:reply', variant: 'brand' };
         }
         
         switch (logType) {
             case 'error':
-                return 'utility:error';
+                return { iconName: 'utility:error', variant: 'error' };
             case 'warning':
-                return 'utility:warning';
+                return { iconName: 'utility:warning', variant: 'warning' };
             case 'success':
-                return 'utility:success';
+                return { iconName: 'utility:success', variant: 'success' };
             case 'action':
-                return 'utility:touch_action';
+                return { iconName: 'utility:touch_action', variant: 'brand' };
             case 'log':
             default:
-                return 'utility:info';
+                return { iconName: 'utility:info', variant: 'inverse' };
         }
     }
 
     shouldUseSpinner(log) {
         // Use spinner for running sub-commands (those that contain "Running:")
         if (log.isSubCommand && log.message && log.message.includes('Running:')) {
+            return true;
+        }
+        // Use spinner for questions that are waiting for an answer
+        if (log.isQuestion && this.isWaitingForAnswer) {
             return true;
         }
         return false;
