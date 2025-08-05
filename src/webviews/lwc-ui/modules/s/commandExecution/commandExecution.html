@@ -33,36 +33,15 @@
             </p>
           </template>
         </div>
-        <div class="slds-media__figure slds-media__figure_reverse">
-          <lightning-button-group>
-            <lightning-button-icon
-              icon-name={toggleIcon}
-              variant="border-filled"
-              alternative-text="Toggle logs"
-              title="Toggle logs visibility"
-              onclick={handleToggleExpanded}>
-            </lightning-button-icon>
-            <template if:true={isCompleted}>
-              <lightning-button-icon
-                icon-name="utility:clear"
-                variant="border-filled"
-                alternative-text="Clear logs"
-                title="Clear detailed logs"
-                onclick={handleClearLogs}>
-              </lightning-button-icon>
-            </template>
-          </lightning-button-group>
-        </div>
       </div>
     </div>
 
     <!-- Log container -->
-    <template if:true={isExpanded}>
-      <div class="slds-card__body slds-card__body_inner">
-        <div class="log-container slds-scrollable_y" style="max-height: 400px;">
-          <template if:true={logSectionsForDisplay.length}>
-            <div class="log-sections">
-              <template for:each={logSectionsForDisplay} for:item="section">
+    <div class="slds-card__body slds-card__body_inner">
+      <div class="log-container slds-scrollable_y" style="max-height: 400px;">
+        <template if:true={logSectionsForDisplay.length}>
+          <div class="log-sections">
+            <template for:each={logSectionsForDisplay} for:item="section">
                 <div key={section.id} class="log-section slds-box slds-box_x-small slds-m-bottom_x-small">
                   <!-- Section header -->
                   <div class="section-header slds-p-around_x-small" data-section-id={section.id}>
@@ -231,6 +210,5 @@
           </template>
         </div>
       </div>
-    </template>
   </div>
 </template>

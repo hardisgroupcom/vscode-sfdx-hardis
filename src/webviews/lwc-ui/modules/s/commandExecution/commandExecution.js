@@ -10,8 +10,9 @@ export default class CommandExecution extends LightningElement {
     @track startTime = null;
     @track endTime = null;
     @track currentSubCommands = [];
-        @track isExpanded = true;
-        @track isWaitingForAnswer = false;    connectedCallback() {
+    @track isWaitingForAnswer = false;
+    
+    connectedCallback() {
         // Make component available globally for VS Code message handling
         if (typeof window !== 'undefined') {
             window.commandExecutionComponent = this;
@@ -404,7 +405,7 @@ export default class CommandExecution extends LightningElement {
             ...section,
             duration: this.calculateSectionDuration(section),
             sectionStatusIcon: section.isQuestion && !this.isWaitingForAnswer ? 
-                { iconName: 'utility:question', variant: 'brand' } :
+                { iconName: 'utility:question', variant: 'warning' } :
                 section.hasError ? 
                 { iconName: 'utility:error', variant: 'error' } : 
                 section.isActive ? null : 
@@ -412,15 +413,10 @@ export default class CommandExecution extends LightningElement {
             sectionUseSpinner: section.isActive || (section.isQuestion && this.isWaitingForAnswer),
             sectionStatusClass: section.hasError ? 'slds-text-color_error' : 
                                section.isActive ? 'slds-text-color_weak' : 'slds-text-color_success',
-            toggleIcon: section.isExpanded ? 'utility:chevronup' : 'utility:chevrondown',
             hasLogs: section.logs && section.logs.length > 0,
             showToggle: section.logs && section.logs.length > 0,
             isEmpty: section.isEmpty || (section.logs && section.logs.length === 0)
         }));
-    }
-
-    get toggleIcon() {
-        return this.isExpanded ? 'utility:chevronup' : 'utility:chevrondown';
     }
 
     calculateDuration(startTime, endTime) {
@@ -566,7 +562,7 @@ export default class CommandExecution extends LightningElement {
 
     getLogTypeIcon(logType, isQuestion = false, isAnswer = false) {
         if (isQuestion) {
-            return { iconName: 'utility:question', variant: 'brand' };
+            return { iconName: 'utility:question', variant: 'warning' };
         }
         if (isAnswer) {
             return { iconName: 'utility:reply', variant: 'brand' };
@@ -612,10 +608,6 @@ export default class CommandExecution extends LightningElement {
         }
     }
 
-    handleToggleExpanded() {
-        this.isExpanded = !this.isExpanded;
-    }
-
     handleToggleSection(event) {
         const sectionId = event.target.dataset.sectionId;
         if (sectionId) {
@@ -625,25 +617,6 @@ export default class CommandExecution extends LightningElement {
                 }
                 return section;
             });
-        }
-    }
-
-    handleClearLogs() {
-        if (this.isCompleted) {
-            this.logLines = this.logLines.filter(log => 
-                log.logType === 'action' && (
-                    log.message.includes('Command started') || 
-                    log.message.includes('Command completed') || 
-                    log.message.includes('Command failed')
-                )
-            );
-            
-            // Also clear sections except for command start/end
-            this.logSections = this.logSections.filter(section => 
-                section.actionLog.message.includes('Command started') || 
-                section.actionLog.message.includes('Command completed') || 
-                section.actionLog.message.includes('Command failed')
-            );
         }
     }
 
