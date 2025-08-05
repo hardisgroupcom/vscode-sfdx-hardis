@@ -147,10 +147,15 @@ export default class CommandExecution extends LightningElement {
             this.currentSection.endTime = new Date();
             this.currentSection.isActive = false;
             
-            // Keep empty sections but mark them as non-expandable
-            if (this.currentSection.logs.length === 0) {
-                this.currentSection.isExpanded = false;
-                this.currentSection.isEmpty = true;
+            // Remove empty sections only if they are the very first "Started" action section
+            // (i.e., the initial section created during initializeCommand)
+            if (this.currentSection.logs.length === 0 && 
+                this.currentSection.actionLog && 
+                this.currentSection.actionLog.message && 
+                this.currentSection.actionLog.message.startsWith('Started ') &&
+                this.logSections.length === 1) { // Only if it's the first and only section
+                // Remove the empty initial "Started" section from logSections
+                this.logSections = this.logSections.filter(section => section.id !== this.currentSection.id);
             }
         }
     }
@@ -424,8 +429,7 @@ export default class CommandExecution extends LightningElement {
             sectionStatusClass: section.hasError ? 'slds-text-color_error' : 
                                section.isActive ? 'slds-text-color_weak' : 'slds-text-color_success',
             hasLogs: section.logs && section.logs.length > 0,
-            showToggle: section.logs && section.logs.length > 0,
-            isEmpty: section.isEmpty || (section.logs && section.logs.length === 0)
+            showToggle: section.logs && section.logs.length > 0
         }));
     }
 
