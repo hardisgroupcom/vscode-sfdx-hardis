@@ -134,9 +134,12 @@ export default class CommandExecution extends LightningElement {
             logLine.isSubCommand = true;
             logLine.isRunning = logLine.message && logLine.message.includes('Running:');
             
-            // If this is a completion message, mark as not running
+            // If this is a completion message, mark as not running and complete other instances
             if (logLine.message && (logLine.message.includes('completed') || logLine.message.includes('finished') || logLine.message.includes('done'))) {
                 logLine.isRunning = false;
+                
+                // Extract command name from completion message and complete other running instances
+                this.completeOtherRunningInstances(logLine);
             }
         } else {
             logLine.isRunning = false;
@@ -277,8 +280,16 @@ export default class CommandExecution extends LightningElement {
 
     @api
     addSubCommandEnd(subCommandData) {
+        // Find all running instances of this command
+        const runningCommands = this.currentSubCommands.filter(subCmd => 
+            subCmd.command === subCommandData.command && !subCmd.endTime
+        );
+        
+        if (runningCommands.length === 0) return;
+
+        // Update all instances of this command to completed
         const updatedSubCommands = this.currentSubCommands.map(subCmd => {
-            if (subCmd.command === subCommandData.command) {
+            if (subCmd.command === subCommandData.command && !subCmd.endTime) {
                 return {
                     ...subCmd,
                     endTime: new Date(),
@@ -291,18 +302,18 @@ export default class CommandExecution extends LightningElement {
 
         this.currentSubCommands = updatedSubCommands;
         
-        const subCommand = updatedSubCommands.find(sc => sc.command === subCommandData.command);
-        if (!subCommand) return;
-
-        const duration = this.calculateDuration(subCommand.startTime, subCommand.endTime);
-        
-        // Replace the sub-command start log line with the completed one
-        this.replaceSubCommandLog(subCommand.id, {
-            logType: subCommandData.success ? 'success' : 'error',
-            message: `${subCommandData.command} (${duration})`,
-            timestamp: subCommand.endTime,
-            isSubCommand: true,
-            subCommandId: subCommand.id
+        // Complete all running instances of this command
+        runningCommands.forEach(subCommand => {
+            const duration = this.calculateDuration(subCommand.startTime, subCommand.endTime || new Date());
+            
+            // Replace the sub-command start log line with the completed one
+            this.replaceSubCommandLog(subCommand.id, {
+                logType: subCommandData.success ? 'success' : 'error',
+                message: `${subCommandData.command} (${duration})`,
+                timestamp: subCommand.endTime || new Date(),
+                isSubCommand: true,
+                subCommandId: subCommand.id
+            });
         });
 
         if (!subCommandData.success) {
@@ -362,6 +373,28 @@ export default class CommandExecution extends LightningElement {
                 ...newLogData
             };
             this.logLines = [...this.logLines];
+        }
+    }
+
+    completeOtherRunningInstances(completedCommand) {
+        // Extract command name from completion message
+        let commandName = '';
+        if (completedCommand.includes('Completed: ')) {
+            commandName = completedCommand.replace('Completed: ', '').split(' ')[0];
+        }
+        
+        if (commandName) {
+            this.subCommands.forEach((subCommand, index) => {
+                if (subCommand.name.startsWith(commandName) && 
+                    subCommand.status === 'running' && 
+                    subCommand.name !== completedCommand.replace('Completed: ', '')) {
+                    this.subCommands[index] = {
+                        ...subCommand,
+                        status: 'completed'
+                    };
+                }
+            });
+            this.subCommands = [...this.subCommands];
         }
     }
 

@@ -1,7 +1,7 @@
 <template>
-  <div class="command-execution slds-card">
+  <div class="command-execution slds-card" style="height: 100vh; display: flex; flex-direction: column;">
     <!-- Header -->
-    <div class="slds-card__header">
+    <div class="slds-card__header" style="flex-shrink: 0;">
       <div class="slds-media slds-media_center slds-has-flexi-truncate">
         <div class="slds-media__figure" style="width: 2rem;">
           <template if:true={useSpinner}>
@@ -48,8 +48,8 @@
     </div>
 
     <!-- Log container -->
-    <div class="slds-card__body slds-card__body_inner">
-      <div class="log-container slds-scrollable_y" style="max-height: 400px;">
+    <div class="slds-card__body slds-card__body_inner" style="flex: 1; display: flex; flex-direction: column;">
+      <div class="log-container slds-scrollable_y">
         <template if:true={logSectionsForDisplay.length}>
           <div class="log-sections">
             <template for:each={logSectionsForDisplay} for:item="section">
