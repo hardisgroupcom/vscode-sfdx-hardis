@@ -15,6 +15,7 @@ export class LocalWebSocketServer {
   private server: http.Server;
   private wss: WebSocketServer;
   private clients: any = {};
+  private config: vscode.WorkspaceConfiguration;
 
   constructor(context: vscode.ExtensionContext) {
     console.time("WebSocketServer_init");
@@ -23,6 +24,7 @@ export class LocalWebSocketServer {
     globalWss = this;
     this.context = context || null;
     console.timeEnd("WebSocketServer_init");
+    this.config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
   }
 
   async start() {
@@ -63,6 +65,12 @@ export class LocalWebSocketServer {
     if (data.event === "initClient") {
       this.clients[data.context.id] = { context: data.context, ws: ws };
       
+      // Send user input type back to caller
+      this.sendResponse(ws, {
+        event: "userInput",
+        userInput: this.config.get("userInput")
+      });
+
       // Create a new command execution panel for this command
       const panelManager = LwcPanelManager.getInstance(this.context);
       const lwcId = `s-command-execution-${data.context.id}`;
@@ -186,10 +194,9 @@ export class LocalWebSocketServer {
     // Request user input
     else if (data.event === "prompts") {
       const prompt = data.prompts[0];
-      const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
       
       // If user input is set to LWC UI, use the LWC UI panel
-      if (config.get("userInput") === "ui-lwc") {
+      if (this.config.get("userInput") === "ui-lwc") {
         const panelManager = LwcPanelManager.getInstance(this.context);
         const lwcId = "s-prompt-input";
         
@@ -210,8 +217,18 @@ export class LocalWebSocketServer {
               promptsResponse: [data],
             });
             
-            // Schedule panel disposal after a delay if no new prompts arrive
-            panelManager.scheduleDisposal(lwcId, 2000);
+            // Check if there's an active command execution panel
+            const hasActiveCommandPanel = Object.values(this.clients).some(
+              (client: any) => client.panel && client.lwcId && client.lwcId.startsWith('s-command-execution-')
+            );
+            
+            if (hasActiveCommandPanel) {
+              // If there's an active command execution panel, close promptInput immediately
+              panelManager.disposePanel(lwcId);
+            } else {
+              // Otherwise, schedule panel disposal after a delay if no new prompts arrive
+              panelManager.scheduleDisposal(lwcId, 2000);
+            }
             
             // Unsubscribe from messages for this prompt
             messageUnsubscribe();
