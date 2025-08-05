@@ -51,7 +51,7 @@ export default class CommandExecution extends LightningElement {
                 this.addSubCommandEnd(data);
                 break;
             case 'completeCommand':
-                this.completeCommand(data.success);
+                this.completeCommand(data);
                 break;
             default:
                 console.log('Unknown message type:', messageType, data);
@@ -297,7 +297,11 @@ export default class CommandExecution extends LightningElement {
     }
 
     @api
-    completeCommand(success = true) {
+    completeCommand(data) {
+        // Handle new format - object with success and status
+        const success = data.success !== undefined ? data.success : true;
+        const status = data.status || null;
+        
         this.isCompleted = true;
         this.endTime = new Date();
         
@@ -312,9 +316,16 @@ export default class CommandExecution extends LightningElement {
         const duration = this.calculateDuration(this.startTime, this.endTime);
         const logType = success ? 'success' : 'error';
         
+        // Create completion message based on status
+        let completionMessage = `Command ${success ? 'completed successfully' : 'failed'}`;
+        if (status) {
+            completionMessage = `Command ${status}`;
+        }
+        completionMessage += ` (${duration})`;
+        
         this.addLogLine({
             logType: logType,
-            message: `Command ${success ? 'completed successfully' : 'failed'} (${duration})`,
+            message: completionMessage,
             timestamp: this.endTime
         });
 

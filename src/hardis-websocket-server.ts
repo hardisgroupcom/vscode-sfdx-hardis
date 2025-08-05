@@ -99,7 +99,7 @@ export class LocalWebSocketServer {
         // Mark command as completed in the panel
         clientData.panel.sendMessage({
           type: "completeCommand",
-          data: { success: true }
+          data: { success: data?.status !== "aborted", status: data?.status }
         });
         
         // Update panel title to show completion
