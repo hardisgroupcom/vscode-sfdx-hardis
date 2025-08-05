@@ -21,6 +21,7 @@ This is a **Visual Studio Code extension** that provides an intuitive UI for **S
 - **WebSocket Server** - Real-time communication with CLI
 - **webpack** - Bundling and build system
 - **yarn** - NPM packages manager (so use `yarn` commands instead of `npm`)
+- **LWC**: Salesforce lightning web components for UI
 
 ### Main Components
 
@@ -189,6 +190,15 @@ const remoteConfig = await loadExternalSfdxHardisConfiguration();
 - Include usage guidance and prerequisites
 - Link to comprehensive documentation at sfdx-hardis.cloudity.com
 - Show clear error messages with actionable guidance
+
+## Lightning Web Components (LWC) UI
+- Use LWC for user input prompts and command execution panels
+- Supports both LWC UI and traditional terminal input
+- LWC components handle user interactions and display results
+- Build LWC using as much as possible:
+  - SLDS, that is embedded by default in all LWC, locally located in out\assets\styles\salesforce-lightning-design-system.css
+  - LWC Base components, locally located in node_modules\@salesforce-ux\design-system\ui\components
+- Try as much as possible to not define local CSS if you can find matching SLDS CSS classes
 
 ## Integration Points
 
