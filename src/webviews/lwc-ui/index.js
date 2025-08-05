@@ -1,13 +1,11 @@
 import "@lwc/synthetic-shadow";
 import { createElement } from "lwc";
-import HelloWorld from "s/helloWorld";
 import PromptInput from "s/promptInput";
 import CommandExecution from "s/commandExecution";
 
 console.log("LWC UI initializing...");
 
 const lwcIdAndClasses = {
-  "s-hello-world": HelloWorld,
   "s-prompt-input": PromptInput,
   "s-command-execution": CommandExecution
 }

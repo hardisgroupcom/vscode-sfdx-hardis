@@ -12,7 +12,6 @@ import { LocalWebSocketServer } from "./hardis-websocket-server";
 import { LwcPanelManager } from "./lwc-panel-manager";
 import { Logger } from "./logger";
 import { getWorkspaceRoot, preLoadCache } from "./utils";
-import { LwcUiPanel } from "./webviews/lwc-ui-panel";
 import { HardisColors } from "./hardis-colors";
 
 let refreshInterval: any = null;
@@ -76,36 +75,6 @@ export function activate(context: vscode.ExtensionContext) {
     reporter
   );
   context.subscriptions.push(...commands.disposables);
-
-  // Register LWC Demo command
-  const lwcUiCommand = vscode.commands.registerCommand(
-    "vscode-sfdx-hardis.lwcUi",
-    () => {
-      const lwcPanel = LwcUiPanel.display(context.extensionUri, "s-hello-world");
-      
-      // Example of how to use the onMessage listener
-      lwcPanel.onMessage((messageType, data) => {
-        Logger.log(`LWC UI Message - Type: ${messageType}`);
-        Logger.log(`LWC UI Message - Data: ${JSON.stringify(data)}`);
-        
-        // Handle different message types
-        switch (messageType) {
-          case 'button-click':
-            Logger.log('Button was clicked in LWC UI');
-            break;
-          case 'form-submit':
-            Logger.log('Form was submitted in LWC UI');
-            break;
-          default:
-            Logger.log(`Unknown message type: ${messageType}`);
-        }
-      });
-      
-      // Note: The onMessage method returns an unsubscribe function that can be 
-      // stored and called later to remove the listener when needed
-    }
-  );
-  context.subscriptions.push(lwcUiCommand);
 
   // Initialize LWC Panel Manager
   LwcPanelManager.getInstance(context);
