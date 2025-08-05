@@ -12,6 +12,9 @@ export default class CommandExecution extends LightningElement {
     @track currentSubCommands = [];
     @track isExpanded = true;
     @track isWaitingForAnswer = false;
+    @track latestCsvFile = null;
+    @track latestExcelFile = null;
+    @track detectedFiles = [];
 
     connectedCallback() {
         // Make component available globally for VS Code message handling
@@ -57,6 +60,9 @@ export default class CommandExecution extends LightningElement {
             case 'completeCommand':
                 this.completeCommand(data.success);
                 break;
+            case 'fileExistsResponse':
+                this.handleFileExistsResponse(data);
+                break;
             default:
                 console.log('Unknown message type:', messageType, data);
         }
@@ -74,6 +80,9 @@ export default class CommandExecution extends LightningElement {
         this.startTime = new Date();
         this.endTime = null;
         this.currentSubCommands = [];
+        this.latestCsvFile = null;
+        this.latestExcelFile = null;
+        this.detectedFiles = [];
         
         // Add initial "Initializing" action log
         this.addLogLine({
@@ -97,6 +106,15 @@ export default class CommandExecution extends LightningElement {
             isQuestion: logData.isQuestion || false,
             isAnswer: this.isWaitingForAnswer
         };
+
+        // Detect and track file paths in the message first
+        this.detectFilePaths(logLine.message);
+        
+        // Check if this message is just about file paths - if so, don't display it as a log entry
+        if (this.isFilePathMessage(logLine.message)) {
+            // Don't add this to the display, just track the files
+            return;
+        }
 
         // Handle question/answer logic
         if (logLine.isQuestion) {
@@ -304,6 +322,10 @@ export default class CommandExecution extends LightningElement {
     completeCommand(success = true) {
         this.isCompleted = true;
         this.endTime = new Date();
+        
+        // Final check for files in all logs before completion
+        console.log('Command completing - doing final file check...');
+        this.checkAllLogsForFiles();
         
         // Mark current section as complete
         if (this.currentSection) {
@@ -625,5 +647,248 @@ export default class CommandExecution extends LightningElement {
                 logContainer.scrollTop = logContainer.scrollHeight;
             }
         }, 50);
+    }
+
+    detectFilePaths(message) {
+        if (!message || typeof message !== 'string') return;
+
+        console.log('Detecting file paths in message:', message);
+
+        // Simplified patterns to detect file paths for CSV and Excel files
+        const csvPattern = /([^\s]+\.csv)/gi;
+        const excelPattern = /([^\s]+\.xlsx?)/gi;
+
+        // Find CSV files
+        let csvMatches = message.match(csvPattern);
+        if (csvMatches) {
+            csvMatches = csvMatches.filter(file => this.isValidFilePath(file));
+            console.log('Found potential CSV files:', csvMatches);
+            if (csvMatches.length > 0) {
+                // Keep only the latest CSV file - will check existence later
+                const latestCsv = csvMatches[csvMatches.length - 1];
+                const resolvedPath = this.resolveFilePath(latestCsv);
+                this.latestCsvFile = {
+                    path: resolvedPath,
+                    fileName: this.extractFileName(latestCsv),
+                    timestamp: new Date(),
+                    verified: false // Will be checked for existence
+                };
+                console.log('Set potential CSV file:', this.latestCsvFile);
+                // Check if file exists
+                this.checkFileExists(this.latestCsvFile);
+            }
+        }
+
+        // Find Excel files
+        let excelMatches = message.match(excelPattern);
+        if (excelMatches) {
+            excelMatches = excelMatches.filter(file => this.isValidFilePath(file));
+            console.log('Found potential Excel files:', excelMatches);
+            if (excelMatches.length > 0) {
+                // Keep only the latest Excel file - will check existence later
+                const latestExcel = excelMatches[excelMatches.length - 1];
+                const resolvedPath = this.resolveFilePath(latestExcel);
+                this.latestExcelFile = {
+                    path: resolvedPath,
+                    fileName: this.extractFileName(latestExcel),
+                    timestamp: new Date(),
+                    verified: false // Will be checked for existence
+                };
+                console.log('Set potential Excel file:', this.latestExcelFile);
+                // Check if file exists
+                this.checkFileExists(this.latestExcelFile);
+            }
+        }
+        
+        console.log('Current file state - CSV:', this.latestCsvFile, 'Excel:', this.latestExcelFile);
+    }
+
+    // Manual method to check for files in all existing logs
+    checkAllLogsForFiles() {
+        console.log('Manually checking all logs for files...');
+        this.logLines.forEach(log => {
+            if (log.message) {
+                this.detectFilePaths(log.message);
+            }
+        });
+        console.log('After manual check - CSV:', this.latestCsvFile, 'Excel:', this.latestExcelFile);
+    }
+
+    isFilePathMessage(message) {
+        if (!message || typeof message !== 'string') return false;
+        
+        // Simplified check for file path messages - just look for common file indicators
+        const filePathIndicators = [
+            /([^\s]+\.csv)$/i,
+            /([^\s]+\.xlsx?)$/i,
+            /([^\s]+\.xls)$/i
+        ];
+        
+        // Check for file path indicators
+        const hasFileIndicator = filePathIndicators.some(pattern => pattern.test(message));
+        
+        if (hasFileIndicator) {
+            console.log('Message identified as file path message:', message);
+            return true;
+        }
+        
+        return false;
+    }
+
+    checkFileExists(fileObj) {
+        if (!fileObj || !fileObj.path) return;
+        
+        try {
+            // Send message to VS Code to check if file exists
+            if (typeof window !== 'undefined' && window.parent) {
+                window.parent.postMessage({
+                    type: 'checkFileExists',
+                    filePath: fileObj.path,
+                    fileType: fileObj.path.toLowerCase().includes('.csv') ? 'csv' : 'excel'
+                }, '*');
+            }
+        } catch (error) {
+            console.error('Error checking file existence:', error);
+        }
+    }
+
+    // Method to handle file existence response from VS Code
+    handleFileExistsResponse(data) {
+        console.log('File existence check result:', data);
+        
+        if (data.fileType === 'csv' && this.latestCsvFile) {
+            this.latestCsvFile.verified = data.exists;
+            if (data.exists && data.filePath) {
+                // Update with the resolved path from VS Code
+                this.latestCsvFile.path = data.filePath;
+            }
+            console.log('CSV file verification result:', this.latestCsvFile);
+        } else if (data.fileType === 'excel' && this.latestExcelFile) {
+            this.latestExcelFile.verified = data.exists;
+            if (data.exists && data.filePath) {
+                // Update with the resolved path from VS Code
+                this.latestExcelFile.path = data.filePath;
+            }
+            console.log('Excel file verification result:', this.latestExcelFile);
+        }
+        
+        // Force template re-render by updating a tracked property
+        this.detectedFiles = [...this.detectedFiles]; // Trigger reactivity
+    }
+
+    resolveFilePath(filePath) {
+        if (!filePath) return '';
+        
+        // Remove any file:// protocol prefix and URL decode
+        let cleanPath = filePath.replace(/^file:\/\/\//, '').replace(/^file:\/\//, '');
+        cleanPath = decodeURIComponent(cleanPath).trim();
+        
+        // Normalize path separators for Windows
+        cleanPath = cleanPath.replace(/\//g, '\\');
+        
+        // If it's already an absolute path (starts with drive letter or /)
+        if (/^[A-Za-z]:[\\\/]/.test(cleanPath) || cleanPath.startsWith('/')) {
+            console.log('Absolute path detected:', cleanPath);
+            return cleanPath;
+        }
+        
+        // If it's a relative path, we need to send it to VS Code to resolve
+        // For now, just return the path as-is and let the backend handle resolution
+        console.log('Relative path detected:', cleanPath);
+        return cleanPath;
+    }
+
+    isValidFilePath(filePath) {
+        // Basic validation to ensure it's a reasonable file path
+        if (!filePath || filePath.length < 5) return false;
+        
+        // Remove common false positives
+        const invalidPatterns = [
+            /^https?:/i,  // URLs
+            /^\w+:/i,     // Other protocols
+            /^\d+$/,      // Just numbers
+            /^[.]+$/      // Just dots
+        ];
+        
+        return !invalidPatterns.some(pattern => pattern.test(filePath.trim()));
+    }
+
+    extractFileName(filePath) {
+        if (!filePath) return '';
+        
+        // Extract filename from path (works for both Windows and Unix paths)
+        const pathSeparators = /[\\\/]/;
+        const parts = filePath.split(pathSeparators);
+        return parts[parts.length - 1] || filePath;
+    }
+
+    get hasDownloadableFiles() {
+        const hasCsv = this.latestCsvFile && this.latestCsvFile.verified === true;
+        const hasExcel = this.latestExcelFile && this.latestExcelFile.verified === true;
+        const hasFiles = hasCsv || hasExcel;
+        console.log('hasDownloadableFiles check:', hasFiles, 'CSV verified:', hasCsv, 'Excel verified:', hasExcel);
+        return hasFiles;
+    }
+
+    get csvDownloadLabel() {
+        if (!this.latestCsvFile || !this.latestCsvFile.verified) return '';
+        return `Download CSV`;
+    }
+
+    get csvViewLabel() {
+        if (!this.latestCsvFile || !this.latestCsvFile.verified) return '';
+        return `View CSV`;
+    }
+
+    get excelDownloadLabel() {
+        if (!this.latestExcelFile || !this.latestExcelFile.verified) return '';
+        return `Download Excel`;
+    }
+
+    handleDownloadCsv() {
+        if (this.latestCsvFile) {
+            this.downloadFile(this.latestCsvFile.path, this.latestCsvFile.fileName);
+        }
+    }
+
+    handleViewCsv() {
+        if (this.latestCsvFile) {
+            this.openFile(this.latestCsvFile.path);
+        }
+    }
+
+    handleDownloadExcel() {
+        if (this.latestExcelFile) {
+            this.downloadFile(this.latestExcelFile.path, this.latestExcelFile.fileName);
+        }
+    }
+
+    downloadFile(filePath, fileName) {
+        try {
+            // Send message to VS Code to handle file download
+            if (typeof window !== 'undefined' && window.parent) {
+                window.parent.postMessage({
+                    type: 'downloadFile',
+                    filePath: filePath,
+                    fileName: fileName
+                }, '*');
+            }
+        } catch (error) {
+            console.error('Error downloading file:', error);
+        }
+    }
+
+    openFile(filePath) {
+        try {
+            // Send message to VS Code to handle file opening
+            if (typeof window !== 'undefined' && window.parent) {
+                window.parent.postMessage({
+                    type: 'openFile',
+                    filePath: filePath
+                }, '*');
+            }
+        } catch (error) {
+            console.error('Error opening file:', error);
+        }
     }
 }

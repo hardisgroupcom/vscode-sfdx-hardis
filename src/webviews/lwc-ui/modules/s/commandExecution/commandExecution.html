@@ -209,5 +209,66 @@
         </div>
       </div>
     </template>
+
+    <!-- Fixed Download Panel at Bottom -->
+    <template if:true={hasDownloadableFiles}>
+      <div class="download-panel slds-p-around_medium slds-border_top">
+        <div class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center">
+          <div class="slds-col">
+            <h3 class="slds-text-heading_small slds-text-color_default">
+              <lightning-icon icon-name="utility:download" size="x-small" class="slds-m-right_x-small slds-text-color_brand"></lightning-icon>
+              Generated Reports
+            </h3>
+          </div>
+          <div class="slds-col slds-no-flex">
+            <div class="slds-button-group" role="group">
+              <template if:true={latestCsvFile.verified}>
+                <lightning-button
+                  variant="neutral"
+                  label={csvDownloadLabel}
+                  icon-name="utility:download"
+                  icon-position="left"
+                  title={latestCsvFile.path}
+                  onclick={handleDownloadCsv}
+                  class="slds-m-right_x-small">
+                </lightning-button>
+                <lightning-button
+                  variant="brand"
+                  label={csvViewLabel}
+                  icon-name="utility:preview"
+                  icon-position="left"
+                  title={latestCsvFile.path}
+                  onclick={handleViewCsv}
+                  class="slds-m-right_x-small">
+                </lightning-button>
+              </template>
+              <template if:true={latestExcelFile.verified}>
+                <lightning-button
+                  variant="success"
+                  label={excelDownloadLabel}
+                  icon-name="utility:download"
+                  icon-position="left"
+                  title={latestExcelFile.path}
+                  onclick={handleDownloadExcel}>
+                </lightning-button>
+              </template>
+            </div>
+          </div>
+        </div>
+        <!-- File info display -->
+        <template if:true={latestCsvFile.verified}>
+          <div class="slds-text-body_small slds-text-color_weak slds-m-top_x-small">
+            <lightning-icon icon-name="doctype:csv" size="xx-small" class="slds-m-right_xx-small"></lightning-icon>
+            CSV: {latestCsvFile.fileName}
+          </div>
+        </template>
+        <template if:true={latestExcelFile.verified}>
+          <div class="slds-text-body_small slds-text-color_weak slds-m-top_x-small">
+            <lightning-icon icon-name="doctype:excel" size="xx-small" class="slds-m-right_xx-small"></lightning-icon>
+            Excel: {latestExcelFile.fileName}
+          </div>
+        </template>
+      </div>
+    </template>
   </div>
 </template>
