@@ -63,6 +63,21 @@ export class LocalWebSocketServer {
     }
     // Command initialization
     if (data.event === "initClient") {
+      // Close any completed commandExecution panel before opening a new one
+      const panelManager = LwcPanelManager.getInstance(this.context);
+      const activePanelIds = panelManager.getActivePanelIds();
+      for (const panelId of activePanelIds) {
+        if (panelId.startsWith("s-command-execution-")) {
+          const panel = panelManager.getPanel(panelId);
+          if (panel && panel.getTitle && typeof panel.getTitle === "function") {
+            const title = panel.getTitle();
+            if (title && title.endsWith("- Completed")) {
+              panelManager.disposePanel(panelId);
+            }
+          }
+        }
+      }
+
       this.clients[data.context.id] = { context: data.context, ws: ws };
       
       // Send user input type back to caller
@@ -72,13 +87,8 @@ export class LocalWebSocketServer {
       });
 
       // Create a new command execution panel for this command
-      const panelManager = LwcPanelManager.getInstance(this.context);
       const lwcId = `s-command-execution-${data.context.id}`;
-      
-      // Create a unique panel for each command
       const panel = panelManager.getOrCreatePanel(lwcId, data.context);
-      
-      // Store panel reference for this command context
       this.clients[data.context.id].panel = panel;
       this.clients[data.context.id].lwcId = lwcId;
       

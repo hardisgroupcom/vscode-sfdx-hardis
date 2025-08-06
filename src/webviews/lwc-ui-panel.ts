@@ -102,6 +102,13 @@ export class LwcUiPanel {
     this.panel.title = title;
   }
 
+  /**
+   * Get the current panel title
+   */
+  public getTitle(): string {
+    return this.panel.title;
+  }
+
   public setPanelTitleFromLwcId() {
     const lwcDefinitions: {
       [key: string]: string;
