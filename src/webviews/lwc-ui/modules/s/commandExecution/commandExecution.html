@@ -111,11 +111,22 @@
                                 </div>
                               </template>
                               <template if:false={logLine.useSpinner}>
-                                <lightning-icon 
-                                  icon-name={logLine.iconName}
-                                  variant={logLine.iconVariant}
-                                  size="xx-small">
-                                </lightning-icon>
+                                <template if:true={logLine.isQuestion}>
+                                  <div class="slds-icon_container slds-icon_container_circle slds-icon_container--brand" title="Question">
+                                    <lightning-icon 
+                                      icon-name="utility:question"
+                                      variant="inverse"
+                                      size="xx-small">
+                                    </lightning-icon>
+                                  </div>
+                                </template>
+                                <template if:false={logLine.isQuestion}>
+                                  <lightning-icon 
+                                    icon-name={logLine.iconName}
+                                    variant={logLine.iconVariant}
+                                    size="xx-small">
+                                  </lightning-icon>
+                                </template>
                               </template>
                             </div>
                             <div class="slds-media__body">

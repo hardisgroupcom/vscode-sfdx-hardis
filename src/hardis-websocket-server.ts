@@ -63,6 +63,12 @@ export class LocalWebSocketServer {
     }
     // Command initialization
     if (data.event === "initClient") {
+
+      // If the UI is configured to be hidden, do not proceed with command execution
+      if (data?.uiConfig?.hide  === true) {
+        return;
+      }
+      
       // Close any completed commandExecution panel before opening a new one
       const panelManager = LwcPanelManager.getInstance(this.context);
       const activePanelIds = panelManager.getActivePanelIds();
@@ -101,11 +107,12 @@ export class LocalWebSocketServer {
         type: "initializeCommand",
         data: data.context
       };
-      
       if (data.commandDocUrl) {
         initData.data.commandDocUrl = data.commandDocUrl;
       }
-      
+      if (data.uiConfig) {
+        initData.data.uiConfig = data.uiConfig;
+      }
       panel.sendMessage(initData);
     }
     // Command end
