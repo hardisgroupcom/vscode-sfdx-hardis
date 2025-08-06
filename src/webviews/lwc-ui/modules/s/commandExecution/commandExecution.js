@@ -408,7 +408,7 @@ ${resultMessage}`;
             // Replace the sub-command start log line with the completed one
             this.replaceSubCommandLog(subCommand.id, {
                 logType: subCommandData.success ? 'success' : 'error',
-                message: `${subCommandData.command} (${duration})`,
+                message: `${subCommandData.command.replace('Running: ', '')} (${duration})`,
                 timestamp: subCommand.endTime || new Date(),
                 isSubCommand: true,
                 subCommandId: subCommand.id
