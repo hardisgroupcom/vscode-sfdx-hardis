@@ -14,6 +14,7 @@ export default class CommandExecution extends LightningElement {
     @track currentSubCommands = [];
     @track isWaitingForAnswer = false;
     @track latestQuestionId = null;
+    @track lastQueryLogId = null;
     
     connectedCallback() {
         // Make component available globally for VS Code message handling
@@ -130,7 +131,8 @@ export default class CommandExecution extends LightningElement {
             isSubCommand: logData.isSubCommand || false,
             subCommandId: logData.subCommandId || null,
             isQuestion: logData.isQuestion || false,
-            isAnswer: this.isWaitingForAnswer
+            isAnswer: this.isWaitingForAnswer,
+            isQuery: logData.isQuery || false
         };
 
         // Detect if this is a sub-command and determine its running state
@@ -147,6 +149,30 @@ export default class CommandExecution extends LightningElement {
             }
         } else {
             logLine.isRunning = false;
+        }
+
+        const isQueryOrResult = logLine.message.includes('[SOQL Query]') || logLine.message.includes('[BulkApiV2]' || logLine.message.includes('[SOQL Query Tooling]'));
+        if (isQueryOrResult) {
+            // Clean up the message for queries
+            logLine.message = logLine.message
+                .replace(/\[SOQL Query\]/g, '')
+                .replace(/\[BulkApiV2\]/g, '')
+                .replace(/\[SOQL Query Tooling\]/g, '')
+                .trim();
+        }
+
+        if (isQueryOrResult && this.lastQueryLogId) {
+            // This is a result for the last query, merge it
+            this.mergeQueryResult(this.lastQueryLogId, logLine.message);
+            this.lastQueryLogId = null; // Reset after merging
+            return; // Skip adding the result as a separate line
+        }
+
+        // Detect if this is a new query
+        if (isQueryOrResult) {
+            logLine.isQuery = true;
+            logLine.logType = 'query';
+            this.lastQueryLogId = logLine.id;
         }
 
         // Handle question/answer logic
@@ -250,7 +276,8 @@ export default class CommandExecution extends LightningElement {
             formattedTimestamp: this.formatTimestamp(logLine.timestamp),
             cssClass: this.getLogTypeClass(logLine.logType),
             isSubCommand: logLine.isSubCommand || false,
-            isRunning: logLine.isRunning || false
+            isRunning: logLine.isRunning || false,
+            isQuery: logLine.isQuery || false
         };
 
         this.currentSection.logs = [...this.currentSection.logs, formattedLog];
@@ -265,6 +292,47 @@ export default class CommandExecution extends LightningElement {
         
         // Auto-scroll to bottom after adding new log to section
         this.scrollToBottom();
+    }
+
+    mergeQueryResult(queryLogId, resultMessage) {
+        const logIndex = this.logLines.findIndex(log => log.id === queryLogId);
+        if (logIndex === -1)             {
+            return; // Query log not found, nothing to do
+        }
+
+        const queryLog = this.logLines[logIndex];
+        const newMergedMessage = `${queryLog.message}
+${resultMessage}`;
+
+        const updatedLog = {
+            ...queryLog,
+            message: newMergedMessage
+        };
+
+        // Update logLines immutably
+        this.logLines = [
+            ...this.logLines.slice(0, logIndex),
+            updatedLog,
+            ...this.logLines.slice(logIndex + 1)
+        ];
+
+        // Update logSections immutably
+        if (this.currentSection && this.currentSection.logs) {
+            const sectionLogIndex = this.currentSection.logs.findIndex(log => log.id === queryLogId);
+            if (sectionLogIndex !== -1) {
+                const updatedSectionLog = {
+                    ...this.currentSection.logs[sectionLogIndex],
+                    message: newMergedMessage
+                };
+
+                this.currentSection.logs = [
+                    ...this.currentSection.logs.slice(0, sectionLogIndex),
+                    updatedSectionLog,
+                    ...this.currentSection.logs.slice(sectionLogIndex + 1)
+                ];
+                this.logSections = [...this.logSections];
+            }
+        }
     }
 
     @api
@@ -661,6 +729,8 @@ export default class CommandExecution extends LightningElement {
                 return 'log-success';
             case 'action':
                 return 'log-action';
+            case 'query':
+                return 'log-query';
             case 'log':
             default:
                 return 'log-default';
@@ -684,6 +754,8 @@ export default class CommandExecution extends LightningElement {
                 return { iconName: 'utility:success', variant: 'success' };
             case 'action':
                 return { iconName: 'utility:touch_action', variant: 'brand' };
+            case 'query':
+                return { iconName: 'utility:database', variant: 'brand' };
             case 'log':
             default:
                 return { iconName: 'utility:info', variant: 'inverse' };

@@ -1,5 +1,10 @@
 # GitHub Copilot Instructions for vscode-sfdx-hardis
 
+## Github Copilot behavior
+
+Act like Claude 4 even when using another model: explain your reasoning step by step and update code incrementally.
+Ensure best practices are followed, and refactor when necessary.
+
 ## Project Overview
 
 This is a **Visual Studio Code extension** that provides an intuitive UI for **SFDX Hardis**, a comprehensive Salesforce DX toolkit that simplifies Salesforce development, deployment, and CI/CD processes. The extension allows users to manage Salesforce projects without requiring deep knowledge of SFDX or Git commands.

@@ -114,6 +114,13 @@
   color: #4a5568;
 }
 
+.section-logs > div[data-log-type="query"],
+.log-lines > div[data-log-type="query"] {
+  background-color: #e6f7ff;
+  border-left-color: #1890ff;
+  color: #0050b3;
+}
+
 /* Sub-command styling */
 .section-logs > div[data-is-subcommand="true"][data-is-running="true"],
 .log-lines > div[data-is-subcommand="true"][data-is-running="true"] {
@@ -225,6 +232,12 @@
   .log-lines > div[data-log-type="log"] {
     background-color: #222222;
     color: #bdbdbd;
+  }
+
+  .section-logs > div[data-log-type="query"],
+  .log-lines > div[data-log-type="query"] {
+    background-color: #1b2a3a;
+    color: #69c0ff;
   }
 
   /* Dark theme sub-command styling */
