@@ -205,6 +205,21 @@ const remoteConfig = await loadExternalSfdxHardisConfiguration();
   - LWC Base components, locally located in node_modules\@salesforce-ux\design-system\ui\components
 - Try as much as possible to not define local CSS if you can find matching SLDS CSS classes
 
+## Custom Webviews with LWC
+
+### Guidelines for Implementing and Maintaining Custom Webviews
+- Use Lightning Web Components (LWC) for all custom webview UIs in the extension. Each webview should be modular, maintainable, and leverage the LWC lifecycle.
+- Webview entry points should be in `src/webviews/` and LWC modules in `src/webviews/lwc-ui/modules/`.
+- Always use the VS Code Webview API to securely load and communicate with LWC-based UIs. Never expose sensitive data or APIs directly to the webview context.
+- Use the provided WebSocket server for real-time communication between the extension host and LWC webviews. Prefer message-based protocols for all interactions.
+- When handling user input or command execution in a webview, always validate and sanitize data before passing it to the backend or CLI.
+- For UI consistency, use SLDS (Salesforce Lightning Design System) and LWC base components. Avoid custom CSS unless absolutely necessary and prefer SLDS utility classes.
+- Document the public API (events, messages, properties) of each custom LWC webview component in code comments and in the project documentation.
+- When updating or refactoring a webview, ensure backward compatibility for message formats and UI state where possible.
+- Test webviews in both light and dark VS Code themes, and with different org color settings if applicable.
+- For new features, add integration tests that simulate user interaction with the LWC webview and verify correct extension-host communication.
+- See `src/webviews/lwc-ui/modules/` for examples of best practices in LWC webview structure and communication.
+
 ## Integration Points
 
 ### Salesforce CLI Integration
