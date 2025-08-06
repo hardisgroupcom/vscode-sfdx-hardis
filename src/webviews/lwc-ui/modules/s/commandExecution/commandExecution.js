@@ -404,8 +404,11 @@ ${resultMessage}`;
         // Complete all running instances of this command
         runningCommands.forEach(subCommand => {
             const duration = this.calculateDuration(subCommand.startTime, subCommand.endTime || new Date());
-            
-            // Replace the sub-command start log line with the completed one
+            // Remove 'Running: ' prefix only if present
+            let cleanCommand = subCommandData.command;
+            if (cleanCommand.startsWith('Running: ')) {
+                cleanCommand = cleanCommand.slice('Running: '.length);
+            }
             this.replaceSubCommandLog(subCommand.id, {
                 logType: subCommandData.success ? 'success' : 'error',
                 message: `${subCommandData.command.replace('Running: ', '')} (${duration})`,
