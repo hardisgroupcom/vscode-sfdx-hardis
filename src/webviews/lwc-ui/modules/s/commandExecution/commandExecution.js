@@ -249,6 +249,14 @@ export default class CommandExecution extends LightningElement {
             isQuestion: actionLog.isQuestion || false
         };
 
+        // Collapse the previous section if it's not a question
+        if (this.logSections.length > 0) {
+            const previousSection = this.logSections[this.logSections.length - 1];
+            if (previousSection && !previousSection.isQuestion) {
+                previousSection.isExpanded = false;
+            }
+        }
+
         this.currentSection = newSection;
         this.logSections = [...this.logSections, newSection];
         
@@ -578,6 +586,7 @@ ${resultMessage}`;
         return this.logSections.map(section => ({
             ...section,
             duration: this.calculateSectionDuration(section),
+            toggleIcon: section.isExpanded ? 'utility:chevronup' : 'utility:chevrondown',
             sectionStatusIcon: section.isQuestion && !this.isWaitingForAnswer ? 
                 { iconName: 'utility:question', variant: 'warning' } :
                 section.hasError ? 
@@ -802,7 +811,14 @@ ${resultMessage}`;
         }
     }
 
-    // handleToggleSection removed: sections are always expanded
+    handleToggleSection(event) {
+        const sectionId = event.currentTarget.dataset.sectionId;
+        const section = this.logSections.find(s => s.id === sectionId);
+        if (section) {
+            section.isExpanded = !section.isExpanded;
+            this.logSections = [...this.logSections];
+        }
+    }
 
     scrollToBottom() {
         requestAnimationFrame(() => {

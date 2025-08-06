@@ -55,7 +55,7 @@
             <template for:each={logSectionsForDisplay} for:item="section">
                 <div key={section.id} class="log-section slds-box slds-box_x-small slds-m-bottom_x-small">
                   <!-- Section header (always expanded, no toggle) -->
-                  <div class="section-header slds-p-around_x-small" data-section-id={section.id}>
+                  <div class="section-header slds-p-around_x-small" data-section-id={section.id} onclick={handleToggleSection}>
                     <div class="slds-media slds-media_center">
                       <div class="slds-media__figure" style="width: 1rem;">
                         <template if:true={section.sectionUseSpinner}>
@@ -91,12 +91,27 @@
                           </div>
                         </div>
                       </div>
+                      <div class="slds-media__figure slds-media__figure_reverse">
+                        <template if:true={section.hasLogs}>
+                          <lightning-icon
+                              icon-name={section.toggleIcon}
+                              size="x-small"
+                              alternative-text="Toggle Section"
+                              variant="brand"
+                              data-section-id={section.id}>
+                          </lightning-icon>
+                        </template>
+                        <template if:false={section.hasLogs}>
+                            <div style="width: 0.75rem;">&nbsp;</div>
+                        </template>
+                      </div>
                     </div>
                   </div>
 
                   <!-- Section logs (always expanded) -->
-                  <template if:true={section.hasLogs}>
-                    <div class="section-logs slds-m-top_x-small slds-m-left_medium slds-m-right_x-small slds-m-bottom_x-small">
+                  <template if:true={section.isExpanded}>
+                    <template if:true={section.hasLogs}>
+                      <div class="section-logs slds-m-top_x-small slds-m-left_medium slds-m-right_x-small slds-m-bottom_x-small">
                       <template for:each={section.logs} for:item="logLine">
                         <div key={logLine.id} class={logLine.cssClass} data-log-type={logLine.logType} data-is-subcommand={logLine.isSubCommand} data-is-running={logLine.isRunning}>
                           <div class="slds-media slds-media_small">
@@ -161,6 +176,7 @@
                       </template>
                     </div>
                   </template>
+                </template>
                 </div>
               </template>
             </div>
