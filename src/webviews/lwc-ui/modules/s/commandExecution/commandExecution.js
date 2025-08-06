@@ -230,10 +230,15 @@ export default class CommandExecution extends LightningElement {
 
     startNewSection(actionLog) {
         const iconInfo = this.getLogTypeIcon(actionLog.logType, actionLog.isQuestion, actionLog.isAnswer);
+        
+        // Format message for multi-line and bullets
+        const formattedMessage = this.formatMultiLineMessage(actionLog.message);
+
         const newSection = {
             id: this.generateId(),
             actionLog: {
                 ...actionLog,
+                formattedMessage: formattedMessage,
                 iconName: iconInfo.iconName,
                 iconVariant: iconInfo.variant,
                 useSpinner: this.shouldUseSpinner(actionLog),
@@ -287,6 +292,11 @@ export default class CommandExecution extends LightningElement {
             isRunning: logLine.isRunning || false,
             isQuery: logLine.isQuery || false
         };
+
+        // Format multi-line messages and bullets
+        if (!formattedLog.formattedMessage) {
+            formattedLog.formattedMessage = this.formatMultiLineMessage(formattedLog.message);
+        }
 
         this.currentSection.logs = [...this.currentSection.logs, formattedLog];
         
@@ -796,6 +806,43 @@ ${resultMessage}`;
         
         // Check if any log in the section is the latest question
         return section.logs && section.logs.some(log => log.id === this.latestQuestionId);
+    }
+
+    formatMultiLineMessage(message) {
+        if (!message || typeof message !== 'string') return '';
+        if (!message.includes('\n') && !message.trim().startsWith('- ')) return message;
+
+        const lines = message.split('\n');
+        let html = '';
+        let inList = false;
+
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            const trimmedLine = line.trim();
+
+            if (trimmedLine.startsWith('- ')) {
+                if (!inList) {
+                    html += '<ul>';
+                    inList = true;
+                }
+                // Remove the leading hyphen and space before adding to list item
+                html += `<li>${line.substring(line.indexOf('- ') + 2)}</li>`;
+            } else {
+                if (inList) {
+                    html += '</ul>';
+                    inList = false;
+                }
+                html += line;
+                if (i < lines.length - 1) {
+                    html += '<br/>';
+                }
+            }
+        }
+
+        if (inList) {
+            html += '</ul>';
+        }
+        return html;
     }
 
     formatTimestamp(timestamp) {
