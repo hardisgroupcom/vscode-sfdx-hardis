@@ -672,15 +672,23 @@ ${resultMessage}`;
             return this.makeJsonHumanReadable(parsed);
         } catch (e) {
             // Not valid JSON, return original message
+            return this.linkifyUrls(message);
+        }
+    }
+
+    linkifyUrls(message) {
+        if (!message || typeof message !== 'string') {
             return message;
         }
+        const urlRegex = /(https?:\/\/[^\s"'`<>]+)/g;
+        return message.replace(urlRegex, (url) => `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`);
     }
 
     makeJsonHumanReadable(obj) {
         if (obj === null) return 'No value';
         if (obj === undefined) return 'Not defined';
         if (typeof obj === 'boolean') return obj ? 'Yes' : 'No';
-        if (typeof obj === 'string') return obj;
+        if (typeof obj === 'string') return this.linkifyUrls(obj);
         if (typeof obj === 'number') return obj.toString();
         
         if (Array.isArray(obj)) {
@@ -810,7 +818,7 @@ ${resultMessage}`;
 
     formatMultiLineMessage(message) {
         if (!message || typeof message !== 'string') return '';
-        if (!message.includes('\n') && !message.trim().startsWith('- ')) return message;
+        if (!message.includes('\n') && !message.trim().startsWith('- ')) return this.linkifyUrls(message);
 
         const lines = message.split('\n');
         let html = '';
@@ -826,13 +834,13 @@ ${resultMessage}`;
                     inList = true;
                 }
                 // Remove the leading hyphen and space before adding to list item
-                html += `<li>${line.substring(line.indexOf('- ') + 2)}</li>`;
+                html += `<li>${this.linkifyUrls(line.substring(line.indexOf('- ') + 2))}</li>`;
             } else {
                 if (inList) {
                     html += '</ul>';
                     inList = false;
                 }
-                html += line;
+                html += this.linkifyUrls(line);
                 if (i < lines.length - 1) {
                     html += '<br/>';
                 }
