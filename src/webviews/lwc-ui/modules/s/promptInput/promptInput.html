@@ -62,19 +62,19 @@
                     <!-- Select Input with Buttons (5 or fewer choices) -->
                     <template if:true={isSelectWithButtons}>
                         <div class="slds-m-bottom_medium">
-                            <div class="slds-grid slds-grid_vertical slds-gutters_large">
+                            <div class="slds-grid slds-wrap slds-gutters_small select-options-btn-row">
                                 <template for:each={selectOptions} for:item="option">
-                                    <div key={option.value} class="slds-col slds-m-bottom_small">
+                                    <div key={option.value} class="slds-col slds-size_1-of-1 slds-m-bottom_x-small">
                                         <button
                                             type="button"
                                             data-value={option.value}
                                             onclick={handleButtonSelect}
                                             onkeydown={handleKeyDown}
-                                            class="slds-button slds-button_neutral slds-button_stretch select-option-button slds-p-around_medium">
-                                            <div class="slds-grid slds-grid_vertical slds-grid_align-start slds-text-align_left">
-                                                <div class="slds-col slds-text-heading_small slds-m-bottom_x-small">{option.label}</div>
+                                            class="slds-button slds-button_outline-brand select-option-button">
+                                            <div class="select-option-content">
+                                                <div class="select-option-label">{option.label}</div>
                                                 <template if:true={option.description}>
-                                                    <div class="slds-col slds-text-body_small slds-text-color_weak slds-text-align_left">{option.description}</div>
+                                                    <div class="select-option-desc">{option.description}</div>
                                                 </template>
                                             </div>
                                         </button>
