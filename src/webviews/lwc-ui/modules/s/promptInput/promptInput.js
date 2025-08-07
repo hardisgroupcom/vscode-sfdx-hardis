@@ -84,15 +84,17 @@ export default class PromptInput extends LightningElement {
             } else if (this.currentPrompt.type === 'select') {
                 // Build the options first to populate the mapping
                 const options = this.selectOptions;
-                
+
                 // For single select, find the first selected choice
-                const selectedChoice = this.currentPrompt.choices && this.currentPrompt.choices.find(choice => choice.selected);
+                let selectedChoice = this.currentPrompt.choices && this.currentPrompt.choices.find(choice => choice.selected);
+                // If selected choice empty, try to use the prompt "default" property
+                if (!selectedChoice && this.currentPrompt.default) {
+                    selectedChoice = this.currentPrompt.choices && this.currentPrompt.choices.find(choice => this.isEqual(choice.value, this.currentPrompt.default));
+                }
+
                 if (selectedChoice) {
-                    // Find the string identifier for this choice
-                    const stringIdentifier = Object.keys(this.choiceValueMapping).find(key => 
-                        this.choiceValueMapping[key] === selectedChoice.value
-                    );
-                    
+                    // Find the string identifier for this choice (deep equality for objects)
+                    const stringIdentifier = Object.keys(this.choiceValueMapping).find(key => this.isEqual(this.choiceValueMapping[key], selectedChoice.value));
                     this.selectedValue = stringIdentifier || '';
                     this.selectedOptionDescription = this.decodeHtmlEntities(selectedChoice.description || '');
                 } else {
@@ -115,6 +117,19 @@ export default class PromptInput extends LightningElement {
         this.currentPrompt = null;
         this.promptData = null;
         this.resetValues();
+    }
+
+    // Helper for deep equality (handles primitives and objects)
+    isEqual(a, b) {
+        if (a === b) return true;
+        if (typeof a === 'object' && typeof b === 'object' && a && b) {
+            try {
+                return JSON.stringify(a) === JSON.stringify(b);
+            } catch (e) {
+                return false;
+            }
+        }
+        return false;
     }
 
     resetValues() {
