@@ -517,6 +517,15 @@ export class Commands {
           { pipelineData: pipelineData } // Pass pipelineData to the LWC
         );
         panel.updateTitle("DevOps Pipeline");
+
+        // Register message handler for refreshpipeline
+        panel.onMessage(async (type, _data) => {
+          if (type === "refreshpipeline") {
+            const provider = new PipelineDataProvider();
+            const newData = await provider.getPipelineData();
+            panel.sendInitializationData({ pipelineData: newData });
+          }
+        });
       }
     );
     this.disposables.push(disposable);

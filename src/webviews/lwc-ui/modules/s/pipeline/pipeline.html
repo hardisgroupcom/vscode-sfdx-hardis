@@ -1,8 +1,13 @@
 <template>
     <lightning-card title="DevOps Pipeline" icon-name="utility:flow">
         <div class="slds-p-around_medium">
-            <div class="slds-m-bottom_small">
-                <lightning-input type="toggle" label="Show only major branches" checked={showOnlyMajor} onchange={handleToggleMajor}></lightning-input>
+            <div class="slds-grid slds-grid_align-spread slds-m-bottom_small">
+                <div class="slds-col">
+                    <lightning-input type="toggle" label="Show only major branches" checked={showOnlyMajor} onchange={handleToggleMajor}></lightning-input>
+                </div>
+                <div class="slds-col slds-no-flex">
+                    <lightning-button icon-name="utility:refresh" label="Refresh" title="Refresh pipeline data" onclick={refreshPipeline} class="slds-m-left_small"></lightning-button>
+                </div>
             </div>
             <template if:true={pipelineData}>
                 <div class="pipeline-container">

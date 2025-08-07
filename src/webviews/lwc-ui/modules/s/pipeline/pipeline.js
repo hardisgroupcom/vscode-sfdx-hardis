@@ -1,4 +1,3 @@
-
 import { LightningElement, api } from "lwc";
 
 export default class Pipeline extends LightningElement {
@@ -8,7 +7,6 @@ export default class Pipeline extends LightningElement {
   lastDiagram = "";
 
   showOnlyMajor = false;
-
 
   @api
   initialize(data) {
@@ -20,7 +18,6 @@ export default class Pipeline extends LightningElement {
     setTimeout(() => this.renderMermaid(), 0);
     console.log("Pipeline data initialized:", this.pipelineData);
   }
-
 
   handleToggleMajor(event) {
     this.showOnlyMajor = event.target.checked;
@@ -34,9 +31,6 @@ export default class Pipeline extends LightningElement {
       setTimeout(() => this.renderMermaid(), 0);
     }
   }
-
-
-  // updateDiagram removed: filtering is now backend responsibility
 
   renderedCallback() {
     if (this.pipelineData && this.currentDiagram) {
@@ -85,7 +79,6 @@ export default class Pipeline extends LightningElement {
       .then(({ svg }) => {
         mermaidDiv.innerHTML = svg;
         this.error = undefined;
-        if (debugDiv) debugDiv.textContent = "[Rendered successfully]";
         console.log("Mermaid diagram rendered successfully");
       })
       .catch((error) => {
@@ -94,5 +87,16 @@ export default class Pipeline extends LightningElement {
         if (debugDiv) debugDiv.textContent = this.error + "\n" + diagram;
         console.error("Mermaid rendering error:", error);
       });
+  }
+
+  // Added refreshPipeline method
+  refreshPipeline() {
+    if (typeof window !== 'undefined' && window.sendMessageToVSCode) {
+        window.sendMessageToVSCode({
+              type: 'refreshpipeline',
+              data: {}
+        });
+    }
+    console.log("Pipeline refresh event dispatched");
   }
 }
