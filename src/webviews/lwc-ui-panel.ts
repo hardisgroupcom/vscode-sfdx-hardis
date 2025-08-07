@@ -115,6 +115,7 @@ export class LwcUiPanel {
     } = {
       "s-prompt-input": "Prompt Input",
       "s-command-execution": "Command Execution",
+      "s-pipeline": "DevOps Pipeline",
     };
     const panelTitle = lwcDefinitions[this.lwcId] || "SFDX Hardis";
     this.panel.title = panelTitle;
@@ -435,6 +436,10 @@ export class LwcUiPanel {
         <script>
           // Set SLDS icons path for LWC components
           window.SLDS_ICONS_PATH = "${sldsIconsUri}";
+        </script>
+        <script src="${webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'out', 'webviews', 'mermaid.min.js'))}"></script>
+        <script>
+            mermaid.initialize({ startOnLoad: false });
         </script>
         <script src="${scriptUri}"></script>
       </body>

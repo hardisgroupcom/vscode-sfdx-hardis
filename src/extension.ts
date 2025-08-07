@@ -68,7 +68,8 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(disposableTreePlugins);
 
   // Register common commands
-  const commands = new Commands(
+    const commands = new Commands(
+    context.extensionUri,
     hardisCommandsProvider,
     hardisStatusProvider,
     hardisPluginsProvider,

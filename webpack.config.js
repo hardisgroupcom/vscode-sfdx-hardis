@@ -87,8 +87,9 @@ const lwcWebviewConfig = {
     path: path.resolve(__dirname, 'out', 'webviews'),
     filename: 'lwc-ui.js',
   },
-  resolve: {
+    resolve: {
     extensions: ['.js', '.ts'],
+    modules: ['node_modules'], // Add node_modules to resolution paths
     fallback: {
       "process": require.resolve("process/browser"),
     }
@@ -134,11 +135,16 @@ const lwcWebviewConfig = {
       experimentalSyntheticShadow: true,
       experimentalDynamicComponent: true
     }),
-    new CopyWebpackPlugin({
+        new CopyWebpackPlugin({
       patterns: [
         {
           from: path.resolve(__dirname, 'node_modules/@salesforce-ux/design-system/assets'),
           to: path.resolve(__dirname, 'out/assets'), // Copy to out/assets instead of out/webviews/assets
+          noErrorOnMissing: true
+        },
+        {
+          from: path.resolve(__dirname, 'node_modules/mermaid/dist/mermaid.min.js'),
+          to: path.resolve(__dirname, 'out/webviews'),
           noErrorOnMissing: true
         }
       ]

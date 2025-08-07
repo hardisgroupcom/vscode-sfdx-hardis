@@ -167,6 +167,11 @@
         "icon": "$(preview)"
       },
       {
+        "command": "sfdx-hardis.showPipeline",
+        "title": "SFDX Hardis: Show DevOps Pipeline",
+        "icon": "$(organization)"
+      },
+      {
         "command": "vscode-sfdx-hardis.selectColorForOrg",
         "title": "SFDX Hardis: Select color for current default org",
         "icon": "$(symbol-color)"
@@ -424,6 +429,7 @@
     "@types/js-yaml": "^4.0.9",
     "@types/mocha": "^10.0.0",
     "@types/node": "^20.0.0",
+    "@types/sort-array": "^4.1.2",
     "@types/vscode": "^1.54.0",
     "@types/which": "^3.0.0",
     "@types/ws": "^8.5.12",
@@ -455,9 +461,11 @@
     "git-url-parse": "^11.6.0",
     "js-yaml": "^4.1.0",
     "lightning-base-components": "^1.27.2-alpha",
+    "mermaid": "^11.9.0",
     "moment": "^2.29.1",
     "process": "^0.11.10",
     "simple-git": "^3.18.0",
+    "sort-array": "^5.1.1",
     "which": "^4.0.0",
     "ws": "^8.18.0"
   }

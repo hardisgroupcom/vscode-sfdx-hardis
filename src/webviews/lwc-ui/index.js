@@ -2,12 +2,14 @@ import "@lwc/synthetic-shadow";
 import { createElement } from "lwc";
 import PromptInput from "s/promptInput";
 import CommandExecution from "s/commandExecution";
+import Pipeline from "s/pipeline";
 
 console.log("LWC UI initializing...");
 
 const lwcIdAndClasses = {
   "s-prompt-input": PromptInput,
-  "s-command-execution": CommandExecution
+  "s-command-execution": CommandExecution,
+  "s-pipeline": Pipeline
 }
 
 // Communication bridge between VS Code webview and LWC components
