@@ -10,7 +10,10 @@ export default class PromptInput extends LightningElement {
     @track isVisible = false;
     @track isSubmitting = false; // Track if submission is in progress
     @track error = null;
-    @track choiceValueMapping = {}; // Map string identifiers to original choice values
+    // Centralized mapping: string identifier -> original value
+    @track choiceValueMapping = {};
+    // Reverse mapping: JSON-stringified original value -> string identifier
+    @track valueToIdentifier = {};
     _hasInitialFocus = false; // Track if initial focus has been set
 
     connectedCallback() {
@@ -76,38 +79,61 @@ export default class PromptInput extends LightningElement {
         this.isVisible = true;
         this.error = null;
         this.resetValues();
-        
+
+        // Build mappings for select/multiselect
+        if (this.currentPrompt && (this.currentPrompt.type === 'select' || this.currentPrompt.type === 'multiselect')) {
+            this.buildChoiceMappings();
+        }
+
         if (this.currentPrompt) {
-            // Set initial values
             if (this.currentPrompt.type === 'text' || this.currentPrompt.type === 'number') {
                 this.inputValue = this.currentPrompt.initial || '';
             } else if (this.currentPrompt.type === 'select') {
-                // Build the options first to populate the mapping
-                const options = this.selectOptions;
-
                 // For single select, find the first selected choice
                 let selectedChoice = this.currentPrompt.choices && this.currentPrompt.choices.find(choice => choice.selected);
-                // If selected choice empty, try to use the prompt "default" property
                 if (!selectedChoice && this.currentPrompt.default) {
                     selectedChoice = this.currentPrompt.choices && this.currentPrompt.choices.find(choice => this.isEqual(choice.value, this.currentPrompt.default));
                 }
-
                 if (selectedChoice) {
-                    // Find the string identifier for this choice (deep equality for objects)
-                    const stringIdentifier = Object.keys(this.choiceValueMapping).find(key => this.isEqual(this.choiceValueMapping[key], selectedChoice.value));
+                    // Use reverse mapping to get identifier
+                    const stringIdentifier = this.valueToIdentifier[JSON.stringify(selectedChoice.value)];
                     this.selectedValue = stringIdentifier || '';
                     this.selectedOptionDescription = this.decodeHtmlEntities(selectedChoice.description || '');
                 } else {
-                    // If no choice is pre-selected, default to empty
                     this.selectedValue = '';
                     this.selectedOptionDescription = '';
                 }
             } else if (this.currentPrompt.type === 'multiselect') {
-                this.selectedValues = this.currentPrompt.choices && this.currentPrompt.choices
+                // Use reverse mapping to get identifiers for selected values
+                this.selectedValues = (this.currentPrompt.choices || [])
                     .filter(choice => choice.selected)
-                    .map(choice => choice.value) || [];
+                    .map(choice => this.valueToIdentifier[JSON.stringify(choice.value)]) || [];
             }
         }
+    }
+
+    // Build mapping from string identifier <-> original value for current choices
+    buildChoiceMappings() {
+        this.choiceValueMapping = {};
+        this.valueToIdentifier = {};
+        if (!this.currentPrompt || !this.currentPrompt.choices) return;
+        this.currentPrompt.choices.forEach((choice, index) => {
+            let stringIdentifier;
+            if (typeof choice.value === 'string') {
+                stringIdentifier = choice.value;
+            } else {
+                stringIdentifier = `choice${index + 1}`;
+            }
+            // Ensure uniqueness
+            let uniqueIdentifier = stringIdentifier;
+            let counter = 1;
+            while (this.choiceValueMapping.hasOwnProperty(uniqueIdentifier)) {
+                uniqueIdentifier = `${stringIdentifier}_${counter}`;
+                counter++;
+            }
+            this.choiceValueMapping[uniqueIdentifier] = choice.value;
+            this.valueToIdentifier[JSON.stringify(choice.value)] = uniqueIdentifier;
+        });
     }
 
     @api
@@ -224,46 +250,16 @@ export default class PromptInput extends LightningElement {
 
     get selectOptions() {
         if (!this.currentPrompt || !this.currentPrompt.choices) return [];
-        
-        // Reset the mapping for this prompt
-        this.choiceValueMapping = {};
-        
-        const options = this.currentPrompt.choices.map((choice, index) => {
+        return this.currentPrompt.choices.map((choice, index) => {
             const choiceTitle = choice.title || choice.label || choice.name || 'Option ' + (index + 1);
             const choiceDescription = choice.description || '';
-            
-            // Create a string identifier for this choice
-            let stringIdentifier;
-            
-            if (typeof choice.value === 'string') {
-                // If it's already a string, use it directly
-                stringIdentifier = choice.value;
-            } else {
-                // If it's an object or other type, create a string identifier
-                stringIdentifier = `choice${index + 1}`;
-            }
-            
-            // Ensure unique identifier by checking if it already exists
-            let uniqueIdentifier = stringIdentifier;
-            let counter = 1;
-            while (this.choiceValueMapping.hasOwnProperty(uniqueIdentifier)) {
-                uniqueIdentifier = `${stringIdentifier}_${counter}`;
-                counter++;
-            }
-            
-            // Store the mapping from string identifier to original value
-            this.choiceValueMapping[uniqueIdentifier] = choice.value;
-            
-            const option = {
+            const stringIdentifier = this.valueToIdentifier[JSON.stringify(choice.value)];
+            return {
                 label: this.decodeHtmlEntities(choiceTitle),
-                value: uniqueIdentifier,
+                value: stringIdentifier,
                 description: this.decodeHtmlEntities(choiceDescription)
             };
-            
-            return option;
         });
-        
-        return options;
     }
 
     // Helper method to get choice description by value (using string identifier)
@@ -290,57 +286,17 @@ export default class PromptInput extends LightningElement {
 
     get multiselectOptions() {
         if (!this.currentPrompt || !this.currentPrompt.choices) return [];
-        
-        // Initialize the mapping for multiselect
-        this.choiceValueMapping = {};
-        
-        const options = this.currentPrompt.choices.map((choice, index) => {
-            // Create string identifiers for multiselect like we do for single select
-            let stringIdentifier;
-            
-            if (typeof choice.value === 'string') {
-                stringIdentifier = choice.value;
-            } else {
-                stringIdentifier = `choice${index + 1}`;
-            }
-            
-            // Ensure unique identifier
-            let uniqueIdentifier = stringIdentifier;
-            let counter = 1;
-            const existingIds = this.currentPrompt.choices.slice(0, index).map((c, i) => 
-                typeof c.value === 'string' ? c.value : `choice${i + 1}`
-            );
-            while (existingIds.includes(uniqueIdentifier)) {
-                uniqueIdentifier = `${stringIdentifier}_${counter}`;
-                counter++;
-            }
-            
-            // Store the mapping from string identifier to original value
-            this.choiceValueMapping[uniqueIdentifier] = choice.value;
-            
-            const isChecked = this.selectedValues.includes(uniqueIdentifier);
-            
-            const option = {
+        return this.currentPrompt.choices.map((choice, index) => {
+            const stringIdentifier = this.valueToIdentifier[JSON.stringify(choice.value)];
+            const isChecked = this.selectedValues.includes(stringIdentifier);
+            return {
                 label: this.decodeHtmlEntities(choice.title),
-                value: uniqueIdentifier, // Use string identifier instead of original value
-                originalValue: choice.value, // Keep reference to original value
+                value: stringIdentifier,
+                originalValue: choice.value,
                 description: this.decodeHtmlEntities(choice.description || ''),
                 checked: isChecked
             };
-            
-            console.log('multiselectOptions - choice:', {
-                originalValue: choice.value,
-                stringIdentifier: uniqueIdentifier,
-                selectedValues: this.selectedValues,
-                isChecked: isChecked,
-                choiceLabel: choice.title
-            });
-            
-            return option;
         });
-        
-        console.log('multiselectOptions getter called, selectedValues:', this.selectedValues);
-        return options;
     }
 
     get inputType() {
@@ -486,20 +442,10 @@ export default class PromptInput extends LightningElement {
 
     handleSelectAll() {
         if (!this.currentPrompt || !this.currentPrompt.choices) return;
-        
-        // Select all choice values using string identifiers
-        const allIdentifiers = this.currentPrompt.choices.map((choice, index) => {
-            if (typeof choice.value === 'string') {
-                return choice.value;
-            } else {
-                return `choice${index + 1}`;
-            }
-        });
-        
-        console.log('handleSelectAll called, identifiers:', allIdentifiers);
+        // Select all string identifiers from mapping
+        const allIdentifiers = this.currentPrompt.choices.map(choice => this.valueToIdentifier[JSON.stringify(choice.value)]);
         this.selectedValues = allIdentifiers;
         this.error = null;
-        console.log('handleSelectAll called, selectedValues after:', this.selectedValues);
     }
 
     handleUnselectAll() {
@@ -563,7 +509,6 @@ export default class PromptInput extends LightningElement {
     buildResponse() {
         const response = {};
         const promptName = this.promptName;
-        
         if (this.isTextInput) {
             response[promptName] = this.inputValue;
         } else if (this.isNumberInput) {
@@ -581,55 +526,25 @@ export default class PromptInput extends LightningElement {
             if (!this.selectedValue || this.selectedValue === '') {
                 response[promptName] = 'exitNow';
             } else {
-                // Get the original value using the string identifier
                 const originalValue = this.choiceValueMapping[this.selectedValue];
-                
-                if (originalValue !== undefined) {
-                    // Create a safe, serializable copy of the original value
-                    let safeValue;
-                    if (typeof originalValue === 'object' && originalValue !== null) {
-                        try {
-                            // Create a clean serializable copy
-                            safeValue = JSON.parse(JSON.stringify(originalValue));
-                        } catch (error) {
-                            // Fall back to string identifier if serialization fails
-                            safeValue = this.selectedValue;
-                        }
-                    } else {
-                        safeValue = originalValue;
-                    }
-                    response[promptName] = safeValue;
-                } else {
-                    response[promptName] = this.selectedValue;
-                }
+                response[promptName] = this.makeSafeValue(originalValue);
             }
         } else if (this.isMultiselectInput) {
-            // Map string identifiers back to original values and create safe, serializable copies
-            const safeValues = this.selectedValues.map(identifier => {
-                // Get the original value using the string identifier
+            // Return array of original values, stringified if not string
+            response[promptName] = this.selectedValues.map(identifier => {
                 const originalValue = this.choiceValueMapping[identifier];
-                
-                if (originalValue !== undefined) {
-                    if (typeof originalValue === 'object' && originalValue !== null) {
-                        try {
-                            // Create a clean serializable copy
-                            return JSON.parse(JSON.stringify(originalValue));
-                        } catch (error) {
-                            // Fall back to string identifier if serialization fails
-                            return identifier;
-                        }
-                    } else {
-                        return originalValue;
-                    }
-                } else {
-                    // Fallback to the identifier itself if mapping not found
-                    return identifier;
-                }
+                return this.makeSafeValue(originalValue);
             });
-            response[promptName] = safeValues;
         }
-        
         return response;
+    }
+
+    makeSafeValue(value) {
+        // if the value is an object, convert it to a string
+        if (typeof value === 'object' && value !== null) {
+            return JSON.parse(JSON.stringify(value));
+        }
+        return value;
     }
 
     dispatchPromptResponse(response) {
