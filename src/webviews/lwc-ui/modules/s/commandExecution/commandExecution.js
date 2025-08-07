@@ -693,29 +693,34 @@ ${resultMessage}`;
         if (typeof obj === 'boolean') return obj ? 'Yes' : 'No';
         if (typeof obj === 'string') return this.linkifyUrls(obj);
         if (typeof obj === 'number') return obj.toString();
-        
+
         if (Array.isArray(obj)) {
             if (obj.length === 0) return 'No items';
             if (obj.length === 1) return this.makeJsonHumanReadable(obj[0]);
-            
+
             // For arrays, create a readable list with HTML line breaks
             const items = obj.map((item, index) => {
                 const readable = this.makeJsonHumanReadable(item);
                 return `${index + 1}. ${readable}`;
             }).join('<br/>');
-            
+
             return `${obj.length} items:<br/>${items}`;
         }
-        
+
         if (typeof obj === 'object') {
             const entries = Object.entries(obj);
             if (entries.length === 0) return 'No properties';
-            
+
+            // If single property and value is a string, return just the string value
+            if (entries.length === 1 && typeof entries[0][1] === 'string') {
+                return this.linkifyUrls(entries[0][1]);
+            }
+
             // Convert object properties to human-readable format with HTML
             const readable = entries.map(([key, value]) => {
                 const humanKey = this.humanizeKey(key);
                 const humanValue = this.makeJsonHumanReadable(value);
-                
+
                 // Handle different value types with appropriate HTML formatting
                 if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
                     const indentedValue = humanValue.split('<br/>').join('<br/>&nbsp;&nbsp;');
@@ -724,10 +729,10 @@ ${resultMessage}`;
                     return `${humanKey}: ${humanValue}`;
                 }
             }).join('<br/>');
-            
+
             return readable;
         }
-        
+
         return obj.toString();
     }
 
