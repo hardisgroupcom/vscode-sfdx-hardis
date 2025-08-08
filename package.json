@@ -162,7 +162,7 @@
         "icon": "$(gear)"
       },
       {
-        "command": "sfdx-hardis.showPipeline",
+        "command": "vscode-sfdx-hardis.showPipeline",
         "title": "SFDX Hardis: Show DevOps Pipeline",
         "icon": "$(organization)"
       },

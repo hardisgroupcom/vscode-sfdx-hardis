@@ -10,7 +10,7 @@ import TelemetryReporter from "@vscode/extension-telemetry";
 import { ThemeUtils } from "./themeUtils";
 import { exec } from "child_process";
 import { LwcPanelManager } from "./lwc-panel-manager";
-import { PipelineData, PipelineDataProvider } from "./pipeline-data-provider";
+import { PipelineDataProvider } from "./pipeline-data-provider";
 
 export class Commands {
   private readonly extensionUri: vscode.Uri;
@@ -507,7 +507,7 @@ export class Commands {
 
   registerShowPipeline() {
     const disposable = vscode.commands.registerCommand(
-      "sfdx-hardis.showPipeline",
+      "vscode-sfdx-hardis.showPipeline",
       async () => {
         const pipelineDataProvider = new PipelineDataProvider();
         const pipelineData = await pipelineDataProvider.getPipelineData();

@@ -156,6 +156,7 @@ export class ThemeUtils {
       },
       "hardis:work:save": { vscode: "save", hardis: "save.svg" },
       "hardis:work:resetselection": { vscode: "history", hardis: "reset.svg" },
+      "vscode-sfdx-hardis.showPipeline": { vscode: "graph", hardis: "flow.svg" },
       "scratch:push-from-git-to-org": {
         vscode: "cloud-upload",
         hardis: "push.svg",

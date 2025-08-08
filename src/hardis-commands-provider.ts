@@ -197,6 +197,14 @@ export class HardisCommandsProvider
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/work/resetselection/",
           },
+          {
+            id: "vscode-sfdx-hardis.showPipeline",
+            label: "Show DevOps Pipeline",
+            command: "vscode-sfdx-hardis.showPipeline",
+            tooltip: "Open the DevOps Pipeline panel to visualize and manage your CI/CD pipeline.",
+            requiresProject: false,
+            helpUrl: "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/"
+          },
         ],
       },
       {
