@@ -2,6 +2,7 @@ import { LightningElement, api, track } from 'lwc';
 
 export default class PromptInput extends LightningElement {
     @api promptData = null;
+    @api embedded = false;
     @track currentPrompt = null;
     @track inputValue = '';
     @track selectedValues = [];

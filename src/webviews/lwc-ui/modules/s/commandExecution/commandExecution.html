@@ -186,7 +186,9 @@
             </template>
               <!-- Embedded PromptInput for in-panel prompts -->
               <template if:true={showEmbeddedPrompt}>
-                <s-prompt-input prompt-data={embeddedPromptData} onsubmit={handleEmbeddedPromptSubmit} onexit={handleEmbeddedPromptExit}></s-prompt-input>
+                <div class="log-section slds-box slds-box_x-small slds-m-bottom_x-small">
+                  <s-prompt-input prompt-data={embeddedPromptData} embedded="true" onsubmit={handleEmbeddedPromptSubmit} onexit={handleEmbeddedPromptExit}></s-prompt-input>
+                </div>
               </template>
             </div>
           </template>

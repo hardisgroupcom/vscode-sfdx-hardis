@@ -162,11 +162,6 @@
         "icon": "$(gear)"
       },
       {
-        "command": "vscode-sfdx-hardis.lwcUi",
-        "title": "SFDX Hardis: LWC UI",
-        "icon": "$(preview)"
-      },
-      {
         "command": "sfdx-hardis.showPipeline",
         "title": "SFDX Hardis: Show DevOps Pipeline",
         "icon": "$(organization)"
@@ -311,11 +306,6 @@
         },
         {
           "command": "vscode-sfdx-hardis.openExtensionSettings",
-          "when": "view == sfdx-hardis-commands",
-          "group": "navigation"
-        },
-        {
-          "command": "vscode-sfdx-hardis.lwcUi",
           "when": "view == sfdx-hardis-commands",
           "group": "navigation"
         },
