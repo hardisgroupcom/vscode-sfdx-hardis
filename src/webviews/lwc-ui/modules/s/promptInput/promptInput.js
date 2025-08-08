@@ -62,19 +62,18 @@ export default class PromptInput extends LightningElement {
                 // Scroll validate button into view if embedded and not multiselect and not select with buttons
                 if (
                     this.embedded &&
-                    !this.isMultiselectInput &&
-                    !this.isSelectWithButtons
+                    !this.isMultiselectInput
                 ) {
-                    // Find the validate button (brand variant)
-                    const validateBtn = this.template.querySelector('lightning-button[variant="brand"]');
-                    if (validateBtn && validateBtn.focus) {
+                    // Find the cancel button (neutral variant)
+                    const cancelBtn = this.template.querySelector('lightning-button[variant="neutral"]');
+                    if (cancelBtn && cancelBtn.focus) {
                         // LWC base components render a shadow button, so try to scroll the actual button
                         // Try to find the native button inside
-                        const nativeBtn = validateBtn.shadowRoot && validateBtn.shadowRoot.querySelector('button');
+                        const nativeBtn = cancelBtn.shadowRoot && cancelBtn.shadowRoot.querySelector('button');
                         if (nativeBtn && nativeBtn.scrollIntoView) {
                             nativeBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        } else if (validateBtn.scrollIntoView) {
-                            validateBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        } else if (cancelBtn.scrollIntoView) {
+                            cancelBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
                         }
                     }
                 }
@@ -435,7 +434,20 @@ export default class PromptInput extends LightningElement {
     }
 
     handleComboboxClick(event) {
-        // Handle combobox click events if needed
+        // Auto-scroll the combobox into view if it's near the bottom of the viewport
+        try {
+            const combobox = event.currentTarget;
+            if (combobox && combobox.getBoundingClientRect) {
+                const rect = combobox.getBoundingClientRect();
+                const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+                // If the bottom of the combobox is below the viewport, scroll it into view
+                if (rect.bottom > viewportHeight - 40) {
+                    combobox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        } catch (e) {
+            // Fail silently
+        }
     }
 
     handleButtonSelect(event) {

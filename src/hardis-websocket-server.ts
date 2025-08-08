@@ -197,6 +197,16 @@ export class LocalWebSocketServer {
       vscode.commands.executeCommand("vscode-sfdx-hardis.refreshPluginsView");
     }
     // Request to refresh commands box
+    else if (data.event === "refreshPipeline") {
+      const panelManager = LwcPanelManager.getInstance();
+      const pipelinePanel = panelManager.getPanel("s-pipeline");
+      if (pipelinePanel) {
+        pipelinePanel.sendMessage({
+          type: "refreshPipeline"
+        });
+      }
+    }
+    // Request to refresh commands box
     else if (data.event === "runSfdxHardisCommand") {
       const sfdxHardisCommand = data?.sfdxHardisCommand || "";
       if (

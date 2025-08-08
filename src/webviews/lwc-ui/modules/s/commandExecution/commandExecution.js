@@ -78,6 +78,8 @@ export default class CommandExecution extends LightningElement {
                 console.log('Unknown message type:', messageType, data);
         }
     }
+
+    
     showPromptInPanel(data) {
         this.embeddedPromptData = { prompts: [data.prompt] };
         this.showEmbeddedPrompt = true;

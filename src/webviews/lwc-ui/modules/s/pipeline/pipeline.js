@@ -102,6 +102,17 @@ export default class Pipeline extends LightningElement {
       });
   }
 
+  @api
+  handleMessage(messageType, data) {
+      switch (messageType) {
+          case "refreshPipeline":
+              this.refreshPipeline();
+              break;
+          default:
+              console.log('Unknown message type:', messageType, data);
+      }
+  }
+  
   // Added refreshPipeline method
   refreshPipeline() {
     if (typeof window !== 'undefined' && window.sendMessageToVSCode) {
