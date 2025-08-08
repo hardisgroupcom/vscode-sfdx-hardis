@@ -98,13 +98,14 @@ export class BranchStrategyMermaidBuilder {
       }
     }
 
-    for (const branchAndOrg of noMergeTargetBranchAndOrg) {
-      const nameBase = isPreprod(branchAndOrg.branchName) ? "hotfix" : "feature";
-      const level = branchAndOrg.level - 1
-      this.salesforceDevOrgsGroup.push(branchAndOrg.branchName);
-      this.addFeatureBranch(nameBase, level, branchAndOrg);
-      this.addFeatureBranch(nameBase, level, branchAndOrg);
-    }
+    // Disable for now
+    // for (const branchAndOrg of noMergeTargetBranchAndOrg) {
+    //   const nameBase = isPreprod(branchAndOrg.branchName) ? "hotfix" : "feature";
+    //   const level = branchAndOrg.level - 1
+    //   this.salesforceDevOrgsGroup.push(branchAndOrg.branchName);
+    //   this.addFeatureBranch(nameBase, level, branchAndOrg);
+    //   this.addFeatureBranch(nameBase, level, branchAndOrg);
+    // }
 
     // Add retrofit link only if it does not mess with the diagram display :/
     if (branchesMergingInPreprod.length < 2) {
@@ -174,7 +175,7 @@ export class BranchStrategyMermaidBuilder {
   this.mermaidLines.push("");
 
     // Git branches
-    this.mermaidLines.push(this.indent("subgraph GitBranches [Git Branches]", 1));
+    this.mermaidLines.push(this.indent("subgraph GitBranches [Major Git Branches]", 1));
     this.mermaidLines.push(this.indent("direction TB", 2));
     for (const gitBranch of this.gitBranches) {
       this.mermaidLines.push(this.indent(`${gitBranch.nodeName}["${gitBranch.label}"]:::${gitBranch.class}`, 2));
@@ -185,7 +186,7 @@ export class BranchStrategyMermaidBuilder {
     // Salesforce orgs (only if there are any major orgs and not in onlyMajorBranches mode)
     const majorOrgs = this.salesforceOrgs.filter((salesforceOrg) => ["salesforceProd", "salesforceMajor"].includes(salesforceOrg.class));
   if (majorOrgs.length > 0 && !(options && options.onlyMajorBranches)) {
-      this.mermaidLines.push(this.indent("subgraph SalesforceOrgs [Salesforce Major Orgs]", 1));
+      this.mermaidLines.push(this.indent("subgraph SalesforceOrgs [Major Salesforce Orgs]", 1));
       this.mermaidLines.push(this.indent("direction TB", 2));
       for (const salesforceOrg of majorOrgs) {
         this.mermaidLines.push(this.indent(`${salesforceOrg.nodeName}(["${salesforceOrg.label}"]):::${salesforceOrg.class}`, 2));
@@ -283,7 +284,8 @@ export class BranchStrategyMermaidBuilder {
   }
 
   listClassesAndStyles(): string[] {
-    // Enhanced SLDS: backgrounds for orgs/branches/subgraphs, soft shadow, rounded corners, SLDS font
+  // Enhanced SLDS: backgrounds for orgs/branches/subgraphs, soft shadow, rounded corners, SLDS font
+  // Use Salesforce-like light blue for subgraph backgrounds
   const classesAndStyles = `
 classDef salesforceDev fill:#F4F6F9,stroke:#E5E5E5,stroke-width:1.5px,color:#3E3E3C,font-weight:400,border-radius:14px;
 classDef salesforceMajor fill:#E3FCEF,stroke:#E5E5E5,stroke-width:1.5px,color:#032D60,font-weight:600,border-radius:14px;
@@ -291,11 +293,11 @@ classDef salesforceProd fill:#FFF6E3,stroke:#E5E5E5,stroke-width:1.5px,color:#03
 classDef gitMajor fill:#EAF5FE,stroke:#0176D3,stroke-width:2.5px,color:#032D60,font-weight:700,border-radius:14px;
 classDef gitMain fill:#0176D3,stroke:#032D60,stroke-width:3px,color:#fff,font-weight:900,border-radius:14px;
 classDef gitFeature fill:#fff,stroke:#E5E5E5,stroke-width:1.5px,color:#3E3E3C,font-weight:400,border-radius:14px;
-style GitBranches fill:#EAF5FE,color:#3E3E3C,stroke:#E5E5E5,stroke-width:1.5px;
-style SalesforceOrgs fill:#F4F6F9,color:#3E3E3C,stroke:#E5E5E5,stroke-width:1.5px;
+style GitBranches fill:#F0F6FB,color:#3E3E3C,stroke:#E5E5E5,stroke-width:1.5px;
+style SalesforceOrgs fill:#F0F6FB,color:#3E3E3C,stroke:#E5E5E5,stroke-width:1.5px;
 style SalesforceDevOrgs fill:#F4F6F9,color:#3E3E3C,stroke:#0176D3,stroke-width:1.5px;
 `
-    return classesAndStyles.split("\n");
+  return classesAndStyles.split("\n");
   }
 
   private listLinksDef(): any {

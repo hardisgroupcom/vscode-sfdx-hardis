@@ -1,9 +1,9 @@
 <template>
-    <lightning-card title="DevOps Pipeline" icon-name="utility:flow">
+    <lightning-card>
         <div class="slds-p-around_medium">
             <div class="slds-grid slds-grid_align-spread slds-m-bottom_small">
                 <div class="slds-col">
-                    <lightning-input type="toggle" label="Show only major branches" checked={showOnlyMajor} onchange={handleToggleMajor}></lightning-input>
+                    <!-- <lightning-input type="toggle" label="Show only major branches" checked={showOnlyMajor} onchange={handleToggleMajor}></lightning-input> -->
                 </div>
                 <div class="slds-col slds-no-flex">
                     <lightning-button icon-name="utility:key" label="Add new Org" title="Configure Salesforce authentication for a new org in the Pipeline" onclick={configureAuth} class="slds-m-left_small"></lightning-button>
