@@ -143,7 +143,7 @@ export class BranchStrategyMermaidBuilder {
       const branchAndOrg = this.branchesAndOrgs.find((branchAndOrg) => branchAndOrg.branchName === gitBranch.name);
       if (branchAndOrg) {
         const nodeName = branchAndOrg.branchName + "Org";
-        let orgLabel = branchAndOrg.alias || (isProduction(branchAndOrg.branchName) ? "Production Org" : prettifyFieldName(branchAndOrg.branchName) + " Org");
+        let orgLabel = branchAndOrg.alias || (isProduction(branchAndOrg.branchName) ? "Production Org" : prettifyFieldName(branchAndOrg.branchName));
         if (branchAndOrg.instanceUrl && !branchAndOrg.instanceUrl.includes("login.salesforce.com") && !branchAndOrg.instanceUrl.includes("test.salesforce.com")) {
           // Remove the http, sandbox and salesforce part from instance url
           // ex: https://atlantem4--recetteatl.sandbox.my.salesforce.com becomes atlantem4--recetteatl
@@ -152,7 +152,6 @@ export class BranchStrategyMermaidBuilder {
           orgLabel = orgLabel.replace(/\.sandbox$/, ''); // Remove .sandbox if present
           orgLabel = orgLabel.replace(/\.my$/, ''); // Remove .my if present
           orgLabel = orgLabel.replace(/\.salesforce$/, ''); // Remove .salesforce if present
-          orgLabel += " Org"; // Append Org to the label
         }
         let orgClass = "salesforceDev"; // Default to dev
 
