@@ -80,7 +80,14 @@ export class BranchStrategyMermaidBuilder {
         }
         this.gitLinks.push({ source: nodeName, target: mergeTarget + "Branch", type: "gitMerge", label: "Merge" });
       }
-      return { name: branchAndOrg.branchName, nodeName: nodeName, label: branchAndOrg.branchName, class: isProduction(branchAndOrg.branchName) ? "gitMain" : "gitMajor", level: branchAndOrg.level };
+      return { 
+        name: branchAndOrg.branchName,
+        nodeName: nodeName,
+        label: branchAndOrg.branchName,
+        class: isProduction(branchAndOrg.branchName) ? "gitMain" : "gitMajor", 
+        level: branchAndOrg.level, 
+        instanceUrl: branchAndOrg.instanceUrl
+      };
     });
 
     // Create feature branches for branches that are not merge targets
@@ -123,13 +130,13 @@ export class BranchStrategyMermaidBuilder {
     this.gitLinks = sortArray(this.gitLinks, { by: ['level', 'source'], order: ['asc', 'asc'] });
   }
 
-  private addFeatureBranch(nameBase: string, level: number, branchAndOrg: any) {
-    this.featureBranchNb++;
-    const nameBase1 = nameBase + this.featureBranchNb;
-    const nodeName1 = nameBase + "Branch" + this.featureBranchNb;
-    this.gitBranches.push({ name: nameBase1, nodeName: nodeName1, label: nameBase1, class: "gitFeature", level: level, group: branchAndOrg.branchName });
-    this.gitLinks.push({ source: nodeName1, target: this.gitBranches.find((gitBranch) => gitBranch.name === branchAndOrg.branchName)?.nodeName || "ERROR", type: "gitMerge", label: "Merge" });
-  }
+  // private addFeatureBranch(nameBase: string, level: number, branchAndOrg: any) {
+  //   this.featureBranchNb++;
+  //   const nameBase1 = nameBase + this.featureBranchNb;
+  //   const nodeName1 = nameBase + "Branch" + this.featureBranchNb;
+  //   this.gitBranches.push({ name: nameBase1, nodeName: nodeName1, label: nameBase1, class: "gitFeature", level: level, group: branchAndOrg.branchName });
+  //   this.gitLinks.push({ source: nodeName1, target: this.gitBranches.find((gitBranch) => gitBranch.name === branchAndOrg.branchName)?.nodeName || "ERROR", type: "gitMerge", label: "Merge" });
+  // }
 
   private listSalesforceOrgsAndLinks(): any {
     for (const gitBranch of this.gitBranches) {
@@ -161,7 +168,8 @@ export class BranchStrategyMermaidBuilder {
             label: orgLabel,
             class: orgClass,
             level: branchAndOrg.level,
-            group: branchAndOrg.branchName // Keep group for dev orgs
+            group: branchAndOrg.branchName, // Keep group for dev orgs
+            instanceUrl: branchAndOrg.instanceUrl
         });
         this.deployLinks.push({ source: gitBranch.nodeName, target: nodeName, type: "sfDeploy", label: "Deploy to Org", level: branchAndOrg.level });
       } else {
@@ -199,7 +207,16 @@ export class BranchStrategyMermaidBuilder {
       this.mermaidLines.push(this.indent("subgraph SalesforceOrgs [Major Salesforce Orgs]", 1));
       this.mermaidLines.push(this.indent("direction TB", 2));
       for (const salesforceOrg of majorOrgs) {
-        this.mermaidLines.push(this.indent(`${salesforceOrg.nodeName}(["${salesforceOrg.label}"]):::${salesforceOrg.class}`, 2));
+        // Make node clickable if instanceUrl is present and not login.salesforce.com or test.salesforce.com
+        let nodeLine = `${salesforceOrg.nodeName}(["${salesforceOrg.label}"]):::${salesforceOrg.class}`;
+        if (
+          salesforceOrg.instanceUrl &&
+          !salesforceOrg.instanceUrl.includes("login.salesforce.com") &&
+          !salesforceOrg.instanceUrl.includes("test.salesforce.com")
+        ) {
+          nodeLine += `\nclick ${salesforceOrg.nodeName} "${salesforceOrg.instanceUrl}" _blank`;
+        }
+        this.mermaidLines.push(this.indent(nodeLine, 2));
       }
       this.mermaidLines.push(this.indent("end", 1));
       this.mermaidLines.push("");
