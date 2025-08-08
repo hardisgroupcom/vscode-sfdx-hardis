@@ -1,3 +1,4 @@
+
 import { LightningElement, api } from "lwc";
 
 export default class Pipeline extends LightningElement {
@@ -17,6 +18,18 @@ export default class Pipeline extends LightningElement {
     this.lastDiagram = "";
     setTimeout(() => this.renderMermaid(), 0);
     console.log("Pipeline data initialized:", this.pipelineData);
+  }
+
+  configureAuth() {
+    if (typeof window !== 'undefined' && window.sendMessageToVSCode) {
+      window.sendMessageToVSCode({
+        type: 'runCommand',
+        data: {
+          command: 'sf hardis:project:configure:auth'
+        }
+      });
+    }
+    console.log('Configure Auth button clicked');
   }
 
   handleToggleMajor(event) {

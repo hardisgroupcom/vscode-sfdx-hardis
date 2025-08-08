@@ -6,13 +6,16 @@
                     <lightning-input type="toggle" label="Show only major branches" checked={showOnlyMajor} onchange={handleToggleMajor}></lightning-input>
                 </div>
                 <div class="slds-col slds-no-flex">
+                    <lightning-button icon-name="utility:key" label="Add new Org" title="Configure Salesforce authentication for a new org in the Pipeline" onclick={configureAuth} class="slds-m-left_small"></lightning-button>
                     <lightning-button icon-name="utility:refresh" label="Refresh" title="Refresh pipeline data" onclick={refreshPipeline} class="slds-m-left_small"></lightning-button>
                 </div>
             </div>
             <template if:true={pipelineData}>
                 <div class="pipeline-container">
                     <div class="mermaid"></div>
-                    <pre class="mermaid-debug" style="color:#888;font-size:10px;max-height:100px;overflow:auto;"></pre>
+                    <template if:true={error}>
+                        <pre class="mermaid-debug" style="color:#888;font-size:10px;max-height:100px;overflow:auto;"></pre>
+                    </template>
                 </div>
             </template>
             <template if:false={pipelineData}>

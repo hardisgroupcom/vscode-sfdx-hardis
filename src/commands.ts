@@ -518,12 +518,17 @@ export class Commands {
         );
         panel.updateTitle("DevOps Pipeline");
 
-        // Register message handler for refreshpipeline
-        panel.onMessage(async (type, _data) => {
+        // Register message handler for refreshpipeline and runCommand
+        panel.onMessage(async (type, data) => {
           if (type === "refreshpipeline") {
             const provider = new PipelineDataProvider();
             const newData = await provider.getPipelineData();
             panel.sendInitializationData({ pipelineData: newData });
+          } else if (type === "runCommand" && data?.command) {
+            vscode.commands.executeCommand(
+              "vscode-sfdx-hardis.execute-command",
+              data.command
+            );
           }
         });
       }
