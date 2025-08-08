@@ -676,23 +676,38 @@ ${resultMessage}`;
             });
     }
 
+    get latestQuestionSectionId() {
+        // Find the section whose actionLog.id matches latestQuestionId and is a question
+        if (!this.latestQuestionId) return null;
+        const section = this.logSections.find(
+            s => s.isQuestion && s.actionLog && s.actionLog.id === this.latestQuestionId
+        );
+        return section ? section.id : null;
+    }
+
     get logSectionsForDisplay() {
-        return this.logSections.map(section => ({
-            ...section,
-            duration: this.calculateSectionDuration(section),
-            toggleIcon: section.isExpanded ? 'utility:chevronup' : 'utility:chevrondown',
-            sectionStatusIcon: section.isQuestion && !this.isWaitingForAnswer ? 
-                { iconName: 'utility:question', variant: 'warning' } :
-                section.hasError ? 
-                { iconName: 'utility:error', variant: 'error' } : 
-                section.isActive ? null : 
-                { iconName: 'utility:success', variant: 'success' }, // null for active = use spinner
-            sectionUseSpinner: section.isActive || (section.isQuestion && this.isWaitingForAnswer && this.isLatestQuestionSection(section)),
-            sectionStatusClass: section.hasError ? 'slds-text-color_error' : 
-                               section.isActive ? 'slds-text-color_weak' : 'slds-text-color_success',
-            hasLogs: section.logs && section.logs.length > 0,
-            showToggle: section.logs && section.logs.length > 0
-        }));
+        const latestQuestionSectionId = this.latestQuestionSectionId;
+        const shouldHideLatest = this.showEmbeddedPrompt;
+        return this.logSections.map(section => {
+            const isLatest = section.id === latestQuestionSectionId;
+            return {
+                ...section,
+                duration: this.calculateSectionDuration(section),
+                toggleIcon: section.isExpanded ? 'utility:chevronup' : 'utility:chevrondown',
+                sectionStatusIcon: section.isQuestion && !this.isWaitingForAnswer ? 
+                    { iconName: 'utility:question', variant: 'warning' } :
+                    section.hasError ? 
+                    { iconName: 'utility:error', variant: 'error' } : 
+                    section.isActive ? null : 
+                    { iconName: 'utility:success', variant: 'success' },
+                sectionUseSpinner: section.isActive || (section.isQuestion && this.isWaitingForAnswer && this.isLatestQuestionSection(section)),
+                sectionStatusClass: section.hasError ? 'slds-text-color_error' : 
+                                   section.isActive ? 'slds-text-color_weak' : 'slds-text-color_success',
+                hasLogs: section.logs && section.logs.length > 0,
+                showToggle: section.logs && section.logs.length > 0,
+                isLatestQuestionSectionToHide: shouldHideLatest && isLatest
+            };
+        });
     }
 
     calculateDuration(startTime, endTime) {

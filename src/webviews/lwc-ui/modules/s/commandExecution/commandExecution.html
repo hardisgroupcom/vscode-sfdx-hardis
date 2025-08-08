@@ -53,7 +53,8 @@
         <template if:true={logSectionsForDisplay.length}>
           <div class="log-sections">
             <template for:each={logSectionsForDisplay} for:item="section">
-                <div key={section.id} class="log-section slds-box slds-box_x-small slds-m-bottom_x-small">
+                <template if:false={section.isLatestQuestionSectionToHide}>
+                  <div key={section.id} class="log-section slds-box slds-box_x-small slds-m-bottom_x-small">
                   <!-- Section header (always expanded, no toggle) -->
                   <div class="section-header slds-p-around_x-small" data-section-id={section.id} onclick={handleToggleSection}>
                     <div class="slds-media slds-media_top">
@@ -180,8 +181,9 @@
                     </div>
                   </template>
                 </template>
-                </div>
-              </template>
+                  </div>
+                </template>
+            </template>
               <!-- Embedded PromptInput for in-panel prompts -->
               <template if:true={showEmbeddedPrompt}>
                 <s-prompt-input prompt-data={embeddedPromptData} onsubmit={handleEmbeddedPromptSubmit} onexit={handleEmbeddedPromptExit}></s-prompt-input>
