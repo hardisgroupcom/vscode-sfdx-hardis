@@ -230,69 +230,89 @@ export class LocalWebSocketServer {
     // Request user input
     else if (data.event === "prompts") {
       const prompt = data.prompts[0];
-      
       // If user input is set to LWC UI, use the LWC UI panel
       if (this.config.get("userInput") === "ui-lwc") {
         const panelManager = LwcPanelManager.getInstance(this.context);
-        const lwcId = "s-prompt-input";
-        
-        // Get or create the panel for prompt input
-        const panel = panelManager.getOrCreatePanel(lwcId, {prompt: prompt});
-        
-        // Track if a response has been sent to prevent duplicate responses
-        let responseSent = false;
-        
-        // Set up message handling for this specific prompt
-        const messageUnsubscribe = panel.onMessage((messageType: string, data: any) => {
-          if (messageType === "submit" && !responseSent) {
-            responseSent = true;
-            
-            // The data should contain the response object with the prompt name as key
-            this.sendResponse(ws, {
-              event: "promptsResponse",
-              promptsResponse: [data],
-            });
-            
-            // Check if there's an active command execution panel
-            const hasActiveCommandPanel = Object.values(this.clients).some(
-              (client: any) => client.panel && client.lwcId && client.lwcId.startsWith('s-command-execution-')
-            );
-            
-            if (hasActiveCommandPanel) {
-              // If there's an active command execution panel, close promptInput immediately
-              panelManager.disposePanel(lwcId);
-            } else {
-              // Otherwise, schedule panel disposal after a delay if no new prompts arrive
-              panelManager.scheduleDisposal(lwcId, 2000);
+        // Try to find an active command execution panel for this context
+        const commandLwcId = `s-command-execution-${data.context?.id || ''}`;
+        const commandPanel = panelManager.getPanel(commandLwcId);
+
+        // Factorized handler for prompt submit/cancel
+        const handlePromptPanelMessages = (panel: any, lwcId: any, prompt: any) => {
+          let responseSent = false;
+          const messageUnsubscribe = panel.onMessage((messageType: any, msgData: any) => {
+            // Accept both legacy and embedded promptInput message types
+            if ((messageType === "promptSubmit" || messageType === "submit") && !responseSent) {
+              responseSent = true;
+              this.sendResponse(ws, {
+                event: "promptsResponse",
+                promptsResponse: [msgData],
+              });
+              // If this is a standalone promptInput, check for command panel before disposal
+              if (lwcId === "s-prompt-input") {
+                const hasActiveCommandPanel = Object.values(this.clients).some(
+                  (client) => {
+                    const c = client as any;
+                    return c.panel && c.lwcId && c.lwcId.startsWith('s-command-execution-');
+                  }
+                );
+                if (hasActiveCommandPanel) {
+                  panelManager.disposePanel(lwcId);
+                } else {
+                  panelManager.scheduleDisposal(lwcId, 2000);
+                }
+              }
+              messageUnsubscribe();
             }
-            
-            // Unsubscribe from messages for this prompt
-            messageUnsubscribe();
-          }
-        });
-        
-        // Set up disposal callback to handle panel closure without submission
-        const onDisposalCallback = () => {
-          if (!responseSent) {
-            responseSent = true;
-            
-            // Send exitNow response like when escape key is pressed in quickpick
-            const exitResponse: any = {};
-            exitResponse[`${prompt.name}`] = "exitNow";
-            
-            this.sendResponse(ws, {
-              event: "promptsResponse",
-              promptsResponse: [exitResponse],
-            });
-            
-            // Unsubscribe from messages
-            messageUnsubscribe();
+            if ((messageType === "promptExit" || messageType === "cancel") && !responseSent) {
+              responseSent = true;
+              const exitResponse: Record<string, any> = {};
+              exitResponse[String(prompt.name)] = "exitNow";
+              this.sendResponse(ws, {
+                event: "promptsResponse",
+                promptsResponse: [exitResponse],
+              });
+              messageUnsubscribe();
+            }
+            // hide prompt in panel after submit or cancel message
+            if (["promptSubmit", "submit", "promptExit", "cancel"].includes(messageType)) {
+              panel.sendMessage({
+                type: "hidePrompt",
+                data: { promptName: prompt.name }
+              });
+            }
+          });
+          // Disposal callback for standalone promptInput
+          if (lwcId === "s-prompt-input") {
+            const onDisposalCallback = () => {
+              if (!responseSent) {
+                responseSent = true;
+                const exitResponse: Record<string, any> = {};
+                exitResponse[String(prompt.name)] = "exitNow";
+                this.sendResponse(ws, {
+                  event: "promptsResponse",
+                  promptsResponse: [exitResponse],
+                });
+                messageUnsubscribe();
+              }
+            };
+            panelManager.setDisposalCallback(lwcId, onDisposalCallback);
           }
         };
-        
-        // Register the disposal callback with the panel manager
-        panelManager.setDisposalCallback(lwcId, onDisposalCallback);
-        
+
+        if (commandPanel) {
+          // Send a message to the commandExecution LWC to show the prompt
+          commandPanel.sendMessage({
+            type: "showPrompt",
+            data: { prompt, context: data.context }
+          });
+          handlePromptPanelMessages(commandPanel, commandLwcId, prompt);
+          return;
+        }
+        // Fallback: no command panel, use standalone promptInput as before
+        const lwcId = "s-prompt-input";
+        const panel = panelManager.getOrCreatePanel(lwcId, { prompt });
+        handlePromptPanelMessages(panel, lwcId, prompt);
         return;
       }
 

@@ -1,6 +1,11 @@
 import { LightningElement, track, api } from 'lwc';
+import PromptInput from 's/promptInput';
 
 export default class CommandExecution extends LightningElement {
+    // For embedded prompt
+    @track showEmbeddedPrompt = false;
+    @track embeddedPromptData = null;
+    embeddedPromptListener = null;
     @track commandContext = null;
     @track commandDocUrl = null;
     @track reportFiles = []; // Track report files
@@ -63,9 +68,85 @@ export default class CommandExecution extends LightningElement {
             case 'reportFile':
                 this.addReportFile(data);
                 break;
+            case 'showPrompt':
+                this.showPromptInPanel(data);
+                break;
+            case 'hidePrompt':
+                this.hidePromptInPanel();
+                break;
             default:
                 console.log('Unknown message type:', messageType, data);
         }
+    }
+    showPromptInPanel(data) {
+        this.embeddedPromptData = { prompts: [data.prompt] };
+        this.showEmbeddedPrompt = true;
+        // Remove any previous listener
+        if (this.embeddedPromptListener) {
+            this.removeEventListener('promptsubmit', this.embeddedPromptListener);
+            this.removeEventListener('promptexit', this.embeddedPromptListener);
+        }
+        // Listen for submit/exit from embedded prompt
+        this.embeddedPromptListener = (event) => {
+            if (event.type === 'promptsubmit') {
+                this.showEmbeddedPrompt = false;
+                this.embeddedPromptData = null;
+                // Relay to VS Code
+                if (window && window.sendMessageToVSCode) {
+                    window.sendMessageToVSCode({ type: 'promptSubmit', data: event.detail });
+                }
+            } else if (event.type === 'promptexit') {
+                this.showEmbeddedPrompt = false;
+                this.embeddedPromptData = null;
+                if (window && window.sendMessageToVSCode) {
+                    window.sendMessageToVSCode({ type: 'promptExit', data: event.detail });
+                }
+            }
+        };
+        this.addEventListener('promptsubmit', this.embeddedPromptListener);
+        this.addEventListener('promptexit', this.embeddedPromptListener);
+
+        // Ensure the embedded promptInput is initialized after rendering
+        setTimeout(() => {
+            const promptInput = this.template.querySelector('s-prompt-input');
+            if (promptInput && typeof promptInput.initialize === 'function') {
+                promptInput.initialize(this.embeddedPromptData);
+            }
+            // Scroll the promptInput into view for better UX
+            if (promptInput && typeof promptInput.scrollIntoView === 'function') {
+                promptInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } else if (promptInput && promptInput instanceof HTMLElement) {
+                promptInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }, 0);
+    }
+
+    hidePromptInPanel() {
+        this.showEmbeddedPrompt = false;
+        this.embeddedPromptData = null;
+        // Remove any previous listener
+        if (this.embeddedPromptListener) {
+            this.removeEventListener('promptsubmit', this.embeddedPromptListener);
+            this.removeEventListener('promptexit', this.embeddedPromptListener);
+            this.embeddedPromptListener = null;
+        }
+    }
+
+    disconnectedCallback() {
+        // ...existing code...
+        // Remove embedded prompt listeners if any
+        if (this.embeddedPromptListener) {
+            this.removeEventListener('promptsubmit', this.embeddedPromptListener);
+            this.removeEventListener('promptexit', this.embeddedPromptListener);
+        }
+    }
+    // Handler for embedded prompt events (for template wiring)
+    handleEmbeddedPromptSubmit(event) {
+        // Dispatch as DOM event for showPromptInPanel to catch
+        this.dispatchEvent(new CustomEvent('promptsubmit', { detail: event.detail, bubbles: true, composed: true }));
+    }
+    handleEmbeddedPromptExit(event) {
+        this.dispatchEvent(new CustomEvent('promptexit', { detail: event.detail, bubbles: true, composed: true }));
     }
 
     @api

@@ -182,6 +182,10 @@
                 </template>
                 </div>
               </template>
+              <!-- Embedded PromptInput for in-panel prompts -->
+              <template if:true={showEmbeddedPrompt}>
+                <s-prompt-input prompt-data={embeddedPromptData} onsubmit={handleEmbeddedPromptSubmit} onexit={handleEmbeddedPromptExit}></s-prompt-input>
+              </template>
             </div>
           </template>
           
