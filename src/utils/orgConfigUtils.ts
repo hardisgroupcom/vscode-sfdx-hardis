@@ -11,6 +11,7 @@ export interface MajorOrg {
     alias?: string;
     mergeTargets: string[];
     level: number;
+    instanceUrl: string;
 }
 
 export async function listMajorOrgs(): Promise<MajorOrg[]> {
@@ -48,7 +49,8 @@ export async function listMajorOrgs(): Promise<MajorOrg[]> {
             orgType,
             alias: props.alias,
             mergeTargets,
-            level
+            level,
+            instanceUrl: props.instanceUrl,
         });
     }
 

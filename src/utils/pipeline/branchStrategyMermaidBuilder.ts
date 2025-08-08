@@ -136,12 +136,22 @@ export class BranchStrategyMermaidBuilder {
       const branchAndOrg = this.branchesAndOrgs.find((branchAndOrg) => branchAndOrg.branchName === gitBranch.name);
       if (branchAndOrg) {
         const nodeName = branchAndOrg.branchName + "Org";
-        const orgLabel = branchAndOrg.alias || (isProduction(branchAndOrg.branchName) ? "Production Org" : prettifyFieldName(branchAndOrg.branchName) + " Org");
+        let orgLabel = branchAndOrg.alias || (isProduction(branchAndOrg.branchName) ? "Production Org" : prettifyFieldName(branchAndOrg.branchName) + " Org");
+        if (branchAndOrg.instanceUrl && !branchAndOrg.instanceUrl.includes("login.salesforce.com") && !branchAndOrg.instanceUrl.includes("test.salesforce.com")) {
+          // Remove the http, sandbox and salesforce part from instance url
+          // ex: https://atlantem4--recetteatl.sandbox.my.salesforce.com becomes atlantem4--recetteatl
+          orgLabel = branchAndOrg.instanceUrl;
+          orgLabel = orgLabel.replace(/https?:\/\/|\.sandbox\.my\.salesforce\.com|\.my\.salesforce\.com/g, '').replace(/\/$/, ''); // Remove http(s) and trailing slash
+          orgLabel = orgLabel.replace(/\.sandbox$/, ''); // Remove .sandbox if present
+          orgLabel = orgLabel.replace(/\.my$/, ''); // Remove .my if present
+          orgLabel = orgLabel.replace(/\.salesforce$/, ''); // Remove .salesforce if present
+          orgLabel += " Org"; // Append Org to the label
+        }
         let orgClass = "salesforceDev"; // Default to dev
 
         if (branchAndOrg.orgType === "prod") {
             orgClass = "salesforceProd";
-        } else if (branchAndOrg.orgType === "preprod" || branchAndOrg.orgType === "integration") {
+        } else { // if (branchAndOrg.orgType === "preprod" || branchAndOrg.orgType === "integration") {
             orgClass = "salesforceMajor";
         }
 
@@ -185,7 +195,7 @@ export class BranchStrategyMermaidBuilder {
 
     // Salesforce orgs (only if there are any major orgs and not in onlyMajorBranches mode)
     const majorOrgs = this.salesforceOrgs.filter((salesforceOrg) => ["salesforceProd", "salesforceMajor"].includes(salesforceOrg.class));
-  if (majorOrgs.length > 0 && !(options && options.onlyMajorBranches)) {
+    if (majorOrgs.length > 0 && !(options && options.onlyMajorBranches)) {
       this.mermaidLines.push(this.indent("subgraph SalesforceOrgs [Major Salesforce Orgs]", 1));
       this.mermaidLines.push(this.indent("direction TB", 2));
       for (const salesforceOrg of majorOrgs) {
@@ -295,7 +305,7 @@ classDef gitMain fill:#0176D3,stroke:#032D60,stroke-width:3px,color:#fff,font-we
 classDef gitFeature fill:#fff,stroke:#E5E5E5,stroke-width:1.5px,color:#3E3E3C,font-weight:400,border-radius:14px;
 style GitBranches fill:#F0F6FB,color:#3E3E3C,stroke:#E5E5E5,stroke-width:1.5px;
 style SalesforceOrgs fill:#F0F6FB,color:#3E3E3C,stroke:#E5E5E5,stroke-width:1.5px;
-style SalesforceDevOrgs fill:#F4F6F9,color:#3E3E3C,stroke:#0176D3,stroke-width:1.5px;
+style SalesforceDevOrgs fill:#F0F6FB,color:#3E3E3C,stroke:#0176D3,stroke-width:1.5px;
 `
   return classesAndStyles.split("\n");
   }
