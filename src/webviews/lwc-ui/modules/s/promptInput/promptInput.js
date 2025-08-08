@@ -17,6 +17,15 @@ export default class PromptInput extends LightningElement {
     @track valueToIdentifier = {};
     _hasInitialFocus = false; // Track if initial focus has been set
 
+    // Dynamically set card classes based on embedded property
+    get cardClass() {
+        return this.embedded ? '' : 'slds-card slds-card_boundary';
+    }
+
+    get cardBodyClass() {
+        return this.embedded ? '' : 'slds-card__body slds-card__body_inner';
+    }
+
     connectedCallback() {
         // Listen for prompt events from parent
         this.addEventListener('promptrequest', this.handlePromptRequest.bind(this));

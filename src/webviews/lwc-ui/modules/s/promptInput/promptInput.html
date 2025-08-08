@@ -1,8 +1,8 @@
 <template>
     <template if:true={isVisible}>
         <div class="slds-p-around_medium" onkeydown={handleKeyDown}>
-            <div class="slds-card slds-card_boundary">
-                <div class="slds-card__body slds-card__body_inner">
+            <div class={cardClass}>
+                <div class={cardBodyClass}>
                     <!-- Prompt Message -->
                     <div class="slds-m-bottom_medium slds-p-bottom_small slds-border_bottom">
                         <div class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center">
