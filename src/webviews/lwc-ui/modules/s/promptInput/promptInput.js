@@ -46,10 +46,8 @@ export default class PromptInput extends LightningElement {
         // Only perform initial focus when the prompt first becomes visible
         if (this.isVisible && this.currentPrompt && !this._hasInitialFocus) {
             this._hasInitialFocus = true;
-            
             setTimeout(() => {
                 let firstInput;
-                
                 // For button select, focus the first button
                 if (this.isSelectWithButtons) {
                     firstInput = this.template.querySelector('.select-option-button');
@@ -57,9 +55,28 @@ export default class PromptInput extends LightningElement {
                     // For other inputs, focus the input/combobox but don't interfere with dropdown navigation
                     firstInput = this.template.querySelector('lightning-input, lightning-combobox');
                 }
-                
                 if (firstInput && typeof firstInput.focus === 'function') {
                     firstInput.focus();
+                }
+
+                // Scroll validate button into view if embedded and not multiselect and not select with buttons
+                if (
+                    this.embedded &&
+                    !this.isMultiselectInput &&
+                    !this.isSelectWithButtons
+                ) {
+                    // Find the validate button (brand variant)
+                    const validateBtn = this.template.querySelector('lightning-button[variant="brand"]');
+                    if (validateBtn && validateBtn.focus) {
+                        // LWC base components render a shadow button, so try to scroll the actual button
+                        // Try to find the native button inside
+                        const nativeBtn = validateBtn.shadowRoot && validateBtn.shadowRoot.querySelector('button');
+                        if (nativeBtn && nativeBtn.scrollIntoView) {
+                            nativeBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        } else if (validateBtn.scrollIntoView) {
+                            validateBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    }
                 }
             }, 150);
         }
