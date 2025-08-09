@@ -12,6 +12,7 @@
     "**/report/**",
     "**/*.svg",
     "**/*-provider.ts",
-    "**/eslint.config.js"
+    "**/eslint.config.js",
+    "**/webpack.config.js"
   ]
 }
