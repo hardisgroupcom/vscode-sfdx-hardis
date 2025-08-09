@@ -146,7 +146,6 @@ export class BranchStrategyMermaidBuilder {
         let orgLabel = branchAndOrg.alias || (isProduction(branchAndOrg.branchName) ? "Production Org" : prettifyFieldName(branchAndOrg.branchName));
         if (branchAndOrg.instanceUrl && !branchAndOrg.instanceUrl.includes("login.salesforce.com") && !branchAndOrg.instanceUrl.includes("test.salesforce.com")) {
           // Remove the http, sandbox and salesforce part from instance url
-          // ex: https://atlantem4--recetteatl.sandbox.my.salesforce.com becomes atlantem4--recetteatl
           orgLabel = branchAndOrg.instanceUrl;
           orgLabel = orgLabel.replace(/https?:\/\/|\.sandbox\.my\.salesforce\.com|\.my\.salesforce\.com/g, '').replace(/\/$/, ''); // Remove http(s) and trailing slash
           orgLabel = orgLabel.replace(/\.sandbox$/, ''); // Remove .sandbox if present
