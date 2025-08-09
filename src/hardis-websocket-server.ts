@@ -196,7 +196,7 @@ export class LocalWebSocketServer {
     else if (data.event === "refreshPlugins") {
       vscode.commands.executeCommand("vscode-sfdx-hardis.refreshPluginsView");
     }
-    // Request to refresh commands box
+    // Request to refresh pipeline box
     else if (data.event === "refreshPipeline") {
       const panelManager = LwcPanelManager.getInstance();
       const pipelinePanel = panelManager.getPanel("s-pipeline");
