@@ -97,6 +97,18 @@ export class LocalWebSocketServer {
       this.clients[data.context.id].panel = panel;
       this.clients[data.context.id].lwcId = lwcId;
 
+      const messageUnsubscribe = panel.onMessage((messageType: any, _msgData: any) => {
+        // Handle cancel command request from the panel
+        if (messageType === "panelDisposed") {
+          // Send cancel command event to the server
+          this.sendResponse(ws, {
+            event: "cancelCommand",
+            context: data.context,
+          });
+          messageUnsubscribe();
+        }
+      });
+
       // Set the panel title to include command info
       const commandName = data.context.command || "SFDX Hardis Command";
       panel.updateTitle(`${commandName} - Running`);

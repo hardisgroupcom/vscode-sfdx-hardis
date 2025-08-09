@@ -131,6 +131,12 @@ export class LwcUiPanel {
     }
 
     this._isDisposed = true;
+    this.notifyMessageListeners({
+      type: "panelDisposed",
+      data: {
+        lwcId: this.lwcId,
+      },
+    });
 
     // Clean up our resources
     this.panel.dispose();
