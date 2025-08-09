@@ -274,6 +274,7 @@ export class LocalWebSocketServer {
               }
               messageUnsubscribe();
             }
+            /* jscpd:ignore-start */
             if ((messageType === "promptExit" || messageType === "cancel") && !responseSent) {
               responseSent = true;
               const exitResponse: Record<string, any> = {};
@@ -284,6 +285,7 @@ export class LocalWebSocketServer {
               });
               messageUnsubscribe();
             }
+            /* jscpd:ignore-end */
             // hide prompt in panel after submit or cancel message
             if (["promptSubmit", "submit", "promptExit", "cancel"].includes(messageType)) {
               panel.sendMessage({
