@@ -224,23 +224,25 @@ export class LwcUiPanel {
    * @param filePath Path to the file to check
    * @param fileType Type of the file (csv or excel)
    */
+  private resolveWorkspacePath(filePath: string): string {
+    if (path.isAbsolute(filePath)) {
+      return filePath;
+    }
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (workspaceFolders && workspaceFolders.length > 0) {
+      const resolved = path.join(workspaceFolders[0].uri.fsPath, filePath);
+      console.log(`Resolved relative path: ${filePath} -> ${resolved}`);
+      return resolved;
+    }
+    return filePath;
+  }
+
   private async handleFileExistsCheck(filePath: string, fileType: string): Promise<void> {
     try {
-      let resolvedPath = filePath;
-      
-      // If it's a relative path, resolve it relative to the workspace
-      if (!path.isAbsolute(filePath)) {
-        const workspaceFolders = vscode.workspace.workspaceFolders;
-        if (workspaceFolders && workspaceFolders.length > 0) {
-          resolvedPath = path.join(workspaceFolders[0].uri.fsPath, filePath);
-          console.log(`Resolved relative path: ${filePath} -> ${resolvedPath}`);
-        }
-      }
-      
+      const resolvedPath = this.resolveWorkspacePath(filePath);
       // Check if file exists
       const fileUri = vscode.Uri.file(resolvedPath);
       await vscode.workspace.fs.stat(fileUri);
-      
       // File exists, send positive response with resolved path
       this.sendMessage({
         type: "fileExistsResponse",
@@ -271,21 +273,10 @@ export class LwcUiPanel {
    */
   private async handleFileDownload(filePath: string, fileName: string): Promise<void> {
     try {
-      let resolvedPath = filePath;
-      
-      // If it's a relative path, resolve it relative to the workspace
-      if (!path.isAbsolute(filePath)) {
-        const workspaceFolders = vscode.workspace.workspaceFolders;
-        if (workspaceFolders && workspaceFolders.length > 0) {
-          resolvedPath = path.join(workspaceFolders[0].uri.fsPath, filePath);
-          console.log(`Resolved relative path for download: ${filePath} -> ${resolvedPath}`);
-        }
-      }
-      
+      const resolvedPath = this.resolveWorkspacePath(filePath);
       // Check if file exists
       const fileUri = vscode.Uri.file(resolvedPath);
       await vscode.workspace.fs.stat(fileUri);
-      
       // Show save dialog
       const saveUri = await vscode.window.showSaveDialog({
         defaultUri: vscode.Uri.file(fileName),
@@ -295,7 +286,6 @@ export class LwcUiPanel {
           'All Files': ['*']
         }
       });
-      
       if (saveUri) {
         // Copy the file to the selected location
         await vscode.workspace.fs.copy(fileUri, saveUri, { overwrite: true });
@@ -313,25 +303,13 @@ export class LwcUiPanel {
    */
   private async handleFileOpen(filePath: string): Promise<void> {
     try {
-      let resolvedPath = filePath;
-      
-      // If it's a relative path, resolve it relative to the workspace
-      if (!path.isAbsolute(filePath)) {
-        const workspaceFolders = vscode.workspace.workspaceFolders;
-        if (workspaceFolders && workspaceFolders.length > 0) {
-          resolvedPath = path.join(workspaceFolders[0].uri.fsPath, filePath);
-          console.log(`Resolved relative path for open: ${filePath} -> ${resolvedPath}`);
-        }
-      }
-      
+      const resolvedPath = this.resolveWorkspacePath(filePath);
       // Check if file exists
       const fileUri = vscode.Uri.file(resolvedPath);
       await vscode.workspace.fs.stat(fileUri);
-      
       // Check if it's an Excel file (or other binary file) that should be opened externally
       const fileExtension = path.extname(resolvedPath).toLowerCase();
       const binaryExtensions = ['.xlsx', '.xls', '.xlsm', '.xlsb', '.pdf', '.doc', '.docx', '.ppt', '.pptx'];
-      
       if (binaryExtensions.includes(fileExtension)) {
         // Open with default Windows application
         await vscode.env.openExternal(fileUri);
