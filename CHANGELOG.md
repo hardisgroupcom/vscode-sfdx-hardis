@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [6.0.0] 2024-08-09
+
+- New UI with LWC
+  - Command execution
+  - DevOps Pipeline view and configuration
+
 ## [5.10.1] 2024-06-27
 
 - Add newest api version labels
