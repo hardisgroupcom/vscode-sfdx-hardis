@@ -1,3 +1,5 @@
+/* eslint-disable */
+// LWC: ignore parsing errors for import/export, handled by LWC compiler
 import "@lwc/synthetic-shadow";
 import { createElement } from "lwc";
 import PromptInput from "s/promptInput";

@@ -1,3 +1,5 @@
+/* eslint-disable */
+// LWC: ignore parsing errors for import/export, handled by LWC compiler
 // @ts-nocheck
 // eslint-env es6
 
