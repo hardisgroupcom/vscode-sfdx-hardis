@@ -1,0 +1,5 @@
+# Ignore LWC JS files that use ES module syntax and are handled by the LWC compiler
+src/webviews/lwc-ui/index.js
+src/webviews/lwc-ui/modules/s/commandExecution/commandExecution.js
+src/webviews/lwc-ui/modules/s/pipeline/pipeline.js
+src/webviews/lwc-ui/modules/s/promptInput/promptInput.js
