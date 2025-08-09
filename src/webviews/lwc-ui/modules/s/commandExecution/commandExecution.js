@@ -30,8 +30,23 @@ export default class CommandExecution extends LightningElement {
     if (typeof window !== "undefined") {
       window.commandExecutionComponent = this;
     }
-    // Auto-scroll to bottom when component is first connected
-    setTimeout(() => this.scrollToBottom(), 100);
+    this.userScrolledUp = false;
+    setTimeout(() => {
+      const rootContainer = this.template.querySelector(".command-execution");
+      if (rootContainer) {
+        rootContainer.addEventListener("scroll", () => {
+          // If user is not at the bottom, set flag
+          const threshold = 10; // px
+          const atBottom = rootContainer.scrollTop + rootContainer.clientHeight >= rootContainer.scrollHeight - threshold;
+          if (atBottom) {
+            this.userScrolledUp = false;
+          } else {
+            this.userScrolledUp = true;
+          }
+        });
+      }
+      this.scrollToBottom();
+    }, 100);
   }
 
   disconnectedCallback() {
@@ -1123,6 +1138,8 @@ ${resultMessage}`;
   }
 
   scrollToBottom() {
+    // Only scroll if user has not scrolled up
+    if (this.userScrolledUp) return;
     requestAnimationFrame(() => {
       const rootContainer = this.template.querySelector(".command-execution");
       if (rootContainer) {
