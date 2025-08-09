@@ -56,9 +56,15 @@ export default class Pipeline extends LightningElement {
   renderMermaid() {
     const mermaidDiv = this.template.querySelector(".mermaid");
     const debugDiv = this.template.querySelector(".mermaid-debug");
+    // Only set error if pipelineData.orgs exists and has length
     if (!mermaidDiv) {
-      this.error = "Mermaid container not found in template.";
-      if (debugDiv) debugDiv.textContent = this.error;
+      if (this.pipelineData && this.pipelineData.orgs && this.pipelineData.orgs.length) {
+        this.error = "Mermaid container not found in template.";
+        if (debugDiv) debugDiv.textContent = this.error;
+      } else {
+        this.error = undefined;
+        if (debugDiv) debugDiv.textContent = "";
+      }
       return;
     }
     if (!window.mermaid) {
