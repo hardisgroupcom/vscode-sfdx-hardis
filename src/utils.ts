@@ -3,7 +3,7 @@ import c from "chalk";
 import * as childProcess from "child_process";
 import * as fs from "fs-extra";
 import * as path from "path";
-import simpleGit, { SimpleGit } from "simple-git";
+import simpleGit from "simple-git";
 
 import { Worker } from "worker_threads";
 import * as vscode from "vscode";
@@ -454,7 +454,7 @@ export async function loadFromLocalConfigFile(file: string): Promise<any> {
   try {
     const localConfig = yaml.load(fs.readFileSync(file).toString());
     return localConfig;
-  } catch (e) {
+  } catch {
     return {};
   }
 }
@@ -480,7 +480,7 @@ export async function getGitParentBranch() {
       );
       return parentBranch;
     }
-  } catch (e) {
+  } catch {
     return null;
   }
   return null;

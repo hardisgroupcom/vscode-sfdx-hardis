@@ -1,3 +1,5 @@
+// @ts-nocheck
+// eslint-env es6
 import { LightningElement, track, api } from 'lwc';
 import PromptInput from 's/promptInput';
 

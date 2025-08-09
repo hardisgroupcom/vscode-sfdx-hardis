@@ -1,3 +1,5 @@
+// @ts-nocheck
+// eslint-env es6
 import { LightningElement, api, track } from 'lwc';
 
 export default class PromptInput extends LightningElement {
