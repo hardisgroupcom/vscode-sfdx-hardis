@@ -37,7 +37,9 @@ export default class CommandExecution extends LightningElement {
         rootContainer.addEventListener("scroll", () => {
           // If user is not at the bottom, set flag
           const threshold = 10; // px
-          const atBottom = rootContainer.scrollTop + rootContainer.clientHeight >= rootContainer.scrollHeight - threshold;
+          const atBottom =
+            rootContainer.scrollTop + rootContainer.clientHeight >=
+            rootContainer.scrollHeight - threshold;
           if (atBottom) {
             this.userScrolledUp = false;
           } else {
