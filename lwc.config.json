@@ -1,0 +1,10 @@
+{
+  "modules": [
+    {
+      "dir": "src/webviews/lwc-ui/modules"
+    },
+    {
+      "dir": "node_modules/lightning-base-components/src"
+    }
+  ]
+}

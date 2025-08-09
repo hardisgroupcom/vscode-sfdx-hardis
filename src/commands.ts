@@ -9,8 +9,11 @@ import { getWorkspaceRoot } from "./utils";
 import TelemetryReporter from "@vscode/extension-telemetry";
 import { ThemeUtils } from "./themeUtils";
 import { exec } from "child_process";
+import { LwcPanelManager } from "./lwc-panel-manager";
+import { PipelineDataProvider } from "./pipeline-data-provider";
 
 export class Commands {
+  private readonly extensionUri: vscode.Uri;
   hardisCommandsProvider: HardisCommandsProvider | null = null;
   hardisStatusProvider: HardisStatusProvider | null = null;
   hardisPluginsProvider: HardisPluginsProvider | null = null;
@@ -21,11 +24,13 @@ export class Commands {
   disposableWebSocketServer: LocalWebSocketServer | null = null;
 
   constructor(
+    extensionUri: vscode.Uri,
     hardisCommandsProvider: HardisCommandsProvider,
     hardisStatusProvider: HardisStatusProvider,
     hardisPluginsProvider: HardisPluginsProvider,
     reporter: TelemetryReporter,
   ) {
+    this.extensionUri = extensionUri;
     this.hardisCommandsProvider = hardisCommandsProvider;
     this.hardisStatusProvider = hardisStatusProvider;
     this.hardisPluginsProvider = hardisPluginsProvider;
@@ -53,6 +58,7 @@ export class Commands {
     this.registerGeneratePackageXmlDoc();
     this.registerGenerateFlowDocumentation();
     this.registerGenerateFlowVisualGitDiff();
+    this.registerShowPipeline();
   }
 
   getLatestTerminal() {
@@ -498,6 +504,37 @@ export class Commands {
     this.disposables.push(disposable);
   }
   /* jscpd:ignore-end */
+
+  registerShowPipeline() {
+    const disposable = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.showPipeline",
+      async () => {
+        const pipelineDataProvider = new PipelineDataProvider();
+        const pipelineData = await pipelineDataProvider.getPipelineData();
+
+        const panel = LwcPanelManager.getInstance().getOrCreatePanel(
+          "s-pipeline",
+          { pipelineData: pipelineData }, // Pass pipelineData to the LWC
+        );
+        panel.updateTitle("DevOps Pipeline");
+
+        // Register message handler for refreshpipeline and runCommand
+        panel.onMessage(async (type, data) => {
+          if (type === "refreshpipeline") {
+            const provider = new PipelineDataProvider();
+            const newData = await provider.getPipelineData();
+            panel.sendInitializationData({ pipelineData: newData });
+          } else if (type === "runCommand" && data?.command) {
+            vscode.commands.executeCommand(
+              "vscode-sfdx-hardis.execute-command",
+              data.command,
+            );
+          }
+        });
+      },
+    );
+    this.disposables.push(disposable);
+  }
 
   registerOpenKeyFile() {
     // Open key file command

@@ -9,9 +9,9 @@ import { HardisDebugger } from "./hardis-debugger";
 import { HardisPluginsProvider } from "./hardis-plugins-provider";
 import { HardisStatusProvider } from "./hardis-status-provider";
 import { LocalWebSocketServer } from "./hardis-websocket-server";
+import { LwcPanelManager } from "./lwc-panel-manager";
 import { Logger } from "./logger";
 import { getWorkspaceRoot, preLoadCache } from "./utils";
-import { WelcomePanel } from "./webviews/welcome";
 import { HardisColors } from "./hardis-colors";
 
 let refreshInterval: any = null;
@@ -36,10 +36,6 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Call cli commands before their result is used, to improve startup performances
   preLoadCache();
-
-  // Initialize Welcome Webview
-  const welcomeWebview = new WelcomePanel();
-  context.subscriptions.push(...welcomeWebview.disposables);
 
   // Register Commands tree data provider
   const hardisCommandsProvider = new HardisCommandsProvider(
@@ -73,12 +69,16 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Register common commands
   const commands = new Commands(
+    context.extensionUri,
     hardisCommandsProvider,
     hardisStatusProvider,
     hardisPluginsProvider,
     reporter,
   );
   context.subscriptions.push(...commands.disposables);
+
+  // Initialize LWC Panel Manager
+  LwcPanelManager.getInstance(context);
 
   // Initialize colors
   const hardisColors = new HardisColors();
@@ -99,7 +99,9 @@ export function activate(context: vscode.ExtensionContext) {
         }
         // Wait a while to run WebSocket server, as it can be time consuming
         try {
-          commands.disposableWebSocketServer = new LocalWebSocketServer();
+          commands.disposableWebSocketServer = new LocalWebSocketServer(
+            context,
+          );
           commands.disposableWebSocketServer.start();
           context.subscriptions.push(commands.disposableWebSocketServer);
           resolve(commands.disposableWebSocketServer);
@@ -115,7 +117,8 @@ export function activate(context: vscode.ExtensionContext) {
 
   async function manageWebSocketServer() {
     const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
-    if (config.get("userInput") === "ui") {
+    const userInput = config.get("userInput");
+    if (userInput === "ui-lwc" || userInput === "ui") {
       if (
         commands.disposableWebSocketServer === null ||
         commands.disposableWebSocketServer === undefined
