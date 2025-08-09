@@ -131,14 +131,26 @@ export class LocalWebSocketServer {
       const clientData = this.clients[data.context?.id];
       if (clientData?.panel) {
         // Mark command as completed in the panel
-        clientData.panel.sendMessage({
+        const success = data?.status !== "aborted" && data?.status !== "error";
+        const message: any = {
           type: "completeCommand",
-          data: { success: data?.status !== "aborted", status: data?.status },
-        });
+          data: { success: success, status: data?.status },
+        }
+        if (data?.error) {
+          message.data.error = data.error;
+        }
+        clientData.panel.sendMessage(message);
+
+        const titleLabel = data?.status === "aborted"
+          ? "Aborted":
+          data?.status === "error"
+            ? "Error"
+            : "Completed";
 
         // Update panel title to show completion
         const commandName = clientData.context.command || "SFDX Hardis Command";
-        clientData.panel.updateTitle(`${commandName} - Completed`);
+
+        clientData.panel.updateTitle(`${commandName} - ${titleLabel}`);
 
         // Schedule panel disposal after a delay to allow user to review logs
         // const panelManager = LwcPanelManager.getInstance(this.context);

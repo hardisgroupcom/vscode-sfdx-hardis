@@ -680,6 +680,22 @@ ${resultMessage}`;
       }
     }
 
+    if (this.currentSubCommands.length > 0) {
+      // Mark all sub-commands as completed
+      this.currentSubCommands.forEach((subCommand) => {
+        subCommand.endTime = this.endTime;
+        subCommand.success = success;
+      });
+    }
+
+    if (this.isWaitingForAnswer) {
+      // If we were waiting for an answer, mark it as completed
+      this.isWaitingForAnswer = false;
+      this.latestQuestionId = null;
+      this.showEmbeddedPrompt = false;
+      this.embeddedPromptData = null;
+    }
+
     const duration = this.calculateDuration(this.startTime, this.endTime);
     const logType = success ? "success" : "error";
 
@@ -689,6 +705,9 @@ ${resultMessage}`;
       completionMessage = `Command ${status}`;
     }
     completionMessage += ` (${duration})`;
+    if (data.error) {
+      completionMessage += `\n${data.error.message || JSON.stringify(data.error, null, 2)}`;
+    }
 
     this.addLogLine({
       logType: logType,
