@@ -39,41 +39,41 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Register Commands tree data provider
   const hardisCommandsProvider = new HardisCommandsProvider(
-    currentWorkspaceFolderUri
+    currentWorkspaceFolderUri,
   );
   const disposableTreeCommands = vscode.window.registerTreeDataProvider(
     "sfdx-hardis-commands",
-    hardisCommandsProvider
+    hardisCommandsProvider,
   );
   context.subscriptions.push(disposableTreeCommands);
 
   // Register Status TreeView
   const hardisStatusProvider = new HardisStatusProvider(
-    currentWorkspaceFolderUri
+    currentWorkspaceFolderUri,
   );
   const disposableTreeInfo = vscode.window.registerTreeDataProvider(
     "sfdx-hardis-status",
-    hardisStatusProvider
+    hardisStatusProvider,
   );
   context.subscriptions.push(disposableTreeInfo);
 
   // Register Status TreeView
   const hardisPluginsProvider = new HardisPluginsProvider(
-    currentWorkspaceFolderUri
+    currentWorkspaceFolderUri,
   );
   const disposableTreePlugins = vscode.window.registerTreeDataProvider(
     "sfdx-hardis-plugins",
-    hardisPluginsProvider
+    hardisPluginsProvider,
   );
   context.subscriptions.push(disposableTreePlugins);
 
   // Register common commands
-    const commands = new Commands(
+  const commands = new Commands(
     context.extensionUri,
     hardisCommandsProvider,
     hardisStatusProvider,
     hardisPluginsProvider,
-    reporter
+    reporter,
   );
   context.subscriptions.push(...commands.disposables);
 
@@ -99,14 +99,16 @@ export function activate(context: vscode.ExtensionContext) {
         }
         // Wait a while to run WebSocket server, as it can be time consuming
         try {
-          commands.disposableWebSocketServer = new LocalWebSocketServer(context);
+          commands.disposableWebSocketServer = new LocalWebSocketServer(
+            context,
+          );
           commands.disposableWebSocketServer.start();
           context.subscriptions.push(commands.disposableWebSocketServer);
           resolve(commands.disposableWebSocketServer);
         } catch (e: any) {
           Logger.log("Error while launching WebSocket Server: " + e.message);
           vscode.window.showWarningMessage(
-            "Local WebSocket Server was unable to start.\nUser prompts will be in the terminal."
+            "Local WebSocket Server was unable to start.\nUser prompts will be in the terminal.",
           );
         }
       }, 5000);
@@ -156,15 +158,15 @@ export function activate(context: vscode.ExtensionContext) {
     ) {
       vscode.commands.executeCommand(
         "vscode-sfdx-hardis.refreshCommandsView",
-        true
+        true,
       );
       vscode.commands.executeCommand(
         "vscode-sfdx-hardis.refreshStatusView",
-        true
+        true,
       );
       vscode.commands.executeCommand(
         "vscode-sfdx-hardis.refreshPluginsView",
-        true
+        true,
       );
     }
   });
@@ -180,7 +182,7 @@ export function activate(context: vscode.ExtensionContext) {
   vscode.workspace.onDidRenameFiles((event) => {
     if (
       event.files.filter((rename) =>
-        rename.newUri.fsPath.includes("sfdx-project.json")
+        rename.newUri.fsPath.includes("sfdx-project.json"),
       )
     ) {
       vscode.commands.executeCommand("vscode-sfdx-hardis.refreshCommandsView");

@@ -8,7 +8,8 @@ import { LwcUiPanel } from "./webviews/lwc-ui-panel";
 export class LwcPanelManager {
   private static instance: LwcPanelManager | null = null;
   private activePanels: Map<string, LwcUiPanel> = new Map();
-  private panelDisposeTimers: Map<string, ReturnType<typeof setTimeout>> = new Map();
+  private panelDisposeTimers: Map<string, ReturnType<typeof setTimeout>> =
+    new Map();
   private disposalCallbacks: Map<string, () => void> = new Map();
   private context: vscode.ExtensionContext;
 
@@ -19,10 +20,14 @@ export class LwcPanelManager {
   /**
    * Get or create the singleton instance of LwcPanelManager
    */
-  public static getInstance(context?: vscode.ExtensionContext): LwcPanelManager {
+  public static getInstance(
+    context?: vscode.ExtensionContext,
+  ): LwcPanelManager {
     if (!LwcPanelManager.instance) {
       if (!context) {
-        throw new Error("Context required for first initialization of LwcPanelManager");
+        throw new Error(
+          "Context required for first initialization of LwcPanelManager",
+        );
       }
       LwcPanelManager.instance = new LwcPanelManager(context);
     }
@@ -47,7 +52,7 @@ export class LwcPanelManager {
         ? vscode.window.activeTextEditor.viewColumn
         : undefined;
       existingPanel.reveal(column);
-      
+
       if (initData) {
         existingPanel.sendInitializationData(initData);
       }
@@ -55,8 +60,12 @@ export class LwcPanelManager {
     }
 
     // Create new panel
-    const panel = LwcUiPanel.display(this.context.extensionUri, lwcId, initData);
-    
+    const panel = LwcUiPanel.display(
+      this.context.extensionUri,
+      lwcId,
+      initData,
+    );
+
     // Store reference to the panel
     this.activePanels.set(lwcId, panel);
 
@@ -73,7 +82,7 @@ export class LwcPanelManager {
         }
         this.disposalCallbacks.delete(lwcId);
       }
-      
+
       // Clean up our references when panel is disposed
       this.activePanels.delete(lwcId);
       this.clearDisposeTimer(lwcId);

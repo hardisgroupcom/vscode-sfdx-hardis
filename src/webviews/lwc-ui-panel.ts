@@ -16,7 +16,7 @@ export class LwcUiPanel {
     panel: vscode.WebviewPanel,
     extensionUri: vscode.Uri,
     lwcId: string,
-    initData?: any
+    initData?: any,
   ) {
     this.panel = panel;
     this.extensionUri = extensionUri;
@@ -35,12 +35,12 @@ export class LwcUiPanel {
       (message) => {
         // Handle built-in file operations first
         this.handleBuiltInMessages(message);
-        
+
         // Then notify external listeners
         this.notifyMessageListeners(message);
       },
       null,
-      this.disposables
+      this.disposables,
     );
 
     // Send initialization data to the webview after a short delay to ensure it's ready
@@ -54,7 +54,7 @@ export class LwcUiPanel {
   public static display(
     extensionUri: vscode.Uri,
     lwcId: string,
-    initData?: any
+    initData?: any,
   ): LwcUiPanel {
     const column = vscode.window.activeTextEditor
       ? vscode.window.activeTextEditor.viewColumn
@@ -80,14 +80,18 @@ export class LwcUiPanel {
             extensionUri,
             "node_modules",
             "@salesforce-ux",
-            "design-system"
+            "design-system",
           ),
         ],
-      }
+      },
     );
 
     // Set custom icon for the panel tab
-    panel.iconPath = vscode.Uri.joinPath(extensionUri, "resources", "cloudity-logo.svg");
+    panel.iconPath = vscode.Uri.joinPath(
+      extensionUri,
+      "resources",
+      "cloudity-logo.svg",
+    );
 
     const lwcUiPanel = new LwcUiPanel(panel, extensionUri, lwcId, initData);
     lwcUiPanel.setPanelTitleFromLwcId();
@@ -201,16 +205,16 @@ export class LwcUiPanel {
 
     try {
       switch (messageType) {
-        case 'checkFileExists':
+        case "checkFileExists":
           await this.handleFileExistsCheck(data.filePath, data.fileType);
           break;
-        case 'downloadFile':
+        case "downloadFile":
           await this.handleFileDownload(data.filePath, data.fileName);
           break;
-        case 'openFile':
+        case "openFile":
           await this.handleFileOpen(data.filePath);
           break;
-        case 'openExternal':
+        case "openExternal":
           await this.handleOpenExternal(data.url || data);
           break;
       }
@@ -237,7 +241,10 @@ export class LwcUiPanel {
     return filePath;
   }
 
-  private async handleFileExistsCheck(filePath: string, fileType: string): Promise<void> {
+  private async handleFileExistsCheck(
+    filePath: string,
+    fileType: string,
+  ): Promise<void> {
     try {
       const resolvedPath = this.resolveWorkspacePath(filePath);
       // Check if file exists
@@ -249,8 +256,8 @@ export class LwcUiPanel {
         data: {
           filePath: resolvedPath, // Send back the resolved path
           fileType: fileType,
-          exists: true
-        }
+          exists: true,
+        },
       });
     } catch {
       // File doesn't exist or other error, send negative response
@@ -260,8 +267,8 @@ export class LwcUiPanel {
         data: {
           filePath: filePath,
           fileType: fileType,
-          exists: false
-        }
+          exists: false,
+        },
       });
     }
   }
@@ -271,7 +278,10 @@ export class LwcUiPanel {
    * @param filePath Path to the file to download
    * @param fileName Suggested filename for download
    */
-  private async handleFileDownload(filePath: string, fileName: string): Promise<void> {
+  private async handleFileDownload(
+    filePath: string,
+    fileName: string,
+  ): Promise<void> {
     try {
       const resolvedPath = this.resolveWorkspacePath(filePath);
       // Check if file exists
@@ -281,18 +291,20 @@ export class LwcUiPanel {
       const saveUri = await vscode.window.showSaveDialog({
         defaultUri: vscode.Uri.file(fileName),
         filters: {
-          'Excel Files': ['xlsx', 'xls'],
-          'CSV Files': ['csv'],
-          'All Files': ['*']
-        }
+          "Excel Files": ["xlsx", "xls"],
+          "CSV Files": ["csv"],
+          "All Files": ["*"],
+        },
       });
       if (saveUri) {
         // Copy the file to the selected location
         await vscode.workspace.fs.copy(fileUri, saveUri, { overwrite: true });
-        vscode.window.showInformationMessage(`File downloaded successfully to ${saveUri.fsPath}`);
+        vscode.window.showInformationMessage(
+          `File downloaded successfully to ${saveUri.fsPath}`,
+        );
       }
     } catch (error) {
-      console.error('Error downloading file:', error);
+      console.error("Error downloading file:", error);
       vscode.window.showErrorMessage(`Failed to download file: ${error}`);
     }
   }
@@ -309,7 +321,17 @@ export class LwcUiPanel {
       await vscode.workspace.fs.stat(fileUri);
       // Check if it's an Excel file (or other binary file) that should be opened externally
       const fileExtension = path.extname(resolvedPath).toLowerCase();
-      const binaryExtensions = ['.xlsx', '.xls', '.xlsm', '.xlsb', '.pdf', '.doc', '.docx', '.ppt', '.pptx'];
+      const binaryExtensions = [
+        ".xlsx",
+        ".xls",
+        ".xlsm",
+        ".xlsb",
+        ".pdf",
+        ".doc",
+        ".docx",
+        ".ppt",
+        ".pptx",
+      ];
       if (binaryExtensions.includes(fileExtension)) {
         // Open with default Windows application
         await vscode.env.openExternal(fileUri);
@@ -321,7 +343,7 @@ export class LwcUiPanel {
         console.log(`Opened file in VS Code: ${resolvedPath}`);
       }
     } catch (error) {
-      console.error('Error opening file:', error);
+      console.error("Error opening file:", error);
       vscode.window.showErrorMessage(`Failed to open file: ${error}`);
     }
   }
@@ -335,7 +357,7 @@ export class LwcUiPanel {
       const uri = vscode.Uri.parse(url);
       await vscode.env.openExternal(uri);
     } catch (error) {
-      console.error('Error opening external URL:', error);
+      console.error("Error opening external URL:", error);
       vscode.window.showErrorMessage(`Failed to open URL: ${url}`);
     }
   }
@@ -367,7 +389,7 @@ export class LwcUiPanel {
   private getHtmlForWebview(webview: vscode.Webview) {
     // Get the local path to main script run in the webview, then convert it to a uri we can use in the webview.
     const scriptUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this.extensionUri, "out", "webviews", "lwc-ui.js")
+      vscode.Uri.joinPath(this.extensionUri, "out", "webviews", "lwc-ui.js"),
     );
 
     // Get path to SLDS CSS (copied by webpack)
@@ -377,13 +399,13 @@ export class LwcUiPanel {
         "out",
         "assets",
         "styles",
-        "salesforce-lightning-design-system.min.css"
-      )
+        "salesforce-lightning-design-system.min.css",
+      ),
     );
 
     // Get path to SLDS icons directory (copied by webpack)
     const sldsIconsUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this.extensionUri, "out", "assets", "icons")
+      vscode.Uri.joinPath(this.extensionUri, "out", "assets", "icons"),
     );
 
     // Safely serialize initialization data
@@ -415,7 +437,7 @@ export class LwcUiPanel {
           // Set SLDS icons path for LWC components
           window.SLDS_ICONS_PATH = "${sldsIconsUri}";
         </script>
-        <script src="${webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, 'out', 'webviews', 'mermaid.min.js'))}"></script>
+        <script src="${webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, "out", "webviews", "mermaid.min.js"))}"></script>
         <script>
             mermaid.initialize({ startOnLoad: false });
         </script>

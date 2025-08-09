@@ -514,7 +514,7 @@ export class Commands {
 
         const panel = LwcPanelManager.getInstance().getOrCreatePanel(
           "s-pipeline",
-          { pipelineData: pipelineData } // Pass pipelineData to the LWC
+          { pipelineData: pipelineData }, // Pass pipelineData to the LWC
         );
         panel.updateTitle("DevOps Pipeline");
 
@@ -527,11 +527,11 @@ export class Commands {
           } else if (type === "runCommand" && data?.command) {
             vscode.commands.executeCommand(
               "vscode-sfdx-hardis.execute-command",
-              data.command
+              data.command,
             );
           }
         });
-      }
+      },
     );
     this.disposables.push(disposable);
   }

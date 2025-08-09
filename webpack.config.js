@@ -1,26 +1,26 @@
-const path = require('path');
-const webpack = require('webpack');
-const LwcWebpackPlugin = require('lwc-webpack-plugin');
-const CopyWebpackPlugin = require('copy-webpack-plugin');
+const path = require("path");
+const webpack = require("webpack");
+const LwcWebpackPlugin = require("lwc-webpack-plugin");
+const CopyWebpackPlugin = require("copy-webpack-plugin");
 
 /** @type {import('webpack').Configuration} */
 const extensionConfig = {
-  target: 'node', // vscode extensions run in Node.js context
-  mode: 'none', // this leaves the source code as close as possible to the original (when packaging we set this to 'production')
+  target: "node", // vscode extensions run in Node.js context
+  mode: "none", // this leaves the source code as close as possible to the original (when packaging we set this to 'production')
 
-  entry: './src/extension.ts', // the entry point of this extension, 📖 -> https://webpack.js.org/configuration/entry-context/
+  entry: "./src/extension.ts", // the entry point of this extension, 📖 -> https://webpack.js.org/configuration/entry-context/
   output: {
     // the bundle is stored in the 'out' folder (check package.json), 📖 -> https://webpack.js.org/configuration/output/
-    path: path.resolve(__dirname, 'out'),
-    filename: 'extension.js',
-    libraryTarget: 'commonjs2'
+    path: path.resolve(__dirname, "out"),
+    filename: "extension.js",
+    libraryTarget: "commonjs2",
   },
   externals: {
-    vscode: 'commonjs vscode' // the vscode-module is created on-the-fly and must be excluded. Add other modules that cannot be webpack'ed, 📖 -> https://webpack.js.org/configuration/externals/
+    vscode: "commonjs vscode", // the vscode-module is created on-the-fly and must be excluded. Add other modules that cannot be webpack'ed, 📖 -> https://webpack.js.org/configuration/externals/
   },
   resolve: {
     // support reading TypeScript and JavaScript files, 📖 -> https://github.com/TypeStrong/ts-loader
-    extensions: ['.ts', '.js']
+    extensions: [".ts", ".js"],
   },
   module: {
     rules: [
@@ -29,13 +29,13 @@ const extensionConfig = {
         exclude: /node_modules/,
         use: [
           {
-            loader: 'ts-loader'
-          }
-        ]
-      }
-    ]
+            loader: "ts-loader",
+          },
+        ],
+      },
+    ],
   },
-  devtool: 'nosources-source-map',
+  devtool: "nosources-source-map",
   infrastructureLogging: {
     level: "log", // enables logging required for problem matchers
   },
@@ -43,20 +43,20 @@ const extensionConfig = {
 
 /** @type {import('webpack').Configuration} */
 const workerConfig = {
-  target: 'node',
-  mode: 'none',
-  
-  entry: './src/worker.ts',
+  target: "node",
+  mode: "none",
+
+  entry: "./src/worker.ts",
   output: {
-    path: path.resolve(__dirname, 'out'),
-    filename: 'worker.js',
-    libraryTarget: 'commonjs2'
+    path: path.resolve(__dirname, "out"),
+    filename: "worker.js",
+    libraryTarget: "commonjs2",
   },
   externals: {
-    vscode: 'commonjs vscode'
+    vscode: "commonjs vscode",
   },
   resolve: {
-    extensions: ['.ts', '.js']
+    extensions: [".ts", ".js"],
   },
   module: {
     rules: [
@@ -65,13 +65,13 @@ const workerConfig = {
         exclude: /node_modules/,
         use: [
           {
-            loader: 'ts-loader'
-          }
-        ]
-      }
-    ]
+            loader: "ts-loader",
+          },
+        ],
+      },
+    ],
   },
-  devtool: 'nosources-source-map',
+  devtool: "nosources-source-map",
   infrastructureLogging: {
     level: "log",
   },
@@ -79,78 +79,87 @@ const workerConfig = {
 
 /** @type {import('webpack').Configuration} */
 const lwcWebviewConfig = {
-  target: 'web',
-  mode: 'none',
-  
-  entry: './src/webviews/lwc-ui/index.js',
+  target: "web",
+  mode: "none",
+
+  entry: "./src/webviews/lwc-ui/index.js",
   output: {
-    path: path.resolve(__dirname, 'out', 'webviews'),
-    filename: 'lwc-ui.js',
+    path: path.resolve(__dirname, "out", "webviews"),
+    filename: "lwc-ui.js",
   },
-    resolve: {
-    extensions: ['.js', '.ts'],
-    modules: ['node_modules'], // Add node_modules to resolution paths
+  resolve: {
+    extensions: [".js", ".ts"],
+    modules: ["node_modules"], // Add node_modules to resolution paths
     fallback: {
-      "process": require.resolve("process/browser"),
-    }
+      process: require.resolve("process/browser"),
+    },
   },
   module: {
     rules: [
       {
         test: /\.js$/,
         include: [
-          path.resolve(__dirname, 'src/webviews/lwc-ui'),
-          path.resolve(__dirname, 'src/webviews'),
+          path.resolve(__dirname, "src/webviews/lwc-ui"),
+          path.resolve(__dirname, "src/webviews"),
         ],
         use: [
           {
-            loader: 'babel-loader',
+            loader: "babel-loader",
             options: {
-              presets: ['@babel/preset-env'],
+              presets: ["@babel/preset-env"],
               plugins: [
-                ['@lwc/babel-plugin-component', {
-                  namespace: 's'
-                }]
-              ]
-            }
-          }
-        ]
-      }
-    ]
+                [
+                  "@lwc/babel-plugin-component",
+                  {
+                    namespace: "s",
+                  },
+                ],
+              ],
+            },
+          },
+        ],
+      },
+    ],
   },
   plugins: [
     new webpack.ProvidePlugin({
-      process: 'process/browser',
+      process: "process/browser",
     }),
     new LwcWebpackPlugin({
       modules: [
         {
-          dir: path.resolve(__dirname, 'src/webviews/lwc-ui/modules'),
+          dir: path.resolve(__dirname, "src/webviews/lwc-ui/modules"),
         },
         {
-          npm: 'lightning-base-components'
-        }
+          npm: "lightning-base-components",
+        },
       ],
-      mode: 'development',
+      mode: "development",
       experimentalSyntheticShadow: true,
-      experimentalDynamicComponent: true
+      experimentalDynamicComponent: true,
     }),
-        new CopyWebpackPlugin({
+    new CopyWebpackPlugin({
       patterns: [
         {
-          from: path.resolve(__dirname, 'node_modules/@salesforce-ux/design-system/assets'),
-          to: path.resolve(__dirname, 'out/assets'), // Copy to out/assets instead of out/webviews/assets
-          noErrorOnMissing: true
+          from: path.resolve(
+            __dirname,
+            "node_modules/@salesforce-ux/design-system/assets",
+          ),
+          to: path.resolve(__dirname, "out/assets"), // Copy to out/assets instead of out/webviews/assets
+          noErrorOnMissing: true,
         },
         {
-          from: path.resolve(__dirname, 'node_modules/mermaid/dist/mermaid.min.js'),
-          to: path.resolve(__dirname, 'out/webviews'),
-          noErrorOnMissing: true
-        }
-      ]
-    })
+          from: path.resolve(
+            __dirname,
+            "node_modules/mermaid/dist/mermaid.min.js",
+          ),
+          to: path.resolve(__dirname, "out/webviews"),
+          noErrorOnMissing: true,
+        },
+      ],
+    }),
   ],
-  devtool: 'source-map',
+  devtool: "source-map",
   infrastructureLogging: {
     level: "log",
   },

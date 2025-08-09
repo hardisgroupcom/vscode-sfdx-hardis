@@ -11,7 +11,7 @@ let globalWss: LocalWebSocketServer | null;
 
 export class LocalWebSocketServer {
   public websocketHostPort: any = null;
-  private context: vscode.ExtensionContext ;
+  private context: vscode.ExtensionContext;
   private server: http.Server;
   private wss: WebSocketServer;
   private clients: any = {};
@@ -63,12 +63,11 @@ export class LocalWebSocketServer {
     }
     // Command initialization
     if (data.event === "initClient") {
-
       // If the UI is configured to be hidden, do not proceed with command execution
-      if (data?.uiConfig?.hide  === true) {
+      if (data?.uiConfig?.hide === true) {
         return;
       }
-      
+
       // Close any completed commandExecution panel before opening a new one
       const panelManager = LwcPanelManager.getInstance(this.context);
       const activePanelIds = panelManager.getActivePanelIds();
@@ -85,11 +84,11 @@ export class LocalWebSocketServer {
       }
 
       this.clients[data.context.id] = { context: data.context, ws: ws };
-      
+
       // Send user input type back to caller
       this.sendResponse(ws, {
         event: "userInput",
-        userInput: this.config.get("userInput")
+        userInput: this.config.get("userInput"),
       });
 
       // Create a new command execution panel for this command
@@ -97,15 +96,15 @@ export class LocalWebSocketServer {
       const panel = panelManager.getOrCreatePanel(lwcId, data.context);
       this.clients[data.context.id].panel = panel;
       this.clients[data.context.id].lwcId = lwcId;
-      
+
       // Set the panel title to include command info
-      const commandName = data.context.command || 'SFDX Hardis Command';
+      const commandName = data.context.command || "SFDX Hardis Command";
       panel.updateTitle(`${commandName} - Running`);
-      
+
       // Initialize the command in the panel, including commandDocUrl if available
       const initData: any = {
         type: "initializeCommand",
-        data: data.context
+        data: data.context,
       };
       if (data.commandDocUrl) {
         initData.data.commandDocUrl = data.commandDocUrl;
@@ -122,13 +121,13 @@ export class LocalWebSocketServer {
         // Mark command as completed in the panel
         clientData.panel.sendMessage({
           type: "completeCommand",
-          data: { success: data?.status !== "aborted", status: data?.status }
+          data: { success: data?.status !== "aborted", status: data?.status },
         });
-        
+
         // Update panel title to show completion
-        const commandName = clientData.context.command || 'SFDX Hardis Command';
+        const commandName = clientData.context.command || "SFDX Hardis Command";
         clientData.panel.updateTitle(`${commandName} - Completed`);
-        
+
         // Schedule panel disposal after a delay to allow user to review logs
         // const panelManager = LwcPanelManager.getInstance(this.context);
         // panelManager.scheduleDisposal(clientData.lwcId, 10000); // 10 seconds
@@ -146,8 +145,8 @@ export class LocalWebSocketServer {
             logType: data.logType,
             message: data.message,
             timestamp: new Date(),
-            isQuestion: data.isQuestion || false
-          }
+            isQuestion: data.isQuestion || false,
+          },
         });
       }
     }
@@ -157,7 +156,7 @@ export class LocalWebSocketServer {
       if (clientData?.panel) {
         clientData.panel.sendMessage({
           type: "addSubCommandStart",
-          data: data.data
+          data: data.data,
         });
       }
     }
@@ -167,7 +166,7 @@ export class LocalWebSocketServer {
       if (clientData?.panel) {
         clientData.panel.sendMessage({
           type: "addSubCommandEnd",
-          data: data.data
+          data: data.data,
         });
       }
     }
@@ -179,8 +178,8 @@ export class LocalWebSocketServer {
           type: "reportFile",
           data: {
             file: data.file,
-            title: data.title
-          }
+            title: data.title,
+          },
         });
       }
     }
@@ -202,7 +201,7 @@ export class LocalWebSocketServer {
       const pipelinePanel = panelManager.getPanel("s-pipeline");
       if (pipelinePanel) {
         pipelinePanel.sendMessage({
-          type: "refreshPipeline"
+          type: "refreshPipeline",
         });
       }
     }
@@ -244,56 +243,76 @@ export class LocalWebSocketServer {
       if (this.config.get("userInput") === "ui-lwc") {
         const panelManager = LwcPanelManager.getInstance(this.context);
         // Try to find an active command execution panel for this context
-        const commandLwcId = `s-command-execution-${data.context?.id || ''}`;
+        const commandLwcId = `s-command-execution-${data.context?.id || ""}`;
         const commandPanel = panelManager.getPanel(commandLwcId);
 
         // Factorized handler for prompt submit/cancel
-        const handlePromptPanelMessages = (panel: any, lwcId: any, prompt: any) => {
+        const handlePromptPanelMessages = (
+          panel: any,
+          lwcId: any,
+          prompt: any,
+        ) => {
           let responseSent = false;
-          const messageUnsubscribe = panel.onMessage((messageType: any, msgData: any) => {
-            // Accept both legacy and embedded promptInput message types
-            if ((messageType === "promptSubmit" || messageType === "submit") && !responseSent) {
-              responseSent = true;
-              this.sendResponse(ws, {
-                event: "promptsResponse",
-                promptsResponse: [msgData],
-              });
-              // If this is a standalone promptInput, check for command panel before disposal
-              if (lwcId === "s-prompt-input") {
-                const hasActiveCommandPanel = Object.values(this.clients).some(
-                  (client) => {
+          const messageUnsubscribe = panel.onMessage(
+            (messageType: any, msgData: any) => {
+              // Accept both legacy and embedded promptInput message types
+              if (
+                (messageType === "promptSubmit" || messageType === "submit") &&
+                !responseSent
+              ) {
+                responseSent = true;
+                this.sendResponse(ws, {
+                  event: "promptsResponse",
+                  promptsResponse: [msgData],
+                });
+                // If this is a standalone promptInput, check for command panel before disposal
+                if (lwcId === "s-prompt-input") {
+                  const hasActiveCommandPanel = Object.values(
+                    this.clients,
+                  ).some((client) => {
                     const c = client as any;
-                    return c.panel && c.lwcId && c.lwcId.startsWith('s-command-execution-');
+                    return (
+                      c.panel &&
+                      c.lwcId &&
+                      c.lwcId.startsWith("s-command-execution-")
+                    );
+                  });
+                  if (hasActiveCommandPanel) {
+                    panelManager.disposePanel(lwcId);
+                  } else {
+                    panelManager.scheduleDisposal(lwcId, 2000);
                   }
-                );
-                if (hasActiveCommandPanel) {
-                  panelManager.disposePanel(lwcId);
-                } else {
-                  panelManager.scheduleDisposal(lwcId, 2000);
                 }
+                messageUnsubscribe();
               }
-              messageUnsubscribe();
-            }
-            /* jscpd:ignore-start */
-            if ((messageType === "promptExit" || messageType === "cancel") && !responseSent) {
-              responseSent = true;
-              const exitResponse: Record<string, any> = {};
-              exitResponse[String(prompt.name)] = "exitNow";
-              this.sendResponse(ws, {
-                event: "promptsResponse",
-                promptsResponse: [exitResponse],
-              });
-              messageUnsubscribe();
-            }
-            /* jscpd:ignore-end */
-            // hide prompt in panel after submit or cancel message
-            if (["promptSubmit", "submit", "promptExit", "cancel"].includes(messageType)) {
-              panel.sendMessage({
-                type: "hidePrompt",
-                data: { promptName: prompt.name }
-              });
-            }
-          });
+              /* jscpd:ignore-start */
+              if (
+                (messageType === "promptExit" || messageType === "cancel") &&
+                !responseSent
+              ) {
+                responseSent = true;
+                const exitResponse: Record<string, any> = {};
+                exitResponse[String(prompt.name)] = "exitNow";
+                this.sendResponse(ws, {
+                  event: "promptsResponse",
+                  promptsResponse: [exitResponse],
+                });
+                messageUnsubscribe();
+              }
+              /* jscpd:ignore-end */
+              // hide prompt in panel after submit or cancel message
+              if (
+                ["promptSubmit", "submit", "promptExit", "cancel"].includes(
+                  messageType,
+                )
+              ) {
+                panel.sendMessage({
+                  type: "hidePrompt",
+                  data: { promptName: prompt.name },
+                });
+              }
+            },
+          );
           // Disposal callback for standalone promptInput
           if (lwcId === "s-prompt-input") {
             const onDisposalCallback = () => {
@@ -316,7 +335,7 @@ export class LocalWebSocketServer {
           // Send a message to the commandExecution LWC to show the prompt
           commandPanel.sendMessage({
             type: "showPrompt",
-            data: { prompt, context: data.context }
+            data: { prompt, context: data.context },
           });
           handlePromptPanelMessages(commandPanel, commandLwcId, prompt);
           return;
@@ -439,7 +458,7 @@ export class LocalWebSocketServer {
       // Dispose all LWC panels through the panel manager
       const panelManager = LwcPanelManager.getInstance();
       panelManager.disposeAllPanels();
-      
+
       this.wss.close();
       this.server.close();
       globalWss = null;

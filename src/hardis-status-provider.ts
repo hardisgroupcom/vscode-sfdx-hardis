@@ -322,7 +322,7 @@ Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if you
         gitRemotesOrigins = gitRemotes.filter(
           (remote) => remote.name === "origin",
         );
-    } catch {
+      } catch {
         console.warn("[vscode-sfdx-hardis] No git repository found");
       }
       if (gitRemotesOrigins.length > 0) {
@@ -400,7 +400,7 @@ After merging, refresh VsCode SFDX-Hardis status panel to discard this warning
 Note: Disable disableGitMergeRequiredCheck in settings to skip this check.`;
               gitCommand = `vscode-sfdx-hardis.openExternal https://sfdx-hardis.cloudity.com/salesforce-ci-cd-merge-parent-branch/`;
             }
-    } catch {
+          } catch {
             console.warn(
               "Unable to check if remote parent git branch is up to date",
             );

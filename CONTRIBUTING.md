@@ -220,8 +220,8 @@ git push origin feature/your-feature-name
 
 ## Getting Help
 
-- **Documentation**: https://sfdx-hardis.cloudity.com/
-- **Issues**: https://github.com/hardisgroupcom/sfdx-hardis/issues
+- **Documentation**: <https://sfdx-hardis.cloudity.com/>
+- **Issues**: <https://github.com/hardisgroupcom/sfdx-hardis/issues>
 - **Discussions**: Use GitHub Discussions for questions
 
 ## Development Resources

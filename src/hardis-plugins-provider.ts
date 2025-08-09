@@ -363,37 +363,46 @@ export class HardisPluginsProvider
       // Special check for sfdx-hardis version
       if (plugin.name === "sfdx-hardis") {
         let installedVersion = null;
-  const regex = new RegExp(`${plugin.name} ([^s]+)`, "gm");
+        const regex = new RegExp(`${plugin.name} ([^s]+)`, "gm");
         const match = regex.exec(sfdxPlugins);
         if (match && match[1]) {
           installedVersion = match[1];
         }
-        if (installedVersion && compareVersions(installedVersion, "6.0.0") < 0) {
-          vscode.window.showErrorMessage(
-            `Your sfdx-hardis plugin version (${installedVersion}) is outdated. Please upgrade to v6.0.0 or higher to benefit from new features.\nRun: sf plugins:install sfdx-hardis@latest`,
-            "Upgrade now"
-          ).then(selection => {
-            if (selection === "Upgrade now") {
-              vscode.commands.executeCommand(
-                "vscode-sfdx-hardis.execute-command",
-                "sf plugins:install sfdx-hardis@latest"
-              );
-            }
-          });
+        if (
+          installedVersion &&
+          compareVersions(installedVersion, "6.0.0") < 0
+        ) {
+          vscode.window
+            .showErrorMessage(
+              `Your sfdx-hardis plugin version (${installedVersion}) is outdated. Please upgrade to v6.0.0 or higher to benefit from new features.\nRun: sf plugins:install sfdx-hardis@latest`,
+              "Upgrade now",
+            )
+            .then((selection) => {
+              if (selection === "Upgrade now") {
+                vscode.commands.executeCommand(
+                  "vscode-sfdx-hardis.execute-command",
+                  "sf plugins:install sfdx-hardis@latest",
+                );
+              }
+            });
         }
       }
-// Compare two semver strings. Returns -1 if a < b, 0 if equal, 1 if a > b
-function compareVersions(a: string, b: string): number {
-  const pa = a.split('.').map(Number);
-  const pb = b.split('.').map(Number);
-  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
-    const na = pa[i] || 0;
-    const nb = pb[i] || 0;
-  if (na < nb) { return -1; }
-  if (na > nb) { return 1; }
-  }
-  return 0;
-}
+      // Compare two semver strings. Returns -1 if a < b, 0 if equal, 1 if a > b
+      function compareVersions(a: string, b: string): number {
+        const pa = a.split(".").map(Number);
+        const pb = b.split(".").map(Number);
+        for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+          const na = pa[i] || 0;
+          const nb = pb[i] || 0;
+          if (na < nb) {
+            return -1;
+          }
+          if (na > nb) {
+            return 1;
+          }
+        }
+        return 0;
+      }
       // Check latest plugin version
       let latestPluginVersion;
       try {

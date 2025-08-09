@@ -25,15 +25,15 @@ export default class Pipeline extends LightningElement {
   }
 
   configureAuth() {
-    if (typeof window !== 'undefined' && window.sendMessageToVSCode) {
+    if (typeof window !== "undefined" && window.sendMessageToVSCode) {
       window.sendMessageToVSCode({
-        type: 'runCommand',
+        type: "runCommand",
         data: {
-          command: 'sf hardis:project:configure:auth'
-        }
+          command: "sf hardis:project:configure:auth",
+        },
       });
     }
-    console.log('Configure Auth button clicked');
+    console.log("Configure Auth button clicked");
   }
 
   handleToggleMajor(event) {
@@ -62,7 +62,11 @@ export default class Pipeline extends LightningElement {
     const debugDiv = this.template.querySelector(".mermaid-debug");
     // Only set error if pipelineData.orgs exists and has length
     if (!mermaidDiv) {
-      if (this.pipelineData && this.pipelineData.orgs && this.pipelineData.orgs.length) {
+      if (
+        this.pipelineData &&
+        this.pipelineData.orgs &&
+        this.pipelineData.orgs.length
+      ) {
         this.error = "Mermaid container not found in template.";
         if (debugDiv) debugDiv.textContent = this.error;
       } else {
@@ -114,22 +118,22 @@ export default class Pipeline extends LightningElement {
 
   @api
   handleMessage(messageType, data) {
-      switch (messageType) {
-          case "refreshPipeline":
-              this.refreshPipeline();
-              break;
-          default:
-              console.log('Unknown message type:', messageType, data);
-      }
+    switch (messageType) {
+      case "refreshPipeline":
+        this.refreshPipeline();
+        break;
+      default:
+        console.log("Unknown message type:", messageType, data);
+    }
   }
-  
+
   // Added refreshPipeline method
   refreshPipeline() {
-    if (typeof window !== 'undefined' && window.sendMessageToVSCode) {
-        window.sendMessageToVSCode({
-              type: 'refreshpipeline',
-              data: {}
-        });
+    if (typeof window !== "undefined" && window.sendMessageToVSCode) {
+      window.sendMessageToVSCode({
+        type: "refreshpipeline",
+        data: {},
+      });
     }
     console.log("Pipeline refresh event dispatched");
   }

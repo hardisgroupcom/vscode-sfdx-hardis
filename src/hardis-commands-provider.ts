@@ -201,9 +201,10 @@ export class HardisCommandsProvider
             id: "vscode-sfdx-hardis.showPipeline",
             label: "DevOps Pipeline",
             command: "vscode-sfdx-hardis.showPipeline",
-            tooltip: "Open the DevOps Pipeline panel to visualize and manage your CI/CD pipeline.",
+            tooltip:
+              "Open the DevOps Pipeline panel to visualize and manage your CI/CD pipeline.",
             requiresProject: false,
-            helpUrl: "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/"
+            helpUrl: "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/",
           },
         ],
       },
