@@ -393,7 +393,7 @@ export class HardisPluginsProvider
               if (selection === "Upgrade now") {
                 vscode.commands.executeCommand(
                   "vscode-sfdx-hardis.execute-command",
-                  `sf plugins:install sfdx-hardis@${versionToInstall}`,
+                  `echo y|sf plugins:install sfdx-hardis@${versionToInstall} && sf hardis:work:ws --event refreshPlugins`,
                 );
               }
             });
