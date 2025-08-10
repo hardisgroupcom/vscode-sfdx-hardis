@@ -5,6 +5,8 @@
 import { LightningElement, api, track } from "lwc";
 
 export default class PromptInput extends LightningElement {
+  // Track the index of the currently focused button for select-with-buttons
+  focusedButtonIndex = 0;
   @api promptData = null;
   @api embedded = false;
   @track currentPrompt = null;
@@ -56,19 +58,25 @@ export default class PromptInput extends LightningElement {
       this._hasInitialFocus = true;
       setTimeout(() => {
         let firstInput;
-        // For button select, focus the first button
         if (this.isSelectWithButtons) {
-          firstInput = this.template.querySelector(".select-option-button");
+          // Always set focus to the button matching the first selectOption
+          this.focusedButtonIndex = 0;
+          const firstValue = this.selectOptions[0] && this.selectOptions[0].value;
+          const buttons = this.template.querySelectorAll('.select-option-button');
+          // Find the button whose data-value matches the first selectOption value
+          let btnToFocus = null;
+          if (firstValue) {
+            btnToFocus = Array.from(buttons).find(btn => btn.dataset.value === firstValue);
+          }
+          firstInput = btnToFocus || buttons[0];
         } else {
-          // For other inputs, focus the input/combobox but don't interfere with dropdown navigation
           firstInput = this.template.querySelector(
-            "lightning-input, lightning-combobox",
+            'lightning-input, lightning-combobox',
           );
         }
-        if (firstInput && typeof firstInput.focus === "function") {
+        if (firstInput && typeof firstInput.focus === 'function') {
           firstInput.focus();
         }
-
         // Scroll validate button into view if embedded and not multiselect and not select with buttons
         if (this.embedded && !this.isMultiselectInput) {
           // Find the cancel button (neutral variant)
@@ -421,21 +429,26 @@ export default class PromptInput extends LightningElement {
     // Submit on Enter key press
     if (event.key === "Enter" || event.keyCode === 13) {
       event.preventDefault();
-
+      if (this.isSelectWithButtons) {
+        // Use selectOptions for stable mapping
+        const option = this.selectOptions[this.focusedButtonIndex];
+        if (option && option.value) {
+          this.selectedValue = option.value;
+          this.handleSubmit();
+        }
+        // If no option, do nothing
+        return;
+      }
       // For text/number inputs, ensure we capture the current value before submitting
       if (this.isTextInput || this.isNumberInput) {
-        // Get the current value from the lightning-input element
         const lightningInput = event.currentTarget;
         if (lightningInput && lightningInput.value !== undefined) {
           this.inputValue = lightningInput.value;
         }
-      }
-
-      // For button select, if no button is selected yet, do nothing
-      if (this.isSelectWithButtons && !this.selectedValue) {
+        this.handleSubmit();
         return;
       }
-
+      // For other types, default submit
       this.handleSubmit();
     }
     // Cancel on Escape key press
@@ -451,26 +464,33 @@ export default class PromptInput extends LightningElement {
         event.key === "ArrowLeft" ||
         event.key === "ArrowRight")
     ) {
-      this.handleButtonNavigation(event);
+      // Only handle navigation if the event target is the button itself, not a child
+      const isButton = event.currentTarget && event.currentTarget.classList && event.currentTarget.classList.contains('select-option-button');
+      if (isButton) {
+        this.handleButtonNavigation(event);
+      }
     }
   }
 
   handleButtonNavigation(event) {
     event.preventDefault();
-    const buttons = this.template.querySelectorAll(".select-option-button");
-    const currentButton = event.currentTarget.closest(".select-option-button");
-    const currentIndex = Array.from(buttons).indexOf(currentButton);
-
+    debugger;
+    // Use selectOptions for stable navigation
+    const optionsLen = this.selectOptions.length;
+    let currentIndex = this.focusedButtonIndex;
     let nextIndex = currentIndex;
-
-    if (event.key === "ArrowDown" || event.key === "ArrowRight") {
-      nextIndex = (currentIndex + 1) % buttons.length;
-    } else if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
-      nextIndex = currentIndex > 0 ? currentIndex - 1 : buttons.length - 1;
+    if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
+      nextIndex = (currentIndex + 1) % optionsLen;
+    } else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+      nextIndex = currentIndex > 0 ? currentIndex - 1 : optionsLen - 1;
     }
-
-    if (buttons[nextIndex]) {
-      buttons[nextIndex].focus();
+    this.focusedButtonIndex = nextIndex;
+    // Focus the button whose data-value matches the selectOption value
+    const nextValue = this.selectOptions[nextIndex] && this.selectOptions[nextIndex].value;
+    const buttons = this.template.querySelectorAll('.select-option-button');
+    const btnToFocus = Array.from(buttons).find(btn => btn.dataset.value === nextValue);
+    if (btnToFocus) {
+      btnToFocus.focus();
     }
   }
 
@@ -512,6 +532,12 @@ export default class PromptInput extends LightningElement {
     // Use currentTarget to get the button element, not the clicked child element
     const button = event.currentTarget;
     const stringIdentifier = button.dataset.value;
+
+    // Update focusedButtonIndex to match the selectOption index for this value
+    const idx = this.selectOptions.findIndex(opt => opt.value === stringIdentifier);
+    if (idx >= 0) {
+      this.focusedButtonIndex = idx;
+    }
 
     this.selectedValue = stringIdentifier;
     this.error = null;
