@@ -63,10 +63,16 @@ export class LocalWebSocketServer {
     }
     // Command initialization
     if (data.event === "initClient") {
+      // Ignore if not lwc UI
+      if (this.config.get("userInput") === "ui-lwc") {
+        return;
+      }
       // If the UI is configured to be hidden, do not proceed with command execution
       if (data?.uiConfig?.hide === true) {
         return;
       }
+
+
 
       // Close any completed commandExecution panel before opening a new one
       const panelManager = LwcPanelManager.getInstance(this.context);
@@ -130,6 +136,10 @@ export class LocalWebSocketServer {
     }
     // Command end
     if (data.event === "closeClient" || data.event === "clientClose") {
+      // Ignore if not lwc UI
+      if (this.config.get("userInput") === "ui-lwc") {
+        return;
+      }
       const clientData = this.clients[data.context?.id];
       if (clientData?.panel) {
         // Mark command as completed in the panel
@@ -163,6 +173,10 @@ export class LocalWebSocketServer {
     }
     // Command log line
     else if (data.event === "commandLogLine") {
+      // Ignore if not lwc UI
+      if (this.config.get("userInput") === "ui-lwc") {
+        return;
+      }
       // Find the client context for this log line using the context ID
       const clientData = this.clients[data.context?.id];
       if (clientData?.panel) {
@@ -179,6 +193,10 @@ export class LocalWebSocketServer {
     }
     // Sub-command start
     else if (data.event === "commandSubCommandStart") {
+      // Ignore if not lwc UI
+      if (this.config.get("userInput") === "ui-lwc") {
+        return;
+      }
       const clientData = this.clients[data.context?.id];
       if (clientData?.panel) {
         clientData.panel.sendMessage({
@@ -189,6 +207,10 @@ export class LocalWebSocketServer {
     }
     // Sub-command end
     else if (data.event === "commandSubCommandEnd") {
+      // Ignore if not lwc UI
+      if (this.config.get("userInput") === "ui-lwc") {
+        return;
+      }
       const clientData = this.clients[data.context?.id];
       if (clientData?.panel) {
         clientData.panel.sendMessage({
@@ -199,6 +221,10 @@ export class LocalWebSocketServer {
     }
     // Report file
     else if (data.event === "reportFile") {
+      // Ignore if not lwc UI
+      if (this.config.get("userInput") === "ui-lwc") {
+        return;
+      }
       const clientData = this.clients[data.context?.id];
       if (clientData?.panel) {
         clientData.panel.sendMessage({
