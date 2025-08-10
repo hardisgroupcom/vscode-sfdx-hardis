@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [6.0.1] 2024-08-10
+
+- Improve sfdx-hardis dependency detection for pre-release mode
+- Improve performance at initialization by using a single multi-threaded worker
+
 ## [6.0.0] 2024-08-09
 
 - New UI with LWC
