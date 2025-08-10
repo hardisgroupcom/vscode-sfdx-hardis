@@ -8,6 +8,7 @@ import {
   loadProjectSfdxHardisConfig,
   NODE_JS_MINIMUM_VERSION,
   RECOMMENDED_SFDX_CLI_VERSION,
+  RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION,
   resetCache,
 } from "./utils";
 import { Logger } from "./logger";
@@ -370,39 +371,37 @@ export class HardisPluginsProvider
         }
         if (
           installedVersion &&
-          compareVersions(installedVersion, "6.0.0") < 0
+          (
+            RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION !== "beta" &&
+            this.compareVersions(installedVersion, RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION) < 0
+          ||
+          (
+            RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION === "beta" &&
+            installedVersion !== "beta" )
+          )
         ) {
+          const versionToInstall = RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION === "beta"
+            ? "beta"
+            : "latest";
+          const errorMessageForUSer = RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION === "beta" 
+          ? `You are using VsCode sfdx-hardis pre-release version. Please install beta version of sfdx-hardis plugin to benefit from new features.\nRun: sf plugins:install sfdx-hardis@beta`
+          : `Your sfdx-hardis plugin version (${installedVersion}) is outdated. Please upgrade to latest version to benefit from new features.\nRun: sf plugins:install sfdx-hardis@${versionToInstall}`;
           vscode.window
             .showErrorMessage(
-              `Your sfdx-hardis plugin version (${installedVersion}) is outdated. Please upgrade to v6.0.0 or higher to benefit from new features.\nRun: sf plugins:install sfdx-hardis@latest`,
+              errorMessageForUSer,
               "Upgrade now",
             )
             .then((selection) => {
               if (selection === "Upgrade now") {
                 vscode.commands.executeCommand(
                   "vscode-sfdx-hardis.execute-command",
-                  "sf plugins:install sfdx-hardis@latest",
+                  `sf plugins:install sfdx-hardis@${versionToInstall}`,
                 );
               }
             });
         }
       }
-      // Compare two semver strings. Returns -1 if a < b, 0 if equal, 1 if a > b
-      function compareVersions(a: string, b: string): number {
-        const pa = a.split(".").map(Number);
-        const pb = b.split(".").map(Number);
-        for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
-          const na = pa[i] || 0;
-          const nb = pb[i] || 0;
-          if (na < nb) {
-            return -1;
-          }
-          if (na > nb) {
-            return 1;
-          }
-        }
-        return 0;
-      }
+
       // Check latest plugin version
       let latestPluginVersion;
       try {
@@ -499,6 +498,23 @@ export class HardisPluginsProvider
         });
     }
     return items.sort((a: any, b: any) => (a.label > b.label ? 1 : -1));
+  }
+
+  // Compare two semver strings. Returns -1 if a < b, 0 if equal, 1 if a > b
+  private compareVersions(a: string, b: string): number {
+    const pa = a.split(".").map(Number);
+    const pb = b.split(".").map(Number);
+    for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+      const na = pa[i] || 0;
+      const nb = pb[i] || 0;
+      if (na < nb) {
+        return -1;
+      }
+      if (na > nb) {
+        return 1;
+      }
+    }
+    return 0;
   }
 
   private async loadAdditionalPlugins(
