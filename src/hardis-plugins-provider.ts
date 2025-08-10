@@ -372,12 +372,15 @@ export class HardisPluginsProvider
         if (
           installedVersion &&
           (
+            (
             RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION !== "beta" &&
             this.compareVersions(installedVersion, RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION) < 0
-          ||
-          (
+            )
+            ||
+            (
             RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION === "beta" &&
-            installedVersion !== "beta" )
+            !installedVersion.includes("(beta)")
+            )
           )
         ) {
           const versionToInstall = RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION === "beta"
