@@ -61,20 +61,25 @@ export default class PromptInput extends LightningElement {
         if (this.isSelectWithButtons) {
           // Always set focus to the button matching the first selectOption
           this.focusedButtonIndex = 0;
-          const firstValue = this.selectOptions[0] && this.selectOptions[0].value;
-          const buttons = this.template.querySelectorAll('.select-option-button');
+          const firstValue =
+            this.selectOptions[0] && this.selectOptions[0].value;
+          const buttons = this.template.querySelectorAll(
+            ".select-option-button",
+          );
           // Find the button whose data-value matches the first selectOption value
           let btnToFocus = null;
           if (firstValue) {
-            btnToFocus = Array.from(buttons).find(btn => btn.dataset.value === firstValue);
+            btnToFocus = Array.from(buttons).find(
+              (btn) => btn.dataset.value === firstValue,
+            );
           }
           firstInput = btnToFocus || buttons[0];
         } else {
           firstInput = this.template.querySelector(
-            'lightning-input, lightning-combobox',
+            "lightning-input, lightning-combobox",
           );
         }
-        if (firstInput && typeof firstInput.focus === 'function') {
+        if (firstInput && typeof firstInput.focus === "function") {
           firstInput.focus();
         }
         // Scroll validate button into view if embedded and not multiselect and not select with buttons
@@ -465,7 +470,10 @@ export default class PromptInput extends LightningElement {
         event.key === "ArrowRight")
     ) {
       // Only handle navigation if the event target is the button itself, not a child
-      const isButton = event.currentTarget && event.currentTarget.classList && event.currentTarget.classList.contains('select-option-button');
+      const isButton =
+        event.currentTarget &&
+        event.currentTarget.classList &&
+        event.currentTarget.classList.contains("select-option-button");
       if (isButton) {
         this.handleButtonNavigation(event);
       }
@@ -479,16 +487,19 @@ export default class PromptInput extends LightningElement {
     const optionsLen = this.selectOptions.length;
     let currentIndex = this.focusedButtonIndex;
     let nextIndex = currentIndex;
-    if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
+    if (event.key === "ArrowDown" || event.key === "ArrowRight") {
       nextIndex = (currentIndex + 1) % optionsLen;
-    } else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+    } else if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
       nextIndex = currentIndex > 0 ? currentIndex - 1 : optionsLen - 1;
     }
     this.focusedButtonIndex = nextIndex;
     // Focus the button whose data-value matches the selectOption value
-    const nextValue = this.selectOptions[nextIndex] && this.selectOptions[nextIndex].value;
-    const buttons = this.template.querySelectorAll('.select-option-button');
-    const btnToFocus = Array.from(buttons).find(btn => btn.dataset.value === nextValue);
+    const nextValue =
+      this.selectOptions[nextIndex] && this.selectOptions[nextIndex].value;
+    const buttons = this.template.querySelectorAll(".select-option-button");
+    const btnToFocus = Array.from(buttons).find(
+      (btn) => btn.dataset.value === nextValue,
+    );
     if (btnToFocus) {
       btnToFocus.focus();
     }
@@ -534,7 +545,9 @@ export default class PromptInput extends LightningElement {
     const stringIdentifier = button.dataset.value;
 
     // Update focusedButtonIndex to match the selectOption index for this value
-    const idx = this.selectOptions.findIndex(opt => opt.value === stringIdentifier);
+    const idx = this.selectOptions.findIndex(
+      (opt) => opt.value === stringIdentifier,
+    );
     if (idx >= 0) {
       this.focusedButtonIndex = idx;
     }
