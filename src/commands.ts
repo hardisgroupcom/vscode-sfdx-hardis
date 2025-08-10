@@ -134,8 +134,31 @@ export class Commands {
               (vsTerminal) => vsTerminal.processId === terminal.processId,
             ).length > 0,
         );
-        // Create new terminal if necessary
+
+        // Check if any LWC panel is running a command
+        let panelIsBusy = false;
+        try {
+          const panelManager = LwcPanelManager.getInstance();
+          const activeIds = panelManager.getActivePanelIds();
+          for (const id of activeIds) {
+            if (id.startsWith("s-command-execution-")) {
+              const panel = panelManager.getPanel(id);
+              if (panel && panel.getTitle && typeof panel.getTitle === "function") {
+                const title = panel.getTitle();
+                if (title.includes("Running")) {
+                  panelIsBusy = true;
+                }
+                break;
+              }
+            }
+          }
+        } catch {
+          console.log("Error checking LWC panel status, assuming no panels are busy.");
+        }
+
+        // If there is a busy panel, always open a new terminal
         if (
+          panelIsBusy ||
           this.terminalStack.length === 0 ||
           vscode.window.terminals.length === 0
         ) {
@@ -178,20 +201,11 @@ export class Commands {
               }
             }
           }
-          /* Create terminal
-                  const terminalOptions: vscode.TerminalOptions = {
-                    name: 'SFDX Hardis',
-                    cwd: (vscode.workspace.workspaceFolders) ? vscode.workspace.workspaceFolders[0].uri.path : process.cwd()
-                  };*/
-          //const newTerminal = vscode.window.createTerminal(terminalOptions);
           vscode.commands.executeCommand(
             "workbench.action.terminal.newInActiveWorkspace",
             "SFDX Hardis",
           );
           new Promise((resolve) => setTimeout(resolve, 4000)).then(() => {
-            /* vscode.commands.executeCommand(
-                            "workbench.action.toggleMaximizedPanel"
-                        );*/
             const newTerminal =
               vscode.window.terminals[vscode.window.terminals.length - 1];
             this.terminalStack.push(newTerminal);
