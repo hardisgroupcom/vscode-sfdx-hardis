@@ -27,7 +27,7 @@ jobs:
       - run: yarn
       - uses: lannonbr/vsce-action@master
         with:
-          args: "publish -p $VSCE_TOKEN"
+          args: "publish -p $VSCE_TOKEN --allow-package-secrets github"
         env:
           VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
 

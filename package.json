@@ -2,7 +2,7 @@
   "name": "vscode-sfdx-hardis",
   "displayName": "SFDX Hardis by Cloudity",
   "description": "Handle Salesforce DX and Git without knowing Salesforce DX or Git !",
-  "version": "5.10.1",
+  "version": "v6.0.0-alpha",
   "icon": "resources/sfdx-hardis-logo-square.png",
   "publisher": "NicolasVuillamy",
   "author": {
@@ -394,7 +394,7 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run package",
+    "vscode:prepublish": "yarn run package",
     "compile": "tsc -p ./",
     "build": "webpack",
     "watch": "webpack --watch",
@@ -402,7 +402,8 @@
     "pretest": "yarn run compile && yarn run lint",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
-    "test": "node ./out/test/runTest.js"
+    "test": "node ./out/test/runTest.js",
+    "vsix": "vsce package --allow-package-secrets github"
   },
   "devDependencies": {
     "@babel/core": "^7.28.0",
