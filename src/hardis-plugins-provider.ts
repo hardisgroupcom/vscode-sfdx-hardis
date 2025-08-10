@@ -371,29 +371,24 @@ export class HardisPluginsProvider
         }
         if (
           installedVersion &&
-          (
-            (
-            RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION !== "beta" &&
-            this.compareVersions(installedVersion, RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION) < 0
-            )
-            ||
-            (
-            RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION === "beta" &&
-            !installedVersion.includes("(beta)")
-            )
-          )
+          ((RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION !== "beta" &&
+            this.compareVersions(
+              installedVersion,
+              RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION,
+            ) < 0) ||
+            (RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION === "beta" &&
+              !installedVersion.includes("(beta)")))
         ) {
-          const versionToInstall = RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION === "beta"
-            ? "beta"
-            : "latest";
-          const errorMessageForUSer = RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION === "beta" 
-          ? `You are using VsCode sfdx-hardis pre-release version. Please install beta version of sfdx-hardis plugin to benefit from new features.\nRun: sf plugins:install sfdx-hardis@beta`
-          : `Your sfdx-hardis plugin version (${installedVersion}) is outdated. Please upgrade to latest version to benefit from new features.\nRun: sf plugins:install sfdx-hardis@${versionToInstall}`;
+          const versionToInstall =
+            RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION === "beta"
+              ? "beta"
+              : "latest";
+          const errorMessageForUSer =
+            RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION === "beta"
+              ? `You are using VsCode sfdx-hardis pre-release version. Please install beta version of sfdx-hardis plugin to benefit from new features.\nRun: sf plugins:install sfdx-hardis@beta`
+              : `Your sfdx-hardis plugin version (${installedVersion}) is outdated. Please upgrade to latest version to benefit from new features.\nRun: sf plugins:install sfdx-hardis@${versionToInstall}`;
           vscode.window
-            .showErrorMessage(
-              errorMessageForUSer,
-              "Upgrade now",
-            )
+            .showErrorMessage(errorMessageForUSer, "Upgrade now")
             .then((selection) => {
               if (selection === "Upgrade now") {
                 vscode.commands.executeCommand(

@@ -1,8 +1,6 @@
 import { parentPort } from "worker_threads";
 import * as childProcess from "child_process";
 
-
-
 // Execute a command concurrently
 
 function execCliCommand(cmd: string, execOptions: any, requestId: string) {
@@ -23,7 +21,7 @@ if (parentPort) {
       execCliCommand(
         msg.cliCommand.cmd,
         JSON.parse(msg.cliCommand.execOptions),
-        msg.requestId
+        msg.requestId,
       );
     }
   });

@@ -12,7 +12,7 @@ import { Logger } from "./logger";
 
 export const RECOMMENDED_SFDX_CLI_VERSION = null; //"7.111.6";
 export const NODE_JS_MINIMUM_VERSION = 20.0;
-export const RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION = "beta" // "6.0.0";
+export const RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION = "beta"; // "6.0.0";
 
 let REMOTE_CONFIGS: any = {};
 let PROJECT_CONFIG: any = null;
@@ -40,13 +40,13 @@ export function isMultithreadActive() {
   return false;
 }
 
-
-
 // --- Single Worker for CLI commands, with requestId mapping ---
 let sharedWorker: Worker | null = null;
-let sharedWorkerCallbacks: Map<string, {resolve: Function, reject: Function}> = new Map();
+let sharedWorkerCallbacks: Map<
+  string,
+  { resolve: Function; reject: Function }
+> = new Map();
 let sharedWorkerRequestSeq = 0;
-
 
 export async function execShell(cmd: string, execOptions: any) {
   if (isMultithreadActive()) {
