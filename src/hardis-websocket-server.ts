@@ -27,6 +27,10 @@ export class LocalWebSocketServer {
     this.config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
   }
 
+  async refreshConfig() {
+    this.config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+  }
+
   async start() {
     let port = DEFAULT_PORT;
     if (port === 2702) {

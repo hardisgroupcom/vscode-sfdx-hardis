@@ -2,14 +2,6 @@
 
 ## [Unreleased]
 
-## [6.0.3] 2024-08-10
-
-- Fix mode if not using LWC UI
-
-## [6.0.2] 2024-08-10
-
-- Fix mode if not using LWC UI
-
 ## [6.0.1] 2024-08-10
 
 - Improve sfdx-hardis dependency detection for pre-release mode
