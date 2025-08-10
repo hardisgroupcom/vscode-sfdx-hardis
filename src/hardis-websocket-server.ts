@@ -64,7 +64,7 @@ export class LocalWebSocketServer {
     // Command initialization
     if (data.event === "initClient") {
       // Ignore if not lwc UI
-      if (this.config.get("userInput") === "ui-lwc") {
+      if (this.config.get("userInput") !== "ui-lwc") {
         return;
       }
       // If the UI is configured to be hidden, do not proceed with command execution
@@ -137,7 +137,7 @@ export class LocalWebSocketServer {
     // Command end
     if (data.event === "closeClient" || data.event === "clientClose") {
       // Ignore if not lwc UI
-      if (this.config.get("userInput") === "ui-lwc") {
+      if (this.config.get("userInput") !== "ui-lwc") {
         return;
       }
       const clientData = this.clients[data.context?.id];
@@ -174,7 +174,7 @@ export class LocalWebSocketServer {
     // Command log line
     else if (data.event === "commandLogLine") {
       // Ignore if not lwc UI
-      if (this.config.get("userInput") === "ui-lwc") {
+      if (this.config.get("userInput") !== "ui-lwc") {
         return;
       }
       // Find the client context for this log line using the context ID
@@ -194,7 +194,7 @@ export class LocalWebSocketServer {
     // Sub-command start
     else if (data.event === "commandSubCommandStart") {
       // Ignore if not lwc UI
-      if (this.config.get("userInput") === "ui-lwc") {
+      if (this.config.get("userInput") !== "ui-lwc") {
         return;
       }
       const clientData = this.clients[data.context?.id];
@@ -208,7 +208,7 @@ export class LocalWebSocketServer {
     // Sub-command end
     else if (data.event === "commandSubCommandEnd") {
       // Ignore if not lwc UI
-      if (this.config.get("userInput") === "ui-lwc") {
+      if (this.config.get("userInput") !== "ui-lwc") {
         return;
       }
       const clientData = this.clients[data.context?.id];
@@ -222,7 +222,7 @@ export class LocalWebSocketServer {
     // Report file
     else if (data.event === "reportFile") {
       // Ignore if not lwc UI
-      if (this.config.get("userInput") === "ui-lwc") {
+      if (this.config.get("userInput") !== "ui-lwc") {
         return;
       }
       const clientData = this.clients[data.context?.id];
