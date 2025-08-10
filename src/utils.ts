@@ -12,6 +12,7 @@ import { Logger } from "./logger";
 
 export const RECOMMENDED_SFDX_CLI_VERSION = null; //"7.111.6";
 export const NODE_JS_MINIMUM_VERSION = 20.0;
+export const RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION = "beta"; // "6.0.0";
 
 let REMOTE_CONFIGS: any = {};
 let PROJECT_CONFIG: any = null;
@@ -39,21 +40,45 @@ export function isMultithreadActive() {
   return false;
 }
 
+// --- Single Worker for CLI commands, with requestId mapping ---
+let sharedWorker: Worker | null = null;
+let sharedWorkerCallbacks: Map<
+  string,
+  { resolve: Function; reject: Function }
+> = new Map();
+let sharedWorkerRequestSeq = 0;
+
 export async function execShell(cmd: string, execOptions: any) {
   if (isMultithreadActive()) {
-    // Use worker to perform CLI command
-    return new Promise<any>((resolve, reject) => {
-      const worker = new Worker(path.join(__dirname, "worker.js"), {
-        workerData: {
-          cliCommand: { cmd: cmd, execOptions: JSON.stringify(execOptions) },
-          path: "./worker.ts",
-        },
-      });
-      worker.on("message", (result) => {
-        if (result.error) {
-          reject(result.error);
+    if (!sharedWorker) {
+      sharedWorker = new Worker(path.join(__dirname, "worker.js"));
+      sharedWorker.on("message", (result: any) => {
+        const reqId = result && result.requestId;
+        if (!reqId || !sharedWorkerCallbacks.has(reqId)) {
+          return;
         }
-        resolve({ stdout: result.stdout, stderr: result.stderr });
+        const cb = sharedWorkerCallbacks.get(reqId)!;
+        sharedWorkerCallbacks.delete(reqId);
+        if (result && result.error) {
+          cb.reject(result.error);
+        } else {
+          cb.resolve({ stdout: result.stdout, stderr: result.stderr });
+        }
+      });
+      sharedWorker.on("exit", () => {
+        sharedWorker = null;
+      });
+      sharedWorker.on("error", () => {
+        sharedWorker = null;
+      });
+    }
+    return new Promise<any>((resolve, reject) => {
+      const requestId = `req_${Date.now()}_${sharedWorkerRequestSeq++}`;
+      sharedWorkerCallbacks.set(requestId, { resolve, reject });
+      sharedWorker!.postMessage({
+        cliCommand: { cmd: cmd, execOptions: JSON.stringify(execOptions) },
+        requestId,
+        path: "./worker.ts",
       });
     });
   } else {
