@@ -126,6 +126,10 @@ export function activate(context: vscode.ExtensionContext) {
         startWebSocketServer()
           .then(() => Logger.log("sfdx-hardis Websocket OK"))
           .catch((e) => Logger.log("sfdx-hardis Websocket KO: " + e.message));
+      } else if (commands.disposableWebSocketServer) {
+        // WebSocket server is already running, do nothing
+        await commands.disposableWebSocketServer.refreshConfig();
+        Logger.log("Reinitialized WebSocketServer config");
       }
     } else {
       if (
