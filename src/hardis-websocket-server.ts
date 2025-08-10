@@ -236,6 +236,7 @@ export class LocalWebSocketServer {
           data: {
             file: data.file,
             title: data.title,
+            type: data.type // Forward the type property for LWC simplification
           },
         });
       }

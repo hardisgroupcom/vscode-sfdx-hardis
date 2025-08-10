@@ -223,9 +223,29 @@ export class LwcUiPanel {
         case "openExternal":
           await this.handleOpenExternal(data.url || data);
           break;
+        case "runVsCodeCommand":
+          await this.handleRunCommand(data);
+          break;
       }
     } catch (error) {
       console.error(`Error handling built-in message ${messageType}:`, error);
+    }
+  }
+
+  /**
+   * Handle VS Code command execution request from webview
+   * @param data Object with a 'command' property (string)
+   */
+  private async handleRunCommand(data: { command: string }): Promise<void> {
+    if (!data || !data.command || typeof data.command !== 'string') {
+      vscode.window.showErrorMessage('No VS Code command specified to run.');
+      return;
+    }
+    try {
+      await vscode.commands.executeCommand(data.command);
+    } catch (error) {
+      console.error('Error running VS Code command:', error);
+      vscode.window.showErrorMessage(`Failed to run VS Code command: ${data.command}`);
     }
   }
 

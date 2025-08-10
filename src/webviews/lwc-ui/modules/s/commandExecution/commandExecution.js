@@ -222,14 +222,19 @@ export default class CommandExecution extends LightningElement {
   @api
   addReportFile(data) {
     if (data && data.file && data.title) {
+      // Only accept the four allowed types
+      const allowedTypes = ['actionCommand', 'actionUrl', 'report', 'docUrl'];
+      const type = allowedTypes.includes(data.type) ? data.type : 'report';
       const reportFile = {
         id: this.generateId(),
         file: data.file,
         title: data.title,
         timestamp: new Date(),
+        type: type,
+        url: type === 'actionUrl' ? data.file : null,
+        vscodeCommand: type === 'actionCommand' ? data.file : null,
       };
       this.reportFiles = [...this.reportFiles, reportFile];
-      // Auto-scroll to bottom after adding new report file
       this.scrollToBottom();
     }
   }
@@ -839,6 +844,72 @@ ${resultMessage}`;
     });
   }
 
+  // --- Report Files Section Helpers ---
+  get reportFileTypesPresent() {
+    // Returns an object: { hasActionCommands, hasActionUrls, hasReports, hasDocUrls }
+    let hasActionCommands = false, hasActionUrls = false, hasReports = false, hasDocUrls = false;
+    for (const f of this.reportFiles) {
+      if (f.type === 'actionCommand') hasActionCommands = true;
+      else if (f.type === 'actionUrl') hasActionUrls = true;
+      else if (f.type === 'report') hasReports = true;
+      else if (f.type === 'docUrl') hasDocUrls = true;
+    }
+    return { hasActionCommands, hasActionUrls, hasReports, hasDocUrls };
+  }
+
+  get reportFilesSectionTitle() {
+    const { hasActionCommands, hasActionUrls, hasReports, hasDocUrls } = this.reportFileTypesPresent;
+    const parts = [];
+    if (hasActionCommands || hasActionUrls) parts.push('Actions');
+    if (hasReports) parts.push('Reports');
+    if (hasDocUrls) parts.push('Docs');
+    return parts.length > 0 ? parts.join(', ') : 'Report Files';
+  }
+
+  get sortedReportFiles() {
+    // Only handle the four allowed types
+    return this.reportFiles.map(f => {
+      switch (f.type) {
+        case 'actionCommand':
+          return {
+            ...f,
+            buttonVariant: 'brand',
+            iconName: 'utility:play',
+            iconVariant: 'inverse',
+          };
+        case 'actionUrl':
+          return {
+            ...f,
+            buttonVariant: 'brand', // Use brand for strong call to action
+            iconName: 'utility:link',
+            iconVariant: 'inverse', // Inverse for contrast on brand
+          };
+        case 'report':
+          return {
+            ...f,
+            buttonVariant: 'success',
+            iconName: 'utility:page',
+            iconVariant: 'inverse',
+          };
+        case 'docUrl':
+          return {
+            ...f,
+            buttonVariant: 'outline-brand',
+            iconName: 'utility:info',
+            iconVariant: 'brand',
+          };
+        default:
+          // Should not happen, fallback to report style
+          return {
+            ...f,
+            buttonVariant: 'success',
+            iconName: 'utility:page',
+            iconVariant: 'inverse',
+          };
+      }
+    });
+  }
+
   calculateDuration(startTime, endTime) {
     if (!startTime || !endTime) return "";
 
@@ -1172,22 +1243,43 @@ ${resultMessage}`;
     return this.reportFiles ? this.reportFiles.length : 0;
   }
 
-  get reportFilesCountPlural() {
-    return this.reportFilesCount === 1 ? "" : "s";
-  }
-
   handleOpenReportFile(event) {
+    // Find the reportFile object by id or file path
     const filePath = event.target.dataset.filePath;
-    if (filePath) {
-      // Use the VS Code webview API to send message
-      if (typeof window !== "undefined" && window.sendMessageToVSCode) {
-        window.sendMessageToVSCode({
-          type: "openFile",
-          data: { filePath: filePath },
-        });
-      } else {
-        console.error("VS Code API not available for opening report file");
+    const reportFile = this.reportFiles.find(f => f.file === filePath);
+    if (!reportFile) {
+      console.error("Report file not found for:", filePath);
+      return;
+    }
+
+    if (typeof window !== "undefined" && window.sendMessageToVSCode) {
+      switch (reportFile.type) {
+        case 'actionCommand':
+          // Run a VS Code command
+          window.sendMessageToVSCode({
+            type: "runVsCodeCommand",
+            data: { command: reportFile.file }
+          });
+          break;
+        case 'actionUrl':
+        case 'docUrl':
+          // Open external URL
+          window.sendMessageToVSCode({
+            type: "openExternal",
+            data: { url: reportFile.file }
+          });
+          break;
+        case 'report':
+        default:
+          // Open file in VS Code
+          window.sendMessageToVSCode({
+            type: "openFile",
+            data: { filePath: reportFile.file }
+          });
+          break;
       }
+    } else {
+      console.error("VS Code API not available for opening report file");
     }
   }
 }
