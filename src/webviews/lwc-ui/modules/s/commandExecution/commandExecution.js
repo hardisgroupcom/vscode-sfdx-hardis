@@ -6,6 +6,8 @@ import { LightningElement, track, api } from "lwc";
 import PromptInput from "s/promptInput";
 
 export default class CommandExecution extends LightningElement {
+  // Table logs storage (sectionId -> table data)
+  tableLogs = {};
   // For embedded prompt
   @track showEmbeddedPrompt = false;
   @track embeddedPromptData = null;
@@ -74,7 +76,68 @@ export default class CommandExecution extends LightningElement {
         this.initializeCommand(data);
         break;
       case "addLogLine":
-        this.addLogLine(data);
+        // Support for logType 'table'
+        if (data && data.logType === "table" && data.message) {
+          let tableData;
+          try {
+            tableData = JSON.parse(data.message);
+          } catch (e) {
+            // fallback: show as plain log
+            this.addLogLine({
+              logType: "error",
+              message: "Could not parse table data: " + e.message,
+              timestamp: data.timestamp,
+            });
+            break;
+          }
+          if (Array.isArray(tableData) && tableData.length > 0) {
+            // Derive columns from keys of first row
+            const columns = Object.keys(tableData[0]).map((key) => ({
+              label: this.humanizeKey(key),
+              fieldName: key,
+              type: typeof tableData[0][key] === "number" ? "number" : "text",
+              sortable: true,
+            }));
+            // Add a log line as a placeholder for the table
+            const logLine = {
+              id: this.generateId(),
+              logType: "table",
+              message: "[Table]",
+              timestamp: data.timestamp ? new Date(data.timestamp) : new Date(),
+              tableSectionId: null, // will be set below
+            };
+            // Add to current section
+            if (!this.currentSection) {
+              this.startNewSection({
+                logType: "action",
+                message: "Table Output",
+                timestamp: logLine.timestamp,
+              });
+            }
+            this.addLogToCurrentSection(logLine);
+            // Store table data for this section
+            const sectionId = this.currentSection.id;
+            logLine.tableSectionId = sectionId;
+            this.tableLogs[sectionId] = {
+              columns,
+              rows: tableData,
+              showAll: false,
+            };
+            // Update logSections to trigger reactivity
+            this.logSections = [...this.logSections];
+            break;
+          } else {
+            // fallback: show as plain log
+            this.addLogLine({
+              logType: "log",
+              message: "[Empty Table]",
+              timestamp: data.timestamp,
+            });
+            break;
+          }
+        } else {
+          this.addLogLine(data);
+        }
         break;
       case "addSubCommandStart":
         this.addSubCommandStart(data);
@@ -447,6 +510,8 @@ export default class CommandExecution extends LightningElement {
       isSubCommand: logLine.isSubCommand || false,
       isRunning: logLine.isRunning || false,
       isQuery: logLine.isQuery || false,
+      tableSectionId: logLine.tableSectionId || null,
+      isTable: logLine.logType === 'table',
     };
 
     // Format multi-line messages and bullets
@@ -468,6 +533,20 @@ export default class CommandExecution extends LightningElement {
 
     // Auto-scroll to bottom after adding new log to section
     this.scrollToBottom();
+  }
+
+  // Handler for "See more" button in table logs
+  handleSeeMoreTable(event) {
+    const sectionId = event.target.dataset.sectionId;
+    if (sectionId && this.tableLogs[sectionId]) {
+      this.tableLogs[sectionId].showAll = true;
+      // Force reactivity
+      this.tableLogs = { ...this.tableLogs };
+    }
+  }
+  // Helper to get table log data for a section
+  getTableLog(sectionId) {
+    return this.tableLogs[sectionId] || null;
   }
 
   mergeQueryResult(queryLogId, resultMessage) {
@@ -813,12 +892,32 @@ ${resultMessage}`;
     const shouldHideLatest = this.showEmbeddedPrompt;
     return this.logSections.map((section) => {
       const isLatest = section.id === latestQuestionSectionId;
+      // Table log support
+      let tableLog = this.tableLogs[section.id] || null;
+      let tableShowAll = false;
+      let tableShowMoreButton = false;
+      let rowsLimited = [];
+      let tableRows = [];
+      let tableTruncatedMessage = null;
+      if (tableLog) {
+        tableShowAll = !!tableLog.showAll;
+        rowsLimited = tableLog.rows ? tableLog.rows.slice(0, 10) : [];
+        tableShowMoreButton = !tableShowAll && tableLog.rows && tableLog.rows.length > 10;
+        let rawRows = tableShowAll ? tableLog.rows : rowsLimited;
+        // Detect truncation message row
+        if (
+          rawRows.length > 0 &&
+          rawRows[rawRows.length - 1].sfdxHardisTruncatedMessage
+        ) {
+          tableTruncatedMessage = rawRows[rawRows.length - 1].sfdxHardisTruncatedMessage;
+          rawRows = rawRows.slice(0, rawRows.length - 1);
+        }
+        tableRows = rawRows;
+      }
       return {
         ...section,
         duration: this.calculateSectionDuration(section),
-        toggleIcon: section.isExpanded
-          ? "utility:chevronup"
-          : "utility:chevrondown",
+        toggleIcon: section.isExpanded ? "utility:chevronup" : "utility:chevrondown",
         sectionStatusIcon:
           section.isQuestion && !this.isWaitingForAnswer
             ? { iconName: "utility:question", variant: "warning" }
@@ -840,6 +939,11 @@ ${resultMessage}`;
         hasLogs: section.logs && section.logs.length > 0,
         showToggle: section.logs && section.logs.length > 0,
         isLatestQuestionSectionToHide: shouldHideLatest && isLatest,
+        tableLog: tableLog ? { ...tableLog, rowsLimited } : null,
+        tableShowAll,
+        tableShowMoreButton,
+        tableRows,
+        tableTruncatedMessage,
       };
     });
   }

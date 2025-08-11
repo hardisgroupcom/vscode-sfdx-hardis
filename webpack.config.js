@@ -112,6 +112,8 @@ const lwcWebviewConfig = {
                   "@lwc/babel-plugin-component",
                   {
                     namespace: "s",
+                    experimentalDynamicComponent: true,
+                    enableDynamicComponents: true
                   },
                 ],
               ],
@@ -137,6 +139,7 @@ const lwcWebviewConfig = {
       mode: "development",
       experimentalSyntheticShadow: true,
       experimentalDynamicComponent: true,
+      enableDynamicComponents: true
     }),
     new CopyWebpackPlugin({
       patterns: [
