@@ -6,7 +6,12 @@
                     <!-- <lightning-input type="toggle" label="Show only major branches" checked={showOnlyMajor} onchange={handleToggleMajor}></lightning-input> -->
                 </div>
                 <div class="slds-col slds-no-flex">
-                    <lightning-button icon-name="utility:key" label="Add new Org" title="Configure Salesforce authentication for a new org in the Pipeline" onclick={configureAuth} class="slds-m-left_small"></lightning-button>
+                    <template if:true={prButtonInfo}>
+                        <lightning-button label={prButtonInfo.label} title={prButtonInfo.label} onclick={openPrPage} class="slds-m-right_small">
+                            <img slot="icon" src={prButtonIconUrl} alt={prButtonInfo.icon} style="height:1.2em;vertical-align:middle;display:inline;" />
+                        </lightning-button>
+                    </template>
+                    <lightning-button icon-name="utility:key" label="Add new Org" title="Configure Salesforce authentication for a new org in the Pipeline" onclick={configureAuth} variant="brand" class="slds-m-left_small"></lightning-button>
                     <lightning-button icon-name="utility:refresh" label="Refresh" title="Refresh pipeline data" onclick={refreshPipeline} class="slds-m-left_small"></lightning-button>
                 </div>
             </div>

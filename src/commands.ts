@@ -11,6 +11,7 @@ import { ThemeUtils } from "./themeUtils";
 import { exec } from "child_process";
 import { LwcPanelManager } from "./lwc-panel-manager";
 import { PipelineDataProvider } from "./pipeline-data-provider";
+import { getPullRequestButtonInfo } from "./utils/gitPrButtonUtils";
 
 export class Commands {
   private readonly extensionUri: vscode.Uri;
@@ -526,24 +527,31 @@ export class Commands {
         const pipelineDataProvider = new PipelineDataProvider();
         const pipelineData = await pipelineDataProvider.getPipelineData();
 
+
+        // Calculate PR button info using utility
+        const repoPath = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0
+          ? vscode.workspace.workspaceFolders[0].uri.fsPath
+          : process.cwd();
+        let prButtonInfo = null;
+        try {
+          prButtonInfo = await getPullRequestButtonInfo(repoPath);
+        } catch (e) {
+          console.log("Error getting PR button info:", e);
+        }
+
         const panel = LwcPanelManager.getInstance().getOrCreatePanel(
           "s-pipeline",
-          { pipelineData: pipelineData }, // Pass pipelineData to the LWC
+          { pipelineData: pipelineData, prButtonInfo },
         );
         panel.updateTitle("DevOps Pipeline");
 
         // Register message handler for refreshpipeline and runCommand
-        panel.onMessage(async (type, data) => {
+        panel.onMessage(async (type, _data) => {
           if (type === "refreshpipeline") {
             const provider = new PipelineDataProvider();
             const newData = await provider.getPipelineData();
-            panel.sendInitializationData({ pipelineData: newData });
-          } else if (type === "runCommand" && data?.command) {
-            vscode.commands.executeCommand(
-              "vscode-sfdx-hardis.execute-command",
-              data.command,
-            );
-          }
+            panel.sendInitializationData({ pipelineData: newData, prButtonInfo });
+          } 
         });
       },
     );

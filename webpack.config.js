@@ -148,7 +148,7 @@ const lwcWebviewConfig = {
             __dirname,
             "node_modules/@salesforce-ux/design-system/assets",
           ),
-          to: path.resolve(__dirname, "out/assets"), // Copy to out/assets instead of out/webviews/assets
+          to: path.resolve(__dirname, "out/assets"),
           noErrorOnMissing: true,
         },
         {
@@ -157,6 +157,11 @@ const lwcWebviewConfig = {
             "node_modules/mermaid/dist/mermaid.min.js",
           ),
           to: path.resolve(__dirname, "out/webviews"),
+          noErrorOnMissing: true,
+        },
+        {
+          from: path.resolve(__dirname, "resources/git-icons"),
+          to: path.resolve(__dirname, "out/resources/git-icons"),
           noErrorOnMissing: true,
         },
       ],

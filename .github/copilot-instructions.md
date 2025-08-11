@@ -170,9 +170,9 @@ const remoteConfig = await loadExternalSfdxHardisConfiguration();
 
 ### Command Categories
 1. **Simple (CI/CD)**: For non-technical users
-   - Start new task
+   - Start new User Story
    - Pull from org
-   - Save/publish work
+   - Save/publish User Story
 
 2. **Advanced (CI/CD)**: For technical users  
    - Push to org
@@ -196,14 +196,100 @@ const remoteConfig = await loadExternalSfdxHardisConfiguration();
 - Link to comprehensive documentation at sfdx-hardis.cloudity.com
 - Show clear error messages with actionable guidance
 
-## Lightning Web Components (LWC) UI
-- Use LWC for user input prompts and command execution panels
-- Supports both LWC UI and traditional terminal input
-- LWC components handle user interactions and display results
-- Build LWC using as much as possible:
-  - SLDS, that is embedded by default in all LWC, locally located in out\assets\styles\salesforce-lightning-design-system.css
-  - LWC Base components, locally located in node_modules\@salesforce-ux\design-system\ui\components
-- Try as much as possible to not define local CSS if you can find matching SLDS CSS classes
+
+## Lightning Web Components (LWC) UI & Message Exchange Architecture
+
+### LWC Usage in the Extension
+- All custom UI in the extension is implemented using Lightning Web Components (LWC), rendered in VS Code webviews.
+- LWC is used for user prompts, command execution logs, pipeline views, and other interactive panels.
+- SLDS (Salesforce Lightning Design System) is the default styling system. Avoid custom CSS unless SLDS cannot provide the required style.
+- LWC base components are located in `node_modules/@salesforce-ux/design-system/ui/components`.
+
+### LWC/VS Code Message Exchange Pattern
+
+#### 1. Initialization
+- When a webview is created, the extension injects an `#app` container with `data-lwc-id` and `data-init-data` attributes.
+- The LWC bootstrap (`index.js`) reads these attributes, instantiates the correct LWC component, and passes initialization data.
+- The extension sends an `initialize` message to the LWC component after the DOM is ready, containing any required data (e.g., pipeline info, PR button info, command context).
+
+#### 2. Message Bridge
+- Communication is strictly message-based using `window.sendMessageToVSCode(message)` and `window.addEventListener('message', ...)`.
+- LWC components send messages to the extension using `window.sendMessageToVSCode`.
+- The extension listens for messages from the webview and routes them to built-in handlers or custom listeners.
+
+#### 3. Built-in Message Types (from LWC to Extension)
+- `openExternal`: Open a URL in the user's browser.
+- `runCommand`: Execute a VS Code command.
+- `refreshPipeline`, `refreshStatus`, `refreshCommands`, `refreshPlugins`: Refresh various tree views.
+- `openFile`, `downloadFile`, `fileExistsCheck`: File operations (open, download, check existence).
+- `panelDisposed`: Notify extension that the panel was closed.
+
+#### 4. Built-in Message Types (from Extension to LWC)
+- `initialize`: Initial data for the LWC component (context, config, etc.).
+- `addLogLine`, `addSubCommandStart`, `addSubCommandEnd`: Command execution log events.
+- `reportFile`: Notify LWC of a generated report file.
+- `completeCommand`: Notify LWC that a command has finished (success, error, or aborted).
+- `refreshPipeline`: Instruct LWC to refresh pipeline data.
+
+#### 5. Custom Message Types
+- Custom messages are used for specific workflows (e.g., prompt input, pipeline PR button, etc.).
+- Example: The pipeline LWC receives a `prButtonInfo` object in its initialization data, containing the PR/MR button label and URL, calculated by the extension.
+
+#### 6. Message Handling in LWC
+- Each LWC component exposes `initialize(data)` and/or `handleMessage(type, data)` methods.
+- The bootstrapper (`index.js`) routes incoming messages to these methods.
+- For prompt input, the method may be `showPrompt(data)`.
+
+#### 7. Command Execution Flow
+- When a CLI command is run, the extension opens a command execution LWC panel with context data.
+- The extension streams log lines, subcommand events, and completion status to the LWC via messages.
+- The LWC can send cancellation or user input messages back to the extension.
+
+#### 8. Pipeline PR/MR Button Workflow
+- The extension detects the git provider and remote URL, calculates the PR/MR page URL and label using a utility (`getPullRequestButtonInfo`).
+- This info is passed in the initialization data to the pipeline LWC.
+- The LWC displays a dynamic button (e.g., "View PULL REQUESTS on GITHUB").
+- When clicked, the LWC sends an `openExternal` message with the URL; the extension opens it in the browser.
+
+#### 9. Security and Validation
+- All messages are validated and sanitized before being acted upon.
+- Only whitelisted commands and URLs are allowed from the LWC to the extension.
+
+#### 10. Extensibility
+- New message types should be documented and handled in both the LWC and extension message routers.
+- Prefer message-based protocols for all LWC/VS Code interactions for maintainability and testability.
+
+### LWC UI Best Practices
+- Use SLDS classes for all layout and styling; avoid custom CSS unless necessary.
+- Place all imports at the top of files.
+- Centralize logic (e.g., PR/MR URL calculation) in utilities and import them where needed.
+- Document all public LWC component APIs (initialization data, message types, events).
+
+### Example: LWC/VS Code Message Exchange
+
+**From Extension to LWC:**
+```js
+panel.webview.postMessage({
+  type: "initialize",
+  data: { prButtonInfo: { label: "View PULL REQUESTS on GITHUB", url: "https://github.com/org/repo/pulls" }, ... }
+});
+```
+
+**From LWC to Extension:**
+```js
+window.sendMessageToVSCode({ type: "openExternal", data: "https://github.com/org/repo/pulls" });
+```
+
+**LWC Message Handler:**
+```js
+window.addEventListener("message", (event) => {
+  const message = event.data;
+  if (message.type === "initialize") {
+    this.initialize(message.data);
+  }
+  // ...
+});
+```
 
 ## Custom Webviews with LWC
 

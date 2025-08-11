@@ -224,6 +224,9 @@ export class LwcUiPanel {
           await this.handleOpenExternal(data.url || data);
           break;
         case "runVsCodeCommand":
+          await this.handleRunVsCodeCommand(data);
+          break;
+        case "runCommand":
           await this.handleRunCommand(data);
           break;
       }
@@ -236,7 +239,7 @@ export class LwcUiPanel {
    * Handle VS Code command execution request from webview
    * @param data Object with a 'command' property (string)
    */
-  private async handleRunCommand(data: { command: string }): Promise<void> {
+  private async handleRunVsCodeCommand(data: { command: string }): Promise<void> {
     if (!data || !data.command || typeof data.command !== 'string') {
       vscode.window.showErrorMessage('No VS Code command specified to run.');
       return;
@@ -248,6 +251,17 @@ export class LwcUiPanel {
       vscode.window.showErrorMessage(`Failed to run VS Code command: ${data.command}`);
     }
   }
+
+  /**
+   * Handle command execution request from webview
+   * @param data Object with a 'command' property (string)
+   */
+  private async handleRunCommand(data: { command: string }): Promise<void> {
+      vscode.commands.executeCommand(
+        "vscode-sfdx-hardis.execute-command",
+        data.command,
+      );
+    }
 
   /**
    * Handle file existence check request from webview
