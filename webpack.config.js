@@ -2,8 +2,6 @@ const path = require("path");
 const webpack = require("webpack");
 const LwcWebpackPlugin = require("lwc-webpack-plugin");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
-const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
-
 
 /** @type {import('webpack').Configuration} */
 const extensionConfig = {
@@ -82,7 +80,7 @@ const workerConfig = {
 /** @type {import('webpack').Configuration} */
 const lwcWebviewConfig = {
   target: "web",
-  mode: "production",
+  mode: "none",
 
   entry: "./src/webviews/lwc-ui/index.js",
   output: {
