@@ -2,12 +2,17 @@
 
 ## [Unreleased]
 
-## [6.0.1] 2024-08-10
+## [6.0.5 (pre-release)] 2024-08-11
+
+- Display more kind of buttons (action link, action command, url, doc)
+- Display tables in command execution LWC
+
+## [6.0.1 (pre-release)] 2024-08-10
 
 - Improve sfdx-hardis dependency detection for pre-release mode
 - Improve performance at initialization by using a single multi-threaded worker
 
-## [6.0.0] 2024-08-09
+## [6.0.0 (pre-release)] 2024-08-09
 
 - New UI with LWC
   - Command execution
