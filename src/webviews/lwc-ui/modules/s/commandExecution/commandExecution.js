@@ -971,47 +971,50 @@ ${resultMessage}`;
   }
 
   get sortedReportFiles() {
-    // Only handle the four allowed types
-    return this.reportFiles.map(f => {
+    // Sort: actionCommand, actionUrl, report, docUrl
+    const actionCommands = [];
+    const actionUrls = [];
+    const reports = [];
+    const docUrls = [];
+    for (const f of this.reportFiles) {
       switch (f.type) {
         case 'actionCommand':
-          return {
-            ...f,
-            buttonVariant: 'brand',
-            iconName: 'utility:play',
-            iconVariant: 'inverse',
-          };
+          actionCommands.push(f);
+          break;
         case 'actionUrl':
-          return {
-            ...f,
-            buttonVariant: 'brand', // Use brand for strong call to action
-            iconName: 'utility:link',
-            iconVariant: 'inverse', // Inverse for contrast on brand
-          };
+          actionUrls.push(f);
+          break;
         case 'report':
-          return {
-            ...f,
-            buttonVariant: 'success',
-            iconName: 'utility:page',
-            iconVariant: 'inverse',
-          };
+          reports.push(f);
+          break;
         case 'docUrl':
-          return {
-            ...f,
-            buttonVariant: 'outline-brand',
-            iconName: 'utility:info',
-            iconVariant: 'brand',
-          };
+          docUrls.push(f);
+          break;
         default:
-          // Should not happen, fallback to report style
-          return {
-            ...f,
-            buttonVariant: 'success',
-            iconName: 'utility:page',
-            iconVariant: 'inverse',
-          };
+          reports.push(f);
       }
-    });
+    }
+    // Map to add button/icon props as before
+    const decorate = (f) => {
+      switch (f.type) {
+        case 'actionCommand':
+          return { ...f, buttonVariant: 'brand', iconName: 'utility:play', iconVariant: 'inverse' };
+        case 'actionUrl':
+          return { ...f, buttonVariant: 'brand', iconName: 'utility:link', iconVariant: 'inverse' };
+        case 'report':
+          return { ...f, buttonVariant: 'success', iconName: 'utility:page', iconVariant: 'inverse' };
+        case 'docUrl':
+          return { ...f, buttonVariant: 'outline-brand', iconName: 'utility:info', iconVariant: 'brand' };
+        default:
+          return { ...f, buttonVariant: 'success', iconName: 'utility:page', iconVariant: 'inverse' };
+      }
+    };
+    return [
+      ...actionCommands.map(decorate),
+      ...actionUrls.map(decorate),
+      ...reports.map(decorate),
+      ...docUrls.map(decorate),
+    ];
   }
 
   calculateDuration(startTime, endTime) {
@@ -1254,6 +1257,15 @@ ${resultMessage}`;
     if (!message || typeof message !== "string") return "";
     if (!message.includes("\n") && !message.trim().startsWith("- "))
       return this.linkifyUrls(message);
+
+    // Convert HTML characters so they are displayed as HTML
+    message = message
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;")
+      .replace(/`/g, "&#96;"); // Escape backticks
 
     const lines = message.split("\n");
     let html = "";
