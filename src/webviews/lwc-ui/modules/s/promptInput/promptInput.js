@@ -22,6 +22,7 @@ export default class PromptInput extends LightningElement {
   // Reverse mapping: JSON-stringified original value -> string identifier
   @track valueToIdentifier = {};
   _hasInitialFocus = false; // Track if initial focus has been set
+  _hasInitialScroll = false;
 
   // Dynamically set card classes based on embedded property
   get cardClass() {
@@ -52,57 +53,8 @@ export default class PromptInput extends LightningElement {
         this.currentPrompt.message,
       );
     }
-
-    // Only perform initial focus when the prompt first becomes visible
-    if (this.isVisible && this.currentPrompt && !this._hasInitialFocus) {
-      this._hasInitialFocus = true;
-      setTimeout(() => {
-        let firstInput;
-        if (this.isSelectWithButtons) {
-          // Always set focus to the button matching the first selectOption
-          this.focusedButtonIndex = 0;
-          const firstValue =
-            this.selectOptions[0] && this.selectOptions[0].value;
-          const buttons = this.template.querySelectorAll(
-            ".select-option-button",
-          );
-          // Find the button whose data-value matches the first selectOption value
-          let btnToFocus = null;
-          if (firstValue) {
-            btnToFocus = Array.from(buttons).find(
-              (btn) => btn.dataset.value === firstValue,
-            );
-          }
-          firstInput = btnToFocus || buttons[0];
-        } else {
-          firstInput = this.template.querySelector(
-            "lightning-input, lightning-combobox",
-          );
-        }
-        if (firstInput && typeof firstInput.focus === "function") {
-          firstInput.focus();
-        }
-        // Scroll validate button into view if embedded and not multiselect and not select with buttons
-        if (this.embedded && !this.isMultiselectInput) {
-          // Find the cancel button (neutral variant)
-          const cancelBtn = this.template.querySelector(
-            'lightning-button[variant="neutral"]',
-          );
-          if (cancelBtn && cancelBtn.focus) {
-            // LWC base components render a shadow button, so try to scroll the actual button
-            // Try to find the native button inside
-            const nativeBtn =
-              cancelBtn.shadowRoot &&
-              cancelBtn.shadowRoot.querySelector("button");
-            if (nativeBtn && nativeBtn.scrollIntoView) {
-              nativeBtn.scrollIntoView({ behavior: "smooth", block: "center" });
-            } else if (cancelBtn.scrollIntoView) {
-              cancelBtn.scrollIntoView({ behavior: "smooth", block: "center" });
-            }
-          }
-        }
-      }, 150);
-    }
+    this.setInitialFocus();
+    this.setInitialScroll();
   }
 
   disconnectedCallback() {
@@ -179,6 +131,8 @@ export default class PromptInput extends LightningElement {
             ) || [];
       }
     }
+    this.setInitialFocus();
+    this.setInitialScroll();
   }
 
   // Build mapping from string identifier <-> original value for current choices
@@ -214,6 +168,74 @@ export default class PromptInput extends LightningElement {
     this.resetValues();
   }
 
+
+
+
+  setInitialScroll() {
+    if (this.isVisible && this.currentPrompt && !this._hasInitialScroll) {
+      setTimeout(() => {
+        if (this._hasInitialScroll) {
+          return;
+        }
+        if (this.isMultiselectInput || !this.embedded) {
+          // For multiselect, we don't scroll to the cancel button
+          this._hasInitialScroll = true;
+          return;
+        }
+        // Find the cancel button (destructive or neutral variant for backward compatibility)
+        let cancelBtn = this.template.querySelector('lightning-button[variant="destructive"]');
+        if (cancelBtn && cancelBtn.focus) {
+          // LWC base components render a shadow button, so try to scroll the actual button
+          // Try to find the native button inside
+          const nativeBtn = cancelBtn.shadowRoot &&
+            cancelBtn.shadowRoot.querySelector("button");
+          if (nativeBtn && nativeBtn.scrollIntoView) {
+            nativeBtn.scrollIntoView({ behavior: "smooth", block: "center" });
+            this._hasInitialScroll = true;
+          } else if (cancelBtn.scrollIntoView) {
+            cancelBtn.scrollIntoView({ behavior: "smooth", block: "center" });
+            this._hasInitialScroll = true;
+          }
+        }
+      }, 150);
+    }
+  }
+
+  setInitialFocus() {
+    if (this.isVisible && this.currentPrompt && !this._hasInitialFocus) {
+      setTimeout(() => {
+        if (this._hasInitialFocus) {
+          return;
+        }
+        let firstInput;
+        if (this.isSelectWithButtons) {
+          // Always set focus to the button matching the first selectOption
+          this.focusedButtonIndex = 0;
+          const firstValue = this.selectOptions[0] && this.selectOptions[0].value;
+          const buttons = this.template.querySelectorAll(
+            ".select-option-button"
+          );
+          // Find the button whose data-value matches the first selectOption value
+          let btnToFocus = null;
+          if (firstValue) {
+            btnToFocus = Array.from(buttons).find(
+              (btn) => btn.dataset.value === firstValue
+            );
+          }
+          firstInput = btnToFocus || buttons[0];
+        } else {
+          firstInput = this.template.querySelector(
+            "lightning-input, lightning-combobox"
+          );
+        }
+        if (firstInput && typeof firstInput.focus === "function") {
+          firstInput.focus();
+          this._hasInitialFocus = true;
+        }
+      }, 150);
+    }
+  }
+
   // Helper for deep equality (handles primitives and objects)
   isEqual(a, b) {
     if (a === b) return true;
@@ -236,6 +258,7 @@ export default class PromptInput extends LightningElement {
     this.isSubmitting = false;
     this.choiceValueMapping = {};
     this._hasInitialFocus = false; // Reset focus flag
+    this._hasInitialScroll = false; // Reset scroll flag
   }
 
   get isTextInput() {

@@ -202,12 +202,12 @@ export default class CommandExecution extends LightningElement {
       if (promptInput && typeof promptInput.initialize === "function") {
         promptInput.initialize(this.embeddedPromptData);
       }
-      // Scroll the promptInput into view for better UX
-      if (promptInput && typeof promptInput.scrollIntoView === "function") {
-        promptInput.scrollIntoView({ behavior: "smooth", block: "center" });
-      } else if (promptInput && promptInput instanceof HTMLElement) {
-        promptInput.scrollIntoView({ behavior: "smooth", block: "center" });
-      }
+      // // Scroll the promptInput into view for better UX
+      // if (promptInput && typeof promptInput.scrollIntoView === "function") {
+      //   promptInput.scrollIntoView({ behavior: "smooth", block: "center" });
+      // } else if (promptInput && promptInput instanceof HTMLElement) {
+      //   promptInput.scrollIntoView({ behavior: "smooth", block: "center" });
+      // }
     }, 0);
   }
 
