@@ -182,8 +182,8 @@ export default class PromptInput extends LightningElement {
           this._hasInitialScroll = true;
           return;
         }
-        // Find the cancel button (destructive or neutral variant for backward compatibility)
-        let cancelBtn = this.template.querySelector('lightning-button[variant="destructive"]');
+        // Find the cancel button by its label attribute
+        let cancelBtn = this.template.querySelector('lightning-button[name="cancel"]');
         if (cancelBtn && cancelBtn.focus) {
           // LWC base components render a shadow button, so try to scroll the actual button
           // Try to find the native button inside
