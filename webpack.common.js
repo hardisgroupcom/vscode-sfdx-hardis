@@ -3,23 +3,18 @@ const webpack = require("webpack");
 const LwcWebpackPlugin = require("lwc-webpack-plugin");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 
-/** @type {import('webpack').Configuration} */
 const extensionConfig = {
-  target: "node", // vscode extensions run in Node.js context
-  mode: "none", // this leaves the source code as close as possible to the original (when packaging we set this to 'production')
-
-  entry: "./src/extension.ts", // the entry point of this extension, 📖 -> https://webpack.js.org/configuration/entry-context/
+  target: "node",
+  entry: "./src/extension.ts",
   output: {
-    // the bundle is stored in the 'out' folder (check package.json), 📖 -> https://webpack.js.org/configuration/output/
     path: path.resolve(__dirname, "out"),
     filename: "extension.js",
     libraryTarget: "commonjs2",
   },
   externals: {
-    vscode: "commonjs vscode", // the vscode-module is created on-the-fly and must be excluded. Add other modules that cannot be webpack'ed, 📖 -> https://webpack.js.org/configuration/externals/
+    vscode: "commonjs vscode",
   },
   resolve: {
-    // support reading TypeScript and JavaScript files, 📖 -> https://github.com/TypeStrong/ts-loader
     extensions: [".ts", ".js"],
   },
   module: {
@@ -35,17 +30,10 @@ const extensionConfig = {
       },
     ],
   },
-  devtool: "nosources-source-map",
-  infrastructureLogging: {
-    level: "log", // enables logging required for problem matchers
-  },
 };
 
-/** @type {import('webpack').Configuration} */
 const workerConfig = {
   target: "node",
-  mode: "none",
-
   entry: "./src/worker.ts",
   output: {
     path: path.resolve(__dirname, "out"),
@@ -71,17 +59,10 @@ const workerConfig = {
       },
     ],
   },
-  devtool: "nosources-source-map",
-  infrastructureLogging: {
-    level: "log",
-  },
 };
 
-/** @type {import('webpack').Configuration} */
 const lwcWebviewConfig = {
   target: "web",
-  mode: "none",
-
   entry: "./src/webviews/lwc-ui/index.js",
   output: {
     path: path.resolve(__dirname, "out", "webviews"),
@@ -89,7 +70,7 @@ const lwcWebviewConfig = {
   },
   resolve: {
     extensions: [".js", ".ts"],
-    modules: ["node_modules"], // Add node_modules to resolution paths
+    modules: ["node_modules"],
     fallback: {
       process: require.resolve("process/browser"),
     },
@@ -113,7 +94,7 @@ const lwcWebviewConfig = {
                   {
                     namespace: "s",
                     experimentalDynamicComponent: true,
-                    enableDynamicComponents: true
+                    enableDynamicComponents: true,
                   },
                 ],
               ],
@@ -136,10 +117,9 @@ const lwcWebviewConfig = {
           npm: "lightning-base-components",
         },
       ],
-      mode: "development",
       experimentalSyntheticShadow: true,
       experimentalDynamicComponent: true,
-      enableDynamicComponents: true
+      enableDynamicComponents: true,
     }),
     new CopyWebpackPlugin({
       patterns: [
@@ -162,7 +142,7 @@ const lwcWebviewConfig = {
         {
           from: path.resolve(
             __dirname,
-            "node_modules/mermaid/dist/mermaid.min.js",
+            "node_modules/mermaid/dist/mermaid.min.js"
           ),
           to: path.resolve(__dirname, "out/webviews"),
           noErrorOnMissing: true,
@@ -175,10 +155,6 @@ const lwcWebviewConfig = {
       ],
     }),
   ],
-  devtool: "source-map",
-  infrastructureLogging: {
-    level: "log",
-  },
 };
 
-module.exports = [extensionConfig, workerConfig, lwcWebviewConfig];
+module.exports = { extensionConfig, workerConfig, lwcWebviewConfig };

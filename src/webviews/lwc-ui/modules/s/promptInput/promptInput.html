@@ -175,17 +175,20 @@
                             <div class="slds-col slds-no-flex">
                                 <div class="slds-button-group" role="group">
                                     <lightning-button
-                                        variant="brand"
-                                        label="Validate"
-                                        icon-name="utility:check"
-                                        onclick={handleSubmit}
-                                        class="slds-m-right_small">
-                                    </lightning-button>
-                                    <lightning-button
+                                        data-id="cancelBtn"
                                         variant="neutral"
                                         label="Cancel"
+                                        tabindex="-1"
                                         icon-name="utility:close"
-                                        onclick={handleCancel}>
+                                        onclick={handleCancel}
+                                        class="slds-m-right_medium">
+                                    </lightning-button>
+                                    <lightning-button
+                                        variant="brand"
+                                        label="Validate"
+                                        tabindex="0"
+                                        icon-name="utility:check"
+                                        onclick={handleSubmit}>
                                     </lightning-button>
                                 </div>
                             </div>
@@ -202,6 +205,7 @@
                             </div>
                             <div class="slds-col slds-no-flex">
                                 <lightning-button
+                                    data-id="cancelBtn"
                                     variant="neutral"
                                     label="Cancel"
                                     icon-name="utility:close"

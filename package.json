@@ -396,9 +396,10 @@
   "scripts": {
     "vscode:prepublish": "yarn run package",
     "compile": "tsc -p ./",
-    "build": "webpack",
-    "watch": "webpack --watch",
-    "package": "webpack --mode production --devtool hidden-source-map",
+  "build": "webpack --config webpack.prod.js",
+  "watch": "webpack --config webpack.dev.js --watch",
+  "dev": "webpack --config webpack.dev.js",
+  "package": "webpack --config webpack.prod.js",
     "pretest": "yarn run compile && yarn run lint",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
@@ -406,6 +407,7 @@
     "vsix": "vsce package --allow-package-secrets github"
   },
   "devDependencies": {
+    "terser-webpack-plugin": "^5.3.10",
     "@babel/core": "^7.28.0",
     "@babel/preset-env": "^7.28.0",
     "@eslint/js": "^9.29.0",
@@ -441,6 +443,7 @@
     "ts-loader": "^9.5.2",
     "typescript": "^5.0.0",
     "webpack": "^5.101.0",
+    "webpack-bundle-analyzer": "^4.10.2",
     "webpack-cli": "^6.0.1"
   },
   "dependencies": {

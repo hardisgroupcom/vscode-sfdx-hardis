@@ -3,27 +3,44 @@
 {
 	"version": "2.0.0",
 	"tasks": [
-		{
-			"type": "npm",
-			"script": "watch",
-			"problemMatcher": "$tsc-watch",
-			"isBackground": true,
-			"presentation": {
-				"reveal": "never"
+			{
+				"label": "watch:dev",
+				"type": "shell",
+				"command": "yarn run watch",
+				"problemMatcher": "$tsc-watch",
+				"isBackground": true,
+				"background": {
+					"activeOnStart": true,
+					"beginsPattern": "Compiler is watching files for updates...",
+					"endsPattern": "Compiler finished"
+				},
+				"presentation": {
+					"reveal": "never"
+				},
+				"group": {
+					"kind": "build",
+					"isDefault": false
+				}
 			},
-			"group": {
-				"kind": "build",
-				"isDefault": false
-			}
-		},
 		{
-			"type": "npm",
-			"script": "build",
+			"label": "build:prod",
+			"type": "shell",
+			"command": "yarn run build",
 			"problemMatcher": "$tsc",
 			"group": {
 				"kind": "build",
 				"isDefault": true
 			}
-		}
+		},
+			{
+				"label": "build:dev",
+				"type": "shell",
+				"command": "yarn run dev",
+				"problemMatcher": "$tsc",
+				"group": {
+					"kind": "build",
+					"isDefault": false
+				}
+			},
 	]
 }

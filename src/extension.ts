@@ -27,10 +27,6 @@ export function activate(context: vscode.ExtensionContext) {
   // This line of code will only be executed once when your extension is activated
   Logger.log("VsCode SFDX Hardis activation is starting...");
 
-  // Anonymous telemetry respecting VsCode Guidelines -> https://code.visualstudio.com/api/extension-guides/telemetry
-  reporter = new TelemetryReporter("cf83e6dc-2621-4cb6-b92b-30905d1c8476");
-  context.subscriptions.push(reporter);
-
   // Get current workspace
   const currentWorkspaceFolderUri = getWorkspaceRoot();
 
@@ -66,6 +62,10 @@ export function activate(context: vscode.ExtensionContext) {
     hardisPluginsProvider,
   );
   context.subscriptions.push(disposableTreePlugins);
+
+  // Anonymous telemetry respecting VsCode Guidelines -> https://code.visualstudio.com/api/extension-guides/telemetry
+  reporter = new TelemetryReporter("cf83e6dc-2621-4cb6-b92b-30905d1c8476");
+  context.subscriptions.push(reporter);
 
   // Register common commands
   const commands = new Commands(
