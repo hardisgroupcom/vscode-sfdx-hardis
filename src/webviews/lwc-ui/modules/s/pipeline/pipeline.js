@@ -3,25 +3,42 @@
 // @ts-nocheck
 // eslint-env es6
 
-import { LightningElement, api } from "lwc";
+
+
+import { LightningElement, api, track } from "lwc";
+
 
 export default class Pipeline extends LightningElement {
+  @track prButtonInfo;
   pipelineData;
   error;
   currentDiagram = "";
   lastDiagram = "";
-
   showOnlyMajor = false;
+
+  // Dynamically compute the icon URL for the PR button
+  get prButtonIconUrl() {
+    if (!this.prButtonInfo || !this.prButtonInfo.icon) return null;
+    // The icons are copied to /resources/git-icons in the webview root
+    return `/resources/git-icons/${this.prButtonInfo.icon}.svg`;
+  }
 
   @api
   initialize(data) {
     this.pipelineData = data.pipelineData;
+    this.prButtonInfo = data.prButtonInfo;
     this.showOnlyMajor = false;
     this.currentDiagram = this.pipelineData.mermaidDiagram;
     this.error = undefined;
     this.lastDiagram = "";
     setTimeout(() => this.renderMermaid(), 0);
     console.log("Pipeline data initialized:", this.pipelineData);
+  }
+
+  openPrPage() {
+    if (this.prButtonInfo && this.prButtonInfo.url && typeof window !== "undefined" && window.sendMessageToVSCode) {
+      window.sendMessageToVSCode({ type: "openExternal", data: {url: this.prButtonInfo.url} });
+    }
   }
 
   configureAuth() {
