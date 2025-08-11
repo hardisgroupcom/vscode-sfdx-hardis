@@ -183,7 +183,7 @@ export default class PromptInput extends LightningElement {
           return;
         }
         // Find the cancel button by its label attribute
-        let cancelBtn = this.template.querySelector('lightning-button[name="cancel"]');
+        let cancelBtn = this.template.querySelector('[data-id="cancelBtn"]');
         if (cancelBtn && cancelBtn.focus) {
           // LWC base components render a shadow button, so try to scroll the actual button
           // Try to find the native button inside
