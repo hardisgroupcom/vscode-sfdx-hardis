@@ -170,9 +170,9 @@ const remoteConfig = await loadExternalSfdxHardisConfiguration();
 
 ### Command Categories
 1. **Simple (CI/CD)**: For non-technical users
-   - Start new task
+   - Start new User Story
    - Pull from org
-   - Save/publish work
+   - Save/publish User Story
 
 2. **Advanced (CI/CD)**: For technical users  
    - Push to org
