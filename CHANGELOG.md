@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [6.0.6 (pre-release)] 2024-08-11
+
+- Improve UI & Buttons
+- Rename Task into User Story
+
 ## [6.0.5 (pre-release)] 2024-08-11
 
 - Display more kind of buttons (action link, action command, url, doc)
