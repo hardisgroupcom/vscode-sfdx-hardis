@@ -53,7 +53,6 @@ export default class PromptInput extends LightningElement {
         this.currentPrompt.message,
       );
     }
-    this.setInitialFocus();
     this.setInitialScroll();
   }
 
@@ -131,8 +130,6 @@ export default class PromptInput extends LightningElement {
             ) || [];
       }
     }
-    this.setInitialFocus();
-    this.setInitialScroll();
   }
 
   // Build mapping from string identifier <-> original value for current choices
@@ -168,36 +165,42 @@ export default class PromptInput extends LightningElement {
     this.resetValues();
   }
 
-
-
-
   setInitialScroll() {
     if (this.isVisible && this.currentPrompt && !this._hasInitialScroll) {
       setTimeout(() => {
         if (this._hasInitialScroll) {
+          this.setInitialFocus();
           return;
         }
         if (this.isMultiselectInput || !this.embedded) {
           // For multiselect, we don't scroll to the cancel button
           this._hasInitialScroll = true;
+          this.setInitialFocus();
           return;
         }
-        // Find the cancel button by its label attribute
-        let cancelBtn = this.template.querySelector('[data-id="cancelBtn"]');
+        // Find the cancel button by its label attribute 
+        let cancelBtn = this.template.querySelector('lightning-button[data-id="cancelBtn"]');
         if (cancelBtn && cancelBtn.focus) {
           // LWC base components render a shadow button, so try to scroll the actual button
           // Try to find the native button inside
           const nativeBtn = cancelBtn.shadowRoot &&
             cancelBtn.shadowRoot.querySelector("button");
           if (nativeBtn && nativeBtn.scrollIntoView) {
-            nativeBtn.scrollIntoView({ behavior: "smooth", block: "center" });
+            if (!this._hasInitialScroll){
+              nativeBtn.scrollIntoView({ behavior: "smooth", block: "center" });
             this._hasInitialScroll = true;
+            this.setInitialFocus();
+            }
           } else if (cancelBtn.scrollIntoView) {
-            cancelBtn.scrollIntoView({ behavior: "smooth", block: "center" });
-            this._hasInitialScroll = true;
+            if (!this._hasInitialScroll) {
+              cancelBtn.scrollIntoView({ behavior: "smooth", block: "center" });
+              this.setInitialFocus();
+              this._hasInitialScroll = true;
+            }
+            
           }
         }
-      }, 150);
+      }, 200);
     }
   }
 
@@ -229,10 +232,12 @@ export default class PromptInput extends LightningElement {
           );
         }
         if (firstInput && typeof firstInput.focus === "function") {
-          firstInput.focus();
+          if (!this._hasInitialFocus) {
+            firstInput.focus();
+          }
           this._hasInitialFocus = true;
         }
-      }, 150);
+      }, 50);
     }
   }
 
