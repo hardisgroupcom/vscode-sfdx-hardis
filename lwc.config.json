@@ -6,5 +6,8 @@
     {
       "dir": "node_modules/lightning-base-components/src"
     }
-  ]
+  ],
+  "experimentalSyntheticShadow": true,
+  "experimentalDynamicComponent": true,
+  "enableDynamicComponents": true
 }

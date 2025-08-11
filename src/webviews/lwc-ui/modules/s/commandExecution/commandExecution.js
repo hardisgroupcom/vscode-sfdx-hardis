@@ -6,6 +6,8 @@ import { LightningElement, track, api } from "lwc";
 import PromptInput from "s/promptInput";
 
 export default class CommandExecution extends LightningElement {
+  // Table logs storage (sectionId -> table data)
+  tableLogs = {};
   // For embedded prompt
   @track showEmbeddedPrompt = false;
   @track embeddedPromptData = null;
@@ -74,7 +76,68 @@ export default class CommandExecution extends LightningElement {
         this.initializeCommand(data);
         break;
       case "addLogLine":
-        this.addLogLine(data);
+        // Support for logType 'table'
+        if (data && data.logType === "table" && data.message) {
+          let tableData;
+          try {
+            tableData = JSON.parse(data.message);
+          } catch (e) {
+            // fallback: show as plain log
+            this.addLogLine({
+              logType: "error",
+              message: "Could not parse table data: " + e.message,
+              timestamp: data.timestamp,
+            });
+            break;
+          }
+          if (Array.isArray(tableData) && tableData.length > 0) {
+            // Derive columns from keys of first row
+            const columns = Object.keys(tableData[0]).map((key) => ({
+              label: this.humanizeKey(key),
+              fieldName: key,
+              type: typeof tableData[0][key] === "number" ? "number" : "text",
+              sortable: true,
+            }));
+            // Add a log line as a placeholder for the table
+            const logLine = {
+              id: this.generateId(),
+              logType: "table",
+              message: "[Table]",
+              timestamp: data.timestamp ? new Date(data.timestamp) : new Date(),
+              tableSectionId: null, // will be set below
+            };
+            // Add to current section
+            if (!this.currentSection) {
+              this.startNewSection({
+                logType: "action",
+                message: "Table Output",
+                timestamp: logLine.timestamp,
+              });
+            }
+            this.addLogToCurrentSection(logLine);
+            // Store table data for this section
+            const sectionId = this.currentSection.id;
+            logLine.tableSectionId = sectionId;
+            this.tableLogs[sectionId] = {
+              columns,
+              rows: tableData,
+              showAll: false,
+            };
+            // Update logSections to trigger reactivity
+            this.logSections = [...this.logSections];
+            break;
+          } else {
+            // fallback: show as plain log
+            this.addLogLine({
+              logType: "log",
+              message: "[Empty Table]",
+              timestamp: data.timestamp,
+            });
+            break;
+          }
+        } else {
+          this.addLogLine(data);
+        }
         break;
       case "addSubCommandStart":
         this.addSubCommandStart(data);
@@ -222,14 +285,19 @@ export default class CommandExecution extends LightningElement {
   @api
   addReportFile(data) {
     if (data && data.file && data.title) {
+      // Only accept the four allowed types
+      const allowedTypes = ['actionCommand', 'actionUrl', 'report', 'docUrl'];
+      const type = allowedTypes.includes(data.type) ? data.type : 'report';
       const reportFile = {
         id: this.generateId(),
         file: data.file,
         title: data.title,
         timestamp: new Date(),
+        type: type,
+        url: type === 'actionUrl' ? data.file : null,
+        vscodeCommand: type === 'actionCommand' ? data.file : null,
       };
       this.reportFiles = [...this.reportFiles, reportFile];
-      // Auto-scroll to bottom after adding new report file
       this.scrollToBottom();
     }
   }
@@ -442,6 +510,8 @@ export default class CommandExecution extends LightningElement {
       isSubCommand: logLine.isSubCommand || false,
       isRunning: logLine.isRunning || false,
       isQuery: logLine.isQuery || false,
+      tableSectionId: logLine.tableSectionId || null,
+      isTable: logLine.logType === 'table',
     };
 
     // Format multi-line messages and bullets
@@ -463,6 +533,20 @@ export default class CommandExecution extends LightningElement {
 
     // Auto-scroll to bottom after adding new log to section
     this.scrollToBottom();
+  }
+
+  // Handler for "See more" button in table logs
+  handleSeeMoreTable(event) {
+    const sectionId = event.target.dataset.sectionId;
+    if (sectionId && this.tableLogs[sectionId]) {
+      this.tableLogs[sectionId].showAll = true;
+      // Force reactivity
+      this.tableLogs = { ...this.tableLogs };
+    }
+  }
+  // Helper to get table log data for a section
+  getTableLog(sectionId) {
+    return this.tableLogs[sectionId] || null;
   }
 
   mergeQueryResult(queryLogId, resultMessage) {
@@ -808,12 +892,32 @@ ${resultMessage}`;
     const shouldHideLatest = this.showEmbeddedPrompt;
     return this.logSections.map((section) => {
       const isLatest = section.id === latestQuestionSectionId;
+      // Table log support
+      let tableLog = this.tableLogs[section.id] || null;
+      let tableShowAll = false;
+      let tableShowMoreButton = false;
+      let rowsLimited = [];
+      let tableRows = [];
+      let tableTruncatedMessage = null;
+      if (tableLog) {
+        tableShowAll = !!tableLog.showAll;
+        rowsLimited = tableLog.rows ? tableLog.rows.slice(0, 10) : [];
+        tableShowMoreButton = !tableShowAll && tableLog.rows && tableLog.rows.length > 10;
+        let rawRows = tableShowAll ? tableLog.rows : rowsLimited;
+        // Detect truncation message row
+        if (
+          rawRows.length > 0 &&
+          rawRows[rawRows.length - 1].sfdxHardisTruncatedMessage
+        ) {
+          tableTruncatedMessage = rawRows[rawRows.length - 1].sfdxHardisTruncatedMessage;
+          rawRows = rawRows.slice(0, rawRows.length - 1);
+        }
+        tableRows = rawRows;
+      }
       return {
         ...section,
         duration: this.calculateSectionDuration(section),
-        toggleIcon: section.isExpanded
-          ? "utility:chevronup"
-          : "utility:chevrondown",
+        toggleIcon: section.isExpanded ? "utility:chevronup" : "utility:chevrondown",
         sectionStatusIcon:
           section.isQuestion && !this.isWaitingForAnswer
             ? { iconName: "utility:question", variant: "warning" }
@@ -835,7 +939,78 @@ ${resultMessage}`;
         hasLogs: section.logs && section.logs.length > 0,
         showToggle: section.logs && section.logs.length > 0,
         isLatestQuestionSectionToHide: shouldHideLatest && isLatest,
+        tableLog: tableLog ? { ...tableLog, rowsLimited } : null,
+        tableShowAll,
+        tableShowMoreButton,
+        tableRows,
+        tableTruncatedMessage,
       };
+    });
+  }
+
+  // --- Report Files Section Helpers ---
+  get reportFileTypesPresent() {
+    // Returns an object: { hasActionCommands, hasActionUrls, hasReports, hasDocUrls }
+    let hasActionCommands = false, hasActionUrls = false, hasReports = false, hasDocUrls = false;
+    for (const f of this.reportFiles) {
+      if (f.type === 'actionCommand') hasActionCommands = true;
+      else if (f.type === 'actionUrl') hasActionUrls = true;
+      else if (f.type === 'report') hasReports = true;
+      else if (f.type === 'docUrl') hasDocUrls = true;
+    }
+    return { hasActionCommands, hasActionUrls, hasReports, hasDocUrls };
+  }
+
+  get reportFilesSectionTitle() {
+    const { hasActionCommands, hasActionUrls, hasReports, hasDocUrls } = this.reportFileTypesPresent;
+    const parts = [];
+    if (hasActionCommands || hasActionUrls) parts.push('Actions');
+    if (hasReports) parts.push('Reports');
+    if (hasDocUrls) parts.push('Docs');
+    return parts.length > 0 ? parts.join(', ') : 'Report Files';
+  }
+
+  get sortedReportFiles() {
+    // Only handle the four allowed types
+    return this.reportFiles.map(f => {
+      switch (f.type) {
+        case 'actionCommand':
+          return {
+            ...f,
+            buttonVariant: 'brand',
+            iconName: 'utility:play',
+            iconVariant: 'inverse',
+          };
+        case 'actionUrl':
+          return {
+            ...f,
+            buttonVariant: 'brand', // Use brand for strong call to action
+            iconName: 'utility:link',
+            iconVariant: 'inverse', // Inverse for contrast on brand
+          };
+        case 'report':
+          return {
+            ...f,
+            buttonVariant: 'success',
+            iconName: 'utility:page',
+            iconVariant: 'inverse',
+          };
+        case 'docUrl':
+          return {
+            ...f,
+            buttonVariant: 'outline-brand',
+            iconName: 'utility:info',
+            iconVariant: 'brand',
+          };
+        default:
+          // Should not happen, fallback to report style
+          return {
+            ...f,
+            buttonVariant: 'success',
+            iconName: 'utility:page',
+            iconVariant: 'inverse',
+          };
+      }
     });
   }
 
@@ -1172,22 +1347,43 @@ ${resultMessage}`;
     return this.reportFiles ? this.reportFiles.length : 0;
   }
 
-  get reportFilesCountPlural() {
-    return this.reportFilesCount === 1 ? "" : "s";
-  }
-
   handleOpenReportFile(event) {
+    // Find the reportFile object by id or file path
     const filePath = event.target.dataset.filePath;
-    if (filePath) {
-      // Use the VS Code webview API to send message
-      if (typeof window !== "undefined" && window.sendMessageToVSCode) {
-        window.sendMessageToVSCode({
-          type: "openFile",
-          data: { filePath: filePath },
-        });
-      } else {
-        console.error("VS Code API not available for opening report file");
+    const reportFile = this.reportFiles.find(f => f.file === filePath);
+    if (!reportFile) {
+      console.error("Report file not found for:", filePath);
+      return;
+    }
+
+    if (typeof window !== "undefined" && window.sendMessageToVSCode) {
+      switch (reportFile.type) {
+        case 'actionCommand':
+          // Run a VS Code command
+          window.sendMessageToVSCode({
+            type: "runVsCodeCommand",
+            data: { command: reportFile.file }
+          });
+          break;
+        case 'actionUrl':
+        case 'docUrl':
+          // Open external URL
+          window.sendMessageToVSCode({
+            type: "openExternal",
+            data: { url: reportFile.file }
+          });
+          break;
+        case 'report':
+        default:
+          // Open file in VS Code
+          window.sendMessageToVSCode({
+            type: "openFile",
+            data: { filePath: reportFile.file }
+          });
+          break;
       }
+    } else {
+      console.error("VS Code API not available for opening report file");
     }
   }
 }

@@ -118,57 +118,91 @@
                     <template if:true={section.hasLogs}>
                       <div class="section-logs slds-m-top_x-small slds-m-left_medium slds-m-right_x-small slds-m-bottom_x-small">
                       <template for:each={section.logs} for:item="logLine">
-                        <div key={logLine.id} class={logLine.cssClass} data-log-type={logLine.logType} data-is-subcommand={logLine.isSubCommand} data-is-running={logLine.isRunning}>
-                          <div class="slds-media slds-media_top">
-                            <div class="slds-media__figure" style="width: 0.75rem;">
-                              <template if:true={logLine.useSpinner}>
-                                <div class="slds-is-relative" style="height: 0.75rem;">
-                                  <lightning-spinner 
-                                    alternative-text="Running..." 
-                                    size="xx-small"
-                                    variant="brand">
-                                  </lightning-spinner>
+                        <template if:true={logLine.isTable}>
+                          <div key={logLine.id} style="padding-top: 0; padding-bottom: 0.5rem;">
+                            <template lwc:if={section.tableLog}>
+                              <div class="slds-table_header-fixed_container slds-scrollable_x" style="max-width: 100%;">
+                                <lightning-datatable
+                                  key-field="id"
+                                  data={section.tableRows}
+                                  columns={section.tableLog.columns}
+                                  hide-checkbox-column
+                                  class="slds-table slds-table_bordered slds-table_cell-buffer slds-table_striped"
+                                >
+                                </lightning-datatable>
+                              </div>
+                              <template if:true={section.tableTruncatedMessage}>
+                                <div class="slds-text-color_weak slds-p-vertical_x-small slds-text-align_center" style="font-style:italic;">
+                                  {section.tableTruncatedMessage}
                                 </div>
                               </template>
-                              <template if:false={logLine.useSpinner}>
-                                <template if:true={logLine.isQuestion}>
-                                  <div class="slds-icon_container slds-icon_container_circle slds-icon_container--brand" title="Question">
-                                    <lightning-icon 
-                                      icon-name="utility:question"
-                                      variant="inverse"
-                                      size="xx-small">
-                                    </lightning-icon>
+                              <template lwc:if={section.tableShowMoreButton}>
+                                <div class="slds-m-top_x-small slds-align_absolute-center">
+                                  <lightning-button
+                                    label="See more"
+                                    variant="neutral"
+                                    data-section-id={section.id}
+                                    onclick={handleSeeMoreTable}
+                                    class="slds-m-top_x-small">
+                                  </lightning-button>
+                                </div>
+                              </template>
+                            </template>
+                          </div>
+                        </template>
+                        <template if:false={logLine.isTable}>
+                          <div key={logLine.id} class={logLine.cssClass} data-log-type={logLine.logType} data-is-subcommand={logLine.isSubCommand} data-is-running={logLine.isRunning}>
+                            <div class="slds-media slds-media_top">
+                              <div class="slds-media__figure" style="width: 0.75rem;">
+                                <template if:true={logLine.useSpinner}>
+                                  <div class="slds-is-relative" style="height: 0.75rem;">
+                                    <lightning-spinner 
+                                      alternative-text="Running..." 
+                                      size="xx-small"
+                                      variant="brand">
+                                    </lightning-spinner>
                                   </div>
                                 </template>
-                                <template if:false={logLine.isQuestion}>
-                                  <lightning-icon 
-                                    icon-name={logLine.iconName}
-                                    variant={logLine.iconVariant}
-                                    size="xx-small">
-                                  </lightning-icon>
-                                </template>
-                              </template>
-                            </div>
-                            <div class="slds-media__body">
-                              <div class="slds-grid">
-                                <div class="slds-col slds-size_11-of-12">
-                                    <div class="log-message">
-                                        <template if:true={logLine.formattedMessage}>
-                                            <lightning-formatted-rich-text 
-                                                value={logLine.formattedMessage}
-                                                disable-linkify="true">
-                                            </lightning-formatted-rich-text>
-                                        </template>
-                                        <template if:false={logLine.formattedMessage}>
-                                            {logLine.message}
-                                        </template>
+                                <template if:false={logLine.useSpinner}>
+                                  <template if:true={logLine.isQuestion}>
+                                    <div class="slds-icon_container slds-icon_container_circle slds-icon_container--brand" title="Question">
+                                      <lightning-icon 
+                                        icon-name="utility:question"
+                                        variant="inverse"
+                                        size="xx-small">
+                                      </lightning-icon>
                                     </div>
+                                  </template>
+                                  <template if:false={logLine.isQuestion}>
+                                    <lightning-icon 
+                                      icon-name={logLine.iconName}
+                                      variant={logLine.iconVariant}
+                                      size="xx-small">
+                                    </lightning-icon>
+                                  </template>
+                                </template>
+                              </div>
+                              <div class="slds-media__body">
+                                <div class="slds-grid">
+                                  <div class="slds-col slds-size_11-of-12">
+                                      <div class="log-message">
+                                          <template if:true={logLine.formattedMessage}>
+                                              <lightning-formatted-rich-text 
+                                                  value={logLine.formattedMessage}
+                                                  disable-linkify="true">
+                                              </lightning-formatted-rich-text>
+                                          </template>
+                                          <template if:false={logLine.formattedMessage}>
+                                              {logLine.message}
+                                          </template>
+                                      </div>
+                                  </div>
+                                  <!-- Timestamp removed -->
                                 </div>
-                                <!-- Timestamp removed -->
                               </div>
                             </div>
                           </div>
-                        </div>
+                        </template>
                       </template>
                     </div>
                   </template>
@@ -194,7 +228,7 @@
           </template>
         </div>
         
-        <!-- Report Files Section -->
+        <!-- Report Files/Actions/Links Section -->
         <template if:true={hasReportFiles}>
           <div class="log-section slds-box slds-box_x-small slds-m-bottom_x-small">
             <!-- Section header -->
@@ -203,7 +237,7 @@
                 <div class="slds-media__figure" style="width: 1rem;">
                   <lightning-icon 
                     icon-name="utility:file"
-                    variant="success"
+                    variant="brand"
                     size="x-small">
                   </lightning-icon>
                 </div>
@@ -211,12 +245,12 @@
                   <div class="slds-grid">
                     <div class="slds-col slds-size_10-of-12">
                       <div class="section-title slds-text-body_regular slds-text-color_default">
-                        Report Files
+                        {reportFilesSectionTitle}
                       </div>
                     </div>
                     <div class="slds-col slds-size_2-of-12 slds-text-align_right">
                       <div class="section-timestamp slds-text-body_small slds-text-color_weak">
-                        {reportFilesCount} file{reportFilesCountPlural}
+                        {reportFilesCount}
                       </div>
                     </div>
                   </div>
@@ -224,20 +258,21 @@
               </div>
             </div>
 
-            <!-- Report files content -->
+            <!-- Report files & actions content -->
             <div class="section-logs slds-m-top_x-small slds-m-left_medium slds-m-right_x-small slds-m-bottom_x-small">
               <div class="slds-grid slds-wrap slds-gutters_small">
-                <template for:each={reportFiles} for:item="reportFile">
+                <template for:each={sortedReportFiles} for:item="reportFile">
                   <div key={reportFile.id} class="slds-col slds-no-flex">
                     <lightning-button
-                      variant="brand"
+                      variant={reportFile.buttonVariant}
                       label={reportFile.title}
-                      icon-name="utility:open"
+                      icon-name={reportFile.iconName}
+                      icon-position="left"
                       data-file-path={reportFile.file}
                       onclick={handleOpenReportFile}
-                      title="Open report file"
-                      class="slds-m-right_small">
-                    </lightning-button>
+                      title={reportFile.title}
+                      class="slds-m-right_small"
+                    ></lightning-button>
                   </div>
                 </template>
               </div>
