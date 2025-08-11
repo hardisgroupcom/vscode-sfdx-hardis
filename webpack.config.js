@@ -2,6 +2,8 @@ const path = require("path");
 const webpack = require("webpack");
 const LwcWebpackPlugin = require("lwc-webpack-plugin");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
+const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
+
 
 /** @type {import('webpack').Configuration} */
 const extensionConfig = {
@@ -80,7 +82,7 @@ const workerConfig = {
 /** @type {import('webpack').Configuration} */
 const lwcWebviewConfig = {
   target: "web",
-  mode: "none",
+  mode: "production",
 
   entry: "./src/webviews/lwc-ui/index.js",
   output: {
@@ -146,9 +148,17 @@ const lwcWebviewConfig = {
         {
           from: path.resolve(
             __dirname,
-            "node_modules/@salesforce-ux/design-system/assets",
+            "node_modules/@salesforce-ux/design-system/assets/styles/salesforce-lightning-design-system.min.css"
           ),
-          to: path.resolve(__dirname, "out/assets"),
+          to: path.resolve(__dirname, "out/assets/styles/salesforce-lightning-design-system.min.css"),
+          noErrorOnMissing: true,
+        },
+        {
+          from: path.resolve(
+            __dirname,
+            "node_modules/@salesforce-ux/design-system/assets/icons"
+          ),
+          to: path.resolve(__dirname, "out/assets/icons"),
           noErrorOnMissing: true,
         },
         {
