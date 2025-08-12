@@ -1,0 +1,12 @@
+/* SFDX Hardis Config Editor LWC styles */
+.slds-badge {
+	font-size: 11px;
+	padding: 0 6px;
+	border-radius: 6px;
+}
+.slds-text-title_bold {
+	font-weight: 600;
+}
+.slds-align_absolute-center {
+	align-items: center;
+}

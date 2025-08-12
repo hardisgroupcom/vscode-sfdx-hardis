@@ -12,6 +12,7 @@ import { exec } from "child_process";
 import { LwcPanelManager } from "./lwc-panel-manager";
 import { PipelineDataProvider } from "./pipeline-data-provider";
 import { getPullRequestButtonInfo } from "./utils/gitPrButtonUtils";
+import { SfdxHardisConfigHelper } from "./utils/pipeline/sfdx-hardis-config-helper";
 
 export class Commands {
   private readonly extensionUri: vscode.Uri;
@@ -60,6 +61,7 @@ export class Commands {
     this.registerGenerateFlowDocumentation();
     this.registerGenerateFlowVisualGitDiff();
     this.registerShowPipeline();
+    this.registerShowPipelineConfig();
   }
 
   getLatestTerminal() {
@@ -552,6 +554,34 @@ export class Commands {
             const newData = await provider.getPipelineData();
             panel.sendInitializationData({ pipelineData: newData, prButtonInfo });
           } 
+        });
+      },
+    );
+    this.disposables.push(disposable);
+  }
+
+  registerShowPipelineConfig() {
+    const disposable = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.showPipelineConfig",
+      async (branchName: string|null) => {
+        const workspaceRoot = getWorkspaceRoot();
+        const sfdxHardisConfigHelper = SfdxHardisConfigHelper.getInstance(workspaceRoot);
+        const config = sfdxHardisConfigHelper.getEditorInput(branchName);
+        const panel = LwcPanelManager.getInstance().getOrCreatePanel(
+          "s-pipeline-config",
+          { config },
+        );
+        panel.updateTitle(branchName ? `Configuration - ${branchName}` : "Global Pipeline Configuration");
+        // Register message handler to save configuration
+        panel.onMessage(async (type, data) => {
+          if (type === "saveConfig") {
+            try {
+              await sfdxHardisConfigHelper.saveConfigFromEditor(data.config);
+              vscode.window.showInformationMessage("Configuration saved successfully.");
+            } catch (error : any) {
+              vscode.window.showErrorMessage("Error saving configuration: " + error.message);
+            }
+          }
         });
       },
     );

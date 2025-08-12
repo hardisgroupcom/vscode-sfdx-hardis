@@ -5,6 +5,7 @@ import { createElement } from "lwc";
 import PromptInput from "s/promptInput";
 import CommandExecution from "s/commandExecution";
 import Pipeline from "s/pipeline";
+import PipelineConfig from "s/pipelineConfig";
 
 console.log("LWC UI initializing...");
 
@@ -12,6 +13,7 @@ const lwcIdAndClasses = {
   "s-prompt-input": PromptInput,
   "s-command-execution": CommandExecution,
   "s-pipeline": Pipeline,
+  "s-pipeline-config": PipelineConfig,
 };
 
 // Communication bridge between VS Code webview and LWC components

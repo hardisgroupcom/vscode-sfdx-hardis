@@ -172,6 +172,11 @@
         "icon": "$(organization)"
       },
       {
+        "command": "vscode-sfdx-hardis.showPipelineConfig",
+        "title": "SFDX Hardis: Show Pipeline Configuration",
+        "icon": "$(settings-gear)"
+      },
+      {
         "command": "vscode-sfdx-hardis.selectColorForOrg",
         "title": "SFDX Hardis: Select color for current default org",
         "icon": "$(symbol-color)"

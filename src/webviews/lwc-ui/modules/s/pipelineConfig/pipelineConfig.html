@@ -1,0 +1,83 @@
+<template>
+  <lightning-card title="Pipeline Configuration" icon-name="custom:custom63">
+    <div class="slds-p-around_medium">
+      <template if:true={isBranch}>
+        <div class="slds-text-title_caps slds-m-bottom_x-small">
+          Branch: <b>{branchName}</b>
+        </div>
+      </template>
+      <template if:true={isEditMode}>
+        <div class="slds-m-bottom_medium slds-text-title_caps">Edit Mode</div>
+        <template for:each={configEntries} for:item="entry">
+          <div key={entry.key} class="slds-m-bottom_small">
+            <label class="slds-form-element__label" for={entry.key}>{entry.key}
+              <template if:true={entry.inherited}>
+                <span class="slds-badge slds-theme_info slds-m-left_x-small" title="Inherited from global config">inherited</span>
+              </template>
+            </label>
+            <template if:true={entry.isEnum}>
+              <lightning-combobox
+                data-key={entry.key}
+                value={entry.valueEdit}
+                options={entry.optionsLwc}
+                onchange={handleInputChange}
+              ></lightning-combobox>
+            </template>
+            <template if:true={entry.isArrayEnum}>
+              <lightning-dual-listbox
+                data-key={entry.key}
+                value={entry.valueEdit}
+                options={entry.optionsLwc}
+                onchange={handleInputChange}
+                label="Select values"
+              ></lightning-dual-listbox>
+            </template>
+            <template if:true={entry.isArrayText}>
+              <textarea
+                class="slds-textarea"
+                data-key={entry.key}
+                value={entry.valueEditText}
+                onchange={handleInputChange}
+                rows="2"
+              ></textarea>
+              <div class="slds-text-body_small slds-text-color_weak">One value per line</div>
+            </template>
+            <template if:true={entry.isText}>
+              <input
+                class="slds-input"
+                type="text"
+                data-key={entry.key}
+                value={entry.valueEdit}
+                onchange={handleInputChange}
+              />
+            </template>
+            <template if:true={entry.inherited}>
+              <div class="slds-text-color_weak slds-text-body_small">Global: {entry.globalValue}</div>
+            </template>
+          </div>
+        </template>
+        <div class="slds-m-top_medium">
+          <lightning-button variant="brand" label="Save" onclick={handleSave} class="slds-m-right_small"></lightning-button>
+          <lightning-button variant="neutral" label="Cancel" onclick={handleCancel}></lightning-button>
+        </div>
+      </template>
+      <template if:false={isEditMode}>
+        <div class="slds-m-bottom_medium slds-text-title_caps">View Mode</div>
+        <template for:each={configEntries} for:item="entry">
+          <div key={entry.key} class="slds-m-bottom_small slds-grid slds-wrap slds-align_absolute-center">
+            <div class="slds-col slds-size_1-of-4 slds-text-title_bold">{entry.key}</div>
+            <div class="slds-col slds-size_3-of-4">
+              <span>{entry.value}</span>
+              <template if:true={entry.inherited}>
+                <span class="slds-badge slds-theme_info slds-m-left_x-small" title="Inherited from global config">inherited</span>
+              </template>
+            </div>
+          </div>
+        </template>
+        <div class="slds-m-top_medium">
+          <lightning-button variant="brand" label="Edit" onclick={handleEdit}></lightning-button>
+        </div>
+      </template>
+    </div>
+  </lightning-card>
+</template>
