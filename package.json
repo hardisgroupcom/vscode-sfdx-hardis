@@ -2,7 +2,7 @@
   "name": "vscode-sfdx-hardis",
   "displayName": "SFDX Hardis by Cloudity",
   "description": "Handle Salesforce DX and Git without knowing Salesforce DX or Git !",
-  "version": "6.0.6",
+  "version": "6.0.7",
   "icon": "resources/sfdx-hardis-logo-square.png",
   "publisher": "NicolasVuillamy",
   "author": {
@@ -396,10 +396,10 @@
   "scripts": {
     "vscode:prepublish": "yarn run package",
     "compile": "tsc -p ./",
-  "build": "webpack --config webpack.prod.js",
-  "watch": "webpack --config webpack.dev.js --watch",
-  "dev": "webpack --config webpack.dev.js",
-  "package": "webpack --config webpack.prod.js",
+    "build": "webpack --config webpack.prod.js",
+    "watch": "webpack --config webpack.dev.js --watch",
+    "dev": "webpack --config webpack.dev.js",
+    "package": "webpack --config webpack.prod.js",
     "pretest": "yarn run compile && yarn run lint",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
@@ -407,7 +407,6 @@
     "vsix": "vsce package --allow-package-secrets github"
   },
   "devDependencies": {
-    "terser-webpack-plugin": "^5.3.10",
     "@babel/core": "^7.28.0",
     "@babel/preset-env": "^7.28.0",
     "@eslint/js": "^9.29.0",
@@ -440,6 +439,7 @@
     "lwc-webpack-plugin": "^3.1.0",
     "mocha": "^10.0.0",
     "style-loader": "^4.0.0",
+    "terser-webpack-plugin": "^5.3.10",
     "ts-loader": "^9.5.2",
     "typescript": "^5.0.0",
     "webpack": "^5.101.0",
