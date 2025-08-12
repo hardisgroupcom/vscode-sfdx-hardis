@@ -14,6 +14,8 @@ export default class Pipeline extends LightningElement {
   error;
   currentDiagram = "";
   lastDiagram = "";
+  hasWarnings = false;
+  warnings = [];
   showOnlyMajor = false;
 
   // Dynamically compute the icon URL for the PR button
@@ -27,6 +29,8 @@ export default class Pipeline extends LightningElement {
   initialize(data) {
     this.pipelineData = data.pipelineData;
     this.prButtonInfo = data.prButtonInfo;
+    this.warnings = this.pipelineData.warnings || [];
+    this.hasWarnings = this.warnings.length > 0;
     this.showOnlyMajor = false;
     this.currentDiagram = this.pipelineData.mermaidDiagram;
     this.error = undefined;

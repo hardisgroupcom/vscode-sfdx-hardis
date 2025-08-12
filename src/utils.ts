@@ -128,7 +128,7 @@ export function preLoadCache() {
     "sfdx-hardis",
     "sfdmu",
     "sfdx-git-delta",
-    "texei-sfdx-plugin",
+    // "texei-sfdx-plugin",
   ];
   for (const npmPackage of npmPackages) {
     preLoadPromises.push(getNpmLatestVersion(npmPackage));

@@ -33,17 +33,29 @@
             </p>
           </template>
         </div>
-        <template if:true={hasDocumentation}>
-            <div class="slds-media__figure slds-media__figure_reverse">
-            <lightning-button
-              variant="neutral"
-              label="View Command Documentation"
-              icon-name="utility:info"
-              onclick={handleOpenDocumentation}
-              title="Open command documentation in browser">
-            </lightning-button>
-            </div>
-        </template>
+        <div class="slds-media__figure slds-media__figure_reverse">
+          <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
+            <template if:true={hasDocumentation}>
+              <lightning-button
+                variant="neutral"
+                label="View Command Documentation"
+                icon-name="utility:info"
+                onclick={handleOpenDocumentation}
+                title="Open command documentation in browser">
+              </lightning-button>
+            </template>
+            <!-- Toggle for Simple/Advanced -->
+            <lightning-input
+              type="toggle"
+              label="Advanced details"
+              checked={isAdvancedMode}
+              onchange={handleToggleDetailsMode}
+              class="details-toggle"
+              title="Toggle between simple and advanced command details view"
+              style="margin-top:0.125rem;"
+            ></lightning-input>
+          </div>
+        </div>
       </div>
     </div>
 

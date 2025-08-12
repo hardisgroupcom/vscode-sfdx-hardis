@@ -170,6 +170,10 @@ export class LwcUiPanel {
    */
   public sendInitializationData(data: any): void {
     this.initializationData = data;
+    const vsCodeSfdxHardisConfiguration = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+    if (vsCodeSfdxHardisConfiguration) {
+      data.vsCodeSfdxHardisConfiguration = vsCodeSfdxHardisConfiguration;
+    }
     this.panel.webview.postMessage({
       type: "initialize",
       data: data,
@@ -228,6 +232,9 @@ export class LwcUiPanel {
           break;
         case "runCommand":
           await this.handleRunCommand(data);
+          break;
+        case "updateVsCodeSfdxHardisConfiguration":
+          this.handleUpdateVsCodeSfdxHardisConfiguration(data);
           break;
       }
     } catch (error) {
@@ -399,6 +406,21 @@ export class LwcUiPanel {
     } catch (error) {
       console.error("Error opening external URL:", error);
       vscode.window.showErrorMessage(`Failed to open URL: ${url}`);
+    }
+  }
+
+  /**
+   * Handle update of VS Code configuration from the webview
+   * @param data Object with 'section' (string) and 'value' (any)
+   */
+  private async handleUpdateVsCodeSfdxHardisConfiguration(data: { configKey: string; value: any }): Promise<void> {
+    try {
+      const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+      await config.update(data.configKey, data.value, vscode.ConfigurationTarget.Global);
+      vscode.window.showInformationMessage(`VsCode configuration '${data.configKey}' updated with value: ${data.value}`);
+    } catch (error) {
+      console.error('Error updating VS Code configuration:', error);
+      vscode.window.showErrorMessage(`Failed to update configuration: ${data.configKey}`);
     }
   }
 

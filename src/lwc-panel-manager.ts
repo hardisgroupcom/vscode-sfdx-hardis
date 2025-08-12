@@ -104,6 +104,22 @@ export class LwcPanelManager {
   }
 
   /**
+   * Send a message to all active LWC panels
+   * @param message The message object to send
+   */
+  public sendMessageToAllPanels(message: any): void {
+    this.activePanels.forEach((panel) => {
+      if (!panel.isDisposed() && typeof panel.sendMessage === 'function') {
+        try {
+          panel.sendMessage(message);
+        } catch (err) {
+          console.error('Error sending message to panel:', err);
+        }
+      }
+    });
+  }
+
+  /**
    * Schedule a panel for disposal after a delay
    * @param lwcId The LWC component identifier
    * @param delayMs Delay in milliseconds before disposal (default: 2000ms)

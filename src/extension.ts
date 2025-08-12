@@ -154,7 +154,14 @@ export function activate(context: vscode.ExtensionContext) {
       if (event.affectsConfiguration("vsCodeSfdxHardis.disableVsCodeColors")) {
         hardisColors.init();
       }
+      // Send message to opened LWC panels to update their configuration
+      const vsCodeSfdxHardisConfiguration = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+      LwcPanelManager.getInstance(context).sendMessageToAllPanels({
+        type: "vsCodeSfdxHardisConfigurationChanged",
+        data: { vsCodeSfdxHardisConfiguration, event },
+      });
     }
+
     // Change theme
     if (
       event.affectsConfiguration("vsCodeSfdxHardis.theme.menuIconType") ||

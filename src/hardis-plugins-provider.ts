@@ -238,10 +238,10 @@ export class HardisPluginsProvider
         name: "sfdx-git-delta",
         helpUrl: "https://github.com/scolladon/sfdx-git-delta",
       },
-      {
-        name: "texei-sfdx-plugin",
-        helpUrl: "https://texei.github.io/texei-sfdx-plugin/",
-      },
+      // {
+      //   name: "texei-sfdx-plugin",
+      //   helpUrl: "https://texei.github.io/texei-sfdx-plugin/",
+      // },
     ];
 
     // Display temporary list until cache is preloaded

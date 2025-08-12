@@ -6,6 +6,8 @@ import { LightningElement, track, api } from "lwc";
 import PromptInput from "s/promptInput";
 
 export default class CommandExecution extends LightningElement {
+  // Track user-toggled expanded state for sections in simple mode
+  userSectionExpandState = {}; // { [sectionId]: boolean }
   // Table logs storage (sectionId -> table data)
   tableLogs = {};
   // For embedded prompt
@@ -26,12 +28,14 @@ export default class CommandExecution extends LightningElement {
   @track isWaitingForAnswer = false;
   @track latestQuestionId = null;
   @track lastQueryLogId = null;
+  @track detailsMode = 'simple'; // 'advanced' or 'simple'
 
   connectedCallback() {
     // Make component available globally for VS Code message handling
     if (typeof window !== "undefined") {
       window.commandExecutionComponent = this;
     }
+    // Handle scrolling state
     this.userScrolledUp = false;
     setTimeout(() => {
       const rootContainer = this.template.querySelector(".command-execution");
@@ -61,12 +65,7 @@ export default class CommandExecution extends LightningElement {
 
   @api
   initialize(initData) {
-    if (initData && initData.context) {
-      this.initializeCommand(initData.context);
-    } else if (initData) {
-      // Handle direct context data
       this.initializeCommand(initData);
-    }
   }
 
   @api
@@ -157,8 +156,42 @@ export default class CommandExecution extends LightningElement {
       case "hidePrompt":
         this.hidePromptInPanel();
         break;
+      case "vsCodeSfdxHardisConfigurationChanged":
+        this.handleVsCodeSfdxHardisConfigurationChanged(data);
+        break;
       default:
         console.log("Unknown message type:", messageType, data);
+    }
+  }
+
+  // Computed property for lightning-input toggle
+  get isAdvancedMode() {
+    return this.detailsMode === 'advanced';
+  }
+
+  handleVsCodeSfdxHardisConfigurationChanged(data) {
+    const vsCodeSfdxHardisConfiguration = data.vsCodeSfdxHardisConfiguration;
+    const newDetailsMode = vsCodeSfdxHardisConfiguration?.["showCommandsDetails"]
+        ? 'advanced'
+        : 'simple';
+    if (newDetailsMode !== this.detailsMode) {
+      this.detailsMode = newDetailsMode;
+    }
+  }
+
+  // Handler for lightning-input toggle
+  handleToggleDetailsMode(event) {
+    // lightning-input toggle passes event.detail.checked
+    this.detailsMode = event.detail && event.detail.checked ? 'advanced' : 'simple';
+    // Optionally persist to VS Code config if needed
+    if (window && window.sendMessageToVSCode) {
+      window.sendMessageToVSCode({
+        type: "updateVsCodeSfdxHardisConfiguration",
+        data: { 
+          configKey: "showCommandsDetails",
+          value: this.detailsMode === 'advanced' ? true : false,
+         },
+      });
     }
   }
 
@@ -241,6 +274,7 @@ export default class CommandExecution extends LightningElement {
       }),
     );
   }
+
   handleEmbeddedPromptExit(event) {
     this.dispatchEvent(
       new CustomEvent("promptexit", {
@@ -252,8 +286,17 @@ export default class CommandExecution extends LightningElement {
   }
 
   @api
-  initializeCommand(context) {
+  initializeCommand(data) {
+    let context = data.context ? data.context : data;
     this.commandContext = context;
+
+    // Handle details mode initialization
+    if (data.vsCodeSfdxHardisConfiguration) {
+      const vscodeConfig = data.vsCodeSfdxHardisConfiguration;
+      this.detailsMode = vscodeConfig?.["showCommandsDetails"]
+        ? 'advanced'
+        : 'simple';
+    }
 
     // Only set commandDocUrl if it's provided, preserve existing value otherwise
     if (context.commandDocUrl) {
@@ -890,7 +933,10 @@ ${resultMessage}`;
   get logSectionsForDisplay() {
     const latestQuestionSectionId = this.latestQuestionSectionId;
     const shouldHideLatest = this.showEmbeddedPrompt;
-    return this.logSections.map((section) => {
+    const isSimple = this.detailsMode === 'simple';
+    const isCompletedOrAborted = this.isCompleted || this.hasError;
+    const lastSectionIdx = this.logSections.length - 1;
+    return this.logSections.map((section, idx) => {
       const isLatest = section.id === latestQuestionSectionId;
       // Table log support
       let tableLog = this.tableLogs[section.id] || null;
@@ -914,10 +960,29 @@ ${resultMessage}`;
         }
         tableRows = rawRows;
       }
+      // --- SIMPLE/ADVANCED LOGIC ---
+      let isExpanded = section.isExpanded;
+      // By default, question sections are expanded, but user can collapse them
+      if (this.userSectionExpandState.hasOwnProperty(section.id)) {
+        isExpanded = this.userSectionExpandState[section.id];
+      } else if (section.isQuestion) {
+        isExpanded = true;
+      } else if (isSimple) {
+        if (this.showEmbeddedPrompt) {
+          isExpanded = isLatest;
+        } else if (idx === lastSectionIdx && isCompletedOrAborted) {
+          isExpanded = true;
+        } else {
+          isExpanded = false;
+        }
+      }
+  // Chevron should reflect actual expansion state for all sections
+  const toggleIcon = isExpanded ? "utility:chevronup" : "utility:chevrondown";
       return {
         ...section,
+        isExpanded,
         duration: this.calculateSectionDuration(section),
-        toggleIcon: section.isExpanded ? "utility:chevronup" : "utility:chevrondown",
+        toggleIcon,
         sectionStatusIcon:
           section.isQuestion && !this.isWaitingForAnswer
             ? { iconName: "utility:question", variant: "warning" }
@@ -1317,7 +1382,13 @@ ${resultMessage}`;
     const sectionId = event.currentTarget.dataset.sectionId;
     const section = this.logSections.find((s) => s.id === sectionId);
     if (section) {
-      section.isExpanded = !section.isExpanded;
+      // In simple mode, track user toggles separately
+      if (this.detailsMode === 'simple') {
+        const prev = this.userSectionExpandState[sectionId] || false;
+        this.userSectionExpandState = { ...this.userSectionExpandState, [sectionId]: !prev };
+      } else {
+        section.isExpanded = !section.isExpanded;
+      }
       this.logSections = [...this.logSections];
     }
   }
