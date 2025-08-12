@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-## [6.0.7 (pre-release)] 2024-08-12
+## [6.0.8 (pre-release)] 2024-08-12
 
 - Command execution: Add simple/advanced mode
 - DevOps pipeline: Add warnings if `mergeTargets` is not defined in branch config.
