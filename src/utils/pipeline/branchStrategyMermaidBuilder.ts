@@ -281,7 +281,7 @@ export class BranchStrategyMermaidBuilder {
     for (const gitBranch of this.gitBranches) {
       this.mermaidLines.push(
         this.indent(
-          `${gitBranch.nodeName}["${gitBranch.label}"]:::${gitBranch.class}`,
+          `${gitBranch.nodeName}["🌿${gitBranch.label}"]:::${gitBranch.class}`,
           2,
         ),
       );
@@ -300,7 +300,7 @@ export class BranchStrategyMermaidBuilder {
       this.mermaidLines.push(this.indent("direction TB", 2));
       for (const salesforceOrg of majorOrgs) {
         // Make node clickable if instanceUrl is present and not login.salesforce.com or test.salesforce.com
-        let nodeLine = `${salesforceOrg.nodeName}(["${salesforceOrg.label}"]):::${salesforceOrg.class}`;
+        let nodeLine = `${salesforceOrg.nodeName}(["☁️${salesforceOrg.label}"]):::${salesforceOrg.class}`;
         if (
           salesforceOrg.instanceUrl &&
           !salesforceOrg.instanceUrl.includes("login.salesforce.com") &&
@@ -338,7 +338,7 @@ export class BranchStrategyMermaidBuilder {
         for (const salesforceOrg of devOrgs) {
           this.mermaidLines.push(
             this.indent(
-              `${salesforceOrg.nodeName}(["${salesforceOrg.label}"]):::${salesforceOrg.class}`,
+              `${salesforceOrg.nodeName}(["☁️${salesforceOrg.label}"]):::${salesforceOrg.class}`,
               2,
             ),
           );

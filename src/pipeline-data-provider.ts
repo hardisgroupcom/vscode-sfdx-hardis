@@ -21,6 +21,7 @@ export interface PipelineData {
   links: OrgLink[];
   mermaidDiagram: string;
   mermaidDiagramMajor: string;
+  warnings: string[];
 }
 
 export class PipelineDataProvider {
@@ -64,6 +65,7 @@ export class PipelineDataProvider {
         links,
         mermaidDiagram,
         mermaidDiagramMajor,
+        warnings: majorOrgs.flatMap((org) => org.warnings || []),
       };
     } catch (error: any) {
       vscode.window.showErrorMessage(
@@ -74,6 +76,7 @@ export class PipelineDataProvider {
         links: [],
         mermaidDiagram: "Error generating pipeline diagram.",
         mermaidDiagramMajor: "Error generating pipeline diagram.",
+        warnings: [error.message],
       };
     }
   }
