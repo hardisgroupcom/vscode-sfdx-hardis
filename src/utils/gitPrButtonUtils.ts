@@ -37,7 +37,9 @@ export async function getPullRequestButtonInfo(repoPath: string): Promise<PullRe
   } else if (remotes[0]?.refs) {
     remoteUrl = remotes[0].refs.fetch || remotes[0].refs.push;
   }
-  if (!remoteUrl) return null;
+  if (!remoteUrl) {
+    return null;
+  }
 
   // Normalize remote URL
   remoteUrl = remoteUrl.replace(/^git@/, 'https://').replace(/\.git$/, '');
@@ -48,7 +50,7 @@ export async function getPullRequestButtonInfo(repoPath: string): Promise<PullRe
       keyword: "gitlab",
       pathSuffix: "/-/merge_requests",
       icon: "gitlab",
-      label: "View Merge Requests on GitLab",
+      label: "View Merge Requests on Gitlab",
       matchRegex: /https?:\/\/(.+?gitlab\.[^/]+)\/(.+)/
     },
     {
