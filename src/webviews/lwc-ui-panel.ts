@@ -417,7 +417,7 @@ export class LwcUiPanel {
     try {
       const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
       await config.update(data.configKey, data.value, vscode.ConfigurationTarget.Global);
-      vscode.window.showInformationMessage(`Configuration '${data.configKey}' updated.`);
+      vscode.window.showInformationMessage(`VsCode configuration '${data.configKey}' updated with value: ${data.value}`);
     } catch (error) {
       console.error('Error updating VS Code configuration:', error);
       vscode.window.showErrorMessage(`Failed to update configuration: ${data.configKey}`);

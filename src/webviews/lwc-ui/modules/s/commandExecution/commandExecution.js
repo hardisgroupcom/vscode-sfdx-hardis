@@ -189,7 +189,7 @@ export default class CommandExecution extends LightningElement {
         type: "updateVsCodeSfdxHardisConfiguration",
         data: { 
           configKey: "showCommandsDetails",
-          value: this.detailsMode,
+          value: this.detailsMode === 'advanced' ? true : false,
          },
       });
     }
