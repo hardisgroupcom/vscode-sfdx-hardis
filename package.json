@@ -110,7 +110,7 @@
         },
         "vsCodeSfdxHardis.showCommandsDetails": {
           "type": "boolean",
-          "default": true,
+          "default": false,
           "description": "Show advanced command execution details in the Command Execution panel. If disabled, only simple details are shown unless a prompt is active or the command is completed."
         }
       }
