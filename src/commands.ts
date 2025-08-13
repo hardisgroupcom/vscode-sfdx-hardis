@@ -10,6 +10,7 @@ import TelemetryReporter from "@vscode/extension-telemetry";
 import { ThemeUtils } from "./themeUtils";
 import { exec } from "child_process";
 import { LwcPanelManager } from "./lwc-panel-manager";
+import { CommandRunner } from "./command-runner";
 import { PipelineDataProvider } from "./pipeline-data-provider";
 import { getPullRequestButtonInfo } from "./utils/gitPrButtonUtils";
 
@@ -20,9 +21,8 @@ export class Commands {
   hardisPluginsProvider: HardisPluginsProvider | null = null;
   reporter: TelemetryReporter | null = null;
   disposables: vscode.Disposable[] = [];
-  terminalStack: vscode.Terminal[] = [];
-  terminalIsRunning = false;
   disposableWebSocketServer: LocalWebSocketServer | null = null;
+  commandRunner: CommandRunner;
 
   constructor(
     extensionUri: vscode.Uri,
@@ -36,6 +36,7 @@ export class Commands {
     this.hardisStatusProvider = hardisStatusProvider;
     this.hardisPluginsProvider = hardisPluginsProvider;
     this.reporter = reporter;
+    this.commandRunner = new CommandRunner(this);
     this.registerCommands();
   }
 
@@ -62,160 +63,15 @@ export class Commands {
     this.registerShowPipeline();
   }
 
-  getLatestTerminal() {
-    return this.terminalStack[this.terminalStack.length - 1];
-  }
-
-  runCommandInTerminal(command: string) {
-    const terminal = this.getLatestTerminal();
-    // Show and focus terminal
-    terminal.show(false);
-
-    // Run command on terminal only if there is not already a command running
-    if (this.terminalIsRunning) {
-      vscode.window.showErrorMessage(
-        "🦙 Wait for the current command to be completed before running a new one :)",
-        "Close",
-      );
-      return;
-    }
-    // terminalIsRunning = true; //Comment until we find a way to detect that a command is running or not
-    if (command.startsWith("sf hardis")) {
-      // Add --skipauth argument when necessary
-      const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
-      if (
-        config.get("disableDefaultOrgAuthenticationCheck") === true &&
-        !command.includes("hardis:org:configure:monitoring") &&
-        !command.includes("--skipauth") &&
-        !command.includes("&&")
-      ) {
-        command += ` --skipauth`;
-      }
-    }
-    // Add --websocket argument when necessary
-    if (
-      (command.startsWith("sf hardis") ||
-        command.includes("sf hardis:work:ws --event")) &&
-      this.disposableWebSocketServer &&
-      this.disposableWebSocketServer.websocketHostPort !== null &&
-      !command.includes("--websocket") &&
-      (!command.includes("&&") ||
-        command.endsWith("sf hardis:work:ws --event refreshPlugins"))
-    ) {
-      command += ` --websocket ${this.disposableWebSocketServer.websocketHostPort}`;
-    }
-    // Adapt command to powershell if necessary
-    if (terminal?.name?.includes("powershell")) {
-      command = command
-        .replace(/ && /g, " ; ")
-        .replace(/echo y/g, "Write-Output 'y'");
-    }
-    terminal.sendText(command);
-    // Scrolldown the terminal
-    vscode.commands.executeCommand("workbench.action.terminal.scrollToBottom");
-    // Telemetry: Send only the 2 first portions of the command
-    // Examples: "sf hardis:work:new" , "sf plugins:install"
-    if (this.reporter) {
-      const truncatedCommand = command.split(" ").slice(0, 2).join(" ");
-      this.reporter.sendTelemetryEvent("command", {
-        command: truncatedCommand,
-      });
-    }
-  }
+  // Terminal logic moved to CommandRunner
 
   registerExecuteCommand() {
     // Execute SFDX Hardis command
     const disposable = vscode.commands.registerCommand(
       "vscode-sfdx-hardis.execute-command",
       (sfdxHardisCommand: string) => {
-        // Filter killed terminals
-        this.terminalStack = this.terminalStack.filter(
-          (terminal) =>
-            vscode.window.terminals.filter(
-              (vsTerminal) => vsTerminal.processId === terminal.processId,
-            ).length > 0,
-        );
-
-        // Check if any LWC panel is running a command
-        let panelIsBusy = false;
-        try {
-          const panelManager = LwcPanelManager.getInstance();
-          const activeIds = panelManager.getActivePanelIds();
-          for (const id of activeIds) {
-            if (id.startsWith("s-command-execution-")) {
-              const panel = panelManager.getPanel(id);
-              if (panel && panel.getTitle && typeof panel.getTitle === "function") {
-                const title = panel.getTitle();
-                if (title.includes("Running")) {
-                  panelIsBusy = true;
-                }
-                break;
-              }
-            }
-          }
-        } catch {
-          console.log("Error checking LWC panel status, assuming no panels are busy.");
-        }
-
-        // If there is a busy panel, always open a new terminal
-        if (
-          panelIsBusy ||
-          this.terminalStack.length === 0 ||
-          vscode.window.terminals.length === 0
-        ) {
-          // Check bash is the default terminal if we are on windows
-          if (process.platform === "win32") {
-            const terminalConfig =
-              vscode.workspace.getConfiguration("terminal");
-            const selectedTerminal: string =
-              terminalConfig.integrated?.shell?.windows ||
-              terminalConfig.integrated?.defaultProfile?.windows ||
-              "";
-            if (!selectedTerminal.toLowerCase().includes("bash")) {
-              const config =
-                vscode.workspace.getConfiguration("vsCodeSfdxHardis");
-              if (config.get("disableGitBashCheck") !== true) {
-                vscode.commands.executeCommand(
-                  "workbench.action.terminal.selectDefaultShell",
-                );
-                vscode.window
-                  .showWarningMessage(
-                    "🦙 It is recommended to use Git Bash as default terminal shell (do it in the opened dialog at the top of the screen)",
-                    "Download Git Bash",
-                    "Ignore",
-                    "Don't ask again",
-                  )
-                  .then(async (selection) => {
-                    if (selection === "Download Git Bash") {
-                      vscode.env.openExternal(
-                        vscode.Uri.parse("https://git-scm.com/downloads"),
-                      );
-                    } else if (selection === "Don't ask again") {
-                      await config.update("disableGitBashCheck", true);
-                    } else {
-                      vscode.window.showInformationMessage(
-                        "🦙 If you do not want to see this message anymore, set VsCode setting vsCodeSfdxHardis.disableGitBashCheck to true, or click on Don't ask again",
-                      );
-                    }
-                  });
-                return;
-              }
-            }
-          }
-          vscode.commands.executeCommand(
-            "workbench.action.terminal.newInActiveWorkspace",
-            "SFDX Hardis",
-          );
-          new Promise((resolve) => setTimeout(resolve, 4000)).then(() => {
-            const newTerminal =
-              vscode.window.terminals[vscode.window.terminals.length - 1];
-            this.terminalStack.push(newTerminal);
-            this.runCommandInTerminal(sfdxHardisCommand);
-          });
-        } else {
-          // Run command in active terminal
-          this.runCommandInTerminal(sfdxHardisCommand);
-        }
+        // Use CommandRunner for all terminal and LWC panel logic
+        this.commandRunner.executeCommand(sfdxHardisCommand);
       },
     );
     this.disposables.push(disposable);
@@ -264,15 +120,7 @@ export class Commands {
     const disposable = vscode.commands.registerCommand(
       "vscode-sfdx-hardis.newTerminal",
       () => {
-        vscode.commands.executeCommand(
-          "workbench.action.terminal.newInActiveWorkspace",
-          "SFDX Hardis",
-        );
-        new Promise((resolve) => setTimeout(resolve, 4000)).then(() => {
-          const newTerminal =
-            vscode.window.terminals[vscode.window.terminals.length - 1];
-          this.terminalStack.push(newTerminal);
-        });
+        this.commandRunner.createNewTerminal();
       },
     );
     this.disposables.push(disposable);
