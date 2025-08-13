@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [6.0.9 (pre-release)] 2024-08-14
+
 - Add a new mode (by default) to execute sfdx-hardis commands in background, not in terminal
 
 ## [6.0.8 (pre-release)] 2024-08-12
