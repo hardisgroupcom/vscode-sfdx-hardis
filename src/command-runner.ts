@@ -49,17 +49,20 @@ export class CommandRunner {
     preprocessAndValidateCommand(command: string, type: 'background' | 'terminal' = 'background', process?: any): string | null {
         // Block dangerous or invalid commands
         if (!command.startsWith("sf hardis") || command.includes("&&")) {
-            if (this.commandsInstance?.logger) {
-                this.commandsInstance.logger.log("Invalid command blocked");
+            if (type === "background") {
+                if (this.commandsInstance?.logger) {
+                    this.commandsInstance.logger.log("Invalid command blocked");
+                }
+                vscode.window.showErrorMessage(`Blocked: Only 'sf hardis' commands without '&&' are allowed.\n${command}`);
+                return null;
             }
-            vscode.window.showErrorMessage("Blocked: Only 'sf hardis' commands without '&&' are allowed.");
-            return null;
         }
         let cmd = command;
         // Add --skipauth argument when necessary
         const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
         if (
             config.get("disableDefaultOrgAuthenticationCheck") === true &&
+            cmd.startsWith("sf hardis") &&
             !cmd.includes("hardis:org:configure:monitoring") &&
             !cmd.includes("--skipauth") &&
             !cmd.includes("&&")
