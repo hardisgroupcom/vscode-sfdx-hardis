@@ -65,7 +65,7 @@ export default class CommandExecution extends LightningElement {
 
   @api
   initialize(initData) {
-      this.initializeCommand(initData);
+    this.initializeCommand(initData);
   }
 
   @api
@@ -172,8 +172,8 @@ export default class CommandExecution extends LightningElement {
   handleVsCodeSfdxHardisConfigurationChanged(data) {
     const vsCodeSfdxHardisConfiguration = data.vsCodeSfdxHardisConfiguration;
     const newDetailsMode = vsCodeSfdxHardisConfiguration?.["showCommandsDetails"]
-        ? 'advanced'
-        : 'simple';
+      ? 'advanced'
+      : 'simple';
     if (newDetailsMode !== this.detailsMode) {
       this.detailsMode = newDetailsMode;
     }
@@ -187,10 +187,10 @@ export default class CommandExecution extends LightningElement {
     if (window && window.sendMessageToVSCode) {
       window.sendMessageToVSCode({
         type: "updateVsCodeSfdxHardisConfiguration",
-        data: { 
+        data: {
           configKey: "showCommandsDetails",
           value: this.detailsMode === 'advanced' ? true : false,
-         },
+        },
       });
     }
   }
@@ -396,11 +396,12 @@ export default class CommandExecution extends LightningElement {
       logLine.isRunning = false;
     }
 
-    const isQueryOrResult =
+    const isQueryOrResult = (
       logLine.message.includes("[SOQL Query]") ||
-      logLine.message.includes(
-        "[BulkApiV2]" || logLine.message.includes("[SOQL Query Tooling]"),
-      );
+      logLine.message.includes("[BulkApiV2]") ||
+      logLine.message.includes("[SOQL Query Tooling]")
+    );
+
     if (isQueryOrResult) {
       // Clean up the message for queries
       logLine.message = logLine.message
@@ -976,8 +977,8 @@ ${resultMessage}`;
           isExpanded = false;
         }
       }
-  // Chevron should reflect actual expansion state for all sections
-  const toggleIcon = isExpanded ? "utility:chevronup" : "utility:chevrondown";
+      // Chevron should reflect actual expansion state for all sections
+      const toggleIcon = isExpanded ? "utility:chevronup" : "utility:chevrondown";
       return {
         ...section,
         isExpanded,
