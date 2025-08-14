@@ -166,6 +166,10 @@ export class CommandRunner {
         if (wsIndex !== -1) {
             displayPopupMessage = displayPopupMessage.substring(0, wsIndex).trim();
         }
+        const skipAuthIndex = displayPopupMessage.indexOf("--skipauth");
+        if (skipAuthIndex !== -1) {
+            displayPopupMessage = displayPopupMessage.substring(0, skipAuthIndex).trim();
+        }
         vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
             title: displayPopupMessage,
