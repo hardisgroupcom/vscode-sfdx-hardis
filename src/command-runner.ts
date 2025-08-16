@@ -3,6 +3,7 @@ import * as vscode from "vscode";
 import { LwcPanelManager } from "./lwc-panel-manager";
 import { spawn } from "child_process";
 import { stripAnsi } from "./utils";
+import { cwd } from "process";
 
 /**
  * CommandRunner handles all logic related to terminal management and command execution.
@@ -136,6 +137,7 @@ export class CommandRunner {
         let childProcess: any;
         const spawnOptions: any = {
             shell: true,
+            cwd: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.cwd(),
         }
         if (this.debugNodeJs) {
             spawnOptions.env = { ...process.env, NODE_OPTIONS: "--inspect-brk" };
