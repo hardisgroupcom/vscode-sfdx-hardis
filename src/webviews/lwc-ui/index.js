@@ -10,12 +10,14 @@ async function importLwcModules() {
   const PromptInput = (await import("s/promptInput")).default;
   const CommandExecution = (await import("s/commandExecution")).default;
   const Pipeline = (await import("s/pipeline")).default;
+  const PipelineConfig = (await import("s/pipelineConfig")).default;
   const ExtensionConfig = (await import("s/extensionConfig")).default;
 
   const lwcIdAndClassesDefinition = {
     "s-prompt-input": PromptInput,
     "s-command-execution": CommandExecution,
     "s-pipeline": Pipeline,
+    "s-pipeline-config": PipelineConfig,
     "s-extension-config": ExtensionConfig,
   };
   return lwcIdAndClassesDefinition
