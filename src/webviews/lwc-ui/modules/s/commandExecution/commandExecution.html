@@ -133,13 +133,12 @@
                         <template if:true={logLine.isTable}>
                           <div key={logLine.id} style="padding-top: 0; padding-bottom: 0.5rem;">
                             <template lwc:if={section.tableLog}>
-                              <div class="slds-table_header-fixed_container slds-scrollable_x" style="max-width: 100%;">
+                              <div class="slds-scrollable_x" style="max-width: 100%; color: black;">
                                 <lightning-datatable
                                   key-field="id"
                                   data={section.tableRows}
                                   columns={section.tableLog.columns}
                                   hide-checkbox-column
-                                  class="slds-table slds-table_bordered slds-table_cell-buffer slds-table_striped"
                                 >
                                 </lightning-datatable>
                               </div>
