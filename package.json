@@ -73,6 +73,11 @@
           "type": "string",
           "description": "Absolute path or URL to a .sfdx-hardis.yml file that contains custom commands for the menu\nSee https://github.com/hardisgroupcom/vscode-sfdx-hardis#custom-commands"
         },
+        "vsCodeSfdxHardis.debugSfdxHardisCommands": {
+          "type": "boolean",
+          "default": false,
+          "description": "Adds NODE_OPTIONS=--inspect-brk to sfdx-hardis commands to debug them in VsCode"
+        },
         "vsCodeSfdxHardis.disableDefaultOrgAuthenticationCheck": {
           "type": "boolean",
           "default": false,

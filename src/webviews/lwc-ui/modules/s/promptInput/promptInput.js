@@ -108,6 +108,13 @@ export default class PromptInput extends LightningElement {
               this.isEqual(choice.value, this.currentPrompt.default),
             );
         }
+        if (!selectedChoice && this.currentPrompt.initial) {
+          selectedChoice =
+            this.currentPrompt.choices &&
+            this.currentPrompt.choices.find((choice) =>
+              this.isEqual(choice.value, this.currentPrompt.initial),
+            );
+        }
         if (selectedChoice) {
           // Use reverse mapping to get identifier
           const stringIdentifier =
@@ -128,6 +135,18 @@ export default class PromptInput extends LightningElement {
             .map(
               (choice) => this.valueToIdentifier[JSON.stringify(choice.value)],
             ) || [];
+        if (this.selectedValues.length === 0 && this.currentPrompt?.default?.length > 0) {
+          // If no initial selections, try to find from default values
+          this.selectedValues = this.currentPrompt.default.map((defaultValue) => {
+            return this.valueToIdentifier[JSON.stringify(defaultValue)];
+          }).filter((value) => value !== undefined && value !== null);
+        }
+        if (this.selectedValues.length === 0 && this.currentPrompt?.initial?.length > 0) {
+          // If no initial selections, try to find from initial values
+          this.selectedValues = this.currentPrompt.initial.map((initValue) => {
+            return this.valueToIdentifier[JSON.stringify(initValue)];
+          }).filter((value) => value !== undefined && value !== null);
+        }
       }
     }
   }
