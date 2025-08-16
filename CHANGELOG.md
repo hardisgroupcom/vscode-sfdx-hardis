@@ -5,6 +5,7 @@
 - Add debug options for sfdx-hardis commands
 - Add new sandbox refresh commands
 - New UI to update VsCode SFDX-Hardis configuration
+- Fix issue on MacOS with background commands
 
 ## [6.0.9 (pre-release)] 2024-08-14
 
