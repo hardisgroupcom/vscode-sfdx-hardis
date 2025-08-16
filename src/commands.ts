@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import * as fs from "fs-extra";
+import { getExtensionConfigSections } from "./utils/extensionConfigUtils";
 import { HardisCommandsProvider } from "./hardis-commands-provider";
 import { HardisStatusProvider } from "./hardis-status-provider";
 import { HardisPluginsProvider } from "./hardis-plugins-provider";
@@ -44,7 +45,6 @@ export class Commands {
     this.registerExecuteCommand();
     this.registerOpenValidationLink();
     this.registerOpenReportsFolder();
-    this.registerOpenExtensionSettings();
     this.registerNewTerminalCommand();
     this.registerRefreshCommandsView();
     this.registerRefreshStatusView();
@@ -61,6 +61,34 @@ export class Commands {
     this.registerGenerateFlowDocumentation();
     this.registerGenerateFlowVisualGitDiff();
     this.registerShowPipeline();
+    this.registerShowExtensionConfig();
+  }
+  registerShowExtensionConfig() {
+    // Show the extensionConfig LWC panel for editing extension settings
+    const disposable = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.showExtensionConfig",
+      async () => {
+        // Use utility to get config sections
+        const sections = await getExtensionConfigSections(this.extensionUri);
+
+        const lwcManager = LwcPanelManager.getInstance();
+        const panel = lwcManager.getOrCreatePanel("s-extension-config", {sections: sections});
+        // Open the LWC panel
+        panel.onMessage(async (type: string, _data: any) => {
+            if (type === 'refresh') {
+              // Re-send current settings
+              for (const section of sections) {
+                for (const entry of section.entries) {
+                  entry.value = vscode.workspace.getConfiguration().get(entry.key);
+                }
+              }
+              panel.sendMessage({ type: 'initialize', data: { sections } });
+            }
+          }
+        );
+      }
+    );
+    this.disposables.push(disposable);
   }
 
   // Terminal logic moved to CommandRunner
@@ -248,19 +276,6 @@ export class Commands {
       "vscode-sfdx-hardis.selectExtensionTheme",
       async () => {
         await ThemeUtils.promptUpdateConfiguration();
-      },
-    );
-    this.disposables.push(disposable);
-  }
-
-  registerOpenExtensionSettings() {
-    // Open external command
-    const disposable = vscode.commands.registerCommand(
-      "vscode-sfdx-hardis.openExtensionSettings",
-      async () => {
-        vscode.commands.executeCommand("workbench.action.openGlobalSettings", {
-          query: "Hardis",
-        });
       },
     );
     this.disposables.push(disposable);

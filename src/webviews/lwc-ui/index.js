@@ -2,17 +2,24 @@
 // LWC: ignore parsing errors for import/export, handled by LWC compiler
 import "@lwc/synthetic-shadow";
 import { createElement } from "lwc";
-import PromptInput from "s/promptInput";
-import CommandExecution from "s/commandExecution";
-import Pipeline from "s/pipeline";
 
 console.log("LWC UI initializing...");
 
-const lwcIdAndClasses = {
-  "s-prompt-input": PromptInput,
-  "s-command-execution": CommandExecution,
-  "s-pipeline": Pipeline,
-};
+async function importLwcModules() {
+  // Dynamically import LWC modules for better performance and code splitting
+  const PromptInput = (await import("s/promptInput")).default;
+  const CommandExecution = (await import("s/commandExecution")).default;
+  const Pipeline = (await import("s/pipeline")).default;
+  const ExtensionConfig = (await import("s/extensionConfig")).default;
+
+  const lwcIdAndClassesDefinition = {
+    "s-prompt-input": PromptInput,
+    "s-command-execution": CommandExecution,
+    "s-pipeline": Pipeline,
+    "s-extension-config": ExtensionConfig,
+  };
+  return lwcIdAndClassesDefinition
+}
 
 // Communication bridge between VS Code webview and LWC components
 window.vscodeAPI = acquireVsCodeApi();
@@ -50,6 +57,8 @@ window.addEventListener("message", (event) => {
 // Wait for DOM to be ready
 document.addEventListener("DOMContentLoaded", async () => {
   console.log("DOM ready, creating LWC component...");
+
+  const lwcIdAndClasses = await importLwcModules();
 
   try {
     // Find the app container and mount the component

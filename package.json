@@ -96,7 +96,7 @@
         "vsCodeSfdxHardis.disableVsCodeColors": {
           "type": "boolean",
           "default": false,
-          "description": "Disable coloration of VsCode depending on the org type selected"
+          "description": "Disable coloration of VsCode depending on the org type selected (red for production, orange for major org...)"
         },
         "vsCodeSfdxHardis.enableMultithread": {
           "type": "boolean",
@@ -180,14 +180,14 @@
         "icon": "$(output)"
       },
       {
-        "command": "vscode-sfdx-hardis.openExtensionSettings",
-        "title": "SFDX Hardis: Open extension settings",
-        "icon": "$(gear)"
-      },
-      {
         "command": "vscode-sfdx-hardis.showPipeline",
         "title": "SFDX Hardis: DevOps Pipeline",
         "icon": "$(organization)"
+      },
+      {
+        "command": "vscode-sfdx-hardis.showExtensionConfig",
+        "title": "SFDX Hardis: Extension Settings",
+        "icon": "$(gear)"
       },
       {
         "command": "vscode-sfdx-hardis.selectColorForOrg",
@@ -328,7 +328,7 @@
           "group": "navigation"
         },
         {
-          "command": "vscode-sfdx-hardis.openExtensionSettings",
+          "command": "vscode-sfdx-hardis.showExtensionConfig",
           "when": "view == sfdx-hardis-commands",
           "group": "navigation"
         },

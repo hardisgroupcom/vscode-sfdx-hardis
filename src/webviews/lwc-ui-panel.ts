@@ -120,6 +120,7 @@ export class LwcUiPanel {
       "s-prompt-input": "Prompt Input",
       "s-command-execution": "Command Execution",
       "s-pipeline": "DevOps Pipeline",
+      "s-extension-config": "Extension Settings",
     };
     const panelTitle = lwcDefinitions[this.lwcId] || "SFDX Hardis";
     this.panel.title = panelTitle;
@@ -439,6 +440,10 @@ export class LwcUiPanel {
   private async handleUpdateVsCodeSfdxHardisConfiguration(data: { configKey: string; value: any }): Promise<void> {
     try {
       const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+      if (data.configKey.startsWith("vsCodeSfdxHardis.")) {
+        data.configKey = data.configKey.replace("vsCodeSfdxHardis.", "");
+      }
+      // Update the configuration value
       await config.update(data.configKey, data.value, vscode.ConfigurationTarget.Global);
       vscode.window.showInformationMessage(`VsCode configuration '${data.configKey}' updated with value: ${data.value}`);
     } catch (error) {
