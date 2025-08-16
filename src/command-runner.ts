@@ -13,6 +13,7 @@ export class CommandRunner {
     private terminalStack: vscode.Terminal[] = [];
     private terminalIsRunning = false;
     private outputChannel?: vscode.OutputChannel;
+    private debugNodeJs = false;
     /**
      * Map of active commands: key is command string, value is { type: 'background'|'terminal', process?: ChildProcess, sentToTerminal?: boolean }
      */
@@ -36,6 +37,7 @@ export class CommandRunner {
 
     executeCommand(sfdxHardisCommand: string) {
         const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+        this.debugNodeJs = config.get("debugSfdxHardisCommands") ?? false;
         if (config.get("userInputCommandLineIfLWC") === "terminal" || !sfdxHardisCommand.startsWith("sf hardis")) {
             this.executeCommandTerminal(sfdxHardisCommand);
         } else {
@@ -132,10 +134,14 @@ export class CommandRunner {
         const commandParts = preprocessedCommand.split(" ");
         const command = commandParts[0];
         let childProcess: any;
+        const spawnOptions: any = {
+            shell: true,
+        }
+        if (this.debugNodeJs) {
+            spawnOptions.env = { ...process.env, NODE_OPTIONS: "--inspect-brk" };
+        }
         try {
-            childProcess = spawn(command!, commandParts.slice(1), {
-                shell: true,
-            });
+            childProcess = spawn(command!, commandParts.slice(1), spawnOptions);
         } catch (e) {
             let msg = "";
             if (e && typeof e === "object" && "message" in e) {
@@ -169,6 +175,9 @@ export class CommandRunner {
         const skipAuthIndex = displayPopupMessage.indexOf("--skipauth");
         if (skipAuthIndex !== -1) {
             displayPopupMessage = displayPopupMessage.substring(0, skipAuthIndex).trim();
+        }
+        if (this.debugNodeJs) {
+            displayPopupMessage += " (debug mode)";
         }
         vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
@@ -357,6 +366,10 @@ export class CommandRunner {
                 .replace(/ && /g, " ; ")
                 .replace(/echo y/g, "Write-Output 'y'");
         }
+        if (this.debugNodeJs) {
+            cmd = `NODE_OPTIONS=--inspect-brk ${cmd}`;
+        }
+        // Send command to terminal
         terminal.sendText(cmd);
         // Mark as sent to terminal (for duplicate prevention)
         this.activeCommands.set(cmd, { type: 'terminal', sentToTerminal: true });

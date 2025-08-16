@@ -526,6 +526,24 @@ export class HardisCommandsProvider
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/org/user/activateinvalid/",
           },
+          {
+            id: "hardis:org:refresh:before-refresh",
+            label: "Sandbox refresh: Before Refresh",
+            tooltip:
+              "Store info that will be needed after a sandbox refresh (Connected Apps, Custom Settings...)",
+            command: "sf hardis:org:refresh:before-refresh",
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/org/refresh/before-refresh/",
+          },
+          {
+            id: "hardis:org:refresh:after-refresh",
+            label: "Sandbox refresh: After Refresh",
+            tooltip:
+              "Restore info after a sandbox refresh (Connected Apps, Custom Settings...)",
+            command: "sf hardis:org:refresh:after-refresh",
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/org/refresh/after-refresh/",
+          },
         ],
       },
       {
