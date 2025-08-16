@@ -121,6 +121,7 @@ export class LwcUiPanel {
       "s-command-execution": "Command Execution",
       "s-pipeline": "DevOps Pipeline",
       "s-pipeline-config": "Pipeline Configuration",
+      "s-extension-config": "Extension Settings",
     };
     const panelTitle = lwcDefinitions[this.lwcId] || "SFDX Hardis";
     this.panel.title = panelTitle;
@@ -361,8 +362,15 @@ export class LwcUiPanel {
    * Handle file open request from webview
    * @param filePath Path to the file to open
    */
-  private async handleFileOpen(filePath: string): Promise<void> {
+  private async handleFileOpen(filePathInit: string): Promise<void> {
     try {
+      let filePath = filePathInit;
+      let anchor = '';
+      if (filePathInit.includes("#")) {
+        const parts = filePathInit.split("#");
+        filePath = parts[0];
+        anchor = parts[1];
+      }
       const resolvedPath = this.resolveWorkspacePath(filePath);
       // Check if file exists
       const fileUri = vscode.Uri.file(resolvedPath);
@@ -388,6 +396,22 @@ export class LwcUiPanel {
         // Open the file in VS Code for text files
         const document = await vscode.workspace.openTextDocument(fileUri);
         await vscode.window.showTextDocument(document);
+        if (anchor) {
+          // Find anchor text in document and scroll to it
+          const editor = vscode.window.activeTextEditor;
+          if (editor) {
+            let position = new vscode.Position(0, 0); // Default position
+            const text = document.getText();
+            const lines = text.split("\n");
+            for (let i = 0; i < lines.length; i++) {
+              if (lines[i].includes(anchor)) {
+                position = new vscode.Position(i, lines[i].indexOf(anchor));
+                editor.revealRange(new vscode.Range(position, position), vscode.TextEditorRevealType.InCenter);
+                break;
+              }
+            }
+          }
+        }
         console.log(`Opened file in VS Code: ${resolvedPath}`);
       }
     } catch (error) {
@@ -417,6 +441,10 @@ export class LwcUiPanel {
   private async handleUpdateVsCodeSfdxHardisConfiguration(data: { configKey: string; value: any }): Promise<void> {
     try {
       const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+      if (data.configKey.startsWith("vsCodeSfdxHardis.")) {
+        data.configKey = data.configKey.replace("vsCodeSfdxHardis.", "");
+      }
+      // Update the configuration value
       await config.update(data.configKey, data.value, vscode.ConfigurationTarget.Global);
       vscode.window.showInformationMessage(`VsCode configuration '${data.configKey}' updated with value: ${data.value}`);
     } catch (error) {

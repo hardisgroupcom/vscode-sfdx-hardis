@@ -1,0 +1,87 @@
+import { LightningElement, track, api } from 'lwc';
+
+export default class ExtensionConfig extends LightningElement {
+    @track sections = [];
+    @track loading = true;
+    @track error = null;
+
+    @api
+    initialize(data) {
+        this.loading = false;
+        this.error = null;
+        // Precompute all values for Lightning base components
+        this.sections = (data.sections || []).map(section => ({
+            ...section,
+            entries: (section.entries || []).map(entry => {
+                let valueString = '';
+                let valueBoolean = false;
+                let valueEnum = '';
+                let optionsLwc = [];
+                // Precompute type flags for template
+                const isBoolean = entry.type === 'boolean';
+                const isEnum = Array.isArray(entry.enum) && entry.enum.length > 0 && !isBoolean;
+                const isString = entry.type === 'string' && !isEnum;
+                if (isString) {
+                    valueString = entry.value ?? '';
+                }
+                if (isBoolean) {
+                    valueBoolean = !!entry.value;
+                }
+                if (isEnum) {
+                    valueEnum = entry.value ?? entry.enum[0];
+                    optionsLwc = entry.enum.map((v, i) => ({ value: v, label: entry.enumDescriptions ? entry.enumDescriptions[i] : String(v) }));
+                }
+                return {
+                    ...entry,
+                    valueString,
+                    valueBoolean,
+                    valueEnum,
+                    optionsLwc,
+                    isString,
+                    isBoolean,
+                    isEnum
+                };
+            })
+        }));
+    }
+
+    handleTextChange(event) {
+        const key = event.target.name;
+        const value = event.detail.value;
+        window.sendMessageToVSCode({
+            type: 'updateVsCodeSfdxHardisConfiguration',
+            data: { configKey: key, value }
+        });
+    }
+
+    handleCheckboxChange(event) {
+        const key = event.target.name;
+        const value = event.detail.checked;
+        window.sendMessageToVSCode({
+            type: 'updateVsCodeSfdxHardisConfiguration',
+            data: { configKey: key, value }
+        });
+    }
+
+    handleSelectChange(event) {
+        const key = event.target.name;
+        const value = event.detail.value;
+        window.sendMessageToVSCode({
+            type: 'updateVsCodeSfdxHardisConfiguration',
+            data: { configKey: key, value }
+        });
+    }
+
+    handleRefresh() {
+        window.sendMessageToVSCode({ type: 'refresh' });
+    }
+
+    @api
+    handleMessage(type, data) {
+        if (type === 'updateSuccess') {
+            this.error = null;
+        } else if (type === 'updateError') {
+            this.error = data;
+        }
+    }
+}

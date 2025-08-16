@@ -2,7 +2,7 @@
   "name": "vscode-sfdx-hardis",
   "displayName": "SFDX Hardis by Cloudity",
   "description": "Handle Salesforce DX and Git without knowing Salesforce DX or Git !",
-  "version": "6.0.8",
+  "version": "6.0.9",
   "icon": "resources/sfdx-hardis-logo-square.png",
   "publisher": "NicolasVuillamy",
   "author": {
@@ -56,9 +56,27 @@
           ],
           "description": "Defines if user input is in VsCode UI or in console"
         },
+        "vsCodeSfdxHardis.userInputCommandLineIfLWC": {
+          "type": "string",
+          "default": "background",
+          "enum": [
+            "background",
+            "terminal"
+          ],
+          "enumDescriptions": [
+            "Commands are executed in background without opening a terminal",
+            "Commands are executed in a VsCode terminal"
+          ],
+          "description": "When userInput is set to ui-lwc, defines if commands are executed in background or in a terminal"
+        },
         "vsCodeSfdxHardis.customCommandsConfiguration": {
           "type": "string",
           "description": "Absolute path or URL to a .sfdx-hardis.yml file that contains custom commands for the menu\nSee https://github.com/hardisgroupcom/vscode-sfdx-hardis#custom-commands"
+        },
+        "vsCodeSfdxHardis.debugSfdxHardisCommands": {
+          "type": "boolean",
+          "default": false,
+          "description": "Adds NODE_OPTIONS=--inspect-brk to sfdx-hardis commands to debug them in VsCode"
         },
         "vsCodeSfdxHardis.disableDefaultOrgAuthenticationCheck": {
           "type": "boolean",
@@ -78,7 +96,7 @@
         "vsCodeSfdxHardis.disableVsCodeColors": {
           "type": "boolean",
           "default": false,
-          "description": "Disable coloration of VsCode depending on the org type selected"
+          "description": "Disable coloration of VsCode depending on the org type selected (red for production, orange for major org...)"
         },
         "vsCodeSfdxHardis.enableMultithread": {
           "type": "boolean",
@@ -162,14 +180,14 @@
         "icon": "$(output)"
       },
       {
-        "command": "vscode-sfdx-hardis.openExtensionSettings",
-        "title": "SFDX Hardis: Open extension settings",
-        "icon": "$(gear)"
-      },
-      {
         "command": "vscode-sfdx-hardis.showPipeline",
         "title": "SFDX Hardis: DevOps Pipeline",
         "icon": "$(organization)"
+      },
+      {
+        "command": "vscode-sfdx-hardis.showExtensionConfig",
+        "title": "SFDX Hardis: Extension Settings",
+        "icon": "$(gear)"
       },
       {
         "command": "vscode-sfdx-hardis.showPipelineConfig",
@@ -315,7 +333,7 @@
           "group": "navigation"
         },
         {
-          "command": "vscode-sfdx-hardis.openExtensionSettings",
+          "command": "vscode-sfdx-hardis.showExtensionConfig",
           "when": "view == sfdx-hardis-commands",
           "group": "navigation"
         },
@@ -470,6 +488,7 @@
     "process": "^0.11.10",
     "simple-git": "^3.18.0",
     "sort-array": "^5.1.1",
+    "tree-kill": "^1.2.2",
     "which": "^4.0.0",
     "ws": "^8.18.0"
   }
