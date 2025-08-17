@@ -171,7 +171,7 @@ export class HardisCommandsProvider
           },
           {
             id: "scratch:pull-from-org-to-git",
-            label: "Pull from SF Org to local Git files",
+            label: "Pull from SF Org to local files",
             tooltip:
               'Once you have made your configuration in your org Setup, click here to download your updates.\nThen, you can commit the updates you want to publish (use VsCode Git extension)\nThen you can run command "Save / Publish User Story"\nNote: if you don\'t see all your updates, you can manually retrieve it using VsCode Extension "Org Browser"(Salesforce logo)',
             command: "sf hardis:scratch:pull",
