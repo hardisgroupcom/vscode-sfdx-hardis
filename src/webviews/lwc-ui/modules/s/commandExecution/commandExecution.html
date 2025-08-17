@@ -1,5 +1,5 @@
 <template>
-  <div class="command-execution slds-card" style="height: 100vh; display: flex; flex-direction: column;">
+  <div class="slds-scope slds-theme_default command-execution slds-card" style="height: 100vh; display: flex; flex-direction: column;">
     <!-- Header -->
     <div class="slds-card__header" style="flex-shrink: 0;">
       <div class="slds-media slds-media_center slds-has-flexi-truncate">
@@ -133,13 +133,12 @@
                         <template if:true={logLine.isTable}>
                           <div key={logLine.id} style="padding-top: 0; padding-bottom: 0.5rem;">
                             <template lwc:if={section.tableLog}>
-                              <div class="slds-table_header-fixed_container slds-scrollable_x" style="max-width: 100%;">
+                              <div class="slds-scrollable_x" style="max-width: 100%; color: black;">
                                 <lightning-datatable
                                   key-field="id"
                                   data={section.tableRows}
                                   columns={section.tableLog.columns}
                                   hide-checkbox-column
-                                  class="slds-table slds-table_bordered slds-table_cell-buffer slds-table_striped"
                                 >
                                 </lightning-datatable>
                               </div>
@@ -272,9 +271,9 @@
 
             <!-- Report files & actions content -->
             <div class="section-logs slds-m-top_x-small slds-m-left_medium slds-m-right_x-small slds-m-bottom_x-small">
-              <div class="slds-grid slds-wrap slds-gutters_small">
+              <div class="report-files-flex-container">
                 <template for:each={sortedReportFiles} for:item="reportFile">
-                  <div key={reportFile.id} class="slds-col slds-no-flex">
+                  <div key={reportFile.id} class="report-file-btn-wrapper">
                     <lightning-button
                       variant={reportFile.buttonVariant}
                       label={reportFile.title}
@@ -283,7 +282,6 @@
                       data-file-path={reportFile.file}
                       onclick={handleOpenReportFile}
                       title={reportFile.title}
-                      class="slds-m-right_small"
                     ></lightning-button>
                   </div>
                 </template>

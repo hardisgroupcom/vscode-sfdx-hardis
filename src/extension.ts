@@ -13,6 +13,7 @@ import { LwcPanelManager } from "./lwc-panel-manager";
 import { Logger } from "./logger";
 import { getWorkspaceRoot, preLoadCache } from "./utils";
 import { HardisColors } from "./hardis-colors";
+import { CacheManager } from "./utils/cache-manager";
 
 let refreshInterval: any = null;
 let reporter;
@@ -20,6 +21,8 @@ let reporter;
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+  CacheManager.init(context.globalState);
+  CacheManager.clearExpired();
   new Logger(vscode.window);
   console.time("Hardis_Activate");
   const timeInit = Date.now();

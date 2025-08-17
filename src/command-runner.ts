@@ -136,6 +136,7 @@ export class CommandRunner {
         let childProcess: any;
         const spawnOptions: any = {
             shell: true,
+            cwd: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.cwd(),
         }
         if (this.debugNodeJs) {
             spawnOptions.env = { ...process.env, NODE_OPTIONS: "--inspect-brk" };

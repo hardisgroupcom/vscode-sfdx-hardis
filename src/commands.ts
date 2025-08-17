@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import * as fs from "fs-extra";
+import { getExtensionConfigSections } from "./utils/extensionConfigUtils";
 import { HardisCommandsProvider } from "./hardis-commands-provider";
 import { HardisStatusProvider } from "./hardis-status-provider";
 import { HardisPluginsProvider } from "./hardis-plugins-provider";
@@ -13,6 +14,7 @@ import { LwcPanelManager } from "./lwc-panel-manager";
 import { CommandRunner } from "./command-runner";
 import { PipelineDataProvider } from "./pipeline-data-provider";
 import { getPullRequestButtonInfo } from "./utils/gitPrButtonUtils";
+import { SfdxHardisConfigHelper } from "./utils/pipeline/sfdxHardisConfigHelper";
 
 export class Commands {
   private readonly extensionUri: vscode.Uri;
@@ -44,7 +46,6 @@ export class Commands {
     this.registerExecuteCommand();
     this.registerOpenValidationLink();
     this.registerOpenReportsFolder();
-    this.registerOpenExtensionSettings();
     this.registerNewTerminalCommand();
     this.registerRefreshCommandsView();
     this.registerRefreshStatusView();
@@ -61,6 +62,35 @@ export class Commands {
     this.registerGenerateFlowDocumentation();
     this.registerGenerateFlowVisualGitDiff();
     this.registerShowPipeline();
+    this.registerShowExtensionConfig();
+    this.registerShowPipelineConfig();
+  }
+  registerShowExtensionConfig() {
+    // Show the extensionConfig LWC panel for editing extension settings
+    const disposable = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.showExtensionConfig",
+      async () => {
+        // Use utility to get config sections
+        const sections = await getExtensionConfigSections(this.extensionUri);
+
+        const lwcManager = LwcPanelManager.getInstance();
+        const panel = lwcManager.getOrCreatePanel("s-extension-config", {sections: sections});
+        // Open the LWC panel
+        panel.onMessage(async (type: string, _data: any) => {
+            if (type === 'refresh') {
+              // Re-send current settings
+              for (const section of sections) {
+                for (const entry of section.entries) {
+                  entry.value = vscode.workspace.getConfiguration().get(entry.key);
+                }
+              }
+              panel.sendMessage({ type: 'initialize', data: { sections } });
+            }
+          }
+        );
+      }
+    );
+    this.disposables.push(disposable);
   }
 
   // Terminal logic moved to CommandRunner
@@ -253,19 +283,6 @@ export class Commands {
     this.disposables.push(disposable);
   }
 
-  registerOpenExtensionSettings() {
-    // Open external command
-    const disposable = vscode.commands.registerCommand(
-      "vscode-sfdx-hardis.openExtensionSettings",
-      async () => {
-        vscode.commands.executeCommand("workbench.action.openGlobalSettings", {
-          query: "Hardis",
-        });
-      },
-    );
-    this.disposables.push(disposable);
-  }
-
   registerOpenReportsFolder() {
     const disposable = vscode.commands.registerCommand(
       "vscode-sfdx-hardis.openReportsFolder",
@@ -372,9 +389,16 @@ export class Commands {
     const disposable = vscode.commands.registerCommand(
       "vscode-sfdx-hardis.showPipeline",
       async () => {
-        const pipelineDataProvider = new PipelineDataProvider();
-        const pipelineData = await pipelineDataProvider.getPipelineData();
 
+        // Show progress while loading config editor input
+        const pipelineData = await vscode.window.withProgress({
+          location: vscode.ProgressLocation.Notification,
+          title: "Loading pipeline information...",
+          cancellable: false
+        }, async () => {
+          const pipelineDataProvider = new PipelineDataProvider();
+          return await pipelineDataProvider.getPipelineData();
+        });
 
         // Calculate PR button info using utility
         const repoPath = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0
@@ -400,6 +424,41 @@ export class Commands {
             const newData = await provider.getPipelineData();
             panel.sendInitializationData({ pipelineData: newData, prButtonInfo });
           } 
+        });
+      },
+    );
+    this.disposables.push(disposable);
+  }
+
+  registerShowPipelineConfig() {
+    const disposable = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.showPipelineConfig",
+      async (branchName: string|null) => {
+        const workspaceRoot = getWorkspaceRoot();
+        const sfdxHardisConfigHelper = SfdxHardisConfigHelper.getInstance(workspaceRoot);
+        // Show progress while loading config editor input
+        const configEditorInput = await vscode.window.withProgress({
+          location: vscode.ProgressLocation.Notification,
+          title: branchName ? `Loading pipeline settings for ${branchName}...` : "Loading global pipeline settings...",
+          cancellable: false
+        }, async () => {
+          return await sfdxHardisConfigHelper.getEditorInput(branchName);
+        });
+        const panel = LwcPanelManager.getInstance().getOrCreatePanel(
+          "s-pipeline-config",
+          configEditorInput,
+        );
+        panel.updateTitle(branchName ? `Settings - ${branchName}` : "Global Pipeline Settings");
+        // Register message handler to save configuration
+        panel.onMessage(async (type, data) => {
+          if (type === "saveSfdxHardisConfig") {
+            try {
+              await sfdxHardisConfigHelper.saveConfigFromEditor(data);
+              vscode.window.showInformationMessage("Configuration saved successfully.");
+            } catch (error : any) {
+              vscode.window.showErrorMessage("Error saving configuration: " + error.message);
+            }
+          }
         });
       },
     );

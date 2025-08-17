@@ -96,7 +96,7 @@
         "vsCodeSfdxHardis.disableVsCodeColors": {
           "type": "boolean",
           "default": false,
-          "description": "Disable coloration of VsCode depending on the org type selected"
+          "description": "Disable coloration of VsCode depending on the org type selected (red for production, orange for major org...)"
         },
         "vsCodeSfdxHardis.enableMultithread": {
           "type": "boolean",
@@ -180,14 +180,19 @@
         "icon": "$(output)"
       },
       {
-        "command": "vscode-sfdx-hardis.openExtensionSettings",
-        "title": "SFDX Hardis: Open extension settings",
-        "icon": "$(gear)"
-      },
-      {
         "command": "vscode-sfdx-hardis.showPipeline",
         "title": "SFDX Hardis: DevOps Pipeline",
         "icon": "$(organization)"
+      },
+      {
+        "command": "vscode-sfdx-hardis.showExtensionConfig",
+        "title": "SFDX Hardis: Extension Settings",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "vscode-sfdx-hardis.showPipelineConfig",
+        "title": "SFDX Hardis: Show Pipeline Settings",
+        "icon": "$(settings-gear)"
       },
       {
         "command": "vscode-sfdx-hardis.selectColorForOrg",
@@ -328,7 +333,7 @@
           "group": "navigation"
         },
         {
-          "command": "vscode-sfdx-hardis.openExtensionSettings",
+          "command": "vscode-sfdx-hardis.showExtensionConfig",
           "when": "view == sfdx-hardis-commands",
           "group": "navigation"
         },
@@ -473,6 +478,7 @@
     "@vscode/extension-telemetry": "^0.8.0",
     "axios": "^1.11.0",
     "chalk": "^5.0.0",
+    "cosmiconfig": "^9.0.0",
     "fs-extra": "^11.0.0",
     "get-port": "^7.1.0",
     "git-url-parse": "^11.6.0",

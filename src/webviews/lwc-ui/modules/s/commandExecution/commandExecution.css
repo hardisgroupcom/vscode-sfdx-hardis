@@ -1,3 +1,14 @@
+/* Flex container for report file buttons */
+.report-files-flex-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem; /* vertical and horizontal gap */
+  align-items: flex-start;
+}
+
+.report-file-btn-wrapper {
+  margin-bottom: 0.25rem;
+}
 /* Force datatable row text to be dark for readability */
 ::slotted(.slds-table tbody tr),
 .slds-table tbody tr,
@@ -190,90 +201,6 @@
   background: #a8a8a8;
 }
 
-/* Dark theme support */
-@media (prefers-color-scheme: dark) {
-  .log-container {
-    background-color: #1a1a1a;
-    border-color: #3a3a3a;
-    color: #e5e5e5;
-  }
-
-  .log-section {
-    background-color: #2a2a2a;
-    border-color: #4a4a4a;
-  }
-
-  .section-header:hover {
-    background-color: #3a3a3a;
-  }
-
-  .section-logs {
-    border-top-color: #4a4a4a;
-  }
-
-  .section-logs > div[data-log-type="error"],
-  .log-lines > div[data-log-type="error"] {
-    background-color: #2d1b1b;
-    color: #ff6b6b;
-  }
-
-  .section-logs > div[data-log-type="warning"],
-  .log-lines > div[data-log-type="warning"] {
-    background-color: #2d2419;
-    color: #ffa726;
-  }
-
-  .section-logs > div[data-log-type="success"],
-  .log-lines > div[data-log-type="success"] {
-    background-color: #1b2d1b;
-    color: #66bb6a;
-  }
-
-  .section-logs > div[data-log-type="action"],
-  .log-lines > div[data-log-type="action"] {
-    background-color: #1b2636;
-    color: #42a5f5;
-  }
-
-  .section-logs > div[data-log-type="log"],
-  .log-lines > div[data-log-type="log"] {
-    background-color: #222222;
-    color: #bdbdbd;
-  }
-
-  .section-logs > div[data-log-type="query"],
-  .log-lines > div[data-log-type="query"] {
-    background-color: #1b2a3a;
-    color: #69c0ff;
-  }
-
-  /* Dark theme sub-command styling */
-  .section-logs > div[data-is-subcommand="true"][data-is-running="true"],
-  .log-lines > div[data-is-subcommand="true"][data-is-running="true"] {
-    background-color: #3d2f1f;
-    border-left-color: #ff8c00;
-    box-shadow: 0 2px 4px rgba(255, 140, 0, 0.3);
-  }
-
-  .section-logs > div[data-is-subcommand="true"][data-is-running="false"],
-  .log-lines > div[data-is-subcommand="true"][data-is-running="false"] {
-    background-color: #1e2a3a;
-    border-left-color: #0ea5e9;
-  }
-
-  .log-container::-webkit-scrollbar-track {
-    background: #2a2a2a;
-  }
-
-  .log-container::-webkit-scrollbar-thumb {
-    background: #4a4a4a;
-  }
-
-  .log-container::-webkit-scrollbar-thumb:hover {
-    background: #5a5a5a;
-  }
-}
-
 /* Answer formatting styles */
 .answer-formatted {
   background-color: #f8f9fa;
@@ -308,12 +235,4 @@
 
 .download-panel .slds-button-group {
   gap: 0.25rem;
-}
-
-/* Dark theme support for download panel */
-@media (prefers-color-scheme: dark) {
-  .download-panel {
-    background-color: #2a2a2a;
-    border-top-color: #4a4a4a;
-  }
 }

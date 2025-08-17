@@ -1,0 +1,61 @@
+<template>
+    <div class="slds-scope slds-theme_default slds-p-around_medium">
+        <template if:true={loading}>
+            <div class="slds-text-body_regular">Loading extension settings...</div>
+        </template>
+        <template if:true={error}>
+            <div class="slds-text-color_error">{error}</div>
+        </template>
+        <template if:false={loading}>
+            <div class="slds-grid slds-wrap">
+                <template for:each={sections} for:item="section" for:index="index">
+                    <div key={section.label} class="slds-size_1-of-1 slds-medium-size_1-of-2 slds-p-around_small">
+                        <lightning-card title={section.label} class="slds-m-bottom_large" icon-name="section.iconName">
+                            <div slot="actions">
+                                <span class="slds-text-body_small slds-text-color_weak">{section.description}</span>
+                            </div>
+                            <div class="slds-p-around_medium">
+                                <template for:each={section.entries} for:item="entry">
+                                    <div key={entry.key} class="slds-m-bottom_medium">
+                                        <template if:true={entry.isEnum}>
+                                            <lightning-combobox
+                                                name={entry.key}
+                                                label={entry.label}
+                                                value={entry.valueEnum}
+                                                options={entry.optionsLwc}
+                                                onchange={handleSelectChange}
+                                                class="slds-m-bottom_xx-small"
+                                            ></lightning-combobox>
+                                        </template>
+                                        <template if:true={entry.isBoolean}>
+                                            <lightning-input
+                                                type="checkbox"
+                                                name={entry.key}
+                                                label={entry.label}
+                                                checked={entry.valueBoolean}
+                                                onchange={handleCheckboxChange}
+                                                class="slds-m-bottom_xx-small"
+                                            ></lightning-input>
+                                        </template>
+                                        <template if:true={entry.isString}>
+                                            <lightning-input
+                                                type="text"
+                                                name={entry.key}
+                                                label={entry.label}
+                                                value={entry.valueString}
+                                                onchange={handleTextChange}
+                                                class="slds-m-bottom_xx-small"
+                                            ></lightning-input>
+                                        </template>
+                                        <div class="slds-form-element__help">{entry.description}</div>
+                                    </div>
+                                </template>
+                            </div>
+                        </lightning-card>
+                    </div>
+                </template>
+            </div>
+            <lightning-button variant="neutral" label="Refresh" onclick={handleRefresh} class="slds-m-top_medium"></lightning-button>
+        </template>
+    </div>
+</template>

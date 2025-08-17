@@ -2,16 +2,16 @@
 // LWC: ignore parsing errors for import/export, handled by LWC compiler
 import "@lwc/synthetic-shadow";
 import { createElement } from "lwc";
-import PromptInput from "s/promptInput";
-import CommandExecution from "s/commandExecution";
-import Pipeline from "s/pipeline";
 
 console.log("LWC UI initializing...");
 
-const lwcIdAndClasses = {
-  "s-prompt-input": PromptInput,
-  "s-command-execution": CommandExecution,
-  "s-pipeline": Pipeline,
+// Static import map for all LWC modules (ensures Webpack bundles them)
+const lwcModules = {
+  "s-prompt-input": () => import("s/promptInput"),
+  "s-command-execution": () => import("s/commandExecution"),
+  "s-pipeline": () => import("s/pipeline"),
+  "s-pipeline-config": () => import("s/pipelineConfig"),
+  "s-extension-config": () => import("s/extensionConfig"),
 };
 
 // Communication bridge between VS Code webview and LWC components
@@ -74,25 +74,27 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
       }
 
-      // Create the LWC element
       // Handle dynamic IDs by extracting the base component name
-      let lwcClass = lwcIdAndClasses[lwcId];
-      if (!lwcClass) {
+      let lwcImportFn = lwcModules[lwcId];
+      if (!lwcImportFn) {
         // Try to find a matching base component (e.g., s-command-execution-41208 -> s-command-execution)
-        const baseId = Object.keys(lwcIdAndClasses).find((id) =>
+        const baseId = Object.keys(lwcModules).find((id) =>
           lwcId.startsWith(id),
         );
         if (baseId) {
-          lwcClass = lwcIdAndClasses[baseId];
+          lwcImportFn = lwcModules[baseId];
           console.log(`Found base component ${baseId} for dynamic ID ${lwcId}`);
         }
       }
 
-      if (!lwcClass) {
+      if (!lwcImportFn) {
         console.error(`❌ No LWC class found for ID: ${lwcId}`);
         return;
       }
+      // Dynamically import the LWC class using the static import map
+      const lwcClass = (await lwcImportFn()).default;
 
+      // Create the LWC element
       const element = createElement(lwcId, { is: lwcClass });
 
       // Store reference for message handling

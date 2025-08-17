@@ -227,9 +227,7 @@ export default [
       "webpack.config.js",
       // Ignore LWC JS files handled by LWC compiler
       "src/webviews/lwc-ui/index.js",
-      "src/webviews/lwc-ui/modules/s/commandExecution/commandExecution.js",
-      "src/webviews/lwc-ui/modules/s/pipeline/pipeline.js",
-      "src/webviews/lwc-ui/modules/s/promptInput/promptInput.js",
+      "src/webviews/lwc-ui/modules/s/**",
     ],
   },
 ];

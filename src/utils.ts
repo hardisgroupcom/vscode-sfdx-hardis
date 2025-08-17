@@ -9,20 +9,31 @@ import { Worker } from "worker_threads";
 import * as vscode from "vscode";
 import * as yaml from "js-yaml";
 import { Logger } from "./logger";
+import { CacheManager, CacheSection } from "./utils/cache-manager";
+import { getConfig } from "./utils/pipeline/sfdxHardisConfig";
 
 export const RECOMMENDED_SFDX_CLI_VERSION = null; //"7.111.6";
 export const NODE_JS_MINIMUM_VERSION = 20.0;
 export const RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION = "beta"; // "6.0.0";
 
-let REMOTE_CONFIGS: any = {};
-let PROJECT_CONFIG: any = null;
-let COMMANDS_RESULTS: any = {};
-let NPM_VERSIONS_CACHE: any = {};
-let GIT_MENUS: any[] | null = null;
-let ORGS_INFO_CACHE: any[] = [];
-let USER_INSTANCE_URL_CACHE: any = {};
+
+// Interface for execCommand and execSfdxJson options
+export interface ExecCommandOptions {
+  fail?: boolean;
+  output?: boolean;
+  debug?: boolean;
+  spinner?: boolean;
+  cwd?: string;
+  cacheExpiration?: number;
+  cacheSection?: CacheSection;
+}
+
 let MULTITHREAD_ACTIVE: boolean | null = null;
 let CACHE_IS_PRELOADED: boolean = false;
+let COMMANDS_RESULTS: Record<string, any> = {};
+let GIT_MENUS: any[] | null = null;
+let PROJECT_CONFIG: any = null;
+let REMOTE_CONFIGS: Record<string, any> = {};
 
 export function isMultithreadActive() {
   if (MULTITHREAD_ACTIVE !== null) {
@@ -104,30 +115,29 @@ export function isCachePreloaded() {
 export function preLoadCache() {
   console.time("sfdxHardisPreload");
   const preLoadPromises = [];
+  const oneDayInMs = 1000 * 60 * 60 * 24;
   const cliCommands = [
-    "node --version",
-    "git --version",
-    "sf --version",
-    "sf plugins",
+    ["node --version", oneDayInMs * 30], // 30 days
+    ["git --version", oneDayInMs * 30], // 30 days
+    ["sf --version", oneDayInMs ], // 1 day
+    ["sf plugins", oneDayInMs ], // 1 day
   ];
   for (const cmd of cliCommands) {
-    preLoadPromises.push(execCommand(cmd, {}, {}));
+    preLoadPromises.push(execCommand(String(cmd[0]),  {cacheExpiration: Number(cmd[1]), cacheSection: "app"}));
   }
   const sfdxJsonCommands = [
-    "sf org display",
-    "sf config get target-dev-hub",
-    "sf hardis:config:get --level project",
-    "sf hardis:config:get --level user",
+    ["sf org display", oneDayInMs ], // 1 day
+    ["sf config get target-dev-hub", oneDayInMs ], // 1 day
   ];
   for (const cmd of sfdxJsonCommands) {
-    preLoadPromises.push(execSfdxJson(cmd, {}, {}));
+    preLoadPromises.push(execSfdxJson(String(cmd[0]), {cacheExpiration: Number(cmd[1]), cacheSection: "project"}));
   }
   const npmPackages = [
-    "@salesforce/cli",
-    "@salesforce/plugin-packaging",
-    "sfdx-hardis",
-    "sfdmu",
-    "sfdx-git-delta",
+    "@salesforce/cli", 
+    "@salesforce/plugin-packaging", 
+    "sfdx-hardis", 
+    "sfdmu", 
+    "sfdx-git-delta", 
     // "texei-sfdx-plugin",
   ];
   for (const npmPackage of npmPackages) {
@@ -150,31 +160,31 @@ export function preLoadCache() {
 export async function getNpmLatestVersion(
   packageName: string,
 ): Promise<string> {
-  if (NPM_VERSIONS_CACHE[packageName]) {
-    return NPM_VERSIONS_CACHE[packageName];
+  if (CacheManager.get("app", packageName)) {
+    return CacheManager.get("app", packageName) as string;
   }
   const versionRes = await axios.get(
     "https://registry.npmjs.org/" + packageName + "/latest",
   );
   const version = versionRes.data.version;
-  NPM_VERSIONS_CACHE[packageName] = version;
+  CacheManager.set("app", packageName, version, 1000 * 60 * 60 * 24); // 1 day
   return version;
 }
 
 export function resetCache() {
-  REMOTE_CONFIGS = {};
-  PROJECT_CONFIG = null;
+  CacheManager.delete("app");
+  CacheManager.delete("project");
   COMMANDS_RESULTS = {};
-  NPM_VERSIONS_CACHE = {};
   GIT_MENUS = null;
+  PROJECT_CONFIG = null;
+  REMOTE_CONFIGS = {};
   Logger.log("[vscode-sfdx-hardis] Reset cache");
 }
 
 // Execute command
 export async function execCommand(
   command: string,
-  commandThis: any,
-  options: any = {
+  options: ExecCommandOptions = {
     fail: false,
     output: false,
     debug: false,
@@ -190,6 +200,16 @@ export async function execCommand(
     cwd: options.cwd || vscode.workspace.rootPath,
     env: process.env,
   };
+  const cacheSection = options.cacheSection;
+  const cacheExpiration = options.cacheExpiration;
+  // Try to get from CacheManager if cacheSection is set
+  if (cacheSection) {
+    const cached = CacheManager.get(cacheSection, command);
+    if (cached) {
+      process.env.FORCE_COLOR = prevForceColor;
+      return cached;
+    }
+  }
   try {
     if (COMMANDS_RESULTS[command]) {
       // use cache
@@ -232,11 +252,15 @@ export async function execCommand(
   // Return status 0 if not --json
   process.env.FORCE_COLOR = prevForceColor;
   if (!command.includes("--json")) {
-    return {
+    const resultObj = {
       status: 0,
       stdout: commandResult.stdout,
       stderr: commandResult.stderr,
     };
+    if (cacheSection && typeof cacheExpiration === 'number') {
+      CacheManager.set(cacheSection, command, resultObj, cacheExpiration);
+    }
+    return resultObj;
   }
   // Parse command result if --json
   try {
@@ -251,23 +275,29 @@ export async function execCommand(
         "[sfdx-hardis][WARNING] stderr: " + c.yellow(commandResult.stderr),
       );
     }
+    if (cacheSection && typeof cacheExpiration === 'number') {
+      CacheManager.set(cacheSection, command, parsedResult, cacheExpiration);
+    }
     return parsedResult;
   } catch (e: any) {
     // Manage case when json is not parsable
-    return {
+    const errorObj = {
       status: 1,
       errorMessage: c.red(
         `[sfdx-hardis][ERROR] Error parsing JSON in command result: ${e.message}\n${commandResult.stdout}\n${commandResult.stderr})`,
       ),
     };
+    if (cacheSection && typeof cacheExpiration === 'number') {
+      CacheManager.set(cacheSection, command, errorObj, cacheExpiration);
+    }
+    return errorObj;
   }
 }
 
 // Execute salesforce DX command with --json
 export async function execSfdxJson(
   command: string,
-  commandThis: any,
-  options: any = {
+  options: ExecCommandOptions = {
     fail: false,
     output: false,
     debug: false,
@@ -276,7 +306,7 @@ export async function execSfdxJson(
   if (!command.includes("--json")) {
     command += " --json";
   }
-  return await execCommand(command, commandThis, options);
+  return await execCommand(command, options);
 }
 
 export function getWorkspaceRoot() {
@@ -319,26 +349,21 @@ export function getSfdxProjectJson() {
 
 // Cache org info so it can be reused later with better perfs
 export function setOrgCache(newOrgInfo: any) {
-  ORGS_INFO_CACHE = ORGS_INFO_CACHE.map((orgInfo) => {
-    if (
-      orgInfo.username === newOrgInfo.username ||
-      orgInfo.instanceUrl === newOrgInfo.instanceUrl
-    ) {
-      return newOrgInfo;
-    }
-    return orgInfo;
-  });
+  const orgKey = `${newOrgInfo.username}||${newOrgInfo.instanceUrl}`;
+  CacheManager.set("orgs", orgKey, newOrgInfo, 1000 * 60 * 60 * 24 * 30); // 30 days
+  CacheManager.set("orgs", `username-instanceUrl:${newOrgInfo.username}`, newOrgInfo.instanceUrl, 1000 * 60 * 60 * 24 * 90); // 90 days
 }
 
 // Get from org cache
 export function findInOrgCache(orgCriteria: any) {
-  for (const orgInfo of ORGS_INFO_CACHE) {
-    if (
-      orgInfo.username === orgCriteria.username ||
-      orgInfo.instanceUrl === orgCriteria.instanceUrl ||
-      orgInfo.instanceUrl === `${orgCriteria.instanceUrl}/`
-    ) {
-      return orgInfo;
+  const orgKeys = [
+    `${orgCriteria.username}||${orgCriteria.instanceUrl}`,
+    `${orgCriteria.username}||${orgCriteria.instanceUrl}/`,
+  ]
+  for (const orgKey of orgKeys) {
+    const cached = CacheManager.get("orgs", orgKey);
+    if (cached) {
+      return cached;
     }
   }
   return null;
@@ -347,30 +372,25 @@ export function findInOrgCache(orgCriteria: any) {
 export async function getUsernameInstanceUrl(
   username: string,
 ): Promise<string | null> {
-  // username - instances cache
-  if (USER_INSTANCE_URL_CACHE[username]) {
-    return USER_INSTANCE_URL_CACHE[username];
-  }
-  // org cache
-  const orgInCache = findInOrgCache({ username: username });
-  if (orgInCache) {
-    return orgInCache.instanceUrl;
+  const cacheValue = CacheManager.get("orgs", `username-instanceUrl:${username}`);
+  if (cacheValue) {
+    return cacheValue as string;
   }
   // request org
   const orgInfoResult = await execSfdxJson(
     `sf org display --target-org ${username}`,
-    null,
     {
       fail: false,
       output: false,
+      cacheExpiration: 1000 * 60 * 60 * 24, // 1 day
+      cacheSection: "project",
     },
   );
   if (orgInfoResult.result) {
     const orgInfo = orgInfoResult.result || orgInfoResult;
-    setOrgCache(orgInfo);
     if (orgInfo.instanceUrl) {
-      USER_INSTANCE_URL_CACHE[username] = orgInfo.instanceUrl;
-      return orgInfo.instanceUrl;
+          setOrgCache(orgInfo);
+        return orgInfo.instanceUrl;
     }
   }
   return null;
@@ -402,12 +422,7 @@ export async function loadProjectSfdxHardisConfig() {
   if (PROJECT_CONFIG) {
     return PROJECT_CONFIG;
   }
-  const configRes = await execSfdxJson(
-    "sf hardis:config:get --level project",
-    null,
-    { fail: false, output: true },
-  );
-  PROJECT_CONFIG = configRes?.result?.config || {};
+  PROJECT_CONFIG = await getConfig("project");
   return PROJECT_CONFIG;
 }
 

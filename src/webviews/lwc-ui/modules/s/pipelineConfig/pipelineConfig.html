@@ -1,0 +1,201 @@
+<template>
+  <div class="slds-scope slds-theme_default slds-p-around_small">
+    <div class="slds-grid slds-grid_align-spread slds-m-bottom_medium">
+      <div class="slds-col slds-align-middle">
+        <template if:true={isBranch}>
+          <h2 class="slds-text-heading_medium">
+            Pipeline Settings for major git branch <b>{branchName}</b>
+          </h2>
+        </template>
+        <template if:false={isBranch}>
+          <h2 class="slds-text-heading_medium">
+            Global Pipeline Settings
+          </h2>
+        </template>
+      </div>
+      <div class="slds-col slds-no-flex slds-align-middle" data-key="top-btn-group" style="text-align:right;">
+        <template if:true={isEditMode}>
+          <lightning-button variant="brand" label="Save" onclick={handleSave} class="slds-m-right_small" data-button="top"></lightning-button>
+          <lightning-button variant="neutral" label="Cancel" onclick={handleCancel} data-button="top"></lightning-button>
+        </template>
+        <template if:false={isEditMode}>
+          <lightning-button variant="brand" label="Edit" onclick={handleEdit} data-button="top"></lightning-button>
+        </template>
+      </div>
+    </div>
+  <div class="slds-p-horizontal_small">
+      <div class="slds-grid slds-wrap">
+        <template for:each={configSections} for:item="section" for:index="index">
+          <div key={section.label} class="slds-size_1-of-1 slds-m-bottom_small slds-m-around_small">
+            <lightning-card title={section.label} class="slds-m-bottom_large">
+              <div class="slds-p-horizontal_small slds-p-top_x-small slds-text-body_small slds-text-color_weak">
+                {section.description}
+              </div>
+              <div class="slds-p-around_small">
+                <template for:each={section.entries} for:item="entry">
+                  <div key={entry.key} class="slds-m-bottom_medium">
+                  <template if:true={isEditMode}>
+                    <template if:true={entry.isEnum}>
+                      <div class="slds-form-element slds-m-bottom_xx-small">
+                        <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                          <span>{entry.label}</span>
+                          <template if:true={entry.description}>
+                            <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
+                          </template>
+                        </label>
+                        <lightning-combobox
+                          data-key={entry.key}
+                          value={entry.valueEdit}
+                          options={entry.optionsLwc}
+                          onchange={handleInputChange}
+                        ></lightning-combobox>
+                      </div>
+                    </template>
+                    <template if:true={entry.isArrayEnum}>
+                      <div class="slds-form-element slds-m-bottom_xx-small">
+                        <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                          <span>{entry.label}</span>
+                          <template if:true={entry.description}>
+                            <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
+                          </template>
+                        </label>
+                        <lightning-dual-listbox
+                          data-key={entry.key}
+                          value={entry.valueEdit}
+                          options={entry.optionsLwc}
+                          onchange={handleInputChange}
+                          label="Select values"
+                        ></lightning-dual-listbox>
+                      </div>
+                    </template>
+                    <template if:true={entry.isArrayText}>
+                      <div class="slds-form-element slds-m-bottom_xx-small">
+                        <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                          <span>{entry.label}</span>
+                          <template if:true={entry.description}>
+                            <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
+                          </template>
+                        </label>
+                        <lightning-textarea
+                          data-key={entry.key}
+                          value={entry.valueEditText}
+                          onchange={handleInputChange}
+                          rows="2"
+                        ></lightning-textarea>
+                        <div class="slds-text-body_small slds-text-color_weak">One value per line</div>
+                      </div>
+                    </template>
+                    <template if:true={entry.isBoolean}>
+                      <div class="slds-form-element slds-m-bottom_xx-small" style="display:flex;align-items:center;gap:0.2rem;">
+                        <lightning-input
+                          type="checkbox"
+                          data-key={entry.key}
+                          checked={entry.valueEdit}
+                          onchange={handleInputChange}
+                          oninput={handleInputChange}
+                          class="slds-m-right_x-small"
+                        ></lightning-input>
+                        <span style="display:flex;align-items:center;gap:0.15rem;">
+                          {entry.label}
+                          <template if:true={entry.description}>
+                            <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
+                          </template>
+                        </span>
+                      </div>
+                    </template>
+                    <template if:true={entry.isText}>
+                      <div class="slds-form-element slds-m-bottom_xx-small">
+                        <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                          <span>{entry.label}</span>
+                          <template if:true={entry.description}>
+                            <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
+                          </template>
+                        </label>
+                        <lightning-input
+                          type="text"
+                          data-key={entry.key}
+                          value={entry.valueEdit}
+                          onchange={handleInputChange}
+                        ></lightning-input>
+                      </div>
+                    </template>
+                    <template if:true={entry.inherited}>
+                      <div class="slds-text-color_weak slds-text-body_small">Global: {entry.globalValue}</div>
+                    </template>
+                  </template>
+                  <template if:false={isEditMode}>
+                    <template if:true={entry.isBoolean}>
+                      <div class="slds-form-element slds-m-bottom_xx-small" style="display:flex;align-items:center;gap:0.2rem;">
+                        <lightning-input
+                          type="checkbox"
+                          checked={entry.value}
+                          disabled
+                          class="slds-m-right_x-small"
+                        ></lightning-input>
+                        <span style="display:flex;align-items:center;gap:0.15rem;">
+                          {entry.label}
+                          <template if:true={entry.description}>
+                            <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
+                          </template>
+                        </span>
+                      </div>
+                    </template>
+                    <template if:false={entry.isBoolean}>
+                      <div class="slds-form-element slds-m-bottom_xx-small">
+                        <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                          <span>{entry.label}</span>
+                          <template if:true={entry.description}>
+                            <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
+                          </template>
+                        </label>
+                        <template if:true={entry.isArrayEnum}>
+                          <template if:true={entry.hasArrayEnumValues}>
+                            <ul class="slds-list_dotted slds-m-left_medium">
+                              <template for:each={entry.valueDisplay} for:item="item">
+                                <li key={item}>{item}</li>
+                              </template>
+                            </ul>
+                          </template>
+                          <template if:false={entry.hasArrayEnumValues}>
+                            <span class="slds-text-color_weak">(none)</span>
+                          </template>
+                        </template>
+                        <template if:true={entry.isArrayText}>
+                          <template if:true={entry.hasArrayTextValues}>
+                            <ul class="slds-list_dotted slds-m-left_medium">
+                              <template for:each={entry.valueDisplay} for:item="item">
+                                <li key={item}>{item}</li>
+                              </template>
+                            </ul>
+                          </template>
+                          <template if:false={entry.hasArrayTextValues}>
+                            <span class="slds-text-color_weak">(none)</span>
+                          </template>
+                        </template>
+                      </div>
+                    </template>
+                    <template if:true={entry.inherited}>
+                      <span class="slds-badge slds-theme_info slds-m-left_x-small" title="Inherited from global config">inherited</span>
+                    </template>
+                  </template>
+                  </div>
+                </template>
+              </div>
+            </lightning-card>
+          </div>
+        </template>
+      </div>
+    </div>
+    <!--
+    <div class="slds-grid slds-grid_align-end slds-m-top_medium" data-key="bottom-btn-group">
+      <template if:true={isEditMode}>
+        <lightning-button variant="brand" label="Save" onclick={handleSave} class="slds-m-right_small" data-button="bottom"></lightning-button>
+        <lightning-button variant="neutral" label="Cancel" onclick={handleCancel} data-button="bottom"></lightning-button>
+      </template>
+      <template if:false={isEditMode}>
+        <lightning-button variant="brand" label="Edit" onclick={handleEdit} data-button="bottom"></lightning-button>
+      </template>
+    </div>
+    -->
+  </div>
+</template>
