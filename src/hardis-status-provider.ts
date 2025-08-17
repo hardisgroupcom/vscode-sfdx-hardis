@@ -116,7 +116,7 @@ export class HardisStatusProvider
       const devHubAliasRes = await execSfdxJson(devHubAliasCommand, {
         fail: false,
         output: false,
-        cacheSection: "orgs",
+        cacheSection: "project",
         cacheExpiration: 1000 * 60 * 60, // 1 hour
       });
       if (
@@ -141,8 +141,8 @@ export class HardisStatusProvider
     const orgInfoResult = await execSfdxJson(orgDisplayCommand,  {
       fail: false,
       output: false,
-      cacheSection: "orgs",
-      cacheExpiration: 1000 * 60 * 60, // 1 hour
+      cacheSection: orgDisplayCommand.includes("--target-org") ? "orgs": "project",
+      cacheExpiration: orgDisplayCommand.includes("--target-org") ? 1000 * 60 * 60 * 24 * 90 : 1000 * 60 * 15, // 90 days for named orgs, 15 minutes for default org
     });
     if (orgInfoResult.result || orgInfoResult.id) {
       const orgInfo = orgInfoResult.result || orgInfoResult;
