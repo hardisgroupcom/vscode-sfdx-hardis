@@ -9,8 +9,17 @@
     margin-left: 0.25rem;
     height: 1em;
 }
+
+.helptext-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
 .multiline-helptext-popover {
     position: absolute;
+    top: 0;
+    left: 100%;
     background: #032d60;
     color: #fff;
     border-radius: 8px;
