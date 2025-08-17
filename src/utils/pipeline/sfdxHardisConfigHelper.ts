@@ -106,7 +106,7 @@ export class SfdxHardisConfigHelper {
       // This will work in both dev and production (webpacked) builds
       // @ts-ignore
       return require.resolve("../../resources/sfdx-hardis.jsonschema.json");
-    } catch (e) {
+    } catch {
       // Fallback: join relative to __dirname
       return path.resolve(__dirname, "../../resources/sfdx-hardis.jsonschema.json");
     }

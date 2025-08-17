@@ -111,9 +111,11 @@ export class HardisPluginsProvider
     if (isCachePreloaded() && nodeInstallOk === false) {
       const nodeVersionStdOut: string =
         (
-          await execCommand("node --version", this, {
+          await execCommand("node --version", 
+          {
             output: true,
             fail: false,
+            cacheSection: "app"
           })
         ).stdout ||
         process.env.NODE_PATH ||
@@ -183,9 +185,11 @@ export class HardisPluginsProvider
     if (isCachePreloaded() && gitInstallOk === false) {
       const gitVersionStdOut: string =
         (
-          await execCommand("git --version", this, {
+          await execCommand("git --version", 
+          {
             output: true,
             fail: false,
+            cacheSection: "app",
           })
         ).stdout || "error";
       const gitVersionMatch = /git version ([0-9]+)\.(.*)/gm.exec(
@@ -271,7 +275,13 @@ export class HardisPluginsProvider
     const outdated: any[] = [];
     // check sfdx-cli version
     const sfdxCliVersionStdOut: string = (
-      await execCommand("sf --version", this, { output: true, fail: false })
+      await execCommand("sf --version", 
+         { 
+          output: true, 
+          fail: false, 
+          cacheSection: "app",
+          cacheExpiration: 1000 * 60 * 60 * 24, // 1 day
+         })
     ).stdout;
     let sfdxCliVersionMatch = /sfdx-cli\/([^\s]+)/gm.exec(sfdxCliVersionStdOut);
     let sfdxCliVersion = "(missing)";
@@ -357,7 +367,13 @@ export class HardisPluginsProvider
     items.push(sfdxCliItem);
     // get currently installed plugins
     const sfdxPlugins =
-      (await execCommand("sf plugins", this, { output: true, fail: false }))
+      (await execCommand("sf plugins", 
+          {
+           output: true,
+           fail: false,
+           cacheSection: "app",
+           cacheExpiration: 1000 * 60 * 60 * 24, // 1 day
+          }))
         .stdout || "";
     // Check installed plugins status version
     const pluginPromises = plugins.map(async (plugin) => {
