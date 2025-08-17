@@ -2,11 +2,7 @@
 // LWC: ignore parsing errors for import/export, handled by LWC compiler
 // @ts-nocheck
 // eslint-env es6
-
-
-
 import { LightningElement, api, track } from "lwc";
-
 
 export default class Pipeline extends LightningElement {
   @track prButtonInfo;
@@ -23,6 +19,18 @@ export default class Pipeline extends LightningElement {
     if (!this.prButtonInfo || !this.prButtonInfo.icon) return null;
     // The icons are copied to /resources/git-icons in the webview root
     return `/resources/git-icons/${this.prButtonInfo.icon}.svg`;
+  }
+
+  handleShowPipelineConfig() {
+    if (typeof window !== 'undefined' && window.sendMessageToVSCode) {
+      window.sendMessageToVSCode({
+        type: 'runVsCodeCommand',
+        data: {
+          command: 'vscode-sfdx-hardis.showPipelineConfig',
+          args: []
+        }
+      });
+    }
   }
 
   @api
@@ -55,6 +63,18 @@ export default class Pipeline extends LightningElement {
       });
     }
     console.log("Configure Auth button clicked");
+  }
+
+  handleShowPipelineConfig() {
+    if (typeof window !== 'undefined' && window.sendMessageToVSCode) {
+      window.sendMessageToVSCode({
+        type: 'runVsCodeCommand',
+        data: {
+          command: 'vscode-sfdx-hardis.showPipelineConfig',
+          args: []
+        }
+      });
+    }
   }
 
   handleToggleMajor(event) {
