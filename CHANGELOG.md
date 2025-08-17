@@ -10,6 +10,7 @@
 - Fix issue on MacOS with background commands
 - Use VsCode Cache manager to improve performances
 - Add Pipeline Settings command & LWC
+- Build custom LWC helptext component to handle multiline display
 
 ## [6.0.9 (pre-release)] 2024-08-14
 
