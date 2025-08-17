@@ -10,3 +10,7 @@
 .slds-align_absolute-center {
 	align-items: center;
 }
+
+:host {
+    color: #000000;
+}

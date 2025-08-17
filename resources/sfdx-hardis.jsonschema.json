@@ -131,7 +131,7 @@
     },
     "availableProjects": {
       "$id": "#/properties/availableProjects",
-      "description": "List of business projects that are managed in the same repository. Will be used to build git branch name when using hardis:work:new",
+      "description": "List of business projects that are managed in the same repository. Will be used to build git branch name when creating a new User Story (hardis:work:new)",
       "examples": [
         [
           "sales_cloud",

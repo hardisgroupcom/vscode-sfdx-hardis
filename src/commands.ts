@@ -14,7 +14,7 @@ import { LwcPanelManager } from "./lwc-panel-manager";
 import { CommandRunner } from "./command-runner";
 import { PipelineDataProvider } from "./pipeline-data-provider";
 import { getPullRequestButtonInfo } from "./utils/gitPrButtonUtils";
-import { SfdxHardisConfigHelper } from "./utils/pipeline/sfdx-hardis-config-helper";
+import { SfdxHardisConfigHelper } from "./utils/pipeline/sfdxHardisConfigHelper";
 
 export class Commands {
   private readonly extensionUri: vscode.Uri;
@@ -429,15 +429,22 @@ export class Commands {
       async (branchName: string|null) => {
         const workspaceRoot = getWorkspaceRoot();
         const sfdxHardisConfigHelper = SfdxHardisConfigHelper.getInstance(workspaceRoot);
-        const config = sfdxHardisConfigHelper.getEditorInput(branchName);
+        // Show progress while loading config editor input
+        const configEditorInput = await vscode.window.withProgress({
+          location: vscode.ProgressLocation.Notification,
+          title: branchName ? `Loading pipeline configuration for ${branchName}...` : "Loading global pipeline configuration...",
+          cancellable: false
+        }, async () => {
+          return await sfdxHardisConfigHelper.getEditorInput(branchName);
+        });
         const panel = LwcPanelManager.getInstance().getOrCreatePanel(
           "s-pipeline-config",
-          { config },
+          { config: configEditorInput },
         );
         panel.updateTitle(branchName ? `Configuration - ${branchName}` : "Global Pipeline Configuration");
         // Register message handler to save configuration
         panel.onMessage(async (type, data) => {
-          if (type === "saveConfig") {
+          if (type === "saveSfdxHardisConfig") {
             try {
               await sfdxHardisConfigHelper.saveConfigFromEditor(data.config);
               vscode.window.showInformationMessage("Configuration saved successfully.");

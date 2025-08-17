@@ -13,6 +13,7 @@ export interface SfdxHardisConfigSchemaEntry {
   type: 'text' | 'enum' | 'array';
   itemType?: 'text' | 'enum';
   options?: any[];
+  default?: any;
   description?: string;
   branchAllowed?: boolean;
   globalAllowed?: boolean;
@@ -29,6 +30,7 @@ export interface SfdxHardisConfigEditorInput {
   isBranch: boolean;
   branchName: string;
   configSchema: SfdxHardisConfigSchema;
+  sections: Array<{ label: string; description: string; keys: string[] }>;
 }
 
 export interface SfdxHardisConfigEditorSaveData {
@@ -43,13 +45,56 @@ export class SfdxHardisConfigHelper {
   static allConfigFields: Array<{ key: string; schema: SfdxHardisConfigSchemaEntry }> = [];
   static schemaLoaded = false;
   static readonly CONFIGURABLE_FIELDS = [
-    { name: "instanceUrl", scopes: ["global", "branch"] },
-    { name: "username", scopes: ["global", "branch"] },
-    { name: "useDeltaDeployment", scopes: ["global"] },
-    { name: "useSmartDeploymentTests", scopes: ["global"] },
+    { name: "instanceUrl", scopes: ["branch"] },
+    { name: "username", scopes: ["branch"] },
+    { name: "useDeltaDeployment", scopes: ["global", "branch"] },
+    { name: "useSmartDeploymentTests", scopes: ["global", "branch"] },
     { name: "developmentBranch", scopes: ["global"] },
+    { name: "allowedOrgTypes", scopes: ["global"] },
     { name: "availableProjects", scopes: ["global"] },
     { name: "availableTargetBranches", scopes: ["global"] },
+    { name: "installPackagesDuringCheckDeploy", scopes: ["global"] },
+    { name: "autoCleanTypes", scopes: ["global"] }, 
+    { name: "autoRetrieveWhenPull", scopes: ["global"] },
+    { name: "autoRemoveUserPermissions", scopes: ["global"] }
+  ]
+  static readonly SECTIONS = [
+    {
+      label: "Deployment",
+      description: "",
+      keys: [
+        "useDeltaDeployment",
+        "useSmartDeploymentTests",
+        "installPackagesDuringCheckDeploy",
+      ]
+    },
+    {
+      label: "User Stories",
+      description: "",
+      keys: [
+        "developmentBranch",
+        "availableTargetBranches",
+        "allowedOrgTypes",
+        "availableProjects"
+      ],
+    },
+    {
+      label: "Salesforce Project",
+      description: "",
+      keys: [
+        "autoCleanTypes",
+        "autoRetrieveWhenPull",
+        "autoRemoveUserPermissions"
+      ]
+    },
+    {
+      label: "Authentication",
+      description: "",
+      keys: [
+        "instanceUrl",
+        "username"
+      ]
+    }
   ]
   static readonly REMOTE_SCHEMA_URL = "https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/main/config/sfdx-hardis.jsonschema.json";
   // Always resolve to the resources directory, compatible with both Node and Webpack
@@ -119,10 +164,12 @@ export class SfdxHardisConfigHelper {
       .map(([key, value]: [string, any]) => ({
         key,
         schema: {
-          type: value.type === "array" ? "array" : value.enum ? "enum" : "text",
-          itemType: value.items && value.items.enum ? "enum" : value.items ? "text" : undefined,
-          options: value.enum || (value.items && value.items.enum) || undefined,
+          type: value.type,
+          title: value.title,
+          items: value.items,
+          default: value.default,
           description: value.description,
+          examples: value.examples || [],
           globalAllowed: this.CONFIGURABLE_FIELDS.find(field => field.name === key)?.scopes.includes("global") || false,
           branchAllowed: this.CONFIGURABLE_FIELDS.find(field => field.name === key)?.scopes.includes("branch") || false,
         }
@@ -135,6 +182,7 @@ export class SfdxHardisConfigHelper {
    * Loads and merges global and branch config, returns data for LWC
    */
   async getEditorInput(branchName: string|null): Promise<SfdxHardisConfigEditorInput> {
+
     await SfdxHardisConfigHelper.loadSchema();
     const globalPath = path.join(this.workspaceRoot, "config/.sfdx-hardis.yml");
     const branchPath = branchName
@@ -154,7 +202,29 @@ export class SfdxHardisConfigHelper {
     const allowedFields = SfdxHardisConfigHelper.allConfigFields.filter(f => isBranch ? f.schema.branchAllowed : f.schema.globalAllowed).map(f => f.key);
     config = {};
     for (const key of allowedFields) {
-      config[key] = (isBranch ? (branchConfig[key] !== undefined ? branchConfig[key] : globalConfig[key]) : globalConfig[key]);
+      if (isBranch) {
+        if (branchConfig[key] !== undefined) {
+          config[key] = branchConfig[key];
+        } else if (globalConfig[key] !== undefined) {
+          config[key] = globalConfig[key];
+        } else {
+          // Use schema default if present
+          const schemaEntry = SfdxHardisConfigHelper.allConfigFields.find(f => f.key === key)?.schema;
+          if (schemaEntry && schemaEntry.default !== undefined) {
+            config[key] = schemaEntry.default;
+          }
+        }
+      } else {
+        if (globalConfig[key] !== undefined) {
+          config[key] = globalConfig[key];
+        } else {
+          // Use schema default if present
+          const schemaEntry = SfdxHardisConfigHelper.allConfigFields.find(f => f.key === key)?.schema;
+          if (schemaEntry && schemaEntry.default !== undefined) {
+            config[key] = schemaEntry.default;
+          }
+        }
+      }
     }
     // Build configSchema from allowed fields
     const configSchema: SfdxHardisConfigSchema = {};
@@ -170,6 +240,7 @@ export class SfdxHardisConfigHelper {
       isBranch,
       branchName: branchName || '',
       configSchema,
+      sections: SfdxHardisConfigHelper.SECTIONS
     };
   }
 
