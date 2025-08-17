@@ -23,16 +23,6 @@
 }
 /* Prompt Input Component Styles - Minimal Custom CSS using SLDS */
 
-/* Host element styling */
-:host {
-    display: block;
-    width: 100%;
-    box-sizing: border-box;
-    color: #000000;
-}
-
-/* Custom button styling for select options */
-
 /* Compact, clean select option buttons */
 .select-option-button {
     transition: all 0.2s ease;

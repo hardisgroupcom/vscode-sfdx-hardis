@@ -453,7 +453,7 @@ export class Commands {
         panel.onMessage(async (type, data) => {
           if (type === "saveSfdxHardisConfig") {
             try {
-              await sfdxHardisConfigHelper.saveConfigFromEditor(data.config);
+              await sfdxHardisConfigHelper.saveConfigFromEditor(data);
               vscode.window.showInformationMessage("Configuration saved successfully.");
             } catch (error : any) {
               vscode.window.showErrorMessage("Error saving configuration: " + error.message);

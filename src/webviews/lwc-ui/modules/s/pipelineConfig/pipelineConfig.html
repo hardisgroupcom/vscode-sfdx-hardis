@@ -1,5 +1,5 @@
 <template>
-  <div class="slds-p-around_medium">
+  <div class="slds-scope slds-theme_default slds-p-around_medium">
     <div class="slds-grid slds-grid_align-spread slds-m-bottom_medium">
       <div class="slds-col slds-align-middle">
         <template if:true={isBranch}>
@@ -13,13 +13,13 @@
           </h2>
         </template>
       </div>
-      <div class="slds-col slds-no-flex slds-align-middle" style="text-align:right;">
+      <div class="slds-col slds-no-flex slds-align-middle" data-key="top-btn-group" style="text-align:right;">
         <template if:true={isEditMode}>
-          <lightning-button variant="brand" label="Save" onclick={handleSave} class="slds-m-right_small"></lightning-button>
-          <lightning-button variant="neutral" label="Cancel" onclick={handleCancel}></lightning-button>
+          <lightning-button variant="brand" label="Save" onclick={handleSave} class="slds-m-right_small" data-button="top"></lightning-button>
+          <lightning-button variant="neutral" label="Cancel" onclick={handleCancel} data-button="top"></lightning-button>
         </template>
         <template if:false={isEditMode}>
-          <lightning-button variant="brand" label="Edit" onclick={handleEdit}></lightning-button>
+          <lightning-button variant="brand" label="Edit" onclick={handleEdit} data-button="top"></lightning-button>
         </template>
       </div>
     </div>
@@ -92,6 +92,7 @@
                           data-key={entry.key}
                           checked={entry.valueEdit}
                           onchange={handleInputChange}
+                          oninput={handleInputChange}
                           class="slds-m-right_x-small"
                         ></lightning-input>
                         <span style="display:flex;align-items:center;gap:0.15rem;">
@@ -144,7 +145,7 @@
                         <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
                           <span>{entry.label}</span>
                           <template if:true={entry.description}>
-                            <lightning-helptext content={entry.description} class="slds-icon-text-info"></lightning-helptext>
+                            <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
                           </template>
                         </label>
                         <template if:true={entry.isArrayEnum}>
@@ -185,13 +186,13 @@
         </template>
       </div>
     </div>
-    <div class="slds-grid slds-grid_align-end slds-m-top_medium">
+    <div class="slds-grid slds-grid_align-end slds-m-top_medium" data-key="bottom-btn-group">
       <template if:true={isEditMode}>
-        <lightning-button variant="brand" label="Save" onclick={handleSave} class="slds-m-right_small"></lightning-button>
-        <lightning-button variant="neutral" label="Cancel" onclick={handleCancel}></lightning-button>
+        <lightning-button variant="brand" label="Save" onclick={handleSave} class="slds-m-right_small" data-button="bottom"></lightning-button>
+        <lightning-button variant="neutral" label="Cancel" onclick={handleCancel} data-button="bottom"></lightning-button>
       </template>
       <template if:false={isEditMode}>
-        <lightning-button variant="brand" label="Edit" onclick={handleEdit}></lightning-button>
+        <lightning-button variant="brand" label="Edit" onclick={handleEdit} data-button="bottom"></lightning-button>
       </template>
     </div>
   </div>

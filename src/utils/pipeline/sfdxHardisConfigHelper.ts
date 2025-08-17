@@ -263,7 +263,14 @@ export class SfdxHardisConfigHelper {
         }
       }
       await fs.ensureDir(path.dirname(branchPath));
-      await fs.writeFile(branchPath, yaml.dump(branchOnly), "utf8");
+      // Merge with existing branch config
+      if (await fs.pathExists(branchPath)) {
+        const existingBranchConfig: SfdxHardisConfig = (yaml.load(await fs.readFile(branchPath, "utf8")) as SfdxHardisConfig) || {};
+        Object.assign(existingBranchConfig, branchOnly);
+        await fs.writeFile(branchPath, yaml.dump(existingBranchConfig), "utf8");
+      } else {
+        await fs.writeFile(branchPath, yaml.dump(branchOnly), "utf8");
+      }
     } else {
       // Save only global-allowed keys
       await SfdxHardisConfigHelper.loadSchema();
@@ -275,7 +282,15 @@ export class SfdxHardisConfigHelper {
         }
       }
       await fs.ensureDir(path.dirname(globalPath));
-      await fs.writeFile(globalPath, yaml.dump(globalOnly), "utf8");
+      // Merge with existing global config
+      if (await fs.pathExists(globalPath)) {
+        const existingGlobalConfig: SfdxHardisConfig = (yaml.load(await fs.readFile(globalPath, "utf8")) as SfdxHardisConfig) || {};
+        Object.assign(existingGlobalConfig, globalOnly);
+        await fs.writeFile(globalPath, yaml.dump(existingGlobalConfig), "utf8");
+      } else {
+        // If no existing global config, just write the new one
+        await fs.writeFile(globalPath, yaml.dump(globalOnly), "utf8");
+      }
     }
   }
 

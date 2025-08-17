@@ -521,7 +521,7 @@ export class LwcUiPanel {
           #app { width: 100%; height: 100vh; }
         </style>
       </head>
-      <body class="slds-scope">
+      <body class="slds-scope slds-theme_default">
         <div id="app" data-lwc-id="${this.lwcId}" data-init-data="${initDataJson}"></div>
         
         <script>

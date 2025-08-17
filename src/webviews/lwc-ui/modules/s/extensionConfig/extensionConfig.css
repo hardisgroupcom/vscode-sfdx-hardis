@@ -1,7 +1,3 @@
 .slds-form-element {
     max-width: 600px;
 }
-
-:host {
-    color: #000000;
-}

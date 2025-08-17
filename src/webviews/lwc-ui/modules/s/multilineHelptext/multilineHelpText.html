@@ -1,16 +1,18 @@
 <template>
-  <div class="slds-form-element__icon slds-m-left_xx-small" onmouseover={show} onmouseout={hide}>
+  <div class="slds-scope slds-theme_default slds-form-element__icon slds-m-left_xx-small" onmouseenter={show} onmouseleave={hide}>
     <lightning-icon
       icon-name="utility:info"
       alternative-text="Help"
       size="x-small"
       class="slds-icon-text-default"
+      variant="brand"
     ></lightning-icon>
 
     <template if:true={visible}>
       <div
         class="slds-popover slds-popover_tooltip multiline-helptext-popover"
         role="tooltip"
+        style="pointer-events:none;"
       >
         <div class="slds-popover__body">
           <lightning-formatted-rich-text value={content}></lightning-formatted-rich-text>

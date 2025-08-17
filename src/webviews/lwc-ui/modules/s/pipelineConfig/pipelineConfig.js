@@ -1,4 +1,5 @@
 import { LightningElement, api, track } from "lwc";
+import 's/forceLightTheme'; // Ensure light theme is applied
 
 /**
  * LWC to display and edit .sfdx-hardis.yml configuration (global or branch-scoped)
@@ -143,24 +144,8 @@ export default class PipelineConfig extends LightningElement {
 	handleCancel() {
 		this.mode = 'view';
 		this.editedConfig = {};
+		this.handleRefresh();
 	}
-
-	handleSave() {
-		debugger;
-		// Send updated config to VS Code
-		if (typeof window !== 'undefined' && window.sendMessageToVSCode) {
-			window.sendMessageToVSCode({
-				type: 'saveSfdxHardisConfig',
-				data: {
-					config: this.editedConfig,
-					isBranch: this.isBranch,
-					branchName: this.branchName,
-				},
-			});
-		}
-		this.mode = 'view';
-	}
-
 
 	@api
 	initialize(data) {
@@ -193,17 +178,33 @@ export default class PipelineConfig extends LightningElement {
 		let value = event.target.value;
 		// Find schema from configSchema object
 		let schema = this.configSchema && this.configSchema[key] ? this.configSchema[key] : { type: 'string' };
-		if (schema.type === 'array') {
-			if (schema.items && schema.items.enum && event.detail && Array.isArray(event.detail.value)) {
-				value = event.detail.value;
-			} else {
-				// Textarea, split by lines or comma
-				value = value.split(/\r?\n|,/).map(v => v.trim()).filter(Boolean);
-			}
+
+		// Robustly handle all input types
+		if (schema.type === 'boolean') {
+			// Checkbox: checked property
+			value = event.target.checked;
+			this.editedConfig[key] = value;
 		} else if (schema.enum) {
+			// Combobox: single value
 			value = event.detail && event.detail.value !== undefined ? event.detail.value : value;
+			this.editedConfig[key] = value;
+		} else if (schema.type === 'array' && schema.items && schema.items.enum) {
+			// Dual-listbox: array of enums
+			value = event.detail && Array.isArray(event.detail.value) ? event.detail.value : [];
+			this.editedConfig[key] = value;
+		} else if (schema.type === 'array' && schema.items && schema.items.type === 'string') {
+			// Textarea: array of strings, split by line
+			if (typeof value === 'string') {
+				value = value.split(/\r?\n/).map(v => v.trim()).filter(Boolean);
+			}
+			this.editedConfig[key] = value;
+		} else if (schema.type === 'string') {
+			// Text input
+			this.editedConfig[key] = value;
+		} else {
+			// Fallback: assign value
+			this.editedConfig[key] = value;
 		}
-		this.editedConfig[key] = value;
 	}
 
 	// For template: expose input type checks as properties for each entry
@@ -225,5 +226,35 @@ export default class PipelineConfig extends LightningElement {
 	getInputTypeText(entry) {
 		const schema = this.configSchema[entry.key] || { type: 'text' };
 		return schema.type === 'text';
+	}
+
+	handleSave() {
+		// Send updated config to VS Code
+		if (typeof window !== 'undefined' && window.sendMessageToVSCode) {
+			window.sendMessageToVSCode({
+				type: 'saveSfdxHardisConfig',
+				data: {
+					config: JSON.parse(JSON.stringify(this.editedConfig)),
+					isBranch: this.isBranch,
+					branchName: this.branchName,
+				},
+			});
+			this.mode = 'view';
+			this.config = {...this.editedConfig};
+			this.editedConfig = {};
+			this.handleRefresh();
+		}
+	}
+
+	handleRefresh() {
+		this.initialize({
+		    config: this.config,
+		    configSchema: this.configSchema,
+		    branchConfig: this.branchConfig,
+		    globalConfig: this.globalConfig,
+		    isBranch: this.isBranch,
+		    branchName: this.branchName,
+		    sections: this.sections
+		});
 	}
 }
