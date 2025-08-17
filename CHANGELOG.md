@@ -6,6 +6,8 @@
 - Add new sandbox refresh commands
 - New UI to update VsCode SFDX-Hardis configuration
 - Fix issue on MacOS with background commands
+- Use VsCode Cache manager to improve performances
+- Add Pipeline Settings command & LWC
 
 ## [6.0.9 (pre-release)] 2024-08-14
 
