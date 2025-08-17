@@ -50,7 +50,7 @@ export default class PipelineConfig extends LightningElement {
 							globalValue = globalConfig[key];
 							inherited = branchValue === undefined && globalValue !== undefined;
 						}
-						let isEnum = false, isArrayEnum = false, isArrayText = false, isText = false, isBoolean = false;
+						let isEnum = false, isArrayEnum = false, isArrayText = false, isText = false, isBoolean = false, isNumber = false;
 						let options = [];
 						let label = schema.title || key;
 						let description = schema.description || '';
@@ -70,23 +70,27 @@ export default class PipelineConfig extends LightningElement {
 							isText = true;
 						} else if (schema.type === 'boolean') {
 							isBoolean = true;
+						} else if (schema.type === 'number') {
+							isNumber = true;
 						}
 						let valueEdit = this.editedConfig ? this.editedConfig[key] : undefined;
 						const value = config[key];
-						// Always initialize valueEdit for edit mode for enums, array enums, and array text
-						if (this.isEditMode) {
-							if (isEnum) {
-								if (valueEdit === undefined) valueEdit = value !== undefined ? value : '';
-							} else if (isArrayEnum) {
-								if (!Array.isArray(valueEdit)) valueEdit = Array.isArray(value) ? value : [];
-							} else if (isArrayText) {
-								if (!Array.isArray(valueEdit)) valueEdit = Array.isArray(value) ? value : [];
-							} else if (isText) {
-								if (valueEdit === undefined) valueEdit = value !== undefined ? value : '';
-							} else if (isBoolean) {
-								if (valueEdit === undefined) valueEdit = value !== undefined ? value : false;
-							}
-						}
+								// Always initialize valueEdit for edit mode for enums, array enums, array text, number
+								if (this.isEditMode) {
+									if (isEnum) {
+										if (valueEdit === undefined) valueEdit = value !== undefined ? value : '';
+									} else if (isArrayEnum) {
+										if (!Array.isArray(valueEdit)) valueEdit = Array.isArray(value) ? value : [];
+									} else if (isArrayText) {
+										if (!Array.isArray(valueEdit)) valueEdit = Array.isArray(value) ? value : [];
+									} else if (isText) {
+										if (valueEdit === undefined) valueEdit = value !== undefined ? value : '';
+									} else if (isBoolean) {
+										if (valueEdit === undefined) valueEdit = value !== undefined ? value : false;
+									} else if (isNumber) {
+										if (valueEdit === undefined) valueEdit = value !== undefined ? value : null;
+									}
+								}
 						let valueEditText = '';
 						let valueDisplay = '';
 						if (isArrayEnum || isArrayText) {
@@ -106,27 +110,28 @@ export default class PipelineConfig extends LightningElement {
 						} else if (isArrayText || isArrayEnum) {
 							valueEditText = '';
 						}
-						entries.push({
-							key,
-							label,
-							description,
-							value,
-							valueDisplay,
-							valueEdit,
-							valueEditText,
-							inherited,
-							branchValue,
-							globalValue,
-							isEnum,
-							isArrayEnum,
-							isArrayText,
-							isText,
-							isBoolean,
-							options,
-							optionsLwc,
-							hasArrayEnumValues: isArrayEnum && Array.isArray(valueDisplay) && valueDisplay.length > 0,
-							hasArrayTextValues: isArrayText && Array.isArray(valueDisplay) && valueDisplay.length > 0,
-						});
+								entries.push({
+									key,
+									label,
+									description,
+									value,
+									valueDisplay,
+									valueEdit,
+									valueEditText,
+									inherited,
+									branchValue,
+									globalValue,
+									isEnum,
+									isArrayEnum,
+									isArrayText,
+									isText,
+									isBoolean,
+									isNumber,
+									options,
+									optionsLwc,
+									hasArrayEnumValues: isArrayEnum && Array.isArray(valueDisplay) && valueDisplay.length > 0,
+									hasArrayTextValues: isArrayText && Array.isArray(valueDisplay) && valueDisplay.length > 0,
+								});
 					}
 					return {
 						label: section.label,
@@ -162,39 +167,45 @@ export default class PipelineConfig extends LightningElement {
 		}
 	}
 
-	handleInputChange(event) {
-		const key = event.target.dataset.key;
-		let value = event.target.value;
-		// Find schema from configSchema object
-		let schema = this.configSchema && this.configSchema[key] ? this.configSchema[key] : { type: 'string' };
+		handleInputChange(event) {
+			const key = event.target.dataset.key;
+			let value = event.target.value;
+			// Find schema from configSchema object
+			let schema = this.configSchema && this.configSchema[key] ? this.configSchema[key] : { type: 'string' };
 
-		// Robustly handle all input types
-		if (schema.type === 'boolean') {
-			// Checkbox: checked property
-			value = event.target.checked;
-			this.editedConfig[key] = value;
-		} else if (schema.enum) {
-			// Combobox: single value
-			value = event.detail && event.detail.value !== undefined ? event.detail.value : value;
-			this.editedConfig[key] = value;
-		} else if (schema.type === 'array' && schema.items && schema.items.enum) {
-			// Dual-listbox: array of enums
-			value = event.detail && Array.isArray(event.detail.value) ? event.detail.value : [];
-			this.editedConfig[key] = value;
-		} else if (schema.type === 'array' && schema.items && schema.items.type === 'string') {
-			// Textarea: array of strings, split by line
-			if (typeof value === 'string') {
-				value = value.split(/\r?\n/).map(v => v.trim()).filter(Boolean);
+			// Robustly handle all input types
+			if (schema.type === 'boolean') {
+				// Checkbox: checked property
+				value = event.target.checked;
+				this.editedConfig[key] = value;
+			} else if (schema.enum) {
+				// Combobox: single value
+				value = event.detail && event.detail.value !== undefined ? event.detail.value : value;
+				this.editedConfig[key] = value;
+			} else if (schema.type === 'array' && schema.items && schema.items.enum) {
+				// Dual-listbox: array of enums
+				value = event.detail && Array.isArray(event.detail.value) ? event.detail.value : [];
+				this.editedConfig[key] = value;
+			} else if (schema.type === 'array' && schema.items && schema.items.type === 'string') {
+				// Textarea: array of strings, split by line
+				if (typeof value === 'string') {
+					value = value.split(/\r?\n/).map(v => v.trim()).filter(Boolean);
+				}
+				this.editedConfig[key] = value;
+			} else if (schema.type === 'number') {
+				// Number input
+				if (typeof value === 'string') {
+					value = value.trim() === '' ? null : Number(value);
+				}
+				this.editedConfig[key] = value;
+			} else if (schema.type === 'string') {
+				// Text input
+				this.editedConfig[key] = value;
+			} else {
+				// Fallback: assign value
+				this.editedConfig[key] = value;
 			}
-			this.editedConfig[key] = value;
-		} else if (schema.type === 'string') {
-			// Text input
-			this.editedConfig[key] = value;
-		} else {
-			// Fallback: assign value
-			this.editedConfig[key] = value;
 		}
-	}
 
 	// For template: expose input type checks as properties for each entry
 	getInputTypeEnum(entry) {
