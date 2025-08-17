@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [6.0.10 (pre-release)] 2024-08-17
+
 - Add debug options for sfdx-hardis commands
 - Add new sandbox refresh commands
 - New UI to update VsCode SFDX-Hardis configuration
