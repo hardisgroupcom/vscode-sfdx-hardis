@@ -188,8 +188,8 @@ export class SfdxHardisConfigHelper {
           default: value.default,
           description: value.description,
           examples: value.examples || [],
-          globalAllowed: this.CONFIGURABLE_FIELDS.find(field => field.name === key)?.scopes.includes("global") || false,
-          branchAllowed: this.CONFIGURABLE_FIELDS.find(field => field.name === key)?.scopes.includes("branch") || false,
+          globalAllowed: this.CONFIGURABLE_FIELDS.find(field => field.name === key)?.scopes?.includes("global") || false,
+          branchAllowed: this.CONFIGURABLE_FIELDS.find(field => field.name === key)?.scopes?.includes("branch") || false,
         }
       }));
       this.schemaLoaded = true;
