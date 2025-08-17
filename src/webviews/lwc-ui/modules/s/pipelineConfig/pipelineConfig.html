@@ -119,6 +119,22 @@
                         ></lightning-input>
                       </div>
                     </template>
+                    <template if:true={entry.isNumber}>
+                      <div class="slds-form-element slds-m-bottom_xx-small">
+                        <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                          <span>{entry.label}</span>
+                          <template if:true={entry.description}>
+                            <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
+                          </template>
+                        </label>
+                        <lightning-input
+                          type="number"
+                          data-key={entry.key}
+                          value={entry.valueEdit}
+                          onchange={handleInputChange}
+                        ></lightning-input>
+                      </div>
+                    </template>
                     <template if:true={entry.inherited}>
                       <div class="slds-text-color_weak slds-text-body_small">Global: {entry.globalValue}</div>
                     </template>
@@ -157,7 +173,7 @@
                             </ul>
                           </template>
                           <template if:false={entry.hasArrayEnumValues}>
-                            <span class="slds-text-color_weak">(none)</span>
+                            <span class="slds-text-color_weak">None</span>
                           </template>
                         </template>
                         <template if:true={entry.isArrayText}>
@@ -169,8 +185,14 @@
                             </ul>
                           </template>
                           <template if:false={entry.hasArrayTextValues}>
-                            <span class="slds-text-color_weak">(none)</span>
+                            <span class="slds-text-color_weak">None</span>
                           </template>
+                        </template>
+                        <template if:true={entry.isText}>
+                          <span class="slds-text-color_weak">{entry.value}</span>
+                        </template>
+                        <template if:true={entry.isNumber}>
+                          <span class="slds-text-color_weak">{entry.value}</span>
                         </template>
                       </div>
                     </template>
