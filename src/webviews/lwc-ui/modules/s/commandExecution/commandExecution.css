@@ -1,3 +1,14 @@
+/* Flex container for report file buttons */
+.report-files-flex-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem; /* vertical and horizontal gap */
+  align-items: flex-start;
+}
+
+.report-file-btn-wrapper {
+  margin-bottom: 0.25rem;
+}
 /* Force datatable row text to be dark for readability */
 ::slotted(.slds-table tbody tr),
 .slds-table tbody tr,

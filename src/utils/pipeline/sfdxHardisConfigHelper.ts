@@ -47,16 +47,22 @@ export class SfdxHardisConfigHelper {
   static readonly CONFIGURABLE_FIELDS = [
     { name: "instanceUrl", scopes: ["branch"] },
     { name: "username", scopes: ["branch"] },
+    { name: "packageNoOverwritePath", scope: ["branch"]},
     { name: "useDeltaDeployment", scopes: ["global", "branch"] },
     { name: "useSmartDeploymentTests", scopes: ["global", "branch"] },
     { name: "developmentBranch", scopes: ["global"] },
     { name: "allowedOrgTypes", scopes: ["global"] },
     { name: "availableProjects", scopes: ["global"] },
     { name: "availableTargetBranches", scopes: ["global"] },
+    { name: "sharedDevSandboxes", scopes: ["global"]},
+    { name: "newTaskNameRegex", scopes: ["global"] },
+    { name: "newTaskNameRegexExample", scopes: "global"},
     { name: "installPackagesDuringCheckDeploy", scopes: ["global"] },
     { name: "autoCleanTypes", scopes: ["global"] }, 
     { name: "autoRetrieveWhenPull", scopes: ["global"] },
-    { name: "autoRemoveUserPermissions", scopes: ["global"] }
+    { name: "autoRemoveUserPermissions", scopes: ["global"] } ,
+    { name: "apexTestsMinCoverageOrgWide", scopes: ["global"] },
+    { name: "extends", scopes: ["global"] },
   ]
   static readonly SECTIONS = [
     {
@@ -74,6 +80,8 @@ export class SfdxHardisConfigHelper {
         "useDeltaDeployment",
         "useSmartDeploymentTests",
         "installPackagesDuringCheckDeploy",
+        "apexTestsMinCoverageOrgWide",
+        "packageNoOverwritePath"
       ]
     },
     {
@@ -84,7 +92,9 @@ export class SfdxHardisConfigHelper {
         "availableTargetBranches",
         "availableProjects",
         "allowedOrgTypes",
-        "sharedDevSandboxes"
+        "sharedDevSandboxes",
+        "newTaskNameRegex",
+        "newTaskNameRegexExample"
       ],
     },
     {
@@ -94,6 +104,13 @@ export class SfdxHardisConfigHelper {
         "autoCleanTypes",
         "autoRetrieveWhenPull",
         "autoRemoveUserPermissions"
+      ]
+    },
+    {
+      label: "Other",
+      description: "",
+      keys: [
+        "extends",
       ]
     }
   ]
