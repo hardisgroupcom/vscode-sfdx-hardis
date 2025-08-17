@@ -20,6 +20,7 @@ export default class PipelineConfig extends LightningElement {
 	@track mode = 'view';
 	@track editedConfig = {};
 	@track sections = [];
+	initData = {}
 
 	get isEditMode() {
 		return this.mode === 'edit';
@@ -149,27 +150,15 @@ export default class PipelineConfig extends LightningElement {
 
 	@api
 	initialize(data) {
-		// Support both { config: {...}, ... } and { configEditorInput: {...} }
-		let input = data;
 		if (data && data.config && data.configSchema) {
-			// Direct structure
-			this.config = data.config;
-			this.configSchema = data.configSchema;
-			this.branchConfig = data.branchConfig || null;
-			this.globalConfig = data.globalConfig || null;
-			this.isBranch = typeof data.isBranch === 'boolean' ? data.isBranch : false;
-			this.branchName = data.branchName || '';
-			this.sections = data.sections || [];
-		} else if (data && data.config) {
-			// Nested under 'config'
-			input = data.config;
-			this.config = input.config;
-			this.configSchema = input.configSchema;
-			this.branchConfig = input.branchConfig || null;
-			this.globalConfig = input.globalConfig || null;
-			this.isBranch = typeof input.isBranch === 'boolean' ? input.isBranch : false;
-			this.branchName = input.branchName || '';
-			this.sections = input.sections || [];
+			this.initData = Object.assign({},data);
+			this.config = this.initData.config;
+			this.configSchema = this.initData.configSchema;
+			this.branchConfig = this.initData.branchConfig || null;
+			this.globalConfig = this.initData.globalConfig || null;
+			this.isBranch = typeof this.initData.isBranch === 'boolean' ? this.initData.isBranch : false;
+			this.branchName = this.initData.branchName || '';
+			this.sections = this.initData.sections || [];
 		}
 	}
 
@@ -247,14 +236,7 @@ export default class PipelineConfig extends LightningElement {
 	}
 
 	handleRefresh() {
-		this.initialize({
-		    config: this.config,
-		    configSchema: this.configSchema,
-		    branchConfig: this.branchConfig,
-		    globalConfig: this.globalConfig,
-		    isBranch: this.isBranch,
-		    branchName: this.branchName,
-		    sections: this.sections
-		});
+		this.initData.config = Object.assign({}, this.config);
+		this.initialize(this.initData);
 	}
 }

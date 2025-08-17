@@ -446,7 +446,7 @@ export class Commands {
         });
         const panel = LwcPanelManager.getInstance().getOrCreatePanel(
           "s-pipeline-config",
-          { config: configEditorInput },
+          configEditorInput,
         );
         panel.updateTitle(branchName ? `Settings - ${branchName}` : "Global Pipeline Settings");
         // Register message handler to save configuration
