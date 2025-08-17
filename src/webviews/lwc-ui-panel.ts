@@ -120,7 +120,7 @@ export class LwcUiPanel {
       "s-prompt-input": "Prompt Input",
       "s-command-execution": "Command Execution",
       "s-pipeline": "DevOps Pipeline",
-      "s-pipeline-config": "Pipeline Configuration",
+      "s-pipeline-config": "Pipeline Settings",
       "s-extension-config": "Extension Settings",
     };
     const panelTitle = lwcDefinitions[this.lwcId] || "SFDX Hardis";

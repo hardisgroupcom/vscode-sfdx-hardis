@@ -644,7 +644,7 @@ export class HardisPluginsProvider
     const topics = [
       {
         id: "status-plugins-sfdx",
-        label: "SFDX",
+        label: "SF CLI & Plugins",
         defaultExpand: true,
       },
       {

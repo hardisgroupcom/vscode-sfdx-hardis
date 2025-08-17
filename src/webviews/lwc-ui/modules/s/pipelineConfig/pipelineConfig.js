@@ -146,6 +146,7 @@ export default class PipelineConfig extends LightningElement {
 	}
 
 	handleSave() {
+		debugger;
 		// Send updated config to VS Code
 		if (typeof window !== 'undefined' && window.sendMessageToVSCode) {
 			window.sendMessageToVSCode({

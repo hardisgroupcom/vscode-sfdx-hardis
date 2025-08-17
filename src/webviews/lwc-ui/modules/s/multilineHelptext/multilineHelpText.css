@@ -1,0 +1,20 @@
+.multiline-helptext-popover {
+    position: absolute;
+    background: #032d60;
+    color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px #0002;
+    padding: 1rem;
+    font-size: 15px;
+    z-index: 9999;
+    min-width: 220px;
+    max-width: 420px;
+    width: max-content;
+    word-break: break-word;
+    white-space: pre-line;
+    left: 0;
+    /* Remove any arrow/nubbin */
+}
+.slds-form-element__icon.slds-m-left_xx-small {
+    margin-top: 2px;
+}

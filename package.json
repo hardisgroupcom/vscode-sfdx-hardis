@@ -191,7 +191,7 @@
       },
       {
         "command": "vscode-sfdx-hardis.showPipelineConfig",
-        "title": "SFDX Hardis: Show Pipeline Configuration",
+        "title": "SFDX Hardis: Show Pipeline Settings",
         "icon": "$(settings-gear)"
       },
       {

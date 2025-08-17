@@ -82,8 +82,9 @@ export class SfdxHardisConfigHelper {
       keys: [
         "developmentBranch",
         "availableTargetBranches",
+        "availableProjects",
         "allowedOrgTypes",
-        "availableProjects"
+        "sharedDevSandboxes"
       ],
     },
     {

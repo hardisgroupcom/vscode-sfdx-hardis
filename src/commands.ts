@@ -439,7 +439,7 @@ export class Commands {
         // Show progress while loading config editor input
         const configEditorInput = await vscode.window.withProgress({
           location: vscode.ProgressLocation.Notification,
-          title: branchName ? `Loading pipeline configuration for ${branchName}...` : "Loading global pipeline configuration...",
+          title: branchName ? `Loading pipeline settings for ${branchName}...` : "Loading global pipeline settings...",
           cancellable: false
         }, async () => {
           return await sfdxHardisConfigHelper.getEditorInput(branchName);
@@ -448,7 +448,7 @@ export class Commands {
           "s-pipeline-config",
           { config: configEditorInput },
         );
-        panel.updateTitle(branchName ? `Configuration - ${branchName}` : "Global Pipeline Configuration");
+        panel.updateTitle(branchName ? `Settings - ${branchName}` : "Global Pipeline Settings");
         // Register message handler to save configuration
         panel.onMessage(async (type, data) => {
           if (type === "saveSfdxHardisConfig") {
