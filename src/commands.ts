@@ -389,9 +389,16 @@ export class Commands {
     const disposable = vscode.commands.registerCommand(
       "vscode-sfdx-hardis.showPipeline",
       async () => {
-        const pipelineDataProvider = new PipelineDataProvider();
-        const pipelineData = await pipelineDataProvider.getPipelineData();
 
+        // Show progress while loading config editor input
+        const pipelineData = await vscode.window.withProgress({
+          location: vscode.ProgressLocation.Notification,
+          title: "Loading pipeline information...",
+          cancellable: false
+        }, async () => {
+          const pipelineDataProvider = new PipelineDataProvider();
+          return await pipelineDataProvider.getPipelineData();
+        });
 
         // Calculate PR button info using utility
         const repoPath = vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0

@@ -60,6 +60,14 @@ export class SfdxHardisConfigHelper {
   ]
   static readonly SECTIONS = [
     {
+      label: "Salesforce Org",
+      description: "",
+      keys: [
+        "instanceUrl",
+        "username"
+      ]
+    },
+    {
       label: "Deployment",
       description: "",
       keys: [
@@ -85,14 +93,6 @@ export class SfdxHardisConfigHelper {
         "autoCleanTypes",
         "autoRetrieveWhenPull",
         "autoRemoveUserPermissions"
-      ]
-    },
-    {
-      label: "Authentication",
-      description: "",
-      keys: [
-        "instanceUrl",
-        "username"
       ]
     }
   ]
