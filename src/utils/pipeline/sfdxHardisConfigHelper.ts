@@ -47,16 +47,22 @@ export class SfdxHardisConfigHelper {
   static readonly CONFIGURABLE_FIELDS = [
     { name: "instanceUrl", scopes: ["branch"] },
     { name: "username", scopes: ["branch"] },
+    { name: "packageNoOverwritePath", scope: ["branch"]},
     { name: "useDeltaDeployment", scopes: ["global", "branch"] },
     { name: "useSmartDeploymentTests", scopes: ["global", "branch"] },
     { name: "developmentBranch", scopes: ["global"] },
     { name: "allowedOrgTypes", scopes: ["global"] },
     { name: "availableProjects", scopes: ["global"] },
     { name: "availableTargetBranches", scopes: ["global"] },
+    { name: "sharedDevSandboxes", scopes: ["global"]},
+    { name: "newTaskNameRegex", scopes: ["global"] },
+    { name: "newTaskNameRegexExample", scopes: "global"},
     { name: "installPackagesDuringCheckDeploy", scopes: ["global"] },
     { name: "autoCleanTypes", scopes: ["global"] }, 
     { name: "autoRetrieveWhenPull", scopes: ["global"] },
-    { name: "autoRemoveUserPermissions", scopes: ["global"] }
+    { name: "autoRemoveUserPermissions", scopes: ["global"] } ,
+    { name: "apexTestsMinCoverageOrgWide", scopes: ["global"] },
+    { name: "extends", scopes: ["global"] },
   ]
   static readonly SECTIONS = [
     {
@@ -74,6 +80,8 @@ export class SfdxHardisConfigHelper {
         "useDeltaDeployment",
         "useSmartDeploymentTests",
         "installPackagesDuringCheckDeploy",
+        "apexTestsMinCoverageOrgWide",
+        "packageNoOverwritePath"
       ]
     },
     {
@@ -82,8 +90,11 @@ export class SfdxHardisConfigHelper {
       keys: [
         "developmentBranch",
         "availableTargetBranches",
+        "availableProjects",
         "allowedOrgTypes",
-        "availableProjects"
+        "sharedDevSandboxes",
+        "newTaskNameRegex",
+        "newTaskNameRegexExample"
       ],
     },
     {
@@ -93,6 +104,13 @@ export class SfdxHardisConfigHelper {
         "autoCleanTypes",
         "autoRetrieveWhenPull",
         "autoRemoveUserPermissions"
+      ]
+    },
+    {
+      label: "Other",
+      description: "",
+      keys: [
+        "extends",
       ]
     }
   ]
@@ -105,7 +123,7 @@ export class SfdxHardisConfigHelper {
       // This will work in both dev and production (webpacked) builds
       // @ts-ignore
       return require.resolve("../../resources/sfdx-hardis.jsonschema.json");
-    } catch (e) {
+    } catch {
       // Fallback: join relative to __dirname
       return path.resolve(__dirname, "../../resources/sfdx-hardis.jsonschema.json");
     }
@@ -170,8 +188,8 @@ export class SfdxHardisConfigHelper {
           default: value.default,
           description: value.description,
           examples: value.examples || [],
-          globalAllowed: this.CONFIGURABLE_FIELDS.find(field => field.name === key)?.scopes.includes("global") || false,
-          branchAllowed: this.CONFIGURABLE_FIELDS.find(field => field.name === key)?.scopes.includes("branch") || false,
+          globalAllowed: this.CONFIGURABLE_FIELDS.find(field => field.name === key)?.scopes?.includes("global") || false,
+          branchAllowed: this.CONFIGURABLE_FIELDS.find(field => field.name === key)?.scopes?.includes("branch") || false,
         }
       }));
       this.schemaLoaded = true;
@@ -262,7 +280,14 @@ export class SfdxHardisConfigHelper {
         }
       }
       await fs.ensureDir(path.dirname(branchPath));
-      await fs.writeFile(branchPath, yaml.dump(branchOnly), "utf8");
+      // Merge with existing branch config
+      if (await fs.pathExists(branchPath)) {
+        const existingBranchConfig: SfdxHardisConfig = (yaml.load(await fs.readFile(branchPath, "utf8")) as SfdxHardisConfig) || {};
+        Object.assign(existingBranchConfig, branchOnly);
+        await fs.writeFile(branchPath, yaml.dump(existingBranchConfig), "utf8");
+      } else {
+        await fs.writeFile(branchPath, yaml.dump(branchOnly), "utf8");
+      }
     } else {
       // Save only global-allowed keys
       await SfdxHardisConfigHelper.loadSchema();
@@ -274,7 +299,15 @@ export class SfdxHardisConfigHelper {
         }
       }
       await fs.ensureDir(path.dirname(globalPath));
-      await fs.writeFile(globalPath, yaml.dump(globalOnly), "utf8");
+      // Merge with existing global config
+      if (await fs.pathExists(globalPath)) {
+        const existingGlobalConfig: SfdxHardisConfig = (yaml.load(await fs.readFile(globalPath, "utf8")) as SfdxHardisConfig) || {};
+        Object.assign(existingGlobalConfig, globalOnly);
+        await fs.writeFile(globalPath, yaml.dump(existingGlobalConfig), "utf8");
+      } else {
+        // If no existing global config, just write the new one
+        await fs.writeFile(globalPath, yaml.dump(globalOnly), "utf8");
+      }
     }
   }
 

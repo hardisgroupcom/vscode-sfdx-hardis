@@ -1,5 +1,5 @@
 <template>
-  <div class="command-execution slds-card" style="height: 100vh; display: flex; flex-direction: column;">
+  <div class="slds-scope slds-theme_default command-execution slds-card" style="height: 100vh; display: flex; flex-direction: column;">
     <!-- Header -->
     <div class="slds-card__header" style="flex-shrink: 0;">
       <div class="slds-media slds-media_center slds-has-flexi-truncate">
@@ -271,9 +271,9 @@
 
             <!-- Report files & actions content -->
             <div class="section-logs slds-m-top_x-small slds-m-left_medium slds-m-right_x-small slds-m-bottom_x-small">
-              <div class="slds-grid slds-wrap slds-gutters_small">
+              <div class="report-files-flex-container">
                 <template for:each={sortedReportFiles} for:item="reportFile">
-                  <div key={reportFile.id} class="slds-col slds-no-flex">
+                  <div key={reportFile.id} class="report-file-btn-wrapper">
                     <lightning-button
                       variant={reportFile.buttonVariant}
                       label={reportFile.title}
@@ -282,7 +282,6 @@
                       data-file-path={reportFile.file}
                       onclick={handleOpenReportFile}
                       title={reportFile.title}
-                      class="slds-m-right_small"
                     ></lightning-button>
                   </div>
                 </template>

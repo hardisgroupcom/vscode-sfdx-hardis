@@ -3,7 +3,6 @@ import * as vscode from "vscode";
 import { LwcPanelManager } from "./lwc-panel-manager";
 import { spawn } from "child_process";
 import { stripAnsi } from "./utils";
-import { cwd } from "process";
 
 /**
  * CommandRunner handles all logic related to terminal management and command execution.

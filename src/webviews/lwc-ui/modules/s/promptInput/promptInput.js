@@ -3,6 +3,7 @@
 // @ts-nocheck
 // eslint-env es6
 import { LightningElement, api, track } from "lwc";
+import 's/forceLightTheme'; // Ensure light theme is applied
 
 export default class PromptInput extends LightningElement {
   // Track the index of the currently focused button for select-with-buttons
@@ -529,7 +530,6 @@ export default class PromptInput extends LightningElement {
 
   handleButtonNavigation(event) {
     event.preventDefault();
-    debugger;
     // Use selectOptions for stable navigation
     const optionsLen = this.selectOptions.length;
     let currentIndex = this.focusedButtonIndex;

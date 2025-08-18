@@ -2,7 +2,7 @@
   "name": "vscode-sfdx-hardis",
   "displayName": "SFDX Hardis by Cloudity",
   "description": "Handle Salesforce DX and Git without knowing Salesforce DX or Git !",
-  "version": "6.0.9",
+  "version": "6.0.10",
   "icon": "resources/sfdx-hardis-logo-square.png",
   "publisher": "NicolasVuillamy",
   "author": {
@@ -191,7 +191,7 @@
       },
       {
         "command": "vscode-sfdx-hardis.showPipelineConfig",
-        "title": "SFDX Hardis: Show Pipeline Configuration",
+        "title": "SFDX Hardis: Show Pipeline Settings",
         "icon": "$(settings-gear)"
       },
       {
@@ -478,6 +478,7 @@
     "@vscode/extension-telemetry": "^0.8.0",
     "axios": "^1.11.0",
     "chalk": "^5.0.0",
+    "cosmiconfig": "^9.0.0",
     "fs-extra": "^11.0.0",
     "get-port": "^7.1.0",
     "git-url-parse": "^11.6.0",

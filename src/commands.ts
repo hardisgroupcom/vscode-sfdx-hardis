@@ -439,21 +439,21 @@ export class Commands {
         // Show progress while loading config editor input
         const configEditorInput = await vscode.window.withProgress({
           location: vscode.ProgressLocation.Notification,
-          title: branchName ? `Loading pipeline configuration for ${branchName}...` : "Loading global pipeline configuration...",
+          title: branchName ? `Loading pipeline settings for ${branchName}...` : "Loading global pipeline settings...",
           cancellable: false
         }, async () => {
           return await sfdxHardisConfigHelper.getEditorInput(branchName);
         });
         const panel = LwcPanelManager.getInstance().getOrCreatePanel(
           "s-pipeline-config",
-          { config: configEditorInput },
+          configEditorInput,
         );
-        panel.updateTitle(branchName ? `Configuration - ${branchName}` : "Global Pipeline Configuration");
+        panel.updateTitle(branchName ? `Settings - ${branchName}` : "Global Pipeline Settings");
         // Register message handler to save configuration
         panel.onMessage(async (type, data) => {
           if (type === "saveSfdxHardisConfig") {
             try {
-              await sfdxHardisConfigHelper.saveConfigFromEditor(data.config);
+              await sfdxHardisConfigHelper.saveConfigFromEditor(data);
               vscode.window.showInformationMessage("Configuration saved successfully.");
             } catch (error : any) {
               vscode.window.showErrorMessage("Error saving configuration: " + error.message);

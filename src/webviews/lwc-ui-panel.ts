@@ -120,7 +120,7 @@ export class LwcUiPanel {
       "s-prompt-input": "Prompt Input",
       "s-command-execution": "Command Execution",
       "s-pipeline": "DevOps Pipeline",
-      "s-pipeline-config": "Pipeline Configuration",
+      "s-pipeline-config": "Pipeline Settings",
       "s-extension-config": "Extension Settings",
     };
     const panelTitle = lwcDefinitions[this.lwcId] || "SFDX Hardis";
@@ -521,7 +521,7 @@ export class LwcUiPanel {
           #app { width: 100%; height: 100vh; }
         </style>
       </head>
-      <body class="slds-scope">
+      <body class="slds-scope slds-theme_default">
         <div id="app" data-lwc-id="${this.lwcId}" data-init-data="${initDataJson}"></div>
         
         <script>
