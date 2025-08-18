@@ -1,4 +1,10 @@
 /* SFDX Hardis Config Editor LWC styles */
+@import 's/forceLightTheme';
+
+.blue-back {
+	background:  #EDF4FF;
+}
+
 .slds-badge {
 	font-size: 11px;
 	padding: 0 6px;
