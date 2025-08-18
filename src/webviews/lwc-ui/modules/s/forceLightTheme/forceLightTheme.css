@@ -1,11 +1,11 @@
 :host {
   /* Force white/light background */
-  background-color: #ffffff !important;
+  background-color: #EDF4FF !important;
   color: #080707 !important;
 
   /* Reset SLDS design tokens to light values */
-  --lwc-colorBackground: #ffffff;
-  --lwc-colorBackgroundAlt: #f3f2f2;
+  --lwc-colorBackground: #EDF4FF;
+  --lwc-colorBackgroundAlt: #EDF4FF;
   --lwc-colorBorder: #dddbda;
   --lwc-colorTextDefault: #080707;
   --lwc-colorTextWeak: #3e3e3c;
@@ -17,6 +17,6 @@
 :host .slds-box,
 :host .slds-page-header,
 :host .slds-modal__content {
-  background-color: #ffffff !important;
+  background-color: #EDF4FF !important;
   color: #080707 !important;
 }
