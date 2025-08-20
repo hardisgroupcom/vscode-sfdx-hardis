@@ -24,8 +24,18 @@
           </template>
         </div>
         <div class="slds-media__body">
-          <h2 class="slds-card__header-title">
+          <h2 class="slds-card__header-title" style="display: flex; align-items: center; gap: 0.5rem;">
             <span class="slds-text-heading_small">{commandTitle}</span>
+            <template if:true={commandLogFile}>
+              <lightning-button-icon
+                icon-name="utility:log"
+                variant="bare"
+                alternative-text="Open command log file"
+                title="Open command log file in new tab"
+                onclick={handleOpenCommandLogFile}
+                class="slds-m-left_xx-small"
+              ></lightning-button-icon>
+            </template>
           </h2>
           <template if:true={commandDuration}>
             <p class="slds-text-body_small slds-text-color_weak">

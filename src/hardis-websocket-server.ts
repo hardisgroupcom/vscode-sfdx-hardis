@@ -136,6 +136,9 @@ export class LocalWebSocketServer {
       if (data.uiConfig) {
         initData.data.uiConfig = data.uiConfig;
       }
+      if (data.commandLogFile) {
+        initData.data.commandLogFile = data.commandLogFile;
+      }
       panel.sendMessage(initData);
     }
     // Command end

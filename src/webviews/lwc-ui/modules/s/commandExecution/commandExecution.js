@@ -17,6 +17,7 @@ export default class CommandExecution extends LightningElement {
   embeddedPromptListener = null;
   @track commandContext = null;
   @track commandDocUrl = null;
+  @track commandLogFile = null;
   @track reportFiles = []; // Track report files
   @track logLines = [];
   @track logSections = [];
@@ -305,6 +306,15 @@ export default class CommandExecution extends LightningElement {
     } else if (!this.commandDocUrl) {
       // Only set to null if we don't already have a URL
       this.commandDocUrl = null;
+    }
+
+    // If initialization data contains commandLogFile, set it
+    if (context.commandLogFile) {
+      this.commandLogFile = context.commandLogFile
+    }
+    else if (!this.commandLogFile) {
+      // Reset commandLogFile if not provided
+      this.commandLogFile = null;
     }
 
     this.reportFiles = []; // Reset report files for new command
@@ -1430,6 +1440,16 @@ ${resultMessage}`;
 
   get reportFilesCount() {
     return this.reportFiles ? this.reportFiles.length : 0;
+  }
+
+  // Handler for the log file icon button
+  handleOpenCommandLogFile() {
+    if (this.commandLogFile && typeof window !== "undefined" && window.sendMessageToVSCode) {
+      window.sendMessageToVSCode({
+        type: 'openFile',
+        data: { filePath: this.commandLogFile }
+      });
+    }
   }
 
   handleOpenReportFile(event) {
