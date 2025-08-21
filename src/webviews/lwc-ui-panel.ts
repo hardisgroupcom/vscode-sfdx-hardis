@@ -530,7 +530,12 @@ export class LwcUiPanel {
         </script>
         <script src="${webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, "out", "webviews", "mermaid.min.js"))}"></script>
         <script>
-            mermaid.initialize({ startOnLoad: false });
+            mermaid.initialize({
+              startOnLoad: false,
+              themeVariables: {
+                clusterBkg: "#EAF5FC"
+              }
+            });
         </script>
         <script src="${scriptUri}"></script>
       </body>

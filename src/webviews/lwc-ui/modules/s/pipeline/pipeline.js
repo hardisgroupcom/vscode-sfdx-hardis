@@ -144,14 +144,6 @@ export default class Pipeline extends LightningElement {
       return;
     }
 
-    // remove yellow background
-    window.mermaid.initialize({
-      startOnLoad: false,
-      themeVariables: {
-        clusterBkg: "none",
-      },
-    });
-
     window.mermaid
       .render("graphDiv", diagram)
       .then(({ svg }) => {
