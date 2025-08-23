@@ -235,8 +235,14 @@ export class ThemeUtils {
         vscode: "account",
         hardis: "user.svg",
       },
-      "hardis:org:refresh:before-refresh": { vscode: "refresh", hardis: "refresh.svg" },
-      "hardis:org:refresh:after-refresh": { vscode: "refresh", hardis: "refresh.svg" },
+      "hardis:org:refresh:before-refresh": {
+        vscode: "refresh",
+        hardis: "refresh.svg",
+      },
+      "hardis:org:refresh:after-refresh": {
+        vscode: "refresh",
+        hardis: "refresh.svg",
+      },
       "hardis:org:monitor:backup": { vscode: "save-all", hardis: "backup.svg" },
       "hardis:org:diagnose:audittrail": {
         vscode: "eye-watch",

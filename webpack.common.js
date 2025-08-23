@@ -126,15 +126,18 @@ const lwcWebviewConfig = {
         {
           from: path.resolve(
             __dirname,
-            "node_modules/@salesforce-ux/design-system/assets/styles/salesforce-lightning-design-system.min.css"
+            "node_modules/@salesforce-ux/design-system/assets/styles/salesforce-lightning-design-system.min.css",
           ),
-          to: path.resolve(__dirname, "out/assets/styles/salesforce-lightning-design-system.min.css"),
+          to: path.resolve(
+            __dirname,
+            "out/assets/styles/salesforce-lightning-design-system.min.css",
+          ),
           noErrorOnMissing: true,
         },
         {
           from: path.resolve(
             __dirname,
-            "node_modules/@salesforce-ux/design-system/assets/icons"
+            "node_modules/@salesforce-ux/design-system/assets/icons",
           ),
           to: path.resolve(__dirname, "out/assets/icons"),
           noErrorOnMissing: true,
@@ -142,7 +145,7 @@ const lwcWebviewConfig = {
         {
           from: path.resolve(
             __dirname,
-            "node_modules/mermaid/dist/mermaid.min.js"
+            "node_modules/mermaid/dist/mermaid.min.js",
           ),
           to: path.resolve(__dirname, "out/webviews"),
           noErrorOnMissing: true,
@@ -153,8 +156,14 @@ const lwcWebviewConfig = {
           noErrorOnMissing: true,
         },
         {
-          from: path.resolve(__dirname, "resources/sfdx-hardis.jsonschema.json"),
-          to: path.resolve(__dirname, "out/resources/sfdx-hardis.jsonschema.json"),
+          from: path.resolve(
+            __dirname,
+            "resources/sfdx-hardis.jsonschema.json",
+          ),
+          to: path.resolve(
+            __dirname,
+            "out/resources/sfdx-hardis.jsonschema.json",
+          ),
           noErrorOnMissing: true,
         },
       ],

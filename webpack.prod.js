@@ -1,4 +1,8 @@
-const { extensionConfig, workerConfig, lwcWebviewConfig } = require("./webpack.common.js");
+const {
+  extensionConfig,
+  workerConfig,
+  lwcWebviewConfig,
+} = require("./webpack.common.js");
 const TerserPlugin = require("terser-webpack-plugin");
 
 const prodtool = "hidden-source-map";

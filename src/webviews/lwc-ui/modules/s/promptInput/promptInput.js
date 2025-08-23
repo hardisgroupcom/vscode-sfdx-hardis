@@ -3,7 +3,7 @@
 // @ts-nocheck
 // eslint-env es6
 import { LightningElement, api, track } from "lwc";
-import 's/forceLightTheme'; // Ensure light theme is applied
+import "s/forceLightTheme"; // Ensure light theme is applied
 
 export default class PromptInput extends LightningElement {
   // Track the index of the currently focused button for select-with-buttons
@@ -15,7 +15,7 @@ export default class PromptInput extends LightningElement {
   @track selectedValues = [];
   @track selectedValue = ""; // Single value for select input (string identifier)
   @track selectedOptionDescription = ""; // Description for selected option
-  @track multiselectFilter = '';
+  @track multiselectFilter = "";
   @track multiselectShowOnlySelected = false;
   @track isVisible = false;
   @track isSubmitting = false; // Track if submission is in progress
@@ -29,7 +29,7 @@ export default class PromptInput extends LightningElement {
 
   // Handler for filter input
   handleMultiselectFilterChange(event) {
-    this.multiselectFilter = event.target.value || '';
+    this.multiselectFilter = event.target.value || "";
   }
 
   // Handler for show only selected toggle
@@ -41,13 +41,14 @@ export default class PromptInput extends LightningElement {
   get filteredMultiselectOptions() {
     let options = this.multiselectOptions;
     if (this.multiselectShowOnlySelected) {
-      options = options.filter(opt => opt.checked);
+      options = options.filter((opt) => opt.checked);
     }
     if (this.multiselectFilter && this.multiselectFilter.trim().length > 0) {
       const filter = this.multiselectFilter.trim().toLowerCase();
-      options = options.filter(opt =>
-        (opt.label && opt.label.toLowerCase().includes(filter)) ||
-        (opt.description && opt.description.toLowerCase().includes(filter))
+      options = options.filter(
+        (opt) =>
+          (opt.label && opt.label.toLowerCase().includes(filter)) ||
+          (opt.description && opt.description.toLowerCase().includes(filter)),
       );
     }
     return options;
@@ -164,17 +165,27 @@ export default class PromptInput extends LightningElement {
             .map(
               (choice) => this.valueToIdentifier[JSON.stringify(choice.value)],
             ) || [];
-        if (this.selectedValues.length === 0 && this.currentPrompt?.default?.length > 0) {
+        if (
+          this.selectedValues.length === 0 &&
+          this.currentPrompt?.default?.length > 0
+        ) {
           // If no initial selections, try to find from default values
-          this.selectedValues = this.currentPrompt.default.map((defaultValue) => {
-            return this.valueToIdentifier[JSON.stringify(defaultValue)];
-          }).filter((value) => value !== undefined && value !== null);
+          this.selectedValues = this.currentPrompt.default
+            .map((defaultValue) => {
+              return this.valueToIdentifier[JSON.stringify(defaultValue)];
+            })
+            .filter((value) => value !== undefined && value !== null);
         }
-        if (this.selectedValues.length === 0 && this.currentPrompt?.initial?.length > 0) {
+        if (
+          this.selectedValues.length === 0 &&
+          this.currentPrompt?.initial?.length > 0
+        ) {
           // If no initial selections, try to find from initial values
-          this.selectedValues = this.currentPrompt.initial.map((initValue) => {
-            return this.valueToIdentifier[JSON.stringify(initValue)];
-          }).filter((value) => value !== undefined && value !== null);
+          this.selectedValues = this.currentPrompt.initial
+            .map((initValue) => {
+              return this.valueToIdentifier[JSON.stringify(initValue)];
+            })
+            .filter((value) => value !== undefined && value !== null);
         }
       }
     }
@@ -226,18 +237,21 @@ export default class PromptInput extends LightningElement {
           this.setInitialFocus();
           return;
         }
-        // Find the cancel button by its label attribute 
-        let cancelBtn = this.template.querySelector('lightning-button[data-id="cancelBtn"]');
+        // Find the cancel button by its label attribute
+        let cancelBtn = this.template.querySelector(
+          'lightning-button[data-id="cancelBtn"]',
+        );
         if (cancelBtn && cancelBtn.focus) {
           // LWC base components render a shadow button, so try to scroll the actual button
           // Try to find the native button inside
-          const nativeBtn = cancelBtn.shadowRoot &&
+          const nativeBtn =
+            cancelBtn.shadowRoot &&
             cancelBtn.shadowRoot.querySelector("button");
           if (nativeBtn && nativeBtn.scrollIntoView) {
-            if (!this._hasInitialScroll){
+            if (!this._hasInitialScroll) {
               nativeBtn.scrollIntoView({ behavior: "smooth", block: "center" });
-            this._hasInitialScroll = true;
-            this.setInitialFocus();
+              this._hasInitialScroll = true;
+              this.setInitialFocus();
             }
           } else if (cancelBtn.scrollIntoView) {
             if (!this._hasInitialScroll) {
@@ -245,7 +259,6 @@ export default class PromptInput extends LightningElement {
               this.setInitialFocus();
               this._hasInitialScroll = true;
             }
-            
           }
         }
       }, 200);
@@ -262,21 +275,22 @@ export default class PromptInput extends LightningElement {
         if (this.isSelectWithButtons) {
           // Always set focus to the button matching the first selectOption
           this.focusedButtonIndex = 0;
-          const firstValue = this.selectOptions[0] && this.selectOptions[0].value;
+          const firstValue =
+            this.selectOptions[0] && this.selectOptions[0].value;
           const buttons = this.template.querySelectorAll(
-            ".select-option-button"
+            ".select-option-button",
           );
           // Find the button whose data-value matches the first selectOption value
           let btnToFocus = null;
           if (firstValue) {
             btnToFocus = Array.from(buttons).find(
-              (btn) => btn.dataset.value === firstValue
+              (btn) => btn.dataset.value === firstValue,
             );
           }
           firstInput = btnToFocus || buttons[0];
         } else {
           firstInput = this.template.querySelector(
-            "lightning-input, lightning-combobox"
+            "lightning-input, lightning-combobox",
           );
         }
         if (firstInput && typeof firstInput.focus === "function") {
@@ -312,7 +326,7 @@ export default class PromptInput extends LightningElement {
     this.choiceValueMapping = {};
     this._hasInitialFocus = false; // Reset focus flag
     this._hasInitialScroll = false; // Reset scroll flag
-    this.multiselectFilter = '';
+    this.multiselectFilter = "";
     this.multiselectShowOnlySelected = false;
   }
 

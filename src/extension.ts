@@ -158,7 +158,8 @@ export function activate(context: vscode.ExtensionContext) {
         hardisColors.init();
       }
       // Send message to opened LWC panels to update their configuration
-      const vsCodeSfdxHardisConfiguration = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+      const vsCodeSfdxHardisConfiguration =
+        vscode.workspace.getConfiguration("vsCodeSfdxHardis");
       LwcPanelManager.getInstance(context).sendMessageToAllPanels({
         type: "vsCodeSfdxHardisConfigurationChanged",
         data: { vsCodeSfdxHardisConfiguration, event },

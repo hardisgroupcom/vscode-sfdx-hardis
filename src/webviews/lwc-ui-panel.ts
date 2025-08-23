@@ -172,7 +172,8 @@ export class LwcUiPanel {
    */
   public sendInitializationData(data: any): void {
     this.initializationData = data;
-    const vsCodeSfdxHardisConfiguration = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+    const vsCodeSfdxHardisConfiguration =
+      vscode.workspace.getConfiguration("vsCodeSfdxHardis");
     if (vsCodeSfdxHardisConfiguration) {
       data.vsCodeSfdxHardisConfiguration = vsCodeSfdxHardisConfiguration;
     }
@@ -248,16 +249,20 @@ export class LwcUiPanel {
    * Handle VS Code command execution request from webview
    * @param data Object with a 'command' property (string)
    */
-  private async handleRunVsCodeCommand(data: { command: string }): Promise<void> {
-    if (!data || !data.command || typeof data.command !== 'string') {
-      vscode.window.showErrorMessage('No VS Code command specified to run.');
+  private async handleRunVsCodeCommand(data: {
+    command: string;
+  }): Promise<void> {
+    if (!data || !data.command || typeof data.command !== "string") {
+      vscode.window.showErrorMessage("No VS Code command specified to run.");
       return;
     }
     try {
       await vscode.commands.executeCommand(data.command);
     } catch (error) {
-      console.error('Error running VS Code command:', error);
-      vscode.window.showErrorMessage(`Failed to run VS Code command: ${data.command}`);
+      console.error("Error running VS Code command:", error);
+      vscode.window.showErrorMessage(
+        `Failed to run VS Code command: ${data.command}`,
+      );
     }
   }
 
@@ -266,11 +271,11 @@ export class LwcUiPanel {
    * @param data Object with a 'command' property (string)
    */
   private async handleRunCommand(data: { command: string }): Promise<void> {
-      vscode.commands.executeCommand(
-        "vscode-sfdx-hardis.execute-command",
-        data.command,
-      );
-    }
+    vscode.commands.executeCommand(
+      "vscode-sfdx-hardis.execute-command",
+      data.command,
+    );
+  }
 
   /**
    * Handle file existence check request from webview
@@ -365,7 +370,7 @@ export class LwcUiPanel {
   private async handleFileOpen(filePathInit: string): Promise<void> {
     try {
       let filePath = filePathInit;
-      let anchor = '';
+      let anchor = "";
       if (filePathInit.includes("#")) {
         const parts = filePathInit.split("#");
         filePath = parts[0];
@@ -406,7 +411,10 @@ export class LwcUiPanel {
             for (let i = 0; i < lines.length; i++) {
               if (lines[i].includes(anchor)) {
                 position = new vscode.Position(i, lines[i].indexOf(anchor));
-                editor.revealRange(new vscode.Range(position, position), vscode.TextEditorRevealType.InCenter);
+                editor.revealRange(
+                  new vscode.Range(position, position),
+                  vscode.TextEditorRevealType.InCenter,
+                );
                 break;
               }
             }
@@ -438,18 +446,29 @@ export class LwcUiPanel {
    * Handle update of VS Code configuration from the webview
    * @param data Object with 'section' (string) and 'value' (any)
    */
-  private async handleUpdateVsCodeSfdxHardisConfiguration(data: { configKey: string; value: any }): Promise<void> {
+  private async handleUpdateVsCodeSfdxHardisConfiguration(data: {
+    configKey: string;
+    value: any;
+  }): Promise<void> {
     try {
       const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
       if (data.configKey.startsWith("vsCodeSfdxHardis.")) {
         data.configKey = data.configKey.replace("vsCodeSfdxHardis.", "");
       }
       // Update the configuration value
-      await config.update(data.configKey, data.value, vscode.ConfigurationTarget.Global);
-      vscode.window.showInformationMessage(`VsCode configuration '${data.configKey}' updated with value: ${data.value}`);
+      await config.update(
+        data.configKey,
+        data.value,
+        vscode.ConfigurationTarget.Global,
+      );
+      vscode.window.showInformationMessage(
+        `VsCode configuration '${data.configKey}' updated with value: ${data.value}`,
+      );
     } catch (error) {
-      console.error('Error updating VS Code configuration:', error);
-      vscode.window.showErrorMessage(`Failed to update configuration: ${data.configKey}`);
+      console.error("Error updating VS Code configuration:", error);
+      vscode.window.showErrorMessage(
+        `Failed to update configuration: ${data.configKey}`,
+      );
     }
   }
 

@@ -47,7 +47,7 @@ export const sectionDefs = [
 ];
 
 export async function getExtensionConfigSections(
-  extensionUri: vscode.Uri
+  extensionUri: vscode.Uri,
 ): Promise<any[]> {
   // Load config schema from extension package.json
   const packageJsonPath = path.join(extensionUri.fsPath, "package.json");
@@ -67,7 +67,8 @@ export async function getExtensionConfigSections(
     entries: section.keys.map((key) => {
       const prop = configProps[key] || {};
       const afterLastDot = key.lastIndexOf(".");
-      const keyWithoutPrefix = afterLastDot >= 0 ? key.substring(afterLastDot + 1) : key;
+      const keyWithoutPrefix =
+        afterLastDot >= 0 ? key.substring(afterLastDot + 1) : key;
       const label =
         prop.title ||
         keyWithoutPrefix

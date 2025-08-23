@@ -16,7 +16,6 @@ export const RECOMMENDED_SFDX_CLI_VERSION = null; //"7.111.6";
 export const NODE_JS_MINIMUM_VERSION = 20.0;
 export const RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION: string = "6.1.0";
 
-
 // Interface for execCommand and execSfdxJson options
 export interface ExecCommandOptions {
   fail?: boolean;
@@ -119,25 +118,35 @@ export function preLoadCache() {
   const cliCommands = [
     ["node --version", oneDayInMs * 30], // 30 days
     ["git --version", oneDayInMs * 30], // 30 days
-    ["sf --version", oneDayInMs ], // 1 day
-    ["sf plugins", oneDayInMs ], // 1 day
+    ["sf --version", oneDayInMs], // 1 day
+    ["sf plugins", oneDayInMs], // 1 day
   ];
   for (const cmd of cliCommands) {
-    preLoadPromises.push(execCommand(String(cmd[0]),  {cacheExpiration: Number(cmd[1]), cacheSection: "app"}));
+    preLoadPromises.push(
+      execCommand(String(cmd[0]), {
+        cacheExpiration: Number(cmd[1]),
+        cacheSection: "app",
+      }),
+    );
   }
   const sfdxJsonCommands = [
-    ["sf org display", oneDayInMs ], // 1 day
-    ["sf config get target-dev-hub", oneDayInMs ], // 1 day
+    ["sf org display", oneDayInMs], // 1 day
+    ["sf config get target-dev-hub", oneDayInMs], // 1 day
   ];
   for (const cmd of sfdxJsonCommands) {
-    preLoadPromises.push(execSfdxJson(String(cmd[0]), {cacheExpiration: Number(cmd[1]), cacheSection: "project"}));
+    preLoadPromises.push(
+      execSfdxJson(String(cmd[0]), {
+        cacheExpiration: Number(cmd[1]),
+        cacheSection: "project",
+      }),
+    );
   }
   const npmPackages = [
-    "@salesforce/cli", 
-    "@salesforce/plugin-packaging", 
-    "sfdx-hardis", 
-    "sfdmu", 
-    "sfdx-git-delta", 
+    "@salesforce/cli",
+    "@salesforce/plugin-packaging",
+    "sfdx-hardis",
+    "sfdmu",
+    "sfdx-git-delta",
     // "texei-sfdx-plugin",
   ];
   for (const npmPackage of npmPackages) {
@@ -257,7 +266,7 @@ export async function execCommand(
       stdout: commandResult.stdout,
       stderr: commandResult.stderr,
     };
-    if (cacheSection && typeof cacheExpiration === 'number') {
+    if (cacheSection && typeof cacheExpiration === "number") {
       CacheManager.set(cacheSection, command, resultObj, cacheExpiration);
     }
     return resultObj;
@@ -275,7 +284,7 @@ export async function execCommand(
         "[sfdx-hardis][WARNING] stderr: " + c.yellow(commandResult.stderr),
       );
     }
-    if (cacheSection && typeof cacheExpiration === 'number') {
+    if (cacheSection && typeof cacheExpiration === "number") {
       CacheManager.set(cacheSection, command, parsedResult, cacheExpiration);
     }
     return parsedResult;
@@ -287,7 +296,7 @@ export async function execCommand(
         `[sfdx-hardis][ERROR] Error parsing JSON in command result: ${e.message}\n${commandResult.stdout}\n${commandResult.stderr})`,
       ),
     };
-    if (cacheSection && typeof cacheExpiration === 'number') {
+    if (cacheSection && typeof cacheExpiration === "number") {
       CacheManager.set(cacheSection, command, errorObj, cacheExpiration);
     }
     return errorObj;
@@ -351,7 +360,12 @@ export function getSfdxProjectJson() {
 export function setOrgCache(newOrgInfo: any) {
   const orgKey = `${newOrgInfo.username}||${newOrgInfo.instanceUrl}`;
   CacheManager.set("orgs", orgKey, newOrgInfo, 1000 * 60 * 60 * 24 * 30); // 30 days
-  CacheManager.set("orgs", `username-instanceUrl:${newOrgInfo.username}`, newOrgInfo.instanceUrl, 1000 * 60 * 60 * 24 * 90); // 90 days
+  CacheManager.set(
+    "orgs",
+    `username-instanceUrl:${newOrgInfo.username}`,
+    newOrgInfo.instanceUrl,
+    1000 * 60 * 60 * 24 * 90,
+  ); // 90 days
 }
 
 // Get from org cache
@@ -359,7 +373,7 @@ export function findInOrgCache(orgCriteria: any) {
   const orgKeys = [
     `${orgCriteria.username}||${orgCriteria.instanceUrl}`,
     `${orgCriteria.username}||${orgCriteria.instanceUrl}/`,
-  ]
+  ];
   for (const orgKey of orgKeys) {
     const cached = CacheManager.get("orgs", orgKey);
     if (cached) {
@@ -372,7 +386,10 @@ export function findInOrgCache(orgCriteria: any) {
 export async function getUsernameInstanceUrl(
   username: string,
 ): Promise<string | null> {
-  const cacheValue = CacheManager.get("orgs", `username-instanceUrl:${username}`);
+  const cacheValue = CacheManager.get(
+    "orgs",
+    `username-instanceUrl:${username}`,
+  );
   if (cacheValue) {
     return cacheValue as string;
   }
@@ -389,8 +406,8 @@ export async function getUsernameInstanceUrl(
   if (orgInfoResult.result) {
     const orgInfo = orgInfoResult.result || orgInfoResult;
     if (orgInfo.instanceUrl) {
-          setOrgCache(orgInfo);
-        return orgInfo.instanceUrl;
+      setOrgCache(orgInfo);
+      return orgInfo.instanceUrl;
     }
   }
   return null;

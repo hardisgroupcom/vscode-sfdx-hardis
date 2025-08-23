@@ -553,7 +553,8 @@ export class HardisCommandsProvider
           {
             id: "hardis:org:monitor:backup",
             label: "Metadatas Backup",
-            tooltip: "Retrieves all relevant Metadata of an org according to backup configuration",
+            tooltip:
+              "Retrieves all relevant Metadata of an org according to backup configuration",
             command: "sf hardis:org:monitor:backup",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/",

@@ -109,11 +109,11 @@ export class LwcPanelManager {
    */
   public sendMessageToAllPanels(message: any): void {
     this.activePanels.forEach((panel) => {
-      if (!panel.isDisposed() && typeof panel.sendMessage === 'function') {
+      if (!panel.isDisposed() && typeof panel.sendMessage === "function") {
         try {
           panel.sendMessage(message);
         } catch (err) {
-          console.error('Error sending message to panel:', err);
+          console.error("Error sending message to panel:", err);
         }
       }
     });

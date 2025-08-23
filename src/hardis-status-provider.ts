@@ -138,11 +138,15 @@ export class HardisStatusProvider
         return items;
       }
     }
-    const orgInfoResult = await execSfdxJson(orgDisplayCommand,  {
+    const orgInfoResult = await execSfdxJson(orgDisplayCommand, {
       fail: false,
       output: false,
-      cacheSection: orgDisplayCommand.includes("--target-org") ? "orgs": "project",
-      cacheExpiration: orgDisplayCommand.includes("--target-org") ? 1000 * 60 * 60 * 24 * 90 : 1000 * 60 * 15, // 90 days for named orgs, 15 minutes for default org
+      cacheSection: orgDisplayCommand.includes("--target-org")
+        ? "orgs"
+        : "project",
+      cacheExpiration: orgDisplayCommand.includes("--target-org")
+        ? 1000 * 60 * 60 * 24 * 90
+        : 1000 * 60 * 15, // 90 days for named orgs, 15 minutes for default org
     });
     if (orgInfoResult.result || orgInfoResult.id) {
       const orgInfo = orgInfoResult.result || orgInfoResult;
@@ -418,45 +422,44 @@ Note: Disable disableGitMergeRequiredCheck in settings to skip this check.`;
           tooltip: gitTooltip,
           command: gitCommand,
         });
-          const userConfig = await getConfig("user");
-          if (userConfig.mergeRequests) {
-            const mergeRequests =
-              userConfig.mergeRequests.filter(
-                (mr: any) =>
-                  mr !== null &&
-                  mr.branch === currentBranch &&
-                  (mr.url !== null || mr.urlCreate !== null),
-              );
-            // Existing merge request
-            if (mergeRequests[0] && mergeRequests[0].url) {
-              items.push({
-                id: "git-merge-request-url",
-                label: "Merge Request: Open",
-                iconId: "git:pull-request",
-                tooltip:
-                  "Click to open merge request in browser\n" +
-                  mergeRequests[0].url,
-                command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
-                  mergeRequests[0].url,
-                )}`,
-              });
-            }
-
-            // Create merge request URL
-            else if (mergeRequests[0] && mergeRequests[0].urlCreate) {
-              items.push({
-                id: "git-merge-request-create-url",
-                label: "Merge Request: Create",
-                icon: "merge.svg",
-                tooltip:
-                  "Click to create merge request in browser\n" +
-                  mergeRequests[0].urlCreate,
-                command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
-                  mergeRequests[0].urlCreate,
-                )}`,
-              });
-            }
+        const userConfig = await getConfig("user");
+        if (userConfig.mergeRequests) {
+          const mergeRequests = userConfig.mergeRequests.filter(
+            (mr: any) =>
+              mr !== null &&
+              mr.branch === currentBranch &&
+              (mr.url !== null || mr.urlCreate !== null),
+          );
+          // Existing merge request
+          if (mergeRequests[0] && mergeRequests[0].url) {
+            items.push({
+              id: "git-merge-request-url",
+              label: "Merge Request: Open",
+              iconId: "git:pull-request",
+              tooltip:
+                "Click to open merge request in browser\n" +
+                mergeRequests[0].url,
+              command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
+                mergeRequests[0].url,
+              )}`,
+            });
           }
+
+          // Create merge request URL
+          else if (mergeRequests[0] && mergeRequests[0].urlCreate) {
+            items.push({
+              id: "git-merge-request-create-url",
+              label: "Merge Request: Create",
+              icon: "merge.svg",
+              tooltip:
+                "Click to create merge request in browser\n" +
+                mergeRequests[0].urlCreate,
+              command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
+                mergeRequests[0].urlCreate,
+              )}`,
+            });
+          }
+        }
       }
     }
     return items;

@@ -443,9 +443,9 @@ export class BranchStrategyMermaidBuilder {
   }
 
   listClassesAndStyles(): string[] {
-  // Enhanced SLDS: backgrounds for orgs/branches/subgraphs, bolder borders, rounded corners, SLDS font, and improved contrast
-  // Only use properties supported by Mermaid classDef/style syntax
-  const classesAndStyles = `
+    // Enhanced SLDS: backgrounds for orgs/branches/subgraphs, bolder borders, rounded corners, SLDS font, and improved contrast
+    // Only use properties supported by Mermaid classDef/style syntax
+    const classesAndStyles = `
 classDef salesforceDev fill:#F4F6F9,stroke:#0176D3,stroke-width:2.5px,color:#032D60,font-weight:500,border-radius:16px;
 classDef salesforceMajor fill:#FFF6E3,stroke:#FFB75D,stroke-width:2.5px,color:#032D60,font-weight:900,border-radius:16px;
 classDef salesforceProd fill:#E3FCEF,stroke:#04844B,stroke-width:2.5px,color:#032D60,font-weight:700,border-radius:16px;
@@ -456,7 +456,7 @@ style GitBranches fill:#F0F6FB,color:#032D60,stroke:#0176D3,stroke-width:2px;
 style SalesforceOrgs fill:#F0F6FB,color:#032D60,stroke:#04844B,stroke-width:2px;
 style SalesforceDevOrgs fill:#F0F6FB,color:#032D60,stroke:#0176D3,stroke-width:2px;
 `;
-  return classesAndStyles.split("\n");
+    return classesAndStyles.split("\n");
   }
 
   private listLinksDef(): any {

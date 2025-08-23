@@ -52,10 +52,14 @@ export async function listMajorOrgs(): Promise<MajorOrg[]> {
           orgType,
           configFiles.map((f) => f.replace(/^.*\.sfdx-hardis\.|\.yml$/g, "")),
         );
-    
+
     const warnings: string[] = [];
-    if (!(Array.isArray(props.mergeTargets) && props.mergeTargets.length > 0) && orgType !== "prod") {
-      const exampleMergeTarget = mergeTargets.length > 0 ? mergeTargets[0] : "preprod";
+    if (
+      !(Array.isArray(props.mergeTargets) && props.mergeTargets.length > 0) &&
+      orgType !== "prod"
+    ) {
+      const exampleMergeTarget =
+        mergeTargets.length > 0 ? mergeTargets[0] : "preprod";
       warnings.push(
         `No merge target defined for branch '${branchName}'. Consider adding 'mergeTargets' in ${configFile} config file. (Ex: mergeTargets: ["${exampleMergeTarget}"])`,
       );
@@ -68,7 +72,7 @@ export async function listMajorOrgs(): Promise<MajorOrg[]> {
       mergeTargets,
       level,
       instanceUrl: props.instanceUrl,
-      warnings: warnings
+      warnings: warnings,
     });
   }
 

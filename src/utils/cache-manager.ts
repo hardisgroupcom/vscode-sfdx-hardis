@@ -35,7 +35,7 @@ export class CacheManager {
     section: CacheSection,
     key: string,
     value: T,
-    ttlMs: number
+    ttlMs: number,
   ): Promise<void> {
     const fullKey = this.makeKey(section, key);
     const entry: CacheEntry<T> = {
@@ -51,7 +51,7 @@ export class CacheManager {
     const entry = this.store.get<CacheEntry<T>>(fullKey);
 
     if (!entry) {
-        return undefined;
+      return undefined;
     }
 
     if (Date.now() > entry.expiresAt) {
@@ -62,7 +62,9 @@ export class CacheManager {
     const expiresInSeconds = Math.floor((entry.expiresAt - Date.now()) / 1000);
     // Convert seconds in days, hours and minutes format
     const expiresInDaysHoursMinutes = `${Math.floor(expiresInSeconds / 86400)}d ${Math.floor((expiresInSeconds % 86400) / 3600)}h ${Math.floor((expiresInSeconds % 3600) / 60)}m`;
-    Logger.log(`Cache hit for ${section}:${key} (expires in ${expiresInDaysHoursMinutes})`);
+    Logger.log(
+      `Cache hit for ${section}:${key} (expires in ${expiresInDaysHoursMinutes})`,
+    );
     return entry.value;
   }
 
@@ -80,7 +82,7 @@ export class CacheManager {
       toDelete = [...keys];
     } else if (section && !key) {
       // delete all in section
-      toDelete = keys.filter(k => k.startsWith(section + ":"));
+      toDelete = keys.filter((k) => k.startsWith(section + ":"));
     } else if (section && key) {
       // delete specific
       toDelete = [this.makeKey(section, key)];
@@ -91,7 +93,7 @@ export class CacheManager {
     }
 
     // update index
-    const remaining = keys.filter(k => !toDelete.includes(k));
+    const remaining = keys.filter((k) => !toDelete.includes(k));
     await this.store.update(this.KEYS_INDEX, remaining);
   }
 
@@ -109,7 +111,7 @@ export class CacheManager {
     }
 
     if (expiredKeys.length > 0) {
-      const remaining = keys.filter(k => !expiredKeys.includes(k));
+      const remaining = keys.filter((k) => !expiredKeys.includes(k));
       await this.store.update(this.KEYS_INDEX, remaining);
     }
   }

@@ -4,7 +4,7 @@
 // eslint-env es6
 import { LightningElement, track, api } from "lwc";
 import PromptInput from "s/promptInput";
-import 's/forceLightTheme'; // Ensure light theme is applied
+import "s/forceLightTheme"; // Ensure light theme is applied
 
 export default class CommandExecution extends LightningElement {
   // Track user-toggled expanded state for sections in simple mode
@@ -30,7 +30,7 @@ export default class CommandExecution extends LightningElement {
   @track isWaitingForAnswer = false;
   @track latestQuestionId = null;
   @track lastQueryLogId = null;
-  @track detailsMode = 'simple'; // 'advanced' or 'simple'
+  @track detailsMode = "simple"; // 'advanced' or 'simple'
 
   connectedCallback() {
     // Make component available globally for VS Code message handling
@@ -168,14 +168,16 @@ export default class CommandExecution extends LightningElement {
 
   // Computed property for lightning-input toggle
   get isAdvancedMode() {
-    return this.detailsMode === 'advanced';
+    return this.detailsMode === "advanced";
   }
 
   handleVsCodeSfdxHardisConfigurationChanged(data) {
     const vsCodeSfdxHardisConfiguration = data.vsCodeSfdxHardisConfiguration;
-    const newDetailsMode = vsCodeSfdxHardisConfiguration?.["showCommandsDetails"]
-      ? 'advanced'
-      : 'simple';
+    const newDetailsMode = vsCodeSfdxHardisConfiguration?.[
+      "showCommandsDetails"
+    ]
+      ? "advanced"
+      : "simple";
     if (newDetailsMode !== this.detailsMode) {
       this.detailsMode = newDetailsMode;
     }
@@ -184,14 +186,15 @@ export default class CommandExecution extends LightningElement {
   // Handler for lightning-input toggle
   handleToggleDetailsMode(event) {
     // lightning-input toggle passes event.detail.checked
-    this.detailsMode = event.detail && event.detail.checked ? 'advanced' : 'simple';
+    this.detailsMode =
+      event.detail && event.detail.checked ? "advanced" : "simple";
     // Optionally persist to VS Code config if needed
     if (window && window.sendMessageToVSCode) {
       window.sendMessageToVSCode({
         type: "updateVsCodeSfdxHardisConfiguration",
         data: {
           configKey: "showCommandsDetails",
-          value: this.detailsMode === 'advanced' ? true : false,
+          value: this.detailsMode === "advanced" ? true : false,
         },
       });
     }
@@ -296,8 +299,8 @@ export default class CommandExecution extends LightningElement {
     if (data.vsCodeSfdxHardisConfiguration) {
       const vscodeConfig = data.vsCodeSfdxHardisConfiguration;
       this.detailsMode = vscodeConfig?.["showCommandsDetails"]
-        ? 'advanced'
-        : 'simple';
+        ? "advanced"
+        : "simple";
     }
 
     // Only set commandDocUrl if it's provided, preserve existing value otherwise
@@ -310,9 +313,8 @@ export default class CommandExecution extends LightningElement {
 
     // If initialization data contains commandLogFile, set it
     if (context.commandLogFile) {
-      this.commandLogFile = context.commandLogFile
-    }
-    else if (!this.commandLogFile) {
+      this.commandLogFile = context.commandLogFile;
+    } else if (!this.commandLogFile) {
       // Reset commandLogFile if not provided
       this.commandLogFile = null;
     }
@@ -340,16 +342,16 @@ export default class CommandExecution extends LightningElement {
   addReportFile(data) {
     if (data && data.file && data.title) {
       // Only accept the four allowed types
-      const allowedTypes = ['actionCommand', 'actionUrl', 'report', 'docUrl'];
-      const type = allowedTypes.includes(data.type) ? data.type : 'report';
+      const allowedTypes = ["actionCommand", "actionUrl", "report", "docUrl"];
+      const type = allowedTypes.includes(data.type) ? data.type : "report";
       const reportFile = {
         id: this.generateId(),
         file: data.file,
         title: data.title,
         timestamp: new Date(),
         type: type,
-        url: type === 'actionUrl' ? data.file : null,
-        vscodeCommand: type === 'actionCommand' ? data.file : null,
+        url: type === "actionUrl" ? data.file : null,
+        vscodeCommand: type === "actionCommand" ? data.file : null,
       };
       this.reportFiles = [...this.reportFiles, reportFile];
       this.scrollToBottom();
@@ -407,11 +409,10 @@ export default class CommandExecution extends LightningElement {
       logLine.isRunning = false;
     }
 
-    const isQueryOrResult = (
+    const isQueryOrResult =
       logLine.message.includes("[SOQL Query]") ||
       logLine.message.includes("[BulkApiV2]") ||
-      logLine.message.includes("[SOQL Query Tooling]")
-    );
+      logLine.message.includes("[SOQL Query Tooling]");
 
     if (isQueryOrResult) {
       // Clean up the message for queries
@@ -566,7 +567,7 @@ export default class CommandExecution extends LightningElement {
       isRunning: logLine.isRunning || false,
       isQuery: logLine.isQuery || false,
       tableSectionId: logLine.tableSectionId || null,
-      isTable: logLine.logType === 'table',
+      isTable: logLine.logType === "table",
     };
 
     // Format multi-line messages and bullets
@@ -945,7 +946,7 @@ ${resultMessage}`;
   get logSectionsForDisplay() {
     const latestQuestionSectionId = this.latestQuestionSectionId;
     const shouldHideLatest = this.showEmbeddedPrompt;
-    const isSimple = this.detailsMode === 'simple';
+    const isSimple = this.detailsMode === "simple";
     const isCompletedOrAborted = this.isCompleted || this.hasError;
     const lastSectionIdx = this.logSections.length - 1;
     return this.logSections.map((section, idx) => {
@@ -960,14 +961,16 @@ ${resultMessage}`;
       if (tableLog) {
         tableShowAll = !!tableLog.showAll;
         rowsLimited = tableLog.rows ? tableLog.rows.slice(0, 10) : [];
-        tableShowMoreButton = !tableShowAll && tableLog.rows && tableLog.rows.length > 10;
+        tableShowMoreButton =
+          !tableShowAll && tableLog.rows && tableLog.rows.length > 10;
         let rawRows = tableShowAll ? tableLog.rows : rowsLimited;
         // Detect truncation message row
         if (
           rawRows.length > 0 &&
           rawRows[rawRows.length - 1].sfdxHardisTruncatedMessage
         ) {
-          tableTruncatedMessage = rawRows[rawRows.length - 1].sfdxHardisTruncatedMessage;
+          tableTruncatedMessage =
+            rawRows[rawRows.length - 1].sfdxHardisTruncatedMessage;
           rawRows = rawRows.slice(0, rawRows.length - 1);
         }
         tableRows = rawRows;
@@ -989,7 +992,9 @@ ${resultMessage}`;
         }
       }
       // Chevron should reflect actual expansion state for all sections
-      const toggleIcon = isExpanded ? "utility:chevronup" : "utility:chevrondown";
+      const toggleIcon = isExpanded
+        ? "utility:chevronup"
+        : "utility:chevrondown";
       return {
         ...section,
         isExpanded,
@@ -1028,23 +1033,27 @@ ${resultMessage}`;
   // --- Report Files Section Helpers ---
   get reportFileTypesPresent() {
     // Returns an object: { hasActionCommands, hasActionUrls, hasReports, hasDocUrls }
-    let hasActionCommands = false, hasActionUrls = false, hasReports = false, hasDocUrls = false;
+    let hasActionCommands = false,
+      hasActionUrls = false,
+      hasReports = false,
+      hasDocUrls = false;
     for (const f of this.reportFiles) {
-      if (f.type === 'actionCommand') hasActionCommands = true;
-      else if (f.type === 'actionUrl') hasActionUrls = true;
-      else if (f.type === 'report') hasReports = true;
-      else if (f.type === 'docUrl') hasDocUrls = true;
+      if (f.type === "actionCommand") hasActionCommands = true;
+      else if (f.type === "actionUrl") hasActionUrls = true;
+      else if (f.type === "report") hasReports = true;
+      else if (f.type === "docUrl") hasDocUrls = true;
     }
     return { hasActionCommands, hasActionUrls, hasReports, hasDocUrls };
   }
 
   get reportFilesSectionTitle() {
-    const { hasActionCommands, hasActionUrls, hasReports, hasDocUrls } = this.reportFileTypesPresent;
+    const { hasActionCommands, hasActionUrls, hasReports, hasDocUrls } =
+      this.reportFileTypesPresent;
     const parts = [];
-    if (hasActionCommands || hasActionUrls) parts.push('Actions');
-    if (hasReports) parts.push('Reports');
-    if (hasDocUrls) parts.push('Docs');
-    return parts.length > 0 ? parts.join(', ') : 'Report Files';
+    if (hasActionCommands || hasActionUrls) parts.push("Actions");
+    if (hasReports) parts.push("Reports");
+    if (hasDocUrls) parts.push("Docs");
+    return parts.length > 0 ? parts.join(", ") : "Report Files";
   }
 
   get sortedReportFiles() {
@@ -1055,16 +1064,16 @@ ${resultMessage}`;
     const docUrls = [];
     for (const f of this.reportFiles) {
       switch (f.type) {
-        case 'actionCommand':
+        case "actionCommand":
           actionCommands.push(f);
           break;
-        case 'actionUrl':
+        case "actionUrl":
           actionUrls.push(f);
           break;
-        case 'report':
+        case "report":
           reports.push(f);
           break;
-        case 'docUrl':
+        case "docUrl":
           docUrls.push(f);
           break;
         default:
@@ -1074,16 +1083,41 @@ ${resultMessage}`;
     // Map to add button/icon props as before
     const decorate = (f) => {
       switch (f.type) {
-        case 'actionCommand':
-          return { ...f, buttonVariant: 'brand', iconName: 'utility:play', iconVariant: 'inverse' };
-        case 'actionUrl':
-          return { ...f, buttonVariant: 'brand', iconName: 'utility:link', iconVariant: 'inverse' };
-        case 'report':
-          return { ...f, buttonVariant: 'success', iconName: 'utility:page', iconVariant: 'inverse' };
-        case 'docUrl':
-          return { ...f, buttonVariant: 'outline-brand', iconName: 'utility:info', iconVariant: 'brand' };
+        case "actionCommand":
+          return {
+            ...f,
+            buttonVariant: "brand",
+            iconName: "utility:play",
+            iconVariant: "inverse",
+          };
+        case "actionUrl":
+          return {
+            ...f,
+            buttonVariant: "brand",
+            iconName: "utility:link",
+            iconVariant: "inverse",
+          };
+        case "report":
+          return {
+            ...f,
+            buttonVariant: "success",
+            iconName: "utility:page",
+            iconVariant: "inverse",
+          };
+        case "docUrl":
+          return {
+            ...f,
+            buttonVariant: "outline-brand",
+            iconName: "utility:info",
+            iconVariant: "brand",
+          };
         default:
-          return { ...f, buttonVariant: 'success', iconName: 'utility:page', iconVariant: 'inverse' };
+          return {
+            ...f,
+            buttonVariant: "success",
+            iconName: "utility:page",
+            iconVariant: "inverse",
+          };
       }
     };
     return [
@@ -1395,9 +1429,12 @@ ${resultMessage}`;
     const section = this.logSections.find((s) => s.id === sectionId);
     if (section) {
       // In simple mode, track user toggles separately
-      if (this.detailsMode === 'simple') {
+      if (this.detailsMode === "simple") {
         const prev = this.userSectionExpandState[sectionId] || false;
-        this.userSectionExpandState = { ...this.userSectionExpandState, [sectionId]: !prev };
+        this.userSectionExpandState = {
+          ...this.userSectionExpandState,
+          [sectionId]: !prev,
+        };
       } else {
         section.isExpanded = !section.isExpanded;
       }
@@ -1444,10 +1481,14 @@ ${resultMessage}`;
 
   // Handler for the log file icon button
   handleOpenCommandLogFile() {
-    if (this.commandLogFile && typeof window !== "undefined" && window.sendMessageToVSCode) {
+    if (
+      this.commandLogFile &&
+      typeof window !== "undefined" &&
+      window.sendMessageToVSCode
+    ) {
       window.sendMessageToVSCode({
-        type: 'openFile',
-        data: { filePath: this.commandLogFile }
+        type: "openFile",
+        data: { filePath: this.commandLogFile },
       });
     }
   }
@@ -1455,7 +1496,7 @@ ${resultMessage}`;
   handleOpenReportFile(event) {
     // Find the reportFile object by id or file path
     const filePath = event.target.dataset.filePath;
-    const reportFile = this.reportFiles.find(f => f.file === filePath);
+    const reportFile = this.reportFiles.find((f) => f.file === filePath);
     if (!reportFile) {
       console.error("Report file not found for:", filePath);
       return;
@@ -1463,27 +1504,27 @@ ${resultMessage}`;
 
     if (typeof window !== "undefined" && window.sendMessageToVSCode) {
       switch (reportFile.type) {
-        case 'actionCommand':
+        case "actionCommand":
           // Run a VS Code command
           window.sendMessageToVSCode({
             type: "runVsCodeCommand",
-            data: { command: reportFile.file }
+            data: { command: reportFile.file },
           });
           break;
-        case 'actionUrl':
-        case 'docUrl':
+        case "actionUrl":
+        case "docUrl":
           // Open external URL
           window.sendMessageToVSCode({
             type: "openExternal",
-            data: { url: reportFile.file }
+            data: { url: reportFile.file },
           });
           break;
-        case 'report':
+        case "report":
         default:
           // Open file in VS Code
           window.sendMessageToVSCode({
             type: "openFile",
-            data: { filePath: reportFile.file }
+            data: { filePath: reportFile.file },
           });
           break;
       }

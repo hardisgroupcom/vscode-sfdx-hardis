@@ -76,8 +76,6 @@ export class LocalWebSocketServer {
         return;
       }
 
-
-
       // Close any completed commandExecution panel before opening a new one
       const panelManager = LwcPanelManager.getInstance(this.context);
       const activePanelIds = panelManager.getActivePanelIds();
@@ -243,7 +241,7 @@ export class LocalWebSocketServer {
           data: {
             file: data.file,
             title: data.title,
-            type: data.type // Forward the type property for LWC simplification
+            type: data.type, // Forward the type property for LWC simplification
           },
         });
       }
