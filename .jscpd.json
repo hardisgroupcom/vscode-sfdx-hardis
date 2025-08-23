@@ -13,6 +13,8 @@
     "**/*.svg",
     "**/*-provider.ts",
     "**/eslint.config.js",
-    "**/webpack*.js"
+    "**/webpack*.js",
+    "**/*.html",
+    "**/*.xml"
   ]
 }
