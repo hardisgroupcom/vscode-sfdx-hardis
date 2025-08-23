@@ -2,8 +2,8 @@
 
 ## [Unreleased]
 
- - Fixes related to Code Builder integration
- - Fix cache manager issue
+- Fixes related to Code Builder integration
+- Fix cache manager issue
 
 ## [6.1.0] 2024-08-23
 
