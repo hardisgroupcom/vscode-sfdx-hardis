@@ -36,7 +36,7 @@ export default class PipelineConfig extends LightningElement {
     const isBranch = this.isBranch;
     // configSchema is an object: { [key]: schema }
     const configSchema = this.configSchema || {};
-	/* jscpd-ignore-start */
+    /* jscpd-ignore-start */
     return (this.sections || [])
       .map((section) => {
         const entries = [];
@@ -236,7 +236,7 @@ export default class PipelineConfig extends LightningElement {
         };
       })
       .filter((section) => section.entries.length > 0);
-	/* jscpd-ignore-end */
+    /* jscpd-ignore-end */
   }
 
   handleEdit() {
