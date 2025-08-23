@@ -416,7 +416,7 @@ export class Commands {
         try {
           prButtonInfo = await getPullRequestButtonInfo(repoPath);
         } catch (e) {
-          Logger.log("Error getting PR button info:", e);
+          Logger.log("Error getting PR button info:\n"+JSON.stringify(e));
         }
 
         const panel = LwcPanelManager.getInstance().getOrCreatePanel(
