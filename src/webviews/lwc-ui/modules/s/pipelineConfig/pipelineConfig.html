@@ -4,14 +4,10 @@
       <div class="slds-grid slds-grid_align-spread slds-m-bottom_medium">
         <div class="slds-col slds-align-middle">
           <template if:true={isBranch}>
-            <h2 class="slds-text-heading_medium">
-              Pipeline Settings for major git branch <b>{branchName}</b>
-            </h2>
+            <span class="slds-text-heading_medium slds-text-title_bold">Pipeline Settings for major git branch <b>{branchName}</b></span>
           </template>
           <template if:false={isBranch}>
-            <h2 class="slds-text-heading_medium">
-              Global Pipeline Settings
-            </h2>
+            <span class="slds-text-heading_medium slds-text-title_bold">Global Pipeline Settings</span>
           </template>
         </div>
         <div class="slds-col slds-no-flex slds-align-middle" data-key="top-btn-group" style="text-align:right;">
