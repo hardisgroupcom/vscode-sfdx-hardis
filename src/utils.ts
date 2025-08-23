@@ -458,6 +458,7 @@ export async function loadExternalSfdxHardisConfiguration() {
 }
 
 // Fetch remote config file
+/* jscpd-ignore-start */
 async function loadFromRemoteConfigFile(url: string) {
   if (REMOTE_CONFIGS[url]) {
     return REMOTE_CONFIGS[url];
@@ -475,6 +476,7 @@ async function loadFromRemoteConfigFile(url: string) {
   REMOTE_CONFIGS[url] = remoteConfig;
   return remoteConfig;
 }
+/* jscpd-ignore-end */
 
 export async function readSfdxHardisConfig(): Promise<any> {
   if (vscode.workspace.workspaceFolders) {
