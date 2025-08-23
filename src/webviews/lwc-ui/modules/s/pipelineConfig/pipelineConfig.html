@@ -31,172 +31,190 @@
                 <div class="slds-p-around_small">
                   <template for:each={section.entries} for:item="entry">
                     <div key={entry.key} class="slds-m-bottom_medium">
-                    <template if:true={isEditMode}>
-                      <template if:true={entry.isEnum}>
-                        <div class="slds-form-element slds-m-bottom_xx-small">
-                          <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
-                            <span>{entry.label}</span>
-                            <template if:true={entry.description}>
-                              <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
+                      <div class="slds-grid slds-gutters">
+                        <div class="slds-col slds-size_10-of-12">
+                          <template if:true={isEditMode}>
+                            <template if:true={entry.isEnum}>
+                              <div class="slds-form-element slds-m-bottom_xx-small">
+                                <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                                  <span>{entry.label}</span>
+                                  <template if:true={entry.description}>
+                                    <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
+                                  </template>
+                                </label>
+                                <lightning-combobox
+                                  data-key={entry.key}
+                                  value={entry.valueEdit}
+                                  options={entry.optionsLwc}
+                                  onchange={handleInputChange}
+                                ></lightning-combobox>
+                              </div>
                             </template>
-                          </label>
-                          <lightning-combobox
-                            data-key={entry.key}
-                            value={entry.valueEdit}
-                            options={entry.optionsLwc}
-                            onchange={handleInputChange}
-                          ></lightning-combobox>
-                        </div>
-                      </template>
-                      <template if:true={entry.isArrayEnum}>
-                        <div class="slds-form-element slds-m-bottom_xx-small">
-                          <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
-                            <span>{entry.label}</span>
-                            <template if:true={entry.description}>
-                              <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
+                            <template if:true={entry.isArrayEnum}>
+                              <div class="slds-form-element slds-m-bottom_xx-small">
+                                <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                                  <span>{entry.label}</span>
+                                  <template if:true={entry.description}>
+                                    <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
+                                  </template>
+                                </label>
+                                <lightning-dual-listbox
+                                  data-key={entry.key}
+                                  value={entry.valueEdit}
+                                  options={entry.optionsLwc}
+                                  onchange={handleInputChange}
+                                  label="Select values"
+                                ></lightning-dual-listbox>
+                              </div>
                             </template>
-                          </label>
-                          <lightning-dual-listbox
-                            data-key={entry.key}
-                            value={entry.valueEdit}
-                            options={entry.optionsLwc}
-                            onchange={handleInputChange}
-                            label="Select values"
-                          ></lightning-dual-listbox>
-                        </div>
-                      </template>
-                      <template if:true={entry.isArrayText}>
-                        <div class="slds-form-element slds-m-bottom_xx-small">
-                          <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
-                            <span>{entry.label}</span>
-                            <template if:true={entry.description}>
-                              <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
+                            <template if:true={entry.isArrayText}>
+                              <div class="slds-form-element slds-m-bottom_xx-small">
+                                <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                                  <span>{entry.label}</span>
+                                  <template if:true={entry.description}>
+                                    <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
+                                  </template>
+                                </label>
+                                <lightning-textarea
+                                  data-key={entry.key}
+                                  value={entry.valueEditText}
+                                  onchange={handleInputChange}
+                                  rows="2"
+                                ></lightning-textarea>
+                                <div class="slds-text-body_small slds-text-color_weak">One value per line</div>
+                              </div>
                             </template>
-                          </label>
-                          <lightning-textarea
-                            data-key={entry.key}
-                            value={entry.valueEditText}
-                            onchange={handleInputChange}
-                            rows="2"
-                          ></lightning-textarea>
-                          <div class="slds-text-body_small slds-text-color_weak">One value per line</div>
-                        </div>
-                      </template>
-                      <template if:true={entry.isBoolean}>
-                        <div class="slds-form-element slds-m-bottom_xx-small" style="display:flex;align-items:center;gap:0.2rem;">
-                          <lightning-input
-                            type="checkbox"
-                            data-key={entry.key}
-                            checked={entry.valueEdit}
-                            onchange={handleInputChange}
-                            oninput={handleInputChange}
-                            class="slds-m-right_x-small"
-                          ></lightning-input>
-                          <span style="display:flex;align-items:center;gap:0.15rem;">
-                            {entry.label}
-                            <template if:true={entry.description}>
-                              <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
+                            <template if:true={entry.isBoolean}>
+                              <div class="slds-form-element slds-m-bottom_xx-small" style="display:flex;align-items:center;gap:0.2rem;">
+                                <lightning-input
+                                  type="checkbox"
+                                  data-key={entry.key}
+                                  checked={entry.valueEdit}
+                                  onchange={handleInputChange}
+                                  oninput={handleInputChange}
+                                  class="slds-m-right_x-small"
+                                ></lightning-input>
+                                <span style="display:flex;align-items:center;gap:0.15rem;">
+                                  {entry.label}
+                                  <template if:true={entry.description}>
+                                    <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
+                                  </template>
+                                </span>
+                              </div>
                             </template>
-                          </span>
-                        </div>
-                      </template>
-                      <template if:true={entry.isText}>
-                        <div class="slds-form-element slds-m-bottom_xx-small">
-                          <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
-                            <span>{entry.label}</span>
-                            <template if:true={entry.description}>
-                              <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
+                            <template if:true={entry.isText}>
+                              <div class="slds-form-element slds-m-bottom_xx-small">
+                                <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                                  <span>{entry.label}</span>
+                                  <template if:true={entry.description}>
+                                    <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
+                                  </template>
+                                </label>
+                                <lightning-input
+                                  type="text"
+                                  data-key={entry.key}
+                                  value={entry.valueEdit}
+                                  onchange={handleInputChange}
+                                ></lightning-input>
+                              </div>
                             </template>
-                          </label>
-                          <lightning-input
-                            type="text"
-                            data-key={entry.key}
-                            value={entry.valueEdit}
-                            onchange={handleInputChange}
-                          ></lightning-input>
-                        </div>
-                      </template>
-                      <template if:true={entry.isNumber}>
-                        <div class="slds-form-element slds-m-bottom_xx-small">
-                          <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
-                            <span>{entry.label}</span>
-                            <template if:true={entry.description}>
-                              <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
+                            <template if:true={entry.isNumber}>
+                              <div class="slds-form-element slds-m-bottom_xx-small">
+                                <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                                  <span>{entry.label}</span>
+                                  <template if:true={entry.description}>
+                                    <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
+                                  </template>
+                                </label>
+                                <lightning-input
+                                  type="number"
+                                  data-key={entry.key}
+                                  value={entry.valueEdit}
+                                  onchange={handleInputChange}
+                                ></lightning-input>
+                              </div>
                             </template>
-                          </label>
-                          <lightning-input
-                            type="number"
-                            data-key={entry.key}
-                            value={entry.valueEdit}
-                            onchange={handleInputChange}
-                          ></lightning-input>
-                        </div>
-                      </template>
-                      <template if:true={entry.inherited}>
-                        <div class="slds-text-color_weak slds-text-body_small">Global: {entry.globalValue}</div>
-                      </template>
-                    </template>
-                    <template if:false={isEditMode}>
-                      <template if:true={entry.isBoolean}>
-                        <div class="slds-form-element slds-m-bottom_xx-small" style="display:flex;align-items:center;gap:0.2rem;">
-                          <lightning-input
-                            type="checkbox"
-                            checked={entry.value}
-                            disabled
-                            class="slds-m-right_x-small"
-                          ></lightning-input>
-                          <span style="display:flex;align-items:center;gap:0.15rem;">
-                            {entry.label}
-                            <template if:true={entry.description}>
-                              <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
+                            <template if:true={entry.inherited}>
+                              <div class="slds-text-color_weak slds-text-body_small">Global: {entry.globalValue}</div>
                             </template>
-                          </span>
-                        </div>
-                      </template>
-                      <template if:false={entry.isBoolean}>
-                        <div class="slds-form-element slds-m-bottom_xx-small">
-                          <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
-                            <span>{entry.label}</span>
-                            <template if:true={entry.description}>
-                              <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
+                          </template>
+                          <template if:false={isEditMode}>
+                            <template if:true={entry.isBoolean}>
+                              <div class="slds-form-element slds-m-bottom_xx-small" style="display:flex;align-items:center;gap:0.2rem;">
+                                <lightning-input
+                                  type="checkbox"
+                                  checked={entry.value}
+                                  disabled
+                                  class="slds-m-right_x-small"
+                                ></lightning-input>
+                                <span style="display:flex;align-items:center;gap:0.15rem;">
+                                  {entry.label}
+                                  <template if:true={entry.description}>
+                                    <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
+                                  </template>
+                                </span>
+                              </div>
                             </template>
-                          </label>
-                          <template if:true={entry.isArrayEnum}>
-                            <template if:true={entry.hasArrayEnumValues}>
-                              <ul class="slds-list_dotted slds-m-left_medium">
-                                <template for:each={entry.valueDisplay} for:item="item">
-                                  <li key={item}>{item}</li>
+                            <template if:false={entry.isBoolean}>
+                              <div class="slds-form-element slds-m-bottom_xx-small">
+                                <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                                  <span>{entry.label}</span>
+                                  <template if:true={entry.description}>
+                                    <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
+                                  </template>
+                                </label>
+                                <template if:true={entry.isArrayEnum}>
+                                  <template if:true={entry.hasArrayEnumValues}>
+                                    <ul class="slds-list_dotted slds-m-left_medium">
+                                      <template for:each={entry.valueDisplay} for:item="item">
+                                        <li key={item}>{item}</li>
+                                      </template>
+                                    </ul>
+                                  </template>
+                                  <template if:false={entry.hasArrayEnumValues}>
+                                    <span class="slds-text-color_weak">None</span>
+                                  </template>
                                 </template>
-                              </ul>
-                            </template>
-                            <template if:false={entry.hasArrayEnumValues}>
-                              <span class="slds-text-color_weak">None</span>
-                            </template>
-                          </template>
-                          <template if:true={entry.isArrayText}>
-                            <template if:true={entry.hasArrayTextValues}>
-                              <ul class="slds-list_dotted slds-m-left_medium">
-                                <template for:each={entry.valueDisplay} for:item="item">
-                                  <li key={item}>{item}</li>
+                                <template if:true={entry.isArrayText}>
+                                  <template if:true={entry.hasArrayTextValues}>
+                                    <ul class="slds-list_dotted slds-m-left_medium">
+                                      <template for:each={entry.valueDisplay} for:item="item">
+                                        <li key={item}>{item}</li>
+                                      </template>
+                                    </ul>
+                                  </template>
+                                  <template if:false={entry.hasArrayTextValues}>
+                                    <span class="slds-text-color_weak">None</span>
+                                  </template>
                                 </template>
-                              </ul>
+                                <template if:true={entry.isText}>
+                                  <span class="slds-text-color_weak">{entry.value}</span>
+                                </template>
+                                <template if:true={entry.isNumber}>
+                                  <span class="slds-text-color_weak">{entry.value}</span>
+                                </template>
+                              </div>
                             </template>
-                            <template if:false={entry.hasArrayTextValues}>
-                              <span class="slds-text-color_weak">None</span>
+                            <template if:true={entry.inherited}>
+                              <span class="slds-badge slds-theme_info slds-m-left_x-small" title="Inherited from global config">inherited</span>
                             </template>
-                          </template>
-                          <template if:true={entry.isText}>
-                            <span class="slds-text-color_weak">{entry.value}</span>
-                          </template>
-                          <template if:true={entry.isNumber}>
-                            <span class="slds-text-color_weak">{entry.value}</span>
                           </template>
                         </div>
-                      </template>
-                      <template if:true={entry.inherited}>
-                        <span class="slds-badge slds-theme_info slds-m-left_x-small" title="Inherited from global config">inherited</span>
-                      </template>
-                    </template>
+                        <div class="slds-col slds-size_2-of-12 slds-align-middle">
+                          <template if:true={entry.hasDocUrl}>
+                            <lightning-button
+                              variant="neutral"
+                              label="Documentation"
+                              icon-name="utility:link"
+                              icon-position="left"
+                              class="slds-m-left_xx-small"
+                              onclick={handleOpenDocUrl}
+                              data-doc-url={entry.docUrl}
+                              style="font-size:0.75rem;line-height:1.5;"
+                            ></lightning-button>
+                          </template>
+                        </div>
+                      </div>
                     </div>
                   </template>
                 </div>

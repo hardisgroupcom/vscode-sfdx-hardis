@@ -50,6 +50,7 @@ export class SfdxHardisConfigHelper {
     { name: "packageNoOverwritePath", scope: ["branch"]},
     { name: "useDeltaDeployment", scopes: ["global", "branch"] },
     { name: "useSmartDeploymentTests", scopes: ["global", "branch"] },
+    { name: "manualActionsFileUrl", scopes: ["global"] },
     { name: "developmentBranch", scopes: ["global"] },
     { name: "allowedOrgTypes", scopes: ["global"] },
     { name: "availableProjects", scopes: ["global"] },
@@ -81,6 +82,7 @@ export class SfdxHardisConfigHelper {
         "useSmartDeploymentTests",
         "installPackagesDuringCheckDeploy",
         "apexTestsMinCoverageOrgWide",
+        "manualActionsFileUrl",
         "packageNoOverwritePath"
       ]
     },
@@ -188,6 +190,7 @@ export class SfdxHardisConfigHelper {
           default: value.default,
           description: value.description,
           examples: value.examples || [],
+          docUrl: value.docUrl || null,
           globalAllowed: this.CONFIGURABLE_FIELDS.find(field => field.name === key)?.scopes?.includes("global") || false,
           branchAllowed: this.CONFIGURABLE_FIELDS.find(field => field.name === key)?.scopes?.includes("branch") || false,
         }

@@ -54,6 +54,8 @@ export default class PipelineConfig extends LightningElement {
 						let options = [];
 						let label = schema.title || key;
 						let description = schema.description || '';
+						const docUrl = schema.docUrl ||null;
+						const hasDocUrl = docUrl !== null;
 						let optionsLwc = [];
 						// Detect type
 						let enumNames = null;
@@ -165,6 +167,8 @@ export default class PipelineConfig extends LightningElement {
 							isNumber,
 							options,
 							optionsLwc,
+							docUrl,
+							hasDocUrl,
 							hasArrayEnumValues: isArrayEnum && Array.isArray(valueDisplay) && valueDisplay.length > 0,
 							hasArrayTextValues: isArrayText && Array.isArray(valueDisplay) && valueDisplay.length > 0,
 						});
@@ -187,6 +191,15 @@ export default class PipelineConfig extends LightningElement {
 		this.mode = 'view';
 		this.editedConfig = {};
 		this.handleRefresh();
+	}
+
+	handleOpenDocUrl(event) {
+		const url = event.target.dataset.docUrl;
+		if (url && typeof window !== 'undefined' && window.sendMessageToVSCode) {
+			window.sendMessageToVSCode({ type: 'openExternal', data: url });
+		} else if (url) {
+			window.open(url, '_blank');
+		}
 	}
 
 	@api
