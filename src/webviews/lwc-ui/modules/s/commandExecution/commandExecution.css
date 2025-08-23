@@ -30,6 +30,10 @@
 	background:  #EDF4FF;
 }
 
+.slds-spinner_container {
+    background-color: transparent !important;
+}
+
 .log-container {
   background-color: #f4f6f9;
   border: 1px solid #d8dde6;
