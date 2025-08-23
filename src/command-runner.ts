@@ -94,7 +94,7 @@ export class CommandRunner {
         }
 
         // Check for duplicate running command
-        // jscpd:ignore-start (duplicate command prevention)
+        /* jscpd:ignore-start */
         const existing = this.activeCommands.get(cmd);
         if (existing) {
             // For background: process is not killed and not closed/errored
@@ -108,7 +108,7 @@ export class CommandRunner {
                 return null;
             }
         }
-        // jscpd:ignore-end (duplicate command prevention)
+        /* jscpd:ignore-end */
         // Telemetry: Send only the 2 first portions of the command
         if (this.commandsInstance.reporter) {
             const truncatedCommand = cmd.split(" ").slice(0, 2).join(" ");

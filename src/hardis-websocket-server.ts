@@ -148,7 +148,7 @@ export class LocalWebSocketServer {
         return;
       }
       const clientData = this.clients[data.context?.id];
-      // jscpd:ignore-start (panel completion logic)
+      /* jscpd:ignore-start */
       if (clientData?.panel) {
         // Mark command as completed in the panel
         const success = data?.status !== "aborted" && data?.status !== "error";
@@ -177,7 +177,7 @@ export class LocalWebSocketServer {
         // const panelManager = LwcPanelManager.getInstance(this.context);
         // panelManager.scheduleDisposal(clientData.lwcId, 10000); // 10 seconds
       }
-      // jscpd:ignore-end (panel completion logic)
+      /* jscpd:ignore-end */
       delete this.clients[data.context?.id];
     }
     // Command log line
