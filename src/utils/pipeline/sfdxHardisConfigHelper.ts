@@ -119,15 +119,18 @@ export class SfdxHardisConfigHelper {
   static readonly REMOTE_SCHEMA_URL = "https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/main/config/sfdx-hardis.jsonschema.json";
   // Always resolve to the resources directory, compatible with both Node and Webpack
   static readonly LOCAL_SCHEMA_PATH = (() => {
-    // Try to use require.resolve if available (works with webpacked code)
+    // Try to resolve in out/resources (webpacked/prod) first
+    let candidate = path.resolve(__dirname, "./resources/sfdx-hardis.jsonschema.json");
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+    // Fallback: try require.resolve (may work in some node/webpack setups)
     try {
-      // __dirname is out/..., so go up to out/resources
-      // This will work in both dev and production (webpacked) builds
       // @ts-ignore
-      return require.resolve("../../resources/sfdx-hardis.jsonschema.json");
+      return require.resolve("resources/sfdx-hardis.jsonschema.json");
     } catch {
-      // Fallback: join relative to __dirname
-      return path.resolve(__dirname, "../../resources/sfdx-hardis.jsonschema.json");
+      // Not found
+      return null;
     }
   })();
 
@@ -159,20 +162,17 @@ export class SfdxHardisConfigHelper {
       const res = await axios.get(this.REMOTE_SCHEMA_URL, { timeout: 5000 });
       if (res.status === 200 && res.data) {
         schema = res.data;
-        // Cache locally
-        await fs.ensureDir(path.dirname(this.LOCAL_SCHEMA_PATH));
-        await fs.writeFile(this.LOCAL_SCHEMA_PATH, JSON.stringify(schema, null, 2), "utf8");
       }
     } catch (e) {
-      console.warn("Failed to load remote schema, falling back to local cache", e);
+      console.warn("Failed to load remote schema, falling back to local", e);
     }
-    if (!schema) {
+    if (!schema && this.LOCAL_SCHEMA_PATH) {
       try {
         if (await fs.pathExists(this.LOCAL_SCHEMA_PATH)) {
           schema = JSON.parse(await fs.readFile(this.LOCAL_SCHEMA_PATH, "utf8"));
         }
-      } catch {
-        // No schema available
+      } catch (e) {
+        console.warn("Failed to load local schema", e);
       }
     }
     if (schema && schema.properties) {

@@ -152,6 +152,11 @@ const lwcWebviewConfig = {
           to: path.resolve(__dirname, "out/resources/git-icons"),
           noErrorOnMissing: true,
         },
+        {
+          from: path.resolve(__dirname, "resources/sfdx-hardis.jsonschema.json"),
+          to: path.resolve(__dirname, "out/resources/sfdx-hardis.jsonschema.json"),
+          noErrorOnMissing: true,
+        },
       ],
     }),
   ],
