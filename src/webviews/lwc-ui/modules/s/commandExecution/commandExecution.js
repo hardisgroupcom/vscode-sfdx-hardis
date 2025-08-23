@@ -1540,7 +1540,7 @@ ${resultMessage}`;
     // const filePath = data.filePath;
     const fileName = data.fileName;
     const base64 = data.base64;
-    if (!filePath || !fileName || !base64) {
+    if (!fileName || !base64) {
       console.error("Invalid data for file download:", data);
       return;
     }

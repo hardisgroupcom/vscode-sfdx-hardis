@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [6.1.1] 2024-08-24
+
 - Fixes related to Code Builder integration
 - Fix cache manager issue
 - Handle binary file download in web context

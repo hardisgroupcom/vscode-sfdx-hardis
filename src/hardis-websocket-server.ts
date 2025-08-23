@@ -93,12 +93,6 @@ export class LocalWebSocketServer {
 
       this.clients[data.context.id] = { context: data.context, ws: ws };
 
-      // Send user input type back to caller
-      this.sendResponse(ws, {
-        event: "userInput",
-        userInput: this.config.get("userInput"),
-      });
-
       // Create a new command execution panel for this command
       const lwcId = `s-command-execution-${data.context.id}`;
       const panel = panelManager.getOrCreatePanel(lwcId, data.context);
@@ -138,6 +132,12 @@ export class LocalWebSocketServer {
         initData.data.commandLogFile = data.commandLogFile;
       }
       panel.sendMessage(initData);
+
+      // Send user input type back to caller so it know the panel is initialized and can continue the command
+      this.sendResponse(ws, {
+        event: "userInput",
+        userInput: this.config.get("userInput"),
+      });
     }
     // Command end
     if (data.event === "closeClient" || data.event === "clientClose") {
