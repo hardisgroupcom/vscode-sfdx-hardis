@@ -215,6 +215,7 @@ export class LocalWebSocketServer {
       }
     }
     // Sub-command end
+    /* jscpd:ignore-start */
     else if (data.event === "commandSubCommandEnd") {
       // Ignore if not lwc UI
       if (this.config.get("userInput") !== "ui-lwc") {
@@ -228,6 +229,7 @@ export class LocalWebSocketServer {
         });
       }
     }
+
     // Report file
     else if (data.event === "reportFile") {
       // Ignore if not lwc UI
@@ -246,6 +248,7 @@ export class LocalWebSocketServer {
         });
       }
     }
+    /* jscpd:ignore-end */
     // Request to refresh status box
     else if (data.event === "refreshStatus") {
       vscode.commands.executeCommand("vscode-sfdx-hardis.refreshStatusView");

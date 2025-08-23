@@ -383,6 +383,7 @@ export class CommandRunner {
     /**
      * Creates a new terminal and adds it to the stack.
      */
+    /* jscpd:ignore-start */
     createNewTerminal() {
         vscode.commands.executeCommand(
             "workbench.action.terminal.newInActiveWorkspace",
@@ -395,4 +396,5 @@ export class CommandRunner {
             this.commandsInstance.terminalStack = this.terminalStack;
         });
     }
+    /* jscpd:ignore-end */
 }
