@@ -148,6 +148,13 @@ export default class PipelineConfig extends LightningElement {
 						} else if (isArrayText || isArrayEnum) {
 							valueEditText = '';
 						}
+						// Compute hasValue for text and number fields
+						let hasValue = false;
+						if (isText) {
+							hasValue = value !== undefined && value !== null && String(value).trim() !== '';
+						} else if (isNumber) {
+							hasValue = value !== undefined && value !== null && value !== '';
+						}
 						entries.push({
 							key,
 							label,
@@ -171,6 +178,7 @@ export default class PipelineConfig extends LightningElement {
 							hasDocUrl,
 							hasArrayEnumValues: isArrayEnum && Array.isArray(valueDisplay) && valueDisplay.length > 0,
 							hasArrayTextValues: isArrayText && Array.isArray(valueDisplay) && valueDisplay.length > 0,
+							hasValue,
 						});
 					}
 					return {

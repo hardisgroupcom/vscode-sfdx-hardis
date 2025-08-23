@@ -188,10 +188,20 @@
                                   </template>
                                 </template>
                                 <template if:true={entry.isText}>
-                                  <span class="slds-text-color_weak">{entry.value}</span>
+                                  <template if:true={entry.hasValue}>
+                                    <span class="slds-text-color_weak">{entry.value}</span>
+                                  </template>
+                                  <template if:false={entry.hasValue}>
+                                    <span class="slds-text-color_weak">None</span>
+                                  </template>
                                 </template>
                                 <template if:true={entry.isNumber}>
-                                  <span class="slds-text-color_weak">{entry.value}</span>
+                                  <template if:true={entry.hasValue}>
+                                    <span class="slds-text-color_weak">{entry.value}</span>
+                                  </template>
+                                  <template if:false={entry.hasValue}>
+                                    <span class="slds-text-color_weak">None</span>
+                                  </template>
                                 </template>
                               </div>
                             </template>
