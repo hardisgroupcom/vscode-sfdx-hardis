@@ -1,3 +1,7 @@
 .slds-form-element {
     max-width: 600px;
 }
+
+.blue-back {
+	background:  #EDF4FF;
+}
