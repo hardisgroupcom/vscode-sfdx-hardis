@@ -200,7 +200,7 @@ export class CommandRunner {
                                 if (err) {
                                     output.appendLine(`[Cancelled by user] Error killing child process: ${err.message}`);
                                 } else {
-                                    output.appendLine(`[Cancelled by user] Successfull killed ${preprocessedCommand}`);
+                                    output.appendLine(`[Cancelled by user] Successfully killed ${preprocessedCommand}`);
                                 }
                                 progressResolve && progressResolve();
                             });
