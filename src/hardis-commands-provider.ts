@@ -632,6 +632,15 @@ export class HardisCommandsProvider
               "https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unused-apex-classes/",
           },
           {
+            id: "hardis:org:diagnose:unused-connected-apps",
+            label: "Unused Connected Apps",
+            tooltip:
+              "List all Connected Apps that have not been used for more than 90 days, and could probably be deleted",
+            command: "sf hardis:org:diagnose:unused-connected-apps",
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unused-connected-apps/",
+          },
+          {
             id: "hardis:lint:access",
             label: "Metadata without access",
             tooltip:

@@ -15,6 +15,8 @@ export default class PromptInput extends LightningElement {
   @track selectedValues = [];
   @track selectedValue = ""; // Single value for select input (string identifier)
   @track selectedOptionDescription = ""; // Description for selected option
+  @track multiselectFilter = '';
+  @track multiselectShowOnlySelected = false;
   @track isVisible = false;
   @track isSubmitting = false; // Track if submission is in progress
   @track error = null;
@@ -24,6 +26,32 @@ export default class PromptInput extends LightningElement {
   @track valueToIdentifier = {};
   _hasInitialFocus = false; // Track if initial focus has been set
   _hasInitialScroll = false;
+
+  // Handler for filter input
+  handleMultiselectFilterChange(event) {
+    this.multiselectFilter = event.target.value || '';
+  }
+
+  // Handler for show only selected toggle
+  handleMultiselectShowOnlySelectedChange(event) {
+    this.multiselectShowOnlySelected = event.target.checked;
+  }
+
+  // Returns filtered options for multiselect
+  get filteredMultiselectOptions() {
+    let options = this.multiselectOptions;
+    if (this.multiselectShowOnlySelected) {
+      options = options.filter(opt => opt.checked);
+    }
+    if (this.multiselectFilter && this.multiselectFilter.trim().length > 0) {
+      const filter = this.multiselectFilter.trim().toLowerCase();
+      options = options.filter(opt =>
+        (opt.label && opt.label.toLowerCase().includes(filter)) ||
+        (opt.description && opt.description.toLowerCase().includes(filter))
+      );
+    }
+    return options;
+  }
 
   // Dynamically set card classes based on embedded property
   get cardClass() {
@@ -284,6 +312,8 @@ export default class PromptInput extends LightningElement {
     this.choiceValueMapping = {};
     this._hasInitialFocus = false; // Reset focus flag
     this._hasInitialScroll = false; // Reset scroll flag
+    this.multiselectFilter = '';
+    this.multiselectShowOnlySelected = false;
   }
 
   get isTextInput() {

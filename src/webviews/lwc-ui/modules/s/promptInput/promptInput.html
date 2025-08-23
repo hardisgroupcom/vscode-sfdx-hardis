@@ -117,32 +117,55 @@
                     <template if:true={isMultiselectInput}>
                         <div class="slds-m-bottom_medium">
                             <fieldset class="slds-form-element">
-                                <legend class="slds-form-element__legend slds-form-element__label">
-                                    Select options (multiple allowed)
-                                </legend>
-                                <!-- Select All / Unselect All buttons -->
-                                <div class="slds-m-bottom_small">
-                                    <div class="slds-button-group" role="group">
-                                        <lightning-button
-                                            variant="neutral"
-                                            label="Select All"
-                                            size="small"
-                                            icon-name="utility:check"
-                                            disabled={allItemsSelected}
-                                            onclick={handleSelectAll}>
-                                        </lightning-button>
-                                        <lightning-button
-                                            variant="neutral"
-                                            label="Unselect All"
-                                            size="small"
-                                            icon-name="utility:clear"
-                                            disabled={noItemsSelected}
-                                            onclick={handleUnselectAll}>
-                                        </lightning-button>
+                                <!-- Filter and show selected controls -->
+                                <div class="slds-m-bottom_small slds-grid slds-gutters_small slds-grid_vertical-align-center">
+                                    <div class="slds-col slds-size_2-of-6">
+                                        <lightning-input
+                                            type="search"
+                                            placeholder="Type to filter..."
+                                            value={multiselectFilter}
+                                            onchange={handleMultiselectFilterChange}
+                                            class="slds-m-bottom_none"
+                                            style="min-width: 180px; max-width: 250px;"
+                                        ></lightning-input>
+                                    </div>
+                                    <div class="slds-col slds-size_2-of-6 slds-p-left_medium slds-p-right_medium">
+                                        <div class="slds-grid slds-grid_vertical-align-center slds-grid_align-center">
+                                            <label class="slds-form-element__label slds-m-right_small" style="white-space:nowrap;" for="showOnlySelectedToggle">Show only selected</label>
+                                            <lightning-input
+                                                type="toggle"
+                                                checked={multiselectShowOnlySelected}
+                                                onchange={handleMultiselectShowOnlySelectedChange}
+                                                class="slds-m-bottom_none"
+                                                variant="label-hidden"
+                                                name="showOnlySelectedToggle"
+                                                aria-label="Show only selected"
+                                            ></lightning-input>
+                                        </div>
+                                    </div>
+                                    <div class="slds-col slds-size_2-of-6 slds-grid slds-grid_align-end slds-grid_vertical-align-center">
+                                        <div class="slds-button-group" role="group">
+                                            <lightning-button
+                                                variant="neutral"
+                                                label="Select All"
+                                                size="small"
+                                                icon-name="utility:check"
+                                                disabled={allItemsSelected}
+                                                onclick={handleSelectAll}>
+                                            </lightning-button>
+                                            <lightning-button
+                                                variant="neutral"
+                                                label="Unselect All"
+                                                size="small"
+                                                icon-name="utility:clear"
+                                                disabled={noItemsSelected}
+                                                onclick={handleUnselectAll}>
+                                            </lightning-button>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="slds-form-element__control">
-                                    <template for:each={multiselectOptions} for:item="option">
+                                    <template for:each={filteredMultiselectOptions} for:item="option">
                                         <div key={option.value} class="slds-m-bottom_small">
                                             <lightning-input
                                                 type="checkbox"

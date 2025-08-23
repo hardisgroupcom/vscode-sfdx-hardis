@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Add Monitoring command [Unused Connected Apps](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unused-connected-apps/)
+- Add filtering capability to multiselect prompt
+
 ## [6.0.10 (pre-release)] 2024-08-17
 
 - Add debug options for sfdx-hardis commands

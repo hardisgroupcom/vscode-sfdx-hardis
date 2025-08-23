@@ -247,6 +247,10 @@ export class ThemeUtils {
         vscode: "code",
         hardis: "old.svg",
       },
+      "hardis:org:diagnose:unused-connected-apps": {
+        vscode: "plug",
+        hardis: "extract.svg",
+      },
       "hardis:doc:project2markdown": { vscode: "book", hardis: "doc.svg" },
       "hardis:doc:project2markdown-pdf": { vscode: "book", hardis: "doc.svg" },
       "hardis:doc:project2markdown-history": {

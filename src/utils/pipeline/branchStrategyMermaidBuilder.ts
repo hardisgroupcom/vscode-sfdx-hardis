@@ -447,8 +447,8 @@ export class BranchStrategyMermaidBuilder {
   // Only use properties supported by Mermaid classDef/style syntax
   const classesAndStyles = `
 classDef salesforceDev fill:#F4F6F9,stroke:#0176D3,stroke-width:2.5px,color:#032D60,font-weight:500,border-radius:16px;
-classDef salesforceMajor fill:#E3FCEF,stroke:#04844B,stroke-width:2.5px,color:#032D60,font-weight:700,border-radius:16px;
-classDef salesforceProd fill:#FFF6E3,stroke:#FFB75D,stroke-width:2.5px,color:#032D60,font-weight:900,border-radius:16px;
+classDef salesforceMajor fill:#FFF6E3,stroke:#FFB75D,stroke-width:2.5px,color:#032D60,font-weight:900,border-radius:16px;
+classDef salesforceProd fill:#E3FCEF,stroke:#04844B,stroke-width:2.5px,color:#032D60,font-weight:700,border-radius:16px;
 classDef gitMajor fill:#EAF5FE,stroke:#0176D3,stroke-width:2.5px,color:#032D60,font-weight:700,border-radius:16px;
 classDef gitMain fill:#0176D3,stroke:#032D60,stroke-width:3px,color:#fff,font-weight:900,border-radius:16px;
 classDef gitFeature fill:#fff,stroke:#E5E5E5,stroke-width:1.5px,color:#3E3E3C,font-weight:500,border-radius:16px;
