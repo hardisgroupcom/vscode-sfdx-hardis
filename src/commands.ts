@@ -15,6 +15,7 @@ import { CommandRunner } from "./command-runner";
 import { PipelineDataProvider } from "./pipeline-data-provider";
 import { getPullRequestButtonInfo } from "./utils/gitPrButtonUtils";
 import { SfdxHardisConfigHelper } from "./utils/pipeline/sfdxHardisConfigHelper";
+import { Logger } from "./logger";
 
 export class Commands {
   private readonly extensionUri: vscode.Uri;
@@ -415,7 +416,7 @@ export class Commands {
         try {
           prButtonInfo = await getPullRequestButtonInfo(repoPath);
         } catch (e) {
-          console.log("Error getting PR button info:", e);
+          Logger.log("Error getting PR button info:", e);
         }
 
         const panel = LwcPanelManager.getInstance().getOrCreatePanel(

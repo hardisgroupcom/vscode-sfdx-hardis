@@ -3,6 +3,7 @@ import * as vscode from "vscode";
 import { LwcPanelManager } from "./lwc-panel-manager";
 import { spawn } from "child_process";
 import { stripAnsi } from "./utils";
+import { Logger } from "./logger";
 
 /**
  * CommandRunner handles all logic related to terminal management and command execution.
@@ -326,7 +327,7 @@ export class CommandRunner {
         }
       }
     } catch {
-      console.log(
+      Logger.log(
         "Error checking LWC panel status, assuming no panels are busy.",
       );
     }

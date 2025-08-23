@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import { isWebVsCode } from "../utils";
+import { Logger } from "../logger";
 
 
 type MessageListener = (messageType: string, data: any) => void;
@@ -243,7 +244,7 @@ export class LwcUiPanel {
           break;
       }
     } catch (error) {
-      console.error(`Error handling built-in message ${messageType}:`, error);
+      Logger.log(`Error handling built-in message ${messageType}:\n`+ JSON.stringify(error));
     }
   }
 
@@ -261,7 +262,7 @@ export class LwcUiPanel {
     try {
       await vscode.commands.executeCommand(data.command);
     } catch (error) {
-      console.error("Error running VS Code command:", error);
+      Logger.log("Error running VS Code command:\n" + JSON.stringify(error));
       vscode.window.showErrorMessage(
         `Failed to run VS Code command: ${data.command}`,
       );
@@ -360,7 +361,7 @@ export class LwcUiPanel {
         );
       }
     } catch (error) {
-      console.error("Error downloading file:", error);
+      Logger.log("Error downloading file:\n" + JSON.stringify(error));
       vscode.window.showErrorMessage(`Failed to download file: ${error}`);
     }
   }
@@ -398,11 +399,11 @@ export class LwcUiPanel {
       if (binaryExtensions.includes(fileExtension)) {
         if (isWebVsCode()) {
           await vscode.commands.executeCommand("workbench.action.files.saveAs", fileUri);
-          console.log(`Triggered download for file: ${resolvedPath}`);
+          Logger.log(`Triggered download for file: ${resolvedPath}`);
         }
         else {
           await vscode.env.openExternal(fileUri);
-          console.log(`Opened file with default application: ${resolvedPath}`);
+          Logger.log(`Opened file with default application: ${resolvedPath}`);
         }
       } else {
         // Open the file in VS Code for text files
@@ -427,10 +428,10 @@ export class LwcUiPanel {
             }
           }
         }
-        console.log(`Opened file in VS Code: ${resolvedPath}`);
+        Logger.log(`Opened file in VS Code: ${resolvedPath}`);
       }
     } catch (error) {
-      console.error("Error opening file:", error);
+      Logger.log("Error opening file:\n"+ JSON.stringify(error));
       vscode.window.showErrorMessage(`Failed to open file: ${error}`);
     }
   }
@@ -444,7 +445,7 @@ export class LwcUiPanel {
       const uri = vscode.Uri.parse(url);
       await vscode.env.openExternal(uri);
     } catch (error) {
-      console.error("Error opening external URL:", error);
+      Logger.log("Error opening external URL:\n"+ JSON.stringify(error));
       vscode.window.showErrorMessage(`Failed to open URL: ${url}`);
     }
   }
@@ -472,7 +473,7 @@ export class LwcUiPanel {
         `VsCode configuration '${data.configKey}' updated with value: ${data.value}`,
       );
     } catch (error) {
-      console.error("Error updating VS Code configuration:", error);
+      Logger.log("Error updating VS Code configuration:\n" + JSON.stringify(error));
       vscode.window.showErrorMessage(
         `Failed to update configuration: ${data.configKey}`,
       );
@@ -491,7 +492,7 @@ export class LwcUiPanel {
       try {
         listener(messageType, data);
       } catch (error) {
-        console.error("Error in LWC UI message listener:", error);
+        Logger.log("Error in LWC UI message listener:\n" + JSON.stringify(error));
       }
     });
   }

@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { LwcUiPanel } from "./webviews/lwc-ui-panel";
+import { Logger } from "./logger";
 
 /**
  * Manager for LWC UI panels
@@ -78,7 +79,7 @@ export class LwcPanelManager {
         try {
           callback();
         } catch (error) {
-          console.error("Error in disposal callback:", error);
+          Logger.log("Error in disposal callback:\n"+ JSON.stringify(error));
         }
         this.disposalCallbacks.delete(lwcId);
       }
@@ -113,7 +114,7 @@ export class LwcPanelManager {
         try {
           panel.sendMessage(message);
         } catch (err) {
-          console.error("Error sending message to panel:", err);
+          Logger.log("Error sending message to panel:\n" + JSON.stringify(err));
         }
       }
     });

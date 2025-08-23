@@ -20,6 +20,7 @@ import * as path from "path";
 import { simpleGit } from "simple-git";
 import * as child from "child_process";
 import { getWorkspaceRoot } from "../../utils";
+import { Logger } from "../../logger";
 
 const moduleName = "sfdx-hardis";
 const projectConfigFiles = [
@@ -158,10 +159,8 @@ export async function setInConfigFile(
   if (explorer) {
     explorer.clearCaches();
   }
-  console.log(
-    c.magentaBright(
+  Logger.log(
       `Updated config file ${c.bold(configFile)} with values: \n${JSON.stringify(propValues, null, 2)}`,
-    ),
   );
 }
 
