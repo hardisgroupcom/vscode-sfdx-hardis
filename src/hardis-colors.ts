@@ -178,6 +178,8 @@ export class HardisColors {
       {
         fail: false,
         output: true,
+        cacheSection: "orgs",
+        cacheExpiration: 1000 * 60 * 60 * 24 * 90, // 24 hours
       },
     );
     if (orgRes?.result?.records?.length === 1) {

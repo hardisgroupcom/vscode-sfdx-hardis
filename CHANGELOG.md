@@ -2,6 +2,52 @@
 
 ## [Unreleased]
 
+## [6.0.11 (pre-release)] 2024-08-23
+
+- Add Monitoring command [Unused Connected Apps](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unused-connected-apps/)
+- Add filtering capability to multiselect prompt
+- Enhance design & forms
+
+## [6.0.10 (pre-release)] 2024-08-17
+
+- Add debug options for sfdx-hardis commands
+- Add new sandbox refresh commands
+- New UI to update VsCode SFDX-Hardis configuration
+- Fix issue on MacOS with background commands
+- Use VsCode Cache manager to improve performances
+- Add Pipeline Settings command & LWC
+- Build custom LWC helptext component to handle multiline display
+
+## [6.0.9 (pre-release)] 2024-08-14
+
+- Add a new mode (by default) to execute sfdx-hardis commands in background, not in terminal
+
+## [6.0.8 (pre-release)] 2024-08-12
+
+- Command execution: Add simple/advanced mode
+- DevOps pipeline: Add warnings if `mergeTargets` is not defined in branch config.
+
+## [6.0.6 (pre-release)] 2024-08-11
+
+- Improve UI & Buttons
+- Rename Task into User Story
+
+## [6.0.5 (pre-release)] 2024-08-11
+
+- Display more kind of buttons (action link, action command, url, doc)
+- Display tables in command execution LWC
+
+## [6.0.1 (pre-release)] 2024-08-10
+
+- Improve sfdx-hardis dependency detection for pre-release mode
+- Improve performance at initialization by using a single multi-threaded worker
+
+## [6.0.0 (pre-release)] 2024-08-09
+
+- New UI with LWC
+  - Command execution
+  - DevOps Pipeline view and configuration
+
 ## [5.10.1] 2024-06-27
 
 - Add newest api version labels

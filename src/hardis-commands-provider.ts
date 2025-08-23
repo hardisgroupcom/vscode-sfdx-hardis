@@ -162,7 +162,7 @@ export class HardisCommandsProvider
         commands: [
           {
             id: "hardis:work:new",
-            label: "Start a new task",
+            label: "New User Story",
             command: "sf hardis:work:new",
             tooltip:
               "Start to work, it will:\n- Create a new git branch where it is needed to \n- Allow to select or create a Salesforce org to work in (sandbox or scratch)",
@@ -171,16 +171,16 @@ export class HardisCommandsProvider
           },
           {
             id: "scratch:pull-from-org-to-git",
-            label: "Pull from SF Org to local Git files",
+            label: "Pull from SF Org to local files",
             tooltip:
-              'Once you have made your configuration in your org Setup, click here to download your updates.\nThen, you can commit the updates you want to publish (use VsCode Git extension)\nThen you can run command "Save / Publish my current task"\nNote: if you don\'t see all your updates, you can manually retrieve it using VsCode Extension "Org Browser"(Salesforce logo)',
+              'Once you have made your configuration in your org Setup, click here to download your updates.\nThen, you can commit the updates you want to publish (use VsCode Git extension)\nThen you can run command "Save / Publish User Story"\nNote: if you don\'t see all your updates, you can manually retrieve it using VsCode Extension "Org Browser"(Salesforce logo)',
             command: "sf hardis:scratch:pull",
             requiresProject: true,
             helpUrl: "https://sfdx-hardis.cloudity.com/hardis/scratch/pull/",
           },
           {
             id: "hardis:work:save",
-            label: "Save / Publish my current task",
+            label: "Save / Publish User Story",
             command: "sf hardis:work:save",
             tooltip:
               "Once you performed your commit(s), click here to prepare your Pull Request. It will:\n- Automatically update package.xml and destructiveChanges.xml\n- Clean metadatas before publishing them (for example remove flow positions or remove object & field access from Profiles)",
@@ -192,10 +192,19 @@ export class HardisCommandsProvider
             label: "Reset selected list of items to merge",
             command: "sf hardis:work:resetselection",
             tooltip:
-              'You already pushed a commit but you selected updates that you do not want to deploy ?\nIn that case, click here and you\'ll be able to select again what you want to commit.\nAfter creating new commits, click on "Save / Publish my current task"',
+              'You already pushed a commit but you selected updates that you do not want to deploy ?\nIn that case, click here and you\'ll be able to select again what you want to commit.\nAfter creating new commits, click on "Save / Publish User Story"',
             requiresProject: true,
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/work/resetselection/",
+          },
+          {
+            id: "vscode-sfdx-hardis.showPipeline",
+            label: "DevOps Pipeline",
+            command: "vscode-sfdx-hardis.showPipeline",
+            tooltip:
+              "Open the DevOps Pipeline panel to visualize and manage your CI/CD pipeline.",
+            requiresProject: false,
+            helpUrl: "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/",
           },
         ],
       },
@@ -517,6 +526,24 @@ export class HardisCommandsProvider
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/org/user/activateinvalid/",
           },
+          {
+            id: "hardis:org:refresh:before-refresh",
+            label: "Sandbox refresh: Before Refresh",
+            tooltip:
+              "Store info that will be needed after a sandbox refresh (Connected Apps, Custom Settings...)",
+            command: "sf hardis:org:refresh:before-refresh",
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/org/refresh/before-refresh/",
+          },
+          {
+            id: "hardis:org:refresh:after-refresh",
+            label: "Sandbox refresh: After Refresh",
+            tooltip:
+              "Restore info after a sandbox refresh (Connected Apps, Custom Settings...)",
+            command: "sf hardis:org:refresh:after-refresh",
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/org/refresh/after-refresh/",
+          },
         ],
       },
       {
@@ -525,8 +552,9 @@ export class HardisCommandsProvider
         commands: [
           {
             id: "hardis:org:monitor:backup",
-            label: "Retrieve all metadatas",
-            tooltip: "Retrieves all relevant Metadata of an org",
+            label: "Metadatas Backup",
+            tooltip:
+              "Retrieves all relevant Metadata of an org according to backup configuration",
             command: "sf hardis:org:monitor:backup",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/",
@@ -603,6 +631,15 @@ export class HardisCommandsProvider
             command: "sf hardis:org:diagnose:unused-apex-classes",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unused-apex-classes/",
+          },
+          {
+            id: "hardis:org:diagnose:unused-connected-apps",
+            label: "Unused Connected Apps",
+            tooltip:
+              "List all Connected Apps that have not been used for more than 90 days, and could probably be deleted",
+            command: "sf hardis:org:diagnose:unused-connected-apps",
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unused-connected-apps/",
           },
           {
             id: "hardis:lint:access",

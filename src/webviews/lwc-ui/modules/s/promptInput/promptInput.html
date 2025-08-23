@@ -1,0 +1,254 @@
+<template>
+    <template if:true={isVisible}>
+        <div class="slds-scope slds-theme_default slds-p-around_medium" onkeydown={handleKeyDown}>
+            <div class={cardClass}>
+                <div class={cardBodyClass}>
+                    <!-- Prompt Message -->
+                    <div class="slds-m-bottom_medium slds-p-bottom_small slds-border_bottom">
+                        <div class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center">
+                            <div class="slds-col">
+                                <span class="slds-text-heading_small slds-text-color_default prompt-message-content"></span>
+                            </div>
+                            <!-- Help text icon for description -->
+                            <template if:true={promptDescription}>
+                                <div class="slds-col slds-no-flex">
+                                    <lightning-helptext content={promptDescription}></lightning-helptext>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Error Message -->
+                    <template if:true={error}>
+                        <div class="slds-m-bottom_medium">
+                            <div class="slds-notify slds-notify_alert slds-theme_error" role="alert">
+                                <span class="slds-assistive-text">Error</span>
+                                <span>{error}</span>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- Text Input -->
+                    <template if:true={isTextInput}>
+                        <div class="slds-m-bottom_medium">
+                            <lightning-input
+                                type="text"
+                                label="Your Input"
+                                placeholder={promptPlaceholder}
+                                value={inputValue}
+                                onchange={handleInputChange}
+                                oninput={handleInputChange}
+                                onkeydown={handleKeyDown}>
+                            </lightning-input>
+                        </div>
+                    </template>
+
+                    <!-- Number Input -->
+                    <template if:true={isNumberInput}>
+                        <div class="slds-m-bottom_medium">
+                            <lightning-input
+                                type="number"
+                                label="Your Input"
+                                placeholder={promptPlaceholder}
+                                value={inputValue}
+                                step={numberStep}
+                                onchange={handleInputChange}
+                                oninput={handleInputChange}
+                                onkeydown={handleKeyDown}>
+                            </lightning-input>
+                        </div>
+                    </template>
+
+                    <!-- Select Input with Buttons (5 or fewer choices) -->
+                    <template if:true={isSelectWithButtons}>
+                        <div class="slds-m-bottom_medium">
+                            <div class="slds-grid slds-wrap slds-gutters_small select-options-btn-row">
+                                <template for:each={selectOptions} for:item="option">
+                                    <div key={option.value} class="slds-col slds-size_1-of-1 slds-m-bottom_x-small">
+                                        <button
+                                            type="button"
+                                            data-value={option.value}
+                                            onclick={handleButtonSelect}
+                                            onkeydown={handleKeyDown}
+                                            class="slds-button slds-button_outline-brand select-option-button">
+                                            <div class="select-option-content">
+                                                <div class="select-option-label">{option.label}</div>
+                                                <template if:true={option.description}>
+                                                    <div class="select-option-desc">{option.description}</div>
+                                                </template>
+                                            </div>
+                                        </button>
+                                    </div>
+                                </template>
+                            </div>
+                            <!-- Display description for selected option -->
+                            <template if:true={selectedOptionDescription}>
+                                <div class="slds-box slds-box_x-small slds-theme_shade slds-m-top_small">
+                                    <div class="slds-text-body_small">{selectedOptionDescription}</div>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+
+                    <!-- Select Input with Combobox (more than 5 choices) -->
+                    <template if:true={isSelectWithCombobox}>
+                        <div class="slds-m-bottom_medium">
+                            <lightning-combobox
+                                label="Select an option"
+                                placeholder={comboboxPlaceholder}
+                                options={selectOptions}
+                                value={selectedValue}
+                                onchange={handleSelectChange}
+                                onselect={handleSelectChange}
+                                onclick={handleComboboxClick}
+                                onkeydown={handleKeyDown}
+                                class="prompt-combobox">
+                            </lightning-combobox>
+                            <!-- Display description for selected option -->
+                            <template if:true={selectedOptionDescription}>
+                                <div class="slds-m-top_small">
+                                    <div class="slds-text-body_small slds-text-color_weak">{selectedOptionDescription}</div>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+
+                    <!-- Multiselect Input -->
+                    <template if:true={isMultiselectInput}>
+                        <div class="slds-m-bottom_medium">
+                            <fieldset class="slds-form-element">
+                                <!-- Filter and show selected controls -->
+                                <div class="slds-m-bottom_small slds-grid slds-gutters_small slds-grid_vertical-align-center">
+                                    <div class="slds-col slds-size_2-of-6">
+                                        <lightning-input
+                                            type="search"
+                                            placeholder="Type to filter..."
+                                            value={multiselectFilter}
+                                            onchange={handleMultiselectFilterChange}
+                                            class="slds-m-bottom_none"
+                                            style="min-width: 180px; max-width: 250px;"
+                                        ></lightning-input>
+                                    </div>
+                                    <div class="slds-col slds-size_2-of-6 slds-p-left_medium slds-p-right_medium">
+                                        <div class="slds-grid slds-grid_vertical-align-center slds-grid_align-center">
+                                            <label class="slds-form-element__label slds-m-right_small" style="white-space:nowrap;" for="showOnlySelectedToggle">Show only selected</label>
+                                            <lightning-input
+                                                type="toggle"
+                                                checked={multiselectShowOnlySelected}
+                                                onchange={handleMultiselectShowOnlySelectedChange}
+                                                class="slds-m-bottom_none"
+                                                variant="label-hidden"
+                                                name="showOnlySelectedToggle"
+                                                aria-label="Show only selected"
+                                            ></lightning-input>
+                                        </div>
+                                    </div>
+                                    <div class="slds-col slds-size_2-of-6 slds-grid slds-grid_align-end slds-grid_vertical-align-center">
+                                        <div class="slds-button-group" role="group">
+                                            <lightning-button
+                                                variant="neutral"
+                                                label="Select All"
+                                                size="small"
+                                                icon-name="utility:check"
+                                                disabled={allItemsSelected}
+                                                onclick={handleSelectAll}>
+                                            </lightning-button>
+                                            <lightning-button
+                                                variant="neutral"
+                                                label="Unselect All"
+                                                size="small"
+                                                icon-name="utility:clear"
+                                                disabled={noItemsSelected}
+                                                onclick={handleUnselectAll}>
+                                            </lightning-button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="slds-form-element__control">
+                                    <template for:each={filteredMultiselectOptions} for:item="option">
+                                        <div key={option.value} class="slds-m-bottom_small">
+                                            <lightning-input
+                                                type="checkbox"
+                                                label={option.label}
+                                                value={option.value}
+                                                checked={option.checked}
+                                                onchange={handleMultiselectChange}
+                                                onkeydown={handleKeyDown}>
+                                            </lightning-input>
+                                            <template if:true={option.description}>
+                                                <div class="slds-text-body_small slds-text-color_weak slds-m-left_large slds-m-top_x-small">
+                                                    {option.description}
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
+                            </fieldset>
+                        </div>
+                    </template>
+
+                    <!-- Action Buttons (hidden for button select since buttons auto-submit) -->
+                    <template if:false={isSelectWithButtons}>
+                        <div class="slds-border_top slds-p-top_medium slds-grid slds-grid_align-spread slds-grid_vertical-align-center">
+                            <div class="slds-col">
+                                <div class="slds-text-body_small slds-text-color_weak">
+                                    Press Enter to validate, Esc to cancel
+                                </div>
+                            </div>
+                            <div class="slds-col slds-no-flex">
+                                <div class="slds-button-group" role="group">
+                                    <lightning-button
+                                        data-id="cancelBtn"
+                                        variant="neutral"
+                                        label="Cancel"
+                                        tabindex="-1"
+                                        icon-name="utility:close"
+                                        onclick={handleCancel}
+                                        class="slds-m-right_medium">
+                                    </lightning-button>
+                                    <lightning-button
+                                        variant="brand"
+                                        label="Validate"
+                                        tabindex="0"
+                                        icon-name="utility:check"
+                                        onclick={handleSubmit}>
+                                    </lightning-button>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- Cancel button only for button select -->
+                    <template if:true={isSelectWithButtons}>
+                        <div class="slds-border_top slds-p-top_medium slds-grid slds-grid_align-spread slds-grid_vertical-align-center">
+                            <div class="slds-col">
+                                <div class="slds-text-body_small slds-text-color_weak">
+                                    Click an option to select, or press Esc to cancel
+                                </div>
+                            </div>
+                            <div class="slds-col slds-no-flex">
+                                <lightning-button
+                                    data-id="cancelBtn"
+                                    variant="neutral"
+                                    label="Cancel"
+                                    icon-name="utility:close"
+                                    onclick={handleCancel}>
+                                </lightning-button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </template>
+    <!-- Simple submission spinner -->
+    <template if:true={isSubmitting}>
+        <div class="slds-p-around_large slds-align_absolute-center">
+            <lightning-spinner
+                alternative-text="Submitting response..."
+                size="medium"
+                variant="brand">
+            </lightning-spinner>
+        </div>
+    </template>
+</template>

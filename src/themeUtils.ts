@@ -156,6 +156,10 @@ export class ThemeUtils {
       },
       "hardis:work:save": { vscode: "save", hardis: "save.svg" },
       "hardis:work:resetselection": { vscode: "history", hardis: "reset.svg" },
+      "vscode-sfdx-hardis.showPipeline": {
+        vscode: "graph",
+        hardis: "flow.svg",
+      },
       "scratch:push-from-git-to-org": {
         vscode: "cloud-upload",
         hardis: "push.svg",
@@ -231,6 +235,14 @@ export class ThemeUtils {
         vscode: "account",
         hardis: "user.svg",
       },
+      "hardis:org:refresh:before-refresh": {
+        vscode: "refresh",
+        hardis: "refresh.svg",
+      },
+      "hardis:org:refresh:after-refresh": {
+        vscode: "refresh",
+        hardis: "refresh.svg",
+      },
       "hardis:org:monitor:backup": { vscode: "save-all", hardis: "backup.svg" },
       "hardis:org:diagnose:audittrail": {
         vscode: "eye-watch",
@@ -240,6 +252,10 @@ export class ThemeUtils {
       "hardis:org:diagnose:unused-apex-classes": {
         vscode: "code",
         hardis: "old.svg",
+      },
+      "hardis:org:diagnose:unused-connected-apps": {
+        vscode: "plug",
+        hardis: "extract.svg",
       },
       "hardis:doc:project2markdown": { vscode: "book", hardis: "doc.svg" },
       "hardis:doc:project2markdown-pdf": { vscode: "book", hardis: "doc.svg" },

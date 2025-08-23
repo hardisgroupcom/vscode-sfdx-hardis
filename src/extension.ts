@@ -9,10 +9,11 @@ import { HardisDebugger } from "./hardis-debugger";
 import { HardisPluginsProvider } from "./hardis-plugins-provider";
 import { HardisStatusProvider } from "./hardis-status-provider";
 import { LocalWebSocketServer } from "./hardis-websocket-server";
+import { LwcPanelManager } from "./lwc-panel-manager";
 import { Logger } from "./logger";
 import { getWorkspaceRoot, preLoadCache } from "./utils";
-import { WelcomePanel } from "./webviews/welcome";
 import { HardisColors } from "./hardis-colors";
+import { CacheManager } from "./utils/cache-manager";
 
 let refreshInterval: any = null;
 let reporter;
@@ -20,6 +21,8 @@ let reporter;
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+  CacheManager.init(context.globalState);
+  CacheManager.clearExpired();
   new Logger(vscode.window);
   console.time("Hardis_Activate");
   const timeInit = Date.now();
@@ -27,19 +30,11 @@ export function activate(context: vscode.ExtensionContext) {
   // This line of code will only be executed once when your extension is activated
   Logger.log("VsCode SFDX Hardis activation is starting...");
 
-  // Anonymous telemetry respecting VsCode Guidelines -> https://code.visualstudio.com/api/extension-guides/telemetry
-  reporter = new TelemetryReporter("cf83e6dc-2621-4cb6-b92b-30905d1c8476");
-  context.subscriptions.push(reporter);
-
   // Get current workspace
   const currentWorkspaceFolderUri = getWorkspaceRoot();
 
   // Call cli commands before their result is used, to improve startup performances
   preLoadCache();
-
-  // Initialize Welcome Webview
-  const welcomeWebview = new WelcomePanel();
-  context.subscriptions.push(...welcomeWebview.disposables);
 
   // Register Commands tree data provider
   const hardisCommandsProvider = new HardisCommandsProvider(
@@ -71,14 +66,22 @@ export function activate(context: vscode.ExtensionContext) {
   );
   context.subscriptions.push(disposableTreePlugins);
 
+  // Anonymous telemetry respecting VsCode Guidelines -> https://code.visualstudio.com/api/extension-guides/telemetry
+  reporter = new TelemetryReporter("cf83e6dc-2621-4cb6-b92b-30905d1c8476");
+  context.subscriptions.push(reporter);
+
   // Register common commands
   const commands = new Commands(
+    context.extensionUri,
     hardisCommandsProvider,
     hardisStatusProvider,
     hardisPluginsProvider,
     reporter,
   );
   context.subscriptions.push(...commands.disposables);
+
+  // Initialize LWC Panel Manager
+  LwcPanelManager.getInstance(context);
 
   // Initialize colors
   const hardisColors = new HardisColors();
@@ -99,7 +102,9 @@ export function activate(context: vscode.ExtensionContext) {
         }
         // Wait a while to run WebSocket server, as it can be time consuming
         try {
-          commands.disposableWebSocketServer = new LocalWebSocketServer();
+          commands.disposableWebSocketServer = new LocalWebSocketServer(
+            context,
+          );
           commands.disposableWebSocketServer.start();
           context.subscriptions.push(commands.disposableWebSocketServer);
           resolve(commands.disposableWebSocketServer);
@@ -115,7 +120,8 @@ export function activate(context: vscode.ExtensionContext) {
 
   async function manageWebSocketServer() {
     const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
-    if (config.get("userInput") === "ui") {
+    const userInput = config.get("userInput");
+    if (userInput === "ui-lwc" || userInput === "ui") {
       if (
         commands.disposableWebSocketServer === null ||
         commands.disposableWebSocketServer === undefined
@@ -123,6 +129,10 @@ export function activate(context: vscode.ExtensionContext) {
         startWebSocketServer()
           .then(() => Logger.log("sfdx-hardis Websocket OK"))
           .catch((e) => Logger.log("sfdx-hardis Websocket KO: " + e.message));
+      } else if (commands.disposableWebSocketServer) {
+        // WebSocket server is already running, do nothing
+        await commands.disposableWebSocketServer.refreshConfig();
+        Logger.log("Reinitialized WebSocketServer config");
       }
     } else {
       if (
@@ -147,7 +157,15 @@ export function activate(context: vscode.ExtensionContext) {
       if (event.affectsConfiguration("vsCodeSfdxHardis.disableVsCodeColors")) {
         hardisColors.init();
       }
+      // Send message to opened LWC panels to update their configuration
+      const vsCodeSfdxHardisConfiguration =
+        vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+      LwcPanelManager.getInstance(context).sendMessageToAllPanels({
+        type: "vsCodeSfdxHardisConfigurationChanged",
+        data: { vsCodeSfdxHardisConfiguration, event },
+      });
     }
+
     // Change theme
     if (
       event.affectsConfiguration("vsCodeSfdxHardis.theme.menuIconType") ||

@@ -8,6 +8,7 @@ import {
   loadProjectSfdxHardisConfig,
   NODE_JS_MINIMUM_VERSION,
   RECOMMENDED_SFDX_CLI_VERSION,
+  RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION,
   resetCache,
 } from "./utils";
 import { Logger } from "./logger";
@@ -110,9 +111,10 @@ export class HardisPluginsProvider
     if (isCachePreloaded() && nodeInstallOk === false) {
       const nodeVersionStdOut: string =
         (
-          await execCommand("node --version", this, {
+          await execCommand("node --version", {
             output: true,
             fail: false,
+            cacheSection: "app",
           })
         ).stdout ||
         process.env.NODE_PATH ||
@@ -182,9 +184,10 @@ export class HardisPluginsProvider
     if (isCachePreloaded() && gitInstallOk === false) {
       const gitVersionStdOut: string =
         (
-          await execCommand("git --version", this, {
+          await execCommand("git --version", {
             output: true,
             fail: false,
+            cacheSection: "app",
           })
         ).stdout || "error";
       const gitVersionMatch = /git version ([0-9]+)\.(.*)/gm.exec(
@@ -237,10 +240,10 @@ export class HardisPluginsProvider
         name: "sfdx-git-delta",
         helpUrl: "https://github.com/scolladon/sfdx-git-delta",
       },
-      {
-        name: "texei-sfdx-plugin",
-        helpUrl: "https://texei.github.io/texei-sfdx-plugin/",
-      },
+      // {
+      //   name: "texei-sfdx-plugin",
+      //   helpUrl: "https://texei.github.io/texei-sfdx-plugin/",
+      // },
     ];
 
     // Display temporary list until cache is preloaded
@@ -270,7 +273,12 @@ export class HardisPluginsProvider
     const outdated: any[] = [];
     // check sfdx-cli version
     const sfdxCliVersionStdOut: string = (
-      await execCommand("sf --version", this, { output: true, fail: false })
+      await execCommand("sf --version", {
+        output: true,
+        fail: false,
+        cacheSection: "app",
+        cacheExpiration: 1000 * 60 * 60 * 24, // 1 day
+      })
     ).stdout;
     let sfdxCliVersionMatch = /sfdx-cli\/([^\s]+)/gm.exec(sfdxCliVersionStdOut);
     let sfdxCliVersion = "(missing)";
@@ -356,10 +364,55 @@ export class HardisPluginsProvider
     items.push(sfdxCliItem);
     // get currently installed plugins
     const sfdxPlugins =
-      (await execCommand("sf plugins", this, { output: true, fail: false }))
-        .stdout || "";
+      (
+        await execCommand("sf plugins", {
+          output: true,
+          fail: false,
+          cacheSection: "app",
+          cacheExpiration: 1000 * 60 * 60 * 24, // 1 day
+        })
+      ).stdout || "";
     // Check installed plugins status version
     const pluginPromises = plugins.map(async (plugin) => {
+      // Special check for sfdx-hardis version
+      if (plugin.name === "sfdx-hardis") {
+        let installedVersion = null;
+        const regex = new RegExp(`${plugin.name} ([^s]+)`, "gm");
+        const match = regex.exec(sfdxPlugins);
+        if (match && match[1]) {
+          installedVersion = match[1];
+        }
+        if (
+          installedVersion &&
+          ((RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION !== "beta" &&
+            this.compareVersions(
+              installedVersion,
+              RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION,
+            ) < 0) ||
+            (RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION === "beta" &&
+              !installedVersion.includes("(beta)")))
+        ) {
+          const versionToInstall =
+            RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION === "beta"
+              ? "beta"
+              : "latest";
+          const errorMessageForUSer =
+            RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION === "beta"
+              ? `You are using VsCode sfdx-hardis pre-release version. Please install beta version of sfdx-hardis plugin to benefit from new features.\nRun: sf plugins:install sfdx-hardis@beta`
+              : `Your sfdx-hardis plugin version (${installedVersion}) is outdated. Please upgrade to latest version to benefit from new features.\nRun: sf plugins:install sfdx-hardis@${versionToInstall}`;
+          vscode.window
+            .showErrorMessage(errorMessageForUSer, "Upgrade now")
+            .then((selection) => {
+              if (selection === "Upgrade now") {
+                vscode.commands.executeCommand(
+                  "vscode-sfdx-hardis.execute-command",
+                  `echo y|sf plugins:install sfdx-hardis@${versionToInstall} && sf hardis:work:ws --event refreshPlugins`,
+                );
+              }
+            });
+        }
+      }
+
       // Check latest plugin version
       let latestPluginVersion;
       try {
@@ -456,6 +509,23 @@ export class HardisPluginsProvider
         });
     }
     return items.sort((a: any, b: any) => (a.label > b.label ? 1 : -1));
+  }
+
+  // Compare two semver strings. Returns -1 if a < b, 0 if equal, 1 if a > b
+  private compareVersions(a: string, b: string): number {
+    const pa = a.split(".").map(Number);
+    const pb = b.split(".").map(Number);
+    for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+      const na = pa[i] || 0;
+      const nb = pb[i] || 0;
+      if (na < nb) {
+        return -1;
+      }
+      if (na > nb) {
+        return 1;
+      }
+    }
+    return 0;
   }
 
   private async loadAdditionalPlugins(
@@ -587,7 +657,7 @@ export class HardisPluginsProvider
     const topics = [
       {
         id: "status-plugins-sfdx",
-        label: "SFDX",
+        label: "SF CLI & Plugins",
         defaultExpand: true,
       },
       {

@@ -4,22 +4,31 @@ import { WebSocketServer } from "ws";
 import * as vscode from "vscode";
 import { getWorkspaceRoot, stripAnsi } from "./utils";
 import { Logger } from "./logger";
+import { LwcPanelManager } from "./lwc-panel-manager";
 
 const DEFAULT_PORT = parseInt(process.env.SFDX_HARDIS_WEBSOCKET_PORT || "2702");
 let globalWss: LocalWebSocketServer | null;
 
 export class LocalWebSocketServer {
   public websocketHostPort: any = null;
+  private context: vscode.ExtensionContext;
   private server: http.Server;
   private wss: WebSocketServer;
   private clients: any = {};
+  private config: vscode.WorkspaceConfiguration;
 
-  constructor() {
+  constructor(context: vscode.ExtensionContext) {
     console.time("WebSocketServer_init");
     this.server = http.createServer();
     this.wss = new WebSocketServer({ server: this.server });
     globalWss = this;
+    this.context = context || null;
     console.timeEnd("WebSocketServer_init");
+    this.config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+  }
+
+  async refreshConfig() {
+    this.config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
   }
 
   async start() {
@@ -56,14 +65,188 @@ export class LocalWebSocketServer {
     if (process.env.DEBUG) {
       Logger.log("received:" + data);
     }
-    // Client initialization
+    // Command initialization
     if (data.event === "initClient") {
+      // Ignore if not lwc UI
+      if (this.config.get("userInput") !== "ui-lwc") {
+        return;
+      }
+      // If the UI is configured to be hidden, do not proceed with command execution
+      if (data?.uiConfig?.hide === true) {
+        return;
+      }
+
+      // Close any completed commandExecution panel before opening a new one
+      const panelManager = LwcPanelManager.getInstance(this.context);
+      const activePanelIds = panelManager.getActivePanelIds();
+      for (const panelId of activePanelIds) {
+        if (panelId.startsWith("s-command-execution-")) {
+          const panel = panelManager.getPanel(panelId);
+          if (panel && panel.getTitle && typeof panel.getTitle === "function") {
+            const title = panel.getTitle();
+            if (title && title.endsWith("- Completed")) {
+              panelManager.disposePanel(panelId);
+            }
+          }
+        }
+      }
+
       this.clients[data.context.id] = { context: data.context, ws: ws };
+
+      // Send user input type back to caller
+      this.sendResponse(ws, {
+        event: "userInput",
+        userInput: this.config.get("userInput"),
+      });
+
+      // Create a new command execution panel for this command
+      const lwcId = `s-command-execution-${data.context.id}`;
+      const panel = panelManager.getOrCreatePanel(lwcId, data.context);
+      this.clients[data.context.id].panel = panel;
+      this.clients[data.context.id].lwcId = lwcId;
+
+      const messageUnsubscribe = panel.onMessage(
+        (messageType: any, _msgData: any) => {
+          // Handle cancel command request from the panel
+          if (messageType === "panelDisposed") {
+            // Send cancel command event to the server
+            this.sendResponse(ws, {
+              event: "cancelCommand",
+              context: data.context,
+            });
+            messageUnsubscribe();
+          }
+        },
+      );
+
+      // Set the panel title to include command info
+      const commandName = data.context.command || "SFDX Hardis Command";
+      panel.updateTitle(`${commandName} - Running`);
+
+      // Initialize the command in the panel, including commandDocUrl if available
+      const initData: any = {
+        type: "initializeCommand",
+        data: data.context,
+      };
+      if (data.commandDocUrl) {
+        initData.data.commandDocUrl = data.commandDocUrl;
+      }
+      if (data.uiConfig) {
+        initData.data.uiConfig = data.uiConfig;
+      }
+      if (data.commandLogFile) {
+        initData.data.commandLogFile = data.commandLogFile;
+      }
+      panel.sendMessage(initData);
     }
-    // Client initialization
-    if (data.event === "clientClose") {
-      delete this.clients[data.context.id];
+    // Command end
+    if (data.event === "closeClient" || data.event === "clientClose") {
+      // Ignore if not lwc UI
+      if (this.config.get("userInput") !== "ui-lwc") {
+        return;
+      }
+      const clientData = this.clients[data.context?.id];
+      /* jscpd:ignore-start */
+      if (clientData?.panel) {
+        // Mark command as completed in the panel
+        const success = data?.status !== "aborted" && data?.status !== "error";
+        const message: any = {
+          type: "completeCommand",
+          data: { success: success, status: data?.status },
+        };
+        if (data?.error) {
+          message.data.error = data.error;
+        }
+        clientData.panel.sendMessage(message);
+
+        const titleLabel =
+          data?.status === "aborted"
+            ? "Aborted"
+            : data?.status === "error"
+              ? "Error"
+              : "Completed";
+
+        // Update panel title to show completion
+        const commandName = clientData.context.command || "SFDX Hardis Command";
+
+        clientData.panel.updateTitle(`${commandName} - ${titleLabel}`);
+
+        // Schedule panel disposal after a delay to allow user to review logs
+        // const panelManager = LwcPanelManager.getInstance(this.context);
+        // panelManager.scheduleDisposal(clientData.lwcId, 10000); // 10 seconds
+      }
+      /* jscpd:ignore-end */
+      delete this.clients[data.context?.id];
     }
+    // Command log line
+    else if (data.event === "commandLogLine") {
+      // Ignore if not lwc UI
+      if (this.config.get("userInput") !== "ui-lwc") {
+        return;
+      }
+      // Find the client context for this log line using the context ID
+      const clientData = this.clients[data.context?.id];
+      if (clientData?.panel) {
+        clientData.panel.sendMessage({
+          type: "addLogLine",
+          data: {
+            logType: data.logType,
+            message: data.message,
+            timestamp: new Date(),
+            isQuestion: data.isQuestion || false,
+          },
+        });
+      }
+    }
+    // Sub-command start
+    else if (data.event === "commandSubCommandStart") {
+      // Ignore if not lwc UI
+      if (this.config.get("userInput") !== "ui-lwc") {
+        return;
+      }
+      const clientData = this.clients[data.context?.id];
+      if (clientData?.panel) {
+        clientData.panel.sendMessage({
+          type: "addSubCommandStart",
+          data: data.data,
+        });
+      }
+    }
+    // Sub-command end
+    /* jscpd:ignore-start */
+    else if (data.event === "commandSubCommandEnd") {
+      // Ignore if not lwc UI
+      if (this.config.get("userInput") !== "ui-lwc") {
+        return;
+      }
+      const clientData = this.clients[data.context?.id];
+      if (clientData?.panel) {
+        clientData.panel.sendMessage({
+          type: "addSubCommandEnd",
+          data: data.data,
+        });
+      }
+    }
+
+    // Report file
+    else if (data.event === "reportFile") {
+      // Ignore if not lwc UI
+      if (this.config.get("userInput") !== "ui-lwc") {
+        return;
+      }
+      const clientData = this.clients[data.context?.id];
+      if (clientData?.panel) {
+        clientData.panel.sendMessage({
+          type: "reportFile",
+          data: {
+            file: data.file,
+            title: data.title,
+            type: data.type, // Forward the type property for LWC simplification
+          },
+        });
+      }
+    }
+    /* jscpd:ignore-end */
     // Request to refresh status box
     else if (data.event === "refreshStatus") {
       vscode.commands.executeCommand("vscode-sfdx-hardis.refreshStatusView");
@@ -75,6 +258,16 @@ export class LocalWebSocketServer {
     // Request to refresh commands box
     else if (data.event === "refreshPlugins") {
       vscode.commands.executeCommand("vscode-sfdx-hardis.refreshPluginsView");
+    }
+    // Request to refresh pipeline box
+    else if (data.event === "refreshPipeline") {
+      const panelManager = LwcPanelManager.getInstance();
+      const pipelinePanel = panelManager.getPanel("s-pipeline");
+      if (pipelinePanel) {
+        pipelinePanel.sendMessage({
+          type: "refreshPipeline",
+        });
+      }
     }
     // Request to refresh commands box
     else if (data.event === "runSfdxHardisCommand") {
@@ -110,6 +303,114 @@ export class LocalWebSocketServer {
     // Request user input
     else if (data.event === "prompts") {
       const prompt = data.prompts[0];
+      // If user input is set to LWC UI, use the LWC UI panel
+      if (this.config.get("userInput") === "ui-lwc") {
+        const panelManager = LwcPanelManager.getInstance(this.context);
+        // Try to find an active command execution panel for this context
+        const commandLwcId = `s-command-execution-${data.context?.id || ""}`;
+        const commandPanel = panelManager.getPanel(commandLwcId);
+
+        // Factorized handler for prompt submit/cancel
+        const handlePromptPanelMessages = (
+          panel: any,
+          lwcId: any,
+          prompt: any,
+        ) => {
+          let responseSent = false;
+          const messageUnsubscribe = panel.onMessage(
+            (messageType: any, msgData: any) => {
+              // Accept both legacy and embedded promptInput message types
+              if (
+                (messageType === "promptSubmit" || messageType === "submit") &&
+                !responseSent
+              ) {
+                responseSent = true;
+                this.sendResponse(ws, {
+                  event: "promptsResponse",
+                  promptsResponse: [msgData],
+                });
+                // If this is a standalone promptInput, check for command panel before disposal
+                if (lwcId === "s-prompt-input") {
+                  const hasActiveCommandPanel = Object.values(
+                    this.clients,
+                  ).some((client) => {
+                    const c = client as any;
+                    return (
+                      c.panel &&
+                      c.lwcId &&
+                      c.lwcId.startsWith("s-command-execution-")
+                    );
+                  });
+                  if (hasActiveCommandPanel) {
+                    panelManager.disposePanel(lwcId);
+                  } else {
+                    panelManager.scheduleDisposal(lwcId, 2000);
+                  }
+                }
+                messageUnsubscribe();
+              }
+              /* jscpd:ignore-start */
+              if (
+                (messageType === "promptExit" || messageType === "cancel") &&
+                !responseSent
+              ) {
+                responseSent = true;
+                const exitResponse: Record<string, any> = {};
+                exitResponse[String(prompt.name)] = "exitNow";
+                this.sendResponse(ws, {
+                  event: "promptsResponse",
+                  promptsResponse: [exitResponse],
+                });
+                messageUnsubscribe();
+              }
+              /* jscpd:ignore-end */
+              // hide prompt in panel after submit or cancel message
+              if (
+                ["promptSubmit", "submit", "promptExit", "cancel"].includes(
+                  messageType,
+                )
+              ) {
+                panel.sendMessage({
+                  type: "hidePrompt",
+                  data: { promptName: prompt.name },
+                });
+              }
+            },
+          );
+          // Disposal callback for standalone promptInput
+          if (lwcId === "s-prompt-input") {
+            const onDisposalCallback = () => {
+              if (!responseSent) {
+                responseSent = true;
+                const exitResponse: Record<string, any> = {};
+                exitResponse[String(prompt.name)] = "exitNow";
+                this.sendResponse(ws, {
+                  event: "promptsResponse",
+                  promptsResponse: [exitResponse],
+                });
+                messageUnsubscribe();
+              }
+            };
+            panelManager.setDisposalCallback(lwcId, onDisposalCallback);
+          }
+        };
+
+        if (commandPanel) {
+          // Send a message to the commandExecution LWC to show the prompt
+          commandPanel.sendMessage({
+            type: "showPrompt",
+            data: { prompt, context: data.context },
+          });
+          handlePromptPanelMessages(commandPanel, commandLwcId, prompt);
+          return;
+        }
+        // Fallback: no command panel, use standalone promptInput as before
+        const lwcId = "s-prompt-input";
+        const panel = panelManager.getOrCreatePanel(lwcId, { prompt });
+        handlePromptPanelMessages(panel, lwcId, prompt);
+        return;
+      }
+
       const maxLenMessage = 1000;
       prompt.message =
         prompt.message > maxLenMessage
@@ -218,6 +519,10 @@ export class LocalWebSocketServer {
 
   dispose() {
     try {
+      // Dispose all LWC panels through the panel manager
+      const panelManager = LwcPanelManager.getInstance();
+      panelManager.disposeAllPanels();
+
       this.wss.close();
       this.server.close();
       globalWss = null;

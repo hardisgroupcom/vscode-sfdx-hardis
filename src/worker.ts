@@ -1,21 +1,28 @@
-import { parentPort, workerData } from "worker_threads";
+import { parentPort } from "worker_threads";
 import * as childProcess from "child_process";
 
-// Execute CLI command
-if (workerData.cliCommand) {
-  childProcess.exec(
-    workerData.cliCommand.cmd,
-    JSON.parse(workerData.cliCommand.execOptions),
-    (error, stdout, stderr) => {
+// Execute a command concurrently
+
+function execCliCommand(cmd: string, execOptions: any, requestId: string) {
+  childProcess.exec(cmd, execOptions, (error, stdout, stderr) => {
+    if (parentPort) {
       if (error) {
-        if (parentPort) {
-          parentPort.postMessage({ error: error });
-        }
+        parentPort.postMessage({ error: error, requestId });
       } else {
-        if (parentPort) {
-          parentPort.postMessage({ stdout: stdout, stderr: stderr });
-        }
+        parentPort.postMessage({ stdout: stdout, stderr: stderr, requestId });
       }
-    },
-  );
+    }
+  });
+}
+
+if (parentPort) {
+  parentPort.on("message", (msg) => {
+    if (msg && msg.cliCommand) {
+      execCliCommand(
+        msg.cliCommand.cmd,
+        JSON.parse(msg.cliCommand.execOptions),
+        msg.requestId,
+      );
+    }
+  });
 }

@@ -1,0 +1,14 @@
+:host {
+    color: #000000;
+}
+
+.pipeline-container {
+    /* Add your CSS for pipeline visualization here */
+    border: 1px solid #ccc;
+    padding: 10px;
+    min-height: 200px;
+}
+
+.blue-back {
+	background:  #EDF4FF;
+}

@@ -1,5 +1,4 @@
 import * as vscode from "vscode";
-import * as path from "path";
 import GitUrlParse from "git-url-parse";
 import moment = require("moment");
 import {
@@ -17,6 +16,7 @@ import {
 import { Logger } from "./logger";
 import simpleGit from "simple-git";
 import { ThemeUtils } from "./themeUtils";
+import { getConfig } from "./utils/pipeline/sfdxHardisConfig";
 
 export class HardisStatusProvider
   implements vscode.TreeDataProvider<StatusTreeItem>
@@ -113,9 +113,11 @@ export class HardisStatusProvider
     let orgDisplayCommand = "sf org display";
     if (options.devHub) {
       const devHubAliasCommand = "sf config get target-dev-hub";
-      const devHubAliasRes = await execSfdxJson(devHubAliasCommand, this, {
+      const devHubAliasRes = await execSfdxJson(devHubAliasCommand, {
         fail: false,
         output: false,
+        cacheSection: "project",
+        cacheExpiration: 1000 * 60 * 60, // 1 hour
       });
       if (
         devHubAliasRes &&
@@ -124,7 +126,7 @@ export class HardisStatusProvider
         devHubAliasRes.result[0].value
       ) {
         devHubUsername = devHubAliasRes.result[0].value;
-        orgDisplayCommand += ` -- ${devHubUsername}`;
+        orgDisplayCommand += ` --target-org ${devHubUsername}`;
       } else {
         items.push({
           id: "org-not-connected-devhub",
@@ -136,9 +138,15 @@ export class HardisStatusProvider
         return items;
       }
     }
-    const orgInfoResult = await execSfdxJson(orgDisplayCommand, this, {
+    const orgInfoResult = await execSfdxJson(orgDisplayCommand, {
       fail: false,
       output: false,
+      cacheSection: orgDisplayCommand.includes("--target-org")
+        ? "orgs"
+        : "project",
+      cacheExpiration: orgDisplayCommand.includes("--target-org")
+        ? 1000 * 60 * 60 * 24 * 90
+        : 1000 * 60 * 15, // 90 days for named orgs, 15 minutes for default org
     });
     if (orgInfoResult.result || orgInfoResult.id) {
       const orgInfo = orgInfoResult.result || orgInfoResult;
@@ -233,7 +241,6 @@ Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if you
         if (config?.poolConfig) {
           const poolViewRes = await execSfdxJson(
             "sf hardis:scratch:pool:view",
-            this,
             { output: false, fail: false },
           );
           if (
@@ -323,7 +330,7 @@ Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if you
         gitRemotesOrigins = gitRemotes.filter(
           (remote) => remote.name === "origin",
         );
-      } catch (e) {
+      } catch {
         console.warn("[vscode-sfdx-hardis] No git repository found");
       }
       if (gitRemotesOrigins.length > 0) {
@@ -401,7 +408,7 @@ After merging, refresh VsCode SFDX-Hardis status panel to discard this warning
 Note: Disable disableGitMergeRequiredCheck in settings to skip this check.`;
               gitCommand = `vscode-sfdx-hardis.openExternal https://sfdx-hardis.cloudity.com/salesforce-ci-cd-merge-parent-branch/`;
             }
-          } catch (e) {
+          } catch {
             console.warn(
               "Unable to check if remote parent git branch is up to date",
             );
@@ -415,50 +422,42 @@ Note: Disable disableGitMergeRequiredCheck in settings to skip this check.`;
           tooltip: gitTooltip,
           command: gitCommand,
         });
-        if (isCachePreloaded()) {
-          // Merge request info
-          const mergeRequestRes = await execSfdxJson(
-            "sf hardis:config:get --level user",
-            this,
-            { fail: false, output: true },
+        const userConfig = await getConfig("user");
+        if (userConfig.mergeRequests) {
+          const mergeRequests = userConfig.mergeRequests.filter(
+            (mr: any) =>
+              mr !== null &&
+              mr.branch === currentBranch &&
+              (mr.url !== null || mr.urlCreate !== null),
           );
-          if (mergeRequestRes?.result?.config?.mergeRequests) {
-            const mergeRequests =
-              mergeRequestRes.result.config.mergeRequests.filter(
-                (mr: any) =>
-                  mr !== null &&
-                  mr.branch === currentBranch &&
-                  (mr.url !== null || mr.urlCreate !== null),
-              );
-            // Existing merge request
-            if (mergeRequests[0] && mergeRequests[0].url) {
-              items.push({
-                id: "git-merge-request-url",
-                label: "Merge Request: Open",
-                iconId: "git:pull-request",
-                tooltip:
-                  "Click to open merge request in browser\n" +
-                  mergeRequests[0].url,
-                command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
-                  mergeRequests[0].url,
-                )}`,
-              });
-            }
+          // Existing merge request
+          if (mergeRequests[0] && mergeRequests[0].url) {
+            items.push({
+              id: "git-merge-request-url",
+              label: "Merge Request: Open",
+              iconId: "git:pull-request",
+              tooltip:
+                "Click to open merge request in browser\n" +
+                mergeRequests[0].url,
+              command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
+                mergeRequests[0].url,
+              )}`,
+            });
+          }
 
-            // Create merge request URL
-            else if (mergeRequests[0] && mergeRequests[0].urlCreate) {
-              items.push({
-                id: "git-merge-request-create-url",
-                label: "Merge Request: Create",
-                icon: "merge.svg",
-                tooltip:
-                  "Click to create merge request in browser\n" +
-                  mergeRequests[0].urlCreate,
-                command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
-                  mergeRequests[0].urlCreate,
-                )}`,
-              });
-            }
+          // Create merge request URL
+          else if (mergeRequests[0] && mergeRequests[0].urlCreate) {
+            items.push({
+              id: "git-merge-request-create-url",
+              label: "Merge Request: Create",
+              icon: "merge.svg",
+              tooltip:
+                "Click to create merge request in browser\n" +
+                mergeRequests[0].urlCreate,
+              command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
+                mergeRequests[0].urlCreate,
+              )}`,
+            });
           }
         }
       }

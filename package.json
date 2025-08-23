@@ -2,7 +2,7 @@
   "name": "vscode-sfdx-hardis",
   "displayName": "SFDX Hardis by Cloudity",
   "description": "Handle Salesforce DX and Git without knowing Salesforce DX or Git !",
-  "version": "5.10.1",
+  "version": "6.0.10",
   "icon": "resources/sfdx-hardis-logo-square.png",
   "publisher": "NicolasVuillamy",
   "author": {
@@ -43,20 +43,40 @@
       "properties": {
         "vsCodeSfdxHardis.userInput": {
           "type": "string",
-          "default": "ui",
+          "default": "ui-lwc",
           "enum": [
+            "ui-lwc",
             "ui",
             "console"
           ],
           "enumDescriptions": [
+            "Visual Studio Code LWC User Interface",
             "Visual Studio Code User Interface",
             "Command line"
           ],
           "description": "Defines if user input is in VsCode UI or in console"
         },
+        "vsCodeSfdxHardis.userInputCommandLineIfLWC": {
+          "type": "string",
+          "default": "background",
+          "enum": [
+            "background",
+            "terminal"
+          ],
+          "enumDescriptions": [
+            "Commands are executed in background without opening a terminal",
+            "Commands are executed in a VsCode terminal"
+          ],
+          "description": "When userInput is set to ui-lwc, defines if commands are executed in background or in a terminal"
+        },
         "vsCodeSfdxHardis.customCommandsConfiguration": {
           "type": "string",
           "description": "Absolute path or URL to a .sfdx-hardis.yml file that contains custom commands for the menu\nSee https://github.com/hardisgroupcom/vscode-sfdx-hardis#custom-commands"
+        },
+        "vsCodeSfdxHardis.debugSfdxHardisCommands": {
+          "type": "boolean",
+          "default": false,
+          "description": "Adds NODE_OPTIONS=--inspect-brk to sfdx-hardis commands to debug them in VsCode"
         },
         "vsCodeSfdxHardis.disableDefaultOrgAuthenticationCheck": {
           "type": "boolean",
@@ -76,7 +96,7 @@
         "vsCodeSfdxHardis.disableVsCodeColors": {
           "type": "boolean",
           "default": false,
-          "description": "Disable coloration of VsCode depending on the org type selected"
+          "description": "Disable coloration of VsCode depending on the org type selected (red for production, orange for major org...)"
         },
         "vsCodeSfdxHardis.enableMultithread": {
           "type": "boolean",
@@ -105,6 +125,11 @@
             "Standard Visual Studio Code Icons"
           ],
           "description": "Theme of SFDX-Hardis menu icons"
+        },
+        "vsCodeSfdxHardis.showCommandsDetails": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show advanced command execution details in the Command Execution panel. If disabled, only simple details are shown unless a prompt is active or the command is completed."
         }
       }
     },
@@ -155,9 +180,19 @@
         "icon": "$(output)"
       },
       {
-        "command": "vscode-sfdx-hardis.openExtensionSettings",
-        "title": "SFDX Hardis: Open extension settings",
+        "command": "vscode-sfdx-hardis.showPipeline",
+        "title": "SFDX Hardis: DevOps Pipeline",
+        "icon": "$(organization)"
+      },
+      {
+        "command": "vscode-sfdx-hardis.showExtensionConfig",
+        "title": "SFDX Hardis: Extension Settings",
         "icon": "$(gear)"
+      },
+      {
+        "command": "vscode-sfdx-hardis.showPipelineConfig",
+        "title": "SFDX Hardis: Show Pipeline Settings",
+        "icon": "$(settings-gear)"
       },
       {
         "command": "vscode-sfdx-hardis.selectColorForOrg",
@@ -298,7 +333,7 @@
           "group": "navigation"
         },
         {
-          "command": "vscode-sfdx-hardis.openExtensionSettings",
+          "command": "vscode-sfdx-hardis.showExtensionConfig",
           "when": "view == sfdx-hardis-commands",
           "group": "navigation"
         },
@@ -387,24 +422,34 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run -S esbuild-base -- --minify",
-    "esbuild-base": "rimraf out && esbuild ./src/worker.ts --bundle --outfile=out/worker.js --external:vscode --format=cjs --platform=node && esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node",
+    "vscode:prepublish": "yarn run package",
     "compile": "tsc -p ./",
-    "build": "npm run -S esbuild-base -- --sourcemap",
-    "watch": "npm run -S esbuild-base -- --sourcemap --watch",
+    "build": "webpack --config webpack.prod.js",
+    "watch": "webpack --config webpack.dev.js --watch",
+    "dev": "webpack --config webpack.dev.js",
+    "package": "webpack --config webpack.prod.js",
     "pretest": "yarn run compile && yarn run lint",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
-    "test": "node ./out/test/runTest.js"
+    "test": "node ./out/test/runTest.js",
+    "vsix": "vsce package --allow-package-secrets github"
   },
   "devDependencies": {
+    "@babel/core": "^7.28.0",
+    "@babel/preset-env": "^7.28.0",
     "@eslint/js": "^9.29.0",
+    "@lwc/babel-plugin-component": "^8.20.2",
+    "@lwc/engine-dom": "^8.20.2",
+    "@lwc/module-resolver": "^8.20.2",
+    "@lwc/synthetic-shadow": "^8.20.2",
+    "@salesforce-ux/design-system": "^2.27.2",
     "@types/fs-extra": "^11.0.4",
     "@types/git-url-parse": "^9.0.1",
     "@types/glob": "^8.0.0",
     "@types/js-yaml": "^4.0.9",
     "@types/mocha": "^10.0.0",
     "@types/node": "^20.0.0",
+    "@types/sort-array": "^4.1.2",
     "@types/vscode": "^1.54.0",
     "@types/which": "^3.0.0",
     "@types/ws": "^8.5.12",
@@ -412,24 +457,39 @@
     "@typescript-eslint/parser": "^8.0.0",
     "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "^3.0.0",
-    "esbuild": "^0.25.0",
+    "babel-loader": "^10.0.0",
+    "copy-webpack-plugin": "^13.0.0",
+    "css-loader": "^7.1.2",
     "eslint": "^9.0.0",
     "glob": "^11.0.0",
     "lru-cache": "^7.18.3",
+    "lwc": "^8.20.2",
+    "lwc-webpack-plugin": "^3.1.0",
     "mocha": "^10.0.0",
-    "rimraf": "^6.0.1",
-    "typescript": "^5.0.0"
+    "style-loader": "^4.0.0",
+    "terser-webpack-plugin": "^5.3.10",
+    "ts-loader": "^9.5.2",
+    "typescript": "^5.0.0",
+    "webpack": "^5.101.0",
+    "webpack-bundle-analyzer": "^4.10.2",
+    "webpack-cli": "^6.0.1"
   },
   "dependencies": {
     "@vscode/extension-telemetry": "^0.8.0",
     "axios": "^1.11.0",
     "chalk": "^5.0.0",
+    "cosmiconfig": "^9.0.0",
     "fs-extra": "^11.0.0",
     "get-port": "^7.1.0",
     "git-url-parse": "^11.6.0",
     "js-yaml": "^4.1.0",
+    "lightning-base-components": "^1.27.2-alpha",
+    "mermaid": "^11.9.0",
     "moment": "^2.29.1",
+    "process": "^0.11.10",
     "simple-git": "^3.18.0",
+    "sort-array": "^5.1.1",
+    "tree-kill": "^1.2.2",
     "which": "^4.0.0",
     "ws": "^8.18.0"
   }

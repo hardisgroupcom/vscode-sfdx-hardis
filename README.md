@@ -32,8 +32,8 @@ _Graciously provided by [**Cloudity**](https://cloudity.com/), and based on sfdx
   - [Status](#status)
   - [Dependencies](#dependencies)
 - [Assisted UI](#assisted-ui)
-  - [Work on a task (simple)](#work-on-a-task-simple)
-  - [Work on a task (Expert)](#work-on-a-task-expert)
+  - [CI/CD (Simple)](#work-on-a-user-story-simple)
+  - [CI/CD (Advanced)](#work-on-a-user-story-expert)
   - [Data Import & Export](#data-import-export)
   - [Debugger](#debugger)
   - [Operations](#operations)
@@ -119,19 +119,19 @@ If some a missing or with deprecated versions, a message is displayed to invite 
 
 Integration between VsCode SFDX Hardis UI and sfdx-hardis CLI, so you don't need to know the commands or their arguments
 
-### Work on a task (simple)
+### Work on a User Story (Simple)
 
 ![screenshot](resources/menu-assisted.jpg)
 
 Base commands allowing to a consultant profile to work on a SFDX project without knowledge about SFDX or Git
 
-- [Start a new task](https://sfdx-hardis.cloudity.com/hardis/work/new/)
+- [New User Story](https://sfdx-hardis.cloudity.com/hardis/work/new/)
 - Open my org in browser
 - [Pull from Salesforce org to local files](https://sfdx-hardis.cloudity.com/hardis/scratch/pull/)
-- [Save / Publish my current task](https://sfdx-hardis.cloudity.com/hardis/work/save/)
+- [Save / Publish User Story](https://sfdx-hardis.cloudity.com/hardis/work/save/)
 - [Reset selected list of items to merge](https://sfdx-hardis.cloudity.com/hardis/work/resetselection/)
 
-### Work on a task (Expert)
+### Work on a User Story (Expert)
 
 ![screenshot](resources/menu-expert.jpg)
 

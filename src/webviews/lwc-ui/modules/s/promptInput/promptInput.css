@@ -1,0 +1,109 @@
+.select-option-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+}
+
+.select-option-label {
+    font-weight: bold;
+    text-align: left;
+    width: 100%;
+    line-height: 1.3;
+}
+
+.select-option-desc {
+    font-weight: normal;
+    color: #54698d;
+    font-size: 0.95em;
+    margin-top: 0.15rem;
+    text-align: left;
+    width: 100%;
+    line-height: 1.2;
+}
+/* Prompt Input Component Styles - Minimal Custom CSS using SLDS */
+
+/* Compact, clean select option buttons */
+.select-option-button {
+    transition: all 0.2s ease;
+    min-height: 36px;
+    padding: 0.5rem 1rem;
+    white-space: normal !important;
+    word-break: break-word;
+    text-align: left;
+    font-weight: normal;
+    border-radius: 0.375rem;
+    box-shadow: none;
+    margin: 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.select-option-button:focus {
+    outline: 2px solid #1589ee;
+    outline-offset: 1px;
+}
+
+.select-option-button:hover {
+    background: #f3f6fb;
+    border-color: #1589ee;
+}
+
+.select-options-btn-row {
+    margin-bottom: 0.25rem;
+}
+
+/* Ensure Lightning components take full width */
+lightning-input,
+lightning-combobox {
+    display: block;
+    width: 100%;
+}
+
+/* Make the helptext icon bigger */
+lightning-helptext {
+    --slds-c-icon-size-medium: 1.25rem; /* Increase icon size from default 1rem to 1.25rem */
+}
+
+/* Alternative approach - target the help icon directly */
+lightning-helptext::part(icon) {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+}
+
+/* Target the SVG icon inside helptext for better compatibility */
+lightning-helptext .slds-button__icon,
+lightning-helptext lightning-icon {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+}
+
+/* Submission Modal Styles */
+.submission-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.submission-modal {
+    background: white;
+    border-radius: 0.5rem;
+    min-width: 300px;
+    max-width: 500px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+    border: 1px solid #d8dde6;
+}
+
+/* Ensure the spinner uses brand colors (blue) */
+.submission-modal lightning-spinner {
+    --slds-c-spinner-color-foreground: #1589ee; /* Brand blue color */
+}

@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import * as fs from "fs-extra";
+import { getExtensionConfigSections } from "./utils/extensionConfigUtils";
 import { HardisCommandsProvider } from "./hardis-commands-provider";
 import { HardisStatusProvider } from "./hardis-status-provider";
 import { HardisPluginsProvider } from "./hardis-plugins-provider";
@@ -9,27 +10,35 @@ import { getWorkspaceRoot } from "./utils";
 import TelemetryReporter from "@vscode/extension-telemetry";
 import { ThemeUtils } from "./themeUtils";
 import { exec } from "child_process";
+import { LwcPanelManager } from "./lwc-panel-manager";
+import { CommandRunner } from "./command-runner";
+import { PipelineDataProvider } from "./pipeline-data-provider";
+import { getPullRequestButtonInfo } from "./utils/gitPrButtonUtils";
+import { SfdxHardisConfigHelper } from "./utils/pipeline/sfdxHardisConfigHelper";
 
 export class Commands {
+  private readonly extensionUri: vscode.Uri;
   hardisCommandsProvider: HardisCommandsProvider | null = null;
   hardisStatusProvider: HardisStatusProvider | null = null;
   hardisPluginsProvider: HardisPluginsProvider | null = null;
   reporter: TelemetryReporter | null = null;
   disposables: vscode.Disposable[] = [];
-  terminalStack: vscode.Terminal[] = [];
-  terminalIsRunning = false;
   disposableWebSocketServer: LocalWebSocketServer | null = null;
+  commandRunner: CommandRunner;
 
   constructor(
+    extensionUri: vscode.Uri,
     hardisCommandsProvider: HardisCommandsProvider,
     hardisStatusProvider: HardisStatusProvider,
     hardisPluginsProvider: HardisPluginsProvider,
     reporter: TelemetryReporter,
   ) {
+    this.extensionUri = extensionUri;
     this.hardisCommandsProvider = hardisCommandsProvider;
     this.hardisStatusProvider = hardisStatusProvider;
     this.hardisPluginsProvider = hardisPluginsProvider;
     this.reporter = reporter;
+    this.commandRunner = new CommandRunner(this);
     this.registerCommands();
   }
 
@@ -37,7 +46,6 @@ export class Commands {
     this.registerExecuteCommand();
     this.registerOpenValidationLink();
     this.registerOpenReportsFolder();
-    this.registerOpenExtensionSettings();
     this.registerNewTerminalCommand();
     this.registerRefreshCommandsView();
     this.registerRefreshStatusView();
@@ -53,148 +61,50 @@ export class Commands {
     this.registerGeneratePackageXmlDoc();
     this.registerGenerateFlowDocumentation();
     this.registerGenerateFlowVisualGitDiff();
+    this.registerShowPipeline();
+    this.registerShowExtensionConfig();
+    this.registerShowPipelineConfig();
+  }
+  registerShowExtensionConfig() {
+    // Show the extensionConfig LWC panel for editing extension settings
+    const disposable = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.showExtensionConfig",
+      async () => {
+        // Use utility to get config sections
+        const sections = await getExtensionConfigSections(this.extensionUri);
+
+        const lwcManager = LwcPanelManager.getInstance();
+        const panel = lwcManager.getOrCreatePanel("s-extension-config", {
+          sections: sections,
+        });
+        // Open the LWC panel
+        panel.onMessage(async (type: string, _data: any) => {
+          if (type === "refresh") {
+            // Re-send current settings
+            for (const section of sections) {
+              for (const entry of section.entries) {
+                entry.value = vscode.workspace
+                  .getConfiguration()
+                  .get(entry.key);
+              }
+            }
+            panel.sendMessage({ type: "initialize", data: { sections } });
+          }
+        });
+      },
+    );
+    this.disposables.push(disposable);
   }
 
-  getLatestTerminal() {
-    return this.terminalStack[this.terminalStack.length - 1];
-  }
-
-  runCommandInTerminal(command: string) {
-    const terminal = this.getLatestTerminal();
-    // Show and focus terminal
-    terminal.show(false);
-
-    // Run command on terminal only if there is not already a command running
-    if (this.terminalIsRunning) {
-      vscode.window.showErrorMessage(
-        "🦙 Wait for the current command to be completed before running a new one :)",
-        "Close",
-      );
-      return;
-    }
-    // terminalIsRunning = true; //Comment until we find a way to detect that a command is running or not
-    if (command.startsWith("sf hardis")) {
-      // Add --skipauth argument when necessary
-      const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
-      if (
-        config.get("disableDefaultOrgAuthenticationCheck") === true &&
-        !command.includes("hardis:org:configure:monitoring") &&
-        !command.includes("--skipauth") &&
-        !command.includes("&&")
-      ) {
-        command += ` --skipauth`;
-      }
-    }
-    // Add --websocket argument when necessary
-    if (
-      (command.startsWith("sf hardis") ||
-        command.includes("sf hardis:work:ws --event")) &&
-      this.disposableWebSocketServer &&
-      this.disposableWebSocketServer.websocketHostPort !== null &&
-      !command.includes("--websocket") &&
-      (!command.includes("&&") ||
-        command.endsWith("sf hardis:work:ws --event refreshPlugins"))
-    ) {
-      command += ` --websocket ${this.disposableWebSocketServer.websocketHostPort}`;
-    }
-    // Adapt command to powershell if necessary
-    if (terminal?.name?.includes("powershell")) {
-      command = command
-        .replace(/ && /g, " ; ")
-        .replace(/echo y/g, "Write-Output 'y'");
-    }
-    terminal.sendText(command);
-    // Scrolldown the terminal
-    vscode.commands.executeCommand("workbench.action.terminal.scrollToBottom");
-    // Telemetry: Send only the 2 first portions of the command
-    // Examples: "sf hardis:work:new" , "sf plugins:install"
-    if (this.reporter) {
-      const truncatedCommand = command.split(" ").slice(0, 2).join(" ");
-      this.reporter.sendTelemetryEvent("command", {
-        command: truncatedCommand,
-      });
-    }
-  }
+  // Terminal logic moved to CommandRunner
 
   registerExecuteCommand() {
     // Execute SFDX Hardis command
     const disposable = vscode.commands.registerCommand(
       "vscode-sfdx-hardis.execute-command",
       (sfdxHardisCommand: string) => {
-        // Filter killed terminals
-        this.terminalStack = this.terminalStack.filter(
-          (terminal) =>
-            vscode.window.terminals.filter(
-              (vsTerminal) => vsTerminal.processId === terminal.processId,
-            ).length > 0,
-        );
-        // Create new terminal if necessary
-        if (
-          this.terminalStack.length === 0 ||
-          vscode.window.terminals.length === 0
-        ) {
-          // Check bash is the default terminal if we are on windows
-          if (process.platform === "win32") {
-            const terminalConfig =
-              vscode.workspace.getConfiguration("terminal");
-            const selectedTerminal: string =
-              terminalConfig.integrated?.shell?.windows ||
-              terminalConfig.integrated?.defaultProfile?.windows ||
-              "";
-            if (!selectedTerminal.toLowerCase().includes("bash")) {
-              const config =
-                vscode.workspace.getConfiguration("vsCodeSfdxHardis");
-              if (config.get("disableGitBashCheck") !== true) {
-                vscode.commands.executeCommand(
-                  "workbench.action.terminal.selectDefaultShell",
-                );
-                vscode.window
-                  .showWarningMessage(
-                    "🦙 It is recommended to use Git Bash as default terminal shell (do it in the opened dialog at the top of the screen)",
-                    "Download Git Bash",
-                    "Ignore",
-                    "Don't ask again",
-                  )
-                  .then(async (selection) => {
-                    if (selection === "Download Git Bash") {
-                      vscode.env.openExternal(
-                        vscode.Uri.parse("https://git-scm.com/downloads"),
-                      );
-                    } else if (selection === "Don't ask again") {
-                      await config.update("disableGitBashCheck", true);
-                    } else {
-                      vscode.window.showInformationMessage(
-                        "🦙 If you do not want to see this message anymore, set VsCode setting vsCodeSfdxHardis.disableGitBashCheck to true, or click on Don't ask again",
-                      );
-                    }
-                  });
-                return;
-              }
-            }
-          }
-          /* Create terminal
-                  const terminalOptions: vscode.TerminalOptions = {
-                    name: 'SFDX Hardis',
-                    cwd: (vscode.workspace.workspaceFolders) ? vscode.workspace.workspaceFolders[0].uri.path : process.cwd()
-                  };*/
-          //const newTerminal = vscode.window.createTerminal(terminalOptions);
-          vscode.commands.executeCommand(
-            "workbench.action.terminal.newInActiveWorkspace",
-            "SFDX Hardis",
-          );
-          new Promise((resolve) => setTimeout(resolve, 4000)).then(() => {
-            /* vscode.commands.executeCommand(
-                            "workbench.action.toggleMaximizedPanel"
-                        );*/
-            const newTerminal =
-              vscode.window.terminals[vscode.window.terminals.length - 1];
-            this.terminalStack.push(newTerminal);
-            this.runCommandInTerminal(sfdxHardisCommand);
-          });
-        } else {
-          // Run command in active terminal
-          this.runCommandInTerminal(sfdxHardisCommand);
-        }
+        // Use CommandRunner for all terminal and LWC panel logic
+        this.commandRunner.executeCommand(sfdxHardisCommand);
       },
     );
     this.disposables.push(disposable);
@@ -243,15 +153,7 @@ export class Commands {
     const disposable = vscode.commands.registerCommand(
       "vscode-sfdx-hardis.newTerminal",
       () => {
-        vscode.commands.executeCommand(
-          "workbench.action.terminal.newInActiveWorkspace",
-          "SFDX Hardis",
-        );
-        new Promise((resolve) => setTimeout(resolve, 4000)).then(() => {
-          const newTerminal =
-            vscode.window.terminals[vscode.window.terminals.length - 1];
-          this.terminalStack.push(newTerminal);
-        });
+        this.commandRunner.createNewTerminal();
       },
     );
     this.disposables.push(disposable);
@@ -384,19 +286,6 @@ export class Commands {
     this.disposables.push(disposable);
   }
 
-  registerOpenExtensionSettings() {
-    // Open external command
-    const disposable = vscode.commands.registerCommand(
-      "vscode-sfdx-hardis.openExtensionSettings",
-      async () => {
-        vscode.commands.executeCommand("workbench.action.openGlobalSettings", {
-          query: "Hardis",
-        });
-      },
-    );
-    this.disposables.push(disposable);
-  }
-
   registerOpenReportsFolder() {
     const disposable = vscode.commands.registerCommand(
       "vscode-sfdx-hardis.openReportsFolder",
@@ -498,6 +387,105 @@ export class Commands {
     this.disposables.push(disposable);
   }
   /* jscpd:ignore-end */
+
+  registerShowPipeline() {
+    const disposable = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.showPipeline",
+      async () => {
+        // Show progress while loading config editor input
+        const pipelineData = await vscode.window.withProgress(
+          {
+            location: vscode.ProgressLocation.Notification,
+            title: "Loading pipeline information...",
+            cancellable: false,
+          },
+          async () => {
+            const pipelineDataProvider = new PipelineDataProvider();
+            return await pipelineDataProvider.getPipelineData();
+          },
+        );
+
+        // Calculate PR button info using utility
+        const repoPath =
+          vscode.workspace.workspaceFolders &&
+          vscode.workspace.workspaceFolders.length > 0
+            ? vscode.workspace.workspaceFolders[0].uri.fsPath
+            : process.cwd();
+        let prButtonInfo = null;
+        try {
+          prButtonInfo = await getPullRequestButtonInfo(repoPath);
+        } catch (e) {
+          console.log("Error getting PR button info:", e);
+        }
+
+        const panel = LwcPanelManager.getInstance().getOrCreatePanel(
+          "s-pipeline",
+          { pipelineData: pipelineData, prButtonInfo },
+        );
+        panel.updateTitle("DevOps Pipeline");
+
+        // Register message handler for refreshpipeline and runCommand
+        panel.onMessage(async (type, _data) => {
+          if (type === "refreshpipeline") {
+            const provider = new PipelineDataProvider();
+            const newData = await provider.getPipelineData();
+            panel.sendInitializationData({
+              pipelineData: newData,
+              prButtonInfo,
+            });
+          }
+        });
+      },
+    );
+    this.disposables.push(disposable);
+  }
+
+  registerShowPipelineConfig() {
+    const disposable = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.showPipelineConfig",
+      async (branchName: string | null) => {
+        const workspaceRoot = getWorkspaceRoot();
+        const sfdxHardisConfigHelper =
+          SfdxHardisConfigHelper.getInstance(workspaceRoot);
+        // Show progress while loading config editor input
+        const configEditorInput = await vscode.window.withProgress(
+          {
+            location: vscode.ProgressLocation.Notification,
+            title: branchName
+              ? `Loading pipeline settings for ${branchName}...`
+              : "Loading global pipeline settings...",
+            cancellable: false,
+          },
+          async () => {
+            return await sfdxHardisConfigHelper.getEditorInput(branchName);
+          },
+        );
+        const panel = LwcPanelManager.getInstance().getOrCreatePanel(
+          "s-pipeline-config",
+          configEditorInput,
+        );
+        panel.updateTitle(
+          branchName ? `Settings - ${branchName}` : "Global Pipeline Settings",
+        );
+        // Register message handler to save configuration
+        panel.onMessage(async (type, data) => {
+          if (type === "saveSfdxHardisConfig") {
+            try {
+              await sfdxHardisConfigHelper.saveConfigFromEditor(data);
+              vscode.window.showInformationMessage(
+                "Configuration saved successfully.",
+              );
+            } catch (error: any) {
+              vscode.window.showErrorMessage(
+                "Error saving configuration: " + error.message,
+              );
+            }
+          }
+        });
+      },
+    );
+    this.disposables.push(disposable);
+  }
 
   registerOpenKeyFile() {
     // Open key file command
