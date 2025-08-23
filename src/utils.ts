@@ -266,7 +266,7 @@ export async function execCommand(
       stdout: commandResult.stdout,
       stderr: commandResult.stderr,
     };
-    if (cacheSection && typeof cacheExpiration === "number") {
+    if (cacheSection && typeof cacheExpiration === "number" && !CacheManager.get(cacheSection, command)) {
       CacheManager.set(cacheSection, command, resultObj, cacheExpiration);
     }
     return resultObj;
@@ -359,13 +359,18 @@ export function getSfdxProjectJson() {
 // Cache org info so it can be reused later with better perfs
 export function setOrgCache(newOrgInfo: any) {
   const orgKey = `${newOrgInfo.username}||${newOrgInfo.instanceUrl}`;
-  CacheManager.set("orgs", orgKey, newOrgInfo, 1000 * 60 * 60 * 24 * 30); // 30 days
-  CacheManager.set(
-    "orgs",
-    `username-instanceUrl:${newOrgInfo.username}`,
-    newOrgInfo.instanceUrl,
-    1000 * 60 * 60 * 24 * 90,
-  ); // 90 days
+  if (!CacheManager.get("orgs", orgKey)) {
+    CacheManager.set("orgs", orgKey, newOrgInfo, 1000 * 60 * 60 * 24 * 30); // 30 days
+  }
+  const instanceUrlKey = `username-instanceUrl:${newOrgInfo.username}`;
+  if (!CacheManager.get("orgs", instanceUrlKey)) {
+    CacheManager.set(
+      "orgs",
+      instanceUrlKey,
+      newOrgInfo.instanceUrl,
+      1000 * 60 * 60 * 24 * 90,
+    ); // 90 days
+  }
 }
 
 // Get from org cache
