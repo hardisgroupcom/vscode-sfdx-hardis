@@ -160,7 +160,7 @@ export async function setInConfigFile(
     explorer.clearCaches();
   }
   Logger.log(
-      `Updated config file ${c.bold(configFile)} with values: \n${JSON.stringify(propValues, null, 2)}`,
+    `Updated config file ${c.bold(configFile)} with values: \n${JSON.stringify(propValues, null, 2)}`,
   );
 }
 

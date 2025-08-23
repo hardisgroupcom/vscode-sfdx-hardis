@@ -3,7 +3,6 @@ import * as path from "path";
 import { isWebVsCode } from "../utils";
 import { Logger } from "../logger";
 
-
 type MessageListener = (messageType: string, data: any) => void;
 
 export class LwcUiPanel {
@@ -244,7 +243,10 @@ export class LwcUiPanel {
           break;
       }
     } catch (error) {
-      Logger.log(`Error handling built-in message ${messageType}:\n`+ JSON.stringify(error));
+      Logger.log(
+        `Error handling built-in message ${messageType}:\n` +
+          JSON.stringify(error),
+      );
     }
   }
 
@@ -398,10 +400,12 @@ export class LwcUiPanel {
       ];
       if (binaryExtensions.includes(fileExtension)) {
         if (isWebVsCode()) {
-          await vscode.commands.executeCommand("workbench.action.files.saveAs", fileUri);
+          await vscode.commands.executeCommand(
+            "workbench.action.files.saveAs",
+            fileUri,
+          );
           Logger.log(`Triggered download for file: ${resolvedPath}`);
-        }
-        else {
+        } else {
           await vscode.env.openExternal(fileUri);
           Logger.log(`Opened file with default application: ${resolvedPath}`);
         }
@@ -431,7 +435,7 @@ export class LwcUiPanel {
         Logger.log(`Opened file in VS Code: ${resolvedPath}`);
       }
     } catch (error) {
-      Logger.log("Error opening file:\n"+ JSON.stringify(error));
+      Logger.log("Error opening file:\n" + JSON.stringify(error));
       vscode.window.showErrorMessage(`Failed to open file: ${error}`);
     }
   }
@@ -445,7 +449,7 @@ export class LwcUiPanel {
       const uri = vscode.Uri.parse(url);
       await vscode.env.openExternal(uri);
     } catch (error) {
-      Logger.log("Error opening external URL:\n"+ JSON.stringify(error));
+      Logger.log("Error opening external URL:\n" + JSON.stringify(error));
       vscode.window.showErrorMessage(`Failed to open URL: ${url}`);
     }
   }
@@ -473,7 +477,9 @@ export class LwcUiPanel {
         `VsCode configuration '${data.configKey}' updated with value: ${data.value}`,
       );
     } catch (error) {
-      Logger.log("Error updating VS Code configuration:\n" + JSON.stringify(error));
+      Logger.log(
+        "Error updating VS Code configuration:\n" + JSON.stringify(error),
+      );
       vscode.window.showErrorMessage(
         `Failed to update configuration: ${data.configKey}`,
       );
@@ -492,7 +498,9 @@ export class LwcUiPanel {
       try {
         listener(messageType, data);
       } catch (error) {
-        Logger.log("Error in LWC UI message listener:\n" + JSON.stringify(error));
+        Logger.log(
+          "Error in LWC UI message listener:\n" + JSON.stringify(error),
+        );
       }
     });
   }

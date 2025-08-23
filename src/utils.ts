@@ -266,7 +266,11 @@ export async function execCommand(
       stdout: commandResult.stdout,
       stderr: commandResult.stderr,
     };
-    if (cacheSection && typeof cacheExpiration === "number" && !CacheManager.get(cacheSection, command)) {
+    if (
+      cacheSection &&
+      typeof cacheExpiration === "number" &&
+      !CacheManager.get(cacheSection, command)
+    ) {
       CacheManager.set(cacheSection, command, resultObj, cacheExpiration);
     }
     return resultObj;
@@ -560,7 +564,7 @@ export function stripAnsi(str: string) {
   return (str || "").replace(ansiRegex, "");
 }
 
-let IS_WEB_VSCODE: boolean|null = null;
+let IS_WEB_VSCODE: boolean | null = null;
 export function isWebVsCode() {
   if (IS_WEB_VSCODE === null) {
     IS_WEB_VSCODE = vscode.env.uiKind === vscode.UIKind.Web;

@@ -79,7 +79,7 @@ export class LwcPanelManager {
         try {
           callback();
         } catch (error) {
-          Logger.log("Error in disposal callback:\n"+ JSON.stringify(error));
+          Logger.log("Error in disposal callback:\n" + JSON.stringify(error));
         }
         this.disposalCallbacks.delete(lwcId);
       }
