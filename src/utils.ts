@@ -559,3 +559,11 @@ const ansiRegex = new RegExp(ansiPattern, "g");
 export function stripAnsi(str: string) {
   return (str || "").replace(ansiRegex, "");
 }
+
+let IS_WEB_VSCODE: boolean|null = null;
+export function isWebVsCode() {
+  if (IS_WEB_VSCODE === null) {
+    IS_WEB_VSCODE = vscode.env.uiKind === vscode.UIKind.Web;
+  }
+  return IS_WEB_VSCODE;
+}

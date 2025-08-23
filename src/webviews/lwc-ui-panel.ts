@@ -1,5 +1,7 @@
 import * as vscode from "vscode";
 import * as path from "path";
+import { isWebVsCode } from "../utils";
+
 
 type MessageListener = (messageType: string, data: any) => void;
 
@@ -394,9 +396,14 @@ export class LwcUiPanel {
         ".pptx",
       ];
       if (binaryExtensions.includes(fileExtension)) {
-        // Open with default Windows application
-        await vscode.env.openExternal(fileUri);
-        console.log(`Opened file with default application: ${resolvedPath}`);
+        if (isWebVsCode()) {
+          await vscode.commands.executeCommand("workbench.action.files.saveAs", fileUri);
+          console.log(`Triggered download for file: ${resolvedPath}`);
+        }
+        else {
+          await vscode.env.openExternal(fileUri);
+          console.log(`Opened file with default application: ${resolvedPath}`);
+        }
       } else {
         // Open the file in VS Code for text files
         const document = await vscode.workspace.openTextDocument(fileUri);
