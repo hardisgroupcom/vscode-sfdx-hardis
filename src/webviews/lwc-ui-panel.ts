@@ -223,9 +223,6 @@ export class LwcUiPanel {
         case "checkFileExists":
           await this.handleFileExistsCheck(data.filePath, data.fileType);
           break;
-        case "downloadFile":
-          await this.handleFileDownload(data.filePath, data.fileName);
-          break;
         case "openFile":
           await this.handleFileOpen(data.filePath);
           break;
@@ -333,42 +330,6 @@ export class LwcUiPanel {
   }
 
   /**
-   * Handle file download request from webview
-   * @param filePath Path to the file to download
-   * @param fileName Suggested filename for download
-   */
-  private async handleFileDownload(
-    filePath: string,
-    fileName: string,
-  ): Promise<void> {
-    try {
-      const resolvedPath = this.resolveWorkspacePath(filePath);
-      // Check if file exists
-      const fileUri = vscode.Uri.file(resolvedPath);
-      await vscode.workspace.fs.stat(fileUri);
-      // Show save dialog
-      const saveUri = await vscode.window.showSaveDialog({
-        defaultUri: vscode.Uri.file(fileName),
-        filters: {
-          "Excel Files": ["xlsx", "xls"],
-          "CSV Files": ["csv"],
-          "All Files": ["*"],
-        },
-      });
-      if (saveUri) {
-        // Copy the file to the selected location
-        await vscode.workspace.fs.copy(fileUri, saveUri, { overwrite: true });
-        vscode.window.showInformationMessage(
-          `File downloaded successfully to ${saveUri.fsPath}`,
-        );
-      }
-    } catch (error) {
-      Logger.log("Error downloading file:\n" + JSON.stringify(error));
-      vscode.window.showErrorMessage(`Failed to download file: ${error}`);
-    }
-  }
-
-  /**
    * Handle file open request from webview
    * @param filePath Path to the file to open
    */
@@ -400,11 +361,17 @@ export class LwcUiPanel {
       ];
       if (binaryExtensions.includes(fileExtension)) {
         if (isWebVsCode()) {
-          await vscode.commands.executeCommand(
-            "workbench.action.files.saveAs",
-            fileUri,
-          );
-          Logger.log(`Triggered download for file: ${resolvedPath}`);
+          const content = await vscode.workspace.fs.readFile(fileUri);
+          const base64 = Buffer.from(content).toString("base64");
+          this.sendMessage({
+            type: "downloadFileFromPanel",
+            data: {
+              filePath: resolvedPath,
+              fileName: path.basename(resolvedPath),
+              base64: base64,
+            },
+          });
+          Logger.log(`Sent download message for file: ${resolvedPath}`);
         } else {
           await vscode.env.openExternal(fileUri);
           Logger.log(`Opened file with default application: ${resolvedPath}`);

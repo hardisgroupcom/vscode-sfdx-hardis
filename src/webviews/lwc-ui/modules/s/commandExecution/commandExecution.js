@@ -161,6 +161,9 @@ export default class CommandExecution extends LightningElement {
       case "vsCodeSfdxHardisConfigurationChanged":
         this.handleVsCodeSfdxHardisConfigurationChanged(data);
         break;
+      case "downloadFileFromPanel":
+        this.handleDownloadFileFromPanel(data);
+        break;
       default:
         console.log("Unknown message type:", messageType, data);
     }
@@ -1531,5 +1534,23 @@ ${resultMessage}`;
     } else {
       console.error("VS Code API not available for opening report file");
     }
+  }
+
+  handleDownloadFileFromPanel(data) {
+    // const filePath = data.filePath;
+    const fileName = data.fileName;
+    const base64 = data.base64;
+    if (!filePath || !fileName || !base64) {
+      console.error("Invalid data for file download:", data);
+      return;
+    }
+    const bytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+    const blob = new Blob([bytes]);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 }
