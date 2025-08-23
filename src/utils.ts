@@ -180,9 +180,9 @@ export async function getNpmLatestVersion(
   return version;
 }
 
-export function resetCache() {
-  CacheManager.delete("app");
-  CacheManager.delete("project");
+export async function resetCache() {
+  await CacheManager.delete("app");
+  await CacheManager.delete("project");
   COMMANDS_RESULTS = {};
   GIT_MENUS = null;
   PROJECT_CONFIG = null;

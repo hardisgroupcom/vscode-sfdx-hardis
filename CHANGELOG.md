@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+ - Fixes related to Code Builder integration
+ - Fix cache manager issue
+
 ## [6.1.0] 2024-08-23
 
 - Add Monitoring command [Unused Connected Apps](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unused-connected-apps/)

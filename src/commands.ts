@@ -114,8 +114,8 @@ export class Commands {
     // Refresh commands tree
     const disposable = vscode.commands.registerCommand(
       "vscode-sfdx-hardis.refreshCommandsView",
-      (keepCache: boolean = false) => {
-        this.hardisCommandsProvider?.refresh(keepCache);
+      async (keepCache: boolean = false) => {
+        await this.hardisCommandsProvider?.refresh(keepCache);
         // Reload window if Salesforce Extensions are not active
         const toReload = vscode.extensions.all.filter(
           (extension) =>
@@ -133,8 +133,8 @@ export class Commands {
   registerRefreshStatusView() {
     const disposable = vscode.commands.registerCommand(
       "vscode-sfdx-hardis.refreshStatusView",
-      (keepCache: boolean = false) =>
-        this.hardisStatusProvider?.refresh(keepCache),
+      async (keepCache: boolean = false) =>
+        await this.hardisStatusProvider?.refresh(keepCache),
     );
     this.disposables.push(disposable);
   }
@@ -142,8 +142,8 @@ export class Commands {
   registerRefreshPluginsView() {
     const disposable = vscode.commands.registerCommand(
       "vscode-sfdx-hardis.refreshPluginsView",
-      (keepCache: boolean = false) =>
-        this.hardisPluginsProvider?.refresh(keepCache),
+      async (keepCache: boolean = false) =>
+        await this.hardisPluginsProvider?.refresh(keepCache),
     );
     this.disposables.push(disposable);
   }

@@ -38,18 +38,23 @@ export class CacheManager {
     ttlMs: number,
   ): Promise<void> {
     const fullKey = this.makeKey(section, key);
+    const expiresAt = Date.now() + ttlMs;
     const entry: CacheEntry<T> = {
       value,
-      expiresAt: Date.now() + ttlMs,
+      expiresAt: expiresAt,
     };
     await this.store.update(fullKey, entry);
     await this.trackKey(fullKey);
+    const expiresInDaysHoursMinutes = this.buildHumanExpiry(expiresAt);
+    Logger.log(
+      `Cache set for ${section}:${key} (expires in ${expiresInDaysHoursMinutes})`,
+    );
   }
 
   static get<T>(section: CacheSection, key: string): T | undefined {
     const fullKey = this.makeKey(section, key);
     const entry = this.store.get<CacheEntry<T>>(fullKey);
-
+    this.trackKey(fullKey);
     if (!entry) {
       return undefined;
     }
@@ -58,10 +63,7 @@ export class CacheManager {
       this.delete(section, key); // auto cleanup expired
       return undefined;
     }
-    // Log cache hit with expiration in seconds
-    const expiresInSeconds = Math.floor((entry.expiresAt - Date.now()) / 1000);
-    // Convert seconds in days, hours and minutes format
-    const expiresInDaysHoursMinutes = `${Math.floor(expiresInSeconds / 86400)}d ${Math.floor((expiresInSeconds % 86400) / 3600)}h ${Math.floor((expiresInSeconds % 3600) / 60)}m`;
+    const expiresInDaysHoursMinutes = this.buildHumanExpiry(entry.expiresAt);
     Logger.log(
       `Cache hit for ${section}:${key} (expires in ${expiresInDaysHoursMinutes})`,
     );
@@ -90,11 +92,8 @@ export class CacheManager {
 
     for (const k of toDelete) {
       await this.store.update(k, undefined);
+      Logger.log(`Cache deleted for key ${k}`);
     }
-
-    // update index
-    const remaining = keys.filter((k) => !toDelete.includes(k));
-    await this.store.update(this.KEYS_INDEX, remaining);
   }
 
   static async clearExpired(): Promise<void> {
@@ -109,10 +108,14 @@ export class CacheManager {
         await this.store.update(k, undefined);
       }
     }
+  }
 
-    if (expiredKeys.length > 0) {
-      const remaining = keys.filter((k) => !expiredKeys.includes(k));
-      await this.store.update(this.KEYS_INDEX, remaining);
-    }
+  // Utility to build human-readable expiry from timestamp
+  static buildHumanExpiry(expiresAt: number): string {
+    // Log cache hit with expiration in seconds
+    const expiresInSeconds = Math.floor((expiresAt - Date.now()) / 1000);
+    // Convert seconds in days, hours and minutes format
+    const expiresInDaysHoursMinutes = `${Math.floor(expiresInSeconds / 86400)}d ${Math.floor((expiresInSeconds % 86400) / 3600)}h ${Math.floor((expiresInSeconds % 3600) / 60)}m`;
+    return expiresInDaysHoursMinutes;
   }
 }

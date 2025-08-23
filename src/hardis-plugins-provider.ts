@@ -337,7 +337,7 @@ export class HardisPluginsProvider
         !sfdxPath.includes("npm") &&
         !sfdxPath.includes("node") &&
         !sfdxPath.includes("nvm") &&
-        !sfdxPath.includes("/home/codebuilder/.sf/bin/sf") &&
+        !sfdxPath.includes("/home/codebuilder/") &&
         !(
           sfdxPath.includes("/usr/local/bin") && process.platform === "darwin"
         ) &&
@@ -644,9 +644,9 @@ export class HardisPluginsProvider
     StatusTreeItem | undefined | null | void
   > = this._onDidChangeTreeData.event;
 
-  refresh(keepCache: boolean): void {
+  async refresh(keepCache: boolean): Promise<void> {
     if (!keepCache) {
-      resetCache();
+      await resetCache();
     }
     this.themeUtils = new ThemeUtils();
     this._onDidChangeTreeData.fire();

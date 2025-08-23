@@ -80,10 +80,10 @@ export class HardisCommandsProvider
     CommandTreeItem | undefined | null | void
   > = this._onDidChangeTreeData.event;
 
-  refresh(keepCache: boolean): void {
+  async refresh(keepCache: boolean): Promise<void> {
     this.allTopicsAndCommands = null;
     if (!keepCache) {
-      resetCache();
+      await resetCache();
     }
     this.themeUtils = new ThemeUtils();
     this._onDidChangeTreeData.fire();

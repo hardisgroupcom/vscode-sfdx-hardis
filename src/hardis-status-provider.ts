@@ -507,9 +507,9 @@ Note: Disable disableGitMergeRequiredCheck in settings to skip this check.`;
     StatusTreeItem | undefined | null | void
   > = this._onDidChangeTreeData.event;
 
-  refresh(keepCache: boolean): void {
+  async refresh(keepCache: boolean): Promise<void> {
     if (!keepCache) {
-      resetCache();
+      await resetCache();
     }
     this.themeUtils = new ThemeUtils();
     this._onDidChangeTreeData.fire();
