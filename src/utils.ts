@@ -575,7 +575,7 @@ export function isWebVsCode() {
 let gitBashPath: string | null | undefined = undefined;
 export function getGitBashPath() {
   if (gitBashPath !== undefined) {
-      return gitBashPath;
+    return gitBashPath;
   }
   // Common install paths for Git Bash on Windows
   const candidates = [
