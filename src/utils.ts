@@ -571,3 +571,25 @@ export function isWebVsCode() {
   }
   return IS_WEB_VSCODE;
 }
+
+let gitBashPath: string | null | undefined = undefined;
+export function getGitBashPath() {
+  if (gitBashPath !== undefined) {
+      return gitBashPath;
+  }
+  // Common install paths for Git Bash on Windows
+  const candidates = [
+    "C:\\Program Files\\Git\\bin\\bash.exe",
+    "C:\\Program Files (x86)\\Git\\bin\\bash.exe",
+    "C:\\Program Files\\Git\\usr\\bin\\bash.exe",
+    "C:\\Program Files (x86)\\Git\\usr\\bin\\bash.exe",
+  ];
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) {
+      gitBashPath = candidate;
+      return candidate;
+    }
+  }
+  gitBashPath = null;
+  return null;
+}

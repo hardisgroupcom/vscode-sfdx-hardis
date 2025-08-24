@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Allow hardis:project:configure:auth to call itself when necessary
+- Run background commands in Git bash for Windows if available (required for openssl)
+
 ## [6.1.2] 2024-08-24
 
 - Improves sfdx plugins version matching
