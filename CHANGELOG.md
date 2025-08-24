@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [6.1.3] 2024-08-24
+
 - Allow hardis:project:configure:auth to call itself when necessary
 - Run background commands in Git bash for Windows if available (required for openssl)
 
