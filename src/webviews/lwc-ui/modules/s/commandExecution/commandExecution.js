@@ -57,7 +57,12 @@ export default class CommandExecution extends LightningElement {
   }
 
   renderedCallback() {
-    if (!this.readyMessageSent && window && window.sendMessageToVSCode && this.logSections.length > 0) {
+    if (
+      !this.readyMessageSent &&
+      window &&
+      window.sendMessageToVSCode &&
+      this.logSections.length > 0
+    ) {
       // Notify VS Code that the LWC panel is ready to receive messages
       window.sendMessageToVSCode({
         type: "commandLWCReady",

@@ -111,8 +111,7 @@ export class LocalWebSocketServer {
               context: data.context,
             });
             messageUnsubscribe();
-          }
-          else if (messageType === "commandLWCReady") {
+          } else if (messageType === "commandLWCReady") {
             // Notify the command that the LWC panel is ready to receive messages
             await this.sendCommandReady(ws);
           }
@@ -138,7 +137,6 @@ export class LocalWebSocketServer {
         initData.data.commandLogFile = data.commandLogFile;
       }
       panel.sendMessage(initData);
-
     }
     // Command end
     if (data.event === "closeClient" || data.event === "clientClose") {
@@ -507,11 +505,11 @@ export class LocalWebSocketServer {
   }
 
   async sendCommandReady(ws: any) {
-      // Send user input type back to caller so it know it can continue the command
-      this.sendResponse(ws, {
-        event: "userInput",
-        userInput: this.config.get("userInput"),
-      });
+    // Send user input type back to caller so it know it can continue the command
+    this.sendResponse(ws, {
+      event: "userInput",
+      userInput: this.config.get("userInput"),
+    });
   }
 
   async broadcastMessage(data: any) {
