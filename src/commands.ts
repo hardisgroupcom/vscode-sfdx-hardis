@@ -15,6 +15,7 @@ import { CommandRunner } from "./command-runner";
 import { PipelineDataProvider } from "./pipeline-data-provider";
 import { getPullRequestButtonInfo } from "./utils/gitPrButtonUtils";
 import { SfdxHardisConfigHelper } from "./utils/pipeline/sfdxHardisConfigHelper";
+import { Logger } from "./logger";
 
 export class Commands {
   private readonly extensionUri: vscode.Uri;
@@ -114,8 +115,8 @@ export class Commands {
     // Refresh commands tree
     const disposable = vscode.commands.registerCommand(
       "vscode-sfdx-hardis.refreshCommandsView",
-      (keepCache: boolean = false) => {
-        this.hardisCommandsProvider?.refresh(keepCache);
+      async (keepCache: boolean = false) => {
+        await this.hardisCommandsProvider?.refresh(keepCache);
         // Reload window if Salesforce Extensions are not active
         const toReload = vscode.extensions.all.filter(
           (extension) =>
@@ -133,8 +134,8 @@ export class Commands {
   registerRefreshStatusView() {
     const disposable = vscode.commands.registerCommand(
       "vscode-sfdx-hardis.refreshStatusView",
-      (keepCache: boolean = false) =>
-        this.hardisStatusProvider?.refresh(keepCache),
+      async (keepCache: boolean = false) =>
+        await this.hardisStatusProvider?.refresh(keepCache),
     );
     this.disposables.push(disposable);
   }
@@ -142,8 +143,8 @@ export class Commands {
   registerRefreshPluginsView() {
     const disposable = vscode.commands.registerCommand(
       "vscode-sfdx-hardis.refreshPluginsView",
-      (keepCache: boolean = false) =>
-        this.hardisPluginsProvider?.refresh(keepCache),
+      async (keepCache: boolean = false) =>
+        await this.hardisPluginsProvider?.refresh(keepCache),
     );
     this.disposables.push(disposable);
   }
@@ -415,7 +416,7 @@ export class Commands {
         try {
           prButtonInfo = await getPullRequestButtonInfo(repoPath);
         } catch (e) {
-          console.log("Error getting PR button info:", e);
+          Logger.log("Error getting PR button info:\n" + JSON.stringify(e));
         }
 
         const panel = LwcPanelManager.getInstance().getOrCreatePanel(

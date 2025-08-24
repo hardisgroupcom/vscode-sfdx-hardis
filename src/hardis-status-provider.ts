@@ -331,7 +331,7 @@ Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if you
           (remote) => remote.name === "origin",
         );
       } catch {
-        console.warn("[vscode-sfdx-hardis] No git repository found");
+        Logger.log("No git repository found");
       }
       if (gitRemotesOrigins.length > 0) {
         const origin = gitRemotesOrigins[0];
@@ -409,7 +409,7 @@ Note: Disable disableGitMergeRequiredCheck in settings to skip this check.`;
               gitCommand = `vscode-sfdx-hardis.openExternal https://sfdx-hardis.cloudity.com/salesforce-ci-cd-merge-parent-branch/`;
             }
           } catch {
-            console.warn(
+            Logger.log(
               "Unable to check if remote parent git branch is up to date",
             );
           }
@@ -507,9 +507,9 @@ Note: Disable disableGitMergeRequiredCheck in settings to skip this check.`;
     StatusTreeItem | undefined | null | void
   > = this._onDidChangeTreeData.event;
 
-  refresh(keepCache: boolean): void {
+  async refresh(keepCache: boolean): Promise<void> {
     if (!keepCache) {
-      resetCache();
+      await resetCache();
     }
     this.themeUtils = new ThemeUtils();
     this._onDidChangeTreeData.fire();

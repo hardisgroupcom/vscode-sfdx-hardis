@@ -14,7 +14,7 @@ import { getConfig } from "./utils/pipeline/sfdxHardisConfig";
 
 export const RECOMMENDED_SFDX_CLI_VERSION = null; //"7.111.6";
 export const NODE_JS_MINIMUM_VERSION = 20.0;
-export const RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION: string = "6.1.0";
+export const RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION: string = "6.1.1";
 
 // Interface for execCommand and execSfdxJson options
 export interface ExecCommandOptions {
@@ -180,9 +180,9 @@ export async function getNpmLatestVersion(
   return version;
 }
 
-export function resetCache() {
-  CacheManager.delete("app");
-  CacheManager.delete("project");
+export async function resetCache() {
+  await CacheManager.delete("app");
+  await CacheManager.delete("project");
   COMMANDS_RESULTS = {};
   GIT_MENUS = null;
   PROJECT_CONFIG = null;
@@ -266,7 +266,11 @@ export async function execCommand(
       stdout: commandResult.stdout,
       stderr: commandResult.stderr,
     };
-    if (cacheSection && typeof cacheExpiration === "number") {
+    if (
+      cacheSection &&
+      typeof cacheExpiration === "number" &&
+      !CacheManager.get(cacheSection, command)
+    ) {
       CacheManager.set(cacheSection, command, resultObj, cacheExpiration);
     }
     return resultObj;
@@ -359,13 +363,18 @@ export function getSfdxProjectJson() {
 // Cache org info so it can be reused later with better perfs
 export function setOrgCache(newOrgInfo: any) {
   const orgKey = `${newOrgInfo.username}||${newOrgInfo.instanceUrl}`;
-  CacheManager.set("orgs", orgKey, newOrgInfo, 1000 * 60 * 60 * 24 * 30); // 30 days
-  CacheManager.set(
-    "orgs",
-    `username-instanceUrl:${newOrgInfo.username}`,
-    newOrgInfo.instanceUrl,
-    1000 * 60 * 60 * 24 * 90,
-  ); // 90 days
+  if (!CacheManager.get("orgs", orgKey)) {
+    CacheManager.set("orgs", orgKey, newOrgInfo, 1000 * 60 * 60 * 24 * 30); // 30 days
+  }
+  const instanceUrlKey = `username-instanceUrl:${newOrgInfo.username}`;
+  if (!CacheManager.get("orgs", instanceUrlKey)) {
+    CacheManager.set(
+      "orgs",
+      instanceUrlKey,
+      newOrgInfo.instanceUrl,
+      1000 * 60 * 60 * 24 * 90,
+    ); // 90 days
+  }
 }
 
 // Get from org cache
@@ -553,4 +562,12 @@ const ansiRegex = new RegExp(ansiPattern, "g");
 
 export function stripAnsi(str: string) {
   return (str || "").replace(ansiRegex, "");
+}
+
+let IS_WEB_VSCODE: boolean | null = null;
+export function isWebVsCode() {
+  if (IS_WEB_VSCODE === null) {
+    IS_WEB_VSCODE = vscode.env.uiKind === vscode.UIKind.Web;
+  }
+  return IS_WEB_VSCODE;
 }

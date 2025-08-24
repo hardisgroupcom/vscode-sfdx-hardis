@@ -1,5 +1,7 @@
 import * as vscode from "vscode";
 import * as path from "path";
+import { isWebVsCode } from "../utils";
+import { Logger } from "../logger";
 
 type MessageListener = (messageType: string, data: any) => void;
 
@@ -221,9 +223,6 @@ export class LwcUiPanel {
         case "checkFileExists":
           await this.handleFileExistsCheck(data.filePath, data.fileType);
           break;
-        case "downloadFile":
-          await this.handleFileDownload(data.filePath, data.fileName);
-          break;
         case "openFile":
           await this.handleFileOpen(data.filePath);
           break;
@@ -241,7 +240,10 @@ export class LwcUiPanel {
           break;
       }
     } catch (error) {
-      console.error(`Error handling built-in message ${messageType}:`, error);
+      Logger.log(
+        `Error handling built-in message ${messageType}:\n` +
+          JSON.stringify(error),
+      );
     }
   }
 
@@ -259,7 +261,7 @@ export class LwcUiPanel {
     try {
       await vscode.commands.executeCommand(data.command);
     } catch (error) {
-      console.error("Error running VS Code command:", error);
+      Logger.log("Error running VS Code command:\n" + JSON.stringify(error));
       vscode.window.showErrorMessage(
         `Failed to run VS Code command: ${data.command}`,
       );
@@ -328,42 +330,6 @@ export class LwcUiPanel {
   }
 
   /**
-   * Handle file download request from webview
-   * @param filePath Path to the file to download
-   * @param fileName Suggested filename for download
-   */
-  private async handleFileDownload(
-    filePath: string,
-    fileName: string,
-  ): Promise<void> {
-    try {
-      const resolvedPath = this.resolveWorkspacePath(filePath);
-      // Check if file exists
-      const fileUri = vscode.Uri.file(resolvedPath);
-      await vscode.workspace.fs.stat(fileUri);
-      // Show save dialog
-      const saveUri = await vscode.window.showSaveDialog({
-        defaultUri: vscode.Uri.file(fileName),
-        filters: {
-          "Excel Files": ["xlsx", "xls"],
-          "CSV Files": ["csv"],
-          "All Files": ["*"],
-        },
-      });
-      if (saveUri) {
-        // Copy the file to the selected location
-        await vscode.workspace.fs.copy(fileUri, saveUri, { overwrite: true });
-        vscode.window.showInformationMessage(
-          `File downloaded successfully to ${saveUri.fsPath}`,
-        );
-      }
-    } catch (error) {
-      console.error("Error downloading file:", error);
-      vscode.window.showErrorMessage(`Failed to download file: ${error}`);
-    }
-  }
-
-  /**
    * Handle file open request from webview
    * @param filePath Path to the file to open
    */
@@ -394,9 +360,22 @@ export class LwcUiPanel {
         ".pptx",
       ];
       if (binaryExtensions.includes(fileExtension)) {
-        // Open with default Windows application
-        await vscode.env.openExternal(fileUri);
-        console.log(`Opened file with default application: ${resolvedPath}`);
+        if (isWebVsCode()) {
+          const content = await vscode.workspace.fs.readFile(fileUri);
+          const base64 = Buffer.from(content).toString("base64");
+          this.sendMessage({
+            type: "downloadFileFromPanel",
+            data: {
+              filePath: resolvedPath,
+              fileName: path.basename(resolvedPath),
+              base64: base64,
+            },
+          });
+          Logger.log(`Sent download message for file: ${resolvedPath}`);
+        } else {
+          await vscode.env.openExternal(fileUri);
+          Logger.log(`Opened file with default application: ${resolvedPath}`);
+        }
       } else {
         // Open the file in VS Code for text files
         const document = await vscode.workspace.openTextDocument(fileUri);
@@ -420,10 +399,10 @@ export class LwcUiPanel {
             }
           }
         }
-        console.log(`Opened file in VS Code: ${resolvedPath}`);
+        Logger.log(`Opened file in VS Code: ${resolvedPath}`);
       }
     } catch (error) {
-      console.error("Error opening file:", error);
+      Logger.log("Error opening file:\n" + JSON.stringify(error));
       vscode.window.showErrorMessage(`Failed to open file: ${error}`);
     }
   }
@@ -437,7 +416,7 @@ export class LwcUiPanel {
       const uri = vscode.Uri.parse(url);
       await vscode.env.openExternal(uri);
     } catch (error) {
-      console.error("Error opening external URL:", error);
+      Logger.log("Error opening external URL:\n" + JSON.stringify(error));
       vscode.window.showErrorMessage(`Failed to open URL: ${url}`);
     }
   }
@@ -465,7 +444,9 @@ export class LwcUiPanel {
         `VsCode configuration '${data.configKey}' updated with value: ${data.value}`,
       );
     } catch (error) {
-      console.error("Error updating VS Code configuration:", error);
+      Logger.log(
+        "Error updating VS Code configuration:\n" + JSON.stringify(error),
+      );
       vscode.window.showErrorMessage(
         `Failed to update configuration: ${data.configKey}`,
       );
@@ -484,7 +465,9 @@ export class LwcUiPanel {
       try {
         listener(messageType, data);
       } catch (error) {
-        console.error("Error in LWC UI message listener:", error);
+        Logger.log(
+          "Error in LWC UI message listener:\n" + JSON.stringify(error),
+        );
       }
     });
   }

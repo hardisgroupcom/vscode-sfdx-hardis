@@ -69,10 +69,12 @@ export class LocalWebSocketServer {
     if (data.event === "initClient") {
       // Ignore if not lwc UI
       if (this.config.get("userInput") !== "ui-lwc") {
+        await this.sendCommandReady(ws);
         return;
       }
       // If the UI is configured to be hidden, do not proceed with command execution
       if (data?.uiConfig?.hide === true) {
+        await this.sendCommandReady(ws);
         return;
       }
 
@@ -93,12 +95,6 @@ export class LocalWebSocketServer {
 
       this.clients[data.context.id] = { context: data.context, ws: ws };
 
-      // Send user input type back to caller
-      this.sendResponse(ws, {
-        event: "userInput",
-        userInput: this.config.get("userInput"),
-      });
-
       // Create a new command execution panel for this command
       const lwcId = `s-command-execution-${data.context.id}`;
       const panel = panelManager.getOrCreatePanel(lwcId, data.context);
@@ -106,7 +102,7 @@ export class LocalWebSocketServer {
       this.clients[data.context.id].lwcId = lwcId;
 
       const messageUnsubscribe = panel.onMessage(
-        (messageType: any, _msgData: any) => {
+        async (messageType: any, _msgData: any) => {
           // Handle cancel command request from the panel
           if (messageType === "panelDisposed") {
             // Send cancel command event to the server
@@ -115,6 +111,9 @@ export class LocalWebSocketServer {
               context: data.context,
             });
             messageUnsubscribe();
+          } else if (messageType === "commandLWCReady") {
+            // Notify the command that the LWC panel is ready to receive messages
+            await this.sendCommandReady(ws);
           }
         },
       );
@@ -503,6 +502,14 @@ export class LocalWebSocketServer {
         throw new Error(`WSS: prompt type ${prompt.type} not taken in account`);
       }
     }
+  }
+
+  async sendCommandReady(ws: any) {
+    // Send user input type back to caller so it know it can continue the command
+    this.sendResponse(ws, {
+      event: "userInput",
+      userInput: this.config.get("userInput"),
+    });
   }
 
   async broadcastMessage(data: any) {

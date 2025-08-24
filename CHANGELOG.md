@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+## [6.1.1] 2024-08-24
+
+- Fixes related to Code Builder integration
+- Fix cache manager issue
+- Handle binary file download in web context
+- Wait for LWC to be ready before continuing the sfdx-hardis command
+
 ## [6.1.0] 2024-08-23
 
 - Add Monitoring command [Unused Connected Apps](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unused-connected-apps/)

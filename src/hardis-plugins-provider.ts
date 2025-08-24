@@ -300,7 +300,7 @@ export class HardisPluginsProvider
       latestSfdxCliVersion = await getNpmLatestVersion("@salesforce/cli");
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
-      console.error(`Error while fetching latest version for @salesforce/cli`);
+      Logger.log(`Error while fetching latest version for @salesforce/cli`);
       return [];
     }
 
@@ -337,7 +337,7 @@ export class HardisPluginsProvider
         !sfdxPath.includes("npm") &&
         !sfdxPath.includes("node") &&
         !sfdxPath.includes("nvm") &&
-        !sfdxPath.includes("/home/codebuilder/.sf/bin/sf") &&
+        !sfdxPath.includes("/home/codebuilder/") &&
         !(
           sfdxPath.includes("/usr/local/bin") && process.platform === "darwin"
         ) &&
@@ -419,7 +419,7 @@ export class HardisPluginsProvider
         latestPluginVersion = await getNpmLatestVersion(plugin.name);
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (e) {
-        console.error(`Error while fetching latest version for ${plugin.name}`);
+        Logger.log(`Error while fetching latest version for ${plugin.name}`);
         return;
       }
       let pluginLabel = plugin.name;
@@ -644,9 +644,9 @@ export class HardisPluginsProvider
     StatusTreeItem | undefined | null | void
   > = this._onDidChangeTreeData.event;
 
-  refresh(keepCache: boolean): void {
+  async refresh(keepCache: boolean): Promise<void> {
     if (!keepCache) {
-      resetCache();
+      await resetCache();
     }
     this.themeUtils = new ThemeUtils();
     this._onDidChangeTreeData.fire();

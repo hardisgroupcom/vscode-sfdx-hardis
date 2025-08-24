@@ -31,6 +31,7 @@ export default class CommandExecution extends LightningElement {
   @track latestQuestionId = null;
   @track lastQueryLogId = null;
   @track detailsMode = "simple"; // 'advanced' or 'simple'
+  readyMessageSent = false;
 
   connectedCallback() {
     // Make component available globally for VS Code message handling
@@ -53,6 +54,22 @@ export default class CommandExecution extends LightningElement {
       }
       this.scrollToBottom();
     }, 100);
+  }
+
+  renderedCallback() {
+    if (
+      !this.readyMessageSent &&
+      window &&
+      window.sendMessageToVSCode &&
+      this.logSections.length > 0
+    ) {
+      // Notify VS Code that the LWC panel is ready to receive messages
+      window.sendMessageToVSCode({
+        type: "commandLWCReady",
+        data: {},
+      });
+      this.readyMessageSent = true;
+    }
   }
 
   disconnectedCallback() {
@@ -160,6 +177,9 @@ export default class CommandExecution extends LightningElement {
         break;
       case "vsCodeSfdxHardisConfigurationChanged":
         this.handleVsCodeSfdxHardisConfigurationChanged(data);
+        break;
+      case "downloadFileFromPanel":
+        this.handleDownloadFileFromPanel(data);
         break;
       default:
         console.log("Unknown message type:", messageType, data);
@@ -292,6 +312,7 @@ export default class CommandExecution extends LightningElement {
 
   @api
   initializeCommand(data) {
+    this.readyMessageSent = false;
     let context = data.context ? data.context : data;
     this.commandContext = context;
 
@@ -1531,5 +1552,23 @@ ${resultMessage}`;
     } else {
       console.error("VS Code API not available for opening report file");
     }
+  }
+
+  handleDownloadFileFromPanel(data) {
+    // const filePath = data.filePath;
+    const fileName = data.fileName;
+    const base64 = data.base64;
+    if (!fileName || !base64) {
+      console.error("Invalid data for file download:", data);
+      return;
+    }
+    const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+    const blob = new Blob([bytes]);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 }
