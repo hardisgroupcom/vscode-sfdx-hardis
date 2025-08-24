@@ -363,7 +363,7 @@ export class HardisPluginsProvider
     }
     items.push(sfdxCliItem);
     // get currently installed plugins
-    const sfdxPlugins =
+    let sfdxPlugins =
       (
         await execCommand("sf plugins", {
           output: true,
@@ -372,12 +372,18 @@ export class HardisPluginsProvider
           cacheExpiration: 1000 * 60 * 60 * 24, // 1 day
         })
       ).stdout || "";
+    // Remove everything after "Uninstalled JIT", including it
+    const uninstalledJitIndex = sfdxPlugins.indexOf("Uninstalled JIT");
+    if (uninstalledJitIndex > -1) {
+      sfdxPlugins = sfdxPlugins.substring(0, uninstalledJitIndex).trim();
+    }
     // Check installed plugins status version
     const pluginPromises = plugins.map(async (plugin) => {
       // Special check for sfdx-hardis version
       if (plugin.name === "sfdx-hardis") {
         let installedVersion = null;
-        const regex = new RegExp(`${plugin.name} ([^s]+)`, "gm");
+        // Match semver (e.g., 1.2.3, 1.2.3-beta, 1.2.3-alpha.1, etc.)
+        const regex = new RegExp(`${plugin.name} (\\d+\\.\\d+\\.\\d+(?:-[\\w.-]+)?)`, "gm");
         const match = regex.exec(sfdxPlugins);
         if (match && match[1]) {
           installedVersion = match[1];
