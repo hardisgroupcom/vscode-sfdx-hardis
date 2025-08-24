@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [6.1.2] 2024-08-24
+
+- Improves sfdx plugins version matching
+
 ## [6.1.1] 2024-08-24
 
 - Fixes related to Code Builder integration
