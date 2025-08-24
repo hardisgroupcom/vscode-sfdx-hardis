@@ -274,6 +274,12 @@
         "title": "View dependency documentation",
         "icon": "$(remote-explorer-documentation)"
       }
+      ,
+      {
+        "command": "vscode-sfdx-hardis.showInstalledPackages",
+        "title": "SFDX Hardis: Show Installed Packages",
+        "icon": "$(package)"
+      }
     ],
     "viewsContainers": {
       "activitybar": [
