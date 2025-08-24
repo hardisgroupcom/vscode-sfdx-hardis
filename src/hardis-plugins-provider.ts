@@ -383,7 +383,10 @@ export class HardisPluginsProvider
       if (plugin.name === "sfdx-hardis") {
         let installedVersion = null;
         // Match semver (e.g., 1.2.3, 1.2.3-beta, 1.2.3-alpha.1, etc.)
-        const regex = new RegExp(`${plugin.name} (\\d+\\.\\d+\\.\\d+(?:-[\\w.-]+)?)`, "gm");
+        const regex = new RegExp(
+          `${plugin.name} (\\d+\\.\\d+\\.\\d+(?:-[\\w.-]+)?)`,
+          "gm",
+        );
         const match = regex.exec(sfdxPlugins);
         if (match && match[1]) {
           installedVersion = match[1];
