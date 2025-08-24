@@ -56,7 +56,42 @@ export default class InstalledPackages extends LightningElement {
     }
 
     handleDraftValuesChange(event) {
-        this.draftValues = event.detail.draftValues;
+        const newDrafts = event.detail.draftValues;
+        // Merge new drafts into existing draftValues by SubscriberPackageId
+        const draftMap = new Map();
+        // Add existing drafts
+        for (const draft of this.draftValues) {
+            draftMap.set(draft.SubscriberPackageId, { ...draft });
+        }
+        // Overwrite/add new drafts
+        for (const draft of newDrafts) {
+            draftMap.set(draft.SubscriberPackageId, { ...draft });
+        }
+        this.draftValues = Array.from(draftMap.values());
     }
+
+    handleRetrieveFromOrg() {
+        if (typeof window !== "undefined" && window.sendMessageToVSCode) {
+            window.sendMessageToVSCode({
+                type: "runCommand",
+                data: {
+                    command: "sf hardis:org:retrieve:packageconfig",
+                },
+            });
+        }
+        console.log("Retrieve from org button clicked");
+    }
+
+    handleInstallNewPackage() {
+        if (typeof window !== "undefined" && window.sendMessageToVSCode) {
+            window.sendMessageToVSCode({
+                type: "runCommand",
+                data: {
+                    command: "sf hardis:package:install",
+                },
+            });
+        }
+        console.log("Install new package button clicked");
+    }    
 
 }
