@@ -41,47 +41,8 @@ export class Commands {
     this.reporter = reporter;
     this.commandRunner = new CommandRunner(this);
     this.registerCommands();
-    this.registerShowInstalledPackages();
   }
-  registerShowInstalledPackages() {
-    const disposable = vscode.commands.registerCommand(
-      "vscode-sfdx-hardis.showInstalledPackages",
-      async () => {
-        const workspaceRoot = getWorkspaceRoot();
-        const sfdxHardisConfigHelper = SfdxHardisConfigHelper.getInstance(workspaceRoot);
-        // Load config
-        let config: any = {};
-        try {
-          config = await sfdxHardisConfigHelper.getEditorInput(null);
-        } catch (e) {
-          const err = e as any;
-          vscode.window.showErrorMessage("Could not load sfdx-hardis.yml config: " + (err.message || err));
-          return;
-        }
-        const packages = config.config.installedPackages || [];
-        const panel = LwcPanelManager.getInstance().getOrCreatePanel(
-          "s-installed-packages",
-          { packages }
-        );
-        panel.updateTitle("Installed Packages");
-        // Listen for save events from LWC
-        panel.onMessage(async (type, data) => {
-          if (type === "save") {
-            try {
-              // Update config and save
-              config.config.installedPackages = data;
-              await sfdxHardisConfigHelper.saveConfigFromEditor({ config: config.config, isBranch: false, branchName: "" });
-              vscode.window.showInformationMessage("Installed packages updated successfully.");
-            } catch (e) {
-              const err = e as any;
-              vscode.window.showErrorMessage("Failed to save installed packages: " + (err.message || err));
-            }
-          }
-        });
-      }
-    );
-    this.disposables.push(disposable);
-  }
+
 
   registerCommands() {
     this.registerExecuteCommand();
@@ -105,6 +66,7 @@ export class Commands {
     this.registerShowPipeline();
     this.registerShowExtensionConfig();
     this.registerShowPipelineConfig();
+    this.registerShowInstalledPackages();
   }
   registerShowExtensionConfig() {
     // Show the extensionConfig LWC panel for editing extension settings
@@ -524,6 +486,55 @@ export class Commands {
           }
         });
       },
+    );
+    this.disposables.push(disposable);
+  }
+
+  registerShowInstalledPackages() {
+    const disposable = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.showInstalledPackages",
+      async () => {
+        const workspaceRoot = getWorkspaceRoot();
+        const sfdxHardisConfigHelper = SfdxHardisConfigHelper.getInstance(workspaceRoot);
+        // Show progress while loading config editor input
+        const packages = await vscode.window.withProgress(
+          {
+            location: vscode.ProgressLocation.Notification,
+            title: `Loading installed packages...`,
+            cancellable: false,
+          },
+          async () => {
+            const allConfig = await sfdxHardisConfigHelper.getEditorInput(null);
+            return allConfig?.config?.installedPackages || [];
+          },
+        );
+        const panel = LwcPanelManager.getInstance().getOrCreatePanel(
+          "s-installed-packages",
+          { packages }
+        );
+        panel.updateTitle("Installed Packages");
+        // Listen for save events from LWC
+        // Register message handler to save configuration
+        panel.onMessage(async (type, data) => {
+          if (type === "saveSfdxHardisConfig") {
+            try {
+              const allConfig = await sfdxHardisConfigHelper.getEditorInput(
+                null
+              );
+              allConfig.config.installedPackages = data.packages;
+              await sfdxHardisConfigHelper.saveConfigFromEditor(allConfig);
+              vscode.window.showInformationMessage(
+                "Installed packages configuration saved successfully."
+              );
+            } catch (error: any) {
+              vscode.window.showErrorMessage(
+                "Error saving installed packages configuration: " +
+                  error.message
+              );
+            }
+          }
+        });
+      }
     );
     this.disposables.push(disposable);
   }

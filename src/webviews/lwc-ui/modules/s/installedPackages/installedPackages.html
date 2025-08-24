@@ -1,5 +1,5 @@
 <template>
-    <lightning-card title="Installed Packages">
+    <lightning-card title="Installed Packages on SFDX-Hardis DevOps Pipeline">
         <div class="slds-m-around_medium">
             <lightning-datatable
                 key-field="Id"
@@ -9,7 +9,6 @@
                 onsave={handleSave}
                 oncellchange={handleDraftValuesChange}
                 hide-checkbox-column
-                {isEditMode}
                 class="slds-m-bottom_medium"
             ></lightning-datatable>
             <template if:true={isEditMode}>
@@ -17,9 +16,6 @@
                     <lightning-button variant="brand" label="Save" onclick={handleSave}></lightning-button>
                     <lightning-button variant="neutral" label="Cancel" onclick={handleCancel}></lightning-button>
                 </lightning-button-group>
-            </template>
-            <template if:false={isEditMode}>
-                <lightning-button variant="brand" label="Edit" onclick={handleEdit}></lightning-button>
             </template>
         </div>
     </lightning-card>
