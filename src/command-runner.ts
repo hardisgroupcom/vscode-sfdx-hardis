@@ -2,7 +2,7 @@ import treeKill from "tree-kill";
 import * as vscode from "vscode";
 import { LwcPanelManager } from "./lwc-panel-manager";
 import { spawn } from "child_process";
-import { stripAnsi } from "./utils";
+import { getGitBashPath, stripAnsi } from "./utils";
 import { Logger } from "./logger";
 
 /**
@@ -111,7 +111,7 @@ export class CommandRunner {
     // Check for duplicate running command
     /* jscpd:ignore-start */
     const existing = this.activeCommands.get(cmd);
-    if (existing) {
+    if (existing && !cmd.includes("hardis:project:configure:auth")) {
       // For background: process is not killed and not closed/errored
       if (
         existing.type === "background" &&
@@ -169,6 +169,10 @@ export class CommandRunner {
     };
     if (this.debugNodeJs) {
       spawnOptions.env = { ...process.env, NODE_OPTIONS: "--inspect-brk" };
+    }
+    const gitBashPath = getGitBashPath();
+    if (process.platform === "win32" && gitBashPath) {
+      spawnOptions.shell = gitBashPath;
     }
     try {
       childProcess = spawn(command!, commandParts.slice(1), spawnOptions);

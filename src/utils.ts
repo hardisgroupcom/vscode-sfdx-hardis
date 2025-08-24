@@ -14,7 +14,7 @@ import { getConfig } from "./utils/pipeline/sfdxHardisConfig";
 
 export const RECOMMENDED_SFDX_CLI_VERSION = null; //"7.111.6";
 export const NODE_JS_MINIMUM_VERSION = 20.0;
-export const RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION: string = "6.1.1";
+export const RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION: string = "6.1.3";
 
 // Interface for execCommand and execSfdxJson options
 export interface ExecCommandOptions {
@@ -570,4 +570,26 @@ export function isWebVsCode() {
     IS_WEB_VSCODE = vscode.env.uiKind === vscode.UIKind.Web;
   }
   return IS_WEB_VSCODE;
+}
+
+let gitBashPath: string | null | undefined = undefined;
+export function getGitBashPath() {
+  if (gitBashPath !== undefined) {
+    return gitBashPath;
+  }
+  // Common install paths for Git Bash on Windows
+  const candidates = [
+    "C:\\Program Files\\Git\\bin\\bash.exe",
+    "C:\\Program Files (x86)\\Git\\bin\\bash.exe",
+    "C:\\Program Files\\Git\\usr\\bin\\bash.exe",
+    "C:\\Program Files (x86)\\Git\\usr\\bin\\bash.exe",
+  ];
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) {
+      gitBashPath = candidate;
+      return candidate;
+    }
+  }
+  gitBashPath = null;
+  return null;
 }
