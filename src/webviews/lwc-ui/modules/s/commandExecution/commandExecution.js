@@ -31,6 +31,7 @@ export default class CommandExecution extends LightningElement {
   @track latestQuestionId = null;
   @track lastQueryLogId = null;
   @track detailsMode = "simple"; // 'advanced' or 'simple'
+  readyMessageSent = false;
 
   connectedCallback() {
     // Make component available globally for VS Code message handling
@@ -53,6 +54,17 @@ export default class CommandExecution extends LightningElement {
       }
       this.scrollToBottom();
     }, 100);
+  }
+
+  renderedCallback() {
+    if (!this.readyMessageSent && window && window.sendMessageToVSCode && this.logSections.length > 0) {
+      // Notify VS Code that the LWC panel is ready to receive messages
+      window.sendMessageToVSCode({
+        type: "commandLWCReady",
+        data: {},
+      });
+      this.readyMessageSent = true;
+    }
   }
 
   disconnectedCallback() {
@@ -295,6 +307,7 @@ export default class CommandExecution extends LightningElement {
 
   @api
   initializeCommand(data) {
+    this.readyMessageSent = false;
     let context = data.context ? data.context : data;
     this.commandContext = context;
 
