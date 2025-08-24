@@ -6,11 +6,11 @@ export default class InstalledPackages extends LightningElement {
     @track draftValues = [];
 
     columns = [
-        { label: 'Name', fieldName: 'SubscriberPackageName', type: 'text', sortable: true },
-        { label: 'Namespace', fieldName: 'SubscriberPackageNamespace', type: 'text', sortable: true },
+        { label: 'Name', fieldName: 'SubscriberPackageName', type: 'text', sortable: false },
+        { label: 'Namespace', fieldName: 'SubscriberPackageNamespace', type: 'text', sortable: false },
         { label: 'Version', fieldName: 'SubscriberPackageVersionNumber', type: 'text' },
-        { label: 'Scratch Orgs', fieldName: 'installOnScratchOrgs', type: 'boolean', editable: true, sortable: true, cellAttributes: { alignment: 'center' } },
-        { label: 'Deployments', fieldName: 'installDuringDeployments', type: 'boolean', editable: true, sortable: true, cellAttributes: { alignment: 'center' } },
+        { label: 'Scratch Orgs', fieldName: 'installOnScratchOrgs', type: 'boolean', editable: true, sortable: false, cellAttributes: { alignment: 'center' } },
+        { label: 'Deployments', fieldName: 'installDuringDeployments', type: 'boolean', editable: true, sortable: false, cellAttributes: { alignment: 'center' } },
     ];
 
     get isEditMode() {
@@ -20,6 +20,12 @@ export default class InstalledPackages extends LightningElement {
     @api
     initialize(data) {
         this.packages = data.packages || [];
+        // Sort packages by SubscriberPackageName
+        this.packages.sort((a, b) => {
+            if (a.SubscriberPackageName < b.SubscriberPackageName) return -1;
+            if (a.SubscriberPackageName > b.SubscriberPackageName) return 1;
+            return 0;
+        });
         this.editMode = false;
         this.draftValues = [];
     }
