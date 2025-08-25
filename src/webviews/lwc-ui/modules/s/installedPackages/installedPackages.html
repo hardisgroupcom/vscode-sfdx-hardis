@@ -10,6 +10,13 @@
                 <lightning-button icon-name="utility:refresh" label="Refresh" title="Refresh Installed packages configuration" onclick={handleRefresh}></lightning-button>
             </lightning-button-group>
         </div>
+        <div class="slds-notify slds-notify_alert slds-theme_info slds-theme_alert-texture slds-m-around_small" role="alert">
+            <lightning-icon icon-name="utility:info" alternative-text="Info" size="small" class="slds-m-right_small"></lightning-icon>
+            <span>
+                <p>Packages flagged <b>Deployments</b> will be installed during sfdx-hardis deployment workflows.</p>
+                <p>Packages flagged <b>Scratch Org</b> will be installed when creating Scratch Orgs for development or validation purposes.</p>
+            </span>
+        </div>
         <div class="slds-m-around_medium">
             <lightning-datatable
                 key-field="Id"
