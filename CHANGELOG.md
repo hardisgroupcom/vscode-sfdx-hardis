@@ -2,7 +2,10 @@
 
 ## [Unreleased]
 
- - New DevOps Pipeline installed packages manager
+ - DevOps Pipeline
+   - Installed packages Manager
+   - Warning when missing encrypted certificate keys in branch configuration
+   - Warning when manual actions file has not been set
  - Remove declaration of welcome command that is not existing anymore
 
 ## [6.1.3] 2024-08-24
