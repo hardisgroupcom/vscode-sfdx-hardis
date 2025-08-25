@@ -30,6 +30,17 @@ export default class InstalledPackages extends LightningElement {
         this.draftValues = [];
     }
 
+    @api
+    handleMessage(messageType, data) {
+        switch (messageType) {
+            case "refreshPackages":
+                this.handleRefresh();
+                break;
+            default:
+                console.log("Unknown message type:", messageType, data);
+        }
+    }
+
     handleEdit() {
         this.editMode = true;
     }
@@ -54,6 +65,10 @@ export default class InstalledPackages extends LightningElement {
         }
         // Refresh to ensure reactivity
         this.draftValues = [...this.draftValues];
+    }
+
+    handleRefresh() {
+        window.sendMessageToVSCode({ type: "refresh" });
     }
 
     handleSave() {

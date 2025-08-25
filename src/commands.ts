@@ -491,12 +491,11 @@ export class Commands {
   }
 
   registerShowInstalledPackages() {
-    const disposable = vscode.commands.registerCommand(
-      "vscode-sfdx-hardis.showInstalledPackages",
-      async () => {
-        const workspaceRoot = getWorkspaceRoot();
-        const sfdxHardisConfigHelper = SfdxHardisConfigHelper.getInstance(workspaceRoot);
-        // Show progress while loading config editor input
+    const workspaceRoot = getWorkspaceRoot();
+    const sfdxHardisConfigHelper = SfdxHardisConfigHelper.getInstance(workspaceRoot);
+    // Reusable loading packages function
+    const loadInstalledPackages = async () => {
+       // Show progress while loading config editor input
         const packages = await vscode.window.withProgress(
           {
             location: vscode.ProgressLocation.Notification,
@@ -508,6 +507,13 @@ export class Commands {
             return allConfig?.config?.installedPackages || [];
           },
         );
+        return packages;
+    }
+
+    const disposable = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.showInstalledPackages",
+      async () => {
+        const packages = await loadInstalledPackages();
         const panel = LwcPanelManager.getInstance().getOrCreatePanel(
           "s-installed-packages",
           { packages }
@@ -532,6 +538,10 @@ export class Commands {
                   error.message
               );
             }
+          }
+          else if (type === "refresh") {
+            const packages = await loadInstalledPackages();
+            panel.sendMessage({ type: "initialize", data: { packages: packages } });
           }
         });
       }
