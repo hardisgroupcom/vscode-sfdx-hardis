@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [6.2.0] 2024-08-25
+
 - DevOps Pipeline
   - Installed packages Manager
   - Warning when missing encrypted certificate keys in branch configuration
