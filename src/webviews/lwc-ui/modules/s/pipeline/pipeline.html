@@ -1,79 +1,77 @@
 <template>
-    <div class="slds-scope slds-theme_default blue-back">
+    <div class="slds-scope slds-theme_default slds-p-around_medium blue-back">
     <lightning-card>
-        <div class="slds-p-around_medium">
-            <div class="slds-grid slds-grid_align-spread slds-m-bottom_small">
-                <div class="slds-col slds-align-left">
-                    <span class="slds-text-heading_medium slds-text-title_bold">SFDX-Hardis DevOps Pipeline</span>
-                </div>
-                <div class="slds-col slds-no-flex">
-                    <template if:true={prButtonInfo}>
-                        <lightning-button 
-                            icon-name="utility:share"
-                            label={prButtonInfo.label} 
-                            title={prButtonInfo.label} 
-                            onclick={openPrPage}
-                        ></lightning-button>
-                    </template>
-                    <lightning-button 
-                        icon-name="utility:settings"
-                        variant="brand" 
-                        label="Pipeline Settings" 
-                        onclick={handleShowPipelineConfig} 
-                        class="slds-m-left_small"
-                    ></lightning-button>
-                    <lightning-button 
-                        icon-name="utility:package"
-                        variant="brand"
-                        label="Installed Packages"
-                        title="View and edit installed packages for this project"
-                        onclick={handleShowInstalledPackages}
-                        class="slds-m-left_small"
-                    ></lightning-button>
-                    <lightning-button icon-name="utility:key" label="Add new Org" title="Configure Salesforce authentication for a new org in the Pipeline, or reconfigure it for a refreshed Sandbox" onclick={configureAuth} variant="brand" class="slds-m-left_small"></lightning-button>
-                    <lightning-button icon-name="utility:refresh" label="Refresh" title="Refresh pipeline data" onclick={refreshPipeline} class="slds-m-left_small"></lightning-button>
-                </div>
+        <div class="slds-grid slds-grid_align-spread slds-p-around_small">
+            <div class="slds-col slds-align-left">
+                <span class="slds-text-heading_medium slds-text-title_bold">SFDX-Hardis DevOps Pipeline</span>
             </div>
-            <template if:true={pipelineData}>
-                <template if:true={pipelineData.orgs}>
-                    <template if:true={pipelineData.orgs.length}>
-                        <div class="pipeline-container">
-                            <div class="mermaid"></div>
-                            <template if:true={error}>
-                                <pre class="mermaid-debug" style="color:#888;font-size:10px;max-height:100px;overflow:auto;"></pre>
-                            </template>
-                            <template if:true={hasWarnings}>
-                                <div class="slds-box slds-theme_warning slds-m-top_small" style="font-size:13px;">
-                                    <div class="slds-text-title_caps slds-m-bottom_x-small">Warnings</div>
-                                    <ul class="slds-list_dotted">
-                                        <template for:each={warnings} for:item="warning">
-                                            <li key={warning}>{warning}</li>
-                                        </template>
-                                    </ul>
-                                </div>
-                            </template>
-                        </div>
-                    </template>
-                    <template if:false={pipelineData.orgs.length}>
-                        <div class="slds-align_absolute-center" style="flex-direction:column;display:flex;align-items:center;padding:2rem;">
-                            <div class="slds-text-heading_medium slds-m-bottom_medium">No pipeline configured</div>
-                            <div class="slds-m-bottom_medium">To get started, configure your sfdx-hardis DevOps pipeline.</div>
-                            <a class="slds-button slds-button_brand slds-m-bottom_medium" href="https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/" target="_blank">Configure DevOps Pipeline</a>
-                            <a href="https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/" target="_blank" style="display:block;max-width:600px;width:100%;margin:1.5rem 0;">
-                                <img src="https://sfdx-hardis.cloudity.com/assets/images/devops-comparison.png" alt="DevOps Comparison" style="max-width:600px;width:100%;box-shadow:0 2px 8px #0001;border-radius:8px;" />
-                            </a>
-                            <div class="slds-m-bottom_medium slds-text-body_regular" style="max-width:600px;text-align:center;">See how sfdx-hardis can help you automate and secure your Salesforce deployments, and compare with other DevOps solutions.</div>
-                        </div>
-                    </template>
+            <div class="slds-col slds-no-flex">
+                <template if:true={prButtonInfo}>
+                    <lightning-button 
+                        icon-name="utility:share"
+                        label={prButtonInfo.label} 
+                        title={prButtonInfo.label} 
+                        onclick={openPrPage}
+                    ></lightning-button>
+                </template>
+                <lightning-button 
+                    icon-name="utility:settings"
+                    variant="brand" 
+                    label="Pipeline Settings" 
+                    onclick={handleShowPipelineConfig} 
+                    class="slds-m-left_small"
+                ></lightning-button>
+                <lightning-button 
+                    icon-name="utility:package"
+                    variant="brand"
+                    label="Installed Packages"
+                    title="View and edit installed packages for this project"
+                    onclick={handleShowInstalledPackages}
+                    class="slds-m-left_small"
+                ></lightning-button>
+                <lightning-button icon-name="utility:key" label="Add new Org" title="Configure Salesforce authentication for a new org in the Pipeline, or reconfigure it for a refreshed Sandbox" onclick={configureAuth} variant="brand" class="slds-m-left_small"></lightning-button>
+                <lightning-button icon-name="utility:refresh" label="Refresh" title="Refresh pipeline data" onclick={refreshPipeline} class="slds-m-left_small"></lightning-button>
+            </div>
+        </div>
+        <template if:true={pipelineData}>
+            <template if:true={pipelineData.orgs}>
+                <template if:true={pipelineData.orgs.length}>
+                    <div class="pipeline-container">
+                        <div class="mermaid"></div>
+                        <template if:true={error}>
+                            <pre class="mermaid-debug" style="color:#888;font-size:10px;max-height:100px;overflow:auto;"></pre>
+                        </template>
+                        <template if:true={hasWarnings}>
+                            <div class="slds-box slds-theme_warning slds-m-top_small" style="font-size:13px;">
+                                <div class="slds-text-title_caps slds-m-bottom_x-small">Warnings</div>
+                                <ul class="slds-list_dotted">
+                                    <template for:each={warnings} for:item="warning">
+                                        <li key={warning}>{warning}</li>
+                                    </template>
+                                </ul>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+                <template if:false={pipelineData.orgs.length}>
+                    <div class="slds-align_absolute-center" style="flex-direction:column;display:flex;align-items:center;padding:2rem;">
+                        <div class="slds-text-heading_medium slds-m-bottom_medium">No pipeline configured</div>
+                        <div class="slds-m-bottom_medium">To get started, configure your sfdx-hardis DevOps pipeline.</div>
+                        <a class="slds-button slds-button_brand slds-m-bottom_medium" href="https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/" target="_blank">Configure DevOps Pipeline</a>
+                        <a href="https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/" target="_blank" style="display:block;max-width:600px;width:100%;margin:1.5rem 0;">
+                            <img src="https://sfdx-hardis.cloudity.com/assets/images/devops-comparison.png" alt="DevOps Comparison" style="max-width:600px;width:100%;box-shadow:0 2px 8px #0001;border-radius:8px;" />
+                        </a>
+                        <div class="slds-m-bottom_medium slds-text-body_regular" style="max-width:600px;text-align:center;">See how sfdx-hardis can help you automate and secure your Salesforce deployments, and compare with other DevOps solutions.</div>
+                    </div>
                 </template>
             </template>
-            <template if:false={pipelineData}>
-                <p>Loading pipeline data...</p>
-            </template>
-            <template if:true={error}>
-                <p class="slds-text-color_error">Error loading pipeline: {error}</p>
-            </template>
-        </div>
+        </template>
+        <template if:false={pipelineData}>
+            <p>Loading pipeline data...</p>
+        </template>
+        <template if:true={error}>
+            <p class="slds-text-color_error">Error loading pipeline: {error}</p>
+        </template>
     </lightning-card>
     </div>
 </template>
