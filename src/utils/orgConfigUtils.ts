@@ -1,7 +1,9 @@
 import * as fs from "fs";
+import path from "path";
 import { glob } from "glob";
 import * as yaml from "js-yaml";
 import sortArray from "sort-array";
+import { getWorkspaceRoot } from "../utils";
 
 export interface MajorOrg {
   branchName: string;
@@ -14,8 +16,9 @@ export interface MajorOrg {
 }
 
 export async function listMajorOrgs(): Promise<MajorOrg[]> {
+  const workspaceRoot = getWorkspaceRoot();
   const branchConfigPattern = "**/config/branches/.sfdx-hardis.*.yml";
-  const configFiles = await glob(branchConfigPattern);
+  const configFiles = await glob(branchConfigPattern, {cwd: workspaceRoot});
   const majorOrgs: MajorOrg[] = [];
 
   for (const configFile of configFiles) {
@@ -62,6 +65,14 @@ export async function listMajorOrgs(): Promise<MajorOrg[]> {
         mergeTargets.length > 0 ? mergeTargets[0] : "preprod";
       warnings.push(
         `No merge target defined for branch '${branchName}'. Consider adding 'mergeTargets' in ${configFile} config file. (Ex: mergeTargets: ["${exampleMergeTarget}"])`,
+      );
+    }
+
+    // Check if there is an encrypted certificate key file for the branch
+    const certKeyFile = `config/branches/.jwt/${branchName}.key`;
+    if (!fs.existsSync(path.join(workspaceRoot,certKeyFile))) {
+      warnings.push(
+        `No encrypted certificate key file found for branch '${branchName}' (expected: ${certKeyFile}). You should configure the org authentication again.`,
       );
     }
 
