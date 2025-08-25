@@ -39,13 +39,31 @@ export default class InstalledPackages extends LightningElement {
         this.draftValues = [];
     }
 
+    handleDraftValuesChange(event) {
+        debugger;
+        const newDrafts = event.detail.draftValues;
+        for (const newDraft of newDrafts) {
+            const existingDraftIndex = this.draftValues.findIndex(draft => draft.Id === newDraft.Id);
+            if (existingDraftIndex !== -1) {
+                // Update existing draft
+                this.draftValues[existingDraftIndex] = { ...this.draftValues[existingDraftIndex], ...newDraft };
+            } else {
+                // Add new draft
+                this.draftValues.push(newDraft);
+            }
+        }
+        // Refresh to ensure reactivity
+        this.draftValues = [...this.draftValues];
+    }
+
     handleSave() {
         // Send updated config to VS Code
         if (typeof window !== "undefined" && window.sendMessageToVSCode) {
+            debugger;
             // Merge draftValues into packages
             const packagesForUpdate = [...this.packages]
             for (const draft of this.draftValues) {
-                const pkg = packagesForUpdate.find(p => p.SubscriberPackageId === draft.SubscriberPackageId);
+                const pkg = packagesForUpdate.find(p => p.Id === draft.Id);
                 if (pkg) {
                     Object.assign(pkg, draft);
                 }
@@ -59,21 +77,6 @@ export default class InstalledPackages extends LightningElement {
             this.editMode = false;
             this.draftValues = [];
         }
-    }
-
-    handleDraftValuesChange(event) {
-        const newDrafts = event.detail.draftValues;
-        // Merge new drafts into existing draftValues by SubscriberPackageId
-        const draftMap = new Map();
-        // Add existing drafts
-        for (const draft of this.draftValues) {
-            draftMap.set(draft.SubscriberPackageId, { ...draft });
-        }
-        // Overwrite/add new drafts
-        for (const draft of newDrafts) {
-            draftMap.set(draft.SubscriberPackageId, { ...draft });
-        }
-        this.draftValues = Array.from(draftMap.values());
     }
 
     handleRetrieveFromOrg() {
