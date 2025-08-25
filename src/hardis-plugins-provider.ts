@@ -123,7 +123,7 @@ export class HardisPluginsProvider
       if (!nodeVersionMatch) {
         nodeItem.status = "dependency-missing";
         nodeItem.tooltip = "Node.js is missing";
-        (nodeItem.command = `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
+        ((nodeItem.command = `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
           "https://nodejs.org/en/",
         )}`),
           vscode.window
@@ -137,12 +137,12 @@ export class HardisPluginsProvider
                   vscode.Uri.parse("https://nodejs.org/en/"),
                 );
               }
-            });
+            }));
       } else if (parseInt(nodeVersionMatch[1]) < NODE_JS_MINIMUM_VERSION) {
         nodeItem.label += " v" + nodeVersionMatch[1];
         nodeItem.status = "dependency-warning";
         nodeItem.tooltip = "Node.js is outdated";
-        (nodeItem.command = `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
+        ((nodeItem.command = `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
           "https://nodejs.org/en/",
         )}`),
           vscode.window
@@ -156,7 +156,7 @@ export class HardisPluginsProvider
                   vscode.Uri.parse("https://nodejs.org/en/"),
                 );
               }
-            });
+            }));
       } else {
         nodeItem.label +=
           " v" + nodeVersionMatch[1] + "." + nodeVersionMatch.slice(2).join("");
@@ -196,7 +196,7 @@ export class HardisPluginsProvider
       if (!gitVersionMatch) {
         gitItem.status = "dependency-missing";
         gitItem.tooltip = "Git is missing";
-        (gitItem.command = `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
+        ((gitItem.command = `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
           "https://git-scm.com/downloads",
         )}`),
           vscode.window
@@ -210,7 +210,7 @@ export class HardisPluginsProvider
                   vscode.Uri.parse("https://git-scm.com/downloads"),
                 );
               }
-            });
+            }));
       } else {
         gitItem.label +=
           " v" + gitVersionMatch[1] + "." + gitVersionMatch.slice(2).join("");

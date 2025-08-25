@@ -268,9 +268,7 @@ export class LocalWebSocketServer {
           type: "refreshPipeline",
         });
       }
-      const packagesConfigPanel = panelManager.getPanel(
-        "s-installed-packages",
-      );
+      const packagesConfigPanel = panelManager.getPanel("s-installed-packages");
       // Packages config
       if (packagesConfigPanel) {
         packagesConfigPanel.sendMessage({
