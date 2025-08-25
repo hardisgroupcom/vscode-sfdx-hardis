@@ -13,6 +13,7 @@ const lwcModules = {
   "s-pipeline-config": () => import("s/pipelineConfig"),
   "s-extension-config": () => import("s/extensionConfig"),
   "s-multiline-helptext": () => import("s/multilineHelptext"),
+  "s-installed-packages": () => import("s/installedPackages"),
 };
 
 // Communication bridge between VS Code webview and LWC components

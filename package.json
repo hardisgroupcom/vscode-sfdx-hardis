@@ -135,11 +135,6 @@
     },
     "commands": [
       {
-        "command": "vscode-sfdx-hardis.welcome",
-        "title": "SFDX Hardis: Welcome",
-        "icon": "$(home)"
-      },
-      {
         "command": "vscode-sfdx-hardis.execute-command",
         "title": "SFDX Hardis: Execute sfdx-hardis command",
         "icon": "$(run)"
@@ -273,6 +268,11 @@
         "command": "vscode-sfdx-hardis.openPluginHelp",
         "title": "View dependency documentation",
         "icon": "$(remote-explorer-documentation)"
+      },
+      {
+        "command": "vscode-sfdx-hardis.showInstalledPackages",
+        "title": "SFDX Hardis: Show Installed Packages",
+        "icon": "$(package)"
       }
     ],
     "viewsContainers": {

@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+- DevOps Pipeline
+  - Installed packages Manager
+  - Warning when missing encrypted certificate keys in branch configuration
+  - Warning when manual actions file has not been set
+- Remove declaration of welcome command that is not existing anymore
+- Update Copilot instructions
+
 ## [6.1.3] 2024-08-24
 
 - Allow hardis:project:configure:auth to call itself when necessary

@@ -65,6 +65,7 @@ export class SfdxHardisConfigHelper {
     { name: "autoRemoveUserPermissions", scopes: ["global"] },
     { name: "apexTestsMinCoverageOrgWide", scopes: ["global"] },
     { name: "extends", scopes: ["global"] },
+    { name: "installedPackages", scopes: ["global", "branch"] },
   ];
   static readonly SECTIONS = [
     {

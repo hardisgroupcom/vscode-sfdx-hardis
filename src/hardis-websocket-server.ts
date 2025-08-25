@@ -258,13 +258,21 @@ export class LocalWebSocketServer {
     else if (data.event === "refreshPlugins") {
       vscode.commands.executeCommand("vscode-sfdx-hardis.refreshPluginsView");
     }
-    // Request to refresh pipeline box
+    // Request to refresh pipeline info
     else if (data.event === "refreshPipeline") {
       const panelManager = LwcPanelManager.getInstance();
+      // Pipeline config
       const pipelinePanel = panelManager.getPanel("s-pipeline");
       if (pipelinePanel) {
         pipelinePanel.sendMessage({
           type: "refreshPipeline",
+        });
+      }
+      const packagesConfigPanel = panelManager.getPanel("s-installed-packages");
+      // Packages config
+      if (packagesConfigPanel) {
+        packagesConfigPanel.sendMessage({
+          type: "refreshPackages",
         });
       }
     }

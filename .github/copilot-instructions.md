@@ -28,6 +28,11 @@ This is a **Visual Studio Code extension** that provides an intuitive UI for **S
 - **yarn** - NPM packages manager (so use `yarn` commands instead of `npm`)
 - **LWC**: Salesforce lightning web components for UI
 
+### Utilities and Config Management
+- **src/utils/** contains helpers for caching, config, org, string operations, and git PR button logic.
+- **src/utils/pipeline/sfdxHardisConfigHelper.ts**: Singleton per workspace, loads config schema (remote/local), merges global/branch config, exposes config fields/sections for LWC editors, and saves config from LWC UI. Only fields in `CONFIGURABLE_FIELDS` are exposed, grouped by `SECTIONS`.
+- **Config schema** is loaded from a remote URL or local fallback. LWC config editors use this schema for field rendering and validation.
+
 ### Main Components
 
 #### 1. Extension Entry Point (`src/extension.ts`)
@@ -205,12 +210,22 @@ const remoteConfig = await loadExternalSfdxHardisConfiguration();
 - SLDS (Salesforce Lightning Design System) is the default styling system. Avoid custom CSS unless SLDS cannot provide the required style.
 - LWC base components are located in `node_modules/@salesforce-ux/design-system/ui/components`.
 
+#### LWC UI Structure
+- **src/webviews/lwc-ui/index.js**: LWC webview bootstrapper, instantiates components, and routes messages.
+- **src/webviews/lwc-ui/modules/s/**: Contains LWC modules for command execution, extension config, pipeline, pipeline config, prompt input, and help text. Each module has `.js`, `.html`, `.css` files and uses SLDS for styling.
+- LWC config editors (extension config, pipeline config) receive schema and config data from the extension, render fields by section, and send save requests back to the extension.
+
 ### LWC/VS Code Message Exchange Pattern
 
 #### 1. Initialization
 - When a webview is created, the extension injects an `#app` container with `data-lwc-id` and `data-init-data` attributes.
 - The LWC bootstrap (`index.js`) reads these attributes, instantiates the correct LWC component, and passes initialization data.
 - The extension sends an `initialize` message to the LWC component after the DOM is ready, containing any required data (e.g., pipeline info, PR button info, command context).
+
+#### 1a. Config Editor Workflow
+- The extension provides config schema and values (global/branch) to the LWC config editor panel.
+- LWC config editors render fields by section, allow editing, and send save requests to the extension.
+- The extension saves config using `SfdxHardisConfigHelper.saveConfigFromEditor`, writing to the appropriate YAML file (global or branch).
 
 #### 2. Message Bridge
 - Communication is strictly message-based using `window.sendMessageToVSCode(message)` and `window.addEventListener('message', ...)`.
@@ -305,6 +320,17 @@ window.addEventListener("message", (event) => {
 - Test webviews in both light and dark VS Code themes, and with different org color settings if applicable.
 - For new features, add integration tests that simulate user interaction with the LWC webview and verify correct extension-host communication.
 - See `src/webviews/lwc-ui/modules/` for examples of best practices in LWC webview structure and communication.
+
+#### Extending Config Schema and Editors
+- To add new config fields:
+  1. Add to `CONFIGURABLE_FIELDS` in `sfdxHardisConfigHelper.ts`.
+  2. Update the schema (remote/local) as needed.
+  3. Add to the appropriate section in `SECTIONS`.
+  4. LWC config editors will automatically reflect new fields if schema is updated.
+- To add new LWC panels:
+  1. Create a new folder in `modules/s/` with `.js`, `.html`, `.css`.
+  2. Register the panel in the extension.
+  3. Use the message protocol for communication.
 
 ## Integration Points
 

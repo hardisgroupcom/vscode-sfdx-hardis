@@ -1,0 +1,33 @@
+<template>
+    <div class="slds-scope slds-theme_default slds-p-around_medium blue-back">
+    <lightning-card title="Installed Packages on SFDX-Hardis DevOps Pipeline">
+        <div slot="actions" class="slds-float_right">
+            <lightning-button-group>
+                <lightning-button icon-name="utility:download" label="Retrieve from org" variant="brand" title="Retrieve package config from org" onclick={handleRetrieveFromOrg}></lightning-button>
+                <span class="slds-m-left_x-small"></span>
+                <lightning-button icon-name="utility:add" label="Install new package" variant="brand" title="Install a new package" onclick={handleInstallNewPackage}></lightning-button>
+                <span class="slds-m-left_x-small"></span>
+                <lightning-button icon-name="utility:refresh" label="Refresh" title="Refresh Installed packages configuration" onclick={handleRefresh}></lightning-button>
+            </lightning-button-group>
+        </div>
+        <div class="slds-m-around_medium">
+            <lightning-datatable
+                key-field="Id"
+                data={packages}
+                columns={columns}
+                draft-values={draftValues}
+                onsave={handleSave}
+                oncellchange={handleDraftValuesChange}
+                hide-checkbox-column
+                class="slds-m-bottom_medium"
+            ></lightning-datatable>
+            <template if:true={isEditMode}>
+                <lightning-button-group>
+                    <lightning-button variant="brand" label="Save" onclick={handleSave}></lightning-button>
+                    <lightning-button variant="neutral" label="Cancel" onclick={handleCancel}></lightning-button>
+                </lightning-button-group>
+            </template>
+        </div>
+    </lightning-card>
+    </div>
+</template>

@@ -65,6 +65,7 @@ export class Commands {
     this.registerShowPipeline();
     this.registerShowExtensionConfig();
     this.registerShowPipelineConfig();
+    this.registerShowInstalledPackages();
   }
   registerShowExtensionConfig() {
     // Show the extensionConfig LWC panel for editing extension settings
@@ -488,6 +489,67 @@ export class Commands {
     this.disposables.push(disposable);
   }
 
+  registerShowInstalledPackages() {
+    const workspaceRoot = getWorkspaceRoot();
+    const sfdxHardisConfigHelper =
+      SfdxHardisConfigHelper.getInstance(workspaceRoot);
+    // Reusable loading packages function
+    const loadInstalledPackages = async () => {
+      // Show progress while loading config editor input
+      const packages = await vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Notification,
+          title: `Loading installed packages...`,
+          cancellable: false,
+        },
+        async () => {
+          const allConfig = await sfdxHardisConfigHelper.getEditorInput(null);
+          return allConfig?.config?.installedPackages || [];
+        },
+      );
+      return packages;
+    };
+
+    const disposable = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.showInstalledPackages",
+      async () => {
+        const packages = await loadInstalledPackages();
+        const panel = LwcPanelManager.getInstance().getOrCreatePanel(
+          "s-installed-packages",
+          { packages },
+        );
+        panel.updateTitle("Installed Packages");
+        // Listen for save events from LWC
+        // Register message handler to save configuration
+        panel.onMessage(async (type, data) => {
+          if (type === "saveSfdxHardisConfig") {
+            try {
+              const allConfig =
+                await sfdxHardisConfigHelper.getEditorInput(null);
+              allConfig.config.installedPackages = data.packages;
+              await sfdxHardisConfigHelper.saveConfigFromEditor(allConfig);
+              vscode.window.showInformationMessage(
+                "Installed packages configuration saved successfully.",
+              );
+            } catch (error: any) {
+              vscode.window.showErrorMessage(
+                "Error saving installed packages configuration: " +
+                  error.message,
+              );
+            }
+          } else if (type === "refresh") {
+            const packages = await loadInstalledPackages();
+            panel.sendMessage({
+              type: "initialize",
+              data: { packages: packages },
+            });
+          }
+        });
+      },
+    );
+    this.disposables.push(disposable);
+  }
+
   registerOpenKeyFile() {
     // Open key file command
     vscode.commands.registerCommand(
@@ -529,8 +591,8 @@ export class Commands {
         const currentWorkspaceFolderUri = getWorkspaceRoot();
         const value = await new Promise<any>((resolve) => {
           quickpick.ignoreFocusOut = true;
-          (quickpick.title = "Please select a configuration file to open"),
-            (quickpick.canSelectMany = false);
+          ((quickpick.title = "Please select a configuration file to open"),
+            (quickpick.canSelectMany = false));
           quickpick.items = keyFileList
             .filter((choice: any) =>
               fs.existsSync(currentWorkspaceFolderUri + path.sep + choice.file),

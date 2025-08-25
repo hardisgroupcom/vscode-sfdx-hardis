@@ -178,6 +178,18 @@ export default class Pipeline extends LightningElement {
     }
   }
 
+  handleShowInstalledPackages() {
+    if (typeof window !== "undefined" && window.sendMessageToVSCode) {
+      window.sendMessageToVSCode({
+        type: "runVsCodeCommand",
+        data: {
+          command: "vscode-sfdx-hardis.showInstalledPackages",
+          args: [],
+        },
+      });
+    }
+  }
+
   // Added refreshPipeline method
   refreshPipeline() {
     if (typeof window !== "undefined" && window.sendMessageToVSCode) {

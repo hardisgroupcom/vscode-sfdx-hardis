@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { BranchStrategyMermaidBuilder } from "./utils/pipeline/branchStrategyMermaidBuilder";
 import { listMajorOrgs, MajorOrg } from "./utils/orgConfigUtils";
+import { getConfig } from "./utils/pipeline/sfdxHardisConfig";
 
 export interface OrgNode {
   name: string;
@@ -60,12 +61,20 @@ export class PipelineDataProvider {
         }
       }
 
+      const warnings = majorOrgs.flatMap((org) => org.warnings || []);
+      const projectConfig = await getConfig("project");
+      if (!projectConfig.manualActionsFileUrl) {
+        warnings.push(
+          "The Pipeline should have Manual Actions tracking file (for pre-deployment and post-deployment manual actions). It is recommended to define one in Pipeline Settings.",
+        );
+      }
+
       return {
         orgs,
         links,
         mermaidDiagram,
         mermaidDiagramMajor,
-        warnings: majorOrgs.flatMap((org) => org.warnings || []),
+        warnings: warnings,
       };
     } catch (error: any) {
       vscode.window.showErrorMessage(
