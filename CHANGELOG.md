@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+ - New DevOps Pipeline installed packages manager
+ - Remove declaration of welcome command that is not existing anymore
+
 ## [6.1.3] 2024-08-24
 
 - Allow hardis:project:configure:auth to call itself when necessary
