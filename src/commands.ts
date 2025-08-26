@@ -408,14 +408,10 @@ export class Commands {
         );
 
         // Calculate PR button info using utility
-        const repoPath =
-          vscode.workspace.workspaceFolders &&
-          vscode.workspace.workspaceFolders.length > 0
-            ? vscode.workspace.workspaceFolders[0].uri.fsPath
-            : process.cwd();
+        const workspaceRoot = getWorkspaceRoot();
         let prButtonInfo = null;
         try {
-          prButtonInfo = await getPullRequestButtonInfo(repoPath);
+          prButtonInfo = await getPullRequestButtonInfo(workspaceRoot);
         } catch (e) {
           Logger.log("Error getting PR button info:\n" + JSON.stringify(e));
         }

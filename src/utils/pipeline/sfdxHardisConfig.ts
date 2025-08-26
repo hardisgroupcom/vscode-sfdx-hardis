@@ -185,8 +185,9 @@ export async function getCurrentGitBranch(options: any = { formatted: false }) {
   if (!isGitRepo()) {
     return null;
   }
+  const workspaceRoot = getWorkspaceRoot();
   const gitBranch =
-    process.env.CI_COMMIT_REF_NAME || (await simpleGit().branchLocal()).current;
+    process.env.CI_COMMIT_REF_NAME || (await simpleGit(workspaceRoot).branchLocal()).current;
   if (options.formatted === true) {
     return gitBranch.replace("/", "__");
   }

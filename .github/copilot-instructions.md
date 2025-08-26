@@ -348,7 +348,8 @@ if (!options.skipAuth) {
 ### Git Integration
 ```typescript
 import simpleGit from 'simple-git';
-const git = simpleGit();
+const workspaceRoot = getWorkspaceRoot();
+const git = simpleGit(workspaceRoot);
 const status = await git.status();
 ```
 

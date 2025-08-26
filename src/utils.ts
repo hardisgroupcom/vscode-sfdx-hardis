@@ -529,10 +529,15 @@ export async function loadFromLocalConfigFile(file: string): Promise<any> {
 
 export async function getGitParentBranch() {
   try {
+    const workspaceRoot = getWorkspaceRoot();
+    const git = simpleGit({ trimmed: true, baseDir: workspaceRoot });
+    if (!(await git.checkIsRepo())) {
+      return null;
+    }
     const outputFromGit = (
-      await simpleGit({ trimmed: true }).raw("show-branch", "-a")
+      await git.raw("show-branch", "-a")
     ).split("\n");
-    const rev = await simpleGit({ trimmed: true }).raw(
+    const rev = git.raw(
       "rev-parse",
       "--abbrev-ref",
       "HEAD",
