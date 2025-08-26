@@ -16,3 +16,9 @@
 .slds-align_absolute-center {
 	align-items: center;
 }
+
+/* Lighter blue for readonly (disabled) and checked toggles */
+.slds-checkbox_toggle input[type='checkbox'][disabled][checked] + .slds-checkbox_faux {
+	background: #B3D6F6 !important;
+	border-color: #B3D6F6 !important;
+}

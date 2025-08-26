@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [6.2.1] 2024-08-26
+
+- Display toggles instead of checkboxes for boolean values in Pipeline Settings and Extension Settings UIs
+
 ## [6.2.0] 2024-08-25
 
 - DevOps Pipeline

@@ -63,7 +63,7 @@ export default class ExtensionConfig extends LightningElement {
 
   handleCheckboxChange(event) {
     const key = event.target.name;
-    const value = event.detail.checked;
+    const value = event.target.checked;
     window.sendMessageToVSCode({
       type: "updateVsCodeSfdxHardisConfiguration",
       data: { configKey: key, value },

@@ -287,7 +287,7 @@ export default class PipelineConfig extends LightningElement {
 
     // Robustly handle all input types
     if (schema.type === "boolean") {
-      // Checkbox: checked property
+      // Toggle: checked property
       value = event.target.checked;
       this.editedConfig[key] = value;
     } else if (schema.enum) {
