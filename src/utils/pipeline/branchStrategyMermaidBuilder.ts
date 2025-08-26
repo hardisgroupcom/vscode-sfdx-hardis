@@ -93,10 +93,14 @@ export class BranchStrategyMermaidBuilder {
           label: "Merge",
         });
       }
+      let label = branchAndOrg.branchName;
+      if (branchAndOrg?.commitsGroupsPendingMergeToTarget) {
+        label += `</br>(${branchAndOrg.commitsGroupsPendingMergeToTarget.length})`;
+      }
       return {
         name: branchAndOrg.branchName,
         nodeName: nodeName,
-        label: branchAndOrg.branchName,
+        label: label,
         class: isProduction(branchAndOrg.branchName) ? "gitMain" : "gitMajor",
         level: branchAndOrg.level,
         instanceUrl: branchAndOrg.instanceUrl,
