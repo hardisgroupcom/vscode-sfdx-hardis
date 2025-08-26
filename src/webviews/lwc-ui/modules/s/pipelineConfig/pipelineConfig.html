@@ -85,21 +85,22 @@
                               </div>
                             </template>
                             <template if:true={entry.isBoolean}>
-                              <div class="slds-form-element slds-m-bottom_xx-small" style="display:flex;align-items:center;gap:0.2rem;">
-                                <lightning-input
-                                  type="checkbox"
-                                  data-key={entry.key}
-                                  checked={entry.valueEdit}
-                                  onchange={handleInputChange}
-                                  oninput={handleInputChange}
-                                  class="slds-m-right_x-small"
-                                ></lightning-input>
-                                <span style="display:flex;align-items:center;gap:0.15rem;">
+                              <div class="slds-form-element slds-m-bottom_xx-small">
+                                <label class="slds-form-element__label" style="display:block;">
                                   {entry.label}
                                   <template if:true={entry.description}>
                                     <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
                                   </template>
-                                </span>
+                                </label>
+                                <lightning-input
+                                  type="toggle"
+                                  data-key={entry.key}
+                                  checked={entry.valueEdit}
+                                  onchange={handleInputChange}
+                                  oninput={handleInputChange}
+                                  class="slds-m-bottom_xx-small"
+                                  variant="label-hidden"
+                                ></lightning-input>
                               </div>
                             </template>
                             <template if:true={entry.isText}>
@@ -140,19 +141,20 @@
                           </template>
                           <template if:false={isEditMode}>
                             <template if:true={entry.isBoolean}>
-                              <div class="slds-form-element slds-m-bottom_xx-small" style="display:flex;align-items:center;gap:0.2rem;">
-                                <lightning-input
-                                  type="checkbox"
-                                  checked={entry.value}
-                                  disabled
-                                  class="slds-m-right_x-small"
-                                ></lightning-input>
-                                <span style="display:flex;align-items:center;gap:0.15rem;">
+                              <div class="slds-form-element slds-m-bottom_xx-small">
+                                <label class="slds-form-element__label" style="display:block;">
                                   {entry.label}
                                   <template if:true={entry.description}>
                                     <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
                                   </template>
-                                </span>
+                                </label>
+                                <lightning-input
+                                  type="toggle"
+                                  checked={entry.value}
+                                  disabled
+                                  class="slds-m-bottom_xx-small"
+                                  variant="label-hidden"
+                                ></lightning-input>
                               </div>
                             </template>
                             <template if:false={entry.isBoolean}>

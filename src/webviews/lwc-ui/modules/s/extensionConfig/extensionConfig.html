@@ -28,13 +28,17 @@
                                             ></lightning-combobox>
                                         </template>
                                         <template if:true={entry.isBoolean}>
+                                            <label class="slds-form-element__label" style="display:block;">
+                                                {entry.label}
+                                            </label>
                                             <lightning-input
-                                                type="checkbox"
+                                                type="toggle"
                                                 name={entry.key}
-                                                label={entry.label}
                                                 checked={entry.valueBoolean}
                                                 onchange={handleCheckboxChange}
+                                                oninput={handleCheckboxChange}
                                                 class="slds-m-bottom_xx-small"
+                                                variant="label-hidden"
                                             ></lightning-input>
                                         </template>
                                         <template if:true={entry.isString}>
