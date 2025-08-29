@@ -7,6 +7,7 @@ import { HardisStatusProvider } from "./hardis-status-provider";
 import { HardisPluginsProvider } from "./hardis-plugins-provider";
 import { LocalWebSocketServer } from "./hardis-websocket-server";
 import { getPythonCommand, getWorkspaceRoot } from "./utils";
+import axios from "axios";
 import TelemetryReporter from "@vscode/extension-telemetry";
 import { ThemeUtils } from "./themeUtils";
 import { exec } from "child_process";
@@ -577,6 +578,40 @@ export class Commands {
           "vscode-sfdx-hardis.execute-command",
           command,
         );
+        // Display a progress vscode UI message while the server starts (check that the server is started by pinging localhost:8000)
+        vscode.window.withProgress(
+          {
+            location: vscode.ProgressLocation.Notification,
+            title: "Starting local documentation server...\n(it can take a while 😱)",
+            cancellable: true,
+          }, async (progress, token) => {
+            return new Promise<void>((resolve, reject) => {
+              let isResolved = false;
+              const interval = setInterval(() => {
+                axios
+                  .get("http://localhost:8000", { timeout: 2000 })
+                  .then(() => {
+                    if (!isResolved) {
+                      isResolved = true;
+                      clearInterval(interval);
+                      progress.report({ message: "Local documentation server is running at http://localhost:8000" });
+                      vscode.env.openExternal(vscode.Uri.parse("http://localhost:8000"));
+                      resolve();
+                    }
+                  })
+                  .catch(() => {
+                    // Server not started yet or not reachable
+                  });
+              }, 3000);
+              token.onCancellationRequested(() => {
+                if (!isResolved) {
+                  isResolved = true;
+                  clearInterval(interval);
+                  reject();
+                }
+              });
+            });
+          });
       },
     );
     this.disposables.push(disposable);
