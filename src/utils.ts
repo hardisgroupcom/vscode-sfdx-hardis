@@ -594,7 +594,7 @@ export function getGitBashPath() {
   return null;
 }
 
-let pythonCommand: string | null  = null;
+let pythonCommand: string | null = null;
 export async function getPythonCommand() {
   if (pythonCommand !== null) {
     return pythonCommand;
@@ -605,7 +605,11 @@ export async function getPythonCommand() {
       const result = await execShell(`${candidate} --version`, {
         maxBuffer: 10000 * 10000,
       });
-      if (result && result.stdout && result.stdout.toString().includes("Python")) {
+      if (
+        result &&
+        result.stdout &&
+        result.stdout.toString().includes("Python")
+      ) {
         pythonCommand = candidate;
         return candidate;
       }

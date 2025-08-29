@@ -842,8 +842,7 @@ export class HardisCommandsProvider
           {
             id: "hardis-run-doc",
             label: "Run Local HTML Doc Pages",
-            command:
-              "vscode-sfdx-hardis.runLocalHtmlDocPages",
+            command: "vscode-sfdx-hardis.runLocalHtmlDocPages",
             tooltip:
               "Run Documentation local web server, then open http://127.0.0.1:8000/ . You need Python on your computer :)",
             requiresProject: true,

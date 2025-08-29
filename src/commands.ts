@@ -559,19 +559,19 @@ export class Commands {
         // Check how python is installed
         const pythonCommand = await getPythonCommand();
         if (!pythonCommand) {
-            vscode.window
+          vscode.window
             .showErrorMessage(
               "🦙 Python is not installed or not available in PATH. Please install Python to run the local documentation server.",
-              "Download and install Python"
+              "Download and install Python",
             )
             .then((selection) => {
               if (selection === "Download and install Python") {
-              vscode.env.openExternal(
-                vscode.Uri.parse("https://www.python.org/downloads/")
-              );
+                vscode.env.openExternal(
+                  vscode.Uri.parse("https://www.python.org/downloads/"),
+                );
               }
             });
-            return;
+          return;
         }
         const command = `${pythonCommand} -m pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists && mkdocs serve --verbose`;
         vscode.commands.executeCommand(
@@ -582,9 +582,11 @@ export class Commands {
         vscode.window.withProgress(
           {
             location: vscode.ProgressLocation.Notification,
-            title: "Starting local documentation server...\n(it can take a while 😱)",
+            title:
+              "Starting local documentation server...\n(it can take a while 😱)",
             cancellable: true,
-          }, async (progress, token) => {
+          },
+          async (progress, token) => {
             return new Promise<void>((resolve, reject) => {
               let isResolved = false;
               const interval = setInterval(() => {
@@ -594,8 +596,13 @@ export class Commands {
                     if (!isResolved) {
                       isResolved = true;
                       clearInterval(interval);
-                      progress.report({ message: "Local documentation server is running at http://localhost:8000" });
-                      vscode.env.openExternal(vscode.Uri.parse("http://localhost:8000"));
+                      progress.report({
+                        message:
+                          "Local documentation server is running at http://localhost:8000",
+                      });
+                      vscode.env.openExternal(
+                        vscode.Uri.parse("http://localhost:8000"),
+                      );
                       resolve();
                     }
                   })
@@ -611,7 +618,8 @@ export class Commands {
                 }
               });
             });
-          });
+          },
+        );
       },
     );
     this.disposables.push(disposable);
