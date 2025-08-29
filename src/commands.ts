@@ -573,7 +573,7 @@ export class Commands {
             });
             return;
         }
-        const command = `${pythonCommand} -m pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists && mkdocs serve`;
+        const command = `${pythonCommand} -m pip install mkdocs-material mkdocs-exclude-search mdx_truly_sane_lists && mkdocs serve --verbose`;
         vscode.commands.executeCommand(
           "vscode-sfdx-hardis.execute-command",
           command,
