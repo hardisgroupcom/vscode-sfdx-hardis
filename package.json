@@ -273,6 +273,11 @@
         "command": "vscode-sfdx-hardis.showInstalledPackages",
         "title": "SFDX Hardis: Show Installed Packages",
         "icon": "$(package)"
+      },
+      {
+        "command": "vscode-sfdx-hardis.runLocalHtmlDocPages",
+        "title": "SFDX Hardis: Run Local HTML Doc Pages",
+        "icon": "$(globe)"
       }
     ],
     "viewsContainers": {

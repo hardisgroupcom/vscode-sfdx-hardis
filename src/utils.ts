@@ -593,3 +593,25 @@ export function getGitBashPath() {
   gitBashPath = null;
   return null;
 }
+
+let pythonCommand: string | null  = null;
+export async function getPythonCommand() {
+  if (pythonCommand !== null) {
+    return pythonCommand;
+  }
+  const candidates = ["python", "python3", "py", "py3"];
+  for (const candidate of candidates) {
+    try {
+      const result = await execShell(`${candidate} --version`, {
+        maxBuffer: 10000 * 10000,
+      });
+      if (result && result.stdout && result.stdout.toString().includes("Python")) {
+        pythonCommand = candidate;
+        return candidate;
+      }
+    } catch {
+      console.log(`Python not found with command: ${candidate}`);
+    }
+  }
+  return null;
+}
