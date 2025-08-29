@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [6.2.2] 2024-08-29
+
+- Analyze local environment to find Python executable to use to call command **Run Local HTML Doc Pages**. Display a link to install python if not found.
+
 ## [6.2.1] 2024-08-26
 
 - Display toggles instead of checkboxes for boolean values in Pipeline Settings and Extension Settings UIs
