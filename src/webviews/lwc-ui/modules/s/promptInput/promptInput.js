@@ -15,7 +15,9 @@ export default class PromptInput extends LightningElement {
   @track selectedValues = [];
   @track selectedValue = ""; // Single value for select input (string identifier)
   @track selectedOptionDescription = ""; // Description for selected option
+  @track comboboxFilter = ""; // filter text for combobox when many options
   @track multiselectFilter = "";
+  @track comboboxFilterVisible = false;
   @track multiselectShowOnlySelected = false;
   @track isVisible = false;
   @track isSubmitting = false; // Track if submission is in progress
@@ -30,6 +32,22 @@ export default class PromptInput extends LightningElement {
   // Handler for filter input
   handleMultiselectFilterChange(event) {
     this.multiselectFilter = event.target.value || "";
+  }
+
+  // Handler for combobox filter input
+  handleComboboxFilterChange(event) {
+    this.comboboxFilter = event.detail?.value ?? event.target?.value ?? "";
+  }
+
+  // Toggle visibility of the combobox filter input
+  handleToggleComboboxFilter() {
+    // Toggle only if the feature is available
+    if (!this.showComboboxFilter) return;
+    this.comboboxFilterVisible = !this.comboboxFilterVisible;
+    // When hiding the filter, clear it so combobox shows all values
+    if (!this.comboboxFilterVisible) {
+      this.comboboxFilter = "";
+    }
   }
 
   // Handler for show only selected toggle
@@ -327,6 +345,8 @@ export default class PromptInput extends LightningElement {
     this._hasInitialFocus = false; // Reset focus flag
     this._hasInitialScroll = false; // Reset scroll flag
     this.multiselectFilter = "";
+    this.comboboxFilter = "";
+    this.comboboxFilterVisible = false;
     this.multiselectShowOnlySelected = false;
   }
 
@@ -375,7 +395,40 @@ export default class PromptInput extends LightningElement {
 
   get comboboxPlaceholder() {
     const placeholder = this.promptPlaceholder;
-    return placeholder || "Choose an option...";
+    const base = placeholder || "Choose an option";
+    const count = (this.filteredComboboxOptions || []).length;
+    return `${base} (${count} choice${count === 1 ? "" : "s"})`;
+  }
+
+  // Dynamic label for combobox including visible choices count
+  get comboboxLabel() {
+    const base = "Select an option";
+    const count = (this.filteredComboboxOptions || []).length;
+    return `${base} (${count} choice${count === 1 ? "" : "s"})`;
+  }
+
+  // Whether to show the right-side filter input for combobox
+  get showComboboxFilter() {
+    // Show when there are more than 10 original choices
+    return (
+      this.currentPrompt &&
+      this.currentPrompt.choices &&
+      this.currentPrompt.choices.length > 5
+    );
+  }
+
+  // Filtered combobox options based on comboboxFilter text
+  get filteredComboboxOptions() {
+    const options = this.selectOptions || [];
+    if (!this.comboboxFilter || this.comboboxFilter.trim().length === 0) {
+      return options;
+    }
+    const filter = this.comboboxFilter.trim().toLowerCase();
+    return options.filter(
+      (opt) =>
+        (opt.label && opt.label.toLowerCase().includes(filter)) ||
+        (opt.description && opt.description.toLowerCase().includes(filter)),
+    );
   }
 
   get promptDescription() {

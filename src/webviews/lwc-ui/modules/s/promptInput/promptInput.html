@@ -93,17 +93,72 @@
                     <!-- Select Input with Combobox (more than 5 choices) -->
                     <template if:true={isSelectWithCombobox}>
                         <div class="slds-m-bottom_medium">
-                            <lightning-combobox
-                                label="Select an option"
-                                placeholder={comboboxPlaceholder}
-                                options={selectOptions}
-                                value={selectedValue}
-                                onchange={handleSelectChange}
-                                onselect={handleSelectChange}
-                                onclick={handleComboboxClick}
-                                onkeydown={handleKeyDown}
-                                class="prompt-combobox">
-                            </lightning-combobox>
+                            <!-- When many options are available we show a small toggle button to show/hide a filter input on the right -->
+                            <template if:true={showComboboxFilter}>
+                                <div class="slds-grid slds-grid_vertical-align-center">
+                                    <div class="slds-col">
+                                        <lightning-combobox
+                                            label={comboboxLabel}
+                                            placeholder={comboboxPlaceholder}
+                                            options={filteredComboboxOptions}
+                                            value={selectedValue}
+                                            onchange={handleSelectChange}
+                                            onselect={handleSelectChange}
+                                            onclick={handleComboboxClick}
+                                            onkeydown={handleKeyDown}
+                                            class="prompt-combobox">
+                                        </lightning-combobox>
+                                    </div>
+                                    <div class="slds-col slds-no-flex slds-p-left_small slds-grid slds-grid_vertical-align-center slds-grid_align-end">
+                                        <!-- When filter is hidden show a small icon button to reveal it -->
+                                        <template if:false={comboboxFilterVisible}>
+                                                <lightning-button-icon
+                                                    class="combobox-filter-toggle"
+                                                    icon-name="utility:filterList"
+                                                    alternative-text="Show filter"
+                                                    onclick={handleToggleComboboxFilter}
+                                                    variant="bare"
+                                                    size="medium">
+                                                </lightning-button-icon>
+                                        </template>
+                                        <!-- When filter is visible show the search input -->
+                                        <template if:true={comboboxFilterVisible}>
+                                            <lightning-input
+                                                type="search"
+                                                placeholder="Filter options..."
+                                                value={comboboxFilter}
+                                                onchange={handleComboboxFilterChange}
+                                                oninput={handleComboboxFilterChange}
+                                                class="prompt-combobox-filter"
+                                                style="min-width: 180px; max-width: 250px;"
+                                                aria-label="Filter options">
+                                            </lightning-input>
+                                                <lightning-button-icon
+                                                    class="combobox-filter-toggle slds-m-left_x-small"
+                                                    icon-name="utility:close"
+                                                    alternative-text="Hide filter"
+                                                    onclick={handleToggleComboboxFilter}
+                                                    variant="bare"
+                                                    size="medium">
+                                                </lightning-button-icon>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+                            <template if:false={showComboboxFilter}>
+                                <lightning-combobox
+                                    label={comboboxLabel}
+                                    placeholder={comboboxPlaceholder}
+                                    options={filteredComboboxOptions}
+                                    value={selectedValue}
+                                    onchange={handleSelectChange}
+                                    onselect={handleSelectChange}
+                                    onclick={handleComboboxClick}
+                                    onkeydown={handleKeyDown}
+                                    class="prompt-combobox">
+                                </lightning-combobox>
+                            </template>
+
                             <!-- Display description for selected option -->
                             <template if:true={selectedOptionDescription}>
                                 <div class="slds-m-top_small">

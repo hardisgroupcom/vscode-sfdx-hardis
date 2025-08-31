@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Show combobox filter to simplify selection when there are many values
+
 ## [6.2.2] 2024-08-29
 
 - Analyze local environment to find Python executable to use to call command **Run Local HTML Doc Pages**. Display a link to install python if not found.
