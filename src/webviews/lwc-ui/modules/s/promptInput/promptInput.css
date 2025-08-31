@@ -62,6 +62,26 @@ lightning-combobox {
     width: 100%;
 }
 
+/* Make the combobox filter toggle match combobox height and center the icon */
+.combobox-filter-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    /* Match typical lightning-combobox height (approx 2.25rem) */
+    min-height: 2.25rem;
+    min-width: 2.25rem;
+    height: 2.25rem;
+    width: 2.25rem;
+    padding: 0.15rem;
+}
+
+.combobox-filter-toggle::part(icon),
+.combobox-filter-toggle lightning-icon,
+.combobox-filter-toggle .slds-button__icon {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+}
+
 /* Make the helptext icon bigger */
 lightning-helptext {
     --slds-c-icon-size-medium: 1.25rem; /* Increase icon size from default 1rem to 1.25rem */
