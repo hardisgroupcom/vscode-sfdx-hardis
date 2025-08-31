@@ -52,11 +52,20 @@ export default class OrgManager extends LightningElement {
     }
   }
 
-  handleRefresh(all = false) {
-    // Respect the explicit all flag, or the toggle state in the UI
-    const allFlag = all || this.viewAll === true;
+  handleConnect() {
     if (typeof window !== 'undefined' && window.sendMessageToVSCode) {
-      window.sendMessageToVSCode({ type: 'refreshOrgs', data: { all: allFlag } });
+      window.sendMessageToVSCode({ type: 'runCommand', data: { command: 'sf hardis:org:select --prompt-default' } });
+    }
+  }
+
+  handleRefresh(all = false) {
+    // If called as an event handler the first argument will be an Event object.
+    // Treat a non-boolean `all` argument as "no explicit flag" and fall back to the UI toggle.
+    const explicitAll = typeof all === 'boolean' ? all : undefined;
+    const allFlag = explicitAll === true ? true : this.viewAll === true;
+    if (typeof window !== 'undefined' && window.sendMessageToVSCode) {
+      // Always send a boolean for `all` so the backend can rely on `data.all === true` checks
+      window.sendMessageToVSCode({ type: 'refreshOrgs', data: { all: !!allFlag } });
     }
   }
 

@@ -228,6 +228,7 @@ export async function execCommand(
       commandResult =
         COMMANDS_RESULTS[command].result ??
         (await COMMANDS_RESULTS[command].promise);
+      delete COMMANDS_RESULTS[command];
     } else {
       // no cache
       Logger.log("[vscode-sfdx-hardis][command] " + command);
@@ -236,6 +237,11 @@ export async function execCommand(
       COMMANDS_RESULTS[command] = { promise: commandResultPromise };
       commandResult = await commandResultPromise;
       COMMANDS_RESULTS[command] = { result: commandResult };
+      setTimeout(() => {
+        if (COMMANDS_RESULTS[command] && COMMANDS_RESULTS[command].result) {
+          delete COMMANDS_RESULTS[command];
+        }
+      }, 1000 * 20); // keep result in memory for 20 seconds
       console.timeEnd(command);
     }
   } catch (e: any) {

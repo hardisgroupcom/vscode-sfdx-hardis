@@ -7,6 +7,8 @@
                 <span class="slds-m-left_x-small"></span>
                 <lightning-button icon-name="utility:refresh" label="Refresh" title="Refresh orgs list" onclick={handleRefresh}></lightning-button>
                 <span class="slds-m-left_x-small"></span>
+                <lightning-button icon-name="utility:add" label="Add Org" title="Connect to existing orgs" variant="brand" onclick={handleConnect}></lightning-button>
+                <span class="slds-m-left_x-small"></span>
                 <template if:true={hasRecommended}>
                     <lightning-button icon-name="utility:trash" label="Remove recommended" variant="destructive" title="Remove recommended orgs" onclick={handleRemoveRecommended}></lightning-button>
                 </template>
