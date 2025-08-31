@@ -3,7 +3,13 @@
     <lightning-card title="Salesforce Orgs Manager">
         <div slot="actions" class="slds-float_right">
             <lightning-button-group>
+                <lightning-input type="toggle" label="View all orgs" title="View all orgs" checked={viewAll} onchange={handleViewAllToggle}></lightning-input>
+                <span class="slds-m-left_x-small"></span>
                 <lightning-button icon-name="utility:refresh" label="Refresh" title="Refresh orgs list" onclick={handleRefresh}></lightning-button>
+                <span class="slds-m-left_x-small"></span>
+                <template if:true={hasRecommended}>
+                    <lightning-button icon-name="utility:trash" label="Remove recommended" variant="destructive" title="Remove recommended orgs" onclick={handleRemoveRecommended}></lightning-button>
+                </template>
                 <span class="slds-m-left_x-small"></span>
                 <template if:true={hasSelection}>
                     <lightning-button icon-name="utility:delete" label="Forget selected" variant="destructive" title="Forget selected orgs" onclick={handleForgetSelected}></lightning-button>
@@ -15,7 +21,6 @@
                 key-field="username"
                 data={orgs}
                 columns={columns}
-                onsave={handleSave}
                 onrowaction={handleRowAction}
                 onrowselection={handleRowSelection}
                 selected-rows={selectedRowKeys}

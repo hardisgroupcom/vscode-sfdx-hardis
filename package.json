@@ -373,6 +373,11 @@
           "group": "navigation"
         },
         {
+          "command": "vscode-sfdx-hardis.openOrgsManager",
+          "when": "view == sfdx-hardis-status",
+          "group": "navigation"
+        },
+        {
           "command": "vscode-sfdx-hardis.selectColorForOrg",
           "when": "view == sfdx-hardis-status",
           "group": "navigation"

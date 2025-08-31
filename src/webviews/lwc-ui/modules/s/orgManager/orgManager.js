@@ -3,9 +3,11 @@ import { LightningElement, api, track } from "lwc";
 export default class OrgManager extends LightningElement {
   @track orgs = [];
   @track selectedRowKeys = [];
+  @track viewAll = false;
 
   columns = [
-    { label: "Instance URL", fieldName: "instanceUrl", type: "url", typeAttributes: { label: { fieldName: 'instanceUrl' }, target: '_blank' } },
+    { label: "Instance URL", fieldName: "instanceUrl", type: "url", typeAttributes: { label: { fieldName: 'instanceLabel' }, target: '_blank' } },
+    { label: "Type", fieldName: "orgType", type: "text" },
     { label: "Username", fieldName: "username", type: "text" },
     {
       label: "Connected",
@@ -15,15 +17,6 @@ export default class OrgManager extends LightningElement {
         label: { fieldName: 'connectedLabel' },
         name: 'toggleConnection',
         variant: { fieldName: 'connectedVariant' }
-      }
-    },
-    {
-      label: "Action",
-      type: "button",
-      typeAttributes: {
-        label: 'Open in Browser',
-        name: 'openLoginUrl',
-        variant: 'neutral'
       }
     }
   ];
@@ -39,8 +32,11 @@ export default class OrgManager extends LightningElement {
     this.orgs = this.orgs.map((o) => ({
       ...o,
       username: o.username || o.loginUrl || o.instanceUrl,
-      connectedLabel: o.connectedStatus && o.connectedStatus.toLowerCase().startsWith('connected') ? 'Disconnect' : 'Reconnect',
-      connectedVariant: o.connectedStatus && o.connectedStatus.toLowerCase().startsWith('connected') ? 'destructive' : 'brand'
+      // strip protocol for display (label) and remove trailing slash
+      instanceLabel: (o.instanceUrl || '').replace(/^https?:\/\//, '').replace(/\/$/, ''),
+      // more robust connected detection: accept connected/authorized/true etc.
+      connectedLabel: (o.connectedStatus || '').toString().toLowerCase().match(/connected|authorized/) ? 'Disconnect' : 'Reconnect',
+      connectedVariant: (o.connectedStatus || '').toString().toLowerCase().match(/connected|authorized/) ? 'destructive' : 'brand'
     }));
     this.selectedRowKeys = [];
   }
@@ -49,16 +45,58 @@ export default class OrgManager extends LightningElement {
   handleMessage(messageType, data) {
     switch (messageType) {
       case 'refreshOrgs':
-        this.handleRefresh();
+        this.handleRefresh(data && data.all === true);
         break;
       default:
         console.log('Unknown message type:', messageType, data);
     }
   }
 
-  handleRefresh() {
+  handleRefresh(all = false) {
+    // Respect the explicit all flag, or the toggle state in the UI
+    const allFlag = all || this.viewAll === true;
     if (typeof window !== 'undefined' && window.sendMessageToVSCode) {
-      window.sendMessageToVSCode({ type: 'refreshOrgs' });
+      window.sendMessageToVSCode({ type: 'refreshOrgs', data: { all: allFlag } });
+    }
+  }
+
+  handleViewAllToggle(event) {
+    this.viewAll = event.target.checked === true;
+    // Immediately refresh to reflect the new view mode
+    this.handleRefresh(this.viewAll === true);
+  }
+
+  get hasRecommended() {
+    return this.recommendedUsernames.length > 0;
+  }
+
+  // Return an array of usernames considered "recommended" for removal: disconnected, deleted or expired
+  get recommendedUsernames() {
+    const now = Date.now();
+    return (this.orgs || [])
+      .filter((o) => {
+        const connected = (o.connectedStatus || "").toString().toLowerCase().match(/connected|authorized/);
+        const deleted = o.deleted === true || o.isDeleted === true || (o.status || "").toString().toLowerCase().includes("deleted") || (o.connectedStatus || "").toString().toLowerCase().includes("deleted");
+        let expired = false;
+        try {
+          if (o.expirationDate) {
+            const exp = new Date(o.expirationDate).getTime();
+            if (!isNaN(exp) && exp < now) expired = true;
+          }
+        } catch (e) {
+          // ignore date parse errors
+        }
+        return (!connected) || deleted || expired;
+      })
+      .map((o) => o.username)
+      .filter(Boolean);
+  }
+
+  handleRemoveRecommended() {
+    const recommendedUsernames = this.recommendedUsernames || [];
+
+    if (typeof window !== 'undefined' && window.sendMessageToVSCode) {
+      window.sendMessageToVSCode({ type: 'removeRecommended', data: { usernames: recommendedUsernames } });
     }
   }
 
@@ -68,9 +106,24 @@ export default class OrgManager extends LightningElement {
   }
 
   handleForgetSelected() {
-    if (!this.hasSelection) return;
+    // Try to gather usernames from tracked selection; if empty, fallback to the datatable's selected rows
+    let usernames = (this.selectedRowKeys || []).slice();
+    if (!usernames || usernames.length === 0) {
+      const table = this.template.querySelector('lightning-datatable');
+      if (table && typeof table.getSelectedRows === 'function') {
+        const rows = table.getSelectedRows() || [];
+        usernames = rows.map((r) => r.username).filter(Boolean);
+      }
+    }
+
+    if (!usernames || usernames.length === 0) return;
+
+    // Debug: log the usernames we will send
+    // eslint-disable-next-line no-console
+    console.log('OrgManager: forgetting selected usernames', usernames);
+
     if (typeof window !== 'undefined' && window.sendMessageToVSCode) {
-      window.sendMessageToVSCode({ type: 'forgetOrgs', data: { usernames: this.selectedRowKeys } });
+      window.sendMessageToVSCode({ type: 'forgetOrgs', data: { usernames } });
     }
   }
 
@@ -78,25 +131,23 @@ export default class OrgManager extends LightningElement {
     const actionName = event.detail.action.name;
     const row = event.detail.row;
     if (actionName === 'toggleConnection') {
-      // If currently connected, call logout; otherwise, try to login (open login URL)
-      const isConnected = row.connectedStatus && row.connectedStatus.toLowerCase().startsWith('connected');
+      // Robust connected detection using same regex as label computation
+      const isConnected = (row.connectedStatus || '').toString().toLowerCase().match(/connected|authorized/);
       if (isConnected) {
-        // Logout
+        // Use the same forget flow as the global "Forget selected" action so the extension
+        // can show progress and handle cleanup consistently.
         if (typeof window !== 'undefined' && window.sendMessageToVSCode) {
-          window.sendMessageToVSCode({ type: 'runCommand', data: { command: `sf org logout --target-org ${row.username} --noprompt` } });
+          window.sendMessageToVSCode({ type: 'forgetOrgs', data: { usernames: [row.username] } });
         }
       } else {
-        // Reconnect: open browser login
+        // Reconnect: send a connectOrg message to the extension so it can
+        // handle the connect flow (sf hardis:org:connect) centrally.
         if (typeof window !== 'undefined' && window.sendMessageToVSCode) {
-          // Prefer runCommand to open login flow; extension can handle this message
-          window.sendMessageToVSCode({ type: 'runCommand', data: { command: `sf org login web --instance-url ${row.instanceUrl} --username ${row.username}` } });
+          window.sendMessageToVSCode({
+            type: 'connectOrg',
+            data: { username: row.username, instanceUrl: row.instanceUrl },
+          });
         }
-      }
-    } else if (actionName === 'openLoginUrl') {
-      // open loginUrl in external browser
-      const url = row.loginUrl || row.instanceUrl;
-      if (typeof window !== 'undefined' && window.sendMessageToVSCode) {
-        window.sendMessageToVSCode({ type: 'openUrl', data: { url } });
       }
     }
   }

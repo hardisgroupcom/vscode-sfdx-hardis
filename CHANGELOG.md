@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Show combobox filter to simplify selection when there are many values
+- New feature: Orgs Manager to list, manage and clean all orgs known by Salesforce CLI
 
 ## [6.2.2] 2024-08-29
 
