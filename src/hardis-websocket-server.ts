@@ -256,7 +256,7 @@ export class LocalWebSocketServer {
         orgManagerPanel.sendMessage({
           type: "refreshOrgs",
         });
-     }
+      }
     }
     // Request to refresh commands box
     else if (data.event === "refreshCommands") {

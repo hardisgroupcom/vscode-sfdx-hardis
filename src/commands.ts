@@ -79,7 +79,10 @@ export class Commands {
         const lwcManager = LwcPanelManager.getInstance();
         // Load orgs using orgUtils
         try {
-          const orgs = await this.loadOrgsWithProgress(false, "Loading Salesforce orgs...\n(it can be long, make some cleaning to make it faster 🙃)");
+          const orgs = await this.loadOrgsWithProgress(
+            false,
+            "Loading Salesforce orgs...\n(it can be long, make some cleaning to make it faster 🙃)",
+          );
 
           const panel = lwcManager.getOrCreatePanel("s-org-manager", {
             orgs: orgs,
@@ -95,22 +98,25 @@ export class Commands {
               currentAllFlag = allFlag;
               const newOrgs = await this.loadOrgsWithProgress(allFlag);
               panel.sendInitializationData({ orgs: newOrgs });
-            } 
-            else if (type === "connectOrg") {
+            } else if (type === "connectOrg") {
               // run hardis:org:select
               const username = data.username;
-              const command = `sf hardis:org:select --username "${username || ''}"`;
+              const command = `sf hardis:org:select --username "${username || ""}"`;
               this.commandRunner.executeCommand(command);
-            }
-            else if (type === "forgetOrgs") {
+            } else if (type === "forgetOrgs") {
               try {
                 const usernames = data?.usernames || [];
                 if (usernames.length === 0) {
-                  vscode.window.showInformationMessage("No orgs selected to forget.");
+                  vscode.window.showInformationMessage(
+                    "No orgs selected to forget.",
+                  );
                   return;
                 }
 
-                const result = await this.forgetOrgsWithProgress(usernames, `Forgetting ${usernames.length} org(s)...`);
+                const result = await this.forgetOrgsWithProgress(
+                  usernames,
+                  `Forgetting ${usernames.length} org(s)...`,
+                );
 
                 // send back result and refresh list
                 const newOrgs = await this.loadOrgsWithProgress(currentAllFlag);
@@ -123,21 +129,24 @@ export class Commands {
                   `Error forgetting orgs: ${error?.message || error}`,
                 );
               }
-            } 
-            else if (type === "removeRecommended") {
-                // If LWC sent usernames, use them; otherwise fallback to detection
-                let usernames: string[] = [];
-                if (data && Array.isArray(data.usernames) && data.usernames.length > 0) {
-                  usernames = data.usernames.filter(Boolean);
-                }
+            } else if (type === "removeRecommended") {
+              // If LWC sent usernames, use them; otherwise fallback to detection
+              let usernames: string[] = [];
+              if (
+                data &&
+                Array.isArray(data.usernames) &&
+                data.usernames.length > 0
+              ) {
+                usernames = data.usernames.filter(Boolean);
+              }
 
-                if (usernames.length === 0) {
-                  vscode.window.showInformationMessage(
-                    "No recommended orgs found to remove.",
-                  );
-                  return;
-                }
-              
+              if (usernames.length === 0) {
+                vscode.window.showInformationMessage(
+                  "No recommended orgs found to remove.",
+                );
+                return;
+              }
+
               try {
                 const confirm = await vscode.window.showWarningMessage(
                   `This will forget ${usernames.length} orgs (disconnected, deleted or expired). Are you sure?`,
@@ -149,7 +158,10 @@ export class Commands {
                   return;
                 }
 
-                const result = await this.forgetOrgsWithProgress(usernames, `Forgetting ${usernames.length} recommended org(s)...`);
+                const result = await this.forgetOrgsWithProgress(
+                  usernames,
+                  `Forgetting ${usernames.length} recommended org(s)...`,
+                );
                 vscode.window.showInformationMessage(
                   `Forgot ${result.successUsernames.length} recommended org(s).`,
                 );
@@ -199,7 +211,10 @@ export class Commands {
           }
           const u = usernames[i];
           const increment = Math.round(100 / total);
-          progress.report({ message: `Forgetting ${u} (${i + 1}/${total})`, increment });
+          progress.report({
+            message: `Forgetting ${u} (${i + 1}/${total})`,
+            increment,
+          });
           try {
             await execSfdxJson(`sf org logout --target-org ${u} --noprompt`);
             successUsernames.push(u);
@@ -216,7 +231,9 @@ export class Commands {
 
   // Helper: load orgs with a progress notification; preserves return value from listAllOrgs(all)
   private async loadOrgsWithProgress(all: boolean = false, title?: string) {
-    const t = title || (all ? "Loading all Salesforce orgs..." : "Loading Salesforce orgs...");
+    const t =
+      title ||
+      (all ? "Loading all Salesforce orgs..." : "Loading Salesforce orgs...");
     return await vscode.window.withProgress(
       {
         location: vscode.ProgressLocation.Notification,
