@@ -275,6 +275,11 @@
         "icon": "$(package)"
       },
       {
+        "command": "vscode-sfdx-hardis.openOrgsManager",
+        "title": "SFDX Hardis: Open Orgs Manager",
+        "icon": "$(organization)"
+      },
+      {
         "command": "vscode-sfdx-hardis.runLocalHtmlDocPages",
         "title": "SFDX Hardis: Run Local HTML Doc Pages",
         "icon": "$(globe)"

@@ -17,6 +17,7 @@ import { PipelineDataProvider } from "./pipeline-data-provider";
 import { getPullRequestButtonInfo } from "./utils/gitPrButtonUtils";
 import { SfdxHardisConfigHelper } from "./utils/pipeline/sfdxHardisConfigHelper";
 import { Logger } from "./logger";
+import { listOrgs, forgetOrgs } from "./utils/orgUtils";
 
 export class Commands {
   private readonly extensionUri: vscode.Uri;
@@ -67,7 +68,78 @@ export class Commands {
     this.registerShowExtensionConfig();
     this.registerShowPipelineConfig();
     this.registerShowInstalledPackages();
+    this.registerShowOrgsManager();
     this.registerRunLocalHtmlDocPages();
+  }
+
+  registerShowOrgsManager() {
+    const disposable = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.openOrgsManager",
+      async () => {
+        const lwcManager = LwcPanelManager.getInstance();
+        // Load orgs using orgUtils
+        try {
+          const orgs = await vscode.window.withProgress(
+            {
+              location: vscode.ProgressLocation.Notification,
+              title: "Loading Salesforce orgs...",
+              cancellable: false,
+            },
+            async () => await listOrgs(),
+          );
+
+          const panel = lwcManager.getOrCreatePanel("s-org-manager", {
+            orgs: orgs,
+          });
+          panel.updateTitle("Orgs Manager");
+
+          panel.onMessage(async (type: string, data: any) => {
+            if (type === "refreshOrgs") {
+              const newOrgs = await listOrgs();
+              panel.sendInitializationData({ orgs: newOrgs });
+            } else if (type === "forgetOrgs") {
+              try {
+                const usernames = data?.usernames || [];
+                const result = await forgetOrgs(usernames);
+                // send back result and refresh list
+                const newOrgs = await listOrgs();
+                panel.sendInitializationData({ orgs: newOrgs });
+                vscode.window.showInformationMessage(
+                  `Forgot ${result.successUsernames.length} org(s).`,
+                );
+              } catch (error: any) {
+                vscode.window.showErrorMessage(
+                  `Error forgetting orgs: ${error?.message || error}`,
+                );
+              }
+            } else if (type === "runCommand") {
+              // delegate to existing command runner
+              try {
+                if (data && data.command) {
+                  this.commandRunner.executeCommand(data.command);
+                }
+              } catch (err) {
+                Logger.log('Error executing command from orgs manager: ' + JSON.stringify(err));
+              }
+            } else if (type === "openUrl") {
+              try {
+                if (data && data.url) {
+                  await vscode.env.openExternal(vscode.Uri.parse(data.url));
+                }
+              } catch (err) {
+                Logger.log('Error opening URL from orgs manager: ' + JSON.stringify(err));
+              }
+            }
+          });
+        } catch (error: any) {
+          Logger.log("Error opening orgs manager:\n" + JSON.stringify(error));
+          vscode.window.showErrorMessage(
+            "Failed to open Org Manager: " + (error?.message || error),
+          );
+        }
+      },
+    );
+    this.disposables.push(disposable);
   }
   registerShowExtensionConfig() {
     // Show the extensionConfig LWC panel for editing extension settings

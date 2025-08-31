@@ -1,0 +1,27 @@
+<template>
+    <div class="slds-scope slds-theme_default slds-p-around_medium blue-back">
+    <lightning-card title="Salesforce Orgs Manager">
+        <div slot="actions" class="slds-float_right">
+            <lightning-button-group>
+                <lightning-button icon-name="utility:refresh" label="Refresh" title="Refresh orgs list" onclick={handleRefresh}></lightning-button>
+                <span class="slds-m-left_x-small"></span>
+                <template if:true={hasSelection}>
+                    <lightning-button icon-name="utility:delete" label="Forget selected" variant="destructive" title="Forget selected orgs" onclick={handleForgetSelected}></lightning-button>
+                </template>
+            </lightning-button-group>
+        </div>
+        <div class="slds-m-around_medium">
+            <lightning-datatable
+                key-field="username"
+                data={orgs}
+                columns={columns}
+                onsave={handleSave}
+                onrowaction={handleRowAction}
+                onrowselection={handleRowSelection}
+                selected-rows={selectedRowKeys}
+                class="slds-m-bottom_medium"
+            ></lightning-datatable>
+        </div>
+    </lightning-card>
+    </div>
+</template>
