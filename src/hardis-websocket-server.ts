@@ -249,6 +249,14 @@ export class LocalWebSocketServer {
     // Request to refresh status box
     else if (data.event === "refreshStatus") {
       vscode.commands.executeCommand("vscode-sfdx-hardis.refreshStatusView");
+      // Refresh Orgs Manager panel if existing
+      const panelManager = LwcPanelManager.getInstance();
+      const orgManagerPanel = panelManager.getPanel("s-org-manager");
+      if (orgManagerPanel) {
+        orgManagerPanel.sendMessage({
+          type: "refreshOrgs",
+        });
+      }
     }
     // Request to refresh commands box
     else if (data.event === "refreshCommands") {

@@ -14,6 +14,7 @@ const lwcModules = {
   "s-extension-config": () => import("s/extensionConfig"),
   "s-multiline-helptext": () => import("s/multilineHelptext"),
   "s-installed-packages": () => import("s/installedPackages"),
+  "s-org-manager": () => import("s/orgManager"),
 };
 
 // Communication bridge between VS Code webview and LWC components

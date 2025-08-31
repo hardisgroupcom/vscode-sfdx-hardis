@@ -275,6 +275,11 @@
         "icon": "$(package)"
       },
       {
+        "command": "vscode-sfdx-hardis.openOrgsManager",
+        "title": "SFDX Hardis: Open Orgs Manager",
+        "icon": "$(organization)"
+      },
+      {
         "command": "vscode-sfdx-hardis.runLocalHtmlDocPages",
         "title": "SFDX Hardis: Run Local HTML Doc Pages",
         "icon": "$(globe)"
@@ -365,6 +370,11 @@
         {
           "command": "vscode-sfdx-hardis.newTerminal",
           "when": "view == sfdx-hardis-commands",
+          "group": "navigation"
+        },
+        {
+          "command": "vscode-sfdx-hardis.openOrgsManager",
+          "when": "view == sfdx-hardis-status",
           "group": "navigation"
         },
         {

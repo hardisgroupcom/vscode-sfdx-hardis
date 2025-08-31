@@ -6,7 +6,7 @@ import { HardisCommandsProvider } from "./hardis-commands-provider";
 import { HardisStatusProvider } from "./hardis-status-provider";
 import { HardisPluginsProvider } from "./hardis-plugins-provider";
 import { LocalWebSocketServer } from "./hardis-websocket-server";
-import { getPythonCommand, getWorkspaceRoot } from "./utils";
+import { getPythonCommand, getWorkspaceRoot, execSfdxJson } from "./utils";
 import axios from "axios";
 import TelemetryReporter from "@vscode/extension-telemetry";
 import { ThemeUtils } from "./themeUtils";
@@ -17,6 +17,7 @@ import { PipelineDataProvider } from "./pipeline-data-provider";
 import { getPullRequestButtonInfo } from "./utils/gitPrButtonUtils";
 import { SfdxHardisConfigHelper } from "./utils/pipeline/sfdxHardisConfigHelper";
 import { Logger } from "./logger";
+import { listAllOrgs } from "./utils/orgUtils";
 
 export class Commands {
   private readonly extensionUri: vscode.Uri;
@@ -67,8 +68,184 @@ export class Commands {
     this.registerShowExtensionConfig();
     this.registerShowPipelineConfig();
     this.registerShowInstalledPackages();
+    this.registerShowOrgsManager();
     this.registerRunLocalHtmlDocPages();
   }
+
+  registerShowOrgsManager() {
+    const disposable = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.openOrgsManager",
+      async () => {
+        const lwcManager = LwcPanelManager.getInstance();
+        // Load orgs using orgUtils
+        try {
+          const orgs = await this.loadOrgsWithProgress(
+            false,
+            "Loading Salesforce orgs...\n(it can be long, make some cleaning to make it faster 🙃)",
+          );
+
+          const panel = lwcManager.getOrCreatePanel("s-org-manager", {
+            orgs: orgs,
+          });
+          panel.updateTitle("Orgs Manager");
+
+          // Track the last requested 'all' flag so it persists between operations
+          let currentAllFlag = false;
+
+          panel.onMessage(async (type: string, data: any) => {
+            if (type === "refreshOrgs") {
+              const allFlag = !!(data && data.all === true);
+              currentAllFlag = allFlag;
+              const newOrgs = await this.loadOrgsWithProgress(allFlag);
+              panel.sendInitializationData({ orgs: newOrgs });
+            } else if (type === "connectOrg") {
+              // run hardis:org:select
+              const username = data.username;
+              const command = `sf hardis:org:select --username "${username || ""}"`;
+              this.commandRunner.executeCommand(command);
+            } else if (type === "forgetOrgs") {
+              try {
+                const usernames = data?.usernames || [];
+                if (usernames.length === 0) {
+                  vscode.window.showInformationMessage(
+                    "No orgs selected to forget.",
+                  );
+                  return;
+                }
+
+                const result = await this.forgetOrgsWithProgress(
+                  usernames,
+                  `Forgetting ${usernames.length} org(s)...`,
+                );
+
+                // send back result and refresh list
+                const newOrgs = await this.loadOrgsWithProgress(currentAllFlag);
+                panel.sendInitializationData({ orgs: newOrgs });
+                vscode.window.showInformationMessage(
+                  `Forgot ${result.successUsernames.length} org(s).`,
+                );
+              } catch (error: any) {
+                vscode.window.showErrorMessage(
+                  `Error forgetting orgs: ${error?.message || error}`,
+                );
+              }
+            } else if (type === "removeRecommended") {
+              // If LWC sent usernames, use them; otherwise fallback to detection
+              let usernames: string[] = [];
+              if (
+                data &&
+                Array.isArray(data.usernames) &&
+                data.usernames.length > 0
+              ) {
+                usernames = data.usernames.filter(Boolean);
+              }
+
+              if (usernames.length === 0) {
+                vscode.window.showInformationMessage(
+                  "No recommended orgs found to remove.",
+                );
+                return;
+              }
+
+              try {
+                const confirm = await vscode.window.showWarningMessage(
+                  `This will forget ${usernames.length} orgs (disconnected, deleted or expired). Are you sure?`,
+                  {},
+                  "Yes",
+                  "No",
+                );
+                if (confirm !== "Yes") {
+                  return;
+                }
+
+                const result = await this.forgetOrgsWithProgress(
+                  usernames,
+                  `Forgetting ${usernames.length} recommended org(s)...`,
+                );
+                vscode.window.showInformationMessage(
+                  `Forgot ${result.successUsernames.length} recommended org(s).`,
+                );
+                const newOrgs = await this.loadOrgsWithProgress(currentAllFlag);
+                panel.sendInitializationData({ orgs: newOrgs });
+              } catch (error: any) {
+                vscode.window.showErrorMessage(
+                  `Error removing recommended orgs: ${error?.message || error}`,
+                );
+              }
+            }
+          });
+        } catch (error: any) {
+          Logger.log("Error opening orgs manager:\n" + JSON.stringify(error));
+          vscode.window.showErrorMessage(
+            "Failed to open Org Manager: " + (error?.message || error),
+          );
+        }
+      },
+    );
+    this.disposables.push(disposable);
+  }
+
+  // Helper: forget given org usernames with a VS Code progress notification and per-org steps
+  private async forgetOrgsWithProgress(usernames: string[], title: string) {
+    return await vscode.window.withProgress(
+      {
+        location: vscode.ProgressLocation.Notification,
+        title: title,
+        cancellable: true,
+      },
+      async (progress, token) => {
+        const successUsernames: string[] = [];
+        const errorUsernames: string[] = [];
+        const total = usernames.length;
+        let cancelled = false;
+
+        // When the user cancels, set a flag so we stop after the current iteration
+        token.onCancellationRequested(() => {
+          cancelled = true;
+        });
+
+        for (let i = 0; i < total; i++) {
+          if (cancelled) {
+            // Stop processing further orgs when cancelled by the user
+            break;
+          }
+          const u = usernames[i];
+          const increment = Math.round(100 / total);
+          progress.report({
+            message: `Forgetting ${u} (${i + 1}/${total})`,
+            increment,
+          });
+          try {
+            await execSfdxJson(`sf org logout --target-org ${u} --noprompt`);
+            successUsernames.push(u);
+          } catch (err) {
+            void err;
+            errorUsernames.push(u);
+          }
+        }
+
+        return { successUsernames, errorUsernames, cancelled };
+      },
+    );
+  }
+
+  // Helper: load orgs with a progress notification; preserves return value from listAllOrgs(all)
+  private async loadOrgsWithProgress(all: boolean = false, title?: string) {
+    const t =
+      title ||
+      (all ? "Loading all Salesforce orgs..." : "Loading Salesforce orgs...");
+    return await vscode.window.withProgress(
+      {
+        location: vscode.ProgressLocation.Notification,
+        title: t,
+        cancellable: false,
+      },
+      async () => {
+        return await listAllOrgs(all);
+      },
+    );
+  }
+
   registerShowExtensionConfig() {
     // Show the extensionConfig LWC panel for editing extension settings
     const disposable = vscode.commands.registerCommand(

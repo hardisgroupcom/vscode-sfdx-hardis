@@ -488,6 +488,13 @@ export class HardisCommandsProvider
         label: "Org Operations",
         commands: [
           {
+            id: "orgs-manager",
+            label: "Orgs Manager",
+            tooltip:
+              "Open Orgs Manager to connect to new orgs, disconnect from existing orgs and make some cleaning",
+            command: "vscode-sfdx-hardis.openOrgsManager",
+          },
+          {
             id: "org:user:freeze",
             label: "Freeze users",
             tooltip:

@@ -207,6 +207,8 @@
     "nvuillam",
     "oclif",
     "oncellchange",
+    "onrowaction",
+    "onrowselection",
     "onsave",
     "orgmissingitems",
     "orgs",
