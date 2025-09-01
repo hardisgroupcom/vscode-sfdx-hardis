@@ -15,10 +15,15 @@ export default class OrgManager extends LightningElement {
         target: "_blank",
       },
     },
-  { label: "Type", fieldName: "orgType", type: "text", initialWidth: 120 },
-  { label: "Username", fieldName: "username", type: "text" },
-  { label: "Alias", fieldName: "alias", type: "text", initialWidth: 120 },
-  { label: "Connected", fieldName: "connectedLabel", type: "text", initialWidth: 140 },
+    { label: "Type", fieldName: "orgType", type: "text", initialWidth: 120 },
+    { label: "Username", fieldName: "username", type: "text" },
+    { label: "Alias", fieldName: "alias", type: "text", initialWidth: 120 },
+    {
+      label: "Connected",
+      fieldName: "connectedLabel",
+      type: "text",
+      initialWidth: 140,
+    },
     {
       label: "Actions",
       type: "action",
@@ -64,7 +69,11 @@ export default class OrgManager extends LightningElement {
         } else {
           actions.push({ label: "Reconnect", name: "reconnect" });
         }
-        actions.push({ label: "Remove", name: "remove", variant: "destructive" });
+        actions.push({
+          label: "Remove",
+          name: "remove",
+          variant: "destructive",
+        });
         return actions;
       })(),
     }));
@@ -192,21 +201,27 @@ export default class OrgManager extends LightningElement {
     if (actionName === "open") {
       if (typeof window !== "undefined" && window.sendMessageToVSCode) {
         window.sendMessageToVSCode({
-           type: "runInternalCommand",
-           data: {
+          type: "runInternalCommand",
+          data: {
             command: `sf org open --target-org ${row.username}`,
             commandId: Math.random(),
-            progressMessage: `Opening org ${row.username}...`
-          }
+            progressMessage: `Opening org ${row.username}...`,
+          },
         });
       }
     } else if (actionName === "reconnect") {
       if (typeof window !== "undefined" && window.sendMessageToVSCode) {
-        window.sendMessageToVSCode({ type: "connectOrg", data: { username: row.username, instanceUrl: row.instanceUrl } });
+        window.sendMessageToVSCode({
+          type: "connectOrg",
+          data: { username: row.username, instanceUrl: row.instanceUrl },
+        });
       }
     } else if (actionName === "remove") {
       if (typeof window !== "undefined" && window.sendMessageToVSCode) {
-        window.sendMessageToVSCode({ type: "forgetOrgs", data: { usernames: [row.username] } });
+        window.sendMessageToVSCode({
+          type: "forgetOrgs",
+          data: { usernames: [row.username] },
+        });
       }
     }
   }

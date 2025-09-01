@@ -1,6 +1,10 @@
 import * as vscode from "vscode";
 import * as path from "path";
-import { execCommandWithProgress, execSfdxJsonWithProgress, isWebVsCode } from "../utils";
+import {
+  execCommandWithProgress,
+  execSfdxJsonWithProgress,
+  isWebVsCode,
+} from "../utils";
 import { Logger } from "../logger";
 
 type MessageListener = (messageType: string, data: any) => void;
@@ -287,13 +291,21 @@ export class LwcUiPanel {
     );
   }
 
-  private async handleRunInternalCommand(data: { command: string, commandId: number, progressMessage: string }): Promise<void> {
+  private async handleRunInternalCommand(data: {
+    command: string;
+    commandId: number;
+    progressMessage: string;
+  }): Promise<void> {
     if (!data || !data.command || typeof data.command !== "string") {
       vscode.window.showErrorMessage("No internal command specified to run.");
       return;
     }
     const command = data.command;
-    if ( !command.startsWith("sf ") || command.includes("&&") || command.includes("||")) {
+    if (
+      !command.startsWith("sf ") ||
+      command.includes("&&") ||
+      command.includes("||")
+    ) {
       vscode.window.showErrorMessage(
         "Only 'sfdx' or 'sf' commands can be run as internal commands.",
       );
@@ -304,8 +316,7 @@ export class LwcUiPanel {
     try {
       if (data.command.includes("--json")) {
         result = await execSfdxJsonWithProgress(command, {}, progressMessage);
-      }
-      else {
+      } else {
         result = await execCommandWithProgress(command, {}, progressMessage);
       }
     } catch (error) {
@@ -320,7 +331,6 @@ export class LwcUiPanel {
       },
     });
   }
-
 
   /**
    * Handle file existence check request from webview

@@ -191,15 +191,15 @@ export async function resetCache() {
 }
 
 export async function execCommandWithProgress(
-    command: string,
-    options: ExecCommandOptions = {
-      fail: false,
-      output: false,
-      debug: false,
-      spinner: true,
-    },
-    progressMessage: string)
-{
+  command: string,
+  options: ExecCommandOptions = {
+    fail: false,
+    output: false,
+    debug: false,
+    spinner: true,
+  },
+  progressMessage: string,
+) {
   return await vscode.window.withProgress(
     {
       location: vscode.ProgressLocation.Notification,
@@ -208,21 +208,21 @@ export async function execCommandWithProgress(
     },
     async () => {
       return await execCommand(command, options);
-    }
+    },
   );
 }
 
 /* jscpd:ignore-start */
 export async function execSfdxJsonWithProgress(
-    command: string,
-    options: ExecCommandOptions = {
-      fail: false,
-      output: false,
-      debug: false,
-      spinner: true,
-    },
-    progressMessage: string)
-{
+  command: string,
+  options: ExecCommandOptions = {
+    fail: false,
+    output: false,
+    debug: false,
+    spinner: true,
+  },
+  progressMessage: string,
+) {
   return await vscode.window.withProgress(
     {
       location: vscode.ProgressLocation.Notification,
@@ -231,7 +231,7 @@ export async function execSfdxJsonWithProgress(
     },
     async () => {
       return await execSfdxJson(command, options);
-    }
+    },
   );
 }
 /* jscpd:ignore-end */
