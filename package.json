@@ -177,7 +177,7 @@
       {
         "command": "vscode-sfdx-hardis.showPipeline",
         "title": "SFDX Hardis: DevOps Pipeline",
-        "icon": "$(organization)"
+        "icon": "$(rocket)"
       },
       {
         "command": "vscode-sfdx-hardis.showExtensionConfig",

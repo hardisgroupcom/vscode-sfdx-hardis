@@ -157,7 +157,7 @@ export class ThemeUtils {
       "hardis:work:save": { vscode: "save", hardis: "save.svg" },
       "hardis:work:resetselection": { vscode: "history", hardis: "reset.svg" },
       "vscode-sfdx-hardis.showPipeline": {
-        vscode: "graph",
+        vscode: "rocket",
         hardis: "flow.svg",
       },
       "scratch:push-from-git-to-org": {
@@ -226,6 +226,10 @@ export class ThemeUtils {
       "hardis:debug:importapex": {
         vscode: "cloud-download",
         hardis: "pull.svg",
+      },
+      "vscode-sfdx-hardis.openOrgsManager": {
+        vscode: "organization",
+        hardis: "salesforce.svg",
       },
       "org:user:freeze": { vscode: "pinned", hardis: "freeze.svg" },
       "org:user:unfreeze": { vscode: "rocket", hardis: "unfreeze.svg" },

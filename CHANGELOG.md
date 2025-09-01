@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [6.3.1] 2024-09-01
+
+- Change icon of Orgs Manager
+
 ## [6.3.0] 2024-09-01
 
 - Show combobox filter to simplify selection when there are many values
