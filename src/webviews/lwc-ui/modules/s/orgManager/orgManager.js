@@ -97,7 +97,7 @@ export default class OrgManager extends LightningElement {
     if (typeof window !== "undefined" && window.sendMessageToVSCode) {
       // Always send a boolean for `all` so the backend can rely on `data.all === true` checks
       window.sendMessageToVSCode({
-        type: "refreshOrgs",
+        type: "refreshOrgsFromUi",
         data: { all: !!allFlag },
       });
     }
