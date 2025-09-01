@@ -93,7 +93,7 @@ export class Commands {
           let currentAllFlag = false;
 
           panel.onMessage(async (type: string, data: any) => {
-            if (type === "refreshOrgs") {
+            if (type === "refreshOrgsFromUi") {
               const allFlag = !!(data && data.all === true);
               currentAllFlag = allFlag;
               const newOrgs = await this.loadOrgsWithProgress(allFlag);

@@ -1,6 +1,10 @@
 import * as vscode from "vscode";
 import * as path from "path";
-import { isWebVsCode } from "../utils";
+import {
+  execCommandWithProgress,
+  execSfdxJsonWithProgress,
+  isWebVsCode,
+} from "../utils";
 import { Logger } from "../logger";
 
 type MessageListener = (messageType: string, data: any) => void;
@@ -210,6 +214,11 @@ export class LwcUiPanel {
     };
   }
 
+  public clearExistingOnMessageListeners(): void {
+    // Clear listeners previously added with onMessage method
+    this.messageListeners = [];
+  }
+
   /**
    * Handle built-in file operation messages from the webview
    * @param message The message received from the webview
@@ -234,6 +243,9 @@ export class LwcUiPanel {
           break;
         case "runCommand":
           await this.handleRunCommand(data);
+          break;
+        case "runInternalCommand":
+          await this.handleRunInternalCommand(data);
           break;
         case "updateVsCodeSfdxHardisConfiguration":
           this.handleUpdateVsCodeSfdxHardisConfiguration(data);
@@ -277,6 +289,47 @@ export class LwcUiPanel {
       "vscode-sfdx-hardis.execute-command",
       data.command,
     );
+  }
+
+  private async handleRunInternalCommand(data: {
+    command: string;
+    commandId: number;
+    progressMessage: string;
+  }): Promise<void> {
+    if (!data || !data.command || typeof data.command !== "string") {
+      vscode.window.showErrorMessage("No internal command specified to run.");
+      return;
+    }
+    const command = data.command;
+    if (
+      !command.startsWith("sf ") ||
+      command.includes("&&") ||
+      command.includes("||")
+    ) {
+      vscode.window.showErrorMessage(
+        "Only 'sfdx' or 'sf' commands can be run as internal commands.",
+      );
+      return;
+    }
+    let result: any = null;
+    const progressMessage = data.progressMessage || "Running command...";
+    try {
+      if (data.command.includes("--json")) {
+        result = await execSfdxJsonWithProgress(command, {}, progressMessage);
+      } else {
+        result = await execCommandWithProgress(command, {}, progressMessage);
+      }
+    } catch (error) {
+      Logger.log("Error running internal command:\n" + JSON.stringify(error));
+    }
+    this.sendMessage({
+      type: "internalCommandResult",
+      data: {
+        command: command,
+        commandId: data.commandId,
+        result: result,
+      },
+    });
   }
 
   /**
