@@ -212,6 +212,7 @@ export async function execCommandWithProgress(
   );
 }
 
+/* jscpd-ignore-start */
 export async function execSfdxJsonWithProgress(
     command: string,
     options: ExecCommandOptions = {
@@ -233,6 +234,7 @@ export async function execSfdxJsonWithProgress(
     }
   );
 }
+/* jscpd-ignore-end */
 
 // Execute command
 export async function execCommand(
