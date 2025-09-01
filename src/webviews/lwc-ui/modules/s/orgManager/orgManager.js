@@ -4,6 +4,7 @@ export default class OrgManager extends LightningElement {
   @track orgs = [];
   @track selectedRowKeys = [];
   @track viewAll = false;
+  internalCommands = [];
 
   columns = [
     {
@@ -51,12 +52,12 @@ export default class OrgManager extends LightningElement {
         .replace(/^https?:\/\//, "")
         .replace(/\/$/, ""),
       // more robust connected detection: accept connected/authorized/true etc.
-      connectedLabel: (o.connectedStatus || "")
+      connectedLabel: ((o.connectedStatus || "")
         .toString()
         .toLowerCase()
         .match(/connected|authorized/)
         ? "Connected"
-        : "Disconnected",
+        : "Disconnected") + (o.isDefault ? " (Default)" : ""),
       // Compute row actions for the Actions column: Open (connected), Reconnect (disconnected), Remove (always)
       rowActions: (() => {
         const isConnected = (o.connectedStatus || "")
@@ -66,6 +67,7 @@ export default class OrgManager extends LightningElement {
         const actions = [];
         if (isConnected) {
           actions.push({ label: "Open", name: "open" });
+          actions.push({ label: "Set as Default Org", name: "setDefault" });
         } else {
           actions.push({ label: "Reconnect", name: "reconnect" });
         }
@@ -85,6 +87,9 @@ export default class OrgManager extends LightningElement {
     switch (messageType) {
       case "refreshOrgs":
         this.handleRefresh(data && data.all === true);
+        break;
+      case "commandResult":
+        this.handleCommandResult(data);
         break;
       default:
         console.log("Unknown message type:", messageType, data);
@@ -200,16 +205,35 @@ export default class OrgManager extends LightningElement {
     // Handle Actions column events (open, reconnect, remove)
     if (actionName === "open") {
       if (typeof window !== "undefined" && window.sendMessageToVSCode) {
-        window.sendMessageToVSCode({
-          type: "runInternalCommand",
-          data: {
+        const internalCommand = {
             command: `sf org open --target-org ${row.username}`,
             commandId: Math.random(),
             progressMessage: `Opening org ${row.username}...`,
+            callback : (data) => {
+              // After opening the org, refresh the list to update connected status
+              this.handleRefresh(this.viewAll === true);
+            }
+        };
+        window.sendMessageToVSCode({
+          type: "runInternalCommand",
+          data: internalCommand
+        });
+        this.internalCommands.push(internalCommand);
+      }
+    } 
+    else if (actionName === "setDefault") {
+      if (typeof window !== "undefined" && window.sendMessageToVSCode) {
+        window.sendMessageToVSCode({
+          type: "runInternalCommand",
+          data: {
+            command: `sf config set target-org ${row.username}`,
+            commandId: Math.random(),
+            progressMessage: `Setting org ${row.username} as default org...`,
           },
         });
       }
-    } else if (actionName === "reconnect") {
+    }
+    else if (actionName === "reconnect") {
       if (typeof window !== "undefined" && window.sendMessageToVSCode) {
         window.sendMessageToVSCode({
           type: "connectOrg",
@@ -222,6 +246,25 @@ export default class OrgManager extends LightningElement {
           type: "forgetOrgs",
           data: { usernames: [row.username] },
         });
+      }
+    }
+  }
+
+  handleCommandResult(data) {
+    if (data && data.command && data.commandId) {
+      // If found in internalCommands: Execute callback of the command, then remove it from internalCommands
+      const cmdIndex = this.internalCommands.findIndex(cmd => cmd.commandId === data.commandId);
+      if (cmdIndex !== -1) {
+        const cmd = this.internalCommands[cmdIndex];
+        if (cmd.callback && typeof cmd.callback === 'function') {
+          try {
+            cmd.callback(data);
+          } catch (e) {
+            // ignore callback errors
+          }
+        }
+        // Delete the command from the internal list to avoid unbounded growth
+        this.internalCommands.splice(cmdIndex, 1);
       }
     }
   }

@@ -323,7 +323,7 @@ export class LwcUiPanel {
       Logger.log("Error running internal command:\n" + JSON.stringify(error));
     }
     this.sendMessage({
-      type: "internalCommandResult",
+      type: "commandResult",
       data: {
         command: command,
         commandId: data.commandId,
