@@ -488,7 +488,7 @@ export class HardisCommandsProvider
         label: "Org Operations",
         commands: [
           {
-            id: "orgs-manager",
+            id: "vscode-sfdx-hardis.openOrgsManager",
             label: "Orgs Manager",
             tooltip:
               "Open Orgs Manager to connect to new orgs, disconnect from existing orgs and make some cleaning",
