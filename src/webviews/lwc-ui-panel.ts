@@ -210,6 +210,11 @@ export class LwcUiPanel {
     };
   }
 
+  public clearExistingOnMessageListeners(): void {
+    // Clear listeners previously added with onMessage method
+    this.messageListeners = [];
+  }
+
   /**
    * Handle built-in file operation messages from the webview
    * @param message The message received from the webview

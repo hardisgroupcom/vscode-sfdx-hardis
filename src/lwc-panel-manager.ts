@@ -48,6 +48,9 @@ export class LwcPanelManager {
     // Check if panel already exists and is not disposed
     const existingPanel = this.activePanels.get(lwcId);
     if (existingPanel && !existingPanel.isDisposed()) {
+      // Remove existing onMessage handlers to avoid duplicates
+      existingPanel.clearExistingOnMessageListeners();
+
       // Panel exists, reveal it and update with new data if provided
       const column = vscode.window.activeTextEditor
         ? vscode.window.activeTextEditor.viewColumn
