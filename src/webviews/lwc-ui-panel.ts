@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import * as path from "path";
-import { execCommand, execCommandWithProgress, execSfdxJson, execSfdxJsonWithProgress, isWebVsCode } from "../utils";
+import { execCommandWithProgress, execSfdxJsonWithProgress, isWebVsCode } from "../utils";
 import { Logger } from "../logger";
 
 type MessageListener = (messageType: string, data: any) => void;

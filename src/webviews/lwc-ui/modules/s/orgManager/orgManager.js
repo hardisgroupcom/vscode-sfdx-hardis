@@ -15,9 +15,10 @@ export default class OrgManager extends LightningElement {
         target: "_blank",
       },
     },
-    { label: "Type", fieldName: "orgType", type: "text" },
-    { label: "Username", fieldName: "username", type: "text" },
-    { label: "Connected", fieldName: "connectedLabel", type: "text" },
+  { label: "Type", fieldName: "orgType", type: "text", initialWidth: 120 },
+  { label: "Username", fieldName: "username", type: "text" },
+  { label: "Alias", fieldName: "alias", type: "text", initialWidth: 120 },
+  { label: "Connected", fieldName: "connectedLabel", type: "text", initialWidth: 140 },
     {
       label: "Actions",
       type: "action",
@@ -39,6 +40,7 @@ export default class OrgManager extends LightningElement {
     this.orgs = this.orgs.map((o) => ({
       ...o,
       username: o.username || o.loginUrl || o.instanceUrl,
+      alias: o.alias || "",
       // strip protocol for display (label) and remove trailing slash
       instanceLabel: (o.instanceUrl || "")
         .replace(/^https?:\/\//, "")
