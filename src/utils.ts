@@ -212,7 +212,7 @@ export async function execCommandWithProgress(
   );
 }
 
-/* jscpd-ignore-start */
+/* jscpd:ignore-start */
 export async function execSfdxJsonWithProgress(
     command: string,
     options: ExecCommandOptions = {
@@ -234,7 +234,7 @@ export async function execSfdxJsonWithProgress(
     }
   );
 }
-/* jscpd-ignore-end */
+/* jscpd:ignore-end */
 
 // Execute command
 export async function execCommand(
@@ -519,7 +519,7 @@ export async function loadExternalSfdxHardisConfiguration() {
 }
 
 // Fetch remote config file
-/* jscpd-ignore-start */
+/* jscpd:ignore-start */
 async function loadFromRemoteConfigFile(url: string) {
   if (REMOTE_CONFIGS[url]) {
     return REMOTE_CONFIGS[url];
@@ -537,7 +537,7 @@ async function loadFromRemoteConfigFile(url: string) {
   REMOTE_CONFIGS[url] = remoteConfig;
   return remoteConfig;
 }
-/* jscpd-ignore-end */
+/* jscpd:ignore-end */
 
 export async function readSfdxHardisConfig(): Promise<any> {
   if (vscode.workspace.workspaceFolders) {
