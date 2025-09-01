@@ -17,14 +17,13 @@ export default class OrgManager extends LightningElement {
     },
     { label: "Type", fieldName: "orgType", type: "text" },
     { label: "Username", fieldName: "username", type: "text" },
+    { label: "Connected", fieldName: "connectedLabel", type: "text" },
     {
-      label: "Connected",
-      fieldName: "connectedStatus",
-      type: "button",
+      label: "Actions",
+      type: "action",
+      fieldName: "rowActions",
       typeAttributes: {
-        label: { fieldName: "connectedLabel" },
-        name: "toggleConnection",
-        variant: { fieldName: "connectedVariant" },
+        rowActions: { fieldName: "rowActions" },
       },
     },
   ];
@@ -49,14 +48,23 @@ export default class OrgManager extends LightningElement {
         .toString()
         .toLowerCase()
         .match(/connected|authorized/)
-        ? "Disconnect"
-        : "Reconnect",
-      connectedVariant: (o.connectedStatus || "")
-        .toString()
-        .toLowerCase()
-        .match(/connected|authorized/)
-        ? "destructive"
-        : "brand",
+        ? "Connected"
+        : "Disconnected",
+      // Compute row actions for the Actions column: Open (connected), Reconnect (disconnected), Remove (always)
+      rowActions: (() => {
+        const isConnected = (o.connectedStatus || "")
+          .toString()
+          .toLowerCase()
+          .match(/connected|authorized/);
+        const actions = [];
+        if (isConnected) {
+          actions.push({ label: "Open", name: "open" });
+        } else {
+          actions.push({ label: "Reconnect", name: "reconnect" });
+        }
+        actions.push({ label: "Remove", name: "remove", variant: "destructive" });
+        return actions;
+      })(),
     }));
     this.selectedRowKeys = [];
   }
@@ -178,30 +186,25 @@ export default class OrgManager extends LightningElement {
   handleRowAction(event) {
     const actionName = event.detail.action.name;
     const row = event.detail.row;
-    if (actionName === "toggleConnection") {
-      // Robust connected detection using same regex as label computation
-      const isConnected = (row.connectedStatus || "")
-        .toString()
-        .toLowerCase()
-        .match(/connected|authorized/);
-      if (isConnected) {
-        // Use the same forget flow as the global "Forget selected" action so the extension
-        // can show progress and handle cleanup consistently.
-        if (typeof window !== "undefined" && window.sendMessageToVSCode) {
-          window.sendMessageToVSCode({
-            type: "forgetOrgs",
-            data: { usernames: [row.username] },
-          });
-        }
-      } else {
-        // Reconnect: send a connectOrg message to the extension so it can
-        // handle the connect flow (sf hardis:org:connect) centrally.
-        if (typeof window !== "undefined" && window.sendMessageToVSCode) {
-          window.sendMessageToVSCode({
-            type: "connectOrg",
-            data: { username: row.username, instanceUrl: row.instanceUrl },
-          });
-        }
+    // Handle Actions column events (open, reconnect, remove)
+    if (actionName === "open") {
+      if (typeof window !== "undefined" && window.sendMessageToVSCode) {
+        window.sendMessageToVSCode({
+           type: "runInternalCommand",
+           data: {
+            command: `sf org open --target-org ${row.username}`,
+            commandId: Math.random(),
+            progressMessage: `Opening org ${row.username}...`
+          }
+        });
+      }
+    } else if (actionName === "reconnect") {
+      if (typeof window !== "undefined" && window.sendMessageToVSCode) {
+        window.sendMessageToVSCode({ type: "connectOrg", data: { username: row.username, instanceUrl: row.instanceUrl } });
+      }
+    } else if (actionName === "remove") {
+      if (typeof window !== "undefined" && window.sendMessageToVSCode) {
+        window.sendMessageToVSCode({ type: "forgetOrgs", data: { usernames: [row.username] } });
       }
     }
   }

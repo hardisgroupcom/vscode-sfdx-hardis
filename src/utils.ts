@@ -190,6 +190,50 @@ export async function resetCache() {
   Logger.log("[vscode-sfdx-hardis] Reset cache");
 }
 
+export async function execCommandWithProgress(
+    command: string,
+    options: ExecCommandOptions = {
+      fail: false,
+      output: false,
+      debug: false,
+      spinner: true,
+    },
+    progressMessage: string)
+{
+  return await vscode.window.withProgress(
+    {
+      location: vscode.ProgressLocation.Notification,
+      title: progressMessage || "Executing command...",
+      cancellable: false,
+    },
+    async () => {
+      return await execCommand(command, options);
+    }
+  );
+}
+
+export async function execSfdxJsonWithProgress(
+    command: string,
+    options: ExecCommandOptions = {
+      fail: false,
+      output: false,
+      debug: false,
+      spinner: true,
+    },
+    progressMessage: string)
+{
+  return await vscode.window.withProgress(
+    {
+      location: vscode.ProgressLocation.Notification,
+      title: progressMessage || "Executing command...",
+      cancellable: false,
+    },
+    async () => {
+      return await execSfdxJson(command, options);
+    }
+  );
+}
+
 // Execute command
 export async function execCommand(
   command: string,

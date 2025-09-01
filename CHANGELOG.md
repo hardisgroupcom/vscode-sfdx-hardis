@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [6.3.2] 2024-09-01
+
+- Open org using SF Cli + Adds internal command execution with progress
+
 ## [6.3.1] 2024-09-01
 
 - Change icon of Orgs Manager
