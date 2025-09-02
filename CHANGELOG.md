@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Allow user to override the check of duplicate running commands
+
 ## [6.3.2] 2024-09-01
 
 - Open org using SF Cli + Adds internal command execution with progress
