@@ -52,12 +52,13 @@ export default class OrgManager extends LightningElement {
         .replace(/^https?:\/\//, "")
         .replace(/\/$/, ""),
       // more robust connected detection: accept connected/authorized/true etc.
-      connectedLabel: ((o.connectedStatus || "")
-        .toString()
-        .toLowerCase()
-        .match(/connected|authorized/)
-        ? "Connected"
-        : "Disconnected") + (o.isDefault ? " (Default)" : ""),
+      connectedLabel:
+        ((o.connectedStatus || "")
+          .toString()
+          .toLowerCase()
+          .match(/connected|authorized/)
+          ? "Connected"
+          : "Disconnected") + (o.isDefault ? " (Default)" : ""),
       // Compute row actions for the Actions column: Open (connected), Reconnect (disconnected), Remove (always)
       rowActions: (() => {
         const isConnected = (o.connectedStatus || "")
@@ -206,22 +207,21 @@ export default class OrgManager extends LightningElement {
     if (actionName === "open") {
       if (typeof window !== "undefined" && window.sendMessageToVSCode) {
         const internalCommand = {
-            command: `sf org open --target-org ${row.username}`,
-            commandId: Math.random(),
-            progressMessage: `Opening org ${row.username}...`,
-            callback : (data) => {
-              // After opening the org, refresh the list to update connected status
-              this.handleRefresh(this.viewAll === true);
-            }
+          command: `sf org open --target-org ${row.username}`,
+          commandId: Math.random(),
+          progressMessage: `Opening org ${row.username}...`,
+          callback: (data) => {
+            // After opening the org, refresh the list to update connected status
+            this.handleRefresh(this.viewAll === true);
+          },
         };
         window.sendMessageToVSCode({
           type: "runInternalCommand",
-          data: internalCommand
+          data: internalCommand,
         });
         this.internalCommands.push(internalCommand);
       }
-    } 
-    else if (actionName === "setDefault") {
+    } else if (actionName === "setDefault") {
       if (typeof window !== "undefined" && window.sendMessageToVSCode) {
         window.sendMessageToVSCode({
           type: "runInternalCommand",
@@ -232,8 +232,7 @@ export default class OrgManager extends LightningElement {
           },
         });
       }
-    }
-    else if (actionName === "reconnect") {
+    } else if (actionName === "reconnect") {
       if (typeof window !== "undefined" && window.sendMessageToVSCode) {
         window.sendMessageToVSCode({
           type: "connectOrg",
@@ -253,10 +252,12 @@ export default class OrgManager extends LightningElement {
   handleCommandResult(data) {
     if (data && data.command && data.commandId) {
       // If found in internalCommands: Execute callback of the command, then remove it from internalCommands
-      const cmdIndex = this.internalCommands.findIndex(cmd => cmd.commandId === data.commandId);
+      const cmdIndex = this.internalCommands.findIndex(
+        (cmd) => cmd.commandId === data.commandId,
+      );
       if (cmdIndex !== -1) {
         const cmd = this.internalCommands[cmdIndex];
-        if (cmd.callback && typeof cmd.callback === 'function') {
+        if (cmd.callback && typeof cmd.callback === "function") {
           try {
             cmd.callback(data);
           } catch (e) {

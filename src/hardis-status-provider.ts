@@ -58,7 +58,6 @@ export class HardisStatusProvider
     }
   }
 
-
   /**
    * List commands related to a topic
    */

@@ -14,7 +14,7 @@ export class CommandRunner {
   private terminalStack: vscode.Terminal[] = [];
   private terminalIsRunning = false;
   private outputChannel?: vscode.OutputChannel;
-  private allowNextDuplicateCommand = false ;
+  private allowNextDuplicateCommand = false;
   private debugNodeJs = false;
   /**
    * Map of active commands: key is command string, value is { type: 'background'|'terminal', process?: ChildProcess, sentToTerminal?: boolean }
@@ -112,7 +112,11 @@ export class CommandRunner {
     // Check for duplicate running command
     /* jscpd:ignore-start */
     const existing = this.activeCommands.get(cmd);
-    if (existing && !cmd.includes("hardis:project:configure:auth") && this.allowNextDuplicateCommand === false) {
+    if (
+      existing &&
+      !cmd.includes("hardis:project:configure:auth") &&
+      this.allowNextDuplicateCommand === false
+    ) {
       // For background: process is not killed and not closed/errored
       if (
         existing.type === "background" &&
@@ -129,7 +133,7 @@ export class CommandRunner {
         return null;
       }
     }
-    this.allowNextDuplicateCommand = false ;
+    this.allowNextDuplicateCommand = false;
     /* jscpd:ignore-end */
     // Telemetry: Send only the 2 first portions of the command
     if (this.commandsInstance.reporter) {
@@ -148,15 +152,17 @@ export class CommandRunner {
   }
 
   showDuplicateCommandWarning() {
-    const buttonMsg = "No you're wrong, you app is buggy, let me run it again" ;
-    vscode.window.showErrorMessage(
-      "No need to click multiple times on a menu, just be patient 🤗",
-      buttonMsg,
-    ).then((selection) => {
-      if (selection === buttonMsg) {
-        this.allowNextDuplicateCommand = true ;
-      }
-    });
+    const buttonMsg = "No you're wrong, you app is buggy, let me run it again";
+    vscode.window
+      .showErrorMessage(
+        "No need to click multiple times on a menu, just be patient 🤗",
+        buttonMsg,
+      )
+      .then((selection) => {
+        if (selection === buttonMsg) {
+          this.allowNextDuplicateCommand = true;
+        }
+      });
   }
 
   executeCommandBackground(sfdxHardisCommand: string) {
