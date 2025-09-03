@@ -7,7 +7,7 @@ export default class InstalledPackages extends LightningElement {
   packagesBeforeRetrieve = null;
 
   get columns() {
-    return  [
+    return [
       {
         label: "Name",
         fieldName: "SubscriberPackageName",
@@ -23,7 +23,8 @@ export default class InstalledPackages extends LightningElement {
       {
         label: "Version",
         fieldName: "SubscriberPackageVersionNumber",
-        editable: this.packagesBeforeRetrieve !== null && this.draftValues.length > 0,
+        editable:
+          this.packagesBeforeRetrieve !== null && this.draftValues.length > 0,
         type: "text",
       },
       {
@@ -43,7 +44,7 @@ export default class InstalledPackages extends LightningElement {
         cellAttributes: { alignment: "center" },
       },
     ];
-}
+  }
 
   @api
   initialize(data) {
@@ -73,7 +74,9 @@ export default class InstalledPackages extends LightningElement {
 
   handleCancel() {
     this.draftValues = [];
-    this.packages = this.packagesBeforeRetrieve ? [...this.packagesBeforeRetrieve] : [...this.packages];
+    this.packages = this.packagesBeforeRetrieve
+      ? [...this.packagesBeforeRetrieve]
+      : [...this.packages];
     this.packagesBeforeRetrieve = null;
   }
 
@@ -115,7 +118,10 @@ export default class InstalledPackages extends LightningElement {
       }
       const packagesWithConfig = [];
       for (const pkg of packagesForUpdate) {
-        if (pkg.installDuringDeployments === true || pkg.installOnScratchOrgs === true) {
+        if (
+          pkg.installDuringDeployments === true ||
+          pkg.installOnScratchOrgs === true
+        ) {
           packagesWithConfig.push(pkg);
         }
       }
@@ -147,7 +153,12 @@ export default class InstalledPackages extends LightningElement {
   }
 
   updateDraftFromPackagesResult(data) {
-    if (data.result && data?.result?.status === 0 && data?.result?.result && data.result.result.length > 0) {
+    if (
+      data.result &&
+      data?.result?.status === 0 &&
+      data?.result?.result &&
+      data.result.result.length > 0
+    ) {
       const retrievedPackages = data.result.result;
       const updatedPackages = [...this.packages];
       let hasChanges = false;
@@ -159,27 +170,37 @@ export default class InstalledPackages extends LightningElement {
           const existingPkg = updatedPackages[existingPkgIndex];
           // Update existing package details
           if (
-            existingPkg.SubscriberPackageVersionNumber !==  retrievedPkg.SubscriberPackageVersionNumber ||
-            existingPkg.SubscriberPackageName !== retrievedPkg.SubscriberPackageName ||
-            existingPkg.SubscriberPackageNamespace !== retrievedPkg.SubscriberPackageNamespace    
+            existingPkg.SubscriberPackageVersionNumber !==
+              retrievedPkg.SubscriberPackageVersionNumber ||
+            existingPkg.SubscriberPackageName !==
+              retrievedPkg.SubscriberPackageName ||
+            existingPkg.SubscriberPackageNamespace !==
+              retrievedPkg.SubscriberPackageNamespace
           ) {
             updatedPackages[existingPkgIndex] = {
               ...existingPkg,
-              SubscriberPackageVersionId: retrievedPkg.SubscriberPackageVersionId,
-              SubscriberPackageVersionNumber: retrievedPkg.SubscriberPackageVersionNumber,
+              SubscriberPackageVersionId:
+                retrievedPkg.SubscriberPackageVersionId,
+              SubscriberPackageVersionNumber:
+                retrievedPkg.SubscriberPackageVersionNumber,
               SubscriberPackageName: retrievedPkg.SubscriberPackageName,
-              SubscriberPackageNamespace: retrievedPkg.SubscriberPackageNamespace,
+              SubscriberPackageNamespace:
+                retrievedPkg.SubscriberPackageNamespace,
             };
             hasChanges = true;
             // If the version changed, reflect it in draftValues so the datatable shows the updated value
             try {
-              const identifier = existingPkg.Id || existingPkg.SubscriberPackageId || null;
+              const identifier =
+                existingPkg.Id || existingPkg.SubscriberPackageId || null;
               if (identifier) {
                 const draftEntry = {
                   Id: identifier,
-                  SubscriberPackageVersionNumber: retrievedPkg.SubscriberPackageVersionNumber,
+                  SubscriberPackageVersionNumber:
+                    retrievedPkg.SubscriberPackageVersionNumber,
                 };
-                const existingDraftIndex = this.draftValues.findIndex((d) => d.Id === identifier);
+                const existingDraftIndex = this.draftValues.findIndex(
+                  (d) => d.Id === identifier,
+                );
                 if (existingDraftIndex !== -1) {
                   this.draftValues[existingDraftIndex] = {
                     ...this.draftValues[existingDraftIndex],
@@ -210,7 +231,7 @@ export default class InstalledPackages extends LightningElement {
           if (a.SubscriberPackageName > b.SubscriberPackageName) return 1;
           return 0;
         });
-        this.packagesBeforeRetrieve = [...this.packages]
+        this.packagesBeforeRetrieve = [...this.packages];
         // Refresh for reactivity in LWC
         this.packages = [...updatedPackages];
         this.draftValues = [...this.draftValues];
