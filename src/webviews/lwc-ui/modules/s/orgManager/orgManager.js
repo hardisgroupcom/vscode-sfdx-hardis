@@ -17,7 +17,7 @@ export default class OrgManager extends LightningElement {
       },
       cellAttributes: { class: { fieldName: "rowClass" } },
     },
-    { label: "Type", fieldName: "orgType", type: "text", initialWidth: 120, cellAttributes: { class: { fieldName: "rowClass" } } },
+    { label: "Type", fieldName: "orgType", type: "text", initialWidth: 100, cellAttributes: { class: { fieldName: "rowClass" } } },
     { label: "Username", fieldName: "username", type: "text", cellAttributes: { class: { fieldName: "rowClass" } } },
     { label: "Alias", fieldName: "alias", type: "text", initialWidth: 120, cellAttributes: { class: { fieldName: "rowClass" } } },
     {
@@ -27,7 +27,7 @@ export default class OrgManager extends LightningElement {
       initialWidth: 140,
       cellAttributes: { class: { fieldName: "rowClass" } },
     },
-    { label: "Role", fieldName: "defaultLabel", type: "text", initialWidth: 80, cellAttributes: { class: { fieldName: "rowClass" } } },
+    { label: "Role", fieldName: "defaultLabel", type: "text", initialWidth: 100, cellAttributes: { class: { fieldName: "rowClass" } } },
     {
       label: "Actions",
       type: "action",
