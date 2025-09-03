@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Use white background for branches in DevOps Pipeline UI
+
 ## [6.3.4] 2024-09-04
 
 - Optimize org-related refreshes
