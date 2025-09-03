@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [6.3.4] 2024-09-04
+
+- Optimize org-related refreshes
+
 ## [6.3.3] 2024-09-03
 
 - Allow user to override the check of duplicate running commands

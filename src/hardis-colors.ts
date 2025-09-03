@@ -71,6 +71,7 @@ export class HardisColors {
   // Watch sfdx config files in order to detect changes of default org
   registerFileSystemWatchers() {
     if (vscode.workspace.workspaceFolders) {
+      let prevValues: any = {};
       for (const sfdxConfigPath of this.sfdxConfigPaths) {
         const watcher = vscode.workspace.createFileSystemWatcher(
           new vscode.RelativePattern(
@@ -79,12 +80,18 @@ export class HardisColors {
           ),
         );
         watcher.onDidCreate(async (uri) => {
+          const fileContent = await fs.readJSON(uri.fsPath);
+          prevValues[uri.fsPath] = JSON.stringify(fileContent);
           await this.manageColor(uri.fsPath);
           HardisStatusProvider.refreshOrgRelatedUis();
         });
         watcher.onDidChange(async (uri) => {
-          await this.manageColor(uri.fsPath);
-          HardisStatusProvider.refreshOrgRelatedUis();
+          const fileContent = await fs.readJSON(uri.fsPath);
+          if (prevValues[uri.fsPath] !== JSON.stringify(fileContent)) {
+            prevValues[uri.fsPath] = JSON.stringify(fileContent);
+            await this.manageColor(uri.fsPath);
+            HardisStatusProvider.refreshOrgRelatedUis();
+          }
         });
         this.disposables.push(watcher);
       }
