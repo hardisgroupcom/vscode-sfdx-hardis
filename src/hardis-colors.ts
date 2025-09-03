@@ -9,6 +9,7 @@ import {
   readSfdxHardisConfig,
   writeSfdxHardisConfig,
 } from "./utils";
+import { HardisStatusProvider } from "./hardis-status-provider";
 
 const PRODUCTION_EDITIONS = [
   "Team Edition",
@@ -77,8 +78,14 @@ export class HardisColors {
             `**/${sfdxConfigPath}`,
           ),
         );
-        watcher.onDidCreate((uri) => this.manageColor(uri.fsPath));
-        watcher.onDidChange((uri) => this.manageColor(uri.fsPath));
+        watcher.onDidCreate(async (uri) => {
+          await this.manageColor(uri.fsPath);
+          HardisStatusProvider.refreshOrgRelatedUis();
+        });
+        watcher.onDidChange(async (uri) => {
+          await this.manageColor(uri.fsPath);
+          HardisStatusProvider.refreshOrgRelatedUis();
+        });
         this.disposables.push(watcher);
       }
     }

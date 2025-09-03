@@ -4,10 +4,13 @@ export type SalesforceOrg = {
   username?: string;
   alias?: string;
   orgType?: "production" | "sandbox" | "scratch" | "other";
-  isDefault?: boolean;
+  isDefaultUsername?: boolean;
+  isDevHub?: boolean;
+  isDefaultDevHubUsername?: boolean;
   isScratch?: boolean;
   isSandbox?: boolean;
   instanceUrl?: string;
+  instanceApiVersion?: string;
   loginUrl?: string;
   orgId?: string;
   createdDate?: string;
@@ -66,7 +69,9 @@ export async function listAllOrgs(all = false): Promise<SalesforceOrg[]> {
       username: org.username,
       alias: org.alias,
       orgType: orgType,
-      isDefault: org.isDefault,
+      isDefaultUsername: !!org.isDefaultUsername,
+      isDefaultDevHubUsername: !!org.isDefaultDevHubUsername,
+      isDevHub: !!org.isDevHub,
       isScratch: !!org.isScratch,
       isSandbox: !!org.isSandbox,
       instanceUrl: org.instanceUrl,

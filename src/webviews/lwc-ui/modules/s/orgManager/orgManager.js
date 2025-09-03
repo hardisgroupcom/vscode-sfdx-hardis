@@ -4,6 +4,7 @@ export default class OrgManager extends LightningElement {
   @track orgs = [];
   @track selectedRowKeys = [];
   @track viewAll = false;
+  internalCommands = [];
 
   columns = [
     {
@@ -14,15 +15,41 @@ export default class OrgManager extends LightningElement {
         label: { fieldName: "instanceLabel" },
         target: "_blank",
       },
+      cellAttributes: { class: { fieldName: "rowClass" } },
     },
-    { label: "Type", fieldName: "orgType", type: "text", initialWidth: 120 },
-    { label: "Username", fieldName: "username", type: "text" },
-    { label: "Alias", fieldName: "alias", type: "text", initialWidth: 120 },
+    {
+      label: "Type",
+      fieldName: "orgType",
+      type: "text",
+      initialWidth: 100,
+      cellAttributes: { class: { fieldName: "rowClass" } },
+    },
+    {
+      label: "Username",
+      fieldName: "username",
+      type: "text",
+      cellAttributes: { class: { fieldName: "rowClass" } },
+    },
+    {
+      label: "Alias",
+      fieldName: "alias",
+      type: "text",
+      initialWidth: 120,
+      cellAttributes: { class: { fieldName: "rowClass" } },
+    },
     {
       label: "Connected",
       fieldName: "connectedLabel",
       type: "text",
       initialWidth: 140,
+      cellAttributes: { class: { fieldName: "rowClass" } },
+    },
+    {
+      label: "Role",
+      fieldName: "defaultLabel",
+      type: "text",
+      initialWidth: 100,
+      cellAttributes: { class: { fieldName: "rowClass" } },
     },
     {
       label: "Actions",
@@ -31,13 +58,13 @@ export default class OrgManager extends LightningElement {
       typeAttributes: {
         rowActions: { fieldName: "rowActions" },
       },
+      cellAttributes: { class: { fieldName: "rowClass" } },
     },
   ];
 
   get hasSelection() {
     return this.selectedRowKeys && this.selectedRowKeys.length > 0;
   }
-
   @api
   initialize(data) {
     this.orgs = (data && data.orgs) || [];
@@ -66,6 +93,15 @@ export default class OrgManager extends LightningElement {
         const actions = [];
         if (isConnected) {
           actions.push({ label: "Open", name: "open" });
+          if (!o.isDefaultUsername) {
+            actions.push({ label: "Set as Default Org", name: "setDefault" });
+          }
+          if (o.isDevHub && !o.isDefaultDevHubUsername) {
+            actions.push({
+              label: "Set as Default Dev Hub",
+              name: "setDefaultDevHub",
+            });
+          }
         } else {
           actions.push({ label: "Reconnect", name: "reconnect" });
         }
@@ -76,7 +112,37 @@ export default class OrgManager extends LightningElement {
         });
         return actions;
       })(),
+      // CSS class used by cellAttributes to highlight default org rows
+      rowClass:
+        o.isDefaultUsername || o.isDefaultDevHubUsername
+          ? "org-default-row"
+          : "",
+      defaultLabel: o.isDefaultUsername
+        ? "Default Org"
+        : o.isDefaultDevHubUsername
+          ? "Dev Hub"
+          : "",
     }));
+    // If a default org or a default dev hub exists, move them to the top of the list
+    const prioritized = [];
+    // find default org
+    const defaultOrg = this.orgs.find((r) => r.isDefaultUsername === true);
+    if (defaultOrg) prioritized.push(defaultOrg);
+    // find default dev hub (different from default org)
+    const defaultDevHub = this.orgs.find(
+      (r) =>
+        r.isDefaultDevHubUsername === true &&
+        r.username !== (defaultOrg && defaultOrg.username),
+    );
+    if (defaultDevHub) prioritized.push(defaultDevHub);
+    if (prioritized.length > 0) {
+      const prioritizedUsernames = new Set(prioritized.map((r) => r.username));
+      const rest = this.orgs.filter(
+        (r) => !prioritizedUsernames.has(r.username),
+      );
+      this.orgs = [...prioritized, ...rest];
+    }
+
     this.selectedRowKeys = [];
   }
 
@@ -85,6 +151,9 @@ export default class OrgManager extends LightningElement {
     switch (messageType) {
       case "refreshOrgs":
         this.handleRefresh(data && data.all === true);
+        break;
+      case "commandResult":
+        this.handleCommandResult(data);
         break;
       default:
         console.log("Unknown message type:", messageType, data);
@@ -200,12 +269,40 @@ export default class OrgManager extends LightningElement {
     // Handle Actions column events (open, reconnect, remove)
     if (actionName === "open") {
       if (typeof window !== "undefined" && window.sendMessageToVSCode) {
+        const internalCommand = {
+          command: `sf org open --target-org ${row.username}`,
+          commandId: Math.random(),
+          progressMessage: `Opening org ${row.username}...`,
+          callback: (data) => {
+            // After opening the org, refresh the list to update connected status
+            this.handleRefresh(this.viewAll === true);
+          },
+        };
+        window.sendMessageToVSCode({
+          type: "runInternalCommand",
+          data: internalCommand,
+        });
+        this.internalCommands.push(internalCommand);
+      }
+    } else if (actionName === "setDefault") {
+      if (typeof window !== "undefined" && window.sendMessageToVSCode) {
         window.sendMessageToVSCode({
           type: "runInternalCommand",
           data: {
-            command: `sf org open --target-org ${row.username}`,
+            command: `sf config set target-org ${row.username}`,
             commandId: Math.random(),
-            progressMessage: `Opening org ${row.username}...`,
+            progressMessage: `Setting org ${row.username} as default org...`,
+          },
+        });
+      }
+    } else if (actionName === "setDefaultDevHub") {
+      if (typeof window !== "undefined" && window.sendMessageToVSCode) {
+        window.sendMessageToVSCode({
+          type: "runInternalCommand",
+          data: {
+            command: `sf config set target-dev-hub ${row.username}`,
+            commandId: Math.random(),
+            progressMessage: `Setting org ${row.username} as default Dev Hub...`,
           },
         });
       }
@@ -222,6 +319,27 @@ export default class OrgManager extends LightningElement {
           type: "forgetOrgs",
           data: { usernames: [row.username] },
         });
+      }
+    }
+  }
+
+  handleCommandResult(data) {
+    if (data && data.command && data.commandId) {
+      // If found in internalCommands: Execute callback of the command, then remove it from internalCommands
+      const cmdIndex = this.internalCommands.findIndex(
+        (cmd) => cmd.commandId === data.commandId,
+      );
+      if (cmdIndex !== -1) {
+        const cmd = this.internalCommands[cmdIndex];
+        if (cmd.callback && typeof cmd.callback === "function") {
+          try {
+            cmd.callback(data);
+          } catch (e) {
+            // ignore callback errors
+          }
+        }
+        // Delete the command from the internal list to avoid unbounded growth
+        this.internalCommands.splice(cmdIndex, 1);
       }
     }
   }

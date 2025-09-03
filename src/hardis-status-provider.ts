@@ -17,6 +17,7 @@ import { Logger } from "./logger";
 import simpleGit from "simple-git";
 import { ThemeUtils } from "./themeUtils";
 import { getConfig } from "./utils/pipeline/sfdxHardisConfig";
+import { LwcPanelManager } from "./lwc-panel-manager";
 
 export class HardisStatusProvider
   implements vscode.TreeDataProvider<StatusTreeItem>
@@ -42,6 +43,18 @@ export class HardisStatusProvider
       return this.getTopicElements(element);
     } else {
       return Promise.resolve(this.listTopicElements());
+    }
+  }
+
+  public static refreshOrgRelatedUis() {
+    vscode.commands.executeCommand("vscode-sfdx-hardis.refreshStatusView");
+    // Refresh Orgs Manager panel if existing
+    const panelManager = LwcPanelManager.getInstance();
+    const orgManagerPanel = panelManager.getPanel("s-org-manager");
+    if (orgManagerPanel) {
+      orgManagerPanel.sendMessage({
+        type: "refreshOrgs",
+      });
     }
   }
 
