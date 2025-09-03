@@ -323,6 +323,7 @@ export default class OrgManager extends LightningElement {
     }
   }
 
+  /* jscpd:ignore-start */
   handleCommandResult(data) {
     if (data && data.command && data.commandId) {
       // If found in internalCommands: Execute callback of the command, then remove it from internalCommands
@@ -343,4 +344,5 @@ export default class OrgManager extends LightningElement {
       }
     }
   }
+  /* jscpd:ignore-end */
 }

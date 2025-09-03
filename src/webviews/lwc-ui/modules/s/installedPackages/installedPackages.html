@@ -24,16 +24,11 @@
                 columns={columns}
                 draft-values={draftValues}
                 onsave={handleSave}
+                oncancel={handleCancel}
                 oncellchange={handleDraftValuesChange}
                 hide-checkbox-column
                 class="slds-m-bottom_medium"
             ></lightning-datatable>
-            <template if:true={isEditMode}>
-                <lightning-button-group>
-                    <lightning-button variant="brand" label="Save" onclick={handleSave}></lightning-button>
-                    <lightning-button variant="neutral" label="Cancel" onclick={handleCancel}></lightning-button>
-                </lightning-button-group>
-            </template>
         </div>
     </lightning-card>
     </div>

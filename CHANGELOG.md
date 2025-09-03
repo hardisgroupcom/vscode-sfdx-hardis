@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+## [6.3.5] 2024-09-04
+
+- Installed packages manager: allow to pre-input packages using org installed packages
 - Use white background for branches in DevOps Pipeline UI
 
 ## [6.3.4] 2024-09-04
