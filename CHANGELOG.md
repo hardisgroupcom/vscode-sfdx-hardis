@@ -2,10 +2,12 @@
 
 ## [Unreleased]
 
+## [6.3.3] 2024-09-03
+
 - Allow user to override the check of duplicate running commands
 - Orgs Manager enhancements
-  - Allow to set an org by default
-  - Display default org
+  - Allow to set default org or default dev hub
+  - Display default org & default dev hub
 - Improve refresh org handling by watching config files
 
 ## [6.3.2] 2024-09-01
