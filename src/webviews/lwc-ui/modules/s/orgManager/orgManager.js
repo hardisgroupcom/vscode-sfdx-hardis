@@ -17,9 +17,26 @@ export default class OrgManager extends LightningElement {
       },
       cellAttributes: { class: { fieldName: "rowClass" } },
     },
-    { label: "Type", fieldName: "orgType", type: "text", initialWidth: 100, cellAttributes: { class: { fieldName: "rowClass" } } },
-    { label: "Username", fieldName: "username", type: "text", cellAttributes: { class: { fieldName: "rowClass" } } },
-    { label: "Alias", fieldName: "alias", type: "text", initialWidth: 120, cellAttributes: { class: { fieldName: "rowClass" } } },
+    {
+      label: "Type",
+      fieldName: "orgType",
+      type: "text",
+      initialWidth: 100,
+      cellAttributes: { class: { fieldName: "rowClass" } },
+    },
+    {
+      label: "Username",
+      fieldName: "username",
+      type: "text",
+      cellAttributes: { class: { fieldName: "rowClass" } },
+    },
+    {
+      label: "Alias",
+      fieldName: "alias",
+      type: "text",
+      initialWidth: 120,
+      cellAttributes: { class: { fieldName: "rowClass" } },
+    },
     {
       label: "Connected",
       fieldName: "connectedLabel",
@@ -27,7 +44,13 @@ export default class OrgManager extends LightningElement {
       initialWidth: 140,
       cellAttributes: { class: { fieldName: "rowClass" } },
     },
-    { label: "Role", fieldName: "defaultLabel", type: "text", initialWidth: 100, cellAttributes: { class: { fieldName: "rowClass" } } },
+    {
+      label: "Role",
+      fieldName: "defaultLabel",
+      type: "text",
+      initialWidth: 100,
+      cellAttributes: { class: { fieldName: "rowClass" } },
+    },
     {
       label: "Actions",
       type: "action",
@@ -55,13 +78,12 @@ export default class OrgManager extends LightningElement {
         .replace(/^https?:\/\//, "")
         .replace(/\/$/, ""),
       // more robust connected detection: accept connected/authorized/true etc.
-      connectedLabel:
-        ((o.connectedStatus || "")
-          .toString()
-          .toLowerCase()
-          .match(/connected|authorized/)
-          ? "Connected"
-          : "Disconnected"),
+      connectedLabel: (o.connectedStatus || "")
+        .toString()
+        .toLowerCase()
+        .match(/connected|authorized/)
+        ? "Connected"
+        : "Disconnected",
       // Compute row actions for the Actions column: Open (connected), Reconnect (disconnected), Remove (always)
       rowActions: (() => {
         const isConnected = (o.connectedStatus || "")
@@ -75,7 +97,10 @@ export default class OrgManager extends LightningElement {
             actions.push({ label: "Set as Default Org", name: "setDefault" });
           }
           if (o.isDevHub && !o.isDefaultDevHubUsername) {
-            actions.push({ label: "Set as Default Dev Hub", name: "setDefaultDevHub" });
+            actions.push({
+              label: "Set as Default Dev Hub",
+              name: "setDefaultDevHub",
+            });
           }
         } else {
           actions.push({ label: "Reconnect", name: "reconnect" });
@@ -88,12 +113,15 @@ export default class OrgManager extends LightningElement {
         return actions;
       })(),
       // CSS class used by cellAttributes to highlight default org rows
-      rowClass: o.isDefaultUsername || o.isDefaultDevHubUsername ? "org-default-row" : "",
+      rowClass:
+        o.isDefaultUsername || o.isDefaultDevHubUsername
+          ? "org-default-row"
+          : "",
       defaultLabel: o.isDefaultUsername
         ? "Default Org"
         : o.isDefaultDevHubUsername
-        ? "Dev Hub"
-        : "",
+          ? "Dev Hub"
+          : "",
     }));
     // If a default org or a default dev hub exists, move them to the top of the list
     const prioritized = [];
@@ -102,12 +130,16 @@ export default class OrgManager extends LightningElement {
     if (defaultOrg) prioritized.push(defaultOrg);
     // find default dev hub (different from default org)
     const defaultDevHub = this.orgs.find(
-      (r) => r.isDefaultDevHubUsername === true && r.username !== (defaultOrg && defaultOrg.username),
+      (r) =>
+        r.isDefaultDevHubUsername === true &&
+        r.username !== (defaultOrg && defaultOrg.username),
     );
     if (defaultDevHub) prioritized.push(defaultDevHub);
     if (prioritized.length > 0) {
       const prioritizedUsernames = new Set(prioritized.map((r) => r.username));
-      const rest = this.orgs.filter((r) => !prioritizedUsernames.has(r.username));
+      const rest = this.orgs.filter(
+        (r) => !prioritizedUsernames.has(r.username),
+      );
       this.orgs = [...prioritized, ...rest];
     }
 
@@ -263,8 +295,7 @@ export default class OrgManager extends LightningElement {
           },
         });
       }
-    }
-    else if (actionName === "setDefaultDevHub") {
+    } else if (actionName === "setDefaultDevHub") {
       if (typeof window !== "undefined" && window.sendMessageToVSCode) {
         window.sendMessageToVSCode({
           type: "runInternalCommand",
@@ -275,8 +306,7 @@ export default class OrgManager extends LightningElement {
           },
         });
       }
-    }
-    else if (actionName === "reconnect") {
+    } else if (actionName === "reconnect") {
       if (typeof window !== "undefined" && window.sendMessageToVSCode) {
         window.sendMessageToVSCode({
           type: "connectOrg",
