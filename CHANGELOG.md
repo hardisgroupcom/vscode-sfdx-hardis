@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [6.4.0] 2024-09-06
+
+- Add command **Org Monitoring -> Unsecured Connected Apps**
+- Detect when there is a crash at the beginning of a sf hardis command, and display error on running LWC panel
+
 ## [6.3.5] 2024-09-04
 
 - Installed packages manager: allow to pre-input packages using org installed packages

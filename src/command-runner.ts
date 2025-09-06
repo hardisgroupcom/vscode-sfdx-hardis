@@ -291,6 +291,7 @@ export class CommandRunner {
         closeProgress();
       }
     }
+    const stderrLines: string[] = []
 
     // Handle output and errors
     childProcess.stdout?.on("data", (data: any) => {
@@ -302,11 +303,28 @@ export class CommandRunner {
       let clean = stripAnsi(data.toString());
       output.append(`[stderr] ${clean}`);
       handleLogLine(clean);
+      stderrLines.push(clean);
     });
     childProcess.on("close", (code: any) => {
       output.appendLine(`[Ended] ${preprocessedCommand} (exit code: ${code})`);
       this.activeCommands.delete(preprocessedCommand);
       closeProgress();
+      // Send message to panel if still marked as active and running
+      setTimeout(() => {
+        const panelManager = LwcPanelManager.getInstance();
+        if (!panelManager) {
+          return;
+        }
+        panelManager.sendMessageToAllPanels({
+          type: "backgroundCommandEnded",
+          data: {
+            command: preprocessedCommand,
+            commandShort: preprocessedCommand.replace("sf ","").split("--")[0].trim(),
+            exitCode: code,
+            stderrLines: stderrLines
+          }
+        });
+      }, 3000);
     });
     childProcess.on("error", (err: any) => {
       output.appendLine(`[Error] ${err.message}`);
