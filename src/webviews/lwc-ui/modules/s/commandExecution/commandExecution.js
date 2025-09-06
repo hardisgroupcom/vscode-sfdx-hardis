@@ -181,6 +181,9 @@ export default class CommandExecution extends LightningElement {
       case "downloadFileFromPanel":
         this.handleDownloadFileFromPanel(data);
         break;
+      case "backgroundCommandEnded":
+        this.handleBackgroundCommandEnded(data);
+        break;
       default:
         console.log("Unknown message type:", messageType, data);
     }
@@ -1570,5 +1573,27 @@ ${resultMessage}`;
     a.download = fileName;
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  handleBackgroundCommandEnded(data) {
+    if (
+      data?.exitCode > 0 &&
+      !this.isCompleted &&
+      data.commandShort === this.commandContext?.command
+    ) {
+      // If the background command ended with an error, and this command is still running, mark it as failed
+      const stderrLinesStr = data?.stderrLines
+        ? data.stderrLines.join("\n")
+        : "";
+      this.addLogLine({
+        logType: "error",
+        message: `Background command "${data.command}" failed with exit code ${data.exitCode}.\n${stderrLinesStr}`,
+        timestamp: new Date(),
+      });
+      this.completeCommand({
+        success: false,
+        status: `Aborted (background command failed)`,
+      });
+    }
   }
 }

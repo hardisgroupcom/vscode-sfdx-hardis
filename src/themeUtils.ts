@@ -310,6 +310,10 @@ export class ThemeUtils {
         vscode: "eye-watch",
         hardis: "monitoring.svg",
       },
+      "hardis:org:diagnose:unsecure-connected-apps": {
+        vscode: "plug",
+        hardis: "extract.svg",
+      },
       "hardis:lint:access": { vscode: "law", hardis: "password.svg" },
       "hardis:lint:unusedmetadatas": { vscode: "law", hardis: "trash.svg" },
       "hardis:lint:metadatastatus": { vscode: "law", hardis: "flow.svg" },

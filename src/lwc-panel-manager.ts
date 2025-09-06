@@ -112,7 +112,8 @@ export class LwcPanelManager {
    * @param message The message object to send
    */
   public sendMessageToAllPanels(message: any): void {
-    this.activePanels.forEach((panel) => {
+    for (const activePanel of this.activePanels) {
+      const panel = activePanel[1];
       if (!panel.isDisposed() && typeof panel.sendMessage === "function") {
         try {
           panel.sendMessage(message);
@@ -120,7 +121,7 @@ export class LwcPanelManager {
           Logger.log("Error sending message to panel:\n" + JSON.stringify(err));
         }
       }
-    });
+    }
   }
 
   /**

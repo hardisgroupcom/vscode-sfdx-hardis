@@ -605,6 +605,15 @@ export class HardisCommandsProvider
               "https://sfdx-hardis.cloudity.com/hardis/org/diagnose/releaseupdates/",
           },
           {
+            id: "hardis:org:diagnose:unsecure-connected-apps",
+            label: "Unsecured Connected Apps",
+            tooltip:
+              "List all Connected Apps that are unsecured (not installed or not Admin user pre-approved)",
+            command: "sf hardis:org:diagnose:unsecure-connected-apps",
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-connected-apps/",
+          },
+          {
             id: "org:diagnose:legacyapi",
             label: "Legacy API versions usage",
             tooltip: "Detects if deprected APIs are your in a production org",
