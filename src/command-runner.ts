@@ -291,7 +291,7 @@ export class CommandRunner {
         closeProgress();
       }
     }
-    const stderrLines: string[] = []
+    const stderrLines: string[] = [];
 
     // Handle output and errors
     childProcess.stdout?.on("data", (data: any) => {
@@ -319,10 +319,13 @@ export class CommandRunner {
           type: "backgroundCommandEnded",
           data: {
             command: preprocessedCommand,
-            commandShort: preprocessedCommand.replace("sf ","").split("--")[0].trim(),
+            commandShort: preprocessedCommand
+              .replace("sf ", "")
+              .split("--")[0]
+              .trim(),
             exitCode: code,
-            stderrLines: stderrLines
-          }
+            stderrLines: stderrLines,
+          },
         });
       }, 3000);
     });
