@@ -3,5 +3,6 @@
 }
 
 .blue-back {
-	background:  #EDF4FF;
+	background: #EDF4FF;
+	min-height: 100vh;
 }
