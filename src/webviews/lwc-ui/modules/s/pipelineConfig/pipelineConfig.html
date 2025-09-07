@@ -2,7 +2,7 @@
   <div class="blue-back">
     <div class="slds-scope slds-p-around_small blue-back">
       <div class="slds-grid slds-grid_align-spread slds-m-bottom_medium">
-        <div class="slds-col slds-align-middle">
+        <div class="slds-col slds-size_4-of-12 slds-align-left">
           <template if:true={isBranch}>
             <span class="slds-text-heading_medium slds-text-title_bold">Pipeline Settings for major git branch <b>{branchName}</b></span>
           </template>
@@ -10,7 +10,21 @@
             <span class="slds-text-heading_medium slds-text-title_bold">Global Pipeline Settings</span>
           </template>
         </div>
-        <div class="slds-col slds-no-flex slds-align-middle" data-key="top-btn-group" style="text-align:right;">
+        <div class="slds-col slds-size_4-of-12 slds-align-middle">
+          <div class="slds-form-element">
+            <lightning-combobox
+              name="configScope"
+              label="Configuration Scope"
+              variant="label-hidden"
+              value={selectedConfigScope}
+              placeholder="Select configuration scope"
+              options={configScopeOptions}
+              onchange={handleConfigScopeChange}
+              disabled={isEditMode}
+            ></lightning-combobox>
+          </div>
+        </div>
+        <div class="slds-col slds-size_4-of-12 slds-no-flex slds-align-middle" data-key="top-btn-group" style="text-align:right;">
           <template if:true={isEditMode}>
             <lightning-button variant="brand" label="Save" onclick={handleSave} class="slds-m-right_small" data-button="top"></lightning-button>
             <lightning-button variant="neutral" label="Cancel" onclick={handleCancel} data-button="top"></lightning-button>

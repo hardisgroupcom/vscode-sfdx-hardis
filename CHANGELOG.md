@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- Enhance pipeline configuration
+  - Allow to update branch-scoped configuration
+  - Display sections in tabs for better UI
+
 ## [6.4.0] 2024-09-06
 
 - Add command **Org Monitoring -> Unsecured Connected Apps**

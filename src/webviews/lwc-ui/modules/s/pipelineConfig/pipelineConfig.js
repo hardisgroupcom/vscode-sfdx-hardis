@@ -10,6 +10,7 @@ import "s/forceLightTheme"; // Ensure light theme is applied
  *   isBranch: true if branch config is loaded
  *   branchName: name of the branch (if any)
  *   mode: 'view' | 'edit'
+ *   availableBranches: array of available branch names for selection
  */
 export default class PipelineConfig extends LightningElement {
   @api config = {};
@@ -17,13 +18,33 @@ export default class PipelineConfig extends LightningElement {
   @api globalConfig = null;
   @api isBranch = false;
   @api branchName = "";
+  @api availableBranches = [];
   @track mode = "view";
   @track editedConfig = {};
   @track sections = [];
+  @track selectedConfigScope = "global";
   initData = {};
 
   get isEditMode() {
     return this.mode === "edit";
+  }
+
+  get configScopeOptions() {
+    const options = [
+      { label: "Global Settings", value: "global" }
+    ];
+    
+    // Add branch options
+    if (this.availableBranches && Array.isArray(this.availableBranches)) {
+      this.availableBranches.forEach(branch => {
+        options.push({
+          label: `Branch: ${branch}`,
+          value: `branch:${branch}`
+        });
+      });
+    }
+    
+    return options;
   }
 
   @track configSchema = {};
@@ -250,6 +271,37 @@ export default class PipelineConfig extends LightningElement {
     this.handleRefresh();
   }
 
+  handleConfigScopeChange(event) {
+    if (this.isEditMode) {
+      // Don't allow changing scope while in edit mode
+      return;
+    }
+    
+    const newScope = event.detail.value;
+    this.selectedConfigScope = newScope;
+    
+    if (newScope === "global") {
+      // Request global config
+      this.requestConfigData(null);
+    } else if (newScope.startsWith("branch:")) {
+      // Extract branch name and request branch config
+      const branchName = newScope.substring(7); // Remove "branch:" prefix
+      this.requestConfigData(branchName);
+    }
+  }
+
+  requestConfigData(branchName) {
+    // Send message to VS Code to reload config for the specified branch
+    if (typeof window !== "undefined" && window.sendMessageToVSCode) {
+      window.sendMessageToVSCode({
+        type: "loadPipelineConfig",
+        data: {
+          branchName: branchName
+        }
+      });
+    }
+  }
+
   handleOpenDocUrl(event) {
     const url = event.target.dataset.docUrl;
     if (url && typeof window !== "undefined" && window.sendMessageToVSCode) {
@@ -273,6 +325,14 @@ export default class PipelineConfig extends LightningElement {
           : false;
       this.branchName = this.initData.branchName || "";
       this.sections = this.initData.sections || [];
+      this.availableBranches = this.initData.availableBranches || [];
+      
+      // Set the selected config scope based on current state
+      if (this.isBranch && this.branchName) {
+        this.selectedConfigScope = `branch:${this.branchName}`;
+      } else {
+        this.selectedConfigScope = "global";
+      }
     }
   }
 
@@ -372,7 +432,15 @@ export default class PipelineConfig extends LightningElement {
   }
 
   handleRefresh() {
+    // Update config in initData and reinitialize
     this.initData.config = Object.assign({}, this.config);
     this.initialize(this.initData);
+  }
+
+  @api
+  handleMessage(type, data) {
+    if (type === "initialize") {
+      this.initialize(data);
+    }
   }
 }

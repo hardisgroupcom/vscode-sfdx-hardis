@@ -18,6 +18,7 @@ import { getPullRequestButtonInfo } from "./utils/gitPrButtonUtils";
 import { SfdxHardisConfigHelper } from "./utils/pipeline/sfdxHardisConfigHelper";
 import { Logger } from "./logger";
 import { listAllOrgs } from "./utils/orgUtils";
+import { listMajorOrgs } from "./utils/orgConfigUtils";
 
 export class Commands {
   private readonly extensionUri: vscode.Uri;
@@ -628,6 +629,11 @@ export class Commands {
         const workspaceRoot = getWorkspaceRoot();
         const sfdxHardisConfigHelper =
           SfdxHardisConfigHelper.getInstance(workspaceRoot);
+        
+        // Load available branches from major orgs
+        const majorOrgs = await listMajorOrgs();
+        const availableBranches = majorOrgs.map(org => org.branchName);
+        
         // Show progress while loading config editor input
         const configEditorInput = await vscode.window.withProgress(
           {
@@ -638,9 +644,13 @@ export class Commands {
             cancellable: false,
           },
           async () => {
-            return await sfdxHardisConfigHelper.getEditorInput(branchName);
+            const input = await sfdxHardisConfigHelper.getEditorInput(branchName);
+            // Add available branches to the input
+            input.availableBranches = availableBranches;
+            return input;
           },
         );
+        
         const panel = LwcPanelManager.getInstance().getOrCreatePanel(
           "s-pipeline-config",
           configEditorInput,
@@ -648,7 +658,8 @@ export class Commands {
         panel.updateTitle(
           branchName ? `Settings - ${branchName}` : "Global Pipeline Settings",
         );
-        // Register message handler to save configuration
+        
+        // Register message handlers
         panel.onMessage(async (type, data) => {
           if (type === "saveSfdxHardisConfig") {
             try {
@@ -659,6 +670,36 @@ export class Commands {
             } catch (error: any) {
               vscode.window.showErrorMessage(
                 "Error saving configuration: " + error.message,
+              );
+            }
+          } else if (type === "loadPipelineConfig") {
+            // Handle request to load config for different branch
+            try {
+              const newBranchName = data.branchName;
+              const newConfigEditorInput = await vscode.window.withProgress(
+                {
+                  location: vscode.ProgressLocation.Notification,
+                  title: newBranchName
+                    ? `Loading pipeline settings for ${newBranchName}...`
+                    : "Loading global pipeline settings...",
+                  cancellable: false,
+                },
+                async () => {
+                  const input = await sfdxHardisConfigHelper.getEditorInput(newBranchName);
+                  // Add available branches to the input
+                  input.availableBranches = availableBranches;
+                  return input;
+                },
+              );
+              
+              // Update panel title and send new data to LWC
+              panel.updateTitle(
+                newBranchName ? `Settings - ${newBranchName}` : "Global Pipeline Settings",
+              );
+              panel.sendInitializationData(newConfigEditorInput);
+            } catch (error: any) {
+              vscode.window.showErrorMessage(
+                "Error loading configuration: " + error.message,
               );
             }
           }
