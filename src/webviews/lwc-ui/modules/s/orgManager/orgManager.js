@@ -282,26 +282,26 @@ export default class OrgManager extends LightningElement {
       };
       this.requestRunInternalCommand(internalCommand);
     } else if (actionName === "setDefaultDevHub") {
-        const internalCommand = {
-          command: `sf config set target-dev-hub ${row.username}`,
-          commandId: Math.random(),
-          progressMessage: `Setting org ${row.username} as default Dev Hub...`,
-          callback: () => {
-            // After opening the org, refresh the list to update connected status
-            this.handleRefresh(this.viewAll === true);
-          },
-        };
+      const internalCommand = {
+        command: `sf config set target-dev-hub ${row.username}`,
+        commandId: Math.random(),
+        progressMessage: `Setting org ${row.username} as default Dev Hub...`,
+        callback: () => {
+          // After opening the org, refresh the list to update connected status
+          this.handleRefresh(this.viewAll === true);
+        },
+      };
       this.requestRunInternalCommand(internalCommand);
     } else if (actionName === "reconnect") {
-        window.sendMessageToVSCode({
-          type: "connectOrg",
-          data: { username: row.username, instanceUrl: row.instanceUrl },
-        });
+      window.sendMessageToVSCode({
+        type: "connectOrg",
+        data: { username: row.username, instanceUrl: row.instanceUrl },
+      });
     } else if (actionName === "remove") {
-        window.sendMessageToVSCode({
-          type: "forgetOrgs",
-          data: { usernames: [row.username] },
-        });
+      window.sendMessageToVSCode({
+        type: "forgetOrgs",
+        data: { usernames: [row.username] },
+      });
     }
   }
 

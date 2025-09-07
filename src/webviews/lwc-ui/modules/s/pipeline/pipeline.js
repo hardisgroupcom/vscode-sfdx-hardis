@@ -23,13 +23,13 @@ export default class Pipeline extends LightningElement {
   }
 
   handleShowPipelineConfig() {
-      window.sendMessageToVSCode({
-        type: "runVsCodeCommand",
-        data: {
-          command: "vscode-sfdx-hardis.showPipelineConfig",
-          args: [],
-        },
-      });
+    window.sendMessageToVSCode({
+      type: "runVsCodeCommand",
+      data: {
+        command: "vscode-sfdx-hardis.showPipelineConfig",
+        args: [],
+      },
+    });
   }
 
   @api
