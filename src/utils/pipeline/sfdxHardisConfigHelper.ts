@@ -29,6 +29,7 @@ export interface SfdxHardisConfigEditorInput {
   branchName: string;
   configSchema: SfdxHardisConfigSchema;
   sections: Array<{ label: string; description: string; keys: string[] }>;
+  availableBranches?: string[];
 }
 
 export interface SfdxHardisConfigEditorSaveData {
@@ -47,10 +48,17 @@ export class SfdxHardisConfigHelper {
   static schemaLoaded = false;
   static readonly CONFIGURABLE_FIELDS = [
     { name: "instanceUrl", scopes: ["branch"] },
-    { name: "username", scopes: ["branch"] },
+    { name: "targetUsername", scopes: ["branch"] },
+    { name: "mergeTargets", scopes: ["branch"] },
+    { name: "devHubAlias", scopes: ["global"] },
+    { name: "devHubInstanceUrl", scopes: ["global"] },
+    { name: "devHubUsername", scopes: ["global"] },
+    { name: "initPermissionSets", scopes: ["global"] },
+    { name: "scratchOrgInitApexScripts", scopes: ["global"] },
+    { name: "dataPackages", scopes: ["global"] },
     { name: "packageNoOverwritePath", scope: ["branch"] },
-    { name: "useDeltaDeployment", scopes: ["global", "branch"] },
-    { name: "useSmartDeploymentTests", scopes: ["global", "branch"] },
+    { name: "useDeltaDeployment", scopes: ["global"] },
+    { name: "useSmartDeploymentTests", scopes: ["global"] },
     { name: "manualActionsFileUrl", scopes: ["global"] },
     { name: "developmentBranch", scopes: ["global"] },
     { name: "allowedOrgTypes", scopes: ["global"] },
@@ -65,13 +73,13 @@ export class SfdxHardisConfigHelper {
     { name: "autoRemoveUserPermissions", scopes: ["global"] },
     { name: "apexTestsMinCoverageOrgWide", scopes: ["global"] },
     { name: "extends", scopes: ["global"] },
-    { name: "installedPackages", scopes: ["global", "branch"] },
+    { name: "installedPackages", scopes: ["global"] },
   ];
   static readonly SECTIONS = [
     {
       label: "Salesforce Org",
       description: "",
-      keys: ["instanceUrl", "username"],
+      keys: ["instanceUrl", "targetUsername"],
     },
     {
       label: "Deployment",
@@ -83,6 +91,7 @@ export class SfdxHardisConfigHelper {
         "apexTestsMinCoverageOrgWide",
         "manualActionsFileUrl",
         "packageNoOverwritePath",
+        "mergeTargets",
       ],
     },
     {
@@ -105,6 +114,17 @@ export class SfdxHardisConfigHelper {
         "autoCleanTypes",
         "autoRetrieveWhenPull",
         "autoRemoveUserPermissions",
+      ],
+    },
+    {
+      label: "Dev Hub",
+      description: "",
+      keys: [
+        "devHubAlias",
+        "devHubInstanceUrl",
+        "devHubUsername",
+        "initPermissionSets",
+        "scratchOrgInitApexScripts",
       ],
     },
     {
