@@ -22,6 +22,13 @@ import { listMajorOrgs } from "./utils/orgConfigUtils";
 
 export class Commands {
   private readonly extensionUri: vscode.Uri;
+  private loadOrgsInProgressPromise: Thenable<any> | null = null;
+  private loadOrgsQueue: Array<{
+    all: boolean;
+    title?: string;
+    resolve: (value: any) => void;
+    reject: (error: any) => void;
+  }> = [];
   hardisCommandsProvider: HardisCommandsProvider | null = null;
   hardisStatusProvider: HardisStatusProvider | null = null;
   hardisPluginsProvider: HardisPluginsProvider | null = null;
@@ -29,6 +36,7 @@ export class Commands {
   disposables: vscode.Disposable[] = [];
   disposableWebSocketServer: LocalWebSocketServer | null = null;
   commandRunner: CommandRunner;
+
 
   constructor(
     extensionUri: vscode.Uri,
@@ -231,20 +239,70 @@ export class Commands {
   }
 
   // Helper: load orgs with a progress notification; preserves return value from listAllOrgs(all)
-  private async loadOrgsWithProgress(all: boolean = false, title?: string) {
-    const t =
-      title ||
-      (all ? "Loading all Salesforce orgs..." : "Loading Salesforce orgs...");
-    return await vscode.window.withProgress(
+  // Prevents multiple simultaneous progress notifications by queuing requests
+  private async loadOrgsWithProgress(all: boolean = false, title?: string): Promise<any> {
+    return new Promise((resolve, reject) => {
+      // Add this request to the queue
+      this.loadOrgsQueue.push({ all, title, resolve, reject });
+
+      // If there's already a load in progress, just wait for it
+      if (this.loadOrgsInProgressPromise) {
+        return;
+      }
+
+      // Start processing the queue
+      this.processLoadOrgsQueue();
+    });
+  }
+
+  private async processLoadOrgsQueue(): Promise<void> {
+    if (this.loadOrgsQueue.length === 0 || this.loadOrgsInProgressPromise) {
+      return;
+    }
+
+    // Get the latest request from the queue (use the most recent parameters)
+    const latestRequest = this.loadOrgsQueue[this.loadOrgsQueue.length - 1];
+    const allQueuedRequests = [...this.loadOrgsQueue];
+    this.loadOrgsQueue = []; // Clear the queue
+
+    const title = latestRequest.title || 
+      (latestRequest.all ? "Loading all Salesforce orgs..." : "Loading Salesforce orgs...");
+
+    // Create the progress notification with the latest request's parameters
+    this.loadOrgsInProgressPromise = vscode.window.withProgress(
       {
         location: vscode.ProgressLocation.Notification,
-        title: t,
+        title: title,
         cancellable: false,
       },
       async () => {
-        return await listAllOrgs(all);
+        return await listAllOrgs(latestRequest.all);
       },
     );
+
+    try {
+      // Wait for the actual loading to complete
+      const result = await this.loadOrgsInProgressPromise;
+      
+      // Resolve all queued requests with the same result
+      allQueuedRequests.forEach(request => {
+        request.resolve(result);
+      });
+    } catch (error) {
+      // Reject all queued requests with the same error
+      allQueuedRequests.forEach(request => {
+        request.reject(error);
+      });
+    } finally {
+      // Clear the progress promise
+      this.loadOrgsInProgressPromise = null;
+      
+      // Process any new requests that may have been queued while we were loading
+      if (this.loadOrgsQueue.length > 0) {
+        // Use setTimeout to avoid potential stack overflow with recursive calls
+        setTimeout(() => this.processLoadOrgsQueue(), 0);
+      }
+    }
   }
 
   registerShowExtensionConfig() {

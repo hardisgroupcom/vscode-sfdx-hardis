@@ -23,7 +23,6 @@ export default class Pipeline extends LightningElement {
   }
 
   handleShowPipelineConfig() {
-    if (typeof window !== "undefined" && window.sendMessageToVSCode) {
       window.sendMessageToVSCode({
         type: "runVsCodeCommand",
         data: {
@@ -31,7 +30,6 @@ export default class Pipeline extends LightningElement {
           args: [],
         },
       });
-    }
   }
 
   @api
@@ -63,27 +61,23 @@ export default class Pipeline extends LightningElement {
   }
 
   configureAuth() {
-    if (typeof window !== "undefined" && window.sendMessageToVSCode) {
-      window.sendMessageToVSCode({
-        type: "runCommand",
-        data: {
-          command: "sf hardis:project:configure:auth",
-        },
-      });
-    }
+    window.sendMessageToVSCode({
+      type: "runCommand",
+      data: {
+        command: "sf hardis:project:configure:auth",
+      },
+    });
     console.log("Configure Auth button clicked");
   }
 
   handleShowPipelineConfig() {
-    if (typeof window !== "undefined" && window.sendMessageToVSCode) {
-      window.sendMessageToVSCode({
-        type: "runVsCodeCommand",
-        data: {
-          command: "vscode-sfdx-hardis.showPipelineConfig",
-          args: [],
-        },
-      });
-    }
+    window.sendMessageToVSCode({
+      type: "runVsCodeCommand",
+      data: {
+        command: "vscode-sfdx-hardis.showPipelineConfig",
+        args: [],
+      },
+    });
   }
 
   handleToggleMajor(event) {
@@ -179,25 +173,21 @@ export default class Pipeline extends LightningElement {
   }
 
   handleShowInstalledPackages() {
-    if (typeof window !== "undefined" && window.sendMessageToVSCode) {
-      window.sendMessageToVSCode({
-        type: "runVsCodeCommand",
-        data: {
-          command: "vscode-sfdx-hardis.showInstalledPackages",
-          args: [],
-        },
-      });
-    }
+    window.sendMessageToVSCode({
+      type: "runVsCodeCommand",
+      data: {
+        command: "vscode-sfdx-hardis.showInstalledPackages",
+        args: [],
+      },
+    });
   }
 
   // Added refreshPipeline method
   refreshPipeline() {
-    if (typeof window !== "undefined" && window.sendMessageToVSCode) {
-      window.sendMessageToVSCode({
-        type: "refreshpipeline",
-        data: {},
-      });
-    }
+    window.sendMessageToVSCode({
+      type: "refreshpipeline",
+      data: {},
+    });
     console.log("Pipeline refresh event dispatched");
   }
 }

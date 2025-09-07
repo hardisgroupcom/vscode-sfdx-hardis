@@ -106,33 +106,30 @@ export default class InstalledPackages extends LightningElement {
   }
 
   handleSave() {
-    // Send updated config to VS Code
-    if (typeof window !== "undefined" && window.sendMessageToVSCode) {
-      // Merge draftValues into packages
-      const packagesForUpdate = [...this.packages];
-      for (const draft of this.draftValues) {
-        const pkg = packagesForUpdate.find((p) => p.Id === draft.Id);
-        if (pkg) {
-          Object.assign(pkg, draft);
-        }
+    // Merge draftValues into packages
+    const packagesForUpdate = [...this.packages];
+    for (const draft of this.draftValues) {
+      const pkg = packagesForUpdate.find((p) => p.Id === draft.Id);
+      if (pkg) {
+        Object.assign(pkg, draft);
       }
-      const packagesWithConfig = [];
-      for (const pkg of packagesForUpdate) {
-        if (
-          pkg.installDuringDeployments === true ||
-          pkg.installOnScratchOrgs === true
-        ) {
-          packagesWithConfig.push(pkg);
-        }
-      }
-      window.sendMessageToVSCode({
-        type: "saveSfdxHardisConfig",
-        data: {
-          packages: JSON.parse(JSON.stringify(packagesWithConfig)),
-        },
-      });
-      this.draftValues = [];
     }
+    const packagesWithConfig = [];
+    for (const pkg of packagesForUpdate) {
+      if (
+        pkg.installDuringDeployments === true ||
+        pkg.installOnScratchOrgs === true
+      ) {
+        packagesWithConfig.push(pkg);
+      }
+    }
+    window.sendMessageToVSCode({
+      type: "saveSfdxHardisConfig",
+      data: {
+        packages: JSON.parse(JSON.stringify(packagesWithConfig)),
+      },
+    });
+    this.draftValues = [];
   }
 
   handleRetrieveFromOrg() {
@@ -145,11 +142,7 @@ export default class InstalledPackages extends LightningElement {
         this.updateDraftFromPackagesResult(data);
       },
     };
-    window.sendMessageToVSCode({
-      type: "runInternalCommand",
-      data: JSON.parse(JSON.stringify(internalCommand)),
-    });
-    this.internalCommands.push(internalCommand);
+    this.requestRunInternalCommand(internalCommand);
   }
 
   updateDraftFromPackagesResult(data) {
@@ -240,15 +233,21 @@ export default class InstalledPackages extends LightningElement {
   }
 
   handleInstallNewPackage() {
-    if (typeof window !== "undefined" && window.sendMessageToVSCode) {
-      window.sendMessageToVSCode({
-        type: "runCommand",
-        data: {
-          command: "sf hardis:package:install",
-        },
-      });
-    }
+    window.sendMessageToVSCode({
+      type: "runCommand",
+      data: {
+        command: "sf hardis:package:install",
+      },
+    });
     console.log("Install new package button clicked");
+  }
+
+  requestRunInternalCommand(internalCommand) {
+    window.sendMessageToVSCode({
+      type: "runInternalCommand",
+      data: JSON.parse(JSON.stringify(internalCommand)),
+    });
+    this.internalCommands.push(internalCommand);
   }
 
   handleCommandResult(data) {

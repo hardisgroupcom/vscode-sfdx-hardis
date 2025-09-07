@@ -834,12 +834,10 @@ export default class PromptInput extends LightningElement {
 
   dispatchPromptResponse(response) {
     // Send message to VS Code via the global API
-    if (typeof window !== "undefined" && window.sendMessageToVSCode) {
-      window.sendMessageToVSCode({
-        type: "submit",
-        data: response,
-      });
-    }
+    window.sendMessageToVSCode({
+      type: "submit",
+      data: response,
+    });
 
     // Also dispatch custom event to parent component for local handling
     const responseEvent = new CustomEvent("promptresponse", {

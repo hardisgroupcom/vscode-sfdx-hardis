@@ -290,23 +290,17 @@ export default class PipelineConfig extends LightningElement {
 
   requestConfigData(branchName) {
     // Send message to VS Code to reload config for the specified branch
-    if (typeof window !== "undefined" && window.sendMessageToVSCode) {
-      window.sendMessageToVSCode({
-        type: "loadPipelineConfig",
-        data: {
-          branchName: branchName,
-        },
-      });
-    }
+    window.sendMessageToVSCode({
+      type: "loadPipelineConfig",
+      data: {
+        branchName: branchName,
+      },
+    });
   }
 
   handleOpenDocUrl(event) {
     const url = event.target.dataset.docUrl;
-    if (url && typeof window !== "undefined" && window.sendMessageToVSCode) {
-      window.sendMessageToVSCode({ type: "openExternal", data: url });
-    } else if (url) {
-      window.open(url, "_blank");
-    }
+    window.sendMessageToVSCode({ type: "openExternal", data: url });
   }
 
   @api
@@ -413,20 +407,18 @@ export default class PipelineConfig extends LightningElement {
 
   handleSave() {
     // Send updated config to VS Code
-    if (typeof window !== "undefined" && window.sendMessageToVSCode) {
-      window.sendMessageToVSCode({
-        type: "saveSfdxHardisConfig",
-        data: {
-          config: JSON.parse(JSON.stringify(this.editedConfig)),
-          isBranch: this.isBranch,
-          branchName: this.branchName,
-        },
-      });
-      this.mode = "view";
-      this.config = { ...this.editedConfig };
-      this.editedConfig = {};
-      this.handleRefresh();
-    }
+    window.sendMessageToVSCode({
+      type: "saveSfdxHardisConfig",
+      data: {
+        config: JSON.parse(JSON.stringify(this.editedConfig)),
+        isBranch: this.isBranch,
+        branchName: this.branchName,
+      },
+    });
+    this.mode = "view";
+    this.config = { ...this.editedConfig };
+    this.editedConfig = {};
+    this.handleRefresh();
   }
 
   handleRefresh() {

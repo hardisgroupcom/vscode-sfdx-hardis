@@ -212,15 +212,13 @@ export default class CommandExecution extends LightningElement {
     this.detailsMode =
       event.detail && event.detail.checked ? "advanced" : "simple";
     // Optionally persist to VS Code config if needed
-    if (window && window.sendMessageToVSCode) {
-      window.sendMessageToVSCode({
-        type: "updateVsCodeSfdxHardisConfiguration",
-        data: {
-          configKey: "showCommandsDetails",
-          value: this.detailsMode === "advanced" ? true : false,
-        },
-      });
-    }
+    window.sendMessageToVSCode({
+      type: "updateVsCodeSfdxHardisConfiguration",
+      data: {
+        configKey: "showCommandsDetails",
+        value: this.detailsMode === "advanced" ? true : false,
+      },
+    });
   }
 
   showPromptInPanel(data) {
@@ -237,21 +235,17 @@ export default class CommandExecution extends LightningElement {
         this.showEmbeddedPrompt = false;
         this.embeddedPromptData = null;
         // Relay to VS Code
-        if (window && window.sendMessageToVSCode) {
-          window.sendMessageToVSCode({
-            type: "promptSubmit",
-            data: event.detail,
-          });
-        }
+        window.sendMessageToVSCode({
+          type: "promptSubmit",
+          data: event.detail,
+        });
       } else if (event.type === "promptexit") {
         this.showEmbeddedPrompt = false;
         this.embeddedPromptData = null;
-        if (window && window.sendMessageToVSCode) {
-          window.sendMessageToVSCode({
-            type: "promptExit",
-            data: event.detail,
-          });
-        }
+        window.sendMessageToVSCode({
+          type: "promptExit",
+          data: event.detail,
+        });
       }
     };
     this.addEventListener("promptsubmit", this.embeddedPromptListener);
@@ -1484,14 +1478,10 @@ ${resultMessage}`;
   handleOpenDocumentation() {
     if (this.commandDocUrl) {
       // Use the VS Code webview API to send message
-      if (typeof window !== "undefined" && window.sendMessageToVSCode) {
-        window.sendMessageToVSCode({
-          type: "openExternal",
-          data: { url: this.commandDocUrl },
-        });
-      } else {
-        console.error("VS Code API not available for opening documentation");
-      }
+      window.sendMessageToVSCode({
+        type: "openExternal",
+        data: { url: this.commandDocUrl },
+      });
     }
   }
 
@@ -1526,34 +1516,30 @@ ${resultMessage}`;
       return;
     }
 
-    if (typeof window !== "undefined" && window.sendMessageToVSCode) {
-      switch (reportFile.type) {
-        case "actionCommand":
-          // Run a VS Code command
-          window.sendMessageToVSCode({
-            type: "runVsCodeCommand",
-            data: { command: reportFile.file },
-          });
-          break;
-        case "actionUrl":
-        case "docUrl":
-          // Open external URL
-          window.sendMessageToVSCode({
-            type: "openExternal",
-            data: { url: reportFile.file },
-          });
-          break;
-        case "report":
-        default:
-          // Open file in VS Code
-          window.sendMessageToVSCode({
-            type: "openFile",
-            data: { filePath: reportFile.file },
-          });
-          break;
-      }
-    } else {
-      console.error("VS Code API not available for opening report file");
+    switch (reportFile.type) {
+      case "actionCommand":
+        // Run a VS Code command
+        window.sendMessageToVSCode({
+          type: "runVsCodeCommand",
+          data: { command: reportFile.file },
+        });
+        break;
+      case "actionUrl":
+      case "docUrl":
+        // Open external URL
+        window.sendMessageToVSCode({
+          type: "openExternal",
+          data: { url: reportFile.file },
+        });
+        break;
+      case "report":
+      default:
+        // Open file in VS Code
+        window.sendMessageToVSCode({
+          type: "openFile",
+          data: { filePath: reportFile.file },
+        });
+        break;
     }
   }
 

@@ -161,12 +161,10 @@ export default class OrgManager extends LightningElement {
   }
 
   handleConnect() {
-    if (typeof window !== "undefined" && window.sendMessageToVSCode) {
-      window.sendMessageToVSCode({
-        type: "runCommand",
-        data: { command: "sf hardis:org:select --prompt-default" },
-      });
-    }
+    window.sendMessageToVSCode({
+      type: "runCommand",
+      data: { command: "sf hardis:org:select --prompt-default" },
+    });
   }
 
   handleRefresh(all = false) {
@@ -174,13 +172,11 @@ export default class OrgManager extends LightningElement {
     // Treat a non-boolean `all` argument as "no explicit flag" and fall back to the UI toggle.
     const explicitAll = typeof all === "boolean" ? all : undefined;
     const allFlag = explicitAll === true ? true : this.viewAll === true;
-    if (typeof window !== "undefined" && window.sendMessageToVSCode) {
-      // Always send a boolean for `all` so the backend can rely on `data.all === true` checks
-      window.sendMessageToVSCode({
-        type: "refreshOrgsFromUi",
-        data: { all: !!allFlag },
-      });
-    }
+    // Always send a boolean for `all` so the backend can rely on `data.all === true` checks
+    window.sendMessageToVSCode({
+      type: "refreshOrgsFromUi",
+      data: { all: !!allFlag },
+    });
   }
 
   handleViewAllToggle(event) {
@@ -228,12 +224,10 @@ export default class OrgManager extends LightningElement {
   handleRemoveRecommended() {
     const recommendedUsernames = this.recommendedUsernames || [];
 
-    if (typeof window !== "undefined" && window.sendMessageToVSCode) {
-      window.sendMessageToVSCode({
-        type: "removeRecommended",
-        data: { usernames: recommendedUsernames },
-      });
-    }
+    window.sendMessageToVSCode({
+      type: "removeRecommended",
+      data: { usernames: recommendedUsernames },
+    });
   }
 
   handleRowSelection(event) {
@@ -258,9 +252,7 @@ export default class OrgManager extends LightningElement {
     // eslint-disable-next-line no-console
     console.log("OrgManager: forgetting selected usernames", usernames);
 
-    if (typeof window !== "undefined" && window.sendMessageToVSCode) {
-      window.sendMessageToVSCode({ type: "forgetOrgs", data: { usernames } });
-    }
+    window.sendMessageToVSCode({ type: "forgetOrgs", data: { usernames } });
   }
 
   handleRowAction(event) {
@@ -268,59 +260,57 @@ export default class OrgManager extends LightningElement {
     const row = event.detail.row;
     // Handle Actions column events (open, reconnect, remove)
     if (actionName === "open") {
-      if (typeof window !== "undefined" && window.sendMessageToVSCode) {
+      const internalCommand = {
+        command: `sf org open --target-org ${row.username}`,
+        commandId: Math.random(),
+        progressMessage: `Opening org ${row.username}...`,
+        callback: () => {
+          // After opening the org, refresh the list to update connected status
+          this.handleRefresh(this.viewAll === true);
+        },
+      };
+      this.requestRunInternalCommand(internalCommand);
+    } else if (actionName === "setDefault") {
+      const internalCommand = {
+        command: `sf config set target-org ${row.username}`,
+        commandId: Math.random(),
+        progressMessage: `Setting org ${row.username} as default org...`,
+        callback: () => {
+          // After opening the org, refresh the list to update connected status
+          this.handleRefresh(this.viewAll === true);
+        },
+      };
+      this.requestRunInternalCommand(internalCommand);
+    } else if (actionName === "setDefaultDevHub") {
         const internalCommand = {
-          command: `sf org open --target-org ${row.username}`,
+          command: `sf config set target-dev-hub ${row.username}`,
           commandId: Math.random(),
-          progressMessage: `Opening org ${row.username}...`,
-          callback: (data) => {
+          progressMessage: `Setting org ${row.username} as default Dev Hub...`,
+          callback: () => {
             // After opening the org, refresh the list to update connected status
             this.handleRefresh(this.viewAll === true);
           },
         };
-        window.sendMessageToVSCode({
-          type: "runInternalCommand",
-          data: internalCommand,
-        });
-        this.internalCommands.push(internalCommand);
-      }
-    } else if (actionName === "setDefault") {
-      if (typeof window !== "undefined" && window.sendMessageToVSCode) {
-        window.sendMessageToVSCode({
-          type: "runInternalCommand",
-          data: {
-            command: `sf config set target-org ${row.username}`,
-            commandId: Math.random(),
-            progressMessage: `Setting org ${row.username} as default org...`,
-          },
-        });
-      }
-    } else if (actionName === "setDefaultDevHub") {
-      if (typeof window !== "undefined" && window.sendMessageToVSCode) {
-        window.sendMessageToVSCode({
-          type: "runInternalCommand",
-          data: {
-            command: `sf config set target-dev-hub ${row.username}`,
-            commandId: Math.random(),
-            progressMessage: `Setting org ${row.username} as default Dev Hub...`,
-          },
-        });
-      }
+      this.requestRunInternalCommand(internalCommand);
     } else if (actionName === "reconnect") {
-      if (typeof window !== "undefined" && window.sendMessageToVSCode) {
         window.sendMessageToVSCode({
           type: "connectOrg",
           data: { username: row.username, instanceUrl: row.instanceUrl },
         });
-      }
     } else if (actionName === "remove") {
-      if (typeof window !== "undefined" && window.sendMessageToVSCode) {
         window.sendMessageToVSCode({
           type: "forgetOrgs",
           data: { usernames: [row.username] },
         });
-      }
     }
+  }
+
+  requestRunInternalCommand(internalCommand) {
+    window.sendMessageToVSCode({
+      type: "runInternalCommand",
+      data: JSON.parse(JSON.stringify(internalCommand)),
+    });
+    this.internalCommands.push(internalCommand);
   }
 
   /* jscpd:ignore-start */

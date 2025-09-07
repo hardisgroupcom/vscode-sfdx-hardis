@@ -5,6 +5,8 @@
 - Enhance pipeline configuration
   - Allow to update branch-scoped configuration
   - Display sections in tabs for better UI
+- Orgs Manager: Fix refresh issue after setting default org
+- Optimize LWC performances by removing unnecessary method existence check
 
 ## [6.4.0] 2024-09-06
 
