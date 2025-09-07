@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [6.4.1] 2024-09-07
+
 - Enhance pipeline configuration
   - Allow to update branch-scoped configuration
   - Display sections in tabs for better UI
