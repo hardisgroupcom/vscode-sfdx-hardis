@@ -125,7 +125,7 @@ export class SfdxHardisConfigHelper {
         "devHubUsername",
         "initPermissionSets",
         "scratchOrgInitApexScripts",
-        ],
+      ],
     },
     {
       label: "Other",

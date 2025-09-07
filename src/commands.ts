@@ -629,11 +629,11 @@ export class Commands {
         const workspaceRoot = getWorkspaceRoot();
         const sfdxHardisConfigHelper =
           SfdxHardisConfigHelper.getInstance(workspaceRoot);
-        
+
         // Load available branches from major orgs
         const majorOrgs = await listMajorOrgs();
-        const availableBranches = majorOrgs.map(org => org.branchName);
-        
+        const availableBranches = majorOrgs.map((org) => org.branchName);
+
         // Show progress while loading config editor input
         const configEditorInput = await vscode.window.withProgress(
           {
@@ -644,13 +644,14 @@ export class Commands {
             cancellable: false,
           },
           async () => {
-            const input = await sfdxHardisConfigHelper.getEditorInput(branchName);
+            const input =
+              await sfdxHardisConfigHelper.getEditorInput(branchName);
             // Add available branches to the input
             input.availableBranches = availableBranches;
             return input;
           },
         );
-        
+
         const panel = LwcPanelManager.getInstance().getOrCreatePanel(
           "s-pipeline-config",
           configEditorInput,
@@ -658,7 +659,7 @@ export class Commands {
         panel.updateTitle(
           branchName ? `Settings - ${branchName}` : "Global Pipeline Settings",
         );
-        
+
         // Register message handlers
         panel.onMessage(async (type, data) => {
           if (type === "saveSfdxHardisConfig") {
@@ -685,16 +686,19 @@ export class Commands {
                   cancellable: false,
                 },
                 async () => {
-                  const input = await sfdxHardisConfigHelper.getEditorInput(newBranchName);
+                  const input =
+                    await sfdxHardisConfigHelper.getEditorInput(newBranchName);
                   // Add available branches to the input
                   input.availableBranches = availableBranches;
                   return input;
                 },
               );
-              
+
               // Update panel title and send new data to LWC
               panel.updateTitle(
-                newBranchName ? `Settings - ${newBranchName}` : "Global Pipeline Settings",
+                newBranchName
+                  ? `Settings - ${newBranchName}`
+                  : "Global Pipeline Settings",
               );
               panel.sendInitializationData(newConfigEditorInput);
             } catch (error: any) {

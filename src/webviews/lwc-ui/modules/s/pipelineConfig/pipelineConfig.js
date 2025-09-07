@@ -30,20 +30,18 @@ export default class PipelineConfig extends LightningElement {
   }
 
   get configScopeOptions() {
-    const options = [
-      { label: "Global Settings", value: "global" }
-    ];
-    
+    const options = [{ label: "Global Settings", value: "global" }];
+
     // Add branch options
     if (this.availableBranches && Array.isArray(this.availableBranches)) {
-      this.availableBranches.forEach(branch => {
+      this.availableBranches.forEach((branch) => {
         options.push({
           label: `Branch: ${branch}`,
-          value: `branch:${branch}`
+          value: `branch:${branch}`,
         });
       });
     }
-    
+
     return options;
   }
 
@@ -276,10 +274,10 @@ export default class PipelineConfig extends LightningElement {
       // Don't allow changing scope while in edit mode
       return;
     }
-    
+
     const newScope = event.detail.value;
     this.selectedConfigScope = newScope;
-    
+
     if (newScope === "global") {
       // Request global config
       this.requestConfigData(null);
@@ -296,8 +294,8 @@ export default class PipelineConfig extends LightningElement {
       window.sendMessageToVSCode({
         type: "loadPipelineConfig",
         data: {
-          branchName: branchName
-        }
+          branchName: branchName,
+        },
       });
     }
   }
@@ -326,7 +324,7 @@ export default class PipelineConfig extends LightningElement {
       this.branchName = this.initData.branchName || "";
       this.sections = this.initData.sections || [];
       this.availableBranches = this.initData.availableBranches || [];
-      
+
       // Set the selected config scope based on current state
       if (this.isBranch && this.branchName) {
         this.selectedConfigScope = `branch:${this.branchName}`;
