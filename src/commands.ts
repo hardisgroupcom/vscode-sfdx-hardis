@@ -37,7 +37,6 @@ export class Commands {
   disposableWebSocketServer: LocalWebSocketServer | null = null;
   commandRunner: CommandRunner;
 
-
   constructor(
     extensionUri: vscode.Uri,
     hardisCommandsProvider: HardisCommandsProvider,
@@ -240,7 +239,10 @@ export class Commands {
 
   // Helper: load orgs with a progress notification; preserves return value from listAllOrgs(all)
   // Prevents multiple simultaneous progress notifications by queuing requests
-  private async loadOrgsWithProgress(all: boolean = false, title?: string): Promise<any> {
+  private async loadOrgsWithProgress(
+    all: boolean = false,
+    title?: string,
+  ): Promise<any> {
     return new Promise((resolve, reject) => {
       // Add this request to the queue
       this.loadOrgsQueue.push({ all, title, resolve, reject });
@@ -265,8 +267,11 @@ export class Commands {
     const allQueuedRequests = [...this.loadOrgsQueue];
     this.loadOrgsQueue = []; // Clear the queue
 
-    const title = latestRequest.title || 
-      (latestRequest.all ? "Loading all Salesforce orgs..." : "Loading Salesforce orgs...");
+    const title =
+      latestRequest.title ||
+      (latestRequest.all
+        ? "Loading all Salesforce orgs..."
+        : "Loading Salesforce orgs...");
 
     // Create the progress notification with the latest request's parameters
     this.loadOrgsInProgressPromise = vscode.window.withProgress(
@@ -283,20 +288,20 @@ export class Commands {
     try {
       // Wait for the actual loading to complete
       const result = await this.loadOrgsInProgressPromise;
-      
+
       // Resolve all queued requests with the same result
-      allQueuedRequests.forEach(request => {
+      allQueuedRequests.forEach((request) => {
         request.resolve(result);
       });
     } catch (error) {
       // Reject all queued requests with the same error
-      allQueuedRequests.forEach(request => {
+      allQueuedRequests.forEach((request) => {
         request.reject(error);
       });
     } finally {
       // Clear the progress promise
       this.loadOrgsInProgressPromise = null;
-      
+
       // Process any new requests that may have been queued while we were loading
       if (this.loadOrgsQueue.length > 0) {
         // Use setTimeout to avoid potential stack overflow with recursive calls
