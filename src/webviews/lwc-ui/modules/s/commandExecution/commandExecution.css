@@ -245,3 +245,95 @@
 .download-panel .slds-button-group {
   gap: 0.25rem;
 }
+
+/* Progress section styles */
+.progress-section {
+  border-left: 4px solid #0176d3;
+  background: linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%);
+}
+
+.progress-section .section-header {
+  background-color: rgba(1, 118, 211, 0.05);
+}
+
+.progress-section .section-header:hover {
+  background-color: rgba(1, 118, 211, 0.1);
+}
+
+.progress-section .section-logs > div {
+  background-color: rgba(255, 255, 255, 0.8);
+  border-left: 2px solid #0176d3;
+}
+
+/* Animated progress bar styles */
+.animated-progress-bar {
+  position: relative;
+  overflow: hidden;
+}
+
+.animated-progress-bar.is-active::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(255, 255, 255, 0.3) 40%, 
+    rgba(255, 255, 255, 0.6) 50%, 
+    rgba(255, 255, 255, 0.3) 60%, 
+    transparent 100%);
+  animation: progress-shine 2s ease-in-out infinite;
+}
+
+/* Alternative moving animation for indeterminate progress */
+.animated-progress-bar.is-indeterminate::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -30%;
+  width: 30%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(1, 118, 211, 0.8) 50%, 
+    transparent 100%);
+  animation: progress-indeterminate 2s linear infinite;
+  border-radius: inherit;
+}
+
+/* Subtle background pulse for indeterminate */
+.animated-progress-bar.is-indeterminate {
+  animation: progress-background-pulse 3s ease-in-out infinite;
+}
+
+@keyframes progress-shine {
+  0% {
+    left: -100%;
+  }
+  50% {
+    left: 100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+@keyframes progress-indeterminate {
+  0% {
+    left: -30%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+@keyframes progress-background-pulse {
+  0%, 100% {
+    background-color: rgba(1, 118, 211, 0.1);
+  }
+  50% {
+    background-color: rgba(1, 118, 211, 0.2);
+  }
+}

@@ -76,6 +76,137 @@
           <div class="log-sections">
             <template for:each={logSectionsForDisplay} for:item="section">
                 <template if:false={section.isLatestQuestionSectionToHide}>
+                  <!-- Progress Section -->
+                  <template if:true={section.isProgress}>
+                    <div key={section.id} class="log-section progress-section slds-box slds-box_x-small slds-m-bottom_x-small">
+                      <!-- Progress section header -->
+                      <div class="section-header slds-p-around_x-small" data-section-id={section.id} onclick={handleToggleSection}>
+                        <div class="slds-media slds-media_top">
+                          <div class="slds-media__figure" style="width: 1rem;">
+                            <template if:true={section.sectionUseSpinner}>
+                              <div class="slds-is-relative" style="height: 1rem;">
+                                <lightning-spinner 
+                                  alternative-text="Progress..." 
+                                  size="x-small"
+                                  variant="brand">
+                                </lightning-spinner>
+                              </div>
+                            </template>
+                            <template if:false={section.sectionUseSpinner}>
+                              <template if:true={section.sectionStatusIcon}>
+                                <lightning-icon 
+                                  icon-name={section.sectionStatusIcon.iconName}
+                                  variant={section.sectionStatusIcon.variant}
+                                  size="x-small">
+                                </lightning-icon>
+                              </template>
+                            </template>
+                          </div>
+                          <div class="slds-media__body">
+                            <div class="slds-grid">
+                              <div class="slds-col slds-size_10-of-12">
+                                <div class="section-title slds-text-body_regular slds-text-color_default">
+                                  {section.title}
+                                </div>
+                                <!-- Progress Bar -->
+                                <div class="slds-m-top_xx-small">
+                                  <div class={section.progressAnimationClass}>
+                                    <lightning-progress-bar 
+                                      value={section.progressPercentage}
+                                      size="medium">
+                                    </lightning-progress-bar>
+                                  </div>
+                                  <div class="slds-grid slds-grid_align-spread slds-text-body_small slds-text-color_weak slds-m-top_xx-small">
+                                    <div class="slds-col">
+                                      <template if:true={section.progressStepText}>
+                                        {section.progressStepText}
+                                        <template if:true={section.progressPercentage}>
+                                          ({section.progressPercentage}%)
+                                        </template>
+                                      </template>
+                                    </div>
+                                    <div class="slds-col slds-text-align_right">
+                                      <template if:true={section.progressTimeEstimation}>
+                                        <span class="slds-text-color_weak" title="Estimated time remaining based on average step duration">
+                                          {section.progressTimeEstimation}
+                                        </span>
+                                      </template>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="slds-media__figure slds-media__figure_reverse">
+                            <template if:true={section.hasLogs}>
+                              <lightning-icon
+                                  icon-name={section.toggleIcon}
+                                  size="x-small"
+                                  alternative-text="Toggle Section"
+                                  variant="brand"
+                                  data-section-id={section.id}>
+                              </lightning-icon>
+                            </template>
+                            <template if:false={section.hasLogs}>
+                                <div style="width: 0.75rem;">&nbsp;</div>
+                            </template>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Progress section logs (latest 5) -->
+                      <template if:true={section.isExpanded}>
+                        <template if:true={section.hasLogs}>
+                          <div class="section-logs slds-m-top_x-small slds-m-left_medium slds-m-right_x-small slds-m-bottom_x-small">
+                            <template for:each={section.progressLogs} for:item="logLine">
+                              <div key={logLine.id} class={logLine.cssClass} data-log-type={logLine.logType} data-is-subcommand={logLine.isSubCommand} data-is-running={logLine.isRunning}>
+                                <div class="slds-media slds-media_top">
+                                  <div class="slds-media__figure" style="width: 0.75rem;">
+                                    <template if:true={logLine.useSpinner}>
+                                      <div class="slds-is-relative" style="height: 0.75rem;">
+                                        <lightning-spinner 
+                                          alternative-text="Running..." 
+                                          size="xx-small"
+                                          variant="brand">
+                                        </lightning-spinner>
+                                      </div>
+                                    </template>
+                                    <template if:false={logLine.useSpinner}>
+                                      <lightning-icon 
+                                        icon-name={logLine.iconName}
+                                        variant={logLine.iconVariant}
+                                        size="xx-small">
+                                      </lightning-icon>
+                                    </template>
+                                  </div>
+                                  <div class="slds-media__body">
+                                    <div class="slds-grid">
+                                      <div class="slds-col slds-size_11-of-12">
+                                          <div class="log-message">
+                                              <template if:true={logLine.formattedMessage}>
+                                                  <lightning-formatted-rich-text 
+                                                      value={logLine.formattedMessage}
+                                                      disable-linkify="true">
+                                                  </lightning-formatted-rich-text>
+                                              </template>
+                                              <template if:false={logLine.formattedMessage}>
+                                                  {logLine.message}
+                                              </template>
+                                          </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </template>
+                          </div>
+                        </template>
+                      </template>
+                    </div>
+                  </template>
+                  
+                  <!-- Regular Section -->
+                  <template if:false={section.isProgress}>
                   <div key={section.id} class="log-section slds-box slds-box_x-small slds-m-bottom_x-small">
                   <!-- Section header (always expanded, no toggle) -->
                   <div class="section-header slds-p-around_x-small" data-section-id={section.id} onclick={handleToggleSection}>
@@ -228,7 +359,8 @@
                     </div>
                   </template>
                 </template>
-                  </div>
+                    </div>
+                  </template>
                 </template>
             </template>
               <!-- Embedded PromptInput for in-panel prompts -->

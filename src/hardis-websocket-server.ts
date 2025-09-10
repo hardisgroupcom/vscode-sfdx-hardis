@@ -227,6 +227,56 @@ export class LocalWebSocketServer {
         });
       }
     }
+    // Progress start
+    else if (data.event === "progressStart") {
+      // Ignore if not lwc UI
+      if (this.config.get("userInput") !== "ui-lwc") {
+        return;
+      }
+      const clientData = this.clients[data.context?.id];
+      if (clientData?.panel) {
+        clientData.panel.sendMessage({
+          type: "progressStart",
+          data: {
+            title: data.title || "Progress",
+            totalSteps: data.totalSteps || data.steps || 0,
+          },
+        });
+      }
+    }
+    // Progress step
+    else if (data.event === "progressStep") {
+      // Ignore if not lwc UI
+      if (this.config.get("userInput") !== "ui-lwc") {
+        return;
+      }
+      const clientData = this.clients[data.context?.id];
+      if (clientData?.panel) {
+        clientData.panel.sendMessage({
+          type: "progressStep",
+          data: {
+            step: data.step,
+            totalSteps: data.totalSteps || data.steps,
+          },
+        });
+      }
+    }
+    // Progress end
+    else if (data.event === "progressEnd") {
+      // Ignore if not lwc UI
+      if (this.config.get("userInput") !== "ui-lwc") {
+        return;
+      }
+      const clientData = this.clients[data.context?.id];
+      if (clientData?.panel) {
+        clientData.panel.sendMessage({
+          type: "progressEnd",
+          data: {
+            totalSteps: data.totalSteps || data.steps,
+          },
+        });
+      }
+    }
 
     // Report file
     else if (data.event === "reportFile") {
