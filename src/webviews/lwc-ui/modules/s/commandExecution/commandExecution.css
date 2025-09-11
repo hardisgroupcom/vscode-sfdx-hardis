@@ -271,6 +271,20 @@
   overflow: hidden;
 }
 
+/* Increase progress bar height */
+.animated-progress-bar lightning-progress-bar,
+.animated-progress-bar lightning-progress-bar::part(bar) {
+  height: 12px !important;
+  min-height: 12px !important;
+}
+
+/* Target the internal progress bar element for better height control */
+.animated-progress-bar lightning-progress-bar .slds-progress-bar,
+.animated-progress-bar lightning-progress-bar .slds-progress-bar__value {
+  height: 12px !important;
+  border-radius: 6px !important;
+}
+
 .animated-progress-bar.is-active::after {
   content: '';
   position: absolute;
