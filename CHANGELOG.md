@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Add progress action when executing a command in background mode
+
 ## [6.4.1] 2024-09-07
 
 - Enhance pipeline configuration
