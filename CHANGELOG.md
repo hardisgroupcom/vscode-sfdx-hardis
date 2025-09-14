@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [6.5.1] 2024-09-14
+
+- Open report folder in explorer instead of VSCode window
+
 ## [6.5.0] 2024-09-14
 
 - Add progress action when executing a command in background mode

@@ -671,3 +671,16 @@ export async function getPythonCommand() {
   }
   return null;
 }
+
+export function openFolderInExplorer(folderPath: string) {
+  const platform = process.platform;
+  if (platform === "win32") {
+    childProcess.exec(`explorer "${folderPath}"`);
+  } else if (platform === "darwin") {
+    childProcess.exec(`open "${folderPath}"`);
+  } else if (platform === "linux") {
+    childProcess.exec(`xdg-open "${folderPath}"`);
+  } else {
+    vscode.window.showErrorMessage(`Unsupported platform ${platform}`);
+  }
+}
