@@ -954,6 +954,7 @@ export class Commands {
               description: exportConfig.sfdxHardisDescription || "",
               soqlQuery: exportConfig.soqlQuery || "",
               fileTypes: exportConfig.fileTypes || "all",
+              fileSizeMin: exportConfig.fileSizeMin || 0,
               outputFolderNameField:
                 exportConfig.outputFolderNameField || "Name",
               outputFileNameFormat:
@@ -998,6 +999,7 @@ export class Commands {
       sfdxHardisDescription: data.description,
       soqlQuery: data.soqlQuery,
       fileTypes: data.fileTypes,
+      fileSizeMin: data.fileSizeMin || 0,
       outputFolderNameField: data.outputFolderNameField,
       outputFileNameFormat: data.outputFileNameFormat,
       overwriteParentRecords: data.overwriteParentRecords,
@@ -1030,6 +1032,7 @@ export class Commands {
       sfdxHardisDescription: data.description,
       soqlQuery: data.soqlQuery,
       fileTypes: data.fileTypes,
+      fileSizeMin: data.fileSizeMin || 0,
       outputFolderNameField: data.outputFolderNameField,
       outputFileNameFormat: data.outputFileNameFormat,
       overwriteParentRecords: data.overwriteParentRecords,

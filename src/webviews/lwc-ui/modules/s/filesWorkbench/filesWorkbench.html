@@ -205,7 +205,7 @@
                         <strong>Path:</strong> {selectedWorkspace.path}
                       </p>
                       <template if:true={selectedWorkspace.exportedFilesCount}>
-                        <p class="slds-text-body_small slds-text-color_default">
+                        <p class="slds-text-body_small slds-text-color_default exported-files-clickable" onclick={handleOpenFolder} title="Click to open workspace folder in OS explorer">
                           <lightning-icon icon-name="utility:file" size="xx-small" class="slds-m-right_xx-small"></lightning-icon>
                           <strong>{selectedWorkspace.exportedFilesCount} exported files</strong>
                         </p>
@@ -230,6 +230,8 @@
                         <dd class="slds-item_detail slds-truncate" title={selectedWorkspace.soqlQuery}>{selectedWorkspace.soqlQuery}</dd>
                         <dt class="slds-item_label slds-text-color_weak slds-truncate" title="File Types">File Types:</dt>
                         <dd class="slds-item_detail slds-truncate">{selectedWorkspace.fileTypes}</dd>
+                        <dt class="slds-item_label slds-text-color_weak slds-truncate" title="Minimum File Size">Min File Size (KB):</dt>
+                        <dd class="slds-item_detail slds-truncate">{selectedWorkspace.fileSizeMin}</dd>
                         <dt class="slds-item_label slds-text-color_weak slds-truncate" title="Folder Field">Folder Field:</dt>
                         <dd class="slds-item_detail slds-truncate">{selectedWorkspace.outputFolderNameField}</dd>
                         <dt class="slds-item_label slds-text-color_weak slds-truncate" title="File Name Format">File Name Format:</dt>
@@ -365,6 +367,28 @@
 
               <div class="slds-col slds-size_1-of-2">
                 <div class="slds-form-element slds-m-bottom_medium">
+                  <label class="slds-form-element__label" for="file-size-min">
+                    Minimum File Size (KB)
+                    <s-multiline-helptext content="Minimum file size in kilobytes to include in export/import.<br/>Files smaller than this size will be skipped.<br/>Set to 0 to include all files regardless of size."></s-multiline-helptext>
+                  </label>
+                  <div class="slds-form-element__control">
+                    <lightning-input
+                      variant="label-hidden"
+                      type="number"
+                      name="file-size-min"
+                      placeholder="0"
+                      min="0"
+                      value={newWorkspace.fileSizeMin}
+                      onchange={handleFileSizeMinChange}
+                    ></lightning-input>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="slds-grid slds-gutters">
+              <div class="slds-col slds-size_1-of-2">
+                <div class="slds-form-element slds-m-bottom_medium">
                   <label class="slds-form-element__label" for="folder-field">
                     Folder Name Field
                     <s-multiline-helptext content="The field from your SOQL query to use as folder names.<br/>Example: If you use 'Name', files will be organized in folders named after the record's Name field.<br/>Common options: Name, Id, Account.Name"></s-multiline-helptext>
@@ -380,6 +404,10 @@
                     ></lightning-input>
                   </div>
                 </div>
+              </div>
+
+              <div class="slds-col slds-size_1-of-2">
+                <!-- Empty column for layout balance -->
               </div>
             </div>
 

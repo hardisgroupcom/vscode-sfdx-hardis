@@ -13,6 +13,7 @@ export default class FilesWorkbench extends LightningElement {
     description: "",
     soqlQuery: "SELECT Id,Name FROM Opportunity",
     fileTypes: "all",
+    fileSizeMin: 0,
     outputFolderNameField: "Name",
     outputFileNameFormat: "title",
     overwriteParentRecords: true,
@@ -206,6 +207,7 @@ export default class FilesWorkbench extends LightningElement {
         description: workspace.description,
         soqlQuery: workspace.soqlQuery,
         fileTypes: workspace.fileTypes,
+        fileSizeMin: workspace.fileSizeMin || 0,
         outputFolderNameField: workspace.outputFolderNameField,
         outputFileNameFormat: workspace.outputFileNameFormat,
         overwriteParentRecords: workspace.overwriteParentRecords,
@@ -300,6 +302,10 @@ export default class FilesWorkbench extends LightningElement {
     this.newWorkspace.fileTypes = event.detail?.value ?? event.target.value;
   }
 
+  handleFileSizeMinChange(event) {
+    this.newWorkspace.fileSizeMin = parseInt(event.detail?.value ?? event.target.value) || 0;
+  }
+
   handleOutputFolderNameFieldChange(event) {
     this.newWorkspace.outputFolderNameField =
       event.detail?.value ?? event.target.value;
@@ -380,6 +386,7 @@ export default class FilesWorkbench extends LightningElement {
       description: "",
       soqlQuery: "SELECT Id,Name FROM Opportunity",
       fileTypes: "all",
+      fileSizeMin: 0,
       outputFolderNameField: "Name",
       outputFileNameFormat: "title",
       overwriteParentRecords: true,

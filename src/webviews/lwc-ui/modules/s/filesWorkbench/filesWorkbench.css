@@ -460,6 +460,26 @@ lightning-button-menu .slds-dropdown {
   min-width: 0;
 }
 
+/* Exported files clickable styling */
+.exported-files-clickable {
+  cursor: pointer;
+  transition: color 0.2s ease;
+  border-radius: 0.25rem;
+  padding: 0.25rem;
+  margin: -0.25rem; /* Negative margin to expand click area */
+  display: inline-block;
+}
+
+.exported-files-clickable:hover {
+  color: var(--slds-g-color-brand-base-50, #0176d3);
+  background-color: var(--slds-g-color-neutral-base-95, #f3f3f3);
+  text-decoration: none;
+}
+
+.exported-files-clickable:hover strong {
+  text-decoration: underline;
+}
+
 /* Responsive grid adjustments */
 @media (max-width: 768px) {
   .slds-grid.slds-gutters > .slds-col {
