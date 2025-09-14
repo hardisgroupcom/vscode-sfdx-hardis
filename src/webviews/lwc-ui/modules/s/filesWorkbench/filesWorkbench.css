@@ -12,6 +12,11 @@
 .blue-back {
 	background: #EDF4FF;
 	min-height: 100vh;
+	height: 100vh; /* Ensure full viewport height */
+	margin: 0; /* Remove any margins */
+	padding: 0; /* Remove any padding that might cause gaps */
+	display: flex;
+	flex-direction: column;
 }
 
 
@@ -45,28 +50,32 @@
 }
 
 .workspace-list {
-  max-height: 400px;
+  height: calc(100vh - 200px); /* Reduced offset to extend closer to bottom */
+  min-height: 300px; /* Minimum height for usability */
+  max-height: calc(100vh - 150px); /* Reduced max offset for more space */
   overflow-y: auto;
-  /* Hide scrollbar but keep functionality */
+  /* Visible scrollbar with proper styling */
   scrollbar-width: thin;
-  scrollbar-color: transparent transparent;
+  scrollbar-color: rgba(0, 0, 0, 0.3) rgba(0, 0, 0, 0.1);
 }
 
 .workspace-list::-webkit-scrollbar {
-  width: 6px;
+  width: 8px; /* Slightly wider for better visibility */
 }
 
 .workspace-list::-webkit-scrollbar-track {
-  background: transparent;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
 }
 
 .workspace-list::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.3); /* More visible thumb */
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .workspace-list::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.5); /* Darker on hover */
 }
 
 /* Ensure workspace name is visible */
@@ -140,6 +149,25 @@ fieldset .slds-form-element .slds-grid {
   margin-bottom: 1rem;
 }
 
+/* Reduce excessive spacing in modal forms */
+.slds-modal__content .slds-form-element {
+  margin-bottom: 0.75rem; /* Reduce spacing between form elements */
+}
+
+.slds-modal__content .slds-p-around_medium {
+  padding: 1rem; /* Reduce padding to minimize blank space */
+}
+
+/* Ensure form elements don't create unnecessary height */
+.slds-modal__content .slds-grid.slds-gutters {
+  margin-bottom: 0.5rem; /* Reduce grid bottom margin */
+}
+
+/* Compact toggle button layout */
+.slds-modal__content .slds-form-element .slds-grid {
+  margin-bottom: 0.5rem; /* Reduce spacing for toggle elements */
+}
+
 /* Help Text Alignment */
 .slds-form-element__label {
   display: flex;
@@ -165,10 +193,13 @@ button[disabled="true"] {
 .slds-modal__container {
   max-width: 90%;
   width: 800px;
+  max-height: 90vh; /* Limit modal height to 90% of viewport */
+  height: auto; /* Allow natural height based on content */
 }
 
 .slds-modal__content {
-  max-height: 70vh;
+  max-height: 60vh; /* Reduce max height to prevent excessive blank space */
+  height: auto; /* Allow natural height based on content */
   overflow-y: auto;
   /* Better scrollbar for modal */
   scrollbar-width: thin;
@@ -299,10 +330,45 @@ lightning-button-menu .slds-dropdown {
 /* Main container improvements */
 .slds-card {
   overflow: visible !important;
+  height: 100vh; /* Full viewport height */
+  display: flex;
+  flex-direction: column;
 }
 
 .slds-card__body {
   overflow: visible !important;
+  flex: 1; /* Take remaining space */
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 0; /* Remove bottom padding to extend to full height */
+}
+
+/* Left column workspace list container */
+.workspace-list-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.workspace-list-container lightning-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.workspace-list-container .slds-card__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 0; /* Remove default padding to maximize list space */
+  padding-bottom: 0; /* Ensure no bottom padding */
+}
+
+/* Ensure the main grid takes full height */
+.slds-grid.slds-gutters {
+  height: 100%;
+  align-items: stretch; /* Ensure columns stretch to full height */
+  margin-bottom: 0; /* Remove any bottom margin */
 }
 
 /* Grid improvements to prevent scroll issues */
@@ -404,6 +470,11 @@ lightning-button-menu .slds-dropdown {
   .slds-modal__container {
     width: 95%;
     max-width: none;
+    max-height: 95vh; /* Increase available height on mobile */
+  }
+  
+  .slds-modal__content {
+    max-height: 75vh; /* Allow more content height on mobile */
   }
   
   .slds-form-element__label {
@@ -417,6 +488,15 @@ lightning-button-menu .slds-dropdown {
   }
   
   .workspace-list {
-    max-height: 300px;
+    height: calc(50vh - 100px); /* Smaller height on mobile */
+    min-height: 200px;
+  }
+  
+  .slds-card {
+    height: auto; /* Allow natural height on mobile */
+  }
+  
+  .workspace-list-container {
+    height: auto;
   }
 }

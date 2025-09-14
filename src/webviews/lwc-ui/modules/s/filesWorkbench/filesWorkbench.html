@@ -68,32 +68,34 @@
           <!-- Two Column Layout -->
           <div class="slds-grid slds-gutters">
             <!-- Left Column: Workspaces List -->
-            <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-3 slds-large-size_1-of-4">
+            <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-3 slds-large-size_1-of-4 workspace-list-container">
               <lightning-card title="Available Workspaces">
                 <s-multiline-helptext slot="actions" content="Each workspace represents a file import/export configuration.<br/>Click on a workspace to select it and see available actions.<br/>Use the Edit and Delete buttons on the right to manage workspaces."></s-multiline-helptext>
-                <div class="workspace-list">
-                  <template for:each={workspacesForDisplay} for:item="workspace">
-                    <div 
-                      key={workspace.path} 
-                      class={workspace.cssClass}
-                      data-path={workspace.path}
-                      onclick={handleWorkspaceSelect}
-                    >
-                      <div class="slds-media slds-media_small">
-                        <div class="slds-media__figure">
-                          <lightning-icon icon-name={workspace.iconName} size="small"></lightning-icon>
-                        </div>
-                        <div class="slds-media__body">
-                          <p class="slds-text-body_regular slds-truncate" title={workspace.label}>
-                            <strong>{workspace.label}</strong>
-                          </p>
-                          <p class="slds-text-body_small slds-text-color_weak slds-truncate" title={workspace.name}>
-                            {workspace.name}
-                          </p>
+                <div class="slds-card__body slds-card__body_inner">
+                  <div class="workspace-list">
+                    <template for:each={workspacesForDisplay} for:item="workspace">
+                      <div 
+                        key={workspace.path} 
+                        class={workspace.cssClass}
+                        data-path={workspace.path}
+                        onclick={handleWorkspaceSelect}
+                      >
+                        <div class="slds-media slds-media_small">
+                          <div class="slds-media__figure">
+                            <lightning-icon icon-name={workspace.iconName} size="small"></lightning-icon>
+                          </div>
+                          <div class="slds-media__body">
+                            <p class="slds-text-body_regular slds-truncate" title={workspace.label}>
+                              <strong>{workspace.label}</strong>
+                            </p>
+                            <p class="slds-text-body_small slds-text-color_weak slds-truncate" title={workspace.name}>
+                              {workspace.name}
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </template>
+                    </template>
+                  </div>
                 </div>
               </lightning-card>
             </div>
@@ -212,7 +214,7 @@
                   </div>
 
                   <!-- Configuration Preview -->
-                  <div class="slds-m-top_medium slds-m-bottom_medium">
+                  <div class="slds-m-top_medium slds-m-bottom_medium slds-p-bottom_small">
                     <div class="slds-grid slds-grid_align-spread slds-m-bottom_x-small">
                       <h5 class="slds-text-heading_x-small">Configuration Summary</h5>
                     </div>
