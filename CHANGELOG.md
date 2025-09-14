@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Add progress action when executing a command in background mode
+- New command: Files Workbench to manage multiple files export/import configurations
 
 ## [6.4.1] 2024-09-07
 
