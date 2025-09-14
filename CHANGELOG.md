@@ -5,6 +5,7 @@
 ## [6.5.1] 2024-09-14
 
 - Open report folder in explorer instead of VSCode window
+- Add configuration item to set minimum file size to export in Files Workbench
 
 ## [6.5.0] 2024-09-14
 
