@@ -303,7 +303,8 @@ export default class FilesWorkbench extends LightningElement {
   }
 
   handleFileSizeMinChange(event) {
-    this.newWorkspace.fileSizeMin = parseInt(event.detail?.value ?? event.target.value) || 0;
+    this.newWorkspace.fileSizeMin =
+      parseInt(event.detail?.value ?? event.target.value) || 0;
   }
 
   handleOutputFolderNameFieldChange(event) {

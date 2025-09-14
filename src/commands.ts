@@ -6,7 +6,12 @@ import { HardisCommandsProvider } from "./hardis-commands-provider";
 import { HardisStatusProvider } from "./hardis-status-provider";
 import { HardisPluginsProvider } from "./hardis-plugins-provider";
 import { LocalWebSocketServer } from "./hardis-websocket-server";
-import { getPythonCommand, getWorkspaceRoot, execSfdxJson, openFolderInExplorer } from "./utils";
+import {
+  getPythonCommand,
+  getWorkspaceRoot,
+  execSfdxJson,
+  openFolderInExplorer,
+} from "./utils";
 import axios from "axios";
 import TelemetryReporter from "@vscode/extension-telemetry";
 import { ThemeUtils } from "./themeUtils";
