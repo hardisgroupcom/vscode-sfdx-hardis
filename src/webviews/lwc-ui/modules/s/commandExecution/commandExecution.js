@@ -1834,17 +1834,21 @@ ${resultMessage}`;
 
   handleReportFileAction(filePath, label) {
     // Common method to handle report file actions (download/open)
+    if (!filePath) {
+      return;
+    }
+
     if (filePath.startsWith("http")) {
-      // External URL - download
+      // External URL - download or open external
       window.sendMessageToVSCode({
         type: "downloadFile",
         data: filePath,
       });
     } else {
-      // Local file - open
+      // Local file - open in VS Code
       window.sendMessageToVSCode({
         type: "openFile",
-        data: filePath,
+        data: { filePath: filePath },
       });
     }
   }
