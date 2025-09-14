@@ -75,7 +75,7 @@
                   <template for:each={workspacesForDisplay} for:item="workspace">
                     <div 
                       key={workspace.path} 
-                      class="slds-box slds-box_x-small workspace-item"
+                      class={workspace.cssClass}
                       data-path={workspace.path}
                       onclick={handleWorkspaceSelect}
                     >

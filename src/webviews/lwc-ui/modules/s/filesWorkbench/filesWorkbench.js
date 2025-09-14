@@ -40,6 +40,10 @@ export default class FilesWorkbench extends LightningElement {
         this.handleWorkspacesLoaded(message.data);
         break;
       case 'workspaceCreated':
+        // Store the newly created workspace path for auto-selection
+        if (message.data && message.data.path) {
+          this.pendingSelectedWorkspacePath = message.data.path;
+        }
         this.loadWorkspaces();
         this.showCreateWorkspace = false;
         this.editingWorkspace = null;
@@ -111,7 +115,8 @@ export default class FilesWorkbench extends LightningElement {
         hasDescription: !!workspace.description,
         overwriteParentRecords: workspace.overwriteParentRecords ? 'Yes' : 'No',
         overwriteFiles: workspace.overwriteFiles ? 'Yes' : 'No',
-        exportedFilesCount: workspace.exportedFilesCount || null
+        exportedFilesCount: workspace.exportedFilesCount || null,
+        cssClass: this.getWorkspaceCssClass(workspace)
       }))
       .sort((a, b) => {
         // Sort by label first, then by name as fallback
@@ -119,6 +124,12 @@ export default class FilesWorkbench extends LightningElement {
         const labelB = (b.label || b.name || '').toLowerCase();
         return labelA.localeCompare(labelB);
       });
+  }
+
+  getWorkspaceCssClass(workspace) {
+    const baseClasses = 'slds-box slds-box_x-small workspace-item';
+    const isSelected = this.selectedWorkspace && this.selectedWorkspace.path === workspace.path;
+    return isSelected ? `${baseClasses} selected` : baseClasses;
   }
 
   get isCreateMode() {

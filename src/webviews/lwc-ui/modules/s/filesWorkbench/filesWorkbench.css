@@ -34,8 +34,14 @@
 }
 
 .workspace-item.selected {
-  background-color: var(--slds-g-color-brand-base-10, #e8f4fd);
-  border-color: var(--slds-g-color-brand-base-50, #0176d3);
+  background-color: var(--slds-g-color-brand-base-5, #f0f8ff);
+  border-color: var(--slds-g-color-brand-base-40, #2e8dd6);
+  border-width: 2px;
+  box-shadow: 0 1px 2px rgba(1, 118, 211, 0.1);
+}
+
+.workspace-item.selected .slds-media__body strong {
+  color: var(--slds-g-color-brand-base-50, #0176d3);
 }
 
 .workspace-list {

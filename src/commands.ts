@@ -864,10 +864,10 @@ export class Commands {
             }
 
             case 'createWorkspace': {
-              await this.createFilesWorkspace(data);
+              const createdPath = await this.createFilesWorkspace(data);
               panel.sendMessage({
                 type: 'workspaceCreated',
-                data: {}
+                data: { path: createdPath }
               });
               break;
             }
@@ -905,15 +905,16 @@ export class Commands {
 
             case 'openFolder': {
               try {
-                if (data.path && fs.existsSync(data.path)) {
-                  vscode.commands.executeCommand('revealFileInOS', vscode.Uri.file(data.path));
-                } else {
-                  vscode.window.showErrorMessage(`Folder not found: ${data.path}`);
-                }
+              if (data.path && fs.existsSync(data.path)) {
+                // Open the folder itself in a new VS Code window
+                vscode.commands.executeCommand('vscode.openFolder', vscode.Uri.file(data.path), true);
+              } else {
+                vscode.window.showErrorMessage(`Folder not found: ${data.path}`);
+              }
               } catch (e: any) {
-                vscode.window.showErrorMessage(
-                  `Failed to open folder: ${e?.message || e}`,
-                );
+              vscode.window.showErrorMessage(
+                `Failed to open folder: ${e?.message || e}`,
+              );
               }
               break;
             }
@@ -976,7 +977,7 @@ export class Commands {
     return workspaces;
   }
 
-  private async createFilesWorkspace(data: any): Promise<void> {
+  private async createFilesWorkspace(data: any): Promise<string> {
     const workspaceRoot = getWorkspaceRoot();
     const filesFolder = path.join(workspaceRoot, 'scripts', 'files');
     const workspacePath = path.join(filesFolder, data.name);
@@ -1008,6 +1009,8 @@ export class Commands {
     await fs.writeFile(exportJsonPath, JSON.stringify(exportConfig, null, 2));
 
     vscode.window.showInformationMessage(`Files workspace "${data.label}" created successfully!`);
+    
+    return workspacePath;
   }
 
   private async updateFilesWorkspace(data: any): Promise<void> {
