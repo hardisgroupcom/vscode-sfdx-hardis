@@ -345,6 +345,32 @@ lightning-button-menu .slds-dropdown {
   }
 }
 
+/* Action buttons container improvements */
+.slds-card [slot="actions"] {
+  flex-shrink: 0;
+  min-width: 0;
+  overflow: visible;
+}
+
+/* Horizontal action buttons styling */
+.slds-show_large.slds-grid {
+  display: flex !important;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.75rem; /* Add consistent spacing between buttons */
+}
+
+.slds-show_large lightning-button {
+  flex-shrink: 0;
+  min-width: auto;
+  margin: 0; /* Remove any default margins */
+}
+
+/* Override any gutter spacing that might cause layout issues */
+.slds-show_large.slds-gutters_small > * {
+  padding: 0; /* Remove gutter padding to use gap instead */
+}
+
 /* Small button styling for horizontal layout */
 .slds-show_large lightning-button {
   flex-shrink: 0;

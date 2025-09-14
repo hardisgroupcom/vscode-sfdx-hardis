@@ -6,6 +6,7 @@ export default class FilesWorkbench extends LightningElement {
   isLoading = false;
   showCreateWorkspace = false;
   editingWorkspace = null;
+  pendingSelectedWorkspacePath = null;
   @track newWorkspace = {
     name: '',
     label: '',
@@ -39,11 +40,26 @@ export default class FilesWorkbench extends LightningElement {
         this.handleWorkspacesLoaded(message.data);
         break;
       case 'workspaceCreated':
+        this.loadWorkspaces();
+        this.showCreateWorkspace = false;
+        this.editingWorkspace = null;
+        break;
       case 'workspaceUpdated':
+        // Store the currently selected workspace path before reloading
+        const selectedPath = this.selectedWorkspace?.path;
+        this.loadWorkspaces();
+        this.showCreateWorkspace = false;
+        this.editingWorkspace = null;
+        // Schedule re-selection of the workspace after workspaces are loaded
+        if (selectedPath) {
+          this.pendingSelectedWorkspacePath = selectedPath;
+        }
+        break;
       case 'workspaceDeleted':
         this.loadWorkspaces();
         this.showCreateWorkspace = false;
         this.editingWorkspace = null;
+        this.selectedWorkspace = null; // Clear selection when workspace is deleted
         break;
       default:
         break;
@@ -64,6 +80,15 @@ export default class FilesWorkbench extends LightningElement {
   handleWorkspacesLoaded(data) {
     this.workspaces = data.workspaces || [];
     this.isLoading = false;
+    
+    // Re-select the workspace if we have a pending selection (after update)
+    if (this.pendingSelectedWorkspacePath) {
+      const updatedWorkspace = this.workspaces.find(w => w.path === this.pendingSelectedWorkspacePath);
+      if (updatedWorkspace) {
+        this.selectedWorkspace = updatedWorkspace;
+      }
+      this.pendingSelectedWorkspacePath = null; // Clear the pending selection
+    }
   }
 
   loadWorkspaces() {
@@ -79,14 +104,21 @@ export default class FilesWorkbench extends LightningElement {
   }
 
   get workspacesForDisplay() {
-    return this.workspaces.map(workspace => ({
-      ...workspace,
-      iconName: 'standard:file',
-      hasDescription: !!workspace.description,
-      overwriteParentRecords: workspace.overwriteParentRecords ? 'Yes' : 'No',
-      overwriteFiles: workspace.overwriteFiles ? 'Yes' : 'No',
-      exportedFilesCount: workspace.exportedFilesCount || null
-    }));
+    return this.workspaces
+      .map(workspace => ({
+        ...workspace,
+        iconName: 'standard:file',
+        hasDescription: !!workspace.description,
+        overwriteParentRecords: workspace.overwriteParentRecords ? 'Yes' : 'No',
+        overwriteFiles: workspace.overwriteFiles ? 'Yes' : 'No',
+        exportedFilesCount: workspace.exportedFilesCount || null
+      }))
+      .sort((a, b) => {
+        // Sort by label first, then by name as fallback
+        const labelA = (a.label || a.name || '').toLowerCase();
+        const labelB = (b.label || b.name || '').toLowerCase();
+        return labelA.localeCompare(labelB);
+      });
   }
 
   get isCreateMode() {

@@ -103,9 +103,9 @@
               <template if:true={selectedWorkspace}>
                 <lightning-card title={selectedWorkspace.label}>
                   <!-- Card Actions Slot -->
-                  <div slot="actions" class="slds-grid slds-gutters_x-small">
+                  <div slot="actions">
                     <!-- Horizontal Buttons - Hidden on small screens -->
-                    <div class="slds-show_large slds-grid slds-gutters_small">
+                    <div class="slds-show_large slds-grid">
                       <lightning-button
                         variant="brand"
                         label="Export files"
@@ -212,7 +212,7 @@
                   </div>
 
                   <!-- Configuration Preview -->
-                  <div class="slds-m-top_medium">
+                  <div class="slds-m-top_medium slds-m-bottom_medium">
                     <div class="slds-grid slds-grid_align-spread slds-m-bottom_x-small">
                       <h5 class="slds-text-heading_x-small">Configuration Summary</h5>
                     </div>
