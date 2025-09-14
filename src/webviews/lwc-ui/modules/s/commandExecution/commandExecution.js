@@ -55,6 +55,9 @@ export default class CommandExecution extends LightningElement {
       }
       this.scrollToBottom();
     }, 100);
+
+    // Bind document click handler once so we can remove the exact same reference later
+    this._boundHandleDocumentClick = this.handleDocumentClick.bind(this);
   }
 
   renderedCallback() {
@@ -80,6 +83,11 @@ export default class CommandExecution extends LightningElement {
       window.commandExecutionComponent === this
     ) {
       window.commandExecutionComponent = null;
+    }
+    // Remove embedded prompt listeners if any
+    if (this.embeddedPromptListener) {
+      this.removeEventListener("promptsubmit", this.embeddedPromptListener);
+      this.removeEventListener("promptexit", this.embeddedPromptListener);
     }
   }
 
@@ -1242,14 +1250,17 @@ ${resultMessage}`;
           result.push(group.files[0]);
         } else {
           // Multiple formats, create dropdown
+          // Use a stable ID based on the title to prevent issues on re-render
+          const stableId = `dropdown_${baseTitle.replace(/[^a-zA-Z0-9]/g, '')}`;
           result.push({
-            id: `dropdown_${Math.random().toString(36).substr(2, 9)}`,
+            id: stableId,
             title: baseTitle,
             type: group.files[0].type, // Use the type from the first file
             isDropdown: true,
             dropdownOptions: group.files.map(f => ({
-              label: f.format,
-              value: f.file,
+              label: f.format === 'CSV' ? 'CSV' : f.format === 'XLSX' ? 'Excel' : f.format,
+              value: f.file, // Keep value for compatibility if needed elsewhere
+              type: f.type,
               file: f.file,
               format: f.format
             }))
@@ -1692,160 +1703,97 @@ ${resultMessage}`;
     }
   }
 
+  // Replace the dropdown toggle handler with a more defensive implementation
   handleReportDropdownToggle(event) {
     // Handle click on multi-format report button to toggle dropdown
     event.stopPropagation();
-    const reportId = event.currentTarget.dataset.reportId;
-    
+
+    // Defensive reportId resolution (lightning-button wraps the real button)
+    const reportId =
+      (event.currentTarget && event.currentTarget.dataset && event.currentTarget.dataset.reportId) ||
+      (event.target && event.target.dataset && event.target.dataset.reportId) ||
+      (event.target && event.target.closest && event.target.closest('[data-report-id]') && event.target.closest('[data-report-id]').dataset.reportId);
+
+    if (!reportId) return;
+
     // Close any other open dropdowns
     this.closeAllDropdowns();
-    
-    // Toggle the clicked dropdown
+
     const container = this.template.querySelector(`[data-report-id="${reportId}"].report-dropdown-container`);
     const dropdown = this.template.querySelector(`[data-report-id="${reportId}"].report-format-dropdown`);
+
+    if (!container || !dropdown) return;
+
+    const isOpen = container.classList.contains('slds-is-open');
     
-    if (container && dropdown) {
-      const isOpen = container.classList.contains('slds-is-open');
-      if (!isOpen) {
-        // Smart positioning: check if there's room below
-        this.positionDropdown(container, dropdown);
-        
-        container.classList.add('slds-is-open');
-        dropdown.classList.add('slds-is-open');
-        
-        // Add click listener to close dropdown when clicking outside
-        setTimeout(() => {
-          document.addEventListener('click', this.handleDocumentClick.bind(this));
-        }, 0);
+    if (!isOpen) {
+      container.classList.add('slds-is-open');
+      dropdown.classList.add('slds-is-open');
+
+      // Add document listener (use pre-bound reference)
+      setTimeout(() => {
+        document.addEventListener('click', this._boundHandleDocumentClick);
+      }, 0);
+    } else {
+      // Close it
+      container.classList.remove('slds-is-open');
+      dropdown.classList.remove('slds-is-open');
+      if (this._boundHandleDocumentClick) {
+        document.removeEventListener('click', this._boundHandleDocumentClick);
       }
     }
   }
 
-  positionDropdown(container, dropdown) {
-    // Smart positioning logic - calculate actual space available
-    const containerRect = container.getBoundingClientRect();
-    const viewportHeight = window.innerHeight;
-    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    
-    // Get the actual dropdown height
-    let dropdownHeight = 120; // Default estimate for 2-3 options
-    
-    // Try to get actual height if dropdown has content
-    const dropdownList = dropdown.querySelector('.slds-dropdown__list');
-    if (dropdownList) {
-      // Temporarily make visible to measure height
-      const originalVisibility = dropdown.style.visibility;
-      const originalOpacity = dropdown.style.opacity;
-      const originalPosition = dropdown.style.position;
-      const originalTop = dropdown.style.top;
-      
-      dropdown.style.visibility = 'visible';
-      dropdown.style.opacity = '0';
-      dropdown.style.position = 'absolute';
-      dropdown.style.top = '-9999px';
-      
-      dropdownHeight = dropdown.offsetHeight || dropdownList.offsetHeight || 120;
-      
-      // Reset styles
-      dropdown.style.visibility = originalVisibility;
-      dropdown.style.opacity = originalOpacity;
-      dropdown.style.position = originalPosition;
-      dropdown.style.top = originalTop;
+  handleDropdownMainButtonClick(event) {
+    // Handle click on the main button part of a dropdown button - open Excel by default
+    event.stopPropagation();
+
+    const reportId = event.currentTarget.dataset.reportId;
+    if (!reportId) return;
+
+    // Find the report file by ID
+    const reportFile = this.sortedReportFiles.find(f => f.id === reportId);
+    if (!reportFile || !reportFile.isDropdown) return;
+
+    // Look for Excel/XLSX option first, fallback to first option
+    let targetOption = reportFile.dropdownOptions.find(opt => opt.format === 'XLSX');
+    if (!targetOption) {
+      targetOption = reportFile.dropdownOptions[0];
     }
-    
-    const spaceBelow = viewportHeight - containerRect.bottom - 10; // 10px buffer
-    const spaceAbove = containerRect.top - 10; // 10px buffer
-    
-    console.log('Positioning dropdown:', {
-      containerRect: containerRect,
-      viewportHeight: viewportHeight,
-      dropdownHeight: dropdownHeight,
-      spaceBelow: spaceBelow,
-      spaceAbove: spaceAbove,
-      scrollTop: scrollTop
-    });
-    
-    // If there's not enough space below but there's space above, position above
-    if (spaceBelow < dropdownHeight && spaceAbove >= dropdownHeight) {
-      console.log('Positioning dropdown above');
-      container.classList.add('dropdown-above');
-    } else {
-      console.log('Positioning dropdown below');
-      container.classList.remove('dropdown-above');
+
+    if (targetOption) {
+      // Trigger the same file opening logic as dropdown selection
+      this.handleReportFileAction(targetOption.file, targetOption.label);
     }
   }
 
+
+
   handleReportFileDropdownSelect(event) {
     // Handle selection from dropdown
-    console.log("Dropdown selection triggered", event.currentTarget.dataset);
     event.preventDefault();
     event.stopPropagation();
     
     const filePath = event.currentTarget.dataset.filePath;
     const reportId = event.currentTarget.dataset.reportId;
     
-    console.log("Selected file path:", filePath, "Report ID:", reportId);
-    
     // Close the dropdown
     this.closeAllDropdowns();
     
-    // Find the specific report file option by file path
-    let selectedReportFile = null;
-    
-    // Look through all report files to find the one with the matching file path
-    for (const reportFile of this.reportFiles) {
-      if (reportFile.isDropdown && reportFile.id === reportId) {
-        // Look in the dropdown options for the selected file
-        const selectedOption = reportFile.dropdownOptions.find(option => option.value === filePath);
-        if (selectedOption) {
-          // Create a temporary report file object with the selected file's properties
-          selectedReportFile = {
-            ...reportFile,
-            file: filePath,
-            title: selectedOption.label
-          };
-          console.log("Found selected report file:", selectedReportFile);
-          break;
-        }
-      }
+    // Find the parent report file group from the memoized/stable sortedReportFiles
+    const parentReportFile = this.sortedReportFiles.find(rf => rf.id === reportId);
+    if (!parentReportFile) {
+      return;
     }
     
-    if (!selectedReportFile) {
-      console.error("Report file not found for dropdown selection:", filePath);
+    // Find the specific selected option from the dropdown
+    const selectedOption = parentReportFile.dropdownOptions.find(option => option.file === filePath);
+    if (!selectedOption) {
       return;
     }
 
-    console.log("Triggering action for file type:", selectedReportFile.type, "File:", selectedReportFile.file);
-
-    // Use the same logic as handleOpenReportFile
-    switch (selectedReportFile.type) {
-      case "actionCommand":
-        // Run a VS Code command
-        console.log("Sending VS Code command:", selectedReportFile.file);
-        window.sendMessageToVSCode({
-          type: "runVsCodeCommand",
-          data: { command: selectedReportFile.file },
-        });
-        break;
-      case "actionUrl":
-      case "docUrl":
-        // Open external URL
-        console.log("Opening external URL:", selectedReportFile.file);
-        window.sendMessageToVSCode({
-          type: "openExternal",
-          data: { url: selectedReportFile.file },
-        });
-        break;
-      case "report":
-      default:
-        // Open file in VS Code
-        console.log("Opening file in VS Code:", selectedReportFile.file);
-        window.sendMessageToVSCode({
-          type: "openFile",
-          data: { filePath: selectedReportFile.file },
-        });
-        break;
-    }
+    // Use the common action handler
+    this.handleReportFileAction(selectedOption.file, selectedOption.label);
   }
 
   handleDocumentClick(event) {
@@ -1878,8 +1826,10 @@ ${resultMessage}`;
       dropdown.classList.remove('slds-is-open');
     });
     
-    // Remove document click listener
-    document.removeEventListener('click', this.handleDocumentClick.bind(this));
+    // Remove document click listener (use bound reference)
+    if (this._boundHandleDocumentClick) {
+      document.removeEventListener('click', this._boundHandleDocumentClick);
+    }
   }
 
   handleReportFileAction(filePath, label) {
@@ -2094,3 +2044,5 @@ ${resultMessage}`;
     }
   }
 }
+
+// End of file

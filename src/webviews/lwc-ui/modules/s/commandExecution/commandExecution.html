@@ -438,7 +438,7 @@
                             variant={reportFile.buttonVariant}
                             icon-name={reportFile.iconName}
                             icon-position="left"
-                            onclick={handleReportDropdownToggle}
+                            onclick={handleDropdownMainButtonClick}
                             data-report-id={reportFile.id}
                             title={reportFile.title}
                             class="report-dropdown-button"
@@ -448,15 +448,12 @@
                         <div class="slds-dropdown slds-dropdown_left report-format-dropdown" data-report-id={reportFile.id}>
                           <ul class="slds-dropdown__list" role="menu">
                             <template for:each={reportFile.dropdownOptions} for:item="option">
-                              <li key={option.value} class="slds-dropdown__item" role="presentation">
-                                <a 
-                                  href="javascript:void(0);" 
-                                  role="menuitem" 
-                                  class="slds-truncate"
-                                  data-file-path={option.value}
-                                  data-report-id={reportFile.id}
-                                  onclick={handleReportFileDropdownSelect}
-                                >
+                              <li key={option.type} class="slds-dropdown__item" role="presentation">
+                                <a href="javascript:void(0);" role="menuitem" tabindex="-1" 
+                                   data-type={option.type} 
+                                   data-file-path={option.file}
+                                   data-report-id={reportFile.id}
+                                   onclick={handleReportFileDropdownSelect}>
                                   <span class="slds-truncate" title={option.label}>{option.label}</span>
                                 </a>
                               </li>
