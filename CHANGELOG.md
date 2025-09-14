@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+## [6.5.0] 2024-09-14
+
+- Add progress action when executing a command in background mode
+- New command: Files Workbench to manage multiple files export/import configurations
+- Display only one button per report if it is available in CSV and XLSX
+- Fix position of helper texts
+
 ## [6.4.1] 2024-09-07
 
 - Enhance pipeline configuration

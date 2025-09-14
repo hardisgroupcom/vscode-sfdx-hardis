@@ -15,6 +15,7 @@ const lwcModules = {
   "s-multiline-helptext": () => import("s/multilineHelptext"),
   "s-installed-packages": () => import("s/installedPackages"),
   "s-org-manager": () => import("s/orgManager"),
+  "s-files-workbench": () => import("s/filesWorkbench"),
 };
 
 // Communication bridge between VS Code webview and LWC components

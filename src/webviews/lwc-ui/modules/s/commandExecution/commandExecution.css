@@ -9,6 +9,166 @@
 .report-file-btn-wrapper {
   margin-bottom: 0.25rem;
 }
+
+/* Custom dropdown styling for report format selection */
+.report-dropdown-container {
+  position: relative;
+  display: inline-block;
+}
+
+.report-button-with-dropdown {
+  position: relative;
+  display: inline-flex;
+  align-items: stretch;
+  border-radius: 0.25rem;
+  overflow: hidden;
+  border: none; /* Remove container border, let button handle it */
+  box-shadow: none;
+}
+
+.dropdown-indicator {
+  background-color: #2e844a;
+  color: white;
+  padding: 0 8px;
+  margin-left: -1px; /* Overlap with button to create seamless look */
+  border: 1px solid #2e844a;
+  border-left: none; /* Remove left border for seamless connection */
+  border-top-right-radius: 0.25rem;
+  border-bottom-right-radius: 0.25rem;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  transition: all 0.15s ease;
+  min-height: 32px;
+  box-sizing: border-box;
+}
+
+.dropdown-indicator:hover {
+  background-color: #236e3a;
+  border-color: #236e3a;
+}
+
+.dropdown-indicator:active {
+  background-color: #1c5929;
+  border-color: #1c5929;
+}
+
+.report-dropdown-button {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  margin-right: 0 !important;
+  flex: 1;
+  z-index: 1; /* Ensure button is below dropdown indicator */
+}
+
+/* Target the actual button element within lightning-button for square corners */
+.report-dropdown-button button {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  border-right: none !important;
+  margin-right: 0 !important;
+  box-sizing: border-box;
+}
+
+/* Also target any nested elements that might have border radius */
+.report-dropdown-button * {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+/* Ensure the button and dropdown indicator have the same height */
+.report-button-with-dropdown lightning-button {
+  height: 32px;
+  flex: 1;
+}
+
+.report-button-with-dropdown lightning-button button {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  border-right: none !important;
+  height: 100% !important;
+  box-sizing: border-box;
+}
+
+/* New wrapper for positioning */
+.dropdown-menu-container {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  bottom: 100%; /* Position the bottom of the container at the top of the button */
+  margin-bottom: 4px; /* Add a small gap */
+
+  /* Animation related */
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(8px); /* Start slightly lower for animation */
+  transition: all 0.15s ease-out;
+  pointer-events: none;
+}
+
+/* When open, make the container visible and interactive */
+.report-dropdown-container.slds-is-open .dropdown-menu-container {
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* Reset the dropdown itself, as it's now inside the positioned container */
+.report-format-dropdown {
+  min-width: 120px;
+
+  /* Default hidden state (in case wrapper is missing or was removed) */
+  position: absolute;
+  left: 0;
+  z-index: 9999;
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: all 0.12s ease-out;
+  pointer-events: none;
+  bottom: 100%;
+  margin-bottom: 4px;
+}
+
+/* When the dropdown container receives slds-is-open, show the dropdown */
+.report-dropdown-container.slds-is-open .report-format-dropdown {
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.report-format-dropdown .slds-dropdown__list {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid #d8dde6;
+  border-radius: 0.25rem;
+  background-color: white;
+}
+
+.report-format-dropdown .slds-dropdown__item a {
+  padding: 0.5rem 0.75rem;
+  color: #444;
+  text-decoration: none;
+  display: block;
+  font-size: 0.875rem;
+  line-height: 1.25;
+}
+
+.report-format-dropdown .slds-dropdown__item a:hover {
+  background-color: #f8f9fa;
+  color: #0176d3;
+}
+
+.report-format-dropdown .slds-dropdown__item a:focus {
+  background-color: #e6f3ff;
+  color: #0176d3;
+  outline: none;
+}
 /* Force datatable row text to be dark for readability */
 ::slotted(.slds-table tbody tr),
 .slds-table tbody tr,
@@ -244,4 +404,110 @@
 
 .download-panel .slds-button-group {
   gap: 0.25rem;
+}
+
+/* Progress section styles */
+.progress-section {
+  border-left: 4px solid #0176d3;
+  background: linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%);
+}
+
+.progress-section .section-header {
+  background-color: rgba(1, 118, 211, 0.05);
+}
+
+.progress-section .section-header:hover {
+  background-color: rgba(1, 118, 211, 0.1);
+}
+
+.progress-section .section-logs > div {
+  background-color: rgba(255, 255, 255, 0.8);
+  border-left: 2px solid #0176d3;
+}
+
+/* Animated progress bar styles */
+.animated-progress-bar {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Increase progress bar height */
+.animated-progress-bar lightning-progress-bar,
+.animated-progress-bar lightning-progress-bar::part(bar) {
+  height: 12px !important;
+  min-height: 12px !important;
+}
+
+/* Target the internal progress bar element for better height control */
+.animated-progress-bar lightning-progress-bar .slds-progress-bar,
+.animated-progress-bar lightning-progress-bar .slds-progress-bar__value {
+  height: 12px !important;
+  border-radius: 6px !important;
+}
+
+.animated-progress-bar.is-active::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(255, 255, 255, 0.3) 40%, 
+    rgba(255, 255, 255, 0.6) 50%, 
+    rgba(255, 255, 255, 0.3) 60%, 
+    transparent 100%);
+  animation: progress-shine 2s ease-in-out infinite;
+}
+
+/* Alternative moving animation for indeterminate progress */
+.animated-progress-bar.is-indeterminate::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -30%;
+  width: 30%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(1, 118, 211, 0.8) 50%, 
+    transparent 100%);
+  animation: progress-indeterminate 2s linear infinite;
+  border-radius: inherit;
+}
+
+/* Subtle background pulse for indeterminate */
+.animated-progress-bar.is-indeterminate {
+  animation: progress-background-pulse 3s ease-in-out infinite;
+}
+
+@keyframes progress-shine {
+  0% {
+    left: -100%;
+  }
+  50% {
+    left: 100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+@keyframes progress-indeterminate {
+  0% {
+    left: -30%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+@keyframes progress-background-pulse {
+  0%, 100% {
+    background-color: rgba(1, 118, 211, 0.1);
+  }
+  50% {
+    background-color: rgba(1, 118, 211, 0.2);
+  }
 }

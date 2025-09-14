@@ -212,6 +212,10 @@ export class ThemeUtils {
       "org:files:export": { vscode: "cloud-download", hardis: "file.svg" },
       "org:files:import": { vscode: "cloud-upload", hardis: "file.svg" },
       "org:files:configure": { vscode: "gear", hardis: "configure.svg" },
+      "vscode-sfdx-hardis.showFilesWorkbench": {
+        vscode: "files",
+        hardis: "file.svg",
+      },
       "hardis:debug:run": { vscode: "debug-console", hardis: "debug.svg" },
       "hardis:debug:activate": {
         vscode: "breakpoints-activate",
