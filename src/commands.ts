@@ -6,7 +6,12 @@ import { HardisCommandsProvider } from "./hardis-commands-provider";
 import { HardisStatusProvider } from "./hardis-status-provider";
 import { HardisPluginsProvider } from "./hardis-plugins-provider";
 import { LocalWebSocketServer } from "./hardis-websocket-server";
-import { getPythonCommand, getWorkspaceRoot, execSfdxJson } from "./utils";
+import {
+  getPythonCommand,
+  getWorkspaceRoot,
+  execSfdxJson,
+  openFolderInExplorer,
+} from "./utils";
 import axios from "axios";
 import TelemetryReporter from "@vscode/extension-telemetry";
 import { ThemeUtils } from "./themeUtils";
@@ -541,16 +546,7 @@ export class Commands {
             process.cwd(),
           "hardis-report",
         );
-        const platform = process.platform;
-        if (platform === "win32") {
-          exec(`explorer "${reportFolderPath}"`);
-        } else if (platform === "darwin") {
-          exec(`open "${reportFolderPath}"`);
-        } else if (platform === "linux") {
-          exec(`xdg-open "${reportFolderPath}"`);
-        } else {
-          vscode.window.showErrorMessage(`Unsupported platform ${platform}`);
-        }
+        openFolderInExplorer(reportFolderPath);
       },
     );
     this.disposables.push(disposable);
@@ -906,12 +902,7 @@ export class Commands {
             case "openFolder": {
               try {
                 if (data.path && fs.existsSync(data.path)) {
-                  // Open the folder itself in a new VS Code window
-                  vscode.commands.executeCommand(
-                    "vscode.openFolder",
-                    vscode.Uri.file(data.path),
-                    true,
-                  );
+                  openFolderInExplorer(data.path);
                 } else {
                   vscode.window.showErrorMessage(
                     `Folder not found: ${data.path}`,
@@ -968,6 +959,7 @@ export class Commands {
               description: exportConfig.sfdxHardisDescription || "",
               soqlQuery: exportConfig.soqlQuery || "",
               fileTypes: exportConfig.fileTypes || "all",
+              fileSizeMin: exportConfig.fileSizeMin || 0,
               outputFolderNameField:
                 exportConfig.outputFolderNameField || "Name",
               outputFileNameFormat:
@@ -1012,6 +1004,7 @@ export class Commands {
       sfdxHardisDescription: data.description,
       soqlQuery: data.soqlQuery,
       fileTypes: data.fileTypes,
+      fileSizeMin: data.fileSizeMin || 0,
       outputFolderNameField: data.outputFolderNameField,
       outputFileNameFormat: data.outputFileNameFormat,
       overwriteParentRecords: data.overwriteParentRecords,
@@ -1044,6 +1037,7 @@ export class Commands {
       sfdxHardisDescription: data.description,
       soqlQuery: data.soqlQuery,
       fileTypes: data.fileTypes,
+      fileSizeMin: data.fileSizeMin || 0,
       outputFolderNameField: data.outputFolderNameField,
       outputFileNameFormat: data.outputFileNameFormat,
       overwriteParentRecords: data.overwriteParentRecords,
