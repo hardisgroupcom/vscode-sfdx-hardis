@@ -9,6 +9,142 @@
 .report-file-btn-wrapper {
   margin-bottom: 0.25rem;
 }
+
+/* Custom dropdown styling for report format selection */
+.report-dropdown-container {
+  position: relative;
+  display: inline-block;
+}
+
+.report-button-with-dropdown {
+  position: relative;
+  display: inline-flex;
+  align-items: stretch;
+  border-radius: 0.25rem;
+  overflow: hidden;
+}
+
+.dropdown-indicator {
+  background-color: #2e844a;
+  color: white;
+  padding: 0 8px;
+  margin-left: -1px;
+  border: 1px solid #2e844a;
+  border-left: none;
+  border-radius: 0 0.25rem 0.25rem 0;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  transition: all 0.15s ease;
+  min-height: 32px;
+  box-shadow: 0 1px 1px 0 rgba(45, 132, 74, 0.1);
+}
+
+.dropdown-indicator:hover {
+  background-color: #236e3a;
+  border-color: #236e3a;
+  border-left-color: #1c5929;
+}
+
+.dropdown-indicator:active {
+  background-color: #1c5929;
+  border-color: #1c5929;
+}
+
+.report-dropdown-button {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  margin-right: 0 !important;
+  flex: 1;
+}
+
+/* Target the actual button element within lightning-button for square corners */
+.report-dropdown-button button {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  border-right: none !important;
+  margin-right: 0 !important;
+}
+
+/* Also target any nested elements that might have border radius */
+.report-dropdown-button * {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+/* Ensure the button and dropdown indicator have the same height */
+.report-button-with-dropdown lightning-button {
+  height: 32px;
+  flex: 1;
+}
+
+.report-button-with-dropdown lightning-button button {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  border-right: none !important;
+  height: 100% !important;
+}
+
+.report-format-dropdown {
+  position: absolute;
+  left: 0;
+  z-index: 9999;
+  min-width: 120px;
+  visibility: hidden;
+  opacity: 0;
+  transition: all 0.15s ease-out;
+}
+
+/* Default positioning: below the button */
+.report-dropdown-container:not(.dropdown-above) .report-format-dropdown {
+  top: 100%;
+  margin-top: 2px;
+  transform: translateY(-4px);
+}
+
+/* Smart positioning: above the button when no room below */
+.report-dropdown-container.dropdown-above .report-format-dropdown {
+  bottom: 100%;
+  margin-top: 0;
+  margin-bottom: 2px;
+  transform: translateY(4px);
+}
+
+.report-dropdown-container.slds-is-open .report-format-dropdown {
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.report-format-dropdown .slds-dropdown__list {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid #d8dde6;
+  border-radius: 0.25rem;
+  background-color: white;
+}
+
+.report-format-dropdown .slds-dropdown__item a {
+  padding: 0.5rem 0.75rem;
+  color: #444;
+  text-decoration: none;
+  display: block;
+  font-size: 0.875rem;
+  line-height: 1.25;
+}
+
+.report-format-dropdown .slds-dropdown__item a:hover {
+  background-color: #f8f9fa;
+  color: #0176d3;
+}
+
+.report-format-dropdown .slds-dropdown__item a:focus {
+  background-color: #e6f3ff;
+  color: #0176d3;
+  outline: none;
+}
 /* Force datatable row text to be dark for readability */
 ::slotted(.slds-table tbody tr),
 .slds-table tbody tr,

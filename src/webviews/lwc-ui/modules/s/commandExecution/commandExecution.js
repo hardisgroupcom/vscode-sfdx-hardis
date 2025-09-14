@@ -1205,51 +1205,93 @@ ${resultMessage}`;
           reports.push(f);
       }
     }
+    
+    // Helper function to group files with similar labels
+    const groupSimilarFiles = (files) => {
+      const grouped = {};
+      const standalone = [];
+      
+      for (const file of files) {
+        // Check if the title ends with (CSV) or (XLSX)
+        const csvMatch = file.title.match(/^(.+?)\s*\(CSV\)$/);
+        const xlsxMatch = file.title.match(/^(.+?)\s*\(XLSX\)$/);
+        
+        if (csvMatch) {
+          const baseTitle = csvMatch[1].trim();
+          if (!grouped[baseTitle]) {
+            grouped[baseTitle] = { base: baseTitle, files: [] };
+          }
+          grouped[baseTitle].files.push({ ...file, format: 'CSV' });
+        } else if (xlsxMatch) {
+          const baseTitle = xlsxMatch[1].trim();
+          if (!grouped[baseTitle]) {
+            grouped[baseTitle] = { base: baseTitle, files: [] };
+          }
+          grouped[baseTitle].files.push({ ...file, format: 'XLSX' });
+        } else {
+          standalone.push(file);
+        }
+      }
+      
+      // Convert grouped files to dropdown format or standalone if only one format
+      const result = [];
+      
+      for (const [baseTitle, group] of Object.entries(grouped)) {
+        if (group.files.length === 1) {
+          // Only one format, keep as standalone
+          result.push(group.files[0]);
+        } else {
+          // Multiple formats, create dropdown
+          result.push({
+            id: `dropdown_${Math.random().toString(36).substr(2, 9)}`,
+            title: baseTitle,
+            type: group.files[0].type, // Use the type from the first file
+            isDropdown: true,
+            dropdownOptions: group.files.map(f => ({
+              label: f.format,
+              value: f.file,
+              file: f.file,
+              format: f.format
+            }))
+          });
+        }
+      }
+      
+      return [...result, ...standalone];
+    };
+    
+    // Group similar files for each category
+    const groupedActionCommands = groupSimilarFiles(actionCommands);
+    const groupedActionUrls = groupSimilarFiles(actionUrls);
+    const groupedReports = groupSimilarFiles(reports);
+    const groupedDocUrls = groupSimilarFiles(docUrls);
+    
     // Map to add button/icon props as before
     const decorate = (f) => {
-      switch (f.type) {
-        case "actionCommand":
-          return {
-            ...f,
-            buttonVariant: "brand",
-            iconName: "utility:play",
-            iconVariant: "inverse",
-          };
-        case "actionUrl":
-          return {
-            ...f,
-            buttonVariant: "brand",
-            iconName: "utility:link",
-            iconVariant: "inverse",
-          };
-        case "report":
-          return {
-            ...f,
-            buttonVariant: "success",
-            iconName: "utility:page",
-            iconVariant: "inverse",
-          };
-        case "docUrl":
-          return {
-            ...f,
-            buttonVariant: "outline-brand",
-            iconName: "utility:info",
-            iconVariant: "brand",
-          };
-        default:
-          return {
-            ...f,
-            buttonVariant: "success",
-            iconName: "utility:page",
-            iconVariant: "inverse",
-          };
+      const baseProps = {
+        ...f,
+        buttonVariant: f.type === "actionCommand" ? "brand" :
+                      f.type === "actionUrl" ? "brand" :
+                      f.type === "docUrl" ? "outline-brand" : "success",
+        iconName: f.type === "actionCommand" ? "utility:play" :
+                  f.type === "actionUrl" ? "utility:link" :
+                  f.type === "docUrl" ? "utility:info" : "utility:page",
+        iconVariant: f.type === "docUrl" ? "brand" : "inverse",
+      };
+      
+      // Add dropdown-specific properties
+      if (f.isDropdown) {
+        baseProps.dropdownOptionsJson = JSON.stringify(f.dropdownOptions);
       }
+      
+      return baseProps;
     };
+    
     return [
-      ...actionCommands.map(decorate),
-      ...actionUrls.map(decorate),
-      ...reports.map(decorate),
-      ...docUrls.map(decorate),
+      ...groupedActionCommands.map(decorate),
+      ...groupedActionUrls.map(decorate),
+      ...groupedReports.map(decorate),
+      ...groupedDocUrls.map(decorate),
     ];
   }
 
@@ -1647,6 +1689,213 @@ ${resultMessage}`;
           data: { filePath: reportFile.file },
         });
         break;
+    }
+  }
+
+  handleReportDropdownToggle(event) {
+    // Handle click on multi-format report button to toggle dropdown
+    event.stopPropagation();
+    const reportId = event.currentTarget.dataset.reportId;
+    
+    // Close any other open dropdowns
+    this.closeAllDropdowns();
+    
+    // Toggle the clicked dropdown
+    const container = this.template.querySelector(`[data-report-id="${reportId}"].report-dropdown-container`);
+    const dropdown = this.template.querySelector(`[data-report-id="${reportId}"].report-format-dropdown`);
+    
+    if (container && dropdown) {
+      const isOpen = container.classList.contains('slds-is-open');
+      if (!isOpen) {
+        // Smart positioning: check if there's room below
+        this.positionDropdown(container, dropdown);
+        
+        container.classList.add('slds-is-open');
+        dropdown.classList.add('slds-is-open');
+        
+        // Add click listener to close dropdown when clicking outside
+        setTimeout(() => {
+          document.addEventListener('click', this.handleDocumentClick.bind(this));
+        }, 0);
+      }
+    }
+  }
+
+  positionDropdown(container, dropdown) {
+    // Smart positioning logic - calculate actual space available
+    const containerRect = container.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    
+    // Get the actual dropdown height
+    let dropdownHeight = 120; // Default estimate for 2-3 options
+    
+    // Try to get actual height if dropdown has content
+    const dropdownList = dropdown.querySelector('.slds-dropdown__list');
+    if (dropdownList) {
+      // Temporarily make visible to measure height
+      const originalVisibility = dropdown.style.visibility;
+      const originalOpacity = dropdown.style.opacity;
+      const originalPosition = dropdown.style.position;
+      const originalTop = dropdown.style.top;
+      
+      dropdown.style.visibility = 'visible';
+      dropdown.style.opacity = '0';
+      dropdown.style.position = 'absolute';
+      dropdown.style.top = '-9999px';
+      
+      dropdownHeight = dropdown.offsetHeight || dropdownList.offsetHeight || 120;
+      
+      // Reset styles
+      dropdown.style.visibility = originalVisibility;
+      dropdown.style.opacity = originalOpacity;
+      dropdown.style.position = originalPosition;
+      dropdown.style.top = originalTop;
+    }
+    
+    const spaceBelow = viewportHeight - containerRect.bottom - 10; // 10px buffer
+    const spaceAbove = containerRect.top - 10; // 10px buffer
+    
+    console.log('Positioning dropdown:', {
+      containerRect: containerRect,
+      viewportHeight: viewportHeight,
+      dropdownHeight: dropdownHeight,
+      spaceBelow: spaceBelow,
+      spaceAbove: spaceAbove,
+      scrollTop: scrollTop
+    });
+    
+    // If there's not enough space below but there's space above, position above
+    if (spaceBelow < dropdownHeight && spaceAbove >= dropdownHeight) {
+      console.log('Positioning dropdown above');
+      container.classList.add('dropdown-above');
+    } else {
+      console.log('Positioning dropdown below');
+      container.classList.remove('dropdown-above');
+    }
+  }
+
+  handleReportFileDropdownSelect(event) {
+    // Handle selection from dropdown
+    console.log("Dropdown selection triggered", event.currentTarget.dataset);
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const filePath = event.currentTarget.dataset.filePath;
+    const reportId = event.currentTarget.dataset.reportId;
+    
+    console.log("Selected file path:", filePath, "Report ID:", reportId);
+    
+    // Close the dropdown
+    this.closeAllDropdowns();
+    
+    // Find the specific report file option by file path
+    let selectedReportFile = null;
+    
+    // Look through all report files to find the one with the matching file path
+    for (const reportFile of this.reportFiles) {
+      if (reportFile.isDropdown && reportFile.id === reportId) {
+        // Look in the dropdown options for the selected file
+        const selectedOption = reportFile.dropdownOptions.find(option => option.value === filePath);
+        if (selectedOption) {
+          // Create a temporary report file object with the selected file's properties
+          selectedReportFile = {
+            ...reportFile,
+            file: filePath,
+            title: selectedOption.label
+          };
+          console.log("Found selected report file:", selectedReportFile);
+          break;
+        }
+      }
+    }
+    
+    if (!selectedReportFile) {
+      console.error("Report file not found for dropdown selection:", filePath);
+      return;
+    }
+
+    console.log("Triggering action for file type:", selectedReportFile.type, "File:", selectedReportFile.file);
+
+    // Use the same logic as handleOpenReportFile
+    switch (selectedReportFile.type) {
+      case "actionCommand":
+        // Run a VS Code command
+        console.log("Sending VS Code command:", selectedReportFile.file);
+        window.sendMessageToVSCode({
+          type: "runVsCodeCommand",
+          data: { command: selectedReportFile.file },
+        });
+        break;
+      case "actionUrl":
+      case "docUrl":
+        // Open external URL
+        console.log("Opening external URL:", selectedReportFile.file);
+        window.sendMessageToVSCode({
+          type: "openExternal",
+          data: { url: selectedReportFile.file },
+        });
+        break;
+      case "report":
+      default:
+        // Open file in VS Code
+        console.log("Opening file in VS Code:", selectedReportFile.file);
+        window.sendMessageToVSCode({
+          type: "openFile",
+          data: { filePath: selectedReportFile.file },
+        });
+        break;
+    }
+  }
+
+  handleDocumentClick(event) {
+    // Close dropdowns when clicking outside
+    const dropdownContainers = this.template.querySelectorAll('.report-dropdown-container');
+    let clickedInside = false;
+    
+    dropdownContainers.forEach(container => {
+      if (container.contains(event.target)) {
+        clickedInside = true;
+      }
+    });
+    
+    if (!clickedInside) {
+      this.closeAllDropdowns();
+    }
+  }
+
+  closeAllDropdowns() {
+    // Close all open dropdowns
+    const containers = this.template.querySelectorAll('.report-dropdown-container');
+    const dropdowns = this.template.querySelectorAll('.report-format-dropdown');
+    
+    containers.forEach(container => {
+      container.classList.remove('slds-is-open');
+      container.classList.remove('dropdown-above'); // Clean up positioning class
+    });
+    
+    dropdowns.forEach(dropdown => {
+      dropdown.classList.remove('slds-is-open');
+    });
+    
+    // Remove document click listener
+    document.removeEventListener('click', this.handleDocumentClick.bind(this));
+  }
+
+  handleReportFileAction(filePath, label) {
+    // Common method to handle report file actions (download/open)
+    if (filePath.startsWith("http")) {
+      // External URL - download
+      window.sendMessageToVSCode({
+        type: "downloadFile",
+        data: filePath,
+      });
+    } else {
+      // Local file - open
+      window.sendMessageToVSCode({
+        type: "openFile",
+        data: filePath,
+      });
     }
   }
 

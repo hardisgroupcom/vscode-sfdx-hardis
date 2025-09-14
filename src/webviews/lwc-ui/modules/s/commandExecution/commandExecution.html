@@ -416,15 +416,55 @@
               <div class="report-files-flex-container">
                 <template for:each={sortedReportFiles} for:item="reportFile">
                   <div key={reportFile.id} class="report-file-btn-wrapper">
-                    <lightning-button
-                      variant={reportFile.buttonVariant}
-                      label={reportFile.title}
-                      icon-name={reportFile.iconName}
-                      icon-position="left"
-                      data-file-path={reportFile.file}
-                      onclick={handleOpenReportFile}
-                      title={reportFile.title}
-                    ></lightning-button>
+                    <!-- Regular button for single files -->
+                    <template if:false={reportFile.isDropdown}>
+                      <lightning-button
+                        variant={reportFile.buttonVariant}
+                        label={reportFile.title}
+                        icon-name={reportFile.iconName}
+                        icon-position="left"
+                        data-file-path={reportFile.file}
+                        onclick={handleOpenReportFile}
+                        title={reportFile.title}
+                      ></lightning-button>
+                    </template>
+                    
+                    <!-- Real button for multiple format files -->
+                    <template if:true={reportFile.isDropdown}>
+                      <div class="slds-dropdown-trigger slds-dropdown-trigger_click report-dropdown-container" data-report-id={reportFile.id}>
+                        <div class="report-button-with-dropdown">
+                          <lightning-button
+                            label={reportFile.title}
+                            variant={reportFile.buttonVariant}
+                            icon-name={reportFile.iconName}
+                            icon-position="left"
+                            onclick={handleReportDropdownToggle}
+                            data-report-id={reportFile.id}
+                            title={reportFile.title}
+                            class="report-dropdown-button"
+                          ></lightning-button>
+                          <span class="dropdown-indicator" onclick={handleReportDropdownToggle} data-report-id={reportFile.id}>⏷</span>
+                        </div>
+                        <div class="slds-dropdown slds-dropdown_left report-format-dropdown" data-report-id={reportFile.id}>
+                          <ul class="slds-dropdown__list" role="menu">
+                            <template for:each={reportFile.dropdownOptions} for:item="option">
+                              <li key={option.value} class="slds-dropdown__item" role="presentation">
+                                <a 
+                                  href="javascript:void(0);" 
+                                  role="menuitem" 
+                                  class="slds-truncate"
+                                  data-file-path={option.value}
+                                  data-report-id={reportFile.id}
+                                  onclick={handleReportFileDropdownSelect}
+                                >
+                                  <span class="slds-truncate" title={option.label}>{option.label}</span>
+                                </a>
+                              </li>
+                            </template>
+                          </ul>
+                        </div>
+                      </div>
+                    </template>
                   </div>
                 </template>
               </div>
