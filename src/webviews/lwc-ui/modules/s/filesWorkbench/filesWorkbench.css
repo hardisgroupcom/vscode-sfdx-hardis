@@ -1,0 +1,390 @@
+/* Existing styles ... */
+
+.slds-button_stretch {
+  width: 100%;
+}
+
+/* Ensure consistent spacing in the actions row */
+.slds-grid .slds-button_stretch {
+  display: block;
+}
+
+.blue-back {
+	background: #EDF4FF;
+	min-height: 100vh;
+}
+
+
+/* Workspace Item Styling */
+.workspace-item {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid var(--slds-g-color-border-base-1, #e5e5e5);
+  margin-bottom: 0.5rem !important; /* Add space between items to prevent border overlap */
+  position: relative;
+  z-index: 1;
+}
+
+.workspace-item:hover {
+  background-color: var(--slds-g-color-neutral-base-95, #f3f3f3);
+  border: 1px solid var(--slds-g-color-brand-base-50, #0176d3);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 10; /* Bring hovered item above others */
+}
+
+.workspace-item.selected {
+  background-color: var(--slds-g-color-brand-base-10, #e8f4fd);
+  border-color: var(--slds-g-color-brand-base-50, #0176d3);
+}
+
+.workspace-list {
+  max-height: 400px;
+  overflow-y: auto;
+  /* Hide scrollbar but keep functionality */
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.workspace-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.workspace-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.workspace-list::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+
+.workspace-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+/* Ensure workspace name is visible */
+.workspace-item .slds-media__body p {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.workspace-item .slds-media__body .slds-text-body_regular {
+  margin-bottom: 0.25rem;
+}
+
+.workspace-item .slds-media__body .slds-text-body_small {
+  margin-bottom: 0.125rem;
+}
+
+.workspace-item .slds-media__body .slds-text-body_small:last-child {
+  margin-bottom: 0;
+}
+
+/* Make workspace name more visible */
+.workspace-name-text {
+  color: var(--slds-g-color-text-default, #181818) !important;
+  font-style: italic;
+  font-size: 0.75rem;
+}
+
+/* Make workspace folder name prominent */
+.workspace-folder-name {
+  color: var(--slds-g-color-text-default, #181818) !important;
+  background-color: var(--slds-g-color-neutral-base-98, #fafafa);
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  border: 1px solid var(--slds-g-color-border-base-2, #dddbda);
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.workspace-folder-name strong {
+  font-weight: 600;
+}
+
+.workspace-folder-name lightning-icon {
+  color: var(--slds-g-color-brand-base-50, #0176d3);
+}
+
+/* Toggle button alignment with help text */
+.slds-grid_vertical-align-center {
+  align-items: center;
+}
+
+.slds-grid_vertical-align-center lightning-input {
+  margin-bottom: 0;
+}
+
+.slds-grid_vertical-align-center s-multiline-helptext {
+  flex-shrink: 0;
+  align-self: center;
+}
+
+/* Ensure toggle labels and help text are properly aligned */
+fieldset .slds-form-element .slds-grid {
+  min-height: 2.5rem;
+  align-items: center;
+}
+
+/* Form Field Improvements */
+.slds-form-element {
+  margin-bottom: 1rem;
+}
+
+/* Help Text Alignment */
+.slds-form-element__label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.slds-form-element__label s-multiline-helptext {
+  margin-left: auto;
+}
+
+.slds-grid.slds-grid_align-spread s-multiline-helptext {
+  margin-left: auto;
+}
+
+/* Fix for disabled button logic */
+button[disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Modal styling improvements */
+.slds-modal__container {
+  max-width: 90%;
+  width: 800px;
+}
+
+.slds-modal__content {
+  max-height: 70vh;
+  overflow-y: auto;
+  /* Better scrollbar for modal */
+  scrollbar-width: thin;
+}
+
+.slds-modal__content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.slds-modal__content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.slds-modal__content::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.slds-modal__content::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
+
+/* Configuration summary styling */
+.slds-list_horizontal dt {
+  margin-right: 0.5rem;
+  font-weight: 600;
+  flex-basis: 30%;
+  min-width: 120px;
+}
+
+.slds-list_horizontal dd {
+  margin-right: 1rem;
+  margin-bottom: 0.5rem;
+  flex-basis: 70%;
+}
+
+/* Configuration Preview Styling */
+.slds-box.slds-theme_shade {
+  background-color: var(--slds-g-color-neutral-base-98, #fafafa);
+  border: 1px solid var(--slds-g-color-border-base-1, #e5e5e5);
+}
+
+/* Header Grid Fix */
+.slds-card__header .slds-media__body .slds-grid {
+  width: 100%;
+  align-items: flex-start;
+}
+
+.slds-card__header .slds-media__body h2 {
+  margin: 0;
+}
+
+/* Button menu improvements */
+lightning-button-menu {
+  /* Prevent button menu from triggering ugly scrollbars */
+  position: relative;
+  z-index: 1000;
+}
+
+/* Fix contextual menu positioning to prevent iframe-like behavior */
+.workspace-item lightning-button-menu {
+  position: relative;
+}
+
+.workspace-item .slds-dropdown {
+  position: absolute !important;
+  top: 100% !important;
+  right: 0 !important;
+  left: auto !important;
+  transform: none !important;
+  margin-top: 0.25rem !important;
+  z-index: 9999 !important;
+  min-width: 120px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+  border: 1px solid var(--slds-g-color-border-base-2, #dddbda) !important;
+  background: white !important;
+}
+
+/* Prevent iframe-like behavior by ensuring proper stacking context */
+.workspace-item .slds-dropdown,
+.workspace-item .slds-dropdown-trigger {
+  isolation: isolate;
+}
+
+/* Override any iframe-like containment */
+.workspace-item {
+  contain: none !important;
+}
+
+/* Ensure menu items are properly styled */
+.workspace-item .slds-dropdown .slds-dropdown__item {
+  padding: 0.5rem 0.75rem;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  color: var(--slds-g-color-text-default, #181818);
+}
+
+.workspace-item .slds-dropdown .slds-dropdown__item:hover {
+  background-color: var(--slds-g-color-neutral-base-95, #f3f3f3);
+}
+
+/* Prevent dropdown from being cut off */
+.workspace-item {
+  position: relative;
+  overflow: visible !important;
+}
+
+/* Ensure dropdowns appear above content */
+.slds-dropdown {
+  z-index: 10000 !important;
+}
+
+/* Fix for dropdown positioning in workspace list */
+.workspace-list {
+  position: relative;
+  z-index: 1;
+}
+
+/* Dropdown menu positioning fix to prevent scrollbar */
+lightning-button-menu .slds-dropdown {
+  position: fixed !important;
+}
+
+/* Main container improvements */
+.slds-card {
+  overflow: visible !important;
+}
+
+.slds-card__body {
+  overflow: visible !important;
+}
+
+/* Grid improvements to prevent scroll issues */
+.slds-grid.slds-gutters {
+  overflow: visible !important;
+}
+
+.slds-col {
+  overflow: visible !important;
+  min-width: 0; /* Prevent flex overflow issues */
+}
+
+/* Workspace item container improvements */
+.workspace-item {
+  position: relative;
+  overflow: visible !important;
+}
+
+/* Prevent dropdown from being cut off */
+.workspace-item lightning-button-menu {
+  position: static;
+}
+
+/* Force dropdown to appear above other content */
+.slds-dropdown_right {
+  transform: translateX(-100%);
+}
+
+/* Responsive button actions */
+.slds-show_large {
+  display: flex !important;
+}
+
+.slds-hide_large {
+  display: none !important;
+}
+
+/* Responsive Actions Styling */
+@media (max-width: 1024px) {
+  .slds-show_large {
+    display: none !important;
+  }
+  
+  .slds-hide_large {
+    display: flex !important;
+  }
+}
+
+/* Small button styling for horizontal layout */
+.slds-show_large lightning-button {
+  flex-shrink: 0;
+  min-width: auto;
+}
+
+.slds-show_large .slds-grid {
+  flex-wrap: nowrap;
+  align-items: center;
+}
+
+/* Ensure action buttons don't wrap prematurely */
+.slds-card [slot="actions"] {
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+/* Responsive grid adjustments */
+@media (max-width: 768px) {
+  .slds-grid.slds-gutters > .slds-col {
+    width: 100%;
+    margin-bottom: 1rem;
+  }
+  
+  .slds-modal__container {
+    width: 95%;
+    max-width: none;
+  }
+  
+  .slds-form-element__label {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+  
+  .slds-form-element__label s-multiline-helptext {
+    margin-left: 0;
+  }
+  
+  .workspace-list {
+    max-height: 300px;
+  }
+}

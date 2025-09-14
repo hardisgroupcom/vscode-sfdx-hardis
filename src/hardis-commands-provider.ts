@@ -410,6 +410,13 @@ export class HardisCommandsProvider
         icon: new vscode.ThemeIcon("files"),
         commands: [
           {
+            id: "vscode-sfdx-hardis.showFilesWorkbench",
+            label: "Files Import/Export Workbench",
+            tooltip:
+              "Manage file import/export workspaces and run file operations with an intuitive interface",
+            command: "vscode-sfdx-hardis.showFilesWorkbench",
+          },
+          {
             id: "org:files:export",
             label: "Export files from org",
             tooltip: "Export files from org based on a configuration",

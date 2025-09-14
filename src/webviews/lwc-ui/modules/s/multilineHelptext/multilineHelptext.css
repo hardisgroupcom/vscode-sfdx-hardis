@@ -18,8 +18,6 @@
 
 .multiline-helptext-popover {
     position: absolute;
-    top: 0;
-    left: 100%;
     background: #032d60;
     color: #fff;
     border-radius: 8px;
@@ -32,7 +30,51 @@
     width: max-content;
     word-break: break-word;
     white-space: pre-line;
-    left: 0.25rem;
+}
+
+/* Horizontal positioning - right side (default) */
+.multiline-helptext-popover.position-right {
+    left: 100%;
+    margin-left: 0.25rem;
+}
+
+/* Horizontal positioning - left side */
+.multiline-helptext-popover.position-left {
+    right: 100%;
+    margin-right: 0.25rem;
+}
+
+/* Vertical positioning - bottom (default) */
+.multiline-helptext-popover.position-bottom {
+    top: calc(100% + 0.25rem);
+}
+
+/* Vertical positioning - top */
+.multiline-helptext-popover.position-top {
+    bottom: calc(100% + 0.25rem);
+}
+
+/* Override SLDS popover positioning when using dynamic classes */
+.slds-popover.position-right {
+    left: 100% !important;
+    margin-left: 0.25rem !important;
+    right: auto !important;
+}
+
+.slds-popover.position-left {
+    right: 100% !important;
+    margin-right: 0.25rem !important;
+    left: auto !important;
+}
+
+.slds-popover.position-bottom {
+    top: calc(100% + 0.25rem) !important;
+    bottom: auto !important;
+}
+
+.slds-popover.position-top {
+    bottom: calc(100% + 0.25rem) !important;
+    top: auto !important;
 }
 .slds-form-element__icon.slds-m-left_xx-small {
     margin-top: 2px;

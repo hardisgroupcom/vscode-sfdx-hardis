@@ -1,0 +1,446 @@
+<template>
+  <div class="slds-card blue-back">
+    <!-- Header -->
+    <div class="slds-card__header slds-grid">
+      <header class="slds-media slds-media_center slds-has-flexi-truncate">
+        <div class="slds-media__figure">
+          <span class="slds-icon_container slds-icon-standard-file">
+            <lightning-icon icon-name="standard:file" alternative-text="Files" size="medium"></lightning-icon>
+          </span>
+        </div>
+        <div class="slds-media__body">
+          <div class="slds-grid slds-grid_align-spread">
+            <h2 class="slds-card__header-title">
+              <span class="slds-text-heading_medium">Files Import/Export Workbench</span>
+            </h2>
+          </div>
+          <p class="slds-text-body_small slds-line-height_reset">
+            Manage file import/export workspaces and run file operations
+          </p>
+        </div>
+      </header>
+      <div class="slds-no-flex">
+        <lightning-button
+          variant="brand"
+          label="Create Workspace"
+          title="Create a new file import/export workspace"
+          icon-name="utility:add"
+          onclick={handleCreateWorkspace}
+        ></lightning-button>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <template if:true={isLoading}>
+      <div class="slds-card__body slds-card__body_inner">
+        <div class="slds-text-align_center slds-p-around_large">
+          <lightning-spinner alternative-text="Loading workspaces..." size="medium"></lightning-spinner>
+          <p class="slds-text-body_small slds-text-color_weak slds-m-top_small">Loading workspaces...</p>
+        </div>
+      </div>
+    </template>
+
+    <!-- No Workspaces State -->
+    <template if:false={isLoading}>
+      <template if:false={hasWorkspaces}>
+        <div class="slds-card__body slds-card__body_inner">
+          <div class="slds-text-align_center slds-p-around_large">
+            <lightning-icon icon-name="utility:file" size="large" class="slds-text-color_weak"></lightning-icon>
+            <h3 class="slds-text-heading_medium slds-m-top_medium">No Workspaces Found</h3>
+            <p class="slds-text-body_regular slds-text-color_weak slds-m-top_small">
+              Create your first file import/export workspace to get started.
+            </p>
+            <lightning-button
+              variant="brand"
+              label="Create Your First Workspace"
+              class="slds-m-top_medium"
+              onclick={handleCreateWorkspace}
+            ></lightning-button>
+          </div>
+        </div>
+      </template>
+    </template>
+
+    <!-- Workspaces List -->
+    <template if:false={isLoading}>
+      <template if:true={hasWorkspaces}>
+        <div class="slds-card__body slds-card__body_inner">
+          <!-- Two Column Layout -->
+          <div class="slds-grid slds-gutters">
+            <!-- Left Column: Workspaces List -->
+            <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-3 slds-large-size_1-of-4">
+              <lightning-card title="Available Workspaces">
+                <s-multiline-helptext slot="actions" content="Each workspace represents a file import/export configuration.<br/>Click on a workspace to select it and see available actions.<br/>Use the Edit and Delete buttons on the right to manage workspaces."></s-multiline-helptext>
+                <div class="workspace-list">
+                  <template for:each={workspacesForDisplay} for:item="workspace">
+                    <div 
+                      key={workspace.path} 
+                      class="slds-box slds-box_x-small workspace-item"
+                      data-path={workspace.path}
+                      onclick={handleWorkspaceSelect}
+                    >
+                      <div class="slds-media slds-media_small">
+                        <div class="slds-media__figure">
+                          <lightning-icon icon-name={workspace.iconName} size="small"></lightning-icon>
+                        </div>
+                        <div class="slds-media__body">
+                          <p class="slds-text-body_regular slds-truncate" title={workspace.label}>
+                            <strong>{workspace.label}</strong>
+                          </p>
+                          <p class="slds-text-body_small slds-text-color_weak slds-truncate" title={workspace.name}>
+                            {workspace.name}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </template>
+                </div>
+              </lightning-card>
+            </div>
+
+            <!-- Right Column: Selected Workspace Actions -->
+            <div class="slds-col slds-size_1-of-2 slds-medium-size_2-of-3 slds-large-size_3-of-4">
+              <template if:true={selectedWorkspace}>
+                <lightning-card title={selectedWorkspace.label}>
+                  <!-- Card Actions Slot -->
+                  <div slot="actions" class="slds-grid slds-gutters_x-small">
+                    <!-- Horizontal Buttons - Hidden on small screens -->
+                    <div class="slds-show_large slds-grid slds-gutters_small">
+                      <lightning-button
+                        variant="brand"
+                        label="Export files"
+                        title="Export files from Salesforce using this workspace configuration"
+                        icon-name="utility:download"
+                        icon-position="left"
+                        size="small"
+                        onclick={handleExportFiles}
+                      ></lightning-button>
+                      <lightning-button
+                        variant="brand"
+                        label="Import files"
+                        title="Import files to Salesforce using this workspace configuration"
+                        icon-name="utility:upload"
+                        icon-position="left"
+                        size="small"
+                        onclick={handleImportFiles}
+                      ></lightning-button>
+                      <lightning-button
+                        variant="neutral"
+                        label="Edit"
+                        title="Edit workspace settings and configuration"
+                        icon-name="utility:edit"
+                        icon-position="left"
+                        size="small"
+                        data-path={selectedWorkspace.path}
+                        onclick={handleEditWorkspace}
+                      ></lightning-button>
+                      <lightning-button
+                        variant="destructive"
+                        label="Delete"
+                        title="Delete this workspace permanently"
+                        icon-name="utility:delete"
+                        icon-position="left"
+                        size="small"
+                        data-path={selectedWorkspace.path}
+                        onclick={handleDeleteWorkspace}
+                      ></lightning-button>
+                    </div>
+
+                    <!-- Dropdown Menu - Shown only on small screens -->
+                    <div class="slds-hide_large">
+                      <lightning-button-menu
+                        alternative-text="Workspace Actions"
+                        menu-alignment="right"
+                        variant="border-filled"
+                        icon-name="utility:down"
+                      >
+                        <lightning-menu-item
+                          value="export"
+                          label="Export Files"
+                          icon-name="utility:download"
+                          onclick={handleExportFiles}
+                        ></lightning-menu-item>
+                        <lightning-menu-item
+                          value="import"
+                          label="Import Files"
+                          icon-name="utility:upload"
+                          onclick={handleImportFiles}
+                        ></lightning-menu-item>
+                        <lightning-menu-item
+                          value="edit"
+                          label="Edit Workspace"
+                          icon-name="utility:edit"
+                          onclick={handleEditWorkspace}
+                        ></lightning-menu-item>
+                        <lightning-menu-item
+                          value="delete"
+                          label="Delete Workspace"
+                          icon-name="utility:delete"
+                          onclick={handleDeleteWorkspace}
+                        ></lightning-menu-item>
+                      </lightning-button-menu>
+                    </div>
+                  </div>
+
+                  <!-- Workspace Info -->
+                  <div class="slds-media slds-m-bottom_medium">
+                    <div class="slds-media__figure">
+                      <lightning-button-icon
+                        icon-name="utility:open_folder"
+                        variant="bare"
+                        alternative-text="Open folder in explorer"
+                        title="Click to open workspace folder in OS explorer"
+                        size="large"
+                        onclick={handleOpenFolder}
+                        class="slds-p-around_xx-small"
+                      ></lightning-button-icon>
+                    </div>
+                    <div class="slds-media__body">
+                      <template if:true={selectedWorkspace.description}>
+                        <p class="slds-text-body_small slds-text-color_weak slds-m-bottom_x-small">{selectedWorkspace.description}</p>
+                      </template>
+                      <p class="slds-text-body_small slds-text-color_weak">
+                        <strong>Path:</strong> {selectedWorkspace.path}
+                      </p>
+                      <template if:true={selectedWorkspace.exportedFilesCount}>
+                        <p class="slds-text-body_small slds-text-color_default">
+                          <lightning-icon icon-name="utility:file" size="xx-small" class="slds-m-right_xx-small"></lightning-icon>
+                          <strong>{selectedWorkspace.exportedFilesCount} exported files</strong>
+                        </p>
+                      </template>
+                    </div>
+                  </div>
+
+                  <!-- Configuration Preview -->
+                  <div class="slds-m-top_medium">
+                    <div class="slds-grid slds-grid_align-spread slds-m-bottom_x-small">
+                      <h5 class="slds-text-heading_x-small">Configuration Summary</h5>
+                    </div>
+                    <div class="slds-box slds-box_x-small slds-theme_shade slds-m-bottom_medium">
+                      <dl class="slds-list_horizontal slds-wrap">
+                        <dt class="slds-item_label slds-text-color_weak slds-truncate" title="Workspace Name">Workspace Name:</dt>
+                        <dd class="slds-item_detail slds-truncate" title={selectedWorkspace.name}>{selectedWorkspace.name}</dd>
+                        <template if:true={selectedWorkspace.description}>
+                          <dt class="slds-item_label slds-text-color_weak slds-truncate" title="Description">Description:</dt>
+                          <dd class="slds-item_detail slds-truncate" title={selectedWorkspace.description}>{selectedWorkspace.description}</dd>
+                        </template>
+                        <dt class="slds-item_label slds-text-color_weak slds-truncate" title="SOQL Query">SOQL Query:</dt>
+                        <dd class="slds-item_detail slds-truncate" title={selectedWorkspace.soqlQuery}>{selectedWorkspace.soqlQuery}</dd>
+                        <dt class="slds-item_label slds-text-color_weak slds-truncate" title="File Types">File Types:</dt>
+                        <dd class="slds-item_detail slds-truncate">{selectedWorkspace.fileTypes}</dd>
+                        <dt class="slds-item_label slds-text-color_weak slds-truncate" title="Folder Field">Folder Field:</dt>
+                        <dd class="slds-item_detail slds-truncate">{selectedWorkspace.outputFolderNameField}</dd>
+                        <dt class="slds-item_label slds-text-color_weak slds-truncate" title="File Name Format">File Name Format:</dt>
+                        <dd class="slds-item_detail slds-truncate">{selectedWorkspace.outputFileNameFormat}</dd>
+                        <dt class="slds-item_label slds-text-color_weak slds-truncate" title="Overwrite Parent Records">Overwrite Parent Records:</dt>
+                        <dd class="slds-item_detail slds-truncate">{selectedWorkspace.overwriteParentRecords}</dd>
+                        <dt class="slds-item_label slds-text-color_weak slds-truncate" title="Overwrite Files">Overwrite Files:</dt>
+                        <dd class="slds-item_detail slds-truncate">{selectedWorkspace.overwriteFiles}</dd>
+                      </dl>
+                    </div>
+                  </div>
+                </lightning-card>
+              </template>
+              <template if:false={selectedWorkspace}>
+                <lightning-card title="Workspace Actions">
+                  <div class="slds-text-align_center slds-p-around_large">
+                    <lightning-icon icon-name="utility:touch_action" size="large" class="slds-text-color_weak"></lightning-icon>
+                    <h3 class="slds-text-heading_medium slds-m-top_medium">Select a Workspace</h3>
+                    <p class="slds-text-body_regular slds-text-color_weak slds-m-top_small">
+                      Click on a workspace from the list to see available actions and configuration details.
+                    </p>
+                  </div>
+                </lightning-card>
+              </template>
+            </div>
+          </div>
+        </div>
+      </template>
+    </template>
+  </div>
+
+    <!-- Create/Edit Workspace Modal -->
+    <template if:true={showCreateWorkspace}>
+      <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+        <div class="slds-modal__container">
+          <header class="slds-modal__header">
+            <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick={handleCancel}>
+              <lightning-icon icon-name="utility:close" alternative-text="close" size="small"></lightning-icon>
+              <span class="slds-assistive-text">Close</span>
+            </button>
+            <h2 id="modal-heading-01" class="slds-modal__title slds-hyphenate">{modalTitle}</h2>
+          </header>
+          <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+            <!-- Basic Information -->
+            <div class="slds-form-element slds-m-bottom_medium">
+              <label class="slds-form-element__label" for="workspace-name">
+                <abbr class="slds-required" title="required">* </abbr>Workspace Name
+                <s-multiline-helptext content="The folder name for this workspace.<br/>Use PascalCase format (e.g., OpportunityFiles).<br/>This will create a folder in scripts/files/ directory."></s-multiline-helptext>
+              </label>
+              <div class="slds-form-element__control">
+                <lightning-input
+                  variant="label-hidden"
+                  type="text"
+                  name="workspace-name"
+                  placeholder="e.g., OpportunityFiles"
+                  value={newWorkspace.name}
+                  onchange={handleNameChange}
+                  required
+                ></lightning-input>
+              </div>
+            </div>
+
+            <div class="slds-form-element slds-m-bottom_medium">
+              <label class="slds-form-element__label" for="workspace-label">
+                <abbr class="slds-required" title="required">* </abbr>Display Label
+                <s-multiline-helptext content="A human-readable name for this workspace.<br/>This will be displayed in the workspace list and helps identify the purpose of this configuration."></s-multiline-helptext>
+              </label>
+              <div class="slds-form-element__control">
+                <lightning-input
+                  variant="label-hidden"
+                  type="text"
+                  name="workspace-label"
+                  placeholder="e.g., Opportunity Files Export"
+                  value={newWorkspace.label}
+                  onchange={handleLabelChange}
+                  required
+                ></lightning-input>
+              </div>
+            </div>
+
+            <div class="slds-form-element slds-m-bottom_medium">
+              <label class="slds-form-element__label" for="workspace-description">
+                Description
+                <s-multiline-helptext content="Optional description to explain what this workspace is used for.<br/>This helps team members understand the purpose and scope of this file export configuration."></s-multiline-helptext>
+              </label>
+              <div class="slds-form-element__control">
+                <lightning-textarea
+                  variant="label-hidden"
+                  name="workspace-description"
+                  placeholder="Describe what this workspace is used for..."
+                  value={newWorkspace.description}
+                  onchange={handleDescriptionChange}
+                ></lightning-textarea>
+              </div>
+            </div>
+
+            <!-- Configuration -->
+            <div class="slds-form-element slds-m-bottom_medium">
+              <label class="slds-form-element__label" for="soql-query">
+                <abbr class="slds-required" title="required">* </abbr>SOQL Query
+                <s-multiline-helptext content="The SOQL query to fetch parent records for file operations.<br/>Example: SELECT Id,Name FROM Opportunity WHERE Name LIKE 'Important%'<br/>Files attached to these records will be exported/imported."></s-multiline-helptext>
+              </label>
+              <div class="slds-form-element__control">
+                <lightning-textarea
+                  variant="label-hidden"
+                  name="soql-query"
+                  placeholder="SELECT Id,Name FROM Opportunity"
+                  value={newWorkspace.soqlQuery}
+                  onchange={handleSoqlQueryChange}
+                  required
+                ></lightning-textarea>
+              </div>
+            </div>
+
+            <div class="slds-grid slds-gutters">
+              <div class="slds-col slds-size_1-of-2">
+                <div class="slds-form-element slds-m-bottom_medium">
+                  <label class="slds-form-element__label" for="file-types">
+                    File Types
+                    <s-multiline-helptext content="Filter which file types to include in the export/import.<br/>'all' = all file types<br/>'PDF' = only PDF files<br/>Or specify comma-separated extensions like 'PDF,DOC,DOCX'"></s-multiline-helptext>
+                  </label>
+                  <div class="slds-form-element__control">
+                    <lightning-combobox
+                      variant="label-hidden"
+                      name="file-types"
+                      value={newWorkspace.fileTypes}
+                      options={fileTypesOptions}
+                      onchange={handleFileTypesChange}
+                    ></lightning-combobox>
+                  </div>
+                </div>
+              </div>
+
+              <div class="slds-col slds-size_1-of-2">
+                <div class="slds-form-element slds-m-bottom_medium">
+                  <label class="slds-form-element__label" for="folder-field">
+                    Folder Name Field
+                    <s-multiline-helptext content="The field from your SOQL query to use as folder names.<br/>Example: If you use 'Name', files will be organized in folders named after the record's Name field.<br/>Common options: Name, Id, Account.Name"></s-multiline-helptext>
+                  </label>
+                  <div class="slds-form-element__control">
+                    <lightning-input
+                      variant="label-hidden"
+                      type="text"
+                      name="folder-field"
+                      placeholder="Name"
+                      value={newWorkspace.outputFolderNameField}
+                      onchange={handleOutputFolderNameFieldChange}
+                    ></lightning-input>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="slds-form-element slds-m-bottom_medium">
+              <label class="slds-form-element__label" for="file-name-format">
+                File Name Format
+                <s-multiline-helptext content="How to name the exported files:<br/>• title: Use the original file title<br/>• title_id: Title + Salesforce ID<br/>• id_title: Salesforce ID + Title<br/>• id: Only the Salesforce ID"></s-multiline-helptext>
+              </label>
+              <div class="slds-form-element__control">
+                <lightning-combobox
+                  variant="label-hidden"
+                  name="file-name-format"
+                  value={newWorkspace.outputFileNameFormat}
+                  options={fileNameFormatOptions}
+                  onchange={handleOutputFileNameFormatChange}
+                ></lightning-combobox>
+              </div>
+            </div>
+
+            <!-- Overwrite Options -->
+            <div class="slds-form-element slds-m-bottom_medium">
+              <div class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center">
+                <lightning-input
+                  type="toggle"
+                  name="overwrite-parent-records"
+                  label="Overwrite parent records"
+                  checked={newWorkspace.overwriteParentRecords}
+                  onchange={handleOverwriteParentRecordsChange}
+                  class="slds-no-flex"
+                ></lightning-input>
+                <s-multiline-helptext content="If checked, will re-export files for records that already have a local folder.<br/>If unchecked, skips records that already have been processed." class="slds-m-left_small"></s-multiline-helptext>
+              </div>
+            </div>
+
+            <div class="slds-form-element slds-m-bottom_medium">
+              <div class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center">
+                <lightning-input
+                  type="toggle"
+                  name="overwrite-files"
+                  label="Overwrite existing files"
+                  checked={newWorkspace.overwriteFiles}
+                  onchange={handleOverwriteFilesChange}
+                  class="slds-no-flex"
+                ></lightning-input>
+                <s-multiline-helptext content="If checked, replaces existing local files with the same name.<br/>If unchecked, skips downloading files that already exist locally." class="slds-m-left_small"></s-multiline-helptext>
+              </div>
+            </div>
+          </div>
+          <footer class="slds-modal__footer">
+            <lightning-button
+              variant="neutral"
+              label="Cancel"
+              onclick={handleCancel}
+            ></lightning-button>
+            <lightning-button
+              variant="brand"
+              label={saveButtonLabel}
+              disabled={saveButtonDisabled}
+              onclick={handleSave}
+            ></lightning-button>
+          </footer>
+        </div>
+      </section>
+      <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+</template>
