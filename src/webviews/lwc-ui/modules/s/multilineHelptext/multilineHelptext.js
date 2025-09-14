@@ -22,9 +22,9 @@ export default class MultilineHelptext extends LightningElement {
   }
 
   calculatePosition() {
-    const popover = this.template.querySelector('.multiline-helptext-popover');
-    const wrapper = this.template.querySelector('.helptext-wrapper');
-    
+    const popover = this.template.querySelector(".multiline-helptext-popover");
+    const wrapper = this.template.querySelector(".helptext-wrapper");
+
     if (!popover || !wrapper) return;
 
     const wrapperRect = wrapper.getBoundingClientRect();
@@ -32,10 +32,10 @@ export default class MultilineHelptext extends LightningElement {
     const viewportHeight = window.innerHeight;
     const popoverWidth = 420; // max-width from CSS
     const popoverHeight = 150; // estimated height
-    
+
     // Check horizontal positioning
     const spaceOnRight = viewportWidth - wrapperRect.right;
-    
+
     // If not enough space on right (less than popover width + margin), position on left
     if (spaceOnRight < popoverWidth + 20) {
       this.positionLeft = true;
@@ -45,7 +45,7 @@ export default class MultilineHelptext extends LightningElement {
 
     // Check vertical positioning
     const spaceBelow = viewportHeight - wrapperRect.bottom;
-    
+
     // If not enough space below (less than popover height + margin), position on top
     if (spaceBelow < popoverHeight + 20) {
       this.positionTop = true;
@@ -55,8 +55,10 @@ export default class MultilineHelptext extends LightningElement {
   }
 
   get popoverClass() {
-    const horizontalClass = this.positionLeft ? 'position-left' : 'position-right';
-    const verticalClass = this.positionTop ? 'position-top' : 'position-bottom';
+    const horizontalClass = this.positionLeft
+      ? "position-left"
+      : "position-right";
+    const verticalClass = this.positionTop ? "position-top" : "position-bottom";
     return `slds-popover slds-popover_tooltip multiline-helptext-popover ${horizontalClass} ${verticalClass}`;
   }
 }

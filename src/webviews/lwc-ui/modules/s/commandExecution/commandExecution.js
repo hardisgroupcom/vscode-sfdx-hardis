@@ -491,7 +491,10 @@ export default class CommandExecution extends LightningElement {
 
     // If this is an action log and there's no active progress section, close current section and start a new one
     // Otherwise, treat action logs as regular log lines when progress is active
-    if (logLine.logType === "action" && !(this.currentProgressSection && this.currentProgressSection.isActive)) {
+    if (
+      logLine.logType === "action" &&
+      !(this.currentProgressSection && this.currentProgressSection.isActive)
+    ) {
       this.closeCurrentSection();
       this.startNewSection(logLine);
     } else {
@@ -1041,7 +1044,7 @@ ${resultMessage}`;
     return this.logSections.map((section, idx) => {
       const isLatest = section.id === latestQuestionSectionId;
       const isProgress = section.type === "progress";
-      
+
       // Table log support
       let tableLog = this.tableLogs[section.id] || null;
       let tableShowAll = false;
@@ -1066,7 +1069,7 @@ ${resultMessage}`;
         }
         tableRows = rawRows;
       }
-      
+
       // --- SIMPLE/ADVANCED LOGIC ---
       let isExpanded = section.isExpanded;
       // By default, question sections and progress sections are expanded, but user can collapse them
@@ -1083,43 +1086,47 @@ ${resultMessage}`;
           isExpanded = false;
         }
       }
-      
+
       // Chevron should reflect actual expansion state for all sections
       const toggleIcon = isExpanded
         ? "utility:chevronup"
         : "utility:chevrondown";
-        
+
       // Progress-specific properties
       let progressPercentage = 0;
-      let progressAnimationClass = '';
+      let progressAnimationClass = "";
       let isIndeterminate = false;
-      let progressStepText = '';
-      let progressTimeEstimation = '';
-      
+      let progressStepText = "";
+      let progressTimeEstimation = "";
+
       if (isProgress && section.totalSteps > 0) {
-        progressPercentage = Math.round((section.currentStep / section.totalSteps) * 100);
+        progressPercentage = Math.round(
+          (section.currentStep / section.totalSteps) * 100,
+        );
         progressStepText = `${section.currentStep} of ${section.totalSteps} steps`;
-        progressTimeEstimation = section.estimatedRemainingTime || '';
-        
+        progressTimeEstimation = section.estimatedRemainingTime || "";
+
         // Add shine animation for active progress with known steps
         if (section.isActive) {
-          progressAnimationClass = 'animated-progress-bar is-active';
+          progressAnimationClass = "animated-progress-bar is-active";
         }
       } else if (isProgress && section.totalSteps === 0) {
         // If no total steps defined, show indeterminate progress
         // Show increasing progress based on steps taken, but cap at 90% for indeterminate feel
-        progressPercentage = section.currentStep > 0 
-          ? Math.min(90, 20 + (section.currentStep * 5)) 
-          : 15; // Show some initial progress
-        progressStepText = section.currentStep > 0 
-          ? `${section.currentStep} steps completed` 
-          : 'Starting...';
+        progressPercentage =
+          section.currentStep > 0
+            ? Math.min(90, 20 + section.currentStep * 5)
+            : 15; // Show some initial progress
+        progressStepText =
+          section.currentStep > 0
+            ? `${section.currentStep} steps completed`
+            : "Starting...";
         isIndeterminate = true;
         if (section.isActive) {
-          progressAnimationClass = 'animated-progress-bar is-indeterminate';
+          progressAnimationClass = "animated-progress-bar is-indeterminate";
         }
       }
-      
+
       return {
         ...section,
         isExpanded,
@@ -1136,11 +1143,11 @@ ${resultMessage}`;
             ? { iconName: "utility:question", variant: "warning" }
             : isProgress && section.isActive
               ? { iconName: "utility:progress", variant: "brand" }
-            : section.hasError
-              ? { iconName: "utility:error", variant: "error" }
-              : section.isActive
-                ? null
-                : { iconName: "utility:success", variant: "success" },
+              : section.hasError
+                ? { iconName: "utility:error", variant: "error" }
+                : section.isActive
+                  ? null
+                  : { iconName: "utility:success", variant: "success" },
         sectionUseSpinner:
           section.isActive ||
           (section.isQuestion &&
@@ -1151,8 +1158,16 @@ ${resultMessage}`;
           : section.isActive
             ? "slds-text-color_weak"
             : "slds-text-color_success",
-        hasLogs: (section.logs && section.logs.length > 0) || (isProgress && section.progressLogs && section.progressLogs.length > 0),
-        showToggle: (section.logs && section.logs.length > 0) || (isProgress && section.progressLogs && section.progressLogs.length > 0),
+        hasLogs:
+          (section.logs && section.logs.length > 0) ||
+          (isProgress &&
+            section.progressLogs &&
+            section.progressLogs.length > 0),
+        showToggle:
+          (section.logs && section.logs.length > 0) ||
+          (isProgress &&
+            section.progressLogs &&
+            section.progressLogs.length > 0),
         isLatestQuestionSectionToHide: shouldHideLatest && isLatest,
         tableLog: tableLog ? { ...tableLog, rowsLimited } : null,
         tableShowAll,
@@ -1213,37 +1228,37 @@ ${resultMessage}`;
           reports.push(f);
       }
     }
-    
+
     // Helper function to group files with similar labels
     const groupSimilarFiles = (files) => {
       const grouped = {};
       const standalone = [];
-      
+
       for (const file of files) {
         // Check if the title ends with (CSV) or (XLSX)
         const csvMatch = file.title.match(/^(.+?)\s*\(CSV\)$/);
         const xlsxMatch = file.title.match(/^(.+?)\s*\(XLSX\)$/);
-        
+
         if (csvMatch) {
           const baseTitle = csvMatch[1].trim();
           if (!grouped[baseTitle]) {
             grouped[baseTitle] = { base: baseTitle, files: [] };
           }
-          grouped[baseTitle].files.push({ ...file, format: 'CSV' });
+          grouped[baseTitle].files.push({ ...file, format: "CSV" });
         } else if (xlsxMatch) {
           const baseTitle = xlsxMatch[1].trim();
           if (!grouped[baseTitle]) {
             grouped[baseTitle] = { base: baseTitle, files: [] };
           }
-          grouped[baseTitle].files.push({ ...file, format: 'XLSX' });
+          grouped[baseTitle].files.push({ ...file, format: "XLSX" });
         } else {
           standalone.push(file);
         }
       }
-      
+
       // Convert grouped files to dropdown format or standalone if only one format
       const result = [];
-      
+
       for (const [baseTitle, group] of Object.entries(grouped)) {
         if (group.files.length === 1) {
           // Only one format, keep as standalone
@@ -1251,53 +1266,68 @@ ${resultMessage}`;
         } else {
           // Multiple formats, create dropdown
           // Use a stable ID based on the title to prevent issues on re-render
-          const stableId = `dropdown_${baseTitle.replace(/[^a-zA-Z0-9]/g, '')}`;
+          const stableId = `dropdown_${baseTitle.replace(/[^a-zA-Z0-9]/g, "")}`;
           result.push({
             id: stableId,
             title: baseTitle,
             type: group.files[0].type, // Use the type from the first file
             isDropdown: true,
-            dropdownOptions: group.files.map(f => ({
-              label: f.format === 'CSV' ? 'CSV' : f.format === 'XLSX' ? 'Excel' : f.format,
+            dropdownOptions: group.files.map((f) => ({
+              label:
+                f.format === "CSV"
+                  ? "CSV"
+                  : f.format === "XLSX"
+                    ? "Excel"
+                    : f.format,
               value: f.file, // Keep value for compatibility if needed elsewhere
               type: f.type,
               file: f.file,
-              format: f.format
-            }))
+              format: f.format,
+            })),
           });
         }
       }
-      
+
       return [...result, ...standalone];
     };
-    
+
     // Group similar files for each category
     const groupedActionCommands = groupSimilarFiles(actionCommands);
     const groupedActionUrls = groupSimilarFiles(actionUrls);
     const groupedReports = groupSimilarFiles(reports);
     const groupedDocUrls = groupSimilarFiles(docUrls);
-    
+
     // Map to add button/icon props as before
     const decorate = (f) => {
       const baseProps = {
         ...f,
-        buttonVariant: f.type === "actionCommand" ? "brand" :
-                      f.type === "actionUrl" ? "brand" :
-                      f.type === "docUrl" ? "outline-brand" : "success",
-        iconName: f.type === "actionCommand" ? "utility:play" :
-                  f.type === "actionUrl" ? "utility:link" :
-                  f.type === "docUrl" ? "utility:info" : "utility:page",
+        buttonVariant:
+          f.type === "actionCommand"
+            ? "brand"
+            : f.type === "actionUrl"
+              ? "brand"
+              : f.type === "docUrl"
+                ? "outline-brand"
+                : "success",
+        iconName:
+          f.type === "actionCommand"
+            ? "utility:play"
+            : f.type === "actionUrl"
+              ? "utility:link"
+              : f.type === "docUrl"
+                ? "utility:info"
+                : "utility:page",
         iconVariant: f.type === "docUrl" ? "brand" : "inverse",
       };
-      
+
       // Add dropdown-specific properties
       if (f.isDropdown) {
         baseProps.dropdownOptionsJson = JSON.stringify(f.dropdownOptions);
       }
-      
+
       return baseProps;
     };
-    
+
     return [
       ...groupedActionCommands.map(decorate),
       ...groupedActionUrls.map(decorate),
@@ -1710,36 +1740,45 @@ ${resultMessage}`;
 
     // Defensive reportId resolution (lightning-button wraps the real button)
     const reportId =
-      (event.currentTarget && event.currentTarget.dataset && event.currentTarget.dataset.reportId) ||
+      (event.currentTarget &&
+        event.currentTarget.dataset &&
+        event.currentTarget.dataset.reportId) ||
       (event.target && event.target.dataset && event.target.dataset.reportId) ||
-      (event.target && event.target.closest && event.target.closest('[data-report-id]') && event.target.closest('[data-report-id]').dataset.reportId);
+      (event.target &&
+        event.target.closest &&
+        event.target.closest("[data-report-id]") &&
+        event.target.closest("[data-report-id]").dataset.reportId);
 
     if (!reportId) return;
 
     // Close any other open dropdowns
     this.closeAllDropdowns();
 
-    const container = this.template.querySelector(`[data-report-id="${reportId}"].report-dropdown-container`);
-    const dropdown = this.template.querySelector(`[data-report-id="${reportId}"].report-format-dropdown`);
+    const container = this.template.querySelector(
+      `[data-report-id="${reportId}"].report-dropdown-container`,
+    );
+    const dropdown = this.template.querySelector(
+      `[data-report-id="${reportId}"].report-format-dropdown`,
+    );
 
     if (!container || !dropdown) return;
 
-    const isOpen = container.classList.contains('slds-is-open');
-    
+    const isOpen = container.classList.contains("slds-is-open");
+
     if (!isOpen) {
-      container.classList.add('slds-is-open');
-      dropdown.classList.add('slds-is-open');
+      container.classList.add("slds-is-open");
+      dropdown.classList.add("slds-is-open");
 
       // Add document listener (use pre-bound reference)
       setTimeout(() => {
-        document.addEventListener('click', this._boundHandleDocumentClick);
+        document.addEventListener("click", this._boundHandleDocumentClick);
       }, 0);
     } else {
       // Close it
-      container.classList.remove('slds-is-open');
-      dropdown.classList.remove('slds-is-open');
+      container.classList.remove("slds-is-open");
+      dropdown.classList.remove("slds-is-open");
       if (this._boundHandleDocumentClick) {
-        document.removeEventListener('click', this._boundHandleDocumentClick);
+        document.removeEventListener("click", this._boundHandleDocumentClick);
       }
     }
   }
@@ -1752,11 +1791,13 @@ ${resultMessage}`;
     if (!reportId) return;
 
     // Find the report file by ID
-    const reportFile = this.sortedReportFiles.find(f => f.id === reportId);
+    const reportFile = this.sortedReportFiles.find((f) => f.id === reportId);
     if (!reportFile || !reportFile.isDropdown) return;
 
     // Look for Excel/XLSX option first, fallback to first option
-    let targetOption = reportFile.dropdownOptions.find(opt => opt.format === 'XLSX');
+    let targetOption = reportFile.dropdownOptions.find(
+      (opt) => opt.format === "XLSX",
+    );
     if (!targetOption) {
       targetOption = reportFile.dropdownOptions[0];
     }
@@ -1767,27 +1808,29 @@ ${resultMessage}`;
     }
   }
 
-
-
   handleReportFileDropdownSelect(event) {
     // Handle selection from dropdown
     event.preventDefault();
     event.stopPropagation();
-    
+
     const filePath = event.currentTarget.dataset.filePath;
     const reportId = event.currentTarget.dataset.reportId;
-    
+
     // Close the dropdown
     this.closeAllDropdowns();
-    
+
     // Find the parent report file group from the memoized/stable sortedReportFiles
-    const parentReportFile = this.sortedReportFiles.find(rf => rf.id === reportId);
+    const parentReportFile = this.sortedReportFiles.find(
+      (rf) => rf.id === reportId,
+    );
     if (!parentReportFile) {
       return;
     }
-    
+
     // Find the specific selected option from the dropdown
-    const selectedOption = parentReportFile.dropdownOptions.find(option => option.file === filePath);
+    const selectedOption = parentReportFile.dropdownOptions.find(
+      (option) => option.file === filePath,
+    );
     if (!selectedOption) {
       return;
     }
@@ -1798,15 +1841,17 @@ ${resultMessage}`;
 
   handleDocumentClick(event) {
     // Close dropdowns when clicking outside
-    const dropdownContainers = this.template.querySelectorAll('.report-dropdown-container');
+    const dropdownContainers = this.template.querySelectorAll(
+      ".report-dropdown-container",
+    );
     let clickedInside = false;
-    
-    dropdownContainers.forEach(container => {
+
+    dropdownContainers.forEach((container) => {
       if (container.contains(event.target)) {
         clickedInside = true;
       }
     });
-    
+
     if (!clickedInside) {
       this.closeAllDropdowns();
     }
@@ -1814,21 +1859,23 @@ ${resultMessage}`;
 
   closeAllDropdowns() {
     // Close all open dropdowns
-    const containers = this.template.querySelectorAll('.report-dropdown-container');
-    const dropdowns = this.template.querySelectorAll('.report-format-dropdown');
-    
-    containers.forEach(container => {
-      container.classList.remove('slds-is-open');
-      container.classList.remove('dropdown-above'); // Clean up positioning class
+    const containers = this.template.querySelectorAll(
+      ".report-dropdown-container",
+    );
+    const dropdowns = this.template.querySelectorAll(".report-format-dropdown");
+
+    containers.forEach((container) => {
+      container.classList.remove("slds-is-open");
+      container.classList.remove("dropdown-above"); // Clean up positioning class
     });
-    
-    dropdowns.forEach(dropdown => {
-      dropdown.classList.remove('slds-is-open');
+
+    dropdowns.forEach((dropdown) => {
+      dropdown.classList.remove("slds-is-open");
     });
-    
+
     // Remove document click listener (use bound reference)
     if (this._boundHandleDocumentClick) {
-      document.removeEventListener('click', this._boundHandleDocumentClick);
+      document.removeEventListener("click", this._boundHandleDocumentClick);
     }
   }
 
@@ -1901,7 +1948,7 @@ ${resultMessage}`;
     }
 
     // Deactivate all previous sections (stop their spinners)
-    this.logSections.forEach(section => {
+    this.logSections.forEach((section) => {
       if (section.isActive && section.type !== "progress") {
         section.isActive = false;
         section.endTime = new Date();
@@ -1942,14 +1989,14 @@ ${resultMessage}`;
 
     const now = new Date();
     const previousStep = this.currentProgressSection.currentStep;
-    
+
     // Update step count and total if provided
     if (data.step !== undefined) {
       this.currentProgressSection.currentStep = data.step;
     } else {
       this.currentProgressSection.currentStep++;
     }
-    
+
     if (data.totalSteps !== undefined || data.steps !== undefined) {
       this.currentProgressSection.totalSteps = data.totalSteps || data.steps;
     }
@@ -1969,10 +2016,11 @@ ${resultMessage}`;
     if (data.totalSteps !== undefined || data.steps !== undefined) {
       this.currentProgressSection.totalSteps = data.totalSteps || data.steps;
     }
-    
+
     // Ensure current step matches total steps
     if (this.currentProgressSection.totalSteps > 0) {
-      this.currentProgressSection.currentStep = this.currentProgressSection.totalSteps;
+      this.currentProgressSection.currentStep =
+        this.currentProgressSection.totalSteps;
     }
 
     this.currentProgressSection.isActive = false;
@@ -1989,7 +2037,7 @@ ${resultMessage}`;
     if (!this.currentProgressSection) return;
 
     const progress = this.currentProgressSection;
-    
+
     // Record step completion time if this is a new step
     if (progress.currentStep > previousStep) {
       const stepTime = currentTime.getTime() - progress.startTime.getTime();
@@ -1998,28 +2046,39 @@ ${resultMessage}`;
         const lastStepTime = progress.stepTimes[progress.stepTimes.length - 1];
         const timeSinceLastStep = currentTime.getTime() - lastStepTime;
         progress.stepTimes.push(currentTime.getTime());
-        
+
         // Calculate average step duration (excluding first step which includes setup time)
         if (progress.stepTimes.length > 2) {
           const stepDurations = [];
           for (let i = 1; i < progress.stepTimes.length; i++) {
-            stepDurations.push(progress.stepTimes[i] - progress.stepTimes[i - 1]);
+            stepDurations.push(
+              progress.stepTimes[i] - progress.stepTimes[i - 1],
+            );
           }
-          progress.averageStepTime = stepDurations.reduce((a, b) => a + b, 0) / stepDurations.length;
+          progress.averageStepTime =
+            stepDurations.reduce((a, b) => a + b, 0) / stepDurations.length;
         }
       } else {
         // First step completed
-        progress.stepTimes.push(progress.startTime.getTime(), currentTime.getTime());
+        progress.stepTimes.push(
+          progress.startTime.getTime(),
+          currentTime.getTime(),
+        );
         progress.averageStepTime = stepTime;
       }
     }
 
     // Calculate estimated remaining time if we have enough data
-    if (progress.totalSteps > 0 && progress.currentStep > 0 && progress.averageStepTime > 0) {
+    if (
+      progress.totalSteps > 0 &&
+      progress.currentStep > 0 &&
+      progress.averageStepTime > 0
+    ) {
       const stepsRemaining = progress.totalSteps - progress.currentStep;
       if (stepsRemaining > 0) {
         const remainingTimeMs = stepsRemaining * progress.averageStepTime;
-        progress.estimatedRemainingTime = this.formatRemainingTime(remainingTimeMs);
+        progress.estimatedRemainingTime =
+          this.formatRemainingTime(remainingTimeMs);
       } else {
         progress.estimatedRemainingTime = "Almost done";
       }
@@ -2028,7 +2087,7 @@ ${resultMessage}`;
 
   formatRemainingTime(milliseconds) {
     const totalSeconds = Math.ceil(milliseconds / 1000);
-    
+
     if (totalSeconds < 60) {
       return `~${totalSeconds}s remaining`;
     } else if (totalSeconds < 3600) {

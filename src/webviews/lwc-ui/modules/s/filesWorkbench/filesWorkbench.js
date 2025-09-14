@@ -1,4 +1,4 @@
-import { LightningElement, api, track } from 'lwc';
+import { LightningElement, api, track } from "lwc";
 
 export default class FilesWorkbench extends LightningElement {
   workspaces = [];
@@ -8,38 +8,38 @@ export default class FilesWorkbench extends LightningElement {
   editingWorkspace = null;
   pendingSelectedWorkspacePath = null;
   @track newWorkspace = {
-    name: '',
-    label: '',
-    description: '',
-    soqlQuery: 'SELECT Id,Name FROM Opportunity',
-    fileTypes: 'all',
-    outputFolderNameField: 'Name',
-    outputFileNameFormat: 'title',
+    name: "",
+    label: "",
+    description: "",
+    soqlQuery: "SELECT Id,Name FROM Opportunity",
+    fileTypes: "all",
+    outputFolderNameField: "Name",
+    outputFileNameFormat: "title",
     overwriteParentRecords: true,
-    overwriteFiles: false
+    overwriteFiles: false,
   };
 
   connectedCallback() {
     this.loadWorkspaces();
-    
+
     // Listen for messages from VS Code
-    window.addEventListener('message', this.handleMessage.bind(this));
+    window.addEventListener("message", this.handleMessage.bind(this));
   }
 
   disconnectedCallback() {
-    window.removeEventListener('message', this.handleMessage.bind(this));
+    window.removeEventListener("message", this.handleMessage.bind(this));
   }
 
   handleMessage(event) {
     const message = event.data;
     switch (message.type) {
-      case 'initialize':
+      case "initialize":
         this.handleInitialize(message.data);
         break;
-      case 'workspacesLoaded':
+      case "workspacesLoaded":
         this.handleWorkspacesLoaded(message.data);
         break;
-      case 'workspaceCreated':
+      case "workspaceCreated":
         // Store the newly created workspace path for auto-selection
         if (message.data && message.data.path) {
           this.pendingSelectedWorkspacePath = message.data.path;
@@ -48,7 +48,7 @@ export default class FilesWorkbench extends LightningElement {
         this.showCreateWorkspace = false;
         this.editingWorkspace = null;
         break;
-      case 'workspaceUpdated':
+      case "workspaceUpdated":
         // Store the currently selected workspace path before reloading
         const selectedPath = this.selectedWorkspace?.path;
         this.loadWorkspaces();
@@ -59,7 +59,7 @@ export default class FilesWorkbench extends LightningElement {
           this.pendingSelectedWorkspacePath = selectedPath;
         }
         break;
-      case 'workspaceDeleted':
+      case "workspaceDeleted":
         this.loadWorkspaces();
         this.showCreateWorkspace = false;
         this.editingWorkspace = null;
@@ -84,10 +84,12 @@ export default class FilesWorkbench extends LightningElement {
   handleWorkspacesLoaded(data) {
     this.workspaces = data.workspaces || [];
     this.isLoading = false;
-    
+
     // Re-select the workspace if we have a pending selection (after update)
     if (this.pendingSelectedWorkspacePath) {
-      const updatedWorkspace = this.workspaces.find(w => w.path === this.pendingSelectedWorkspacePath);
+      const updatedWorkspace = this.workspaces.find(
+        (w) => w.path === this.pendingSelectedWorkspacePath,
+      );
       if (updatedWorkspace) {
         this.selectedWorkspace = updatedWorkspace;
       }
@@ -98,8 +100,8 @@ export default class FilesWorkbench extends LightningElement {
   loadWorkspaces() {
     this.isLoading = true;
     window.sendMessageToVSCode({
-      type: 'loadWorkspaces',
-      data: {}
+      type: "loadWorkspaces",
+      data: {},
     });
   }
 
@@ -109,26 +111,27 @@ export default class FilesWorkbench extends LightningElement {
 
   get workspacesForDisplay() {
     return this.workspaces
-      .map(workspace => ({
+      .map((workspace) => ({
         ...workspace,
-        iconName: 'standard:file',
+        iconName: "standard:file",
         hasDescription: !!workspace.description,
-        overwriteParentRecords: workspace.overwriteParentRecords ? 'Yes' : 'No',
-        overwriteFiles: workspace.overwriteFiles ? 'Yes' : 'No',
+        overwriteParentRecords: workspace.overwriteParentRecords ? "Yes" : "No",
+        overwriteFiles: workspace.overwriteFiles ? "Yes" : "No",
         exportedFilesCount: workspace.exportedFilesCount || null,
-        cssClass: this.getWorkspaceCssClass(workspace)
+        cssClass: this.getWorkspaceCssClass(workspace),
       }))
       .sort((a, b) => {
         // Sort by label first, then by name as fallback
-        const labelA = (a.label || a.name || '').toLowerCase();
-        const labelB = (b.label || b.name || '').toLowerCase();
+        const labelA = (a.label || a.name || "").toLowerCase();
+        const labelB = (b.label || b.name || "").toLowerCase();
         return labelA.localeCompare(labelB);
       });
   }
 
   getWorkspaceCssClass(workspace) {
-    const baseClasses = 'slds-box slds-box_x-small workspace-item';
-    const isSelected = this.selectedWorkspace && this.selectedWorkspace.path === workspace.path;
+    const baseClasses = "slds-box slds-box_x-small workspace-item";
+    const isSelected =
+      this.selectedWorkspace && this.selectedWorkspace.path === workspace.path;
     return isSelected ? `${baseClasses} selected` : baseClasses;
   }
 
@@ -141,13 +144,17 @@ export default class FilesWorkbench extends LightningElement {
   }
 
   get modalTitle() {
-    return this.isEditMode ? 'Edit Files Import/Export Workspace' : 'Create New Files Import/Export Workspace';
+    return this.isEditMode
+      ? "Edit Files Import/Export Workspace"
+      : "Create New Files Import/Export Workspace";
   }
 
   get canSaveWorkspace() {
-    return this.newWorkspace.name.trim() && 
-           this.newWorkspace.label.trim() && 
-           this.newWorkspace.soqlQuery.trim();
+    return (
+      this.newWorkspace.name.trim() &&
+      this.newWorkspace.label.trim() &&
+      this.newWorkspace.soqlQuery.trim()
+    );
   }
 
   get saveButtonDisabled() {
@@ -155,13 +162,13 @@ export default class FilesWorkbench extends LightningElement {
   }
 
   get saveButtonLabel() {
-    return this.isEditMode ? 'Update Workspace' : 'Create Workspace';
+    return this.isEditMode ? "Update Workspace" : "Create Workspace";
   }
 
   // Event Handlers
   handleWorkspaceSelect(event) {
     const workspacePath = event.currentTarget.dataset.path;
-    const workspace = this.workspaces.find(w => w.path === workspacePath);
+    const workspace = this.workspaces.find((w) => w.path === workspacePath);
     this.selectedWorkspace = workspace;
   }
 
@@ -172,24 +179,25 @@ export default class FilesWorkbench extends LightningElement {
   }
 
   handleEditWorkspace(event) {
-    console.log('Edit workspace clicked', event);
-    
+    console.log("Edit workspace clicked", event);
+
     let workspacePath;
-    
+
     // Handle both menu item clicks and button clicks
-    if (event.detail && event.detail.value === 'edit') {
+    if (event.detail && event.detail.value === "edit") {
       // From menu item - use selected workspace
       workspacePath = this.selectedWorkspace?.path;
-      console.log('From menu item, workspace path:', workspacePath);
+      console.log("From menu item, workspace path:", workspacePath);
     } else {
       // From button - use dataset
-      workspacePath = event.currentTarget?.dataset?.path || this.selectedWorkspace?.path;
-      console.log('From button, workspace path:', workspacePath);
+      workspacePath =
+        event.currentTarget?.dataset?.path || this.selectedWorkspace?.path;
+      console.log("From button, workspace path:", workspacePath);
     }
-    
-    const workspace = this.workspaces.find(w => w.path === workspacePath);
-    console.log('Found workspace:', workspace);
-    
+
+    const workspace = this.workspaces.find((w) => w.path === workspacePath);
+    console.log("Found workspace:", workspace);
+
     if (workspace) {
       this.editingWorkspace = workspace;
       this.newWorkspace = {
@@ -201,41 +209,44 @@ export default class FilesWorkbench extends LightningElement {
         outputFolderNameField: workspace.outputFolderNameField,
         outputFileNameFormat: workspace.outputFileNameFormat,
         overwriteParentRecords: workspace.overwriteParentRecords,
-        overwriteFiles: workspace.overwriteFiles
+        overwriteFiles: workspace.overwriteFiles,
       };
       this.showCreateWorkspace = true;
-      console.log('Opening edit modal');
+      console.log("Opening edit modal");
     } else {
-      console.error('Workspace not found for path:', workspacePath);
+      console.error("Workspace not found for path:", workspacePath);
     }
-    
-    if (event && typeof event.stopPropagation === 'function') {
+
+    if (event && typeof event.stopPropagation === "function") {
       event.stopPropagation();
     }
   }
 
   handleDeleteWorkspace(event) {
     let path;
-    
+
     // Handle both menu item clicks and button clicks
-    if (event.detail && event.detail.value === 'delete') {
+    if (event.detail && event.detail.value === "delete") {
       // From menu item - use selected workspace
       path = this.selectedWorkspace?.path;
     } else {
       // From button - use dataset or selected workspace
       const pathFromDataset = event?.currentTarget?.dataset?.path;
-      path = (this.selectedWorkspace && this.selectedWorkspace.path) || pathFromDataset;
+      path =
+        (this.selectedWorkspace && this.selectedWorkspace.path) ||
+        pathFromDataset;
     }
-    
+
     if (path) {
-      const ws = this.workspaces.find((w) => w.path === path) || this.selectedWorkspace;
+      const ws =
+        this.workspaces.find((w) => w.path === path) || this.selectedWorkspace;
       window.sendMessageToVSCode({
-        type: 'deleteWorkspace',
-        data: { path, label: ws?.label || ws?.name || path }
+        type: "deleteWorkspace",
+        data: { path, label: ws?.label || ws?.name || path },
       });
     }
-    
-    if (event && typeof event.stopPropagation === 'function') {
+
+    if (event && typeof event.stopPropagation === "function") {
       event.stopPropagation();
     }
   }
@@ -243,8 +254,8 @@ export default class FilesWorkbench extends LightningElement {
   handleOpenFolder() {
     if (this.selectedWorkspace && this.selectedWorkspace.path) {
       window.sendMessageToVSCode({
-        type: 'openFolder',
-        data: { path: this.selectedWorkspace.path }
+        type: "openFolder",
+        data: { path: this.selectedWorkspace.path },
       });
     }
   }
@@ -256,15 +267,15 @@ export default class FilesWorkbench extends LightningElement {
   }
 
   handleSave() {
-    const action = this.isEditMode ? 'updateWorkspace' : 'createWorkspace';
+    const action = this.isEditMode ? "updateWorkspace" : "createWorkspace";
     const data = {
       ...this.newWorkspace,
-      originalPath: this.editingWorkspace?.path
+      originalPath: this.editingWorkspace?.path,
     };
 
     window.sendMessageToVSCode({
       type: action,
-      data: data
+      data: data,
     });
   }
 
@@ -290,60 +301,64 @@ export default class FilesWorkbench extends LightningElement {
   }
 
   handleOutputFolderNameFieldChange(event) {
-    this.newWorkspace.outputFolderNameField = event.detail?.value ?? event.target.value;
+    this.newWorkspace.outputFolderNameField =
+      event.detail?.value ?? event.target.value;
   }
 
   handleOutputFileNameFormatChange(event) {
-    this.newWorkspace.outputFileNameFormat = event.detail?.value ?? event.target.value;
+    this.newWorkspace.outputFileNameFormat =
+      event.detail?.value ?? event.target.value;
   }
 
   handleOverwriteParentRecordsChange(event) {
-    this.newWorkspace.overwriteParentRecords = event.detail?.checked ?? event.target.checked;
+    this.newWorkspace.overwriteParentRecords =
+      event.detail?.checked ?? event.target.checked;
   }
 
   handleOverwriteFilesChange(event) {
-    this.newWorkspace.overwriteFiles = event.detail?.checked ?? event.target.checked;
+    this.newWorkspace.overwriteFiles =
+      event.detail?.checked ?? event.target.checked;
   }
 
   // Command Actions
   handleExportFiles(event) {
     // Handle both menu item clicks and button clicks
-    if (event && event.detail && event.detail.value === 'export') {
+    if (event && event.detail && event.detail.value === "export") {
       // From menu item
     } else {
       // From button - stop propagation
-      if (event && typeof event.stopPropagation === 'function') {
+      if (event && typeof event.stopPropagation === "function") {
         event.stopPropagation();
       }
     }
-    
+
     if (this.selectedWorkspace) {
       window.sendMessageToVSCode({
-        type: 'runCommand',
-        data: { 
-          command: `sf hardis:org:files:export --path "${this.selectedWorkspace.path}"` 
-        }
+        type: "runCommand",
+        data: {
+          command: `sf hardis:org:files:export --path "${this.selectedWorkspace.path}"`,
+        },
       });
     }
   }
 
   handleImportFiles(event) {
     // Handle both menu item clicks and button clicks
-    if (event && event.detail && event.detail.value === 'import') {
+    if (event && event.detail && event.detail.value === "import") {
       // From menu item
     } else {
       // From button - stop propagation
-      if (event && typeof event.stopPropagation === 'function') {
+      if (event && typeof event.stopPropagation === "function") {
         event.stopPropagation();
       }
     }
-    
+
     if (this.selectedWorkspace) {
       window.sendMessageToVSCode({
-        type: 'runCommand',
-        data: { 
-          command: `sf hardis:org:files:import --path "${this.selectedWorkspace.path}"` 
-        }
+        type: "runCommand",
+        data: {
+          command: `sf hardis:org:files:import --path "${this.selectedWorkspace.path}"`,
+        },
       });
     }
   }
@@ -351,8 +366,8 @@ export default class FilesWorkbench extends LightningElement {
   handleConfigureWorkspace() {
     if (this.selectedWorkspace) {
       window.sendMessageToVSCode({
-        type: 'openFile',
-        data: this.selectedWorkspace.configPath
+        type: "openFile",
+        data: this.selectedWorkspace.configPath,
       });
     }
   }
@@ -360,33 +375,39 @@ export default class FilesWorkbench extends LightningElement {
   // Helper Methods
   resetNewWorkspace() {
     this.newWorkspace = {
-      name: '',
-      label: '',
-      description: '',
-      soqlQuery: 'SELECT Id,Name FROM Opportunity',
-      fileTypes: 'all',
-      outputFolderNameField: 'Name',
-      outputFileNameFormat: 'title',
+      name: "",
+      label: "",
+      description: "",
+      soqlQuery: "SELECT Id,Name FROM Opportunity",
+      fileTypes: "all",
+      outputFolderNameField: "Name",
+      outputFileNameFormat: "title",
       overwriteParentRecords: true,
-      overwriteFiles: false
+      overwriteFiles: false,
     };
   }
 
   get fileNameFormatOptions() {
     return [
-      { label: 'Title (e.g., "Document Title")', value: 'title' },
-      { label: 'Title + ID (e.g., "Document Title_006xxx")', value: 'title_id' },
-      { label: 'ID + Title (e.g., "006xxx_Document Title")', value: 'id_title' },
-      { label: 'ID only (e.g., "006xxx")', value: 'id' }
+      { label: 'Title (e.g., "Document Title")', value: "title" },
+      {
+        label: 'Title + ID (e.g., "Document Title_006xxx")',
+        value: "title_id",
+      },
+      {
+        label: 'ID + Title (e.g., "006xxx_Document Title")',
+        value: "id_title",
+      },
+      { label: 'ID only (e.g., "006xxx")', value: "id" },
     ];
   }
 
   get fileTypesOptions() {
     return [
-      { label: 'All file types', value: 'all' },
-      { label: 'PDF files only', value: 'PDF' },
-      { label: 'Image files only', value: 'PNG,JPG,JPEG,GIF' },
-      { label: 'Document files only', value: 'PDF,DOC,DOCX,XLS,XLSX,PPT,PPTX' }
+      { label: "All file types", value: "all" },
+      { label: "PDF files only", value: "PDF" },
+      { label: "Image files only", value: "PNG,JPG,JPEG,GIF" },
+      { label: "Document files only", value: "PDF,DOC,DOCX,XLS,XLSX,PPT,PPTX" },
     ];
   }
 }
