@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [6.6.0] 2024-09-19
+
+- New command to start Salesforce CLI MCP server from VsCode SFDX Hardis
+- New configuration item to auto-start Salesforce CLI MCP server when starting VsCode SFDX Hardis
+- Display extension settings with tabs for better UX
+
 ## [6.5.1] 2024-09-14
 
 - Open report folder in explorer instead of VSCode window

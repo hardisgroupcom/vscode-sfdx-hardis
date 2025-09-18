@@ -15,7 +15,6 @@ import {
 import axios from "axios";
 import TelemetryReporter from "@vscode/extension-telemetry";
 import { ThemeUtils } from "./themeUtils";
-import { exec } from "child_process";
 import { LwcPanelManager } from "./lwc-panel-manager";
 import { CommandRunner } from "./command-runner";
 import { PipelineDataProvider } from "./pipeline-data-provider";
@@ -24,6 +23,7 @@ import { SfdxHardisConfigHelper } from "./utils/pipeline/sfdxHardisConfigHelper"
 import { Logger } from "./logger";
 import { listAllOrgs } from "./utils/orgUtils";
 import { listMajorOrgs } from "./utils/orgConfigUtils";
+import { runSalesforceCliMcpServer } from "./utils/mcpUtils";
 
 export class Commands {
   private readonly extensionUri: vscode.Uri;
@@ -84,6 +84,7 @@ export class Commands {
     this.registerShowOrgsManager();
     this.registerShowFilesWorkbench();
     this.registerRunLocalHtmlDocPages();
+    this.registerRunSalesforceCliMcpServer();
   }
 
   registerShowOrgsManager() {
@@ -920,6 +921,17 @@ export class Commands {
               break;
           }
         });
+      },
+    );
+    this.disposables.push(disposable);
+  }
+
+  registerRunSalesforceCliMcpServer() {
+    // Register command to start/stop MCP server
+    const disposable = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.runSalesforceCliMcpServer",
+      async () => {
+        await runSalesforceCliMcpServer();
       },
     );
     this.disposables.push(disposable);

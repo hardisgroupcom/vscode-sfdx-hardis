@@ -14,6 +14,7 @@ import { Logger } from "./logger";
 import { getWorkspaceRoot, preLoadCache } from "./utils";
 import { HardisColors } from "./hardis-colors";
 import { CacheManager } from "./utils/cache-manager";
+import { runSalesforceCliMcpServer } from "./utils/mcpUtils";
 
 let refreshInterval: any = null;
 let reporter;
@@ -146,6 +147,26 @@ export function activate(context: vscode.ExtensionContext) {
 
   manageWebSocketServer();
 
+  async function startMcpServerIfConfigured() {
+    // Auto-start Salesforce CLI MCP server
+    const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+    const autoStartMcp = config.get("mcp.autoStartSalesforceCliMcp");
+    if (autoStartMcp) {
+      runSalesforceCliMcpServer()
+        .then(() =>
+          Logger.log("Salesforce CLI MCP server start attempted on activation"),
+        )
+        .catch((e) =>
+          Logger.log(
+            "Error starting Salesforce CLI MCP server on activation: " +
+              e.message,
+          ),
+        );
+    }
+  }
+
+  startMcpServerIfConfigured();
+
   // Catch event configuration changes
   vscode.workspace.onDidChangeConfiguration((event) => {
     if (event.affectsConfiguration("vsCodeSfdxHardis")) {
@@ -156,6 +177,14 @@ export function activate(context: vscode.ExtensionContext) {
       // Enable / Disable org colors
       if (event.affectsConfiguration("vsCodeSfdxHardis.disableVsCodeColors")) {
         hardisColors.init();
+      }
+      // Enable / Disable start MCP Server at startup
+      if (
+        event.affectsConfiguration(
+          "vsCodeSfdxHardis.mcp.autoStartSalesforceCliMcp",
+        )
+      ) {
+        startMcpServerIfConfigured();
       }
       // Send message to opened LWC panels to update their configuration
       const vsCodeSfdxHardisConfiguration =
@@ -206,11 +235,11 @@ export function activate(context: vscode.ExtensionContext) {
     }
   });
 
-  // Refresh Plugins and Status every 6h
+  // Refresh Plugins and Status every 4h
   refreshInterval = setInterval(() => {
     vscode.commands.executeCommand("vscode-sfdx-hardis.refreshStatusView");
     vscode.commands.executeCommand("vscode-sfdx-hardis.refreshPluginsView");
-  }, 21600000);
+  }, 14400000);
 
   console.timeEnd("Hardis_Activate");
   const timeSpent = (timeInit - Date.now()) / 1000;

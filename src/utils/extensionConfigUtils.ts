@@ -34,6 +34,12 @@ export const sectionDefs = [
     ],
   },
   {
+    label: "MCP",
+    iconName: "utility:server",
+    description: "MCP Server settings.",
+    keys: ["vsCodeSfdxHardis.mcp.autoStartSalesforceCliMcp"],
+  },
+  {
     label: "Other",
     iconName: "utility:settings",
     description: "Other settings related to the extension.",

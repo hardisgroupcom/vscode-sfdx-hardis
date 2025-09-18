@@ -1,65 +1,102 @@
 <template>
-    <div class="slds-scope slds-theme_default slds-p-around_medium blue-back">
-        <template if:true={loading}>
-            <div class="slds-text-body_regular">Loading extension settings...</div>
-        </template>
-        <template if:true={error}>
-            <div class="slds-text-color_error">{error}</div>
-        </template>
-        <template if:false={loading}>
-            <div class="slds-grid slds-wrap">
-                <template for:each={sections} for:item="section" for:index="index">
-                    <div key={section.label} class="slds-size_1-of-1 slds-medium-size_1-of-2 slds-p-around_small">
-                        <lightning-card title={section.label} class="slds-m-bottom_large" icon-name="section.iconName">
-                            <div slot="actions">
-                                <span class="slds-text-body_small slds-text-color_weak">{section.description}</span>
-                            </div>
-                            <div class="slds-p-around_medium">
-                                <template for:each={section.entries} for:item="entry">
-                                    <div key={entry.key} class="slds-m-bottom_medium">
-                                        <template if:true={entry.isEnum}>
-                                            <lightning-combobox
-                                                name={entry.key}
-                                                label={entry.label}
-                                                value={entry.valueEnum}
-                                                options={entry.optionsLwc}
-                                                onchange={handleSelectChange}
-                                                class="slds-m-bottom_xx-small"
-                                            ></lightning-combobox>
-                                        </template>
-                                        <template if:true={entry.isBoolean}>
-                                            <label class="slds-form-element__label" style="display:block;">
-                                                {entry.label}
-                                            </label>
-                                            <lightning-input
-                                                type="toggle"
-                                                name={entry.key}
-                                                checked={entry.valueBoolean}
-                                                onchange={handleCheckboxChange}
-                                                oninput={handleCheckboxChange}
-                                                class="slds-m-bottom_xx-small"
-                                                variant="label-hidden"
-                                            ></lightning-input>
-                                        </template>
-                                        <template if:true={entry.isString}>
-                                            <lightning-input
-                                                type="text"
-                                                name={entry.key}
-                                                label={entry.label}
-                                                value={entry.valueString}
-                                                onchange={handleTextChange}
-                                                class="slds-m-bottom_xx-small"
-                                            ></lightning-input>
-                                        </template>
-                                        <div class="slds-form-element__help">{entry.description}</div>
-                                    </div>
+    <div class="blue-back">
+        <div class="slds-scope slds-p-around_small blue-back">
+            <div class="slds-grid slds-grid_align-spread slds-m-bottom_medium">
+                <div class="slds-col slds-size_8-of-12 slds-align-left">
+                    <span class="slds-text-heading_medium slds-text-title_bold">Extension Configuration</span>
+                </div>
+                <div class="slds-col slds-size_4-of-12 slds-no-flex slds-align-middle" style="text-align:right;">
+                    <lightning-button variant="neutral" label="Refresh" onclick={handleRefresh} class="slds-m-top_medium"></lightning-button>
+                </div>
+            </div>
+            
+            <template if:true={loading}>
+                <div class="slds-text-body_regular">Loading extension settings...</div>
+            </template>
+            <template if:true={error}>
+                <div class="slds-text-color_error">{error}</div>
+            </template>
+            
+            <div class="slds-p-horizontal_small">
+                <template if:false={loading}>
+                    <template if:true={sections}>
+                        <lightning-card hide-header="true" label="Extension Settings">
+                            <lightning-tabset>
+                                <template for:each={sections} for:item="section" for:index="index">
+                                    <lightning-tab key={section.label} label={section.label}>
+                                        <div class="slds-p-around_medium">
+                                            <template if:true={section.description}>
+                                                <div class="slds-text-body_regular slds-text-color_weak slds-m-bottom_medium">
+                                                    {section.description}
+                                                </div>
+                                            </template>
+                                            <template for:each={section.entries} for:item="entry">
+                                                <div key={entry.key} class="slds-m-bottom_medium">
+                                                    <div class="slds-grid slds-gutters">
+                                                        <div class="slds-col slds-size_12-of-12">
+                                                            <template if:true={entry.isEnum}>
+                                                                <div class="slds-form-element slds-m-bottom_xx-small">
+                                                                    <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                                                                        <span>{entry.label}</span>
+                                                                        <template if:true={entry.description}>
+                                                                            <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
+                                                                        </template>
+                                                                    </label>
+                                                                    <lightning-combobox
+                                                                        name={entry.key}
+                                                                        value={entry.valueEnum}
+                                                                        options={entry.optionsLwc}
+                                                                        onchange={handleSelectChange}
+                                                                    ></lightning-combobox>
+                                                                </div>
+                                                            </template>
+                                                            <template if:true={entry.isBoolean}>
+                                                                <div class="slds-form-element slds-m-bottom_xx-small">
+                                                                    <label class="slds-form-element__label" style="display:block;">
+                                                                        {entry.label}
+                                                                        <template if:true={entry.description}>
+                                                                            <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
+                                                                        </template>
+                                                                    </label>
+                                                                    <lightning-input
+                                                                        type="toggle"
+                                                                        name={entry.key}
+                                                                        checked={entry.valueBoolean}
+                                                                        onchange={handleCheckboxChange}
+                                                                        oninput={handleCheckboxChange}
+                                                                        class="slds-m-bottom_xx-small"
+                                                                        variant="label-hidden"
+                                                                    ></lightning-input>
+                                                                </div>
+                                                            </template>
+                                                            <template if:true={entry.isString}>
+                                                                <div class="slds-form-element slds-m-bottom_xx-small">
+                                                                    <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                                                                        <span>{entry.label}</span>
+                                                                        <template if:true={entry.description}>
+                                                                            <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
+                                                                        </template>
+                                                                    </label>
+                                                                    <lightning-input
+                                                                        type="text"
+                                                                        name={entry.key}
+                                                                        value={entry.valueString}
+                                                                        onchange={handleTextChange}
+                                                                    ></lightning-input>
+                                                                </div>
+                                                            </template>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </lightning-tab>
                                 </template>
-                            </div>
+                            </lightning-tabset>
                         </lightning-card>
-                    </div>
+                    </template>
                 </template>
             </div>
-            <lightning-button variant="neutral" label="Refresh" onclick={handleRefresh} class="slds-m-top_medium"></lightning-button>
-        </template>
+        </div>
     </div>
 </template>
