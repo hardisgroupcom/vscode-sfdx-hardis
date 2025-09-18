@@ -37,9 +37,7 @@ export const sectionDefs = [
     label: "MCP",
     iconName: "utility:server",
     description: "MCP Server settings.",
-    keys: [
-      "vsCodeSfdxHardis.mcp.autoStartSalesforceCliMcp",
-    ],
+    keys: ["vsCodeSfdxHardis.mcp.autoStartSalesforceCliMcp"],
   },
   {
     label: "Other",

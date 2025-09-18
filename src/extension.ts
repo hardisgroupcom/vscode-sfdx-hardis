@@ -152,9 +152,16 @@ export function activate(context: vscode.ExtensionContext) {
     const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
     const autoStartMcp = config.get("mcp.autoStartSalesforceCliMcp");
     if (autoStartMcp) {
-      runSalesforceCliMcpServer().then(() =>
-        Logger.log("Salesforce CLI MCP server start attempted on activation"),
-      ).catch((e) => Logger.log("Error starting Salesforce CLI MCP server on activation: " + e.message));
+      runSalesforceCliMcpServer()
+        .then(() =>
+          Logger.log("Salesforce CLI MCP server start attempted on activation"),
+        )
+        .catch((e) =>
+          Logger.log(
+            "Error starting Salesforce CLI MCP server on activation: " +
+              e.message,
+          ),
+        );
     }
   }
 
@@ -172,7 +179,11 @@ export function activate(context: vscode.ExtensionContext) {
         hardisColors.init();
       }
       // Enable / Disable start MCP Server at startup
-      if (event.affectsConfiguration("vsCodeSfdxHardis.mcp.autoStartSalesforceCliMcp")) {
+      if (
+        event.affectsConfiguration(
+          "vsCodeSfdxHardis.mcp.autoStartSalesforceCliMcp",
+        )
+      ) {
         startMcpServerIfConfigured();
       }
       // Send message to opened LWC panels to update their configuration
@@ -229,8 +240,6 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.commands.executeCommand("vscode-sfdx-hardis.refreshStatusView");
     vscode.commands.executeCommand("vscode-sfdx-hardis.refreshPluginsView");
   }, 14400000);
-
-
 
   console.timeEnd("Hardis_Activate");
   const timeSpent = (timeInit - Date.now()) / 1000;
