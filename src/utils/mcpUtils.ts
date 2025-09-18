@@ -3,7 +3,7 @@ import * as vscode from "vscode";
 export async function runSalesforceCliMcpServer() {
     const installed = await checkAndAddMcpServerConfig();
     if (installed) {
-        await vscode.commands.executeCommand("mcp.listServers", 'Salesforce DX');
+        await vscode.commands.executeCommand("workbench.mcp.listServer", 'Salesforce DX');
     }
 }
 
