@@ -263,6 +263,12 @@ export class HardisCommandsProvider
         label: "CI/CD (misc)",
         commands: [
           {
+            id: "mcp:start-sf-cli-mcp-server",
+            label: "Start Salesforce CLI MCP server",
+            command: "vscode-sfdx-hardis.runSalesforceCliMcpServer",
+            requiresProject: false,
+          },
+          {
             id: "scratch:create",
             label: "Create scratch org (or resume creation)",
             tooltip:
