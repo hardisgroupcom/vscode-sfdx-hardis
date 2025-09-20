@@ -3,7 +3,7 @@
 ## [Unreleased]
 
 - Enable MegaLinter LLM Advisor
-- Org Manager: Add contextual menu to set alias
+- Org Manager: Allow to edit Org aliases in the table
 
 ## [6.6.1] 2024-09-20
 

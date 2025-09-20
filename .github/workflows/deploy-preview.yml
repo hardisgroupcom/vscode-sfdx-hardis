@@ -23,7 +23,7 @@ jobs:
     environment:
       name: release
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - run: yarn
       - uses: lannonbr/vsce-action@master
         with:

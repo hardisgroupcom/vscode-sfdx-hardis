@@ -23,67 +23,33 @@
                 key-field="username"
                 data={orgs}
                 columns={columns}
+                draft-values={draftValues}
+                oncellchange={handleDraftValuesChange}
+                onsave={handleSaveAliases}
+                oncancel={handleCancelAliasChanges}
                 onrowaction={handleRowAction}
                 onrowselection={handleRowSelection}
                 selected-rows={selectedRowKeys}
+                hide-checkbox-column={hasAliasChanges}
                 class="slds-m-bottom_medium"
             ></lightning-datatable>
-        </div>
-    </lightning-card>
-    
-    <!-- Set Alias Modal -->
-    <template if:true={showAliasModal}>
-        <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
-            <div class="slds-modal__container">
-                <header class="slds-modal__header">
-                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" 
-                            title="Close" onclick={handleCloseAliasModal}>
-                        <lightning-icon icon-name="utility:close" alternative-text="close" size="small"></lightning-icon>
-                        <span class="slds-assistive-text">Close</span>
-                    </button>
-                    <h2 id="modal-heading-01" class="slds-modal__title slds-hyphenate">Set Org Alias</h2>
-                </header>
-                <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
-                    <div class="slds-form-element">
-                        <label class="slds-form-element__label" for="alias-input">
-                            Alias for {selectedOrgForAlias.username}
-                        </label>
-                        <div class="slds-form-element__control">
-                            <lightning-input
-                                id="alias-input"
-                                data-id="alias-input"
-                                type="text"
-                                value={aliasInputValue}
-                                placeholder="Enter alias name"
-                                onchange={handleAliasInputChange}
-                                onkeyup={handleAliasInputKeyUp}
-                                pattern="^[a-zA-Z0-9_-]+$"
-                                message-when-pattern-mismatch="Alias can only contain letters, numbers, hyphens, and underscores"
-                            ></lightning-input>
-                        </div>
-                        <template if:true={aliasError}>
-                            <div class="slds-form-element__help slds-text-color_error">
-                                {aliasError}
-                            </div>
-                        </template>
+            
+            <!-- Validation errors display -->
+            <template if:true={hasValidationErrors}>
+                <div class="slds-notify slds-notify_alert slds-alert_error slds-m-top_medium" role="alert">
+                    <div class="slds-notify__content">
+                        <h2 class="slds-text-heading_small">Alias Validation Errors</h2>
+                        <ul class="slds-list_dotted slds-m-top_small">
+                            <template for:each={validationErrors} for:item="error">
+                                <li key={error.username} class="slds-m-bottom_x-small">
+                                    <strong>{error.username}</strong> (alias: "{error.alias}"): {error.error}
+                                </li>
+                            </template>
+                        </ul>
                     </div>
                 </div>
-                <footer class="slds-modal__footer">
-                    <lightning-button
-                        variant="neutral"
-                        label="Cancel"
-                        onclick={handleCloseAliasModal}
-                    ></lightning-button>
-                    <lightning-button
-                        variant="brand"
-                        label="Set Alias"
-                        onclick={handleSetAliasConfirm}
-                        disabled={isSetAliasDisabled}
-                    ></lightning-button>
-                </footer>
-            </div>
-        </section>
-        <div class="slds-backdrop slds-backdrop_open"></div>
-    </template>
+            </template>
+        </div>
+    </lightning-card>
     </div>
 </template>

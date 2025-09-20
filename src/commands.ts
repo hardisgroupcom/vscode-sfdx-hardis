@@ -187,38 +187,47 @@ export class Commands {
                   `Error removing recommended orgs: ${error?.message || error}`,
                 );
               }
-            } else if (type === "setOrgAlias") {
+            } else if (type === "saveAliases") {
               try {
-                const { username, alias } = data;
-
-                if (!alias || !alias.trim()) {
-                  vscode.window.showErrorMessage("Alias cannot be empty");
+                const { aliasChanges } = data;
+                
+                if (!aliasChanges || aliasChanges.length === 0) {
+                  vscode.window.showInformationMessage("No alias changes to save.");
                   return;
                 }
 
-                // Execute sf alias set command with progress
+                // Execute all sf alias set commands in parallel with progress
                 await vscode.window.withProgress(
                   {
                     location: vscode.ProgressLocation.Notification,
-                    title: `Setting alias "${alias.trim()}" for org ${username}...`,
+                    title: `Setting ${aliasChanges.length} alias(es)...`,
                     cancellable: false,
                   },
                   async () => {
-                    const command = `sf alias set ${alias.trim()}=${username}`;
-                    await execSfdxJson(command);
+                    const aliasCommands = aliasChanges.map((change: { username: string; alias: string }) => {
+                      const alias = change.alias.trim();
+                      if (alias) {
+                        return execSfdxJson(`sf alias set ${alias}=${change.username}`);
+                      } else {
+                        // If alias is empty, unset it
+                        return execSfdxJson(`sf alias unset ${change.username}`);
+                      }
+                    });
+                    
+                    await Promise.all(aliasCommands);
                   },
                 );
 
                 vscode.window.showInformationMessage(
-                  `Alias "${alias.trim()}" set successfully for org ${username}`,
+                  `Successfully updated ${aliasChanges.length} alias(es)`,
                 );
 
-                // Refresh the orgs list to show the updated alias
+                // Refresh the orgs list to show the updated aliases
                 const newOrgs = await this.loadOrgsWithProgress(currentAllFlag);
                 panel.sendInitializationData({ orgs: newOrgs });
               } catch (error: any) {
                 vscode.window.showErrorMessage(
-                  `Error setting alias: ${error?.message || error}`,
+                  `Error setting aliases: ${error?.message || error}`,
                 );
               }
             }
