@@ -12,19 +12,21 @@
                         </div>
                     </div>
                 </div>
+                <div class="hero-settings">
+                    <lightning-input
+                        type="toggle"
+                        label="Show at startup"
+                        name="showWelcomeAtStartup"
+                        checked={showWelcomeAtStartup}
+                        onchange={handleWelcomeSettingChange}
+                        class="welcome-toggle"
+                    ></lightning-input>
+                </div>
             </div>
 
-            <!-- Main Features Section -->
+            <!-- Main Content Section -->
             <div class="section">
-                <div class="section-header">
-                    <h2 class="section-title">
-                        <span class="section-icon">⭐</span>
-                        Major Features
-                    </h2>
-                    <p class="section-subtitle">Discover the core capabilities that make your Salesforce implementation and maintenance easier</p>
-                </div>
-                
-                <div class="features-grid">
+                <div class="unified-grid">
                     <!-- Org Manager Card -->
                     <div class="feature-card" onclick={navigateToOrgsManager}>
                         <div class="feature-card-header">
@@ -67,6 +69,20 @@
                         <div class="feature-arrow">→</div>
                     </div>
 
+                    <!-- Documentation Tool Card -->
+                    <div class="feature-card" onclick={navigateToDocumentation}>
+                        <div class="feature-card-header">
+                            <div class="feature-icon-container documentation">
+                                <lightning-icon icon-name="utility:knowledge_base" size="medium" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="feature-title">Documentation</h3>
+                        </div>
+                        <p class="feature-description">
+                            Generate and view project documentation
+                        </p>
+                        <div class="feature-arrow">→</div>
+                    </div>
+
                     <!-- Files Workbench Card -->
                     <div class="feature-card" onclick={navigateToFilesWorkbench}>
                         <div class="feature-card-header">
@@ -97,34 +113,19 @@
                         </p>
                         <div class="feature-arrow">⏳</div>
                     </div>
-                </div>
-            </div>
 
-            <!-- Additional Tools Section -->
-            <div class="section">
-                <div class="section-header">
-                    <h2 class="section-title">
-                        <span class="section-icon">🔧</span>
-                        Additional Tools
-                    </h2>
-                    <p class="section-subtitle">Advanced features for power users</p>
-                </div>
-                
-                <div class="tools-grid">
-                    <div class="tool-card" onclick={navigateToDocumentation}>
-                        <div class="tool-icon-container documentation">
-                            <lightning-icon icon-name="standard:documentation" size="small"></lightning-icon>
+                    <!-- Extension Settings Card -->
+                    <div class="feature-card" onclick={navigateToExtensionConfig}>
+                        <div class="feature-card-header">
+                            <div class="feature-icon-container settings">
+                                <lightning-icon icon-name="utility:settings" size="medium" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="feature-title">Extension Settings</h3>
                         </div>
-                        <h4 class="tool-title">Documentation</h4>
-                        <p class="tool-description">Generate and view project documentation</p>
-                    </div>
-
-                    <div class="tool-card" onclick={navigateToExtensionConfig}>
-                        <div class="tool-icon-container settings">
-                            <lightning-icon icon-name="standard:settings" size="small"></lightning-icon>
-                        </div>
-                        <h4 class="tool-title">Extension Settings</h4>
-                        <p class="tool-description">Configure extension preferences</p>
+                        <p class="feature-description">
+                            Configure extension preferences
+                        </p>
+                        <div class="feature-arrow">→</div>
                     </div>
                 </div>
             </div>
@@ -154,29 +155,6 @@
                             onclick={openTutorials}
                             class="getting-started-button"
                         ></lightning-button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Settings Section -->
-            <div class="settings-section">
-                <div class="settings-content">
-                    <div class="settings-header">
-                        <lightning-icon icon-name="utility:settings" size="x-small" class="settings-icon"></lightning-icon>
-                        <span class="settings-title">Welcome Settings</span>
-                    </div>
-                    <div class="setting-item">
-                        <lightning-input
-                            type="toggle"
-                            label="Show Welcome panel at startup"
-                            name="showWelcomeAtStartup"
-                            checked={showWelcomeAtStartup}
-                            onchange={handleWelcomeSettingChange}
-                            message-when-value-missing="This setting controls whether the Welcome panel appears automatically when you first open SFDX Hardis in a VS Code session."
-                        ></lightning-input>
-                        <p class="setting-description">
-                            When enabled, this Welcome page will automatically appear when you first open the SFDX Hardis panel in a new VS Code session.
-                        </p>
                     </div>
                 </div>
             </div>

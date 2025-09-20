@@ -40,6 +40,39 @@ export default class OrgMonitoring extends LightningElement {
     });
   }
 
+  viewSkipItemsPackage() {
+    window.sendMessageToVSCode({
+      type: "viewPackageConfig",
+      data: {
+        packageType: "skip",
+        filePath: "manifest/package-skip-items.xml",
+        title: "Skip Items Package"
+      }
+    });
+  }
+
+  viewBackupItemsPackage() {
+    window.sendMessageToVSCode({
+      type: "viewPackageConfig",
+      data: {
+        packageType: "backup",
+        filePath: "manifest/package-backup-items.xml",
+        title: "Backup Items Package"
+      }
+    });
+  }
+
+  viewAllOrgItemsPackage() {
+    window.sendMessageToVSCode({
+      type: "viewPackageConfig",
+      data: {
+        packageType: "all-org",
+        filePath: "manifest/package-all-org-items.xml",
+        title: "All Org Items Package"
+      }
+    });
+  }
+
   viewPackageConfig() {
     window.sendMessageToVSCode({
       type: "viewPackageConfig"

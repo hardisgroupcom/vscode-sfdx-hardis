@@ -18,6 +18,7 @@
 .hero-section {
     margin-bottom: 2rem;
     padding: 1rem 0;
+    position: relative;
 }
 
 .hero-section.compact {
@@ -28,6 +29,8 @@
 .hero-content {
     max-width: 800px;
     margin: 0 auto;
+    position: relative;
+    width: 100%;
 }
 
 .hero-header {
@@ -35,6 +38,7 @@
     align-items: center;
     gap: 1rem;
     justify-content: center;
+    position: relative;
 }
 
 .hero-icon {
@@ -43,7 +47,20 @@
 }
 
 .hero-text {
-    text-align: left;
+    text-align: center;
+    flex: 0 1 auto;
+}
+
+.hero-settings {
+    position: absolute;
+    right: 2rem;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+}
+
+.welcome-toggle {
+    --slds-c-toggle-label-text-align: right;
 }
 
 .hero-title {
@@ -94,6 +111,14 @@
 
 /* Features Grid */
 .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+/* Unified Grid for all elements */
+.unified-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 1.5rem;
@@ -293,6 +318,26 @@
     border-color: #1589ee;
 }
 
+.feature-icon-container.documentation {
+    background: linear-gradient(135deg, #ffb439 0%, #e6930f 100%);
+    box-shadow: 0 3px 10px rgba(255, 180, 57, 0.25);
+}
+
+.feature-icon-container.documentation lightning-icon {
+    --slds-c-icon-color-foreground: white !important;
+    --slds-c-icon-color-foreground-default: white !important;
+}
+
+.feature-icon-container.settings {
+    background: linear-gradient(135deg, #706e6b 0%, #514f4d 100%);
+    box-shadow: 0 3px 10px rgba(112, 110, 107, 0.25);
+}
+
+.feature-icon-container.settings lightning-icon {
+    --slds-c-icon-color-foreground: white !important;
+    --slds-c-icon-color-foreground-default: white !important;
+}
+
 .tool-icon-container {
     width: 40px;
     height: 40px;
@@ -444,11 +489,21 @@
     .hero-header {
         flex-direction: column;
         text-align: center;
-        gap: 0.5rem;
+        gap: 0.75rem;
+        justify-content: center;
     }
     
     .hero-text {
         text-align: center;
+    }
+    
+    .hero-settings {
+        margin-left: 0;
+        align-self: center;
+        position: relative;
+        right: auto;
+        top: auto;
+        transform: none;
     }
     
     .hero-title {
@@ -460,6 +515,10 @@
     }
     
     .features-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .unified-grid {
         grid-template-columns: 1fr;
     }
     

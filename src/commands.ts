@@ -974,7 +974,8 @@ export class Commands {
               break;
             }
             case "viewPackageConfig": {
-              await this.showPackageXmlPanel();
+              const packageConfig = data || {};
+              await this.showPackageXmlPanel(packageConfig);
               break;
             }
             default:
@@ -998,38 +999,54 @@ export class Commands {
     }
   }
 
-  private async showPackageXmlPanel(): Promise<void> {
+  private async showPackageXmlPanel(packageConfig: any = {}): Promise<void> {
     const lwcManager = LwcPanelManager.getInstance();
     
+    // Default to skip items if no config provided (backward compatibility)
+    const config = {
+      packageType: packageConfig.packageType || "skip",
+      filePath: packageConfig.filePath || "manifest/package-skip-items.xml",
+      title: packageConfig.title || "Package Configuration"
+    };
+    
     try {
-      const packageData = await this.loadPackageXmlData();
+      const packageData = await this.loadPackageXmlData(config.filePath);
       
       const panel = lwcManager.getOrCreatePanel("s-package-xml", {
-        packageData: packageData
+        packageData: packageData,
+        config: config
       });
-      panel.updateTitle("Package Configuration - package-skip-items.xml");
+      panel.updateTitle(`${config.title} - ${config.filePath}`);
 
       // Handle messages from the Package XML panel
       panel.onMessage(async (type: string, data: any) => {
         switch (type) {
           case "refreshPackageConfig": {
             try {
-              const newPackageData = await this.loadPackageXmlData();
+              const refreshFilePath = data?.filePath || config.filePath;
+              const newPackageData = await this.loadPackageXmlData(refreshFilePath);
               panel.sendMessage({
                 type: "packageDataUpdated",
-                data: { packageData: newPackageData }
+                data: { 
+                  packageData: newPackageData,
+                  config: { ...config, filePath: refreshFilePath }
+                }
               });
             } catch (error: any) {
               panel.sendMessage({
                 type: "packageDataUpdated",
-                data: { error: error.message }
+                data: { 
+                  error: error.message,
+                  config: config
+                }
               });
             }
             break;
           }
           case "editPackageFile": {
             const workspaceRoot = getWorkspaceRoot();
-            const packagePath = path.join(workspaceRoot, "manifest", "package-skip-items.xml");
+            const editFilePath = data?.filePath || config.filePath;
+            const packagePath = path.join(workspaceRoot, editFilePath);
             try {
               const document = await vscode.workspace.openTextDocument(packagePath);
               await vscode.window.showTextDocument(document);
@@ -1054,16 +1071,16 @@ export class Commands {
     }
   }
 
-  private async loadPackageXmlData(): Promise<any> {
+  private async loadPackageXmlData(relativeFilePath: string = "manifest/package-skip-items.xml"): Promise<any> {
     const workspaceRoot = getWorkspaceRoot();
-    const packageSkipItemsPath = path.join(workspaceRoot, "manifest", "package-skip-items.xml");
+    const packagePath = path.join(workspaceRoot, relativeFilePath);
     
-    if (!fs.existsSync(packageSkipItemsPath)) {
-      throw new Error("package-skip-items.xml file not found in manifest/ directory");
+    if (!fs.existsSync(packagePath)) {
+      throw new Error(`Package file not found: ${relativeFilePath}`);
     }
 
     try {
-      const xmlContent = await fs.readFile(packageSkipItemsPath, 'utf8');
+      const xmlContent = await fs.readFile(packagePath, 'utf8');
       return await this.parsePackageXml(xmlContent);
     } catch (error: any) {
       throw new Error(`Failed to read package-skip-items.xml: ${error.message}`);

@@ -6,3 +6,37 @@
 	background: #EDF4FF;
 	min-height: 100vh;
 }
+
+/* Reduce vertical spacing between form elements */
+.slds-form-element {
+    margin-bottom: 0.75rem !important;
+}
+
+/* Reduce spacing between label and input controls */
+.slds-form-element__label {
+    margin-bottom: 0.25rem !important;
+}
+
+/* Reduce spacing within form element containers */
+.slds-form-element .slds-m-bottom_xx-small {
+    margin-bottom: 0.125rem !important;
+}
+
+/* Tighten spacing for lightning components */
+lightning-combobox,
+lightning-input {
+    margin-top: 0 !important;
+}
+
+/* Remove any default spacing from lightning component containers */
+lightning-combobox .slds-combobox_container,
+lightning-input .slds-form-element {
+    margin-top: 0 !important;
+}
+
+/* Remove top padding/margin from combobox specifically */
+lightning-combobox {
+    display: block;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}

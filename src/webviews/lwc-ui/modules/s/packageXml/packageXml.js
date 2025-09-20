@@ -140,18 +140,46 @@ export default class PackageXml extends LightningElement {
   get packageTypeConfig() {
     const configs = {
       skip: {
-        title: "Package Skip Configuration",
-        description: "Monitoring package skip items",
-        icon: "standard:package",
-        infoIcon: "📋",
-        typesIcon: "📦",
-        typesTitle: "Metadata Types",
-        typesDescription: "Items configured to be skipped during monitoring",
+        title: "Skip Items Package",
+        description: "Items ignored during metadata backup",
+        icon: "utility:ban",
+        infoIcon: "🚫",
+        typesIcon: "📋",
+        typesTitle: "Skipped Metadata Types",
+        typesDescription: "Metadata types and components ignored during backup operations",
         wildcardMessage: "All members of this type are skipped (*)",
-        emptyTitle: "No Metadata Types Configured",
+        emptyTitle: "No Skip Items Configured",
         emptyDescription: "This package file doesn't contain any metadata types to skip.",
-        refreshTooltip: "Reload package skip configuration",
-        editTooltip: "Open the package skip file for editing"
+        refreshTooltip: "Reload skip items package configuration",
+        editTooltip: "Open the skip items package file for editing"
+      },
+      backup: {
+        title: "Backup Items Package",
+        description: "Items included in metadata backup",
+        icon: "utility:save",
+        infoIcon: "�",
+        typesIcon: "📦",
+        typesTitle: "Backup Metadata Types",
+        typesDescription: "Metadata types and components included in backup operations",
+        wildcardMessage: "All members of this type are backed up (*)",
+        emptyTitle: "No Backup Items Configured",
+        emptyDescription: "This package file doesn't contain any metadata types for backup.",
+        refreshTooltip: "Reload backup items package configuration",
+        editTooltip: "Open the backup items package file for editing"
+      },
+      "all-org": {
+        title: "All Org Items Package",
+        description: "All items in the org including non-backed up items",
+        icon: "utility:package",
+        infoIcon: "📊",
+        typesIcon: "🏢",
+        typesTitle: "All Org Metadata Types",
+        typesDescription: "Complete inventory of all metadata types and components in the org",
+        wildcardMessage: "All members of this type are in the org (*)",
+        emptyTitle: "No Org Items Found",
+        emptyDescription: "This package file doesn't contain any metadata types from the org.",
+        refreshTooltip: "Reload all org items package",
+        editTooltip: "Open the all org items package file for editing"
       },
       deploy: {
         title: "Deployment Package",

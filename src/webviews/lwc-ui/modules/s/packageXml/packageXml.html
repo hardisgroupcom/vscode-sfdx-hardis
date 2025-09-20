@@ -5,7 +5,7 @@
             <div class="header-section">
                 <div class="header-content">
                     <div class="header-icon-container" data-package-type={packageType}>
-                        <lightning-icon icon-name={packageIconName} size="medium"></lightning-icon>
+                        <lightning-icon icon-name={packageIconName} size="medium" variant="inverse"></lightning-icon>
                     </div>
                     <div class="header-text">
                         <h1 class="header-title">{packageTitle}</h1>
@@ -45,7 +45,7 @@
                 <div class="error-section">
                     <div class="error-card">
                         <div class="error-icon-container">
-                            <lightning-icon icon-name="utility:error" size="small"></lightning-icon>
+                            <lightning-icon icon-name="utility:error" size="small" variant="inverse"></lightning-icon>
                         </div>
                         <div class="error-content">
                             <h3 class="error-title">Unable to Load Package Configuration</h3>
@@ -112,7 +112,7 @@
                                     <div class="type-header" onclick={toggleTypeExpansion} data-type-name={metadataType.name}>
                                         <div class="type-info">
                                             <div class="type-icon-container" data-type={metadataType.name}>
-                                                <lightning-icon icon-name={metadataType.iconName} size="medium"></lightning-icon>
+                                                <lightning-icon icon-name={metadataType.iconName} size="medium" variant="inverse"></lightning-icon>
                                             </div>
                                             <div class="type-details">
                                                 <h3 class="type-name">{metadataType.name}</h3>
@@ -157,7 +157,7 @@
                     <template if:false={hasTypes}>
                         <div class="empty-state">
                             <div class="empty-icon-container">
-                                <lightning-icon icon-name={packageIconName} size="large"></lightning-icon>
+                                <lightning-icon icon-name={packageIconName} size="large" variant="inverse"></lightning-icon>
                             </div>
                             <h3 class="empty-title">{emptyStateTitle}</h3>
                             <p class="empty-description">{emptyStateDescription}</p>

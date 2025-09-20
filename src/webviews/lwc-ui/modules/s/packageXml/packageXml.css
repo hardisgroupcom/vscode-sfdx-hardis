@@ -44,6 +44,11 @@
     border: 3px solid rgba(255, 255, 255, 0.2);
 }
 
+.header-icon-container lightning-icon {
+    --slds-c-icon-color-foreground: white !important;
+    --slds-c-icon-color-foreground-default: white !important;
+}
+
 /* Dynamic header colors based on package type */
 .header-icon-container[data-package-type="deploy"] {
     background: linear-gradient(135deg, #27ae60 0%, #1e8449 100%);
@@ -133,6 +138,11 @@
     justify-content: center;
     color: white;
     flex-shrink: 0;
+}
+
+.error-icon-container lightning-icon {
+    --slds-c-icon-color-foreground: white !important;
+    --slds-c-icon-color-foreground-default: white !important;
 }
 
 .error-content {
@@ -280,6 +290,11 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     transition: all 0.2s ease;
     border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.type-icon-container lightning-icon {
+    --slds-c-icon-color-foreground: white !important;
+    --slds-c-icon-color-foreground-default: white !important;
 }
 
 .type-icon-container:hover {

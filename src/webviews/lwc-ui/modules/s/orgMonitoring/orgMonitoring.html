@@ -28,14 +28,30 @@
                             <div class="status-actions">
                                 <lightning-button 
                                     variant="brand" 
-                                    label="View Package Configuration" 
-                                    title="View the package-skip-items.xml configuration"
-                                    onclick={viewPackageConfig}
-                                    icon-name="utility:preview"
+                                    label="Skip Items Package" 
+                                    title="View manifest/package-skip-items.xml - Items ignored during backup"
+                                    onclick={viewSkipItemsPackage}
+                                    icon-name="utility:ban"
                                     class="status-button"
                                 ></lightning-button>
                                 <lightning-button 
                                     variant="outline-brand" 
+                                    label="Backup Items Package" 
+                                    title="View manifest/package-backup-items.xml - Items included in backup"
+                                    onclick={viewBackupItemsPackage}
+                                    icon-name="utility:save"
+                                    class="status-button"
+                                ></lightning-button>
+                                <lightning-button 
+                                    variant="outline-brand" 
+                                    label="All Org Items Package" 
+                                    title="View package-all-org-items.xml - All items in the org"
+                                    onclick={viewAllOrgItemsPackage}
+                                    icon-name="utility:package"
+                                    class="status-button"
+                                ></lightning-button>
+                                <lightning-button 
+                                    variant="neutral" 
                                     label="Refresh Status" 
                                     title="Check installation status again"
                                     onclick={checkInstallationStatus}
