@@ -31,4 +31,3 @@ LLM_ADVISOR_LEVEL: ERROR # When to trigger: ERROR (default) or WARNING
 LLM_PROVIDER: google # Provider: see supported providers above
 LLM_MODEL_NAME: gemini-2.5-flash-lite # Model name (provider-specific)
 
-LOG_LEVEL: DEBUG
