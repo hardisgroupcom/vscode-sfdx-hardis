@@ -1,0 +1,213 @@
+<template>
+    <div class="slds-scope slds-theme_default blue-back">
+        <div class="welcome-container">
+            <!-- Compact Hero Header Section -->
+            <div class="hero-section compact">
+                <div class="hero-content">
+                    <div class="hero-header">
+                        <span class="hero-icon">🚀</span>
+                        <div class="hero-text">
+                            <h1 class="hero-title">Welcome to VS Code SFDX Hardis</h1>
+                            <p class="hero-subtitle">Your comprehensive Salesforce DX toolkit</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Features Section -->
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <span class="section-icon">⭐</span>
+                        Major Features
+                    </h2>
+                    <p class="section-subtitle">Discover the core capabilities that make your Salesforce development easier</p>
+                </div>
+                
+                <div class="features-grid">
+                    <!-- Org Manager Card -->
+                    <div class="feature-card" onclick={navigateToOrgsManager}>
+                        <div class="feature-card-header">
+                            <div class="feature-icon-container org-manager">
+                                <lightning-icon icon-name="standard:connected_apps" size="medium"></lightning-icon>
+                            </div>
+                            <h3 class="feature-title">Org Manager</h3>
+                        </div>
+                        <p class="feature-description">
+                            Manage all your Salesforce orgs, connect to new ones, and switch between environments seamlessly.
+                        </p>
+                        <div class="feature-arrow">→</div>
+                    </div>
+
+                    <!-- DevOps Pipeline Card -->
+                    <div class="feature-card" onclick={navigateToPipeline}>
+                        <div class="feature-card-header">
+                            <div class="feature-icon-container devops-pipeline">
+                                <lightning-icon icon-name="standard:flow" size="medium"></lightning-icon>
+                            </div>
+                            <h3 class="feature-title">DevOps Pipeline</h3>
+                        </div>
+                        <p class="feature-description">
+                            Visualize and manage your CI/CD pipeline with automated deployments and environment management.
+                        </p>
+                        <div class="feature-arrow">→</div>
+                    </div>
+
+                    <!-- Files Workbench Card -->
+                    <div class="feature-card" onclick={navigateToFilesWorkbench}>
+                        <div class="feature-card-header">
+                            <div class="feature-icon-container files-workbench">
+                                <lightning-icon icon-name="standard:file" size="medium"></lightning-icon>
+                            </div>
+                            <h3 class="feature-title">Files Workbench</h3>
+                        </div>
+                        <p class="feature-description">
+                            Export and manage files from Salesforce records, configure automated file processing workflows.
+                        </p>
+                        <div class="feature-arrow">→</div>
+                    </div>
+
+                    <!-- Data Workbench Card (Coming Soon) -->
+                    <div class="feature-card coming-soon">
+                        <div class="feature-card-header">
+                            <div class="feature-icon-container data-workbench">
+                                <lightning-icon icon-name="standard:data_model" size="medium"></lightning-icon>
+                            </div>
+                            <h3 class="feature-title">
+                                Data Workbench
+                                <lightning-badge label="Coming Soon" variant="warning" class="feature-badge"></lightning-badge>
+                            </h3>
+                        </div>
+                        <p class="feature-description">
+                            Import, export, and manipulate Salesforce data with SFDMU integration and advanced data management tools.
+                        </p>
+                        <div class="feature-arrow">⏳</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions Section -->
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <span class="section-icon">⚡</span>
+                        Quick Actions
+                    </h2>
+                    <p class="section-subtitle">Common tasks to get you started quickly</p>
+                </div>
+                
+                <div class="quick-actions-grid">
+                    <lightning-button 
+                        variant="brand" 
+                        label="New User Story" 
+                        title="Start working on a new user story"
+                        onclick={handleNewUserStory}
+                        class="quick-action-button primary"
+                        icon-name="utility:add"
+                    ></lightning-button>
+
+                    <lightning-button 
+                        variant="outline-brand" 
+                        label="Pull from Org" 
+                        title="Pull changes from Salesforce org to local files"
+                        onclick={handlePullFromOrg}
+                        class="quick-action-button"
+                        icon-name="utility:download"
+                    ></lightning-button>
+
+                    <lightning-button 
+                        variant="outline-brand" 
+                        label="Save User Story" 
+                        title="Save and publish your user story"
+                        onclick={handleSaveUserStory}
+                        class="quick-action-button"
+                        icon-name="utility:upload"
+                    ></lightning-button>
+
+                    <lightning-button 
+                        variant="outline-brand" 
+                        label="Connect to Org" 
+                        title="Connect to a Salesforce org"
+                        onclick={handleConnectToOrg}
+                        class="quick-action-button"
+                        icon-name="utility:connected_apps"
+                    ></lightning-button>
+                </div>
+            </div>
+
+            <!-- Additional Tools Section -->
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <span class="section-icon">🔧</span>
+                        Additional Tools
+                    </h2>
+                    <p class="section-subtitle">Advanced features for power users</p>
+                </div>
+                
+                <div class="tools-grid">
+                    <div class="tool-card" onclick={handleOrgMonitoring}>
+                        <div class="tool-icon-container monitoring">
+                            <lightning-icon icon-name="standard:monitoring" size="small"></lightning-icon>
+                        </div>
+                        <h4 class="tool-title">Org Monitoring</h4>
+                        <p class="tool-description">Monitor org health and performance</p>
+                    </div>
+
+                    <div class="tool-card" onclick={navigateToDocumentation}>
+                        <div class="tool-icon-container documentation">
+                            <lightning-icon icon-name="standard:documentation" size="small"></lightning-icon>
+                        </div>
+                        <h4 class="tool-title">Documentation</h4>
+                        <p class="tool-description">Generate and view project documentation</p>
+                    </div>
+
+                    <div class="tool-card" onclick={navigateToExtensionConfig}>
+                        <div class="tool-icon-container settings">
+                            <lightning-icon icon-name="standard:settings" size="small"></lightning-icon>
+                        </div>
+                        <h4 class="tool-title">Extension Settings</h4>
+                        <p class="tool-description">Configure extension preferences</p>
+                    </div>
+
+                    <div class="tool-card" onclick={navigateToInstalledPackages}>
+                        <div class="tool-icon-container packages">
+                            <lightning-icon icon-name="standard:package" size="small"></lightning-icon>
+                        </div>
+                        <h4 class="tool-title">Installed Packages</h4>
+                        <p class="tool-description">Manage project packages</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Getting Started Section -->
+            <div class="getting-started-section">
+                <div class="getting-started-content">
+                    <div class="getting-started-header">
+                        <span class="getting-started-icon">🎯</span>
+                        <h3 class="getting-started-title">Getting Started</h3>
+                    </div>
+                    <p class="getting-started-text">
+                        New to SFDX Hardis? Start by connecting to a Salesforce org and exploring the DevOps Pipeline to understand your environment setup.
+                    </p>
+                    <div class="getting-started-actions">
+                        <lightning-button 
+                            variant="neutral" 
+                            label="View Documentation" 
+                            icon-name="utility:new_window"
+                            onclick={openDocumentation}
+                            class="getting-started-button"
+                        ></lightning-button>
+                        <lightning-button 
+                            variant="neutral" 
+                            label="Watch Tutorials" 
+                            icon-name="utility:video"
+                            onclick={openTutorials}
+                            class="getting-started-button"
+                        ></lightning-button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>

@@ -60,6 +60,7 @@ export class Commands {
 
   registerCommands() {
     this.registerExecuteCommand();
+    this.registerShowWelcome();
     this.registerOpenValidationLink();
     this.registerOpenReportsFolder();
     this.registerNewTerminalCommand();
@@ -77,6 +78,7 @@ export class Commands {
     this.registerGeneratePackageXmlDoc();
     this.registerGenerateFlowDocumentation();
     this.registerGenerateFlowVisualGitDiff();
+
     this.registerShowPipeline();
     this.registerShowExtensionConfig();
     this.registerShowPipelineConfig();
@@ -681,6 +683,49 @@ export class Commands {
     this.disposables.push(disposable);
   }
   /* jscpd:ignore-end */
+
+  registerShowWelcome() {
+    const disposable = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.showWelcome",
+      async () => {
+        const lwcManager = LwcPanelManager.getInstance();
+        const panel = lwcManager.getOrCreatePanel("s-welcome", {});
+        panel.updateTitle("SFDX Hardis Welcome");
+
+        // Handle messages from the Welcome panel
+        panel.onMessage(async (type: string, data: any) => {
+          switch (type) {
+            case "navigateToOrgsManager":
+              vscode.commands.executeCommand("vscode-sfdx-hardis.openOrgsManager");
+              break;
+            case "navigateToPipeline":
+              vscode.commands.executeCommand("vscode-sfdx-hardis.showPipeline");
+              break;
+            case "navigateToFilesWorkbench":
+              vscode.commands.executeCommand("vscode-sfdx-hardis.showFilesWorkbench");
+              break;
+            case "navigateToExtensionConfig":
+              vscode.commands.executeCommand("vscode-sfdx-hardis.showExtensionConfig");
+              break;
+            case "navigateToInstalledPackages":
+              vscode.commands.executeCommand("vscode-sfdx-hardis.showInstalledPackages");
+              break;
+            case "navigateToDocumentation":
+              vscode.commands.executeCommand("vscode-sfdx-hardis.runLocalHtmlDocPages");
+              break;
+            case "runCommand":
+              if (data && data.command) {
+                vscode.commands.executeCommand("vscode-sfdx-hardis.execute-command", data.command);
+              }
+              break;
+            default:
+              break;
+          }
+        });
+      },
+    );
+    this.disposables.push(disposable);
+  }
 
   registerShowPipeline() {
     const disposable = vscode.commands.registerCommand(

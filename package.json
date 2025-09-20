@@ -140,6 +140,11 @@
     },
     "commands": [
       {
+        "command": "vscode-sfdx-hardis.showWelcome",
+        "title": "SFDX Hardis: Welcome Home",
+        "icon": "$(home)"
+      },
+      {
         "command": "vscode-sfdx-hardis.execute-command",
         "title": "SFDX Hardis: Execute sfdx-hardis command",
         "icon": "$(run)"

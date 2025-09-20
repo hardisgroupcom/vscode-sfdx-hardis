@@ -156,6 +156,13 @@ export class HardisCommandsProvider
     }
     let hardisCommands = [
       {
+        id: "vscode-sfdx-hardis.showWelcome",
+        label: "Welcome",
+        command: "vscode-sfdx-hardis.showWelcome",
+        requiresProject: false,
+        helpUrl: "https://sfdx-hardis.cloudity.com/",
+      },
+      {
         id: "cicd-simple",
         label: "CI/CD (simple)",
         defaultExpand: true,
