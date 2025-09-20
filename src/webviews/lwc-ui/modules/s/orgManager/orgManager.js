@@ -325,13 +325,13 @@ export default class OrgManager extends LightningElement {
       const existingDraftIndex = this.draftValues.findIndex(
         (draft) => draft.username === newDraft.username,
       );
-      
+
       // Only include the alias field in draft values to avoid highlighting other columns
       const cleanDraft = {
         username: newDraft.username,
-        alias: newDraft.alias
+        alias: newDraft.alias,
       };
-      
+
       if (existingDraftIndex !== -1) {
         // Update existing draft
         this.draftValues[existingDraftIndex] = cleanDraft;
@@ -352,10 +352,10 @@ export default class OrgManager extends LightningElement {
   handleSaveAliases(event) {
     // Clear previous validation errors
     this.validationErrors = [];
-    
+
     // Get draft values from the event (native datatable behavior)
     const draftValues = event.detail.draftValues || this.draftValues;
-    
+
     // Validate all alias changes before submitting
     const validationErrors = [];
     const validatedChanges = [];
@@ -363,7 +363,7 @@ export default class OrgManager extends LightningElement {
     for (const draft of draftValues) {
       const alias = (draft.alias || "").trim();
       const username = draft.username;
-      
+
       // Skip empty aliases (they will be unset)
       if (!alias) {
         validatedChanges.push({ username, alias: "" });
@@ -376,7 +376,7 @@ export default class OrgManager extends LightningElement {
         validationErrors.push({
           username: username,
           alias: alias,
-          error: validationError
+          error: validationError,
         });
         continue;
       }
@@ -391,28 +391,30 @@ export default class OrgManager extends LightningElement {
     }
 
     // All validations passed, update the orgs data directly for immediate display
-    const updatedOrgs = this.orgs.map(org => {
-      const change = validatedChanges.find(change => change.username === org.username);
+    const updatedOrgs = this.orgs.map((org) => {
+      const change = validatedChanges.find(
+        (change) => change.username === org.username,
+      );
       if (change) {
         return { ...org, alias: change.alias };
       }
       return org;
     });
     this.orgs = updatedOrgs;
-    
+
     // Clear draft values and send to VS Code to save aliases
     this.draftValues = [];
     window.sendMessageToVSCode({
       type: "saveAliases",
       data: {
-        aliasChanges: validatedChanges
+        aliasChanges: validatedChanges,
       },
     });
   }
 
   validateAlias(alias) {
     // Salesforce CLI alias validation rules
-    
+
     // Check length (1-64 characters)
     if (alias.length < 1 || alias.length > 64) {
       return "Alias must be 1-64 characters long";

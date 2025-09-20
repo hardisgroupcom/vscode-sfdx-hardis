@@ -190,9 +190,11 @@ export class Commands {
             } else if (type === "saveAliases") {
               try {
                 const { aliasChanges } = data;
-                
+
                 if (!aliasChanges || aliasChanges.length === 0) {
-                  vscode.window.showInformationMessage("No alias changes to save.");
+                  vscode.window.showInformationMessage(
+                    "No alias changes to save.",
+                  );
                   return;
                 }
 
@@ -204,16 +206,22 @@ export class Commands {
                     cancellable: false,
                   },
                   async () => {
-                    const aliasCommands = aliasChanges.map((change: { username: string; alias: string }) => {
-                      const alias = change.alias.trim();
-                      if (alias) {
-                        return execSfdxJson(`sf alias set ${alias}=${change.username}`);
-                      } else {
-                        // If alias is empty, unset it
-                        return execSfdxJson(`sf alias unset ${change.username}`);
-                      }
-                    });
-                    
+                    const aliasCommands = aliasChanges.map(
+                      (change: { username: string; alias: string }) => {
+                        const alias = change.alias.trim();
+                        if (alias) {
+                          return execSfdxJson(
+                            `sf alias set ${alias}=${change.username}`,
+                          );
+                        } else {
+                          // If alias is empty, unset it
+                          return execSfdxJson(
+                            `sf alias unset ${change.username}`,
+                          );
+                        }
+                      },
+                    );
+
                     await Promise.all(aliasCommands);
                   },
                 );
