@@ -476,14 +476,14 @@
 
 .members-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 0.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 0.75rem;
     margin-top: 1rem;
 }
 
 .member-item {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 0.75rem;
     padding: 0.75rem 1rem;
     background: #f8f9fa;
@@ -491,6 +491,8 @@
     border-radius: 6px;
     font-size: 0.875rem;
     transition: all 0.2s ease;
+    min-height: 3rem;
+    overflow: hidden;
 }
 
 .member-item:hover {
@@ -505,11 +507,17 @@
     border-radius: 4px;
     padding: 2px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    flex-shrink: 0;
+    margin-top: 0.125rem;
 }
 
 .member-name {
     color: #181818;
     font-weight: 500;
+    word-break: break-word;
+    line-height: 1.3;
+    flex: 1;
+    min-width: 0;
 }
 
 /* Empty State */
@@ -558,6 +566,7 @@
     
     .members-grid {
         grid-template-columns: 1fr;
+        gap: 0.5rem;
     }
 }
 

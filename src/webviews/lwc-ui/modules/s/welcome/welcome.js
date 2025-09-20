@@ -114,10 +114,10 @@ export default class Welcome extends LightningElement {
     });
   }
 
-  openTutorials() {
+  openCloudityServices() {
     window.sendMessageToVSCode({
       type: "openExternal",
-      data: "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/"
+      data: "https://www.cloudity.com/?ref=sfdxhardis"
     });
   }
 

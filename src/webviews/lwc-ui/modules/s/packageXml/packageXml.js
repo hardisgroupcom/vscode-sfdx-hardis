@@ -21,8 +21,10 @@ export default class PackageXml extends LightningElement {
     
     // Extract package configuration
     this.packageConfig = data?.config || {};
-    this.packageType = this.packageConfig.type || "skip";
     this.packageFilePath = this.packageConfig.filePath || "manifest/package.xml";
+    
+    // Auto-detect package type from file path if not explicitly provided
+    this.packageType = this.packageConfig.type || this.detectPackageTypeFromPath(this.packageFilePath);
     
     if (data?.error) {
       this.hasError = true;
@@ -42,6 +44,29 @@ export default class PackageXml extends LightningElement {
     console.log("Package XML component received message:", type, data);
     if (type === "packageDataUpdated") {
       this.initialize(data);
+    }
+  }
+
+  // Auto-detect package type from file path
+  detectPackageTypeFromPath(filePath) {
+    if (!filePath) return "manifest";
+    
+    const fileName = filePath.toLowerCase();
+    
+    if (fileName.includes("skip-items") || fileName.includes("package-skip")) {
+      return "skip";
+    } else if (fileName.includes("backup-items") || fileName.includes("package-backup")) {
+      return "backup";
+    } else if (fileName.includes("all-org-items") || fileName.includes("package-all-org")) {
+      return "all-org";
+    } else if (fileName.includes("destructive")) {
+      return "destructive";
+    } else if (fileName.includes("deploy")) {
+      return "deploy";
+    } else if (fileName.includes("retrieve")) {
+      return "retrieve";
+    } else {
+      return "manifest"; // Default fallback
     }
   }
 

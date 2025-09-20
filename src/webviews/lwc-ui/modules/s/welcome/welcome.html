@@ -134,26 +134,75 @@
             <div class="getting-started-section">
                 <div class="getting-started-content">
                     <div class="getting-started-header">
-                        <span class="getting-started-icon">🎯</span>
-                        <h3 class="getting-started-title">Getting Started</h3>
+                        <div class="getting-started-icon-container">
+                            <lightning-icon icon-name="utility:lightning_bolt" size="medium" variant="inverse" class="getting-started-icon"></lightning-icon>
+                        </div>
+                        <div class="getting-started-text-header">
+                            <h3 class="getting-started-title">Getting Started</h3>
+                            <p class="getting-started-subtitle">Quick start guide for new users</p>
+                        </div>
                     </div>
-                    <p class="getting-started-text">
-                        New to SFDX Hardis? Start by connecting to a Salesforce org and exploring the DevOps Pipeline to understand your environment setup.
-                    </p>
+                    <div class="getting-started-description">
+                        <p class="getting-started-text">
+                            New to SFDX Hardis? Start by connecting to a Salesforce org and exploring the various features to understand your Salesforce environment and streamline your development workflow.
+                        </p>
+                    </div>
                     <div class="getting-started-actions">
                         <lightning-button 
-                            variant="neutral" 
+                            variant="brand" 
                             label="View Documentation" 
-                            icon-name="utility:new_window"
+                            icon-name="utility:knowledge_base"
                             onclick={openDocumentation}
-                            class="getting-started-button"
+                            class="getting-started-button primary"
                         ></lightning-button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Open Source & Services Section -->
+            <div class="open-source-section">
+                <div class="open-source-content">
+                    <div class="open-source-header">
+                        <div class="open-source-icon-container">
+                            <lightning-icon icon-name="utility:heart" size="medium" variant="inverse" class="open-source-icon"></lightning-icon>
+                        </div>
+                        <div class="open-source-text-header">
+                            <h3 class="open-source-title">Open Source & Free</h3>
+                            <p class="open-source-subtitle">Community-driven Salesforce tooling</p>
+                        </div>
+                    </div>
+                    <div class="open-source-description">
+                        <div class="open-source-highlight">
+                            <lightning-icon icon-name="utility:check" size="small" class="check-icon"></lightning-icon>
+                            <span class="highlight-text">100% Open Source</span>
+                        </div>
+                        <div class="open-source-highlight">
+                            <lightning-icon icon-name="utility:check" size="small" class="check-icon"></lightning-icon>
+                            <span class="highlight-text">Completely Free</span>
+                        </div>
+                        <div class="open-source-highlight">
+                            <lightning-icon icon-name="utility:check" size="small" class="check-icon"></lightning-icon>
+                            <span class="highlight-text">Commercial Use Allowed</span>
+                        </div>
+                    </div>
+                    <div class="services-info">
+                        <div class="services-card">
+                            <div class="services-card-header">
+                                <lightning-icon icon-name="utility:groups" size="small" class="services-icon"></lightning-icon>
+                                <h4 class="services-card-title">Need Expert Guidance?</h4>
+                            </div>
+                            <p class="services-card-text">
+                                <a href="https://www.cloudity.com/?ref=sfdxhardis" target="_blank" class="cloudity-link"><strong>Cloudity</strong></a> offers professional consulting services to help you maximize SFDX Hardis value and optimize your Salesforce development strategy.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="open-source-actions">
                         <lightning-button 
-                            variant="neutral" 
-                            label="Watch Tutorials" 
-                            icon-name="utility:video"
-                            onclick={openTutorials}
-                            class="getting-started-button"
+                            variant="brand" 
+                            label="Explore Cloudity Services" 
+                            icon-name="utility:world"
+                            onclick={openCloudityServices}
+                            class="services-button"
                         ></lightning-button>
                     </div>
                 </div>

@@ -386,53 +386,250 @@
 .getting-started-section {
     background: linear-gradient(135deg, #f3f9ff 0%, #dbeafe 100%);
     border: 1px solid #bbdefb;
-    border-radius: 12px;
-    padding: 2rem;
+    border-radius: 16px;
+    padding: 2.5rem;
     margin-top: 2rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
 .getting-started-content {
     max-width: 700px;
     margin: 0 auto;
-    text-align: center;
 }
 
 .getting-started-header {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-    margin-bottom: 1rem;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(21, 137, 238, 0.2);
 }
 
-.getting-started-icon {
-    font-size: 1.5rem;
+.getting-started-icon-container {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #1589ee 0%, #005fb2 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(21, 137, 238, 0.3);
+    flex-shrink: 0;
+}
+
+.getting-started-icon-container lightning-icon {
+    --slds-c-icon-color-foreground: white !important;
+    --slds-c-icon-color-foreground-default: white !important;
+}
+
+.getting-started-text-header {
+    flex: 1;
 }
 
 .getting-started-title {
-    font-size: 1.5rem;
-    font-weight: 600;
+    font-size: 1.75rem;
+    font-weight: 700;
     color: #181818;
+    margin: 0 0 0.25rem 0;
+    line-height: 1.2;
+}
+
+.getting-started-subtitle {
+    font-size: 1rem;
+    color: #1589ee;
     margin: 0;
+    font-weight: 500;
+}
+
+.getting-started-description {
+    margin-bottom: 2rem;
 }
 
 .getting-started-text {
-    color: #706e6b;
-    line-height: 1.6;
-    margin: 0 0 1.5rem 0;
-    font-size: 1rem;
+    color: #4a5568;
+    line-height: 1.7;
+    margin: 0;
+    font-size: 1.1rem;
+    text-align: center;
 }
 
 .getting-started-actions {
     display: flex;
-    gap: 1rem;
     justify-content: center;
-    flex-wrap: wrap;
 }
 
 .getting-started-button {
-    border-radius: 6px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1rem;
+    padding: 0.75rem 2rem;
+    box-shadow: 0 4px 12px rgba(21, 137, 238, 0.3);
+    transition: all 0.2s ease;
+}
+
+.getting-started-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(21, 137, 238, 0.4);
+}
+
+/* Open Source & Services Section */
+.open-source-section {
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border: 1px solid #bbf7d0;
+    border-radius: 16px;
+    padding: 2.5rem;
+    margin-top: 2rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.open-source-content {
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.open-source-header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.open-source-icon-container {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+    flex-shrink: 0;
+}
+
+.open-source-icon-container lightning-icon {
+    --slds-c-icon-color-foreground: white !important;
+    --slds-c-icon-color-foreground-default: white !important;
+}
+
+.open-source-text-header {
+    flex: 1;
+}
+
+.open-source-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #181818;
+    margin: 0 0 0.25rem 0;
+    line-height: 1.2;
+}
+
+.open-source-subtitle {
+    font-size: 1rem;
+    color: #22c55e;
+    margin: 0;
     font-weight: 500;
+}
+
+.open-source-description {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 12px;
+    border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.open-source-highlight {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.check-icon {
+    color: #22c55e !important;
+    background: rgba(34, 197, 94, 0.1);
+    border-radius: 50%;
+    padding: 0.25rem;
+}
+
+.highlight-text {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.services-info {
+    margin-bottom: 2rem;
+}
+
+.services-card {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(156, 163, 175, 0.3);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.services-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.services-icon {
+    color: #6366f1 !important;
+    background: rgba(99, 102, 241, 0.1);
+    border-radius: 50%;
+    padding: 0.25rem;
+}
+
+.services-card-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0;
+}
+
+.services-card-text {
+    color: #4b5563;
+    line-height: 1.6;
+    margin: 0;
+    font-size: 1rem;
+}
+
+.cloudity-link {
+    color: #1589ee;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.cloudity-link:hover {
+    text-decoration: underline;
+}
+
+.open-source-actions {
+    display: flex;
+    justify-content: center;
+}
+
+.services-button {
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1rem;
+    padding: 0.75rem 2rem;
+    box-shadow: 0 4px 12px rgba(21, 137, 238, 0.3);
+    transition: all 0.2s ease;
+}
+
+.services-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(21, 137, 238, 0.4);
 }
 
 /* Settings Section */
