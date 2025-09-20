@@ -100,55 +100,6 @@
                 </div>
             </div>
 
-            <!-- Quick Actions Section -->
-            <div class="section">
-                <div class="section-header">
-                    <h2 class="section-title">
-                        <span class="section-icon">⚡</span>
-                        Quick Actions
-                    </h2>
-                    <p class="section-subtitle">Common tasks to get you started quickly</p>
-                </div>
-                
-                <div class="quick-actions-grid">
-                    <lightning-button 
-                        variant="brand" 
-                        label="New User Story" 
-                        title="Start working on a new user story"
-                        onclick={handleNewUserStory}
-                        class="quick-action-button primary"
-                        icon-name="utility:add"
-                    ></lightning-button>
-
-                    <lightning-button 
-                        variant="outline-brand" 
-                        label="Pull from Org" 
-                        title="Pull changes from Salesforce org to local files"
-                        onclick={handlePullFromOrg}
-                        class="quick-action-button"
-                        icon-name="utility:download"
-                    ></lightning-button>
-
-                    <lightning-button 
-                        variant="outline-brand" 
-                        label="Save User Story" 
-                        title="Save and publish your user story"
-                        onclick={handleSaveUserStory}
-                        class="quick-action-button"
-                        icon-name="utility:upload"
-                    ></lightning-button>
-
-                    <lightning-button 
-                        variant="outline-brand" 
-                        label="Connect to Org" 
-                        title="Connect to a Salesforce org"
-                        onclick={handleConnectToOrg}
-                        class="quick-action-button"
-                        icon-name="utility:connected_apps"
-                    ></lightning-button>
-                </div>
-            </div>
-
             <!-- Additional Tools Section -->
             <div class="section">
                 <div class="section-header">
@@ -174,14 +125,6 @@
                         </div>
                         <h4 class="tool-title">Extension Settings</h4>
                         <p class="tool-description">Configure extension preferences</p>
-                    </div>
-
-                    <div class="tool-card" onclick={navigateToInstalledPackages}>
-                        <div class="tool-icon-container packages">
-                            <lightning-icon icon-name="standard:package" size="small"></lightning-icon>
-                        </div>
-                        <h4 class="tool-title">Installed Packages</h4>
-                        <p class="tool-description">Manage project packages</p>
                     </div>
                 </div>
             </div>
