@@ -543,6 +543,12 @@ export default class CommandExecution extends LightningElement {
     if (this.currentProgressSection && this.currentProgressSection.isActive) {
       this.currentProgressSection.isActive = false;
       this.currentProgressSection.endTime = new Date();
+      
+      // Auto-collapse the progress section when it ends, unless user has manually toggled it
+      if (!this.userSectionExpandState.hasOwnProperty(this.currentProgressSection.id)) {
+        this.userSectionExpandState[this.currentProgressSection.id] = false;
+      }
+      
       this.currentProgressSection = null;
     }
   }
@@ -1075,8 +1081,11 @@ ${resultMessage}`;
       // By default, question sections and progress sections are expanded, but user can collapse them
       if (this.userSectionExpandState.hasOwnProperty(section.id)) {
         isExpanded = this.userSectionExpandState[section.id];
-      } else if (section.isQuestion || isProgress) {
+      } else if (section.isQuestion) {
         isExpanded = true;
+      } else if (isProgress) {
+        // Progress sections are expanded when active, collapsed when ended (unless user manually toggled)
+        isExpanded = section.isActive === true;
       } else if (isSimple) {
         if (this.showEmbeddedPrompt) {
           isExpanded = isLatest;
@@ -1945,6 +1954,11 @@ ${resultMessage}`;
     if (this.currentProgressSection) {
       this.currentProgressSection.isActive = false;
       this.currentProgressSection.endTime = new Date();
+      
+      // Auto-collapse the progress section when it ends, unless user has manually toggled it
+      if (!this.userSectionExpandState.hasOwnProperty(this.currentProgressSection.id)) {
+        this.userSectionExpandState[this.currentProgressSection.id] = false;
+      }
     }
 
     // Deactivate all previous sections (stop their spinners)
@@ -2026,6 +2040,12 @@ ${resultMessage}`;
     this.currentProgressSection.isActive = false;
     this.currentProgressSection.endTime = new Date();
     this.currentProgressSection.estimatedRemainingTime = null; // Clear estimation
+    
+    // Auto-collapse the progress section when it ends, unless user has manually toggled it
+    if (!this.userSectionExpandState.hasOwnProperty(this.currentProgressSection.id)) {
+      this.userSectionExpandState[this.currentProgressSection.id] = false;
+    }
+    
     this.currentProgressSection = null;
 
     // Update the sections array to trigger reactivity

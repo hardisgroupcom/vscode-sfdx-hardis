@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Auto-collapse progress sections when they are completed.
+
 ## [6.6.0] 2024-09-19
 
 - New command to start Salesforce CLI MCP server from VsCode SFDX Hardis
