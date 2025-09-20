@@ -4,6 +4,10 @@ export default class OrgManager extends LightningElement {
   @track orgs = [];
   @track selectedRowKeys = [];
   @track viewAll = false;
+  @track showAliasModal = false;
+  @track selectedOrgForAlias = null;
+  @track aliasInputValue = "";
+  @track aliasError = "";
   internalCommands = [];
 
   columns = [
@@ -65,6 +69,27 @@ export default class OrgManager extends LightningElement {
   get hasSelection() {
     return this.selectedRowKeys && this.selectedRowKeys.length > 0;
   }
+
+  get isSetAliasDisabled() {
+    return !this.aliasInputValue || 
+           !this.aliasInputValue.trim() || 
+           !!this.aliasError ||
+           !/^[a-zA-Z0-9_-]+$/.test(this.aliasInputValue.trim());
+  }
+
+  renderedCallback() {
+    // Auto-focus the alias input when modal is shown
+    if (this.showAliasModal) {
+      const aliasInput = this.template.querySelector('lightning-input[data-id="alias-input"]');
+      if (aliasInput) {
+        // Use setTimeout to ensure the input is fully rendered
+        setTimeout(() => {
+          aliasInput.focus();
+        }, 100);
+      }
+    }
+  }
+
   @api
   initialize(data) {
     this.orgs = (data && data.orgs) || [];
@@ -105,6 +130,8 @@ export default class OrgManager extends LightningElement {
         } else {
           actions.push({ label: "Reconnect", name: "reconnect" });
         }
+        // Add Set Alias action for all orgs (connected or not)
+        actions.push({ label: "Set Alias", name: "setAlias" });
         actions.push({
           label: "Remove",
           name: "remove",
@@ -297,12 +324,78 @@ export default class OrgManager extends LightningElement {
         type: "connectOrg",
         data: { username: row.username, instanceUrl: row.instanceUrl },
       });
+    } else if (actionName === "setAlias") {
+      this.handleSetAlias(row);
     } else if (actionName === "remove") {
       window.sendMessageToVSCode({
         type: "forgetOrgs",
         data: { usernames: [row.username] },
       });
     }
+  }
+
+  handleSetAlias(row) {
+    // Open modal for alias input
+    this.selectedOrgForAlias = row;
+    this.aliasInputValue = row.alias || "";
+    this.aliasError = "";
+    this.showAliasModal = true;
+  }
+
+  handleCloseAliasModal() {
+    this.showAliasModal = false;
+    this.selectedOrgForAlias = null;
+    this.aliasInputValue = "";
+    this.aliasError = "";
+  }
+
+  handleAliasInputChange(event) {
+    this.aliasInputValue = event.target.value;
+    this.aliasError = "";
+    
+    // Validate input
+    const value = this.aliasInputValue.trim();
+    if (!value) {
+      this.aliasError = "Alias cannot be empty";
+    } else if (!/^[a-zA-Z0-9_-]+$/.test(value)) {
+      this.aliasError = "Alias can only contain letters, numbers, hyphens, and underscores";
+    }
+  }
+
+  handleAliasInputKeyUp(event) {
+    // Check if Enter key was pressed
+    if (event.keyCode === 13 || event.key === 'Enter') {
+      // Only submit if the form is valid (same logic as the button disabled state)
+      if (!this.isSetAliasDisabled) {
+        this.handleSetAliasConfirm();
+      }
+    }
+  }
+
+  handleSetAliasConfirm() {
+    const alias = this.aliasInputValue.trim();
+    
+    if (!alias) {
+      this.aliasError = "Alias cannot be empty";
+      return;
+    }
+    
+    if (!/^[a-zA-Z0-9_-]+$/.test(alias)) {
+      this.aliasError = "Alias can only contain letters, numbers, hyphens, and underscores";
+      return;
+    }
+
+    // Send message to VS Code to set the alias
+    window.sendMessageToVSCode({
+      type: "setOrgAlias",
+      data: { 
+        username: this.selectedOrgForAlias.username,
+        alias: alias
+      },
+    });
+
+    // Close modal
+    this.handleCloseAliasModal();
   }
 
   requestRunInternalCommand(internalCommand) {
