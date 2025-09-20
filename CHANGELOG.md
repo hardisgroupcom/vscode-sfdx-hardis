@@ -6,8 +6,6 @@
 
 ## [6.6.1] 2024-09-20
 
-starfoullahhhhh
-
 - Auto-collapse progress sections when they are completed.
 
 ## [6.6.0] 2024-09-19
