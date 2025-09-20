@@ -155,6 +155,11 @@
         "icon": "$(run)"
       },
       {
+        "command": "vscode-sfdx-hardis.showOrgMonitoring",
+        "title": "SFDX Hardis: Org Monitoring Workbench",
+        "icon": "$(pulse)"
+      },
+      {
         "command": "vscode-sfdx-hardis.simulateMetadataDeployment",
         "title": "SFDX Hardis: Simulate Metadata Deployment",
         "icon": "$(cloud-upload)"

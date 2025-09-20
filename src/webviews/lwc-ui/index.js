@@ -16,6 +16,8 @@ const lwcModules = {
   "s-multiline-helptext": () => import("s/multilineHelptext"),
   "s-installed-packages": () => import("s/installedPackages"),
   "s-org-manager": () => import("s/orgManager"),
+  "s-org-monitoring": () => import("s/orgMonitoring"),
+  "s-package-xml": () => import("s/packageXml"),
   "s-files-workbench": () => import("s/filesWorkbench"),
 };
 

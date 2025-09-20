@@ -138,33 +138,73 @@
 }
 
 .feature-icon-container {
-    width: 48px;
-    height: 48px;
-    border-radius: 8px;
+    width: 52px;
+    height: 52px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    background: linear-gradient(135deg, #1589ee 0%, #005fb2 100%);
+    color: white !important;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.2s ease;
+}
+
+.feature-icon-container lightning-icon {
+    --slds-c-icon-color-foreground: white !important;
+    --slds-c-icon-color-foreground-default: white !important;
+}
+
+.feature-icon-container:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
 .feature-icon-container.org-manager {
     background: linear-gradient(135deg, #1589ee 0%, #005fb2 100%);
-    color: white;
+    box-shadow: 0 3px 10px rgba(21, 137, 238, 0.25);
+}
+
+.feature-icon-container.org-manager lightning-icon {
+    --slds-c-icon-color-foreground: white !important;
 }
 
 .feature-icon-container.devops-pipeline {
     background: linear-gradient(135deg, #06a59a 0%, #045a55 100%);
-    color: white;
+    box-shadow: 0 3px 10px rgba(6, 165, 154, 0.25);
+}
+
+.feature-icon-container.devops-pipeline lightning-icon {
+    --slds-c-icon-color-foreground: white !important;
+}
+
+.feature-icon-container.org-monitoring {
+    background: linear-gradient(135deg, #54a4a6 0%, #026d71 100%);
+    box-shadow: 0 3px 10px rgba(84, 164, 166, 0.25);
+}
+
+.feature-icon-container.org-monitoring lightning-icon {
+    --slds-c-icon-color-foreground: white !important;
 }
 
 .feature-icon-container.files-workbench {
     background: linear-gradient(135deg, #ff6b35 0%, #d4471b 100%);
-    color: white;
+    box-shadow: 0 3px 10px rgba(255, 107, 53, 0.25);
+}
+
+.feature-icon-container.files-workbench lightning-icon {
+    --slds-c-icon-color-foreground: white !important;
 }
 
 .feature-icon-container.data-workbench {
     background: linear-gradient(135deg, #9f4fea 0%, #7b2cbf 100%);
-    color: white;
+    box-shadow: 0 3px 10px rgba(159, 79, 234, 0.25);
+}
+
+.feature-icon-container.data-workbench lightning-icon {
+    --slds-c-icon-color-foreground: white !important;
 }
 
 .feature-title {

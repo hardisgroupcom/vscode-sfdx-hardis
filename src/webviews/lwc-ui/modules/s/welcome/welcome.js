@@ -45,6 +45,12 @@ export default class Welcome extends LightningElement {
     });
   }
 
+  navigateToOrgMonitoring() {
+    window.sendMessageToVSCode({
+      type: "navigateToOrgMonitoring"
+    });
+  }
+
   navigateToExtensionConfig() {
     window.sendMessageToVSCode({
       type: "navigateToExtensionConfig"
@@ -96,16 +102,6 @@ export default class Welcome extends LightningElement {
       type: "runCommand",
       data: {
         command: "sf hardis:org:connect"
-      }
-    });
-  }
-
-  // Additional tools methods
-  handleOrgMonitoring() {
-    window.sendMessageToVSCode({
-      type: "runCommand",
-      data: {
-        command: "sf hardis:org:monitor:all"
       }
     });
   }

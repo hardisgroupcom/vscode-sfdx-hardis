@@ -578,6 +578,15 @@ export class HardisCommandsProvider
         label: "Org Monitoring",
         commands: [
           {
+            id: "vscode-sfdx-hardis.showOrgMonitoring",
+            label: "Org Monitoring Workbench",
+            tooltip:
+              "Open the comprehensive Org Monitoring workbench with all monitoring tools and diagnostics in one place",
+            command: "vscode-sfdx-hardis.showOrgMonitoring",
+            requiresProject: false,
+            helpUrl: "https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/",
+          },
+          {
             id: "hardis:org:monitor:backup",
             label: "Metadatas Backup",
             tooltip:

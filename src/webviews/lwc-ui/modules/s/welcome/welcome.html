@@ -8,7 +8,7 @@
                         <span class="hero-icon">🚀</span>
                         <div class="hero-text">
                             <h1 class="hero-title">Welcome to VS Code SFDX Hardis</h1>
-                            <p class="hero-subtitle">Your comprehensive Salesforce DX toolkit, by <a href="https://www.cloudity.com" target="_blank">Cloudity</a> and <a href="https://sfdx-hardis.cloudity.com/contributors/" target="_blank">friends</a></p>
+                            <p class="hero-subtitle">Your comprehensive Salesforce DX toolkit, by <a href="https://www.cloudity.com/?ref=sfdxhardis" target="_blank">Cloudity</a> and <a href="https://sfdx-hardis.cloudity.com/contributors/" target="_blank">friends</a></p>
                         </div>
                     </div>
                 </div>
@@ -29,7 +29,7 @@
                     <div class="feature-card" onclick={navigateToOrgsManager}>
                         <div class="feature-card-header">
                             <div class="feature-icon-container org-manager">
-                                <lightning-icon icon-name="standard:connected_apps" size="medium"></lightning-icon>
+                                <lightning-icon icon-name="utility:connected_apps" size="medium" variant="inverse"></lightning-icon>
                             </div>
                             <h3 class="feature-title">Org Manager</h3>
                         </div>
@@ -43,7 +43,7 @@
                     <div class="feature-card" onclick={navigateToPipeline}>
                         <div class="feature-card-header">
                             <div class="feature-icon-container devops-pipeline">
-                                <lightning-icon icon-name="standard:flow" size="medium"></lightning-icon>
+                                <lightning-icon icon-name="utility:flow" size="medium" variant="inverse"></lightning-icon>
                             </div>
                             <h3 class="feature-title">DevOps Pipeline</h3>
                         </div>
@@ -53,11 +53,25 @@
                         <div class="feature-arrow">→</div>
                     </div>
 
+                    <!-- Org Monitoring Card -->
+                    <div class="feature-card" onclick={navigateToOrgMonitoring}>
+                        <div class="feature-card-header">
+                            <div class="feature-icon-container org-monitoring">
+                                <lightning-icon icon-name="utility:graph" size="medium" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="feature-title">Org Monitoring</h3>
+                        </div>
+                        <p class="feature-description">
+                            Monitor your Salesforce org health, security, and performance with comprehensive diagnostic tools.
+                        </p>
+                        <div class="feature-arrow">→</div>
+                    </div>
+
                     <!-- Files Workbench Card -->
                     <div class="feature-card" onclick={navigateToFilesWorkbench}>
                         <div class="feature-card-header">
                             <div class="feature-icon-container files-workbench">
-                                <lightning-icon icon-name="standard:file" size="medium"></lightning-icon>
+                                <lightning-icon icon-name="utility:file" size="medium" variant="inverse"></lightning-icon>
                             </div>
                             <h3 class="feature-title">Files Workbench</h3>
                         </div>
@@ -71,7 +85,7 @@
                     <div class="feature-card coming-soon">
                         <div class="feature-card-header">
                             <div class="feature-icon-container data-workbench">
-                                <lightning-icon icon-name="standard:data_model" size="medium"></lightning-icon>
+                                <lightning-icon icon-name="utility:database" size="medium" variant="inverse"></lightning-icon>
                             </div>
                             <h3 class="feature-title">
                                 Data Workbench
@@ -146,14 +160,6 @@
                 </div>
                 
                 <div class="tools-grid">
-                    <div class="tool-card" onclick={handleOrgMonitoring}>
-                        <div class="tool-icon-container monitoring">
-                            <lightning-icon icon-name="standard:monitoring" size="small"></lightning-icon>
-                        </div>
-                        <h4 class="tool-title">Org Monitoring</h4>
-                        <p class="tool-description">Monitor org health and performance</p>
-                    </div>
-
                     <div class="tool-card" onclick={navigateToDocumentation}>
                         <div class="tool-icon-container documentation">
                             <lightning-icon icon-name="standard:documentation" size="small"></lightning-icon>

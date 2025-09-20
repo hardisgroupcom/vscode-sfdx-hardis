@@ -84,6 +84,7 @@ export class Commands {
     this.registerShowPipelineConfig();
     this.registerShowInstalledPackages();
     this.registerShowOrgsManager();
+    this.registerShowOrgMonitoring();
     this.registerShowFilesWorkbench();
     this.registerRunLocalHtmlDocPages();
     this.registerRunSalesforceCliMcpServer();
@@ -711,6 +712,9 @@ export class Commands {
             case "navigateToFilesWorkbench":
               vscode.commands.executeCommand("vscode-sfdx-hardis.showFilesWorkbench");
               break;
+            case "navigateToOrgMonitoring":
+              vscode.commands.executeCommand("vscode-sfdx-hardis.showOrgMonitoring");
+              break;
             case "navigateToExtensionConfig":
               vscode.commands.executeCommand("vscode-sfdx-hardis.showExtensionConfig");
               break;
@@ -729,11 +733,6 @@ export class Commands {
                 } catch (error: any) {
                   vscode.window.showErrorMessage(`Failed to update setting: ${error.message}`);
                 }
-              }
-              break;
-            case "runCommand":
-              if (data && data.command) {
-                vscode.commands.executeCommand("vscode-sfdx-hardis.execute-command", data.command);
               }
               break;
             default:
@@ -947,6 +946,173 @@ export class Commands {
       },
     );
     this.disposables.push(disposable);
+  }
+
+  registerShowOrgMonitoring() {
+    const disposable = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.showOrgMonitoring",
+      async () => {
+        const lwcManager = LwcPanelManager.getInstance();
+        
+        // Check if org monitoring is installed
+        const isInstalled = await this.checkOrgMonitoringInstallation();
+        
+        const panel = lwcManager.getOrCreatePanel("s-org-monitoring", {
+          isInstalled: isInstalled
+        });
+        panel.updateTitle("Org Monitoring Workbench");
+
+        // Handle messages from the Org Monitoring panel
+        panel.onMessage(async (type: string, data: any) => {
+          switch (type) {
+            case "checkOrgMonitoringInstallation": {
+              const currentStatus = await this.checkOrgMonitoringInstallation();
+              panel.sendMessage({
+                type: "installationStatusUpdated",
+                data: { isInstalled: currentStatus }
+              });
+              break;
+            }
+            case "viewPackageConfig": {
+              await this.showPackageXmlPanel();
+              break;
+            }
+            default:
+              break;
+          }
+        });
+      },
+    );
+    this.disposables.push(disposable);
+  }
+
+  private async checkOrgMonitoringInstallation(): Promise<boolean> {
+    const workspaceRoot = getWorkspaceRoot();
+    const packageSkipItemsPath = path.join(workspaceRoot, "manifest", "package-skip-items.xml");
+    
+    try {
+      return fs.existsSync(packageSkipItemsPath);
+    } catch (error) {
+      Logger.log("Error checking org monitoring installation: " + error);
+      return false;
+    }
+  }
+
+  private async showPackageXmlPanel(): Promise<void> {
+    const lwcManager = LwcPanelManager.getInstance();
+    
+    try {
+      const packageData = await this.loadPackageXmlData();
+      
+      const panel = lwcManager.getOrCreatePanel("s-package-xml", {
+        packageData: packageData
+      });
+      panel.updateTitle("Package Configuration - package-skip-items.xml");
+
+      // Handle messages from the Package XML panel
+      panel.onMessage(async (type: string, data: any) => {
+        switch (type) {
+          case "refreshPackageConfig": {
+            try {
+              const newPackageData = await this.loadPackageXmlData();
+              panel.sendMessage({
+                type: "packageDataUpdated",
+                data: { packageData: newPackageData }
+              });
+            } catch (error: any) {
+              panel.sendMessage({
+                type: "packageDataUpdated",
+                data: { error: error.message }
+              });
+            }
+            break;
+          }
+          case "editPackageFile": {
+            const workspaceRoot = getWorkspaceRoot();
+            const packagePath = path.join(workspaceRoot, "manifest", "package-skip-items.xml");
+            try {
+              const document = await vscode.workspace.openTextDocument(packagePath);
+              await vscode.window.showTextDocument(document);
+            } catch (error: any) {
+              vscode.window.showErrorMessage(`Failed to open package file: ${error.message}`);
+            }
+            break;
+          }
+          case "backToMonitoring": {
+            vscode.commands.executeCommand("vscode-sfdx-hardis.showOrgMonitoring");
+            break;
+          }
+          default:
+            break;
+        }
+      });
+    } catch (error: any) {
+      const panel = lwcManager.getOrCreatePanel("s-package-xml", {
+        error: error.message
+      });
+      panel.updateTitle("Package Configuration - Error");
+    }
+  }
+
+  private async loadPackageXmlData(): Promise<any> {
+    const workspaceRoot = getWorkspaceRoot();
+    const packageSkipItemsPath = path.join(workspaceRoot, "manifest", "package-skip-items.xml");
+    
+    if (!fs.existsSync(packageSkipItemsPath)) {
+      throw new Error("package-skip-items.xml file not found in manifest/ directory");
+    }
+
+    try {
+      const xmlContent = await fs.readFile(packageSkipItemsPath, 'utf8');
+      return await this.parsePackageXml(xmlContent);
+    } catch (error: any) {
+      throw new Error(`Failed to read package-skip-items.xml: ${error.message}`);
+    }
+  }
+
+  private async parsePackageXml(xmlContent: string): Promise<any> {
+    // Simple XML parsing for package.xml structure
+    try {
+      // Extract API version
+      const apiVersionMatch = xmlContent.match(/<version>([^<]+)<\/version>/);
+      const apiVersion = apiVersionMatch ? apiVersionMatch[1] : 'Unknown';
+
+      // Extract types
+      const typesRegex = /<types>([\s\S]*?)<\/types>/g;
+      const types: any[] = [];
+      let typeMatch;
+
+      while ((typeMatch = typesRegex.exec(xmlContent)) !== null) {
+        const typeContent = typeMatch[1];
+        
+        // Extract type name
+        const nameMatch = typeContent.match(/<name>([^<]+)<\/name>/);
+        const typeName = nameMatch ? nameMatch[1] : 'Unknown';
+
+        // Extract members
+        const membersRegex = /<members>([^<]+)<\/members>/g;
+        const members: string[] = [];
+        let memberMatch;
+
+        while ((memberMatch = membersRegex.exec(typeContent)) !== null) {
+          members.push(memberMatch[1]);
+        }
+
+        if (typeName !== 'Unknown') {
+          types.push({
+            name: typeName,
+            members: members
+          });
+        }
+      }
+
+      return {
+        apiVersion: apiVersion,
+        types: types
+      };
+    } catch (error: any) {
+      throw new Error(`Failed to parse XML content: ${error.message}`);
+    }
   }
 
   registerShowFilesWorkbench() {
