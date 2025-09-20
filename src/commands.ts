@@ -190,7 +190,7 @@ export class Commands {
             } else if (type === "setOrgAlias") {
               try {
                 const { username, alias } = data;
-                
+
                 if (!alias || !alias.trim()) {
                   vscode.window.showErrorMessage("Alias cannot be empty");
                   return;
@@ -206,13 +206,13 @@ export class Commands {
                   async () => {
                     const command = `sf alias set ${alias.trim()}=${username}`;
                     await execSfdxJson(command);
-                  }
+                  },
                 );
 
                 vscode.window.showInformationMessage(
-                  `Alias "${alias.trim()}" set successfully for org ${username}`
+                  `Alias "${alias.trim()}" set successfully for org ${username}`,
                 );
-                
+
                 // Refresh the orgs list to show the updated alias
                 const newOrgs = await this.loadOrgsWithProgress(currentAllFlag);
                 panel.sendInitializationData({ orgs: newOrgs });

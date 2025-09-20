@@ -71,16 +71,20 @@ export default class OrgManager extends LightningElement {
   }
 
   get isSetAliasDisabled() {
-    return !this.aliasInputValue || 
-           !this.aliasInputValue.trim() || 
-           !!this.aliasError ||
-           !/^[a-zA-Z0-9_-]+$/.test(this.aliasInputValue.trim());
+    return (
+      !this.aliasInputValue ||
+      !this.aliasInputValue.trim() ||
+      !!this.aliasError ||
+      !/^[a-zA-Z0-9_-]+$/.test(this.aliasInputValue.trim())
+    );
   }
 
   renderedCallback() {
     // Auto-focus the alias input when modal is shown
     if (this.showAliasModal) {
-      const aliasInput = this.template.querySelector('lightning-input[data-id="alias-input"]');
+      const aliasInput = this.template.querySelector(
+        'lightning-input[data-id="alias-input"]',
+      );
       if (aliasInput) {
         // Use setTimeout to ensure the input is fully rendered
         setTimeout(() => {
@@ -352,19 +356,20 @@ export default class OrgManager extends LightningElement {
   handleAliasInputChange(event) {
     this.aliasInputValue = event.target.value;
     this.aliasError = "";
-    
+
     // Validate input
     const value = this.aliasInputValue.trim();
     if (!value) {
       this.aliasError = "Alias cannot be empty";
     } else if (!/^[a-zA-Z0-9_-]+$/.test(value)) {
-      this.aliasError = "Alias can only contain letters, numbers, hyphens, and underscores";
+      this.aliasError =
+        "Alias can only contain letters, numbers, hyphens, and underscores";
     }
   }
 
   handleAliasInputKeyUp(event) {
     // Check if Enter key was pressed
-    if (event.keyCode === 13 || event.key === 'Enter') {
+    if (event.keyCode === 13 || event.key === "Enter") {
       // Only submit if the form is valid (same logic as the button disabled state)
       if (!this.isSetAliasDisabled) {
         this.handleSetAliasConfirm();
@@ -374,23 +379,24 @@ export default class OrgManager extends LightningElement {
 
   handleSetAliasConfirm() {
     const alias = this.aliasInputValue.trim();
-    
+
     if (!alias) {
       this.aliasError = "Alias cannot be empty";
       return;
     }
-    
+
     if (!/^[a-zA-Z0-9_-]+$/.test(alias)) {
-      this.aliasError = "Alias can only contain letters, numbers, hyphens, and underscores";
+      this.aliasError =
+        "Alias can only contain letters, numbers, hyphens, and underscores";
       return;
     }
 
     // Send message to VS Code to set the alias
     window.sendMessageToVSCode({
       type: "setOrgAlias",
-      data: { 
+      data: {
         username: this.selectedOrgForAlias.username,
-        alias: alias
+        alias: alias,
       },
     });
 
