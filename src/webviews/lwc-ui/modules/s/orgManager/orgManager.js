@@ -4,10 +4,8 @@ export default class OrgManager extends LightningElement {
   @track orgs = [];
   @track selectedRowKeys = [];
   @track viewAll = false;
-  @track showAliasModal = false;
-  @track selectedOrgForAlias = null;
-  @track aliasInputValue = "";
-  @track aliasError = "";
+  @track draftValues = [];
+  @track validationErrors = [];
   internalCommands = [];
 
   columns = [
@@ -38,6 +36,7 @@ export default class OrgManager extends LightningElement {
       label: "Alias",
       fieldName: "alias",
       type: "text",
+      editable: true,
       initialWidth: 120,
       cellAttributes: { class: { fieldName: "rowClass" } },
     },
@@ -70,28 +69,12 @@ export default class OrgManager extends LightningElement {
     return this.selectedRowKeys && this.selectedRowKeys.length > 0;
   }
 
-  get isSetAliasDisabled() {
-    return (
-      !this.aliasInputValue ||
-      !this.aliasInputValue.trim() ||
-      !!this.aliasError ||
-      !/^[a-zA-Z0-9_-]+$/.test(this.aliasInputValue.trim())
-    );
+  get hasAliasChanges() {
+    return this.draftValues && this.draftValues.length > 0;
   }
 
-  renderedCallback() {
-    // Auto-focus the alias input when modal is shown
-    if (this.showAliasModal) {
-      const aliasInput = this.template.querySelector(
-        'lightning-input[data-id="alias-input"]',
-      );
-      if (aliasInput) {
-        // Use setTimeout to ensure the input is fully rendered
-        setTimeout(() => {
-          aliasInput.focus();
-        }, 100);
-      }
-    }
+  get hasValidationErrors() {
+    return this.validationErrors && this.validationErrors.length > 0;
   }
 
   @api
@@ -134,8 +117,6 @@ export default class OrgManager extends LightningElement {
         } else {
           actions.push({ label: "Reconnect", name: "reconnect" });
         }
-        // Add Set Alias action for all orgs (connected or not)
-        actions.push({ label: "Set Alias", name: "setAlias" });
         actions.push({
           label: "Remove",
           name: "remove",
@@ -175,6 +156,8 @@ export default class OrgManager extends LightningElement {
     }
 
     this.selectedRowKeys = [];
+    this.draftValues = [];
+    this.validationErrors = [];
   }
 
   @api
@@ -328,8 +311,6 @@ export default class OrgManager extends LightningElement {
         type: "connectOrg",
         data: { username: row.username, instanceUrl: row.instanceUrl },
       });
-    } else if (actionName === "setAlias") {
-      this.handleSetAlias(row);
     } else if (actionName === "remove") {
       window.sendMessageToVSCode({
         type: "forgetOrgs",
@@ -338,70 +319,116 @@ export default class OrgManager extends LightningElement {
     }
   }
 
-  handleSetAlias(row) {
-    // Open modal for alias input
-    this.selectedOrgForAlias = row;
-    this.aliasInputValue = row.alias || "";
-    this.aliasError = "";
-    this.showAliasModal = true;
-  }
-
-  handleCloseAliasModal() {
-    this.showAliasModal = false;
-    this.selectedOrgForAlias = null;
-    this.aliasInputValue = "";
-    this.aliasError = "";
-  }
-
-  handleAliasInputChange(event) {
-    this.aliasInputValue = event.target.value;
-    this.aliasError = "";
-
-    // Validate input
-    const value = this.aliasInputValue.trim();
-    if (!value) {
-      this.aliasError = "Alias cannot be empty";
-    } else if (!/^[a-zA-Z0-9_-]+$/.test(value)) {
-      this.aliasError =
-        "Alias can only contain letters, numbers, hyphens, and underscores";
-    }
-  }
-
-  handleAliasInputKeyUp(event) {
-    // Check if Enter key was pressed
-    if (event.keyCode === 13 || event.key === "Enter") {
-      // Only submit if the form is valid (same logic as the button disabled state)
-      if (!this.isSetAliasDisabled) {
-        this.handleSetAliasConfirm();
+  handleDraftValuesChange(event) {
+    const newDrafts = event.detail.draftValues;
+    for (const newDraft of newDrafts) {
+      const existingDraftIndex = this.draftValues.findIndex(
+        (draft) => draft.username === newDraft.username,
+      );
+      
+      // Only include the alias field in draft values to avoid highlighting other columns
+      const cleanDraft = {
+        username: newDraft.username,
+        alias: newDraft.alias
+      };
+      
+      if (existingDraftIndex !== -1) {
+        // Update existing draft
+        this.draftValues[existingDraftIndex] = cleanDraft;
+      } else {
+        // Add new draft
+        this.draftValues.push(cleanDraft);
       }
     }
+    // Refresh to ensure reactivity
+    this.draftValues = [...this.draftValues];
   }
 
-  handleSetAliasConfirm() {
-    const alias = this.aliasInputValue.trim();
+  handleCancelAliasChanges() {
+    this.draftValues = [];
+    this.validationErrors = [];
+  }
 
-    if (!alias) {
-      this.aliasError = "Alias cannot be empty";
+  handleSaveAliases(event) {
+    // Clear previous validation errors
+    this.validationErrors = [];
+    
+    // Get draft values from the event (native datatable behavior)
+    const draftValues = event.detail.draftValues || this.draftValues;
+    
+    // Validate all alias changes before submitting
+    const validationErrors = [];
+    const validatedChanges = [];
+
+    for (const draft of draftValues) {
+      const alias = (draft.alias || "").trim();
+      const username = draft.username;
+      
+      // Skip empty aliases (they will be unset)
+      if (!alias) {
+        validatedChanges.push({ username, alias: "" });
+        continue;
+      }
+
+      // Validate alias compliance with Salesforce CLI requirements
+      const validationError = this.validateAlias(alias);
+      if (validationError) {
+        validationErrors.push({
+          username: username,
+          alias: alias,
+          error: validationError
+        });
+        continue;
+      }
+
+      validatedChanges.push({ username, alias });
+    }
+
+    // If there are validation errors, store them and don't proceed
+    if (validationErrors.length > 0) {
+      this.validationErrors = validationErrors;
       return;
     }
 
-    if (!/^[a-zA-Z0-9_-]+$/.test(alias)) {
-      this.aliasError =
-        "Alias can only contain letters, numbers, hyphens, and underscores";
-      return;
-    }
-
-    // Send message to VS Code to set the alias
+    // All validations passed, update the orgs data directly for immediate display
+    const updatedOrgs = this.orgs.map(org => {
+      const change = validatedChanges.find(change => change.username === org.username);
+      if (change) {
+        return { ...org, alias: change.alias };
+      }
+      return org;
+    });
+    this.orgs = updatedOrgs;
+    
+    // Clear draft values and send to VS Code to save aliases
+    this.draftValues = [];
     window.sendMessageToVSCode({
-      type: "setOrgAlias",
+      type: "saveAliases",
       data: {
-        username: this.selectedOrgForAlias.username,
-        alias: alias,
+        aliasChanges: validatedChanges
       },
     });
+  }
 
-    // Close modal
-    this.handleCloseAliasModal();
+  validateAlias(alias) {
+    // Salesforce CLI alias validation rules
+    
+    // Check length (1-64 characters)
+    if (alias.length < 1 || alias.length > 64) {
+      return "Alias must be 1-64 characters long";
+    }
+
+    // Check if it starts with a letter or underscore
+    if (!/^[a-zA-Z_]/.test(alias)) {
+      return "Alias must start with a letter or underscore";
+    }
+
+    // Check if it contains only valid characters (letters, numbers, underscores, hyphens)
+    if (!/^[a-zA-Z0-9_-]+$/.test(alias)) {
+      return "Alias can only contain letters, numbers, underscores, and hyphens";
+    }
+
+    return null; // No validation errors
   }
 
   requestRunInternalCommand(internalCommand) {
