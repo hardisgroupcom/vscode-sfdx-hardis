@@ -187,6 +187,40 @@ export class Commands {
                   `Error removing recommended orgs: ${error?.message || error}`,
                 );
               }
+            } else if (type === "setOrgAlias") {
+              try {
+                const { username, alias } = data;
+
+                if (!alias || !alias.trim()) {
+                  vscode.window.showErrorMessage("Alias cannot be empty");
+                  return;
+                }
+
+                // Execute sf alias set command with progress
+                await vscode.window.withProgress(
+                  {
+                    location: vscode.ProgressLocation.Notification,
+                    title: `Setting alias "${alias.trim()}" for org ${username}...`,
+                    cancellable: false,
+                  },
+                  async () => {
+                    const command = `sf alias set ${alias.trim()}=${username}`;
+                    await execSfdxJson(command);
+                  },
+                );
+
+                vscode.window.showInformationMessage(
+                  `Alias "${alias.trim()}" set successfully for org ${username}`,
+                );
+
+                // Refresh the orgs list to show the updated alias
+                const newOrgs = await this.loadOrgsWithProgress(currentAllFlag);
+                panel.sendInitializationData({ orgs: newOrgs });
+              } catch (error: any) {
+                vscode.window.showErrorMessage(
+                  `Error setting alias: ${error?.message || error}`,
+                );
+              }
             }
           });
         } catch (error: any) {
