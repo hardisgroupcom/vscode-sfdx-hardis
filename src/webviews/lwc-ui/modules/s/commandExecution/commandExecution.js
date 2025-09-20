@@ -543,12 +543,16 @@ export default class CommandExecution extends LightningElement {
     if (this.currentProgressSection && this.currentProgressSection.isActive) {
       this.currentProgressSection.isActive = false;
       this.currentProgressSection.endTime = new Date();
-      
+
       // Auto-collapse the progress section when it ends, unless user has manually toggled it
-      if (!this.userSectionExpandState.hasOwnProperty(this.currentProgressSection.id)) {
+      if (
+        !this.userSectionExpandState.hasOwnProperty(
+          this.currentProgressSection.id,
+        )
+      ) {
         this.userSectionExpandState[this.currentProgressSection.id] = false;
       }
-      
+
       this.currentProgressSection = null;
     }
   }
@@ -1954,9 +1958,13 @@ ${resultMessage}`;
     if (this.currentProgressSection) {
       this.currentProgressSection.isActive = false;
       this.currentProgressSection.endTime = new Date();
-      
+
       // Auto-collapse the progress section when it ends, unless user has manually toggled it
-      if (!this.userSectionExpandState.hasOwnProperty(this.currentProgressSection.id)) {
+      if (
+        !this.userSectionExpandState.hasOwnProperty(
+          this.currentProgressSection.id,
+        )
+      ) {
         this.userSectionExpandState[this.currentProgressSection.id] = false;
       }
     }
@@ -2040,12 +2048,16 @@ ${resultMessage}`;
     this.currentProgressSection.isActive = false;
     this.currentProgressSection.endTime = new Date();
     this.currentProgressSection.estimatedRemainingTime = null; // Clear estimation
-    
+
     // Auto-collapse the progress section when it ends, unless user has manually toggled it
-    if (!this.userSectionExpandState.hasOwnProperty(this.currentProgressSection.id)) {
+    if (
+      !this.userSectionExpandState.hasOwnProperty(
+        this.currentProgressSection.id,
+      )
+    ) {
       this.userSectionExpandState[this.currentProgressSection.id] = false;
     }
-    
+
     this.currentProgressSection = null;
 
     // Update the sections array to trigger reactivity
