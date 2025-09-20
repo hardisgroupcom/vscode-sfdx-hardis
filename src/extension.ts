@@ -56,11 +56,17 @@ export function activate(context: vscode.ExtensionContext) {
   
   treeView.onDidChangeVisibility((e) => {
     if (e.visible && !welcomeShownThisSession) {
-      welcomeShownThisSession = true;
-      // Delay slightly to ensure the tree view is fully rendered
-      setTimeout(() => {
-        vscode.commands.executeCommand("vscode-sfdx-hardis.showWelcome");
-      }, 500);
+      // Check if the setting is enabled
+      const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+      const showWelcomeAtStartup = config.get("showWelcomeAtStartup", true);
+      
+      if (showWelcomeAtStartup) {
+        welcomeShownThisSession = true;
+        // Delay slightly to ensure the tree view is fully rendered
+        setTimeout(() => {
+          vscode.commands.executeCommand("vscode-sfdx-hardis.showWelcome");
+        }, 500);
+      }
     }
   });
   

@@ -8,7 +8,7 @@
                         <span class="hero-icon">🚀</span>
                         <div class="hero-text">
                             <h1 class="hero-title">Welcome to VS Code SFDX Hardis</h1>
-                            <p class="hero-subtitle">Your comprehensive Salesforce DX toolkit</p>
+                            <p class="hero-subtitle">Your comprehensive Salesforce DX toolkit, by <a href="https://www.cloudity.com" target="_blank">Cloudity</a> and <a href="https://sfdx-hardis.cloudity.com/contributors/" target="_blank">friends</a></p>
                         </div>
                     </div>
                 </div>
@@ -21,7 +21,7 @@
                         <span class="section-icon">⭐</span>
                         Major Features
                     </h2>
-                    <p class="section-subtitle">Discover the core capabilities that make your Salesforce development easier</p>
+                    <p class="section-subtitle">Discover the core capabilities that make your Salesforce implementation and maintenance easier</p>
                 </div>
                 
                 <div class="features-grid">
@@ -205,6 +205,29 @@
                             onclick={openTutorials}
                             class="getting-started-button"
                         ></lightning-button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Section -->
+            <div class="settings-section">
+                <div class="settings-content">
+                    <div class="settings-header">
+                        <lightning-icon icon-name="utility:settings" size="x-small" class="settings-icon"></lightning-icon>
+                        <span class="settings-title">Welcome Settings</span>
+                    </div>
+                    <div class="setting-item">
+                        <lightning-input
+                            type="toggle"
+                            label="Show Welcome panel at startup"
+                            name="showWelcomeAtStartup"
+                            checked={showWelcomeAtStartup}
+                            onchange={handleWelcomeSettingChange}
+                            message-when-value-missing="This setting controls whether the Welcome panel appears automatically when you first open SFDX Hardis in a VS Code session."
+                        ></lightning-input>
+                        <p class="setting-description">
+                            When enabled, this Welcome page will automatically appear when you first open the SFDX Hardis panel in a new VS Code session.
+                        </p>
                     </div>
                 </div>
             </div>

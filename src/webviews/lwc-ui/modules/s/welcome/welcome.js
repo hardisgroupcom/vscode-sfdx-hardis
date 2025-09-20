@@ -7,11 +7,17 @@ import "s/forceLightTheme"; // Ensure light theme is applied
 
 export default class Welcome extends LightningElement {
   @track isLoading = false;
+  @track showWelcomeAtStartup = true;
 
   @api
   initialize(data) {
     console.log("Welcome component initialized:", data);
     this.isLoading = false;
+    
+    // Initialize the setting value
+    if (data && data.showWelcomeAtStartup !== undefined) {
+      this.showWelcomeAtStartup = data.showWelcomeAtStartup;
+    }
   }
 
   @api
@@ -116,6 +122,21 @@ export default class Welcome extends LightningElement {
     window.sendMessageToVSCode({
       type: "openExternal",
       data: "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/"
+    });
+  }
+
+  // Settings handler
+  handleWelcomeSettingChange(event) {
+    const newValue = event.target.checked;
+    this.showWelcomeAtStartup = newValue;
+    
+    // Send message to VS Code to update the setting
+    window.sendMessageToVSCode({
+      type: "updateSetting",
+      data: {
+        setting: "vsCodeSfdxHardis.showWelcomeAtStartup",
+        value: newValue
+      }
     });
   }
 }

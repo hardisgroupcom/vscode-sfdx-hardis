@@ -135,6 +135,11 @@
           "type": "boolean",
           "default": false,
           "description": "Start Salesforce CLI MCP server when starting VsCode SFDX-Hardis"
+        },
+        "vsCodeSfdxHardis.showWelcomeAtStartup": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically show the Welcome panel when opening VS Code SFDX Hardis for the first time in a session"
         }
       }
     },
