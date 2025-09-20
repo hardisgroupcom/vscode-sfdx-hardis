@@ -24,3 +24,9 @@ FILEIO_REPORTER: false
 SECURED_ENV_VARIABLES:
   - VSCE_TOKEN
 ACTION_ACTIONLINT_DISABLE_ERRORS_IF_LESS_THAN: 2
+
+# AI config
+LLM_ADVISOR_ENABLED: "true"                # Enable/disable AI advisor
+LLM_ADVISOR_LEVEL: ERROR                   # When to trigger: ERROR (default) or WARNING
+LLM_PROVIDER: google                       # Provider: see supported providers above
+LLM_MODEL_NAME: gemini-2.5-flash-lite      # Model name (provider-specific)

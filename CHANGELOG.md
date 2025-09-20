@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Enable MegaLinter LLM Advisor
+
 ## [6.6.1] 2024-09-20
 
 - Auto-collapse progress sections when they are completed.
