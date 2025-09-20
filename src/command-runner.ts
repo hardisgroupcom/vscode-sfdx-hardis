@@ -152,7 +152,7 @@ export class CommandRunner {
   }
 
   showDuplicateCommandWarning() {
-    const buttonMsg = "No you're wrong, you app is buggy, let me run it again";
+    const buttonMsg = "No you're wrong, let me run it again!";
     vscode.window
       .showErrorMessage(
         "No need to click multiple times on a menu, just be patient 🤗",

@@ -459,20 +459,6 @@
     justify-content: center;
 }
 
-.getting-started-button {
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 1rem;
-    padding: 0.75rem 2rem;
-    box-shadow: 0 4px 12px rgba(21, 137, 238, 0.3);
-    transition: all 0.2s ease;
-}
-
-.getting-started-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(21, 137, 238, 0.4);
-}
-
 /* Open Source & Services Section */
 .open-source-section {
     background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
@@ -616,20 +602,6 @@
 .open-source-actions {
     display: flex;
     justify-content: center;
-}
-
-.services-button {
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 1rem;
-    padding: 0.75rem 2rem;
-    box-shadow: 0 4px 12px rgba(21, 137, 238, 0.3);
-    transition: all 0.2s ease;
-}
-
-.services-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(21, 137, 238, 0.4);
 }
 
 /* Settings Section */

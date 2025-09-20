@@ -111,9 +111,7 @@
                                 <div key={metadataType.name} class="type-card">
                                     <div class="type-header" onclick={toggleTypeExpansion} data-type-name={metadataType.name}>
                                         <div class="type-info">
-                                            <div class="type-icon-container" data-type={metadataType.name}>
-                                                <lightning-icon icon-name={metadataType.iconName} size="medium" variant="inverse"></lightning-icon>
-                                            </div>
+                                            <lightning-icon icon-name={metadataType.iconName} size="medium" class="type-icon" variant="inverse"></lightning-icon>
                                             <div class="type-details">
                                                 <h3 class="type-name">{metadataType.name}</h3>
                                                 <p class="type-count">{metadataType.memberCount} members</p>
@@ -141,7 +139,7 @@
                                                 <div class="members-grid">
                                                     <template for:each={metadataType.members} for:item="member">
                                                         <div key={member} class="member-item">
-                                                            <lightning-icon icon-name={metadataType.memberIconName} size="x-small" class="member-icon"></lightning-icon>
+                                                            <lightning-icon icon-name={metadataType.memberIconName} size="x-small" class="member-icon" variant="inverse"></lightning-icon>
                                                             <span class="member-name">{member}</span>
                                                         </div>
                                                     </template>

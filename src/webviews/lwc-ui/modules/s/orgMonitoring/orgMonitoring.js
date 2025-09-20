@@ -216,7 +216,7 @@ export default class OrgMonitoring extends LightningElement {
   openSetupGuide() {
     window.sendMessageToVSCode({
       type: "openExternal",
-      data: "https://sfdx-hardis.cloudity.com/hardis/org/configure/monitoring/"
+      data: "https://sfdx-hardis.cloudity.com/salesforce-monitoring-config-home/"
     });
   }
 }

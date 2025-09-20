@@ -117,7 +117,7 @@ export default class Welcome extends LightningElement {
   openCloudityServices() {
     window.sendMessageToVSCode({
       type: "openExternal",
-      data: "https://www.cloudity.com/?ref=sfdxhardis"
+      data: "https://cloudity.com/?ref=sfdxhardis#form"
     });
   }
 
