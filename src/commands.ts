@@ -801,7 +801,7 @@ export class Commands {
         panel.updateTitle("DevOps Pipeline");
 
         // Register message handler for refreshpipeline and runCommand
-        panel.onMessage(async (type, _data) => {
+        panel.onMessage(async (type, data) => {
           if (type === "refreshpipeline") {
             const provider = new PipelineDataProvider();
             const newData = await provider.getPipelineData();
@@ -809,6 +809,9 @@ export class Commands {
               pipelineData: newData,
               prButtonInfo,
             });
+          } else if (type === "showPackageXml") {
+            // Handle package XML display requests from pipeline
+            await this.showPackageXmlPanel(data);
           }
         });
       },
@@ -1093,17 +1096,35 @@ export class Commands {
     const config = {
       packageType: packageConfig.packageType || "skip",
       filePath: packageConfig.filePath || "manifest/package-skip-items.xml",
+      fallbackFilePath: packageConfig.fallbackFilePath || null,
       title: packageConfig.title || "Package Configuration",
     };
 
     try {
-      const packageData = await this.loadPackageXmlData(config.filePath);
+      let packageData;
+      let actualFilePath = config.filePath;
+      
+      try {
+        packageData = await this.loadPackageXmlData(config.filePath);
+      } catch (error) {
+        // Try fallback file if specified and main file fails
+        if (config.fallbackFilePath) {
+          try {
+            packageData = await this.loadPackageXmlData(config.fallbackFilePath);
+            actualFilePath = config.fallbackFilePath; // Update to show the actual loaded file
+          } catch {
+            throw error; // Throw original error if fallback also fails
+          }
+        } else {
+          throw error;
+        }
+      }
 
       const panel = lwcManager.getOrCreatePanel("s-package-xml", {
         packageData: packageData,
-        config: config,
+        config: { ...config, filePath: actualFilePath },
       });
-      panel.updateTitle(`${config.title} - ${config.filePath}`);
+      panel.updateTitle(config.title);
 
       // Handle messages from the Package XML panel
       panel.onMessage(async (type: string, data: any) => {

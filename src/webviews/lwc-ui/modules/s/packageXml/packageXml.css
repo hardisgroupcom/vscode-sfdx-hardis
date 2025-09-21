@@ -89,6 +89,7 @@
     display: flex;
     gap: 1rem;
     flex-shrink: 0;
+    margin-left: auto;
 }
 
 .header-button {

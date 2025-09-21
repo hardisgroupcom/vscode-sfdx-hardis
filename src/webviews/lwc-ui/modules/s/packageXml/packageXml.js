@@ -70,6 +70,11 @@ export default class PackageXml extends LightningElement {
       return "all-org";
     } else if (fileName.includes("destructive")) {
       return "destructive";
+    } else if (
+      fileName.includes("no-overwrite") ||
+      fileName.includes("packagedeployonce")
+    ) {
+      return "no-overwrite";
     } else if (fileName.includes("deploy")) {
       return "deploy";
     } else if (fileName.includes("retrieve")) {
@@ -308,6 +313,21 @@ export default class PackageXml extends LightningElement {
           "This destructive changes package doesn't contain any components to delete.",
         refreshTooltip: "Reload destructive changes",
         editTooltip: "Open the destructive changes file for editing",
+      },
+      "no-overwrite": {
+        title: "No Overwrite Package",
+        description: "Metadata that will never be overwritten during deployment",
+        icon: "utility:ban",
+        infoIcon: "🔒",
+        typesIcon: "🛡️",
+        typesTitle: "Protected Metadata",
+        typesDescription: "Metadata types and components protected from overwrite during deployment",
+        wildcardMessage: "All members of this type are protected from overwrite (*)",
+        emptyTitle: "No Protected Metadata",
+        emptyDescription:
+          "This no-overwrite package doesn't contain any protected metadata types.",
+        refreshTooltip: "Reload no-overwrite package configuration",
+        editTooltip: "Open the no-overwrite package file for editing",
       },
       manifest: {
         title: "Package Manifest",
