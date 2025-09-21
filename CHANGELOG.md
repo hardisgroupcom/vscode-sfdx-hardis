@@ -2,8 +2,17 @@
 
 ## [Unreleased]
 
-- Enable MegaLinter LLM Advisor
+## [6.7.0] 2024-09-21
+
+- Welcome view
+- Org Monitoring Workbench + Package XML Viewer
 - Org Manager: Allow to edit Org aliases in the table
+- DevOps Pipeline: nex features
+  - Quick actions for contributors
+  - Links to package.xml files
+- Improve custom help text component so user can copy text and click on links
+- Many UI/UX improvements
+- Enable MegaLinter LLM Advisor with Google Gemini free tier
 
 ## [6.6.1] 2024-09-20
 

@@ -302,5 +302,5 @@ If you don't want to send anonymous usage stats, you can [disable Telemetry in V
 
 ## Who we are
 
-Powered by [Cloudity](https://www.cloudity.com/) and the Trailblazer Community
+Powered by [Cloudity](https://www.cloudity.com/?ref=sfdxhardis) and the Trailblazer Community
 
