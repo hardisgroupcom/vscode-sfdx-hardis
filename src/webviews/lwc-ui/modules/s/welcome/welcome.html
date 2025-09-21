@@ -147,12 +147,19 @@
                     </div>
                     <div class="getting-started-description">
                         <p class="getting-started-text">
-                            New to SFDX Hardis? Start by connecting to a Salesforce org and exploring the various features to understand your Salesforce environment and streamline your development workflow.
+                            New to SFDX Hardis? Start by connecting to a Salesforce org, then explore our comprehensive documentation to understand your Salesforce environment and streamline your development workflow.
                         </p>
                     </div>
                     <div class="getting-started-actions">
                         <lightning-button 
                             variant="brand" 
+                            label="Select an Org" 
+                            icon-name="utility:connected_apps"
+                            onclick={handleConnectToOrg}
+                            class="slds-m-right_small"
+                        ></lightning-button>
+                        <lightning-button 
+                            variant="outline-brand" 
                             label="View Documentation" 
                             icon-name="utility:knowledge_base"
                             onclick={openDocumentation}

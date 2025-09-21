@@ -49,7 +49,7 @@
                 <template for:each={section.entries} for:item="entry">
                   <div key={entry.key} class="slds-m-bottom_medium">
                     <div class="slds-grid slds-gutters">
-                      <div class="slds-col slds-size_10-of-12">
+                      <div class="slds-col slds-size_9-of-12">
                         <template if:true={isEditMode}>
                           <template if:true={entry.isEnum}>
                             <div class="slds-form-element slds-m-bottom_xx-small">
@@ -229,17 +229,16 @@
                           </template>
                         </template>
                       </div>
-                      <div class="slds-col slds-size_2-of-12 slds-align-middle">
+                      <div class="slds-col slds-size_3-of-12 slds-text-align_right">
                         <template if:true={entry.hasDocUrl}>
                           <lightning-button
                             variant="neutral"
                             label="Documentation"
                             icon-name="utility:link"
                             icon-position="left"
-                            class="slds-m-left_xx-small"
                             onclick={handleOpenDocUrl}
                             data-doc-url={entry.docUrl}
-                            style="font-size:0.75rem;line-height:1.5;"
+                            size="small"
                           ></lightning-button>
                         </template>
                       </div>

@@ -79,51 +79,12 @@ export default class Welcome extends LightningElement {
     });
   }
 
-  navigateToInstalledPackages() {
-    window.sendMessageToVSCode({
-      type: "navigateToInstalledPackages"
-    });
-  }
-
-  navigateToDocumentation() {
-    window.sendMessageToVSCode({
-      type: "navigateToDocumentation"
-    });
-  }
-
   // Quick action methods
-  handleNewUserStory() {
-    window.sendMessageToVSCode({
-      type: "runCommand",
-      data: {
-        command: "sf hardis:work:new"
-      }
-    });
-  }
-
-  handlePullFromOrg() {
-    window.sendMessageToVSCode({
-      type: "runCommand",
-      data: {
-        command: "sf hardis:scratch:pull"
-      }
-    });
-  }
-
-  handleSaveUserStory() {
-    window.sendMessageToVSCode({
-      type: "runCommand",
-      data: {
-        command: "sf hardis:work:save"
-      }
-    });
-  }
-
   handleConnectToOrg() {
     window.sendMessageToVSCode({
       type: "runCommand",
       data: {
-        command: "sf hardis:org:connect"
+        command: "sf hardis:org:select"
       }
     });
   }
