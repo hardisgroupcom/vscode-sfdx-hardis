@@ -13,6 +13,7 @@ import {
   openFolderInExplorer,
 } from "./utils";
 import axios from "axios";
+import yaml from "js-yaml";
 import TelemetryReporter from "@vscode/extension-telemetry";
 import { ThemeUtils } from "./themeUtils";
 import { LwcPanelManager } from "./lwc-panel-manager";
@@ -60,6 +61,7 @@ export class Commands {
 
   registerCommands() {
     this.registerExecuteCommand();
+    this.registerShowWelcome();
     this.registerOpenValidationLink();
     this.registerOpenReportsFolder();
     this.registerNewTerminalCommand();
@@ -82,6 +84,7 @@ export class Commands {
     this.registerShowPipelineConfig();
     this.registerShowInstalledPackages();
     this.registerShowOrgsManager();
+    this.registerShowOrgMonitoring();
     this.registerShowFilesWorkbench();
     this.registerRunLocalHtmlDocPages();
     this.registerRunSalesforceCliMcpServer();
@@ -682,6 +685,85 @@ export class Commands {
   }
   /* jscpd:ignore-end */
 
+  registerShowWelcome() {
+    const disposable = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.showWelcome",
+      async () => {
+        const lwcManager = LwcPanelManager.getInstance();
+
+        // Get current setting value
+        const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+        const showWelcomeAtStartup = config.get("showWelcomeAtStartup", true);
+
+        const panel = lwcManager.getOrCreatePanel("s-welcome", {
+          showWelcomeAtStartup: showWelcomeAtStartup,
+        });
+        panel.updateTitle("SFDX Hardis Welcome");
+
+        // Handle messages from the Welcome panel
+        panel.onMessage(async (type: string, data: any) => {
+          switch (type) {
+            case "navigateToOrgsManager":
+              vscode.commands.executeCommand(
+                "vscode-sfdx-hardis.openOrgsManager",
+              );
+              break;
+            case "navigateToPipeline":
+              vscode.commands.executeCommand("vscode-sfdx-hardis.showPipeline");
+              break;
+            case "navigateToFilesWorkbench":
+              vscode.commands.executeCommand(
+                "vscode-sfdx-hardis.showFilesWorkbench",
+              );
+              break;
+            case "navigateToOrgMonitoring":
+              vscode.commands.executeCommand(
+                "vscode-sfdx-hardis.showOrgMonitoring",
+              );
+              break;
+            case "navigateToExtensionConfig":
+              vscode.commands.executeCommand(
+                "vscode-sfdx-hardis.showExtensionConfig",
+              );
+              break;
+            case "navigateToInstalledPackages":
+              vscode.commands.executeCommand(
+                "vscode-sfdx-hardis.showInstalledPackages",
+              );
+              break;
+            case "navigateToDocumentation":
+              vscode.commands.executeCommand(
+                "vscode-sfdx-hardis.runLocalHtmlDocPages",
+              );
+              break;
+            case "updateSetting":
+              if (data && data.setting && data.value !== undefined) {
+                try {
+                  const config = vscode.workspace.getConfiguration();
+                  await config.update(
+                    data.setting,
+                    data.value,
+                    vscode.ConfigurationTarget.Global,
+                  );
+                  vscode.window.showInformationMessage(
+                    `Setting updated: ${data.setting.split(".").pop()} = ${data.value}`,
+                  );
+                } catch (error: any) {
+                  vscode.window.showErrorMessage(
+                    `Failed to update setting: ${error.message}`,
+                  );
+                }
+              }
+              break;
+            default:
+              break;
+          }
+        });
+      },
+    );
+    this.disposables.push(disposable);
+  }
+
   registerShowPipeline() {
     const disposable = vscode.commands.registerCommand(
       "vscode-sfdx-hardis.showPipeline",
@@ -719,7 +801,7 @@ export class Commands {
         panel.updateTitle("DevOps Pipeline");
 
         // Register message handler for refreshpipeline and runCommand
-        panel.onMessage(async (type, _data) => {
+        panel.onMessage(async (type, data) => {
           if (type === "refreshpipeline") {
             const provider = new PipelineDataProvider();
             const newData = await provider.getPipelineData();
@@ -727,6 +809,9 @@ export class Commands {
               pipelineData: newData,
               prButtonInfo,
             });
+          } else if (type === "showPackageXml") {
+            // Handle package XML display requests from pipeline
+            await this.showPackageXmlPanel(data);
           }
         });
       },
@@ -884,6 +969,285 @@ export class Commands {
       },
     );
     this.disposables.push(disposable);
+  }
+
+  registerShowOrgMonitoring() {
+    const disposable = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.showOrgMonitoring",
+      async () => {
+        const lwcManager = LwcPanelManager.getInstance();
+
+        // Check if org monitoring is installed
+        const isInstalled = await this.checkOrgMonitoringInstallation();
+
+        // Detect if this workspace is a DevOps/CI-CD repository by presence of manifest/package.xml
+        const workspaceRoot = getWorkspaceRoot();
+        const ciCdManifestPath = path.join(
+          workspaceRoot || "",
+          "manifest",
+          "package.xml",
+        );
+        const isCiCdRepo = fs.existsSync(ciCdManifestPath);
+
+        // Read optional monitoring repository URL from config/.sfdx-hardis.yml (monitoring_repository)
+        let monitoringRepository: string | null = null;
+        try {
+          const configPath = path.join(
+            workspaceRoot || "",
+            "config",
+            ".sfdx-hardis.yml",
+          );
+          if (fs.existsSync(configPath)) {
+            const raw = fs.readFileSync(configPath, "utf8");
+            const parsed = yaml.load(raw) as any;
+            monitoringRepository =
+              parsed?.monitoring_repository ||
+              parsed?.monitoringRepository ||
+              null;
+          }
+        } catch (e) {
+          Logger.log(`Unable to read monitoring_repository from config: ${e}`);
+        }
+
+        const panel = lwcManager.getOrCreatePanel("s-org-monitoring", {
+          isInstalled: isInstalled,
+          isCiCdRepo: isCiCdRepo,
+          monitoringRepository: monitoringRepository,
+        });
+        panel.updateTitle("Org Monitoring Workbench");
+
+        // Handle messages from the Org Monitoring panel
+        panel.onMessage(async (type: string, data: any) => {
+          switch (type) {
+            case "checkOrgMonitoringInstallation": {
+              const currentStatus = await this.checkOrgMonitoringInstallation();
+              // Recompute CI/CD detection and config in case workspace changed
+              const workspaceRoot2 = getWorkspaceRoot();
+              const ciCdManifestPath2 = path.join(
+                workspaceRoot2 || "",
+                "manifest",
+                "package.xml",
+              );
+              const isCiCdRepo2 = fs.existsSync(ciCdManifestPath2);
+              let monitoringRepository2: string | null = null;
+              try {
+                const configPath2 = path.join(
+                  workspaceRoot2 || "",
+                  "config",
+                  ".sfdx-hardis.yml",
+                );
+                if (fs.existsSync(configPath2)) {
+                  const raw2 = fs.readFileSync(configPath2, "utf8");
+                  const parsed2 = yaml.load(raw2) as any;
+                  monitoringRepository2 =
+                    parsed2?.monitoring_repository ||
+                    parsed2?.monitoringRepository ||
+                    null;
+                }
+              } catch (e) {
+                Logger.log(
+                  `Unable to read monitoring_repository from config: ${e}`,
+                );
+              }
+              panel.sendMessage({
+                type: "installationStatusUpdated",
+                data: {
+                  isInstalled: currentStatus,
+                  isCiCdRepo: isCiCdRepo2,
+                  monitoringRepository: monitoringRepository2,
+                },
+              });
+              break;
+            }
+            case "viewPackageConfig": {
+              const packageConfig = data || {};
+              await this.showPackageXmlPanel(packageConfig);
+              break;
+            }
+            default:
+              break;
+          }
+        });
+      },
+    );
+    this.disposables.push(disposable);
+  }
+
+  private async checkOrgMonitoringInstallation(): Promise<boolean> {
+    const workspaceRoot = getWorkspaceRoot();
+    const packageSkipItemsPath = path.join(
+      workspaceRoot,
+      "manifest",
+      "package-skip-items.xml",
+    );
+
+    try {
+      return fs.existsSync(packageSkipItemsPath);
+    } catch (error) {
+      Logger.log("Error checking org monitoring installation: " + error);
+      return false;
+    }
+  }
+
+  private async showPackageXmlPanel(packageConfig: any = {}): Promise<void> {
+    const lwcManager = LwcPanelManager.getInstance();
+
+    // Default to skip items if no config provided (backward compatibility)
+    const config = {
+      packageType: packageConfig.packageType || "skip",
+      filePath: packageConfig.filePath || "manifest/package-skip-items.xml",
+      fallbackFilePath: packageConfig.fallbackFilePath || null,
+      title: packageConfig.title || "Package Configuration",
+    };
+
+    try {
+      let packageData;
+      let actualFilePath = config.filePath;
+      
+      try {
+        packageData = await this.loadPackageXmlData(config.filePath);
+      } catch (error) {
+        // Try fallback file if specified and main file fails
+        if (config.fallbackFilePath) {
+          try {
+            packageData = await this.loadPackageXmlData(config.fallbackFilePath);
+            actualFilePath = config.fallbackFilePath; // Update to show the actual loaded file
+          } catch {
+            throw error; // Throw original error if fallback also fails
+          }
+        } else {
+          throw error;
+        }
+      }
+
+      const panel = lwcManager.getOrCreatePanel("s-package-xml", {
+        packageData: packageData,
+        config: { ...config, filePath: actualFilePath },
+      });
+      panel.updateTitle(config.title);
+
+      // Handle messages from the Package XML panel
+      panel.onMessage(async (type: string, data: any) => {
+        switch (type) {
+          case "refreshPackageConfig": {
+            try {
+              const refreshFilePath = data?.filePath || config.filePath;
+              const newPackageData =
+                await this.loadPackageXmlData(refreshFilePath);
+              panel.sendMessage({
+                type: "packageDataUpdated",
+                data: {
+                  packageData: newPackageData,
+                  config: { ...config, filePath: refreshFilePath },
+                },
+              });
+            } catch (error: any) {
+              panel.sendMessage({
+                type: "packageDataUpdated",
+                data: {
+                  error: error.message,
+                  config: config,
+                },
+              });
+            }
+            break;
+          }
+          case "editPackageFile": {
+            const workspaceRoot = getWorkspaceRoot();
+            const editFilePath = data?.filePath || config.filePath;
+            const packagePath = path.join(workspaceRoot, editFilePath);
+            try {
+              const document =
+                await vscode.workspace.openTextDocument(packagePath);
+              await vscode.window.showTextDocument(document);
+            } catch (error: any) {
+              vscode.window.showErrorMessage(
+                `Failed to open package file: ${error.message}`,
+              );
+            }
+            break;
+          }
+          case "backToMonitoring": {
+            vscode.commands.executeCommand(
+              "vscode-sfdx-hardis.showOrgMonitoring",
+            );
+            break;
+          }
+          default:
+            break;
+        }
+      });
+    } catch (error: any) {
+      const panel = lwcManager.getOrCreatePanel("s-package-xml", {
+        error: error.message,
+      });
+      panel.updateTitle("Package Configuration - Error");
+    }
+  }
+
+  private async loadPackageXmlData(
+    relativeFilePath: string = "manifest/package-skip-items.xml",
+  ): Promise<any> {
+    const workspaceRoot = getWorkspaceRoot();
+    const packagePath = path.join(workspaceRoot, relativeFilePath);
+
+    if (!fs.existsSync(packagePath)) {
+      throw new Error(`Package file not found: ${relativeFilePath}`);
+    }
+
+    try {
+      const xmlContent = await fs.readFile(packagePath, "utf8");
+      return await this.parsePackageXml(xmlContent);
+    } catch (error: any) {
+      throw new Error(
+        `Failed to read package-skip-items.xml: ${error.message}`,
+      );
+    }
+  }
+
+  private async parsePackageXml(xmlContent: string): Promise<any> {
+    // Simple XML parsing for package.xml structure
+    try {
+      // Extract API version
+      const apiVersionMatch = xmlContent.match(/<version>([^<]+)<\/version>/);
+      const apiVersion = apiVersionMatch ? apiVersionMatch[1] : "Unknown";
+
+      // Extract types
+      const typesRegex = /<types>([\s\S]*?)<\/types>/g;
+      const types: any[] = [];
+      let typeMatch;
+
+      while ((typeMatch = typesRegex.exec(xmlContent)) !== null) {
+        const typeContent = typeMatch[1];
+
+        // Extract type name
+        const nameMatch = typeContent.match(/<name>([^<]+)<\/name>/);
+        const typeName = nameMatch ? nameMatch[1] : "Unknown";
+
+        // Extract members
+        const membersRegex = /<members>([^<]+)<\/members>/g;
+        const members: string[] = [];
+        let memberMatch;
+
+        while ((memberMatch = membersRegex.exec(typeContent)) !== null) {
+          members.push(memberMatch[1]);
+        }
+
+        if (typeName !== "Unknown") {
+          types.push({
+            name: typeName,
+            members: members,
+          });
+        }
+      }
+
+      return {
+        apiVersion: apiVersion,
+        types: types,
+      };
+    } catch (error: any) {
+      throw new Error(`Failed to parse XML content: ${error.message}`);
+    }
   }
 
   registerShowFilesWorkbench() {

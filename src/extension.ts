@@ -18,6 +18,7 @@ import { runSalesforceCliMcpServer } from "./utils/mcpUtils";
 
 let refreshInterval: any = null;
 let reporter;
+let welcomeShownThisSession = false; // Flag to track if welcome was shown this session
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -46,6 +47,30 @@ export function activate(context: vscode.ExtensionContext) {
     hardisCommandsProvider,
   );
   context.subscriptions.push(disposableTreeCommands);
+
+  // Auto-show Welcome panel when tree view becomes visible (once per session)
+  const treeView = vscode.window.createTreeView("sfdx-hardis-commands", {
+    treeDataProvider: hardisCommandsProvider,
+    showCollapseAll: false,
+  });
+
+  treeView.onDidChangeVisibility((e) => {
+    if (e.visible && !welcomeShownThisSession) {
+      // Check if the setting is enabled
+      const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+      const showWelcomeAtStartup = config.get("showWelcomeAtStartup", true);
+
+      if (showWelcomeAtStartup) {
+        welcomeShownThisSession = true;
+        // Delay slightly to ensure the tree view is fully rendered
+        setTimeout(() => {
+          vscode.commands.executeCommand("vscode-sfdx-hardis.showWelcome");
+        }, 500);
+      }
+    }
+  });
+
+  context.subscriptions.push(treeView);
 
   // Register Status TreeView
   const hardisStatusProvider = new HardisStatusProvider(

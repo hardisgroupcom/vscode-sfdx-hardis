@@ -190,4 +190,67 @@ export default class Pipeline extends LightningElement {
     });
     console.log("Pipeline refresh event dispatched");
   }
+
+  // Quick action methods
+  handleNewUserStory() {
+    window.sendMessageToVSCode({
+      type: "runCommand",
+      data: {
+        command: "sf hardis:work:new",
+      },
+    });
+  }
+
+  handlePullFromOrg() {
+    window.sendMessageToVSCode({
+      type: "runCommand",
+      data: {
+        command: "sf hardis:scratch:pull",
+      },
+    });
+  }
+
+  handleSaveUserStory() {
+    window.sendMessageToVSCode({
+      type: "runCommand",
+      data: {
+        command: "sf hardis:work:save",
+      },
+    });
+  }
+
+  // Package XML handlers
+  handleShowPackageXml() {
+    window.sendMessageToVSCode({
+      type: "showPackageXml",
+      data: {
+        packageType: "deploy",
+        filePath: "manifest/package.xml",
+        title: "Package XML - All Deployable Elements",
+      },
+    });
+  }
+
+  handleShowNoOverwrite() {
+    window.sendMessageToVSCode({
+      type: "showPackageXml", 
+      data: {
+        packageType: "no-overwrite",
+        filePath: "manifest/package-no-overwrite.xml",
+        fallbackFilePath: "manifest/packageDeployOnce.xml",
+        title: "No Overwrite Package - Protected Metadata",
+      },
+    });
+  }
+
+  handleShowDestructiveChanges() {
+    window.sendMessageToVSCode({
+      type: "showPackageXml",
+      data: {
+        packageType: "destructive", 
+        filePath: "manifest/destructiveChanges.xml",
+        title: "Destructive Changes - Metadata to Delete",
+      },
+    });
+  }
 }

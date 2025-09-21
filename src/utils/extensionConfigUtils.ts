@@ -19,6 +19,7 @@ export const sectionDefs = [
     iconName: "utility:brush",
     description: "UI and theming options.",
     keys: [
+      "vsCodeSfdxHardis.showWelcomeAtStartup",
       "vsCodeSfdxHardis.theme.menuIconType",
       "vsCodeSfdxHardis.theme.emojisInSections",
       "vsCodeSfdxHardis.disableVsCodeColors",

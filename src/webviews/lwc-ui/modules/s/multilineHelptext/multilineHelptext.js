@@ -16,10 +16,29 @@ export default class MultilineHelptext extends LightningElement {
   }
 
   hide() {
+    // Add a small delay to allow user to move mouse to popover
+    setTimeout(() => {
+      if (!this.isHoveringPopover) {
+        this.visible = false;
+        this.positionLeft = false;
+        this.positionTop = false;
+      }
+    }, 100);
+  }
+
+  keepVisible() {
+    this.isHoveringPopover = true;
+    this.visible = true;
+  }
+
+  hideFromPopover() {
+    this.isHoveringPopover = false;
     this.visible = false;
     this.positionLeft = false;
     this.positionTop = false;
   }
+
+  @track isHoveringPopover = false;
 
   calculatePosition() {
     const popover = this.template.querySelector(".multiline-helptext-popover");

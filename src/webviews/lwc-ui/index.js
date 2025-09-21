@@ -7,6 +7,7 @@ console.log("LWC UI initializing...");
 
 // Static import map for all LWC modules (ensures Webpack bundles them)
 const lwcModules = {
+  "s-welcome": () => import("s/welcome"),
   "s-prompt-input": () => import("s/promptInput"),
   "s-command-execution": () => import("s/commandExecution"),
   "s-pipeline": () => import("s/pipeline"),
@@ -15,6 +16,8 @@ const lwcModules = {
   "s-multiline-helptext": () => import("s/multilineHelptext"),
   "s-installed-packages": () => import("s/installedPackages"),
   "s-org-manager": () => import("s/orgManager"),
+  "s-org-monitoring": () => import("s/orgMonitoring"),
+  "s-package-xml": () => import("s/packageXml"),
   "s-files-workbench": () => import("s/filesWorkbench"),
 };
 

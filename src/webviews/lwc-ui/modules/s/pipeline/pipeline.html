@@ -1,37 +1,29 @@
 <template>
-    <div class="slds-scope slds-theme_default slds-p-around_medium blue-back">
-    <lightning-card hide-header="true" label="DevOps Pipeline">
-        <div class="slds-grid slds-grid_align-spread slds-p-around_small">
-            <div class="slds-col slds-align-left">
-                <span class="slds-text-heading_medium slds-text-title_bold">SFDX-Hardis DevOps Pipeline</span>
-            </div>
-            <div class="slds-col slds-no-flex">
-                <template if:true={prButtonInfo}>
-                    <lightning-button 
-                        icon-name="utility:share"
-                        label={prButtonInfo.label} 
-                        title={prButtonInfo.label} 
-                        onclick={openPrPage}
-                    ></lightning-button>
-                </template>
+    <div class="slds-scope slds-theme_default slds-p-around_small blue-back">
+    <lightning-card title="SFDX-Hardis DevOps Pipeline">
+        <div slot="actions" class="slds-float_right">
+            <lightning-button-group>
                 <lightning-button 
                     icon-name="utility:settings"
                     variant="brand" 
                     label="Pipeline Settings" 
-                    onclick={handleShowPipelineConfig} 
-                    class="slds-m-left_small"
+                    onclick={handleShowPipelineConfig}
                 ></lightning-button>
+                <span class="slds-m-left_x-small"></span>
                 <lightning-button 
-                    icon-name="utility:package"
+                    icon-name="utility:key" 
+                    label="Add new Org" 
+                    title="Configure Salesforce authentication for a new org in the Pipeline, or reconfigure it for a refreshed Sandbox" 
+                    onclick={configureAuth} 
                     variant="brand"
-                    label="Installed Packages"
-                    title="View and edit installed packages for this project"
-                    onclick={handleShowInstalledPackages}
-                    class="slds-m-left_small"
                 ></lightning-button>
-                <lightning-button icon-name="utility:key" label="Add new Org" title="Configure Salesforce authentication for a new org in the Pipeline, or reconfigure it for a refreshed Sandbox" onclick={configureAuth} variant="brand" class="slds-m-left_small"></lightning-button>
-                <lightning-button icon-name="utility:refresh" label="Refresh" title="Refresh pipeline data" onclick={refreshPipeline} class="slds-m-left_small"></lightning-button>
-            </div>
+                <span class="slds-m-left_x-small"></span>
+                <lightning-button 
+                    icon-name="utility:refresh" 
+                    title="Refresh pipeline data" 
+                    onclick={refreshPipeline}
+                ></lightning-button>
+            </lightning-button-group>
         </div>
         <template if:true={pipelineData}>
             <template if:true={pipelineData.orgs}>
@@ -51,6 +43,42 @@
                                 </ul>
                             </div>
                         </template>
+                        
+                        <!-- Centered buttons: PR and Package XML Management -->
+                        <div class="slds-m-top_medium">
+                            <div style="display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap;">
+                                <template if:true={prButtonInfo}>
+                                    <lightning-button 
+                                        icon-name="utility:share"
+                                        variant="brand"
+                                        label={prButtonInfo.label} 
+                                        title={prButtonInfo.label} 
+                                        onclick={openPrPage}
+                                    ></lightning-button>
+                                </template>
+                                <lightning-button 
+                                    icon-name="utility:upload"
+                                    variant="brand-outline"
+                                    label="Package XML" 
+                                    title="View all deployable elements of the project (manifest/package.xml)" 
+                                    onclick={handleShowPackageXml}
+                                ></lightning-button>
+                                <lightning-button 
+                                    icon-name="utility:ban"
+                                    variant="brand-outline"
+                                    label="No Overwrite" 
+                                    title="View metadata that will never be overwritten during deployment (manifest/package-no-overwrite.xml or manifest/packageDeployOnce.xml)" 
+                                    onclick={handleShowNoOverwrite}
+                                ></lightning-button>
+                                <lightning-button 
+                                    icon-name="utility:delete"
+                                    variant="brand-outline"
+                                    label="Destructive Changes" 
+                                    title="View metadata that will be deleted during deployments (manifest/destructiveChanges.xml)" 
+                                    onclick={handleShowDestructiveChanges}
+                                ></lightning-button>
+                            </div>
+                        </div>
                     </div>
                 </template>
                 <template if:false={pipelineData.orgs.length}>
@@ -73,5 +101,55 @@
             <p class="slds-text-color_error">Error loading pipeline: {error}</p>
         </template>
     </lightning-card>
+    
+    <!-- Quick Development Actions Card - only show when pipeline data exists -->
+    <template if:true={pipelineData}>
+        <template if:true={pipelineData.orgs}>
+            <template if:true={pipelineData.orgs.length}>
+                <div class="pipeline-card-spacing">
+                    <lightning-card title="Project Contribution Workflow">
+                    <div class="commands-grid">
+                        <div class="command-card" onclick={handleNewUserStory}>
+                            <div class="command-header">
+                                <div class="command-icon-container new-story">
+                                    <lightning-icon icon-name="utility:add" size="small" variant="inverse"></lightning-icon>
+                                </div>
+                                <h3 class="command-title">New User Story</h3>
+                            </div>
+                            <p class="command-description">Start a new development or configuration user story</p>
+                        </div>
+                        <div class="command-card" onclick={handlePullFromOrg}>
+                            <div class="command-header">
+                                <div class="command-icon-container pull-action">
+                                    <lightning-icon icon-name="utility:download" size="small" variant="inverse"></lightning-icon>
+                                </div>
+                                <h3 class="command-title">Pull From Org</h3>
+                            </div>
+                            <p class="command-description">Download latest metadata changes from your Salesforce org to local files</p>
+                        </div>
+                        <div class="command-card" onclick={handleShowInstalledPackages}>
+                            <div class="command-header">
+                                <div class="command-icon-container package-action">
+                                    <lightning-icon icon-name="utility:package" size="small" variant="inverse"></lightning-icon>
+                                </div>
+                                <h3 class="command-title">Manage Packages</h3>
+                            </div>
+                            <p class="command-description">View and manage installed packages for this project</p>
+                        </div>
+                        <div class="command-card" onclick={handleSaveUserStory}>
+                            <div class="command-header">
+                                <div class="command-icon-container save-action">
+                                    <lightning-icon icon-name="utility:upload" size="small" variant="inverse"></lightning-icon>
+                                </div>
+                                <h3 class="command-title">Save / Publish</h3>
+                            </div>
+                            <p class="command-description">Save your work and publish changes to the remote repository</p>
+                        </div>
+                    </div>
+                </lightning-card>
+                </div>
+            </template>
+        </template>
+    </template>
     </div>
 </template>

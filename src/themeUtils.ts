@@ -149,6 +149,10 @@ export class ThemeUtils {
   public getAllCommandIcons(): any {
     return {
       default: { vscode: "run", hardis: "default.svg" },
+      "vscode-sfdx-hardis.showWelcome": {
+        vscode: "symbol-misc",
+        hardis: "help.svg",
+      },
       "hardis:work:new": { vscode: "new-file", hardis: "new.svg" },
       "scratch:pull-from-org-to-git": {
         vscode: "cloud-download",

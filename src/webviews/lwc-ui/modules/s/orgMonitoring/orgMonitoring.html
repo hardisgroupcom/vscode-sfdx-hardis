@@ -1,0 +1,414 @@
+<template>
+    <div class="slds-scope slds-theme_default blue-back">
+        <div class="monitoring-container">
+            <!-- Header Section -->
+            <div class="header-section">
+                <div class="header-content">
+                    <div class="header-icon-container">
+                        <lightning-icon icon-name="utility:graph" size="medium" variant="inverse"></lightning-icon>
+                    </div>
+                    <div class="header-text">
+                        <h1 class="header-title">Org Monitoring Workbench</h1>
+                        <p class="header-subtitle">Monitor your Salesforce org health, security, and performance</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Installation Status Section -->
+            <div class="section">
+                <template if:true={isInstalled}>
+                    <!-- Installed State -->
+                    <div class="status-card installed">
+                        <div class="status-icon-container success">
+                            <lightning-icon icon-name="utility:success" size="small" variant="inverse"></lightning-icon>
+                        </div>
+                        <div class="status-content">
+                            <h3 class="status-title">Org Monitoring is Installed</h3>
+                            <p class="status-description">Your org monitoring configuration is active and ready to use.</p>
+                            <div class="status-actions">
+                                <lightning-button 
+                                    variant="brand" 
+                                    label="Skip Items Package" 
+                                    title="View manifest/package-skip-items.xml - Items ignored during backup"
+                                    onclick={viewSkipItemsPackage}
+                                    icon-name="utility:ban"
+                                    class="status-button"
+                                ></lightning-button>
+                                <lightning-button 
+                                    variant="outline-brand" 
+                                    label="Backup Items Package" 
+                                    title="View manifest/package-backup-items.xml - Items included in backup"
+                                    onclick={viewBackupItemsPackage}
+                                    icon-name="utility:save"
+                                    class="status-button"
+                                ></lightning-button>
+                                <lightning-button 
+                                    variant="outline-brand" 
+                                    label="All Org Items Package" 
+                                    title="View package-all-org-items.xml - All items in the org"
+                                    onclick={viewAllOrgItemsPackage}
+                                    icon-name="utility:package"
+                                    class="status-button"
+                                ></lightning-button>
+                                <lightning-button 
+                                    variant="neutral" 
+                                    label="Refresh Status" 
+                                    title="Check installation status again"
+                                    onclick={checkInstallationStatus}
+                                    icon-name="utility:refresh"
+                                    class="status-button"
+                                ></lightning-button>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
+                <template if:false={isInstalled}>
+                        <!-- Not Installed State -->
+                        <template if:true={isCiCdRepo}>
+                            <!-- CI/CD repo: informational card -->
+                            <div class="status-card cicd">
+                                <div class="status-icon-container info">
+                                    <lightning-icon icon-name="utility:info" size="small" variant="inverse"></lightning-icon>
+                                </div>
+                                <div class="status-content">
+                                    <h3 class="status-title">Org Monitoring Not Present (CI/CD Repo)</h3>
+                                    <p class="status-description">
+                                        This workspace appears to be a CI/CD / DevOps repository (manifest/package.xml found). It's normal for org monitoring not to be installed here.
+                                    </p>
+                                    <template if:true={monitoringRepository}>
+                                        <p class="status-description">
+                                            You can view the monitoring tooling in the configured repository for this project.
+                                        </p>
+                                        <div class="status-actions">
+                                            <lightning-button 
+                                                variant="brand"
+                                                label="Open Monitoring Repository"
+                                                onclick={openMonitoringRepository}
+                                                icon-name="utility:new_window"
+                                                class="status-button"
+                                            ></lightning-button>
+                                            <lightning-button 
+                                                variant="neutral" 
+                                                label="Learn More" 
+                                                title="Learn about org monitoring capabilities"
+                                                onclick={learnMore}
+                                                icon-name="utility:info"
+                                                class="status-button"
+                                            ></lightning-button>
+                                        </div>
+                                    </template>
+                                    <template if:false={monitoringRepository}>
+                                        <div class="status-actions">
+                                            <lightning-button 
+                                                variant="neutral" 
+                                                label="Learn More" 
+                                                title="Learn about org monitoring capabilities"
+                                                onclick={learnMore}
+                                                icon-name="utility:info"
+                                                class="status-button"
+                                            ></lightning-button>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                        <template if:false={isCiCdRepo}>
+                            <div class="status-card not-installed">
+                                <div class="status-icon-container warning">
+                                    <lightning-icon icon-name="utility:warning" size="small" variant="inverse"></lightning-icon>
+                                </div>
+                                <div class="status-content">
+                                    <h3 class="status-title">Org Monitoring Not Installed</h3>
+                                    <p class="status-description">
+                                        Install org monitoring to start tracking your Salesforce org's health, security, and performance.
+                                    </p>
+                                    <div class="status-actions">
+                                        <lightning-button 
+                                            variant="brand" 
+                                            label="Install Org Monitoring" 
+                                            title="Configure and install org monitoring for this project"
+                                            onclick={installOrgMonitoring}
+                                            icon-name="utility:download"
+                                            class="status-button primary"
+                                        ></lightning-button>
+                                        <lightning-button 
+                                            variant="neutral" 
+                                            label="Learn More" 
+                                            title="Learn about org monitoring capabilities"
+                                            onclick={learnMore}
+                                            icon-name="utility:info"
+                                            class="status-button"
+                                        ></lightning-button>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </template>
+            </div>
+
+            <!-- Monitoring Commands Section -->
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <span class="section-icon">⚡</span>
+                        Monitoring Commands
+                    </h2>
+                    <p class="section-subtitle">Run monitoring and diagnostic commands to check your org's health</p>
+                </div>
+
+                <div class="commands-grid">
+                    <!-- Backup and Monitoring -->
+                    <div class="command-card">
+                        <div class="command-header">
+                            <div class="command-icon-container backup">
+                                <lightning-icon icon-name="utility:save" size="small" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="command-title">Metadata Backup</h3>
+                        </div>
+                        <p class="command-description">Backup all relevant metadata according to your backup configuration</p>
+                        <lightning-button 
+                            variant="outline-brand" 
+                            label="Run Backup" 
+                            onclick={runMetadataBackup}
+                            class="command-button"
+                        ></lightning-button>
+                    </div>
+
+                    <!-- Audit Trail -->
+                    <div class="command-card">
+                        <div class="command-header">
+                            <div class="command-icon-container audit">
+                                <lightning-icon icon-name="utility:trail" size="small" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="command-title">Audit Trail Analysis</h3>
+                        </div>
+                        <p class="command-description">Detect suspicious setup activities in your org's audit trail</p>
+                        <lightning-button 
+                            variant="outline-brand" 
+                            label="Analyze Audit Trail" 
+                            onclick={runAuditTrail}
+                            class="command-button"
+                        ></lightning-button>
+                    </div>
+
+                    <!-- Apex Tests -->
+                    <div class="command-card">
+                        <div class="command-header">
+                            <div class="command-icon-container tests">
+                                <lightning-icon icon-name="utility:apex" size="small" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="command-title">Apex Tests</h3>
+                        </div>
+                        <p class="command-description">Run all Apex tests and check code coverage requirements</p>
+                        <lightning-button 
+                            variant="outline-brand" 
+                            label="Run Tests" 
+                            onclick={runApexTests}
+                            class="command-button"
+                        ></lightning-button>
+                    </div>
+
+                    <!-- Org Limits -->
+                    <div class="command-card">
+                        <div class="command-header">
+                            <div class="command-icon-container limits">
+                                <lightning-icon icon-name="utility:graph" size="small" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="command-title">Org Limits Check</h3>
+                        </div>
+                        <p class="command-description">Monitor org limits and get alerts when limits are approached</p>
+                        <lightning-button 
+                            variant="outline-brand" 
+                            label="Check Limits" 
+                            onclick={checkOrgLimits}
+                            class="command-button"
+                        ></lightning-button>
+                    </div>
+
+                    <!-- Release Updates -->
+                    <div class="command-card">
+                        <div class="command-header">
+                            <div class="command-icon-container updates">
+                                <lightning-icon icon-name="utility:new" size="small" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="command-title">Release Updates</h3>
+                        </div>
+                        <p class="command-description">Check for Salesforce release updates that need verification</p>
+                        <lightning-button 
+                            variant="outline-brand" 
+                            label="Check Updates" 
+                            onclick={checkReleaseUpdates}
+                            class="command-button"
+                        ></lightning-button>
+                    </div>
+
+                    <!-- Connected Apps Security -->
+                    <div class="command-card">
+                        <div class="command-header">
+                            <div class="command-icon-container security">
+                                <lightning-icon icon-name="utility:shield" size="small" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="command-title">Connected Apps Security</h3>
+                        </div>
+                        <p class="command-description">Identify unsecured connected apps in your org</p>
+                        <lightning-button 
+                            variant="outline-brand" 
+                            label="Check Security" 
+                            onclick={checkConnectedAppsSecurity}
+                            class="command-button"
+                        ></lightning-button>
+                    </div>
+
+                    <!-- Legacy API Usage -->
+                    <div class="command-card">
+                        <div class="command-header">
+                            <div class="command-icon-container legacy">
+                                <lightning-icon icon-name="utility:deprecate" size="small" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="command-title">Legacy API Usage</h3>
+                        </div>
+                        <p class="command-description">Detect usage of deprecated API versions in your org</p>
+                        <lightning-button 
+                            variant="outline-brand" 
+                            label="Check APIs" 
+                            onclick={checkLegacyApi}
+                            class="command-button"
+                        ></lightning-button>
+                    </div>
+
+                    <!-- Unused Users -->
+                    <div class="command-card">
+                        <div class="command-header">
+                            <div class="command-icon-container users">
+                                <lightning-icon icon-name="utility:user" size="small" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="command-title">Unused Users</h3>
+                        </div>
+                        <p class="command-description">Find active users who haven't logged in recently</p>
+                        <lightning-button 
+                            variant="outline-brand" 
+                            label="Find Users" 
+                            onclick={findUnusedUsers}
+                            class="command-button"
+                        ></lightning-button>
+                    </div>
+
+                    <!-- Unused Licenses -->
+                    <div class="command-card">
+                        <div class="command-header">
+                            <div class="command-icon-container licenses">
+                                <lightning-icon icon-name="utility:key" size="small" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="command-title">Unused Licenses</h3>
+                        </div>
+                        <p class="command-description">Detect unused permission set licenses that can be reclaimed</p>
+                        <lightning-button 
+                            variant="outline-brand" 
+                            label="Check Licenses" 
+                            onclick={checkUnusedLicenses}
+                            class="command-button"
+                        ></lightning-button>
+                    </div>
+
+                    <!-- Unused Apex Classes -->
+                    <div class="command-card">
+                        <div class="command-header">
+                            <div class="command-icon-container apex">
+                                <lightning-icon icon-name="utility:apex" size="small" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="command-title">Unused Apex Classes</h3>
+                        </div>
+                        <p class="command-description">Find Apex classes that haven't been used recently</p>
+                        <lightning-button 
+                            variant="outline-brand" 
+                            label="Find Classes" 
+                            onclick={findUnusedApexClasses}
+                            class="command-button"
+                        ></lightning-button>
+                    </div>
+
+                    <!-- Unused Connected Apps -->
+                    <div class="command-card">
+                        <div class="command-header">
+                            <div class="command-icon-container connected-apps">
+                                <lightning-icon icon-name="utility:connected_apps" size="small" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="command-title">Unused Connected Apps</h3>
+                        </div>
+                        <p class="command-description">Find connected apps that haven't been used recently</p>
+                        <lightning-button 
+                            variant="outline-brand" 
+                            label="Find Apps" 
+                            onclick={findUnusedConnectedApps}
+                            class="command-button"
+                        ></lightning-button>
+                    </div>
+
+                    <!-- Metadata Access Check -->
+                    <div class="command-card">
+                        <div class="command-header">
+                            <div class="command-icon-container metadata-access">
+                                <lightning-icon icon-name="utility:lock" size="small" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="command-title">Metadata Access Check</h3>
+                        </div>
+                        <p class="command-description">Check for metadata without proper access permissions</p>
+                        <lightning-button 
+                            variant="outline-brand" 
+                            label="Check Access" 
+                            onclick={checkMetadataAccess}
+                            class="command-button"
+                        ></lightning-button>
+                    </div>
+
+                    <!-- Unused Metadata -->
+                    <div class="command-card">
+                        <div class="command-header">
+                            <div class="command-icon-container unused-metadata">
+                                <lightning-icon icon-name="utility:custom_apps" size="small" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="command-title">Unused Metadata</h3>
+                        </div>
+                        <p class="command-description">Find unused custom labels and permissions</p>
+                        <lightning-button 
+                            variant="outline-brand" 
+                            label="Find Metadata" 
+                            onclick={findUnusedMetadata}
+                            class="command-button"
+                        ></lightning-button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Documentation Section -->
+            <div class="docs-section">
+                <div class="docs-content">
+                    <div class="docs-header">
+                        <span class="docs-icon">📚</span>
+                        <h3 class="docs-title">Learn More</h3>
+                    </div>
+                    <p class="docs-text">
+                        Get comprehensive documentation about org monitoring capabilities and best practices.
+                    </p>
+                    <div class="docs-actions">
+                        <lightning-button 
+                            variant="neutral" 
+                            label="Monitoring Documentation" 
+                            icon-name="utility:new_window"
+                            onclick={openMonitoringDocs}
+                            class="docs-button"
+                        ></lightning-button>
+                        <lightning-button 
+                            variant="neutral" 
+                            label="Setup Guide" 
+                            icon-name="utility:setup"
+                            onclick={openSetupGuide}
+                            class="docs-button"
+                        ></lightning-button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
