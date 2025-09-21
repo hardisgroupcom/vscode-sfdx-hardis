@@ -190,4 +190,32 @@ export default class Pipeline extends LightningElement {
     });
     console.log("Pipeline refresh event dispatched");
   }
+
+  // Quick action methods
+  handleNewUserStory() {
+    window.sendMessageToVSCode({
+      type: "runCommand",
+      data: {
+        command: "sf hardis:work:new"
+      }
+    });
+  }
+
+  handlePullFromOrg() {
+    window.sendMessageToVSCode({
+      type: "runCommand",
+      data: {
+        command: "sf hardis:scratch:pull"
+      }
+    });
+  }
+
+  handleSaveUserStory() {
+    window.sendMessageToVSCode({
+      type: "runCommand",
+      data: {
+        command: "sf hardis:work:save"
+      }
+    });
+  }
 }

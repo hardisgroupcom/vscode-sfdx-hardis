@@ -1,0 +1,453 @@
+/* Package XML Display Styles */
+
+/* Blue background for consistency with other panels */
+.blue-back {
+    background: linear-gradient(135deg, #f8f9ff 0%, #e8f4fd 100%);
+    min-height: 100vh;
+    font-family: "Salesforce Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Main container */
+.package-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem; /* compact layout */
+}
+
+/* Header Section */
+.header-section {
+    margin-bottom: 2rem;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem; /* compact */
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e8e8e8;
+}
+
+.header-icon-container {
+    width: 56px;
+    height: 56px;
+    background: linear-gradient(135deg, #0176d3 0%, #014486 100%);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    flex-shrink: 0;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+    border: 2px solid rgba(255, 255, 255, 0.16);
+}
+
+/* simplified header icon spacing */
+.header-icon {
+    margin-right: 0.75rem;
+    flex-shrink: 0;
+}
+
+/* Dynamic header colors based on package type */
+.header-icon-container[data-package-type="deploy"] {
+    background: linear-gradient(135deg, #27ae60 0%, #1e8449 100%);
+}
+
+.header-icon-container[data-package-type="retrieve"] {
+    background: linear-gradient(135deg, #1589ee 0%, #005fb2 100%);
+}
+
+.header-icon-container[data-package-type="destructive"] {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+}
+
+.header-icon-container[data-package-type="skip"] {
+    background: linear-gradient(135deg, #f39c12 0%, #d68910 100%);
+}
+
+.header-icon-container[data-package-type="manifest"] {
+    background: linear-gradient(135deg, #9f4fea 0%, #7b2cbf 100%);
+}
+
+.header-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #181818;
+    margin: 0 0 0.25rem 0;
+    line-height: 1.15;
+}
+.header-subtitle {
+    font-size: 0.9rem;
+    color: #6f6d6b;
+    margin: 0;
+    line-height: 1.25;
+}
+
+.header-actions {
+    display: flex;
+    gap: 1rem;
+    flex-shrink: 0;
+}
+
+.header-button {
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+/* Loading State */
+.loading-section {
+    text-align: center;
+    padding: 4rem 2rem;
+}
+
+.loading-text {
+    margin-top: 1rem;
+    color: #706e6b;
+    font-size: 1rem;
+}
+
+/* Error State */
+.error-section {
+    padding: 2rem 0;
+}
+
+.error-card {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    border: 1px solid #e5e5e5;
+    border-left: 4px solid #e74c3c;
+    display: flex;
+    align-items: flex-start;
+    gap: 1.5rem;
+}
+
+.error-icon-container {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    flex-shrink: 0;
+}
+
+
+.error-content {
+    flex-grow: 1;
+}
+
+.error-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #181818;
+    margin: 0 0 0.5rem 0;
+}
+
+.error-description {
+    color: #706e6b;
+    margin: 0 0 1.5rem 0;
+    line-height: 1.5;
+}
+
+.error-button {
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+/* Section Styling */
+.section {
+    margin-bottom: 2rem;
+}
+
+.section-header {
+    margin-bottom: 1.5rem;
+}
+
+.section-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #181818;
+    margin-bottom: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.section-icon {
+    font-size: 1.25rem;
+}
+
+.section-subtitle {
+    font-size: 0.9rem;
+    color: #706e6b;
+    margin: 0;
+}
+
+/* Info Card */
+.info-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1rem; /* compact */
+    border: 1px solid #eaeaea;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.info-header {
+    margin-bottom: 1rem;
+}
+
+.info-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #181818;
+    margin: 0;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.info-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #706e6b;
+}
+
+.info-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #181818;
+}
+
+.types-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem; /* compact */
+}
+
+.type-card {
+    background: white;
+    border-radius: 6px;
+    border: 1px solid #ececec;
+    overflow: hidden;
+    transition: all 0.12s ease;
+}
+
+.type-card:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.type-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 0.9rem; /* compact */
+    cursor: pointer;
+    transition: background-color 0.12s ease;
+}
+
+.type-header:hover {
+    background-color: #f8f9fa;
+}
+
+.type-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.type-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.type-name {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #0b2545; /* darker for emphasis */
+    margin: 0 0 0.125rem 0;
+}
+
+.type-count {
+    font-size: 0.825rem;
+    color: #8b949e; /* muted */
+    margin: 0;
+}
+
+
+.type-icon {
+    margin-right: 0.75rem;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+}
+
+.type-icon:hover {
+    transform: translateY(-1px);
+}
+
+.type-toggle {
+    display: flex;
+    align-items: center;
+}
+
+.toggle-icon {
+    color: #706e6b;
+    transition: transform 0.2s ease;
+}
+
+/* Type Members */
+.type-members {
+    padding: 0 1.5rem 1.5rem 1.5rem;
+    border-top: 1px solid #f1f1f1;
+}
+
+.wildcard-notice {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: #f3f9ff;
+    border: 1px solid #bbdefb;
+    border-radius: 6px;
+    margin-top: 1rem;
+}
+
+.wildcard-icon {
+    color: #1589ee;
+}
+
+.wildcard-text {
+    font-size: 0.875rem;
+    color: #181818;
+    font-weight: 500;
+}
+
+.members-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.member-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+    min-height: 3rem;
+    overflow: hidden;
+}
+
+.member-item:hover {
+    background: #e8f4fd;
+    border-color: #1589ee;
+    transform: translateX(4px);
+}
+
+.member-icon {
+    margin-right: 0.5rem;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+}
+
+.member-name {
+    color: #181818;
+    font-weight: 500;
+    word-break: break-word;
+    line-height: 1.3;
+    flex: 1;
+    min-width: 0;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 3rem 2rem;
+}
+
+.empty-icon-container {
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+.empty-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #181818;
+    margin: 0 0 0.5rem 0;
+}
+
+.empty-description {
+    color: #706e6b;
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .package-container {
+        padding: 1rem;
+    }
+    
+    .header-content {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .header-actions {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .members-grid {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .type-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .header-actions {
+        flex-direction: column;
+    }
+}
+
+/* Icon container to allow colored backgrounds per metadata type.
+    Per-type color tokens were removed to avoid empty rulesets. If
+    future per-type backgrounds are required, add a concrete rule
+    (for example: .type-apex { background: linear-gradient(...); }). */

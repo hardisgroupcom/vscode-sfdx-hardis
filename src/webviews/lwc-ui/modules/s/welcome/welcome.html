@@ -1,0 +1,220 @@
+<template>
+    <div class="slds-scope slds-theme_default blue-back">
+        <div class="welcome-container">
+            <!-- Compact Hero Header Section -->
+            <div class="hero-section compact">
+                <div class="hero-content">
+                    <div class="hero-header">
+                        <span class="hero-icon">🚀</span>
+                        <div class="hero-text">
+                            <h1 class="hero-title">Welcome to VS Code SFDX Hardis</h1>
+                            <p class="hero-subtitle">Your comprehensive Salesforce toolkit, by <a href="https://www.cloudity.com/?ref=sfdxhardis" target="_blank">Cloudity</a> and <a href="https://sfdx-hardis.cloudity.com/contributors/" target="_blank">friends</a></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="hero-settings">
+                    <lightning-input
+                        type="toggle"
+                        label="Show at startup"
+                        name="showWelcomeAtStartup"
+                        checked={showWelcomeAtStartup}
+                        onchange={handleWelcomeSettingChange}
+                        class="welcome-toggle"
+                    ></lightning-input>
+                </div>
+            </div>
+
+            <!-- Main Content Section -->
+            <div class="section">
+                <div class="unified-grid">
+                    <!-- Org Manager Card -->
+                    <div class="feature-card" onclick={navigateToOrgsManager}>
+                        <div class="feature-card-header">
+                            <div class="feature-icon-container org-manager">
+                                <lightning-icon icon-name="utility:connected_apps" size="medium" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="feature-title">Org Manager</h3>
+                        </div>
+                        <p class="feature-description">
+                            Manage all your Salesforce orgs, connect to new ones, and switch between environments seamlessly.
+                        </p>
+                        <div class="feature-arrow">→</div>
+                    </div>
+
+                    <!-- DevOps Pipeline Card -->
+                    <div class="feature-card" onclick={navigateToPipeline}>
+                        <div class="feature-card-header">
+                            <div class="feature-icon-container devops-pipeline">
+                                <lightning-icon icon-name="utility:flow" size="medium" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="feature-title">DevOps Pipeline</h3>
+                        </div>
+                        <p class="feature-description">
+                            Visualize and manage your CI/CD pipeline with automated deployments and environment management.
+                        </p>
+                        <div class="feature-arrow">→</div>
+                    </div>
+
+                    <!-- Org Monitoring Card -->
+                    <div class="feature-card" onclick={navigateToOrgMonitoring}>
+                        <div class="feature-card-header">
+                            <div class="feature-icon-container org-monitoring">
+                                <lightning-icon icon-name="utility:graph" size="medium" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="feature-title">Org Monitoring</h3>
+                        </div>
+                        <p class="feature-description">
+                            Monitor your Salesforce org health, security, and performance with comprehensive diagnostic tools.
+                        </p>
+                        <div class="feature-arrow">→</div>
+                    </div>
+
+                    <!-- Documentation Workbench Card (Coming Soon) -->
+                    <div class="feature-card coming-soon">
+                        <div class="feature-card-header">
+                            <div class="feature-icon-container documentation">
+                                <lightning-icon icon-name="utility:knowledge_base" size="medium" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="feature-title">
+                                Documentation Workbench
+                                <lightning-badge label="Coming Soon" variant="warning" class="feature-badge"></lightning-badge>
+                            </h3>
+                        </div>
+                        <p class="feature-description">
+                            Generate and view project documentation tools and integrations (coming soon).
+                        </p>
+                        <div class="feature-arrow">⏳</div>
+                    </div>
+
+                    <!-- Files Workbench Card -->
+                    <div class="feature-card" onclick={navigateToFilesWorkbench}>
+                        <div class="feature-card-header">
+                            <div class="feature-icon-container files-workbench">
+                                <lightning-icon icon-name="utility:file" size="medium" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="feature-title">Files Workbench</h3>
+                        </div>
+                        <p class="feature-description">
+                            Export and manage files from Salesforce records, configure automated file processing workflows.
+                        </p>
+                        <div class="feature-arrow">→</div>
+                    </div>
+
+                    <!-- Data Workbench Card (Coming Soon) -->
+                    <div class="feature-card coming-soon">
+                        <div class="feature-card-header">
+                            <div class="feature-icon-container data-workbench">
+                                <lightning-icon icon-name="utility:database" size="medium" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="feature-title">
+                                Data Workbench
+                                <lightning-badge label="Coming Soon" variant="warning" class="feature-badge"></lightning-badge>
+                            </h3>
+                        </div>
+                        <p class="feature-description">
+                            Import, export, and manipulate Salesforce data with SFDMU integration and advanced data management tools.
+                        </p>
+                        <div class="feature-arrow">⏳</div>
+                    </div>
+
+                    <!-- Extension Settings Card -->
+                    <div class="feature-card" onclick={navigateToExtensionConfig}>
+                        <div class="feature-card-header">
+                            <div class="feature-icon-container settings">
+                                <lightning-icon icon-name="utility:settings" size="medium" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="feature-title">Extension Settings</h3>
+                        </div>
+                        <p class="feature-description">
+                            Configure extension preferences
+                        </p>
+                        <div class="feature-arrow">→</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Getting Started Section -->
+            <div class="getting-started-section">
+                <div class="getting-started-content">
+                    <div class="getting-started-header">
+                        <div class="getting-started-icon-container">
+                            <lightning-icon icon-name="utility:education" size="medium" variant="inverse" class="getting-started-icon"></lightning-icon>
+                        </div>
+                        <div class="getting-started-text-header">
+                            <h3 class="getting-started-title">Getting Started</h3>
+                            <p class="getting-started-subtitle">Quick start guide for new users</p>
+                        </div>
+                    </div>
+                    <div class="getting-started-description">
+                        <p class="getting-started-text">
+                            New to SFDX Hardis? Start by connecting to a Salesforce org, then explore our comprehensive documentation to understand your Salesforce environment and streamline your development workflow.
+                        </p>
+                    </div>
+                    <div class="getting-started-actions">
+                        <lightning-button 
+                            variant="brand" 
+                            label="Select an Org" 
+                            icon-name="utility:connected_apps"
+                            onclick={handleConnectToOrg}
+                            class="slds-m-right_small"
+                        ></lightning-button>
+                        <lightning-button 
+                            variant="outline-brand" 
+                            label="View Documentation" 
+                            icon-name="utility:knowledge_base"
+                            onclick={openDocumentation}
+                        ></lightning-button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Open Source & Services Section -->
+            <div class="open-source-section">
+                <div class="open-source-content">
+                    <div class="open-source-header">
+                        <div class="open-source-icon-container">
+                            <lightning-icon icon-name="utility:heart" size="medium" variant="inverse" class="open-source-icon"></lightning-icon>
+                        </div>
+                        <div class="open-source-text-header">
+                            <h3 class="open-source-title">Open Source & Free</h3>
+                            <p class="open-source-subtitle">Community-driven Salesforce tooling</p>
+                        </div>
+                    </div>
+                    <div class="open-source-description">
+                        <div class="open-source-highlight">
+                            <lightning-icon icon-name="utility:check" size="small" class="check-icon"></lightning-icon>
+                            <span class="highlight-text">100% Open Source</span>
+                        </div>
+                        <div class="open-source-highlight">
+                            <lightning-icon icon-name="utility:check" size="small" class="check-icon"></lightning-icon>
+                            <span class="highlight-text">Completely Free</span>
+                        </div>
+                        <div class="open-source-highlight">
+                            <lightning-icon icon-name="utility:check" size="small" class="check-icon"></lightning-icon>
+                            <span class="highlight-text">Commercial Use Allowed</span>
+                        </div>
+                    </div>
+                    <div class="services-info">
+                        <div class="services-card">
+                            <div class="services-card-header">
+                                <lightning-icon icon-name="utility:groups" size="small" class="services-icon"></lightning-icon>
+                                <h4 class="services-card-title">Need Expert Guidance?</h4>
+                            </div>
+                            <p class="services-card-text">
+                                <a href="https://www.cloudity.com/?ref=sfdxhardis" target="_blank" class="cloudity-link"><strong>Cloudity</strong></a> offers professional consulting services to help you maximize SFDX Hardis value and optimize your Salesforce development strategy.
+                            </p>
+                            <div class="services-card-actions">
+                                <lightning-button 
+                                    variant="brand" 
+                                    label="Contact Us" 
+                                    icon-name="utility:world"
+                                    onclick={openCloudityServices}
+                                ></lightning-button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
