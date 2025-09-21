@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Welcome view
+- Org Monitoring Workbench + Package XML Viewer
 - Enable MegaLinter LLM Advisor
 - Org Manager: Allow to edit Org aliases in the table
 
