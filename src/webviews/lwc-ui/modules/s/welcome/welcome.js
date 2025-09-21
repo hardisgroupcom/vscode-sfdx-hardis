@@ -12,21 +12,21 @@ export default class Welcome extends LightningElement {
 
   connectedCallback() {
     // Add scroll event listener when component is connected
-    window.addEventListener('scroll', this.handleScroll.bind(this));
+    window.addEventListener("scroll", this.handleScroll.bind(this));
   }
 
   disconnectedCallback() {
     // Remove scroll event listener when component is disconnected
-    window.removeEventListener('scroll', this.handleScroll.bind(this));
+    window.removeEventListener("scroll", this.handleScroll.bind(this));
   }
 
   handleScroll() {
-    const heroSettings = this.template.querySelector('.hero-settings');
+    const heroSettings = this.template.querySelector(".hero-settings");
     if (heroSettings) {
       if (window.scrollY > this.scrollThreshold) {
-        heroSettings.classList.add('hidden');
+        heroSettings.classList.add("hidden");
       } else {
-        heroSettings.classList.remove('hidden');
+        heroSettings.classList.remove("hidden");
       }
     }
   }
@@ -35,7 +35,7 @@ export default class Welcome extends LightningElement {
   initialize(data) {
     console.log("Welcome component initialized:", data);
     this.isLoading = false;
-    
+
     // Initialize the setting value
     if (data && data.showWelcomeAtStartup !== undefined) {
       this.showWelcomeAtStartup = data.showWelcomeAtStartup;
@@ -51,31 +51,31 @@ export default class Welcome extends LightningElement {
   // Navigation methods for major features
   navigateToOrgsManager() {
     window.sendMessageToVSCode({
-      type: "navigateToOrgsManager"
+      type: "navigateToOrgsManager",
     });
   }
 
   navigateToPipeline() {
     window.sendMessageToVSCode({
-      type: "navigateToPipeline"
+      type: "navigateToPipeline",
     });
   }
 
   navigateToFilesWorkbench() {
     window.sendMessageToVSCode({
-      type: "navigateToFilesWorkbench"
+      type: "navigateToFilesWorkbench",
     });
   }
 
   navigateToOrgMonitoring() {
     window.sendMessageToVSCode({
-      type: "navigateToOrgMonitoring"
+      type: "navigateToOrgMonitoring",
     });
   }
 
   navigateToExtensionConfig() {
     window.sendMessageToVSCode({
-      type: "navigateToExtensionConfig"
+      type: "navigateToExtensionConfig",
     });
   }
 
@@ -84,8 +84,8 @@ export default class Welcome extends LightningElement {
     window.sendMessageToVSCode({
       type: "runCommand",
       data: {
-        command: "sf hardis:org:select"
-      }
+        command: "sf hardis:org:select",
+      },
     });
   }
 
@@ -93,14 +93,14 @@ export default class Welcome extends LightningElement {
   openDocumentation() {
     window.sendMessageToVSCode({
       type: "openExternal",
-      data: "https://sfdx-hardis.cloudity.com/"
+      data: "https://sfdx-hardis.cloudity.com/",
     });
   }
 
   openCloudityServices() {
     window.sendMessageToVSCode({
       type: "openExternal",
-      data: "https://cloudity.com/?ref=sfdxhardis#form"
+      data: "https://cloudity.com/?ref=sfdxhardis#form",
     });
   }
 
@@ -108,14 +108,14 @@ export default class Welcome extends LightningElement {
   handleWelcomeSettingChange(event) {
     const newValue = event.target.checked;
     this.showWelcomeAtStartup = newValue;
-    
+
     // Send message to VS Code to update the setting
     window.sendMessageToVSCode({
       type: "updateSetting",
       data: {
         setting: "vsCodeSfdxHardis.showWelcomeAtStartup",
-        value: newValue
-      }
+        value: newValue,
+      },
     });
   }
 }

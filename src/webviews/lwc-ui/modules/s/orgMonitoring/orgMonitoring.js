@@ -37,14 +37,17 @@ export default class OrgMonitoring extends LightningElement {
 
   openMonitoringRepository() {
     if (this.monitoringRepository) {
-      window.sendMessageToVSCode({ type: "openExternal", data: this.monitoringRepository });
+      window.sendMessageToVSCode({
+        type: "openExternal",
+        data: this.monitoringRepository,
+      });
     }
   }
 
   // Installation and Status Methods
   checkInstallationStatus() {
     window.sendMessageToVSCode({
-      type: "checkOrgMonitoringInstallation"
+      type: "checkOrgMonitoringInstallation",
     });
   }
 
@@ -52,8 +55,8 @@ export default class OrgMonitoring extends LightningElement {
     window.sendMessageToVSCode({
       type: "runCommand",
       data: {
-        command: "sf hardis:org:configure:monitoring"
-      }
+        command: "sf hardis:org:configure:monitoring",
+      },
     });
   }
 
@@ -63,8 +66,8 @@ export default class OrgMonitoring extends LightningElement {
       data: {
         packageType: "skip",
         filePath: "manifest/package-skip-items.xml",
-        title: "Skip Items Package"
-      }
+        title: "Skip Items Package",
+      },
     });
   }
 
@@ -74,8 +77,8 @@ export default class OrgMonitoring extends LightningElement {
       data: {
         packageType: "backup",
         filePath: "manifest/package-backup-items.xml",
-        title: "Backup Items Package"
-      }
+        title: "Backup Items Package",
+      },
     });
   }
 
@@ -85,21 +88,21 @@ export default class OrgMonitoring extends LightningElement {
       data: {
         packageType: "all-org",
         filePath: "manifest/package-all-org-items.xml",
-        title: "All Org Items Package"
-      }
+        title: "All Org Items Package",
+      },
     });
   }
 
   viewPackageConfig() {
     window.sendMessageToVSCode({
-      type: "viewPackageConfig"
+      type: "viewPackageConfig",
     });
   }
 
   learnMore() {
     window.sendMessageToVSCode({
       type: "openExternal",
-      data: "https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/"
+      data: "https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/",
     });
   }
 
@@ -108,8 +111,8 @@ export default class OrgMonitoring extends LightningElement {
     window.sendMessageToVSCode({
       type: "runCommand",
       data: {
-        command: "sf hardis:org:monitor:backup"
-      }
+        command: "sf hardis:org:monitor:backup",
+      },
     });
   }
 
@@ -117,8 +120,8 @@ export default class OrgMonitoring extends LightningElement {
     window.sendMessageToVSCode({
       type: "runCommand",
       data: {
-        command: "sf hardis:org:diagnose:audittrail"
-      }
+        command: "sf hardis:org:diagnose:audittrail",
+      },
     });
   }
 
@@ -126,8 +129,8 @@ export default class OrgMonitoring extends LightningElement {
     window.sendMessageToVSCode({
       type: "runCommand",
       data: {
-        command: "sf hardis:org:test:apex"
-      }
+        command: "sf hardis:org:test:apex",
+      },
     });
   }
 
@@ -135,8 +138,8 @@ export default class OrgMonitoring extends LightningElement {
     window.sendMessageToVSCode({
       type: "runCommand",
       data: {
-        command: "sf hardis:org:monitor:limits"
-      }
+        command: "sf hardis:org:monitor:limits",
+      },
     });
   }
 
@@ -144,8 +147,8 @@ export default class OrgMonitoring extends LightningElement {
     window.sendMessageToVSCode({
       type: "runCommand",
       data: {
-        command: "sf hardis:org:diagnose:releaseupdates"
-      }
+        command: "sf hardis:org:diagnose:releaseupdates",
+      },
     });
   }
 
@@ -153,8 +156,8 @@ export default class OrgMonitoring extends LightningElement {
     window.sendMessageToVSCode({
       type: "runCommand",
       data: {
-        command: "sf hardis:org:diagnose:unsecure-connected-apps"
-      }
+        command: "sf hardis:org:diagnose:unsecure-connected-apps",
+      },
     });
   }
 
@@ -162,8 +165,8 @@ export default class OrgMonitoring extends LightningElement {
     window.sendMessageToVSCode({
       type: "runCommand",
       data: {
-        command: "sf hardis:org:diagnose:legacyapi"
-      }
+        command: "sf hardis:org:diagnose:legacyapi",
+      },
     });
   }
 
@@ -171,8 +174,8 @@ export default class OrgMonitoring extends LightningElement {
     window.sendMessageToVSCode({
       type: "runCommand",
       data: {
-        command: "sf hardis:org:diagnose:unusedusers"
-      }
+        command: "sf hardis:org:diagnose:unusedusers",
+      },
     });
   }
 
@@ -180,8 +183,8 @@ export default class OrgMonitoring extends LightningElement {
     window.sendMessageToVSCode({
       type: "runCommand",
       data: {
-        command: "sf hardis:org:diagnose:unusedlicenses"
-      }
+        command: "sf hardis:org:diagnose:unusedlicenses",
+      },
     });
   }
 
@@ -190,8 +193,8 @@ export default class OrgMonitoring extends LightningElement {
     window.sendMessageToVSCode({
       type: "runCommand",
       data: {
-        command: "sf hardis:org:diagnose:unused-apex-classes"
-      }
+        command: "sf hardis:org:diagnose:unused-apex-classes",
+      },
     });
   }
 
@@ -199,8 +202,8 @@ export default class OrgMonitoring extends LightningElement {
     window.sendMessageToVSCode({
       type: "runCommand",
       data: {
-        command: "sf hardis:org:diagnose:unused-connected-apps"
-      }
+        command: "sf hardis:org:diagnose:unused-connected-apps",
+      },
     });
   }
 
@@ -208,8 +211,8 @@ export default class OrgMonitoring extends LightningElement {
     window.sendMessageToVSCode({
       type: "runCommand",
       data: {
-        command: "sf hardis:lint:access"
-      }
+        command: "sf hardis:lint:access",
+      },
     });
   }
 
@@ -217,8 +220,8 @@ export default class OrgMonitoring extends LightningElement {
     window.sendMessageToVSCode({
       type: "runCommand",
       data: {
-        command: "sf hardis:lint:unusedmetadatas"
-      }
+        command: "sf hardis:lint:unusedmetadatas",
+      },
     });
   }
 
@@ -226,14 +229,14 @@ export default class OrgMonitoring extends LightningElement {
   openMonitoringDocs() {
     window.sendMessageToVSCode({
       type: "openExternal",
-      data: "https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/"
+      data: "https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/",
     });
   }
 
   openSetupGuide() {
     window.sendMessageToVSCode({
       type: "openExternal",
-      data: "https://sfdx-hardis.cloudity.com/salesforce-monitoring-config-home/"
+      data: "https://sfdx-hardis.cloudity.com/salesforce-monitoring-config-home/",
     });
   }
 }

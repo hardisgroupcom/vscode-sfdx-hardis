@@ -690,13 +690,13 @@ export class Commands {
       "vscode-sfdx-hardis.showWelcome",
       async () => {
         const lwcManager = LwcPanelManager.getInstance();
-        
+
         // Get current setting value
         const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
         const showWelcomeAtStartup = config.get("showWelcomeAtStartup", true);
-        
+
         const panel = lwcManager.getOrCreatePanel("s-welcome", {
-          showWelcomeAtStartup: showWelcomeAtStartup
+          showWelcomeAtStartup: showWelcomeAtStartup,
         });
         panel.updateTitle("SFDX Hardis Welcome");
 
@@ -704,34 +704,54 @@ export class Commands {
         panel.onMessage(async (type: string, data: any) => {
           switch (type) {
             case "navigateToOrgsManager":
-              vscode.commands.executeCommand("vscode-sfdx-hardis.openOrgsManager");
+              vscode.commands.executeCommand(
+                "vscode-sfdx-hardis.openOrgsManager",
+              );
               break;
             case "navigateToPipeline":
               vscode.commands.executeCommand("vscode-sfdx-hardis.showPipeline");
               break;
             case "navigateToFilesWorkbench":
-              vscode.commands.executeCommand("vscode-sfdx-hardis.showFilesWorkbench");
+              vscode.commands.executeCommand(
+                "vscode-sfdx-hardis.showFilesWorkbench",
+              );
               break;
             case "navigateToOrgMonitoring":
-              vscode.commands.executeCommand("vscode-sfdx-hardis.showOrgMonitoring");
+              vscode.commands.executeCommand(
+                "vscode-sfdx-hardis.showOrgMonitoring",
+              );
               break;
             case "navigateToExtensionConfig":
-              vscode.commands.executeCommand("vscode-sfdx-hardis.showExtensionConfig");
+              vscode.commands.executeCommand(
+                "vscode-sfdx-hardis.showExtensionConfig",
+              );
               break;
             case "navigateToInstalledPackages":
-              vscode.commands.executeCommand("vscode-sfdx-hardis.showInstalledPackages");
+              vscode.commands.executeCommand(
+                "vscode-sfdx-hardis.showInstalledPackages",
+              );
               break;
             case "navigateToDocumentation":
-              vscode.commands.executeCommand("vscode-sfdx-hardis.runLocalHtmlDocPages");
+              vscode.commands.executeCommand(
+                "vscode-sfdx-hardis.runLocalHtmlDocPages",
+              );
               break;
             case "updateSetting":
               if (data && data.setting && data.value !== undefined) {
                 try {
                   const config = vscode.workspace.getConfiguration();
-                  await config.update(data.setting, data.value, vscode.ConfigurationTarget.Global);
-                  vscode.window.showInformationMessage(`Setting updated: ${data.setting.split('.').pop()} = ${data.value}`);
+                  await config.update(
+                    data.setting,
+                    data.value,
+                    vscode.ConfigurationTarget.Global,
+                  );
+                  vscode.window.showInformationMessage(
+                    `Setting updated: ${data.setting.split(".").pop()} = ${data.value}`,
+                  );
                 } catch (error: any) {
-                  vscode.window.showErrorMessage(`Failed to update setting: ${error.message}`);
+                  vscode.window.showErrorMessage(
+                    `Failed to update setting: ${error.message}`,
+                  );
                 }
               }
               break;
@@ -953,23 +973,34 @@ export class Commands {
       "vscode-sfdx-hardis.showOrgMonitoring",
       async () => {
         const lwcManager = LwcPanelManager.getInstance();
-        
+
         // Check if org monitoring is installed
         const isInstalled = await this.checkOrgMonitoringInstallation();
 
         // Detect if this workspace is a DevOps/CI-CD repository by presence of manifest/package.xml
         const workspaceRoot = getWorkspaceRoot();
-        const ciCdManifestPath = path.join(workspaceRoot || "", "manifest", "package.xml");
+        const ciCdManifestPath = path.join(
+          workspaceRoot || "",
+          "manifest",
+          "package.xml",
+        );
         const isCiCdRepo = fs.existsSync(ciCdManifestPath);
 
         // Read optional monitoring repository URL from config/.sfdx-hardis.yml (monitoring_repository)
         let monitoringRepository: string | null = null;
         try {
-          const configPath = path.join(workspaceRoot || "", "config", ".sfdx-hardis.yml");
+          const configPath = path.join(
+            workspaceRoot || "",
+            "config",
+            ".sfdx-hardis.yml",
+          );
           if (fs.existsSync(configPath)) {
             const raw = fs.readFileSync(configPath, "utf8");
             const parsed = yaml.load(raw) as any;
-            monitoringRepository = parsed?.monitoring_repository || parsed?.monitoringRepository || null;
+            monitoringRepository =
+              parsed?.monitoring_repository ||
+              parsed?.monitoringRepository ||
+              null;
           }
         } catch (e) {
           Logger.log(`Unable to read monitoring_repository from config: ${e}`);
@@ -989,22 +1020,39 @@ export class Commands {
               const currentStatus = await this.checkOrgMonitoringInstallation();
               // Recompute CI/CD detection and config in case workspace changed
               const workspaceRoot2 = getWorkspaceRoot();
-              const ciCdManifestPath2 = path.join(workspaceRoot2 || "", "manifest", "package.xml");
+              const ciCdManifestPath2 = path.join(
+                workspaceRoot2 || "",
+                "manifest",
+                "package.xml",
+              );
               const isCiCdRepo2 = fs.existsSync(ciCdManifestPath2);
               let monitoringRepository2: string | null = null;
               try {
-                const configPath2 = path.join(workspaceRoot2 || "", "config", ".sfdx-hardis.yml");
+                const configPath2 = path.join(
+                  workspaceRoot2 || "",
+                  "config",
+                  ".sfdx-hardis.yml",
+                );
                 if (fs.existsSync(configPath2)) {
                   const raw2 = fs.readFileSync(configPath2, "utf8");
                   const parsed2 = yaml.load(raw2) as any;
-                  monitoringRepository2 = parsed2?.monitoring_repository || parsed2?.monitoringRepository || null;
+                  monitoringRepository2 =
+                    parsed2?.monitoring_repository ||
+                    parsed2?.monitoringRepository ||
+                    null;
                 }
               } catch (e) {
-                Logger.log(`Unable to read monitoring_repository from config: ${e}`);
+                Logger.log(
+                  `Unable to read monitoring_repository from config: ${e}`,
+                );
               }
               panel.sendMessage({
                 type: "installationStatusUpdated",
-                data: { isInstalled: currentStatus, isCiCdRepo: isCiCdRepo2, monitoringRepository: monitoringRepository2 }
+                data: {
+                  isInstalled: currentStatus,
+                  isCiCdRepo: isCiCdRepo2,
+                  monitoringRepository: monitoringRepository2,
+                },
               });
               break;
             }
@@ -1024,8 +1072,12 @@ export class Commands {
 
   private async checkOrgMonitoringInstallation(): Promise<boolean> {
     const workspaceRoot = getWorkspaceRoot();
-    const packageSkipItemsPath = path.join(workspaceRoot, "manifest", "package-skip-items.xml");
-    
+    const packageSkipItemsPath = path.join(
+      workspaceRoot,
+      "manifest",
+      "package-skip-items.xml",
+    );
+
     try {
       return fs.existsSync(packageSkipItemsPath);
     } catch (error) {
@@ -1036,20 +1088,20 @@ export class Commands {
 
   private async showPackageXmlPanel(packageConfig: any = {}): Promise<void> {
     const lwcManager = LwcPanelManager.getInstance();
-    
+
     // Default to skip items if no config provided (backward compatibility)
     const config = {
       packageType: packageConfig.packageType || "skip",
       filePath: packageConfig.filePath || "manifest/package-skip-items.xml",
-      title: packageConfig.title || "Package Configuration"
+      title: packageConfig.title || "Package Configuration",
     };
-    
+
     try {
       const packageData = await this.loadPackageXmlData(config.filePath);
-      
+
       const panel = lwcManager.getOrCreatePanel("s-package-xml", {
         packageData: packageData,
-        config: config
+        config: config,
       });
       panel.updateTitle(`${config.title} - ${config.filePath}`);
 
@@ -1059,21 +1111,22 @@ export class Commands {
           case "refreshPackageConfig": {
             try {
               const refreshFilePath = data?.filePath || config.filePath;
-              const newPackageData = await this.loadPackageXmlData(refreshFilePath);
+              const newPackageData =
+                await this.loadPackageXmlData(refreshFilePath);
               panel.sendMessage({
                 type: "packageDataUpdated",
-                data: { 
+                data: {
                   packageData: newPackageData,
-                  config: { ...config, filePath: refreshFilePath }
-                }
+                  config: { ...config, filePath: refreshFilePath },
+                },
               });
             } catch (error: any) {
               panel.sendMessage({
                 type: "packageDataUpdated",
-                data: { 
+                data: {
                   error: error.message,
-                  config: config
-                }
+                  config: config,
+                },
               });
             }
             break;
@@ -1083,15 +1136,20 @@ export class Commands {
             const editFilePath = data?.filePath || config.filePath;
             const packagePath = path.join(workspaceRoot, editFilePath);
             try {
-              const document = await vscode.workspace.openTextDocument(packagePath);
+              const document =
+                await vscode.workspace.openTextDocument(packagePath);
               await vscode.window.showTextDocument(document);
             } catch (error: any) {
-              vscode.window.showErrorMessage(`Failed to open package file: ${error.message}`);
+              vscode.window.showErrorMessage(
+                `Failed to open package file: ${error.message}`,
+              );
             }
             break;
           }
           case "backToMonitoring": {
-            vscode.commands.executeCommand("vscode-sfdx-hardis.showOrgMonitoring");
+            vscode.commands.executeCommand(
+              "vscode-sfdx-hardis.showOrgMonitoring",
+            );
             break;
           }
           default:
@@ -1100,25 +1158,29 @@ export class Commands {
       });
     } catch (error: any) {
       const panel = lwcManager.getOrCreatePanel("s-package-xml", {
-        error: error.message
+        error: error.message,
       });
       panel.updateTitle("Package Configuration - Error");
     }
   }
 
-  private async loadPackageXmlData(relativeFilePath: string = "manifest/package-skip-items.xml"): Promise<any> {
+  private async loadPackageXmlData(
+    relativeFilePath: string = "manifest/package-skip-items.xml",
+  ): Promise<any> {
     const workspaceRoot = getWorkspaceRoot();
     const packagePath = path.join(workspaceRoot, relativeFilePath);
-    
+
     if (!fs.existsSync(packagePath)) {
       throw new Error(`Package file not found: ${relativeFilePath}`);
     }
 
     try {
-      const xmlContent = await fs.readFile(packagePath, 'utf8');
+      const xmlContent = await fs.readFile(packagePath, "utf8");
       return await this.parsePackageXml(xmlContent);
     } catch (error: any) {
-      throw new Error(`Failed to read package-skip-items.xml: ${error.message}`);
+      throw new Error(
+        `Failed to read package-skip-items.xml: ${error.message}`,
+      );
     }
   }
 
@@ -1127,7 +1189,7 @@ export class Commands {
     try {
       // Extract API version
       const apiVersionMatch = xmlContent.match(/<version>([^<]+)<\/version>/);
-      const apiVersion = apiVersionMatch ? apiVersionMatch[1] : 'Unknown';
+      const apiVersion = apiVersionMatch ? apiVersionMatch[1] : "Unknown";
 
       // Extract types
       const typesRegex = /<types>([\s\S]*?)<\/types>/g;
@@ -1136,10 +1198,10 @@ export class Commands {
 
       while ((typeMatch = typesRegex.exec(xmlContent)) !== null) {
         const typeContent = typeMatch[1];
-        
+
         // Extract type name
         const nameMatch = typeContent.match(/<name>([^<]+)<\/name>/);
-        const typeName = nameMatch ? nameMatch[1] : 'Unknown';
+        const typeName = nameMatch ? nameMatch[1] : "Unknown";
 
         // Extract members
         const membersRegex = /<members>([^<]+)<\/members>/g;
@@ -1150,17 +1212,17 @@ export class Commands {
           members.push(memberMatch[1]);
         }
 
-        if (typeName !== 'Unknown') {
+        if (typeName !== "Unknown") {
           types.push({
             name: typeName,
-            members: members
+            members: members,
           });
         }
       }
 
       return {
         apiVersion: apiVersion,
-        types: types
+        types: types,
       };
     } catch (error: any) {
       throw new Error(`Failed to parse XML content: ${error.message}`);

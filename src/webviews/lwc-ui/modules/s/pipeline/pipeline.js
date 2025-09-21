@@ -196,8 +196,8 @@ export default class Pipeline extends LightningElement {
     window.sendMessageToVSCode({
       type: "runCommand",
       data: {
-        command: "sf hardis:work:new"
-      }
+        command: "sf hardis:work:new",
+      },
     });
   }
 
@@ -205,8 +205,8 @@ export default class Pipeline extends LightningElement {
     window.sendMessageToVSCode({
       type: "runCommand",
       data: {
-        command: "sf hardis:scratch:pull"
-      }
+        command: "sf hardis:scratch:pull",
+      },
     });
   }
 
@@ -214,8 +214,8 @@ export default class Pipeline extends LightningElement {
     window.sendMessageToVSCode({
       type: "runCommand",
       data: {
-        command: "sf hardis:work:save"
-      }
+        command: "sf hardis:work:save",
+      },
     });
   }
 }
