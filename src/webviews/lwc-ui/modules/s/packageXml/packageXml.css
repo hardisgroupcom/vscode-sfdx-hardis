@@ -269,6 +269,24 @@
     gap: 1rem;
 }
 
+.type-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.type-name {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #0b2545; /* darker for emphasis */
+    margin: 0 0 0.125rem 0;
+}
+
+.type-count {
+    font-size: 0.825rem;
+    color: #8b949e; /* muted */
+    margin: 0;
+}
+
 
 .type-icon {
     margin-right: 0.75rem;

@@ -156,8 +156,8 @@ export default class PackageXml extends LightningElement {
     // Return specific mapping if found, otherwise return default
     // The default styling is handled by CSS for any unmatched data-type
     return iconMap[typeName] || { 
-      icon: 'utility:package', 
-      memberIcon: 'utility:package' 
+      icon: 'utility:file', 
+      memberIcon: 'utility:file' 
     };
   }
 
@@ -223,7 +223,7 @@ export default class PackageXml extends LightningElement {
       retrieve: {
         title: "Retrieve Package",
         description: "Package definition for metadata retrieval",
-        icon: "utility:download",
+        icon: "utility:file",
         infoIcon: "📥",
         typesIcon: "📦",
         typesTitle: "Retrieval Contents",
