@@ -3,13 +3,120 @@
 }
 
 .pipeline-container {
-    /* Add your CSS for pipeline visualization here */
-    border: 1px solid #ccc;
-    padding: 10px;
+    /* Pipeline visualization styling */
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 1rem;
     min-height: 200px;
+    background: white;
+    margin-top: 1rem;
 }
 
 .blue-back {
-	background:  #EDF4FF;
+    background: linear-gradient(135deg, #f8f9ff 0%, #e8f4fd 100%);
     min-height: 100vh;
+    font-family: "Salesforce Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Quick Actions Section */
+.quick-actions-section {
+    background: white;
+    border-radius: 8px;
+    padding: 1rem;
+    border: 1px solid #ddd;
+}
+
+/* Commands Grid - matching orgMonitoring style */
+.commands-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.25rem;
+    margin: 0.5rem 0.5rem 0 0.5rem;
+    padding: 0 0.25rem;
+}
+
+.command-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1.25rem;
+    border: 1px solid #e5e5e5;
+    transition: all 0.2s ease;
+    min-height: 110px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    cursor: pointer;
+}
+
+.command-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: #1589ee;
+}
+
+.command-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.command-icon-container {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: white !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: all 0.2s ease;
+}
+
+.command-icon-container lightning-icon {
+    --slds-c-icon-color-foreground: white !important;
+    --slds-c-icon-color-foreground-default: white !important;
+}
+
+.command-icon-container:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+}
+
+.command-icon-container.new-story {
+    background: linear-gradient(135deg, #1589ee 0%, #005fb2 100%);
+    box-shadow: 0 2px 8px rgba(21, 137, 238, 0.3);
+}
+
+.command-icon-container.pull-action {
+    background: linear-gradient(135deg, #06a59a 0%, #045a55 100%);
+    box-shadow: 0 2px 8px rgba(6, 165, 154, 0.3);
+}
+
+.command-icon-container.package-action {
+    background: linear-gradient(135deg, #9f4fea 0%, #7b2cbf 100%);
+    box-shadow: 0 2px 8px rgba(159, 79, 234, 0.3);
+}
+
+.command-icon-container.save-action {
+    background: linear-gradient(135deg, #27ae60 0%, #1e8449 100%);
+    box-shadow: 0 2px 8px rgba(39, 174, 96, 0.3);
+}
+
+.command-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #181818;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.command-description {
+    color: #706e6b;
+    margin: 0;
+    line-height: 1.4;
+    font-size: 0.875rem;
+    flex-grow: 1;
 }

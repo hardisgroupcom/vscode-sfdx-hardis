@@ -8,6 +8,28 @@ import "s/forceLightTheme"; // Ensure light theme is applied
 export default class Welcome extends LightningElement {
   @track isLoading = false;
   @track showWelcomeAtStartup = true;
+  scrollThreshold = 100; // Hide toggle after scrolling 100px
+
+  connectedCallback() {
+    // Add scroll event listener when component is connected
+    window.addEventListener('scroll', this.handleScroll.bind(this));
+  }
+
+  disconnectedCallback() {
+    // Remove scroll event listener when component is disconnected
+    window.removeEventListener('scroll', this.handleScroll.bind(this));
+  }
+
+  handleScroll() {
+    const heroSettings = this.template.querySelector('.hero-settings');
+    if (heroSettings) {
+      if (window.scrollY > this.scrollThreshold) {
+        heroSettings.classList.add('hidden');
+      } else {
+        heroSettings.classList.remove('hidden');
+      }
+    }
+  }
 
   @api
   initialize(data) {

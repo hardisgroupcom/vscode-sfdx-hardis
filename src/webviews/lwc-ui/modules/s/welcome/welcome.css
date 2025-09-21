@@ -62,6 +62,12 @@
     top: 1rem;
     transform: none;
     z-index: 9999;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.hero-settings.hidden {
+    opacity: 0;
+    visibility: hidden;
 }
 
 .welcome-toggle {
@@ -692,6 +698,12 @@
         z-index: 9999;
         /* prevent toggle from going off-screen on very narrow panels */
         max-width: calc(100% - 1rem);
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    .hero-settings.hidden {
+        opacity: 0;
+        visibility: hidden;
     }
     
     .hero-title {
