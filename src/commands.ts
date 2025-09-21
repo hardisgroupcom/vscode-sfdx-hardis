@@ -1103,14 +1103,16 @@ export class Commands {
     try {
       let packageData;
       let actualFilePath = config.filePath;
-      
+
       try {
         packageData = await this.loadPackageXmlData(config.filePath);
       } catch (error) {
         // Try fallback file if specified and main file fails
         if (config.fallbackFilePath) {
           try {
-            packageData = await this.loadPackageXmlData(config.fallbackFilePath);
+            packageData = await this.loadPackageXmlData(
+              config.fallbackFilePath,
+            );
             actualFilePath = config.fallbackFilePath; // Update to show the actual loaded file
           } catch {
             throw error; // Throw original error if fallback also fails

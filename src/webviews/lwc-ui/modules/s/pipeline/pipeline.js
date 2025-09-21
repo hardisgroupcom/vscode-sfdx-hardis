@@ -233,7 +233,7 @@ export default class Pipeline extends LightningElement {
 
   handleShowNoOverwrite() {
     window.sendMessageToVSCode({
-      type: "showPackageXml", 
+      type: "showPackageXml",
       data: {
         packageType: "no-overwrite",
         filePath: "manifest/package-no-overwrite.xml",
@@ -247,7 +247,7 @@ export default class Pipeline extends LightningElement {
     window.sendMessageToVSCode({
       type: "showPackageXml",
       data: {
-        packageType: "destructive", 
+        packageType: "destructive",
         filePath: "manifest/destructiveChanges.xml",
         title: "Destructive Changes - Metadata to Delete",
       },

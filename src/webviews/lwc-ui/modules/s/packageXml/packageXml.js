@@ -316,13 +316,16 @@ export default class PackageXml extends LightningElement {
       },
       "no-overwrite": {
         title: "No Overwrite Package",
-        description: "Metadata that will never be overwritten during deployment",
+        description:
+          "Metadata that will never be overwritten during deployment",
         icon: "utility:ban",
         infoIcon: "🔒",
         typesIcon: "🛡️",
         typesTitle: "Protected Metadata",
-        typesDescription: "Metadata types and components protected from overwrite during deployment",
-        wildcardMessage: "All members of this type are protected from overwrite (*)",
+        typesDescription:
+          "Metadata types and components protected from overwrite during deployment",
+        wildcardMessage:
+          "All members of this type are protected from overwrite (*)",
         emptyTitle: "No Protected Metadata",
         emptyDescription:
           "This no-overwrite package doesn't contain any protected metadata types.",
