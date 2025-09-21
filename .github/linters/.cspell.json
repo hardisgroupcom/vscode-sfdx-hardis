@@ -217,6 +217,7 @@
     "ovsx",
     "oxsecurity",
     "packageconfig",
+    "packagedeployonce",
     "packagexml",
     "packagexmlfull",
     "passin",
