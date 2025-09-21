@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [6.7.0] 2024-09-21
+
 - Welcome view
 - Org Monitoring Workbench + Package XML Viewer
 - Org Manager: Allow to edit Org aliases in the table
