@@ -15,6 +15,7 @@
     "**/eslint.config.js",
     "**/webpack*.js",
     "**/*.html",
+    "**/*.css",
     "**/*.xml",
     "**/pipelineConfig.js",
     "**/sfdxHardisConfig.ts"
