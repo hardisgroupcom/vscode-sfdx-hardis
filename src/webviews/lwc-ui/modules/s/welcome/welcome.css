@@ -52,11 +52,16 @@
 }
 
 .hero-settings {
-    position: absolute;
-    right: 2rem;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 10;
+    /* Place the toggle at the top-right of the welcome container so it
+       doesn't collide with the centered hero content when the view is
+       narrow. Using a small top offset keeps it visually separate from
+       the header text. */
+    /* Fix to viewport top-right so the toggle sits outside the centered welcome container */
+    position: fixed;
+    right: 0.75rem; /* push closer to the edge */
+    top: 1rem;
+    transform: none;
+    z-index: 9999;
 }
 
 .welcome-toggle {
@@ -604,6 +609,17 @@
     justify-content: center;
 }
 
+/* Center Contact Us button inside services card and add spacing */
+.services-card-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 1.25rem; /* push button slightly down */
+}
+
+.services-card-actions lightning-button {
+    align-self: center;
+}
+
 /* Settings Section */
 .settings-section {
     background: #f8f9fa;
@@ -666,13 +682,16 @@
         text-align: center;
     }
     
+    /* Keep the toggle visible at the top-right on smaller screens as well.
+       Use fixed positioning but reduce offsets so it stays usable on narrow viewports. */
     .hero-settings {
-        margin-left: 0;
-        align-self: center;
-        position: relative;
-        right: auto;
-        top: auto;
+        position: fixed;
+        right: 0.5rem;
+        top: 0.5rem;
         transform: none;
+        z-index: 9999;
+        /* prevent toggle from going off-screen on very narrow panels */
+        max-width: calc(100% - 1rem);
     }
     
     .hero-title {

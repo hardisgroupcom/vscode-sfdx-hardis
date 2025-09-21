@@ -8,11 +8,15 @@ import "s/forceLightTheme"; // Ensure light theme is applied
 export default class OrgMonitoring extends LightningElement {
   @track isInstalled = false;
   @track isLoading = true;
+  @track isCiCdRepo = false;
+  @track monitoringRepository = null;
 
   @api
   initialize(data) {
     console.log("Org Monitoring component initialized:", data);
     this.isInstalled = data?.isInstalled || false;
+    this.isCiCdRepo = data?.isCiCdRepo || false;
+    this.monitoringRepository = data?.monitoringRepository || null;
     this.isLoading = false;
   }
 
@@ -21,6 +25,19 @@ export default class OrgMonitoring extends LightningElement {
     console.log("Org Monitoring component received message:", type, data);
     if (type === "installationStatusUpdated") {
       this.isInstalled = data?.isInstalled || false;
+      // may receive updated ci/cd detection and repo config
+      if (data?.isCiCdRepo !== undefined) {
+        this.isCiCdRepo = !!data.isCiCdRepo;
+      }
+      if (data?.monitoringRepository !== undefined) {
+        this.monitoringRepository = data.monitoringRepository || null;
+      }
+    }
+  }
+
+  openMonitoringRepository() {
+    if (this.monitoringRepository) {
+      window.sendMessageToVSCode({ type: "openExternal", data: this.monitoringRepository });
     }
   }
 

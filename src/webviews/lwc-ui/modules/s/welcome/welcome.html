@@ -8,7 +8,7 @@
                         <span class="hero-icon">🚀</span>
                         <div class="hero-text">
                             <h1 class="hero-title">Welcome to VS Code SFDX Hardis</h1>
-                            <p class="hero-subtitle">Your comprehensive Salesforce DX toolkit, by <a href="https://www.cloudity.com/?ref=sfdxhardis" target="_blank">Cloudity</a> and <a href="https://sfdx-hardis.cloudity.com/contributors/" target="_blank">friends</a></p>
+                            <p class="hero-subtitle">Your comprehensive Salesforce toolkit, by <a href="https://www.cloudity.com/?ref=sfdxhardis" target="_blank">Cloudity</a> and <a href="https://sfdx-hardis.cloudity.com/contributors/" target="_blank">friends</a></p>
                         </div>
                     </div>
                 </div>
@@ -69,18 +69,21 @@
                         <div class="feature-arrow">→</div>
                     </div>
 
-                    <!-- Documentation Tool Card -->
-                    <div class="feature-card" onclick={navigateToDocumentation}>
+                    <!-- Documentation Workbench Card (Coming Soon) -->
+                    <div class="feature-card coming-soon">
                         <div class="feature-card-header">
                             <div class="feature-icon-container documentation">
                                 <lightning-icon icon-name="utility:knowledge_base" size="medium" variant="inverse"></lightning-icon>
                             </div>
-                            <h3 class="feature-title">Documentation</h3>
+                            <h3 class="feature-title">
+                                Documentation Workbench
+                                <lightning-badge label="Coming Soon" variant="warning" class="feature-badge"></lightning-badge>
+                            </h3>
                         </div>
                         <p class="feature-description">
-                            Generate and view project documentation
+                            Generate and view project documentation tools and integrations (coming soon).
                         </p>
-                        <div class="feature-arrow">→</div>
+                        <div class="feature-arrow">⏳</div>
                     </div>
 
                     <!-- Files Workbench Card -->
@@ -135,7 +138,7 @@
                 <div class="getting-started-content">
                     <div class="getting-started-header">
                         <div class="getting-started-icon-container">
-                            <lightning-icon icon-name="utility:lightning_bolt" size="medium" variant="inverse" class="getting-started-icon"></lightning-icon>
+                            <lightning-icon icon-name="utility:education" size="medium" variant="inverse" class="getting-started-icon"></lightning-icon>
                         </div>
                         <div class="getting-started-text-header">
                             <h3 class="getting-started-title">Getting Started</h3>
@@ -193,15 +196,15 @@
                             <p class="services-card-text">
                                 <a href="https://www.cloudity.com/?ref=sfdxhardis" target="_blank" class="cloudity-link"><strong>Cloudity</strong></a> offers professional consulting services to help you maximize SFDX Hardis value and optimize your Salesforce development strategy.
                             </p>
+                            <div class="services-card-actions">
+                                <lightning-button 
+                                    variant="brand" 
+                                    label="Contact Us" 
+                                    icon-name="utility:world"
+                                    onclick={openCloudityServices}
+                                ></lightning-button>
+                            </div>
                         </div>
-                    </div>
-                    <div class="open-source-actions">
-                        <lightning-button 
-                            variant="brand" 
-                            label="Contact Us" 
-                            icon-name="utility:world"
-                            onclick={openCloudityServices}
-                        ></lightning-button>
                     </div>
                 </div>
             </div>

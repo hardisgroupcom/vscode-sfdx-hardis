@@ -13,6 +13,7 @@ import {
   openFolderInExplorer,
 } from "./utils";
 import axios from "axios";
+import yaml from "js-yaml";
 import TelemetryReporter from "@vscode/extension-telemetry";
 import { ThemeUtils } from "./themeUtils";
 import { LwcPanelManager } from "./lwc-panel-manager";
@@ -78,7 +79,6 @@ export class Commands {
     this.registerGeneratePackageXmlDoc();
     this.registerGenerateFlowDocumentation();
     this.registerGenerateFlowVisualGitDiff();
-
     this.registerShowPipeline();
     this.registerShowExtensionConfig();
     this.registerShowPipelineConfig();
@@ -956,9 +956,29 @@ export class Commands {
         
         // Check if org monitoring is installed
         const isInstalled = await this.checkOrgMonitoringInstallation();
-        
+
+        // Detect if this workspace is a DevOps/CI-CD repository by presence of manifest/package.xml
+        const workspaceRoot = getWorkspaceRoot();
+        const ciCdManifestPath = path.join(workspaceRoot || "", "manifest", "package.xml");
+        const isCiCdRepo = fs.existsSync(ciCdManifestPath);
+
+        // Read optional monitoring repository URL from config/.sfdx-hardis.yml (monitoring_repository)
+        let monitoringRepository: string | null = null;
+        try {
+          const configPath = path.join(workspaceRoot || "", "config", ".sfdx-hardis.yml");
+          if (fs.existsSync(configPath)) {
+            const raw = fs.readFileSync(configPath, "utf8");
+            const parsed = yaml.load(raw) as any;
+            monitoringRepository = parsed?.monitoring_repository || parsed?.monitoringRepository || null;
+          }
+        } catch (e) {
+          Logger.log(`Unable to read monitoring_repository from config: ${e}`);
+        }
+
         const panel = lwcManager.getOrCreatePanel("s-org-monitoring", {
-          isInstalled: isInstalled
+          isInstalled: isInstalled,
+          isCiCdRepo: isCiCdRepo,
+          monitoringRepository: monitoringRepository,
         });
         panel.updateTitle("Org Monitoring Workbench");
 
@@ -967,9 +987,24 @@ export class Commands {
           switch (type) {
             case "checkOrgMonitoringInstallation": {
               const currentStatus = await this.checkOrgMonitoringInstallation();
+              // Recompute CI/CD detection and config in case workspace changed
+              const workspaceRoot2 = getWorkspaceRoot();
+              const ciCdManifestPath2 = path.join(workspaceRoot2 || "", "manifest", "package.xml");
+              const isCiCdRepo2 = fs.existsSync(ciCdManifestPath2);
+              let monitoringRepository2: string | null = null;
+              try {
+                const configPath2 = path.join(workspaceRoot2 || "", "config", ".sfdx-hardis.yml");
+                if (fs.existsSync(configPath2)) {
+                  const raw2 = fs.readFileSync(configPath2, "utf8");
+                  const parsed2 = yaml.load(raw2) as any;
+                  monitoringRepository2 = parsed2?.monitoring_repository || parsed2?.monitoringRepository || null;
+                }
+              } catch (e) {
+                Logger.log(`Unable to read monitoring_repository from config: ${e}`);
+              }
               panel.sendMessage({
                 type: "installationStatusUpdated",
-                data: { isInstalled: currentStatus }
+                data: { isInstalled: currentStatus, isCiCdRepo: isCiCdRepo2, monitoringRepository: monitoringRepository2 }
               });
               break;
             }

@@ -64,37 +64,87 @@
                 </template>
 
                 <template if:false={isInstalled}>
-                    <!-- Not Installed State -->
-                    <div class="status-card not-installed">
-                        <div class="status-icon-container warning">
-                            <lightning-icon icon-name="utility:warning" size="small" variant="inverse"></lightning-icon>
-                        </div>
-                        <div class="status-content">
-                            <h3 class="status-title">Org Monitoring Not Installed</h3>
-                            <p class="status-description">
-                                Install org monitoring to start tracking your Salesforce org's health, security, and performance.
-                            </p>
-                            <div class="status-actions">
-                                <lightning-button 
-                                    variant="brand" 
-                                    label="Install Org Monitoring" 
-                                    title="Configure and install org monitoring for this project"
-                                    onclick={installOrgMonitoring}
-                                    icon-name="utility:download"
-                                    class="status-button primary"
-                                ></lightning-button>
-                                <lightning-button 
-                                    variant="neutral" 
-                                    label="Learn More" 
-                                    title="Learn about org monitoring capabilities"
-                                    onclick={learnMore}
-                                    icon-name="utility:info"
-                                    class="status-button"
-                                ></lightning-button>
+                        <!-- Not Installed State -->
+                        <template if:true={isCiCdRepo}>
+                            <!-- CI/CD repo: informational card -->
+                            <div class="status-card cicd">
+                                <div class="status-icon-container info">
+                                    <lightning-icon icon-name="utility:info" size="small" variant="inverse"></lightning-icon>
+                                </div>
+                                <div class="status-content">
+                                    <h3 class="status-title">Org Monitoring Not Present (CI/CD Repo)</h3>
+                                    <p class="status-description">
+                                        This workspace appears to be a CI/CD / DevOps repository (manifest/package.xml found). It's normal for org monitoring not to be installed here.
+                                    </p>
+                                    <template if:true={monitoringRepository}>
+                                        <p class="status-description">
+                                            You can view the monitoring tooling in the configured repository for this project.
+                                        </p>
+                                        <div class="status-actions">
+                                            <lightning-button 
+                                                variant="brand"
+                                                label="Open Monitoring Repository"
+                                                onclick={openMonitoringRepository}
+                                                icon-name="utility:new_window"
+                                                class="status-button"
+                                            ></lightning-button>
+                                            <lightning-button 
+                                                variant="neutral" 
+                                                label="Learn More" 
+                                                title="Learn about org monitoring capabilities"
+                                                onclick={learnMore}
+                                                icon-name="utility:info"
+                                                class="status-button"
+                                            ></lightning-button>
+                                        </div>
+                                    </template>
+                                    <template if:false={monitoringRepository}>
+                                        <div class="status-actions">
+                                            <lightning-button 
+                                                variant="neutral" 
+                                                label="Learn More" 
+                                                title="Learn about org monitoring capabilities"
+                                                onclick={learnMore}
+                                                icon-name="utility:info"
+                                                class="status-button"
+                                            ></lightning-button>
+                                        </div>
+                                    </template>
+                                </div>
                             </div>
-                        </div>
-                    </div>
-                </template>
+                        </template>
+                        <template if:false={isCiCdRepo}>
+                            <div class="status-card not-installed">
+                                <div class="status-icon-container warning">
+                                    <lightning-icon icon-name="utility:warning" size="small" variant="inverse"></lightning-icon>
+                                </div>
+                                <div class="status-content">
+                                    <h3 class="status-title">Org Monitoring Not Installed</h3>
+                                    <p class="status-description">
+                                        Install org monitoring to start tracking your Salesforce org's health, security, and performance.
+                                    </p>
+                                    <div class="status-actions">
+                                        <lightning-button 
+                                            variant="brand" 
+                                            label="Install Org Monitoring" 
+                                            title="Configure and install org monitoring for this project"
+                                            onclick={installOrgMonitoring}
+                                            icon-name="utility:download"
+                                            class="status-button primary"
+                                        ></lightning-button>
+                                        <lightning-button 
+                                            variant="neutral" 
+                                            label="Learn More" 
+                                            title="Learn about org monitoring capabilities"
+                                            onclick={learnMore}
+                                            icon-name="utility:info"
+                                            class="status-button"
+                                        ></lightning-button>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </template>
             </div>
 
             <!-- Monitoring Commands Section -->

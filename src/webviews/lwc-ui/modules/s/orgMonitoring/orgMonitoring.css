@@ -141,6 +141,16 @@
     border-left: 4px solid #ff6b35;
 }
 
+/* Info style for CI/CD repositories where monitoring is intentionally absent */
+.status-card.cicd {
+    border-left: 4px solid #1589ee;
+}
+
+.status-icon-container.info {
+    background: linear-gradient(135deg, #1589ee 0%, #005fb2 100%);
+    color: white;
+}
+
 .status-icon-container {
     width: 44px;
     height: 44px;
