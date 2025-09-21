@@ -4,12 +4,10 @@
 
 .pipeline-container {
     /* Pipeline visualization styling */
-    border: 1px solid #ddd;
     border-radius: 8px;
     padding: 1rem;
     min-height: 200px;
     background: white;
-    margin-top: 1rem;
 }
 
 .blue-back {
@@ -18,20 +16,12 @@
     font-family: "Salesforce Sans", -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-/* Quick Actions Section */
-.quick-actions-section {
-    background: white;
-    border-radius: 8px;
-    padding: 1rem;
-    border: 1px solid #ddd;
-}
-
-/* Commands Grid - matching orgMonitoring style */
+/* Commands Grid - matching orgMonitoring style for Quick Actions cards */
 .commands-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 1.25rem;
-    margin: 0.5rem 0.5rem 0 0.5rem;
+    margin: 1rem;
     padding: 0 0.25rem;
 }
 
@@ -119,4 +109,9 @@
     line-height: 1.4;
     font-size: 0.875rem;
     flex-grow: 1;
+}
+
+/* Add spacing between lightning cards */
+.pipeline-card-spacing {
+    margin-top: 2.5rem !important;
 }
