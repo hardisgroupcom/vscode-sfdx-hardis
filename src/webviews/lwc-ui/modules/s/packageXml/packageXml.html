@@ -4,7 +4,7 @@
             <!-- Header Section -->
             <div class="header-section">
                 <div class="header-content">
-                    <lightning-icon icon-name={packageIconName} size="medium" variant="inverse" class="header-icon"></lightning-icon>
+                    <lightning-icon icon-name={packageIconName} size="medium" class="header-icon"></lightning-icon>
                     <div class="header-text">
                         <h1 class="header-title">{packageTitle}</h1>
                         <p class="header-subtitle">{packageDescription}</p>
@@ -109,7 +109,7 @@
                                 <div key={metadataType.name} class="type-card">
                                     <div class="type-header" onclick={toggleTypeExpansion} data-type-name={metadataType.name}>
                                         <div class="type-info">
-                                            <lightning-icon icon-name={metadataType.iconName} size="small" class="type-icon" variant="inverse"></lightning-icon>
+                                            <lightning-icon icon-name={metadataType.iconName} size="small" class="type-icon"></lightning-icon>
                                             <div class="type-details">
                                                 <h3 class="type-name">{metadataType.name}</h3>
                                                 <p class="type-count">{metadataType.memberCount} members</p>
@@ -137,7 +137,7 @@
                                                 <div class="members-grid">
                                                     <template for:each={metadataType.members} for:item="member">
                                                         <div key={member} class="member-item">
-                                                            <lightning-icon icon-name={metadataType.memberIconName} size="x-small" class="member-icon" variant="inverse"></lightning-icon>
+                                                            <lightning-icon icon-name={metadataType.memberIconName} size="x-small" class="member-icon"></lightning-icon>
                                                             <span class="member-name">{member}</span>
                                                         </div>
                                                     </template>
@@ -152,7 +152,7 @@
 
                     <template if:false={hasTypes}>
                         <div class="empty-state">
-                            <lightning-icon icon-name={packageIconName} size="large" variant="inverse" class="empty-icon"></lightning-icon>
+                            <lightning-icon icon-name={packageIconName} size="large" class="empty-icon"></lightning-icon>
                             <h3 class="empty-title">{emptyStateTitle}</h3>
                             <p class="empty-description">{emptyStateDescription}</p>
                         </div>
