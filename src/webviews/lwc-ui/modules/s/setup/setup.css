@@ -84,6 +84,28 @@
     gap: 0.75rem; /* smaller internal gap */
 }
 
+/* Summary wrapper at top of the setup panel - compact and flush with header */
+.setup-summary-card {
+    margin: 0.4rem 0; /* keep small vertical spacing, no colored container */
+    padding: 0; /* avoid extra nested background */
+    background: transparent;
+}
+
+/* Summary variant of status-card (used for top summary) - match orgMonitoring styles */
+.status-card.summary {
+    background: white;
+    border-radius: 8px;
+    /* compact padding for a tighter summary */
+    padding: 0.65rem 0.9rem;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e9eef3;
+    display: flex;
+    align-items: center; /* center items vertically */
+    gap: 0.85rem; /* tighter gap */
+    margin: 0; /* no outer tinted box */
+    width: 100%;
+}
+
 .status-card.installed {
     border-left: 4px solid #04844b;
 }
@@ -105,16 +127,19 @@
 .status-card.error {
     border-left-color: #9f1239; /* dark magenta/red for errors */
 }
+.status-card.checking {
+    border-left-color: #6b7280; /* grey for checking */
+}
 
 .status-icon-container {
-    width: 44px;
-    height: 44px;
+    width: 40px; /* slightly smaller for compact layout */
+    height: 40px;
     border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
     border: 2px solid rgba(255, 255, 255, 0.2);
     color: white !important;
 }
@@ -122,25 +147,10 @@
 .status-icon-container.success { background: linear-gradient(135deg, #04844b 0%, #037837 100%); }
 .status-icon-container.warning { background: linear-gradient(135deg, #ffb020 0%, #d97706 100%); }
 .status-icon-container.info { background: linear-gradient(135deg, #1589ee 0%, #005fb2 100%); }
-.status-icon-container.neutral { background: #f3f4f6; border-color: #e6eef8; color: #6b7280 !important; }
-
-/* Error / missing state should be red */
+.status-icon-container.neutral { background: linear-gradient(135deg, #94a3b8 0%, #6b7280 100%); }
 .status-icon-container.error { background: linear-gradient(135deg, #dc2626 0%, #9f1239 100%); }
+.status-icon-container.checking { background: linear-gradient(135deg, #94a3b8 0%, #6b7280 100%); }
 
-/* Neutral icon background used while checking — no strong colors */
-.status-icon-container.neutral {
-/* Neutral background when idle. When checking, we overlay a transparent neutral container so the spinner is visible */
-    background: #f3f4f6;
-    border-color: #e6eef8;
-    color: #6b7280 !important;
-}
-
-/* When the item is checking, remove the colorful/solid background so the lightning-spinner renders without a colored square behind it */
-.status-icon-container.checking {
-    background: transparent !important;
-    border-color: transparent !important;
-    box-shadow: none !important;
-}
 
 /* Ensure lightning-icon foreground color respects our palette inside icon containers */
 .status-icon-container lightning-icon {
@@ -148,22 +158,16 @@
     --slds-c-icon-color-foreground-default: white !important;
 }
 
-/* For neutral icon, show darker glyph */
-.status-icon-container.neutral lightning-icon {
-    --slds-c-icon-color-foreground: #6b7280 !important;
-    --slds-c-icon-color-foreground-default: #6b7280 !important;
-}
+.status-content { flex-grow: 1; min-width: 0; display:flex; flex-direction:column; gap:4px }
 
-.status-content { flex-grow: 1; min-width: 0; }
+.status-title { font-size: 0.98rem; font-weight: 700; margin: 0; display:flex; gap:0.5rem; align-items:baseline }
+.status-label { font-weight:700 }
+.status-version { color:#6b7280; font-size:0.85rem; margin-left:6px }
+.status-description { color:#6b7280; margin:0; font-size:0.88rem; line-height:1.2 }
 
-.status-title { font-size: 1rem; font-weight: 600; margin: 0 0 0.25rem 0; display:flex; gap:0.5rem; align-items:baseline }
-.status-label { font-weight:600 }
-.status-version { color:#6b7280; font-size:0.9rem }
-.status-description { color:#706e6b; margin:0; font-size:0.9rem; line-height:1.3 }
-
-.status-actions { display:flex; gap:0.5rem; align-items:center; flex-shrink:0 }
-.status-button { border-radius:6px }
-.status-button.primary { box-shadow: 0 2px 4px rgba(0,0,0,0.08) }
+.status-actions { display:flex; gap:0.5rem; align-items:center; flex-shrink:0; margin-left:auto }
+.status-button { border-radius:6px; padding:0.45rem 0.75rem }
+.status-button.primary { box-shadow: 0 1px 3px rgba(0,0,0,0.06) }
 
 /* Prevent accidental full-screen modal/spinner within this panel */
 .setup-container .submission-modal-backdrop,

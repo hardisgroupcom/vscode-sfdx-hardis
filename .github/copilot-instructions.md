@@ -99,6 +99,8 @@ else {
 }
 ```
 
+In the HTML of LWC components, you can NOT use ternaries or expression evaluations.
+
 ### TypeScript Conventions
 
 #### TreeDataProvider Implementation
