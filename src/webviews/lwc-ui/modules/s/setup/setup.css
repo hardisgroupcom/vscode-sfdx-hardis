@@ -124,6 +124,9 @@
 .status-icon-container.info { background: linear-gradient(135deg, #1589ee 0%, #005fb2 100%); }
 .status-icon-container.neutral { background: #f3f4f6; border-color: #e6eef8; color: #6b7280 !important; }
 
+/* Error / missing state should be red */
+.status-icon-container.error { background: linear-gradient(135deg, #dc2626 0%, #9f1239 100%); }
+
 /* Neutral icon background used while checking — no strong colors */
 .status-icon-container.neutral {
 /* Neutral background when idle. When checking, we overlay a transparent neutral container so the spinner is visible */

@@ -1,3 +1,4 @@
+import * as vscode from "vscode";
 import { execCommand, execCommandWithProgress, getNpmLatestVersion, NODE_JS_MINIMUM_VERSION, RECOMMENDED_SFDX_CLI_VERSION, RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION } from "../utils";
 
 export type DependencyInfo = {
@@ -312,58 +313,6 @@ export class SetupHelper {
     }
   }
 
-  async checkNpmPackage(packageName: string): Promise<DependencyCheckResult> {
-    try {
-      const latest = await getNpmLatestVersion(packageName);
-      // We're only checking remote latest here; whether it's installed can be checked elsewhere
-      return {
-        id: `npm:${packageName}`,
-        label: packageName,
-        installed: true,
-        version: latest,
-        recommended: latest,
-        status: "ok",
-        helpUrl: `https://www.npmjs.com/package/${packageName}`,
-      };
-    } catch {
-      return {
-        id: `npm:${packageName}`,
-        label: packageName,
-        installed: false,
-        version: null,
-        recommended: null,
-        status: "error",
-        helpUrl: `https://www.npmjs.com/package/${packageName}`,
-      };
-    }
-  }
-
-  async installSfCliWithNpm(): Promise<{ success: boolean; message?: string }> {
-    try {
-      await execCommandWithProgress(
-        "npm install @salesforce/cli -g",
-         { fail: false, output: true },
-        "Installing Salesforce CLI..."
-      );
-      return { success: true };
-    } catch (err: any) {
-      return { success: false, message: err?.message || String(err) };
-    }
-  }
-
-  async installSfPlugin(pluginName: string): Promise<{ success: boolean; message?: string }> {
-    try {
-        await execCommandWithProgress(
-            `echo y | sf plugins install ${pluginName}`,
-            { fail: true, output: true },
-            `Running install command for ${pluginName}...`
-        )
-        return{ success: true }
-    } catch (err: any) {
-      return { success: false, message: err?.message || String(err) };
-    }
-  }
-
   async checkSfPlugin(pluginName: string): Promise<DependencyCheckResult> {
     try {
       const res: any = await execCommand("sf plugins", { fail: false, output: true, spinner: false });
@@ -448,6 +397,60 @@ export class SetupHelper {
         status: "error",
         helpUrl: `https://www.npmjs.com/package/${pluginName}`,
       };
+    }
+  }
+
+  async checkNpmPackage(packageName: string): Promise<DependencyCheckResult> {
+    try {
+      const latest = await getNpmLatestVersion(packageName);
+      // We're only checking remote latest here; whether it's installed can be checked elsewhere
+      return {
+        id: `npm:${packageName}`,
+        label: packageName,
+        installed: true,
+        version: latest,
+        recommended: latest,
+        status: "ok",
+        helpUrl: `https://www.npmjs.com/package/${packageName}`,
+      };
+    } catch {
+      return {
+        id: `npm:${packageName}`,
+        label: packageName,
+        installed: false,
+        version: null,
+        recommended: null,
+        status: "error",
+        helpUrl: `https://www.npmjs.com/package/${packageName}`,
+      };
+    }
+  }
+
+  async installSfCliWithNpm(): Promise<{ success: boolean; message?: string }> {
+    try {
+      await execCommandWithProgress(
+        "npm install @salesforce/cli" + (RECOMMENDED_SFDX_CLI_VERSION ? "@" + RECOMMENDED_SFDX_CLI_VERSION : "") + " -g",
+         { fail: true, output: true },
+        "Installing Salesforce CLI..."
+      );
+      vscode.commands.executeCommand("vscode-sfdx-hardis.refreshPluginsView");
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, message: err?.message || String(err) };
+    }
+  }
+
+  async installSfPlugin(pluginName: string): Promise<{ success: boolean; message?: string }> {
+    try {
+        await execCommandWithProgress(
+            `echo y | sf plugins install ${pluginName}@latest`,
+            { fail: true, output: true },
+            `Running install command for ${pluginName}...`
+        )
+        vscode.commands.executeCommand("vscode-sfdx-hardis.refreshPluginsView");
+        return{ success: true }
+    } catch (err: any) {
+      return { success: false, message: err?.message || String(err) };
     }
   }
 

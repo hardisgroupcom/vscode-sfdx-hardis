@@ -37,6 +37,11 @@ export default class Setup extends LightningElement {
           iconContainerClass: "status-icon-container info",
           // action label shown on primary button (avoids ternaries in template)
           actionLabel: "Install",
+          // actionVariant: controls lightning-button variant for install/upgrade actions
+          // default to brand for installable items so Install/Upgrade buttons appear prominent
+          actionVariant: c.installable ? 'brand' : 'neutral',
+          // actionIsInstall: when true, primary button should invoke install/upgrade flow (installDependency)
+          actionIsInstall: !!c.installable,
           ...c,
         }));
 
@@ -91,7 +96,8 @@ export default class Setup extends LightningElement {
               statusIcon = "utility:error";
               statusClassSuffix = "warning";
               cardClass = "status-card not-installed missing";
-              iconContainerClass = "status-icon-container warning";
+              // missing should use an error (red) container
+              iconContainerClass = "status-icon-container error";
               installed = false;
               newActionLabel = "Install";
               break;
@@ -99,7 +105,8 @@ export default class Setup extends LightningElement {
               statusIcon = "utility:error";
               statusClassSuffix = "error";
               cardClass = "status-card not-installed error";
-              iconContainerClass = "status-icon-container neutral";
+              // error should use a red/error icon container
+              iconContainerClass = "status-icon-container error";
               installed = false;
               newActionLabel = c.installable ? "Install" : "Instructions";
               break;
@@ -113,6 +120,12 @@ export default class Setup extends LightningElement {
               newActionLabel = installed ? "Re-check" : "Install";
           }
 
+          // determine actionVariant based on chosen actionLabel
+          const actionVariant = newActionLabel === 'Upgrade' || newActionLabel === 'Install' ? 'brand' : 'neutral';
+
+          // actionIsInstall true when action is Install or Upgrade
+          const actionIsInstall = newActionLabel === 'Install' || newActionLabel === 'Upgrade';
+
           return {
             ...c,
             ...res,
@@ -124,6 +137,8 @@ export default class Setup extends LightningElement {
             cardClass,
             iconContainerClass,
             actionLabel: newActionLabel,
+            actionVariant,
+            actionIsInstall,
             // Override installed based on status (status is the source of truth for UI)
             installed,
           };
