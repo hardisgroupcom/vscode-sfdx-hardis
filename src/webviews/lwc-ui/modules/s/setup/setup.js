@@ -200,7 +200,7 @@ export default class Setup extends LightningElement {
         this.summaryMessage = 'Outdated dependencies: Please upgrade them';
         this.summaryClass = 'warning';
       } else {
-        this.summaryMessage = 'You are all set';
+        this.summaryMessage = 'You are all set 🤓';
         this.summaryClass = 'success';
       }
 
