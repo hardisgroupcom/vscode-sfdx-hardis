@@ -1,4 +1,4 @@
-import { execCommand, getNpmLatestVersion, NODE_JS_MINIMUM_VERSION, RECOMMENDED_SFDX_CLI_VERSION, RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION } from "../utils";
+import { execCommand, execCommandWithProgress, getNpmLatestVersion, NODE_JS_MINIMUM_VERSION, RECOMMENDED_SFDX_CLI_VERSION, RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION } from "../utils";
 
 export type DependencyInfo = {
     explanation: string;
@@ -340,8 +340,11 @@ export class SetupHelper {
 
   async installSfCliWithNpm(): Promise<{ success: boolean; message?: string }> {
     try {
-      // Use npm to install @salesforce/cli globally via npx (no global install required)
-      await execCommand("npm i -g @salesforce/cli", { fail: false, output: true });
+      await execCommandWithProgress(
+        "npm install @salesforce/cli -g",
+         { fail: false, output: true },
+        "Installing Salesforce CLI..."
+      );
       return { success: true };
     } catch (err: any) {
       return { success: false, message: err?.message || String(err) };
@@ -350,67 +353,12 @@ export class SetupHelper {
 
   async installSfPlugin(pluginName: string): Promise<{ success: boolean; message?: string }> {
     try {
-      // Prefer a spawn-based approach so we can run cross-platform and write to stdin
-      // This avoids relying on a shell pipe like `echo y | ...` which can fail on Windows.
-      const { spawn } = await import("child_process");
-
-      return await new Promise((resolve) => {
-        try {
-          const child = spawn("sf", ["plugins", "install", pluginName], {
-            stdio: ["pipe", "pipe", "pipe"],
-          });
-
-          let stdout = "";
-          let stderr = "";
-
-          const onData = (chunk: Buffer) => {
-            stdout += chunk.toString();
-          };
-          const onErr = (chunk: Buffer) => {
-            stderr += chunk.toString();
-          };
-
-          if (child.stdout) { child.stdout.on("data", onData); }
-          if (child.stderr) { child.stderr.on("data", onErr); }
-
-          // Some versions of the CLI may prompt for confirmation; proactively send 'y' then EOF.
-          // Write twice (y\n) and end stdin so the process receives EOF.
-          if (child.stdin) {
-            try { child.stdin.write("y\n"); } catch { /* ignore write errors */ }
-            try { child.stdin.end(); } catch { /* ignore */ }
-          }
-
-          // Safety timeout in case the process hangs (30s)
-          const timeout = setTimeout(() => {
-            try { child.kill(); } catch { /* ignore */ }
-            resolve({ success: false, message: `Timeout installing plugin ${pluginName}` });
-          }, 30_000);
-
-          child.on("error", (_err: any) => {
-            clearTimeout(timeout);
-            // Fallback to execCommand for environments where spawn fails
-            execCommand(`sf plugins install ${pluginName}`, { fail: false, output: true })
-              .then(() => resolve({ success: true }))
-              .catch((e: any) => resolve({ success: false, message: e?.message || String(e) }));
-          });
-
-          child.on("close", (code: number | null) => {
-            clearTimeout(timeout);
-            const exitCode = typeof code === "number" ? code : -1;
-            if (exitCode === 0) {
-              resolve({ success: true });
-            } else {
-              const msg = stderr || stdout || `sf plugins install exited with code ${exitCode}`;
-              resolve({ success: false, message: msg });
-            }
-          });
-        } catch {
-          // If anything unexpected happens, fallback to execCommand
-          execCommand(`sf plugins install ${pluginName}`, { fail: false, output: true })
-            .then(() => resolve({ success: true }))
-            .catch((e: any) => resolve({ success: false, message: e?.message || String(e) }));
-        }
-      });
+        await execCommandWithProgress(
+            `echo y | sf plugins install ${pluginName}`,
+            { fail: true, output: true },
+            `Running install command for ${pluginName}...`
+        )
+        return{ success: true }
     } catch (err: any) {
       return { success: false, message: err?.message || String(err) };
     }
@@ -426,7 +374,9 @@ export class SetupHelper {
         stdout = stdout.substring(0, uninstalledJitIndex).trim();
       }
       // Try to find a line with the plugin name and version, e.g. 'sfdx-hardis 1.2.3'
-      const escapedName = pluginName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const escapedName = pluginName.startsWith("@salesforce/plugin-")
+        ? pluginName.replace("@salesforce/plugin-", "")
+        : pluginName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       const regex = new RegExp(escapedName + "\\s+([-0-9A-Za-z.()]+)", "gm");
       const match = regex.exec(stdout);
       const installedVersion = match && match[1] ? match[1].trim() : null;

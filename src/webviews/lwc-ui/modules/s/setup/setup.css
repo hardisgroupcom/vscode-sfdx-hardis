@@ -92,6 +92,20 @@
     border-left: 4px solid #ff6b35;
 }
 
+/* Additional status-specific card styles */
+.status-card.ok {
+    border-left-color: #04844b;
+}
+.status-card.outdated {
+    border-left-color: #d97706; /* amber/orange */
+}
+.status-card.missing {
+    border-left-color: #b91c1c; /* red */
+}
+.status-card.error {
+    border-left-color: #9f1239; /* dark magenta/red for errors */
+}
+
 .status-icon-container {
     width: 44px;
     height: 44px;
@@ -106,8 +120,9 @@
 }
 
 .status-icon-container.success { background: linear-gradient(135deg, #04844b 0%, #037837 100%); }
-.status-icon-container.warning { background: linear-gradient(135deg, #ff6b35 0%, #d4471b 100%); }
+.status-icon-container.warning { background: linear-gradient(135deg, #ffb020 0%, #d97706 100%); }
 .status-icon-container.info { background: linear-gradient(135deg, #1589ee 0%, #005fb2 100%); }
+.status-icon-container.neutral { background: #f3f4f6; border-color: #e6eef8; color: #6b7280 !important; }
 
 /* Neutral icon background used while checking — no strong colors */
 .status-icon-container.neutral {
@@ -115,13 +130,13 @@
     background: #f3f4f6;
     border-color: #e6eef8;
     color: #6b7280 !important;
+}
 
 /* When the item is checking, remove the colorful/solid background so the lightning-spinner renders without a colored square behind it */
 .status-icon-container.checking {
     background: transparent !important;
     border-color: transparent !important;
     box-shadow: none !important;
-}
 }
 
 /* Ensure lightning-icon foreground color respects our palette inside icon containers */

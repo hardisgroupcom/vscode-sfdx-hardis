@@ -53,6 +53,10 @@
     z-index: 9999;
 }
 
+.hero-top-left.hidden {
+    opacity: 0;
+    visibility: hidden;
+}
 
 .hero-text {
     text-align: center;

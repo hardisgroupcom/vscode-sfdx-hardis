@@ -24,8 +24,8 @@
                             <!-- icon container: class is provided by the controller in `iconContainerClass` -->
                             <div class={chk.iconContainerClass}>
                                 <template if:true={chk.checking}>
-                                    <div class="slds-is-relative" style="height: 2rem; display:flex; align-items:center; justify-content:center;">
-                                        <lightning-spinner alternative-text="Checking" size="small"></lightning-spinner>
+                                    <div class="slds-is-relative" style="height: 2rem;">
+                                        <lightning-spinner alternative-text="Checking" size="small" variant="brand"></lightning-spinner>
                                     </div>
                                 </template>
                                 <template if:false={chk.checking}>
@@ -43,25 +43,27 @@
 
                             <div class="status-actions">
                                 <template if:true={chk.checking}>
-                                    <lightning-spinner alternative-text="Checking" size="small"></lightning-spinner>
+                                    <div class="slds-is-relative" style="height: 2rem;">
+                                        <lightning-spinner alternative-text="Checking" size="small" variant="brand"></lightning-spinner>
+                                    </div>
                                 </template>
 
                                 <template if:true={chk.installed}>
-                                    <lightning-button variant="neutral" label="Re-check" data-id={chk.id} onclick={handleAction} disabled={chk.checking} class="status-button"></lightning-button>
+                                    <lightning-button variant="neutral" label={chk.actionLabel} data-id={chk.id} onclick={handleAction} disabled={chk.checking} class="status-button"></lightning-button>
                                 </template>
 
                                 <template if:false={chk.installed}>
                                     <template if:true={chk.installable}>
-                                            <lightning-button variant="brand" label={chk.actionLabel} data-id={chk.id} onclick={handleInstall} disabled={chk.installDisabled} class="status-button primary"></lightning-button>
-                                            <!-- show prereq hint only after we know the check completed and prerequisites are actually missing -->
-                                            <template if:true={chk.missingPrerequisitesText}>
-                                                <template if:false={chk.checking}>
-                                                    <p class="prereq-hint">Requires: {chk.missingPrerequisitesText}</p>
-                                                </template>
+                                        <lightning-button variant="brand" label={chk.actionLabel} data-id={chk.id} onclick={handleInstall} disabled={chk.installDisabled} class="status-button primary"></lightning-button>
+                                        <!-- show prereq hint only after we know the check completed and prerequisites are actually missing -->
+                                        <template if:true={chk.missingPrerequisitesText}>
+                                            <template if:false={chk.checking}>
+                                                <p class="prereq-hint">Requires: {chk.missingPrerequisitesText}</p>
                                             </template>
+                                        </template>
                                     </template>
                                     <template if:false={chk.installable}>
-                                        <lightning-button variant="neutral" label="Instructions" data-id={chk.id} onclick={handleInstructions} disabled={chk.checking} class="status-button"></lightning-button>
+                                        <lightning-button variant="neutral" label={chk.actionLabel} data-id={chk.id} onclick={handleInstructions} disabled={chk.checking} class="status-button"></lightning-button>
                                     </template>
                                 </template>
                             </div>
