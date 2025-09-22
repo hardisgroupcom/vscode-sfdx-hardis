@@ -5,18 +5,19 @@ export default class Setup extends LightningElement {
   @track summaryMessage = '';
   @track summaryClass = '';
   _pendingCheckResolvers = {};
+  _autoUpdateDependencies = false;
 
   connectedCallback() {
     // Request initialization data (UI should render the list immediately)
     window.sendMessageToVSCode({ type: "requestSetupInit" });
   }
 
-
   @api
   handleMessage(type, data) {
     console.log("Setup component received message:", type, data);
     if (type === "initialize") {
         // Render the static list first (no checking yet) so the UI paints quickly
+        this._autoUpdateDependencies = data.autoUpdateDependencies === true;
         this.checks = data.checks.map((c) => ({
           ...c,
           explanation: c.explanation || "",
@@ -227,6 +228,11 @@ export default class Setup extends LightningElement {
         this._summaryIconName = 'utility:check';
         this._summaryIconContainer = 'status-icon-container success';
       }
+    }
+
+    if (this._autoUpdateDependencies && this.listInstallCandidates().length > 0 && !anyChecking && !this.installQueueRunning && !this._summaryChecking && this.hasPendingActions) {
+      // Automatically run pending installs if the setting is enabled, the queue is not already running, and there are pending actions
+      this.runPendingInstalls();
     }
 
     // Ensure button labels/disabled state reflect the new summary/installQueue states

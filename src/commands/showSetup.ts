@@ -18,6 +18,8 @@ export function registerShowSetup(commands: Commands) {
         panel.onMessage(async (type: string, data: any) => {
           // Return initial list
           if (type === "requestSetupInit") {
+            const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+            const autoUpdateDependencies = config.get("autoUpdateDependencies", false);
             const checks = Object.keys(dependencies).map((key) => {
               const meta = dependencies[key] || { explanation: "", installable: true, iconName: "utility:settings", prerequisites: [] };
               return {
@@ -32,7 +34,12 @@ export function registerShowSetup(commands: Commands) {
               };
             });
             // Send initialize immediately so the LWC can render static list first
-            panel.sendMessage({ type: "initialize", data: { checks } });
+            panel.sendMessage({ type: "initialize", data:
+              { 
+                checks: checks,
+                autoUpdateDependencies: autoUpdateDependencies
+              }
+           });
           } 
           // Check presence and validity of a dependency
           else if (type === "checkDependency") {

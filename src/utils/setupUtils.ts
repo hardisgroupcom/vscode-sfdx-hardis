@@ -306,12 +306,11 @@ export class SetupHelper {
             version,
             recommended,
             status: "error",
-            message: `Non-npm installation detected at ${sfdxPath} (bad installation using Salesforce website executable installer). Please uninstall in "Windows -> Uninstall program" (or the equivalent on Mac), then re-install using sfdx-hardis Wizard (NPM-based).`,
+            message: `Non-npm installation detected at ${sfdxPath} (bad installation using Salesforce website executable installer).\nPlease uninstall Salesforce CLI in "Windows -> Uninstall program" (or the equivalent on Mac), then re-install using sfdx-hardis Wizard (NPM-based).`,
             installCommand: `npm install @salesforce/cli@${recommended || "latest"} -g`,
             upgradeAvailable: false,
         }
       }
-
 
       // If installed but not the recommended version
       if (ok && recommended && version !== recommended) {

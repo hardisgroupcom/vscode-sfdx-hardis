@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [6.8.0] 2024-09-23
+
+- New feature: Install dependencies
+
 ## [6.7.0] 2024-09-21
 
 - Welcome view
