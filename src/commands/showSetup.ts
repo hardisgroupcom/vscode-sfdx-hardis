@@ -50,7 +50,7 @@ export function registerShowSetup(commands: Commands) {
               res = { id: data.id, label: dependency.label, installed: false, version: null, status: 'error' };
             }
 
-            panel.sendMessage({ type: "checkResult", data: { id, res } });
+            panel.sendMessage({ type: "checkResult", data: { id: data.id, res } });
           } 
           // Install a dependency
           else if (type === "installDependency") {
