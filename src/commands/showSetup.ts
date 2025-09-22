@@ -10,7 +10,7 @@ export function registerShowSetup(commands: Commands) {
       async () => {
         const lwcManager = LwcPanelManager.getInstance();
         const panel = lwcManager.getOrCreatePanel("s-setup", {
-          title: "Setup Dependencies",
+          title: "Install Dependencies",
           viewColumn: vscode.ViewColumn.One,
         });
         const helper = SetupHelper.getInstance();
@@ -83,9 +83,12 @@ export function registerShowSetup(commands: Commands) {
             }
             const helpUrl = res?.helpUrl || null;
             const label = res?.label || id || "dependency";
-            const message = res?.installed ? `${label} is already installed` : `${label} is not installed. See documentation.`;
-            const action = helpUrl ? await vscode.window.showInformationMessage(message, "Open instructions") : await vscode.window.showInformationMessage(message);
-            if (action === "Open instructions" && helpUrl) {
+            const message = res?.message ?? res?.installed ? `${label} is already installed` : `${label} is not installed. See documentation.`;
+            const buttonMessage = res?.messageLinkLabel || "Open instructions";
+            const action = helpUrl ? 
+              await vscode.window.showInformationMessage(message,{modal: true}, buttonMessage) :
+              await vscode.window.showInformationMessage(message, {modal: true});
+            if (action === buttonMessage && helpUrl) {
               vscode.env.openExternal(vscode.Uri.parse(helpUrl));
             }
           }

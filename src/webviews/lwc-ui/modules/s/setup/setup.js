@@ -104,7 +104,7 @@ export default class Setup extends LightningElement {
   handleInstall(e) {
     const id = e.currentTarget.dataset.id;
     // mark checking while install happens (will trigger re-check when installResult arrives)
-    this.checks = this.checks.map((c) => (c.id === id ? { ...c, checking: false, installing: true } : c));
+    this.checks = this.checks.map((c) => (c.id === id ? { ...c, checking: false, installing: true, status: '' } : c));
     // ensure buttons reflect checking state immediately
     this._updateDependencyCardsState();
     window.sendMessageToVSCode({ type: "installDependency", data: { id } });
@@ -280,7 +280,7 @@ export default class Setup extends LightningElement {
         buttonAction = 'recheck';
       } 
       else if (status === 'missing' || status === 'error') {
-        buttonLabel = c.installable ? 'Install' : 'Instructions';
+        buttonLabel = c.installable ? 'Install' : 'Install Instructions';
         buttonVariant = 'brand';
         buttonAction = c.installable ? 'install' : 'instructions';
       } 
@@ -332,7 +332,7 @@ export default class Setup extends LightningElement {
 
   // Computed label for the Run button (avoid inline expressions in template)
   get runButtonLabel() {
-    return this.installQueueRunning ? 'Running...' : 'Run pending installs';
+    return this.installQueueRunning ? 'Running...' : 'Run pending installs'
   }
 
   // Computed disabled state for the Run button
@@ -353,11 +353,7 @@ export default class Setup extends LightningElement {
     });
   }
 
-  // Run the install queue for all items that need install/upgrade and are installable
-  async runPendingInstalls() {
-    if (this.installQueueRunning) return;
-    this._installQueueRunning = true;
-    this._updateDependencyCardsState();
+  listInstallCandidates() {
     const installCandidates = this.checks.filter((c) => {
       if (!c.installable) {
         return false;
@@ -367,6 +363,30 @@ export default class Setup extends LightningElement {
       }
       return false;
     });
+    return installCandidates;
+  }
+
+  // Run the install queue for all items that need install/upgrade and are installable
+  async runPendingInstalls() {
+    const installCandidates = this.listInstallCandidates();
+    if (installCandidates.length === 0) {
+      const manualInstallCandidates = this.checks.filter((c) => {
+        if ((c.status === 'missing' || c.status === 'outdated' || c.status === 'error') && !c.installable) {
+          return true;
+        }
+        return false;
+      });
+      if (manualInstallCandidates.length > 0) {
+          const firstCandidate = manualInstallCandidates[0];
+          this.handleInstructions({ currentTarget: { dataset: { id: firstCandidate.id } } });
+      }
+      return;
+    }
+    if (this.installQueueRunning) {
+      return;
+    }
+    this._installQueueRunning = true;
+    this._updateDependencyCardsState();
     for (const chk of installCandidates) {
       if (chk && chk.id) {
         // Await each install to serialize them

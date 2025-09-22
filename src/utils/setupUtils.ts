@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { execCommand, execCommandWithProgress, getNpmLatestVersion, NODE_JS_MINIMUM_VERSION, RECOMMENDED_SFDX_CLI_VERSION, RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION } from "../utils";
+import which from "which";
 
 export type DependencyInfo = {
     explanation: string;
@@ -21,6 +22,7 @@ export type DependencyCheckResult = {
   status?: "ok" | "outdated" | "missing" | "error";
   helpUrl?: string;
   message?: string;
+  messageLinkLabel?: string;
   installCommand?: string;
   upgradeAvailable?: boolean;
 };
@@ -169,6 +171,7 @@ export class SetupHelper {
             helpUrl: "https://nodejs.org/",
             message: `Installed Node.js major version ${major} is older than the required ${minMajor}`,
             installCommand: "https://nodejs.org/",
+            messageLinkLabel: "Download and install latest Node.js (use Windows Installer)",
             upgradeAvailable: true,
           };
         }
@@ -181,6 +184,8 @@ export class SetupHelper {
         recommended: ok ? null : String(NODE_JS_MINIMUM_VERSION),
         status: ok ? "ok" : "missing",
         helpUrl: "https://nodejs.org/",
+        message: ok ? undefined : `Node.js is not installed or not found in PATH (required minimum version: ${NODE_JS_MINIMUM_VERSION})`,
+        messageLinkLabel: "Download and install Node.js (use Windows Installer)",
       };
     } catch {
       return {
@@ -191,6 +196,8 @@ export class SetupHelper {
         recommended: null,
         status: "error",
         helpUrl: "https://nodejs.org/",
+        message: `Node.js is not installed or not found in PATH (required minimum version: ${NODE_JS_MINIMUM_VERSION})`,
+        messageLinkLabel: "Download and install Node.js (use Windows Installer)",
       };
     }
   }
@@ -214,6 +221,8 @@ export class SetupHelper {
         recommended: null,
         status: ok ? "ok" : "missing",
         helpUrl: "https://git-scm.com/",
+        message: ok ? undefined : "Git is not installed or not found in PATH",
+        messageLinkLabel: "Download and install Git (with Git Bash)",
       };
     } catch {
       return {
@@ -224,6 +233,8 @@ export class SetupHelper {
         recommended: null,
         status: "error",
         helpUrl: "https://git-scm.com/",
+        message: "Git is not installed or not found in PATH",
+        messageLinkLabel: "Download and install Git (with Git Bash)",
       };
     }
   }
@@ -262,15 +273,45 @@ export class SetupHelper {
           version: legacyMatch[1],
           recommended,
           status: "error",
-          helpUrl:
-            "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_unified.htm",
           message:
-            "Legacy sfdx-cli detected. Please upgrade to @salesforce/cli.",
+            "Legacy sfdx-cli detected. Please uninstall it using `npm uninstall sfdx-cli -g` then upgrade to @salesforce/cli.",
+          messageLinkLabel: "Uninstall sfdx-cli then install sf",
           installCommand:
             "npm uninstall sfdx-cli --global && npm install @salesforce/cli --global",
           upgradeAvailable: true,
         };
       }
+
+      let sfdxPath = "";
+      try {
+        sfdxPath = await which("sf");
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (_e) {
+        sfdxPath = "missing";
+      }
+
+      if (
+        !sfdxPath.includes("npm") &&
+        !sfdxPath.includes("node") &&
+        !sfdxPath.includes("nvm") &&
+        !sfdxPath.includes("/home/codebuilder/") &&
+        !(
+          sfdxPath.includes("/usr/local/bin") && process.platform === "darwin"
+        ) &&
+        sfdxPath !== "missing" ) {
+          return {
+            id: "sf",
+            label: "Salesforce CLI (sf)",
+            installed: true,
+            version,
+            recommended,
+            status: "error",
+            message: `Non-npm installation detected at ${sfdxPath} (bad installation using Salesforce website executable installer). Please uninstall in "Windows -> Uninstall program" (or the equivalent on Mac), then re-install using sfdx-hardis Wizard (NPM-based).`,
+            installCommand: `npm install @salesforce/cli@${recommended || "latest"} -g`,
+            upgradeAvailable: false,
+        }
+      }
+
 
       // If installed but not the recommended version
       if (ok && recommended && version !== recommended) {

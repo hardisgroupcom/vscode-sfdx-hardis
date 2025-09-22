@@ -47,22 +47,22 @@
                                 <p class="status-description">{chk.explanation}</p>
                             </div>
 
-                            <div class="status-actions">
+                            <div class="status-actions slds-grid slds-grid_vertical slds-grid_align-start">
                                 <!-- Single unified button driven by controller-computed attributes -->
-                                <lightning-button
-                                    class="status-button"
-                                    variant={chk.buttonVariant}
-                                    label={chk.buttonLabel}
-                                    data-id={chk.id}
-                                    data-action={chk.buttonAction}
-                                    onclick={handleUnifiedAction}
-                                    disabled={chk.buttonDisabled}
-                                ></lightning-button>
+                                 <template if:false={chk.missingPrerequisitesText}>
+                                    <lightning-button
+                                        class="status-button slds-m-bottom_xx-small"
+                                        variant={chk.buttonVariant}
+                                        label={chk.buttonLabel}
+                                        data-id={chk.id}
+                                        data-action={chk.buttonAction}
+                                        onclick={handleUnifiedAction}
+                                        disabled={chk.buttonDisabled}
+                                    ></lightning-button>
+                                </template>
                                 <!-- show prereq hint only after we know the check completed and prerequisites are actually missing -->
                                 <template if:true={chk.missingPrerequisitesText}>
-                                    <template if:false={chk.checking}>
-                                        <p class="prereq-hint">Requires: {chk.missingPrerequisitesText}</p>
-                                    </template>
+                                    <p class="prereq-hint slds-text-color_error slds-m-top_xx-small">Requires:<br/>{chk.missingPrerequisitesText}</p>
                                 </template>
                             </div>
                         </div>
