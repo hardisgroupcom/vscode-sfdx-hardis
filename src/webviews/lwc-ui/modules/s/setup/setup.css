@@ -11,6 +11,17 @@
     padding: 1rem 1rem; /* reduced outer padding for denser layout */
 }
 
+.header-actions {
+    margin-left: auto; /* push actions to the right of the header row */
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.setup-toggle {
+    --slds-c-toggle-label-text-align: right;
+}
+
 .header-content {
     display: flex;
     align-items: center;

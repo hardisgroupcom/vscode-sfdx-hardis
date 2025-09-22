@@ -121,9 +121,9 @@ export default class Welcome extends LightningElement {
 
     // Send message to VS Code to update the setting
     window.sendMessageToVSCode({
-      type: "updateSetting",
+      type: "updateVsCodeSfdxHardisConfiguration",
       data: {
-        setting: "vsCodeSfdxHardis.showWelcomeAtStartup",
+        configKey: "vsCodeSfdxHardis.showWelcomeAtStartup",
         value: newValue,
       },
     });

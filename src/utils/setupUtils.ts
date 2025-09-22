@@ -30,6 +30,7 @@ export type DependencyCheckResult = {
 export class SetupHelper {
   workspaceRoot: string;
   private static instance: SetupHelper | null = null;
+  private updatesInProgress: string[] = [];
 
   constructor(workspaceRoot: string = ".") {
     this.workspaceRoot = workspaceRoot;
@@ -40,6 +41,20 @@ export class SetupHelper {
       this.instance = new SetupHelper(workspaceRoot);
     }
     return this.instance;
+  }
+
+  public hasUpdatesInProgress(): boolean {
+    return this.updatesInProgress.length > 0;
+  }
+
+  public setUpdateInProgress(inProgress: boolean, id: string) {
+    if (inProgress) {
+      if (!this.updatesInProgress.includes(id)) {
+        this.updatesInProgress.push(id);
+      }
+    } else {
+      this.updatesInProgress = this.updatesInProgress.filter(p => p !== id);
+    }
   }
 
   // Simple semver-ish compare helper used by several checks
@@ -467,38 +482,57 @@ export class SetupHelper {
   }
 
   async installSfCliWithNpm(): Promise<{ success: boolean; message?: string }> {
+    if (this.hasUpdatesInProgress()) {
+      return { success: false, message: "An installation is already in progress" };
+    }
+    this.setUpdateInProgress(true, "sf");
     try {
       await execCommandWithProgress(
         "npm install @salesforce/cli" + (RECOMMENDED_SFDX_CLI_VERSION ? "@" + RECOMMENDED_SFDX_CLI_VERSION : "") + " -g",
          { fail: true, output: true },
         "Installing Salesforce CLI..."
       );
+      this.setUpdateInProgress(false, "sf");
       vscode.commands.executeCommand("vscode-sfdx-hardis.refreshPluginsView");
       return { success: true };
     } catch (err: any) {
+      this.setUpdateInProgress(false, "sf");
       return { success: false, message: err?.message || String(err) };
     }
   }
 
   async installSfPlugin(pluginName: string): Promise<{ success: boolean; message?: string }> {
+    if (this.hasUpdatesInProgress()) {
+      return { success: false, message: `An installation is already in progress` };
+    }
+    this.setUpdateInProgress(true, pluginName);
     try {
         await execCommandWithProgress(
             `echo y | sf plugins install ${pluginName}@latest`,
             { fail: true, output: true },
             `Running install command for ${pluginName}...`
         )
+        this.setUpdateInProgress(false, pluginName);
         vscode.commands.executeCommand("vscode-sfdx-hardis.refreshPluginsView");
         return{ success: true }
     } catch (err: any) {
+      this.setUpdateInProgress(false, pluginName);
       return { success: false, message: err?.message || String(err) };
     }
   }
 
   async installNpmPackage(packageName: string): Promise<{ success: boolean; message?: string }> {
+    if (this.hasUpdatesInProgress()) {
+      return { success: false, message: `An installation is already in progress`};
+    }
+    this.setUpdateInProgress(true, packageName);
     try {
       await execCommand(`npm i -g ${packageName}`, { fail: false, output: true });
+      this.setUpdateInProgress(false, packageName);
+      vscode.commands.executeCommand("vscode-sfdx-hardis.refreshPluginsView");
       return { success: true };
     } catch (err: any) {
+      this.setUpdateInProgress(false, packageName);
       return { success: false, message: err?.message || String(err) };
     }
   }

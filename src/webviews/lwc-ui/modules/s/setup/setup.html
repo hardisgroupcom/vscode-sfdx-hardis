@@ -9,6 +9,16 @@
                     <h1 class="header-title">Setup</h1>
                     <p class="header-subtitle">Check and install extension dependencies</p>
                 </div>
+                <div class="header-actions">
+                    <lightning-input
+                        type="toggle"
+                        label="Auto-update dependencies"
+                        name="autoUpdateDependencies"
+                        checked={_autoUpdateDependencies}
+                        onchange={handleAutoUpdateChange}
+                        class="setup-toggle"
+                    ></lightning-input>
+                </div>
             </div>
 
             <div class="section">

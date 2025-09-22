@@ -56,25 +56,6 @@ export function  registerShowWelcome(command: Commands) {
             case "navigateToSetup":
               vscode.commands.executeCommand("vscode-sfdx-hardis.showSetup");
               break;
-            case "updateSetting":
-              if (data && data.setting && data.value !== undefined) {
-                try {
-                  const config = vscode.workspace.getConfiguration();
-                  await config.update(
-                    data.setting,
-                    data.value,
-                    vscode.ConfigurationTarget.Global,
-                  );
-                  vscode.window.showInformationMessage(
-                    `Setting updated: ${data.setting.split(".").pop()} = ${data.value}`,
-                  );
-                } catch (error: any) {
-                  vscode.window.showErrorMessage(
-                    `Failed to update setting: ${error.message}`,
-                  );
-                }
-              }
-              break;
             default:
               break;
           }

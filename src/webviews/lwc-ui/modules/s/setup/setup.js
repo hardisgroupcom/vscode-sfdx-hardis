@@ -7,9 +7,15 @@ export default class Setup extends LightningElement {
   _pendingCheckResolvers = {};
   _autoUpdateDependencies = false;
 
+  // Control visibility of the top-right settings (hide on scroll)
+  // (no fixed-position behaviour needed; toggle will live inside header)
+
   connectedCallback() {
     // Request initialization data (UI should render the list immediately)
     window.sendMessageToVSCode({ type: "requestSetupInit" });
+  }
+
+  disconnectedCallback() {
   }
 
   @api
@@ -17,7 +23,7 @@ export default class Setup extends LightningElement {
     console.log("Setup component received message:", type, data);
     if (type === "initialize") {
         // Render the static list first (no checking yet) so the UI paints quickly
-        this._autoUpdateDependencies = data.autoUpdateDependencies === true;
+        this._autoUpdateDependencies = data && data.autoUpdateDependencies === true;
         this.checks = data.checks.map((c) => ({
           ...c,
           explanation: c.explanation || "",
@@ -86,6 +92,23 @@ export default class Setup extends LightningElement {
       // After install, re-run the single check to refresh its status
       this._startCheck(id);
     }
+  }
+
+  // Handler for the header toggle change to persist setting in the host extension
+  handleAutoUpdateChange(event) {
+    const newValue = event.target.checked;
+    this._autoUpdateDependencies = newValue;
+    window.sendMessageToVSCode({
+      type: 'updateVsCodeSfdxHardisConfiguration',
+      data: {
+        configKey: 'vsCodeSfdxHardis.autoUpdateDependencies',
+        value: newValue,
+      },
+    });
+    // Refresh setup data shortly after change so UI reflects updated config if needed
+    setTimeout(() => {
+      window.sendMessageToVSCode({ type: "requestSetupInit" });
+    }, 3000);
   }
 
   _startCheck(id) {

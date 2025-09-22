@@ -125,8 +125,10 @@ export class Commands {
   registerRefreshPluginsView() {
     const disposable = vscode.commands.registerCommand(
       "vscode-sfdx-hardis.refreshPluginsView",
-      async (keepCache: boolean = false) =>
-        await this.hardisPluginsProvider?.refresh(keepCache),
+      async (keepCache: boolean = false) => {
+        await this.hardisPluginsProvider?.refresh(keepCache);
+        vscode.commands.executeCommand("vscode-sfdx-hardis.showSetup");
+      }
     );
     this.disposables.push(disposable);
   }

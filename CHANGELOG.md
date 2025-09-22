@@ -4,7 +4,8 @@
 
 ## [6.8.0] 2024-09-23
 
-- New feature: Install dependencies
+- New feature: **Install dependencies** , available from Welcome LWC & plugins status panel.
+- New setting: **autoUpdateDependencies**
 
 ## [6.7.0] 2024-09-21
 
