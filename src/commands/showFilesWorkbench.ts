@@ -205,6 +205,7 @@ async function updateFilesWorkspace(data: any): Promise<void> {
     }
 
     // Update export.json configuration
+    /* jscpd:ignore-start */
     const exportConfig = {
       sfdxHardisLabel: data.label,
       sfdxHardisDescription: data.description,
@@ -216,6 +217,7 @@ async function updateFilesWorkspace(data: any): Promise<void> {
       overwriteParentRecords: data.overwriteParentRecords,
       overwriteFiles: data.overwriteFiles,
     };
+    /* jscpd:ignore-end */
 
     const exportJsonPath = path.join(newPath, "export.json");
     await fs.writeFile(exportJsonPath, JSON.stringify(exportConfig, null, 2));

@@ -522,7 +522,12 @@ export class HardisPluginsProvider
         )
         .then((selection) => {
           if (selection === "Upgrade plugins") {
-
+            if (config.get("userInput") === "ui-lwc") {
+              vscode.commands.executeCommand(
+                "vscode-sfdx-hardis.showSetup",
+              );
+              return ;
+            }
             vscode.commands.executeCommand(
               "vscode-sfdx-hardis.execute-command",
               command,
