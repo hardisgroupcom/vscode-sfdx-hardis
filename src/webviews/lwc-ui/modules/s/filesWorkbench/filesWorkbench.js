@@ -22,15 +22,9 @@ export default class FilesWorkbench extends LightningElement {
 
   connectedCallback() {
     this.loadWorkspaces();
-
-    // Listen for messages from VS Code
-    window.addEventListener("message", this.handleMessage.bind(this));
   }
 
-  disconnectedCallback() {
-    window.removeEventListener("message", this.handleMessage.bind(this));
-  }
-
+  @api
   handleMessage(event) {
     const message = event.data;
     switch (message.type) {

@@ -8,26 +8,30 @@ import "s/forceLightTheme"; // Ensure light theme is applied
 export default class Welcome extends LightningElement {
   @track isLoading = false;
   @track showWelcomeAtStartup = true;
+  @track setupHidden = false;
   scrollThreshold = 100; // Hide toggle after scrolling 100px
-
   connectedCallback() {
-    // Add scroll event listener when component is connected
-    window.addEventListener("scroll", this.handleScroll.bind(this));
+    // Bind handler once so we can remove it later
+    this._boundHandleScroll = this.handleScroll.bind(this);
+    window.addEventListener("scroll", this._boundHandleScroll);
   }
 
   disconnectedCallback() {
-    // Remove scroll event listener when component is disconnected
-    window.removeEventListener("scroll", this.handleScroll.bind(this));
+    window.removeEventListener("scroll", this._boundHandleScroll);
   }
 
   handleScroll() {
+    // hide the setup button area when scrolling past threshold
     const heroSettings = this.template.querySelector(".hero-settings");
+    const heroTopLeft = this.template.querySelector(".hero-top-left");
+    const shouldHide = window.scrollY > this.scrollThreshold;
+    this.setupHidden = shouldHide;
+
     if (heroSettings) {
-      if (window.scrollY > this.scrollThreshold) {
-        heroSettings.classList.add("hidden");
-      } else {
-        heroSettings.classList.remove("hidden");
-      }
+      heroSettings.classList.toggle("hidden", shouldHide);
+    }
+    if (heroTopLeft) {
+      heroTopLeft.classList.toggle("hidden", shouldHide);
     }
   }
 
@@ -52,6 +56,12 @@ export default class Welcome extends LightningElement {
   navigateToOrgsManager() {
     window.sendMessageToVSCode({
       type: "navigateToOrgsManager",
+    });
+  }
+
+  navigateToSetup() {
+    window.sendMessageToVSCode({
+      type: "navigateToSetup",
     });
   }
 
@@ -111,9 +121,9 @@ export default class Welcome extends LightningElement {
 
     // Send message to VS Code to update the setting
     window.sendMessageToVSCode({
-      type: "updateSetting",
+      type: "updateVsCodeSfdxHardisConfiguration",
       data: {
-        setting: "vsCodeSfdxHardis.showWelcomeAtStartup",
+        configKey: "vsCodeSfdxHardis.showWelcomeAtStartup",
         value: newValue,
       },
     });

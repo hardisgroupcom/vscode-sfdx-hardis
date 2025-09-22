@@ -74,12 +74,32 @@ This is a **Visual Studio Code extension** that provides an intuitive UI for **S
 ## Development Guidelines
 
 ### Command Patterns
+
 All commands follow the modern Salesforce CLI format:
 ```bash
 sf hardis:category:action [options]
 ```
 
 **Never use legacy `sfdx` commands** - always use `sf` CLI.
+
+### Code Style
+
+Always use {} after `if`, `else`, `for`, `while`, even for single statements.
+
+Always go to the next line after `{` and before `}`.
+
+Example:
+
+```
+if (condition) {
+  // Do something
+} 
+else {
+  // Do something else
+}
+```
+
+In the HTML of LWC components, you can NOT use ternaries or expression evaluations.
 
 ### TypeScript Conventions
 

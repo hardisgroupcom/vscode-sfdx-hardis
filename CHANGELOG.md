@@ -2,12 +2,17 @@
 
 ## [Unreleased]
 
+## [6.8.0] 2024-09-23
+
+- New feature: **Install dependencies** , available from Welcome LWC & plugins status panel.
+- New setting: **autoUpdateDependencies**
+
 ## [6.7.0] 2024-09-21
 
 - Welcome view
 - Org Monitoring Workbench + Package XML Viewer
 - Org Manager: Allow to edit Org aliases in the table
-- DevOps Pipeline: nex features
+- DevOps Pipeline: new features
   - Quick actions for contributors
   - Links to package.xml files
 - Improve custom help text component so user can copy text and click on links
