@@ -112,7 +112,13 @@ export default class Setup extends LightningElement {
 
   handleInstructions(e) {
     const id = e.currentTarget.dataset.id;
-    window.sendMessageToVSCode({ type: "showInstructions", data: { id } });
+    window.sendMessageToVSCode({
+       type: "showInstructions",
+       data: {
+         id : id,
+         check: JSON.parse(JSON.stringify(this.checks.find((c) => c.id === id)))
+        }
+    });
   }
 
   // Unified handler for button actions driven by per-check `buttonAction`
@@ -233,29 +239,29 @@ export default class Setup extends LightningElement {
       // derive primary display status from canonical state
       const status = c.status || '';
       let statusIcon = c.checking ? 'utility:sync' : 'utility:info';
-      let statusClassSuffix = c.checking ? '' : 'info';
       let cardClass = c.checking ? 'status-card checking' : 'status-card';
       let iconContainerClass = c.checking ? 'status-icon-container checking' : 'status-icon-container neutral';
 
       switch (status) {
         case 'ok':
           statusIcon = 'utility:check';
-          statusClassSuffix = 'success';
           cardClass = 'status-card installed ok';
           iconContainerClass = 'status-icon-container success';
           break;
         case 'outdated':
           statusIcon = 'utility:warning';
-          statusClassSuffix = 'warning';
           cardClass = 'status-card installed outdated warning';
           iconContainerClass = 'status-icon-container warning';
           break;
         case 'missing':
-        case 'error':
           statusIcon = 'utility:error';
-          statusClassSuffix = 'error';
           cardClass = 'status-card not-installed error';
           iconContainerClass = 'status-icon-container error';
+          break;
+        case 'error':
+          statusIcon = 'utility:ban';
+          cardClass = 'status-card not-installed critical';
+          iconContainerClass = 'status-icon-container critical';
         }
 
       let buttonLabel = 'ERROR: BUG IN CODE';
@@ -279,16 +285,20 @@ export default class Setup extends LightningElement {
         buttonVariant = 'neutral';
         buttonAction = 'recheck';
       } 
-      else if (status === 'missing' || status === 'error') {
+      else if (status === 'missing') {
         buttonLabel = c.installable ? 'Install' : 'Install Instructions';
         buttonVariant = 'brand';
         buttonAction = c.installable ? 'install' : 'instructions';
       } 
+      else if (status === 'error') {
+        buttonLabel = 'Fix Instructions';
+        buttonVariant = 'brand';
+        buttonAction = 'instructions';
+      }
 
       return {
         ...c,
         statusIcon,
-        statusClassSuffix,
         cardClass,
         iconContainerClass,
         buttonLabel,

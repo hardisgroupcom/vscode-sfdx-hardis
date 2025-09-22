@@ -127,6 +127,9 @@
 .status-card.error {
     border-left-color: #9f1239; /* dark magenta/red for errors */
 }
+.status-card.critical {
+    border-left-color: #b91c1c; /* red for critical/missing */
+}
 .status-card.checking {
     border-left-color: #6b7280; /* grey for checking */
 }
@@ -150,7 +153,7 @@
 .status-icon-container.neutral { background: linear-gradient(135deg, #94a3b8 0%, #6b7280 100%); }
 .status-icon-container.error { background: linear-gradient(135deg, #dc2626 0%, #9f1239 100%); }
 .status-icon-container.checking { background: linear-gradient(135deg, #94a3b8 0%, #6b7280 100%); }
-
+.status-icon-container.critical { background: linear-gradient(135deg, #dc2626 0%, #9f1239 100%); }
 
 /* Ensure lightning-icon foreground color respects our palette inside icon containers */
 .status-icon-container lightning-icon {

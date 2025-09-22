@@ -68,28 +68,29 @@ export function registerShowSetup(commands: Commands) {
             }
             panel.sendMessage({ type: "installResult", data: { id: data.id, res: result } });
           } 
+          // Show install or fix instructions
           else if (type === "showInstructions") {
             const id = data?.id;
-            let res = null;
-            const meta = id ? dependencies[id] : undefined;
-            if (meta && typeof meta.checkMethod === 'function') {
-              try {
-                res = await meta.checkMethod();
-              } catch {
-                res = { id, label: meta.label || id, installed: false, version: null, status: 'error' };
-              }
-            } else {
-              res = { id, label: id, installed: false, version: null, status: 'error' };
-            }
-            const helpUrl = res?.helpUrl || null;
-            const label = res?.label || id || "dependency";
-            const message = res?.message ?? res?.installed ? `${label} is already installed` : `${label} is not installed. See documentation.`;
+            let res = data?.check || {};
+            const helpUrl = res.helpUrl || null;
+            const label = res.label || id || "dependency";
+            let message = res.message || `Please refer to the documentation for instructions to install or fix ${label}.`;
             const buttonMessage = res?.messageLinkLabel || "Open instructions";
-            const action = helpUrl ? 
-              await vscode.window.showInformationMessage(message,{modal: true}, buttonMessage) :
-              await vscode.window.showInformationMessage(message, {modal: true});
-            if (action === buttonMessage && helpUrl) {
-              vscode.env.openExternal(vscode.Uri.parse(helpUrl));
+            if (res.status === 'error') {
+              const action = helpUrl ? 
+                await vscode.window.showErrorMessage(message, {modal: true}, buttonMessage) :
+                await vscode.window.showErrorMessage(message, {modal: true});
+                if (action === buttonMessage && helpUrl) {
+                  vscode.env.openExternal(vscode.Uri.parse(helpUrl));
+                }
+            }
+            else {
+              const action = helpUrl ? 
+                await vscode.window.showInformationMessage(message, {modal: true}, buttonMessage) :
+                await vscode.window.showInformationMessage(message, {modal: true});
+              if (action === buttonMessage && helpUrl) {
+                vscode.env.openExternal(vscode.Uri.parse(helpUrl));
+              }
             }
           }
         });
