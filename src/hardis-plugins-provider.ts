@@ -514,26 +514,26 @@ export class HardisPluginsProvider
           vscode.commands.executeCommand("vscode-sfdx-hardis.refreshPluginsView");
         });
       }
-      else {
-      vscode.window
-        .showWarningMessage(
-          "🦙 Some plugins are not up to date, please click to upgrade, then wait for the process to be completed before performing actions",
-          "Upgrade plugins",
-        )
-        .then((selection) => {
-          if (selection === "Upgrade plugins") {
-            if (config.get("userInput") === "ui-lwc") {
+      else if (!setupHelper.hasUpdatesInProgress()) {
+        vscode.window
+          .showWarningMessage(
+            "🦙 Some plugins are not up to date, please click to upgrade, then wait for the process to be completed before performing actions",
+            "Upgrade plugins",
+          )
+          .then((selection) => {
+            if (selection === "Upgrade plugins") {
+              if (config.get("userInput") === "ui-lwc") {
+                vscode.commands.executeCommand(
+                  "vscode-sfdx-hardis.showSetup",
+                );
+                return ;
+              }
               vscode.commands.executeCommand(
-                "vscode-sfdx-hardis.showSetup",
+                "vscode-sfdx-hardis.execute-command",
+                command,
               );
-              return ;
             }
-            vscode.commands.executeCommand(
-              "vscode-sfdx-hardis.execute-command",
-              command,
-            );
-          }
-        });
+          });
       }
     }
     return items.sort((a: any, b: any) => (a.label > b.label ? 1 : -1));
