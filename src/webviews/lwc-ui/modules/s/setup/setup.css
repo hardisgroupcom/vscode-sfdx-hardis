@@ -1,0 +1,206 @@
+/* Setup styles adapted from orgMonitoring to ensure consistent card layout */
+.blue-back {
+    background: linear-gradient(135deg, #f8f9ff 0%, #e8f4fd 100%);
+    min-height: 100vh;
+    font-family: "Salesforce Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.setup-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem 1rem; /* reduced outer padding for denser layout */
+}
+
+.header-actions {
+    margin-left: auto; /* push actions to the right of the header row */
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.setup-toggle {
+    --slds-c-toggle-label-text-align: right;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem; /* smaller header padding */
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e5e5e5;
+    margin-bottom: 0.6rem; /* reduce space below header */
+}
+
+.header-icon-container {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, #54a4a6 0%, #026d71 100%);
+    color: white !important;
+}
+
+.header-title {
+    font-size: 1.25rem;
+    margin: 0;
+    font-weight: 700;
+}
+
+.header-subtitle {
+    margin: 0;
+    color: #6b7280;
+    font-size: 0.95rem;
+}
+
+.section {
+    margin-top: 0.5rem;
+}
+
+/* Top status banner between header and cards */
+.setup-status { margin-bottom: 0.5rem }
+.setup-status-box {
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    display: inline-block;
+    background: #eef2ff;
+    border: 1px solid #e0e7ff;
+}
+.setup-status-box.info { background:#eef2ff; border-color:#c7d2fe; color:#3730a3 }
+.setup-status-box.warning { background:#fff7ed; border-color:#ffedd5; color:#92400e }
+.setup-status-box.error { background:#fff1f2; border-color:#fee2e2; color:#9f1239 }
+.setup-status-box.success { background:#ecfdf5; border-color:#bbf7d0; color:#065f46 }
+.setup-status-text { font-weight:600 }
+
+.commands-grid {
+    display: grid;
+    /* allow slightly smaller cards so two columns fit comfortably */
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.65rem; /* reduce gap between cards */
+}
+
+.status-card {
+    background: white;
+    border-radius: 8px;
+    padding: 0.75rem; /* smaller card padding */
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e9eef3;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem; /* smaller internal gap */
+}
+
+/* Summary wrapper at top of the setup panel - compact and flush with header */
+.setup-summary-card {
+    margin: 0.4rem 0; /* keep small vertical spacing, no colored container */
+    padding: 0; /* avoid extra nested background */
+    background: transparent;
+}
+
+/* Summary variant of status-card (used for top summary) - match orgMonitoring styles */
+.status-card.summary {
+    background: white;
+    border-radius: 8px;
+    /* compact padding for a tighter summary */
+    padding: 0.65rem 0.9rem;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e9eef3;
+    display: flex;
+    align-items: center; /* center items vertically */
+    gap: 0.85rem; /* tighter gap */
+    margin: 0; /* no outer tinted box */
+    width: 100%;
+}
+
+.status-card.installed {
+    border-left: 4px solid #04844b;
+}
+
+.status-card.not-installed {
+    border-left: 4px solid #ff6b35;
+}
+
+/* Additional status-specific card styles */
+.status-card.ok {
+    border-left-color: #04844b;
+}
+.status-card.outdated {
+    border-left-color: #d97706; /* amber/orange */
+}
+.status-card.missing {
+    border-left-color: #b91c1c; /* red */
+}
+.status-card.error {
+    border-left-color: #9f1239; /* dark magenta/red for errors */
+}
+.status-card.critical {
+    border-left-color: #b91c1c; /* red for critical/missing */
+}
+.status-card.checking {
+    border-left-color: #6b7280; /* grey for checking */
+}
+
+.status-icon-container {
+    width: 40px; /* slightly smaller for compact layout */
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    color: white !important;
+}
+
+.status-icon-container.success { background: linear-gradient(135deg, #04844b 0%, #037837 100%); }
+.status-icon-container.warning { background: linear-gradient(135deg, #ffb020 0%, #d97706 100%); }
+.status-icon-container.info { background: linear-gradient(135deg, #1589ee 0%, #005fb2 100%); }
+.status-icon-container.neutral { background: linear-gradient(135deg, #94a3b8 0%, #6b7280 100%); }
+.status-icon-container.error { background: linear-gradient(135deg, #dc2626 0%, #9f1239 100%); }
+.status-icon-container.checking { background: linear-gradient(135deg, #94a3b8 0%, #6b7280 100%); }
+.status-icon-container.critical { background: linear-gradient(135deg, #dc2626 0%, #9f1239 100%); }
+
+/* Ensure lightning-icon foreground color respects our palette inside icon containers */
+.status-icon-container lightning-icon {
+    --slds-c-icon-color-foreground: white !important;
+    --slds-c-icon-color-foreground-default: white !important;
+}
+
+.status-content { flex-grow: 1; min-width: 0; display:flex; flex-direction:column; gap:4px }
+
+.status-title { font-size: 0.98rem; font-weight: 700; margin: 0; display:flex; gap:0.5rem; align-items:baseline }
+.status-label { font-weight:700 }
+.status-version { color:#6b7280; font-size:0.85rem; margin-left:6px }
+.status-description { color:#6b7280; margin:0; font-size:0.88rem; line-height:1.2 }
+
+.status-actions { display:flex; gap:0.5rem; align-items:center; flex-shrink:0; margin-left:auto }
+.status-button { border-radius:6px; padding:0.45rem 0.75rem }
+.status-button.primary { box-shadow: 0 1px 3px rgba(0,0,0,0.06) }
+
+/* Prevent accidental full-screen modal/spinner within this panel */
+.setup-container .submission-modal-backdrop,
+.setup-container .submission-modal,
+.setup-container .slds-spinner_container {
+    display: none !important;
+}
+
+
+@media (max-width: 768px) {
+    .header-content { padding: 0.75rem; gap: 0.75rem }
+    .commands-grid { grid-template-columns: 1fr }
+    .status-card { flex-direction: row; }
+}
+
+/* subtle prereq hint */
+.prereq-hint {
+    margin: 0.25rem 0 0 0;
+    color: #94a3b8; /* muted slate */
+    font-size: 0.85rem;
+}
+

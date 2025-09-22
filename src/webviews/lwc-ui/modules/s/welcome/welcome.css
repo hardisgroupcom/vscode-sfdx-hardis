@@ -46,6 +46,18 @@
     flex-shrink: 0;
 }
 
+.hero-top-left {
+    position: fixed;
+    left: 0.75rem;
+    top: 1rem;
+    z-index: 9999;
+}
+
+.hero-top-left.hidden {
+    opacity: 0;
+    visibility: hidden;
+}
+
 .hero-text {
     text-align: center;
     flex: 0 1 auto;

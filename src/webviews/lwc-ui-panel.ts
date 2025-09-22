@@ -129,6 +129,7 @@ export class LwcUiPanel {
       "s-pipeline-config": "Pipeline Settings",
       "s-extension-config": "Extension Settings",
       "s-files-workbench": "Files Import/Export Workbench",
+      "s-setup": "Install Dependencies",
     };
     const panelTitle = lwcDefinitions[this.lwcId] || "SFDX Hardis";
     this.panel.title = panelTitle;

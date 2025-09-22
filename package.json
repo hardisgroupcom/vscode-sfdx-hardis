@@ -73,6 +73,11 @@
           "type": "string",
           "description": "Absolute path or URL to a .sfdx-hardis.yml file that contains custom commands for the menu\nSee https://github.com/hardisgroupcom/vscode-sfdx-hardis#custom-commands"
         },
+        "vsCodeSfdxHardis.autoUpdateDependencies": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically update dependencies of sfdx-hardis (like @salesforce/cli) when starting VsCode SFDX-Hardis"
+        },
         "vsCodeSfdxHardis.debugSfdxHardisCommands": {
           "type": "boolean",
           "default": false,
@@ -198,6 +203,11 @@
         "command": "vscode-sfdx-hardis.showPipeline",
         "title": "SFDX Hardis: DevOps Pipeline",
         "icon": "$(rocket)"
+      },
+      {
+        "command": "vscode-sfdx-hardis.showSetup",
+        "title": "SFDX Hardis: Setup",
+        "icon": "$(tools)"
       },
       {
         "command": "vscode-sfdx-hardis.showExtensionConfig",
@@ -405,6 +415,11 @@
         {
           "command": "vscode-sfdx-hardis.refreshStatusView",
           "when": "view == sfdx-hardis-status",
+          "group": "navigation"
+        },
+        {
+          "command": "vscode-sfdx-hardis.showSetup",
+          "when": "view == sfdx-hardis-plugins",
           "group": "navigation"
         },
         {

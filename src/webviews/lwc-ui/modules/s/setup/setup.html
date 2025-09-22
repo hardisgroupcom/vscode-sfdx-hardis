@@ -1,0 +1,84 @@
+<template>
+    <div class="slds-scope slds-theme_default blue-back">
+        <div class="setup-container">
+            <div class="header-content">
+                <div class="header-icon-container">
+                    <lightning-icon icon-name="utility:setup" size="medium" variant="inverse"></lightning-icon>
+                </div>
+                <div class="header-text">
+                    <h1 class="header-title">Setup</h1>
+                    <p class="header-subtitle">Check and install extension dependencies</p>
+                </div>
+                <div class="header-actions">
+                    <lightning-input
+                        type="toggle"
+                        label="Auto-update dependencies"
+                        name="autoUpdateDependencies"
+                        checked={_autoUpdateDependencies}
+                        onchange={handleAutoUpdateChange}
+                        class="setup-toggle"
+                    ></lightning-input>
+                </div>
+            </div>
+
+            <div class="section">
+                <!-- Top status card (mirrors orgMonitoring installed state style) -->
+                <div class="setup-summary-card">
+                    <div class="status-card summary">
+                        <div class={summaryIconContainerClass}>
+                            <lightning-icon icon-name={summaryIconName} size="small" variant="inverse"></lightning-icon>
+                        </div>
+                        <div class="status-content">
+                            <h3 class="status-title">Dependencies status summary</h3>
+                            <p class="status-description">{summaryMessage}</p>
+                        </div>
+                        <div class="status-actions">
+                                <template if:true={hasPendingActions}>
+                                    <template if:false={summaryChecking}>
+                                        <lightning-button variant="brand" label={runButtonLabel} onclick={runPendingInstalls} class="status-button primary" disabled={runButtonDisabled}></lightning-button>
+                                    </template>
+                                </template>
+                        </div>
+                    </div>
+                </div>
+                <div class="commands-grid">
+                    <template for:each={checks} for:item="chk">
+                        <div key={chk.id} class={chk.cardClass}>
+
+                            <div class={chk.iconContainerClass}>
+                                <lightning-icon icon-name={chk.statusIcon} size="small" variant="inverse"></lightning-icon>
+                            </div>
+
+                            <div class="status-content">
+                                <h3 class="status-title">
+                                    <span class="status-label">{chk.label}</span>
+                                    <span class="status-version">{chk.version}</span>
+                                </h3>
+                                <p class="status-description">{chk.explanation}</p>
+                            </div>
+
+                            <div class="status-actions slds-grid slds-grid_vertical slds-grid_align-start">
+                                <!-- Single unified button driven by controller-computed attributes -->
+                                 <template if:false={chk.missingPrerequisitesText}>
+                                    <lightning-button
+                                        class="status-button slds-m-bottom_xx-small"
+                                        variant={chk.buttonVariant}
+                                        label={chk.buttonLabel}
+                                        data-id={chk.id}
+                                        data-action={chk.buttonAction}
+                                        onclick={handleUnifiedAction}
+                                        disabled={chk.buttonDisabled}
+                                    ></lightning-button>
+                                </template>
+                                <!-- show prereq hint only after we know the check completed and prerequisites are actually missing -->
+                                <template if:true={chk.missingPrerequisitesText}>
+                                    <p class="prereq-hint slds-text-color_error slds-m-top_xx-small">Requires:<br/>{chk.missingPrerequisitesText}</p>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>

@@ -30,6 +30,7 @@ export const sectionDefs = [
     iconName: "utility:performance",
     description: "Performance and optimization settings.",
     keys: [
+      "vsCodeSfdxHardis.autoUpdateDependencies",
       "vsCodeSfdxHardis.enableMultithread",
       "vsCodeSfdxHardis.disableDefaultOrgAuthenticationCheck",
     ],
