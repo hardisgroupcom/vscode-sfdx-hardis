@@ -200,6 +200,11 @@
         "icon": "$(rocket)"
       },
       {
+        "command": "vscode-sfdx-hardis.showSetup",
+        "title": "SFDX Hardis: Setup",
+        "icon": "$(tools)"
+      },
+      {
         "command": "vscode-sfdx-hardis.showExtensionConfig",
         "title": "SFDX Hardis: Extension Settings",
         "icon": "$(gear)"

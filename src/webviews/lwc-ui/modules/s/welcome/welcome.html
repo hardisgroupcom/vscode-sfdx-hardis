@@ -5,7 +5,17 @@
             <div class="hero-section compact">
                 <div class="hero-content">
                     <div class="hero-header">
-                        <span class="hero-icon">🚀</span>
+                            <span class="hero-icon">🚀</span>
+                            <div class="hero-top-left">
+                                <lightning-button
+                                    variant="neutral"
+                                    label="Setup"
+                                    icon-name="utility:settings"
+                                    onclick={navigateToSetup}
+                                    class="setup-button"
+                                    title="Open Setup"
+                                ></lightning-button>
+                            </div>
                         <div class="hero-text">
                             <h1 class="hero-title">Welcome to VS Code SFDX Hardis</h1>
                             <p class="hero-subtitle">Your comprehensive Salesforce toolkit, by <a href="https://www.cloudity.com/?ref=sfdxhardis" target="_blank">Cloudity</a> and <a href="https://sfdx-hardis.cloudity.com/contributors/" target="_blank">friends</a></p>

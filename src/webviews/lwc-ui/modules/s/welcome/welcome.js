@@ -55,6 +55,12 @@ export default class Welcome extends LightningElement {
     });
   }
 
+  navigateToSetup() {
+    window.sendMessageToVSCode({
+      type: "navigateToSetup",
+    });
+  }
+
   navigateToPipeline() {
     window.sendMessageToVSCode({
       type: "navigateToPipeline",

@@ -1,0 +1,74 @@
+<template>
+    <div class="slds-scope slds-theme_default blue-back">
+        <div class="setup-container">
+            <div class="header-content">
+                <div class="header-icon-container">
+                    <lightning-icon icon-name="utility:setup" size="medium" variant="inverse"></lightning-icon>
+                </div>
+                <div class="header-text">
+                    <h1 class="header-title">Setup</h1>
+                    <p class="header-subtitle">Check and install extension dependencies</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <!-- Top status message (summary) -->
+                <div class="setup-status" if:true={summaryMessage}>
+                    <div class={summaryBoxClass}>
+                        <span class="setup-status-text">{summaryMessage}</span>
+                    </div>
+                </div>
+                <div class="commands-grid">
+                    <template for:each={checks} for:item="chk">
+                        <div key={chk.id} class={chk.cardClass}>
+                            <!-- icon container: class is provided by the controller in `iconContainerClass` -->
+                            <div class={chk.iconContainerClass}>
+                                <template if:true={chk.checking}>
+                                    <div class="slds-is-relative" style="height: 2rem; display:flex; align-items:center; justify-content:center;">
+                                        <lightning-spinner alternative-text="Checking" size="small"></lightning-spinner>
+                                    </div>
+                                </template>
+                                <template if:false={chk.checking}>
+                                    <lightning-icon icon-name={chk.statusIcon} size="small" variant="inverse"></lightning-icon>
+                                </template>
+                            </div>
+
+                            <div class="status-content">
+                                <h3 class="status-title">
+                                    <span class="status-label">{chk.label}</span>
+                                    <span class="status-version">{chk.version}</span>
+                                </h3>
+                                <p class="status-description">{chk.explanation}</p>
+                            </div>
+
+                            <div class="status-actions">
+                                <template if:true={chk.checking}>
+                                    <lightning-spinner alternative-text="Checking" size="small"></lightning-spinner>
+                                </template>
+
+                                <template if:true={chk.installed}>
+                                    <lightning-button variant="neutral" label="Re-check" data-id={chk.id} onclick={handleAction} disabled={chk.checking} class="status-button"></lightning-button>
+                                </template>
+
+                                <template if:false={chk.installed}>
+                                    <template if:true={chk.installable}>
+                                            <lightning-button variant="brand" label={chk.actionLabel} data-id={chk.id} onclick={handleInstall} disabled={chk.installDisabled} class="status-button primary"></lightning-button>
+                                            <!-- show prereq hint only after we know the check completed and prerequisites are actually missing -->
+                                            <template if:true={chk.missingPrerequisitesText}>
+                                                <template if:false={chk.checking}>
+                                                    <p class="prereq-hint">Requires: {chk.missingPrerequisitesText}</p>
+                                                </template>
+                                            </template>
+                                    </template>
+                                    <template if:false={chk.installable}>
+                                        <lightning-button variant="neutral" label="Instructions" data-id={chk.id} onclick={handleInstructions} disabled={chk.checking} class="status-button"></lightning-button>
+                                    </template>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>

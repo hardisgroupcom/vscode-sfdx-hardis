@@ -7,7 +7,7 @@
 - Welcome view
 - Org Monitoring Workbench + Package XML Viewer
 - Org Manager: Allow to edit Org aliases in the table
-- DevOps Pipeline: nex features
+- DevOps Pipeline: new features
   - Quick actions for contributors
   - Links to package.xml files
 - Improve custom help text component so user can copy text and click on links

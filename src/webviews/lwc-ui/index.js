@@ -19,6 +19,7 @@ const lwcModules = {
   "s-org-monitoring": () => import("s/orgMonitoring"),
   "s-package-xml": () => import("s/packageXml"),
   "s-files-workbench": () => import("s/filesWorkbench"),
+  "s-setup": () => import("s/setup"),
 };
 
 // Communication bridge between VS Code webview and LWC components
