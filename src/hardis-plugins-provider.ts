@@ -500,21 +500,29 @@ export class HardisPluginsProvider
       );
       const setupHelper = SetupHelper.getInstance();
       const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
-      if (config.get("autoUpdateDependencies") === true && !setupHelper.hasUpdatesInProgress()) {
+      if (
+        config.get("autoUpdateDependencies") === true &&
+        !setupHelper.hasUpdatesInProgress()
+      ) {
         setupHelper.setUpdateInProgress(true, command);
         execCommandWithProgress(
-            command,
-            { fail: false, output: true },
-            `Automatically upgrading dependencies with command: ${command}`,
-        ).then(() => {
-          setupHelper.setUpdateInProgress(false, command);
-          vscode.commands.executeCommand("vscode-sfdx-hardis.refreshPluginsView");
-        }).catch(() => {
-          setupHelper.setUpdateInProgress(false, command);
-          vscode.commands.executeCommand("vscode-sfdx-hardis.refreshPluginsView");
-        });
-      }
-      else if (!setupHelper.hasUpdatesInProgress()) {
+          command,
+          { fail: false, output: true },
+          `Automatically upgrading dependencies with command: ${command}`,
+        )
+          .then(() => {
+            setupHelper.setUpdateInProgress(false, command);
+            vscode.commands.executeCommand(
+              "vscode-sfdx-hardis.refreshPluginsView",
+            );
+          })
+          .catch(() => {
+            setupHelper.setUpdateInProgress(false, command);
+            vscode.commands.executeCommand(
+              "vscode-sfdx-hardis.refreshPluginsView",
+            );
+          });
+      } else if (!setupHelper.hasUpdatesInProgress()) {
         vscode.window
           .showWarningMessage(
             "🦙 Some plugins are not up to date, please click to upgrade, then wait for the process to be completed before performing actions",
@@ -523,10 +531,8 @@ export class HardisPluginsProvider
           .then((selection) => {
             if (selection === "Upgrade plugins") {
               if (config.get("userInput") === "ui-lwc") {
-                vscode.commands.executeCommand(
-                  "vscode-sfdx-hardis.showSetup",
-                );
-                return ;
+                vscode.commands.executeCommand("vscode-sfdx-hardis.showSetup");
+                return;
               }
               vscode.commands.executeCommand(
                 "vscode-sfdx-hardis.execute-command",
@@ -539,7 +545,12 @@ export class HardisPluginsProvider
     return items.sort((a: any, b: any) => (a.label > b.label ? 1 : -1));
   }
 
-  private buildUpgradeCommand(outdated: any[], plugins: any,legacySfdx: boolean, sfdxCliOutdated: boolean): string {
+  private buildUpgradeCommand(
+    outdated: any[],
+    plugins: any,
+    legacySfdx: boolean,
+    sfdxCliOutdated: boolean,
+  ): string {
     let command = outdated
       .map((plugin) => `echo y|sf plugins:install ${plugin.name}`)
       .join(" && ");

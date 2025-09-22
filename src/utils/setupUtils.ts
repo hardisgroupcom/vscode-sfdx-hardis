@@ -1,16 +1,23 @@
 import * as vscode from "vscode";
-import { execCommand, execCommandWithProgress, getNpmLatestVersion, NODE_JS_MINIMUM_VERSION, RECOMMENDED_SFDX_CLI_VERSION, RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION } from "../utils";
+import {
+  execCommand,
+  execCommandWithProgress,
+  getNpmLatestVersion,
+  NODE_JS_MINIMUM_VERSION,
+  RECOMMENDED_SFDX_CLI_VERSION,
+  RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION,
+} from "../utils";
 import which from "which";
 
 export type DependencyInfo = {
-    explanation: string;
-    installable: boolean;
-    label: string;
-    iconName?: string;
-    prerequisites?: string[];
-    helpUrl?: string;
-    checkMethod?: () => Promise<DependencyCheckResult>;
-    installMethod?: () => Promise<{ success: boolean; message?: string }>;
+  explanation: string;
+  installable: boolean;
+  label: string;
+  iconName?: string;
+  prerequisites?: string[];
+  helpUrl?: string;
+  checkMethod?: () => Promise<DependencyCheckResult>;
+  installMethod?: () => Promise<{ success: boolean; message?: string }>;
 };
 
 export type DependencyCheckResult = {
@@ -53,7 +60,7 @@ export class SetupHelper {
         this.updatesInProgress.push(id);
       }
     } else {
-      this.updatesInProgress = this.updatesInProgress.filter(p => p !== id);
+      this.updatesInProgress = this.updatesInProgress.filter((p) => p !== id);
     }
   }
 
@@ -79,84 +86,90 @@ export class SetupHelper {
 
   listDependencies(): Record<string, DependencyInfo> {
     const dependencies: Record<string, DependencyInfo> = {
-        node: {
-            label: "Node.js",
-            explanation:
-                "Node.js is required to run Salesforce CLI and its plugins.",
-            installable: false,
-            iconName: "utility:platform",
-            prerequisites: [],
-            helpUrl: "https://nodejs.org/",
-            checkMethod: this.checkNode.bind(this),
-            installMethod: undefined,
-        },
-        git: {
-            label: "Git",
-            explanation:
-                "Git is the VCS (Version Control System) used to handle your Salesforce project sources. It also provides Git Bash for Windows.",
-            installable: false,
-            iconName: "utility:git_branch",
-            prerequisites: [],
-            helpUrl: "https://git-scm.com/",
-            checkMethod: this.checkGit.bind(this),
-            installMethod: undefined,
-        },
-        sf: {
-            label: "Salesforce CLI (sf)",
-            explanation:
-                "The modern Salesforce CLI (sf) is required to run Salesforce commands used by the extension.",
-            installable: true,
-            iconName: "utility:terminal",
-            prerequisites: ["node"],
-            helpUrl:
-                "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_unified.htm",
-            checkMethod: this.checkSfCli.bind(this),
-            installMethod: this.installSfCliWithNpm.bind(this),
-        },
-        "sfplugin:sfdx-hardis": {
-            label: "sfdx-hardis",
-            explanation:
-                "sfdx-hardis is the main plugin this extension integrates with. Keep it up to date for features and bugfixes.",
-            installable: true,
-            iconName: "utility:package",
-            prerequisites: ["sf"],
-            helpUrl: "https://github.com/hardisgroupcom/sfdx-hardis",
-            checkMethod: this.checkSfPlugin.bind(this, "sfdx-hardis"),
-            installMethod: this.installSfPlugin.bind(this, "sfdx-hardis"),
-        },
-        "sfplugin:@salesforce/plugin-packaging": {
-            label: "@salesforce/plugin-packaging",
-            explanation:
-                "@salesforce/plugin-packaging provides packaging commands used for package creation and versioning.",
-            installable: true,
-            iconName: "utility:package",
-            prerequisites: ["sf"],
-            helpUrl: "https://github.com/salesforcecli/plugin-packaging",
-            checkMethod: this.checkSfPlugin.bind(this, "@salesforce/plugin-packaging"),
-            installMethod: this.installSfPlugin.bind(this, "@salesforce/plugin-packaging"),
-        },
-        "sfplugin:sfdmu": {
-            label: "SFDMU",
-            explanation:
-                "SFDMU (Salesforce Data Move Utility) is used for data import/export workflows integrated in the extension.",
-            installable: true,
-            iconName: "utility:data_collection",
-            prerequisites: ["sf"],
-            helpUrl: "https://github.com/forcedotcom/SFDX-Data-Move-Utility",
-            checkMethod: this.checkSfPlugin.bind(this, "sfdmu"),
-            installMethod: this.installSfPlugin.bind(this, "sfdmu"),
-        },
-        "sfplugin:sfdx-git-delta": {
-            label: "sfdx-git-delta",
-            explanation:
-                "sfdx-git-delta helps to generate package.xml/diff based on your git changes.",
-            installable: true,
-            iconName: "utility:git_branch",
-            prerequisites: ["sf"],
-            helpUrl: "https://github.com/scolladon/sfdx-git-delta",
-            checkMethod: this.checkSfPlugin.bind(this, "sfdx-git-delta"),
-            installMethod: this.installSfPlugin.bind(this, "sfdx-git-delta"),
-        },
+      node: {
+        label: "Node.js",
+        explanation:
+          "Node.js is required to run Salesforce CLI and its plugins.",
+        installable: false,
+        iconName: "utility:platform",
+        prerequisites: [],
+        helpUrl: "https://nodejs.org/",
+        checkMethod: this.checkNode.bind(this),
+        installMethod: undefined,
+      },
+      git: {
+        label: "Git",
+        explanation:
+          "Git is the VCS (Version Control System) used to handle your Salesforce project sources. It also provides Git Bash for Windows.",
+        installable: false,
+        iconName: "utility:git_branch",
+        prerequisites: [],
+        helpUrl: "https://git-scm.com/",
+        checkMethod: this.checkGit.bind(this),
+        installMethod: undefined,
+      },
+      sf: {
+        label: "Salesforce CLI (sf)",
+        explanation:
+          "The modern Salesforce CLI (sf) is required to run Salesforce commands used by the extension.",
+        installable: true,
+        iconName: "utility:terminal",
+        prerequisites: ["node"],
+        helpUrl:
+          "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_unified.htm",
+        checkMethod: this.checkSfCli.bind(this),
+        installMethod: this.installSfCliWithNpm.bind(this),
+      },
+      "sfplugin:sfdx-hardis": {
+        label: "sfdx-hardis",
+        explanation:
+          "sfdx-hardis is the main plugin this extension integrates with. Keep it up to date for features and bugfixes.",
+        installable: true,
+        iconName: "utility:package",
+        prerequisites: ["sf"],
+        helpUrl: "https://github.com/hardisgroupcom/sfdx-hardis",
+        checkMethod: this.checkSfPlugin.bind(this, "sfdx-hardis"),
+        installMethod: this.installSfPlugin.bind(this, "sfdx-hardis"),
+      },
+      "sfplugin:@salesforce/plugin-packaging": {
+        label: "@salesforce/plugin-packaging",
+        explanation:
+          "@salesforce/plugin-packaging provides packaging commands used for package creation and versioning.",
+        installable: true,
+        iconName: "utility:package",
+        prerequisites: ["sf"],
+        helpUrl: "https://github.com/salesforcecli/plugin-packaging",
+        checkMethod: this.checkSfPlugin.bind(
+          this,
+          "@salesforce/plugin-packaging",
+        ),
+        installMethod: this.installSfPlugin.bind(
+          this,
+          "@salesforce/plugin-packaging",
+        ),
+      },
+      "sfplugin:sfdmu": {
+        label: "SFDMU",
+        explanation:
+          "SFDMU (Salesforce Data Move Utility) is used for data import/export workflows integrated in the extension.",
+        installable: true,
+        iconName: "utility:data_collection",
+        prerequisites: ["sf"],
+        helpUrl: "https://github.com/forcedotcom/SFDX-Data-Move-Utility",
+        checkMethod: this.checkSfPlugin.bind(this, "sfdmu"),
+        installMethod: this.installSfPlugin.bind(this, "sfdmu"),
+      },
+      "sfplugin:sfdx-git-delta": {
+        label: "sfdx-git-delta",
+        explanation:
+          "sfdx-git-delta helps to generate package.xml/diff based on your git changes.",
+        installable: true,
+        iconName: "utility:git_branch",
+        prerequisites: ["sf"],
+        helpUrl: "https://github.com/scolladon/sfdx-git-delta",
+        checkMethod: this.checkSfPlugin.bind(this, "sfdx-git-delta"),
+        installMethod: this.installSfPlugin.bind(this, "sfdx-git-delta"),
+      },
     };
     return dependencies;
   }
@@ -173,7 +186,7 @@ export class SetupHelper {
       const ok = version !== null;
       // If installed, check minimal major version
       if (ok) {
-        const major = parseInt((version.split(".")[0]) || "0", 10);
+        const major = parseInt(version.split(".")[0] || "0", 10);
         const minMajor = Math.floor(Number(NODE_JS_MINIMUM_VERSION) || 0);
         if (!Number.isNaN(major) && major < minMajor) {
           return {
@@ -186,7 +199,8 @@ export class SetupHelper {
             helpUrl: "https://nodejs.org/",
             message: `Installed Node.js major version ${major} is older than the required ${minMajor}`,
             installCommand: "https://nodejs.org/",
-            messageLinkLabel: "Download and install latest Node.js (use Windows Installer)",
+            messageLinkLabel:
+              "Download and install latest Node.js (use Windows Installer)",
             upgradeAvailable: true,
           };
         }
@@ -199,8 +213,11 @@ export class SetupHelper {
         recommended: ok ? null : String(NODE_JS_MINIMUM_VERSION),
         status: ok ? "ok" : "missing",
         helpUrl: "https://nodejs.org/",
-        message: ok ? undefined : `Node.js is not installed or not found in PATH (required minimum version: ${NODE_JS_MINIMUM_VERSION})`,
-        messageLinkLabel: "Download and install Node.js (use Windows Installer)",
+        message: ok
+          ? undefined
+          : `Node.js is not installed or not found in PATH (required minimum version: ${NODE_JS_MINIMUM_VERSION})`,
+        messageLinkLabel:
+          "Download and install Node.js (use Windows Installer)",
       };
     } catch {
       return {
@@ -212,7 +229,8 @@ export class SetupHelper {
         status: "error",
         helpUrl: "https://nodejs.org/",
         message: `Node.js is not installed or not found in PATH (required minimum version: ${NODE_JS_MINIMUM_VERSION})`,
-        messageLinkLabel: "Download and install Node.js (use Windows Installer)",
+        messageLinkLabel:
+          "Download and install Node.js (use Windows Installer)",
       };
     }
   }
@@ -313,18 +331,19 @@ export class SetupHelper {
         !(
           sfdxPath.includes("/usr/local/bin") && process.platform === "darwin"
         ) &&
-        sfdxPath !== "missing" ) {
-          return {
-            id: "sf",
-            label: "Salesforce CLI (sf)",
-            installed: true,
-            version,
-            recommended,
-            status: "error",
-            message: `Non-npm installation detected at ${sfdxPath} (bad installation using Salesforce website executable installer).\nPlease uninstall Salesforce CLI in "Windows -> Uninstall program" (or the equivalent on Mac), then re-install using sfdx-hardis Wizard (NPM-based).`,
-            installCommand: `npm install @salesforce/cli@${recommended || "latest"} -g`,
-            upgradeAvailable: false,
-        }
+        sfdxPath !== "missing"
+      ) {
+        return {
+          id: "sf",
+          label: "Salesforce CLI (sf)",
+          installed: true,
+          version,
+          recommended,
+          status: "error",
+          message: `Non-npm installation detected at ${sfdxPath} (bad installation using Salesforce website executable installer).\nPlease uninstall Salesforce CLI in "Windows -> Uninstall program" (or the equivalent on Mac), then re-install using sfdx-hardis Wizard (NPM-based).`,
+          installCommand: `npm install @salesforce/cli@${recommended || "latest"} -g`,
+          upgradeAvailable: false,
+        };
       }
 
       // If installed but not the recommended version
@@ -370,7 +389,11 @@ export class SetupHelper {
 
   async checkSfPlugin(pluginName: string): Promise<DependencyCheckResult> {
     try {
-      const res: any = await execCommand("sf plugins", { fail: false, output: true, spinner: false });
+      const res: any = await execCommand("sf plugins", {
+        fail: false,
+        output: true,
+        spinner: false,
+      });
       let stdout = (res && res.stdout && res.stdout.toString()) || "";
       // Remove trailing Uninstalled JIT section if present
       const uninstalledJitIndex = stdout.indexOf("Uninstalled JIT");
@@ -418,7 +441,11 @@ export class SetupHelper {
       }
 
       // If installed and latest is known and differs -> outdated
-      if (installed && latestPluginVersion && latestPluginVersion !== installedVersion) {
+      if (
+        installed &&
+        latestPluginVersion &&
+        latestPluginVersion !== installedVersion
+      ) {
         return {
           id: `sfplugin:${pluginName}`,
           label: pluginName,
@@ -442,7 +469,7 @@ export class SetupHelper {
         status: installed ? "ok" : "missing",
         helpUrl: `https://www.npmjs.com/package/${pluginName}`,
       };
-  } catch {
+    } catch {
       return {
         id: `sfplugin:${pluginName}`,
         label: pluginName,
@@ -483,14 +510,21 @@ export class SetupHelper {
 
   async installSfCliWithNpm(): Promise<{ success: boolean; message?: string }> {
     if (this.hasUpdatesInProgress()) {
-      return { success: false, message: "An installation is already in progress" };
+      return {
+        success: false,
+        message: "An installation is already in progress",
+      };
     }
     this.setUpdateInProgress(true, "sf");
     try {
       await execCommandWithProgress(
-        "npm install @salesforce/cli" + (RECOMMENDED_SFDX_CLI_VERSION ? "@" + RECOMMENDED_SFDX_CLI_VERSION : "") + " -g",
-         { fail: true, output: true },
-        "Installing Salesforce CLI..."
+        "npm install @salesforce/cli" +
+          (RECOMMENDED_SFDX_CLI_VERSION
+            ? "@" + RECOMMENDED_SFDX_CLI_VERSION
+            : "") +
+          " -g",
+        { fail: true, output: true },
+        "Installing Salesforce CLI...",
       );
       this.setUpdateInProgress(false, "sf");
       vscode.commands.executeCommand("vscode-sfdx-hardis.refreshPluginsView");
@@ -501,33 +535,46 @@ export class SetupHelper {
     }
   }
 
-  async installSfPlugin(pluginName: string): Promise<{ success: boolean; message?: string }> {
+  async installSfPlugin(
+    pluginName: string,
+  ): Promise<{ success: boolean; message?: string }> {
     if (this.hasUpdatesInProgress()) {
-      return { success: false, message: `An installation is already in progress` };
+      return {
+        success: false,
+        message: `An installation is already in progress`,
+      };
     }
     this.setUpdateInProgress(true, pluginName);
     try {
-        await execCommandWithProgress(
-            `echo y | sf plugins install ${pluginName}@latest`,
-            { fail: true, output: true },
-            `Running install command for ${pluginName}...`
-        )
-        this.setUpdateInProgress(false, pluginName);
-        vscode.commands.executeCommand("vscode-sfdx-hardis.refreshPluginsView");
-        return{ success: true }
+      await execCommandWithProgress(
+        `echo y | sf plugins install ${pluginName}@latest`,
+        { fail: true, output: true },
+        `Running install command for ${pluginName}...`,
+      );
+      this.setUpdateInProgress(false, pluginName);
+      vscode.commands.executeCommand("vscode-sfdx-hardis.refreshPluginsView");
+      return { success: true };
     } catch (err: any) {
       this.setUpdateInProgress(false, pluginName);
       return { success: false, message: err?.message || String(err) };
     }
   }
 
-  async installNpmPackage(packageName: string): Promise<{ success: boolean; message?: string }> {
+  async installNpmPackage(
+    packageName: string,
+  ): Promise<{ success: boolean; message?: string }> {
     if (this.hasUpdatesInProgress()) {
-      return { success: false, message: `An installation is already in progress`};
+      return {
+        success: false,
+        message: `An installation is already in progress`,
+      };
     }
     this.setUpdateInProgress(true, packageName);
     try {
-      await execCommand(`npm i -g ${packageName}`, { fail: false, output: true });
+      await execCommand(`npm i -g ${packageName}`, {
+        fail: false,
+        output: true,
+      });
       this.setUpdateInProgress(false, packageName);
       vscode.commands.executeCommand("vscode-sfdx-hardis.refreshPluginsView");
       return { success: true };

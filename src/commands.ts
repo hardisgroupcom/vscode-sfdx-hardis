@@ -4,9 +4,7 @@ import { HardisCommandsProvider } from "./hardis-commands-provider";
 import { HardisStatusProvider } from "./hardis-status-provider";
 import { HardisPluginsProvider } from "./hardis-plugins-provider";
 import { LocalWebSocketServer } from "./hardis-websocket-server";
-import {
-  openFolderInExplorer,
-} from "./utils";
+import { openFolderInExplorer } from "./utils";
 import TelemetryReporter from "@vscode/extension-telemetry";
 import { ThemeUtils } from "./themeUtils";
 import { CommandRunner } from "./command-runner";
@@ -128,7 +126,7 @@ export class Commands {
       async (keepCache: boolean = false) => {
         await this.hardisPluginsProvider?.refresh(keepCache);
         vscode.commands.executeCommand("vscode-sfdx-hardis.showSetup");
-      }
+      },
     );
     this.disposables.push(disposable);
   }
@@ -374,5 +372,4 @@ export class Commands {
     );
     this.disposables.push(disposable);
   }
-
 }

@@ -2,8 +2,8 @@ import { LightningElement, api, track } from "lwc";
 
 export default class Setup extends LightningElement {
   @track checks = [];
-  @track summaryMessage = '';
-  @track summaryClass = '';
+  @track summaryMessage = "";
+  @track summaryClass = "";
   _pendingCheckResolvers = {};
   _autoUpdateDependencies = false;
 
@@ -15,48 +15,52 @@ export default class Setup extends LightningElement {
     window.sendMessageToVSCode({ type: "requestSetupInit" });
   }
 
-  disconnectedCallback() {
-  }
+  disconnectedCallback() {}
 
   @api
   handleMessage(type, data) {
     console.log("Setup component received message:", type, data);
     if (type === "initialize") {
-        // Render the static list first (no checking yet) so the UI paints quickly
-        this._autoUpdateDependencies = data && data.autoUpdateDependencies === true;
-        this.checks = data.checks.map((c) => ({
-          ...c,
-          explanation: c.explanation || "",
-          installable: typeof c.installable === "boolean" ? c.installable : true,
-          prerequisites: c.prerequisites || [],
-          checking: false, // per-item checking state
-          installed: false,
-          hasChecked: false, // becomes true after first checkResult for the item
-          upgradeAvailable: false,
-          version: c.version || "",
-          installing: false,
-        }));
+      // Render the static list first (no checking yet) so the UI paints quickly
+      this._autoUpdateDependencies =
+        data && data.autoUpdateDependencies === true;
+      this.checks = data.checks.map((c) => ({
+        ...c,
+        explanation: c.explanation || "",
+        installable: typeof c.installable === "boolean" ? c.installable : true,
+        prerequisites: c.prerequisites || [],
+        checking: false, // per-item checking state
+        installed: false,
+        hasChecked: false, // becomes true after first checkResult for the item
+        upgradeAvailable: false,
+        version: c.version || "",
+        installing: false,
+      }));
 
-        // compute prerequisites/installDisabled after initial mapping
-        this._recomputePrerequisites();
+      // compute prerequisites/installDisabled after initial mapping
+      this._recomputePrerequisites();
 
-        // Defer starting checks to next tick so the rendered list is visible before heavy checks start
-        // Start checks in parallel for each item
-        Promise.resolve().then(() => {
-          this.checks.forEach((chk) => this._startCheck(chk.id));
-        });
+      // Defer starting checks to next tick so the rendered list is visible before heavy checks start
+      // Start checks in parallel for each item
+      Promise.resolve().then(() => {
+        this.checks.forEach((chk) => this._startCheck(chk.id));
+      });
     }
     // Receive check result
     else if (type === "checkResult") {
       const { id, res } = data || {};
       // Determine status from res.status (preferred). Fallback to installed flag.
-      const status = (res && res.status) || (res && res.installed ? "ok" : "missing");
+      const status =
+        (res && res.status) || (res && res.installed ? "ok" : "missing");
 
       // update canonical state only; visuals are derived in _updateDependencyCardsState
       this.checks = this.checks.map((c) => {
         if (c.id === id) {
-          const upgradeAvailable = !!(res && (res.upgradeAvailable === true || status === "outdated"));
-          const installed = status === 'ok' || status === 'outdated';
+          const upgradeAvailable = !!(
+            res &&
+            (res.upgradeAvailable === true || status === "outdated")
+          );
+          const installed = status === "ok" || status === "outdated";
           return {
             ...c,
             ...res,
@@ -99,9 +103,9 @@ export default class Setup extends LightningElement {
     const newValue = event.target.checked;
     this._autoUpdateDependencies = newValue;
     window.sendMessageToVSCode({
-      type: 'updateVsCodeSfdxHardisConfiguration',
+      type: "updateVsCodeSfdxHardisConfiguration",
       data: {
-        configKey: 'vsCodeSfdxHardis.autoUpdateDependencies',
+        configKey: "vsCodeSfdxHardis.autoUpdateDependencies",
         value: newValue,
       },
     });
@@ -114,11 +118,12 @@ export default class Setup extends LightningElement {
   _startCheck(id) {
     // Set checking=true for the specific item and emit a check request
     this.checks = this.checks.map((c) =>
-      c.id === id ? 
-      {
-        ...c, 
-        checking: true, 
-      } : c,
+      c.id === id
+        ? {
+            ...c,
+            checking: true,
+          }
+        : c,
     );
     // update derived button labels/disabled state so UI reflects checking immediately
     this._updateDependencyCardsState();
@@ -128,7 +133,9 @@ export default class Setup extends LightningElement {
   handleInstall(e) {
     const id = e.currentTarget.dataset.id;
     // mark checking while install happens (will trigger re-check when installResult arrives)
-    this.checks = this.checks.map((c) => (c.id === id ? { ...c, checking: false, installing: true, status: '' } : c));
+    this.checks = this.checks.map((c) =>
+      c.id === id ? { ...c, checking: false, installing: true, status: "" } : c,
+    );
     // ensure buttons reflect checking state immediately
     this._updateDependencyCardsState();
     window.sendMessageToVSCode({ type: "installDependency", data: { id } });
@@ -137,11 +144,11 @@ export default class Setup extends LightningElement {
   handleInstructions(e) {
     const id = e.currentTarget.dataset.id;
     window.sendMessageToVSCode({
-       type: "showInstructions",
-       data: {
-         id : id,
-         check: JSON.parse(JSON.stringify(this.checks.find((c) => c.id === id)))
-        }
+      type: "showInstructions",
+      data: {
+        id: id,
+        check: JSON.parse(JSON.stringify(this.checks.find((c) => c.id === id))),
+      },
     });
   }
 
@@ -150,12 +157,12 @@ export default class Setup extends LightningElement {
     const id = e.currentTarget.dataset.id;
     const action = e.currentTarget.dataset.action;
     if (!action) return;
-    if (action === 'install') {
+    if (action === "install") {
       // reuse existing install flow
       this.handleInstall({ currentTarget: { dataset: { id } } });
-    } else if (action === 'recheck') {
+    } else if (action === "recheck") {
       this.handleCheck({ currentTarget: { dataset: { id } } });
-    } else if (action === 'instructions') {
+    } else if (action === "instructions") {
       this.handleInstructions({ currentTarget: { dataset: { id } } });
     }
   }
@@ -188,12 +195,16 @@ export default class Setup extends LightningElement {
       const prereqArray = Array.isArray(c.prerequisites) ? c.prerequisites : [];
       const matched = this._prerequisitesMatched(prereqArray);
       // candidates that are not installed yet
-      const missingCandidates = prereqArray.filter((p) => !(lookup[p] && lookup[p].installed === true));
+      const missingCandidates = prereqArray.filter(
+        (p) => !(lookup[p] && lookup[p].installed === true),
+      );
       // only consider a prerequisite "missing" for user hint if that prerequisite has been checked already
-      const missing = missingCandidates.filter((p) => lookup[p] && lookup[p].hasChecked === true);
+      const missing = missingCandidates.filter(
+        (p) => lookup[p] && lookup[p].hasChecked === true,
+      );
       const missingFriendly = missing
         .map((p) => (lookup[p] && lookup[p].label ? lookup[p].label : p))
-        .join(', ');
+        .join(", ");
       const missingText = missingFriendly.length > 0 ? missingFriendly : null;
 
       return {
@@ -209,29 +220,34 @@ export default class Setup extends LightningElement {
     // compute a global summary message and class for the top banner
     const anyChecking = this.checks.some((c) => c.checking === true);
     const anyHasChecked = this.checks.some((c) => c.hasChecked === true);
-    const anyMissing = this.checks.some((c) => c.missingPrerequisites && c.missingPrerequisites.length > 0) || this.checks.some((c) => c.status === 'missing');
-    const anyOutdated = this.checks.some((c) => c.upgradeAvailable === true || c.status === 'outdated');
+    const anyMissing =
+      this.checks.some(
+        (c) => c.missingPrerequisites && c.missingPrerequisites.length > 0,
+      ) || this.checks.some((c) => c.status === "missing");
+    const anyOutdated = this.checks.some(
+      (c) => c.upgradeAvailable === true || c.status === "outdated",
+    );
 
     // If we haven't received any check result yet, consider the summary as checking so we don't show "You are all set"
     if (!anyHasChecked) {
-      this.summaryMessage = 'Check in progress';
-      this.summaryClass = 'info';
+      this.summaryMessage = "Check in progress";
+      this.summaryClass = "info";
       this._summaryChecking = true;
-      this._summaryIconName = 'utility:sync';
-      this._summaryIconContainer = 'status-icon-container neutral';
+      this._summaryIconName = "utility:sync";
+      this._summaryIconContainer = "status-icon-container neutral";
     } else {
       if (anyChecking) {
-        this.summaryMessage = 'Check in progress';
-        this.summaryClass = 'info';
+        this.summaryMessage = "Check in progress";
+        this.summaryClass = "info";
       } else if (anyMissing) {
-        this.summaryMessage = 'Missing dependencies: Please install them';
-        this.summaryClass = 'warning';
+        this.summaryMessage = "Missing dependencies: Please install them";
+        this.summaryClass = "warning";
       } else if (anyOutdated) {
-        this.summaryMessage = 'Outdated dependencies: Please upgrade them';
-        this.summaryClass = 'warning';
+        this.summaryMessage = "Outdated dependencies: Please upgrade them";
+        this.summaryClass = "warning";
       } else {
-        this.summaryMessage = 'You are all set 🤓';
-        this.summaryClass = 'success';
+        this.summaryMessage = "You are all set 🤓";
+        this.summaryClass = "success";
       }
 
       // Expose summary-level checking flag (true if any item is checking)
@@ -239,21 +255,28 @@ export default class Setup extends LightningElement {
 
       // Choose summary icon based on highest-priority state (checking > missing > outdated > ok)
       if (anyChecking) {
-        this._summaryIconName = 'utility:sync'; // spinner will be shown in template when checking
-        this._summaryIconContainer = 'status-icon-container checking';
+        this._summaryIconName = "utility:sync"; // spinner will be shown in template when checking
+        this._summaryIconContainer = "status-icon-container checking";
       } else if (anyMissing) {
-        this._summaryIconName = 'utility:error';
-        this._summaryIconContainer = 'status-icon-container error';
+        this._summaryIconName = "utility:error";
+        this._summaryIconContainer = "status-icon-container error";
       } else if (anyOutdated) {
-        this._summaryIconName = 'utility:warning';
-        this._summaryIconContainer = 'status-icon-container warning';
+        this._summaryIconName = "utility:warning";
+        this._summaryIconContainer = "status-icon-container warning";
       } else {
-        this._summaryIconName = 'utility:check';
-        this._summaryIconContainer = 'status-icon-container success';
+        this._summaryIconName = "utility:check";
+        this._summaryIconContainer = "status-icon-container success";
       }
     }
 
-    if (this._autoUpdateDependencies && this.listInstallCandidates().length > 0 && !anyChecking && !this.installQueueRunning && !this._summaryChecking && this.hasPendingActions) {
+    if (
+      this._autoUpdateDependencies &&
+      this.listInstallCandidates().length > 0 &&
+      !anyChecking &&
+      !this.installQueueRunning &&
+      !this._summaryChecking &&
+      this.hasPendingActions
+    ) {
       // Automatically run pending installs if the setting is enabled, the queue is not already running, and there are pending actions
       this.runPendingInstalls();
     }
@@ -266,63 +289,60 @@ export default class Setup extends LightningElement {
   _updateDependencyCardsState() {
     this.checks = this.checks.map((c) => {
       // derive primary display status from canonical state
-      const status = c.status || '';
-      let statusIcon = c.checking ? 'utility:sync' : 'utility:info';
-      let cardClass = c.checking ? 'status-card checking' : 'status-card';
-      let iconContainerClass = c.checking ? 'status-icon-container checking' : 'status-icon-container neutral';
+      const status = c.status || "";
+      let statusIcon = c.checking ? "utility:sync" : "utility:info";
+      let cardClass = c.checking ? "status-card checking" : "status-card";
+      let iconContainerClass = c.checking
+        ? "status-icon-container checking"
+        : "status-icon-container neutral";
 
       switch (status) {
-        case 'ok':
-          statusIcon = 'utility:check';
-          cardClass = 'status-card installed ok';
-          iconContainerClass = 'status-icon-container success';
+        case "ok":
+          statusIcon = "utility:check";
+          cardClass = "status-card installed ok";
+          iconContainerClass = "status-icon-container success";
           break;
-        case 'outdated':
-          statusIcon = 'utility:warning';
-          cardClass = 'status-card installed outdated warning';
-          iconContainerClass = 'status-icon-container warning';
+        case "outdated":
+          statusIcon = "utility:warning";
+          cardClass = "status-card installed outdated warning";
+          iconContainerClass = "status-icon-container warning";
           break;
-        case 'missing':
-          statusIcon = 'utility:error';
-          cardClass = 'status-card not-installed error';
-          iconContainerClass = 'status-icon-container error';
+        case "missing":
+          statusIcon = "utility:error";
+          cardClass = "status-card not-installed error";
+          iconContainerClass = "status-icon-container error";
           break;
-        case 'error':
-          statusIcon = 'utility:ban';
-          cardClass = 'status-card not-installed critical';
-          iconContainerClass = 'status-icon-container critical';
-        }
+        case "error":
+          statusIcon = "utility:ban";
+          cardClass = "status-card not-installed critical";
+          iconContainerClass = "status-icon-container critical";
+      }
 
-      let buttonLabel = 'ERROR: BUG IN CODE';
-      let buttonVariant = 'error';
-      let buttonAction = 'error';
+      let buttonLabel = "ERROR: BUG IN CODE";
+      let buttonVariant = "error";
+      let buttonAction = "error";
       let buttonDisabled = false;
 
       if (c.checking || c.installing) {
-        buttonLabel = c.checking ? 'Checking...' : 'Installing...';
-        buttonVariant = 'neutral';
-        buttonAction = '',
-        buttonDisabled = true;
-      }
-      else if (status === 'outdated') {
-        buttonLabel = 'Upgrade';
-        buttonVariant =  'brand';
-        buttonAction = 'install';
-      } 
-      else if (status === 'ok') {
-        buttonLabel = 'Re-check';
-        buttonVariant = 'neutral';
-        buttonAction = 'recheck';
-      } 
-      else if (status === 'missing') {
-        buttonLabel = c.installable ? 'Install' : 'Install Instructions';
-        buttonVariant = 'brand';
-        buttonAction = c.installable ? 'install' : 'instructions';
-      } 
-      else if (status === 'error') {
-        buttonLabel = 'Fix Instructions';
-        buttonVariant = 'brand';
-        buttonAction = 'instructions';
+        buttonLabel = c.checking ? "Checking..." : "Installing...";
+        buttonVariant = "neutral";
+        ((buttonAction = ""), (buttonDisabled = true));
+      } else if (status === "outdated") {
+        buttonLabel = "Upgrade";
+        buttonVariant = "brand";
+        buttonAction = "install";
+      } else if (status === "ok") {
+        buttonLabel = "Re-check";
+        buttonVariant = "neutral";
+        buttonAction = "recheck";
+      } else if (status === "missing") {
+        buttonLabel = c.installable ? "Install" : "Install Instructions";
+        buttonVariant = "brand";
+        buttonAction = c.installable ? "install" : "instructions";
+      } else if (status === "error") {
+        buttonLabel = "Fix Instructions";
+        buttonVariant = "brand";
+        buttonAction = "instructions";
       }
 
       return {
@@ -333,7 +353,7 @@ export default class Setup extends LightningElement {
         buttonLabel,
         buttonVariant,
         buttonAction,
-        buttonDisabled
+        buttonDisabled,
       };
     });
     this.checks = [...this.checks];
@@ -342,18 +362,18 @@ export default class Setup extends LightningElement {
   // ...existing code...
 
   get summaryBoxClass() {
-    const base = 'setup-status-box';
+    const base = "setup-status-box";
     return this.summaryClass ? `${base} ${this.summaryClass}` : base;
   }
 
   // Icon name exposed to template when not checking
   get summaryIconName() {
-    return this._summaryIconName || 'utility:setup';
+    return this._summaryIconName || "utility:setup";
   }
 
   // Container class for the icon in the summary card
   get summaryIconContainerClass() {
-    return this._summaryIconContainer || 'status-icon-container info';
+    return this._summaryIconContainer || "status-icon-container info";
   }
 
   // boolean flag used by template to hide summary button while checks are running
@@ -371,7 +391,7 @@ export default class Setup extends LightningElement {
 
   // Computed label for the Run button (avoid inline expressions in template)
   get runButtonLabel() {
-    return this.installQueueRunning ? 'Running...' : 'Run pending installs'
+    return this.installQueueRunning ? "Running..." : "Run pending installs";
   }
 
   // Computed disabled state for the Run button
@@ -382,14 +402,17 @@ export default class Setup extends LightningElement {
 
   // Compute whether there are pending actions (install/upgrade) excluding manual installs like node/git
   get hasPendingActions() {
-    return this.checks && this.checks.some((c) => {
-      const status = c.status || (c.installed ? 'ok' : 'missing');
-      const needs = status === 'missing' || status === 'outdated';
-      if (!needs) return false;
-      // Exclude manual-only installs
-      if (c.id === 'node' || c.id === 'git') return false;
-      return !!c.installable;
-    });
+    return (
+      this.checks &&
+      this.checks.some((c) => {
+        const status = c.status || (c.installed ? "ok" : "missing");
+        const needs = status === "missing" || status === "outdated";
+        if (!needs) return false;
+        // Exclude manual-only installs
+        if (c.id === "node" || c.id === "git") return false;
+        return !!c.installable;
+      })
+    );
   }
 
   listInstallCandidates() {
@@ -397,7 +420,11 @@ export default class Setup extends LightningElement {
       if (!c.installable) {
         return false;
       }
-      if (c.status === 'missing' || c.status === 'outdated' || c.status === 'error') {
+      if (
+        c.status === "missing" ||
+        c.status === "outdated" ||
+        c.status === "error"
+      ) {
         return true;
       }
       return false;
@@ -410,14 +437,21 @@ export default class Setup extends LightningElement {
     const installCandidates = this.listInstallCandidates();
     if (installCandidates.length === 0) {
       const manualInstallCandidates = this.checks.filter((c) => {
-        if ((c.status === 'missing' || c.status === 'outdated' || c.status === 'error') && !c.installable) {
+        if (
+          (c.status === "missing" ||
+            c.status === "outdated" ||
+            c.status === "error") &&
+          !c.installable
+        ) {
           return true;
         }
         return false;
       });
       if (manualInstallCandidates.length > 0) {
-          const firstCandidate = manualInstallCandidates[0];
-          this.handleInstructions({ currentTarget: { dataset: { id: firstCandidate.id } } });
+        const firstCandidate = manualInstallCandidates[0];
+        this.handleInstructions({
+          currentTarget: { dataset: { id: firstCandidate.id } },
+        });
       }
       return;
     }
