@@ -301,11 +301,14 @@ export default class Setup extends LightningElement {
     this.checks = this.checks.map((c) => {
       // derive primary display status from canonical state
       const status = c.status || "";
-      let statusIcon = (c.checking || c.installing) ? "utility:sync" : "utility:info";
-      let cardClass = (c.checking || c.installing) ? "status-card checking" : "status-card";
-      let iconContainerClass = (c.checking || c.installing)
-        ? "status-icon-container checking"
-        : "status-icon-container neutral";
+      let statusIcon =
+        c.checking || c.installing ? "utility:sync" : "utility:info";
+      let cardClass =
+        c.checking || c.installing ? "status-card checking" : "status-card";
+      let iconContainerClass =
+        c.checking || c.installing
+          ? "status-icon-container checking"
+          : "status-icon-container neutral";
       if (!(c.checking || c.installing)) {
         switch (status) {
           case "ok":
