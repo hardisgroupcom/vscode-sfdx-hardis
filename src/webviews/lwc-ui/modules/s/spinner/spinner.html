@@ -1,0 +1,8 @@
+<template>
+    <div part="backdrop"></div>
+    <div role="status" part="spinner" class={computedClass}>
+        <span if:true={validAlternativeText} class="slds-assistive-text">{_altText}</span>
+        <div part="dot-a" class="slds-spinner__dot-a"></div>
+        <div part="dot-b" class="slds-spinner__dot-b"></div>
+    </div>
+</template>

@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [6.8.1] 2024-09-23
+
+- Display spinner when checking or installing dependencies
+
 ## [6.8.0] 2024-09-23
 
 - New feature: **Install dependencies** , available from Welcome LWC & plugins status panel.
