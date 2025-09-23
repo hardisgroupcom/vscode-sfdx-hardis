@@ -95,10 +95,17 @@ export default class Setup extends LightningElement {
       const { id, res } = data || {};
       // After install, re-run the single check to refresh its status
       this._startCheck(id);
-    }
-    else if (type === "refresh") {
+    } else if (type === "refresh") {
       // Refresh the entire setup state (e.g. after changing a config)
-      if (!this.checks.some(c => c.checking || c.installing || this.installQueueRunning || this._summaryChecking)) {
+      if (
+        !this.checks.some(
+          (c) =>
+            c.checking ||
+            c.installing ||
+            this.installQueueRunning ||
+            this._summaryChecking,
+        )
+      ) {
         window.sendMessageToVSCode({ type: "requestSetupInit" });
       }
     }
