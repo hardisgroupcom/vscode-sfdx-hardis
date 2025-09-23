@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { BranchStrategyMermaidBuilder } from "./utils/pipeline/branchStrategyMermaidBuilder";
 import { listMajorOrgs, MajorOrg } from "./utils/orgConfigUtils";
 import { getConfig } from "./utils/pipeline/sfdxHardisConfig";
+import { GitProvider } from "./utils/gitProviders/gitProvider";
 
 export interface OrgNode {
   name: string;
@@ -30,7 +31,8 @@ export class PipelineDataProvider {
 
   public async getPipelineData(): Promise<PipelineData> {
     try {
-      const majorOrgs: MajorOrg[] = await listMajorOrgs();
+      let majorOrgs: MajorOrg[] = await listMajorOrgs();
+      majorOrgs = await completeOrgsWithPullRequests(majorOrgs);
       const mermaidBuilder = new BranchStrategyMermaidBuilder(majorOrgs);
       const mermaidDiagram = mermaidBuilder.build({
         format: "string",
@@ -89,4 +91,17 @@ export class PipelineDataProvider {
       };
     }
   }
+}
+
+async function completeOrgsWithPullRequests(orgs: MajorOrg[]): Promise<MajorOrg[]> {
+  for (const org of orgs) { 
+    try {
+      const prs = await GitProvider.listPullRequestsForBranch(org.branchName);
+      org.openPullRequestsAsTarget = prs.filter(pr => pr.state === 'open');
+      org.mergedPullRequestsAsTarget = prs.filter(pr => pr.state === 'merged');
+    } catch (error) {
+      console.error(`Error fetching PRs for branch ${org.branchName}:`, error);
+    }
+  }
+  return orgs;
 }

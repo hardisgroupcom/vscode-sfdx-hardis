@@ -13,6 +13,8 @@ export interface MajorOrg {
   level: number;
   instanceUrl: string;
   warnings: string[];
+  openPullRequestsAsTarget?: any[];
+  mergedPullRequestsAsTarget?: any[];
 }
 
 export async function listMajorOrgs(): Promise<MajorOrg[]> {
