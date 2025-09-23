@@ -20,6 +20,7 @@ import { registerShowFilesWorkbench } from "./commands/showFilesWorkbench";
 import { registerOpenKeyFile } from "./commands/openKeyFile";
 import { registerRunLocalHtmlDocPages } from "./commands/runLocalHtmlDoc";
 import { registerShowExtensionConfig } from "./commands/showExtensionConfig";
+import { LwcPanelManager } from "./lwc-panel-manager";
 
 export class Commands {
   public readonly extensionUri: vscode.Uri;
@@ -125,7 +126,15 @@ export class Commands {
       "vscode-sfdx-hardis.refreshPluginsView",
       async (keepCache: boolean = false) => {
         await this.hardisPluginsProvider?.refresh(keepCache);
-        vscode.commands.executeCommand("vscode-sfdx-hardis.showSetup");
+        // Reopen setup only if it is already open
+        const panelManager = LwcPanelManager.getInstance();
+        // Pipeline config
+        const setupPanel = panelManager.getPanel("s-setup");
+        if (setupPanel) {
+          setupPanel.sendMessage({
+            type: "refresh",
+          });
+        }
       },
     );
     this.disposables.push(disposable);
