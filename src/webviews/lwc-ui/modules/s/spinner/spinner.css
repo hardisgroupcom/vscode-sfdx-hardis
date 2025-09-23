@@ -1,0 +1,442 @@
+
+:host([data-render-mode="shadow"]) [part='spinner'] .slds-assistive-text {
+  position: absolute !important;
+  margin: -1px !important;
+  border: 0 !important;
+  padding: 0 !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0) !important;
+  text-transform: none !important;
+  white-space: nowrap !important;
+}
+
+:host([data-render-mode="shadow"]) [part='backdrop'] {
+  position: absolute;
+  inset: 0;
+  z-index: 9050;
+  background-color: var(--_slds-c-spinner-backdrop-color-background, var(--slds-g-color-neutral-base-100));
+  visibility: visible;
+  opacity: 0.75;
+  transition:
+    opacity 0.2s ease,
+    visibility 0s;
+  transition-delay: 0s, 0.3s;
+}
+
+/* brand */
+
+:host([data-render-mode="shadow"][variant='brand']) [part='spinner'],:host([data-render-mode="shadow"]) 
+.slds-spinner_brand {
+  --_slds-c-spinner-color-background: var(--slds-g-color-accent-1);
+}
+
+/* inverse */
+
+:host([data-render-mode="shadow"][variant='inverse']) [part='spinner'] {
+  --_slds-c-spinner-color-background: var(--slds-g-color-neutral-base-100);
+}
+
+/* large */
+
+:host([data-render-mode="shadow"][size='large']) [part='spinner'] {
+  width: 2.75rem;
+}
+
+:host([data-render-mode="shadow"][size='large']) [part='dot-a']::before,:host([data-render-mode="shadow"][size='large']) [part='dot-a']::after,:host([data-render-mode="shadow"][size='large']) [part='dot-b']::before,:host([data-render-mode="shadow"][size='large']) [part='dot-b']::after,:host([data-render-mode="shadow"][size='large']) [part='spinner']::before,:host([data-render-mode="shadow"][size='large']) [part='spinner']::after {
+  width: 0.625rem;
+  height: 0.625rem;
+}
+
+:host([data-render-mode="shadow"][size='large']) [part='spinner']::before,:host([data-render-mode="shadow"][size='large']) [part='dot-a']::before,:host([data-render-mode="shadow"][size='large']) [part='dot-b']::before {
+  top: -0.3125rem;
+  left: -0.3125rem;
+  animation-name: dotsBounceBefore-medium;
+}
+
+:host([data-render-mode="shadow"][size='large']) [part='spinner']::after,:host([data-render-mode="shadow"][size='large']) [part='dot-a']::after,:host([data-render-mode="shadow"][size='large']) [part='dot-b']::after {
+  top: -0.3125rem;
+  right: -0.3125rem;
+  animation-name: dotsBounceAfter-medium;
+}
+
+/* end size large */
+
+/* medium */
+
+:host([data-render-mode="shadow"][size='medium']) [part='spinner'] {
+  width: 2rem;
+}
+
+:host([data-render-mode="shadow"][size='medium']) [part='dot-a']::before,:host([data-render-mode="shadow"][size='medium']) [part='dot-a']::after,:host([data-render-mode="shadow"][size='medium']) [part='dot-b']::before,:host([data-render-mode="shadow"][size='medium']) [part='dot-b']::after,:host([data-render-mode="shadow"][size='medium']) [part='spinner']::before,:host([data-render-mode="shadow"][size='medium']) [part='spinner']::after {
+  width: 0.5rem;
+  height: 0.5rem;
+}
+
+:host([data-render-mode="shadow"][size='medium']) [part='spinner']::before,:host([data-render-mode="shadow"][size='medium']) [part='dot-a']::before,:host([data-render-mode="shadow"][size='medium']) [part='dot-b']::before {
+  top: -0.25rem;
+  left: -0.25rem;
+  animation-name: dotsBounceBefore-medium;
+}
+
+:host([data-render-mode="shadow"][size='medium']) [part='spinner']::after,:host([data-render-mode="shadow"][size='medium']) [part='dot-a']::after,:host([data-render-mode="shadow"][size='medium']) [part='dot-b']::after {
+  top: -0.25rem;
+  right: -0.25rem;
+  animation-name: dotsBounceAfter-medium;
+}
+
+/* end size medium */
+
+/* small */
+
+:host([data-render-mode="shadow"][size='small']) [part='spinner'] {
+  width: 1.25rem;
+}
+
+:host([data-render-mode="shadow"][size='small']) [part='dot-a']::before,:host([data-render-mode="shadow"][size='small']) [part='dot-a']::after,:host([data-render-mode="shadow"][size='small']) [part='dot-b']::before,:host([data-render-mode="shadow"][size='small']) [part='dot-b']::after,:host([data-render-mode="shadow"][size='small']) [part='spinner']::before,:host([data-render-mode="shadow"][size='small']) [part='spinner']::after {
+  width: 0.25rem;
+  height: 0.25rem;
+}
+
+:host([data-render-mode="shadow"][size='small']) [part='spinner']::before,:host([data-render-mode="shadow"][size='small']) [part='dot-a']::before,:host([data-render-mode="shadow"][size='small']) [part='dot-b']::before {
+  top: -0.125rem;
+  left: -0.125rem;
+  animation-name: dotsBounceBefore-small;
+}
+
+:host([data-render-mode="shadow"][size='small']) [part='spinner']::after,:host([data-render-mode="shadow"][size='small']) [part='dot-a']::after,:host([data-render-mode="shadow"][size='small']) [part='dot-b']::after {
+  width: 0.25rem;
+  height: 0.25rem;
+  top: -0.125rem;
+  right: -0.125rem;
+  animation-name: dotsBounceAfter-small;
+}
+
+@keyframes dotsBounceBefore-small {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  60% {
+    transform: translate3d(0, 0, 0);
+    animation-timing-function: cubic-bezier(0.55, 0.085, 0.68, 0.53);
+  }
+
+  80% {
+    transform: translate3d(-0.375rem, 0, 0);
+    animation-timing-function: cubic-bezier(0, 1.11, 0.7, 1.43);
+  }
+
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes dotsBounceAfter-small {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  60% {
+    transform: translate3d(0, 0, 0);
+    animation-timing-function: cubic-bezier(0.55, 0.085, 0.68, 0.53);
+  }
+
+  80% {
+    transform: translate3d(0.375rem, 0, 0);
+    animation-timing-function: cubic-bezier(0, 1.11, 0.7, 1.43);
+  }
+
+  100% {
+    transform: translateX(0);
+  }
+}
+
+/* end size small */
+
+/* x-small */
+
+:host([data-render-mode="shadow"][size='x-small']) [part='spinner'],:host([data-render-mode="shadow"]) 
+.slds-spinner_x-small[part='spinner'] {
+  width: 1rem;
+}
+
+:host([data-render-mode="shadow"][size='x-small']) [part='dot-a']::before,:host([data-render-mode="shadow"][size='x-small']) [part='dot-b']::before,:host([data-render-mode="shadow"][size='x-small']) [part='dot-a']::after,:host([data-render-mode="shadow"][size='x-small']) [part='dot-b']::after,:host([data-render-mode="shadow"][size='x-small']) [part='spinner']::before,:host([data-render-mode="shadow"][size='x-small']) [part='spinner']::after,:host([data-render-mode="shadow"]) 
+.slds-spinner_x-small[part='spinner']::before,:host([data-render-mode="shadow"]) 
+.slds-spinner_x-small[part='spinner']::after,:host([data-render-mode="shadow"]) 
+.slds-spinner_x-small [part='dot-a']::before,:host([data-render-mode="shadow"]) 
+.slds-spinner_x-small [part='dot-b']::before,:host([data-render-mode="shadow"]) 
+.slds-spinner_x-small [part='dot-a']::after,:host([data-render-mode="shadow"]) 
+.slds-spinner_x-small [part='dot-b']::after {
+  width: 0.25rem;
+  height: 0.25rem;
+}
+
+:host([data-render-mode="shadow"][size='x-small']) [part='spinner']::before,:host([data-render-mode="shadow"][size='x-small']) [part='dot-a']::before,:host([data-render-mode="shadow"][size='x-small']) [part='dot-b']::before,:host([data-render-mode="shadow"]) 
+.slds-spinner_x-small[part='spinner']::before,:host([data-render-mode="shadow"]) 
+.slds-spinner_x-small [part='dot-a']::before,:host([data-render-mode="shadow"]) 
+.slds-spinner_x-small [part='dot-b']::before {
+  top: -0.125rem;
+  left: -0.125rem;
+  animation-name: dotsBounceBefore-extraSmall;
+}
+
+:host([data-render-mode="shadow"][size='x-small']) [part='spinner']::after,:host([data-render-mode="shadow"][size='x-small']) [part='dot-a']::after,:host([data-render-mode="shadow"][size='x-small']) [part='dot-b']::after,:host([data-render-mode="shadow"]) 
+.slds-spinner_x-small[part='spinner']::after,:host([data-render-mode="shadow"]) 
+.slds-spinner_x-small [part='dot-a']::after,:host([data-render-mode="shadow"]) 
+.slds-spinner_x-small [part='dot-b']::after {
+  top: -0.125rem;
+  right: -0.125rem;
+  animation-name: dotsBounceAfter-extraSmall;
+}
+
+@keyframes dotsBounceBefore-extraSmall {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  60% {
+    transform: translate3d(0, 0, 0);
+    animation-timing-function: cubic-bezier(0.55, 0.085, 0.68, 0.53);
+  }
+
+  80% {
+    transform: translate3d(-0.25rem, 0, 0);
+    animation-timing-function: cubic-bezier(0, 1.11, 0.7, 1.43);
+  }
+
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes dotsBounceAfter-extraSmall {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  60% {
+    transform: translate3d(0, 0, 0);
+    animation-timing-function: cubic-bezier(0.55, 0.085, 0.68, 0.53);
+  }
+
+  80% {
+    transform: translate3d(0.25rem, 0, 0);
+    animation-timing-function: cubic-bezier(0, 1.11, 0.7, 1.43);
+  }
+
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* end size x-small */
+
+/* xx-small */
+
+:host([data-render-mode="shadow"][size='xx-small']) [part='spinner'] {
+  width: 0.5rem;
+}
+
+:host([data-render-mode="shadow"][size='xx-small']) [part='spinner']::before,:host([data-render-mode="shadow"][size='xx-small']) [part='spinner']::after,:host([data-render-mode="shadow"][size='xx-small']) [part='dot-a']::before,:host([data-render-mode="shadow"][size='xx-small']) [part='dot-b']::before,:host([data-render-mode="shadow"][size='xx-small']) [part='dot-a']::after,:host([data-render-mode="shadow"][size='xx-small']) [part='dot-b']::after {
+  width: 0.125rem;
+  height: 0.125rem;
+}
+
+:host([data-render-mode="shadow"][size='xx-small']) [part='spinner']::before,:host([data-render-mode="shadow"][size='xx-small']) [part='dot-a']::before,:host([data-render-mode="shadow"][size='xx-small']) [part='dot-b']::before {
+  top: -0.0625rem;
+  left: -0.0625rem;
+  animation-name: dotsBounceBefore-extraExtraSmall;
+}
+
+:host([data-render-mode="shadow"][size='xx-small']) [part='spinner']::after,:host([data-render-mode="shadow"][size='xx-small']) [part='dot-a']::after,:host([data-render-mode="shadow"][size='xx-small']) [part='dot-b']::after {
+  top: -0.0625rem;
+  right: -0.0625rem;
+  animation-name: dotsBounceAfter-extraExtraSmall;
+}
+
+@keyframes dotsBounceBefore-extraExtraSmall {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  60% {
+    transform: translate3d(0, 0, 0);
+    animation-timing-function: cubic-bezier(0.275, 0.0425, 0.34, 0.265);
+  }
+
+  80% {
+    transform: translate3d(-0.125rem, 0, 0);
+    animation-timing-function: cubic-bezier(0, 0.555, 0.35, 0.715);
+  }
+
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes dotsBounceAfter-extraExtraSmall {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  60% {
+    animation-timing-function: cubic-bezier(0.275, 0.0425, 0.34, 0.265);
+    transform: translate3d(0, 0, 0);
+  }
+
+  80% {
+    animation-timing-function: cubic-bezier(0, 0.555, 0.35, 0.715);
+    transform: translate3d(0.125rem, 0, 0);
+  }
+
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* end size xx-small */
+
+:host([data-render-mode="shadow"]) [part='spinner'] {
+  position: absolute;
+  top: 50%;
+  width: 2rem;
+
+  /*! @noflip */
+  left: 50%;
+  z-index: 9050;
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+
+:host([data-render-mode="shadow"]) [part='spinner'],:host([data-render-mode="shadow"]) 
+[part='dot-a'],:host([data-render-mode="shadow"]) 
+[part='dot-b'] {
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+
+/* creates the circles */
+
+:host([data-render-mode="shadow"]) [part='dot-a'],:host([data-render-mode="shadow"]) 
+[part='dot-b'] {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+}
+
+/* stylelint-disable no-duplicate-selectors */
+
+:host([data-render-mode="shadow"]) [part='spinner']::before,:host([data-render-mode="shadow"]) 
+[part='spinner']::after,:host([data-render-mode="shadow"]) 
+[part='dot-a']::before,:host([data-render-mode="shadow"]) 
+[part='dot-b']::before,:host([data-render-mode="shadow"]) 
+[part='dot-a']::after,:host([data-render-mode="shadow"]) 
+[part='dot-b']::after {
+  content: '';
+  position: absolute;
+  background-color: var(--_slds-c-spinner-color-background, var(--slds-g-color-neutral-base-65));
+  border-radius: 50%;
+  animation-duration: 1000ms;
+  animation-iteration-count: infinite;
+  transform: translate3d(0, 0, 0);
+}
+
+:host([data-render-mode="shadow"]) [part='dot-a'] {
+  transform: rotate(60deg);
+}
+
+:host([data-render-mode="shadow"]) [part='dot-b'] {
+  transform: rotate(120deg);
+}
+
+:host([data-render-mode="shadow"]) [part='spinner']::before {
+  animation-delay: -83.3333ms;
+}
+
+:host([data-render-mode="shadow"]) [part='dot-a']::before {
+  animation-delay: 83.3333ms;
+}
+
+:host([data-render-mode="shadow"]) [part='dot-b']::before {
+  animation-delay: 250ms;
+}
+
+:host([data-render-mode="shadow"]) [part='spinner']::after {
+  animation-delay: 416.6667ms;
+}
+
+:host([data-render-mode="shadow"]) [part='dot-a']::after {
+  animation-delay: 583.3333ms;
+}
+
+:host([data-render-mode="shadow"]) [part='dot-b']::after {
+  animation-delay: 750ms;
+}
+
+:host([data-render-mode="shadow"]) [part='spinner']::after,:host([data-render-mode="shadow"]) 
+[part='spinner']::before,:host([data-render-mode="shadow"]) 
+[part='dot-a']::after,:host([data-render-mode="shadow"]) 
+[part='dot-a']::before,:host([data-render-mode="shadow"]) 
+[part='dot-b']::after,:host([data-render-mode="shadow"]) 
+[part='dot-b']::before {
+  width: 0.5rem;
+  height: 0.5rem;
+}
+
+:host([data-render-mode="shadow"]) [part='spinner']::before,:host([data-render-mode="shadow"]) 
+[part='dot-a']::before,:host([data-render-mode="shadow"]) 
+[part='dot-b']::before {
+  animation-name: dotsBounceBefore-medium;
+  top: -0.25rem;
+  left: -0.25rem;
+}
+
+:host([data-render-mode="shadow"]) [part='spinner']::after,:host([data-render-mode="shadow"]) 
+[part='dot-a']::after,:host([data-render-mode="shadow"]) 
+[part='dot-b']::after {
+  animation-name: dotsBounceAfter-medium;
+  top: -0.25rem;
+  right: -0.25rem;
+}
+
+@keyframes dotsBounceBefore-medium {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  60% {
+    transform: translate3d(0, 0, 0);
+    animation-timing-function: cubic-bezier(0.55, 0.085, 0.68, 0.53);
+  }
+
+  80% {
+    transform: translate3d(-0.5rem, 0, 0);
+    animation-timing-function: cubic-bezier(0, 1.11, 0.7, 1.43);
+  }
+
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes dotsBounceAfter-medium {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  60% {
+    transform: translate3d(0, 0, 0);
+    animation-timing-function: cubic-bezier(0.55, 0.085, 0.68, 0.53);
+  }
+
+  80% {
+    transform: translate3d(0.5rem, 0, 0);
+    animation-timing-function: cubic-bezier(0, 1.11, 0.7, 1.43);
+  }
+
+  100% {
+    transform: translateX(0);
+  }
+}

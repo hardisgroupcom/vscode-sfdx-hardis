@@ -15,8 +15,6 @@ export default class Setup extends LightningElement {
     window.sendMessageToVSCode({ type: "requestSetupInit" });
   }
 
-  disconnectedCallback() {}
-
   @api
   handleMessage(type, data) {
     console.log("Setup component received message:", type, data);
@@ -303,32 +301,33 @@ export default class Setup extends LightningElement {
     this.checks = this.checks.map((c) => {
       // derive primary display status from canonical state
       const status = c.status || "";
-      let statusIcon = c.checking ? "utility:sync" : "utility:info";
-      let cardClass = c.checking ? "status-card checking" : "status-card";
-      let iconContainerClass = c.checking
+      let statusIcon = (c.checking || c.installing) ? "utility:sync" : "utility:info";
+      let cardClass = (c.checking || c.installing) ? "status-card checking" : "status-card";
+      let iconContainerClass = (c.checking || c.installing)
         ? "status-icon-container checking"
         : "status-icon-container neutral";
-
-      switch (status) {
-        case "ok":
-          statusIcon = "utility:check";
-          cardClass = "status-card installed ok";
-          iconContainerClass = "status-icon-container success";
-          break;
-        case "outdated":
-          statusIcon = "utility:warning";
-          cardClass = "status-card installed outdated warning";
-          iconContainerClass = "status-icon-container warning";
-          break;
-        case "missing":
-          statusIcon = "utility:error";
-          cardClass = "status-card not-installed error";
-          iconContainerClass = "status-icon-container error";
-          break;
-        case "error":
-          statusIcon = "utility:ban";
-          cardClass = "status-card not-installed critical";
-          iconContainerClass = "status-icon-container critical";
+      if (!(c.checking || c.installing)) {
+        switch (status) {
+          case "ok":
+            statusIcon = "utility:check";
+            cardClass = "status-card installed ok";
+            iconContainerClass = "status-icon-container success";
+            break;
+          case "outdated":
+            statusIcon = "utility:warning";
+            cardClass = "status-card installed outdated warning";
+            iconContainerClass = "status-icon-container warning";
+            break;
+          case "missing":
+            statusIcon = "utility:error";
+            cardClass = "status-card not-installed error";
+            iconContainerClass = "status-icon-container error";
+            break;
+          case "error":
+            statusIcon = "utility:ban";
+            cardClass = "status-card not-installed critical";
+            iconContainerClass = "status-icon-container critical";
+        }
       }
 
       let buttonLabel = "ERROR: BUG IN CODE";
@@ -360,6 +359,7 @@ export default class Setup extends LightningElement {
 
       return {
         ...c,
+        isBusy: c.checking || c.installing,
         statusIcon,
         cardClass,
         iconContainerClass,
