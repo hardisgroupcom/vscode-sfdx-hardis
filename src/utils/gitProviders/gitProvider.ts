@@ -20,6 +20,44 @@ export class GitProvider {
     gitlabClient: InstanceType<typeof Gitlab> | null = null;
     gitlabProjectId: string | null = null;
 
+    /**
+     * Detect the repository remote host for the current workspace or given path.
+     * Examples: 'gitlab.com', 'github.com', 'dev.azure.com', 'bitbucket.org'
+     */
+    static async detectRepoHost(repoPath?: string): Promise<string | undefined> {
+        try {
+            const git = simpleGit(repoPath || process.cwd());
+            const remotes = await git.getRemotes(true);
+            if (!remotes || remotes.length === 0) {
+                return undefined;
+            }
+            const remoteUrl = remotes[0].refs.fetch;
+            if (!remoteUrl) {
+                return undefined;
+            }
+            // Normalize and parse common URL patterns
+            const url = remoteUrl.replace(/\.git$/i, "");
+            // SSH form: git@hostname:owner/repo.git
+            const sshMatch = url.match(/^[^@]+@([^:]+):/);
+            if (sshMatch && sshMatch[1]) {
+                return sshMatch[1];
+            }
+            // HTTP/HTTPS form: https://hostname/...
+            const httpMatch = url.match(/^https?:\/\/([^/]+)/i);
+            if (httpMatch && httpMatch[1]) {
+                return httpMatch[1];
+            }
+            // Fallback: try first segment before ':' or '/'
+            const fallbackMatch = url.match(/^([^:/]+)[:/]/);
+            if (fallbackMatch && fallbackMatch[1]) {
+                return fallbackMatch[1];
+            }
+            return undefined;
+        } catch {
+            return undefined;
+        }
+    }
+
     async initialize() {
         // Check if we have info to connect to Gitlab using Gitbeaker
         const gitlabToken = await SecretsManager.getSecret("GITLAB_TOKEN");
@@ -29,9 +67,13 @@ export class GitProvider {
             return;
         }
         const remoteUrl = remotes[0].refs.fetch;
-        if (gitlabToken && remoteUrl) {
+        const hostMatch = await GitProvider.detectRepoHost();
+        if (!hostMatch) {
+            return;
+        }
+        if (gitlabToken && hostMatch && remoteUrl) {
             this.gitlabClient = new Gitlab({
-                host: remoteUrl,
+                host: hostMatch,
                 token: gitlabToken
             });
             // Extract project Id from current git remote url

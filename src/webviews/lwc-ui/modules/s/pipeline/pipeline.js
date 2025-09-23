@@ -7,6 +7,17 @@ import "s/forceLightTheme"; // Ensure light theme is applied
 
 export default class Pipeline extends LightningElement {
   @track prButtonInfo;
+  @track showGitConnectModal = false;
+  gitProvider = "gitlab";
+  providerOptions = [
+    { label: "GitLab", value: "gitlab" },
+    { label: "GitHub", value: "github" },
+    { label: "Azure DevOps", value: "azure" },
+    { label: "Bitbucket", value: "bitbucket" },
+  ];
+  gitHost = "";
+  gitUsername = "";
+  gitToken = "";
   pipelineData;
   error;
   currentDiagram = "";
@@ -32,10 +43,64 @@ export default class Pipeline extends LightningElement {
     });
   }
 
+  openGitConnectModal() {
+    // Prefill modal with detected defaults if available
+    if (this.defaultGitProvider && !this.gitProvider) {
+      this.gitProvider = this.defaultGitProvider;
+    }
+    if (this.defaultGitHost && !this.gitHost) {
+      this.gitHost = this.defaultGitHost;
+    }
+    // If provider supports VS Code native authentication, request it instead
+    if (this.gitProvider === "github" || this.gitProvider === "azure") {
+      window.sendMessageToVSCode({ type: "requestNativeAuth", data: { provider: this.gitProvider } });
+      return;
+    }
+
+    this.showGitConnectModal = true;
+  }
+
+  handleCancelGitModal() {
+    this.showGitConnectModal = false;
+  }
+
+  handleProviderChange(event) {
+    this.gitProvider = event.detail.value;
+  }
+
+  handleHostChange(event) {
+    this.gitHost = event.target.value;
+  }
+
+  handleUsernameChange(event) {
+    this.gitUsername = event.target.value;
+  }
+
+  handleTokenChange(event) {
+    this.gitToken = event.target.value;
+  }
+
+  handleSaveGitCredentials() {
+    // Send credentials to the extension for secure storage via SecretsManager
+    window.sendMessageToVSCode({
+      type: "saveGitCredentials",
+      data: {
+        provider: this.gitProvider,
+        host: this.gitHost || undefined,
+        username: this.gitUsername || undefined,
+        token: this.gitToken || undefined,
+      },
+    });
+    this.showGitConnectModal = false;
+  }
+
   @api
   initialize(data) {
     this.pipelineData = data.pipelineData;
     this.prButtonInfo = data.prButtonInfo;
+    // Accept optional defaults for the Connect Git modal
+    this.defaultGitProvider = data.defaultGitProvider;
+    this.defaultGitHost = data.defaultGitHost;
     this.warnings = this.pipelineData.warnings || [];
     this.hasWarnings = this.warnings.length > 0;
     this.showOnlyMajor = false;
