@@ -5,6 +5,14 @@
     font-family: "Salesforce Sans", -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
+.slds-spinner_container {
+    background-color: transparent !important;
+}
+
+.spinner-wrapper .slds-spinner_container {
+  display: block !important;
+}
+
 .setup-container {
     max-width: 1200px;
     margin: 0 auto;
@@ -161,9 +169,9 @@
 .status-icon-container.success { background: linear-gradient(135deg, #04844b 0%, #037837 100%); }
 .status-icon-container.warning { background: linear-gradient(135deg, #ffb020 0%, #d97706 100%); }
 .status-icon-container.info { background: linear-gradient(135deg, #1589ee 0%, #005fb2 100%); }
-.status-icon-container.neutral { background: linear-gradient(135deg, #94a3b8 0%, #6b7280 100%); }
+.status-icon-container.neutral { background: transparent !important; }
 .status-icon-container.error { background: linear-gradient(135deg, #dc2626 0%, #9f1239 100%); }
-.status-icon-container.checking { background: linear-gradient(135deg, #94a3b8 0%, #6b7280 100%); }
+.status-icon-container.checking { background: transparent !important; }
 .status-icon-container.critical { background: linear-gradient(135deg, #dc2626 0%, #9f1239 100%); }
 
 /* Ensure lightning-icon foreground color respects our palette inside icon containers */

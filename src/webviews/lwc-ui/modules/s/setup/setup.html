@@ -26,18 +26,29 @@
                 <div class="setup-summary-card">
                     <div class="status-card summary">
                         <div class={summaryIconContainerClass}>
+                        <template if:true={summaryChecking}>
+                            <div class="slds-is-relative spinner-wrapper" style="height: 2rem;">
+                                <s-spinner 
+                                    alternative-text="Loading..." 
+                                    size="small"
+                                    variant="brand">
+                                </s-spinner>
+                            </div>
+                        </template>
+                        <template if:false={summaryChecking}>
                             <lightning-icon icon-name={summaryIconName} size="small" variant="inverse"></lightning-icon>
+                        </template>
                         </div>
                         <div class="status-content">
                             <h3 class="status-title">Dependencies status summary</h3>
                             <p class="status-description">{summaryMessage}</p>
                         </div>
                         <div class="status-actions">
-                                <template if:true={hasPendingActions}>
-                                    <template if:false={summaryChecking}>
-                                        <lightning-button variant="brand" label={runButtonLabel} onclick={runPendingInstalls} class="status-button primary" disabled={runButtonDisabled}></lightning-button>
-                                    </template>
+                            <template if:true={hasPendingActions}>
+                                <template if:false={summaryChecking}>
+                                    <lightning-button variant="brand" label={runButtonLabel} onclick={runPendingInstalls} class="status-button primary" disabled={runButtonDisabled}></lightning-button>
                                 </template>
+                            </template>
                         </div>
                     </div>
                 </div>
@@ -46,7 +57,18 @@
                         <div key={chk.id} class={chk.cardClass}>
 
                             <div class={chk.iconContainerClass}>
-                                <lightning-icon icon-name={chk.statusIcon} size="small" variant="inverse"></lightning-icon>
+                                <template if:true={chk.isBusy}>
+                                    <div class="slds-is-relative spinner-wrapper" style="height: 2rem;">
+                                        <s-spinner 
+                                            alternative-text="Loading..." 
+                                            size="small"
+                                            variant="brand">
+                                        </s-spinner>
+                                    </div>
+                                </template>
+                                <template if:false={chk.isBusy}>
+                                    <lightning-icon icon-name={chk.statusIcon} size="small" variant="inverse"></lightning-icon>
+                                </template>
                             </div>
 
                             <div class="status-content">
