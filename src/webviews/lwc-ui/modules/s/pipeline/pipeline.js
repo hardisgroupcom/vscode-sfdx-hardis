@@ -6,7 +6,10 @@ import { LightningElement, api, track } from "lwc";
 import "s/forceLightTheme"; // Ensure light theme is applied
 
 export default class Pipeline extends LightningElement {
-  @track prButtonInfo;
+  @track prButtonInfo;  
+  @track connectedLabel = "Connect to Git";
+  @track connectedIconName = "utility:connect";
+
   pipelineData;
   error;
   currentDiagram = "";
@@ -14,6 +17,7 @@ export default class Pipeline extends LightningElement {
   hasWarnings = false;
   warnings = [];
   showOnlyMajor = false;
+
 
   // Dynamically compute the icon URL for the PR button
   get prButtonIconUrl() {
@@ -42,9 +46,9 @@ export default class Pipeline extends LightningElement {
     this.currentDiagram = this.pipelineData.mermaidDiagram;
     this.error = undefined;
     this.lastDiagram = "";
-    this.connectedLabel = this.pipelineData.gitAuthenticated
-      ? "Connected"
-      : "Connect to Git";
+    this.connectedLabel = data && data.gitAuthenticated ? "Connected" : "Connect to Git";
+    this.connectedIconName = data && data.gitAuthenticated ? "utility:check" : "utility:connect";
+    // Render the Mermaid diagram after a brief delay to ensure DOM is ready
     setTimeout(() => this.renderMermaid(), 0);
     console.log("Pipeline data initialized:", this.pipelineData);
   }
@@ -188,7 +192,7 @@ export default class Pipeline extends LightningElement {
   // Added refreshPipeline method
   refreshPipeline() {
     window.sendMessageToVSCode({
-      type: "refreshpipeline",
+      type: "refreshPipeline",
       data: {},
     });
     console.log("Pipeline refresh event dispatched");

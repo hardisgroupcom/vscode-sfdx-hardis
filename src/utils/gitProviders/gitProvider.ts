@@ -50,26 +50,54 @@ export class GitProvider {
         }
         const remoteUrl = remotes[0].refs.fetch;
         // Match GitLab, GitHub, Azure DevOps, Bitbucket remote URLs
-        const urlMatch = remoteUrl.match(new RegExp('^(?:https://|git@)([^/:]+)[/:]([^/]+)/([^/.]+)(\\.git)?$'));
-        if (!urlMatch) {
-            return null;
+        // Accept nested group paths (e.g. group/subgroup/.../repo.git) and both HTTPS and SSH forms
+        // Examples:
+        //   https://gitlab.company.com/group/subgroup/repo.git
+        //   git@gitlab.company.com:group/subgroup/repo.git
+        //   https://dev.azure.company.com/org/project/_git/repo
+        let host: string;
+        let owner: string;
+        let repo: string;
+
+        // First try Azure DevOps specific pattern (handles _git path)
+        const azureMatch = remoteUrl.match(/^https:\/\/([^/]+)\/([^/]+)\/([^/]+)\/_git\/([^/]+)(?:\.git)?$/);
+        if (azureMatch) {
+            // url: https://host/org/project/_git/repo
+            host = azureMatch[1];
+            owner = azureMatch[2];
+            repo = azureMatch[4];
+        } else {
+            // Generic pattern: capture host and the full path after host
+            const genericMatch = remoteUrl.match(/^(?:https:\/\/|git@)([^/:]+)[/:](.+?)(?:\.git)?$/);
+            if (!genericMatch) {
+                return null;
+            }
+            host = genericMatch[1];
+            const fullPath = genericMatch[2];
+            const parts = fullPath.split('/').filter(Boolean);
+            if (parts.length < 2) {
+                return null;
+            }
+            repo = parts.pop() as string;
+            owner = parts.join('/');
         }
-        const host = urlMatch[1];
-        const owner = urlMatch[2];
-        const repo = urlMatch[3];
         let providerName: ProviderName | null = null;
-        if (host.includes('gitlab')) {
+        const hostLower = host.toLowerCase();
+        // Robust checks for common provider indicators (handles on-prem domains like gitlab.company.com)
+        if (/(^|\.)gitlab(\.|$)/i.test(hostLower) || hostLower.includes('gitlab')) {
             providerName = 'gitlab';
-        } else if (host.includes('github')) {
+        } else if (/(^|\.)github(\.|$)/i.test(hostLower) || hostLower.includes('github')) {
             providerName = 'github';
-        } else if (host.includes('dev.azure')) {
+        } else if (hostLower.includes('dev.azure') || hostLower.includes('visualstudio') || hostLower.includes('azure')) {
             providerName = 'azure';
-        } else if (host.includes('bitbucket')) {
+        } else if (/(^|\.)bitbucket(\.|$)/i.test(hostLower) || hostLower.includes('bitbucket')) {
             providerName = 'bitbucket';
         }
         if (!providerName) {
+            Logger.log(`detectRepoInfo: unable to map provider for host=${host} remoteUrl=${remoteUrl} owner=${owner} repo=${repo}`);
             return null;
         }
+
         return { providerName, host, owner, repo, remoteUrl };
     }
 

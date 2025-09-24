@@ -12,7 +12,7 @@ export class GitProviderGitHub extends GitProvider {
     }
 
     async authenticate(): Promise<boolean> {
-        const session = await vscode.authentication.getSession("github", ["repo"], { createIfNone: true, forceNewSession: true });
+        const session = await vscode.authentication.getSession("github", ["repo"], { forceNewSession: true });
         if (session.accessToken) {
             await this.initialize();
             return this.isActive;
@@ -45,7 +45,7 @@ export class GitProviderGitHub extends GitProvider {
         const { data: pullRequests } = await this.gitHubClient!.pulls.list({
             owner,
             repo,
-            head: `${owner}:${branchName}`,
+            base: branchName,
             per_page: 10000,
         });
         const pullRequestsConverted: PullRequest[] = pullRequests.map(pr => ({

@@ -2,7 +2,6 @@ import * as vscode from "vscode";
 import { PipelineDataProvider } from "../pipeline-data-provider";
 import { getPullRequestButtonInfo } from "../utils/gitPrButtonUtils";
 import { Logger } from "../logger";
-import { SecretsManager } from "../utils/secretsManager";
 import { GitProvider } from "../utils/gitProviders/gitProvider";
 import { LwcPanelManager } from "../lwc-panel-manager";
 import { Commands } from "../commands";
@@ -49,7 +48,7 @@ export function registerShowPipeline(commands: Commands) {
 
       panel.onMessage(async (type, data) => {
         // Refresh
-        if (type === "refreshpipeline") {
+        if (type === "refreshPipeline") {
           let authenticated = false;
           const gitProvider = await GitProvider.getInstance();
           if (gitProvider?.isActive) {
@@ -75,7 +74,15 @@ export function registerShowPipeline(commands: Commands) {
             vscode.window.showErrorMessage("No supported Git provider detected in the current repository.");
             return;
           }
-          const authRes = await gitProvider.authenticate();
+          Logger.log(`Authenticating to Git provider: ${gitProvider.repoInfo?.providerName} at ${gitProvider.repoInfo?.host}`);
+          let authRes = false;
+          try {
+            authRes = await gitProvider.authenticate();
+          } catch (e) {
+            vscode.window.showErrorMessage("Error during Git provider authentication. Please check the logs for details.");
+            Logger.log(`Error during Git provider authentication: ${String(e)}`);
+            return;
+          }
           if (authRes === true) {
             vscode.window.showInformationMessage("Successfully connected to Git provider.");
             panel.sendInitializationData({

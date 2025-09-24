@@ -3,6 +3,7 @@ import { BranchStrategyMermaidBuilder } from "./utils/pipeline/branchStrategyMer
 import { listMajorOrgs, MajorOrg } from "./utils/orgConfigUtils";
 import { getConfig } from "./utils/pipeline/sfdxHardisConfig";
 import { GitProvider } from "./utils/gitProviders/gitProvider";
+import { Logger } from "./logger";
 
 export interface OrgNode {
   name: string;
@@ -94,13 +95,22 @@ export class PipelineDataProvider {
 }
 
 async function completeOrgsWithPullRequests(orgs: MajorOrg[]): Promise<MajorOrg[]> {
+  const gitProvider = await GitProvider.getInstance();
+  if (!gitProvider || !gitProvider.isActive) {
+    return orgs;
+  }
+  const config = vscode.workspace.getConfiguration('sfdxHardis');
+  const fetchPrs = config.get<boolean>('pipeline.fetchPullRequests', true);
+  if (!fetchPrs) {
+    return orgs;
+  }
   for (const org of orgs) { 
     try {
-      const prs = await GitProvider.listPullRequestsForBranch(org.branchName);
+      const prs = await gitProvider.listPullRequestsForBranch(org.branchName);
       org.openPullRequestsAsTarget = prs.filter(pr => pr.state === 'open');
       org.mergedPullRequestsAsTarget = prs.filter(pr => pr.state === 'merged');
     } catch (error) {
-      console.error(`Error fetching PRs for branch ${org.branchName}:`, error);
+      Logger.log(`Error fetching PRs for branch ${org.branchName}: ${String(error)}`);
     }
   }
   return orgs;

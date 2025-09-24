@@ -8,7 +8,8 @@ import { Logger } from "../../logger";
 export class GitProviderGitlab extends GitProvider {
 
     gitlabClient: InstanceType<typeof Gitlab> | null = null;
-    gitlabProjectId: string | null = null;
+    gitlabProjectPath: string | null = null;
+    gitlabProjectId: number | null = null;
     secretTokenIdentifier: string = '';
 
     async authenticate(): Promise<boolean> {
@@ -27,36 +28,37 @@ export class GitProviderGitlab extends GitProvider {
 
     async initialize() {
         // Check if we have info to connect to Gitlab using Gitbeaker
+        this.isActive = false;
         this.secretTokenIdentifier = this.hostKey + '_TOKEN';
         const gitlabToken = await SecretsManager.getSecret(this.secretTokenIdentifier);
-        if (gitlabToken && this.repoInfo?.host && this.repoInfo.remoteUrl) {
+        if (gitlabToken && this.repoInfo?.host && this.repoInfo?.remoteUrl) {
+            const host = this.repoInfo.host === 'gitlab.com' ? 'https://gitlab.com' : `https://${this.repoInfo.host}`;
             this.gitlabClient = new Gitlab({
-                host: this.repoInfo.host,
+                host: host,
                 token: gitlabToken
             });
             // Extract project Id from current git remote url
             const projectPathMatch = this.repoInfo.remoteUrl.match(new RegExp('[:/]([^/:]+/[^/]+)(\\.git)?$'));
             const projectPath = projectPathMatch ? projectPathMatch[1] : null;
             if (projectPath) {
-                const projects = await this.gitlabClient.Projects.search(projectPath);
-                if (projects.length > 0) {
-                    this.gitlabProjectId = projects[0].id.toString();
-                    // validate token by calling the user endpoint
-                    try {
-                        // Gitbeaker client should be able to call a simple endpoint; use the Users API if available
-                        if (this.gitlabClient && this.gitlabClient.Users && typeof (this.gitlabClient as any).Users.current === 'function') {
-                            await (this.gitlabClient as any).Users.current();
+                try {
+                    // validate token by calling the user endpoint first
+                    const currentUser = await this.gitlabClient.Users.showCurrentUser();
+                    if (currentUser && currentUser.id) {
+                        this.gitlabProjectPath = projectPath.replace(/\.git$/, '');
+                        // Find related project Id
+                        const project = await this.gitlabClient.Projects.show(encodeURIComponent(this.gitlabProjectPath));
+                        if (project && project.id) {
+                            this.gitlabProjectId = project.id;
+                            this.isActive = true;
                         }
-                        this.isActive = true;
                     }
-                    catch {
-                        this.isActive = false;
-                    }
+                } catch (err) {
+                    Logger.log(`Gitlab access check failed: ${String(err)}`);
                 }
             }
             else {
                 Logger.log(`Could not extract GitLab project path from remote URL: ${this.repoInfo.remoteUrl}`);
-                this.isActive = false;
             }
         }
     }
