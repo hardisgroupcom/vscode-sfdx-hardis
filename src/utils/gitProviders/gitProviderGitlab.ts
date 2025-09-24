@@ -1,3 +1,4 @@
+import * as vscode from "vscode";
 import { GitProvider } from "./gitProvider";
 import { Gitlab } from "@gitbeaker/rest";
 import { PullRequest } from "./types";
@@ -9,6 +10,20 @@ export class GitProviderGitlab extends GitProvider {
     gitlabClient: InstanceType<typeof Gitlab> | null = null;
     gitlabProjectId: string | null = null;
     secretTokenIdentifier: string = '';
+
+    async authenticate(): Promise<boolean> {
+        const token = await vscode.window.showInputBox({
+            prompt: 'Enter your Gitlab PAT (Personal Access Token)',
+            ignoreFocusOut: true,
+            password: true
+        });
+        if (token) {
+            await SecretsManager.setSecret(this.secretTokenIdentifier, token);
+            await this.initialize();
+            return this.isActive;
+        }
+        return false;
+    }
 
     async initialize() {
         // Check if we have info to connect to Gitlab using Gitbeaker

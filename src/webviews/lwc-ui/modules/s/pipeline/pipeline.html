@@ -6,9 +6,9 @@
                 <lightning-button
                     icon-name="utility:connect"
                     variant="brand"
-                    label="Connect Git"
+                    label={connectedLabel}
                     title="Connect to a Git provider"
-                    onclick={openGitConnectModal}
+                    onclick={handleGitConnect}
                 ></lightning-button>
                 <span class="slds-m-left_x-small"></span>
                 <lightning-button 
@@ -110,109 +110,6 @@
         </template>
     </lightning-card>
 
-        <!-- Connect Git Provider Modal -->
-        <template if:true={showGitConnectModal}>
-            <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
-                <div class="slds-modal__container">
-                    <header class="slds-modal__header">
-                        <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick={handleCancelGitModal}>
-                            <lightning-icon icon-name="utility:close" alternative-text="close" size="small"></lightning-icon>
-                            <span class="slds-assistive-text">Close</span>
-                        </button>
-                        <h2 id="git-modal-heading" class="slds-modal__title slds-hyphenate">Connect Git Provider</h2>
-                    </header>
-                    <div class="slds-modal__content slds-p-around_medium" id="git-modal-content">
-                        <div class="slds-form-element slds-m-bottom_medium">
-                            <label class="slds-form-element__label">Provider</label>
-                            <div class="slds-form-element__control">
-                                <lightning-combobox
-                                    name="provider"
-                                    value={gitProviderSelection}
-                                    options={providerOptions}
-                                    onchange={handleProviderChange}
-                                ></lightning-combobox>
-                            </div>
-                        </div>
-
-                        <template if:false={showNativeConnect}>
-                        <template if:true={showHostInput}>
-                            <div class="slds-form-element slds-m-bottom_medium">
-                                <label class="slds-form-element__label">Host / API URL (required for self-hosted)</label>
-                                <div class="slds-form-element__control">
-                                    <lightning-input
-                                        variant="label-hidden"
-                                        type="text"
-                                        name="git-host"
-                                        placeholder="e.g. https://gitlab.example.com or https://github.example.com"
-                                        value={gitHost}
-                                        onchange={handleHostChange}
-                                    ></lightning-input>
-                                </div>
-                            </div>
-                        </template>
-
-                        <div class="slds-form-element slds-m-bottom_medium">
-                            <label class="slds-form-element__label">Username (optional)</label>
-                            <div class="slds-form-element__control">
-                                <lightning-input
-                                    variant="label-hidden"
-                                    type="text"
-                                    name="git-username"
-                                    placeholder="username"
-                                    value={gitUsername}
-                                    onchange={handleUsernameChange}
-                                ></lightning-input>
-                            </div>
-                        </div>
-
-                        <div class="slds-form-element slds-m-bottom_medium">
-                            <label class="slds-form-element__label">Token / Password</label>
-                            <div class="slds-form-element__control">
-                                <lightning-input
-                                    variant="label-hidden"
-                                    type="password"
-                                    name="git-token"
-                                    placeholder="Personal access token or password"
-                                    value={gitToken}
-                                    onchange={handleTokenChange}
-                                ></lightning-input>
-                            </div>
-                        </div>
-                        </template>
-                        <template if:true={showNativeConnect}>
-                            <div class="slds-p-around_medium slds-text-body_regular">
-                                <p>Connect using your identity provider via Visual Studio Code. Click Connect to open the native authentication flow.</p>
-                            </div>
-                        </template>
-                        <!-- Inline status message area -->
-                        <template if:true={saveMessage}>
-                            <div class="slds-m-top_small">
-                                <div class="slds-text-body_small" data-save-status>
-                                    <template if:true={isSaving}>
-                                        <lightning-spinner alternative-text="Saving" size="small"></lightning-spinner>
-                                        <span class="slds-m-left_x-small">{saveMessage}</span>
-                                    </template>
-                                    <template if:false={isSaving}>
-                                        <span class={saveMessageClass}>{saveMessage}</span>
-                                    </template>
-                                </div>
-                            </div>
-                        </template>
-                    </div>
-                    <footer class="slds-modal__footer">
-                        <lightning-button variant="neutral" label="Cancel" onclick={handleCancelGitModal} disabled={isSaving}></lightning-button>
-                        <template if:false={showNativeConnect}>
-                            <lightning-button variant="brand" label="Save" onclick={handleSaveGitCredentials} disabled={isSaving}></lightning-button>
-                        </template>
-                        <template if:true={showNativeConnect}>
-                            <lightning-button variant="brand" label="Connect" onclick={handleRequestNativeAuth} disabled={isSaving}></lightning-button>
-                        </template>
-                    </footer>
-                </div>
-            </section>
-            <div class="slds-backdrop slds-backdrop_open"></div>
-        </template>
-    
     <!-- Quick Development Actions Card - only show when pipeline data exists -->
     <template if:true={pipelineData}>
         <template if:true={pipelineData.orgs}>

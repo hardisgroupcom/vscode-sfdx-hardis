@@ -13,7 +13,17 @@ export class GitProviderBitbucket extends GitProvider {
     secretTokenIdentifier: string = '';
 
     async authenticate(): Promise<boolean> {
-        
+        const token = await vscode.window.showInputBox({
+            prompt: 'Enter your Bitbucket Token',
+            ignoreFocusOut: true,
+            password: true
+        });
+        if (token) {
+            await SecretsManager.setSecret(this.secretTokenIdentifier, token);
+            await this.initialize();
+            return this.isActive;
+        }
+        return false;
     }
 
     async initialize() {
