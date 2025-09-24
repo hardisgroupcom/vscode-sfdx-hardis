@@ -1,104 +1,102 @@
-import { SecretsManager } from "../secretsManager";
-
 import simpleGit from "simple-git";
-import { Gitlab } from "@gitbeaker/rest";
-import type { PullRequest } from "./types";
+import type { ProviderName, PullRequest, RepoInfo } from "./types";
+import { getWorkspaceRoot } from "../../utils";
+import { Logger } from "../../logger";
+import { SecretsManager } from "../secretsManager";
 
 export class GitProvider {
 
     static instance: GitProvider;
 
-    static async getInstance(): Promise<GitProvider> {
+    isActive: boolean = false;
+    repoInfo: RepoInfo | null = null;
+    hostKey: string = '';
+
+    static async getInstance(): Promise<GitProvider|null> {
         if (!this.instance) {
-            this.instance = new GitProvider();
+            const gitInfo = await GitProvider.detectRepoInfo();
+            if (!gitInfo) {
+                return null;
+            }
+            switch (gitInfo.providerName) {
+                case 'gitlab':
+                    this.instance = new (await import('./gitProviderGitlab')).GitProviderGitlab();
+                    break;
+                case 'github':
+                    this.instance = new (await import('./gitProviderGitHub')).GitProviderGitHub();
+                    break;
+                case 'azure':
+                    this.instance = new (await import('./gitProviderAzure')).GitProviderAzure();
+                    break;
+                case 'bitbucket':
+                    this.instance = new (await import('./gitProviderBitbucket')).GitProviderBitbucket();
+                    break;
+                default:
+                    return null;
+            }
+            this.instance.repoInfo = gitInfo;
+            Logger.log(`Detected git provider: ${gitInfo.providerName} (${gitInfo.host}), repo: ${gitInfo.owner}/${gitInfo.repo}`);
+            this.instance.hostKey = gitInfo.host.replace(/\./g, '_').toUpperCase();
             await this.instance.initialize();
         }
         return this.instance;
     }
 
-    isActive: boolean = false;
-    gitlabClient: InstanceType<typeof Gitlab> | null = null;
-    gitlabProjectId: string | null = null;
-
-    /**
-     * Detect the repository remote host for the current workspace or given path.
-     * Examples: 'gitlab.com', 'github.com', 'dev.azure.com', 'bitbucket.org'
-     */
-    static async detectRepoHost(repoPath?: string): Promise<string | undefined> {
-        try {
-            const git = simpleGit(repoPath || process.cwd());
-            const remotes = await git.getRemotes(true);
-            if (!remotes || remotes.length === 0) {
-                return undefined;
-            }
-            const remoteUrl = remotes[0].refs.fetch;
-            if (!remoteUrl) {
-                return undefined;
-            }
-            // Normalize and parse common URL patterns
-            const url = remoteUrl.replace(/\.git$/i, "");
-            // SSH form: git@hostname:owner/repo.git
-            const sshMatch = url.match(/^[^@]+@([^:]+):/);
-            if (sshMatch && sshMatch[1]) {
-                return sshMatch[1];
-            }
-            // HTTP/HTTPS form: https://hostname/...
-            const httpMatch = url.match(/^https?:\/\/([^/]+)/i);
-            if (httpMatch && httpMatch[1]) {
-                return httpMatch[1];
-            }
-            // Fallback: try first segment before ':' or '/'
-            const fallbackMatch = url.match(/^([^:/]+)[:/]/);
-            if (fallbackMatch && fallbackMatch[1]) {
-                return fallbackMatch[1];
-            }
-            return undefined;
-        } catch {
-            return undefined;
+    static async detectRepoInfo(): Promise<RepoInfo | null> {
+        const git = simpleGit(getWorkspaceRoot());
+        const remotes = await git.getRemotes(true);
+        if (remotes.length === 0) {
+            return null;
         }
+        const remoteUrl = remotes[0].refs.fetch;
+        // Match GitLab, GitHub, Azure DevOps, Bitbucket remote URLs
+        const urlMatch = remoteUrl.match(new RegExp('^(?:https://|git@)([^/:]+)[/:]([^/]+)/([^/.]+)(\\.git)?$'));
+        if (!urlMatch) {
+            return null;
+        }
+        const host = urlMatch[1];
+        const owner = urlMatch[2];
+        const repo = urlMatch[3];
+        let providerName: ProviderName | null = null;
+        if (host.includes('gitlab')) {
+            providerName = 'gitlab';
+        } else if (host.includes('github')) {
+            providerName = 'github';
+        } else if (host.includes('dev.azure')) {
+            providerName = 'azure';
+        } else if (host.includes('bitbucket')) {
+            providerName = 'bitbucket';
+        }
+        if (!providerName) {
+            return null;
+        }
+        return { providerName, host, owner, repo, remoteUrl };
+    }
+
+    async authenticate(): Promise<boolean> {
+        Logger.log(`authenticate not implemented on ${this.repoInfo?.providerName || 'unknown provider'}`);
+        return false;
     }
 
     async initialize() {
-        // Check if we have info to connect to Gitlab using Gitbeaker
-        const gitlabToken = await SecretsManager.getSecret("GITLAB_TOKEN");
-        const git = simpleGit();
-        const remotes = await git.getRemotes(true);
-        if (remotes.length === 0) {
-            return;
-        }
-        const remoteUrl = remotes[0].refs.fetch;
-        const hostMatch = await GitProvider.detectRepoHost();
-        if (!hostMatch) {
-            return;
-        }
-        if (gitlabToken && hostMatch && remoteUrl) {
-            this.gitlabClient = new Gitlab({
-                host: hostMatch,
-                token: gitlabToken
-            });
-            // Extract project Id from current git remote url
-            const projectPathMatch = remoteUrl.match(new RegExp('[:/]([^/:]+/[^/]+)(\\.git)?$'));
-            const projectPath = projectPathMatch ? projectPathMatch[1] : null;
-            if (projectPath) {
-                const projects = await this.gitlabClient.Projects.search(projectPath);
-                if (projects.length > 0) {
-                    this.gitlabProjectId = projects[0].id.toString();
-                    this.isActive = true;
-                }
-            }
-        }
+        Logger.log(`initialize not implemented on ${this.repoInfo?.providerName || 'unknown provider'}`);
     }
 
-    static async listPullRequestsForBranch(branchName: string): Promise<PullRequest[]> {
-        const instance = await this.getInstance();
-        if (!instance.isActive) {
-            return [];
+    async listPullRequestsForBranch(_branchName: string): Promise<PullRequest[]> {
+        Logger.log(`listPullRequestsForBranch not implemented on ${this.repoInfo?.providerName || 'unknown provider'}`);
+        return [];
+    }
+
+    handlesNativeGitAuth(): boolean {
+        return false;
+    }
+
+    async storeSecretToken(token: string): Promise<void> {
+        if (!this.isActive || this.handlesNativeGitAuth()){
+            return;
         }
-        const mergeRequests = await instance.gitlabClient!.MergeRequests.all({
-            projectId: instance.gitlabProjectId!,
-            targetBranch: branchName,
-        });
-        return mergeRequests;
+        const secretIdentifier = this.hostKey + '_TOKEN';
+        await SecretsManager.setSecret(secretIdentifier, token);
     }
 }
 

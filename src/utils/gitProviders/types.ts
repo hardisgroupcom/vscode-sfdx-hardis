@@ -1,3 +1,5 @@
+export type ProviderName = 'gitlab' | 'github' | 'azure' | 'bitbucket';
+
 /**
  * Aggregated PR/MR statuses used by the extension. Keep this small so callers
  * can switch on a predictable set of values. The provider mapping below
@@ -16,7 +18,7 @@
  * - Azure DevOps:'active' -> 'open', 'completed' -> 'merged' (or 'closed' if not merged), 'abandoned' -> 'declined'
  * - Bitbucket:   'OPEN' -> 'open', 'MERGED' -> 'merged', 'DECLINED' -> 'declined'
  */
-export type PullRequestStatus = 'open' | 'closed' | 'merged' | 'declined' | string;
+export type PullRequestStatus = 'open' | 'closed' | 'merged' | 'declined';
 
 /**
  * Unified PullRequest / MergeRequest shape used across git providers
@@ -66,7 +68,15 @@ export type PullRequest = {
 
     // Optional provider metadata bag to keep raw provider payload when needed
     provider?: {
-        name?: 'gitlab' | 'github' | 'azure' | 'bitbucket' | string;
+        name?: ProviderName; // 'gitlab' | 'github' | 'azure' | 'bitbucket'
         raw?: any; // raw provider response object
     };
 };
+
+export type RepoInfo = {
+    providerName: ProviderName;
+    host: string; // e.g. 'gitlab.com', 'github.com', 'dev.azure.com', 'bitbucket.org'
+    owner: string; // e.g. user or org name
+    repo: string; // repository name
+    remoteUrl: string
+}
