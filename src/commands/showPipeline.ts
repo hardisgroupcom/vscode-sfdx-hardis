@@ -126,9 +126,53 @@ export function registerShowPipeline(commands: Commands) {
         } else if (type === "saveGitCredentials") {
           try {
             // Store credentials securely via SecretsManager
-            const { provider, host, username, token } = data || {};
+            const { provider, host, username, token, validateHost } = data || {};
             if (!provider) {
               throw new Error("Missing provider in saveGitCredentials payload");
+            }
+            // If requested, validate host reachability before saving
+            if (validateHost && host) {
+              const isReachable = await (async function checkHost(urlStr: string) {
+                return new Promise<boolean>((resolve) => {
+                  try {
+                    let urlToTest = urlStr;
+                    if (!/^https?:\/\//i.test(urlToTest)) {
+                      urlToTest = `https://${urlToTest}`;
+                    }
+                    const url = new URL(urlToTest);
+                    const lib = url.protocol === "http:" ? require("http") : require("https");
+                    const req = lib.request(
+                      {
+                        method: "HEAD",
+                        host: url.hostname,
+                        port: url.port || (url.protocol === "https:" ? 443 : 80),
+                        path: url.pathname || "/",
+                        timeout: 4000,
+                      },
+                      (res: any) => {
+                        const ok = res.statusCode && res.statusCode < 400;
+                        resolve(!!ok);
+                      },
+                    );
+                    req.on("error", () => resolve(false));
+                    req.on("timeout", () => {
+                      try {
+                        req.destroy();
+                      } catch (e) {
+                        // ignore
+                      }
+                      resolve(false);
+                    });
+                    req.end();
+                  } catch (e) {
+                    resolve(false);
+                  }
+                });
+              })(host);
+
+              if (!isReachable) {
+                throw new Error("The provided host is unreachable or did not respond. Please check the URL and try again.");
+              }
             }
             // Determine repository path and try to detect host if not provided
             const repoPath =
