@@ -67,7 +67,7 @@ export function registerShowPipeline(commands: Commands) {
         },
         async () => {
           const pipelineDataProvider = new PipelineDataProvider();
-          const pipelineData = pipelineDataProvider.getPipelineData();
+          const pipelineData = await pipelineDataProvider.getPipelineData();
           const gitProvider = await GitProvider.getInstance();
           let openPullRequests: PullRequest[] = [];
           let gitAuthenticated = false;
@@ -76,7 +76,7 @@ export function registerShowPipeline(commands: Commands) {
             openPullRequests = await gitProvider.listOpenPullRequests();
           }
           const prButtonInfo: any = {};
-          if (gitProvider?.isActive && gitProvider.repoInfo) {
+          if (gitProvider?.repoInfo) {
             const desc = gitProvider.describeGitProvider();
             prButtonInfo.url = desc.pullRequestsWebUrl;
             prButtonInfo.label = `View ${desc.pullRequestLabel}s on ${desc.providerLabel}`;
@@ -93,7 +93,6 @@ export function registerShowPipeline(commands: Commands) {
             gitAuthenticated: gitAuthenticated,
             openPullRequests: openPullRequests
           }
-          
         });
     }
 }
