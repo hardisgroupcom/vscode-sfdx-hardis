@@ -120,6 +120,7 @@ export class GitProviderAzure extends GitProvider {
                 title: pr.title || '',
                 description: pr.description || '',
                 state: ((pr.status || '') as string).toLowerCase() as PullRequest['state'],
+                authorLabel: pr.createdBy?.displayName || pr.createdBy?.uniqueName || 'unknown',
                 webUrl: pr._links?.web?.href || pr.url || '',
                 sourceBranch: pr.sourceRefName ? pr.sourceRefName.replace(/^refs\/heads\//, '') : branchName,
                 targetBranch: pr.targetRefName ? pr.targetRefName.replace(/^refs\/heads\//, '') : ''

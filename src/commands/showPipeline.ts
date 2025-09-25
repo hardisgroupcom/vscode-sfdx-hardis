@@ -11,59 +11,18 @@ export function registerShowPipeline(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
     "vscode-sfdx-hardis.showPipeline",
     async () => {
-      // Show progress while loading config editor input
-      const pipelineData = await vscode.window.withProgress(
-        {
-          location: vscode.ProgressLocation.Notification,
-          title: "Loading pipeline information...",
-          cancellable: false,
-        },
-        async () => {
-          const pipelineDataProvider = new PipelineDataProvider();
-          return await pipelineDataProvider.getPipelineData();
-        },
-      );
-
-      let authenticated = false;
-      let openPullRequests: PullRequest[] = [];
-      const gitProvider = await GitProvider.getInstance();
-      if (gitProvider?.isActive) {
-        authenticated = true;
-      }
-
-      const prButtonInfo : any = {};
-      if (gitProvider?.isActive && gitProvider.repoInfo) {
-        const desc = gitProvider.describeGitProvider();
-        prButtonInfo.url = desc.pullRequestsWebUrl;
-        prButtonInfo.label = `View ${desc.pullRequestLabel}s on ${desc.providerLabel}`;
-        prButtonInfo.icon = gitProvider.repoInfo.providerName ;
-      } else {
-        prButtonInfo.url = '';
-        prButtonInfo.label = 'View Pull Requests';
-        prButtonInfo.icon = '';
-      }
-
+      let pipelineProperties = await loadAllPipelineInfo();
       const panel = LwcPanelManager.getInstance().getOrCreatePanel(
         "s-pipeline",
-        { pipelineData: pipelineData, prButtonInfo, gitAuthenticated: authenticated, openPullRequests: openPullRequests },
+        pipelineProperties,
       );
       panel.updateTitle("DevOps Pipeline");
 
       panel.onMessage(async (type, data) => {
         // Refresh
         if (type === "refreshPipeline") {
-          let authenticated = false;
-          const gitProvider = await GitProvider.getInstance();
-          if (gitProvider?.isActive) {
-            authenticated = true;
-          }
-          const provider = new PipelineDataProvider();
-          const newData = await provider.getPipelineData();
-          panel.sendInitializationData({
-            pipelineData: newData,
-            prButtonInfo,
-            gitAuthenticated: authenticated,
-          });
+          pipelineProperties = await loadAllPipelineInfo();
+          panel.sendInitializationData(pipelineProperties);
         } 
         // Open Package XML Panel
         else if (type === "showPackageXml") {
@@ -88,11 +47,8 @@ export function registerShowPipeline(commands: Commands) {
           }
           if (authRes === true) {
             vscode.window.showInformationMessage("Successfully connected to Git provider.");
-            panel.sendInitializationData({
-              pipelineData,
-              prButtonInfo,
-              gitAuthenticated: true,
-            });
+            pipelineProperties = await loadAllPipelineInfo();
+            panel.sendInitializationData(pipelineProperties);
           } else if (authRes === false) {
             vscode.window.showErrorMessage("Failed to connect to Git provider. Please check the logs for details.");
           }
@@ -101,4 +57,43 @@ export function registerShowPipeline(commands: Commands) {
     },
   );
   commands.disposables.push(disposable);
+
+  async function loadAllPipelineInfo(): Promise<{pipelineData: any, gitAuthenticated: boolean, prButtonInfo: any, openPullRequests: PullRequest[]}> {
+    return await vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Notification,
+          title: "Loading pipeline information...",
+          cancellable: false,
+        },
+        async () => {
+          const pipelineDataProvider = new PipelineDataProvider();
+          const pipelineData = pipelineDataProvider.getPipelineData();
+          const gitProvider = await GitProvider.getInstance();
+          let openPullRequests: PullRequest[] = [];
+          let gitAuthenticated = false;
+          if (gitProvider?.isActive) {
+            gitAuthenticated = true;
+            openPullRequests = await gitProvider.listOpenPullRequests();
+          }
+          const prButtonInfo: any = {};
+          if (gitProvider?.isActive && gitProvider.repoInfo) {
+            const desc = gitProvider.describeGitProvider();
+            prButtonInfo.url = desc.pullRequestsWebUrl;
+            prButtonInfo.label = `View ${desc.pullRequestLabel}s on ${desc.providerLabel}`;
+            prButtonInfo.icon = gitProvider.repoInfo.providerName;
+          } else {
+            prButtonInfo.url = '';
+            prButtonInfo.label = 'View Pull Requests';
+            prButtonInfo.icon = '';
+          }
+
+          return { 
+            pipelineData: pipelineData,
+            prButtonInfo: prButtonInfo,
+            gitAuthenticated: gitAuthenticated,
+            openPullRequests: openPullRequests
+          }
+          
+        });
+    }
 }

@@ -138,6 +138,7 @@ export class GitProviderGitlab extends GitProvider {
                 ? 'closed'
                 : mr.state) as PullRequest["state"],
             webUrl: String(mr.web_url),
+            authorLabel: mr.author?.username || mr.author?.name || 'unknown',
             sourceBranch: String(mr.source_branch),
             targetBranch: String(mr.target_branch),
         };

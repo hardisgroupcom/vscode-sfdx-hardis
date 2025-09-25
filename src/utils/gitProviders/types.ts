@@ -63,6 +63,8 @@ export type PullRequest = {
         email?: string; // when available
     };
 
+    authorLabel: string; // computed label for author (username or name)
+
     // Status & timestamps
     // `PullRequestStatus` lists known provider-specific state values.
     state?: PullRequestStatus;

@@ -9,6 +9,14 @@ export default class Pipeline extends LightningElement {
   @track prButtonInfo;  
   @track connectedLabel = "Connect to Git";
   @track connectedIconName = "utility:connect";
+  @track openPullRequests = [];
+  prColumns = [
+    { label: 'Number', fieldName: 'number', type: 'text' },
+    { label: 'Title', fieldName: 'webUrl', type: 'url', typeAttributes: { label: { fieldName: 'title' }, target: '_blank' } },
+    { label: 'Author', fieldName: 'authorLabel', type: 'text' },
+    { label: 'Source', fieldName: 'sourceBranch', type: 'text' },
+    { label: 'Target', fieldName: 'targetBranch', type: 'text' },
+  ];
 
   pipelineData;
   error;
@@ -48,6 +56,7 @@ export default class Pipeline extends LightningElement {
     this.lastDiagram = "";
     this.connectedLabel = data && data.gitAuthenticated ? "Connected" : "Connect to Git";
     this.connectedIconName = data && data.gitAuthenticated ? "utility:check" : "utility:connect";
+    this.openPullRequests = data.openPullRequests || [];
     // Render the Mermaid diagram after a brief delay to ensure DOM is ready
     setTimeout(() => this.renderMermaid(), 0);
     console.log("Pipeline data initialized:", this.pipelineData);

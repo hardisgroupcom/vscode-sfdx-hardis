@@ -121,6 +121,7 @@ export class GitProviderBitbucket extends GitProvider {
                 title: pr.title,
                 description: pr.description || '',
                 state: (pr.state || '').toLowerCase() as PullRequest['state'],
+                authorLabel: pr.author?.display_name || pr.author?.username || 'unknown',
                 webUrl: pr.links?.html?.href || pr.links?.self?.href || '',
                 sourceBranch: pr.source?.branch?.name || '',
                 targetBranch: pr.destination?.branch?.name || ''

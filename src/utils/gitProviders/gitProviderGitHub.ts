@@ -79,6 +79,7 @@ export class GitProviderGitHub extends GitProvider {
             title: pr.title,
             description: pr.body || '',
             state: pr.state as PullRequest["state"],
+            authorLabel: pr.user?.login || pr.user?.name || 'unknown',
             webUrl: pr.html_url,
             sourceBranch: pr.head.ref,
             targetBranch: pr.base.ref,
