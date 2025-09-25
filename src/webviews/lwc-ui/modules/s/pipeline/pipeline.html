@@ -3,6 +3,14 @@
     <lightning-card title="SFDX-Hardis DevOps Pipeline">
         <div slot="actions" class="slds-float_right">
             <lightning-button-group>
+                <lightning-button
+                    icon-name={connectedIconName}
+                    variant="brand"
+                    label={connectedLabel}
+                    title="Connect to a Git provider"
+                    onclick={handleGitConnect}
+                ></lightning-button>
+                <span class="slds-m-left_x-small"></span>
                 <lightning-button 
                     icon-name="utility:settings"
                     variant="brand" 
@@ -101,52 +109,69 @@
             <p class="slds-text-color_error">Error loading pipeline: {error}</p>
         </template>
     </lightning-card>
-    
+
     <!-- Quick Development Actions Card - only show when pipeline data exists -->
     <template if:true={pipelineData}>
         <template if:true={pipelineData.orgs}>
             <template if:true={pipelineData.orgs.length}>
                 <div class="pipeline-card-spacing">
-                    <lightning-card title="Project Contribution Workflow">
-                    <div class="commands-grid">
-                        <div class="command-card" onclick={handleNewUserStory}>
-                            <div class="command-header">
-                                <div class="command-icon-container new-story">
-                                    <lightning-icon icon-name="utility:add" size="small" variant="inverse"></lightning-icon>
+                    <lightning-card hide-header="true">
+                    <lightning-tabset class="pipeline-tabs">
+                        <lightning-tab label="Project Contribution Workflow" value="workflow">
+                            <div class="commands-grid">
+                                <div class="command-card" onclick={handleNewUserStory}>
+                                    <div class="command-header">
+                                        <div class="command-icon-container new-story">
+                                            <lightning-icon icon-name="utility:add" size="small" variant="inverse"></lightning-icon>
+                                        </div>
+                                        <h3 class="command-title">New User Story</h3>
+                                    </div>
+                                    <p class="command-description">Start a new development or configuration user story</p>
                                 </div>
-                                <h3 class="command-title">New User Story</h3>
-                            </div>
-                            <p class="command-description">Start a new development or configuration user story</p>
-                        </div>
-                        <div class="command-card" onclick={handlePullFromOrg}>
-                            <div class="command-header">
-                                <div class="command-icon-container pull-action">
-                                    <lightning-icon icon-name="utility:download" size="small" variant="inverse"></lightning-icon>
+                                <div class="command-card" onclick={handlePullFromOrg}>
+                                    <div class="command-header">
+                                        <div class="command-icon-container pull-action">
+                                            <lightning-icon icon-name="utility:download" size="small" variant="inverse"></lightning-icon>
+                                        </div>
+                                        <h3 class="command-title">Pull From Org</h3>
+                                    </div>
+                                    <p class="command-description">Download latest metadata changes from your Salesforce org to local files</p>
                                 </div>
-                                <h3 class="command-title">Pull From Org</h3>
-                            </div>
-                            <p class="command-description">Download latest metadata changes from your Salesforce org to local files</p>
-                        </div>
-                        <div class="command-card" onclick={handleShowInstalledPackages}>
-                            <div class="command-header">
-                                <div class="command-icon-container package-action">
-                                    <lightning-icon icon-name="utility:package" size="small" variant="inverse"></lightning-icon>
+                                <div class="command-card" onclick={handleShowInstalledPackages}>
+                                    <div class="command-header">
+                                        <div class="command-icon-container package-action">
+                                            <lightning-icon icon-name="utility:package" size="small" variant="inverse"></lightning-icon>
+                                        </div>
+                                        <h3 class="command-title">Manage Packages</h3>
+                                    </div>
+                                    <p class="command-description">View and manage installed packages for this project</p>
                                 </div>
-                                <h3 class="command-title">Manage Packages</h3>
-                            </div>
-                            <p class="command-description">View and manage installed packages for this project</p>
-                        </div>
-                        <div class="command-card" onclick={handleSaveUserStory}>
-                            <div class="command-header">
-                                <div class="command-icon-container save-action">
-                                    <lightning-icon icon-name="utility:upload" size="small" variant="inverse"></lightning-icon>
+                                <div class="command-card" onclick={handleSaveUserStory}>
+                                    <div class="command-header">
+                                        <div class="command-icon-container save-action">
+                                            <lightning-icon icon-name="utility:upload" size="small" variant="inverse"></lightning-icon>
+                                        </div>
+                                        <h3 class="command-title">Save / Publish</h3>
+                                    </div>
+                                    <p class="command-description">Save your work and publish changes to the remote repository</p>
                                 </div>
-                                <h3 class="command-title">Save / Publish</h3>
                             </div>
-                            <p class="command-description">Save your work and publish changes to the remote repository</p>
-                        </div>
-                    </div>
-                </lightning-card>
+                        </lightning-tab>
+                        <lightning-tab label={openPrTabLabel} value="prs">
+                                <template if:true={openPullRequests}>
+                                    <lightning-datatable
+                                        key-field="id"
+                                        data={openPullRequests}
+                                        columns={prColumns}
+                                        hide-checkbox-column
+                                    ></lightning-datatable>
+                                </template>
+                                <template if:false={openPullRequests}>
+                                    <div class="slds-p-around_medium">No pull requests available.</div>
+                                </template>
+                        </lightning-tab>
+                    </lightning-tabset>
+                    </lightning-card>
                 </div>
             </template>
         </template>

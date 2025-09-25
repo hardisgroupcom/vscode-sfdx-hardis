@@ -19,6 +19,13 @@ const extensionConfig = {
   },
   module: {
     rules: [
+      // Prevent webpack from trying to parse TypeScript declaration files
+      // which may be present in node_modules and are not valid runtime
+      // modules.
+      {
+        test: /\.d\.ts$/,
+        type: "asset/source",
+      },
       {
         test: /\.ts$/,
         exclude: /node_modules/,
@@ -48,6 +55,13 @@ const workerConfig = {
   },
   module: {
     rules: [
+      // Prevent webpack from trying to parse TypeScript declaration files
+      // which may be present in node_modules and are not valid runtime
+      // modules.
+      {
+        test: /\.d\.ts$/,
+        type: "asset/source",
+      },
       {
         test: /\.ts$/,
         exclude: /node_modules/,
@@ -69,7 +83,10 @@ const lwcWebviewConfig = {
     filename: "lwc-ui.js",
   },
   resolve: {
-    extensions: [".js", ".ts"],
+    // Only resolve JS files for the webview bundle. Resolving .ts here makes
+    // webpack attempt to load .d.ts declaration files from node_modules
+    // which are not valid modules for the web target and cause parse errors.
+    extensions: [".js"],
     modules: ["node_modules"],
     fallback: {
       process: require.resolve("process/browser"),
@@ -77,6 +94,14 @@ const lwcWebviewConfig = {
   },
   module: {
     rules: [
+      // Treat TypeScript declaration files as raw source so webpack does not
+      // attempt to parse them as JS modules. Some node modules include .d.ts
+      // files in runtime directories which can otherwise be pulled into the
+      // bundle by dynamic requires.
+      {
+        test: /\.d\.ts$/,
+        type: "asset/source",
+      },
       {
         test: /\.js$/,
         include: [

@@ -7,6 +7,22 @@ import "s/forceLightTheme"; // Ensure light theme is applied
 
 export default class Pipeline extends LightningElement {
   @track prButtonInfo;
+  @track connectedLabel = "Connect to Git";
+  @track connectedIconName = "utility:connect";
+  @track openPullRequests = [];
+  prColumns = [
+    { label: "Number", fieldName: "number", type: "text" },
+    {
+      label: "Title",
+      fieldName: "webUrl",
+      type: "url",
+      typeAttributes: { label: { fieldName: "title" }, target: "_blank" },
+    },
+    { label: "Author", fieldName: "authorLabel", type: "text" },
+    { label: "Source", fieldName: "sourceBranch", type: "text" },
+    { label: "Target", fieldName: "targetBranch", type: "text" },
+  ];
+
   pipelineData;
   error;
   currentDiagram = "";
@@ -42,8 +58,23 @@ export default class Pipeline extends LightningElement {
     this.currentDiagram = this.pipelineData.mermaidDiagram;
     this.error = undefined;
     this.lastDiagram = "";
+    this.connectedLabel =
+      data && data.gitAuthenticated ? "Connected" : "Connect to Git";
+    this.connectedIconName =
+      data && data.gitAuthenticated ? "utility:check" : "utility:connect";
+    this.openPullRequests = data.openPullRequests || [];
+    // ensure reactivity for computed label
+    this.openPullRequests = Array.isArray(this.openPullRequests)
+      ? this.openPullRequests
+      : [];
+    // Render the Mermaid diagram after a brief delay to ensure DOM is ready
     setTimeout(() => this.renderMermaid(), 0);
     console.log("Pipeline data initialized:", this.pipelineData);
+  }
+
+  get openPrTabLabel() {
+    const count = this.openPullRequests ? this.openPullRequests.length : 0;
+    return count > 0 ? `Open Pull Requests (${count})` : "Open Pull Requests";
   }
 
   openPrPage() {
@@ -185,7 +216,7 @@ export default class Pipeline extends LightningElement {
   // Added refreshPipeline method
   refreshPipeline() {
     window.sendMessageToVSCode({
-      type: "refreshpipeline",
+      type: "refreshPipeline",
       data: {},
     });
     console.log("Pipeline refresh event dispatched");
@@ -251,6 +282,13 @@ export default class Pipeline extends LightningElement {
         filePath: "manifest/destructiveChanges.xml",
         title: "Destructive Changes - Metadata to Delete",
       },
+    });
+  }
+
+  handleGitConnect() {
+    window.sendMessageToVSCode({
+      type: "connectToGit",
+      data: {},
     });
   }
 }

@@ -15,6 +15,7 @@ import { getWorkspaceRoot, preLoadCache } from "./utils";
 import { HardisColors } from "./hardis-colors";
 import { CacheManager } from "./utils/cache-manager";
 import { runSalesforceCliMcpServer } from "./utils/mcpUtils";
+import { SecretsManager } from "./utils/secretsManager";
 
 let refreshInterval: any = null;
 let reporter;
@@ -25,6 +26,8 @@ let welcomeShownThisSession = false; // Flag to track if welcome was shown this 
 export function activate(context: vscode.ExtensionContext) {
   CacheManager.init(context.globalState);
   CacheManager.clearExpired();
+  SecretsManager.init(context);
+
   new Logger(vscode.window);
   console.time("Hardis_Activate");
   const timeInit = Date.now();
