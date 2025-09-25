@@ -1,5 +1,5 @@
 import simpleGit from "simple-git";
-import type { ProviderName, PullRequest, RepoInfo } from "./types";
+import type { ProviderDescription, ProviderName, PullRequest, RepoInfo } from "./types";
 import { getWorkspaceRoot } from "../../utils";
 import { Logger } from "../../logger";
 import { SecretsManager } from "../secretsManager";
@@ -70,13 +70,13 @@ export class GitProvider {
             // Generic pattern: capture host and the full path after host
             const genericMatch = remoteUrl.match(/^(?:https:\/\/|git@)([^/:]+)[/:](.+?)(?:\.git)?$/);
             if (!genericMatch) {
-                return null;
+            return null;
             }
             host = genericMatch[1];
             const fullPath = genericMatch[2];
             const parts = fullPath.split('/').filter(Boolean);
             if (parts.length < 2) {
-                return null;
+            return null;
             }
             repo = parts.pop() as string;
             owner = parts.join('/');
@@ -98,7 +98,44 @@ export class GitProvider {
             return null;
         }
 
-        return { providerName, host, owner, repo, remoteUrl };
+        // Compute webUrl for repo homepage
+        let webUrl = '';
+        switch (providerName) {
+                case 'github': {
+                // https://github.com/owner/repo
+                webUrl = `https://${host}/${owner}/${repo}`;
+                break;
+            }
+            case 'gitlab': {
+                // https://gitlab.company.com/group/subgroup/repo
+                webUrl = `https://${host}/${owner}/${repo}`;
+                break;
+            }
+            case 'bitbucket': {
+                // https://bitbucket.org/owner/repo
+                webUrl = `https://${host}/${owner}/${repo}`;
+                break;
+            }
+            case 'azure': {
+                // Azure DevOps: https://dev.azure.com/org/project/_git/repo
+                // But homepage is usually https://dev.azure.com/org/project/_git/repo
+                webUrl = `https://${host}/${owner}/${azureMatch ? azureMatch[3] + '/_git/' + repo : '_git/' + repo}`;
+                break;
+            }
+            default: {
+                webUrl = remoteUrl.replace(/\.git$/, '').replace(/^git@/, 'https://').replace(':', '/');
+            }
+        }
+        return { providerName, host, owner, repo, remoteUrl, webUrl };
+    }
+
+    describeGitProvider(): ProviderDescription {
+        Logger.log(`describeGitProvider not implemented on ${this.repoInfo?.providerName || 'unknown provider'}`);
+        return {
+            providerLabel: "",
+            pullRequestLabel: ',',
+            pullRequestsWebUrl: ''
+        };
     }
 
     async authenticate(): Promise<boolean> {

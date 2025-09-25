@@ -1,5 +1,11 @@
 export type ProviderName = 'gitlab' | 'github' | 'azure' | 'bitbucket';
 
+export type ProviderDescription = {
+    providerLabel: string; // e.g. 'GitLab', 'GitHub', 'Azure DevOps', 'Bitbucket'
+    pullRequestLabel: string; // e.g. 'Merge Request' (GitLab), 'Pull Request' (GitHub, Azure, Bitbucket)
+    pullRequestsWebUrl: string; //  URL to the PR list page in the provider web UI
+};
+
 /**
  * Aggregated PR/MR statuses used by the extension. Keep this small so callers
  * can switch on a predictable set of values. The provider mapping below
@@ -78,5 +84,6 @@ export type RepoInfo = {
     host: string; // e.g. 'gitlab.com', 'github.com', 'dev.azure.com', 'bitbucket.org'
     owner: string; // e.g. user or org name
     repo: string; // repository name
-    remoteUrl: string
+    remoteUrl: string // Git remote URL
+    webUrl: string; // Base web URL to the repository in the provider UI, when available
 }

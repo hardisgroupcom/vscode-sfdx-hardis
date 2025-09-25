@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { GitProvider } from "./gitProvider";
 import { Gitlab } from "@gitbeaker/rest";
-import { PullRequest } from "./types";
+import { ProviderDescription, PullRequest } from "./types";
 import { SecretsManager } from "../secretsManager";
 import { Logger } from "../../logger";
 
@@ -24,6 +24,14 @@ export class GitProviderGitlab extends GitProvider {
             return this.isActive;
         }
         return false;
+    }
+
+    describeGitProvider(): ProviderDescription {
+        return {
+            providerLabel: "GitLab",
+            pullRequestLabel: 'Merge Request',
+            pullRequestsWebUrl: this.repoInfo?.webUrl ? `${this.repoInfo.webUrl}/-/merge_requests` : '',
+        };
     }
 
     async initialize() {
@@ -88,6 +96,10 @@ export class GitProviderGitlab extends GitProvider {
                 Logger.log(`Could not extract GitLab project path from remote URL: ${this.repoInfo.remoteUrl}`);
             }
         }
+    }
+
+    getNameForPullRequest(): string {
+        return 'Merge Request';
     }
 
     async listPullRequestsForBranch(branchName: string): Promise<PullRequest[]> {

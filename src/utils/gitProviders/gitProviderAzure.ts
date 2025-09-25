@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { GitProvider } from "./gitProvider";
-import { PullRequest } from "./types";
+import { ProviderDescription, PullRequest } from "./types";
 import * as azdev from 'azure-devops-node-api';
 import { GitApi } from 'azure-devops-node-api/GitApi';
 
@@ -8,6 +8,14 @@ export class GitProviderAzure extends GitProvider {
 
     connection: azdev.WebApi | null = null;
     gitApi: GitApi | null = null;
+
+    describeGitProvider(): ProviderDescription {
+        return {
+            providerLabel: "Azure DevOps",
+            pullRequestLabel: 'Pull Request',
+            pullRequestsWebUrl: this.repoInfo?.webUrl ? `${this.repoInfo.webUrl}/pullrequests` : '',
+        };
+    }
 
     handlesNativeGitAuth(): boolean {
         return true;

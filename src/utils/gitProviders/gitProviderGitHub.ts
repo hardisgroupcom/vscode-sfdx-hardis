@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { GitProvider } from "./gitProvider";
 import { Octokit } from "@octokit/rest";
-import { PullRequest } from "./types";
+import { ProviderDescription, PullRequest } from "./types";
 
 export class GitProviderGitHub extends GitProvider {
 
@@ -9,6 +9,14 @@ export class GitProviderGitHub extends GitProvider {
 
     handlesNativeGitAuth(): boolean {
         return true;
+    }
+
+    describeGitProvider(): ProviderDescription {
+        return {
+            providerLabel: "GitHub",
+            pullRequestLabel: 'Pull Request',
+            pullRequestsWebUrl: this.repoInfo?.webUrl ? `${this.repoInfo.webUrl}/pulls` : '',
+        };
     }
 
     async authenticate(): Promise<boolean> {

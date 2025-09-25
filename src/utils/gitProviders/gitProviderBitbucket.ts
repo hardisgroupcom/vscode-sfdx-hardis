@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { GitProvider } from "./gitProvider";
 import { Bitbucket } from 'bitbucket';
-import { PullRequest } from "./types";
+import { ProviderDescription, PullRequest } from "./types";
 import { SecretsManager } from "../secretsManager";
 import { Logger } from "../../logger";
 
@@ -11,6 +11,14 @@ export class GitProviderBitbucket extends GitProvider {
     workspace: string | null = null;
     repoSlug: string | null = null;
     secretTokenIdentifier: string = '';
+
+    describeGitProvider(): ProviderDescription {
+        return {
+            providerLabel: "Bitbucket",
+            pullRequestLabel: 'Pull Request',
+            pullRequestsWebUrl: this.repoInfo?.webUrl ? `${this.repoInfo.webUrl}/pull-requests` : '',
+        };
+    }
 
     async authenticate(): Promise<boolean> {
         const token = await vscode.window.showInputBox({
