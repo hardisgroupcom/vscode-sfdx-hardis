@@ -1,12 +1,11 @@
 import * as vscode from "vscode";
 import { PipelineDataProvider } from "../pipeline-data-provider";
-import { getPullRequestButtonInfo } from "../utils/gitPrButtonUtils";
 import { Logger } from "../logger";
 import { GitProvider } from "../utils/gitProviders/gitProvider";
 import { LwcPanelManager } from "../lwc-panel-manager";
 import { Commands } from "../commands";
 import { showPackageXmlPanel } from "./packageXml";
-import { getWorkspaceRoot } from "../utils";
+import { PullRequest } from "../utils/gitProviders/types";
 
 export function registerShowPipeline(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
@@ -25,24 +24,28 @@ export function registerShowPipeline(commands: Commands) {
         },
       );
 
-      // Calculate PR button info using utility
-      const repoPath = getWorkspaceRoot();
-      let prButtonInfo = null;
-      try {
-        prButtonInfo = await getPullRequestButtonInfo(repoPath);
-      } catch (e) {
-        Logger.log("Error getting PR button info:\n" + JSON.stringify(e));
-      }
-
       let authenticated = false;
+      let openPullRequests: PullRequest[] = [];
       const gitProvider = await GitProvider.getInstance();
       if (gitProvider?.isActive) {
         authenticated = true;
       }
 
+      const prButtonInfo : any = {};
+      if (gitProvider?.isActive && gitProvider.repoInfo) {
+        const desc = gitProvider.describeGitProvider();
+        prButtonInfo.url = desc.pullRequestsWebUrl;
+        prButtonInfo.label = `View ${desc.pullRequestLabel}s on ${desc.providerLabel}`;
+        prButtonInfo.icon = gitProvider.repoInfo.providerName ;
+      } else {
+        prButtonInfo.url = '';
+        prButtonInfo.label = 'View Pull Requests';
+        prButtonInfo.icon = '';
+      }
+
       const panel = LwcPanelManager.getInstance().getOrCreatePanel(
         "s-pipeline",
-        { pipelineData: pipelineData, prButtonInfo, gitAuthenticated: authenticated },
+        { pipelineData: pipelineData, prButtonInfo, gitAuthenticated: authenticated, openPullRequests: openPullRequests },
       );
       panel.updateTitle("DevOps Pipeline");
 

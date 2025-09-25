@@ -48,6 +48,18 @@ export class GitProviderGitHub extends GitProvider {
         }
     }
 
+    async listOpenPullRequests(): Promise<PullRequest[]> {
+        const [owner, repo] = [this.repoInfo!.owner, this.repoInfo!.repo];
+        const { data: pullRequests } = await this.gitHubClient!.pulls.list({
+            owner,
+            repo,
+            state: 'open',
+            per_page: 10000,
+        });
+        const pullRequestsConverted: PullRequest[] = pullRequests.map(pr => this.convertToPullRequest(pr));
+        return pullRequestsConverted;
+    }
+
     async listPullRequestsForBranch(branchName: string): Promise<PullRequest[]> {
         const [owner, repo] = [this.repoInfo!.owner, this.repoInfo!.repo];
         const { data: pullRequests } = await this.gitHubClient!.pulls.list({
@@ -56,7 +68,12 @@ export class GitProviderGitHub extends GitProvider {
             base: branchName,
             per_page: 10000,
         });
-        const pullRequestsConverted: PullRequest[] = pullRequests.map(pr => ({
+        const pullRequestsConverted: PullRequest[] = pullRequests.map(pr => this.convertToPullRequest(pr));
+        return pullRequestsConverted;
+    }
+
+    convertToPullRequest(pr: any): PullRequest {
+        return {
             id: pr.id,
             number: pr.number,
             title: pr.title,
@@ -65,8 +82,7 @@ export class GitProviderGitHub extends GitProvider {
             webUrl: pr.html_url,
             sourceBranch: pr.head.ref,
             targetBranch: pr.base.ref,
-        }));
-        return pullRequestsConverted;
+        }
     }
 
 }

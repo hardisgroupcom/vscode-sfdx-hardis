@@ -102,12 +102,29 @@ export class GitProviderGitlab extends GitProvider {
         return 'Merge Request';
     }
 
+    async listOpenPullRequests(): Promise<PullRequest[]> {
+        if (!this.gitlabClient || !this.gitlabProjectId) {
+            return [];
+        }
+        const mergeRequests = await this.gitlabClient!.MergeRequests.all({
+            projectId: this.gitlabProjectId!,
+            state: 'opened',
+        });
+        const pullRequestsConverted: PullRequest[] = mergeRequests.map(mr => this.convertToPullRequest(mr));
+        return pullRequestsConverted;
+    }
+
     async listPullRequestsForBranch(branchName: string): Promise<PullRequest[]> {
         const mergeRequests = await this.gitlabClient!.MergeRequests.all({
             projectId: this.gitlabProjectId!,
             targetBranch: branchName,
         });
-        const pullRequestsConverted: PullRequest[] = mergeRequests.map(mr => ({
+        const pullRequestsConverted: PullRequest[] = mergeRequests.map(mr => this.convertToPullRequest(mr));
+        return pullRequestsConverted;
+    }
+
+    convertToPullRequest(mr: any): PullRequest {
+        return {
             id: mr.id,
             number: mr.iid,
             title: mr.title,
@@ -123,8 +140,7 @@ export class GitProviderGitlab extends GitProvider {
             webUrl: String(mr.web_url),
             sourceBranch: String(mr.source_branch),
             targetBranch: String(mr.target_branch),
-        }));
-        return pullRequestsConverted;
+        };
     }
 
 }

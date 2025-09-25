@@ -3,6 +3,7 @@ import { GitProvider } from "./gitProvider";
 import { ProviderDescription, PullRequest } from "./types";
 import * as azdev from 'azure-devops-node-api';
 import { GitApi } from 'azure-devops-node-api/GitApi';
+import { PullRequestStatus } from "azure-devops-node-api/interfaces/GitInterfaces";
 
 export class GitProviderAzure extends GitProvider {
 
@@ -78,6 +79,22 @@ export class GitProviderAzure extends GitProvider {
         return `https://${host}`;
     }
 
+    async listOpenPullRequests(): Promise<PullRequest[]> {
+        if (!this.repoInfo || !this.gitApi) {
+            return [];
+        }
+        const repoIdOrName = this.repoInfo.repo;
+        const project = this.repoInfo.owner; // best-effort: owner treated as project/organization
+        try {
+            const prSearch = await this.gitApi.getPullRequests(repoIdOrName, { status: PullRequestStatus.Active }, project);
+            const converted: PullRequest[] = (prSearch || []).map(pr => this.convertToPullRequest(pr,''));
+            return converted;
+        }
+        catch {
+            return [];
+        }
+    }
+
     async listPullRequestsForBranch(branchName: string): Promise<PullRequest[]> {
         if (!this.repoInfo || !this.gitApi) {
             return [];
@@ -88,7 +105,16 @@ export class GitProviderAzure extends GitProvider {
 
         try {
             const prSearch = await this.gitApi.getPullRequests(repoIdOrName, { sourceRefName: `refs/heads/${branchName}` }, project);
-            const converted: PullRequest[] = (prSearch || []).map(pr => ({
+            const converted: PullRequest[] = (prSearch || []).map(pr => this.convertToPullRequest(pr,branchName));
+            return converted;
+        }
+        catch {
+            return [];
+        }
+    }
+
+    convertToPullRequest(pr: any,branchName: string): PullRequest {
+        return {
                 id: pr.pullRequestId || (pr as any).id,
                 number: pr.pullRequestId || (pr as any).id,
                 title: pr.title || '',
@@ -97,12 +123,8 @@ export class GitProviderAzure extends GitProvider {
                 webUrl: pr._links?.web?.href || pr.url || '',
                 sourceBranch: pr.sourceRefName ? pr.sourceRefName.replace(/^refs\/heads\//, '') : branchName,
                 targetBranch: pr.targetRefName ? pr.targetRefName.replace(/^refs\/heads\//, '') : ''
-            }));
-            return converted;
-        }
-        catch {
-            return [];
-        }
+            }
     }
+
 
 }

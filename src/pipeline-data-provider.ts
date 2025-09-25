@@ -2,8 +2,8 @@ import * as vscode from "vscode";
 import { BranchStrategyMermaidBuilder } from "./utils/pipeline/branchStrategyMermaidBuilder";
 import { listMajorOrgs, MajorOrg } from "./utils/orgConfigUtils";
 import { getConfig } from "./utils/pipeline/sfdxHardisConfig";
-import { GitProvider } from "./utils/gitProviders/gitProvider";
-import { Logger } from "./logger";
+// import { GitProvider } from "./utils/gitProviders/gitProvider";
+// import { Logger } from "./logger";
 
 export interface OrgNode {
   name: string;
@@ -33,7 +33,7 @@ export class PipelineDataProvider {
   public async getPipelineData(): Promise<PipelineData> {
     try {
       let majorOrgs: MajorOrg[] = await listMajorOrgs();
-      majorOrgs = await completeOrgsWithPullRequests(majorOrgs);
+      // majorOrgs = await completeOrgsWithPullRequests(majorOrgs);
       const mermaidBuilder = new BranchStrategyMermaidBuilder(majorOrgs);
       const mermaidDiagram = mermaidBuilder.build({
         format: "string",
@@ -94,24 +94,24 @@ export class PipelineDataProvider {
   }
 }
 
-async function completeOrgsWithPullRequests(orgs: MajorOrg[]): Promise<MajorOrg[]> {
-  const gitProvider = await GitProvider.getInstance();
-  if (!gitProvider || !gitProvider.isActive) {
-    return orgs;
-  }
-  const config = vscode.workspace.getConfiguration('sfdxHardis');
-  const fetchPrs = config.get<boolean>('pipeline.fetchPullRequests', true);
-  if (!fetchPrs) {
-    return orgs;
-  }
-  for (const org of orgs) { 
-    try {
-      const prs = await gitProvider.listPullRequestsForBranch(org.branchName);
-      org.openPullRequestsAsTarget = prs.filter(pr => pr.state === 'open');
-      org.mergedPullRequestsAsTarget = prs.filter(pr => pr.state === 'merged');
-    } catch (error) {
-      Logger.log(`Error fetching PRs for branch ${org.branchName}: ${String(error)}`);
-    }
-  }
-  return orgs;
-}
+// async function completeOrgsWithPullRequests(orgs: MajorOrg[]): Promise<MajorOrg[]> {
+//   const gitProvider = await GitProvider.getInstance();
+//   if (!gitProvider || !gitProvider.isActive) {
+//     return orgs;
+//   }
+//   const config = vscode.workspace.getConfiguration('sfdxHardis');
+//   const fetchPrs = config.get<boolean>('pipeline.fetchPullRequests', true);
+//   if (!fetchPrs) {
+//     return orgs;
+//   }
+//   for (const org of orgs) { 
+//     try {
+//       const prs = await gitProvider.listPullRequestsForBranch(org.branchName);
+//       org.openPullRequestsAsTarget = prs.filter(pr => pr.state === 'open');
+//       org.mergedPullRequestsAsTarget = prs.filter(pr => pr.state === 'merged');
+//     } catch (error) {
+//       Logger.log(`Error fetching PRs for branch ${org.branchName}: ${String(error)}`);
+//     }
+//   }
+//   return orgs;
+// }

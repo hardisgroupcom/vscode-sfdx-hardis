@@ -147,6 +147,11 @@ export class GitProvider {
         Logger.log(`initialize not implemented on ${this.repoInfo?.providerName || 'unknown provider'}`);
     }
 
+    async listOpenPullRequests(): Promise<PullRequest[]> {
+        Logger.log(`listOpenPullRequests not implemented on ${this.repoInfo?.providerName || 'unknown provider'}`);
+        return [];
+    }
+
     async listPullRequestsForBranch(_branchName: string): Promise<PullRequest[]> {
         Logger.log(`listPullRequestsForBranch not implemented on ${this.repoInfo?.providerName || 'unknown provider'}`);
         return [];

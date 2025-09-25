@@ -73,6 +73,25 @@ export class GitProviderBitbucket extends GitProvider {
         }
     }
 
+    async listOpenPullRequests(): Promise<PullRequest[]> {
+        if (!this.bitbucketClient || !this.workspace || !this.repoSlug) {
+            return [];
+        }
+        try {
+            // Bitbucket Cloud API: GET /repositories/{workspace}/{repo_slug}/pullrequests
+            const response = await this.bitbucketClient.pullrequests.list({
+                workspace: this.workspace,
+                repo_slug: this.repoSlug
+            } as any);
+            const values = (response && response.data && response.data.values) ? response.data.values : [];
+            const converted: PullRequest[] = values.map((pr: any) => this.convertToPullRequest(pr));
+            return converted;
+        }   catch (err) {
+            Logger.log(`Error fetching Bitbucket pull requests: ${String(err)}`);
+            return [];
+        }
+    }
+
     async listPullRequestsForBranch(branchName: string): Promise<PullRequest[]> {
         if (!this.bitbucketClient || !this.workspace || !this.repoSlug) {
             return [];
@@ -86,7 +105,17 @@ export class GitProviderBitbucket extends GitProvider {
             } as any);
 
             const values = (response && response.data && response.data.values) ? response.data.values : [];
-            const converted: PullRequest[] = values.map((pr: any) => ({
+            const converted: PullRequest[] = values.map((pr: any) => this.convertToPullRequest(pr));
+            return converted;
+        }
+        catch (err) {
+            Logger.log(`Error fetching Bitbucket pull requests: ${String(err)}`);
+            return [];
+        }
+    }
+
+    convertToPullRequest(pr: any): PullRequest {
+        return {
                 id: pr.id,
                 number: pr.id,
                 title: pr.title,
@@ -95,13 +124,7 @@ export class GitProviderBitbucket extends GitProvider {
                 webUrl: pr.links?.html?.href || pr.links?.self?.href || '',
                 sourceBranch: pr.source?.branch?.name || '',
                 targetBranch: pr.destination?.branch?.name || ''
-            }));
-            return converted;
+            }
         }
-        catch (err) {
-            Logger.log(`Error fetching Bitbucket pull requests: ${String(err)}`);
-            return [];
-        }
-    }
 
 }
