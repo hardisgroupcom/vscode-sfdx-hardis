@@ -18,6 +18,7 @@
     "**/*.css",
     "**/*.xml",
     "**/pipelineConfig.js",
-    "**/sfdxHardisConfig.ts"
+    "**/sfdxHardisConfig.ts",
+    "**/src/utils/gitProviders/**"
   ]
 }

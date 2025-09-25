@@ -13,6 +13,8 @@ export interface MajorOrg {
   level: number;
   instanceUrl: string;
   warnings: string[];
+  openPullRequestsAsTarget?: any[];
+  mergedPullRequestsAsTarget?: any[];
 }
 
 export async function listMajorOrgs(): Promise<MajorOrg[]> {
@@ -59,12 +61,12 @@ export async function listMajorOrgs(): Promise<MajorOrg[]> {
     const warnings: string[] = [];
     if (
       !(Array.isArray(props.mergeTargets) && props.mergeTargets.length > 0) &&
-      orgType !== "prod"
+      orgType !== "prod" && !branchName.includes("training")
     ) {
       const exampleMergeTarget =
         mergeTargets.length > 0 ? mergeTargets[0] : "preprod";
       warnings.push(
-        `No merge target defined for branch '${branchName}'. Consider adding 'mergeTargets' in ${configFile} config file. (Ex: mergeTargets: ["${exampleMergeTarget}"])`,
+        `No merge target defined for branch ${branchName}. Consider adding one in Pipeline Settings -> select ${branchName} and set merge target in 'Deployment' tab. (Ex: ${exampleMergeTarget})`,
       );
     }
 
@@ -72,7 +74,7 @@ export async function listMajorOrgs(): Promise<MajorOrg[]> {
     const certKeyFile = `config/branches/.jwt/${branchName}.key`;
     if (!fs.existsSync(path.join(workspaceRoot, certKeyFile))) {
       warnings.push(
-        `No encrypted certificate key file found for branch '${branchName}' (expected: ${certKeyFile}). You should configure the org authentication again.`,
+        `No encrypted certificate key file found for branch '${branchName}' (expected: ${certKeyFile}). You should configure the org authentication again (use "Add new org")`,
       );
     }
 
