@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [6.9.0] 2024-09-25
+
+- Connect to Git provider to display the list of open Pull Requests
+
 ## [6.8.1] 2024-09-23
 
 - Display spinner when checking or installing dependencies
