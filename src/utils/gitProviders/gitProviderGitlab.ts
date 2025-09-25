@@ -34,24 +34,51 @@ export class GitProviderGitlab extends GitProvider {
         if (gitlabToken && this.repoInfo?.host && this.repoInfo?.remoteUrl) {
             const host = this.repoInfo.host === 'gitlab.com' ? 'https://gitlab.com' : `https://${this.repoInfo.host}`;
             this.gitlabClient = new Gitlab({
-                host: host,
+                host: host ,
                 token: gitlabToken
             });
-            // Extract project Id from current git remote url
-            const projectPathMatch = this.repoInfo.remoteUrl.match(new RegExp('[:/]([^/:]+/[^/]+)(\\.git)?$'));
-            const projectPath = projectPathMatch ? projectPathMatch[1] : null;
-            if (projectPath) {
+            // Extract project path from current git remote url, supporting nested groups
+            // Examples:
+            // - https://gitlab.com/group/project.git => group/project
+            // - git@gitlab.com:group/project.git => group/project
+            // - https://gitlab.hardis-group.com/busalesforce/hardis-group-interne/hardis-sfdx-official => busalesforce/hardis-group-interne/hardis-sfdx-official
+            // - git@gitlab.hardis-group.com:busalesforce/hardis-group-interne/hardis-sfdx-official.git => busalesforce/hardis-group-interne/hardis-sfdx-official
+
+            const remoteUrl = this.repoInfo.remoteUrl;
+
+            // Match both SSH and HTTPS, with or without .git, and support nested groups
+            // SSH: git@gitlab.com:group/subgroup/project.git
+            // HTTPS: https://gitlab.com/group/subgroup/project.git
+            // HTTPS (no .git): https://gitlab.hardis-group.com/busalesforce/hardis-group-interne/hardis-sfdx-official
+            const sshMatch = remoteUrl.match(/^git@[^:]+:([^ ]+?)(\.git)?$/);
+            const httpsMatch = remoteUrl.match(/^https?:\/\/[^/]+\/(.+?)(\.git)?$/);
+
+            if (sshMatch && sshMatch[1]) {
+                this.gitlabProjectPath = sshMatch[1];
+            }
+            else if (httpsMatch && httpsMatch[1]) {
+                this.gitlabProjectPath = httpsMatch[1];
+            }
+            else {
+                this.gitlabProjectPath = null;
+            }
+            if (this.gitlabProjectPath) {
                 try {
                     // validate token by calling the user endpoint first
                     const currentUser = await this.gitlabClient.Users.showCurrentUser();
                     if (currentUser && currentUser.id) {
-                        this.gitlabProjectPath = projectPath.replace(/\.git$/, '');
                         // Find related project Id
-                        const project = await this.gitlabClient.Projects.show(encodeURIComponent(this.gitlabProjectPath));
+                        const project = await this.gitlabClient.Projects.show(this.gitlabProjectPath);
                         if (project && project.id) {
                             this.gitlabProjectId = project.id;
                             this.isActive = true;
                         }
+                        else {
+                            Logger.log(`Could not find Gitlab project for path: ${this.gitlabProjectPath}`);
+                        }
+                    }
+                    else {
+                        Logger.log(`Gitlab authentication failed: could not fetch current user with provided token.`);
                     }
                 } catch (err) {
                     Logger.log(`Gitlab access check failed: ${String(err)}`);
