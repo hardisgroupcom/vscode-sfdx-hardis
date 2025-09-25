@@ -57,9 +57,16 @@ export default class Pipeline extends LightningElement {
     this.connectedLabel = data && data.gitAuthenticated ? "Connected" : "Connect to Git";
     this.connectedIconName = data && data.gitAuthenticated ? "utility:check" : "utility:connect";
     this.openPullRequests = data.openPullRequests || [];
+  // ensure reactivity for computed label
+  this.openPullRequests = Array.isArray(this.openPullRequests) ? this.openPullRequests : [];
     // Render the Mermaid diagram after a brief delay to ensure DOM is ready
     setTimeout(() => this.renderMermaid(), 0);
     console.log("Pipeline data initialized:", this.pipelineData);
+  }
+
+  get openPrTabLabel() {
+    const count = this.openPullRequests ? this.openPullRequests.length : 0;
+    return count > 0 ? `Open Pull Requests (${count})` : 'Open Pull Requests';
   }
 
   openPrPage() {

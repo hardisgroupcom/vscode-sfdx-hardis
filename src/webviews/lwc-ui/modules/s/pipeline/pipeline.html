@@ -157,7 +157,7 @@
                                 </div>
                             </div>
                         </lightning-tab>
-                        <lightning-tab label="Open Pull Requests" value="prs">
+                        <lightning-tab label={openPrTabLabel} value="prs">
                                 <template if:true={openPullRequests}>
                                     <lightning-datatable
                                         key-field="id"
