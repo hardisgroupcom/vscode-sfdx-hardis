@@ -23,34 +23,46 @@ export function registerShowPipeline(commands: Commands) {
         if (type === "refreshPipeline") {
           pipelineProperties = await loadAllPipelineInfo();
           panel.sendInitializationData(pipelineProperties);
-        } 
+        }
         // Open Package XML Panel
         else if (type === "showPackageXml") {
           // Handle package XML display requests from pipeline
           await showPackageXmlPanel(data);
-        } 
+        }
         // Authenticate or re-authenticate to Git provider
         else if (type === "connectToGit") {
           const gitProvider = await GitProvider.getInstance();
           if (!gitProvider) {
-            vscode.window.showErrorMessage("No supported Git provider detected in the current repository.");
+            vscode.window.showErrorMessage(
+              "No supported Git provider detected in the current repository.",
+            );
             return;
           }
-          Logger.log(`Authenticating to Git provider: ${gitProvider.repoInfo?.providerName} at ${gitProvider.repoInfo?.host}`);
+          Logger.log(
+            `Authenticating to Git provider: ${gitProvider.repoInfo?.providerName} at ${gitProvider.repoInfo?.host}`,
+          );
           let authRes = false;
           try {
             authRes = await gitProvider.authenticate();
           } catch (e) {
-            vscode.window.showErrorMessage("Error during Git provider authentication. Please check the logs for details.");
-            Logger.log(`Error during Git provider authentication: ${String(e)}`);
+            vscode.window.showErrorMessage(
+              "Error during Git provider authentication. Please check the logs for details.",
+            );
+            Logger.log(
+              `Error during Git provider authentication: ${String(e)}`,
+            );
             return;
           }
           if (authRes === true) {
-            vscode.window.showInformationMessage("Successfully connected to Git provider.");
+            vscode.window.showInformationMessage(
+              "Successfully connected to Git provider.",
+            );
             pipelineProperties = await loadAllPipelineInfo();
             panel.sendInitializationData(pipelineProperties);
           } else if (authRes === false) {
-            vscode.window.showErrorMessage("Failed to connect to Git provider. Please check the logs for details.");
+            vscode.window.showErrorMessage(
+              "Failed to connect to Git provider. Please check the logs for details.",
+            );
           }
         }
       });
@@ -58,41 +70,47 @@ export function registerShowPipeline(commands: Commands) {
   );
   commands.disposables.push(disposable);
 
-  async function loadAllPipelineInfo(): Promise<{pipelineData: any, gitAuthenticated: boolean, prButtonInfo: any, openPullRequests: PullRequest[]}> {
+  async function loadAllPipelineInfo(): Promise<{
+    pipelineData: any;
+    gitAuthenticated: boolean;
+    prButtonInfo: any;
+    openPullRequests: PullRequest[];
+  }> {
     return await vscode.window.withProgress(
-        {
-          location: vscode.ProgressLocation.Notification,
-          title: "Loading pipeline information...",
-          cancellable: false,
-        },
-        async () => {
-          const pipelineDataProvider = new PipelineDataProvider();
-          const pipelineData = await pipelineDataProvider.getPipelineData();
-          const gitProvider = await GitProvider.getInstance();
-          let openPullRequests: PullRequest[] = [];
-          let gitAuthenticated = false;
-          if (gitProvider?.isActive) {
-            gitAuthenticated = true;
-            openPullRequests = await gitProvider.listOpenPullRequests();
-          }
-          const prButtonInfo: any = {};
-          if (gitProvider?.repoInfo) {
-            const desc = gitProvider.describeGitProvider();
-            prButtonInfo.url = desc.pullRequestsWebUrl;
-            prButtonInfo.label = `View ${desc.pullRequestLabel}s on ${desc.providerLabel}`;
-            prButtonInfo.icon = gitProvider.repoInfo.providerName;
-          } else {
-            prButtonInfo.url = '';
-            prButtonInfo.label = 'View Pull Requests';
-            prButtonInfo.icon = '';
-          }
+      {
+        location: vscode.ProgressLocation.Notification,
+        title: "Loading pipeline information...",
+        cancellable: false,
+      },
+      async () => {
+        const pipelineDataProvider = new PipelineDataProvider();
+        const pipelineData = await pipelineDataProvider.getPipelineData();
+        const gitProvider = await GitProvider.getInstance();
+        let openPullRequests: PullRequest[] = [];
+        let gitAuthenticated = false;
+        if (gitProvider?.isActive) {
+          gitAuthenticated = true;
+          openPullRequests = await gitProvider.listOpenPullRequests();
+        }
+        const prButtonInfo: any = {};
+        if (gitProvider?.repoInfo) {
+          const desc = gitProvider.describeGitProvider();
+          prButtonInfo.url = desc.pullRequestsWebUrl;
+          prButtonInfo.label = `View ${desc.pullRequestLabel}s on ${desc.providerLabel}`;
+          prButtonInfo.icon = gitProvider.repoInfo.providerName;
+        } else {
+          prButtonInfo.url = "";
+          prButtonInfo.label = "View Pull Requests";
+          prButtonInfo.icon = "";
+        }
 
-          return { 
-            pipelineData: pipelineData,
-            prButtonInfo: prButtonInfo,
-            gitAuthenticated: gitAuthenticated,
-            openPullRequests: openPullRequests
-          }
-        });
-    }
+        return {
+          pipelineData: pipelineData,
+          prButtonInfo: prButtonInfo,
+          gitAuthenticated: gitAuthenticated,
+          openPullRequests: openPullRequests,
+        };
+      },
+    );
+  }
 }

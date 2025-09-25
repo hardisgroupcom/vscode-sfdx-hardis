@@ -104,7 +104,7 @@ export class PipelineDataProvider {
 //   if (!fetchPrs) {
 //     return orgs;
 //   }
-//   for (const org of orgs) { 
+//   for (const org of orgs) {
 //     try {
 //       const prs = await gitProvider.listPullRequestsForBranch(org.branchName);
 //       org.openPullRequestsAsTarget = prs.filter(pr => pr.state === 'open');

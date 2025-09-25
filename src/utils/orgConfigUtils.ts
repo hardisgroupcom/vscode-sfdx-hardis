@@ -61,7 +61,8 @@ export async function listMajorOrgs(): Promise<MajorOrg[]> {
     const warnings: string[] = [];
     if (
       !(Array.isArray(props.mergeTargets) && props.mergeTargets.length > 0) &&
-      orgType !== "prod" && !branchName.includes("training")
+      orgType !== "prod" &&
+      !branchName.includes("training")
     ) {
       const exampleMergeTarget =
         mergeTargets.length > 0 ? mergeTargets[0] : "preprod";

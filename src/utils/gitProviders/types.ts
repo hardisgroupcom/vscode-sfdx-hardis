@@ -1,9 +1,9 @@
-export type ProviderName = 'gitlab' | 'github' | 'azure' | 'bitbucket';
+export type ProviderName = "gitlab" | "github" | "azure" | "bitbucket";
 
 export type ProviderDescription = {
-    providerLabel: string; // e.g. 'GitLab', 'GitHub', 'Azure DevOps', 'Bitbucket'
-    pullRequestLabel: string; // e.g. 'Merge Request' (GitLab), 'Pull Request' (GitHub, Azure, Bitbucket)
-    pullRequestsWebUrl: string; //  URL to the PR list page in the provider web UI
+  providerLabel: string; // e.g. 'GitLab', 'GitHub', 'Azure DevOps', 'Bitbucket'
+  pullRequestLabel: string; // e.g. 'Merge Request' (GitLab), 'Pull Request' (GitHub, Azure, Bitbucket)
+  pullRequestsWebUrl: string; //  URL to the PR list page in the provider web UI
 };
 
 /**
@@ -24,7 +24,7 @@ export type ProviderDescription = {
  * - Azure DevOps:'active' -> 'open', 'completed' -> 'merged' (or 'closed' if not merged), 'abandoned' -> 'declined'
  * - Bitbucket:   'OPEN' -> 'open', 'MERGED' -> 'merged', 'DECLINED' -> 'declined'
  */
-export type PullRequestStatus = 'open' | 'closed' | 'merged' | 'declined';
+export type PullRequestStatus = "open" | "closed" | "merged" | "declined";
 
 /**
  * Unified PullRequest / MergeRequest shape used across git providers
@@ -43,49 +43,49 @@ export type PullRequestStatus = 'open' | 'closed' | 'merged' | 'declined';
  * - `state` normalised values: 'open' | 'closed' | 'merged' | 'declined' | provider-specific strings may appear; callers should treat unknown values as-is.
  */
 export type PullRequest = {
-    // canonical identifiers
-    id: string | number; // provider-global id (string for node_id or numeric id)
-    number?: number; // provider-native numeric id (GitHub PR number, GitLab iid)
+  // canonical identifiers
+  id: string | number; // provider-global id (string for node_id or numeric id)
+  number?: number; // provider-native numeric id (GitHub PR number, GitLab iid)
 
-    // Title and textual fields
-    title: string;
-    // Provider payloads sometimes use `null` for missing descriptions (GitLab). Accept string | null.
-    description?: string | null; // body / description
+  // Title and textual fields
+  title: string;
+  // Provider payloads sometimes use `null` for missing descriptions (GitLab). Accept string | null.
+  description?: string | null; // body / description
 
-    // Branches
-    sourceBranch?: string; // head / source
-    targetBranch?: string; // base / target
+  // Branches
+  sourceBranch?: string; // head / source
+  targetBranch?: string; // base / target
 
-    // Author information (may be partial depending on provider)
-    author?: {
-        name?: string; // display name (Azure, GitLab, GitHub)
-        username?: string; // login or username
-        email?: string; // when available
-    };
+  // Author information (may be partial depending on provider)
+  author?: {
+    name?: string; // display name (Azure, GitLab, GitHub)
+    username?: string; // login or username
+    email?: string; // when available
+  };
 
-    authorLabel: string; // computed label for author (username or name)
+  authorLabel: string; // computed label for author (username or name)
 
-    // Status & timestamps
-    // `PullRequestStatus` lists known provider-specific state values.
-    state?: PullRequestStatus;
-    createdAt?: string; // ISO date string
-    updatedAt?: string; // ISO date string
+  // Status & timestamps
+  // `PullRequestStatus` lists known provider-specific state values.
+  state?: PullRequestStatus;
+  createdAt?: string; // ISO date string
+  updatedAt?: string; // ISO date string
 
-    // URLs
-    webUrl?: string; // canonical UI url
+  // URLs
+  webUrl?: string; // canonical UI url
 
-    // Optional provider metadata bag to keep raw provider payload when needed
-    provider?: {
-        name?: ProviderName; // 'gitlab' | 'github' | 'azure' | 'bitbucket'
-        raw?: any; // raw provider response object
-    };
+  // Optional provider metadata bag to keep raw provider payload when needed
+  provider?: {
+    name?: ProviderName; // 'gitlab' | 'github' | 'azure' | 'bitbucket'
+    raw?: any; // raw provider response object
+  };
 };
 
 export type RepoInfo = {
-    providerName: ProviderName;
-    host: string; // e.g. 'gitlab.com', 'github.com', 'dev.azure.com', 'bitbucket.org'
-    owner: string; // e.g. user or org name
-    repo: string; // repository name
-    remoteUrl: string // Git remote URL
-    webUrl: string; // Base web URL to the repository in the provider UI, when available
-}
+  providerName: ProviderName;
+  host: string; // e.g. 'gitlab.com', 'github.com', 'dev.azure.com', 'bitbucket.org'
+  owner: string; // e.g. user or org name
+  repo: string; // repository name
+  remoteUrl: string; // Git remote URL
+  webUrl: string; // Base web URL to the repository in the provider UI, when available
+};
