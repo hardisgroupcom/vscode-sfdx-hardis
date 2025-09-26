@@ -8,22 +8,26 @@ import "s/forceLightTheme"; // Ensure light theme is applied
 export default class Pipeline extends LightningElement {
   @track prButtonInfo;
   @track connectedLabel = "Connect to Git";
-  @track connectedIconName = "utility:connect";
+  @track connectedVariant = "neutral";
+  @track connectedIconName = "utility:link";
   @track openPullRequests = [];
   prColumns = [
-    { label: "Number", fieldName: "number", type: "text" },
+    { label: "#", fieldName: "number", type: "text", initialWidth: 80, wrapText: true },
     {
       label: "Title",
       fieldName: "webUrl",
       type: "url",
       typeAttributes: { label: { fieldName: "title" }, target: "_blank" },
+      initialWidth: 420,
+      wrapText: true,
     },
-    { label: "Author", fieldName: "authorLabel", type: "text" },
-    { label: "Source", fieldName: "sourceBranch", type: "text" },
-    { label: "Target", fieldName: "targetBranch", type: "text" },
+    { label: "Author", fieldName: "authorLabel", type: "text", initialWidth: 160, wrapText: true },
+    { label: "Source", fieldName: "sourceBranch", type: "text", initialWidth: 280, wrapText: true },
+    { label: "Target", fieldName: "targetBranch", type: "text", initialWidth: 180, wrapText: true },
   ];
 
   pipelineData;
+  repoInfo;
   error;
   currentDiagram = "";
   lastDiagram = "";
@@ -51,6 +55,7 @@ export default class Pipeline extends LightningElement {
   @api
   initialize(data) {
     this.pipelineData = data.pipelineData;
+    this.repoPlatformLabel = data.repoPlatformLabel || "Git";
     this.prButtonInfo = data.prButtonInfo;
     this.warnings = this.pipelineData.warnings || [];
     this.hasWarnings = this.warnings.length > 0;
@@ -59,22 +64,167 @@ export default class Pipeline extends LightningElement {
     this.error = undefined;
     this.lastDiagram = "";
     this.connectedLabel =
-      data && data.gitAuthenticated ? "Connected" : "Connect to Git";
+      data && data.gitAuthenticated ? `Connected to ${this.repoPlatformLabel}` : `Connect to ${this.repoPlatformLabel}`;
     this.connectedIconName =
-      data && data.gitAuthenticated ? "utility:check" : "utility:connect";
+      data && data.gitAuthenticated ? "utility:check" : "utility:link";
+    this.connectedVariant = data && data.gitAuthenticated ? "success" : "neutral";
     this.openPullRequests = data.openPullRequests || [];
     // ensure reactivity for computed label
     this.openPullRequests = Array.isArray(this.openPullRequests)
       ? this.openPullRequests
       : [];
+    // adjust columns to fit the available width immediately
+    setTimeout(() => this.adjustPrColumns(), 50);
     // Render the Mermaid diagram after a brief delay to ensure DOM is ready
     setTimeout(() => this.renderMermaid(), 0);
     console.log("Pipeline data initialized:", this.pipelineData);
   }
 
+  connectedCallback() {
+    this._boundAdjust = this.adjustPrColumns.bind(this);
+    if (typeof window !== 'undefined' && window.addEventListener) {
+      window.addEventListener('resize', this._boundAdjust);
+    }
+  }
+
+  disconnectedCallback() {
+    if (typeof window !== 'undefined' && window.removeEventListener && this._boundAdjust) {
+      window.removeEventListener('resize', this._boundAdjust);
+    }
+  }
+
+  adjustPrColumns() {
+    try {
+      const dt = this.template.querySelector('lightning-datatable');
+      // fallback container
+      const container = this.template.querySelector('.pipeline-card-spacing') || this.template.querySelector('.pipeline-container');
+      const rect = dt ? dt.getBoundingClientRect() : container ? container.getBoundingClientRect() : null;
+      // Prefer datatable's clientWidth when available (excludes scrollbar) and use smaller padding reservation
+      const rawWidth = dt && dt.clientWidth ? dt.clientWidth : rect && rect.width ? rect.width : null;
+      const available = rawWidth ? Math.max(rawWidth, 600) : 800;
+
+      // Minimum widths
+      const minNumber = 80;
+      const minAuthor = 140;
+      const minSource = 220;
+      const minTarget = 140;
+
+      // Sum of minimums
+      const sumMin = minNumber + minAuthor + minSource + minTarget + 120; // 120 is a sensible minimum for title
+      // We'll compute float widths first, then convert to integers and distribute rounding
+      const absMin = {
+        number: 40,
+        author: 80,
+        source: 80,
+        target: 60,
+        title: 80,
+      };
+
+      // Start with desired (float) widths based on minima
+      let desired = {
+        number: minNumber,
+        author: minAuthor,
+        source: minSource,
+        target: minTarget,
+        title: Math.max(120, available - (minNumber + minAuthor + minSource + minTarget)),
+      };
+
+      // If available is smaller than the sum of sensible minima, scale the sensible minima down
+      if (available < sumMin) {
+        const scale = available / sumMin;
+        desired.number = Math.max(absMin.number, minNumber * scale);
+        desired.author = Math.max(absMin.author, minAuthor * scale);
+        desired.source = Math.max(absMin.source, minSource * scale);
+        desired.target = Math.max(absMin.target, minTarget * scale);
+        // title gets remaining space (but at least its absMin)
+        desired.title = Math.max(absMin.title, available - (desired.number + desired.author + desired.source + desired.target));
+      }
+
+      // Now convert floats to integer widths while ensuring the total equals available (rounded)
+      const availInt = Math.round(available);
+      const cols = ['number', 'title', 'author', 'source', 'target'];
+      const intWidths = {};
+      // floor each desired
+      cols.forEach((k) => {
+        intWidths[k] = Math.floor(desired[k]);
+      });
+      let sumInt = cols.reduce((s, k) => s + intWidths[k], 0);
+      let remainder = availInt - sumInt;
+
+      if (remainder !== 0) {
+        // compute fractional parts to distribute remainder fairly
+        const fracs = cols.map((k) => ({ key: k, frac: desired[k] - Math.floor(desired[k]) }));
+        // If we need to add pixels, give to highest fractional parts first (prefer title)
+        if (remainder > 0) {
+          // prefer title first, then by fractional part
+          fracs.sort((a, b) => {
+            if (a.key === 'title' && b.key !== 'title') return -1;
+            if (b.key === 'title' && a.key !== 'title') return 1;
+            return b.frac - a.frac;
+          });
+          let i = 0;
+          while (remainder > 0) {
+            const idx = i % fracs.length;
+            intWidths[fracs[idx].key] += 1;
+            remainder -= 1;
+            i += 1;
+          }
+        }
+        // If we need to remove pixels, remove from smallest fractional parts or columns above their absMin
+        else if (remainder < 0) {
+          fracs.sort((a, b) => a.frac - b.frac);
+          let i = 0;
+          remainder = -remainder;
+          while (remainder > 0) {
+            const key = fracs[i % fracs.length].key;
+            if (intWidths[key] > absMin[key]) {
+              intWidths[key] -= 1;
+              remainder -= 1;
+            }
+            i += 1;
+            // safeguard: if we've looped and can't remove more because all at absMin, break
+            if (i > fracs.length * 3) {
+              break;
+            }
+          }
+        }
+      }
+
+      // Final safety: if sum still differs, force-adjust title as last resort
+      let finalSum = cols.reduce((s, k) => s + intWidths[k], 0);
+      const diff = Math.round(available) - finalSum;
+      if (diff !== 0) {
+        intWidths.title = Math.max(absMin.title, intWidths.title + diff);
+      }
+
+      // Map to variables used later
+      const numberW = intWidths.number;
+      const titleW = intWidths.title;
+      const authorW = intWidths.author;
+      const sourceW = intWidths.source;
+      const targetW = intWidths.target;
+
+      const newCols = this.prColumns.map((c) => {
+        const copy = Object.assign({}, c);
+        if (copy.fieldName === 'number') copy.initialWidth = numberW;
+        else if (copy.fieldName === 'webUrl') copy.initialWidth = titleW;
+        else if (copy.fieldName === 'authorLabel') copy.initialWidth = authorW;
+        else if (copy.fieldName === 'sourceBranch') copy.initialWidth = sourceW;
+        else if (copy.fieldName === 'targetBranch') copy.initialWidth = targetW;
+        return copy;
+      });
+      // reassign to trigger reactivity
+      this.prColumns = newCols;
+    } catch (e) {
+      // silently ignore measurement errors
+      // console.warn('adjustPrColumns error', e);
+    }
+  }
+
   get openPrTabLabel() {
     const count = this.openPullRequests ? this.openPullRequests.length : 0;
-    return count > 0 ? `Open Pull Requests (${count})` : "Open Pull Requests";
+    const prLabel = this.prButtonInfo?.pullRequestLabel ? this.prButtonInfo.pullRequestLabel+"s" : "Pull Requests";
+    return count > 0 ? `Open ${prLabel} (${count})` : `Open ${prLabel}`;
   }
 
   openPrPage() {

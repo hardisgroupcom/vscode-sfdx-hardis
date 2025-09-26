@@ -75,6 +75,7 @@ export function registerShowPipeline(commands: Commands) {
     gitAuthenticated: boolean;
     prButtonInfo: any;
     openPullRequests: PullRequest[];
+    repoPlatformLabel: string;
   }> {
     return await vscode.window.withProgress(
       {
@@ -93,11 +94,14 @@ export function registerShowPipeline(commands: Commands) {
           openPullRequests = await gitProvider.listOpenPullRequests();
         }
         const prButtonInfo: any = {};
+        let repoPlatformLabel = "";
         if (gitProvider?.repoInfo) {
           const desc = gitProvider.describeGitProvider();
           prButtonInfo.url = desc.pullRequestsWebUrl;
           prButtonInfo.label = `View ${desc.pullRequestLabel}s on ${desc.providerLabel}`;
           prButtonInfo.icon = gitProvider.repoInfo.providerName;
+          prButtonInfo.pullRequestLabel = desc.pullRequestLabel;
+          repoPlatformLabel = desc.providerLabel;
         } else {
           prButtonInfo.url = "";
           prButtonInfo.label = "View Pull Requests";
@@ -109,6 +113,7 @@ export function registerShowPipeline(commands: Commands) {
           prButtonInfo: prButtonInfo,
           gitAuthenticated: gitAuthenticated,
           openPullRequests: openPullRequests,
+          repoPlatformLabel: repoPlatformLabel
         };
       },
     );
