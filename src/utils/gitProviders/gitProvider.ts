@@ -173,7 +173,7 @@ export class GitProvider {
     };
   }
 
-  async authenticate(): Promise<boolean> {
+  async authenticate(): Promise<boolean|null> {
     Logger.log(
       `authenticate not implemented on ${this.repoInfo?.providerName || "unknown provider"}`,
     );

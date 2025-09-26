@@ -21,7 +21,7 @@ export class GitProviderBitbucket extends GitProvider {
     };
   }
 
-  async authenticate(): Promise<boolean> {
+  async authenticate(): Promise<boolean|null> {
     const token = await vscode.window.showInputBox({
       prompt: "Enter your Bitbucket Token",
       ignoreFocusOut: true,
@@ -32,7 +32,7 @@ export class GitProviderBitbucket extends GitProvider {
       await this.initialize();
       return this.isActive;
     }
-    return false;
+    return null;
   }
 
   async initialize() {

@@ -20,7 +20,7 @@ export class GitProviderGitHub extends GitProvider {
     };
   }
 
-  async authenticate(): Promise<boolean> {
+  async authenticate(): Promise<boolean| null> {
     const session = await vscode.authentication.getSession("github", ["repo"], {
       forceNewSession: true,
     });

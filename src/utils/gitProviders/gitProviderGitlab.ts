@@ -11,7 +11,7 @@ export class GitProviderGitlab extends GitProvider {
   gitlabProjectId: number | null = null;
   secretTokenIdentifier: string = "";
 
-  async authenticate(): Promise<boolean> {
+  async authenticate(): Promise<boolean|null> {
     const token = await vscode.window.showInputBox({
       prompt: "Enter your Gitlab PAT (Personal Access Token)",
       ignoreFocusOut: true,
@@ -22,7 +22,7 @@ export class GitProviderGitlab extends GitProvider {
       await this.initialize();
       return this.isActive;
     }
-    return false;
+    return null;
   }
 
   describeGitProvider(): ProviderDescription {

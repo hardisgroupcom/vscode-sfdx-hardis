@@ -23,7 +23,7 @@ export class GitProviderAzure extends GitProvider {
     return true;
   }
 
-  async authenticate(): Promise<boolean> {
+  async authenticate(): Promise<boolean|null> {
     const session = await vscode.authentication.getSession(
       "microsoft",
       ["vso.code"],
