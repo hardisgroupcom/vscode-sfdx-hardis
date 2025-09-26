@@ -1,9 +1,10 @@
 import * as vscode from "vscode";
 import { GitProvider } from "./gitProvider";
-import { ProviderDescription, PullRequest } from "./types";
+import { ProviderDescription, PullRequest, PullRequestJob } from "./types";
 import * as azdev from "azure-devops-node-api";
 import { GitApi } from "azure-devops-node-api/GitApi";
-import { PullRequestStatus } from "azure-devops-node-api/interfaces/GitInterfaces";
+import { PullRequestStatus, GitPullRequest } from "azure-devops-node-api/interfaces/GitInterfaces";
+import { Logger } from "../../logger";
 
 export class GitProviderAzure extends GitProvider {
   connection: azdev.WebApi | null = null;
@@ -104,10 +105,7 @@ export class GitProviderAzure extends GitProvider {
         { status: PullRequestStatus.Active },
         project,
       );
-      const converted: PullRequest[] = (prSearch || []).map((pr) =>
-        this.convertToPullRequest(pr, ""),
-      );
-      return converted;
+      return await this.convertAndCollectJobsList(prSearch || [], "");
     } catch {
       return [];
     }
@@ -127,13 +125,76 @@ export class GitProviderAzure extends GitProvider {
         { sourceRefName: `refs/heads/${branchName}` },
         project,
       );
-      const converted: PullRequest[] = (prSearch || []).map((pr) =>
-        this.convertToPullRequest(pr, branchName),
-      );
-      return converted;
+      return await this.convertAndCollectJobsList(prSearch || [], branchName);
     } catch {
       return [];
     }
+  }
+
+  // Fetch latest build(s) for Azure DevOps PR. Best-effort: try to match by commitId or branch.
+  private async fetchLatestJobsForPullRequestAzure(rawPr: GitPullRequest, pr: PullRequest): Promise<PullRequestJob[]> {
+    if (!this.connection || !this.repoInfo) {
+      return [];
+    }
+    try {
+      const buildApi = await this.connection.getBuildApi();
+      const project = this.repoInfo.owner;
+      // Prefer commitId if available
+      const commitId = rawPr.lastMergeSourceCommit?.commitId || rawPr.lastMergeSourceCommit?.commitId;
+      let builds: any[] = [];
+      try {
+        // Get recent builds and filter by sourceVersion or branch
+        const recent = await buildApi.getBuilds(project, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, 20);
+        builds = (recent || []).filter((b: any) => {
+          if (commitId && b.sourceVersion) {
+            return String(b.sourceVersion).toLowerCase() === String(commitId).toLowerCase();
+          }
+          if (pr.sourceBranch && b.sourceBranch) {
+            return b.sourceBranch.endsWith(pr.sourceBranch);
+          }
+          return false;
+        });
+      } catch {
+        // ignore
+      }
+      if (!builds || builds.length === 0) {
+        return [];
+      }
+      const build = builds[0];
+      // Map the build to a PullRequestJob
+      const job: PullRequestJob = {
+        name: build.definition?.name || String(build.id || ""),
+        status: (build.status || build.result || "").toString(),
+        webUrl: build._links?.web?.href || undefined,
+        updatedAt: build.finishTime || build.queueTime || undefined,
+        raw: build,
+      };
+      return [job];
+    } catch {
+      return [];
+    }
+  }
+
+  // Helper to convert raw Azure PR and attach jobs/jobsStatus
+  // Batch helper: convert an array of raw Azure PRs and enrich each with jobs
+  private async convertAndCollectJobsList(rawPrs: GitPullRequest[], branchName: string): Promise<PullRequest[]> {
+    if (!rawPrs || rawPrs.length === 0) {
+      return [];
+    }
+    const converted: PullRequest[] = await Promise.all(
+      rawPrs.map(async (r) => {
+        const convertedPr = this.convertToPullRequest(r, branchName);
+        try {
+          const jobs = await this.fetchLatestJobsForPullRequestAzure(r, convertedPr);
+          convertedPr.jobs = jobs;
+          convertedPr.jobsStatus = this.computeJobsStatus(jobs);
+        } catch (e) {
+          Logger.log(`Error fetching jobs for PR #${convertedPr.number}: ${String(e)}`);
+        }
+        return convertedPr;
+      }),
+    );
+    return converted;
   }
 
   convertToPullRequest(pr: any, branchName: string): PullRequest {
