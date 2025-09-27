@@ -208,6 +208,7 @@ export class GitProviderGitlab extends GitProvider {
       authorLabel: mr.author?.username || mr.author?.name || "unknown",
       sourceBranch: String(mr.source_branch),
       targetBranch: String(mr.target_branch),
+      jobsStatus: "unknown",
     };
   }
 }

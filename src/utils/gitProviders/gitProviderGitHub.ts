@@ -152,6 +152,7 @@ export class GitProviderGitHub extends GitProvider {
       webUrl: pr.html_url,
       sourceBranch: pr.head.ref,
       targetBranch: pr.base.ref,
+      jobsStatus: "unknown",
     };
   }
 }

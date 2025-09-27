@@ -137,6 +137,7 @@ export class GitProviderBitbucket extends GitProvider {
       webUrl: pr.links?.html?.href || pr.links?.self?.href || "",
       sourceBranch: pr.source?.branch?.name || "",
       targetBranch: pr.destination?.branch?.name || "",
+      jobsStatus: "unknown",
     };
   }
 

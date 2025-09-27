@@ -215,6 +215,7 @@ export class GitProviderAzure extends GitProvider {
       targetBranch: pr.targetRefName
         ? pr.targetRefName.replace(/^refs\/heads\//, "")
         : "",
+      jobsStatus: "unknown",
     };
   }
 }
