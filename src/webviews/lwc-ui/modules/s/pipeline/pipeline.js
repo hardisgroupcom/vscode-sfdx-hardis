@@ -22,8 +22,8 @@ export default class Pipeline extends LightningElement {
       initialWidth: 420,
       wrapText: true,
     },
-  // Jobs status column (image referencing a pre-colored SVG in /resources/git-icons)
-  { label: "", fieldName: "jobsIconSrc", type: "image", initialWidth: 40, typeAttributes: { alternativeText: { fieldName: 'jobsIconLabel' }, title: { fieldName: 'jobsIconLabel' }, width: 16 } },
+    // Jobs status column (emoji indicator)
+    { label: "", fieldName: "jobsStatusEmoji", type: "text", initialWidth: 40, wrapText: false },
     { label: "Author", fieldName: "authorLabel", type: "text", initialWidth: 160, wrapText: true },
     { label: "Source", fieldName: "sourceBranch", type: "text", initialWidth: 280, wrapText: true },
     { label: "Target", fieldName: "targetBranch", type: "text", initialWidth: 180, wrapText: true },
@@ -92,8 +92,16 @@ export default class Pipeline extends LightningElement {
       // set image src for pre-colored SVG based on normalized status
       const key = (pr.jobsStatus || 'unknown').toString().toLowerCase();
       const normalized = (['running','pending','success','failed'].includes(key) ? key : 'unknown');
-      copy.jobsIconSrc = `/resources/git-icons/status-${normalized}.svg`;
-      copy.jobsIconLabel = pr.jobsStatus || '';
+      // Add a SLDS-friendly emoji indicator column (quick, robust fallback)
+      const emojiMap = {
+        running: '🔄',
+        pending: '⏳',
+        success: '✅',
+        failed: '❌',
+        unknown: '❔',
+      };
+      // Show emoji only (accessibility: we may add a visually-hidden label later if needed)
+      copy.jobsStatusEmoji = (emojiMap[normalized] || emojiMap.unknown);
       return copy;
     });
   }
@@ -164,8 +172,8 @@ export default class Pipeline extends LightningElement {
 
       // Now convert floats to integer widths while ensuring the total equals available (rounded)
       const availInt = Math.round(available);
-  // Prefer title early so remainder distribution favours it
-  const cols = ['number', 'title', 'status', 'author', 'source', 'target'];
+      // Prefer title early so remainder distribution favours it
+      const cols = ['number', 'title', 'status', 'author', 'source', 'target'];
       const intWidths = {};
       // floor each desired
       cols.forEach((k) => {
@@ -220,20 +228,20 @@ export default class Pipeline extends LightningElement {
         intWidths.title = Math.max(absMin.title, intWidths.title + diff);
       }
 
-  // Map to variables used later
-  const numberW = intWidths.number;
-  const statusW = intWidths.status;
-  const titleW = intWidths.title;
-  const authorW = intWidths.author;
-  const sourceW = intWidths.source;
-  const targetW = intWidths.target;
+      // Map to variables used later
+      const numberW = intWidths.number;
+      const statusW = intWidths.status;
+      const titleW = intWidths.title;
+      const authorW = intWidths.author;
+      const sourceW = intWidths.source;
+      const targetW = intWidths.target;
 
       const newCols = this.prColumns.map((c) => {
         const copy = Object.assign({}, c);
-  if (copy.fieldName === 'number') copy.initialWidth = numberW;
-  else if (copy.fieldName === 'webUrl') copy.initialWidth = titleW;
-  else if (copy.fieldName === 'jobsIconSrc') copy.initialWidth = statusW;
-  else if (copy.fieldName === 'webUrl') copy.initialWidth = titleW;
+        if (copy.fieldName === 'number') copy.initialWidth = numberW;
+        else if (copy.fieldName === 'webUrl') copy.initialWidth = titleW;
+        else if (copy.fieldName === 'jobsStatusEmoji') copy.initialWidth = statusW;
+        else if (copy.fieldName === 'webUrl') copy.initialWidth = titleW;
         else if (copy.fieldName === 'authorLabel') copy.initialWidth = authorW;
         else if (copy.fieldName === 'sourceBranch') copy.initialWidth = sourceW;
         else if (copy.fieldName === 'targetBranch') copy.initialWidth = targetW;
@@ -382,66 +390,6 @@ export default class Pipeline extends LightningElement {
       default:
         console.log("Unknown message type:", messageType, data);
     }
-  }
-
-  // Map aggregated jobsStatus to a Salesforce utility icon name
-  _iconNameForJobsStatus(status) {
-    // Default icon
-    const map = {
-      running: "utility:sync",
-      pending: "utility:clock",
-      success: "utility:success",
-      failed: "utility:close",
-      unknown: "utility:help",
-    };
-    if (!status) return map.unknown;
-    // status is a normalized PullRequestJob value (expected: "running", "pending", "success", "failed", "unknown")
-    if (!status) {
-      return map.unknown;
-    }
-    const s = String(status).toLowerCase();
-    switch (s) {
-      case "running":
-      return map.running;
-      case "pending":
-      return map.pending;
-      case "success":
-      return map.success;
-      case "failed":
-      return map.failed;
-      default:
-      return map.unknown;
-    }
-  }
-
-  // Map status to a hex color string
-  _colorForJobsStatus(status) {
-    const s = status ? String(status).toLowerCase() : 'unknown';
-    switch (s) {
-      case 'running':
-      case 'in_progress':
-        return '#0aa3ff';
-      case 'pending':
-      case 'queued':
-        return '#ffb100';
-      case 'success':
-      case 'passed':
-        return '#2ecc71';
-      case 'failed':
-      case 'failure':
-      case 'error':
-        return '#e14b4b';
-      default:
-        return '#999999';
-    }
-  }
-
-  // Return a small SVG circle as a data URI with the requested color and diameter
-  _svgDataUriCircle(hexColor, diameter = 12) {
-    const r = Math.round(diameter / 2);
-    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${diameter}' height='${diameter}' viewBox='0 0 ${diameter} ${diameter}'><circle cx='${r}' cy='${r}' r='${r}' fill='${hexColor}' /></svg>`;
-    // encodeURIComponent is safe for SVG in data-uri
-    return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
   }
 
   handleShowInstalledPackages() {
