@@ -156,3 +156,9 @@ lightning-datatable .hardis-pr-status-failed .slds-truncate,
 lightning-datatable .hardis-pr-status-unknown .slds-truncate {
     display: none !important;
 }
+
+/* Make URL labels (emoji) look native: no underline and pointer cursor only for emoji cells */
+lightning-datatable .hardis-emoji-cell a {
+    text-decoration: none !important;
+    cursor: pointer !important;
+}

@@ -13,8 +13,9 @@ export default class Pipeline extends LightningElement {
   @track connectedIconName = "utility:link";
   @track openPullRequests = [];
   prColumns = [
-    { label: "#", fieldName: "number", type: "text", initialWidth: 80, wrapText: true },
+    { key: 'number', label: "#", fieldName: "number", type: "text", initialWidth: 80, wrapText: true },
     {
+      key: 'title',
       label: "Title",
       fieldName: "webUrl",
       type: "url",
@@ -22,11 +23,11 @@ export default class Pipeline extends LightningElement {
       initialWidth: 420,
       wrapText: true,
     },
-    // Jobs status column (emoji indicator)
-    { label: "", fieldName: "jobsStatusEmoji", type: "text", initialWidth: 40, wrapText: false },
-    { label: "Author", fieldName: "authorLabel", type: "text", initialWidth: 160, wrapText: true },
-    { label: "Source", fieldName: "sourceBranch", type: "text", initialWidth: 280, wrapText: true },
-    { label: "Target", fieldName: "targetBranch", type: "text", initialWidth: 180, wrapText: true },
+    // Jobs status column (emoji indicator) - clickable, uses PR webUrl but shows emoji as label
+    { key: 'status', label: "", fieldName: "webUrl", type: "url", initialWidth: 32, wrapText: false, typeAttributes: { label: { fieldName: 'jobsStatusEmoji' }, target: '_blank' }, cellAttributes: { class: 'hardis-emoji-cell' } },
+    { key: 'author', label: "Author", fieldName: "authorLabel", type: "text", initialWidth: 160, wrapText: true },
+    { key: 'source', label: "Source", fieldName: "sourceBranch", type: "text", initialWidth: 280, wrapText: true },
+    { key: 'target', label: "Target", fieldName: "targetBranch", type: "text", initialWidth: 180, wrapText: true },
   ];
 
   pipelineData;
@@ -129,19 +130,19 @@ export default class Pipeline extends LightningElement {
       const rawWidth = dt && dt.clientWidth ? dt.clientWidth : rect && rect.width ? rect.width : null;
       const available = rawWidth ? Math.max(rawWidth, 600) : 800;
 
-      // Minimum widths
-  const minNumber = 80;
-  const minStatus = 60;
-  const minAuthor = 140;
-  const minSource = 220;
-  const minTarget = 140;
+          // Minimum widths
+      const minNumber = 80;
+      const minStatus = 36;
+      const minAuthor = 140;
+      const minSource = 220;
+      const minTarget = 140;
 
-  // Sum of minimums
-  const sumMin = minNumber + minStatus + minAuthor + minSource + minTarget + 120; // 120 is a sensible minimum for title
+      // Sum of minimums
+      const sumMin = minNumber + minStatus + minAuthor + minSource + minTarget + 120; // 120 is a sensible minimum for title
       // We'll compute float widths first, then convert to integers and distribute rounding
       const absMin = {
         number: 40,
-        status: 40,
+        status: 24,
         author: 80,
         source: 80,
         target: 60,
@@ -238,13 +239,14 @@ export default class Pipeline extends LightningElement {
 
       const newCols = this.prColumns.map((c) => {
         const copy = Object.assign({}, c);
-        if (copy.fieldName === 'number') copy.initialWidth = numberW;
-        else if (copy.fieldName === 'webUrl') copy.initialWidth = titleW;
-        else if (copy.fieldName === 'jobsStatusEmoji') copy.initialWidth = statusW;
-        else if (copy.fieldName === 'webUrl') copy.initialWidth = titleW;
-        else if (copy.fieldName === 'authorLabel') copy.initialWidth = authorW;
-        else if (copy.fieldName === 'sourceBranch') copy.initialWidth = sourceW;
-        else if (copy.fieldName === 'targetBranch') copy.initialWidth = targetW;
+        // Prefer explicit `key` property for robust identification
+        const k = copy.key || copy.fieldName;
+        if (k === 'number') copy.initialWidth = numberW;
+        else if (k === 'title') copy.initialWidth = titleW;
+        else if (k === 'status' || k === 'jobsStatusEmoji') copy.initialWidth = statusW;
+        else if (k === 'author') copy.initialWidth = authorW;
+        else if (k === 'source') copy.initialWidth = sourceW;
+        else if (k === 'target') copy.initialWidth = targetW;
         return copy;
       });
       // reassign to trigger reactivity
@@ -285,15 +287,6 @@ export default class Pipeline extends LightningElement {
     console.log("Configure Auth button clicked");
   }
 
-  handleShowPipelineConfig() {
-    window.sendMessageToVSCode({
-      type: "runVsCodeCommand",
-      data: {
-        command: "vscode-sfdx-hardis.showPipelineConfig",
-        args: [],
-      },
-    });
-  }
 
   handleToggleMajor(event) {
     this.showOnlyMajor = event.target.checked;
