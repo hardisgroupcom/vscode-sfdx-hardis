@@ -7,6 +7,7 @@ import "s/forceLightTheme"; // Ensure light theme is applied
 
 export default class Pipeline extends LightningElement {
   @track prButtonInfo;
+  @track gitAuthenticated = false;
   @track connectedLabel = "Connect to Git";
   @track connectedVariant = "neutral";
   @track connectedIconName = "utility:link";
@@ -21,6 +22,8 @@ export default class Pipeline extends LightningElement {
       initialWidth: 420,
       wrapText: true,
     },
+  // Jobs status column (image referencing a pre-colored SVG in /resources/git-icons)
+  { label: "", fieldName: "jobsIconSrc", type: "image", initialWidth: 40, typeAttributes: { alternativeText: { fieldName: 'jobsIconLabel' }, title: { fieldName: 'jobsIconLabel' }, width: 16 } },
     { label: "Author", fieldName: "authorLabel", type: "text", initialWidth: 160, wrapText: true },
     { label: "Source", fieldName: "sourceBranch", type: "text", initialWidth: 280, wrapText: true },
     { label: "Target", fieldName: "targetBranch", type: "text", initialWidth: 180, wrapText: true },
@@ -63,12 +66,13 @@ export default class Pipeline extends LightningElement {
     this.currentDiagram = this.pipelineData.mermaidDiagram;
     this.error = undefined;
     this.lastDiagram = "";
+    this.gitAuthenticated = data?.gitAuthenticated ?? false;
     this.connectedLabel =
-      data && data.gitAuthenticated ? `Connected to ${this.repoPlatformLabel}` : `Connect to ${this.repoPlatformLabel}`;
+      gitAuthenticated ? `Connected to ${this.repoPlatformLabel}` : `Connect to ${this.repoPlatformLabel}`;
     this.connectedIconName =
-      data && data.gitAuthenticated ? "utility:check" : "utility:link";
-    this.connectedVariant = data && data.gitAuthenticated ? "success" : "neutral";
-    this.openPullRequests = data.openPullRequests || [];
+      gitAuthenticated ? "utility:check" : "utility:link";
+    this.connectedVariant = gitAuthenticated ? "success" : "neutral";
+  this.openPullRequests = this._mapPrsWithIcons(data.openPullRequests || []);
     // ensure reactivity for computed label
     this.openPullRequests = Array.isArray(this.openPullRequests)
       ? this.openPullRequests
@@ -78,6 +82,20 @@ export default class Pipeline extends LightningElement {
     // Render the Mermaid diagram after a brief delay to ensure DOM is ready
     setTimeout(() => this.renderMermaid(), 0);
     console.log("Pipeline data initialized:", this.pipelineData);
+  }
+
+  // Map PRs to include a computed jobsIconName used by datatable cellAttributes
+  _mapPrsWithIcons(prs) {
+    if (!Array.isArray(prs)) return [];
+    return prs.map((pr) => {
+      const copy = Object.assign({}, pr);
+      // set image src for pre-colored SVG based on normalized status
+      const key = (pr.jobsStatus || 'unknown').toString().toLowerCase();
+      const normalized = (['running','pending','success','failed'].includes(key) ? key : 'unknown');
+      copy.jobsIconSrc = `/resources/git-icons/status-${normalized}.svg`;
+      copy.jobsIconLabel = pr.jobsStatus || '';
+      return copy;
+    });
   }
 
   connectedCallback() {
@@ -104,16 +122,18 @@ export default class Pipeline extends LightningElement {
       const available = rawWidth ? Math.max(rawWidth, 600) : 800;
 
       // Minimum widths
-      const minNumber = 80;
-      const minAuthor = 140;
-      const minSource = 220;
-      const minTarget = 140;
+  const minNumber = 80;
+  const minStatus = 60;
+  const minAuthor = 140;
+  const minSource = 220;
+  const minTarget = 140;
 
-      // Sum of minimums
-      const sumMin = minNumber + minAuthor + minSource + minTarget + 120; // 120 is a sensible minimum for title
+  // Sum of minimums
+  const sumMin = minNumber + minStatus + minAuthor + minSource + minTarget + 120; // 120 is a sensible minimum for title
       // We'll compute float widths first, then convert to integers and distribute rounding
       const absMin = {
         number: 40,
+        status: 40,
         author: 80,
         source: 80,
         target: 60,
@@ -123,26 +143,29 @@ export default class Pipeline extends LightningElement {
       // Start with desired (float) widths based on minima
       let desired = {
         number: minNumber,
+        status: minStatus,
         author: minAuthor,
         source: minSource,
         target: minTarget,
-        title: Math.max(120, available - (minNumber + minAuthor + minSource + minTarget)),
+        title: Math.max(120, available - (minNumber + minStatus + minAuthor + minSource + minTarget)),
       };
 
       // If available is smaller than the sum of sensible minima, scale the sensible minima down
       if (available < sumMin) {
         const scale = available / sumMin;
         desired.number = Math.max(absMin.number, minNumber * scale);
+        desired.status = Math.max(absMin.status, minStatus * scale);
         desired.author = Math.max(absMin.author, minAuthor * scale);
         desired.source = Math.max(absMin.source, minSource * scale);
         desired.target = Math.max(absMin.target, minTarget * scale);
         // title gets remaining space (but at least its absMin)
-        desired.title = Math.max(absMin.title, available - (desired.number + desired.author + desired.source + desired.target));
+        desired.title = Math.max(absMin.title, available - (desired.number + desired.status + desired.author + desired.source + desired.target));
       }
 
       // Now convert floats to integer widths while ensuring the total equals available (rounded)
       const availInt = Math.round(available);
-      const cols = ['number', 'title', 'author', 'source', 'target'];
+  // Prefer title early so remainder distribution favours it
+  const cols = ['number', 'title', 'status', 'author', 'source', 'target'];
       const intWidths = {};
       // floor each desired
       cols.forEach((k) => {
@@ -197,17 +220,20 @@ export default class Pipeline extends LightningElement {
         intWidths.title = Math.max(absMin.title, intWidths.title + diff);
       }
 
-      // Map to variables used later
-      const numberW = intWidths.number;
-      const titleW = intWidths.title;
-      const authorW = intWidths.author;
-      const sourceW = intWidths.source;
-      const targetW = intWidths.target;
+  // Map to variables used later
+  const numberW = intWidths.number;
+  const statusW = intWidths.status;
+  const titleW = intWidths.title;
+  const authorW = intWidths.author;
+  const sourceW = intWidths.source;
+  const targetW = intWidths.target;
 
       const newCols = this.prColumns.map((c) => {
         const copy = Object.assign({}, c);
-        if (copy.fieldName === 'number') copy.initialWidth = numberW;
-        else if (copy.fieldName === 'webUrl') copy.initialWidth = titleW;
+  if (copy.fieldName === 'number') copy.initialWidth = numberW;
+  else if (copy.fieldName === 'webUrl') copy.initialWidth = titleW;
+  else if (copy.fieldName === 'jobsIconSrc') copy.initialWidth = statusW;
+  else if (copy.fieldName === 'webUrl') copy.initialWidth = titleW;
         else if (copy.fieldName === 'authorLabel') copy.initialWidth = authorW;
         else if (copy.fieldName === 'sourceBranch') copy.initialWidth = sourceW;
         else if (copy.fieldName === 'targetBranch') copy.initialWidth = targetW;
@@ -348,9 +374,74 @@ export default class Pipeline extends LightningElement {
       case "refreshPipeline":
         this.refreshPipeline();
         break;
+      case "openPullRequestsUpdated":
+        // allow dynamic updates from extension host
+        this.openPullRequests = this._mapPrsWithIcons(data || []);
+        setTimeout(() => this.adjustPrColumns(), 50);
+        break;
       default:
         console.log("Unknown message type:", messageType, data);
     }
+  }
+
+  // Map aggregated jobsStatus to a Salesforce utility icon name
+  _iconNameForJobsStatus(status) {
+    // Default icon
+    const map = {
+      running: "utility:sync",
+      pending: "utility:clock",
+      success: "utility:success",
+      failed: "utility:close",
+      unknown: "utility:help",
+    };
+    if (!status) return map.unknown;
+    // status is a normalized PullRequestJob value (expected: "running", "pending", "success", "failed", "unknown")
+    if (!status) {
+      return map.unknown;
+    }
+    const s = String(status).toLowerCase();
+    switch (s) {
+      case "running":
+      return map.running;
+      case "pending":
+      return map.pending;
+      case "success":
+      return map.success;
+      case "failed":
+      return map.failed;
+      default:
+      return map.unknown;
+    }
+  }
+
+  // Map status to a hex color string
+  _colorForJobsStatus(status) {
+    const s = status ? String(status).toLowerCase() : 'unknown';
+    switch (s) {
+      case 'running':
+      case 'in_progress':
+        return '#0aa3ff';
+      case 'pending':
+      case 'queued':
+        return '#ffb100';
+      case 'success':
+      case 'passed':
+        return '#2ecc71';
+      case 'failed':
+      case 'failure':
+      case 'error':
+        return '#e14b4b';
+      default:
+        return '#999999';
+    }
+  }
+
+  // Return a small SVG circle as a data URI with the requested color and diameter
+  _svgDataUriCircle(hexColor, diameter = 12) {
+    const r = Math.round(diameter / 2);
+    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='${diameter}' height='${diameter}' viewBox='0 0 ${diameter} ${diameter}'><circle cx='${r}' cy='${r}' r='${r}' fill='${hexColor}' /></svg>`;
+    // encodeURIComponent is safe for SVG in data-uri
+    return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
   }
 
   handleShowInstalledPackages() {

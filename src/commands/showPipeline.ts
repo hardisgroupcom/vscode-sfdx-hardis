@@ -11,7 +11,7 @@ export function registerShowPipeline(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
     "vscode-sfdx-hardis.showPipeline",
     async () => {
-      let pipelineProperties = await loadAllPipelineInfo();
+      let pipelineProperties = await loadAllPipelineInfo(true);
       const panel = LwcPanelManager.getInstance().getOrCreatePanel(
         "s-pipeline",
         pipelineProperties,
@@ -21,7 +21,7 @@ export function registerShowPipeline(commands: Commands) {
       panel.onMessage(async (type, data) => {
         // Refresh
         if (type === "refreshPipeline") {
-          pipelineProperties = await loadAllPipelineInfo();
+          pipelineProperties = await loadAllPipelineInfo(true);
           panel.sendInitializationData(pipelineProperties);
         }
         // Open Package XML Panel
@@ -70,7 +70,7 @@ export function registerShowPipeline(commands: Commands) {
   );
   commands.disposables.push(disposable);
 
-  async function loadAllPipelineInfo(): Promise<{
+  async function loadAllPipelineInfo(resetGit=false): Promise<{
     pipelineData: any;
     gitAuthenticated: boolean;
     prButtonInfo: any;
@@ -86,7 +86,7 @@ export function registerShowPipeline(commands: Commands) {
       async () => {
         const pipelineDataProvider = new PipelineDataProvider();
         const pipelineData = await pipelineDataProvider.getPipelineData();
-        const gitProvider = await GitProvider.getInstance();
+        const gitProvider = await GitProvider.getInstance(resetGit);
         let openPullRequests: PullRequest[] = [];
         let gitAuthenticated = false;
         if (gitProvider?.isActive) {

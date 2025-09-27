@@ -104,7 +104,7 @@ export type PullRequest = {
   // - 'success' : all jobs succeeded
   // - 'failed'  : at least one job failed
   // - 'unknown' : no jobs or unknown statuses
-  jobsStatus?: "running" | "pending" | "success" | "failed" | "unknown" | string;
+  jobsStatus?: "running" | "pending" | "success" | "failed" | "unknown" ;
 };
 
 /**

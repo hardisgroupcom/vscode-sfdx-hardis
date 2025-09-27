@@ -17,8 +17,8 @@ export class GitProvider {
   repoInfo: RepoInfo | null = null;
   hostKey: string = "";
 
-  static async getInstance(): Promise<GitProvider | null> {
-    if (!this.instance) {
+  static async getInstance(reset=false): Promise<GitProvider | null> {
+    if (!this.instance || reset === true) {
       const gitInfo = await GitProvider.detectRepoInfo();
       if (!gitInfo) {
         return null;

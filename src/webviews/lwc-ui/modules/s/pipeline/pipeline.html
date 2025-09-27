@@ -1,5 +1,6 @@
 <template>
     <div class="slds-scope slds-theme_default slds-p-around_small blue-back">
+            <!-- Status icon styles moved to pipeline.css (LWC requires CSS in the component bundle) -->
     <lightning-card title="SFDX-Hardis DevOps Pipeline">
         <div slot="actions" class="slds-float_right">
             <lightning-button-group>
@@ -158,7 +159,7 @@
                             </div>
                         </lightning-tab>
                         <lightning-tab label={openPrTabLabel} value="prs">
-                                <template if:true={openPullRequests}>
+                                <template if:true={gitAuthenticated}>
                                     <lightning-datatable
                                         key-field="id"
                                         data={openPullRequests}
@@ -166,8 +167,16 @@
                                         hide-checkbox-column
                                     ></lightning-datatable>
                                 </template>
-                                <template if:false={openPullRequests}>
-                                    <div class="slds-p-around_medium">No pull requests available.</div>
+                                <template if:false={gitAuthenticated}>
+                                    <div class="slds-m-around_medium slds-grid slds-grid_align-center" style="padding:1rem;">
+                                        <lightning-button
+                                            icon-name={connectedIconName}
+                                            variant={connectedVariant}
+                                            label={connectedLabel}
+                                            title="Connect to a Git provider"
+                                            onclick={handleGitConnect}
+                                        ></lightning-button>
+                                    </div>
                                 </template>
                         </lightning-tab>
                     </lightning-tabset>
