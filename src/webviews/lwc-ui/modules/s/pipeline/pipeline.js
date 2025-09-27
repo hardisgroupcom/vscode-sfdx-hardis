@@ -68,11 +68,11 @@ export default class Pipeline extends LightningElement {
     this.lastDiagram = "";
     this.gitAuthenticated = data?.gitAuthenticated ?? false;
     this.connectedLabel =
-      gitAuthenticated ? `Connected to ${this.repoPlatformLabel}` : `Connect to ${this.repoPlatformLabel}`;
+      this.gitAuthenticated ? `Connected to ${this.repoPlatformLabel}` : `Connect to ${this.repoPlatformLabel}`;
     this.connectedIconName =
-      gitAuthenticated ? "utility:check" : "utility:link";
-    this.connectedVariant = gitAuthenticated ? "success" : "neutral";
-  this.openPullRequests = this._mapPrsWithIcons(data.openPullRequests || []);
+      this.gitAuthenticated ? "utility:check" : "utility:link";
+    this.connectedVariant = this.gitAuthenticated ? "success" : "neutral";
+    this.openPullRequests = this._mapPrsWithIcons(data.openPullRequests || []);
     // ensure reactivity for computed label
     this.openPullRequests = Array.isArray(this.openPullRequests)
       ? this.openPullRequests
