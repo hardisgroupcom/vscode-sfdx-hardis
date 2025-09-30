@@ -7,23 +7,71 @@ import "s/forceLightTheme"; // Ensure light theme is applied
 
 export default class Pipeline extends LightningElement {
   @track prButtonInfo;
+  @track gitAuthenticated = false;
   @track connectedLabel = "Connect to Git";
-  @track connectedIconName = "utility:connect";
+  @track connectedVariant = "neutral";
+  @track connectedIconName = "utility:link";
   @track openPullRequests = [];
   prColumns = [
-    { label: "Number", fieldName: "number", type: "text" },
     {
+      key: "number",
+      label: "#",
+      fieldName: "number",
+      type: "text",
+      initialWidth: 80,
+      wrapText: true,
+    },
+    {
+      key: "title",
       label: "Title",
       fieldName: "webUrl",
       type: "url",
       typeAttributes: { label: { fieldName: "title" }, target: "_blank" },
+      initialWidth: 420,
+      wrapText: true,
     },
-    { label: "Author", fieldName: "authorLabel", type: "text" },
-    { label: "Source", fieldName: "sourceBranch", type: "text" },
-    { label: "Target", fieldName: "targetBranch", type: "text" },
+    // Jobs status column (emoji indicator) - clickable, uses PR webUrl but shows emoji as label
+    {
+      key: "status",
+      label: "",
+      fieldName: "webUrl",
+      type: "url",
+      initialWidth: 32,
+      wrapText: false,
+      typeAttributes: {
+        label: { fieldName: "jobsStatusEmoji" },
+        target: "_blank",
+      },
+      cellAttributes: { class: "hardis-emoji-cell" },
+    },
+    {
+      key: "author",
+      label: "Author",
+      fieldName: "authorLabel",
+      type: "text",
+      initialWidth: 160,
+      wrapText: true,
+    },
+    {
+      key: "source",
+      label: "Source",
+      fieldName: "sourceBranch",
+      type: "text",
+      initialWidth: 280,
+      wrapText: true,
+    },
+    {
+      key: "target",
+      label: "Target",
+      fieldName: "targetBranch",
+      type: "text",
+      initialWidth: 180,
+      wrapText: true,
+    },
   ];
 
   pipelineData;
+  repoInfo;
   error;
   currentDiagram = "";
   lastDiagram = "";
@@ -51,6 +99,7 @@ export default class Pipeline extends LightningElement {
   @api
   initialize(data) {
     this.pipelineData = data.pipelineData;
+    this.repoPlatformLabel = data.repoPlatformLabel || "Git";
     this.prButtonInfo = data.prButtonInfo;
     this.warnings = this.pipelineData.warnings || [];
     this.hasWarnings = this.warnings.length > 0;
@@ -58,23 +107,240 @@ export default class Pipeline extends LightningElement {
     this.currentDiagram = this.pipelineData.mermaidDiagram;
     this.error = undefined;
     this.lastDiagram = "";
-    this.connectedLabel =
-      data && data.gitAuthenticated ? "Connected" : "Connect to Git";
-    this.connectedIconName =
-      data && data.gitAuthenticated ? "utility:check" : "utility:connect";
-    this.openPullRequests = data.openPullRequests || [];
+    this.gitAuthenticated = data?.gitAuthenticated ?? false;
+    this.connectedLabel = this.gitAuthenticated
+      ? `Connected to ${this.repoPlatformLabel}`
+      : `Connect to ${this.repoPlatformLabel}`;
+    this.connectedIconName = this.gitAuthenticated
+      ? "utility:check"
+      : "utility:link";
+    this.connectedVariant = this.gitAuthenticated ? "success" : "neutral";
+    this.openPullRequests = this._mapPrsWithIcons(data.openPullRequests || []);
     // ensure reactivity for computed label
     this.openPullRequests = Array.isArray(this.openPullRequests)
       ? this.openPullRequests
       : [];
+    // adjust columns to fit the available width immediately
+    setTimeout(() => this.adjustPrColumns(), 50);
     // Render the Mermaid diagram after a brief delay to ensure DOM is ready
     setTimeout(() => this.renderMermaid(), 0);
     console.log("Pipeline data initialized:", this.pipelineData);
   }
 
+  // Map PRs to include a computed jobsIconName used by datatable cellAttributes
+  _mapPrsWithIcons(prs) {
+    if (!Array.isArray(prs)) return [];
+    return prs.map((pr) => {
+      const copy = Object.assign({}, pr);
+      // set image src for pre-colored SVG based on normalized status
+      const key = (pr.jobsStatus || "unknown").toString().toLowerCase();
+      const normalized = ["running", "pending", "success", "failed"].includes(
+        key,
+      )
+        ? key
+        : "unknown";
+      // Add a SLDS-friendly emoji indicator column (quick, robust fallback)
+      const emojiMap = {
+        running: "🔄",
+        pending: "⏳",
+        success: "✅",
+        failed: "❌",
+        unknown: "❔",
+      };
+      // Show emoji only (accessibility: we may add a visually-hidden label later if needed)
+      copy.jobsStatusEmoji = emojiMap[normalized] || emojiMap.unknown;
+      return copy;
+    });
+  }
+
+  connectedCallback() {
+    this._boundAdjust = this.adjustPrColumns.bind(this);
+    if (typeof window !== "undefined" && window.addEventListener) {
+      window.addEventListener("resize", this._boundAdjust);
+    }
+  }
+
+  disconnectedCallback() {
+    if (
+      typeof window !== "undefined" &&
+      window.removeEventListener &&
+      this._boundAdjust
+    ) {
+      window.removeEventListener("resize", this._boundAdjust);
+    }
+  }
+
+  adjustPrColumns() {
+    try {
+      const dt = this.template.querySelector("lightning-datatable");
+      // fallback container
+      const container =
+        this.template.querySelector(".pipeline-card-spacing") ||
+        this.template.querySelector(".pipeline-container");
+      const rect = dt
+        ? dt.getBoundingClientRect()
+        : container
+          ? container.getBoundingClientRect()
+          : null;
+      // Prefer datatable's clientWidth when available (excludes scrollbar) and use smaller padding reservation
+      const rawWidth =
+        dt && dt.clientWidth
+          ? dt.clientWidth
+          : rect && rect.width
+            ? rect.width
+            : null;
+      const available = rawWidth ? Math.max(rawWidth, 600) : 800;
+
+      // Minimum widths
+      const minNumber = 80;
+      const minStatus = 36;
+      const minAuthor = 140;
+      const minSource = 220;
+      const minTarget = 140;
+
+      // Sum of minimums
+      const sumMin =
+        minNumber + minStatus + minAuthor + minSource + minTarget + 120; // 120 is a sensible minimum for title
+      // We'll compute float widths first, then convert to integers and distribute rounding
+      const absMin = {
+        number: 40,
+        status: 24,
+        author: 80,
+        source: 80,
+        target: 60,
+        title: 80,
+      };
+
+      // Start with desired (float) widths based on minima
+      let desired = {
+        number: minNumber,
+        status: minStatus,
+        author: minAuthor,
+        source: minSource,
+        target: minTarget,
+        title: Math.max(
+          120,
+          available -
+            (minNumber + minStatus + minAuthor + minSource + minTarget),
+        ),
+      };
+
+      // If available is smaller than the sum of sensible minima, scale the sensible minima down
+      if (available < sumMin) {
+        const scale = available / sumMin;
+        desired.number = Math.max(absMin.number, minNumber * scale);
+        desired.status = Math.max(absMin.status, minStatus * scale);
+        desired.author = Math.max(absMin.author, minAuthor * scale);
+        desired.source = Math.max(absMin.source, minSource * scale);
+        desired.target = Math.max(absMin.target, minTarget * scale);
+        // title gets remaining space (but at least its absMin)
+        desired.title = Math.max(
+          absMin.title,
+          available -
+            (desired.number +
+              desired.status +
+              desired.author +
+              desired.source +
+              desired.target),
+        );
+      }
+
+      // Now convert floats to integer widths while ensuring the total equals available (rounded)
+      const availInt = Math.round(available);
+      // Prefer title early so remainder distribution favours it
+      const cols = ["number", "title", "status", "author", "source", "target"];
+      const intWidths = {};
+      // floor each desired
+      cols.forEach((k) => {
+        intWidths[k] = Math.floor(desired[k]);
+      });
+      let sumInt = cols.reduce((s, k) => s + intWidths[k], 0);
+      let remainder = availInt - sumInt;
+
+      if (remainder !== 0) {
+        // compute fractional parts to distribute remainder fairly
+        const fracs = cols.map((k) => ({
+          key: k,
+          frac: desired[k] - Math.floor(desired[k]),
+        }));
+        // If we need to add pixels, give to highest fractional parts first (prefer title)
+        if (remainder > 0) {
+          // prefer title first, then by fractional part
+          fracs.sort((a, b) => {
+            if (a.key === "title" && b.key !== "title") return -1;
+            if (b.key === "title" && a.key !== "title") return 1;
+            return b.frac - a.frac;
+          });
+          let i = 0;
+          while (remainder > 0) {
+            const idx = i % fracs.length;
+            intWidths[fracs[idx].key] += 1;
+            remainder -= 1;
+            i += 1;
+          }
+        }
+        // If we need to remove pixels, remove from smallest fractional parts or columns above their absMin
+        else if (remainder < 0) {
+          fracs.sort((a, b) => a.frac - b.frac);
+          let i = 0;
+          remainder = -remainder;
+          while (remainder > 0) {
+            const key = fracs[i % fracs.length].key;
+            if (intWidths[key] > absMin[key]) {
+              intWidths[key] -= 1;
+              remainder -= 1;
+            }
+            i += 1;
+            // safeguard: if we've looped and can't remove more because all at absMin, break
+            if (i > fracs.length * 3) {
+              break;
+            }
+          }
+        }
+      }
+
+      // Final safety: if sum still differs, force-adjust title as last resort
+      let finalSum = cols.reduce((s, k) => s + intWidths[k], 0);
+      const diff = Math.round(available) - finalSum;
+      if (diff !== 0) {
+        intWidths.title = Math.max(absMin.title, intWidths.title + diff);
+      }
+
+      // Map to variables used later
+      const numberW = intWidths.number;
+      const statusW = intWidths.status;
+      const titleW = intWidths.title;
+      const authorW = intWidths.author;
+      const sourceW = intWidths.source;
+      const targetW = intWidths.target;
+
+      const newCols = this.prColumns.map((c) => {
+        const copy = Object.assign({}, c);
+        // Prefer explicit `key` property for robust identification
+        const k = copy.key || copy.fieldName;
+        if (k === "number") copy.initialWidth = numberW;
+        else if (k === "title") copy.initialWidth = titleW;
+        else if (k === "status" || k === "jobsStatusEmoji")
+          copy.initialWidth = statusW;
+        else if (k === "author") copy.initialWidth = authorW;
+        else if (k === "source") copy.initialWidth = sourceW;
+        else if (k === "target") copy.initialWidth = targetW;
+        return copy;
+      });
+      // reassign to trigger reactivity
+      this.prColumns = newCols;
+    } catch (e) {
+      // silently ignore measurement errors
+      // console.warn('adjustPrColumns error', e);
+    }
+  }
+
   get openPrTabLabel() {
     const count = this.openPullRequests ? this.openPullRequests.length : 0;
-    return count > 0 ? `Open Pull Requests (${count})` : "Open Pull Requests";
+    const prLabel = this.prButtonInfo?.pullRequestLabel
+      ? this.prButtonInfo.pullRequestLabel + "s"
+      : "Pull Requests";
+    return count > 0 ? `Open ${prLabel} (${count})` : `Open ${prLabel}`;
   }
 
   openPrPage() {
@@ -99,16 +365,6 @@ export default class Pipeline extends LightningElement {
       },
     });
     console.log("Configure Auth button clicked");
-  }
-
-  handleShowPipelineConfig() {
-    window.sendMessageToVSCode({
-      type: "runVsCodeCommand",
-      data: {
-        command: "vscode-sfdx-hardis.showPipelineConfig",
-        args: [],
-      },
-    });
   }
 
   handleToggleMajor(event) {
@@ -197,6 +453,11 @@ export default class Pipeline extends LightningElement {
     switch (messageType) {
       case "refreshPipeline":
         this.refreshPipeline();
+        break;
+      case "openPullRequestsUpdated":
+        // allow dynamic updates from extension host
+        this.openPullRequests = this._mapPrsWithIcons(data || []);
+        setTimeout(() => this.adjustPrColumns(), 50);
         break;
       default:
         console.log("Unknown message type:", messageType, data);

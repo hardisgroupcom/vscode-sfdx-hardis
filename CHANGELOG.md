@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [6.9.1] 2024-09-30
+
+- Pipeline view: Display jobs status of each Pull Request
+- Fix bug when opening Files Workbench panel
+- Prompt select: autofocus filtering field when displayed
+
 ## [6.9.0] 2024-09-25
 
 - Connect to Git provider to display the list of open Pull Requests

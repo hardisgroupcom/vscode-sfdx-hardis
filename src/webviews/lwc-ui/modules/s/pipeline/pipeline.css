@@ -114,3 +114,51 @@
 .pipeline-card-spacing {
     margin-top: 1rem !important;
 }
+
+/* PR status icon coloring */
+/* Color Lightning icons by setting the SLDS CSS custom properties used by lightning-icon */
+.hardis-pr-status-running lightning-icon,
+.hardis-pr-status-running .slds-icon {
+    --slds-c-icon-color-foreground: #0aa3ff;
+    --slds-c-icon-color-foreground-default: #0aa3ff;
+    color: #0aa3ff;
+}
+.hardis-pr-status-pending lightning-icon,
+.hardis-pr-status-pending .slds-icon {
+    --slds-c-icon-color-foreground: #ffb100;
+    --slds-c-icon-color-foreground-default: #ffb100;
+    color: #ffb100;
+}
+.hardis-pr-status-success lightning-icon,
+.hardis-pr-status-success .slds-icon {
+    --slds-c-icon-color-foreground: #2ecc71;
+    --slds-c-icon-color-foreground-default: #2ecc71;
+    color: #2ecc71;
+}
+.hardis-pr-status-failed lightning-icon,
+.hardis-pr-status-failed .slds-icon {
+    --slds-c-icon-color-foreground: #e14b4b;
+    --slds-c-icon-color-foreground-default: #e14b4b;
+    color: #e14b4b;
+}
+.hardis-pr-status-unknown lightning-icon,
+.hardis-pr-status-unknown .slds-icon {
+    --slds-c-icon-color-foreground: #999999;
+    --slds-c-icon-color-foreground-default: #999999;
+    color: #999999;
+}
+
+/* Ensure datatable cell hides text label so only icon is visible */
+lightning-datatable .hardis-pr-status-running .slds-truncate,
+lightning-datatable .hardis-pr-status-pending .slds-truncate,
+lightning-datatable .hardis-pr-status-success .slds-truncate,
+lightning-datatable .hardis-pr-status-failed .slds-truncate,
+lightning-datatable .hardis-pr-status-unknown .slds-truncate {
+    display: none !important;
+}
+
+/* Make URL labels (emoji) look native: no underline and pointer cursor only for emoji cells */
+lightning-datatable .hardis-emoji-cell a {
+    text-decoration: none !important;
+    cursor: pointer !important;
+}
