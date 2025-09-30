@@ -3,7 +3,10 @@ import { GitProvider } from "./gitProvider";
 import { ProviderDescription, PullRequest, PullRequestJob } from "./types";
 import * as azdev from "azure-devops-node-api";
 import { GitApi } from "azure-devops-node-api/GitApi";
-import { PullRequestStatus, GitPullRequest } from "azure-devops-node-api/interfaces/GitInterfaces";
+import {
+  PullRequestStatus,
+  GitPullRequest,
+} from "azure-devops-node-api/interfaces/GitInterfaces";
 import { Logger } from "../../logger";
 
 export class GitProviderAzure extends GitProvider {
@@ -24,7 +27,7 @@ export class GitProviderAzure extends GitProvider {
     return true;
   }
 
-  async authenticate(): Promise<boolean|null> {
+  async authenticate(): Promise<boolean | null> {
     const session = await vscode.authentication.getSession(
       "microsoft",
       ["vso.code"],
@@ -132,7 +135,10 @@ export class GitProviderAzure extends GitProvider {
   }
 
   // Fetch latest build(s) for Azure DevOps PR. Best-effort: try to match by commitId or branch.
-  private async fetchLatestJobsForPullRequestAzure(rawPr: GitPullRequest, pr: PullRequest): Promise<PullRequestJob[]> {
+  private async fetchLatestJobsForPullRequestAzure(
+    rawPr: GitPullRequest,
+    pr: PullRequest,
+  ): Promise<PullRequestJob[]> {
     if (!this.connection || !this.repoInfo) {
       return [];
     }
@@ -140,14 +146,33 @@ export class GitProviderAzure extends GitProvider {
       const buildApi = await this.connection.getBuildApi();
       const project = this.repoInfo.owner;
       // Prefer commitId if available
-      const commitId = rawPr.lastMergeSourceCommit?.commitId || rawPr.lastMergeSourceCommit?.commitId;
+      const commitId =
+        rawPr.lastMergeSourceCommit?.commitId ||
+        rawPr.lastMergeSourceCommit?.commitId;
       let builds: any[] = [];
       try {
         // Get recent builds and filter by sourceVersion or branch
-        const recent = await buildApi.getBuilds(project, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, 20);
+        const recent = await buildApi.getBuilds(
+          project,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          20,
+        );
         builds = (recent || []).filter((b: any) => {
           if (commitId && b.sourceVersion) {
-            return String(b.sourceVersion).toLowerCase() === String(commitId).toLowerCase();
+            return (
+              String(b.sourceVersion).toLowerCase() ===
+              String(commitId).toLowerCase()
+            );
           }
           if (pr.sourceBranch && b.sourceBranch) {
             return b.sourceBranch.endsWith(pr.sourceBranch);
@@ -177,7 +202,10 @@ export class GitProviderAzure extends GitProvider {
 
   // Helper to convert raw Azure PR and attach jobs/jobsStatus
   // Batch helper: convert an array of raw Azure PRs and enrich each with jobs
-  private async convertAndCollectJobsList(rawPrs: GitPullRequest[], branchName: string): Promise<PullRequest[]> {
+  private async convertAndCollectJobsList(
+    rawPrs: GitPullRequest[],
+    branchName: string,
+  ): Promise<PullRequest[]> {
     if (!rawPrs || rawPrs.length === 0) {
       return [];
     }
@@ -185,11 +213,16 @@ export class GitProviderAzure extends GitProvider {
       rawPrs.map(async (r) => {
         const convertedPr = this.convertToPullRequest(r, branchName);
         try {
-          const jobs = await this.fetchLatestJobsForPullRequestAzure(r, convertedPr);
+          const jobs = await this.fetchLatestJobsForPullRequestAzure(
+            r,
+            convertedPr,
+          );
           convertedPr.jobs = jobs;
           convertedPr.jobsStatus = this.computeJobsStatus(jobs);
         } catch (e) {
-          Logger.log(`Error fetching jobs for PR #${convertedPr.number}: ${String(e)}`);
+          Logger.log(
+            `Error fetching jobs for PR #${convertedPr.number}: ${String(e)}`,
+          );
         }
         return convertedPr;
       }),

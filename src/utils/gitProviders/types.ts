@@ -27,7 +27,12 @@ export type ProviderDescription = {
 export type PullRequestStatus = "open" | "closed" | "merged" | "declined";
 
 // Job run status for CI workflows associated with a pull request commit
-export type PullRequestJobStatus = "running" | "success" | "failed" | "pending" | string;
+export type PullRequestJobStatus =
+  | "running"
+  | "success"
+  | "failed"
+  | "pending"
+  | string;
 
 export type PullRequestJob = {
   // job identifier/name (e.g. workflow name or job name)
@@ -104,7 +109,7 @@ export type PullRequest = {
   // - 'success' : all jobs succeeded
   // - 'failed'  : at least one job failed
   // - 'unknown' : no jobs or unknown statuses
-  jobsStatus: "running" | "pending" | "success" | "failed" | "unknown" ;
+  jobsStatus: "running" | "pending" | "success" | "failed" | "unknown";
 };
 
 /**

@@ -62,8 +62,7 @@ export default class PromptInput extends LightningElement {
 
         // Prefer native input inside the component's shadowRoot
         const nativeInput =
-          filterHost.shadowRoot &&
-          filterHost.shadowRoot.querySelector("input");
+          filterHost.shadowRoot && filterHost.shadowRoot.querySelector("input");
 
         const inputToFocus = nativeInput || filterHost.querySelector("input");
 

@@ -17,7 +17,7 @@ export class GitProvider {
   repoInfo: RepoInfo | null = null;
   hostKey: string = "";
 
-  static async getInstance(reset=false): Promise<GitProvider | null> {
+  static async getInstance(reset = false): Promise<GitProvider | null> {
     if (!this.instance || reset === true) {
       const gitInfo = await GitProvider.detectRepoInfo();
       if (!gitInfo) {
@@ -174,7 +174,7 @@ export class GitProvider {
     };
   }
 
-  async authenticate(): Promise<boolean|null> {
+  async authenticate(): Promise<boolean | null> {
     Logger.log(
       `authenticate not implemented on ${this.repoInfo?.providerName || "unknown provider"}`,
     );
@@ -213,7 +213,9 @@ export class GitProvider {
    * - else if all jobs are 'success' => 'success'
    * - else => 'unknown'
    */
-  computeJobsStatus(jobs?: PullRequestJob[]): "running" | "pending" | "success" | "failed" | "unknown" {
+  computeJobsStatus(
+    jobs?: PullRequestJob[],
+  ): "running" | "pending" | "success" | "failed" | "unknown" {
     if (!jobs || jobs.length === 0) {
       return "unknown";
     }

@@ -22,7 +22,7 @@ export class GitProviderGitHub extends GitProvider {
     };
   }
 
-  async authenticate(): Promise<boolean| null> {
+  async authenticate(): Promise<boolean | null> {
     const session = await vscode.authentication.getSession("github", ["repo"], {
       forceNewSession: true,
     });
@@ -81,7 +81,9 @@ export class GitProviderGitHub extends GitProvider {
 
   // Helper to convert a raw GitHub PR and attach jobs/jobsStatus
   // Batch helper: convert an array of raw GitHub PRs and enrich each with jobs
-  private async convertAndCollectJobsList(rawPrs: Endpoints["GET /repos/{owner}/{repo}/pulls"]["response"]["data"]): Promise<PullRequest[]> {
+  private async convertAndCollectJobsList(
+    rawPrs: Endpoints["GET /repos/{owner}/{repo}/pulls"]["response"]["data"],
+  ): Promise<PullRequest[]> {
     if (!rawPrs || rawPrs.length === 0) {
       return [];
     }
@@ -92,8 +94,10 @@ export class GitProviderGitHub extends GitProvider {
           const jobs = await this.fetchLatestJobsForPullRequest(converted);
           converted.jobs = jobs;
           converted.jobsStatus = this.computeJobsStatus(jobs);
-        } catch (e){
-          Logger.log(`Error fetching jobs for PR #${converted.number}: ${String(e)}`);
+        } catch (e) {
+          Logger.log(
+            `Error fetching jobs for PR #${converted.number}: ${String(e)}`,
+          );
         }
         return converted;
       }),
@@ -102,7 +106,9 @@ export class GitProviderGitHub extends GitProvider {
   }
 
   // Fetch latest workflow run jobs for a pull request using the source branch
-  private async fetchLatestJobsForPullRequest(pr: PullRequest): Promise<PullRequestJob[]> {
+  private async fetchLatestJobsForPullRequest(
+    pr: PullRequest,
+  ): Promise<PullRequestJob[]> {
     if (!this.gitHubClient || !this.repoInfo) {
       return [];
     }
@@ -115,7 +121,10 @@ export class GitProviderGitHub extends GitProvider {
         branch: pr.sourceBranch,
         per_page: 10,
       });
-      const runs = runsResp.data && runsResp.data.workflow_runs ? runsResp.data.workflow_runs : [];
+      const runs =
+        runsResp.data && runsResp.data.workflow_runs
+          ? runsResp.data.workflow_runs
+          : [];
       if (!runs || runs.length === 0) {
         return [];
       }
@@ -127,7 +136,8 @@ export class GitProviderGitHub extends GitProvider {
         repo,
         run_id: run.id,
       });
-      const jobs = jobsResp.data && jobsResp.data.jobs ? jobsResp.data.jobs : [];
+      const jobs =
+        jobsResp.data && jobsResp.data.jobs ? jobsResp.data.jobs : [];
       const converted: PullRequestJob[] = jobs.map((j: any) => ({
         name: j.name || j.step_name || String(j.id || ""),
         status: (j.conclusion || j.status || "").toString(),

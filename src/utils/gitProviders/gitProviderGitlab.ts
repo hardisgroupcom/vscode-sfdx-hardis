@@ -1,7 +1,10 @@
 import * as vscode from "vscode";
 import { GitProvider } from "./gitProvider";
 import { Gitlab } from "@gitbeaker/rest";
-import type { MergeRequestSchemaWithBasicLabels, Camelize } from "@gitbeaker/rest";
+import type {
+  MergeRequestSchemaWithBasicLabels,
+  Camelize,
+} from "@gitbeaker/rest";
 import { ProviderDescription, PullRequest, PullRequestJob } from "./types";
 import { SecretsManager } from "../secretsManager";
 import { Logger } from "../../logger";
@@ -12,7 +15,7 @@ export class GitProviderGitlab extends GitProvider {
   gitlabProjectId: number | null = null;
   secretTokenIdentifier: string = "";
 
-  async authenticate(): Promise<boolean|null> {
+  async authenticate(): Promise<boolean | null> {
     const token = await vscode.window.showInputBox({
       prompt: "Enter your Gitlab PAT (Personal Access Token)",
       ignoreFocusOut: true,
@@ -132,7 +135,12 @@ export class GitProviderGitlab extends GitProvider {
   }
 
   // Batch helper: convert an array of raw merge requests and enrich each with jobs
-  private async convertAndCollectJobsList(rawMrs: Array<MergeRequestSchemaWithBasicLabels | Camelize<MergeRequestSchemaWithBasicLabels>>): Promise<PullRequest[]> {
+  private async convertAndCollectJobsList(
+    rawMrs: Array<
+      | MergeRequestSchemaWithBasicLabels
+      | Camelize<MergeRequestSchemaWithBasicLabels>
+    >,
+  ): Promise<PullRequest[]> {
     if (!rawMrs || rawMrs.length === 0) {
       return [];
     }
@@ -143,7 +151,7 @@ export class GitProviderGitlab extends GitProvider {
           const jobs = await this.fetchLatestJobsForMergeRequest(mr);
           pr.jobs = jobs;
           pr.jobsStatus = this.computeJobsStatus(jobs);
-        } catch (e){
+        } catch (e) {
           Logger.log(`Error fetching jobs for MR !${pr.number}: ${String(e)}`);
         }
         return pr;
@@ -154,7 +162,11 @@ export class GitProviderGitlab extends GitProvider {
 
   // Fetch jobs for the latest pipeline related to the merge request.
   // Prefer mr.head_pipeline if available, otherwise try pipelines by SHA or MR pipelines endpoint.
-  private async fetchLatestJobsForMergeRequest(mr: MergeRequestSchemaWithBasicLabels | Camelize<MergeRequestSchemaWithBasicLabels>): Promise<PullRequestJob[]> {
+  private async fetchLatestJobsForMergeRequest(
+    mr:
+      | MergeRequestSchemaWithBasicLabels
+      | Camelize<MergeRequestSchemaWithBasicLabels>,
+  ): Promise<PullRequestJob[]> {
     try {
       const projectId = this.gitlabProjectId!;
       const mrIid = mr.iid!;
@@ -175,13 +187,13 @@ export class GitProviderGitlab extends GitProvider {
       }
 
       const converted: PullRequestJob[] = pipelines.map((p: any) => {
-      return {
-        name: p.ref || p.sha || String(p.id || ""),
-        status: (p.status || "").toString(),
-        webUrl: p.web_url || p.webUrl || undefined,
-        updatedAt: p.updated_at || p.updatedAt || undefined,
-        raw: p,
-      };
+        return {
+          name: p.ref || p.sha || String(p.id || ""),
+          status: (p.status || "").toString(),
+          webUrl: p.web_url || p.webUrl || undefined,
+          updatedAt: p.updated_at || p.updatedAt || undefined,
+          raw: p,
+        };
       });
 
       return converted;

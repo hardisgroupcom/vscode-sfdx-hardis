@@ -22,7 +22,7 @@ export class GitProviderBitbucket extends GitProvider {
     };
   }
 
-  async authenticate(): Promise<boolean|null> {
+  async authenticate(): Promise<boolean | null> {
     const token = await vscode.window.showInputBox({
       prompt: "Enter your Bitbucket Token",
       ignoreFocusOut: true,
@@ -142,22 +142,33 @@ export class GitProviderBitbucket extends GitProvider {
   }
 
   // Fetch pipelines for a Bitbucket PR (Bitbucket Cloud). Best-effort: query pipelines by commit/branch
-  private async fetchLatestJobsForPrBitbucket(rawPr: any, pr: PullRequest): Promise<PullRequestJob[]> {
+  private async fetchLatestJobsForPrBitbucket(
+    rawPr: any,
+    pr: PullRequest,
+  ): Promise<PullRequestJob[]> {
     if (!this.bitbucketClient || !this.workspace || !this.repoSlug) {
       return [];
     }
     try {
       // Try to find the commit hash
-      const commit = rawPr && rawPr.source && rawPr.source.commit ? rawPr.source.commit.hash : undefined;
+      const commit =
+        rawPr && rawPr.source && rawPr.source.commit
+          ? rawPr.source.commit.hash
+          : undefined;
       // Query pipelines endpoint: GET /repositories/{workspace}/{repo_slug}/pipelines/?sort=-created_on&q=target.ref_name="branch"
-      const q = commit ? `target.commit.hash = "${commit}"` : `target.ref_name = "${pr.sourceBranch}"`;
+      const q = commit
+        ? `target.commit.hash = "${commit}"`
+        : `target.ref_name = "${pr.sourceBranch}"`;
       const response = await this.bitbucketClient.pipelines.list({
         workspace: this.workspace,
         repo_slug: this.repoSlug,
         q,
         sort: "-created_on",
       } as any);
-      const values = response && response.data && response.data.values ? response.data.values : [];
+      const values =
+        response && response.data && response.data.values
+          ? response.data.values
+          : [];
       if (!values || values.length === 0) {
         return [];
       }
@@ -167,9 +178,19 @@ export class GitProviderBitbucket extends GitProvider {
       const converted: PullRequestJob[] = [
         {
           name: String((p && p.target && p.target.ref_name) || p.id || ""),
-          status: String((p && p.state && ((p.state.result && p.state.result.name) || p.state.name)) || ""),
-          webUrl: String((p && p.links && p.links.html && p.links.html.href) || undefined) || undefined,
-          updatedAt: String(p && (p.updated_on || p.created_on) || undefined) || undefined,
+          status: String(
+            (p &&
+              p.state &&
+              ((p.state.result && p.state.result.name) || p.state.name)) ||
+              "",
+          ),
+          webUrl:
+            String(
+              (p && p.links && p.links.html && p.links.html.href) || undefined,
+            ) || undefined,
+          updatedAt:
+            String((p && (p.updated_on || p.created_on)) || undefined) ||
+            undefined,
           raw: p,
         },
       ];
@@ -181,7 +202,9 @@ export class GitProviderBitbucket extends GitProvider {
 
   // Helper to convert raw Bitbucket PR and attach jobs/jobsStatus
   // Batch helper: convert an array of raw Bitbucket PRs and enrich each with jobs
-  private async convertAndCollectJobsList(rawPrs: Schema.PaginatedPullrequests['values']): Promise<PullRequest[]> {
+  private async convertAndCollectJobsList(
+    rawPrs: Schema.PaginatedPullrequests["values"],
+  ): Promise<PullRequest[]> {
     if (!rawPrs || rawPrs.length === 0) {
       return [];
     }
@@ -193,7 +216,9 @@ export class GitProviderBitbucket extends GitProvider {
           conv.jobs = jobs;
           conv.jobsStatus = this.computeJobsStatus(jobs);
         } catch (e) {
-          Logger.log(`Error fetching jobs for PR #${conv.number}: ${String(e)}`);
+          Logger.log(
+            `Error fetching jobs for PR #${conv.number}: ${String(e)}`,
+          );
         }
         return conv;
       }),

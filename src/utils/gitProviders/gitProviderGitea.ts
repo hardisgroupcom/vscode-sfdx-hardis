@@ -21,7 +21,7 @@ export class GitProviderGitea extends GitProviderGitHub {
     };
   }
 
-  async authenticate(): Promise<boolean|null> {
+  async authenticate(): Promise<boolean | null> {
     const token = await vscode.window.showInputBox({
       prompt: "Enter your Gitea PAT (Personal Access Token)",
       ignoreFocusOut: true,

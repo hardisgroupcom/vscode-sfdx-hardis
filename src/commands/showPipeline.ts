@@ -41,7 +41,7 @@ export function registerShowPipeline(commands: Commands) {
           Logger.log(
             `Authenticating to Git provider: ${gitProvider.repoInfo?.providerName} at ${gitProvider.repoInfo?.host}`,
           );
-          let authRes: boolean|null = false;
+          let authRes: boolean | null = false;
           try {
             authRes = await gitProvider.authenticate();
           } catch (e) {
@@ -70,7 +70,7 @@ export function registerShowPipeline(commands: Commands) {
   );
   commands.disposables.push(disposable);
 
-  async function loadAllPipelineInfo(resetGit=false): Promise<{
+  async function loadAllPipelineInfo(resetGit = false): Promise<{
     pipelineData: any;
     gitAuthenticated: boolean;
     prButtonInfo: any;
@@ -113,7 +113,7 @@ export function registerShowPipeline(commands: Commands) {
           prButtonInfo: prButtonInfo,
           gitAuthenticated: gitAuthenticated,
           openPullRequests: openPullRequests,
-          repoPlatformLabel: repoPlatformLabel
+          repoPlatformLabel: repoPlatformLabel,
         };
       },
     );
