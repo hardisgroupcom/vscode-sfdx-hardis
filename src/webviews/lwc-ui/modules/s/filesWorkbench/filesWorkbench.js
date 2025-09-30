@@ -25,19 +25,18 @@ export default class FilesWorkbench extends LightningElement {
   }
 
   @api
-  handleMessage(event) {
-    const message = event.data;
-    switch (message.type) {
+  handleMessage(messageType, data) {
+    switch (messageType) {
       case "initialize":
-        this.handleInitialize(message.data);
+        this.handleInitialize(data);
         break;
       case "workspacesLoaded":
-        this.handleWorkspacesLoaded(message.data);
+        this.handleWorkspacesLoaded(data);
         break;
       case "workspaceCreated":
         // Store the newly created workspace path for auto-selection
-        if (message.data && message.data.path) {
-          this.pendingSelectedWorkspacePath = message.data.path;
+        if (data && data.path) {
+          this.pendingSelectedWorkspacePath = data.path;
         }
         this.loadWorkspaces();
         this.showCreateWorkspace = false;
