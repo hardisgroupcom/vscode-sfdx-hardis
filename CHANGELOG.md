@@ -6,6 +6,7 @@
 
 - Pipeline view: Display jobs status of each Pull Request
 - Fix bug when opening Files Workbench panel
+- Prompt select: autofocus filtering field when displayed
 
 ## [6.9.0] 2024-09-25
 

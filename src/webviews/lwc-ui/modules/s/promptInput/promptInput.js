@@ -47,7 +47,39 @@ export default class PromptInput extends LightningElement {
     // When hiding the filter, clear it so combobox shows all values
     if (!this.comboboxFilterVisible) {
       this.comboboxFilter = "";
+      return;
     }
+
+    // When showing the filter, focus the input field. Lightning base components
+    // render native inputs inside their shadowRoot, so we try to find the
+    // inner <input> element after a short delay to ensure it is rendered.
+    setTimeout(() => {
+      try {
+        const filterHost = this.template.querySelector(
+          ".prompt-combobox-filter",
+        );
+        if (!filterHost) return;
+
+        // Prefer native input inside the component's shadowRoot
+        const nativeInput =
+          filterHost.shadowRoot &&
+          filterHost.shadowRoot.querySelector("input");
+
+        const inputToFocus = nativeInput || filterHost.querySelector("input");
+
+        if (inputToFocus && typeof inputToFocus.focus === "function") {
+          inputToFocus.focus();
+          if (typeof inputToFocus.select === "function") {
+            inputToFocus.select();
+          }
+        } else if (filterHost && typeof filterHost.focus === "function") {
+          // Fallback to host focus
+          filterHost.focus();
+        }
+      } catch (e) {
+        // Fail silently if focusing is not possible
+      }
+    }, 50);
   }
 
   // Handler for show only selected toggle
