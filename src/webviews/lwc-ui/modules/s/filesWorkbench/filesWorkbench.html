@@ -106,82 +106,86 @@
                 <lightning-card title={selectedWorkspace.label}>
                   <!-- Card Actions Slot -->
                   <div slot="actions">
-                    <!-- Horizontal Buttons - Hidden on small screens -->
-                    <div class="slds-show_large slds-grid">
-                      <lightning-button
-                        variant="brand"
-                        label="Export files"
-                        title="Export files from Salesforce using this workspace configuration"
-                        icon-name="utility:download"
-                        icon-position="left"
-                        size="small"
-                        onclick={handleExportFiles}
-                      ></lightning-button>
-                      <lightning-button
-                        variant="brand"
-                        label="Import files"
-                        title="Import files to Salesforce using this workspace configuration"
-                        icon-name="utility:upload"
-                        icon-position="left"
-                        size="small"
-                        onclick={handleImportFiles}
-                      ></lightning-button>
-                      <lightning-button
-                        variant="neutral"
-                        label="Edit"
-                        title="Edit workspace settings and configuration"
-                        icon-name="utility:edit"
-                        icon-position="left"
-                        size="small"
-                        data-path={selectedWorkspace.path}
-                        onclick={handleEditWorkspace}
-                      ></lightning-button>
-                      <lightning-button
-                        variant="destructive"
-                        label="Delete"
-                        title="Delete this workspace permanently"
-                        icon-name="utility:delete"
-                        icon-position="left"
-                        size="small"
-                        data-path={selectedWorkspace.path}
-                        onclick={handleDeleteWorkspace}
-                      ></lightning-button>
-                    </div>
-
-                    <!-- Dropdown Menu - Shown only on small screens -->
-                    <div class="slds-hide_large">
-                      <lightning-button-menu
-                        alternative-text="Workspace Actions"
-                        menu-alignment="right"
-                        variant="border-filled"
-                        icon-name="utility:down"
-                      >
-                        <lightning-menu-item
-                          value="export"
-                          label="Export Files"
+                    <!-- Horizontal Buttons - Rendered only when showLargeActions is true -->
+                    <template if:true={showLargeActions}>
+                      <div class="slds-show_large slds-grid">
+                        <lightning-button
+                          variant="brand"
+                          label="Export files"
+                          title="Export files from Salesforce using this workspace configuration"
                           icon-name="utility:download"
+                          icon-position="left"
+                          size="small"
                           onclick={handleExportFiles}
-                        ></lightning-menu-item>
-                        <lightning-menu-item
-                          value="import"
-                          label="Import Files"
+                        ></lightning-button>
+                        <lightning-button
+                          variant="brand"
+                          label="Import files"
+                          title="Import files to Salesforce using this workspace configuration"
                           icon-name="utility:upload"
+                          icon-position="left"
+                          size="small"
                           onclick={handleImportFiles}
-                        ></lightning-menu-item>
-                        <lightning-menu-item
-                          value="edit"
-                          label="Edit Workspace"
+                        ></lightning-button>
+                        <lightning-button
+                          variant="neutral"
+                          label="Edit"
+                          title="Edit workspace settings and configuration"
                           icon-name="utility:edit"
+                          icon-position="left"
+                          size="small"
+                          data-path={selectedWorkspace.path}
                           onclick={handleEditWorkspace}
-                        ></lightning-menu-item>
-                        <lightning-menu-item
-                          value="delete"
-                          label="Delete Workspace"
+                        ></lightning-button>
+                        <lightning-button
+                          variant="destructive"
+                          label="Delete"
+                          title="Delete this workspace permanently"
                           icon-name="utility:delete"
+                          icon-position="left"
+                          size="small"
+                          data-path={selectedWorkspace.path}
                           onclick={handleDeleteWorkspace}
-                        ></lightning-menu-item>
-                      </lightning-button-menu>
-                    </div>
+                        ></lightning-button>
+                      </div>
+                    </template>
+
+                    <!-- Dropdown Menu - Rendered only when showLargeActions is false -->
+                    <template if:false={showLargeActions}>
+                      <div class="slds-hide_large">
+                        <lightning-button-menu
+                          alternative-text="Workspace Actions"
+                          menu-alignment="right"
+                          variant="border-filled"
+                          icon-name="utility:down"
+                        >
+                          <lightning-menu-item
+                            value="export"
+                            label="Export Files"
+                            icon-name="utility:download"
+                            onclick={handleExportFiles}
+                          ></lightning-menu-item>
+                          <lightning-menu-item
+                            value="import"
+                            label="Import Files"
+                            icon-name="utility:upload"
+                            onclick={handleImportFiles}
+                          ></lightning-menu-item>
+                          <lightning-menu-item
+                            value="edit"
+                            label="Edit Workspace"
+                            icon-name="utility:edit"
+                            onclick={handleEditWorkspace}
+                          ></lightning-menu-item>
+                          <lightning-menu-item
+                            value="delete"
+                            label="Delete Workspace"
+                            icon-name="utility:delete"
+                            onclick={handleDeleteWorkspace}
+                          ></lightning-menu-item>
+                        </lightning-button-menu>
+                      </div>
+                    </template>
                   </div>
 
                   <!-- Workspace Info -->

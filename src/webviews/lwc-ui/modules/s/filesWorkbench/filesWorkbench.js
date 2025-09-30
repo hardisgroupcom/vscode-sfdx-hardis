@@ -7,6 +7,10 @@ export default class FilesWorkbench extends LightningElement {
   showCreateWorkspace = false;
   editingWorkspace = null;
   pendingSelectedWorkspacePath = null;
+  // Controls whether the horizontal (large) action buttons are shown.
+  // This mirrors the CSS breakpoint at 1024px but is handled here to
+  // ensure only one of the action controls is rendered in the DOM.
+  showLargeActions = true;
   @track newWorkspace = {
     name: "",
     label: "",
@@ -22,6 +26,28 @@ export default class FilesWorkbench extends LightningElement {
 
   connectedCallback() {
     this.loadWorkspaces();
+    // initialize responsive state and listen to window resize to toggle
+    // action controls so only one set is rendered at any time.
+    this.updateActionsVisibility();
+    this._boundResize = this.updateActionsVisibility.bind(this);
+    window.addEventListener("resize", this._boundResize);
+  }
+
+  disconnectedCallback() {
+    if (this._boundResize) {
+      window.removeEventListener("resize", this._boundResize);
+      this._boundResize = null;
+    }
+  }
+
+  updateActionsVisibility() {
+    try {
+      // Keep breakpoint in sync with CSS: 1024px
+      this.showLargeActions = (window.innerWidth || 0) > 1024;
+    } catch (e) {
+      // Fallback to true if measurement fails
+      this.showLargeActions = true;
+    }
   }
 
   @api

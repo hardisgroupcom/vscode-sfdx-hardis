@@ -5,6 +5,7 @@
 ## [6.9.1] 2024-09-30
 
 - Pipeline view: Display jobs status of each Pull Request
+- Fix bug when opening Files Workbench panel
 
 ## [6.9.0] 2024-09-25
 
