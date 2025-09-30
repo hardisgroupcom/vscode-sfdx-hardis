@@ -3,6 +3,7 @@ import type {
   ProviderDescription,
   ProviderName,
   PullRequest,
+  PullRequestJob,
   RepoInfo,
 } from "./types";
 import { getWorkspaceRoot } from "../../utils";
@@ -16,8 +17,8 @@ export class GitProvider {
   repoInfo: RepoInfo | null = null;
   hostKey: string = "";
 
-  static async getInstance(): Promise<GitProvider | null> {
-    if (!this.instance) {
+  static async getInstance(reset=false): Promise<GitProvider | null> {
+    if (!this.instance || reset === true) {
       const gitInfo = await GitProvider.detectRepoInfo();
       if (!gitInfo) {
         return null;
@@ -173,7 +174,7 @@ export class GitProvider {
     };
   }
 
-  async authenticate(): Promise<boolean> {
+  async authenticate(): Promise<boolean|null> {
     Logger.log(
       `authenticate not implemented on ${this.repoInfo?.providerName || "unknown provider"}`,
     );
@@ -202,6 +203,52 @@ export class GitProvider {
 
   handlesNativeGitAuth(): boolean {
     return false;
+  }
+
+  /**
+   * Compute aggregated jobs status from a list of jobs. Priority order:
+   * - if any job.status === 'running' => 'running'
+   * - else if any job.status === 'failed' => 'failed'
+   * - else if any job.status === 'pending' => 'pending'
+   * - else if all jobs are 'success' => 'success'
+   * - else => 'unknown'
+   */
+  computeJobsStatus(jobs?: PullRequestJob[]): "running" | "pending" | "success" | "failed" | "unknown" {
+    if (!jobs || jobs.length === 0) {
+      return "unknown";
+    }
+    let hasFailed = false;
+    let hasPending = false;
+    let allSuccess = true;
+    for (const j of jobs) {
+      const s = (j && j.status) || "";
+      const st = String(s).toLowerCase();
+      if (st === "running") {
+        return "running";
+      }
+      if (st === "failed" || st === "failure" || st === "error") {
+        hasFailed = true;
+        allSuccess = false;
+      } else if (st === "pending") {
+        hasPending = true;
+        allSuccess = false;
+      } else if (st === "success" || st === "passed" || st === "ok") {
+        // keep allSuccess true unless other flags set
+      } else {
+        // unknown status
+        allSuccess = false;
+      }
+    }
+    if (hasFailed) {
+      return "failed";
+    }
+    if (hasPending) {
+      return "pending";
+    }
+    if (allSuccess) {
+      return "success";
+    }
+    return "unknown";
   }
 
   async storeSecretToken(token: string): Promise<void> {

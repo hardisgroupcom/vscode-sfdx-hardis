@@ -249,6 +249,8 @@
     "promptresponse",
     "promptsubmit",
     "quickpick",
+    "conv",
+    "fracs",
     "rbenv",
     "rebranding",
     "recalc",

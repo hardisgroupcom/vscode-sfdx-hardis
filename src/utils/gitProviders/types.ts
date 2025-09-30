@@ -26,6 +26,22 @@ export type ProviderDescription = {
  */
 export type PullRequestStatus = "open" | "closed" | "merged" | "declined";
 
+// Job run status for CI workflows associated with a pull request commit
+export type PullRequestJobStatus = "running" | "success" | "failed" | "pending" | string;
+
+export type PullRequestJob = {
+  // job identifier/name (e.g. workflow name or job name)
+  name: string;
+  // job status as returned by provider/CI
+  status: PullRequestJobStatus;
+  // url to view job or workflow run
+  webUrl?: string;
+  // timestamp when the job was last updated (ISO string)
+  updatedAt?: string;
+  // optional provider raw payload
+  raw?: any;
+};
+
 /**
  * Unified PullRequest / MergeRequest shape used across git providers
  * (GitLab, GitHub, Azure DevOps, Bitbucket).
@@ -79,7 +95,26 @@ export type PullRequest = {
     name?: ProviderName; // 'gitlab' | 'github' | 'azure' | 'bitbucket'
     raw?: any; // raw provider response object
   };
+  // Jobs for the latest commit of the Pull Request (CI/workflow runs)
+  jobs?: PullRequestJob[];
+
+  // Aggregated jobs status for the latest commit. Computed from `jobs`.
+  // - 'running' : at least one job is running
+  // - 'pending' : at least one job is pending/not yet finished
+  // - 'success' : all jobs succeeded
+  // - 'failed'  : at least one job failed
+  // - 'unknown' : no jobs or unknown statuses
+  jobsStatus: "running" | "pending" | "success" | "failed" | "unknown" ;
 };
+
+/**
+ * Compute aggregated jobs status from a list of jobs. Preference order:
+ *  - if any job.status === 'running' => 'running'
+ *  - else if any job.status === 'failed' => 'failed'
+ *  - else if all jobs are 'success' (or jobs empty/undefined) => 'success'
+ *  - fallback: return 'failed' if any unknown negative status found, or 'running' if ambiguous
+ */
+// computeJobsStatus moved to GitProvider class implementation; keep types file pure types-only.
 
 export type RepoInfo = {
   providerName: ProviderName;

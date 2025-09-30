@@ -11,7 +11,7 @@ export function registerShowPipeline(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
     "vscode-sfdx-hardis.showPipeline",
     async () => {
-      let pipelineProperties = await loadAllPipelineInfo();
+      let pipelineProperties = await loadAllPipelineInfo(true);
       const panel = LwcPanelManager.getInstance().getOrCreatePanel(
         "s-pipeline",
         pipelineProperties,
@@ -21,7 +21,7 @@ export function registerShowPipeline(commands: Commands) {
       panel.onMessage(async (type, data) => {
         // Refresh
         if (type === "refreshPipeline") {
-          pipelineProperties = await loadAllPipelineInfo();
+          pipelineProperties = await loadAllPipelineInfo(true);
           panel.sendInitializationData(pipelineProperties);
         }
         // Open Package XML Panel
@@ -41,7 +41,7 @@ export function registerShowPipeline(commands: Commands) {
           Logger.log(
             `Authenticating to Git provider: ${gitProvider.repoInfo?.providerName} at ${gitProvider.repoInfo?.host}`,
           );
-          let authRes = false;
+          let authRes: boolean|null = false;
           try {
             authRes = await gitProvider.authenticate();
           } catch (e) {
@@ -70,11 +70,12 @@ export function registerShowPipeline(commands: Commands) {
   );
   commands.disposables.push(disposable);
 
-  async function loadAllPipelineInfo(): Promise<{
+  async function loadAllPipelineInfo(resetGit=false): Promise<{
     pipelineData: any;
     gitAuthenticated: boolean;
     prButtonInfo: any;
     openPullRequests: PullRequest[];
+    repoPlatformLabel: string;
   }> {
     return await vscode.window.withProgress(
       {
@@ -85,7 +86,7 @@ export function registerShowPipeline(commands: Commands) {
       async () => {
         const pipelineDataProvider = new PipelineDataProvider();
         const pipelineData = await pipelineDataProvider.getPipelineData();
-        const gitProvider = await GitProvider.getInstance();
+        const gitProvider = await GitProvider.getInstance(resetGit);
         let openPullRequests: PullRequest[] = [];
         let gitAuthenticated = false;
         if (gitProvider?.isActive) {
@@ -93,11 +94,14 @@ export function registerShowPipeline(commands: Commands) {
           openPullRequests = await gitProvider.listOpenPullRequests();
         }
         const prButtonInfo: any = {};
+        let repoPlatformLabel = "";
         if (gitProvider?.repoInfo) {
           const desc = gitProvider.describeGitProvider();
           prButtonInfo.url = desc.pullRequestsWebUrl;
           prButtonInfo.label = `View ${desc.pullRequestLabel}s on ${desc.providerLabel}`;
           prButtonInfo.icon = gitProvider.repoInfo.providerName;
+          prButtonInfo.pullRequestLabel = desc.pullRequestLabel;
+          repoPlatformLabel = desc.providerLabel;
         } else {
           prButtonInfo.url = "";
           prButtonInfo.label = "View Pull Requests";
@@ -109,6 +113,7 @@ export function registerShowPipeline(commands: Commands) {
           prButtonInfo: prButtonInfo,
           gitAuthenticated: gitAuthenticated,
           openPullRequests: openPullRequests,
+          repoPlatformLabel: repoPlatformLabel
         };
       },
     );

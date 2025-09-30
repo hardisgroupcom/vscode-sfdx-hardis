@@ -1,7 +1,8 @@
 import * as vscode from "vscode";
 import { GitProvider } from "./gitProvider";
 import { Gitlab } from "@gitbeaker/rest";
-import { ProviderDescription, PullRequest } from "./types";
+import type { MergeRequestSchemaWithBasicLabels, Camelize } from "@gitbeaker/rest";
+import { ProviderDescription, PullRequest, PullRequestJob } from "./types";
 import { SecretsManager } from "../secretsManager";
 import { Logger } from "../../logger";
 
@@ -11,7 +12,7 @@ export class GitProviderGitlab extends GitProvider {
   gitlabProjectId: number | null = null;
   secretTokenIdentifier: string = "";
 
-  async authenticate(): Promise<boolean> {
+  async authenticate(): Promise<boolean|null> {
     const token = await vscode.window.showInputBox({
       prompt: "Enter your Gitlab PAT (Personal Access Token)",
       ignoreFocusOut: true,
@@ -22,7 +23,7 @@ export class GitProviderGitlab extends GitProvider {
       await this.initialize();
       return this.isActive;
     }
-    return false;
+    return null;
   }
 
   describeGitProvider(): ProviderDescription {
@@ -119,10 +120,7 @@ export class GitProviderGitlab extends GitProvider {
       projectId: this.gitlabProjectId!,
       state: "opened",
     });
-    const pullRequestsConverted: PullRequest[] = mergeRequests.map((mr) =>
-      this.convertToPullRequest(mr),
-    );
-    return pullRequestsConverted;
+    return await this.convertAndCollectJobsList(mergeRequests);
   }
 
   async listPullRequestsForBranch(branchName: string): Promise<PullRequest[]> {
@@ -130,10 +128,67 @@ export class GitProviderGitlab extends GitProvider {
       projectId: this.gitlabProjectId!,
       targetBranch: branchName,
     });
-    const pullRequestsConverted: PullRequest[] = mergeRequests.map((mr) =>
-      this.convertToPullRequest(mr),
+    return await this.convertAndCollectJobsList(mergeRequests);
+  }
+
+  // Batch helper: convert an array of raw merge requests and enrich each with jobs
+  private async convertAndCollectJobsList(rawMrs: Array<MergeRequestSchemaWithBasicLabels | Camelize<MergeRequestSchemaWithBasicLabels>>): Promise<PullRequest[]> {
+    if (!rawMrs || rawMrs.length === 0) {
+      return [];
+    }
+    const converted: PullRequest[] = await Promise.all(
+      rawMrs.map(async (mr) => {
+        const pr = this.convertToPullRequest(mr);
+        try {
+          const jobs = await this.fetchLatestJobsForMergeRequest(mr);
+          pr.jobs = jobs;
+          pr.jobsStatus = this.computeJobsStatus(jobs);
+        } catch (e){
+          Logger.log(`Error fetching jobs for MR !${pr.number}: ${String(e)}`);
+        }
+        return pr;
+      }),
     );
-    return pullRequestsConverted;
+    return converted;
+  }
+
+  // Fetch jobs for the latest pipeline related to the merge request.
+  // Prefer mr.head_pipeline if available, otherwise try pipelines by SHA or MR pipelines endpoint.
+  private async fetchLatestJobsForMergeRequest(mr: MergeRequestSchemaWithBasicLabels | Camelize<MergeRequestSchemaWithBasicLabels>): Promise<PullRequestJob[]> {
+    try {
+      const projectId = this.gitlabProjectId!;
+      const mrIid = mr.iid!;
+      // Collect pipelines for the merge request (Gitbeaker: MergeRequests.pipelines)
+      let pipelines: any[] = [];
+      try {
+        // @ts-ignore - method signature may differ across gitbeaker versions
+        pipelines = await this.gitlabClient?.Pipelines.all(projectId, {
+          sha: mr.sha,
+        });
+      } catch (e) {
+        Logger.log(`Error fetching pipelines for MR !${mrIid}: ${String(e)}`);
+        return [];
+      }
+
+      if (!Array.isArray(pipelines) || pipelines.length === 0) {
+        return [];
+      }
+
+      const converted: PullRequestJob[] = pipelines.map((p: any) => {
+      return {
+        name: p.ref || p.sha || String(p.id || ""),
+        status: (p.status || "").toString(),
+        webUrl: p.web_url || p.webUrl || undefined,
+        updatedAt: p.updated_at || p.updatedAt || undefined,
+        raw: p,
+      };
+      });
+
+      return converted;
+    } catch (e) {
+      Logger.log(`Unexpected error fetching MR pipelines: ${String(e)}`);
+      return [];
+    }
   }
 
   convertToPullRequest(mr: any): PullRequest {
@@ -153,6 +208,7 @@ export class GitProviderGitlab extends GitProvider {
       authorLabel: mr.author?.username || mr.author?.name || "unknown",
       sourceBranch: String(mr.source_branch),
       targetBranch: String(mr.target_branch),
+      jobsStatus: "unknown",
     };
   }
 }

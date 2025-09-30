@@ -18,7 +18,7 @@ export function registerShowWelcome(command: Commands) {
       panel.updateTitle("SFDX Hardis Welcome");
 
       // Handle messages from the Welcome panel
-      panel.onMessage(async (type: string, data: any) => {
+  panel.onMessage(async (type: string, _data: any) => {
         switch (type) {
           case "navigateToOrgsManager":
             vscode.commands.executeCommand(
