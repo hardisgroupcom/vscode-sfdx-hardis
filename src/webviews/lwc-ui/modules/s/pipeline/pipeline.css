@@ -162,3 +162,45 @@ lightning-datatable .hardis-emoji-cell a {
     text-decoration: none !important;
     cursor: pointer !important;
 }
+
+/* Mermaid link animations for running/pending PRs */
+/* Apply subtle pulsing animation to links with red color */
+@keyframes edgeAnimationFast {
+    0%, 100% {
+        opacity: 1;
+        stroke-width: 3px;
+    }
+    50% {
+        opacity: 0.7;
+        stroke-width: 3.5px;
+    }
+}
+
+@keyframes edgeAnimationSlow {
+    0%, 100% {
+        opacity: 1;
+        stroke-width: 2.5px;
+    }
+    50% {
+        opacity: 0.8;
+        stroke-width: 3px;
+    }
+}
+
+/* Apply red color and animation to running PRs (fast) - using multiple selectors for maximum specificity */
+.mermaid svg path.edge-animation-fast,
+.mermaid svg g.edgePath path.edge-animation-fast,
+.mermaid svg g.edgePaths path.edge-animation-fast {
+    stroke: #e74c3c !important; /* Red color */
+    stroke-width: 3px !important;
+    animation: edgeAnimationFast 1s ease-in-out infinite !important;
+}
+
+/* Apply orange color and animation to pending PRs (slow) - using multiple selectors for maximum specificity */
+.mermaid svg path.edge-animation-slow,
+.mermaid svg g.edgePath path.edge-animation-slow,
+.mermaid svg g.edgePaths path.edge-animation-slow {
+    stroke: #ff6b35 !important; /* Orange color */
+    stroke-width: 2.5px !important;
+    animation: edgeAnimationSlow 2s ease-in-out infinite !important;
+}

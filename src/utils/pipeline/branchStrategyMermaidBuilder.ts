@@ -429,6 +429,17 @@ export class BranchStrategyMermaidBuilder {
         `linkStyle ${positions[key].join(",")} ${styleDef}`,
       );
     }
+    
+    // Add metadata comment for animated links (for JavaScript to parse)
+    const animatedLinks = [];
+    for (const key of ["gitMergeWithPRAnimated", "gitFeatureMergeWithPRAnimated"]) {
+      if (positions[key] && positions[key].length > 0) {
+        animatedLinks.push(...positions[key]);
+      }
+    }
+    if (animatedLinks.length > 0) {
+      this.mermaidLines.push(`%% AnimatedLinks:${animatedLinks.join(",")}`);
+    }
   }
 
   private addLinks(links: any[]) {
@@ -438,7 +449,12 @@ export class BranchStrategyMermaidBuilder {
         // If PR exists, make label clickable with markdown link syntax
         if (link.activePR && link.activePR.webUrl) {
           label = `<a href='${link.activePR.webUrl}' target='_blank' style='color:#0176D3;font-weight:bold;text-decoration:underline;'>${link.label}</a>`;
-          link.type = "gitMergeWithPR";
+          // Only use special link type for running/pending jobs
+          const jobStatus = link.activePR.jobsStatus || 'unknown';
+          if (jobStatus === 'running' || jobStatus === 'pending') {
+            link.type = "gitMergeWithPRAnimated";
+          }
+          // For completed PRs (success/failed/unknown), keep gitMerge type (plain style)
         }
         this.mermaidLines.push(
           this.indent(`${link.source} ==>|"${label}"| ${link.target}`, 1),
@@ -448,7 +464,12 @@ export class BranchStrategyMermaidBuilder {
         // If PR exists, make label clickable with markdown link syntax
         if (link.activePR && link.activePR.webUrl) {
           label = `<a href='${link.activePR.webUrl}' target='_blank' style='color:#0176D3;font-weight:bold;text-decoration:underline;'>${link.label}</a>`;
-          link.type = "gitFeatureMergeWithPR";
+          // Only use special link type for running/pending jobs
+          const jobStatus = link.activePR.jobsStatus || 'unknown';
+          if (jobStatus === 'running' || jobStatus === 'pending') {
+            link.type = "gitFeatureMergeWithPRAnimated";
+          }
+          // For completed PRs (success/failed/unknown), keep gitFeatureMerge type (plain style)
         }
         this.mermaidLines.push(
           this.indent(`${link.source} -->|"${label}"| ${link.target}`, 1),
@@ -487,12 +508,12 @@ export class BranchStrategyMermaidBuilder {
     // SLDS blue/green for connectors, thin lines, and more discrete (lighter) link labels
     // Use a lighter color for label text (e.g., #B0B7BD), fully opaque for readability, and no background
     // gitFeatureMerge uses dashed line and lighter color to distinguish from major branch merges
-    // gitMergeWithPR and gitFeatureMergeWithPR use bold, prominent colors for PR links
+    // Animated variants: Set base stroke that CSS will override with red/orange
     return {
       gitMerge: "stroke:#0176D3,stroke-width:2px,color:#032D60,opacity:1;",
-      gitMergeWithPR: "stroke:#0176D3,stroke-width:2.5px,color:#0176D3,font-weight:bold,opacity:1;",
+      gitMergeWithPRAnimated: "stroke:#0176D3,stroke-width:2.5px,color:#0176D3,font-weight:bold,opacity:1;",
       gitFeatureMerge: "stroke:#B0B7BD,stroke-width:1.5px,stroke-dasharray:5 5,color:#B0B7BD,opacity:1;",
-      gitFeatureMergeWithPR: "stroke:#0176D3,stroke-width:2px,stroke-dasharray:5 5,color:#0176D3,font-weight:bold,opacity:1;",
+      gitFeatureMergeWithPRAnimated: "stroke:#0176D3,stroke-width:2px,stroke-dasharray:5 5,color:#0176D3,font-weight:bold,opacity:1;",
       sfDeploy: "stroke:#04844B,stroke-width:1.5px,color:#B0B7BD,opacity:1;",
       sfPushPull: "stroke:#0176D3,stroke-width:1.5px,color:#B0B7BD,opacity:1;",
     };

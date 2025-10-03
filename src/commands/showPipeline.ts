@@ -124,7 +124,7 @@ export function registerShowPipeline(commands: Commands) {
         // Read displayFeatureBranches configuration
         const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
         const displayFeatureBranches =
-          config.get<boolean>("pipelineDisplayFeatureBranches") ?? true;
+          config.get<boolean>("pipelineDisplayFeatureBranches") ?? false;
 
         return {
           pipelineData: pipelineData,

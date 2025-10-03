@@ -133,7 +133,7 @@
         },
         "vsCodeSfdxHardis.pipelineDisplayFeatureBranches": {
           "type": "boolean",
-          "default": true,
+          "default": false,
           "description": "Display feature branches in the DevOps Pipeline diagram"
         },
         "vsCodeSfdxHardis.showCommandsDetails": {

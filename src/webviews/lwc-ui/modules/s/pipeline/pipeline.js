@@ -12,7 +12,7 @@ export default class Pipeline extends LightningElement {
   @track connectedVariant = "neutral";
   @track connectedIconName = "utility:link";
   @track openPullRequests = [];
-  @track displayFeatureBranches = true;
+  @track displayFeatureBranches = false;
   prColumns = [
     {
       key: "number",
@@ -105,7 +105,7 @@ export default class Pipeline extends LightningElement {
     this.warnings = this.pipelineData.warnings || [];
     this.hasWarnings = this.warnings.length > 0;
     this.showOnlyMajor = false;
-    this.displayFeatureBranches = data?.displayFeatureBranches ?? true;
+    this.displayFeatureBranches = data?.displayFeatureBranches ?? false;
     // Select diagram based on displayFeatureBranches toggle
     this.currentDiagram = this.displayFeatureBranches
       ? this.pipelineData.mermaidDiagram
@@ -456,6 +456,10 @@ export default class Pipeline extends LightningElement {
         mermaidDiv.innerHTML = svg;
         this.error = undefined;
         console.log("Mermaid diagram rendered successfully");
+        
+        // Apply animation classes to links with running/pending PRs
+        // Find all edge paths and check if they need animation based on link styling
+        setTimeout(() => this.applyLinkAnimations(), 100);
       })
       .catch((error) => {
         this.error = error?.message || "Mermaid rendering error";
@@ -463,6 +467,76 @@ export default class Pipeline extends LightningElement {
         if (debugDiv) debugDiv.textContent = this.error + "\n" + diagram;
         console.error("Mermaid rendering error:", error);
       });
+  }
+
+  applyLinkAnimations() {
+    // Apply CSS animations to any Mermaid link containing running/pending emojis
+    // The key insight: edge labels and edge paths are in SEPARATE sibling groups
+    // We need to match them by index position
+    const mermaidSvg = this.template.querySelector(".mermaid svg");
+    if (!mermaidSvg) {
+      console.warn("Mermaid SVG not found for animation");
+      return;
+    }
+
+    console.log("🎬 Starting link animation application...");
+    
+    // Find the edgeLabels group (contains all edge label text)
+    const edgeLabelsGroup = mermaidSvg.querySelector("g.edgeLabels");
+    if (!edgeLabelsGroup) {
+      console.warn("No edgeLabels group found");
+      return;
+    }
+    
+    // Find the edgePaths group (contains all edge path elements)
+    const edgePathsGroup = mermaidSvg.querySelector("g.edgePaths");
+    if (!edgePathsGroup) {
+      console.warn("No edgePaths group found");
+      return;
+    }
+    
+    // Get all individual edge labels and paths
+    const edgeLabels = edgeLabelsGroup.querySelectorAll("g.edgeLabel");
+    const edgePaths = edgePathsGroup.querySelectorAll("path.flowchart-link");
+    
+    console.log(`Found ${edgeLabels.length} edge labels and ${edgePaths.length} edge paths`);
+    
+    if (edgeLabels.length === 0 || edgePaths.length === 0) {
+      console.warn("No edge labels or paths found");
+      return;
+    }
+    
+    if (edgeLabels.length !== edgePaths.length) {
+      console.warn(`Mismatch: ${edgeLabels.length} labels but ${edgePaths.length} paths`);
+    }
+    
+    // Match labels to paths by index
+    let animatedCount = 0;
+    const maxIndex = Math.min(edgeLabels.length, edgePaths.length);
+    
+    for (let i = 0; i < maxIndex; i++) {
+      const label = edgeLabels[i];
+      const path = edgePaths[i];
+      
+      // Get the text content from the label (may be nested in foreignObject/div/span/p/a)
+      const labelText = label.textContent || "";
+      
+      // Check for running (🔄) or pending (⏳) emoji
+      const hasRunning = labelText.includes('🔄');
+      const hasPending = labelText.includes('⏳');
+      
+      if (hasRunning || hasPending) {
+        // Apply the appropriate animation class
+        const animationClass = hasRunning ? 'edge-animation-fast' : 'edge-animation-slow';
+        console.log(`🔍 Edge ${i} - Before: classes="${path.className.baseVal}", stroke="${path.style.stroke}"`);
+        path.classList.add(animationClass);
+        console.log(`✅ Applied ${animationClass} to edge ${i}: "${labelText.trim().substring(0, 40)}"`);
+        console.log(`🔍 Edge ${i} - After: classes="${path.className.baseVal}", stroke="${path.style.stroke}"`);
+        animatedCount++;
+      }
+    }
+    
+    console.log(`🎬 Animation complete. Animated ${animatedCount} of ${maxIndex} links.`);
   }
 
   @api
