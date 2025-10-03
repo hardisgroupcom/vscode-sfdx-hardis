@@ -148,3 +148,21 @@ export function isUatRun(branchName: string) {
     branchName.toLowerCase().includes("run")
   );
 }
+
+export function isMajorBranch(branchName: string, allBranches: any[]): boolean {
+  const branchesWithBranchNameAsTarget = allBranches.filter((b) =>
+    Array.isArray(b.mergeTargets)
+      ? b.mergeTargets.includes(branchName)
+      : false,
+  );
+  if (branchesWithBranchNameAsTarget.length > 0) {
+    return true;
+  }
+  return (
+    isProduction(branchName) ||
+    isPreprod(branchName) ||
+    isUat(branchName) ||
+    isUatRun(branchName) ||
+    isIntegration(branchName)
+  );
+}

@@ -1,6 +1,6 @@
 import sortArray from "sort-array";
 import { prettifyFieldName } from "../stringUtils";
-import { isIntegration, isPreprod, isProduction } from "../orgConfigUtils";
+import { isIntegration, isMajorBranch, isPreprod, isProduction } from "../orgConfigUtils";
 import { PullRequest } from "../gitProviders/types";
 
 export class BranchStrategyMermaidBuilder {
@@ -14,7 +14,6 @@ export class BranchStrategyMermaidBuilder {
   private sbDevLinks: any[] = [];
   private retrofitLinks: any[] = [];
   private mermaidLines: string[] = [];
-  private featureBranchNb: number = 0;
 
   constructor(branchesAndOrgs: any[], openPullRequests: PullRequest[] = []) {
     this.branchesAndOrgs = branchesAndOrgs;
@@ -41,7 +40,6 @@ export class BranchStrategyMermaidBuilder {
     this.sbDevLinks = [];
     this.retrofitLinks = [];
     this.mermaidLines = [];
-    this.featureBranchNb = 0;
 
     this.listGitBranchesAndLinks();
     this.listSalesforceOrgsAndLinks();
@@ -90,13 +88,17 @@ export class BranchStrategyMermaidBuilder {
           branchesMergingInPreprod.push(branchAndOrg.branchName);
         }
         const openPullRequestsForThisTarget = this.openPullRequests.filter(pr => pr.targetBranch === mergeTarget);
-        const label = openPullRequestsForThisTarget.length > 0 ? `(${openPullRequestsForThisTarget.length} PR${openPullRequestsForThisTarget.length > 1 ? 's' : ''})` : "No PR";
+        // Select only the first PR if multiple exist
+        const activePR = openPullRequestsForThisTarget.length > 0 ? openPullRequestsForThisTarget[0] : null;
+        // Determine if source is a major branch (will be set after we build the branch object)
+        const isSourceMajorBranch = (activePR && activePR.sourceBranch) ? isMajorBranch(activePR.sourceBranch,this.branchesAndOrgs) : false;
+
         this.gitLinks.push({
           source: nodeName,
           target: mergeTarget + "Branch",
-          type: "gitMerge",
-          label: label,
-          openPullRequests: openPullRequestsForThisTarget
+          type: isSourceMajorBranch ? "gitMerge" : "gitFeatureMerge",
+          label: activePR ? `(#${activePR.number || activePR.id})` : "No PR",
+          activePR: activePR
         });
       }
       return {
@@ -151,12 +153,13 @@ export class BranchStrategyMermaidBuilder {
           level: level,
           group: pullRequest.sourceBranch,
         });
+        const prLinkLabel = (pullRequest.number || pullRequest.id) ? `(#${pullRequest.number || pullRequest.id})` : "(PR)";
         this.gitLinks.push({
           source: nodeName,
           target: pullRequest.targetBranch + "Branch",
-          type: "gitMerge",
-          label: "(PR)",
-          openPullRequests: [pullRequest]
+          type: "gitFeatureMerge",
+          label: prLinkLabel,
+          activePR: pullRequest
         });
       }
     }
@@ -424,8 +427,24 @@ export class BranchStrategyMermaidBuilder {
   private addLinks(links: any[]) {
     for (const link of links) {
       if (link.type === "gitMerge") {
+        let label = link.label;
+        // If PR exists, make label clickable with markdown link syntax
+        if (link.activePR && link.activePR.webUrl) {
+          label = `<a href='${link.activePR.webUrl}' target='_blank' style='color:#0176D3;font-weight:bold;text-decoration:underline;'>${link.label}</a>`;
+          link.type = "gitMergeWithPR";
+        }
         this.mermaidLines.push(
-          this.indent(`${link.source} ==>|"${link.label}"| ${link.target}`, 1),
+          this.indent(`${link.source} ==>|"${label}"| ${link.target}`, 1),
+        );
+      } else if (link.type === "gitFeatureMerge") {
+        let label = link.label;
+        // If PR exists, make label clickable with markdown link syntax
+        if (link.activePR && link.activePR.webUrl) {
+          label = `<a href='${link.activePR.webUrl}' target='_blank' style='color:#0176D3;font-weight:bold;text-decoration:underline;'>${link.label}</a>`;
+          link.type = "gitFeatureMergeWithPR";
+        }
+        this.mermaidLines.push(
+          this.indent(`${link.source} -->|"${label}"| ${link.target}`, 1),
         );
       } else if (link.type === "sfDeploy") {
         this.mermaidLines.push(
@@ -460,8 +479,13 @@ export class BranchStrategyMermaidBuilder {
   private listLinksDef(): any {
     // SLDS blue/green for connectors, thin lines, and more discrete (lighter) link labels
     // Use a lighter color for label text (e.g., #B0B7BD), fully opaque for readability, and no background
+    // gitFeatureMerge uses dashed line and lighter color to distinguish from major branch merges
+    // gitMergeWithPR and gitFeatureMergeWithPR use bold, prominent colors for PR links
     return {
-      gitMerge: "stroke:#0176D3,stroke-width:1.5px,color:#B0B7BD,opacity:1;",
+      gitMerge: "stroke:#0176D3,stroke-width:2px,color:#032D60,opacity:1;",
+      gitMergeWithPR: "stroke:#0176D3,stroke-width:2.5px,color:#0176D3,font-weight:bold,opacity:1;",
+      gitFeatureMerge: "stroke:#B0B7BD,stroke-width:1.5px,stroke-dasharray:5 5,color:#B0B7BD,opacity:1;",
+      gitFeatureMergeWithPR: "stroke:#0176D3,stroke-width:2px,stroke-dasharray:5 5,color:#0176D3,font-weight:bold,opacity:1;",
       sfDeploy: "stroke:#04844B,stroke-width:1.5px,color:#B0B7BD,opacity:1;",
       sfPushPull: "stroke:#0176D3,stroke-width:1.5px,color:#B0B7BD,opacity:1;",
     };

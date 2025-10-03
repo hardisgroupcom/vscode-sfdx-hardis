@@ -158,6 +158,14 @@ export default class Pipeline extends LightningElement {
     if (typeof window !== "undefined" && window.addEventListener) {
       window.addEventListener("resize", this._boundAdjust);
     }
+    // Register global openPR function for Mermaid link callbacks
+    if (typeof window !== "undefined") {
+      window.openPR = (url) => {
+        if (url) {
+          window.open(url, "_blank");
+        }
+      };
+    }
   }
 
   disconnectedCallback() {
@@ -167,6 +175,10 @@ export default class Pipeline extends LightningElement {
       this._boundAdjust
     ) {
       window.removeEventListener("resize", this._boundAdjust);
+    }
+    // Clean up global openPR function
+    if (typeof window !== "undefined" && window.openPR) {
+      delete window.openPR;
     }
   }
 
