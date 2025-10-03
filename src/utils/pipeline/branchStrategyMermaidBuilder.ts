@@ -1,7 +1,7 @@
 import sortArray from "sort-array";
 import { prettifyFieldName } from "../stringUtils";
 import { isIntegration, isMajorBranch, isPreprod, isProduction } from "../orgConfigUtils";
-import { PullRequest } from "../gitProviders/types";
+import { PullRequest, PullRequestJobStatus } from "../gitProviders/types";
 
 export class BranchStrategyMermaidBuilder {
   private branchesAndOrgs: any[];
@@ -45,7 +45,7 @@ export class BranchStrategyMermaidBuilder {
     this.listSalesforceOrgsAndLinks();
 
     if (options.onlyMajorBranches) {
-      // Filter out feature/hotfix/dev orgs and related links, and remove ALL orgs (even major ones) and deploy links
+      // Filter out feature/hotfix/dev branches
       this.gitBranches = this.gitBranches.filter(
         (b) => b.class === "gitMain" || b.class === "gitMajor",
       );
@@ -55,9 +55,16 @@ export class BranchStrategyMermaidBuilder {
         const tgt = this.gitBranches.find((b) => b.nodeName === l.target);
         return src && tgt;
       });
-      // Remove all orgs and org links
-      this.salesforceOrgs = [];
-      this.deployLinks = [];
+      // Keep only major orgs (prod and major), remove dev orgs
+      this.salesforceOrgs = this.salesforceOrgs.filter((org) =>
+        ["salesforceProd", "salesforceMajor"].includes(org.class),
+      );
+      // Keep only deploy links to major orgs
+      const majorOrgNodeNames = this.salesforceOrgs.map((org) => org.nodeName);
+      this.deployLinks = this.deployLinks.filter((link) =>
+        majorOrgNodeNames.includes(link.target),
+      );
+      // Remove dev org groups and dev-specific links
       this.salesforceDevOrgsGroup = [];
       this.sbDevLinks = [];
     }
@@ -97,7 +104,7 @@ export class BranchStrategyMermaidBuilder {
           source: nodeName,
           target: mergeTarget + "Branch",
           type: isSourceMajorBranch ? "gitMerge" : "gitFeatureMerge",
-          label: activePR ? `(#${activePR.number || activePR.id})` : "No PR",
+          label: activePR ? `#${activePR.number || activePR.id} ${this.getPrStatusEmoji(activePR.jobsStatus)}` : "No PR",
           activePR: activePR
         });
       }
@@ -153,7 +160,7 @@ export class BranchStrategyMermaidBuilder {
           level: level,
           group: pullRequest.sourceBranch,
         });
-        const prLinkLabel = (pullRequest.number || pullRequest.id) ? `(#${pullRequest.number || pullRequest.id})` : "(PR)";
+        const prLinkLabel = (pullRequest.number || pullRequest.id) ? `#${pullRequest.number || pullRequest.id} ${this.getPrStatusEmoji(pullRequest.jobsStatus)}` : "No PR";
         this.gitLinks.push({
           source: nodeName,
           target: pullRequest.targetBranch + "Branch",
@@ -290,11 +297,11 @@ export class BranchStrategyMermaidBuilder {
     this.mermaidLines.push(this.indent("end", 1));
     this.mermaidLines.push("");
 
-    // Salesforce orgs (only if there are any major orgs and not in onlyMajorBranches mode)
+    // Salesforce orgs (only if there are any major orgs)
     const majorOrgs = this.salesforceOrgs.filter((salesforceOrg) =>
       ["salesforceProd", "salesforceMajor"].includes(salesforceOrg.class),
     );
-    if (majorOrgs.length > 0 && !(options && options.onlyMajorBranches)) {
+    if (majorOrgs.length > 0) {
       this.mermaidLines.push(
         this.indent("subgraph SalesforceOrgs [Major Salesforce Orgs]", 1),
       );
@@ -493,5 +500,19 @@ export class BranchStrategyMermaidBuilder {
 
   private indent(str: string, number: number): string {
     return " ".repeat(number) + str;
+  }
+
+  private getPrStatusEmoji(status: PullRequestJobStatus): string {
+    const emojiMap: Record<PullRequestJobStatus, string> = {
+      running: "🔄",
+      pending: "⏳",
+      success: "✅",
+      failed: "❌",
+      unknown: "❔",
+    };
+    if (status in emojiMap) {
+      return emojiMap[status];
+    }
+    return "❔";
   }
 }

@@ -29,6 +29,18 @@ export function registerShowPipeline(commands: Commands) {
           // Handle package XML display requests from pipeline
           await showPackageXmlPanel(data);
         }
+        // Update VS Code configuration
+        else if (type === "updateVsCodeSfdxHardisConfiguration") {
+          const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+          await config.update(
+            data.configKey,
+            data.value,
+            vscode.ConfigurationTarget.Global,
+          );
+          Logger.log(
+            `Updated configuration: ${data.configKey} = ${data.value}`,
+          );
+        }
         // Authenticate or re-authenticate to Git provider
         else if (type === "connectToGit") {
           const gitProvider = await GitProvider.getInstance();
@@ -76,6 +88,7 @@ export function registerShowPipeline(commands: Commands) {
     prButtonInfo: any;
     openPullRequests: PullRequest[];
     repoPlatformLabel: string;
+    displayFeatureBranches: boolean;
   }> {
     return await vscode.window.withProgress(
       {
@@ -108,12 +121,18 @@ export function registerShowPipeline(commands: Commands) {
           prButtonInfo.icon = "";
         }
 
+        // Read displayFeatureBranches configuration
+        const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+        const displayFeatureBranches =
+          config.get<boolean>("pipelineDisplayFeatureBranches") ?? true;
+
         return {
           pipelineData: pipelineData,
           prButtonInfo: prButtonInfo,
           gitAuthenticated: gitAuthenticated,
           openPullRequests: openPullRequests,
           repoPlatformLabel: repoPlatformLabel,
+          displayFeatureBranches: displayFeatureBranches,
         };
       },
     );

@@ -55,7 +55,17 @@
                         
                         <!-- Centered buttons: PR and Package XML Management -->
                         <div class="slds-m-top_medium">
-                            <div style="display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap;">
+                            <div style="display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+                                <template if:true={gitAuthenticated}>
+                                    <div style="display: flex; align-items: center; margin-top: -0.25rem;">
+                                        <lightning-input
+                                            type="toggle"
+                                            label="Show feature branches"
+                                            checked={displayFeatureBranches}
+                                            onchange={handleToggleFeatureBranches}
+                                        ></lightning-input>
+                                    </div>
+                                </template>
                                 <template if:true={prButtonInfo}>
                                     <lightning-button 
                                         icon-name="utility:share"

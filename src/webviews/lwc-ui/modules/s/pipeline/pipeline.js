@@ -12,6 +12,7 @@ export default class Pipeline extends LightningElement {
   @track connectedVariant = "neutral";
   @track connectedIconName = "utility:link";
   @track openPullRequests = [];
+  @track displayFeatureBranches = true;
   prColumns = [
     {
       key: "number",
@@ -104,7 +105,11 @@ export default class Pipeline extends LightningElement {
     this.warnings = this.pipelineData.warnings || [];
     this.hasWarnings = this.warnings.length > 0;
     this.showOnlyMajor = false;
-    this.currentDiagram = this.pipelineData.mermaidDiagram;
+    this.displayFeatureBranches = data?.displayFeatureBranches ?? true;
+    // Select diagram based on displayFeatureBranches toggle
+    this.currentDiagram = this.displayFeatureBranches
+      ? this.pipelineData.mermaidDiagram
+      : this.pipelineData.mermaidDiagramMajor;
     this.error = undefined;
     this.lastDiagram = "";
     this.gitAuthenticated = data?.gitAuthenticated ?? false;
@@ -563,5 +568,32 @@ export default class Pipeline extends LightningElement {
       type: "connectToGit",
       data: {},
     });
+  }
+
+  handleToggleFeatureBranches(event) {
+    // Get the new state from the toggle
+    this.displayFeatureBranches = event.target.checked;
+
+    // Update VS Code configuration
+    window.sendMessageToVSCode({
+      type: "updateVsCodeSfdxHardisConfiguration",
+      data: {
+        configKey: "pipelineDisplayFeatureBranches",
+        value: this.displayFeatureBranches,
+      },
+    });
+
+    // Switch diagram
+    this.currentDiagram = this.displayFeatureBranches
+      ? this.pipelineData.mermaidDiagram
+      : this.pipelineData.mermaidDiagramMajor;
+
+    // Re-render the diagram
+    setTimeout(() => this.renderMermaid(), 0);
+
+    console.log(
+      "Feature branches display toggled:",
+      this.displayFeatureBranches,
+    );
   }
 }
