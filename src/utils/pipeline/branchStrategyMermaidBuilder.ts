@@ -1,9 +1,11 @@
 import sortArray from "sort-array";
 import { prettifyFieldName } from "../stringUtils";
 import { isIntegration, isPreprod, isProduction } from "../orgConfigUtils";
+import { PullRequest } from "../gitProviders/types";
 
 export class BranchStrategyMermaidBuilder {
   private branchesAndOrgs: any[];
+  private openPullRequests: PullRequest[] = [];
   private gitBranches: any[] = [];
   private salesforceOrgs: any[] = [];
   private salesforceDevOrgsGroup: string[] = [];
@@ -14,8 +16,9 @@ export class BranchStrategyMermaidBuilder {
   private mermaidLines: string[] = [];
   private featureBranchNb: number = 0;
 
-  constructor(branchesAndOrgs: any[]) {
+  constructor(branchesAndOrgs: any[], openPullRequests: PullRequest[] = []) {
     this.branchesAndOrgs = branchesAndOrgs;
+    this.openPullRequests = openPullRequests;
   }
 
   /**
@@ -86,11 +89,14 @@ export class BranchStrategyMermaidBuilder {
         if (isPreprod(mergeTarget)) {
           branchesMergingInPreprod.push(branchAndOrg.branchName);
         }
+        const openPullRequestsForThisTarget = this.openPullRequests.filter(pr => pr.targetBranch === mergeTarget);
+        const label = openPullRequestsForThisTarget.length > 0 ? `(${openPullRequestsForThisTarget.length} PR${openPullRequestsForThisTarget.length > 1 ? 's' : ''})` : "No PR";
         this.gitLinks.push({
           source: nodeName,
           target: mergeTarget + "Branch",
           type: "gitMerge",
-          label: "Merge",
+          label: label,
+          openPullRequests: openPullRequestsForThisTarget
         });
       }
       return {
@@ -127,14 +133,33 @@ export class BranchStrategyMermaidBuilder {
       }
     }
 
-    // Disable for now
-    // for (const branchAndOrg of noMergeTargetBranchAndOrg) {
-    //   const nameBase = isPreprod(branchAndOrg.branchName) ? "hotfix" : "feature";
-    //   const level = branchAndOrg.level - 1
-    //   this.salesforceDevOrgsGroup.push(branchAndOrg.branchName);
-    //   this.addFeatureBranch(nameBase, level, branchAndOrg);
-    //   this.addFeatureBranch(nameBase, level, branchAndOrg);
-    // }
+    // Add feature branches and links for PRs whose source branch does not exist in the branchesAndOrgs list
+    for (const pullRequest of this.openPullRequests) {
+      if (!this.branchesAndOrgs.find((b) => b.branchName === pullRequest.sourceBranch)) {
+        const level =
+          noMergeTargetBranchAndOrg.length > 0  ?
+            Math.min(
+              ...noMergeTargetBranchAndOrg.map((b) => b.level),
+            ) + 1
+          : 50;
+        const nodeName = pullRequest.sourceBranch + "Branch"; // + "Branch" + (this.featureBranchNb + 1);
+        this.gitBranches.push({
+          name: pullRequest.sourceBranch,
+          nodeName: nodeName,
+          label: pullRequest.sourceBranch,
+          class: "gitFeature",
+          level: level,
+          group: pullRequest.sourceBranch,
+        });
+        this.gitLinks.push({
+          source: nodeName,
+          target: pullRequest.targetBranch + "Branch",
+          type: "gitMerge",
+          label: "(PR)",
+          openPullRequests: [pullRequest]
+        });
+      }
+    }
 
     // Add retrofit link only if it does not mess with the diagram display :/
     if (branchesMergingInPreprod.length < 2) {
@@ -168,14 +193,6 @@ export class BranchStrategyMermaidBuilder {
       order: ["asc", "asc"],
     });
   }
-
-  // private addFeatureBranch(nameBase: string, level: number, branchAndOrg: any) {
-  //   this.featureBranchNb++;
-  //   const nameBase1 = nameBase + this.featureBranchNb;
-  //   const nodeName1 = nameBase + "Branch" + this.featureBranchNb;
-  //   this.gitBranches.push({ name: nameBase1, nodeName: nodeName1, label: nameBase1, class: "gitFeature", level: level, group: branchAndOrg.branchName });
-  //   this.gitLinks.push({ source: nodeName1, target: this.gitBranches.find((gitBranch) => gitBranch.name === branchAndOrg.branchName)?.nodeName || "ERROR", type: "gitMerge", label: "Merge" });
-  // }
 
   private listSalesforceOrgsAndLinks(): any {
     for (const gitBranch of this.gitBranches) {
@@ -230,25 +247,6 @@ export class BranchStrategyMermaidBuilder {
           type: "sfDeploy",
           label: "Deploy to Org",
           level: branchAndOrg.level,
-        });
-      } else {
-        // This else block should ideally not be hit if PipelineDataProvider correctly populates all branches.
-        // However, keeping it for robustness or if there are branches without direct org mappings.
-        const nodeName = gitBranch.name + "Org";
-        this.salesforceOrgs.push({
-          name: gitBranch.name,
-          nodeName: nodeName,
-          label: "Dev " + prettifyFieldName(gitBranch.name),
-          class: "salesforceDev",
-          level: gitBranch.level,
-          group: gitBranch.group,
-        });
-        this.sbDevLinks.push({
-          source: nodeName,
-          target: gitBranch.nodeName,
-          type: "sfPushPull",
-          label: "Push / Pull",
-          level: gitBranch.level,
         });
       }
     }

@@ -84,8 +84,6 @@ export function registerShowPipeline(commands: Commands) {
         cancellable: false,
       },
       async () => {
-        const pipelineDataProvider = new PipelineDataProvider();
-        const pipelineData = await pipelineDataProvider.getPipelineData();
         const gitProvider = await GitProvider.getInstance(resetGit);
         let openPullRequests: PullRequest[] = [];
         let gitAuthenticated = false;
@@ -93,6 +91,8 @@ export function registerShowPipeline(commands: Commands) {
           gitAuthenticated = true;
           openPullRequests = await gitProvider.listOpenPullRequests();
         }
+        const pipelineDataProvider = new PipelineDataProvider();
+        const pipelineData = await pipelineDataProvider.getPipelineData({openPullRequests: openPullRequests});
         const prButtonInfo: any = {};
         let repoPlatformLabel = "";
         if (gitProvider?.repoInfo) {
