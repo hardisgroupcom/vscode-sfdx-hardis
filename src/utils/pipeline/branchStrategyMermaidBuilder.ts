@@ -97,13 +97,19 @@ export class BranchStrategyMermaidBuilder {
         const openPullRequestsForThisTarget = this.openPullRequests.filter(pr => pr.targetBranch === mergeTarget);
         // Select only the first PR if multiple exist
         const activePR = openPullRequestsForThisTarget.length > 0 ? openPullRequestsForThisTarget[0] : null;
-        // Determine if source is a major branch (will be set after we build the branch object)
-        const isSourceMajorBranch = (activePR && activePR.sourceBranch) ? isMajorBranch(activePR.sourceBranch,this.branchesAndOrgs) : false;
+        // Determine if source is a major branch - check PR source if PR exists, otherwise check current branch
+        const isSourceMajorBranch = activePR && activePR.sourceBranch
+          ? isMajorBranch(activePR.sourceBranch, this.branchesAndOrgs)
+          : isMajorBranch(branchAndOrg.branchName, this.branchesAndOrgs);
+        // Also check if target is a major branch
+        const isTargetMajorBranch = isMajorBranch(mergeTarget, this.branchesAndOrgs);
+        // Use gitMerge (thick blue) if either source OR target is a major branch
+        const isMajorLink = isSourceMajorBranch || isTargetMajorBranch;
 
         this.gitLinks.push({
           source: nodeName,
           target: mergeTarget + "Branch",
-          type: isSourceMajorBranch ? "gitMerge" : "gitFeatureMerge",
+          type: isMajorLink ? "gitMerge" : "gitFeatureMerge",
           label: activePR ? `#${activePR.number || activePR.id} ${this.getPrStatusEmoji(activePR.jobsStatus)}` : "No PR",
           activePR: activePR
         });
@@ -508,12 +514,13 @@ export class BranchStrategyMermaidBuilder {
     // SLDS blue/green for connectors, thin lines, and more discrete (lighter) link labels
     // Use a lighter color for label text (e.g., #B0B7BD), fully opaque for readability, and no background
     // gitFeatureMerge uses dashed line and lighter color to distinguish from major branch merges
-    // Animated variants: Set base stroke that CSS will override with red/orange
+    // gitMerge (major branch arrows) are always plain and thicker (3px)
+    // Animated variants: Set base stroke in red that CSS will animate
     return {
-      gitMerge: "stroke:#0176D3,stroke-width:2px,color:#032D60,opacity:1;",
-      gitMergeWithPRAnimated: "stroke:#0176D3,stroke-width:2.5px,color:#0176D3,font-weight:bold,opacity:1;",
+      gitMerge: "stroke:#0176D3,stroke-width:3px,color:#032D60,opacity:1;",
+      gitMergeWithPRAnimated: "stroke:#e74c3c,stroke-width:3px,color:#032D60,font-weight:bold,opacity:1;",
       gitFeatureMerge: "stroke:#B0B7BD,stroke-width:1.5px,stroke-dasharray:5 5,color:#B0B7BD,opacity:1;",
-      gitFeatureMergeWithPRAnimated: "stroke:#0176D3,stroke-width:2px,stroke-dasharray:5 5,color:#0176D3,font-weight:bold,opacity:1;",
+      gitFeatureMergeWithPRAnimated: "stroke:#e74c3c,stroke-width:2.5px,stroke-dasharray:5 5,color:#032D60,font-weight:bold,opacity:1;",
       sfDeploy: "stroke:#04844B,stroke-width:1.5px,color:#B0B7BD,opacity:1;",
       sfPushPull: "stroke:#0176D3,stroke-width:1.5px,color:#B0B7BD,opacity:1;",
     };

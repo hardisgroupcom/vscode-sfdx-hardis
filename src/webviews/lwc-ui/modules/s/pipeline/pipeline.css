@@ -196,11 +196,11 @@ lightning-datatable .hardis-emoji-cell a {
     animation: edgeAnimationFast 1s ease-in-out infinite !important;
 }
 
-/* Apply orange color and animation to pending PRs (slow) - using multiple selectors for maximum specificity */
+/* Apply red color and animation to pending PRs (slow) - using multiple selectors for maximum specificity */
 .mermaid svg path.edge-animation-slow,
 .mermaid svg g.edgePath path.edge-animation-slow,
 .mermaid svg g.edgePaths path.edge-animation-slow {
-    stroke: #ff6b35 !important; /* Orange color */
+    stroke: #e74c3c !important; /* Red color (same as running) */
     stroke-width: 2.5px !important;
     animation: edgeAnimationSlow 2s ease-in-out infinite !important;
 }
