@@ -131,6 +131,11 @@
           ],
           "description": "Theme of SFDX-Hardis menu icons"
         },
+        "vsCodeSfdxHardis.pipelineDisplayFeatureBranches": {
+          "type": "boolean",
+          "default": false,
+          "description": "Display feature branches in the DevOps Pipeline diagram"
+        },
         "vsCodeSfdxHardis.showCommandsDetails": {
           "type": "boolean",
           "default": false,

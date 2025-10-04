@@ -4,6 +4,8 @@ import { glob } from "glob";
 import * as yaml from "js-yaml";
 import sortArray from "sort-array";
 import { getWorkspaceRoot } from "../utils";
+import { Job, JobStatus } from "./gitProviders/types";
+import { GitProvider } from "./gitProviders/gitProvider";
 
 export interface MajorOrg {
   branchName: string;
@@ -15,9 +17,11 @@ export interface MajorOrg {
   warnings: string[];
   openPullRequestsAsTarget?: any[];
   mergedPullRequestsAsTarget?: any[];
+  jobs: Job[];
+  jobsStatus: JobStatus
 }
 
-export async function listMajorOrgs(): Promise<MajorOrg[]> {
+export async function listMajorOrgs(options: {browseGitProvider: boolean} = {browseGitProvider: false}): Promise<MajorOrg[]> {
   const workspaceRoot = getWorkspaceRoot();
   const branchConfigPattern = "**/config/branches/.sfdx-hardis.*.yml";
   const configFiles = await glob(branchConfigPattern, { cwd: workspaceRoot });
@@ -79,6 +83,19 @@ export async function listMajorOrgs(): Promise<MajorOrg[]> {
       );
     }
 
+    let jobs: Job[] = [];
+    let jobsStatus: JobStatus = "unknown";
+    if (options.browseGitProvider) {
+      const gitProvider = await GitProvider.getInstance();
+      if (gitProvider?.isActive) {
+        const jobsRes = await gitProvider.getJobsForBranchLatestCommit(branchName);
+        if (jobsRes) {
+          jobsStatus = jobsRes.jobsStatus;
+          jobs = jobsRes.jobs || [];
+        }
+      }
+    }
+  
     majorOrgs.push({
       branchName,
       orgType,
@@ -87,6 +104,8 @@ export async function listMajorOrgs(): Promise<MajorOrg[]> {
       level,
       instanceUrl: props.instanceUrl,
       warnings: warnings,
+      jobs: jobs,
+      jobsStatus: jobsStatus,
     });
   }
 
@@ -146,5 +165,23 @@ export function isUatRun(branchName: string) {
     (branchName.toLowerCase().startsWith("uat") ||
       branchName.toLowerCase().startsWith("recette")) &&
     branchName.toLowerCase().includes("run")
+  );
+}
+
+export function isMajorBranch(branchName: string, allBranches: any[]): boolean {
+  const branchesWithBranchNameAsTarget = allBranches.filter((b) =>
+    Array.isArray(b.mergeTargets)
+      ? b.mergeTargets.includes(branchName)
+      : false,
+  );
+  if (branchesWithBranchNameAsTarget.length > 0) {
+    return true;
+  }
+  return (
+    isProduction(branchName) ||
+    isPreprod(branchName) ||
+    isUat(branchName) ||
+    isUatRun(branchName) ||
+    isIntegration(branchName)
   );
 }

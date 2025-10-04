@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { BranchStrategyMermaidBuilder } from "./utils/pipeline/branchStrategyMermaidBuilder";
 import { listMajorOrgs, MajorOrg } from "./utils/orgConfigUtils";
 import { getConfig } from "./utils/pipeline/sfdxHardisConfig";
+import { PullRequest } from "./utils/gitProviders/types";
 // import { GitProvider } from "./utils/gitProviders/gitProvider";
 // import { Logger } from "./logger";
 
@@ -30,11 +31,11 @@ export interface PipelineData {
 export class PipelineDataProvider {
   constructor() {}
 
-  public async getPipelineData(): Promise<PipelineData> {
+  public async getPipelineData(options: {browseGitProvider?: boolean, openPullRequests?: PullRequest[]} = {}): Promise<PipelineData> {
     try {
-      let majorOrgs: MajorOrg[] = await listMajorOrgs();
+      let majorOrgs: MajorOrg[] = await listMajorOrgs({browseGitProvider: options.browseGitProvider || false});
       // majorOrgs = await completeOrgsWithPullRequests(majorOrgs);
-      const mermaidBuilder = new BranchStrategyMermaidBuilder(majorOrgs);
+      const mermaidBuilder = new BranchStrategyMermaidBuilder(majorOrgs, options.openPullRequests || []);
       const mermaidDiagram = mermaidBuilder.build({
         format: "string",
         withMermaidTag: true,

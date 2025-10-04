@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { GitProvider } from "./gitProvider";
-import { ProviderDescription, PullRequest, PullRequestJob } from "./types";
+import { ProviderDescription, PullRequest, Job, JobStatus } from "./types";
 import * as azdev from "azure-devops-node-api";
 import { GitApi } from "azure-devops-node-api/GitApi";
 import {
@@ -138,7 +138,7 @@ export class GitProviderAzure extends GitProvider {
   private async fetchLatestJobsForPullRequestAzure(
     rawPr: GitPullRequest,
     pr: PullRequest,
-  ): Promise<PullRequestJob[]> {
+  ): Promise<Job[]> {
     if (!this.connection || !this.repoInfo) {
       return [];
     }
@@ -187,7 +187,7 @@ export class GitProviderAzure extends GitProvider {
       }
       const build = builds[0];
       // Map the build to a PullRequestJob
-      const job: PullRequestJob = {
+      const job: Job = {
         name: build.definition?.name || String(build.id || ""),
         status: (build.status || build.result || "").toString(),
         webUrl: build._links?.web?.href || undefined,
@@ -228,6 +228,54 @@ export class GitProviderAzure extends GitProvider {
       }),
     );
     return converted;
+  }
+
+  async getJobsForBranchLatestCommit(branchName: string): Promise<{jobs: Job[]; jobsStatus: JobStatus} | null> {
+    if (!this.connection || !this.repoInfo) {
+      return null;
+    }
+    try {
+      const buildApi = await this.connection.getBuildApi();
+      const project = this.repoInfo.owner;
+      // Get recent builds for the branch
+      const builds = await buildApi.getBuilds(
+        project,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined, // source branch parameter
+        undefined,
+        10,
+      );
+      if (!builds || builds.length === 0) {
+        return { jobs: [], jobsStatus: "unknown" };
+      }
+      // Filter builds by branch and use the most recent
+      const branchBuilds = builds.filter((b: any) => 
+        b.sourceBranch && b.sourceBranch.endsWith(branchName)
+      );
+      if (branchBuilds.length === 0) {
+        return { jobs: [], jobsStatus: "unknown" };
+      }
+      const build = branchBuilds[0];
+      const job: Job = {
+        name: build.definition?.name || String(build.id || ""),
+        status: (build.status || build.result || "").toString() as JobStatus,
+        webUrl: build._links?.web?.href || undefined,
+        updatedAt: build.finishTime?.toISOString() || build.queueTime?.toISOString() || undefined,
+        raw: build,
+      };
+      return { jobs: [job], jobsStatus: this.computeJobsStatus([job]) };
+    } catch (e) {
+      Logger.log(`Error fetching jobs for branch ${branchName}: ${String(e)}`);
+      return null;
+    }
   }
 
   convertToPullRequest(pr: any, branchName: string): PullRequest {

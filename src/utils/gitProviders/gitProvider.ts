@@ -3,8 +3,9 @@ import type {
   ProviderDescription,
   ProviderName,
   PullRequest,
-  PullRequestJob,
+  Job,
   RepoInfo,
+  JobStatus,
 } from "./types";
 import { getWorkspaceRoot } from "../../utils";
 import { Logger } from "../../logger";
@@ -187,6 +188,13 @@ export class GitProvider {
     );
   }
 
+  async getJobsForBranchLatestCommit(_branchName: string): Promise<{jobs: Job[]; jobsStatus: JobStatus} | null> {
+    Logger.log(
+      `getJobsForBranch not implemented on ${this.repoInfo?.providerName || "unknown provider"}`,
+    );
+    return null;
+  }
+
   async listOpenPullRequests(): Promise<PullRequest[]> {
     Logger.log(
       `listOpenPullRequests not implemented on ${this.repoInfo?.providerName || "unknown provider"}`,
@@ -214,7 +222,7 @@ export class GitProvider {
    * - else => 'unknown'
    */
   computeJobsStatus(
-    jobs?: PullRequestJob[],
+    jobs?: Job[],
   ): "running" | "pending" | "success" | "failed" | "unknown" {
     if (!jobs || jobs.length === 0) {
       return "unknown";
