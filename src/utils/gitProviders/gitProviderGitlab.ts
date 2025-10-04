@@ -5,7 +5,7 @@ import type {
   MergeRequestSchemaWithBasicLabels,
   Camelize,
 } from "@gitbeaker/rest";
-import { ProviderDescription, PullRequest, Job } from "./types";
+import { ProviderDescription, PullRequest, Job, JobStatus } from "./types";
 import { SecretsManager } from "../secretsManager";
 import { Logger } from "../../logger";
 
@@ -200,6 +200,46 @@ export class GitProviderGitlab extends GitProvider {
     } catch (e) {
       Logger.log(`Unexpected error fetching MR pipelines: ${String(e)}`);
       return [];
+    }
+  }
+
+  async getJobsForBranchLatestCommit(branchName: string): Promise<{jobs: Job[]; jobsStatus: JobStatus} | null> {
+    if (!this.gitlabClient || !this.gitlabProjectId) {
+      return null;
+    }
+    try {
+      const projectId = this.gitlabProjectId;
+      // Fetch pipelines for the branch (most recent first)
+      let pipelines: any[] = [];
+      try {
+        // @ts-ignore - method signature may differ across gitbeaker versions
+        pipelines = await this.gitlabClient.Pipelines.all(projectId, {
+          ref: branchName,
+          perPage: 10,
+        });
+      } catch (e) {
+        Logger.log(`Error fetching pipelines for branch ${branchName}: ${String(e)}`);
+        return null;
+      }
+
+      if (!Array.isArray(pipelines) || pipelines.length === 0) {
+        return { jobs: [], jobsStatus: "unknown" };
+      }
+
+      // Use the most recent pipeline
+      const pipeline = pipelines[0];
+      const converted: Job[] = [{
+        name: pipeline.ref || pipeline.sha || String(pipeline.id || ""),
+        status: (pipeline.status || "").toString() as JobStatus,
+        webUrl: pipeline.web_url || pipeline.webUrl || undefined,
+        updatedAt: pipeline.updated_at || pipeline.updatedAt || undefined,
+        raw: pipeline,
+      }];
+
+      return { jobs: converted, jobsStatus: this.computeJobsStatus(converted) };
+    } catch (e) {
+      Logger.log(`Unexpected error fetching branch pipelines: ${String(e)}`);
+      return null;
     }
   }
 

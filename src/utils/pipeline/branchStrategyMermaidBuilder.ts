@@ -294,7 +294,7 @@ export class BranchStrategyMermaidBuilder {
 
     // Git branches
     this.mermaidLines.push(
-      this.indent("subgraph GitBranches [Major Git Branches]", 1),
+      this.indent("subgraph GitBranches [Git Branches]", 1),
     );
     this.mermaidLines.push(this.indent("direction TB", 2));
     for (const gitBranch of this.gitBranches) {
@@ -314,7 +314,7 @@ export class BranchStrategyMermaidBuilder {
     );
     if (majorOrgs.length > 0) {
       this.mermaidLines.push(
-        this.indent("subgraph SalesforceOrgs [Major Salesforce Orgs]", 1),
+        this.indent("subgraph SalesforceOrgs [Salesforce Orgs]", 1),
       );
       this.mermaidLines.push(this.indent("direction TB", 2));
       for (const salesforceOrg of majorOrgs) {
