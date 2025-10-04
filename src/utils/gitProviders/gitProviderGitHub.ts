@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import { GitProvider } from "./gitProvider";
 import { Octokit } from "@octokit/rest";
 import type { Endpoints } from "@octokit/types";
-import { ProviderDescription, PullRequest, PullRequestJob } from "./types";
+import { ProviderDescription, PullRequest, Job } from "./types";
 import { Logger } from "../../logger";
 
 export class GitProviderGitHub extends GitProvider {
@@ -108,7 +108,7 @@ export class GitProviderGitHub extends GitProvider {
   // Fetch latest workflow run jobs for a pull request using the source branch
   private async fetchLatestJobsForPullRequest(
     pr: PullRequest,
-  ): Promise<PullRequestJob[]> {
+  ): Promise<Job[]> {
     if (!this.gitHubClient || !this.repoInfo) {
       return [];
     }
@@ -138,7 +138,7 @@ export class GitProviderGitHub extends GitProvider {
       });
       const jobs =
         jobsResp.data && jobsResp.data.jobs ? jobsResp.data.jobs : [];
-      const converted: PullRequestJob[] = jobs.map((j: any) => ({
+      const converted: Job[] = jobs.map((j: any) => ({
         name: j.name || j.step_name || String(j.id || ""),
         status: (j.conclusion || j.status || "").toString(),
         webUrl: j.html_url || undefined,

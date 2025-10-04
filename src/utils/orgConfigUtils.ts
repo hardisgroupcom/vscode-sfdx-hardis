@@ -4,6 +4,8 @@ import { glob } from "glob";
 import * as yaml from "js-yaml";
 import sortArray from "sort-array";
 import { getWorkspaceRoot } from "../utils";
+import { Job, JobStatus } from "./gitProviders/types";
+import { GitProvider } from "./gitProviders/gitProvider";
 
 export interface MajorOrg {
   branchName: string;
@@ -15,6 +17,8 @@ export interface MajorOrg {
   warnings: string[];
   openPullRequestsAsTarget?: any[];
   mergedPullRequestsAsTarget?: any[];
+  jobs: Job[];
+  jobsStatus: JobStatus
 }
 
 export async function listMajorOrgs(): Promise<MajorOrg[]> {
@@ -79,6 +83,17 @@ export async function listMajorOrgs(): Promise<MajorOrg[]> {
       );
     }
 
+    let jobs: Job[] = [];
+    let jobsStatus: JobStatus = "unknown";
+    const gitProvider = await GitProvider.getInstance();
+    if (gitProvider?.isActive) {
+      const jobsRes = await gitProvider.getJobsForBranchLatestCommit(branchName);
+      if (jobsRes) {
+        jobsStatus = jobsRes.jobsStatus;
+        jobs = jobsRes.jobs || [];
+      }
+    }
+  
     majorOrgs.push({
       branchName,
       orgType,
@@ -87,6 +102,8 @@ export async function listMajorOrgs(): Promise<MajorOrg[]> {
       level,
       instanceUrl: props.instanceUrl,
       warnings: warnings,
+      jobs: jobs,
+      jobsStatus: jobsStatus,
     });
   }
 

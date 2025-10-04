@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { GitProvider } from "./gitProvider";
-import { ProviderDescription, PullRequest, PullRequestJob } from "./types";
+import { ProviderDescription, PullRequest, Job } from "./types";
 import * as azdev from "azure-devops-node-api";
 import { GitApi } from "azure-devops-node-api/GitApi";
 import {
@@ -138,7 +138,7 @@ export class GitProviderAzure extends GitProvider {
   private async fetchLatestJobsForPullRequestAzure(
     rawPr: GitPullRequest,
     pr: PullRequest,
-  ): Promise<PullRequestJob[]> {
+  ): Promise<Job[]> {
     if (!this.connection || !this.repoInfo) {
       return [];
     }
@@ -187,7 +187,7 @@ export class GitProviderAzure extends GitProvider {
       }
       const build = builds[0];
       // Map the build to a PullRequestJob
-      const job: PullRequestJob = {
+      const job: Job = {
         name: build.definition?.name || String(build.id || ""),
         status: (build.status || build.result || "").toString(),
         webUrl: build._links?.web?.href || undefined,

@@ -5,7 +5,7 @@ import type {
   MergeRequestSchemaWithBasicLabels,
   Camelize,
 } from "@gitbeaker/rest";
-import { ProviderDescription, PullRequest, PullRequestJob } from "./types";
+import { ProviderDescription, PullRequest, Job } from "./types";
 import { SecretsManager } from "../secretsManager";
 import { Logger } from "../../logger";
 
@@ -166,7 +166,7 @@ export class GitProviderGitlab extends GitProvider {
     mr:
       | MergeRequestSchemaWithBasicLabels
       | Camelize<MergeRequestSchemaWithBasicLabels>,
-  ): Promise<PullRequestJob[]> {
+  ): Promise<Job[]> {
     try {
       const projectId = this.gitlabProjectId!;
       const mrIid = mr.iid!;
@@ -186,7 +186,7 @@ export class GitProviderGitlab extends GitProvider {
         return [];
       }
 
-      const converted: PullRequestJob[] = pipelines.map((p: any) => {
+      const converted: Job[] = pipelines.map((p: any) => {
         return {
           name: p.ref || p.sha || String(p.id || ""),
           status: (p.status || "").toString(),

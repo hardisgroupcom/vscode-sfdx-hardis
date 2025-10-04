@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import { GitProvider } from "./gitProvider";
 import { Bitbucket } from "bitbucket";
 import type { Schema } from "bitbucket";
-import { ProviderDescription, PullRequest, PullRequestJob } from "./types";
+import { ProviderDescription, PullRequest, Job } from "./types";
 import { SecretsManager } from "../secretsManager";
 import { Logger } from "../../logger";
 
@@ -145,7 +145,7 @@ export class GitProviderBitbucket extends GitProvider {
   private async fetchLatestJobsForPrBitbucket(
     rawPr: any,
     pr: PullRequest,
-  ): Promise<PullRequestJob[]> {
+  ): Promise<Job[]> {
     if (!this.bitbucketClient || !this.workspace || !this.repoSlug) {
       return [];
     }
@@ -175,7 +175,7 @@ export class GitProviderBitbucket extends GitProvider {
       const pipeline = values[0];
       // Map pipeline steps to PullRequestJob if available
       const p: any = pipeline as any;
-      const converted: PullRequestJob[] = [
+      const converted: Job[] = [
         {
           name: String((p && p.target && p.target.ref_name) || p.id || ""),
           status: String(
@@ -183,7 +183,7 @@ export class GitProviderBitbucket extends GitProvider {
               p.state &&
               ((p.state.result && p.state.result.name) || p.state.name)) ||
               "",
-          ),
+          ) as Job["status"],
           webUrl:
             String(
               (p && p.links && p.links.html && p.links.html.href) || undefined,

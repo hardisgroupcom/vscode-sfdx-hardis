@@ -1,7 +1,7 @@
 import sortArray from "sort-array";
 import { prettifyFieldName } from "../stringUtils";
-import { isIntegration, isMajorBranch, isPreprod, isProduction } from "../orgConfigUtils";
-import { PullRequest, PullRequestJobStatus } from "../gitProviders/types";
+import { isMajorBranch, isPreprod, isProduction } from "../orgConfigUtils";
+import { PullRequest, JobStatus } from "../gitProviders/types";
 
 export class BranchStrategyMermaidBuilder {
   private branchesAndOrgs: any[];
@@ -535,8 +535,8 @@ export class BranchStrategyMermaidBuilder {
     return " ".repeat(number) + str;
   }
 
-  private getPrStatusEmoji(status: PullRequestJobStatus): string {
-    const emojiMap: Record<PullRequestJobStatus, string> = {
+  private getPrStatusEmoji(status: JobStatus): string {
+    const emojiMap: Record<JobStatus, string> = {
       running: "🔄",
       pending: "⏳",
       success: "✅",

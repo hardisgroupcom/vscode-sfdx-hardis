@@ -27,18 +27,19 @@ export type ProviderDescription = {
 export type PullRequestStatus = "open" | "closed" | "merged" | "declined";
 
 // Job run status for CI workflows associated with a pull request commit
-export type PullRequestJobStatus =
+export type JobStatus =
   | "running"
   | "success"
   | "failed"
   | "pending"
-  | string;
+  | "unknown";
 
-export type PullRequestJob = {
+
+export type Job = {
   // job identifier/name (e.g. workflow name or job name)
   name: string;
   // job status as returned by provider/CI
-  status: PullRequestJobStatus;
+  status: JobStatus;
   // url to view job or workflow run
   webUrl?: string;
   // timestamp when the job was last updated (ISO string)
@@ -101,7 +102,7 @@ export type PullRequest = {
     raw?: any; // raw provider response object
   };
   // Jobs for the latest commit of the Pull Request (CI/workflow runs)
-  jobs?: PullRequestJob[];
+  jobs?: Job[];
 
   // Aggregated jobs status for the latest commit. Computed from `jobs`.
   // - 'running' : at least one job is running
