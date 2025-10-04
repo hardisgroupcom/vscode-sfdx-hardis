@@ -10,6 +10,17 @@
     background: white;
 }
 
+.pipeline-loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(243, 243, 243, 0.7);
+    z-index: 10;
+    pointer-events: none;
+}
+
 .blue-back {
     background: linear-gradient(135deg, #f8f9ff 0%, #e8f4fd 100%);
     font-family: "Salesforce Sans", -apple-system, BlinkMacSystemFont, sans-serif;

@@ -38,7 +38,17 @@
             <template if:true={pipelineData.orgs}>
                 <template if:true={pipelineData.orgs.length}>
                     <div class="pipeline-container">
-                        <div class="mermaid"></div>
+                        <template if:true={loading}>
+                            <div class="slds-align_absolute-center slds-m-vertical_medium">
+                                <s-spinner alternative-text="Loading pipeline data..." size="medium" variant="brand"></s-spinner>
+                            </div>
+                        </template>
+                        <div style="position: relative;">
+                            <template if:true={loading}>
+                                <div class="pipeline-loading-overlay"></div>
+                            </template>
+                            <div class="mermaid"></div>
+                        </div>
                         <template if:true={error}>
                             <pre class="mermaid-debug" style="color:#888;font-size:10px;max-height:100px;overflow:auto;"></pre>
                         </template>

@@ -21,7 +21,7 @@ export interface MajorOrg {
   jobsStatus: JobStatus
 }
 
-export async function listMajorOrgs(): Promise<MajorOrg[]> {
+export async function listMajorOrgs(options: {browseGitProvider: boolean} = {browseGitProvider: false}): Promise<MajorOrg[]> {
   const workspaceRoot = getWorkspaceRoot();
   const branchConfigPattern = "**/config/branches/.sfdx-hardis.*.yml";
   const configFiles = await glob(branchConfigPattern, { cwd: workspaceRoot });
@@ -85,12 +85,14 @@ export async function listMajorOrgs(): Promise<MajorOrg[]> {
 
     let jobs: Job[] = [];
     let jobsStatus: JobStatus = "unknown";
-    const gitProvider = await GitProvider.getInstance();
-    if (gitProvider?.isActive) {
-      const jobsRes = await gitProvider.getJobsForBranchLatestCommit(branchName);
-      if (jobsRes) {
-        jobsStatus = jobsRes.jobsStatus;
-        jobs = jobsRes.jobs || [];
+    if (options.browseGitProvider) {
+      const gitProvider = await GitProvider.getInstance();
+      if (gitProvider?.isActive) {
+        const jobsRes = await gitProvider.getJobsForBranchLatestCommit(branchName);
+        if (jobsRes) {
+          jobsStatus = jobsRes.jobsStatus;
+          jobs = jobsRes.jobs || [];
+        }
       }
     }
   

@@ -13,6 +13,9 @@ export default class Pipeline extends LightningElement {
   @track connectedIconName = "utility:link";
   @track openPullRequests = [];
   @track displayFeatureBranches = false;
+  @track loading = false;
+  _refreshTimer = null;
+  _isVisible = true;
   prColumns = [
     {
       key: "number",
@@ -99,6 +102,7 @@ export default class Pipeline extends LightningElement {
 
   @api
   initialize(data) {
+    this.loading = false;
     this.pipelineData = data.pipelineData;
     this.repoPlatformLabel = data.repoPlatformLabel || "Git";
     this.prButtonInfo = data.prButtonInfo;
@@ -119,7 +123,6 @@ export default class Pipeline extends LightningElement {
     this.connectedIconName = this.gitAuthenticated
       ? "utility:check"
       : "utility:link";
-    this.connectedVariant = this.gitAuthenticated ? "success" : "neutral";
     this.openPullRequests = this._mapPrsWithIcons(data.openPullRequests || []);
     // ensure reactivity for computed label
     this.openPullRequests = Array.isArray(this.openPullRequests)
@@ -130,6 +133,13 @@ export default class Pipeline extends LightningElement {
     // Render the Mermaid diagram after a brief delay to ensure DOM is ready
     setTimeout(() => this.renderMermaid(), 0);
     console.log("Pipeline data initialized:", this.pipelineData);
+    // Update panel title with PR count
+    this._updatePanelTitle();
+    // Start auto-refresh timer
+    this._startAutoRefresh();
+    if (data.firstDisplay) {
+      this.refreshPipeline();
+    }
   }
 
   // Map PRs to include a computed jobsIconName used by datatable cellAttributes
@@ -160,8 +170,10 @@ export default class Pipeline extends LightningElement {
 
   connectedCallback() {
     this._boundAdjust = this.adjustPrColumns.bind(this);
+    this._boundVisibilityChange = this._handleVisibilityChange.bind(this);
     if (typeof window !== "undefined" && window.addEventListener) {
       window.addEventListener("resize", this._boundAdjust);
+      document.addEventListener("visibilitychange", this._boundVisibilityChange);
     }
     // Register global openPR function for Mermaid link callbacks
     if (typeof window !== "undefined") {
@@ -171,6 +183,7 @@ export default class Pipeline extends LightningElement {
         }
       };
     }
+    this._isVisible = !document.hidden;
   }
 
   disconnectedCallback() {
@@ -181,6 +194,15 @@ export default class Pipeline extends LightningElement {
     ) {
       window.removeEventListener("resize", this._boundAdjust);
     }
+    if (
+      typeof window !== "undefined" &&
+      window.removeEventListener &&
+      this._boundVisibilityChange
+    ) {
+      document.removeEventListener("visibilitychange", this._boundVisibilityChange);
+    }
+    // Clean up auto-refresh timer
+    this._stopAutoRefresh();
     // Clean up global openPR function
     if (typeof window !== "undefined" && window.openPR) {
       delete window.openPR;
@@ -549,6 +571,7 @@ export default class Pipeline extends LightningElement {
         // allow dynamic updates from extension host
         this.openPullRequests = this._mapPrsWithIcons(data || []);
         setTimeout(() => this.adjustPrColumns(), 50);
+        this._updatePanelTitle();
         break;
       default:
         console.log("Unknown message type:", messageType, data);
@@ -567,6 +590,7 @@ export default class Pipeline extends LightningElement {
 
   // Added refreshPipeline method
   refreshPipeline() {
+    this.loading = true;
     window.sendMessageToVSCode({
       type: "refreshPipeline",
       data: {},
@@ -669,5 +693,52 @@ export default class Pipeline extends LightningElement {
       "Feature branches display toggled:",
       this.displayFeatureBranches,
     );
+  }
+
+  _handleVisibilityChange() {
+    this._isVisible = !document.hidden;
+    console.log("Pipeline visibility changed:", this._isVisible ? "visible" : "hidden");
+    // Restart timer with appropriate interval when visibility changes
+    this._startAutoRefresh();
+  }
+
+  _startAutoRefresh() {
+    // Clear existing timer
+    this._stopAutoRefresh();
+    
+    // Only auto-refresh if git is authenticated
+    if (!this.gitAuthenticated) {
+      console.log("Auto-refresh disabled: git not authenticated");
+      return;
+    }
+    
+    // Set interval based on visibility: 1 minute if visible, 5 minutes if not
+    const interval = this._isVisible ? 60000 : 300000; // 60s or 300s
+    
+    this._refreshTimer = setInterval(() => {
+      console.log("Auto-refreshing pipeline (visible:", this._isVisible, ")");
+      this.refreshPipeline();
+    }, interval);
+    
+    console.log(`Auto-refresh started: ${interval / 1000}s interval (visible: ${this._isVisible})`);
+  }
+
+  _stopAutoRefresh() {
+    if (this._refreshTimer) {
+      clearInterval(this._refreshTimer);
+      this._refreshTimer = null;
+      console.log("Auto-refresh stopped");
+    }
+  }
+
+  _updatePanelTitle() {
+    const prCount = this.openPullRequests ? this.openPullRequests.length : 0;
+    const baseTitle = "DevOps Pipeline";
+    const title = prCount > 0 ? `${baseTitle} (${prCount})` : baseTitle;
+    
+    window.sendMessageToVSCode({
+      type: "updatePanelTitle",
+      data: { title: title },
+    });
   }
 }
