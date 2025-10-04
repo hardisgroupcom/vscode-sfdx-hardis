@@ -178,26 +178,26 @@ export class BranchStrategyMermaidBuilder {
     }
 
     // Add retrofit link only if it does not mess with the diagram display :/
-    if (branchesMergingInPreprod.length < 2) {
-      const mainBranch = this.branchesAndOrgs.find((branchAndOrg) =>
-        isProduction(branchAndOrg.branchName),
-      );
-      const preprodBranch = this.branchesAndOrgs.find((branchAndOrg) =>
-        isPreprod(branchAndOrg.branchName),
-      );
-      const integrationBranch = this.branchesAndOrgs.find((branchAndOrg) =>
-        isIntegration(branchAndOrg.branchName),
-      );
+    // if (branchesMergingInPreprod.length < 2) {
+    //   const mainBranch = this.branchesAndOrgs.find((branchAndOrg) =>
+    //     isProduction(branchAndOrg.branchName),
+    //   );
+    //   const preprodBranch = this.branchesAndOrgs.find((branchAndOrg) =>
+    //     isPreprod(branchAndOrg.branchName),
+    //   );
+    //   const integrationBranch = this.branchesAndOrgs.find((branchAndOrg) =>
+    //     isIntegration(branchAndOrg.branchName),
+    //   );
 
-      if (mainBranch && preprodBranch && integrationBranch) {
-        this.retrofitLinks.push({
-          source: mainBranch.branchName + "Branch",
-          target: integrationBranch.branchName + "Branch",
-          type: "gitMerge",
-          label: "Retrofit from RUN to BUILD",
-        });
-      }
-    }
+      // if (mainBranch && preprodBranch && integrationBranch) {
+      //   this.retrofitLinks.push({
+      //     source: mainBranch.branchName + "Branch",
+      //     target: integrationBranch.branchName + "Branch",
+      //     type: "gitMerge",
+      //     label: "Retrofit from RUN to BUILD",
+      //   });
+      // }
+    // }
 
     // Sort branches & links
     this.gitBranches = sortArray(this.gitBranches, {
@@ -284,6 +284,11 @@ export class BranchStrategyMermaidBuilder {
 
   private generateMermaidLines(options?: { onlyMajorBranches?: boolean }) {
     /* jscpd:ignore-start */
+    this.mermaidLines.push('%%{init: {');
+    this.mermaidLines.push('  "flowchart": {');
+    this.mermaidLines.push('    "curve": "monotoneX"');
+    this.mermaidLines.push('  }');
+    this.mermaidLines.push('}}%%');
     this.mermaidLines.push("flowchart LR");
     this.mermaidLines.push("");
 
