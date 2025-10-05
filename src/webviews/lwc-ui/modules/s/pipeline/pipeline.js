@@ -550,8 +550,20 @@ export default class Pipeline extends LightningElement {
       const hasPending = labelText.includes('⏳');
       
       if (hasRunning || hasPending) {
+        // Determine animation type based on path style (deployment vs git links)
+        const pathStyle = path.style.strokeDasharray || "";
+        const isDashedLine = pathStyle.includes("5") || path.getAttribute('style')?.includes('dasharray');
+        
         // Apply the appropriate animation class
-        const animationClass = hasRunning ? 'edge-animation-fast' : 'edge-animation-slow';
+        let animationClass;
+        if (isDashedLine) {
+          // Deployment links use dashed lines
+          animationClass = 'deploy-animation';
+        } else {
+          // Git merge links use solid lines
+          animationClass = hasRunning ? 'edge-animation-fast' : 'edge-animation-slow';
+        }
+        
         console.log(`🔍 Edge ${i} - Before: classes="${path.className.baseVal}", stroke="${path.style.stroke}"`);
         path.classList.add(animationClass);
         console.log(`✅ Applied ${animationClass} to edge ${i}: "${labelText.trim().substring(0, 40)}"`);

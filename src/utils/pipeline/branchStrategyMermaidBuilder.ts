@@ -257,12 +257,34 @@ export class BranchStrategyMermaidBuilder {
           group: branchAndOrg.branchName, // Keep group for dev orgs
           instanceUrl: branchAndOrg.instanceUrl,
         });
+        
+        // Get job status info for this org
+        const jobsStatus = branchAndOrg.jobsStatus || 'unknown';
+        const jobStatusEmoji = this.getPrStatusEmoji(jobsStatus);
+        const hasJobs = branchAndOrg.jobs && branchAndOrg.jobs.length > 0;
+        const jobUrl = hasJobs ? branchAndOrg.jobs[0].webUrl : null;
+        
+        // Determine deploy link type based on job status
+        let deployLinkType = "sfDeploy";
+        if (hasJobs && jobUrl && (jobsStatus === 'running' || jobsStatus === 'pending')) {
+          deployLinkType = "sfDeployAnimated";
+        }
+        
+        // Build deploy label with job status (simpler format for dashed arrows)
+        let deployLabel = "Deploy to Org";
+        if (hasJobs) {
+          deployLabel = `Deploy ${jobStatusEmoji}`;
+        }
+        
         this.deployLinks.push({
           source: gitBranch.nodeName,
           target: nodeName,
-          type: "sfDeploy",
-          label: "Deploy to Org",
+          type: deployLinkType,
+          label: deployLabel,
           level: branchAndOrg.level,
+          hasJobs: hasJobs,
+          jobUrl: jobUrl,
+          jobsStatus: jobsStatus,
         });
       }
     }
@@ -485,9 +507,16 @@ export class BranchStrategyMermaidBuilder {
         this.mermaidLines.push(
           this.indent(`${link.source} -->|"${label}"| ${link.target}`, 1),
         );
-      } else if (link.type === "sfDeploy") {
+      } else if (link.type === "sfDeploy" || link.type === "sfDeployAnimated") {
+        // Make deployment links clickable if job URL exists
+        let label = link.label;
+        if (link.jobUrl) {
+          // Extract just the emoji from the label (e.g., "Deploy ✅" -> "✅")
+          const emoji = label.replace(/^Deploy\s+/, '');
+          label = `<a href='${link.jobUrl}' target='_blank' style='color:#0176D3;font-weight:bold;text-decoration:underline;'>Deploy ${emoji}</a>`;
+        }
         this.mermaidLines.push(
-          this.indent(`${link.source} -. ${link.label} .-> ${link.target}`, 1),
+          this.indent(`${link.source} -.->|"${label}"| ${link.target}`, 1),
         );
       } else if (link.type === "sfPushPull") {
         this.mermaidLines.push(
@@ -527,6 +556,7 @@ export class BranchStrategyMermaidBuilder {
       gitFeatureMerge: "stroke:#B0B7BD,stroke-width:1.5px,stroke-dasharray:5 5,color:#B0B7BD,opacity:1;",
       gitFeatureMergeWithPRAnimated: "stroke:#e74c3c,stroke-width:2.5px,stroke-dasharray:5 5,color:#032D60,font-weight:bold,opacity:1;",
       sfDeploy: "stroke:#04844B,stroke-width:1.5px,color:#B0B7BD,opacity:1;",
+      sfDeployAnimated: "stroke:#e74c3c,stroke-width:2px,color:#032D60,font-weight:bold,opacity:1;",
       sfPushPull: "stroke:#0176D3,stroke-width:1.5px,color:#B0B7BD,opacity:1;",
     };
   }

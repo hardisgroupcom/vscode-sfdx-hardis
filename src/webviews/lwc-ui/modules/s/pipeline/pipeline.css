@@ -215,3 +215,23 @@ lightning-datatable .hardis-emoji-cell a {
     stroke-width: 2.5px !important;
     animation: edgeAnimationSlow 2s ease-in-out infinite !important;
 }
+
+/* Apply animation for deployment links with running/pending jobs */
+@keyframes deployAnimationSlow {
+    0%, 100% {
+        opacity: 1;
+        stroke-width: 2px;
+    }
+    50% {
+        opacity: 0.8;
+        stroke-width: 2.5px;
+    }
+}
+
+.mermaid svg path.deploy-animation,
+.mermaid svg g.edgePath path.deploy-animation,
+.mermaid svg g.edgePaths path.deploy-animation {
+    stroke: #e74c3c !important;
+    stroke-width: 2px !important;
+    animation: deployAnimationSlow 2s ease-in-out infinite !important;
+}
