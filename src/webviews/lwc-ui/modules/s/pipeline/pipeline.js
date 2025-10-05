@@ -502,8 +502,6 @@ export default class Pipeline extends LightningElement {
       console.warn("Mermaid SVG not found for animation");
       return;
     }
-
-    console.log("🎬 Starting link animation application...");
     
     // Find the edgeLabels group (contains all edge label text)
     const edgeLabelsGroup = mermaidSvg.querySelector("g.edgeLabels");
@@ -523,8 +521,6 @@ export default class Pipeline extends LightningElement {
     const edgeLabels = edgeLabelsGroup.querySelectorAll("g.edgeLabel");
     const edgePaths = edgePathsGroup.querySelectorAll("path.flowchart-link");
     
-    console.log(`Found ${edgeLabels.length} edge labels and ${edgePaths.length} edge paths`);
-    
     if (edgeLabels.length === 0 || edgePaths.length === 0) {
       console.warn("No edge labels or paths found");
       return;
@@ -535,7 +531,6 @@ export default class Pipeline extends LightningElement {
     }
     
     // Match labels to paths by index
-    let animatedCount = 0;
     const maxIndex = Math.min(edgeLabels.length, edgePaths.length);
     
     for (let i = 0; i < maxIndex; i++) {
@@ -550,30 +545,14 @@ export default class Pipeline extends LightningElement {
       const hasPending = labelText.includes('⏳');
       
       if (hasRunning || hasPending) {
-        // Determine animation type based on link style
-        // Deployment links use dotted/dashed arrows with "Deploy" text
-        // Git links use solid/dashed arrows with PR numbers
-        const isDeploymentLink = labelText.includes('Deploy');
-        
-        // Apply the appropriate animation class
-        let animationClass;
-        if (isDeploymentLink) {
-          // Deployment links always use deploy-animation
-          animationClass = 'deploy-animation';
-        } else {
-          // Git merge links use edge animations
-          animationClass = hasRunning ? 'edge-animation-fast' : 'edge-animation-slow';
-        }
-        
-        console.log(`🔍 Edge ${i} - Before: classes="${path.className.baseVal}", stroke="${path.style.stroke}"`);
+        // Apply the same animation class based on job status (running vs pending)
+        // Both git PR jobs and deployment jobs use identical animations
+        const animationClass = hasRunning ? 'edge-animation-fast' : 'edge-animation-slow';
         path.classList.add(animationClass);
-        console.log(`✅ Applied ${animationClass} to edge ${i}: "${labelText.trim().substring(0, 40)}"`);
-        console.log(`🔍 Edge ${i} - After: classes="${path.className.baseVal}", stroke="${path.style.stroke}"`);
-        animatedCount++;
+        // Force browser to recognize the class change
+        void path.offsetWidth;
       }
     }
-    
-    console.log(`🎬 Animation complete. Animated ${animatedCount} of ${maxIndex} links.`);
   }
 
   @api

@@ -465,16 +465,6 @@ export class BranchStrategyMermaidBuilder {
       );
     }
     
-    // Add metadata comment for animated links (for JavaScript to parse)
-    const animatedLinks = [];
-    for (const key of ["gitMergeWithPRAnimated", "gitFeatureMergeWithPRAnimated"]) {
-      if (positions[key] && positions[key].length > 0) {
-        animatedLinks.push(...positions[key]);
-      }
-    }
-    if (animatedLinks.length > 0) {
-      this.mermaidLines.push(`%% AnimatedLinks:${animatedLinks.join(",")}`);
-    }
   }
 
   private addLinks(links: any[]) {
