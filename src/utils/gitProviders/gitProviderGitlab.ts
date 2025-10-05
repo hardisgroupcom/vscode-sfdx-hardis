@@ -230,8 +230,19 @@ export class GitProviderGitlab extends GitProvider {
         return { jobs: [], jobsStatus: "unknown" };
       }
 
-      // Use the most recent pipeline
-      const pipeline = pipelines[0];
+      // Filter out pipelines triggered by merge requests
+      // Only keep pipelines triggered by direct commits (source: 'push', 'web', 'api', 'schedule', etc.)
+      // Exclude pipelines with source: 'merge_request_event'
+      const commitPipelines = pipelines.filter(
+        (p) => p.source !== "merge_request_event",
+      );
+
+      if (commitPipelines.length === 0) {
+        return { jobs: [], jobsStatus: "unknown" };
+      }
+
+      // Use the most recent commit-triggered pipeline
+      const pipeline = commitPipelines[0];
       const converted: Job[] = [
         {
           name: pipeline.ref || pipeline.sha || String(pipeline.id || ""),

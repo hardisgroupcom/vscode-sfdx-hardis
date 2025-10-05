@@ -265,7 +265,19 @@ export class GitProviderAzure extends GitProvider {
       if (branchBuilds.length === 0) {
         return { jobs: [], jobsStatus: "unknown" };
       }
-      const build = branchBuilds[0];
+      
+      // Filter out builds triggered by pull requests
+      // Only keep builds triggered by direct commits (reason: 'manual', 'individualCI', 'batchedCI', 'schedule', etc.)
+      // Exclude builds with reason: 'pullRequest'
+      const commitBuilds = branchBuilds.filter(
+        (b: any) => b.reason !== "pullRequest",
+      );
+      
+      if (commitBuilds.length === 0) {
+        return { jobs: [], jobsStatus: "unknown" };
+      }
+      
+      const build = commitBuilds[0];
       const job: Job = {
         name: build.definition?.name || String(build.id || ""),
         status: (build.status || build.result || "").toString() as JobStatus,
