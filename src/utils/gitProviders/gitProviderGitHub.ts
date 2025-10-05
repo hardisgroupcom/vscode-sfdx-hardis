@@ -171,18 +171,18 @@ export class GitProviderGitHub extends GitProvider {
       if (!runs || runs.length === 0) {
         return { jobs: [], jobsStatus: "unknown" };
       }
-      
+
       // Filter out workflow runs triggered by pull requests
       // Only keep runs triggered by direct commits (event: 'push', 'workflow_dispatch', 'schedule', etc.)
       // Exclude runs with event: 'pull_request'
       const commitRuns = runs.filter(
         (r) => r.event !== "pull_request" && r.event !== "pull_request_target",
       );
-      
+
       if (commitRuns.length === 0) {
         return { jobs: [], jobsStatus: "unknown" };
       }
-      
+
       // pick the most recent commit-triggered run
       const run = commitRuns[0];
       // fetch jobs for this run

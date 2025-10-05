@@ -221,18 +221,18 @@ export class GitProviderBitbucket extends GitProvider {
       if (!values || values.length === 0) {
         return { jobs: [], jobsStatus: "unknown" };
       }
-      
+
       // Filter out pipelines triggered by pull requests
       // Only keep pipelines triggered by direct commits (trigger type: 'PUSH', 'MANUAL', 'SCHEDULE', etc.)
       // Exclude pipelines with trigger type: 'PULL_REQUEST'
       const commitPipelines = values.filter(
         (p: any) => p.trigger?.type !== "PULL_REQUEST",
       );
-      
+
       if (commitPipelines.length === 0) {
         return { jobs: [], jobsStatus: "unknown" };
       }
-      
+
       // Use the most recent commit-triggered pipeline
       const pipeline = commitPipelines[0];
       const p: any = pipeline as any;
