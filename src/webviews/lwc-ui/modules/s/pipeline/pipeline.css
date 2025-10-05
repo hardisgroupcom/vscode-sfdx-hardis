@@ -5,7 +5,7 @@
 .pipeline-container {
     /* Pipeline visualization styling */
     border-radius: 8px;
-    padding: 0.75rem;
+    padding: 0.25rem 0.75rem 0.75rem 0.75rem;
     min-height: 150px;
     background: white;
 }
@@ -123,7 +123,7 @@
 
 /* Add spacing between lightning cards */
 .pipeline-card-spacing {
-    margin-top: 1rem !important;
+    margin-top: 0.5rem !important;
 }
 
 /* PR status icon coloring */

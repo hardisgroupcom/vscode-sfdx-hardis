@@ -590,6 +590,12 @@ export default class Pipeline extends LightningElement {
     });
   }
 
+  handleRefresh() {
+    this.refreshPipeline();
+    // Reset auto-refresh timer when manually refreshed
+    this._startAutoRefresh();
+  }
+
   // Added refreshPipeline method
   refreshPipeline(isAutoRefresh = false) {
     this._isAutoRefresh = isAutoRefresh;

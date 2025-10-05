@@ -1,45 +1,85 @@
 <template>
-    <div class="slds-scope slds-theme_default slds-p-around_small blue-back">
+    <div class="slds-scope slds-theme_default blue-back" style="padding: 0.5rem;">
             <!-- Status icon styles moved to pipeline.css (LWC requires CSS in the component bundle) -->
-    <lightning-card title="SFDX-Hardis DevOps Pipeline">
+    <lightning-card title="🚀 SFDX-Hardis DevOps Pipeline">
         <div slot="actions" class="slds-float_right">
-            <lightning-button-group>
-                <lightning-button
-                    icon-name={connectedIconName}
-                    variant={connectedVariant}
-                    label={connectedLabel}
-                    title="Connect to a Git provider"
-                    onclick={handleGitConnect}
-                ></lightning-button>
-                <span class="slds-m-left_x-small"></span>
-                <lightning-button 
-                    icon-name="utility:settings"
-                    variant="brand" 
-                    label="Pipeline Settings" 
-                    onclick={handleShowPipelineConfig}
-                ></lightning-button>
-                <span class="slds-m-left_x-small"></span>
-                <lightning-button 
-                    icon-name="utility:key" 
-                    label="Add new Org" 
-                    title="Configure Salesforce authentication for a new org in the Pipeline, or reconfigure it for a refreshed Sandbox" 
-                    onclick={configureAuth} 
-                    variant="brand"
-                ></lightning-button>
-                <span class="slds-m-left_x-small"></span>
-                <lightning-button 
-                    icon-name="utility:refresh" 
-                    title="Refresh pipeline data" 
-                    onclick={refreshPipeline}
-                ></lightning-button>
-            </lightning-button-group>
+            <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
+                <template if:true={gitAuthenticated}>
+                    <div style="margin-top: 0.25rem;">
+                        <lightning-input
+                            type="toggle"
+                            label="Show feature branches"
+                            checked={displayFeatureBranches}
+                            onchange={handleToggleFeatureBranches}
+                        ></lightning-input>
+                    </div>
+                </template>
+                <lightning-button-group>
+                    <lightning-button
+                        icon-name={connectedIconName}
+                        variant={connectedVariant}
+                        label={connectedLabel}
+                        title="Connect to a Git provider"
+                        onclick={handleGitConnect}
+                    ></lightning-button>
+                    <lightning-button-menu 
+                        alternative-text="Pipeline Settings" 
+                        icon-name="utility:settings"
+                        variant="border-filled"
+                        menu-alignment="right"
+                    >
+                        <lightning-menu-item 
+                            value="pipelineSettings" 
+                            label="Pipeline Settings"
+                            icon-name="utility:settings"
+                            onclick={handleShowPipelineConfig}
+                        ></lightning-menu-item>
+                        <lightning-menu-item 
+                            value="addOrg" 
+                            label="Add/Configure Org"
+                            icon-name="utility:key"
+                            onclick={configureAuth}
+                        ></lightning-menu-item>
+                    </lightning-button-menu>
+                    <lightning-button-menu 
+                        alternative-text="Deployment Packages" 
+                        icon-name="utility:package_org"
+                        variant="border-filled"
+                        menu-alignment="right"
+                    >
+                        <lightning-menu-item 
+                            value="packageXml" 
+                            label="Package XML"
+                            icon-name="utility:upload"
+                            onclick={handleShowPackageXml}
+                        ></lightning-menu-item>
+                        <lightning-menu-item 
+                            value="noOverwrite" 
+                            label="No Overwrite"
+                            icon-name="utility:ban"
+                            onclick={handleShowNoOverwrite}
+                        ></lightning-menu-item>
+                        <lightning-menu-item 
+                            value="destructive" 
+                            label="Destructive Changes"
+                            icon-name="utility:delete"
+                            onclick={handleShowDestructiveChanges}
+                        ></lightning-menu-item>
+                    </lightning-button-menu>
+                    <lightning-button 
+                        icon-name="utility:refresh" 
+                        title="Refresh pipeline data" 
+                        onclick={handleRefresh}
+                    ></lightning-button>
+                </lightning-button-group>
+            </div>
         </div>
         <template if:true={pipelineData}>
             <template if:true={pipelineData.orgs}>
                 <template if:true={pipelineData.orgs.length}>
                     <div class="pipeline-container">
                         <template if:true={loading}>
-                            <div class="slds-align_absolute-center slds-m-vertical_medium">
+                            <div class="slds-align_absolute-center slds-m-vertical_small">
                                 <s-spinner alternative-text="Loading pipeline data..." size="medium" variant="brand"></s-spinner>
                             </div>
                         </template>
@@ -62,52 +102,6 @@
                                 </ul>
                             </div>
                         </template>
-                        
-                        <!-- Centered buttons: PR and Package XML Management -->
-                        <div class="slds-m-top_medium">
-                            <div style="display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
-                                <template if:true={gitAuthenticated}>
-                                    <div style="display: flex; align-items: center; margin-top: -0.25rem;">
-                                        <lightning-input
-                                            type="toggle"
-                                            label="Show feature branches"
-                                            checked={displayFeatureBranches}
-                                            onchange={handleToggleFeatureBranches}
-                                        ></lightning-input>
-                                    </div>
-                                </template>
-                                <template if:true={prButtonInfo}>
-                                    <lightning-button 
-                                        icon-name="utility:share"
-                                        variant="brand"
-                                        label={prButtonInfo.label} 
-                                        title={prButtonInfo.label} 
-                                        onclick={openPrPage}
-                                    ></lightning-button>
-                                </template>
-                                <lightning-button 
-                                    icon-name="utility:upload"
-                                    variant="brand-outline"
-                                    label="Package XML" 
-                                    title="View all deployable elements of the project (manifest/package.xml)" 
-                                    onclick={handleShowPackageXml}
-                                ></lightning-button>
-                                <lightning-button 
-                                    icon-name="utility:ban"
-                                    variant="brand-outline"
-                                    label="No Overwrite" 
-                                    title="View metadata that will never be overwritten during deployment (manifest/package-no-overwrite.xml or manifest/packageDeployOnce.xml)" 
-                                    onclick={handleShowNoOverwrite}
-                                ></lightning-button>
-                                <lightning-button 
-                                    icon-name="utility:delete"
-                                    variant="brand-outline"
-                                    label="Destructive Changes" 
-                                    title="View metadata that will be deleted during deployments (manifest/destructiveChanges.xml)" 
-                                    onclick={handleShowDestructiveChanges}
-                                ></lightning-button>
-                            </div>
-                        </div>
                     </div>
                 </template>
                 <template if:false={pipelineData.orgs.length}>
@@ -186,9 +180,20 @@
                                         columns={prColumns}
                                         hide-checkbox-column
                                     ></lightning-datatable>
+                                    <template if:true={prButtonInfo}>
+                                        <div class="slds-m-top_small slds-align_absolute-center">
+                                            <lightning-button 
+                                                icon-name="utility:share"
+                                                variant="brand"
+                                                label={prButtonInfo.label} 
+                                                title={prButtonInfo.label} 
+                                                onclick={openPrPage}
+                                            ></lightning-button>
+                                        </div>
+                                    </template>
                                 </template>
                                 <template if:false={gitAuthenticated}>
-                                    <div class="slds-m-around_medium slds-grid slds-grid_align-center" style="padding:1rem;">
+                                    <div class="slds-m-around_small slds-grid slds-grid_align-center">
                                         <lightning-button
                                             icon-name={connectedIconName}
                                             variant={connectedVariant}
