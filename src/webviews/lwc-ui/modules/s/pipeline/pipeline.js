@@ -550,17 +550,18 @@ export default class Pipeline extends LightningElement {
       const hasPending = labelText.includes('⏳');
       
       if (hasRunning || hasPending) {
-        // Determine animation type based on path style (deployment vs git links)
-        const pathStyle = path.style.strokeDasharray || "";
-        const isDashedLine = pathStyle.includes("5") || path.getAttribute('style')?.includes('dasharray');
+        // Determine animation type based on link style
+        // Deployment links use dotted/dashed arrows with "Deploy" text
+        // Git links use solid/dashed arrows with PR numbers
+        const isDeploymentLink = labelText.includes('Deploy');
         
         // Apply the appropriate animation class
         let animationClass;
-        if (isDashedLine) {
-          // Deployment links use dashed lines
+        if (isDeploymentLink) {
+          // Deployment links always use deploy-animation
           animationClass = 'deploy-animation';
         } else {
-          // Git merge links use solid lines
+          // Git merge links use edge animations
           animationClass = hasRunning ? 'edge-animation-fast' : 'edge-animation-slow';
         }
         

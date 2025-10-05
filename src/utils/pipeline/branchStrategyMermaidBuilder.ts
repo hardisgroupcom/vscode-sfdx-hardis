@@ -100,10 +100,9 @@ export class BranchStrategyMermaidBuilder {
         );
         // Select only the first PR if multiple exist
         const activePR = openPullRequestsForThisLink.length > 0 ? openPullRequestsForThisLink[0] : null;
-        // Determine if source is a major branch - check PR source if PR exists, otherwise check current branch
-        const isSourceMajorBranch = activePR && activePR.sourceBranch
-          ? isMajorBranch(activePR.sourceBranch, this.branchesAndOrgs)
-          : isMajorBranch(branchAndOrg.branchName, this.branchesAndOrgs);
+        
+        // Determine if source is a major branch
+        const isSourceMajorBranch = isMajorBranch(branchAndOrg.branchName, this.branchesAndOrgs);
         // Also check if target is a major branch
         const isTargetMajorBranch = isMajorBranch(mergeTarget, this.branchesAndOrgs);
         // Use gitMerge (thick blue) if either source OR target is a major branch
