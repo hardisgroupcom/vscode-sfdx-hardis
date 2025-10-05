@@ -16,6 +16,7 @@ export default class Pipeline extends LightningElement {
   @track loading = false;
   _refreshTimer = null;
   _isVisible = true;
+  _isAutoRefresh = false;
   prColumns = [
     {
       key: "number",
@@ -102,7 +103,8 @@ export default class Pipeline extends LightningElement {
 
   @api
   initialize(data) {
-    this.loading = false;
+    this.loading = this._isAutoRefresh ? false : false;
+    this._isAutoRefresh = false;
     this.pipelineData = data.pipelineData;
     this.repoPlatformLabel = data.repoPlatformLabel || "Git";
     this.prButtonInfo = data.prButtonInfo;
@@ -589,13 +591,14 @@ export default class Pipeline extends LightningElement {
   }
 
   // Added refreshPipeline method
-  refreshPipeline() {
-    this.loading = true;
+  refreshPipeline(isAutoRefresh = false) {
+    this._isAutoRefresh = isAutoRefresh;
+    this.loading = !isAutoRefresh;
     window.sendMessageToVSCode({
       type: "refreshPipeline",
       data: {},
     });
-    console.log("Pipeline refresh event dispatched");
+    console.log("Pipeline refresh event dispatched", isAutoRefresh ? "(auto)" : "(manual)");
   }
 
   // Quick action methods
@@ -717,7 +720,7 @@ export default class Pipeline extends LightningElement {
     
     this._refreshTimer = setInterval(() => {
       console.log("Auto-refreshing pipeline (visible:", this._isVisible, ")");
-      this.refreshPipeline();
+      this.refreshPipeline(true);
     }, interval);
     
     console.log(`Auto-refresh started: ${interval / 1000}s interval (visible: ${this._isVisible})`);
