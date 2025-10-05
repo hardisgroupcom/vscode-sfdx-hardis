@@ -175,7 +175,10 @@ export default class Pipeline extends LightningElement {
     this._boundVisibilityChange = this._handleVisibilityChange.bind(this);
     if (typeof window !== "undefined" && window.addEventListener) {
       window.addEventListener("resize", this._boundAdjust);
-      document.addEventListener("visibilitychange", this._boundVisibilityChange);
+      document.addEventListener(
+        "visibilitychange",
+        this._boundVisibilityChange,
+      );
     }
     // Register global openPR function for Mermaid link callbacks
     if (typeof window !== "undefined") {
@@ -201,7 +204,10 @@ export default class Pipeline extends LightningElement {
       window.removeEventListener &&
       this._boundVisibilityChange
     ) {
-      document.removeEventListener("visibilitychange", this._boundVisibilityChange);
+      document.removeEventListener(
+        "visibilitychange",
+        this._boundVisibilityChange,
+      );
     }
     // Clean up auto-refresh timer
     this._stopAutoRefresh();
@@ -480,7 +486,7 @@ export default class Pipeline extends LightningElement {
         mermaidDiv.innerHTML = svg;
         this.error = undefined;
         console.log("Mermaid diagram rendered successfully");
-        
+
         // Apply animation classes to links with running/pending PRs
         // Find all edge paths and check if they need animation based on link styling
         setTimeout(() => this.applyLinkAnimations(), 100);
@@ -502,52 +508,56 @@ export default class Pipeline extends LightningElement {
       console.warn("Mermaid SVG not found for animation");
       return;
     }
-    
+
     // Find the edgeLabels group (contains all edge label text)
     const edgeLabelsGroup = mermaidSvg.querySelector("g.edgeLabels");
     if (!edgeLabelsGroup) {
       console.warn("No edgeLabels group found");
       return;
     }
-    
+
     // Find the edgePaths group (contains all edge path elements)
     const edgePathsGroup = mermaidSvg.querySelector("g.edgePaths");
     if (!edgePathsGroup) {
       console.warn("No edgePaths group found");
       return;
     }
-    
+
     // Get all individual edge labels and paths
     const edgeLabels = edgeLabelsGroup.querySelectorAll("g.edgeLabel");
     const edgePaths = edgePathsGroup.querySelectorAll("path.flowchart-link");
-    
+
     if (edgeLabels.length === 0 || edgePaths.length === 0) {
       console.warn("No edge labels or paths found");
       return;
     }
-    
+
     if (edgeLabels.length !== edgePaths.length) {
-      console.warn(`Mismatch: ${edgeLabels.length} labels but ${edgePaths.length} paths`);
+      console.warn(
+        `Mismatch: ${edgeLabels.length} labels but ${edgePaths.length} paths`,
+      );
     }
-    
+
     // Match labels to paths by index
     const maxIndex = Math.min(edgeLabels.length, edgePaths.length);
-    
+
     for (let i = 0; i < maxIndex; i++) {
       const label = edgeLabels[i];
       const path = edgePaths[i];
-      
+
       // Get the text content from the label (may be nested in foreignObject/div/span/p/a)
       const labelText = label.textContent || "";
-      
+
       // Check for running (🔄) or pending (⏳) emoji
-      const hasRunning = labelText.includes('🔄');
-      const hasPending = labelText.includes('⏳');
-      
+      const hasRunning = labelText.includes("🔄");
+      const hasPending = labelText.includes("⏳");
+
       if (hasRunning || hasPending) {
         // Apply the same animation class based on job status (running vs pending)
         // Both git PR jobs and deployment jobs use identical animations
-        const animationClass = hasRunning ? 'edge-animation-fast' : 'edge-animation-slow';
+        const animationClass = hasRunning
+          ? "edge-animation-fast"
+          : "edge-animation-slow";
         path.classList.add(animationClass);
         // Force browser to recognize the class change
         void path.offsetWidth;
@@ -596,7 +606,10 @@ export default class Pipeline extends LightningElement {
       type: "refreshPipeline",
       data: {},
     });
-    console.log("Pipeline refresh event dispatched", isAutoRefresh ? "(auto)" : "(manual)");
+    console.log(
+      "Pipeline refresh event dispatched",
+      isAutoRefresh ? "(auto)" : "(manual)",
+    );
   }
 
   // Quick action methods
@@ -698,7 +711,10 @@ export default class Pipeline extends LightningElement {
 
   _handleVisibilityChange() {
     this._isVisible = !document.hidden;
-    console.log("Pipeline visibility changed:", this._isVisible ? "visible" : "hidden");
+    console.log(
+      "Pipeline visibility changed:",
+      this._isVisible ? "visible" : "hidden",
+    );
     // Restart timer with appropriate interval when visibility changes
     this._startAutoRefresh();
   }
@@ -706,22 +722,24 @@ export default class Pipeline extends LightningElement {
   _startAutoRefresh() {
     // Clear existing timer
     this._stopAutoRefresh();
-    
+
     // Only auto-refresh if git is authenticated
     if (!this.gitAuthenticated) {
       console.log("Auto-refresh disabled: git not authenticated");
       return;
     }
-    
+
     // Set interval based on visibility: 1 minute if visible, 5 minutes if not
     const interval = this._isVisible ? 60000 : 300000; // 60s or 300s
-    
+
     this._refreshTimer = setInterval(() => {
       console.log("Auto-refreshing pipeline (visible:", this._isVisible, ")");
       this.refreshPipeline(true);
     }, interval);
-    
-    console.log(`Auto-refresh started: ${interval / 1000}s interval (visible: ${this._isVisible})`);
+
+    console.log(
+      `Auto-refresh started: ${interval / 1000}s interval (visible: ${this._isVisible})`,
+    );
   }
 
   _stopAutoRefresh() {
@@ -736,7 +754,7 @@ export default class Pipeline extends LightningElement {
     const prCount = this.openPullRequests ? this.openPullRequests.length : 0;
     const baseTitle = "DevOps Pipeline";
     const title = prCount > 0 ? `${baseTitle} (${prCount})` : baseTitle;
-    
+
     window.sendMessageToVSCode({
       type: "updatePanelTitle",
       data: { title: title },

@@ -230,7 +230,9 @@ export class GitProviderAzure extends GitProvider {
     return converted;
   }
 
-  async getJobsForBranchLatestCommit(branchName: string): Promise<{jobs: Job[]; jobsStatus: JobStatus} | null> {
+  async getJobsForBranchLatestCommit(
+    branchName: string,
+  ): Promise<{ jobs: Job[]; jobsStatus: JobStatus } | null> {
     if (!this.connection || !this.repoInfo) {
       return null;
     }
@@ -257,8 +259,8 @@ export class GitProviderAzure extends GitProvider {
         return { jobs: [], jobsStatus: "unknown" };
       }
       // Filter builds by branch and use the most recent
-      const branchBuilds = builds.filter((b: any) => 
-        b.sourceBranch && b.sourceBranch.endsWith(branchName)
+      const branchBuilds = builds.filter(
+        (b: any) => b.sourceBranch && b.sourceBranch.endsWith(branchName),
       );
       if (branchBuilds.length === 0) {
         return { jobs: [], jobsStatus: "unknown" };
@@ -268,7 +270,10 @@ export class GitProviderAzure extends GitProvider {
         name: build.definition?.name || String(build.id || ""),
         status: (build.status || build.result || "").toString() as JobStatus,
         webUrl: build._links?.web?.href || undefined,
-        updatedAt: build.finishTime?.toISOString() || build.queueTime?.toISOString() || undefined,
+        updatedAt:
+          build.finishTime?.toISOString() ||
+          build.queueTime?.toISOString() ||
+          undefined,
         raw: build,
       };
       return { jobs: [job], jobsStatus: this.computeJobsStatus([job]) };

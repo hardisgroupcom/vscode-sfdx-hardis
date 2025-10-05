@@ -18,10 +18,12 @@ export interface MajorOrg {
   openPullRequestsAsTarget?: any[];
   mergedPullRequestsAsTarget?: any[];
   jobs: Job[];
-  jobsStatus: JobStatus
+  jobsStatus: JobStatus;
 }
 
-export async function listMajorOrgs(options: {browseGitProvider: boolean} = {browseGitProvider: false}): Promise<MajorOrg[]> {
+export async function listMajorOrgs(
+  options: { browseGitProvider: boolean } = { browseGitProvider: false },
+): Promise<MajorOrg[]> {
   const workspaceRoot = getWorkspaceRoot();
   const branchConfigPattern = "**/config/branches/.sfdx-hardis.*.yml";
   const configFiles = await glob(branchConfigPattern, { cwd: workspaceRoot });
@@ -88,14 +90,15 @@ export async function listMajorOrgs(options: {browseGitProvider: boolean} = {bro
     if (options.browseGitProvider) {
       const gitProvider = await GitProvider.getInstance();
       if (gitProvider?.isActive) {
-        const jobsRes = await gitProvider.getJobsForBranchLatestCommit(branchName);
+        const jobsRes =
+          await gitProvider.getJobsForBranchLatestCommit(branchName);
         if (jobsRes) {
           jobsStatus = jobsRes.jobsStatus;
           jobs = jobsRes.jobs || [];
         }
       }
     }
-  
+
     majorOrgs.push({
       branchName,
       orgType,
@@ -170,9 +173,7 @@ export function isUatRun(branchName: string) {
 
 export function isMajorBranch(branchName: string, allBranches: any[]): boolean {
   const branchesWithBranchNameAsTarget = allBranches.filter((b) =>
-    Array.isArray(b.mergeTargets)
-      ? b.mergeTargets.includes(branchName)
-      : false,
+    Array.isArray(b.mergeTargets) ? b.mergeTargets.includes(branchName) : false,
   );
   if (branchesWithBranchNameAsTarget.length > 0) {
     return true;

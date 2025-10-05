@@ -421,38 +421,42 @@ export default class PackageXml extends LightningElement {
     if (!this.packageData?.types) {
       return [];
     }
-    
+
     if (!this.filterText) {
       return this.packageData.types;
     }
-    
+
     return this.packageData.types
-      .map(type => {
+      .map((type) => {
         // Check if type name matches
-        const typeNameMatches = type.name.toLowerCase().includes(this.filterText);
-        
+        const typeNameMatches = type.name
+          .toLowerCase()
+          .includes(this.filterText);
+
         // Filter members that match
         let filteredMembers = type.members || [];
         if (!typeNameMatches && type.members && Array.isArray(type.members)) {
-          filteredMembers = type.members.filter(member => 
-            member.toLowerCase().includes(this.filterText)
+          filteredMembers = type.members.filter((member) =>
+            member.toLowerCase().includes(this.filterText),
           );
         }
-        
+
         // Include type if type name matches OR if any members match
         if (typeNameMatches || filteredMembers.length > 0) {
           return {
             ...type,
             members: typeNameMatches ? type.members : filteredMembers,
-            memberCount: typeNameMatches 
-              ? (type.hasWildcard ? "All" : (type.members?.length || 0))
+            memberCount: typeNameMatches
+              ? type.hasWildcard
+                ? "All"
+                : type.members?.length || 0
               : filteredMembers.length,
           };
         }
-        
+
         return null;
       })
-      .filter(type => type !== null);
+      .filter((type) => type !== null);
   }
 
   get hasFilteredTypes() {

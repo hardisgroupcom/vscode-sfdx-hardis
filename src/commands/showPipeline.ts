@@ -11,20 +11,28 @@ export function registerShowPipeline(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
     "vscode-sfdx-hardis.showPipeline",
     async () => {
-      let pipelineProperties = await loadAllPipelineInfo({browseGitProvider: false, resetGit: false, withProgress: true});
+      let pipelineProperties = await loadAllPipelineInfo({
+        browseGitProvider: false,
+        resetGit: false,
+        withProgress: true,
+      });
       const panel = LwcPanelManager.getInstance().getOrCreatePanel(
         "s-pipeline",
         {
           ...pipelineProperties,
           firstDisplay: true,
-        }
+        },
       );
       panel.updateTitle("DevOps Pipeline");
 
       panel.onMessage(async (type, data) => {
         // Refresh
         if (type === "refreshPipeline") {
-          pipelineProperties = await loadAllPipelineInfo({browseGitProvider: true, resetGit: false, withProgress: false});
+          pipelineProperties = await loadAllPipelineInfo({
+            browseGitProvider: true,
+            resetGit: false,
+            withProgress: false,
+          });
           panel.sendInitializationData(pipelineProperties);
         }
         // Update panel title
@@ -76,7 +84,11 @@ export function registerShowPipeline(commands: Commands) {
             vscode.window.showInformationMessage(
               "Successfully connected to Git provider.",
             );
-            pipelineProperties = await loadAllPipelineInfo({browseGitProvider: true, resetGit: true, withProgress: true});
+            pipelineProperties = await loadAllPipelineInfo({
+              browseGitProvider: true,
+              resetGit: true,
+              withProgress: true,
+            });
             panel.sendInitializationData(pipelineProperties);
           } else if (authRes === false) {
             vscode.window.showErrorMessage(
@@ -89,7 +101,11 @@ export function registerShowPipeline(commands: Commands) {
   );
   commands.disposables.push(disposable);
 
-  async function loadAllPipelineInfo(options: {browseGitProvider: boolean,resetGit: boolean, withProgress?: boolean}): Promise<{
+  async function loadAllPipelineInfo(options: {
+    browseGitProvider: boolean;
+    resetGit: boolean;
+    withProgress?: boolean;
+  }): Promise<{
     pipelineData: any;
     gitAuthenticated: boolean;
     prButtonInfo: any;
@@ -98,7 +114,7 @@ export function registerShowPipeline(commands: Commands) {
     displayFeatureBranches: boolean;
   }> {
     const withProgress = options?.withProgress ?? true;
-    
+
     const loadData = async () => {
       const browseGitProvider = options?.browseGitProvider ?? true;
       const resetGit = options?.resetGit ?? false;
@@ -112,7 +128,10 @@ export function registerShowPipeline(commands: Commands) {
         }
       }
       const pipelineDataProvider = new PipelineDataProvider();
-      const pipelineData = await pipelineDataProvider.getPipelineData({openPullRequests: openPullRequests, browseGitProvider: browseGitProvider});
+      const pipelineData = await pipelineDataProvider.getPipelineData({
+        openPullRequests: openPullRequests,
+        browseGitProvider: browseGitProvider,
+      });
       const prButtonInfo: any = {};
       let repoPlatformLabel = "";
       if (gitProvider?.repoInfo) {
@@ -152,8 +171,7 @@ export function registerShowPipeline(commands: Commands) {
         },
         loadData,
       );
-    }
-    else {
+    } else {
       return await loadData();
     }
   }

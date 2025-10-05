@@ -200,7 +200,9 @@ export class GitProviderBitbucket extends GitProvider {
     }
   }
 
-  async getJobsForBranchLatestCommit(branchName: string): Promise<{jobs: Job[]; jobsStatus: JobStatus} | null> {
+  async getJobsForBranchLatestCommit(
+    branchName: string,
+  ): Promise<{ jobs: Job[]; jobsStatus: JobStatus } | null> {
     if (!this.bitbucketClient || !this.workspace || !this.repoSlug) {
       return null;
     }

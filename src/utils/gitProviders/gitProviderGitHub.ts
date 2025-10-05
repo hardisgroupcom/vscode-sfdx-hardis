@@ -106,9 +106,7 @@ export class GitProviderGitHub extends GitProvider {
   }
 
   // Fetch latest workflow run jobs for a pull request using the source branch
-  private async fetchLatestJobsForPullRequest(
-    pr: PullRequest,
-  ): Promise<Job[]> {
+  private async fetchLatestJobsForPullRequest(pr: PullRequest): Promise<Job[]> {
     if (!this.gitHubClient || !this.repoInfo) {
       return [];
     }
@@ -151,7 +149,9 @@ export class GitProviderGitHub extends GitProvider {
     }
   }
 
-  async getJobsForBranchLatestCommit(branchName: string): Promise<{jobs: Job[]; jobsStatus: JobStatus} | null> {
+  async getJobsForBranchLatestCommit(
+    branchName: string,
+  ): Promise<{ jobs: Job[]; jobsStatus: JobStatus } | null> {
     if (!this.gitHubClient || !this.repoInfo) {
       return null;
     }

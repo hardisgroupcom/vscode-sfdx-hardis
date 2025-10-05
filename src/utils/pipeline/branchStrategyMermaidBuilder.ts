@@ -95,16 +95,27 @@ export class BranchStrategyMermaidBuilder {
           branchesMergingInPreprod.push(branchAndOrg.branchName);
         }
         // Find PRs that match BOTH source and target branches
-        const openPullRequestsForThisLink = this.openPullRequests.filter(pr => 
-          pr.sourceBranch === branchAndOrg.branchName && pr.targetBranch === mergeTarget
+        const openPullRequestsForThisLink = this.openPullRequests.filter(
+          (pr) =>
+            pr.sourceBranch === branchAndOrg.branchName &&
+            pr.targetBranch === mergeTarget,
         );
         // Select only the first PR if multiple exist
-        const activePR = openPullRequestsForThisLink.length > 0 ? openPullRequestsForThisLink[0] : null;
-        
+        const activePR =
+          openPullRequestsForThisLink.length > 0
+            ? openPullRequestsForThisLink[0]
+            : null;
+
         // Determine if source is a major branch
-        const isSourceMajorBranch = isMajorBranch(branchAndOrg.branchName, this.branchesAndOrgs);
+        const isSourceMajorBranch = isMajorBranch(
+          branchAndOrg.branchName,
+          this.branchesAndOrgs,
+        );
         // Also check if target is a major branch
-        const isTargetMajorBranch = isMajorBranch(mergeTarget, this.branchesAndOrgs);
+        const isTargetMajorBranch = isMajorBranch(
+          mergeTarget,
+          this.branchesAndOrgs,
+        );
         // Use gitMerge (thick blue) if either source OR target is a major branch
         const isMajorLink = isSourceMajorBranch || isTargetMajorBranch;
 
@@ -112,8 +123,10 @@ export class BranchStrategyMermaidBuilder {
           source: nodeName,
           target: mergeTarget + "Branch",
           type: isMajorLink ? "gitMerge" : "gitFeatureMerge",
-          label: activePR ? `#${activePR.number || activePR.id} ${this.getPrStatusEmoji(activePR.jobsStatus)}` : "No PR",
-          activePR: activePR
+          label: activePR
+            ? `#${activePR.number || activePR.id} ${this.getPrStatusEmoji(activePR.jobsStatus)}`
+            : "No PR",
+          activePR: activePR,
         });
       }
       return {
@@ -152,13 +165,15 @@ export class BranchStrategyMermaidBuilder {
 
     // Add feature branches and links for PRs whose source branch does not exist in the branchesAndOrgs list
     for (const pullRequest of this.openPullRequests) {
-      if (!this.branchesAndOrgs.find((b) => b.branchName === pullRequest.sourceBranch)) {
+      if (
+        !this.branchesAndOrgs.find(
+          (b) => b.branchName === pullRequest.sourceBranch,
+        )
+      ) {
         const level =
-          noMergeTargetBranchAndOrg.length > 0  ?
-            Math.min(
-              ...noMergeTargetBranchAndOrg.map((b) => b.level),
-            ) + 1
-          : 50;
+          noMergeTargetBranchAndOrg.length > 0
+            ? Math.min(...noMergeTargetBranchAndOrg.map((b) => b.level)) + 1
+            : 50;
         const nodeName = pullRequest.sourceBranch + "Branch"; // + "Branch" + (this.featureBranchNb + 1);
         this.gitBranches.push({
           name: pullRequest.sourceBranch,
@@ -168,13 +183,16 @@ export class BranchStrategyMermaidBuilder {
           level: level,
           group: pullRequest.sourceBranch,
         });
-        const prLinkLabel = (pullRequest.number || pullRequest.id) ? `#${pullRequest.number || pullRequest.id} ${this.getPrStatusEmoji(pullRequest.jobsStatus)}` : "No PR";
+        const prLinkLabel =
+          pullRequest.number || pullRequest.id
+            ? `#${pullRequest.number || pullRequest.id} ${this.getPrStatusEmoji(pullRequest.jobsStatus)}`
+            : "No PR";
         this.gitLinks.push({
           source: nodeName,
           target: pullRequest.targetBranch + "Branch",
           type: "gitFeatureMerge",
           label: prLinkLabel,
-          activePR: pullRequest
+          activePR: pullRequest,
         });
       }
     }
@@ -191,14 +209,14 @@ export class BranchStrategyMermaidBuilder {
     //     isIntegration(branchAndOrg.branchName),
     //   );
 
-      // if (mainBranch && preprodBranch && integrationBranch) {
-      //   this.retrofitLinks.push({
-      //     source: mainBranch.branchName + "Branch",
-      //     target: integrationBranch.branchName + "Branch",
-      //     type: "gitMerge",
-      //     label: "Retrofit from RUN to BUILD",
-      //   });
-      // }
+    // if (mainBranch && preprodBranch && integrationBranch) {
+    //   this.retrofitLinks.push({
+    //     source: mainBranch.branchName + "Branch",
+    //     target: integrationBranch.branchName + "Branch",
+    //     type: "gitMerge",
+    //     label: "Retrofit from RUN to BUILD",
+    //   });
+    // }
     // }
 
     // Sort branches & links
@@ -259,25 +277,29 @@ export class BranchStrategyMermaidBuilder {
           group: branchAndOrg.branchName, // Keep group for dev orgs
           instanceUrl: branchAndOrg.instanceUrl,
         });
-        
+
         // Get job status info for this org
-        const jobsStatus = branchAndOrg.jobsStatus || 'unknown';
+        const jobsStatus = branchAndOrg.jobsStatus || "unknown";
         const jobStatusEmoji = this.getPrStatusEmoji(jobsStatus);
         const hasJobs = branchAndOrg.jobs && branchAndOrg.jobs.length > 0;
         const jobUrl = hasJobs ? branchAndOrg.jobs[0].webUrl : null;
-        
+
         // Determine deploy link type based on job status
         let deployLinkType = "sfDeploy";
-        if (hasJobs && jobUrl && (jobsStatus === 'running' || jobsStatus === 'pending')) {
+        if (
+          hasJobs &&
+          jobUrl &&
+          (jobsStatus === "running" || jobsStatus === "pending")
+        ) {
           deployLinkType = "sfDeployAnimated";
         }
-        
+
         // Build deploy label with job status (simpler format for dashed arrows)
         let deployLabel = "Deploy to Org";
         if (hasJobs) {
           deployLabel = `Deploy ${jobStatusEmoji}`;
         }
-        
+
         this.deployLinks.push({
           source: gitBranch.nodeName,
           target: nodeName,
@@ -308,11 +330,11 @@ export class BranchStrategyMermaidBuilder {
 
   private generateMermaidLines(options?: { onlyMajorBranches?: boolean }) {
     /* jscpd:ignore-start */
-    this.mermaidLines.push('%%{init: {');
+    this.mermaidLines.push("%%{init: {");
     this.mermaidLines.push('  "flowchart": {');
     this.mermaidLines.push('    "curve": "monotoneX"');
-    this.mermaidLines.push('  }');
-    this.mermaidLines.push('}}%%');
+    this.mermaidLines.push("  }");
+    this.mermaidLines.push("}}%%");
     this.mermaidLines.push("flowchart LR");
     this.mermaidLines.push("");
 
@@ -464,7 +486,6 @@ export class BranchStrategyMermaidBuilder {
         `linkStyle ${positions[key].join(",")} ${styleDef}`,
       );
     }
-    
   }
 
   private addLinks(links: any[]) {
@@ -475,8 +496,8 @@ export class BranchStrategyMermaidBuilder {
         if (link.activePR && link.activePR.webUrl) {
           label = `<a href='${link.activePR.webUrl}' target='_blank' style='color:#0176D3;font-weight:bold;text-decoration:underline;'>${link.label}</a>`;
           // Only use special link type for running/pending jobs
-          const jobStatus = link.activePR.jobsStatus || 'unknown';
-          if (jobStatus === 'running' || jobStatus === 'pending') {
+          const jobStatus = link.activePR.jobsStatus || "unknown";
+          if (jobStatus === "running" || jobStatus === "pending") {
             link.type = "gitMergeWithPRAnimated";
           }
           // For completed PRs (success/failed/unknown), keep gitMerge type (plain style)
@@ -491,8 +512,8 @@ export class BranchStrategyMermaidBuilder {
         if (link.activePR && link.activePR.webUrl) {
           label = `<a href='${link.activePR.webUrl}' target='_blank' style='color:#0176D3;font-weight:bold;text-decoration:underline;'>${link.label}</a>`;
           // Only use special link type for running/pending jobs
-          const jobStatus = link.activePR.jobsStatus || 'unknown';
-          if (jobStatus === 'running' || jobStatus === 'pending') {
+          const jobStatus = link.activePR.jobsStatus || "unknown";
+          if (jobStatus === "running" || jobStatus === "pending") {
             link.type = "gitFeatureMergeWithPRAnimated";
           }
           // For completed PRs (success/failed/unknown), keep gitFeatureMerge type (plain style)
@@ -506,7 +527,7 @@ export class BranchStrategyMermaidBuilder {
         let label = link.label;
         if (link.jobUrl) {
           // Extract just the emoji from the label (e.g., "Deploy ✅" -> "✅")
-          const emoji = label.replace(/^Deploy\s+/, '');
+          const emoji = label.replace(/^Deploy\s+/, "");
           label = `<a href='${link.jobUrl}' target='_blank' style='color:#0176D3;font-weight:bold;text-decoration:underline;'>Deploy ${emoji}</a>`;
         }
         this.mermaidLines.push(
@@ -546,11 +567,15 @@ export class BranchStrategyMermaidBuilder {
     // Animated variants: Set base stroke in red that CSS will animate
     return {
       gitMerge: "stroke:#0176D3,stroke-width:3px,color:#032D60,opacity:1;",
-      gitMergeWithPRAnimated: "stroke:#e74c3c,stroke-width:3px,color:#032D60,font-weight:bold,opacity:1;",
-      gitFeatureMerge: "stroke:#B0B7BD,stroke-width:1.5px,stroke-dasharray:5 5,color:#B0B7BD,opacity:1;",
-      gitFeatureMergeWithPRAnimated: "stroke:#e74c3c,stroke-width:2.5px,stroke-dasharray:5 5,color:#032D60,font-weight:bold,opacity:1;",
+      gitMergeWithPRAnimated:
+        "stroke:#e74c3c,stroke-width:3px,color:#032D60,font-weight:bold,opacity:1;",
+      gitFeatureMerge:
+        "stroke:#B0B7BD,stroke-width:1.5px,stroke-dasharray:5 5,color:#B0B7BD,opacity:1;",
+      gitFeatureMergeWithPRAnimated:
+        "stroke:#e74c3c,stroke-width:2.5px,stroke-dasharray:5 5,color:#032D60,font-weight:bold,opacity:1;",
       sfDeploy: "stroke:#04844B,stroke-width:1.5px,color:#B0B7BD,opacity:1;",
-      sfDeployAnimated: "stroke:#e74c3c,stroke-width:2px,color:#032D60,font-weight:bold,opacity:1;",
+      sfDeployAnimated:
+        "stroke:#e74c3c,stroke-width:2px,color:#032D60,font-weight:bold,opacity:1;",
       sfPushPull: "stroke:#0176D3,stroke-width:1.5px,color:#B0B7BD,opacity:1;",
     };
   }

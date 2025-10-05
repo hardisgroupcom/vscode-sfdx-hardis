@@ -188,7 +188,9 @@ export class GitProvider {
     );
   }
 
-  async getJobsForBranchLatestCommit(_branchName: string): Promise<{jobs: Job[]; jobsStatus: JobStatus} | null> {
+  async getJobsForBranchLatestCommit(
+    _branchName: string,
+  ): Promise<{ jobs: Job[]; jobsStatus: JobStatus } | null> {
     Logger.log(
       `getJobsForBranch not implemented on ${this.repoInfo?.providerName || "unknown provider"}`,
     );

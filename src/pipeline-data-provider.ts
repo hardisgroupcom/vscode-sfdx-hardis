@@ -31,11 +31,21 @@ export interface PipelineData {
 export class PipelineDataProvider {
   constructor() {}
 
-  public async getPipelineData(options: {browseGitProvider?: boolean, openPullRequests?: PullRequest[]} = {}): Promise<PipelineData> {
+  public async getPipelineData(
+    options: {
+      browseGitProvider?: boolean;
+      openPullRequests?: PullRequest[];
+    } = {},
+  ): Promise<PipelineData> {
     try {
-      let majorOrgs: MajorOrg[] = await listMajorOrgs({browseGitProvider: options.browseGitProvider || false});
+      let majorOrgs: MajorOrg[] = await listMajorOrgs({
+        browseGitProvider: options.browseGitProvider || false,
+      });
       // majorOrgs = await completeOrgsWithPullRequests(majorOrgs);
-      const mermaidBuilder = new BranchStrategyMermaidBuilder(majorOrgs, options.openPullRequests || []);
+      const mermaidBuilder = new BranchStrategyMermaidBuilder(
+        majorOrgs,
+        options.openPullRequests || [],
+      );
       const mermaidDiagram = mermaidBuilder.build({
         format: "string",
         withMermaidTag: true,

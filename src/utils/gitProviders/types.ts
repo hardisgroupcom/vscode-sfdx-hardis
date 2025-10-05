@@ -34,7 +34,6 @@ export type JobStatus =
   | "pending"
   | "unknown";
 
-
 export type Job = {
   // job identifier/name (e.g. workflow name or job name)
   name: string;

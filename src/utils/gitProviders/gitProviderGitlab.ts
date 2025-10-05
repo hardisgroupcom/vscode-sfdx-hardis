@@ -203,7 +203,9 @@ export class GitProviderGitlab extends GitProvider {
     }
   }
 
-  async getJobsForBranchLatestCommit(branchName: string): Promise<{jobs: Job[]; jobsStatus: JobStatus} | null> {
+  async getJobsForBranchLatestCommit(
+    branchName: string,
+  ): Promise<{ jobs: Job[]; jobsStatus: JobStatus } | null> {
     if (!this.gitlabClient || !this.gitlabProjectId) {
       return null;
     }
@@ -218,7 +220,9 @@ export class GitProviderGitlab extends GitProvider {
           perPage: 10,
         });
       } catch (e) {
-        Logger.log(`Error fetching pipelines for branch ${branchName}: ${String(e)}`);
+        Logger.log(
+          `Error fetching pipelines for branch ${branchName}: ${String(e)}`,
+        );
         return null;
       }
 
@@ -228,13 +232,15 @@ export class GitProviderGitlab extends GitProvider {
 
       // Use the most recent pipeline
       const pipeline = pipelines[0];
-      const converted: Job[] = [{
-        name: pipeline.ref || pipeline.sha || String(pipeline.id || ""),
-        status: (pipeline.status || "").toString() as JobStatus,
-        webUrl: pipeline.web_url || pipeline.webUrl || undefined,
-        updatedAt: pipeline.updated_at || pipeline.updatedAt || undefined,
-        raw: pipeline,
-      }];
+      const converted: Job[] = [
+        {
+          name: pipeline.ref || pipeline.sha || String(pipeline.id || ""),
+          status: (pipeline.status || "").toString() as JobStatus,
+          webUrl: pipeline.web_url || pipeline.webUrl || undefined,
+          updatedAt: pipeline.updated_at || pipeline.updatedAt || undefined,
+          raw: pipeline,
+        },
+      ];
 
       return { jobs: converted, jobsStatus: this.computeJobsStatus(converted) };
     } catch (e) {
