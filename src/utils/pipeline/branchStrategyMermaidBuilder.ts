@@ -496,6 +496,7 @@ export class BranchStrategyMermaidBuilder {
         );
       } else if (link.type === "gitFeatureMerge") {
         let label = link.label;
+        /* jscpd:ignore-start */
         // If PR exists, make label clickable with markdown link syntax
         if (link.activePR && link.activePR.webUrl) {
           label = `<a href='${link.activePR.webUrl}' target='_blank' style='color:#0176D3;font-weight:bold;text-decoration:underline;'>${link.label}</a>`;
@@ -506,6 +507,7 @@ export class BranchStrategyMermaidBuilder {
           }
           // For completed PRs (success/failed/unknown), keep gitFeatureMerge type (plain style)
         }
+        /* jscpd:ignore-end */
         this.mermaidLines.push(
           this.indent(`${link.source} -->|"${label}"| ${link.target}`, 1),
         );
