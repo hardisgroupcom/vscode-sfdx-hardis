@@ -96,16 +96,29 @@
                 <!-- Metadata Types Section -->
                 <div class="section">
                     <div class="section-header">
-                        <h2 class="section-title">
-                            <span class="section-icon">{metadataTypesIcon}</span>
-                            {metadataTypesTitle}
-                        </h2>
-                        <p class="section-subtitle">{metadataTypesDescription}</p>
+                        <div class="section-header-top">
+                            <div class="section-title-group">
+                                <h2 class="section-title">
+                                    <span class="section-icon">{metadataTypesIcon}</span>
+                                    {metadataTypesTitle}
+                                </h2>
+                                <p class="section-subtitle">{metadataTypesDescription}</p>
+                            </div>
+                            <div class="filter-container">
+                                <lightning-input
+                                    type="search"
+                                    placeholder="Filter by type or member name..."
+                                    value={filterText}
+                                    onchange={handleFilterChange}
+                                    class="filter-input"
+                                ></lightning-input>
+                            </div>
+                        </div>
                     </div>
 
-                    <template if:true={hasTypes}>
+                    <template if:true={hasFilteredTypes}>
                         <div class="types-container">
-                            <template for:each={packageData.types} for:item="metadataType">
+                            <template for:each={filteredTypes} for:item="metadataType">
                                 <div key={metadataType.name} class="type-card">
                                     <div class="type-header" onclick={toggleTypeExpansion} data-type-name={metadataType.name}>
                                         <div class="type-info">
@@ -150,11 +163,18 @@
                         </div>
                     </template>
 
-                    <template if:false={hasTypes}>
+                    <template if:false={hasFilteredTypes}>
                         <div class="empty-state">
-                            <lightning-icon icon-name={packageIconName} size="large" class="empty-icon"></lightning-icon>
-                            <h3 class="empty-title">{emptyStateTitle}</h3>
-                            <p class="empty-description">{emptyStateDescription}</p>
+                            <template if:true={filterText}>
+                                <lightning-icon icon-name="utility:search" size="large" class="empty-icon"></lightning-icon>
+                                <h3 class="empty-title">No matching results</h3>
+                                <p class="empty-description">No metadata types or members match your filter "{filterText}"</p>
+                            </template>
+                            <template if:false={filterText}>
+                                <lightning-icon icon-name={packageIconName} size="large" class="empty-icon"></lightning-icon>
+                                <h3 class="empty-title">{emptyStateTitle}</h3>
+                                <p class="empty-description">{emptyStateDescription}</p>
+                            </template>
                         </div>
                     </template>
                 </div>
