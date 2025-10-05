@@ -94,9 +94,12 @@ export class BranchStrategyMermaidBuilder {
         if (isPreprod(mergeTarget)) {
           branchesMergingInPreprod.push(branchAndOrg.branchName);
         }
-        const openPullRequestsForThisTarget = this.openPullRequests.filter(pr => pr.targetBranch === mergeTarget);
+        // Find PRs that match BOTH source and target branches
+        const openPullRequestsForThisLink = this.openPullRequests.filter(pr => 
+          pr.sourceBranch === branchAndOrg.branchName && pr.targetBranch === mergeTarget
+        );
         // Select only the first PR if multiple exist
-        const activePR = openPullRequestsForThisTarget.length > 0 ? openPullRequestsForThisTarget[0] : null;
+        const activePR = openPullRequestsForThisLink.length > 0 ? openPullRequestsForThisLink[0] : null;
         // Determine if source is a major branch - check PR source if PR exists, otherwise check current branch
         const isSourceMajorBranch = activePR && activePR.sourceBranch
           ? isMajorBranch(activePR.sourceBranch, this.branchesAndOrgs)
