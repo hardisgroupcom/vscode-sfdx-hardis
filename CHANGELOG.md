@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [6.10.0] 2024-10-05
+
 - Pipeline view
   - Display Pull Requests within the mermaid diagram, with status and hyperlinks
   - Refactor buttons organization for optimized distribution
