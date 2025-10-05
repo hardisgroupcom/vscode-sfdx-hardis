@@ -13,6 +13,7 @@ export default class PackageXml extends LightningElement {
   @track packageType = "skip"; // Default type: skip, deploy, retrieve, etc.
   @track packageFilePath = "";
   @track packageConfig = null;
+  @track filterText = "";
 
   @api
   initialize(data) {
@@ -416,6 +417,52 @@ export default class PackageXml extends LightningElement {
     );
   }
 
+  get filteredTypes() {
+    if (!this.packageData?.types) {
+      return [];
+    }
+    
+    if (!this.filterText) {
+      return this.packageData.types;
+    }
+    
+    return this.packageData.types
+      .map(type => {
+        // Check if type name matches
+        const typeNameMatches = type.name.toLowerCase().includes(this.filterText);
+        
+        // Filter members that match
+        let filteredMembers = type.members || [];
+        if (!typeNameMatches && type.members && Array.isArray(type.members)) {
+          filteredMembers = type.members.filter(member => 
+            member.toLowerCase().includes(this.filterText)
+          );
+        }
+        
+        // Include type if type name matches OR if any members match
+        if (typeNameMatches || filteredMembers.length > 0) {
+          return {
+            ...type,
+            members: typeNameMatches ? type.members : filteredMembers,
+            memberCount: typeNameMatches 
+              ? (type.hasWildcard ? "All" : (type.members?.length || 0))
+              : filteredMembers.length,
+          };
+        }
+        
+        return null;
+      })
+      .filter(type => type !== null);
+  }
+
+  get hasFilteredTypes() {
+    return this.filteredTypes.length > 0;
+  }
+
+  get filteredTypesCount() {
+    return this.filteredTypes.length;
+  }
+
   get totalTypes() {
     return this.packageData?.types?.length || 0;
   }
@@ -432,6 +479,10 @@ export default class PackageXml extends LightningElement {
   }
 
   // Event Handlers
+  handleFilterChange(event) {
+    this.filterText = event.target.value.toLowerCase();
+  }
+
   toggleTypeExpansion(event) {
     const typeName = event.currentTarget.dataset.typeName;
     if (!typeName || !this.packageData?.types) return;

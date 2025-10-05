@@ -1,9 +1,11 @@
 import sortArray from "sort-array";
 import { prettifyFieldName } from "../stringUtils";
-import { isIntegration, isPreprod, isProduction } from "../orgConfigUtils";
+import { isMajorBranch, isPreprod, isProduction } from "../orgConfigUtils";
+import { PullRequest, JobStatus } from "../gitProviders/types";
 
 export class BranchStrategyMermaidBuilder {
   private branchesAndOrgs: any[];
+  private openPullRequests: PullRequest[] = [];
   private gitBranches: any[] = [];
   private salesforceOrgs: any[] = [];
   private salesforceDevOrgsGroup: string[] = [];
@@ -12,10 +14,10 @@ export class BranchStrategyMermaidBuilder {
   private sbDevLinks: any[] = [];
   private retrofitLinks: any[] = [];
   private mermaidLines: string[] = [];
-  private featureBranchNb: number = 0;
 
-  constructor(branchesAndOrgs: any[]) {
+  constructor(branchesAndOrgs: any[], openPullRequests: PullRequest[] = []) {
     this.branchesAndOrgs = branchesAndOrgs;
+    this.openPullRequests = openPullRequests;
   }
 
   /**
@@ -38,13 +40,12 @@ export class BranchStrategyMermaidBuilder {
     this.sbDevLinks = [];
     this.retrofitLinks = [];
     this.mermaidLines = [];
-    this.featureBranchNb = 0;
 
     this.listGitBranchesAndLinks();
     this.listSalesforceOrgsAndLinks();
 
     if (options.onlyMajorBranches) {
-      // Filter out feature/hotfix/dev orgs and related links, and remove ALL orgs (even major ones) and deploy links
+      // Filter out feature/hotfix/dev branches
       this.gitBranches = this.gitBranches.filter(
         (b) => b.class === "gitMain" || b.class === "gitMajor",
       );
@@ -54,9 +55,16 @@ export class BranchStrategyMermaidBuilder {
         const tgt = this.gitBranches.find((b) => b.nodeName === l.target);
         return src && tgt;
       });
-      // Remove all orgs and org links
-      this.salesforceOrgs = [];
-      this.deployLinks = [];
+      // Keep only major orgs (prod and major), remove dev orgs
+      this.salesforceOrgs = this.salesforceOrgs.filter((org) =>
+        ["salesforceProd", "salesforceMajor"].includes(org.class),
+      );
+      // Keep only deploy links to major orgs
+      const majorOrgNodeNames = this.salesforceOrgs.map((org) => org.nodeName);
+      this.deployLinks = this.deployLinks.filter((link) =>
+        majorOrgNodeNames.includes(link.target),
+      );
+      // Remove dev org groups and dev-specific links
       this.salesforceDevOrgsGroup = [];
       this.sbDevLinks = [];
     }
@@ -86,11 +94,26 @@ export class BranchStrategyMermaidBuilder {
         if (isPreprod(mergeTarget)) {
           branchesMergingInPreprod.push(branchAndOrg.branchName);
         }
+        // Find PRs that match BOTH source and target branches
+        const openPullRequestsForThisLink = this.openPullRequests.filter(pr => 
+          pr.sourceBranch === branchAndOrg.branchName && pr.targetBranch === mergeTarget
+        );
+        // Select only the first PR if multiple exist
+        const activePR = openPullRequestsForThisLink.length > 0 ? openPullRequestsForThisLink[0] : null;
+        
+        // Determine if source is a major branch
+        const isSourceMajorBranch = isMajorBranch(branchAndOrg.branchName, this.branchesAndOrgs);
+        // Also check if target is a major branch
+        const isTargetMajorBranch = isMajorBranch(mergeTarget, this.branchesAndOrgs);
+        // Use gitMerge (thick blue) if either source OR target is a major branch
+        const isMajorLink = isSourceMajorBranch || isTargetMajorBranch;
+
         this.gitLinks.push({
           source: nodeName,
           target: mergeTarget + "Branch",
-          type: "gitMerge",
-          label: "Merge",
+          type: isMajorLink ? "gitMerge" : "gitFeatureMerge",
+          label: activePR ? `#${activePR.number || activePR.id} ${this.getPrStatusEmoji(activePR.jobsStatus)}` : "No PR",
+          activePR: activePR
         });
       }
       return {
@@ -127,36 +150,56 @@ export class BranchStrategyMermaidBuilder {
       }
     }
 
-    // Disable for now
-    // for (const branchAndOrg of noMergeTargetBranchAndOrg) {
-    //   const nameBase = isPreprod(branchAndOrg.branchName) ? "hotfix" : "feature";
-    //   const level = branchAndOrg.level - 1
-    //   this.salesforceDevOrgsGroup.push(branchAndOrg.branchName);
-    //   this.addFeatureBranch(nameBase, level, branchAndOrg);
-    //   this.addFeatureBranch(nameBase, level, branchAndOrg);
-    // }
-
-    // Add retrofit link only if it does not mess with the diagram display :/
-    if (branchesMergingInPreprod.length < 2) {
-      const mainBranch = this.branchesAndOrgs.find((branchAndOrg) =>
-        isProduction(branchAndOrg.branchName),
-      );
-      const preprodBranch = this.branchesAndOrgs.find((branchAndOrg) =>
-        isPreprod(branchAndOrg.branchName),
-      );
-      const integrationBranch = this.branchesAndOrgs.find((branchAndOrg) =>
-        isIntegration(branchAndOrg.branchName),
-      );
-
-      if (mainBranch && preprodBranch && integrationBranch) {
-        this.retrofitLinks.push({
-          source: mainBranch.branchName + "Branch",
-          target: integrationBranch.branchName + "Branch",
-          type: "gitMerge",
-          label: "Retrofit from RUN to BUILD",
+    // Add feature branches and links for PRs whose source branch does not exist in the branchesAndOrgs list
+    for (const pullRequest of this.openPullRequests) {
+      if (!this.branchesAndOrgs.find((b) => b.branchName === pullRequest.sourceBranch)) {
+        const level =
+          noMergeTargetBranchAndOrg.length > 0  ?
+            Math.min(
+              ...noMergeTargetBranchAndOrg.map((b) => b.level),
+            ) + 1
+          : 50;
+        const nodeName = pullRequest.sourceBranch + "Branch"; // + "Branch" + (this.featureBranchNb + 1);
+        this.gitBranches.push({
+          name: pullRequest.sourceBranch,
+          nodeName: nodeName,
+          label: pullRequest.sourceBranch,
+          class: "gitFeature",
+          level: level,
+          group: pullRequest.sourceBranch,
+        });
+        const prLinkLabel = (pullRequest.number || pullRequest.id) ? `#${pullRequest.number || pullRequest.id} ${this.getPrStatusEmoji(pullRequest.jobsStatus)}` : "No PR";
+        this.gitLinks.push({
+          source: nodeName,
+          target: pullRequest.targetBranch + "Branch",
+          type: "gitFeatureMerge",
+          label: prLinkLabel,
+          activePR: pullRequest
         });
       }
     }
+
+    // Add retrofit link only if it does not mess with the diagram display :/
+    // if (branchesMergingInPreprod.length < 2) {
+    //   const mainBranch = this.branchesAndOrgs.find((branchAndOrg) =>
+    //     isProduction(branchAndOrg.branchName),
+    //   );
+    //   const preprodBranch = this.branchesAndOrgs.find((branchAndOrg) =>
+    //     isPreprod(branchAndOrg.branchName),
+    //   );
+    //   const integrationBranch = this.branchesAndOrgs.find((branchAndOrg) =>
+    //     isIntegration(branchAndOrg.branchName),
+    //   );
+
+      // if (mainBranch && preprodBranch && integrationBranch) {
+      //   this.retrofitLinks.push({
+      //     source: mainBranch.branchName + "Branch",
+      //     target: integrationBranch.branchName + "Branch",
+      //     type: "gitMerge",
+      //     label: "Retrofit from RUN to BUILD",
+      //   });
+      // }
+    // }
 
     // Sort branches & links
     this.gitBranches = sortArray(this.gitBranches, {
@@ -168,14 +211,6 @@ export class BranchStrategyMermaidBuilder {
       order: ["asc", "asc"],
     });
   }
-
-  // private addFeatureBranch(nameBase: string, level: number, branchAndOrg: any) {
-  //   this.featureBranchNb++;
-  //   const nameBase1 = nameBase + this.featureBranchNb;
-  //   const nodeName1 = nameBase + "Branch" + this.featureBranchNb;
-  //   this.gitBranches.push({ name: nameBase1, nodeName: nodeName1, label: nameBase1, class: "gitFeature", level: level, group: branchAndOrg.branchName });
-  //   this.gitLinks.push({ source: nodeName1, target: this.gitBranches.find((gitBranch) => gitBranch.name === branchAndOrg.branchName)?.nodeName || "ERROR", type: "gitMerge", label: "Merge" });
-  // }
 
   private listSalesforceOrgsAndLinks(): any {
     for (const gitBranch of this.gitBranches) {
@@ -224,31 +259,34 @@ export class BranchStrategyMermaidBuilder {
           group: branchAndOrg.branchName, // Keep group for dev orgs
           instanceUrl: branchAndOrg.instanceUrl,
         });
+        
+        // Get job status info for this org
+        const jobsStatus = branchAndOrg.jobsStatus || 'unknown';
+        const jobStatusEmoji = this.getPrStatusEmoji(jobsStatus);
+        const hasJobs = branchAndOrg.jobs && branchAndOrg.jobs.length > 0;
+        const jobUrl = hasJobs ? branchAndOrg.jobs[0].webUrl : null;
+        
+        // Determine deploy link type based on job status
+        let deployLinkType = "sfDeploy";
+        if (hasJobs && jobUrl && (jobsStatus === 'running' || jobsStatus === 'pending')) {
+          deployLinkType = "sfDeployAnimated";
+        }
+        
+        // Build deploy label with job status (simpler format for dashed arrows)
+        let deployLabel = "Deploy to Org";
+        if (hasJobs) {
+          deployLabel = `Deploy ${jobStatusEmoji}`;
+        }
+        
         this.deployLinks.push({
           source: gitBranch.nodeName,
           target: nodeName,
-          type: "sfDeploy",
-          label: "Deploy to Org",
+          type: deployLinkType,
+          label: deployLabel,
           level: branchAndOrg.level,
-        });
-      } else {
-        // This else block should ideally not be hit if PipelineDataProvider correctly populates all branches.
-        // However, keeping it for robustness or if there are branches without direct org mappings.
-        const nodeName = gitBranch.name + "Org";
-        this.salesforceOrgs.push({
-          name: gitBranch.name,
-          nodeName: nodeName,
-          label: "Dev " + prettifyFieldName(gitBranch.name),
-          class: "salesforceDev",
-          level: gitBranch.level,
-          group: gitBranch.group,
-        });
-        this.sbDevLinks.push({
-          source: nodeName,
-          target: gitBranch.nodeName,
-          type: "sfPushPull",
-          label: "Push / Pull",
-          level: gitBranch.level,
+          hasJobs: hasJobs,
+          jobUrl: jobUrl,
+          jobsStatus: jobsStatus,
         });
       }
     }
@@ -270,12 +308,17 @@ export class BranchStrategyMermaidBuilder {
 
   private generateMermaidLines(options?: { onlyMajorBranches?: boolean }) {
     /* jscpd:ignore-start */
+    this.mermaidLines.push('%%{init: {');
+    this.mermaidLines.push('  "flowchart": {');
+    this.mermaidLines.push('    "curve": "monotoneX"');
+    this.mermaidLines.push('  }');
+    this.mermaidLines.push('}}%%');
     this.mermaidLines.push("flowchart LR");
     this.mermaidLines.push("");
 
     // Git branches
     this.mermaidLines.push(
-      this.indent("subgraph GitBranches [Major Git Branches]", 1),
+      this.indent("subgraph GitBranches [Git Branches]", 1),
     );
     this.mermaidLines.push(this.indent("direction TB", 2));
     for (const gitBranch of this.gitBranches) {
@@ -289,13 +332,13 @@ export class BranchStrategyMermaidBuilder {
     this.mermaidLines.push(this.indent("end", 1));
     this.mermaidLines.push("");
 
-    // Salesforce orgs (only if there are any major orgs and not in onlyMajorBranches mode)
+    // Salesforce orgs (only if there are any major orgs)
     const majorOrgs = this.salesforceOrgs.filter((salesforceOrg) =>
       ["salesforceProd", "salesforceMajor"].includes(salesforceOrg.class),
     );
-    if (majorOrgs.length > 0 && !(options && options.onlyMajorBranches)) {
+    if (majorOrgs.length > 0) {
       this.mermaidLines.push(
-        this.indent("subgraph SalesforceOrgs [Major Salesforce Orgs]", 1),
+        this.indent("subgraph SalesforceOrgs [Salesforce Orgs]", 1),
       );
       this.mermaidLines.push(this.indent("direction TB", 2));
       for (const salesforceOrg of majorOrgs) {
@@ -421,17 +464,53 @@ export class BranchStrategyMermaidBuilder {
         `linkStyle ${positions[key].join(",")} ${styleDef}`,
       );
     }
+    
   }
 
   private addLinks(links: any[]) {
     for (const link of links) {
       if (link.type === "gitMerge") {
+        let label = link.label;
+        // If PR exists, make label clickable with markdown link syntax
+        if (link.activePR && link.activePR.webUrl) {
+          label = `<a href='${link.activePR.webUrl}' target='_blank' style='color:#0176D3;font-weight:bold;text-decoration:underline;'>${link.label}</a>`;
+          // Only use special link type for running/pending jobs
+          const jobStatus = link.activePR.jobsStatus || 'unknown';
+          if (jobStatus === 'running' || jobStatus === 'pending') {
+            link.type = "gitMergeWithPRAnimated";
+          }
+          // For completed PRs (success/failed/unknown), keep gitMerge type (plain style)
+        }
         this.mermaidLines.push(
-          this.indent(`${link.source} ==>|"${link.label}"| ${link.target}`, 1),
+          this.indent(`${link.source} ==>|"${label}"| ${link.target}`, 1),
         );
-      } else if (link.type === "sfDeploy") {
+      } else if (link.type === "gitFeatureMerge") {
+        let label = link.label;
+        /* jscpd:ignore-start */
+        // If PR exists, make label clickable with markdown link syntax
+        if (link.activePR && link.activePR.webUrl) {
+          label = `<a href='${link.activePR.webUrl}' target='_blank' style='color:#0176D3;font-weight:bold;text-decoration:underline;'>${link.label}</a>`;
+          // Only use special link type for running/pending jobs
+          const jobStatus = link.activePR.jobsStatus || 'unknown';
+          if (jobStatus === 'running' || jobStatus === 'pending') {
+            link.type = "gitFeatureMergeWithPRAnimated";
+          }
+          // For completed PRs (success/failed/unknown), keep gitFeatureMerge type (plain style)
+        }
+        /* jscpd:ignore-end */
         this.mermaidLines.push(
-          this.indent(`${link.source} -. ${link.label} .-> ${link.target}`, 1),
+          this.indent(`${link.source} -->|"${label}"| ${link.target}`, 1),
+        );
+      } else if (link.type === "sfDeploy" || link.type === "sfDeployAnimated") {
+        // Make deployment links clickable if job URL exists
+        let label = link.label;
+        if (link.jobUrl) {
+          // Extract just the emoji from the label (e.g., "Deploy ✅" -> "✅")
+          const emoji = label.replace(/^Deploy\s+/, '');
+          label = `<a href='${link.jobUrl}' target='_blank' style='color:#0176D3;font-weight:bold;text-decoration:underline;'>Deploy ${emoji}</a>`;
+        }
+        this.mermaidLines.push(
+          this.indent(`${link.source} -.->|"${label}"| ${link.target}`, 1),
         );
       } else if (link.type === "sfPushPull") {
         this.mermaidLines.push(
@@ -449,7 +528,7 @@ export class BranchStrategyMermaidBuilder {
   classDef salesforceDev fill:#F4F6F9,stroke:#0176D3,stroke-width:2.5px,color:#032D60,font-weight:500,border-radius:16px;
   classDef salesforceMajor fill:#FFF6E3,stroke:#FFB75D,stroke-width:2.5px,color:#032D60,font-weight:900,border-radius:16px;
   classDef salesforceProd fill:#E3FCEF,stroke:#04844B,stroke-width:2.5px,color:#032D60,font-weight:700,border-radius:16px;
-  classDef gitMajor fill:#fff,stroke:#0176D3,stroke-width:2.5px,color:#032D60,font-weight:700,border-radius:16px;
+  classDef gitMajor fill:#4A9FD8,stroke:#032D60,stroke-width:3px,color:#fff,font-weight:900,border-radius:16px;
   classDef gitMain fill:#0176D3,stroke:#032D60,stroke-width:3px,color:#fff,font-weight:900,border-radius:16px;
   classDef gitFeature fill:#fff,stroke:#E5E5E5,stroke-width:1.5px,color:#3E3E3C,font-weight:500,border-radius:16px;
   style GitBranches fill:#F0F6FB,color:#032D60,stroke:#0176D3,stroke-width:2px;
@@ -462,14 +541,35 @@ export class BranchStrategyMermaidBuilder {
   private listLinksDef(): any {
     // SLDS blue/green for connectors, thin lines, and more discrete (lighter) link labels
     // Use a lighter color for label text (e.g., #B0B7BD), fully opaque for readability, and no background
+    // gitFeatureMerge uses dashed line and lighter color to distinguish from major branch merges
+    // gitMerge (major branch arrows) are always plain and thicker (3px)
+    // Animated variants: Set base stroke in red that CSS will animate
     return {
-      gitMerge: "stroke:#0176D3,stroke-width:1.5px,color:#B0B7BD,opacity:1;",
+      gitMerge: "stroke:#0176D3,stroke-width:3px,color:#032D60,opacity:1;",
+      gitMergeWithPRAnimated: "stroke:#e74c3c,stroke-width:3px,color:#032D60,font-weight:bold,opacity:1;",
+      gitFeatureMerge: "stroke:#B0B7BD,stroke-width:1.5px,stroke-dasharray:5 5,color:#B0B7BD,opacity:1;",
+      gitFeatureMergeWithPRAnimated: "stroke:#e74c3c,stroke-width:2.5px,stroke-dasharray:5 5,color:#032D60,font-weight:bold,opacity:1;",
       sfDeploy: "stroke:#04844B,stroke-width:1.5px,color:#B0B7BD,opacity:1;",
+      sfDeployAnimated: "stroke:#e74c3c,stroke-width:2px,color:#032D60,font-weight:bold,opacity:1;",
       sfPushPull: "stroke:#0176D3,stroke-width:1.5px,color:#B0B7BD,opacity:1;",
     };
   }
 
   private indent(str: string, number: number): string {
     return " ".repeat(number) + str;
+  }
+
+  private getPrStatusEmoji(status: JobStatus): string {
+    const emojiMap: Record<JobStatus, string> = {
+      running: "🔄",
+      pending: "⏳",
+      success: "✅",
+      failed: "❌",
+      unknown: "❔",
+    };
+    if (status in emojiMap) {
+      return emojiMap[status];
+    }
+    return "❔";
   }
 }
