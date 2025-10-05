@@ -12,6 +12,11 @@ export default class Pipeline extends LightningElement {
   @track connectedVariant = "neutral";
   @track connectedIconName = "utility:link";
   @track openPullRequests = [];
+  @track displayFeatureBranches = false;
+  @track loading = false;
+  _refreshTimer = null;
+  _isVisible = true;
+  _isAutoRefresh = false;
   prColumns = [
     {
       key: "number",
@@ -98,13 +103,19 @@ export default class Pipeline extends LightningElement {
 
   @api
   initialize(data) {
+    this.loading = this._isAutoRefresh ? false : false;
+    this._isAutoRefresh = false;
     this.pipelineData = data.pipelineData;
     this.repoPlatformLabel = data.repoPlatformLabel || "Git";
     this.prButtonInfo = data.prButtonInfo;
     this.warnings = this.pipelineData.warnings || [];
     this.hasWarnings = this.warnings.length > 0;
     this.showOnlyMajor = false;
-    this.currentDiagram = this.pipelineData.mermaidDiagram;
+    this.displayFeatureBranches = data?.displayFeatureBranches ?? false;
+    // Select diagram based on displayFeatureBranches toggle
+    this.currentDiagram = this.displayFeatureBranches
+      ? this.pipelineData.mermaidDiagram
+      : this.pipelineData.mermaidDiagramMajor;
     this.error = undefined;
     this.lastDiagram = "";
     this.gitAuthenticated = data?.gitAuthenticated ?? false;
@@ -114,7 +125,6 @@ export default class Pipeline extends LightningElement {
     this.connectedIconName = this.gitAuthenticated
       ? "utility:check"
       : "utility:link";
-    this.connectedVariant = this.gitAuthenticated ? "success" : "neutral";
     this.openPullRequests = this._mapPrsWithIcons(data.openPullRequests || []);
     // ensure reactivity for computed label
     this.openPullRequests = Array.isArray(this.openPullRequests)
@@ -125,6 +135,13 @@ export default class Pipeline extends LightningElement {
     // Render the Mermaid diagram after a brief delay to ensure DOM is ready
     setTimeout(() => this.renderMermaid(), 0);
     console.log("Pipeline data initialized:", this.pipelineData);
+    // Update panel title with PR count
+    this._updatePanelTitle();
+    // Start auto-refresh timer
+    this._startAutoRefresh();
+    if (data.firstDisplay) {
+      this.refreshPipeline();
+    }
   }
 
   // Map PRs to include a computed jobsIconName used by datatable cellAttributes
@@ -155,9 +172,23 @@ export default class Pipeline extends LightningElement {
 
   connectedCallback() {
     this._boundAdjust = this.adjustPrColumns.bind(this);
+    this._boundVisibilityChange = this._handleVisibilityChange.bind(this);
     if (typeof window !== "undefined" && window.addEventListener) {
       window.addEventListener("resize", this._boundAdjust);
+      document.addEventListener(
+        "visibilitychange",
+        this._boundVisibilityChange,
+      );
     }
+    // Register global openPR function for Mermaid link callbacks
+    if (typeof window !== "undefined") {
+      window.openPR = (url) => {
+        if (url) {
+          window.open(url, "_blank");
+        }
+      };
+    }
+    this._isVisible = !document.hidden;
   }
 
   disconnectedCallback() {
@@ -167,6 +198,22 @@ export default class Pipeline extends LightningElement {
       this._boundAdjust
     ) {
       window.removeEventListener("resize", this._boundAdjust);
+    }
+    if (
+      typeof window !== "undefined" &&
+      window.removeEventListener &&
+      this._boundVisibilityChange
+    ) {
+      document.removeEventListener(
+        "visibilitychange",
+        this._boundVisibilityChange,
+      );
+    }
+    // Clean up auto-refresh timer
+    this._stopAutoRefresh();
+    // Clean up global openPR function
+    if (typeof window !== "undefined" && window.openPR) {
+      delete window.openPR;
     }
   }
 
@@ -439,6 +486,10 @@ export default class Pipeline extends LightningElement {
         mermaidDiv.innerHTML = svg;
         this.error = undefined;
         console.log("Mermaid diagram rendered successfully");
+
+        // Apply animation classes to links with running/pending PRs
+        // Find all edge paths and check if they need animation based on link styling
+        setTimeout(() => this.applyLinkAnimations(), 100);
       })
       .catch((error) => {
         this.error = error?.message || "Mermaid rendering error";
@@ -446,6 +497,72 @@ export default class Pipeline extends LightningElement {
         if (debugDiv) debugDiv.textContent = this.error + "\n" + diagram;
         console.error("Mermaid rendering error:", error);
       });
+  }
+
+  applyLinkAnimations() {
+    // Apply CSS animations to any Mermaid link containing running/pending emojis
+    // The key insight: edge labels and edge paths are in SEPARATE sibling groups
+    // We need to match them by index position
+    const mermaidSvg = this.template.querySelector(".mermaid svg");
+    if (!mermaidSvg) {
+      console.warn("Mermaid SVG not found for animation");
+      return;
+    }
+
+    // Find the edgeLabels group (contains all edge label text)
+    const edgeLabelsGroup = mermaidSvg.querySelector("g.edgeLabels");
+    if (!edgeLabelsGroup) {
+      console.warn("No edgeLabels group found");
+      return;
+    }
+
+    // Find the edgePaths group (contains all edge path elements)
+    const edgePathsGroup = mermaidSvg.querySelector("g.edgePaths");
+    if (!edgePathsGroup) {
+      console.warn("No edgePaths group found");
+      return;
+    }
+
+    // Get all individual edge labels and paths
+    const edgeLabels = edgeLabelsGroup.querySelectorAll("g.edgeLabel");
+    const edgePaths = edgePathsGroup.querySelectorAll("path.flowchart-link");
+
+    if (edgeLabels.length === 0 || edgePaths.length === 0) {
+      console.warn("No edge labels or paths found");
+      return;
+    }
+
+    if (edgeLabels.length !== edgePaths.length) {
+      console.warn(
+        `Mismatch: ${edgeLabels.length} labels but ${edgePaths.length} paths`,
+      );
+    }
+
+    // Match labels to paths by index
+    const maxIndex = Math.min(edgeLabels.length, edgePaths.length);
+
+    for (let i = 0; i < maxIndex; i++) {
+      const label = edgeLabels[i];
+      const path = edgePaths[i];
+
+      // Get the text content from the label (may be nested in foreignObject/div/span/p/a)
+      const labelText = label.textContent || "";
+
+      // Check for running (🔄) or pending (⏳) emoji
+      const hasRunning = labelText.includes("🔄");
+      const hasPending = labelText.includes("⏳");
+
+      if (hasRunning || hasPending) {
+        // Apply the same animation class based on job status (running vs pending)
+        // Both git PR jobs and deployment jobs use identical animations
+        const animationClass = hasRunning
+          ? "edge-animation-fast"
+          : "edge-animation-slow";
+        path.classList.add(animationClass);
+        // Force browser to recognize the class change
+        void path.offsetWidth;
+      }
+    }
   }
 
   @api
@@ -458,6 +575,7 @@ export default class Pipeline extends LightningElement {
         // allow dynamic updates from extension host
         this.openPullRequests = this._mapPrsWithIcons(data || []);
         setTimeout(() => this.adjustPrColumns(), 50);
+        this._updatePanelTitle();
         break;
       default:
         console.log("Unknown message type:", messageType, data);
@@ -474,13 +592,24 @@ export default class Pipeline extends LightningElement {
     });
   }
 
+  handleRefresh() {
+    this.refreshPipeline();
+    // Reset auto-refresh timer when manually refreshed
+    this._startAutoRefresh();
+  }
+
   // Added refreshPipeline method
-  refreshPipeline() {
+  refreshPipeline(isAutoRefresh = false) {
+    this._isAutoRefresh = isAutoRefresh;
+    this.loading = !isAutoRefresh;
     window.sendMessageToVSCode({
       type: "refreshPipeline",
       data: {},
     });
-    console.log("Pipeline refresh event dispatched");
+    console.log(
+      "Pipeline refresh event dispatched",
+      isAutoRefresh ? "(auto)" : "(manual)",
+    );
   }
 
   // Quick action methods
@@ -550,6 +679,85 @@ export default class Pipeline extends LightningElement {
     window.sendMessageToVSCode({
       type: "connectToGit",
       data: {},
+    });
+  }
+
+  handleToggleFeatureBranches(event) {
+    // Get the new state from the toggle
+    this.displayFeatureBranches = event.target.checked;
+
+    // Update VS Code configuration
+    window.sendMessageToVSCode({
+      type: "updateVsCodeSfdxHardisConfiguration",
+      data: {
+        configKey: "pipelineDisplayFeatureBranches",
+        value: this.displayFeatureBranches,
+      },
+    });
+
+    // Switch diagram
+    this.currentDiagram = this.displayFeatureBranches
+      ? this.pipelineData.mermaidDiagram
+      : this.pipelineData.mermaidDiagramMajor;
+
+    // Re-render the diagram
+    setTimeout(() => this.renderMermaid(), 0);
+
+    console.log(
+      "Feature branches display toggled:",
+      this.displayFeatureBranches,
+    );
+  }
+
+  _handleVisibilityChange() {
+    this._isVisible = !document.hidden;
+    console.log(
+      "Pipeline visibility changed:",
+      this._isVisible ? "visible" : "hidden",
+    );
+    // Restart timer with appropriate interval when visibility changes
+    this._startAutoRefresh();
+  }
+
+  _startAutoRefresh() {
+    // Clear existing timer
+    this._stopAutoRefresh();
+
+    // Only auto-refresh if git is authenticated
+    if (!this.gitAuthenticated) {
+      console.log("Auto-refresh disabled: git not authenticated");
+      return;
+    }
+
+    // Set interval based on visibility: 1 minute if visible, 5 minutes if not
+    const interval = this._isVisible ? 60000 : 300000; // 60s or 300s
+
+    this._refreshTimer = setInterval(() => {
+      console.log("Auto-refreshing pipeline (visible:", this._isVisible, ")");
+      this.refreshPipeline(true);
+    }, interval);
+
+    console.log(
+      `Auto-refresh started: ${interval / 1000}s interval (visible: ${this._isVisible})`,
+    );
+  }
+
+  _stopAutoRefresh() {
+    if (this._refreshTimer) {
+      clearInterval(this._refreshTimer);
+      this._refreshTimer = null;
+      console.log("Auto-refresh stopped");
+    }
+  }
+
+  _updatePanelTitle() {
+    const prCount = this.openPullRequests ? this.openPullRequests.length : 0;
+    const baseTitle = "DevOps Pipeline";
+    const title = prCount > 0 ? `${baseTitle} (${prCount})` : baseTitle;
+
+    window.sendMessageToVSCode({
+      type: "updatePanelTitle",
+      data: { title: title },
     });
   }
 }

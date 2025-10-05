@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [6.10.0] 2024-10-05
+
+- Pipeline view
+  - Display Pull Requests within the mermaid diagram, with status and hyperlinks
+  - Animate Pull Requests and deployment jobs links when they are in progress
+  - Refactor buttons organization for optimized distribution
+- Package XML view: Add filter
+
 ## [6.9.1] 2024-09-30
 
 - Pipeline view: Display jobs status of each Pull Request

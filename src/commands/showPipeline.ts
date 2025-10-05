@@ -11,23 +11,50 @@ export function registerShowPipeline(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
     "vscode-sfdx-hardis.showPipeline",
     async () => {
-      let pipelineProperties = await loadAllPipelineInfo(true);
+      let pipelineProperties = await loadAllPipelineInfo({
+        browseGitProvider: false,
+        resetGit: false,
+        withProgress: true,
+      });
       const panel = LwcPanelManager.getInstance().getOrCreatePanel(
         "s-pipeline",
-        pipelineProperties,
+        {
+          ...pipelineProperties,
+          firstDisplay: true,
+        },
       );
       panel.updateTitle("DevOps Pipeline");
 
       panel.onMessage(async (type, data) => {
         // Refresh
         if (type === "refreshPipeline") {
-          pipelineProperties = await loadAllPipelineInfo(true);
+          pipelineProperties = await loadAllPipelineInfo({
+            browseGitProvider: true,
+            resetGit: false,
+            withProgress: false,
+          });
           panel.sendInitializationData(pipelineProperties);
+        }
+        // Update panel title
+        else if (type === "updatePanelTitle") {
+          panel.updateTitle(data.title);
         }
         // Open Package XML Panel
         else if (type === "showPackageXml") {
           // Handle package XML display requests from pipeline
           await showPackageXmlPanel(data);
+        }
+        // Update VS Code configuration
+        else if (type === "updateVsCodeSfdxHardisConfiguration") {
+          const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+          await config.update(
+            data.configKey,
+            data.value,
+            vscode.ConfigurationTarget.Global,
+          );
+          Logger.log(
+            `Updated configuration: ${data.configKey} = ${data.value}`,
+          );
         }
         // Authenticate or re-authenticate to Git provider
         else if (type === "connectToGit") {
@@ -57,7 +84,11 @@ export function registerShowPipeline(commands: Commands) {
             vscode.window.showInformationMessage(
               "Successfully connected to Git provider.",
             );
-            pipelineProperties = await loadAllPipelineInfo();
+            pipelineProperties = await loadAllPipelineInfo({
+              browseGitProvider: true,
+              resetGit: true,
+              withProgress: true,
+            });
             panel.sendInitializationData(pipelineProperties);
           } else if (authRes === false) {
             vscode.window.showErrorMessage(
@@ -70,52 +101,78 @@ export function registerShowPipeline(commands: Commands) {
   );
   commands.disposables.push(disposable);
 
-  async function loadAllPipelineInfo(resetGit = false): Promise<{
+  async function loadAllPipelineInfo(options: {
+    browseGitProvider: boolean;
+    resetGit: boolean;
+    withProgress?: boolean;
+  }): Promise<{
     pipelineData: any;
     gitAuthenticated: boolean;
     prButtonInfo: any;
     openPullRequests: PullRequest[];
     repoPlatformLabel: string;
+    displayFeatureBranches: boolean;
   }> {
-    return await vscode.window.withProgress(
-      {
-        location: vscode.ProgressLocation.Notification,
-        title: "Loading pipeline information...",
-        cancellable: false,
-      },
-      async () => {
-        const pipelineDataProvider = new PipelineDataProvider();
-        const pipelineData = await pipelineDataProvider.getPipelineData();
-        const gitProvider = await GitProvider.getInstance(resetGit);
-        let openPullRequests: PullRequest[] = [];
-        let gitAuthenticated = false;
-        if (gitProvider?.isActive) {
-          gitAuthenticated = true;
+    const withProgress = options?.withProgress ?? true;
+
+    const loadData = async () => {
+      const browseGitProvider = options?.browseGitProvider ?? true;
+      const resetGit = options?.resetGit ?? false;
+      const gitProvider = await GitProvider.getInstance(resetGit);
+      let openPullRequests: PullRequest[] = [];
+      let gitAuthenticated = false;
+      if (gitProvider?.isActive) {
+        gitAuthenticated = true;
+        if (browseGitProvider) {
           openPullRequests = await gitProvider.listOpenPullRequests();
         }
-        const prButtonInfo: any = {};
-        let repoPlatformLabel = "";
-        if (gitProvider?.repoInfo) {
-          const desc = gitProvider.describeGitProvider();
-          prButtonInfo.url = desc.pullRequestsWebUrl;
-          prButtonInfo.label = `View ${desc.pullRequestLabel}s on ${desc.providerLabel}`;
-          prButtonInfo.icon = gitProvider.repoInfo.providerName;
-          prButtonInfo.pullRequestLabel = desc.pullRequestLabel;
-          repoPlatformLabel = desc.providerLabel;
-        } else {
-          prButtonInfo.url = "";
-          prButtonInfo.label = "View Pull Requests";
-          prButtonInfo.icon = "";
-        }
+      }
+      const pipelineDataProvider = new PipelineDataProvider();
+      const pipelineData = await pipelineDataProvider.getPipelineData({
+        openPullRequests: openPullRequests,
+        browseGitProvider: browseGitProvider,
+      });
+      const prButtonInfo: any = {};
+      let repoPlatformLabel = "";
+      if (gitProvider?.repoInfo) {
+        const desc = gitProvider.describeGitProvider();
+        prButtonInfo.url = desc.pullRequestsWebUrl;
+        prButtonInfo.label = `View ${desc.pullRequestLabel}s on ${desc.providerLabel}`;
+        prButtonInfo.icon = gitProvider.repoInfo.providerName;
+        prButtonInfo.pullRequestLabel = desc.pullRequestLabel;
+        repoPlatformLabel = desc.providerLabel;
+      } else {
+        prButtonInfo.url = "";
+        prButtonInfo.label = "View Pull Requests";
+        prButtonInfo.icon = "";
+      }
 
-        return {
-          pipelineData: pipelineData,
-          prButtonInfo: prButtonInfo,
-          gitAuthenticated: gitAuthenticated,
-          openPullRequests: openPullRequests,
-          repoPlatformLabel: repoPlatformLabel,
-        };
-      },
-    );
+      // Read displayFeatureBranches configuration
+      const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+      const displayFeatureBranches =
+        config.get<boolean>("pipelineDisplayFeatureBranches") ?? false;
+
+      return {
+        pipelineData: pipelineData,
+        prButtonInfo: prButtonInfo,
+        gitAuthenticated: gitAuthenticated,
+        openPullRequests: openPullRequests,
+        repoPlatformLabel: repoPlatformLabel,
+        displayFeatureBranches: displayFeatureBranches,
+      };
+    };
+
+    if (withProgress) {
+      return await vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Notification,
+          title: "Loading pipeline information...",
+          cancellable: false,
+        },
+        loadData,
+      );
+    } else {
+      return await loadData();
+    }
   }
 }
