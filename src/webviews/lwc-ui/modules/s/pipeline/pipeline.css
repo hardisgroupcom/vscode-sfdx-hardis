@@ -5,9 +5,20 @@
 .pipeline-container {
     /* Pipeline visualization styling */
     border-radius: 8px;
-    padding: 0.75rem;
+    padding: 0.25rem 0.75rem 0.75rem 0.75rem;
     min-height: 150px;
     background: white;
+}
+
+.pipeline-loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(243, 243, 243, 0.7);
+    z-index: 10;
+    pointer-events: none;
 }
 
 .blue-back {
@@ -112,49 +123,7 @@
 
 /* Add spacing between lightning cards */
 .pipeline-card-spacing {
-    margin-top: 1rem !important;
-}
-
-/* PR status icon coloring */
-/* Color Lightning icons by setting the SLDS CSS custom properties used by lightning-icon */
-.hardis-pr-status-running lightning-icon,
-.hardis-pr-status-running .slds-icon {
-    --slds-c-icon-color-foreground: #0aa3ff;
-    --slds-c-icon-color-foreground-default: #0aa3ff;
-    color: #0aa3ff;
-}
-.hardis-pr-status-pending lightning-icon,
-.hardis-pr-status-pending .slds-icon {
-    --slds-c-icon-color-foreground: #ffb100;
-    --slds-c-icon-color-foreground-default: #ffb100;
-    color: #ffb100;
-}
-.hardis-pr-status-success lightning-icon,
-.hardis-pr-status-success .slds-icon {
-    --slds-c-icon-color-foreground: #2ecc71;
-    --slds-c-icon-color-foreground-default: #2ecc71;
-    color: #2ecc71;
-}
-.hardis-pr-status-failed lightning-icon,
-.hardis-pr-status-failed .slds-icon {
-    --slds-c-icon-color-foreground: #e14b4b;
-    --slds-c-icon-color-foreground-default: #e14b4b;
-    color: #e14b4b;
-}
-.hardis-pr-status-unknown lightning-icon,
-.hardis-pr-status-unknown .slds-icon {
-    --slds-c-icon-color-foreground: #999999;
-    --slds-c-icon-color-foreground-default: #999999;
-    color: #999999;
-}
-
-/* Ensure datatable cell hides text label so only icon is visible */
-lightning-datatable .hardis-pr-status-running .slds-truncate,
-lightning-datatable .hardis-pr-status-pending .slds-truncate,
-lightning-datatable .hardis-pr-status-success .slds-truncate,
-lightning-datatable .hardis-pr-status-failed .slds-truncate,
-lightning-datatable .hardis-pr-status-unknown .slds-truncate {
-    display: none !important;
+    margin-top: 0.5rem !important;
 }
 
 /* Make URL labels (emoji) look native: no underline and pointer cursor only for emoji cells */
@@ -162,3 +131,46 @@ lightning-datatable .hardis-emoji-cell a {
     text-decoration: none !important;
     cursor: pointer !important;
 }
+
+/* Mermaid link animations for running/pending PRs */
+/* Apply subtle pulsing animation to links with red color */
+@keyframes edgeAnimationFast {
+    0%, 100% {
+        opacity: 1;
+        stroke-width: 3px;
+    }
+    50% {
+        opacity: 0.7;
+        stroke-width: 3.5px;
+    }
+}
+
+@keyframes edgeAnimationSlow {
+    0%, 100% {
+        opacity: 1;
+        stroke-width: 2.5px;
+    }
+    50% {
+        opacity: 0.8;
+        stroke-width: 3px;
+    }
+}
+
+/* Apply red color and animation to running PRs (fast) - using multiple selectors for maximum specificity */
+.mermaid svg path.edge-animation-fast,
+.mermaid svg g.edgePath path.edge-animation-fast,
+.mermaid svg g.edgePaths path.edge-animation-fast {
+    stroke: #e74c3c !important; /* Red color */
+    stroke-width: 3px !important;
+    animation: edgeAnimationFast 1s ease-in-out infinite !important;
+}
+
+/* Apply red color and animation to pending PRs (slow) - using multiple selectors for maximum specificity */
+.mermaid svg path.edge-animation-slow,
+.mermaid svg g.edgePath path.edge-animation-slow,
+.mermaid svg g.edgePaths path.edge-animation-slow {
+    stroke: #e74c3c !important; /* Red color (same as running) */
+    stroke-width: 2.5px !important;
+    animation: edgeAnimationSlow 2s ease-in-out infinite !important;
+}
+

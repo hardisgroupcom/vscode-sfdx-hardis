@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import { GitProvider } from "./gitProvider";
 import { Bitbucket } from "bitbucket";
 import type { Schema } from "bitbucket";
-import { ProviderDescription, PullRequest, PullRequestJob } from "./types";
+import { ProviderDescription, PullRequest, Job, JobStatus } from "./types";
 import { SecretsManager } from "../secretsManager";
 import { Logger } from "../../logger";
 
@@ -145,7 +145,7 @@ export class GitProviderBitbucket extends GitProvider {
   private async fetchLatestJobsForPrBitbucket(
     rawPr: any,
     pr: PullRequest,
-  ): Promise<PullRequestJob[]> {
+  ): Promise<Job[]> {
     if (!this.bitbucketClient || !this.workspace || !this.repoSlug) {
       return [];
     }
@@ -175,7 +175,7 @@ export class GitProviderBitbucket extends GitProvider {
       const pipeline = values[0];
       // Map pipeline steps to PullRequestJob if available
       const p: any = pipeline as any;
-      const converted: PullRequestJob[] = [
+      const converted: Job[] = [
         {
           name: String((p && p.target && p.target.ref_name) || p.id || ""),
           status: String(
@@ -183,7 +183,7 @@ export class GitProviderBitbucket extends GitProvider {
               p.state &&
               ((p.state.result && p.state.result.name) || p.state.name)) ||
               "",
-          ),
+          ) as Job["status"],
           webUrl:
             String(
               (p && p.links && p.links.html && p.links.html.href) || undefined,
@@ -197,6 +197,66 @@ export class GitProviderBitbucket extends GitProvider {
       return converted;
     } catch {
       return [];
+    }
+  }
+
+  async getJobsForBranchLatestCommit(
+    branchName: string,
+  ): Promise<{ jobs: Job[]; jobsStatus: JobStatus } | null> {
+    if (!this.bitbucketClient || !this.workspace || !this.repoSlug) {
+      return null;
+    }
+    try {
+      // Query pipelines for the branch
+      const response = await this.bitbucketClient.pipelines.list({
+        workspace: this.workspace,
+        repo_slug: this.repoSlug,
+        q: `target.ref_name = "${branchName}"`,
+        sort: "-created_on",
+      } as any);
+      const values =
+        response && response.data && response.data.values
+          ? response.data.values
+          : [];
+      if (!values || values.length === 0) {
+        return { jobs: [], jobsStatus: "unknown" };
+      }
+
+      // Filter out pipelines triggered by pull requests
+      // Only keep pipelines triggered by direct commits (trigger type: 'PUSH', 'MANUAL', 'SCHEDULE', etc.)
+      // Exclude pipelines with trigger type: 'PULL_REQUEST'
+      const commitPipelines = values.filter(
+        (p: any) => p.trigger?.type !== "PULL_REQUEST",
+      );
+
+      if (commitPipelines.length === 0) {
+        return { jobs: [], jobsStatus: "unknown" };
+      }
+
+      // Use the most recent commit-triggered pipeline
+      const pipeline = commitPipelines[0];
+      const p: any = pipeline as any;
+      const job: Job = {
+        name: String((p && p.target && p.target.ref_name) || p.id || ""),
+        status: String(
+          (p &&
+            p.state &&
+            ((p.state.result && p.state.result.name) || p.state.name)) ||
+            "",
+        ) as JobStatus,
+        webUrl:
+          String(
+            (p && p.links && p.links.html && p.links.html.href) || undefined,
+          ) || undefined,
+        updatedAt:
+          String((p && (p.updated_on || p.created_on)) || undefined) ||
+          undefined,
+        raw: p,
+      };
+      return { jobs: [job], jobsStatus: this.computeJobsStatus([job]) };
+    } catch (e) {
+      Logger.log(`Error fetching jobs for branch ${branchName}: ${String(e)}`);
+      return null;
     }
   }
 
