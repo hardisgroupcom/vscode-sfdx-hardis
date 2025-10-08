@@ -108,15 +108,17 @@ export class PipelineDataProvider {
 
   checkManualActionsFile(projectConfig: any): void {
     if (!projectConfig.manualActionsFileUrl) {
-        this.warnings.push(
-          "The Pipeline should have Manual Actions tracking file (for pre-deployment and post-deployment manual actions). It is recommended to define one in Pipeline Settings.",
-        );
+      this.warnings.push(
+        "The Pipeline should have Manual Actions tracking file (for pre-deployment and post-deployment manual actions). It is recommended to define one in Pipeline Settings.",
+      );
     }
   }
 
-  checkDevelopmentBranchExists(projectConfig: any,orgs: MajorOrg[]): void {
+  checkDevelopmentBranchExists(projectConfig: any, orgs: MajorOrg[]): void {
     if (projectConfig.developmentBranch) {
-      const devBranchExists = orgs.some(org => org.branchName === projectConfig.developmentBranch);
+      const devBranchExists = orgs.some(
+        (org) => org.branchName === projectConfig.developmentBranch,
+      );
       if (!devBranchExists) {
         this.warnings.push(
           `The configured development branch '${projectConfig.developmentBranch}' does not exist in the list of major branches. Either create it or update the configuration "developmentBranch".`,
@@ -125,10 +127,18 @@ export class PipelineDataProvider {
     }
   }
 
-  checkAvailableTargetBranchesExist(projectConfig: any,orgs: MajorOrg[]): void {
-    if (projectConfig.availableTargetBranches && Array.isArray(projectConfig.availableTargetBranches)) {
-      const orgBranchNames = orgs.map(org => org.branchName);
-      const invalidBranches = projectConfig.availableTargetBranches.filter((branch: string) => !orgBranchNames.includes(branch));
+  checkAvailableTargetBranchesExist(
+    projectConfig: any,
+    orgs: MajorOrg[],
+  ): void {
+    if (
+      projectConfig.availableTargetBranches &&
+      Array.isArray(projectConfig.availableTargetBranches)
+    ) {
+      const orgBranchNames = orgs.map((org) => org.branchName);
+      const invalidBranches = projectConfig.availableTargetBranches.filter(
+        (branch: string) => !orgBranchNames.includes(branch),
+      );
       if (invalidBranches.length > 0) {
         this.warnings.push(
           `The following branches listed in availableTargetBranches do not exist in the list of major branches: ${invalidBranches.join(", ")}. Either create them or update the configuration "availableTargetBranches".`,
@@ -136,7 +146,6 @@ export class PipelineDataProvider {
       }
     }
   }
-
 }
 
 // async function completeOrgsWithPullRequests(orgs: MajorOrg[]): Promise<MajorOrg[]> {
