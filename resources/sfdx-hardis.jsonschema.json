@@ -176,11 +176,11 @@
       "default": [
         {
           "title": "Feature",
-          "value": "feat",
+          "value": "feature",
           "description": "New feature, evolution of an existing feature... If you don't know, just select Feature"
         },
         {
-          "title": "Debug",
+          "title": "Fix",
           "value": "fix",
           "description": "A bug has been identified and you are the right person to solve it !"
         }
@@ -189,7 +189,7 @@
         [
           {
             "title": "Feature",
-            "value": "feat",
+            "value": "feature",
             "description": "New feature, evolution of an existing feature... If you don't know, just select Feature"
           },
           {
@@ -591,10 +591,10 @@
     },
     "developmentBranch": {
       "$id": "#/properties/developmentBranch",
-      "default": "developpement",
+      "default": "integration",
       "description": "When creating a new sfdx-hardis User Story, this git branch is used as base to create the feature/debug sub branch. The merge request will later have this branch as target.",
       "docUrl": "https://sfdx-hardis.cloudity.com/hardis/work/new/",
-      "examples": ["developpement", "dev_lot2", "hotfixes"],
+      "examples": ["integration", "dev_lot2", "hotfixes"],
       "title": "Default Pull Request/Merge Request target branch when you create a new User Story.",
       "type": "string"
     },
@@ -1345,6 +1345,14 @@
       "description": "Defines if sfdx-hardis will deploy in delta from minor to major branches.\nWhen active, Delta Deployments allow to deploy only the metadatas in the branch / User Story, and not the full sources of the SFDX project.\nNote: Even if activated, Delta Deployments will be applied only for Pull Requests from minor (features,hotfixes) to major branches (integration,preprod).",
       "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-delta-deployment/#delta-mode",
       "title": "Use Delta Deployment",
+      "type": "boolean"
+    },
+    "useDeltaDeploymentWithDependencies": {
+      "$id": "#/properties/useDeltaDeploymentWithDependencies",
+      "default": false,
+      "description": "Also deploy dependencies of the metadatas identified by delta deployment, to avoid broken deployments due to missing dependencies.\n Example: removed picklist value in a field, that is still used in a record type.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-delta-deployment/#delta-with-dependencies-beta",
+      "title": "Use Delta Deployment with dependencies",
       "type": "boolean"
     },
     "useSmartDeploymentTests": {
