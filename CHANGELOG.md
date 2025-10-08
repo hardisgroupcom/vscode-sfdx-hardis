@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [6.10.1] 2024-10-08
+
+- Adds pipeline configuration validations (developmentBranch and availableTargetBranches)
+
 ## [6.10.0] 2024-10-05
 
 - Pipeline view
