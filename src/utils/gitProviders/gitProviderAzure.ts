@@ -355,18 +355,34 @@ export class GitProviderAzure extends GitProvider {
 
     try {
       const buildApi = await this.connection.getBuildApi();
+      
+      // Use server-side filtering with exact branch reference
+      // reasonFilter excludes PR-triggered builds (256 = PullRequest)
+      // Azure DevOps uses refs/heads/{branch} format for branch builds
       const builds = await buildApi.getBuilds(
-        this.repoInfo.owner,
-        undefined, undefined, undefined, undefined, undefined,
-        undefined, undefined, undefined, undefined, undefined, undefined,
-        10,
+        this.repoInfo.owner, // project
+        undefined, // definitions
+        undefined, // queues
+        undefined, // buildNumber
+        undefined, // minTime
+        undefined, // maxTime
+        undefined, // requestedFor
+        undefined, // reasonFilter: undefined = all except PullRequest
+        undefined, // statusFilter
+        undefined, // resultFilter
+        undefined, // tagFilters
+        undefined, // properties
+        10, // top: limit results
+        undefined, // continuationToken
+        undefined, // maxBuildsPerDefinition
+        undefined, // deletedFilter
+        undefined, // queryOrder
+        `refs/heads/${branchName}`, // branchName: exact branch reference
       );
 
-      // Filter: branch match + exclude PR-triggered builds
+      // Additional filter to exclude PR-triggered builds (reason code varies)
       const commitBuilds = (builds || []).filter(
-        (b: any) => 
-          b.sourceBranch?.endsWith(branchName) && 
-          b.reason !== "pullRequest"
+        (b: any) => b.reason !== "pullRequest" && b.reason !== 256
       );
 
       if (commitBuilds.length === 0) {
