@@ -207,13 +207,16 @@ export default class PipelineConfig extends LightningElement {
               valueDisplay = value.map((obj, idx) => {
                 const kvPairs = Object.keys(obj).map((k) => ({
                   key: k,
-                  value: typeof obj[k] === "object" ? JSON.stringify(obj[k]) : String(obj[k]),
+                  value:
+                    typeof obj[k] === "object"
+                      ? JSON.stringify(obj[k])
+                      : String(obj[k]),
                 }));
                 return {
                   properties: kvPairs,
                   canMoveUp: idx > 0,
                   canMoveDown: idx < value.length - 1,
-                  index: idx
+                  index: idx,
                 };
               });
             } else {
@@ -287,12 +290,30 @@ export default class PipelineConfig extends LightningElement {
               valueDisplay.length > 0,
             hasValue,
             schemaItems: schema.items || null,
-            arrayObjectEditorOpen: this.arrayObjectEditorState[key]?.showForm || false,
-            arrayObjectEditIndex: this.arrayObjectEditorState[key]?.editIndex ?? -1,
-            arrayObjectFormData: this.arrayObjectEditorState[key]?.formData || {},
-            arrayObjectFormFields: this.getArrayObjectFormFields({ key, schemaItems: schema.items }),
-            arrayObjectDatatableColumns: isArrayObject ? this.getArrayObjectDatatableColumns({ key, schemaItems: schema.items, isEditMode: this.isEditMode }) : [],
-            arrayObjectDatatableData: isArrayObject ? this.getArrayObjectDatatableData({ key, value, schemaItems: schema.items }) : [],
+            arrayObjectEditorOpen:
+              this.arrayObjectEditorState[key]?.showForm || false,
+            arrayObjectEditIndex:
+              this.arrayObjectEditorState[key]?.editIndex ?? -1,
+            arrayObjectFormData:
+              this.arrayObjectEditorState[key]?.formData || {},
+            arrayObjectFormFields: this.getArrayObjectFormFields({
+              key,
+              schemaItems: schema.items,
+            }),
+            arrayObjectDatatableColumns: isArrayObject
+              ? this.getArrayObjectDatatableColumns({
+                  key,
+                  schemaItems: schema.items,
+                  isEditMode: this.isEditMode,
+                })
+              : [],
+            arrayObjectDatatableData: isArrayObject
+              ? this.getArrayObjectDatatableData({
+                  key,
+                  value,
+                  schemaItems: schema.items,
+                })
+              : [],
           });
         }
         return {
@@ -499,21 +520,21 @@ export default class PipelineConfig extends LightningElement {
     const formData = {};
     // Initialize form data with defaults from schema
     if (schema && schema.items && schema.items.properties) {
-      Object.keys(schema.items.properties).forEach(propKey => {
+      Object.keys(schema.items.properties).forEach((propKey) => {
         const propSchema = schema.items.properties[propKey];
         if (propSchema.default !== undefined) {
           formData[propKey] = propSchema.default;
-        } else if (propSchema.type === 'boolean') {
+        } else if (propSchema.type === "boolean") {
           formData[propKey] = false;
-        } else if (propSchema.type === 'string') {
-          formData[propKey] = '';
+        } else if (propSchema.type === "string") {
+          formData[propKey] = "";
         }
       });
     }
     this.arrayObjectEditorState[key] = {
       showForm: true,
       editIndex: -1,
-      formData: formData
+      formData: formData,
     };
     this.arrayObjectEditorState = { ...this.arrayObjectEditorState };
   }
@@ -526,7 +547,7 @@ export default class PipelineConfig extends LightningElement {
     this.arrayObjectEditorState[key] = {
       showForm: true,
       editIndex: index,
-      formData: JSON.parse(JSON.stringify(itemToEdit))
+      formData: JSON.parse(JSON.stringify(itemToEdit)),
     };
     this.arrayObjectEditorState = { ...this.arrayObjectEditorState };
   }
@@ -544,13 +565,13 @@ export default class PipelineConfig extends LightningElement {
     const key = event.target.dataset.key;
     const index = parseInt(event.target.dataset.index, 10);
     if (index === 0) return; // Already at top
-    
+
     let currentArray = [...(this.editedConfig[key] || this.config[key] || [])];
     // Swap with previous item
     const temp = currentArray[index];
     currentArray[index] = currentArray[index - 1];
     currentArray[index - 1] = temp;
-    
+
     this.editedConfig[key] = currentArray;
     this.editedConfig = { ...this.editedConfig };
   }
@@ -559,14 +580,14 @@ export default class PipelineConfig extends LightningElement {
     const key = event.target.dataset.key;
     const index = parseInt(event.target.dataset.index, 10);
     let currentArray = [...(this.editedConfig[key] || this.config[key] || [])];
-    
+
     if (index === currentArray.length - 1) return; // Already at bottom
-    
+
     // Swap with next item
     const temp = currentArray[index];
     currentArray[index] = currentArray[index + 1];
     currentArray[index + 1] = temp;
-    
+
     this.editedConfig[key] = currentArray;
     this.editedConfig = { ...this.editedConfig };
   }
@@ -578,9 +599,11 @@ export default class PipelineConfig extends LightningElement {
     const index = row._index;
 
     switch (action.name) {
-      case 'move_up':
+      case "move_up":
         if (row._canMoveUp) {
-          let currentArray = [...(this.editedConfig[key] || this.config[key] || [])];
+          let currentArray = [
+            ...(this.editedConfig[key] || this.config[key] || []),
+          ];
           const temp = currentArray[index];
           currentArray[index] = currentArray[index - 1];
           currentArray[index - 1] = temp;
@@ -590,9 +613,11 @@ export default class PipelineConfig extends LightningElement {
           this.config = { ...this.config, [key]: currentArray };
         }
         break;
-      case 'move_down':
+      case "move_down":
         if (row._canMoveDown) {
-          let currentArray = [...(this.editedConfig[key] || this.config[key] || [])];
+          let currentArray = [
+            ...(this.editedConfig[key] || this.config[key] || []),
+          ];
           const temp = currentArray[index];
           currentArray[index] = currentArray[index + 1];
           currentArray[index + 1] = temp;
@@ -602,18 +627,21 @@ export default class PipelineConfig extends LightningElement {
           this.config = { ...this.config, [key]: currentArray };
         }
         break;
-      case 'edit':
-        const currentArrayEdit = this.editedConfig[key] || this.config[key] || [];
+      case "edit":
+        const currentArrayEdit =
+          this.editedConfig[key] || this.config[key] || [];
         const itemToEdit = currentArrayEdit[index] || {};
         this.arrayObjectEditorState[key] = {
           showForm: true,
           editIndex: index,
-          formData: JSON.parse(JSON.stringify(itemToEdit))
+          formData: JSON.parse(JSON.stringify(itemToEdit)),
         };
         this.arrayObjectEditorState = { ...this.arrayObjectEditorState };
         break;
-      case 'delete':
-        let currentArrayDel = [...(this.editedConfig[key] || this.config[key] || [])];
+      case "delete":
+        let currentArrayDel = [
+          ...(this.editedConfig[key] || this.config[key] || []),
+        ];
         currentArrayDel.splice(index, 1);
         this.editedConfig[key] = currentArrayDel;
         this.editedConfig = { ...this.editedConfig };
@@ -628,15 +656,19 @@ export default class PipelineConfig extends LightningElement {
     const fieldName = event.target.dataset.fieldName;
     const fieldType = event.target.dataset.fieldType;
     let value = event.target.value;
-    
-    if (fieldType === 'boolean') {
+
+    if (fieldType === "boolean") {
       value = event.target.checked;
     } else if (event.detail && event.detail.value !== undefined) {
       value = event.detail.value;
     }
-    
+
     if (!this.arrayObjectEditorState[key]) {
-      this.arrayObjectEditorState[key] = { showForm: true, editIndex: -1, formData: {} };
+      this.arrayObjectEditorState[key] = {
+        showForm: true,
+        editIndex: -1,
+        formData: {},
+      };
     }
     this.arrayObjectEditorState[key].formData[fieldName] = value;
     this.arrayObjectEditorState = { ...this.arrayObjectEditorState };
@@ -646,7 +678,7 @@ export default class PipelineConfig extends LightningElement {
     const key = event.target.dataset.key;
     const state = this.arrayObjectEditorState[key];
     if (!state) return;
-    
+
     let currentArray = [...(this.editedConfig[key] || this.config[key] || [])];
     if (state.editIndex >= 0) {
       // Update existing item
@@ -657,11 +689,11 @@ export default class PipelineConfig extends LightningElement {
     }
     this.editedConfig[key] = currentArray;
     this.editedConfig = { ...this.editedConfig };
-    
+
     // Close form
     delete this.arrayObjectEditorState[key];
     this.arrayObjectEditorState = { ...this.arrayObjectEditorState };
-    
+
     // Force refresh of config to update datatable display
     this.config = { ...this.config, [key]: currentArray };
   }
@@ -674,47 +706,56 @@ export default class PipelineConfig extends LightningElement {
 
   // Helper to get datatable columns for array of objects
   getArrayObjectDatatableColumns(entry) {
-    if (!entry || !entry.schemaItems || !entry.schemaItems.properties) return [];
+    if (!entry || !entry.schemaItems || !entry.schemaItems.properties)
+      return [];
     const properties = entry.schemaItems.properties || {};
     const columns = [];
-    
+
     // Add columns for each property
     Object.keys(properties).forEach((fieldKey) => {
       const fieldSchema = properties[fieldKey];
-      let columnType = 'text';
-      
+      let columnType = "text";
+
       // Determine column type based on schema
-      if (fieldSchema.type === 'boolean') {
-        columnType = 'boolean';
-      } else if (fieldSchema.type === 'number') {
-        columnType = 'number';
-      } else if (fieldSchema.type === 'url') {
-        columnType = 'url';
+      if (fieldSchema.type === "boolean") {
+        columnType = "boolean";
+      } else if (fieldSchema.type === "number") {
+        columnType = "number";
+      } else if (fieldSchema.type === "url") {
+        columnType = "url";
       }
-      
+
       columns.push({
         label: fieldSchema.title || fieldKey,
         fieldName: fieldKey,
         type: columnType,
-        wrapText: true
+        wrapText: true,
       });
     });
-    
+
     // Add actions column only in edit mode
     if (entry.isEditMode) {
       columns.push({
-        type: 'action',
+        type: "action",
         typeAttributes: {
           rowActions: [
-            { label: 'Move Up', name: 'move_up', iconName: 'utility:chevronup' },
-            { label: 'Move Down', name: 'move_down', iconName: 'utility:chevrondown' },
-            { label: 'Edit', name: 'edit', iconName: 'utility:edit' },
-            { label: 'Delete', name: 'delete', iconName: 'utility:delete' }
-          ]
-        }
+            {
+              label: "Move Up",
+              name: "move_up",
+              iconName: "utility:chevronup",
+            },
+            {
+              label: "Move Down",
+              name: "move_down",
+              iconName: "utility:chevrondown",
+            },
+            { label: "Edit", name: "edit", iconName: "utility:edit" },
+            { label: "Delete", name: "delete", iconName: "utility:delete" },
+          ],
+        },
       });
     }
-    
+
     return columns;
   }
 
@@ -724,22 +765,22 @@ export default class PipelineConfig extends LightningElement {
     return entry.value.map((obj, idx) => {
       // Convert object to include proper boolean values and metadata
       const rowData = { ...obj };
-      
+
       // Ensure boolean values are actual booleans for datatable display
       if (entry.schemaItems && entry.schemaItems.properties) {
-        Object.keys(entry.schemaItems.properties).forEach(propKey => {
+        Object.keys(entry.schemaItems.properties).forEach((propKey) => {
           const propSchema = entry.schemaItems.properties[propKey];
-          if (propSchema.type === 'boolean' && rowData[propKey] !== undefined) {
+          if (propSchema.type === "boolean" && rowData[propKey] !== undefined) {
             rowData[propKey] = Boolean(rowData[propKey]);
           }
         });
       }
-      
+
       return {
         ...rowData,
         _index: idx,
         _canMoveUp: idx > 0,
-        _canMoveDown: idx < entry.value.length - 1
+        _canMoveDown: idx < entry.value.length - 1,
       };
     });
   }
@@ -750,43 +791,60 @@ export default class PipelineConfig extends LightningElement {
     const fields = [];
     const properties = entry.schemaItems.properties;
     const required = entry.schemaItems.required || [];
-    
+
     // Get examples from schema for placeholders
     const schemaExamples = this.configSchema[entry.key]?.examples;
     let exampleItem = null;
-    if (schemaExamples && Array.isArray(schemaExamples) && schemaExamples.length > 0 && Array.isArray(schemaExamples[0]) && schemaExamples[0].length > 0) {
+    if (
+      schemaExamples &&
+      Array.isArray(schemaExamples) &&
+      schemaExamples.length > 0 &&
+      Array.isArray(schemaExamples[0]) &&
+      schemaExamples[0].length > 0
+    ) {
       exampleItem = schemaExamples[0][0]; // Get first item from first example array
     }
-    
-    Object.keys(properties).forEach(propKey => {
+
+    Object.keys(properties).forEach((propKey) => {
       const propSchema = properties[propKey];
       const formData = this.arrayObjectEditorState[entry.key]?.formData || {};
-      const value = formData[propKey] !== undefined ? formData[propKey] : (propSchema.default || '');
-      
+      const value =
+        formData[propKey] !== undefined
+          ? formData[propKey]
+          : propSchema.default || "";
+
       // Get example value for placeholder
-      const exampleValue = exampleItem && exampleItem[propKey] ? String(exampleItem[propKey]) : '';
-      const placeholder = exampleValue ? `ex: ${exampleValue}` : (propSchema.description || '');
-      
+      const exampleValue =
+        exampleItem && exampleItem[propKey] ? String(exampleItem[propKey]) : "";
+      const placeholder = exampleValue
+        ? `ex: ${exampleValue}`
+        : propSchema.description || "";
+
       fields.push({
         key: propKey,
         label: propSchema.title || propKey,
-        description: propSchema.description || '',
+        description: propSchema.description || "",
         placeholder: placeholder,
         type: propSchema.type,
         required: required.includes(propKey),
         value: value,
         enum: propSchema.enum || null,
         enumNames: propSchema.enumNames || null,
-        options: propSchema.enum ? propSchema.enum.map((opt, idx) => ({
-          label: propSchema.enumNames && propSchema.enumNames[idx] ? propSchema.enumNames[idx] : String(opt),
-          value: String(opt)
-        })) : null,
+        options: propSchema.enum
+          ? propSchema.enum.map((opt, idx) => ({
+              label:
+                propSchema.enumNames && propSchema.enumNames[idx]
+                  ? propSchema.enumNames[idx]
+                  : String(opt),
+              value: String(opt),
+            }))
+          : null,
         isEnum: !!propSchema.enum,
-        isBoolean: propSchema.type === 'boolean',
-        isText: propSchema.type === 'string' && !propSchema.enum,
+        isBoolean: propSchema.type === "boolean",
+        isText: propSchema.type === "string" && !propSchema.enum,
       });
     });
-    
+
     return fields;
   }
 

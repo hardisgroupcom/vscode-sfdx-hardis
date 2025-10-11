@@ -335,7 +335,7 @@ export class SfdxHardisConfigHelper {
     // Convert string booleans to actual booleans based on schema
     await SfdxHardisConfigHelper.loadSchema();
     const configWithProperTypes = this.convertConfigTypes(data.config);
-    
+
     const globalPath = path.join(this.workspaceRoot, "config/.sfdx-hardis.yml");
     if (data.isBranch && data.branchName) {
       const branchPath = path.join(
@@ -401,54 +401,60 @@ export class SfdxHardisConfigHelper {
 
   private convertConfigTypes(config: SfdxHardisConfig): SfdxHardisConfig {
     const converted: SfdxHardisConfig = { ...config };
-    
+
     // Convert types based on already-loaded schema in allConfigFields
     for (const [key, value] of Object.entries(converted)) {
-      const field = SfdxHardisConfigHelper.allConfigFields.find(f => f.key === key);
+      const field = SfdxHardisConfigHelper.allConfigFields.find(
+        (f) => f.key === key,
+      );
       if (!field) {
         continue;
       }
-      
+
       const schemaEntry = field.schema as any; // Cast to access full schema properties
-      
+
       // Handle arrays of objects (like commandsPreDeploy, commandsPostDeploy)
-      if (schemaEntry.type === 'array' && schemaEntry.items?.type === 'object' && Array.isArray(value)) {
+      if (
+        schemaEntry.type === "array" &&
+        schemaEntry.items?.type === "object" &&
+        Array.isArray(value)
+      ) {
         converted[key] = value.map((item: any) => {
           const convertedItem: any = { ...item };
-          
+
           // Convert boolean fields in array items
           if (schemaEntry.items?.properties) {
             for (const [propKey, propValue] of Object.entries(convertedItem)) {
               const propSchema = schemaEntry.items.properties[propKey];
-              if (propSchema?.type === 'boolean') {
+              if (propSchema?.type === "boolean") {
                 // Convert string 'true'/'false' or any truthy/falsy value to actual boolean
-                if (typeof propValue === 'string') {
-                  convertedItem[propKey] = propValue === 'true';
+                if (typeof propValue === "string") {
+                  convertedItem[propKey] = propValue === "true";
                 } else {
                   convertedItem[propKey] = Boolean(propValue);
                 }
               }
             }
           }
-          
+
           return convertedItem;
         });
       }
       // Handle top-level boolean fields
-      else if (schemaEntry.type === 'boolean') {
-        if (typeof value === 'string') {
-          converted[key] = value === 'true';
+      else if (schemaEntry.type === "boolean") {
+        if (typeof value === "string") {
+          converted[key] = value === "true";
         } else {
           converted[key] = Boolean(value);
         }
       }
       // Handle number fields
-      else if (schemaEntry.type === 'number' && typeof value === 'string') {
+      else if (schemaEntry.type === "number" && typeof value === "string") {
         const num = parseFloat(value);
         converted[key] = isNaN(num) ? null : num;
       }
     }
-    
+
     return converted;
   }
 }
