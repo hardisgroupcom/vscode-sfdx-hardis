@@ -2,8 +2,11 @@ import sortArray from "sort-array";
 import { prettifyFieldName } from "../stringUtils";
 import { isMajorBranch, isPreprod, isProduction } from "../orgConfigUtils";
 import { PullRequest, JobStatus } from "../gitProviders/types";
+import { GitProvider } from "../gitProviders/gitProvider";
 
 export class BranchStrategyMermaidBuilder {
+  private isAuthenticated: boolean = false;
+  private gitProvider: GitProvider | null = null;
   private branchesAndOrgs: any[];
   private openPullRequests: PullRequest[] = [];
   private gitBranches: any[] = [];
@@ -15,9 +18,11 @@ export class BranchStrategyMermaidBuilder {
   private retrofitLinks: any[] = [];
   private mermaidLines: string[] = [];
 
-  constructor(branchesAndOrgs: any[], openPullRequests: PullRequest[] = []) {
+  constructor(branchesAndOrgs: any[], isAuthenticated: boolean, openPullRequests: PullRequest[] = [], gitProvider: GitProvider | null = null) {
     this.branchesAndOrgs = branchesAndOrgs;
     this.openPullRequests = openPullRequests;
+    this.isAuthenticated = isAuthenticated;
+    this.gitProvider = gitProvider;
   }
 
   /**
@@ -119,13 +124,30 @@ export class BranchStrategyMermaidBuilder {
         // Use gitMerge (thick blue) if either source OR target is a major branch
         const isMajorLink = isSourceMajorBranch || isTargetMajorBranch;
 
+        // Determine link label based on PR status
+        let linkLabel: string;
+        if (activePR) {
+          linkLabel = `#${activePR.number || activePR.id} ${this.getPrStatusEmoji(activePR.jobsStatus)}`;
+        }
+        else if (this.isAuthenticated && this.gitProvider) {
+          // Generate "Create PR" link when authenticated and no PR exists
+          const createPrUrl = this.gitProvider.getCreatePullRequestUrl(branchAndOrg.branchName, mergeTarget);
+          if (createPrUrl) {
+            linkLabel = `<a href='${createPrUrl}' target='_blank' style='color:#0176D3;font-weight:bold;text-decoration:underline;'>Create PR</a>`;
+          }
+          else {
+            linkLabel = "No PR";
+          }
+        }
+        else {
+          linkLabel = this.isAuthenticated ? "No PR" : "Merge";
+        }
+
         this.gitLinks.push({
           source: nodeName,
           target: mergeTarget + "Branch",
           type: isMajorLink ? "gitMerge" : "gitFeatureMerge",
-          label: activePR
-            ? `#${activePR.number || activePR.id} ${this.getPrStatusEmoji(activePR.jobsStatus)}`
-            : "No PR",
+          label: linkLabel,
           activePR: activePR,
         });
       }
@@ -186,7 +208,7 @@ export class BranchStrategyMermaidBuilder {
         const prLinkLabel =
           pullRequest.number || pullRequest.id
             ? `#${pullRequest.number || pullRequest.id} ${this.getPrStatusEmoji(pullRequest.jobsStatus)}`
-            : "No PR";
+            : this.isAuthenticated ? "No PR" : "Merge";
         this.gitLinks.push({
           source: nodeName,
           target: pullRequest.targetBranch + "Branch",

@@ -280,4 +280,15 @@ export class GitProviderGitlab extends GitProvider {
       jobsStatus: "unknown",
     };
   }
+
+  getCreatePullRequestUrl(
+    sourceBranch: string,
+    targetBranch: string,
+  ): string | null {
+    if (!this.repoInfo?.webUrl) {
+      return null;
+    }
+    // GitLab: https://gitlab.com/owner/repo/-/merge_requests/new?merge_request[source_branch]=source&merge_request[target_branch]=target
+    return `${this.repoInfo.webUrl}/-/merge_requests/new?merge_request[source_branch]=${encodeURIComponent(sourceBranch)}&merge_request[target_branch]=${encodeURIComponent(targetBranch)}`;
+  }
 }
