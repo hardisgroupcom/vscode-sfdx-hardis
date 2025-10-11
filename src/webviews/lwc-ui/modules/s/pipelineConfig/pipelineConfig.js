@@ -276,7 +276,9 @@ export default class PipelineConfig extends LightningElement {
             optionsLwc,
             docUrl,
             hasDocUrl,
-            columnClass: isArrayObject ? 'slds-col' : 'slds-col slds-size_9-of-12',
+            columnClass: isArrayObject
+              ? "slds-col"
+              : "slds-col slds-size_9-of-12",
             hasArrayEnumValues:
               isArrayEnum &&
               Array.isArray(valueDisplay) &&
@@ -714,13 +716,13 @@ export default class PipelineConfig extends LightningElement {
 
     // Get data to calculate column widths
     const data = this.getArrayObjectDatatableData(entry);
-    
+
     // Calculate max content length for each field
     const fieldMaxLengths = {};
     Object.keys(properties).forEach((fieldKey) => {
       const labelLength = (properties[fieldKey].title || fieldKey).length;
       let maxDataLength = labelLength;
-      
+
       // Check data content lengths
       if (data && data.length > 0) {
         data.forEach((row) => {
@@ -731,21 +733,24 @@ export default class PipelineConfig extends LightningElement {
           }
         });
       }
-      
+
       // Use character length for proportional calculation, with diminishing returns for very long content
       // This prevents one very long column from dominating all space
       fieldMaxLengths[fieldKey] = Math.min(maxDataLength, 50); // Cap at 50 chars for calculation
     });
 
     // Calculate total relative size
-    const totalRelativeSize = Object.values(fieldMaxLengths).reduce((sum, len) => sum + len, 0);
-    
+    const totalRelativeSize = Object.values(fieldMaxLengths).reduce(
+      (sum, len) => sum + len,
+      0,
+    );
+
     // Get actual container width from the component's parent element
-    const container = this.template.querySelector('.slds-card__body');
+    const container = this.template.querySelector(".slds-card__body");
     const containerWidth = container ? container.offsetWidth : 1200; // Fallback to 1200 if not found
     const actionsWidth = entry.isEditMode ? 120 : 0;
     const numColumns = Object.keys(properties).length;
-    const tableMarginsPadding = 100 + (numColumns * 10); // More padding for more columns
+    const tableMarginsPadding = 100 + numColumns * 10; // More padding for more columns
     const availableWidth = containerWidth - actionsWidth - tableMarginsPadding;
 
     // Calculate initial column widths proportionally
@@ -754,9 +759,10 @@ export default class PipelineConfig extends LightningElement {
 
     Object.keys(properties).forEach((fieldKey) => {
       const fieldLength = fieldMaxLengths[fieldKey];
-      let widthPixels = totalRelativeSize > 0 
-        ? (fieldLength / totalRelativeSize) * availableWidth
-        : availableWidth / numColumns;
+      let widthPixels =
+        totalRelativeSize > 0
+          ? (fieldLength / totalRelativeSize) * availableWidth
+          : availableWidth / numColumns;
 
       // Ensure minimum width based on column type
       const fieldSchema = properties[fieldKey];
@@ -796,7 +802,10 @@ export default class PipelineConfig extends LightningElement {
       if (fieldSchema.type === "boolean") {
         minWidth = 100;
       }
-      const finalWidth = Math.max(minWidth, Math.round(columnWidths[fieldKey] * scaleFactor));
+      const finalWidth = Math.max(
+        minWidth,
+        Math.round(columnWidths[fieldKey] * scaleFactor),
+      );
 
       columns.push({
         label: fieldSchema.title || fieldKey,
