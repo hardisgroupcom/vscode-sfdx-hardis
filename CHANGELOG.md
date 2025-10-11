@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Pipeline Settings: Allow to configure commands to run before deployment in pipeline configuration 
+
 ## [6.10.2] 2024-10-11
 
 - Adds create PR URL to branch strategy diagram
