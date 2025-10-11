@@ -12,28 +12,29 @@ import { SecretsManager } from "../secretsManager";
 
 /**
  * Azure DevOps Git Provider
- * 
+ *
  * Authentication:
  * - OAuth (Microsoft Account): Works for users in the same tenant
  * - Personal Access Token (PAT): Required for guest users or cross-tenant access
- * 
+ *
  * Guest User Issue:
  * When a user from a different Azure AD tenant (e.g., user@external.com accessing an org
  * in different-tenant.com), OAuth tokens may fail with "TF400813: User is not authorized"
  * even though authentication succeeds. This is because the OAuth token doesn't grant
  * proper permissions for guest users.
- * 
+ *
  * Solution:
  * The initialize() method will:
  * 1. First check for a stored PAT in VS Code secrets
  * 2. If found, use PAT authentication
  * 3. Otherwise, fall back to OAuth
- * 
+ *
  * The authenticate() method offers users the choice between OAuth and PAT.
  */
 export class GitProviderAzure extends GitProvider {
-  private static readonly AZURE_DEVOPS_SCOPE = '499b84ac-1321-427f-aa17-267ca6975798/.default';
-  
+  private static readonly AZURE_DEVOPS_SCOPE =
+    "499b84ac-1321-427f-aa17-267ca6975798/.default";
+
   connection: azdev.WebApi | null = null;
   gitApi: GitApi | null = null;
 
@@ -54,41 +55,44 @@ export class GitProviderAzure extends GitProvider {
   async authenticate(): Promise<boolean | null> {
     const choice = await vscode.window.showQuickPick(
       [
-        { label: 'Use Microsoft Account (OAuth)', value: 'oauth' },
-        { label: 'Use Personal Access Token (PAT)', value: 'pat' }
+        { label: "Use Microsoft Account (OAuth)", value: "oauth" },
+        { label: "Use Personal Access Token (PAT)", value: "pat" },
       ],
       {
-        placeHolder: 'How would you like to authenticate to Azure DevOps?',
-        ignoreFocusOut: true
-      }
+        placeHolder: "How would you like to authenticate to Azure DevOps?",
+        ignoreFocusOut: true,
+      },
     );
 
     if (!choice) {
       return null;
     }
 
-    if (choice.value === 'pat') {
+    if (choice.value === "pat") {
       return await this.authenticateWithPAT();
     }
-    
+
     return await this.authenticateWithOAuth();
   }
 
   private async authenticateWithPAT(): Promise<boolean | null> {
     const orgUrl = this.buildOrganizationUrl();
-    const patUrl = orgUrl ? `${orgUrl}/_usersSettings/tokens` : 'https://dev.azure.com/_usersSettings/tokens';
-    
+    const patUrl = orgUrl
+      ? `${orgUrl}/_usersSettings/tokens`
+      : "https://dev.azure.com/_usersSettings/tokens";
+
     const token = await vscode.window.showInputBox({
-      prompt: 'Enter your Azure DevOps Personal Access Token with Code (Read & Write) scope',
+      prompt:
+        "Enter your Azure DevOps Personal Access Token with Code (Read & Write) scope",
       ignoreFocusOut: true,
       password: true,
-      placeHolder: `Create a PAT at: ${patUrl}`
+      placeHolder: `Create a PAT at: ${patUrl}`,
     });
-    
+
     if (!token) {
       return null;
     }
-    
+
     await SecretsManager.setSecret(this.hostKey + "_TOKEN", token);
     await this.initialize();
     return this.isActive;
@@ -100,18 +104,18 @@ export class GitProviderAzure extends GitProvider {
       [GitProviderAzure.AZURE_DEVOPS_SCOPE],
       { forceNewSession: true },
     );
-    
+
     if (!session?.accessToken) {
       return false;
     }
-    
+
     await this.initialize();
     return this.isActive;
   }
 
   async initialize() {
     const pat = await SecretsManager.getSecret(this.hostKey + "_TOKEN");
-    const authHandler = pat 
+    const authHandler = pat
       ? azdev.getPersonalAccessTokenHandler(pat)
       : await this.getOAuthHandler();
 
@@ -125,17 +129,18 @@ export class GitProviderAzure extends GitProvider {
     }
 
     this.connection = new azdev.WebApi(orgUrl, authHandler);
-    
+
     try {
       this.gitApi = await this.connection.getGitApi();
-      
+
       // Validate token by requesting repository info
       await this.gitApi.getRepository(this.repoInfo.repo, this.repoInfo.owner);
-      
+
       this.isActive = true;
-    } 
-    catch (e: any) {
-      Logger.log(`Azure DevOps authentication failed: ${e?.message || String(e)}`);
+    } catch (e: any) {
+      Logger.log(
+        `Azure DevOps authentication failed: ${e?.message || String(e)}`,
+      );
       this.gitApi = null;
       this.isActive = false;
     }
@@ -147,39 +152,43 @@ export class GitProviderAzure extends GitProvider {
       [GitProviderAzure.AZURE_DEVOPS_SCOPE],
       { createIfNone: false },
     );
-    
-    return session?.accessToken ? azdev.getBearerHandler(session.accessToken) : null;
+
+    return session?.accessToken
+      ? azdev.getBearerHandler(session.accessToken)
+      : null;
   }
 
   private buildOrganizationUrl(): string | null {
     if (!this.repoInfo?.webUrl) {
       return null;
     }
-    
+
     // Extract organization from webUrl (format: https://host/org/project/_git/repo)
     const match = this.repoInfo.webUrl.match(/^https?:\/\/([^/]+)\/([^/]+)/);
     if (!match) {
       return null;
     }
-    
+
     const [, host, organization] = match;
     return `https://${host}/${organization}`;
   }
 
   async listOpenPullRequests(): Promise<PullRequest[]> {
-    return this.listPullRequestsWithCriteria({ status: PullRequestStatus.Active });
+    return this.listPullRequestsWithCriteria({
+      status: PullRequestStatus.Active,
+    });
   }
 
   async listPullRequestsForBranch(branchName: string): Promise<PullRequest[]> {
     return this.listPullRequestsWithCriteria(
       { sourceRefName: `refs/heads/${branchName}` },
-      branchName
+      branchName,
     );
   }
 
   private async listPullRequestsWithCriteria(
     searchCriteria: any,
-    branchName: string = ""
+    branchName: string = "",
   ): Promise<PullRequest[]> {
     if (!this.repoInfo || !this.gitApi) {
       return [];
@@ -192,8 +201,7 @@ export class GitProviderAzure extends GitProvider {
         this.repoInfo.owner,
       );
       return await this.convertAndEnrichPullRequests(prs || [], branchName);
-    } 
-    catch {
+    } catch {
       return [];
     }
   }
@@ -212,8 +220,7 @@ export class GitProviderAzure extends GitProvider {
         try {
           pr.jobs = await this.fetchLatestJobsForPullRequest(rawPr, pr);
           pr.jobsStatus = this.computeJobsStatus(pr.jobs);
-        } 
-        catch (e) {
+        } catch (e) {
           Logger.log(`Error fetching jobs for PR #${pr.number}: ${String(e)}`);
         }
         return pr;
@@ -231,7 +238,7 @@ export class GitProviderAzure extends GitProvider {
 
     try {
       const buildApi = await this.connection.getBuildApi();
-      
+
       // Get builds triggered by this specific pull request
       // For PR builds, Azure DevOps uses refs/pull/{prId}/merge as the source branch
       // Use reasonFilter to only get PR-triggered builds
@@ -259,17 +266,18 @@ export class GitProviderAzure extends GitProvider {
       // Filter builds that match this specific PR
       const matchingBuilds = (builds || []).filter((b: any) => {
         // Check if build was triggered by this PR
-        const buildPrId = b.triggerInfo?.['pr.number'] || b.triggerInfo?.pullRequestId;
+        const buildPrId =
+          b.triggerInfo?.["pr.number"] || b.triggerInfo?.pullRequestId;
         if (buildPrId && pr.number) {
           return String(buildPrId) === String(pr.number);
         }
-        
+
         // Fallback: match by commit ID
         const commitId = rawPr.lastMergeSourceCommit?.commitId;
         if (commitId && b.sourceVersion) {
           return b.sourceVersion.toLowerCase() === commitId.toLowerCase();
         }
-        
+
         return false;
       });
 
@@ -280,29 +288,32 @@ export class GitProviderAzure extends GitProvider {
 
       // Return the most recent build
       const build = matchingBuilds[0];
-      return [{
-        name: build.definition?.name || String(build.id || ""),
-        status: this.mapAzureBuildStatus(build),
-        webUrl: build._links?.web?.href,
-        updatedAt: (build.finishTime || build.queueTime)?.toISOString(),
-        raw: build,
-      }];
-    } 
-    catch(e: any) {
-      Logger.log(`Error fetching jobs for PR #${pr.number}: ${e?.message || String(e)}`);
+      return [
+        {
+          name: build.definition?.name || String(build.id || ""),
+          status: this.mapAzureBuildStatus(build),
+          webUrl: build._links?.web?.href,
+          updatedAt: (build.finishTime || build.queueTime)?.toISOString(),
+          raw: build,
+        },
+      ];
+    } catch (e: any) {
+      Logger.log(
+        `Error fetching jobs for PR #${pr.number}: ${e?.message || String(e)}`,
+      );
       return [];
     }
   }
 
   /**
    * Maps Azure DevOps build status and result to unified JobStatus
-   * 
+   *
    * Build Status (indicates current state):
    * - None (0), InProgress (1), Completed (2), Cancelling (4), Postponed (8), NotStarted (32), All (47)
-   * 
+   *
    * Build Result (indicates final outcome, only set when status is Completed):
    * - None (0), Succeeded (2), PartiallySucceeded (4), Failed (8), Canceled (32)
-   * 
+   *
    * Mapping logic (aggressive failure detection):
    * - InProgress → 'running'
    * - Completed + Succeeded → 'success'
@@ -317,30 +328,32 @@ export class GitProviderAzure extends GitProvider {
   private mapAzureBuildStatus(build: any): JobStatus {
     const status = build.status;
     const result = build.result;
-    
+
     // InProgress - build is running
     if (status === 1) {
       return "running";
     }
-    
+
     // NotStarted or Postponed - build is queued/waiting
     if (status === 8 || status === 32) {
       return "pending";
     }
-    
+
     // Completed - check result for final outcome
     if (status === 2) {
-      if (result === 2) { // Succeeded
+      if (result === 2) {
+        // Succeeded
         return "success";
       }
-      if (result === 4) { // PartiallySucceeded
+      if (result === 4) {
+        // PartiallySucceeded
         return "success";
       }
       // Any other result for completed builds is a failure
       // This includes: Failed (8), Canceled (32), None (0), or unknown values
       return "failed";
     }
-    
+
     // Cancelling or any other status is treated as failure
     // This includes: Cancelling (4), None (0), All (47), or unknown values
     return "failed";
@@ -355,7 +368,7 @@ export class GitProviderAzure extends GitProvider {
 
     try {
       const buildApi = await this.connection.getBuildApi();
-      
+
       // Use server-side filtering with exact branch reference
       // reasonFilter excludes PR-triggered builds (256 = PullRequest)
       // Azure DevOps uses refs/heads/{branch} format for branch builds
@@ -382,7 +395,7 @@ export class GitProviderAzure extends GitProvider {
 
       // Additional filter to exclude PR-triggered builds (reason code varies)
       const commitBuilds = (builds || []).filter(
-        (b: any) => b.reason !== "pullRequest" && b.reason !== 256
+        (b: any) => b.reason !== "pullRequest" && b.reason !== 256,
       );
 
       if (commitBuilds.length === 0) {
@@ -397,10 +410,9 @@ export class GitProviderAzure extends GitProvider {
         updatedAt: (build.finishTime || build.queueTime)?.toISOString(),
         raw: build,
       };
-      
+
       return { jobs: [job], jobsStatus: this.computeJobsStatus([job]) };
-    } 
-    catch (e) {
+    } catch (e) {
       Logger.log(`Error fetching jobs for branch ${branchName}: ${String(e)}`);
       return null;
     }
@@ -458,7 +470,7 @@ export class GitProviderAzure extends GitProvider {
    */
   private mapAzureStatusToState(pr: GitPullRequest): PullRequest["state"] {
     const status = pr.status;
-        if (status === PullRequestStatus.Active) {
+    if (status === PullRequestStatus.Active) {
       return "open";
     }
     if (status === PullRequestStatus.Abandoned) {
@@ -467,7 +479,7 @@ export class GitProviderAzure extends GitProvider {
     if (status === PullRequestStatus.Completed) {
       // Check if PR was actually merged or just closed
       // mergeStatus indicates if merge succeeded
-      if (pr.mergeStatus === "succeeded" as any) {
+      if (pr.mergeStatus === ("succeeded" as any)) {
         return "merged";
       }
       return "closed";
@@ -480,7 +492,11 @@ export class GitProviderAzure extends GitProvider {
     sourceBranch: string,
     targetBranch: string,
   ): string | null {
-    if (!this.repoInfo?.webUrl || !this.repoInfo?.owner || !this.repoInfo?.repo) {
+    if (
+      !this.repoInfo?.webUrl ||
+      !this.repoInfo?.owner ||
+      !this.repoInfo?.repo
+    ) {
       return null;
     }
     // Azure DevOps: https://dev.azure.com/org/project/_git/repo/pullrequestcreate?sourceRef=source&targetRef=target

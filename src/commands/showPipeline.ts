@@ -133,7 +133,8 @@ export function registerShowPipeline(commands: Commands) {
         {
           openPullRequests: openPullRequests,
           browseGitProvider: browseGitProvider,
-        });
+        },
+      );
       const prButtonInfo: any = {};
       let repoPlatformLabel = "";
       if (gitProvider?.repoInfo) {

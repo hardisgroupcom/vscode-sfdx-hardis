@@ -18,7 +18,12 @@ export class BranchStrategyMermaidBuilder {
   private retrofitLinks: any[] = [];
   private mermaidLines: string[] = [];
 
-  constructor(branchesAndOrgs: any[], isAuthenticated: boolean, openPullRequests: PullRequest[] = [], gitProvider: GitProvider | null = null) {
+  constructor(
+    branchesAndOrgs: any[],
+    isAuthenticated: boolean,
+    openPullRequests: PullRequest[] = [],
+    gitProvider: GitProvider | null = null,
+  ) {
     this.branchesAndOrgs = branchesAndOrgs;
     this.openPullRequests = openPullRequests;
     this.isAuthenticated = isAuthenticated;
@@ -128,18 +133,18 @@ export class BranchStrategyMermaidBuilder {
         let linkLabel: string;
         if (activePR) {
           linkLabel = `#${activePR.number || activePR.id} ${this.getPrStatusEmoji(activePR.jobsStatus)}`;
-        }
-        else if (this.isAuthenticated && this.gitProvider) {
+        } else if (this.isAuthenticated && this.gitProvider) {
           // Generate "Create PR" link when authenticated and no PR exists
-          const createPrUrl = this.gitProvider.getCreatePullRequestUrl(branchAndOrg.branchName, mergeTarget);
+          const createPrUrl = this.gitProvider.getCreatePullRequestUrl(
+            branchAndOrg.branchName,
+            mergeTarget,
+          );
           if (createPrUrl) {
             linkLabel = `<a href='${createPrUrl}' target='_blank' style='color:#0176D3;font-weight:bold;text-decoration:underline;'>Create PR</a>`;
-          }
-          else {
+          } else {
             linkLabel = "No PR";
           }
-        }
-        else {
+        } else {
           linkLabel = this.isAuthenticated ? "No PR" : "Merge";
         }
 
@@ -208,7 +213,9 @@ export class BranchStrategyMermaidBuilder {
         const prLinkLabel =
           pullRequest.number || pullRequest.id
             ? `#${pullRequest.number || pullRequest.id} ${this.getPrStatusEmoji(pullRequest.jobsStatus)}`
-            : this.isAuthenticated ? "No PR" : "Merge";
+            : this.isAuthenticated
+              ? "No PR"
+              : "Merge";
         this.gitLinks.push({
           source: nodeName,
           target: pullRequest.targetBranch + "Branch",
