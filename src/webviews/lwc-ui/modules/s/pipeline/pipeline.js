@@ -229,14 +229,16 @@ export default class Pipeline extends LightningElement {
         : container
           ? container.getBoundingClientRect()
           : null;
-      // Prefer datatable's clientWidth when available (excludes scrollbar) and use smaller padding reservation
+      // Prefer datatable's clientWidth when available (excludes scrollbar)
+      // Subtract extra padding to account for internal padding and prevent horizontal scrollbar
       const rawWidth =
         dt && dt.clientWidth
           ? dt.clientWidth
           : rect && rect.width
             ? rect.width
             : null;
-      const available = rawWidth ? Math.max(rawWidth, 600) : 800;
+      // Reserve space for internal padding/margins to prevent scrollbar
+      const available = rawWidth ? Math.max(rawWidth - 5, 600) : 800;
 
       // Minimum widths
       const minNumber = 80;
