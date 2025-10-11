@@ -76,23 +76,27 @@ export class GitProvider {
     let repo: string;
 
     // First try Azure DevOps specific pattern (handles _git path)
+    // Match: https://[username@]host/org/project/_git/repo
     const azureMatch = remoteUrl.match(
-      /^https:\/\/([^/]+)\/([^/]+)\/([^/]+)\/_git\/([^/]+)(?:\.git)?$/,
+      /^https:\/\/(?:[^@]+@)?([^/]+)\/([^/]+)\/([^/]+)\/_git\/([^/]+)(?:\.git)?$/,
     );
     if (azureMatch) {
-      // url: https://host/org/project/_git/repo
-      host = azureMatch[1];
-      owner = azureMatch[2];
+      // url: https://[username@]host/org/project/_git/repo
+      // For Azure DevOps, we need the project name for API calls
+      // Store: host (without username), project (as owner since API expects project), repo
+      host = azureMatch[1]; // host without username
+      owner = azureMatch[3]; // project name (API expects this)
       repo = azureMatch[4];
     } else {
       // Generic pattern: capture host and the full path after host
+      // Also handle optional username: https://[username@]host or git@host
       const genericMatch = remoteUrl.match(
-        /^(?:https:\/\/|git@)([^/:]+)[/:](.+?)(?:\.git)?$/,
+        /^(?:https:\/\/(?:[^@]+@)?|git@)([^/:]+)[/:](.+?)(?:\.git)?$/,
       );
       if (!genericMatch) {
         return null;
       }
-      host = genericMatch[1];
+      host = genericMatch[1]; // host without username
       const fullPath = genericMatch[2];
       const parts = fullPath.split("/").filter(Boolean);
       if (parts.length < 2) {
@@ -150,8 +154,14 @@ export class GitProvider {
       }
       case "azure": {
         // Azure DevOps: https://dev.azure.com/org/project/_git/repo
-        // But homepage is usually https://dev.azure.com/org/project/_git/repo
-        webUrl = `https://${host}/${owner}/${azureMatch ? azureMatch[3] + "/_git/" + repo : "_git/" + repo}`;
+        // webUrl needs both organization and project
+        if (azureMatch) {
+          const organization = azureMatch[2];
+          const project = azureMatch[3];
+          webUrl = `https://${host}/${organization}/${project}/_git/${repo}`;
+        } else {
+          webUrl = `https://${host}/${owner}/_git/${repo}`;
+        }
         break;
       }
       default: {

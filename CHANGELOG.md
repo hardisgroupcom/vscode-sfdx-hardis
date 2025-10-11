@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Adds create PR URL to branch strategy diagram
+- Allow to connect to Azure with Personal Access Token (only way when your are guest user on another tenant)
 
 ## [6.10.1] 2024-10-08
 
