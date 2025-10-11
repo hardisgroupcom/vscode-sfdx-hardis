@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [6.10.2] 2024-10-11
+
 - Adds create PR URL to branch strategy diagram
 - Allow to connect to Azure with Personal Access Token (only way when your are guest user on another tenant)
 - Fix issue when fetching PRs and builds for PRs in Azure DevOps
