@@ -231,42 +231,121 @@ export class GitProviderAzure extends GitProvider {
 
     try {
       const buildApi = await this.connection.getBuildApi();
-      const commitId = rawPr.lastMergeSourceCommit?.commitId;
       
+      // Get builds triggered by this specific pull request
+      // For PR builds, Azure DevOps uses refs/pull/{prId}/merge as the source branch
+      // Use reasonFilter to only get PR-triggered builds
       const builds = await buildApi.getBuilds(
-        this.repoInfo.owner,
-        undefined, undefined, undefined, undefined, undefined,
-        undefined, undefined, undefined, undefined, undefined, undefined,
-        20,
+        this.repoInfo.owner, // project
+        undefined, // definitions
+        undefined, // queues
+        undefined, // buildNumber
+        undefined, // minTime
+        undefined, // maxTime
+        undefined, // requestedFor
+        256, // reasonFilter: BuildReason.PullRequest (256)
+        undefined, // statusFilter
+        undefined, // resultFilter
+        undefined, // tagFilters
+        undefined, // properties
+        20, // top: limit results
+        undefined, // continuationToken
+        undefined, // maxBuildsPerDefinition
+        undefined, // deletedFilter
+        undefined, // queryOrder
+        pr.number ? `refs/pull/${pr.number}/merge` : undefined, // branchName: PR merge ref
       );
 
+      // Filter builds that match this specific PR
       const matchingBuilds = (builds || []).filter((b: any) => {
+        // Check if build was triggered by this PR
+        const buildPrId = b.triggerInfo?.['pr.number'] || b.triggerInfo?.pullRequestId;
+        if (buildPrId && pr.number) {
+          return String(buildPrId) === String(pr.number);
+        }
+        
+        // Fallback: match by commit ID
+        const commitId = rawPr.lastMergeSourceCommit?.commitId;
         if (commitId && b.sourceVersion) {
           return b.sourceVersion.toLowerCase() === commitId.toLowerCase();
         }
-        if (pr.sourceBranch && b.sourceBranch) {
-          return b.sourceBranch.endsWith(pr.sourceBranch);
-        }
+        
         return false;
       });
 
       if (matchingBuilds.length === 0) {
+        Logger.log(`No builds found for PR #${pr.number}`);
         return [];
       }
 
+      // Return the most recent build
       const build = matchingBuilds[0];
       return [{
         name: build.definition?.name || String(build.id || ""),
-        status: (build.status || build.result || "").toString() as JobStatus,
+        status: this.mapAzureBuildStatus(build),
         webUrl: build._links?.web?.href,
         updatedAt: (build.finishTime || build.queueTime)?.toISOString(),
         raw: build,
       }];
     } 
-    catch {
+    catch(e: any) {
+      Logger.log(`Error fetching jobs for PR #${pr.number}: ${e?.message || String(e)}`);
       return [];
     }
   }
+
+  /**
+   * Maps Azure DevOps build status and result to unified JobStatus
+   * 
+   * Build Status (indicates current state):
+   * - None (0), InProgress (1), Completed (2), Cancelling (4), Postponed (8), NotStarted (32), All (47)
+   * 
+   * Build Result (indicates final outcome, only set when status is Completed):
+   * - None (0), Succeeded (2), PartiallySucceeded (4), Failed (8), Canceled (32)
+   * 
+   * Mapping logic (aggressive failure detection):
+   * - InProgress → 'running'
+   * - Completed + Succeeded → 'success'
+   * - Completed + PartiallySucceeded → 'success' (completed with warnings)
+   * - Completed + Failed → 'failed'
+   * - Completed + Canceled → 'failed'
+   * - Completed + (no result or unknown) → 'failed'
+   * - NotStarted, Postponed → 'pending'
+   * - Cancelling → 'failed'
+   * - Any other combination → 'failed' (aggressive: unknown states treated as failures)
+   */
+  private mapAzureBuildStatus(build: any): JobStatus {
+    const status = build.status;
+    const result = build.result;
+    
+    // InProgress - build is running
+    if (status === 1) {
+      return "running";
+    }
+    
+    // NotStarted or Postponed - build is queued/waiting
+    if (status === 8 || status === 32) {
+      return "pending";
+    }
+    
+    // Completed - check result for final outcome
+    if (status === 2) {
+      if (result === 2) { // Succeeded
+        return "success";
+      }
+      if (result === 4) { // PartiallySucceeded
+        return "success";
+      }
+      // Any other result for completed builds is a failure
+      // This includes: Failed (8), Canceled (32), None (0), or unknown values
+      return "failed";
+    }
+    
+    // Cancelling or any other status is treated as failure
+    // This includes: Cancelling (4), None (0), All (47), or unknown values
+    return "failed";
+  }
+
   async getJobsForBranchLatestCommit(
     branchName: string,
   ): Promise<{ jobs: Job[]; jobsStatus: JobStatus } | null> {
@@ -297,7 +376,7 @@ export class GitProviderAzure extends GitProvider {
       const build = commitBuilds[0];
       const job: Job = {
         name: build.definition?.name || String(build.id || ""),
-        status: (build.status || build.result || "").toString() as JobStatus,
+        status: this.mapAzureBuildStatus(build),
         webUrl: build._links?.web?.href,
         updatedAt: (build.finishTime || build.queueTime)?.toISOString(),
         raw: build,
