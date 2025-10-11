@@ -85,8 +85,8 @@ export class GitProvider {
       // For Azure DevOps, we need the project name for API calls
       // Store: host (without username), project (as owner since API expects project), repo
       host = azureMatch[1]; // host without username
-      owner = azureMatch[3]; // project name (API expects this)
-      repo = azureMatch[4];
+      owner = decodeURIComponent(azureMatch[3]); // project name (API expects this, decode URL encoding)
+      repo = decodeURIComponent(azureMatch[4]);
     } else {
       // Generic pattern: capture host and the full path after host
       // Also handle optional username: https://[username@]host or git@host
@@ -102,8 +102,8 @@ export class GitProvider {
       if (parts.length < 2) {
         return null;
       }
-      repo = parts.pop() as string;
-      owner = parts.join("/");
+      repo = decodeURIComponent(parts.pop() as string);
+      owner = decodeURIComponent(parts.join("/"));
     }
     let providerName: ProviderName | null = null;
     const hostLower = host.toLowerCase();
@@ -156,11 +156,12 @@ export class GitProvider {
         // Azure DevOps: https://dev.azure.com/org/project/_git/repo
         // webUrl needs both organization and project
         if (azureMatch) {
-          const organization = azureMatch[2];
-          const project = azureMatch[3];
-          webUrl = `https://${host}/${organization}/${project}/_git/${repo}`;
+          const organization = decodeURIComponent(azureMatch[2]);
+          const project = decodeURIComponent(azureMatch[3]);
+          const repoName = decodeURIComponent(azureMatch[4]);
+          webUrl = `https://${host}/${encodeURIComponent(organization)}/${encodeURIComponent(project)}/_git/${encodeURIComponent(repoName)}`;
         } else {
-          webUrl = `https://${host}/${owner}/_git/${repo}`;
+          webUrl = `https://${host}/${encodeURIComponent(owner)}/_git/${encodeURIComponent(repo)}`;
         }
         break;
       }

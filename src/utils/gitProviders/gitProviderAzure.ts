@@ -312,17 +312,15 @@ export class GitProviderAzure extends GitProvider {
   }
 
   convertToPullRequest(pr: any, branchName: string): PullRequest {
-    return {
+    const prConverted: PullRequest = {
       id: pr.pullRequestId || (pr as any).id,
       number: pr.pullRequestId || (pr as any).id,
       title: pr.title || "",
       description: pr.description || "",
-      state: (
-        (pr.status || "") as string
-      ).toLowerCase() as PullRequest["state"],
+      state: this.mapAzureStatusToState(pr),
       authorLabel:
         pr.createdBy?.displayName || pr.createdBy?.uniqueName || "unknown",
-      webUrl: pr._links?.web?.href || pr.url || "",
+      webUrl: this.buildPullRequestWebUrl(pr),
       sourceBranch: pr.sourceRefName
         ? pr.sourceRefName.replace(/^refs\/heads\//, "")
         : branchName,
@@ -331,6 +329,56 @@ export class GitProviderAzure extends GitProvider {
         : "",
       jobsStatus: "unknown",
     };
+    return prConverted;
+  }
+
+  /**
+   * Builds the browser URL for a pull request
+   * Format: https://dev.azure.com/{org}/{project}/_git/{repo}/pullrequest/{prId}
+   */
+  private buildPullRequestWebUrl(pr: GitPullRequest): string {
+    // First try to get the web link from the PR if available
+    if (pr._links?.web?.href) {
+      return pr._links.web.href;
+    }
+
+    // Construct from repoInfo if available
+    if (this.repoInfo?.webUrl && pr.pullRequestId) {
+      // repoInfo.webUrl format: https://dev.azure.com/org/project/_git/repo
+      return `${this.repoInfo.webUrl}/pullrequest/${pr.pullRequestId}`;
+    }
+
+    // Fallback to API URL if nothing else works
+    return pr.url || "";
+  }
+
+  /**
+   * Maps Azure DevOps PR status to unified PullRequestStatus
+   * Azure status values: NotSet (0), Active (1), Abandoned (2), Completed (3), All (4)
+   * Mapping:
+   * - Active (1) → 'open'
+   * - Abandoned (2) → 'declined'
+   * - Completed (3) → 'merged' if merge succeeded, otherwise 'closed'
+   * - NotSet/other → 'open' (default)
+   */
+  private mapAzureStatusToState(pr: GitPullRequest): PullRequest["state"] {
+    const status = pr.status;
+        if (status === PullRequestStatus.Active) {
+      return "open";
+    }
+    if (status === PullRequestStatus.Abandoned) {
+      return "declined";
+    }
+    if (status === PullRequestStatus.Completed) {
+      // Check if PR was actually merged or just closed
+      // mergeStatus indicates if merge succeeded
+      if (pr.mergeStatus === "succeeded" as any) {
+        return "merged";
+      }
+      return "closed";
+    }
+    // Default for NotSet or unknown
+    return "open";
   }
 
   getCreatePullRequestUrl(
