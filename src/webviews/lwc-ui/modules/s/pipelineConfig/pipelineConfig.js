@@ -23,6 +23,7 @@ export default class PipelineConfig extends LightningElement {
   @track editedConfig = {};
   @track sections = [];
   @track selectedConfigScope = "global";
+  @track arrayObjectEditorState = {}; // { key: { showForm: bool, editIndex: number, formData: {} } }
   initData = {};
 
   get isEditMode() {
@@ -73,6 +74,7 @@ export default class PipelineConfig extends LightningElement {
           let isEnum = false,
             isArrayEnum = false,
             isArrayText = false,
+            isArrayObject = false,
             isText = false,
             isBoolean = false,
             isNumber = false;
@@ -120,6 +122,12 @@ export default class PipelineConfig extends LightningElement {
             schema.items.type === "string"
           ) {
             isArrayText = true;
+          } else if (
+            schema.type === "array" &&
+            schema.items &&
+            schema.items.type === "object"
+          ) {
+            isArrayObject = true;
           } else if (schema.type === "string") {
             isText = true;
           } else if (schema.type === "boolean") {
@@ -131,7 +139,7 @@ export default class PipelineConfig extends LightningElement {
             ? this.editedConfig[key]
             : undefined;
           const value = config[key];
-          // Always initialize valueEdit for edit mode for enums, array enums, array text, number
+          // Always initialize valueEdit for edit mode for enums, array enums, array text, array object, number
           if (this.isEditMode) {
             if (isEnum) {
               if (valueEdit === undefined)
@@ -140,6 +148,9 @@ export default class PipelineConfig extends LightningElement {
               if (!Array.isArray(valueEdit))
                 valueEdit = Array.isArray(value) ? value : [];
             } else if (isArrayText) {
+              if (!Array.isArray(valueEdit))
+                valueEdit = Array.isArray(value) ? value : [];
+            } else if (isArrayObject) {
               if (!Array.isArray(valueEdit))
                 valueEdit = Array.isArray(value) ? value : [];
             } else if (isText) {
@@ -189,6 +200,28 @@ export default class PipelineConfig extends LightningElement {
             } else {
               valueDisplay = [];
             }
+          } else if (isArrayObject) {
+            // For array of objects, display as formatted JSON or structured list
+            if (Array.isArray(value)) {
+              // Convert objects to array of key-value pairs for easier display
+              valueDisplay = value.map((obj, idx) => {
+                const kvPairs = Object.keys(obj).map((k) => ({
+                  key: k,
+                  value:
+                    typeof obj[k] === "object"
+                      ? JSON.stringify(obj[k])
+                      : String(obj[k]),
+                }));
+                return {
+                  properties: kvPairs,
+                  canMoveUp: idx > 0,
+                  canMoveDown: idx < value.length - 1,
+                  index: idx,
+                };
+              });
+            } else {
+              valueDisplay = [];
+            }
           } else if (isEnum) {
             // Map enum value to label for display
             if (enumNames && options && options.length > 0) {
@@ -205,6 +238,11 @@ export default class PipelineConfig extends LightningElement {
             valueEditText = valueEdit.join("\n");
           } else if (isArrayText || isArrayEnum) {
             valueEditText = "";
+          } else if (isArrayObject && Array.isArray(valueEdit)) {
+            // For array of objects, format as JSON for editing
+            valueEditText = JSON.stringify(valueEdit, null, 2);
+          } else if (isArrayObject) {
+            valueEditText = "[]";
           }
           // Compute hasValue for text and number fields
           let hasValue = false;
@@ -230,6 +268,7 @@ export default class PipelineConfig extends LightningElement {
             isEnum,
             isArrayEnum,
             isArrayText,
+            isArrayObject,
             isText,
             isBoolean,
             isNumber,
@@ -237,6 +276,7 @@ export default class PipelineConfig extends LightningElement {
             optionsLwc,
             docUrl,
             hasDocUrl,
+            columnClass: isArrayObject ? 'slds-col' : 'slds-col slds-size_9-of-12',
             hasArrayEnumValues:
               isArrayEnum &&
               Array.isArray(valueDisplay) &&
@@ -245,7 +285,36 @@ export default class PipelineConfig extends LightningElement {
               isArrayText &&
               Array.isArray(valueDisplay) &&
               valueDisplay.length > 0,
+            hasArrayObjectValues:
+              isArrayObject &&
+              Array.isArray(valueDisplay) &&
+              valueDisplay.length > 0,
             hasValue,
+            schemaItems: schema.items || null,
+            arrayObjectEditorOpen:
+              this.arrayObjectEditorState[key]?.showForm || false,
+            arrayObjectEditIndex:
+              this.arrayObjectEditorState[key]?.editIndex ?? -1,
+            arrayObjectFormData:
+              this.arrayObjectEditorState[key]?.formData || {},
+            arrayObjectFormFields: this.getArrayObjectFormFields({
+              key,
+              schemaItems: schema.items,
+            }),
+            arrayObjectDatatableColumns: isArrayObject
+              ? this.getArrayObjectDatatableColumns({
+                  key,
+                  schemaItems: schema.items,
+                  isEditMode: this.isEditMode,
+                })
+              : [],
+            arrayObjectDatatableData: isArrayObject
+              ? this.getArrayObjectDatatableData({
+                  key,
+                  value,
+                  schemaItems: schema.items,
+                })
+              : [],
           });
         }
         return {
@@ -369,6 +438,24 @@ export default class PipelineConfig extends LightningElement {
           .filter(Boolean);
       }
       this.editedConfig[key] = value;
+    } else if (
+      schema.type === "array" &&
+      schema.items &&
+      schema.items.type === "object"
+    ) {
+      // Textarea with JSON: array of objects
+      if (typeof value === "string") {
+        try {
+          value = JSON.parse(value);
+          if (!Array.isArray(value)) {
+            value = [];
+          }
+        } catch (e) {
+          console.error("Invalid JSON for array of objects", e);
+          value = [];
+        }
+      }
+      this.editedConfig[key] = value;
     } else if (schema.type === "number") {
       // Number input
       if (typeof value === "string") {
@@ -425,6 +512,415 @@ export default class PipelineConfig extends LightningElement {
     // Update config in initData and reinitialize
     this.initData.config = Object.assign({}, this.config);
     this.initialize(this.initData);
+  }
+
+  // Array Object Form Management
+  handleAddArrayObjectItem(event) {
+    const key = event.target.dataset.key;
+    const schema = this.configSchema[key];
+    const formData = {};
+    // Initialize form data with defaults from schema
+    if (schema && schema.items && schema.items.properties) {
+      Object.keys(schema.items.properties).forEach((propKey) => {
+        const propSchema = schema.items.properties[propKey];
+        if (propSchema.default !== undefined) {
+          formData[propKey] = propSchema.default;
+        } else if (propSchema.type === "boolean") {
+          formData[propKey] = false;
+        } else if (propSchema.type === "string") {
+          formData[propKey] = "";
+        }
+      });
+    }
+    this.arrayObjectEditorState[key] = {
+      showForm: true,
+      editIndex: -1,
+      formData: formData,
+    };
+    this.arrayObjectEditorState = { ...this.arrayObjectEditorState };
+  }
+
+  handleEditArrayObjectItem(event) {
+    const key = event.target.dataset.key;
+    const index = parseInt(event.target.dataset.index, 10);
+    const currentArray = this.editedConfig[key] || this.config[key] || [];
+    const itemToEdit = currentArray[index] || {};
+    this.arrayObjectEditorState[key] = {
+      showForm: true,
+      editIndex: index,
+      formData: JSON.parse(JSON.stringify(itemToEdit)),
+    };
+    this.arrayObjectEditorState = { ...this.arrayObjectEditorState };
+  }
+
+  handleDeleteArrayObjectItem(event) {
+    const key = event.target.dataset.key;
+    const index = parseInt(event.target.dataset.index, 10);
+    let currentArray = [...(this.editedConfig[key] || this.config[key] || [])];
+    currentArray.splice(index, 1);
+    this.editedConfig[key] = currentArray;
+    this.editedConfig = { ...this.editedConfig };
+  }
+
+  handleMoveArrayObjectItemUp(event) {
+    const key = event.target.dataset.key;
+    const index = parseInt(event.target.dataset.index, 10);
+    if (index === 0) return; // Already at top
+
+    let currentArray = [...(this.editedConfig[key] || this.config[key] || [])];
+    // Swap with previous item
+    const temp = currentArray[index];
+    currentArray[index] = currentArray[index - 1];
+    currentArray[index - 1] = temp;
+
+    this.editedConfig[key] = currentArray;
+    this.editedConfig = { ...this.editedConfig };
+  }
+
+  handleMoveArrayObjectItemDown(event) {
+    const key = event.target.dataset.key;
+    const index = parseInt(event.target.dataset.index, 10);
+    let currentArray = [...(this.editedConfig[key] || this.config[key] || [])];
+
+    if (index === currentArray.length - 1) return; // Already at bottom
+
+    // Swap with next item
+    const temp = currentArray[index];
+    currentArray[index] = currentArray[index + 1];
+    currentArray[index + 1] = temp;
+
+    this.editedConfig[key] = currentArray;
+    this.editedConfig = { ...this.editedConfig };
+  }
+
+  handleArrayObjectRowAction(event) {
+    const action = event.detail.action;
+    const row = event.detail.row;
+    const key = event.currentTarget.dataset.key;
+    const index = row._index;
+
+    switch (action.name) {
+      case "move_up":
+        if (row._canMoveUp) {
+          let currentArray = [
+            ...(this.editedConfig[key] || this.config[key] || []),
+          ];
+          const temp = currentArray[index];
+          currentArray[index] = currentArray[index - 1];
+          currentArray[index - 1] = temp;
+          this.editedConfig[key] = currentArray;
+          this.editedConfig = { ...this.editedConfig };
+          // Force refresh of config to update datatable display
+          this.config = { ...this.config, [key]: currentArray };
+        }
+        break;
+      case "move_down":
+        if (row._canMoveDown) {
+          let currentArray = [
+            ...(this.editedConfig[key] || this.config[key] || []),
+          ];
+          const temp = currentArray[index];
+          currentArray[index] = currentArray[index + 1];
+          currentArray[index + 1] = temp;
+          this.editedConfig[key] = currentArray;
+          this.editedConfig = { ...this.editedConfig };
+          // Force refresh of config to update datatable display
+          this.config = { ...this.config, [key]: currentArray };
+        }
+        break;
+      case "edit":
+        const currentArrayEdit =
+          this.editedConfig[key] || this.config[key] || [];
+        const itemToEdit = currentArrayEdit[index] || {};
+        this.arrayObjectEditorState[key] = {
+          showForm: true,
+          editIndex: index,
+          formData: JSON.parse(JSON.stringify(itemToEdit)),
+        };
+        this.arrayObjectEditorState = { ...this.arrayObjectEditorState };
+        break;
+      case "delete":
+        let currentArrayDel = [
+          ...(this.editedConfig[key] || this.config[key] || []),
+        ];
+        currentArrayDel.splice(index, 1);
+        this.editedConfig[key] = currentArrayDel;
+        this.editedConfig = { ...this.editedConfig };
+        // Force refresh of config to update datatable display
+        this.config = { ...this.config, [key]: currentArrayDel };
+        break;
+    }
+  }
+
+  handleArrayObjectFormFieldChange(event) {
+    const key = event.target.dataset.key;
+    const fieldName = event.target.dataset.fieldName;
+    const fieldType = event.target.dataset.fieldType;
+    let value = event.target.value;
+
+    if (fieldType === "boolean") {
+      value = event.target.checked;
+    } else if (event.detail && event.detail.value !== undefined) {
+      value = event.detail.value;
+    }
+
+    if (!this.arrayObjectEditorState[key]) {
+      this.arrayObjectEditorState[key] = {
+        showForm: true,
+        editIndex: -1,
+        formData: {},
+      };
+    }
+    this.arrayObjectEditorState[key].formData[fieldName] = value;
+    this.arrayObjectEditorState = { ...this.arrayObjectEditorState };
+  }
+
+  handleSaveArrayObjectItem(event) {
+    const key = event.target.dataset.key;
+    const state = this.arrayObjectEditorState[key];
+    if (!state) return;
+
+    let currentArray = [...(this.editedConfig[key] || this.config[key] || [])];
+    if (state.editIndex >= 0) {
+      // Update existing item
+      currentArray[state.editIndex] = { ...state.formData };
+    } else {
+      // Add new item
+      currentArray.push({ ...state.formData });
+    }
+    this.editedConfig[key] = currentArray;
+    this.editedConfig = { ...this.editedConfig };
+
+    // Close form
+    delete this.arrayObjectEditorState[key];
+    this.arrayObjectEditorState = { ...this.arrayObjectEditorState };
+
+    // Force refresh of config to update datatable display
+    this.config = { ...this.config, [key]: currentArray };
+  }
+
+  handleCancelArrayObjectForm(event) {
+    const key = event.target.dataset.key;
+    delete this.arrayObjectEditorState[key];
+    this.arrayObjectEditorState = { ...this.arrayObjectEditorState };
+  }
+
+  // Helper to get datatable columns for array of objects
+  getArrayObjectDatatableColumns(entry) {
+    if (!entry || !entry.schemaItems || !entry.schemaItems.properties)
+      return [];
+    const properties = entry.schemaItems.properties || {};
+    const columns = [];
+
+    // Get data to calculate column widths
+    const data = this.getArrayObjectDatatableData(entry);
+    
+    // Calculate max content length for each field
+    const fieldMaxLengths = {};
+    Object.keys(properties).forEach((fieldKey) => {
+      const labelLength = (properties[fieldKey].title || fieldKey).length;
+      let maxDataLength = labelLength;
+      
+      // Check data content lengths
+      if (data && data.length > 0) {
+        data.forEach((row) => {
+          const value = row[fieldKey];
+          if (value !== undefined && value !== null) {
+            const strValue = String(value);
+            maxDataLength = Math.max(maxDataLength, strValue.length);
+          }
+        });
+      }
+      
+      // Use character length for proportional calculation, with diminishing returns for very long content
+      // This prevents one very long column from dominating all space
+      fieldMaxLengths[fieldKey] = Math.min(maxDataLength, 50); // Cap at 50 chars for calculation
+    });
+
+    // Calculate total relative size
+    const totalRelativeSize = Object.values(fieldMaxLengths).reduce((sum, len) => sum + len, 0);
+    
+    // Get actual container width from the component's parent element
+    const container = this.template.querySelector('.slds-card__body');
+    const containerWidth = container ? container.offsetWidth : 1200; // Fallback to 1200 if not found
+    const actionsWidth = entry.isEditMode ? 120 : 0;
+    const numColumns = Object.keys(properties).length;
+    const tableMarginsPadding = 100 + (numColumns * 10); // More padding for more columns
+    const availableWidth = containerWidth - actionsWidth - tableMarginsPadding;
+
+    // Calculate initial column widths proportionally
+    const columnWidths = {};
+    let totalCalculatedWidth = 0;
+
+    Object.keys(properties).forEach((fieldKey) => {
+      const fieldLength = fieldMaxLengths[fieldKey];
+      let widthPixels = totalRelativeSize > 0 
+        ? (fieldLength / totalRelativeSize) * availableWidth
+        : availableWidth / numColumns;
+
+      // Ensure minimum width based on column type
+      const fieldSchema = properties[fieldKey];
+      let minWidth = 80;
+      if (fieldSchema.type === "boolean") {
+        minWidth = 100; // Booleans with label need more space
+      }
+
+      // Ensure minimum, apply calculated width
+      widthPixels = Math.max(minWidth, widthPixels);
+      columnWidths[fieldKey] = widthPixels;
+      totalCalculatedWidth += widthPixels;
+    });
+
+    // If total width exceeds available, scale down proportionally
+    let scaleFactor = 1;
+    if (totalCalculatedWidth > availableWidth) {
+      scaleFactor = availableWidth / totalCalculatedWidth;
+    }
+
+    // Add columns for each property with scaled widths
+    Object.keys(properties).forEach((fieldKey) => {
+      const fieldSchema = properties[fieldKey];
+      let columnType = "text";
+
+      // Determine column type based on schema
+      if (fieldSchema.type === "boolean") {
+        columnType = "boolean";
+      } else if (fieldSchema.type === "number") {
+        columnType = "number";
+      } else if (fieldSchema.type === "url") {
+        columnType = "url";
+      }
+
+      // Apply scale factor and ensure minimum width
+      let minWidth = 80;
+      if (fieldSchema.type === "boolean") {
+        minWidth = 100;
+      }
+      const finalWidth = Math.max(minWidth, Math.round(columnWidths[fieldKey] * scaleFactor));
+
+      columns.push({
+        label: fieldSchema.title || fieldKey,
+        fieldName: fieldKey,
+        type: columnType,
+        wrapText: true,
+        initialWidth: finalWidth,
+      });
+    });
+
+    // Add actions column only in edit mode
+    if (entry.isEditMode) {
+      columns.push({
+        type: "action",
+        typeAttributes: {
+          rowActions: [
+            {
+              label: "Move Up",
+              name: "move_up",
+              iconName: "utility:chevronup",
+            },
+            {
+              label: "Move Down",
+              name: "move_down",
+              iconName: "utility:chevrondown",
+            },
+            { label: "Edit", name: "edit", iconName: "utility:edit" },
+            { label: "Delete", name: "delete", iconName: "utility:delete" },
+          ],
+        },
+        initialWidth: 120,
+      });
+    }
+
+    return columns;
+  }
+
+  // Helper to get datatable data for array of objects
+  getArrayObjectDatatableData(entry) {
+    if (!entry || !entry.value || !Array.isArray(entry.value)) return [];
+    return entry.value.map((obj, idx) => {
+      // Convert object to include proper boolean values and metadata
+      const rowData = { ...obj };
+
+      // Ensure boolean values are actual booleans for datatable display
+      if (entry.schemaItems && entry.schemaItems.properties) {
+        Object.keys(entry.schemaItems.properties).forEach((propKey) => {
+          const propSchema = entry.schemaItems.properties[propKey];
+          if (propSchema.type === "boolean" && rowData[propKey] !== undefined) {
+            rowData[propKey] = Boolean(rowData[propKey]);
+          }
+        });
+      }
+
+      return {
+        ...rowData,
+        _index: idx,
+        _canMoveUp: idx > 0,
+        _canMoveDown: idx < entry.value.length - 1,
+      };
+    });
+  }
+
+  // Helper to get form fields for array object items
+  getArrayObjectFormFields(entry) {
+    if (!entry.schemaItems || !entry.schemaItems.properties) return [];
+    const fields = [];
+    const properties = entry.schemaItems.properties;
+    const required = entry.schemaItems.required || [];
+
+    // Get examples from schema for placeholders
+    const schemaExamples = this.configSchema[entry.key]?.examples;
+    let exampleItem = null;
+    if (
+      schemaExamples &&
+      Array.isArray(schemaExamples) &&
+      schemaExamples.length > 0 &&
+      Array.isArray(schemaExamples[0]) &&
+      schemaExamples[0].length > 0
+    ) {
+      exampleItem = schemaExamples[0][0]; // Get first item from first example array
+    }
+
+    Object.keys(properties).forEach((propKey) => {
+      const propSchema = properties[propKey];
+      const formData = this.arrayObjectEditorState[entry.key]?.formData || {};
+      const value =
+        formData[propKey] !== undefined
+          ? formData[propKey]
+          : propSchema.default || "";
+
+      // Get example value for placeholder
+      const exampleValue =
+        exampleItem && exampleItem[propKey] ? String(exampleItem[propKey]) : "";
+      const placeholder = exampleValue
+        ? `ex: ${exampleValue}`
+        : propSchema.description || "";
+
+      fields.push({
+        key: propKey,
+        label: propSchema.title || propKey,
+        description: propSchema.description || "",
+        placeholder: placeholder,
+        type: propSchema.type,
+        required: required.includes(propKey),
+        value: value,
+        enum: propSchema.enum || null,
+        enumNames: propSchema.enumNames || null,
+        options: propSchema.enum
+          ? propSchema.enum.map((opt, idx) => ({
+              label:
+                propSchema.enumNames && propSchema.enumNames[idx]
+                  ? propSchema.enumNames[idx]
+                  : String(opt),
+              value: String(opt),
+            }))
+          : null,
+        isEnum: !!propSchema.enum,
+        isBoolean: propSchema.type === "boolean",
+        isText: propSchema.type === "string" && !propSchema.enum,
+      });
+    });
+
+    return fields;
   }
 
   @api

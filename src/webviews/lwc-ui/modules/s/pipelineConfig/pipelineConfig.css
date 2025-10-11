@@ -23,3 +23,14 @@
 	background: #B3D6F6 !important;
 	border-color: #B3D6F6 !important;
 }
+
+/* Make lightning-datatable use full width of container (matching pipeline pattern) */
+lightning-datatable {
+	width: 100%;
+}
+
+/* Full width for array object columns */
+.slds-grid .slds-col:only-child {
+	width: 100%;
+	max-width: 100%;
+}
