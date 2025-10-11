@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Adds create PR URL to branch strategy diagram
+
 ## [6.10.1] 2024-10-08
 
 - Adds pipeline configuration validations (developmentBranch and availableTargetBranches)

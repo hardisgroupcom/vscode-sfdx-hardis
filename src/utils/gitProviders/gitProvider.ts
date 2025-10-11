@@ -270,4 +270,20 @@ export class GitProvider {
     const secretIdentifier = this.hostKey + "_TOKEN";
     await SecretsManager.setSecret(secretIdentifier, token);
   }
+
+  /**
+   * Generate a URL to create a new pull/merge request from source to target branch.
+   * @param sourceBranch The source branch name
+   * @param targetBranch The target branch name
+   * @returns The URL to create a PR, or null if not supported
+   */
+  getCreatePullRequestUrl(
+    _sourceBranch: string,
+    _targetBranch: string,
+  ): string | null {
+    Logger.log(
+      `getCreatePullRequestUrl not implemented on ${this.repoInfo?.providerName || "unknown provider"}`,
+    );
+    return null;
+  }
 }

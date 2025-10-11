@@ -316,4 +316,15 @@ export class GitProviderAzure extends GitProvider {
       jobsStatus: "unknown",
     };
   }
+
+  getCreatePullRequestUrl(
+    sourceBranch: string,
+    targetBranch: string,
+  ): string | null {
+    if (!this.repoInfo?.webUrl || !this.repoInfo?.owner || !this.repoInfo?.repo) {
+      return null;
+    }
+    // Azure DevOps: https://dev.azure.com/org/project/_git/repo/pullrequestcreate?sourceRef=source&targetRef=target
+    return `${this.repoInfo.webUrl}/pullrequestcreate?sourceRef=${encodeURIComponent(sourceBranch)}&targetRef=${encodeURIComponent(targetBranch)}`;
+  }
 }

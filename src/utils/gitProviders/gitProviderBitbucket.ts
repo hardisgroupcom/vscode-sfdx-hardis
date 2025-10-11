@@ -141,6 +141,17 @@ export class GitProviderBitbucket extends GitProvider {
     };
   }
 
+  getCreatePullRequestUrl(
+    sourceBranch: string,
+    targetBranch: string,
+  ): string | null {
+    if (!this.repoInfo?.webUrl) {
+      return null;
+    }
+    // Bitbucket: https://bitbucket.org/owner/repo/pull-requests/new?source=source&dest=target
+    return `${this.repoInfo.webUrl}/pull-requests/new?source=${encodeURIComponent(sourceBranch)}&dest=${encodeURIComponent(targetBranch)}`;
+  }
+
   // Fetch pipelines for a Bitbucket PR (Bitbucket Cloud). Best-effort: query pipelines by commit/branch
   private async fetchLatestJobsForPrBitbucket(
     rawPr: any,
