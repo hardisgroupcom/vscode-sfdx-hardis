@@ -4,6 +4,7 @@ import { isMajorBranch, isPreprod, isProduction } from "../orgConfigUtils";
 import { PullRequest, JobStatus } from "../gitProviders/types";
 
 export class BranchStrategyMermaidBuilder {
+  private isAuthenticated: boolean = false;
   private branchesAndOrgs: any[];
   private openPullRequests: PullRequest[] = [];
   private gitBranches: any[] = [];
@@ -15,9 +16,10 @@ export class BranchStrategyMermaidBuilder {
   private retrofitLinks: any[] = [];
   private mermaidLines: string[] = [];
 
-  constructor(branchesAndOrgs: any[], openPullRequests: PullRequest[] = []) {
+  constructor(branchesAndOrgs: any[], isAuthenticated: boolean, openPullRequests: PullRequest[] = []) {
     this.branchesAndOrgs = branchesAndOrgs;
     this.openPullRequests = openPullRequests;
+    this.isAuthenticated = isAuthenticated;
   }
 
   /**
@@ -125,7 +127,7 @@ export class BranchStrategyMermaidBuilder {
           type: isMajorLink ? "gitMerge" : "gitFeatureMerge",
           label: activePR
             ? `#${activePR.number || activePR.id} ${this.getPrStatusEmoji(activePR.jobsStatus)}`
-            : "No PR",
+            : this.isAuthenticated ? "No PR": "Merge",
           activePR: activePR,
         });
       }
@@ -186,7 +188,7 @@ export class BranchStrategyMermaidBuilder {
         const prLinkLabel =
           pullRequest.number || pullRequest.id
             ? `#${pullRequest.number || pullRequest.id} ${this.getPrStatusEmoji(pullRequest.jobsStatus)}`
-            : "No PR";
+            : this.isAuthenticated ? "No PR" : "Merge";
         this.gitLinks.push({
           source: nodeName,
           target: pullRequest.targetBranch + "Branch",

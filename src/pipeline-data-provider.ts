@@ -34,6 +34,7 @@ export class PipelineDataProvider {
   warnings: string[] = [];
 
   public async getPipelineData(
+    isAuthenticated: boolean,
     options: {
       browseGitProvider?: boolean;
       openPullRequests?: PullRequest[];
@@ -46,6 +47,7 @@ export class PipelineDataProvider {
       // majorOrgs = await completeOrgsWithPullRequests(majorOrgs);
       const mermaidBuilder = new BranchStrategyMermaidBuilder(
         majorOrgs,
+        isAuthenticated,
         options.openPullRequests || [],
       );
       const mermaidDiagram = mermaidBuilder.build({
