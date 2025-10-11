@@ -128,10 +128,13 @@ export function registerShowPipeline(commands: Commands) {
         }
       }
       const pipelineDataProvider = new PipelineDataProvider();
-      const pipelineData = await pipelineDataProvider.getPipelineData({
-        openPullRequests: openPullRequests,
-        browseGitProvider: browseGitProvider,
-      });
+      const pipelineData = await pipelineDataProvider.getPipelineData(
+        gitAuthenticated,
+        {
+          openPullRequests: openPullRequests,
+          browseGitProvider: browseGitProvider,
+        },
+      );
       const prButtonInfo: any = {};
       let repoPlatformLabel = "";
       if (gitProvider?.repoInfo) {

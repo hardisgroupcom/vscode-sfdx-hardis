@@ -221,4 +221,15 @@ export class GitProviderGitHub extends GitProvider {
       jobsStatus: "unknown",
     };
   }
+
+  getCreatePullRequestUrl(
+    sourceBranch: string,
+    targetBranch: string,
+  ): string | null {
+    if (!this.repoInfo?.webUrl) {
+      return null;
+    }
+    // GitHub: https://github.com/owner/repo/compare/target...source?expand=1
+    return `${this.repoInfo.webUrl}/compare/${encodeURIComponent(targetBranch)}...${encodeURIComponent(sourceBranch)}?expand=1`;
+  }
 }

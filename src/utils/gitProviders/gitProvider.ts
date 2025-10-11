@@ -76,30 +76,34 @@ export class GitProvider {
     let repo: string;
 
     // First try Azure DevOps specific pattern (handles _git path)
+    // Match: https://[username@]host/org/project/_git/repo
     const azureMatch = remoteUrl.match(
-      /^https:\/\/([^/]+)\/([^/]+)\/([^/]+)\/_git\/([^/]+)(?:\.git)?$/,
+      /^https:\/\/(?:[^@]+@)?([^/]+)\/([^/]+)\/([^/]+)\/_git\/([^/]+)(?:\.git)?$/,
     );
     if (azureMatch) {
-      // url: https://host/org/project/_git/repo
-      host = azureMatch[1];
-      owner = azureMatch[2];
-      repo = azureMatch[4];
+      // url: https://[username@]host/org/project/_git/repo
+      // For Azure DevOps, we need the project name for API calls
+      // Store: host (without username), project (as owner since API expects project), repo
+      host = azureMatch[1]; // host without username
+      owner = decodeURIComponent(azureMatch[3]); // project name (API expects this, decode URL encoding)
+      repo = decodeURIComponent(azureMatch[4]);
     } else {
       // Generic pattern: capture host and the full path after host
+      // Also handle optional username: https://[username@]host or git@host
       const genericMatch = remoteUrl.match(
-        /^(?:https:\/\/|git@)([^/:]+)[/:](.+?)(?:\.git)?$/,
+        /^(?:https:\/\/(?:[^@]+@)?|git@)([^/:]+)[/:](.+?)(?:\.git)?$/,
       );
       if (!genericMatch) {
         return null;
       }
-      host = genericMatch[1];
+      host = genericMatch[1]; // host without username
       const fullPath = genericMatch[2];
       const parts = fullPath.split("/").filter(Boolean);
       if (parts.length < 2) {
         return null;
       }
-      repo = parts.pop() as string;
-      owner = parts.join("/");
+      repo = decodeURIComponent(parts.pop() as string);
+      owner = decodeURIComponent(parts.join("/"));
     }
     let providerName: ProviderName | null = null;
     const hostLower = host.toLowerCase();
@@ -150,8 +154,15 @@ export class GitProvider {
       }
       case "azure": {
         // Azure DevOps: https://dev.azure.com/org/project/_git/repo
-        // But homepage is usually https://dev.azure.com/org/project/_git/repo
-        webUrl = `https://${host}/${owner}/${azureMatch ? azureMatch[3] + "/_git/" + repo : "_git/" + repo}`;
+        // webUrl needs both organization and project
+        if (azureMatch) {
+          const organization = decodeURIComponent(azureMatch[2]);
+          const project = decodeURIComponent(azureMatch[3]);
+          const repoName = decodeURIComponent(azureMatch[4]);
+          webUrl = `https://${host}/${encodeURIComponent(organization)}/${encodeURIComponent(project)}/_git/${encodeURIComponent(repoName)}`;
+        } else {
+          webUrl = `https://${host}/${encodeURIComponent(owner)}/_git/${encodeURIComponent(repo)}`;
+        }
         break;
       }
       default: {
@@ -269,5 +280,21 @@ export class GitProvider {
     }
     const secretIdentifier = this.hostKey + "_TOKEN";
     await SecretsManager.setSecret(secretIdentifier, token);
+  }
+
+  /**
+   * Generate a URL to create a new pull/merge request from source to target branch.
+   * @param sourceBranch The source branch name
+   * @param targetBranch The target branch name
+   * @returns The URL to create a PR, or null if not supported
+   */
+  getCreatePullRequestUrl(
+    _sourceBranch: string,
+    _targetBranch: string,
+  ): string | null {
+    Logger.log(
+      `getCreatePullRequestUrl not implemented on ${this.repoInfo?.providerName || "unknown provider"}`,
+    );
+    return null;
   }
 }

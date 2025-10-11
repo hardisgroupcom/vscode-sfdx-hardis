@@ -3,8 +3,7 @@ import { BranchStrategyMermaidBuilder } from "./utils/pipeline/branchStrategyMer
 import { listMajorOrgs, MajorOrg } from "./utils/orgConfigUtils";
 import { getConfig } from "./utils/pipeline/sfdxHardisConfig";
 import { PullRequest } from "./utils/gitProviders/types";
-// import { GitProvider } from "./utils/gitProviders/gitProvider";
-// import { Logger } from "./logger";
+import { GitProvider } from "./utils/gitProviders/gitProvider";
 
 export interface OrgNode {
   name: string;
@@ -34,6 +33,7 @@ export class PipelineDataProvider {
   warnings: string[] = [];
 
   public async getPipelineData(
+    isAuthenticated: boolean,
     options: {
       browseGitProvider?: boolean;
       openPullRequests?: PullRequest[];
@@ -43,10 +43,14 @@ export class PipelineDataProvider {
       let majorOrgs: MajorOrg[] = await listMajorOrgs({
         browseGitProvider: options.browseGitProvider || false,
       });
+      // Get the git provider instance to pass to mermaid builder for create PR URLs
+      const gitProvider = await GitProvider.getInstance();
       // majorOrgs = await completeOrgsWithPullRequests(majorOrgs);
       const mermaidBuilder = new BranchStrategyMermaidBuilder(
         majorOrgs,
+        isAuthenticated,
         options.openPullRequests || [],
+        gitProvider,
       );
       const mermaidDiagram = mermaidBuilder.build({
         format: "string",

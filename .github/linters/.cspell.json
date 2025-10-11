@@ -226,6 +226,8 @@
     "packagedeployonce",
     "packagexml",
     "packagexmlfull",
+    "pullrequest",
+    "pullrequestcreate",
     "behaviour",
     "entrancy",
     "prereq",
