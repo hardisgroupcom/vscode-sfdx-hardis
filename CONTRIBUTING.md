@@ -6,7 +6,7 @@ Thank you for your interest in contributing to the **vscode-sfdx-hardis** extens
 
 Before you start contributing, make sure you have the following installed:
 
-- **Node.js** (version 20 or higher)
+- **Node.js** (version 22 or higher)
 - **yarn** package manager (we use yarn instead of npm)
 - **VS Code Insiders** (recommended for extension development)
 - **Git**

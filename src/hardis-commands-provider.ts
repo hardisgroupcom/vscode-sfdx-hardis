@@ -369,6 +369,16 @@ export class HardisCommandsProvider
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/project/generate/bypass/",
           },
+          {
+            id: "hardis:project:metadata:activate-decomposed",
+            label: "Activate decomposed format for metadata (beta)",
+            command: "sf hardis:project:metadata:activate-decomposed",
+            requiresProject: true,
+            tooltip:
+              "Activate decomposed format for metadata in your SFDX project (beta feature)",
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/project/metadata/activate-decomposed/",
+          }
         ],
       },
       {
