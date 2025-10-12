@@ -58,6 +58,7 @@ export class SfdxHardisConfigHelper {
     { name: "dataPackages", scopes: ["global"] },
     { name: "packageNoOverwritePath", scope: ["branch"] },
     { name: "useDeltaDeployment", scopes: ["global"] },
+    { name: "useDeltaDeploymentWithDependencies", scopes: ["global"] },
     { name: "useSmartDeploymentTests", scopes: ["global"] },
     { name: "manualActionsFileUrl", scopes: ["global"] },
     { name: "developmentBranch", scopes: ["global"] },
@@ -88,6 +89,7 @@ export class SfdxHardisConfigHelper {
       description: "",
       keys: [
         "useDeltaDeployment",
+        "useDeltaDeploymentWithDependencies",
         "useSmartDeploymentTests",
         "installPackagesDuringCheckDeploy",
         "apexTestsMinCoverageOrgWide",
