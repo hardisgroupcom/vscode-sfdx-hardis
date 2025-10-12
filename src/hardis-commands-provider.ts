@@ -378,7 +378,7 @@ export class HardisCommandsProvider
               "Activate decomposed format for metadata in your SFDX project (beta feature)",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/project/metadata/activate-decomposed/",
-          }
+          },
         ],
       },
       {
