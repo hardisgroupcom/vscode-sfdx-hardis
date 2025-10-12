@@ -341,6 +341,10 @@ export class ThemeUtils {
         vscode: "law",
         hardis: "extract.svg",
       },
+      "hardis:project:metadata:activate-decomposed": {
+        vscode: "symbol-misc",
+        hardis: "configure.svg",
+      },
       "configure:auth:deployment": { vscode: "gear", hardis: "configure.svg" },
       "configure:auth:devhub": { vscode: "gear", hardis: "configure.svg" },
       "org:configure:monitoring": { vscode: "gear", hardis: "monitoring.svg" },

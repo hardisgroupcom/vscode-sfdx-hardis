@@ -2,7 +2,11 @@
 
 ## [Unreleased]
 
+## [6.11.0] 2024-10-12
+
 - Pipeline Settings: Allow to configure commands to run before deployment in pipeline configuration
+- Add new menu: CI/CD (Misc) -> [Activate decomposed format for metadata (beta)](https://sfdx-hardis.cloudity.com/hardis/project/metadata/activate-decomposed/)
+- Display [**useDeltaDeploymentWithDependencies**](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-delta-deployment/#delta-with-dependencies-beta) in pipeline configuration
 
 ## [6.10.2] 2024-10-11
 
