@@ -96,7 +96,7 @@ export class BranchStrategyMermaidBuilder {
     const branchesMergingInPreprod: string[] = [];
 
     this.gitBranches = this.branchesAndOrgs.map((branchAndOrg) => {
-      const nodeName = branchAndOrg.branchName + "Branch";
+      const nodeName = this.sanitizeNodeName(branchAndOrg.branchName) + "Branch";
       for (const mergeTarget of branchAndOrg.mergeTargets || []) {
         if (!branchesWhoAreMergeTargets.includes(mergeTarget)) {
           branchesWhoAreMergeTargets.push(mergeTarget);
@@ -150,7 +150,7 @@ export class BranchStrategyMermaidBuilder {
 
         this.gitLinks.push({
           source: nodeName,
-          target: mergeTarget + "Branch",
+          target: this.sanitizeNodeName(mergeTarget) + "Branch",
           type: isMajorLink ? "gitMerge" : "gitFeatureMerge",
           label: linkLabel,
           activePR: activePR,
@@ -201,7 +201,7 @@ export class BranchStrategyMermaidBuilder {
           noMergeTargetBranchAndOrg.length > 0
             ? Math.min(...noMergeTargetBranchAndOrg.map((b) => b.level)) + 1
             : 50;
-        const nodeName = pullRequest.sourceBranch + "Branch"; // + "Branch" + (this.featureBranchNb + 1);
+        const nodeName = this.sanitizeNodeName(pullRequest.sourceBranch) + "Branch"; // + "Branch" + (this.featureBranchNb + 1);
         this.gitBranches.push({
           name: pullRequest.sourceBranch,
           nodeName: nodeName,
@@ -218,7 +218,7 @@ export class BranchStrategyMermaidBuilder {
               : "Merge";
         this.gitLinks.push({
           source: nodeName,
-          target: pullRequest.targetBranch + "Branch",
+          target: this.sanitizeNodeName(pullRequest.targetBranch) + "Branch",
           type: "gitFeatureMerge",
           label: prLinkLabel,
           activePR: pullRequest,
@@ -265,7 +265,7 @@ export class BranchStrategyMermaidBuilder {
         (branchAndOrg) => branchAndOrg.branchName === gitBranch.name,
       );
       if (branchAndOrg) {
-        const nodeName = branchAndOrg.branchName + "Org";
+        const nodeName = this.sanitizeNodeName(branchAndOrg.branchName) + "Org";
         let orgLabel =
           branchAndOrg.alias ||
           (isProduction(branchAndOrg.branchName)
@@ -625,5 +625,19 @@ export class BranchStrategyMermaidBuilder {
       return emojiMap[status];
     }
     return "❔";
+  }
+
+  /**
+   * Sanitize branch names for use as Mermaid node names.
+   * Removes or replaces characters that can cause Mermaid parsing issues.
+   */
+  private sanitizeNodeName(branchName: string | undefined): string {
+    if (!branchName) {
+      return 'unknown';
+    }
+    return branchName
+      .replace(/[^a-zA-Z0-9_-]/g, '_') // Replace special chars with underscore
+      .replace(/_{2,}/g, '_') // Replace multiple underscores with single
+      .replace(/^_+|_+$/g, ''); // Remove leading/trailing underscores
   }
 }
