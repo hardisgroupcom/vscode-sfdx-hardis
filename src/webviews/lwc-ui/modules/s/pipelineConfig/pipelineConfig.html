@@ -117,24 +117,26 @@
                                 <lightning-datatable
                                   key-field="_index"
                                   data={entry.arrayObjectDatatableData}
+                                  column-widths-mode="auto"
                                   columns={entry.arrayObjectDatatableColumns}
                                   data-key={entry.key}
                                   onrowaction={handleArrayObjectRowAction}
                                   hide-checkbox-column
-                                  class="slds-m-bottom_small"
+                                  class="slds-m-bottom_medium"
                                 ></lightning-datatable>
                               </template>
                               
                               <!-- Add New Button (Edit mode only) -->
                               <template if:true={isEditMode}>
-                                <lightning-button
-                                  variant="brand"
-                                  label="Add New"
-                                  icon-name="utility:add"
-                                  data-key={entry.key}
-                                  onclick={handleAddArrayObjectItem}
-                                  class="slds-m-top_x-small"
-                                ></lightning-button>
+                                <div class="add-button-container">
+                                  <lightning-button
+                                    variant="brand"
+                                    label="Add New"
+                                    icon-name="utility:add"
+                                    data-key={entry.key}
+                                    onclick={handleAddArrayObjectItem}
+                                  ></lightning-button>
+                                </div>
                               </template>
                               
                               <!-- Modal for adding/editing item -->
@@ -357,6 +359,7 @@
                                   <lightning-datatable
                                     key-field="_index"
                                     data={entry.arrayObjectDatatableData}
+                                    column-widths-mode="auto"
                                     columns={entry.arrayObjectDatatableColumns}
                                     hide-checkbox-column
                                     class="slds-m-top_x-small"
