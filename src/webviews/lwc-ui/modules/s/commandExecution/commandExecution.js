@@ -2166,16 +2166,16 @@ ${resultMessage}`;
     for (let i = 0; i < parts.length; i++) {
       const part = parts[i];
       // Stop when we hit an argument (starts with -)
-      if (part.startsWith('-')) {
+      if (part.startsWith("-")) {
         break;
       }
       commandParts.push(part);
       // If we have 'sf hardis:...' pattern, that's our command
-      if (part.includes('hardis:') && commandParts.length >= 2) {
+      if (part.includes("hardis:") && commandParts.length >= 2) {
         break;
       }
     }
-    return commandParts.join(' ');
+    return commandParts.join(" ");
   }
 
   handleToggleAutoclose(event) {
@@ -2183,13 +2183,13 @@ ${resultMessage}`;
     if (!coreCommand) {
       return;
     }
-    
+
     // Get the new checked state from the toggle event
     const isChecked = event.detail.checked;
-    
+
     // Update local state
     this.isInAutocloseList = isChecked;
-    
+
     // Send update to VS Code using addElements/removeElements to support multiple panels
     if (isChecked) {
       // Add command to autoclose list
@@ -2215,7 +2215,7 @@ ${resultMessage}`;
       });
       // Update local cache
       this.autocloseCommands = this.autocloseCommands.filter(
-        (cmd) => cmd !== coreCommand
+        (cmd) => cmd !== coreCommand,
       );
     }
   }

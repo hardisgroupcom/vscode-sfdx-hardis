@@ -505,7 +505,9 @@ export class LwcUiPanel {
           });
         }
         if (data.removeElements) {
-          currentValue = currentValue.filter((el) => !data.removeElements!.includes(el));
+          currentValue = currentValue.filter(
+            (el) => !data.removeElements!.includes(el),
+          );
         }
         data.value = currentValue;
       }
@@ -515,7 +517,7 @@ export class LwcUiPanel {
         data.value,
         vscode.ConfigurationTarget.Global,
       );
-      
+
       // Show appropriate success message
       if (data.addElements || data.removeElements) {
         let message = `VsCode configuration '${data.configKey}' updated`;
