@@ -171,6 +171,21 @@ export class LocalWebSocketServer {
 
         clientData.panel.updateTitle(`${commandName} - ${titleLabel}`);
 
+        // Auto-close panel if command is in autoclose list and completed successfully
+        if (success) {
+          // Extract core command without arguments
+          const coreCommand = this.extractCoreCommand(commandName);
+          // Refresh config to get the latest autoclose commands list
+          await this.refreshConfig();
+          const autocloseCommands: string[] =
+            this.config.get("autocloseCommands") || [];
+          if (coreCommand && autocloseCommands.includes(coreCommand)) {
+            // Schedule panel disposal after a short delay to allow user to see completion
+            const panelManager = LwcPanelManager.getInstance(this.context);
+            panelManager.scheduleDisposal(clientData.lwcId, 2000); // 2 seconds
+          }
+        }
+
         // Schedule panel disposal after a delay to allow user to review logs
         // const panelManager = LwcPanelManager.getInstance(this.context);
         // panelManager.scheduleDisposal(clientData.lwcId, 10000); // 10 seconds
@@ -569,6 +584,30 @@ export class LocalWebSocketServer {
       event: "userInput",
       userInput: this.config.get("userInput"),
     });
+  }
+
+  extractCoreCommand(fullCommand: string): string | null {
+    if (!fullCommand) {
+      return null;
+    }
+    // Extract core command without arguments
+    // Split by space and take only the parts that form the command (sf hardis:category:action)
+    const parts = fullCommand.split(/\s+/);
+    // Find the command parts (sf hardis:... format)
+    const commandParts: string[] = [];
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      // Stop when we hit an argument (starts with -)
+      if (part.startsWith("-")) {
+        break;
+      }
+      commandParts.push(part);
+      // If we have 'sf hardis:...' pattern, that's our command
+      if (part.includes("hardis:") && commandParts.length >= 2) {
+        break;
+      }
+    }
+    return commandParts.length > 0 ? commandParts.join(" ") : null;
   }
 
   async broadcastMessage(data: any) {

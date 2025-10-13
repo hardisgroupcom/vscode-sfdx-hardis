@@ -87,6 +87,23 @@
                                                                     ></lightning-input>
                                                                 </div>
                                                             </template>
+                                                            <template if:true={entry.isArray}>
+                                                                <div class="slds-form-element slds-m-bottom_xx-small">
+                                                                    <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                                                                        <span>{entry.label}</span>
+                                                                        <template if:true={entry.description}>
+                                                                            <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
+                                                                        </template>
+                                                                    </label>
+                                                                    <lightning-textarea
+                                                                        name={entry.key}
+                                                                        value={entry.valueArray}
+                                                                        onchange={handleTextareaChange}
+                                                                        variant="label-hidden"
+                                                                        placeholder="Enter one item per line"
+                                                                    ></lightning-textarea>
+                                                                </div>
+                                                            </template>
                                                         </div>
                                                     </div>
                                                 </div>
