@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [6.11.1] 2024-10-13
+
 - Fix issue related to VsCode theme colorization sometimes keeping custom colors when not necessary
 - Fix mermaid diagram display issue by sanitizing node names
 
