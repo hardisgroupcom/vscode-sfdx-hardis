@@ -239,7 +239,9 @@ export class HardisColors {
         colorCustomization = {};
       }
       // Convert proxy object to plain object to allow delete operations
-      const colorCustomObj = JSON.parse(JSON.stringify(colorCustomization)) as Record<string, any>;
+      const colorCustomObj = JSON.parse(
+        JSON.stringify(colorCustomization),
+      ) as Record<string, any>;
       this.savePreviousCustomizedColors(colorCustomObj);
       if (color !== null) {
         colorCustomObj["statusBar.background"] = color;
@@ -256,15 +258,19 @@ export class HardisColors {
       ) {
         // Check if current colors are org colors managed by this extension
         const orgColors = Object.values(this.describeOrgColors());
-        const statusBarIsOrgColor = colorCustomObj["statusBar.background"] && 
+        const statusBarIsOrgColor =
+          colorCustomObj["statusBar.background"] &&
           orgColors.includes(colorCustomObj["statusBar.background"]);
-        const activityBarIsOrgColor = colorCustomObj["activityBar.background"] && 
+        const activityBarIsOrgColor =
+          colorCustomObj["activityBar.background"] &&
           orgColors.includes(colorCustomObj["activityBar.background"]);
 
         // Check if previous colors are org colors
-        const statusBarPreviousIsOrgColor = colorCustomObj["statusBar.backgroundPrevious"] &&
+        const statusBarPreviousIsOrgColor =
+          colorCustomObj["statusBar.backgroundPrevious"] &&
           orgColors.includes(colorCustomObj["statusBar.backgroundPrevious"]);
-        const activityBarPreviousIsOrgColor = colorCustomObj["activityBar.backgroundPrevious"] &&
+        const activityBarPreviousIsOrgColor =
+          colorCustomObj["activityBar.backgroundPrevious"] &&
           orgColors.includes(colorCustomObj["activityBar.backgroundPrevious"]);
 
         let updated = false;
