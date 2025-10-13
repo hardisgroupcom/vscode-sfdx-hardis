@@ -34,3 +34,10 @@ lightning-datatable {
 	width: 100%;
 	max-width: 100%;
 }
+
+/* Center the Add New button */
+.add-button-container {
+	display: flex;
+	justify-content: center;
+	margin-top: 0.5rem;
+}
