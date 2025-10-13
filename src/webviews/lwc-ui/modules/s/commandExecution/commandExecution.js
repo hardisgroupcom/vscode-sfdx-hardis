@@ -33,6 +33,8 @@ export default class CommandExecution extends LightningElement {
   @track detailsMode = "simple"; // 'advanced' or 'simple'
   @track currentProgressSection = null; // Track current progress section
   readyMessageSent = false;
+  @track isInAutocloseList = false;
+  @track autocloseCommands = [];
 
   connectedCallback() {
     // Make component available globally for VS Code message handling
@@ -337,6 +339,9 @@ export default class CommandExecution extends LightningElement {
       this.detailsMode = vscodeConfig?.["showCommandsDetails"]
         ? "advanced"
         : "simple";
+      // Load autoclose configuration
+      this.autocloseCommands = vscodeConfig?.["autocloseCommands"] || [];
+      this.updateAutocloseStatus();
     }
 
     // Only set commandDocUrl if it's provided, preserve existing value otherwise
@@ -2136,6 +2141,82 @@ ${resultMessage}`;
         return `~${hours}h remaining`;
       }
       return `~${hours}h ${minutes}m remaining`;
+    }
+  }
+
+  updateAutocloseStatus() {
+    const coreCommand = this.getCoreCommand();
+    if (!coreCommand) {
+      this.isInAutocloseList = false;
+      return;
+    }
+    this.isInAutocloseList = this.autocloseCommands.includes(coreCommand);
+  }
+
+  getCoreCommand() {
+    if (!this.commandContext || !this.commandContext.command) {
+      return null;
+    }
+    const fullCommand = this.commandContext.command;
+    // Extract core command without arguments
+    // Split by space and take only the parts that form the command (sf hardis:category:action)
+    const parts = fullCommand.split(/\s+/);
+    // Find the command parts (sf hardis:... format)
+    let commandParts = [];
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      // Stop when we hit an argument (starts with -)
+      if (part.startsWith('-')) {
+        break;
+      }
+      commandParts.push(part);
+      // If we have 'sf hardis:...' pattern, that's our command
+      if (part.includes('hardis:') && commandParts.length >= 2) {
+        break;
+      }
+    }
+    return commandParts.join(' ');
+  }
+
+  handleToggleAutoclose(event) {
+    const coreCommand = this.getCoreCommand();
+    if (!coreCommand) {
+      return;
+    }
+    
+    // Get the new checked state from the toggle event
+    const isChecked = event.detail.checked;
+    
+    // Update local state
+    this.isInAutocloseList = isChecked;
+    
+    // Send update to VS Code using addElements/removeElements to support multiple panels
+    if (isChecked) {
+      // Add command to autoclose list
+      window.sendMessageToVSCode({
+        type: "updateVsCodeSfdxHardisConfiguration",
+        data: {
+          configKey: "autocloseCommands",
+          addElements: [coreCommand],
+        },
+      });
+      // Update local cache
+      if (!this.autocloseCommands.includes(coreCommand)) {
+        this.autocloseCommands = [...this.autocloseCommands, coreCommand];
+      }
+    } else {
+      // Remove command from autoclose list
+      window.sendMessageToVSCode({
+        type: "updateVsCodeSfdxHardisConfiguration",
+        data: {
+          configKey: "autocloseCommands",
+          removeElements: [coreCommand],
+        },
+      });
+      // Update local cache
+      this.autocloseCommands = this.autocloseCommands.filter(
+        (cmd) => cmd !== coreCommand
+      );
     }
   }
 }

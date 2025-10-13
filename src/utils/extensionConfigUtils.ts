@@ -50,6 +50,7 @@ export const sectionDefs = [
       "vsCodeSfdxHardis.disableGitBashCheck",
       "vsCodeSfdxHardis.disableGitMergeRequiredCheck",
       "vsCodeSfdxHardis.ignoreSfdxCliRecommendedVersion",
+      "vsCodeSfdxHardis.autocloseCommands",
     ],
   },
 ];
