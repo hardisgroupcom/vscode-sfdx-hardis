@@ -193,7 +193,7 @@ export class HardisColors {
         fail: false,
         output: true,
         cacheSection: "orgs",
-        cacheExpiration: 1000 * 60 * 60 * 24 * 90, // 24 hours
+        cacheExpiration: 1000 * 60 * 60 * 24 * 90 * 30, // 90 days
       },
     );
     if (orgRes?.result?.records?.length === 1) {
@@ -231,19 +231,20 @@ export class HardisColors {
     if (vscode.workspace.workspaceFolders) {
       const config = vscode.workspace.getConfiguration();
       let colorCustomization = config.get("workbench.colorCustomizations");
-      // Ensure colorCustomization is an object
+      // Ensure colorCustomization is an object and convert proxy to plain object
       if (
         typeof colorCustomization !== "object" ||
         colorCustomization === null
       ) {
         colorCustomization = {};
       }
-      const colorCustomObj = colorCustomization as Record<string, any>;
+      // Convert proxy object to plain object to allow delete operations
+      const colorCustomObj = JSON.parse(JSON.stringify(colorCustomization)) as Record<string, any>;
       this.savePreviousCustomizedColors(colorCustomObj);
       if (color !== null) {
         colorCustomObj["statusBar.background"] = color;
         colorCustomObj["activityBar.background"] = color;
-        // Do not update config file with blank color if there wasn't a previous config
+        // Update config file with the new color
         await config.update(
           "workbench.colorCustomizations",
           colorCustomObj,
@@ -253,31 +254,67 @@ export class HardisColors {
         colorCustomObj["statusBar.background"] ||
         colorCustomObj["activityBar.background"]
       ) {
-        // Restore colors if found, or delete them
-        if (
-          colorCustomObj["statusBar.background"] &&
-          colorCustomObj["statusBar.backgroundPrevious"]
-        ) {
-          colorCustomObj["statusBar.background"] =
-            colorCustomObj["statusBar.backgroundPrevious"];
-        } else {
-          delete colorCustomObj["statusBar.background"];
+        // Check if current colors are org colors managed by this extension
+        const orgColors = Object.values(this.describeOrgColors());
+        const statusBarIsOrgColor = colorCustomObj["statusBar.background"] && 
+          orgColors.includes(colorCustomObj["statusBar.background"]);
+        const activityBarIsOrgColor = colorCustomObj["activityBar.background"] && 
+          orgColors.includes(colorCustomObj["activityBar.background"]);
+
+        // Check if previous colors are org colors
+        const statusBarPreviousIsOrgColor = colorCustomObj["statusBar.backgroundPrevious"] &&
+          orgColors.includes(colorCustomObj["statusBar.backgroundPrevious"]);
+        const activityBarPreviousIsOrgColor = colorCustomObj["activityBar.backgroundPrevious"] &&
+          orgColors.includes(colorCustomObj["activityBar.backgroundPrevious"]);
+
+        let updated = false;
+
+        // Handle statusBar.background
+        if (colorCustomObj["statusBar.background"]) {
+          if (statusBarIsOrgColor) {
+            // Current color is an org color, remove it
+            delete colorCustomObj["statusBar.background"];
+            updated = true;
+          } else if (
+            colorCustomObj["statusBar.backgroundPrevious"] &&
+            !statusBarPreviousIsOrgColor
+          ) {
+            // There's a previous backup and it's not an org color, restore it
+            colorCustomObj["statusBar.background"] =
+              colorCustomObj["statusBar.backgroundPrevious"];
+            delete colorCustomObj["statusBar.backgroundPrevious"];
+            updated = true;
+          }
+          // Otherwise, keep the current color
         }
-        if (
-          colorCustomObj["activityBar.background"] &&
-          colorCustomObj["activityBar.backgroundPrevious"]
-        ) {
-          colorCustomObj["activityBar.background"] =
-            colorCustomObj["activityBar.backgroundPrevious"];
-        } else {
-          delete colorCustomObj["activityBar.background"];
+
+        // Handle activityBar.background
+        if (colorCustomObj["activityBar.background"]) {
+          if (activityBarIsOrgColor) {
+            // Current color is an org color, remove it
+            delete colorCustomObj["activityBar.background"];
+            updated = true;
+          } else if (
+            colorCustomObj["activityBar.backgroundPrevious"] &&
+            !activityBarPreviousIsOrgColor
+          ) {
+            // There's a previous backup and it's not an org color, restore it
+            colorCustomObj["activityBar.background"] =
+              colorCustomObj["activityBar.backgroundPrevious"];
+            delete colorCustomObj["activityBar.backgroundPrevious"];
+            updated = true;
+          }
+          // Otherwise, keep the current color
         }
-        // Remove colors
-        await config.update(
-          "workbench.colorCustomizations",
-          colorCustomObj,
-          vscode.ConfigurationTarget.Workspace,
-        );
+
+        // Update config only if changes were made
+        if (updated) {
+          await config.update(
+            "workbench.colorCustomizations",
+            colorCustomObj,
+            vscode.ConfigurationTarget.Workspace,
+          );
+        }
       }
     }
   }

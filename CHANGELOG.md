@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Fix issue related to VsCode theme colorization sometimes keeping custom colors when not necessary
+
 ## [6.11.0] 2024-10-12
 
 - Pipeline Settings: Allow to configure commands to run before deployment in pipeline configuration
