@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [6.11.2] 2024-10-13
+
 - Improves datatable column width handling
 - Add AutoClose command toggle and setting
 
