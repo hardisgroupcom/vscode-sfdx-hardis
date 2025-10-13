@@ -17,11 +17,13 @@ export default class ExtensionConfig extends LightningElement {
         let valueString = "";
         let valueBoolean = false;
         let valueEnum = "";
+        let valueArray = "";
         let optionsLwc = [];
         // Precompute type flags for template
         const isBoolean = entry.type === "boolean";
         const isEnum =
           Array.isArray(entry.enum) && entry.enum.length > 0 && !isBoolean;
+        const isArray = entry.type === "array";
         const isString = entry.type === "string" && !isEnum;
         if (isString) {
           valueString = entry.value ?? "";
@@ -38,15 +40,22 @@ export default class ExtensionConfig extends LightningElement {
               : String(v),
           }));
         }
+        if (isArray) {
+          // Convert array to newline-separated string for textarea
+          const arrayValue = Array.isArray(entry.value) ? entry.value : [];
+          valueArray = arrayValue.join("\n");
+        }
         return {
           ...entry,
           valueString,
           valueBoolean,
           valueEnum,
+          valueArray,
           optionsLwc,
           isString,
           isBoolean,
           isEnum,
+          isArray,
         };
       }),
     }));
@@ -73,6 +82,20 @@ export default class ExtensionConfig extends LightningElement {
   handleSelectChange(event) {
     const key = event.target.name;
     const value = event.detail.value;
+    window.sendMessageToVSCode({
+      type: "updateVsCodeSfdxHardisConfiguration",
+      data: { configKey: key, value },
+    });
+  }
+
+  handleTextareaChange(event) {
+    const key = event.target.name;
+    const textValue = event.detail.value || "";
+    // Convert newline-separated string to array, filtering out empty lines
+    const value = textValue
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
     window.sendMessageToVSCode({
       type: "updateVsCodeSfdxHardisConfiguration",
       data: { configKey: key, value },

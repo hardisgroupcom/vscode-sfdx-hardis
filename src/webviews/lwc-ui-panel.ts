@@ -483,11 +483,33 @@ export class LwcUiPanel {
   private async handleUpdateVsCodeSfdxHardisConfiguration(data: {
     configKey: string;
     value: any;
+    addElements?: string[];
+    removeElements?: string[];
   }): Promise<void> {
     try {
       const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
       if (data.configKey.startsWith("vsCodeSfdxHardis.")) {
         data.configKey = data.configKey.replace("vsCodeSfdxHardis.", "");
+      }
+      // If addElements or removeElements are specified, treat the config value as an array
+      if (data.addElements || data.removeElements) {
+        let currentValue = config.get<any[]>(data.configKey);
+        if (!Array.isArray(currentValue)) {
+          currentValue = [];
+        }
+        if (data.addElements) {
+          data.addElements.forEach((el) => {
+            if (!currentValue!.includes(el)) {
+              currentValue!.push(el);
+            }
+          });
+        }
+        if (data.removeElements) {
+          currentValue = currentValue.filter(
+            (el) => !data.removeElements!.includes(el),
+          );
+        }
+        data.value = currentValue;
       }
       // Update the configuration value
       await config.update(
@@ -495,9 +517,22 @@ export class LwcUiPanel {
         data.value,
         vscode.ConfigurationTarget.Global,
       );
-      vscode.window.showInformationMessage(
-        `VsCode configuration '${data.configKey}' updated with value: ${data.value}`,
-      );
+
+      // Show appropriate success message
+      if (data.addElements || data.removeElements) {
+        let message = `VsCode configuration '${data.configKey}' updated`;
+        if (data.addElements && data.addElements.length > 0) {
+          message += ` (added: ${data.addElements.join(", ")})`;
+        }
+        if (data.removeElements && data.removeElements.length > 0) {
+          message += ` (removed: ${data.removeElements.join(", ")})`;
+        }
+        vscode.window.showInformationMessage(message);
+      } else {
+        vscode.window.showInformationMessage(
+          `VsCode configuration '${data.configKey}' updated with value: ${data.value}`,
+        );
+      }
     } catch (error) {
       Logger.log(
         "Error updating VS Code configuration:\n" + JSON.stringify(error),

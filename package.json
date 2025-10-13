@@ -150,6 +150,14 @@
           "type": "boolean",
           "default": true,
           "description": "Automatically show the Welcome panel when opening VS Code SFDX Hardis for the first time in a session"
+        },
+        "vsCodeSfdxHardis.autocloseCommands": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "description": "List of commands that will auto-close their execution panel on successful completion. Commands should be in the format 'sf hardis:category:action'"
         }
       }
     },
