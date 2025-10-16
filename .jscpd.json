@@ -17,6 +17,7 @@
     "**/*.html",
     "**/*.css",
     "**/*.xml",
+    "**/*.json",
     "**/pipelineConfig.js",
     "**/sfdxHardisConfig.ts",
     "**/src/utils/gitProviders/**"

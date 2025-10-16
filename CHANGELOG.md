@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [6.12.0] 2024-10-16
+
+- New feature: Contextual menu on apex files to run as anonymous Apex (like in Developer Console)
+
 ## [6.11.2] 2024-10-13
 
 - Improves datatable column width handling
