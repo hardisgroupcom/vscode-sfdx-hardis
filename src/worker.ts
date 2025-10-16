@@ -7,7 +7,12 @@ function execCliCommand(cmd: string, execOptions: any, requestId: string) {
   childProcess.exec(cmd, execOptions, (error, stdout, stderr) => {
     if (parentPort) {
       if (error) {
-        parentPort.postMessage({ error: error, requestId });
+        parentPort.postMessage({
+          error: error,
+          requestId: requestId,
+          stdout: stdout,
+          stderr: stderr,
+        });
       } else {
         parentPort.postMessage({ stdout: stdout, stderr: stderr, requestId });
       }
