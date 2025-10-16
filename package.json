@@ -188,6 +188,11 @@
         "icon": "$(book)"
       },
       {
+        "command": "vscode-sfdx-hardis.runAnonymousApex",
+        "title": "SFDX Hardis: Run anonymous Apex code",
+        "icon": "$(zap)"
+      },
+      {
         "command": "vscode-sfdx-hardis.generateFlowDocumentation",
         "title": "SFDX Hardis: Generate Flow Documentation",
         "icon": "$(book)"
@@ -364,6 +369,11 @@
           "group": "z_sfdxhardis@5"
         },
         {
+          "command": "vscode-sfdx-hardis.runAnonymousApex",
+          "when": "resourceExtname == '.apex'",
+          "group": "z_sfdxhardis@10"
+        },
+        {
           "command": "vscode-sfdx-hardis.generatePackageXmlDoc",
           "when": "resourceExtname == '.xml'",
           "group": "z_sfdxhardis@10"
@@ -451,6 +461,11 @@
           "command": "vscode-sfdx-hardis.toggleCheckpoint",
           "when": "resourceExtname == .cls",
           "group": "z_sfdxhardis@8"
+        },
+        {
+          "command": "vscode-sfdx-hardis.runAnonymousApex",
+          "when": "resourceExtname == '.apex'",
+          "group": "z_sfdxhardis@10"
         },
         {
           "command": "vscode-sfdx-hardis.generatePackageXmlDoc",

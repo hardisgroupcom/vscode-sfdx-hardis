@@ -1009,6 +1009,12 @@ export class HardisCommandsProvider
             tooltip: "Merge package.xml files located in manifest folder",
             command: "sf hardis:package:mergexml",
           },
+          {
+            id: "execute-anonymous-apex",
+            label: "Run anonymous Apex code",
+            tooltip: "Execute anonymous apex code like in Developer Console",
+            command: "vscode-sfdx-hardis.runAnonymousApex",
+          },
         ],
       },
       /*  {

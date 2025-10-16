@@ -70,7 +70,7 @@ export async function execShell(cmd: string, execOptions: any) {
         const cb = sharedWorkerCallbacks.get(reqId)!;
         sharedWorkerCallbacks.delete(reqId);
         if (result && result.error) {
-          cb.reject(result.error);
+          cb.reject(result);
         } else {
           cb.resolve({ stdout: result.stdout, stderr: result.stderr });
         }
@@ -96,7 +96,7 @@ export async function execShell(cmd: string, execOptions: any) {
     return new Promise<any>((resolve, reject) => {
       childProcess.exec(cmd, execOptions, (error, stdout, stderr) => {
         if (error) {
-          return reject(error);
+          return reject({error: error, stdout: stdout, stderr: stderr });
         }
         return resolve({ stdout: stdout, stderr: stderr });
       });
@@ -301,10 +301,20 @@ export async function execCommand(
       }
     }
     // if --json, we should not have a crash, so return status 1 + output log
-    return {
+    let res: any = {
+      stdout: e.stdout || "",
+      stderr: e.stderr || "",
+      error: e.error || e,
       status: 1,
       errorMessage: `[sfdx-hardis][ERROR] Error processing command\n$${e.stdout}\n${e.stderr}`,
     };
+    try {
+      const parsedResult = JSON.parse(e.stdout.toString());
+      res = Object.assign(res, parsedResult);
+    } catch {
+      res.unableToParseJson = true;
+    }
+    return res;
   }
   // Display output if requested, for better user understanding of the logs
   if (options.output || options.debug) {
@@ -683,4 +693,13 @@ export function openFolderInExplorer(folderPath: string) {
   } else {
     vscode.window.showErrorMessage(`Unsupported platform ${platform}`);
   }
+}
+
+export async function getReportDirectory() {
+  const configProject = await getConfig('project');
+  const workspaceRoot = getWorkspaceRoot();
+  const defaultReportDir = path.join(workspaceRoot || process.cwd(), 'hardis-report');
+  const reportDir = configProject.reportDirectory || defaultReportDir;
+  await fs.ensureDir(reportDir);
+  return reportDir;
 }
