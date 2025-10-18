@@ -157,10 +157,11 @@ export class BranchStrategyMermaidBuilder {
           activePR: activePR,
         });
       }
+      const branchLabel = branchAndOrg?.pullRequestsInBranchSinceLastMerge?.length > 1 ? `${branchAndOrg.branchName}<br/>(${branchAndOrg?.pullRequestsInBranchSinceLastMerge?.length})` : branchAndOrg.branchName;
       return {
         name: branchAndOrg.branchName,
         nodeName: nodeName,
-        label: branchAndOrg.branchName,
+        label: branchLabel,
         class: isProduction(branchAndOrg.branchName) ? "gitMain" : "gitMajor",
         level: branchAndOrg.level,
         instanceUrl: branchAndOrg.instanceUrl,

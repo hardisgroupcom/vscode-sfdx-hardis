@@ -222,6 +222,17 @@ export class GitProvider {
     return [];
   }
 
+  async listPullRequestsInBranchSinceLastMerge(
+    _currentBranchName: string,
+    _targetBranchName: string,
+    _childBranchesNames: string[],
+  ): Promise<PullRequest[]> {
+    Logger.log(
+      `listPullRequestsInBranchSinceLastMerge not implemented on ${this.repoInfo?.providerName || "unknown provider"}`,
+    );
+    return [];
+  }
+
   handlesNativeGitAuth(): boolean {
     return false;
   }

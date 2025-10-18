@@ -4,7 +4,7 @@ import { glob } from "glob";
 import * as yaml from "js-yaml";
 import sortArray from "sort-array";
 import { getWorkspaceRoot } from "../utils";
-import { Job, JobStatus } from "./gitProviders/types";
+import { Job, JobStatus, PullRequest } from "./gitProviders/types";
 import { GitProvider } from "./gitProviders/gitProvider";
 
 export interface MajorOrg {
@@ -15,10 +15,9 @@ export interface MajorOrg {
   level: number;
   instanceUrl: string;
   warnings: string[];
-  openPullRequestsAsTarget?: any[];
-  mergedPullRequestsAsTarget?: any[];
   jobs: Job[];
   jobsStatus: JobStatus;
+  pullRequestsInBranchSinceLastMerge?: PullRequest[];
 }
 
 export async function listMajorOrgs(
@@ -113,10 +112,52 @@ export async function listMajorOrgs(
   }
 
   // Sort by level (desc), then branchName (asc)
-  return sortArray(majorOrgs, {
+  const majorOrgsSorted = sortArray(majorOrgs, {
     by: ["level", "branchName"],
     order: ["desc", "asc"],
   });
+
+  if (options.browseGitProvider) {
+    const gitProvider = await GitProvider.getInstance();
+    if (gitProvider?.isActive) {
+    // Complete with list of Pull Requests merged in each branch, using listPullRequestsInBranchSinceLastMerge
+      for (const org of majorOrgsSorted) {
+        // Get child branches names, then recursively child branches names of child branches
+        const childBranchesNames = recursiveGetChildBranches(
+          org.branchName,
+          majorOrgsSorted,
+        );
+        if (org.mergeTargets.length === 0) { // Case of main/prod branch
+          continue;
+        }
+        const prs = await gitProvider.listPullRequestsInBranchSinceLastMerge(
+          org.branchName,
+          org.mergeTargets[0], // use first merge target as target branch
+          [...childBranchesNames],
+        );
+        org.pullRequestsInBranchSinceLastMerge = prs;
+      }
+    }
+  }
+
+  return majorOrgsSorted;
+}
+
+function recursiveGetChildBranches(
+  branchName: string,
+  majorOrgs: MajorOrg[],
+  collected: Set<string> = new Set(),
+): Set<string> {
+  const directChildren = majorOrgs
+    .filter((o) => o.mergeTargets.includes(branchName))
+    .map((o) => o.branchName);
+  for (const child of directChildren) {
+    if (!collected.has(child)) {
+      collected.add(child);
+      recursiveGetChildBranches(child, majorOrgs, collected);
+    }
+  }
+  return collected;
 }
 
 function guessMatchingMergeTargets(
