@@ -194,18 +194,6 @@ export default class Pipeline extends LightningElement {
         this._boundVisibilityChange,
       );
     }
-    // Register global openPR function for Mermaid link callbacks
-    if (typeof window !== "undefined") {
-      window.openPR = (url) => {
-        if (url) {
-          window.open(url, "_blank");
-        }
-      };
-      // Register global showBranchPRs function for Mermaid branch click callbacks
-      window.showBranchPRs = (branchName) => {
-        this.handleShowBranchPRs(branchName);
-      };
-    }
     this._isVisible = !document.hidden;
   }
 
@@ -229,14 +217,6 @@ export default class Pipeline extends LightningElement {
     }
     // Clean up auto-refresh timer
     this._stopAutoRefresh();
-    // Clean up global openPR function
-    if (typeof window !== "undefined" && window.openPR) {
-      delete window.openPR;
-    }
-    // Clean up global showBranchPRs function
-    if (typeof window !== "undefined" && window.showBranchPRs) {
-      delete window.showBranchPRs;
-    }
   }
 
   adjustPrColumns() {

@@ -524,7 +524,7 @@ export class BranchStrategyMermaidBuilder {
     for (const gitBranch of this.gitBranches) {
       if (gitBranch.hasPullRequests) {
         this.mermaidLines.push(
-          `click ${gitBranch.nodeName} call showBranchPRs() "Show ${gitBranch.name} PRs"`,
+          `click ${gitBranch.nodeName} call handleMermaidClick() "Show ${gitBranch.name} PRs"`,
         );
       }
     }
