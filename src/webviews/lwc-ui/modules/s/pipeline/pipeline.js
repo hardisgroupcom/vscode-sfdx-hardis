@@ -83,6 +83,10 @@ export default class Pipeline extends LightningElement {
   hasWarnings = false;
   warnings = [];
   showOnlyMajor = false;
+  showPRModal = false;
+  modalBranchName = "";
+  modalPullRequests = [];
+  branchPullRequestsMap = new Map();
 
   // Dynamically compute the icon URL for the PR button
   get prButtonIconUrl() {
@@ -112,6 +116,16 @@ export default class Pipeline extends LightningElement {
     this.hasWarnings = this.warnings.length > 0;
     this.showOnlyMajor = false;
     this.displayFeatureBranches = data?.displayFeatureBranches ?? false;
+    
+    // Store branch PR data for modal display
+    this.branchPullRequestsMap = new Map();
+    if (this.pipelineData && this.pipelineData.orgs) {
+      for (const org of this.pipelineData.orgs) {
+        if (org.pullRequestsInBranchSinceLastMerge && org.pullRequestsInBranchSinceLastMerge.length > 0) {
+          this.branchPullRequestsMap.set(org.branchName, org.pullRequestsInBranchSinceLastMerge);
+        }
+      }
+    }
     // Select diagram based on displayFeatureBranches toggle
     this.currentDiagram = this.displayFeatureBranches
       ? this.pipelineData.mermaidDiagram
@@ -187,6 +201,10 @@ export default class Pipeline extends LightningElement {
           window.open(url, "_blank");
         }
       };
+      // Register global showBranchPRs function for Mermaid branch click callbacks
+      window.showBranchPRs = (branchName) => {
+        this.handleShowBranchPRs(branchName);
+      };
     }
     this._isVisible = !document.hidden;
   }
@@ -214,6 +232,10 @@ export default class Pipeline extends LightningElement {
     // Clean up global openPR function
     if (typeof window !== "undefined" && window.openPR) {
       delete window.openPR;
+    }
+    // Clean up global showBranchPRs function
+    if (typeof window !== "undefined" && window.showBranchPRs) {
+      delete window.showBranchPRs;
     }
   }
 
@@ -761,5 +783,31 @@ export default class Pipeline extends LightningElement {
       type: "updatePanelTitle",
       data: { title: title },
     });
+  }
+
+  handleShowBranchPRs(branchName) {
+    console.log("Showing PRs for branch:", branchName);
+    const prs = this.branchPullRequestsMap.get(branchName);
+    if (prs && prs.length > 0) {
+      this.modalBranchName = branchName;
+      this.modalPullRequests = this._mapPrsWithIcons(prs);
+      this.showPRModal = true;
+      console.log("Modal data:", { branchName, prCount: prs.length });
+    }
+    else {
+      console.warn("No PRs found for branch:", branchName);
+    }
+  }
+
+  handleClosePRModal() {
+    this.showPRModal = false;
+    this.modalBranchName = "";
+    this.modalPullRequests = [];
+  }
+
+  get modalTitle() {
+    const prLabel = this.prButtonInfo?.pullRequestLabel || "Pull Request";
+    const count = this.modalPullRequests.length;
+    return `${prLabel}s for ${this.modalBranchName} (${count})`;
   }
 }

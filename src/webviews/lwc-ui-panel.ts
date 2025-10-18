@@ -624,6 +624,7 @@ export class LwcUiPanel {
         <script>
             mermaid.initialize({
               startOnLoad: false,
+              securityLevel: 'loose',
               themeVariables: {
                 clusterBkg: "#EAF5FC"
               }
