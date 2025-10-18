@@ -11,6 +11,11 @@ export default class Pipeline extends LightningElement {
   @track connectedLabel = "Connect to Git";
   @track connectedVariant = "neutral";
   @track connectedIconName = "utility:link";
+  @track ticketAuthenticated = false;
+  @track ticketConnectedLabel = "Connect to Ticketing";
+  @track ticketConnectedVariant = "neutral";
+  @track ticketConnectedIconName = "utility:link";
+  @track ticketProviderName = "";
   @track openPullRequests = [];
   @track displayFeatureBranches = false;
   @track loading = false;
@@ -188,6 +193,18 @@ export default class Pipeline extends LightningElement {
     this.connectedIconName = this.gitAuthenticated
       ? "utility:check"
       : "utility:link";
+    
+    // Update ticketing authentication state
+    this.ticketAuthenticated = data?.ticketAuthenticated ?? false;
+    this.ticketProviderName = data?.ticketProviderName || "Ticketing";
+    this.ticketConnectedLabel = this.ticketAuthenticated
+      ? `Connected to ${this.ticketProviderName}`
+      : `Connect to ${this.ticketProviderName}`;
+    this.ticketConnectedIconName = this.ticketAuthenticated
+      ? "utility:check"
+      : "utility:link";
+    this.ticketConnectedVariant = this.ticketAuthenticated ? "success" : "neutral";
+    
     this.openPullRequests = this._mapPrsWithIcons(data.openPullRequests || []);
     // ensure reactivity for computed label
     this.openPullRequests = Array.isArray(this.openPullRequests)
@@ -766,6 +783,13 @@ export default class Pipeline extends LightningElement {
   handleGitConnect() {
     window.sendMessageToVSCode({
       type: "connectToGit",
+      data: {},
+    });
+  }
+
+  handleTicketConnect() {
+    window.sendMessageToVSCode({
+      type: "connectToTicketing",
       data: {},
     });
   }

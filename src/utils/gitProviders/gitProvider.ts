@@ -10,6 +10,8 @@ import type {
 import { getWorkspaceRoot } from "../../utils";
 import { Logger } from "../../logger";
 import { SecretsManager } from "../secretsManager";
+import { TicketProvider } from "../ticketProviders/ticketProvider";
+import { Ticket } from "../ticketProviders/types";
 
 export class GitProvider {
   static instance: GitProvider;
@@ -235,6 +237,67 @@ export class GitProvider {
 
   handlesNativeGitAuth(): boolean {
     return false;
+  }
+
+  async completePullRequestsWithTickets(
+    _pullRequests: PullRequest[],
+    options: { fetchDetails: boolean } = { fetchDetails: false },
+  ): Promise<PullRequest[]> {
+    const ticketProvider = await TicketProvider.getInstance({reset: false, authenticate: false});
+    if (!ticketProvider) {
+      return _pullRequests;
+    }
+    for (const pr of _pullRequests) {
+      const allpullRequestRelatedStrings = [
+        pr.title,
+        pr.description,
+        pr.sourceBranch,
+      ]
+      const concatenated = allpullRequestRelatedStrings.filter(Boolean).join("\n");
+      const tickets: Ticket[] = await ticketProvider.getTicketsFromString(concatenated);
+      pr.relatedTickets = tickets;
+    }
+    if (options.fetchDetails) {
+      // Make unique list of tickets from all PRs
+      const uniqueTicketsMap: Map<string, Ticket> = new Map();
+      for (const pr of _pullRequests) {
+        if (pr.relatedTickets) {
+          for (const ticket of pr.relatedTickets) {
+            if (!uniqueTicketsMap.has(ticket.id)) {
+              uniqueTicketsMap.set(ticket.id, ticket);
+            }
+          }
+        }
+      }
+      // Fetch details for each unique ticket
+      const uniqueTickets = Array.from(uniqueTicketsMap.values());
+      const detailedResults = await Promise.all(
+        uniqueTickets.map(async (t) => {
+          try {
+            const updated = await ticketProvider.completeTicketDetails(t);
+            return updated ?? t;
+          } 
+          catch (err: any) {
+            Logger.log(
+              `completeTicketDetails failed for ticket=${t.id}: ${err?.message || err}`,
+            );
+            return t;
+          }
+        }),
+      );
+      for (const ticket of detailedResults) {
+        uniqueTicketsMap.set(ticket.id, ticket);
+      }
+      // Update details back to PRs
+      for (const pr of _pullRequests) {
+        if (pr.relatedTickets) {
+          pr.relatedTickets = pr.relatedTickets.map((t) =>
+            uniqueTicketsMap.get(t.id) || t
+          );
+        }
+      }
+    }
+    return _pullRequests;
   }
 
   /**

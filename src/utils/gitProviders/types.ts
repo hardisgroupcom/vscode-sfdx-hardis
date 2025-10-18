@@ -1,3 +1,5 @@
+import { Ticket } from "../ticketProviders/types";
+
 export type ProviderName = "gitlab" | "github" | "azure" | "bitbucket";
 
 export type ProviderDescription = {
@@ -111,6 +113,8 @@ export type PullRequest = {
   // - 'failed'  : at least one job failed
   // - 'unknown' : no jobs or unknown statuses
   jobsStatus: "running" | "pending" | "success" | "failed" | "unknown";
+
+  relatedTickets?: Ticket[]; // tickets associated with the PR (from title/description/branches)
 };
 
 /**

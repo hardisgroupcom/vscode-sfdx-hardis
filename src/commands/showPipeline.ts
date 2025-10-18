@@ -6,6 +6,7 @@ import { LwcPanelManager } from "../lwc-panel-manager";
 import { Commands } from "../commands";
 import { showPackageXmlPanel } from "./packageXml";
 import { PullRequest } from "../utils/gitProviders/types";
+import { TicketProvider } from "../utils/ticketProviders/ticketProvider";
 
 export function registerShowPipeline(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
@@ -96,6 +97,30 @@ export function registerShowPipeline(commands: Commands) {
             );
           }
         }
+        else if (type === "connectToTicketing") {
+          const ticketProvider = await TicketProvider.getInstance({reset: true, authenticate: true});
+          if (!ticketProvider || ticketProvider.isAuthenticated === false) {
+            vscode.window.showErrorMessage(
+              "No supported Ticketing provider detected or authentication failed.",
+            );
+            return;
+          }
+          if (ticketProvider.isAuthenticated === true) {
+            vscode.window.showInformationMessage(
+              `Successfully connected to ${ticketProvider.providerName}.`,
+            );
+            pipelineProperties = await loadAllPipelineInfo({
+              browseGitProvider: true,
+              resetGit: false,
+              withProgress: true,
+            });
+            panel.sendInitializationData(pipelineProperties);
+          } else {
+            vscode.window.showErrorMessage(
+              `Failed to connect to ${ticketProvider.providerName}. Please check the logs for details.`,
+            );
+          }
+        }
       });
     },
   );
@@ -108,6 +133,8 @@ export function registerShowPipeline(commands: Commands) {
   }): Promise<{
     pipelineData: any;
     gitAuthenticated: boolean;
+    ticketAuthenticated?: boolean;
+    ticketProviderName?: string;
     prButtonInfo: any;
     openPullRequests: PullRequest[];
     repoPlatformLabel: string;
@@ -155,10 +182,22 @@ export function registerShowPipeline(commands: Commands) {
       const displayFeatureBranches =
         config.get<boolean>("pipelineDisplayFeatureBranches") ?? false;
 
+      const ticketProvider = await TicketProvider.getInstance({reset: false, authenticate: false});
+      let ticketAuthenticated = false;
+      let ticketProviderName = "";
+      if (ticketProvider) {
+        ticketProviderName = ticketProvider.providerName || "";
+      }
+      if (ticketProvider?.isAuthenticated) {
+        ticketAuthenticated = true;
+      }
+
       return {
         pipelineData: pipelineData,
         prButtonInfo: prButtonInfo,
         gitAuthenticated: gitAuthenticated,
+        ticketAuthenticated: ticketAuthenticated,
+        ticketProviderName: ticketProviderName,
         openPullRequests: openPullRequests,
         repoPlatformLabel: repoPlatformLabel,
         displayFeatureBranches: displayFeatureBranches,

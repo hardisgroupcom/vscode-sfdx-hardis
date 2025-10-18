@@ -139,6 +139,8 @@ export async function listMajorOrgs(
             [...childBranchesNames],
           );
           org.pullRequestsInBranchSinceLastMerge = prs;
+          // Complete with tickets
+          await gitProvider.completePullRequestsWithTickets(prs, { fetchDetails: false });
         }),
       );
     }
