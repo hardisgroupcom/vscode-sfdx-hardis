@@ -82,7 +82,7 @@ export default class Pipeline extends LightningElement {
       label: "#",
       fieldName: "number",
       type: "text",
-      initialWidth: 80,
+      initialWidth: 40,
       wrapText: true,
     },
     {
@@ -91,7 +91,7 @@ export default class Pipeline extends LightningElement {
       fieldName: "webUrl",
       type: "url",
       typeAttributes: { label: { fieldName: "title" }, target: "_blank" },
-      initialWidth: 420,
+      initialWidth: 300,
       wrapText: true,
     },
     {
@@ -99,7 +99,6 @@ export default class Pipeline extends LightningElement {
       label: "Author",
       fieldName: "authorLabel",
       type: "text",
-      initialWidth: 160,
       wrapText: true,
     },
     {
@@ -107,7 +106,6 @@ export default class Pipeline extends LightningElement {
       label: "Merged",
       fieldName: "mergeDateFormatted",
       type: "text",
-      initialWidth: 180,
       wrapText: true,
     },
     {
@@ -115,7 +113,6 @@ export default class Pipeline extends LightningElement {
       label: "Source",
       fieldName: "sourceBranch",
       type: "text",
-      initialWidth: 280,
       wrapText: true,
     },
     {
@@ -123,7 +120,6 @@ export default class Pipeline extends LightningElement {
       label: "Target",
       fieldName: "targetBranch",
       type: "text",
-      initialWidth: 180,
       wrapText: true,
     },
   ];
@@ -876,6 +872,6 @@ export default class Pipeline extends LightningElement {
   get modalTitle() {
     const prLabel = this.prButtonInfo?.pullRequestLabel || "Pull Request";
     const count = this.modalPullRequests.length;
-    return `${prLabel}s for ${this.modalBranchName} (${count})`;
+    return `${prLabel}s in ${this.modalBranchName} (${count})`;
   }
 }
