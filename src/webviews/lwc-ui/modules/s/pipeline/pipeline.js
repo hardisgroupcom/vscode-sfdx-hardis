@@ -75,6 +75,59 @@ export default class Pipeline extends LightningElement {
     },
   ];
 
+  // Columns for modal PR display (without jobs status, with merge date)
+  modalPrColumns = [
+    {
+      key: "number",
+      label: "#",
+      fieldName: "number",
+      type: "text",
+      initialWidth: 80,
+      wrapText: true,
+    },
+    {
+      key: "title",
+      label: "Title",
+      fieldName: "webUrl",
+      type: "url",
+      typeAttributes: { label: { fieldName: "title" }, target: "_blank" },
+      initialWidth: 420,
+      wrapText: true,
+    },
+    {
+      key: "author",
+      label: "Author",
+      fieldName: "authorLabel",
+      type: "text",
+      initialWidth: 160,
+      wrapText: true,
+    },
+    {
+      key: "mergeDate",
+      label: "Merged",
+      fieldName: "mergeDateFormatted",
+      type: "text",
+      initialWidth: 180,
+      wrapText: true,
+    },
+    {
+      key: "source",
+      label: "Source",
+      fieldName: "sourceBranch",
+      type: "text",
+      initialWidth: 280,
+      wrapText: true,
+    },
+    {
+      key: "target",
+      label: "Target",
+      fieldName: "targetBranch",
+      type: "text",
+      initialWidth: 180,
+      wrapText: true,
+    },
+  ];
+
   pipelineData;
   repoInfo;
   error;
@@ -180,6 +233,21 @@ export default class Pipeline extends LightningElement {
       };
       // Show emoji only (accessibility: we may add a visually-hidden label later if needed)
       copy.jobsStatusEmoji = emojiMap[normalized] || emojiMap.unknown;
+      
+      // Format merge date for display
+      if (pr.mergeDate) {
+        try {
+          const date = new Date(pr.mergeDate);
+          copy.mergeDateFormatted = date.toLocaleString();
+        }
+        catch (e) {
+          copy.mergeDateFormatted = pr.mergeDate;
+        }
+      }
+      else {
+        copy.mergeDateFormatted = '';
+      }
+      
       return copy;
     });
   }

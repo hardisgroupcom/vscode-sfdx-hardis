@@ -89,6 +89,7 @@ export type PullRequest = {
   // Status & timestamps
   // `PullRequestStatus` lists known provider-specific state values.
   state?: PullRequestStatus;
+  mergeDate?: string; // ISO date string
   createdAt?: string; // ISO date string
   updatedAt?: string; // ISO date string
 

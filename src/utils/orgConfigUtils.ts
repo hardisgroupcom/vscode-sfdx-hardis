@@ -120,23 +120,27 @@ export async function listMajorOrgs(
   if (options.browseGitProvider) {
     const gitProvider = await GitProvider.getInstance();
     if (gitProvider?.isActive) {
-    // Complete with list of Pull Requests merged in each branch, using listPullRequestsInBranchSinceLastMerge
-      for (const org of majorOrgsSorted) {
-        // Get child branches names, then recursively child branches names of child branches
-        const childBranchesNames = recursiveGetChildBranches(
-          org.branchName,
-          majorOrgsSorted,
-        );
-        if (org.mergeTargets.length === 0) { // Case of main/prod branch
-          continue;
-        }
-        const prs = await gitProvider.listPullRequestsInBranchSinceLastMerge(
-          org.branchName,
-          org.mergeTargets[0], // use first merge target as target branch
-          [...childBranchesNames],
-        );
-        org.pullRequestsInBranchSinceLastMerge = prs;
-      }
+      // Complete with list of Pull Requests merged in each branch, using listPullRequestsInBranchSinceLastMerge
+      // Parallelize calls for better performance
+      await Promise.all(
+        majorOrgsSorted.map(async (org) => {
+          // Get child branches names, then recursively child branches names of child branches
+          const childBranchesNames = recursiveGetChildBranches(
+            org.branchName,
+            majorOrgsSorted,
+          );
+          if (org.mergeTargets.length === 0) {
+            // Case of main/prod branch
+            return;
+          }
+          const prs = await gitProvider.listPullRequestsInBranchSinceLastMerge(
+            org.branchName,
+            org.mergeTargets[0], // use first merge target as target branch
+            [...childBranchesNames],
+          );
+          org.pullRequestsInBranchSinceLastMerge = prs;
+        }),
+      );
     }
   }
 

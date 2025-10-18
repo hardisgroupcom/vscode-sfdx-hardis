@@ -218,6 +218,9 @@ export class GitProviderGitHub extends GitProvider {
       webUrl: pr.html_url,
       sourceBranch: pr.head.ref,
       targetBranch: pr.base.ref,
+      mergeDate: pr.merged_at || undefined,
+      createdAt: pr.created_at || undefined,
+      updatedAt: pr.updated_at || undefined,
       jobsStatus: "unknown",
     };
   }

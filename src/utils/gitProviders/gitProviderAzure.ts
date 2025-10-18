@@ -434,6 +434,9 @@ export class GitProviderAzure extends GitProvider {
       targetBranch: pr.targetRefName
         ? pr.targetRefName.replace(/^refs\/heads\//, "")
         : "",
+      mergeDate: (pr.status === 3 && pr.closedDate) ? pr.closedDate.toISOString() : undefined,
+      createdAt: pr.creationDate ? pr.creationDate.toISOString() : undefined,
+      updatedAt: pr.closedDate ? pr.closedDate.toISOString() : undefined,
       jobsStatus: "unknown",
     };
     return prConverted;

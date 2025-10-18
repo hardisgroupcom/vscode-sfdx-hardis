@@ -188,9 +188,31 @@ lightning-datatable .hardis-emoji-cell a {
     z-index: 8999;
 }
 
-/* Ensure modal datatable fits well */
-.slds-modal__content lightning-datatable {
-    max-height: 400px;
-    overflow-y: auto;
+/* Make modal take 90% of viewport width and height */
+.slds-modal__container {
+    width: 90% !important;
+    max-width: 90vw !important;
+    max-height: 90vh !important;
+    height: 90vh !important;
+    display: flex !important;
+    flex-direction: column !important;
 }
+
+/* Ensure modal content area is flexible and scrollable */
+.slds-modal__content {
+    max-height: calc(90vh - 180px) !important;
+    overflow-y: auto !important;
+    overflow-x: auto !important;
+    flex: 1 1 auto !important;
+    position: relative !important;
+}
+
+/* Datatable should display fully without internal scrolling
+.slds-modal__content lightning-datatable {
+    width: max-content !important;
+    min-width: 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+} */
+
 
