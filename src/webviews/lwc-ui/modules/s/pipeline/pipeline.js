@@ -122,7 +122,7 @@ export default class Pipeline extends LightningElement {
     if (this.pipelineData && this.pipelineData.orgs) {
       for (const org of this.pipelineData.orgs) {
         if (org.pullRequestsInBranchSinceLastMerge && org.pullRequestsInBranchSinceLastMerge.length > 0) {
-          this.branchPullRequestsMap.set(org.branchName, org.pullRequestsInBranchSinceLastMerge);
+          this.branchPullRequestsMap.set(org.name, org.pullRequestsInBranchSinceLastMerge);
         }
       }
     }
@@ -490,6 +490,26 @@ export default class Pipeline extends LightningElement {
         mermaidDiv.innerHTML = svg;
         this.error = undefined;
         console.log("Mermaid diagram rendered successfully");
+
+        // Catch clicks on Nodes
+        const mermaidSvg = this.template.querySelector(".mermaid svg");
+        if (mermaidSvg) {
+          mermaidSvg.addEventListener("click", (event) => {
+            const target = event.target;
+            // Get node where the click happened
+            const mermaidNode = target.closest("g.node");
+            if (!mermaidNode) {
+              return;
+            }
+            const targetId = mermaidNode.getAttribute("id") || "";
+            // Extract branch name from id (id example: from "flowchart-uatBranch-6" extract "uat" without "Branch")
+            const branchMatch = targetId.match(/flowchart-(.+?)(Branch)?-\d+/);
+            if (branchMatch && branchMatch[1]) {
+              const branchName = branchMatch[1];
+              this.handleShowBranchPRs(branchName);
+            }
+          });
+        }
 
         // Apply animation classes to links with running/pending PRs
         // Find all edge paths and check if they need animation based on link styling
