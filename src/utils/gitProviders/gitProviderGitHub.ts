@@ -79,6 +79,99 @@ export class GitProviderGitHub extends GitProvider {
     return await this.convertAndCollectJobsList(pullRequests);
   }
 
+  async listPullRequestsInBranchSinceLastMerge(
+    currentBranchName: string,
+    targetBranchName: string,
+    childBranchesNames: string[],
+  ): Promise<PullRequest[]> {
+    if (!this.gitHubClient || !this.repoInfo) {
+      return [];
+    }
+
+    const [owner, repo] = [this.repoInfo.owner, this.repoInfo.repo];
+
+    try {
+      // Step 1: Find the last merged PR from currentBranch to targetBranch
+      const { data: mergedPRs } = await this.gitHubClient.pulls.list({
+        owner,
+        repo,
+        state: "closed",
+        head: `${owner}:${currentBranchName}`,
+        base: targetBranchName,
+        sort: "updated",
+        direction: "desc",
+        per_page: 1,
+      });
+
+      const lastMergeToTarget = mergedPRs.find((pr) => pr.merged_at);
+
+      // Step 2: Get commits since last merge
+      const compareOptions: any = {
+        owner,
+        repo,
+        base: lastMergeToTarget ? lastMergeToTarget.merge_commit_sha! : targetBranchName,
+        head: currentBranchName,
+        per_page: 100,
+      };
+
+      const { data: comparison } = await this.gitHubClient.repos.compareCommits(compareOptions);
+      
+      if (!comparison.commits || comparison.commits.length === 0) {
+        return [];
+      }
+
+      const commitSHAs = new Set(comparison.commits.map((c) => c.sha));
+
+      // Step 3: Get all merged PRs targeting currentBranch and child branches (parallelized)
+      const allBranches = [currentBranchName, ...childBranchesNames];
+      
+      const prPromises = allBranches.map(async (branchName) => {
+        try {
+          const { data: prs } = await this.gitHubClient!.pulls.list({
+            owner,
+            repo,
+            state: "closed",
+            base: branchName,
+            per_page: 100,
+          });
+          return prs.filter((pr) => pr.merged_at);
+        }
+        catch (err) {
+          Logger.log(
+            `Error fetching merged PRs for branch ${branchName}: ${String(err)}`,
+          );
+          return [];
+        }
+      });
+
+      const prResults = await Promise.all(prPromises);
+      const allMergedPRs: any[] = prResults.flat();
+
+      // Step 4: Filter PRs whose merge commit is in our commit list
+      const relevantPRs = allMergedPRs.filter((pr) => {
+        return pr.merge_commit_sha && commitSHAs.has(pr.merge_commit_sha);
+      });
+
+      // Step 5: Remove duplicates
+      const uniquePRsMap = new Map();
+      for (const pr of relevantPRs) {
+        if (!uniquePRsMap.has(pr.number)) {
+          uniquePRsMap.set(pr.number, pr);
+        }
+      }
+
+      const uniquePRs = Array.from(uniquePRsMap.values());
+
+      // Step 6: Convert to PullRequest format with jobs
+      return await this.convertAndCollectJobsList(uniquePRs);
+    } catch (err) {
+      Logger.log(
+        `Error in listPullRequestsInBranchSinceLastMerge: ${String(err)}`,
+      );
+      return [];
+    }
+  }
+
   // Helper to convert a raw GitHub PR and attach jobs/jobsStatus
   // Batch helper: convert an array of raw GitHub PRs and enrich each with jobs
   private async convertAndCollectJobsList(

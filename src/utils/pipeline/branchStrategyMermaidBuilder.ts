@@ -157,7 +157,7 @@ export class BranchStrategyMermaidBuilder {
           activePR: activePR,
         });
       }
-      const branchLabel = branchAndOrg?.pullRequestsInBranchSinceLastMerge?.length > 1 ? `${branchAndOrg.branchName}<br/>(${branchAndOrg?.pullRequestsInBranchSinceLastMerge?.length})` : branchAndOrg.branchName;
+      const branchLabel = branchAndOrg?.pullRequestsInBranchSinceLastMerge?.length > 0 ? `${branchAndOrg.branchName}<br/>(${branchAndOrg?.pullRequestsInBranchSinceLastMerge?.length})` : branchAndOrg.branchName;
       return {
         name: branchAndOrg.branchName,
         nodeName: nodeName,

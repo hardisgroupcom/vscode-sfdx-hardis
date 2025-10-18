@@ -166,29 +166,32 @@ export class GitProviderGitlab extends GitProvider {
       // Create a Set of commit SHAs for fast lookup
       const commitSHAs = new Set(commitsSinceLastMerge.map((c) => c.id));
 
-      // Step 3: Get all merged MRs targeting currentBranch and child branches
+      // Step 3: Get all merged MRs targeting currentBranch and child branches (parallelized)
       const allBranches = [currentBranchName, ...childBranchesNames];
-      const allMergedMRs: Array<
-        | MergeRequestSchemaWithBasicLabels
-        | Camelize<MergeRequestSchemaWithBasicLabels>
-      > = [];
-
-      for (const branchName of allBranches) {
+      
+      const mrPromises = allBranches.map(async (branchName) => {
         try {
-          const mergedMRs = await this.gitlabClient.MergeRequests.all({
-            projectId: this.gitlabProjectId,
+          const mergedMRs = await this.gitlabClient!.MergeRequests.all({
+            projectId: this.gitlabProjectId!,
             targetBranch: branchName,
             state: "merged",
             perPage: 100,
           });
-          allMergedMRs.push(...mergedMRs);
+          return mergedMRs;
         }
         catch (err) {
           Logger.log(
             `Error fetching merged MRs for branch ${branchName}: ${String(err)}`,
           );
+          return [];
         }
-      }
+      });
+
+      const mrResults = await Promise.all(mrPromises);
+      const allMergedMRs: Array<
+        | MergeRequestSchemaWithBasicLabels
+        | Camelize<MergeRequestSchemaWithBasicLabels>
+      > = mrResults.flat();
 
       // Step 4: Filter MRs whose merge commit SHA is in our commit list
       const relevantMRs = allMergedMRs.filter((mr) => {
