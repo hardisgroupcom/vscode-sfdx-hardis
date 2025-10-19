@@ -158,7 +158,7 @@ async function executeMetadataRetrieve(
 
 async function handleQueryMetadata(panel: any, data: any) {
   try {
-    const { username, metadataType, metadataName, lastUpdatedBy, dateFrom, dateTo } = data;
+    const { username, queryMode, metadataType, metadataName, lastUpdatedBy, dateFrom, dateTo } = data;
 
     if (!username) {
       panel.sendMessage({
@@ -168,68 +168,13 @@ async function handleQueryMetadata(panel: any, data: any) {
       return;
     }
 
-    // Build SOQL query safely on backend
-    let query = "SELECT MemberName, MemberType, LastModifiedDate, LastModifiedBy.Name FROM SourceMember";
-    const conditions: string[] = [];
-
-    if (metadataType) {
-      // Escape single quotes for SOQL
-      const escapedType = metadataType.replace(/'/g, "\\'");
-      conditions.push(`MemberType = '${escapedType}'`);
-    }
-
-    if (metadataName) {
-      // Escape single quotes and wildcards for SOQL LIKE
-      const escapedName = metadataName.replace(/'/g, "\\'").replace(/%/g, "\\%").replace(/_/g, "\\_");
-      conditions.push(`MemberName LIKE '%${escapedName}%'`);
-    }
-
-    if (lastUpdatedBy) {
-      // Escape single quotes and wildcards for SOQL LIKE
-      const escapedUser = lastUpdatedBy.replace(/'/g, "\\'").replace(/%/g, "\\%").replace(/_/g, "\\_");
-      conditions.push(`LastModifiedBy.Name LIKE '%${escapedUser}%'`);
-    }
-
-    // Add date range filters if provided
-    if (dateFrom) {
-      const fromDate = new Date(dateFrom);
-      if (!isNaN(fromDate.getTime())) {
-        conditions.push(`LastModifiedDate >= ${fromDate.toISOString()}`);
-      }
-    }
-
-    if (dateTo) {
-      const toDate = new Date(dateTo);
-      if (!isNaN(toDate.getTime())) {
-        // Set to end of day
-        toDate.setHours(23, 59, 59, 999);
-        conditions.push(`LastModifiedDate <= ${toDate.toISOString()}`);
-      }
-    }
-
-    if (conditions.length > 0) {
-      query += " WHERE " + conditions.join(" AND ");
-    }
-
-    query += " ORDER BY MemberType, MemberName DESC LIMIT 2000";
-
-    // Execute SOQL query using Tooling API
-    const command = `sf data query --query "${query.replace(/"/g, '\\"')}" --target-org ${username} --use-tooling-api --json`;
-    Logger.log(`Executing metadata query: ${command}`);
-
-    const result = await execSfdxJson(command);
-
-    if (result && result.result && result.result.records) {
-      panel.sendMessage({
-        type: "queryResults",
-        data: { records: result.result.records },
-      });
+    // Handle different query modes
+    if (queryMode === "allMetadata") {
+      await handleListMetadata(panel, username, metadataType, metadataName);
     }
     else {
-      panel.sendMessage({
-        type: "queryResults",
-        data: { records: [] },
-      });
+      // Default to recentChanges mode (SourceMember query)
+      await handleSourceMemberQuery(panel, username, metadataType, metadataName, lastUpdatedBy, dateFrom, dateTo);
     }
   }
   catch (error: any) {
@@ -239,6 +184,147 @@ async function handleQueryMetadata(panel: any, data: any) {
       data: { message: error.message || "Failed to query metadata" },
     });
   }
+}
+
+async function handleSourceMemberQuery(
+  panel: any,
+  username: string,
+  metadataType: string | null,
+  metadataName: string | null,
+  lastUpdatedBy: string | null,
+  dateFrom: string | null,
+  dateTo: string | null,
+) {
+  // Build SOQL query safely on backend
+  let query = "SELECT MemberName, MemberType, LastModifiedDate, LastModifiedBy.Name FROM SourceMember";
+  const conditions: string[] = [];
+
+  if (metadataType) {
+    // Escape single quotes for SOQL
+    const escapedType = metadataType.replace(/'/g, "\\'");
+    conditions.push(`MemberType = '${escapedType}'`);
+  }
+
+  if (metadataName) {
+    // Escape single quotes and wildcards for SOQL LIKE
+    const escapedName = metadataName.replace(/'/g, "\\'").replace(/%/g, "\\%").replace(/_/g, "\\_");
+    conditions.push(`MemberName LIKE '%${escapedName}%'`);
+  }
+
+  if (lastUpdatedBy) {
+    // Escape single quotes and wildcards for SOQL LIKE
+    const escapedUser = lastUpdatedBy.replace(/'/g, "\\'").replace(/%/g, "\\%").replace(/_/g, "\\_");
+    conditions.push(`LastModifiedBy.Name LIKE '%${escapedUser}%'`);
+  }
+
+  // Add date range filters if provided
+  if (dateFrom) {
+    const fromDate = new Date(dateFrom);
+    if (!isNaN(fromDate.getTime())) {
+      conditions.push(`LastModifiedDate >= ${fromDate.toISOString()}`);
+    }
+  }
+
+  if (dateTo) {
+    const toDate = new Date(dateTo);
+    if (!isNaN(toDate.getTime())) {
+      // Set to end of day
+      toDate.setHours(23, 59, 59, 999);
+      conditions.push(`LastModifiedDate <= ${toDate.toISOString()}`);
+    }
+  }
+
+  if (conditions.length > 0) {
+    query += " WHERE " + conditions.join(" AND ");
+  }
+
+  query += " ORDER BY MemberType, MemberName DESC LIMIT 2000";
+
+  // Execute SOQL query using Tooling API
+  const command = `sf data query --query "${query.replace(/"/g, '\\"')}" --target-org ${username} --use-tooling-api --json`;
+  Logger.log(`Executing SourceMember query: ${command}`);
+
+  const result = await execSfdxJson(command);
+
+  if (result && result.result && result.result.records) {
+    panel.sendMessage({
+      type: "queryResults",
+      data: { records: result.result.records },
+    });
+  }
+  else {
+    panel.sendMessage({
+      type: "queryResults",
+      data: { records: [] },
+    });
+  }
+}
+
+async function handleListMetadata(
+  panel: any,
+  username: string,
+  metadataType: string | null,
+  metadataName: string | null,
+) {
+  // Require specific metadata type for All Metadata mode
+  if (!metadataType) {
+    panel.sendMessage({
+      type: "queryError",
+      data: { message: "Please select a specific metadata type for All Metadata mode" },
+    });
+    return;
+  }
+
+  const typesToQuery: string[] = [metadataType];
+  const allResults: any[] = [];
+
+  // Query metadata for each type
+  for (const type of typesToQuery) {
+    try {
+      const command = `sf org list metadata --metadata-type ${type} --target-org ${username} --json`;
+      Logger.log(`Executing listMetadata for type: ${type}`);
+
+      const result = await execSfdxJson(command);
+
+      if (result && result.result && Array.isArray(result.result)) {
+        let typeResults = result.result.map((item: any) => ({
+          fullName: item.fullName,
+          type: type,
+          MemberName: item.fullName,
+          MemberType: type,
+          LastModifiedByName: item.lastModifiedByName || "",
+          LastModifiedDate: item.lastModifiedDate || null,
+        }));
+
+        // Apply name filter if provided
+        if (metadataName) {
+          const nameLower = metadataName.toLowerCase();
+          typeResults = typeResults.filter((item: any) =>
+            item.fullName && item.fullName.toLowerCase().includes(nameLower)
+          );
+        }
+
+        allResults.push(...typeResults);
+      }
+    }
+    catch (error: any) {
+      Logger.log(`Error listing metadata for type ${type}: ${error.message}`);
+      // Continue with other types
+    }
+  }
+
+  // Order allResults by MemberType and MemberName
+  allResults.sort((a, b) => {
+    if (a.MemberType === b.MemberType) {
+      return a.MemberName.localeCompare(b.MemberName);
+    }
+    return a.MemberType.localeCompare(b.MemberType);
+  });
+
+  panel.sendMessage({
+    type: "queryResults",
+    data: { records: allResults },
+  });
 }
 
 async function handleRetrieveSelectedMetadata(panel: any, data: any) {

@@ -2,12 +2,14 @@ import { LightningElement, api, track } from "lwc";
 import "s/forceLightTheme"; // Ensure light theme is applied
 
 /**
- * LWC to retrieve and search metadata from a Salesforce org using SourceMember SOQL queries
+ * LWC to retrieve and search metadata from a Salesforce org
+ * Supports two modes: Recent Changes (SourceMember) and All Metadata (Metadata API)
  */
 export default class MetadataRetriever extends LightningElement {
   @api orgs = [];
   @api metadataTypes = [];
   @track selectedOrg = null;
+  @track queryMode = "recentChanges"; // "recentChanges" or "allMetadata"
   @track metadataType = "All";
   @track metadataName = "";
   @track lastUpdatedBy = "";
@@ -21,45 +23,49 @@ export default class MetadataRetriever extends LightningElement {
   @track selectedRows = [];
   @track selectedRowKeys = [];
 
-  // Datatable columns
-  columns = [
-    {
-      label: "Metadata Type",
-      fieldName: "MemberType",
-      type: "text",
-      sortable: true,
-      wrapText: true,
-    },
-    {
-      label: "Metadata Name",
-      fieldName: "MemberName",
-      type: "text",
-      sortable: true,
-      wrapText: true,
-    },
-    {
-      label: "Last Updated By",
-      fieldName: "LastModifiedByName",
-      type: "text",
-      sortable: true,
-      wrapText: true,
-      initialWidth: 180,
-    },
-    {
-      label: "Last Updated Date",
-      fieldName: "LastModifiedDate",
-      type: "date",
-      sortable: true,
-      typeAttributes: {
-        year: "numeric",
-        month: "short",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
+  // Datatable columns - computed based on mode
+  get columns() {
+    const baseColumns = [
+      {
+        label: "Metadata Type",
+        fieldName: "MemberType",
+        type: "text",
+        sortable: true,
+        wrapText: true,
       },
-      initialWidth: 180,
-    },
-    {
+      {
+        label: "Metadata Name",
+        fieldName: "MemberName",
+        type: "text",
+        sortable: true,
+        wrapText: true,
+      },
+      {
+        label: "Last Updated By",
+        fieldName: "LastModifiedByName",
+        type: "text",
+        sortable: true,
+        wrapText: true,
+        initialWidth: 180,
+      },
+      {
+        label: "Last Updated Date",
+        fieldName: "LastModifiedDate",
+        type: "date",
+        sortable: true,
+        typeAttributes: {
+          year: "numeric",
+          month: "short",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+        },
+        initialWidth: 180,
+      },
+    ];
+
+    // Add action column
+    baseColumns.push({
       type: "action",
       typeAttributes: {
         rowActions: [
@@ -67,8 +73,10 @@ export default class MetadataRetriever extends LightningElement {
         ],
       },
       initialWidth: 50,
-    },
-  ];
+    });
+
+    return baseColumns;
+  }
 
   get orgOptions() {
     if (!this.orgs || !Array.isArray(this.orgs)) {
@@ -97,11 +105,27 @@ export default class MetadataRetriever extends LightningElement {
   }
 
   get metadataTypeOptions() {
-    const options = [{ label: "All", value: "All" }];
+    // In All Metadata mode, don't include "All" option
+    const options = this.queryMode === "allMetadata" ? [] : [{ label: "All", value: "All" }];
     if (this.metadataTypes && Array.isArray(this.metadataTypes)) {
       return options.concat(this.metadataTypes);
     }
     return options;
+  }
+
+  get queryModeOptions() {
+    return [
+      { label: "Recent Changes", value: "recentChanges" },
+      { label: "All Metadata", value: "allMetadata" },
+    ];
+  }
+
+  get isRecentChangesMode() {
+    return this.queryMode === "recentChanges";
+  }
+
+  get isAllMetadataMode() {
+    return this.queryMode === "allMetadata";
   }
 
   get hasResults() {
@@ -117,7 +141,14 @@ export default class MetadataRetriever extends LightningElement {
   }
 
   get canSearch() {
-    return this.selectedOrg !== null;
+    if (this.selectedOrg === null) {
+      return false;
+    }
+    // In All Metadata mode, require a specific metadata type
+    if (this.queryMode === "allMetadata" && (this.metadataType === "All" || !this.metadataType)) {
+      return false;
+    }
+    return true;
   }
 
   get cannotSearch() {
@@ -154,6 +185,27 @@ export default class MetadataRetriever extends LightningElement {
 
   handleOrgChange(event) {
     this.selectedOrg = event.detail.value;
+  }
+
+  handleQueryModeChange(event) {
+    this.queryMode = event.detail.value;
+    // Reset metadata type when switching to All Metadata mode (force user to select)
+    if (this.queryMode === "allMetadata") {
+      if (this.metadataType === "All") {
+        this.metadataType = "";
+      }
+    }
+    else {
+      // Reset to "All" when switching back to Recent Changes mode
+      if (!this.metadataType) {
+        this.metadataType = "All";
+      }
+    }
+    // Clear results when switching modes
+    this.metadata = [];
+    this.filteredMetadata = [];
+    this.selectedRows = [];
+    this.selectedRowKeys = [];
   }
 
   handleRowSelection(event) {
@@ -217,16 +269,17 @@ export default class MetadataRetriever extends LightningElement {
     this.selectedRows = [];
     this.selectedRowKeys = [];
 
-    // Send filter criteria to VS Code (backend will build the SOQL query)
+    // Send filter criteria to VS Code with query mode
     window.sendMessageToVSCode({
       type: "queryMetadata",
       data: {
         username: this.selectedOrg,
+        queryMode: this.queryMode,
         metadataType: this.metadataType && this.metadataType !== "All" ? this.metadataType : null,
         metadataName: this.metadataName || null,
-        lastUpdatedBy: this.lastUpdatedBy || null,
-        dateFrom: this.dateFrom || null,
-        dateTo: this.dateTo || null,
+        lastUpdatedBy: this.isRecentChangesMode ? (this.lastUpdatedBy || null) : null,
+        dateFrom: this.isRecentChangesMode ? (this.dateFrom || null) : null,
+        dateTo: this.isRecentChangesMode ? (this.dateTo || null) : null,
       },
     });
   }
@@ -292,6 +345,35 @@ export default class MetadataRetriever extends LightningElement {
       });
     }
 
+    // Apply date range filters
+    if (this.dateFrom) {
+      const fromDate = new Date(this.dateFrom);
+      if (!isNaN(fromDate.getTime())) {
+        fromDate.setHours(0, 0, 0, 0);
+        filtered = filtered.filter((item) => {
+          if (!item.LastModifiedDate) {
+            return false;
+          }
+          const itemDate = new Date(item.LastModifiedDate);
+          return itemDate >= fromDate;
+        });
+      }
+    }
+
+    if (this.dateTo) {
+      const toDate = new Date(this.dateTo);
+      if (!isNaN(toDate.getTime())) {
+        toDate.setHours(23, 59, 59, 999);
+        filtered = filtered.filter((item) => {
+          if (!item.LastModifiedDate) {
+            return false;
+          }
+          const itemDate = new Date(item.LastModifiedDate);
+          return itemDate <= toDate;
+        });
+      }
+    }
+
     // Apply search term filter (searches across all fields)
     if (this.searchTerm) {
       const searchLower = this.searchTerm.toLowerCase();
@@ -343,12 +425,12 @@ export default class MetadataRetriever extends LightningElement {
   handleQueryResults(data) {
     this.isLoading = false;
     if (data && data.records && Array.isArray(data.records)) {
-      // Transform records to include LastModifiedByName and unique key
+      // Transform records - both modes now include date fields
       this.metadata = data.records.map((record) => ({
         MemberName: record.MemberName,
         MemberType: record.MemberType,
         LastModifiedDate: record.LastModifiedDate,
-        LastModifiedByName: record.LastModifiedBy ? record.LastModifiedBy.Name : "",
+        LastModifiedByName: record.LastModifiedByName || "",
         uniqueKey: `${record.MemberType}::${record.MemberName}`,
       }));
       this.applyFilters();

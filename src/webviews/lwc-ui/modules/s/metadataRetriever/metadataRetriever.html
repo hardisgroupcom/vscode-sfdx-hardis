@@ -1,6 +1,16 @@
 <template>
   <div class="slds-p-around_small blue-back">
     <lightning-card title="Metadata Retriever" icon-name="custom:custom63">
+      <!-- Query Mode in Card Header -->
+      <div slot="actions">
+        <lightning-radio-group
+          options={queryModeOptions}
+          value={queryMode}
+          onchange={handleQueryModeChange}
+          type="button"
+        ></lightning-radio-group>
+      </div>
+
       <!-- Filters Section -->
       <div class="slds-p-around_small">
         <div class="slds-grid slds-gutters slds-wrap">
@@ -23,6 +33,7 @@
               options={metadataTypeOptions}
               onchange={handleMetadataTypeChange}
               placeholder="Select metadata type"
+              required={isAllMetadataMode}
             ></lightning-combobox>
           </div>
 
