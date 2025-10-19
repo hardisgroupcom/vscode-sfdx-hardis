@@ -257,7 +257,7 @@ export class GitProvider {
       const tickets: Ticket[] = await ticketProvider.getTicketsFromString(concatenated);
       pr.relatedTickets = tickets;
     }
-    if (options.fetchDetails) {
+    if (options.fetchDetails && ticketProvider.isAuthenticated) {
       // Make unique list of tickets from all PRs
       const uniqueTicketsMap: Map<string, Ticket> = new Map();
       for (const pr of _pullRequests) {

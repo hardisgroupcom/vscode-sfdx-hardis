@@ -41,65 +41,32 @@ export class JiraProvider extends TicketProvider {
         this.jiraHost = config.jiraHost || "";
         
         if (!this.jiraHost) {
-            // Prompt user for JIRA host
-            const hostInput = await vscode.window.showInputBox({
-                prompt: "Enter your JIRA host URL (e.g., https://company.atlassian.net)",
+            Logger.log("JIRA host not configured. Please set jiraHost in .sfdx-hardis.yml");
+            vscode.window.showErrorMessage("JIRA host not configured. Please set jiraHost in .sfdx-hardis.yml (use Pipeline Settings)");
+            return false;
+        }
+
+        // Prompt user for authentication method
+        const choice = await vscode.window.showQuickPick(
+            [
+                { label: "Use Personal Access Token (PAT) - Recommended", value: "pat" },
+                { label: "Use Email + API Token", value: "basic" },
+            ],
+            {
+                placeHolder: "How would you like to authenticate to JIRA?",
                 ignoreFocusOut: true,
-                placeHolder: "https://company.atlassian.net",
-                validateInput: (value) => {
-                    if (!value) {
-                        return "JIRA host URL is required";
-                    }
-                    if (!value.startsWith("http://") && !value.startsWith("https://")) {
-                        return "JIRA host URL must start with http:// or https://";
-                    }
-                    return null;
-                }
-            });
-            
-            if (!hostInput) {
-                return null;
             }
-            
-            this.jiraHost = hostInput;
+        );
+        if (!choice) {
+            return null;
         }
 
-        // Try to get credentials from VS Code secrets
-        // PAT is preferred, but we also support email+token for backward compatibility
-        let jiraPAT = await SecretsManager.getSecret("JIRA_PAT") || "";
-        let jiraEmail = await SecretsManager.getSecret("JIRA_EMAIL") || "";
-        let jiraToken = await SecretsManager.getSecret("JIRA_TOKEN") || "";
-
-        let hasPAT = !!jiraPAT;
-        let hasBasicAuth = jiraEmail && jiraToken;
-
-        if (!hasPAT && !hasBasicAuth) {
-            // Prompt user for authentication method
-            const choice = await vscode.window.showQuickPick(
-                [
-                    { label: "Use Personal Access Token (PAT) - Recommended", value: "pat" },
-                    { label: "Use Email + API Token", value: "basic" },
-                ],
-                {
-                    placeHolder: "How would you like to authenticate to JIRA?",
-                    ignoreFocusOut: true,
-                }
-            );
-
-            if (!choice) {
-                return null;
-            }
-
-            if (choice.value === "pat") {
-                return await this.authenticateWithPAT();
-            }
-            else {
-                return await this.authenticateWithBasicAuth();
-            }
+        if (choice.value === "pat") {
+            return await this.authenticateWithPAT();
         }
-
-        // Initialize with existing credentials
-        return await this.initializeClient(hasPAT ? jiraPAT : "", jiraEmail, jiraToken);
+        else {
+            return await this.authenticateWithBasicAuth();
+        }
     }
 
     private async authenticateWithPAT(): Promise<boolean | null> {
@@ -180,10 +147,16 @@ export class JiraProvider extends TicketProvider {
             }
 
             // Validate credentials by making a test request
-            await this.jiraClient.myself.getCurrentUser();
-            this.isAuthenticated = true;
-            Logger.log("JIRA authentication successful");
-            return true;
+            const user = await this.jiraClient.myself.getCurrentUser();
+            if (user.active) {
+                this.isAuthenticated = true;
+                Logger.log("JIRA authentication successful");
+                return true;
+            }
+            this.isAuthenticated = false;
+            this.jiraClient = null;
+            Logger.log("JIRA authentication failed: User is not active");
+            return false;
         } 
         catch (error: any) {
             Logger.log(`JIRA authentication failed: ${error?.message || String(error)}`);
@@ -230,13 +203,24 @@ export class JiraProvider extends TicketProvider {
         try {
             const issue = await this.jiraClient.issues.getIssue({
                 issueIdOrKey: ticket.id,
-                fields: ['summary', 'status', 'description'],
+                fields: ['summary', 'status', 'description', 'reporter', 'assignee'],
             });
 
             if (issue) {
                 ticket.subject = issue.fields?.summary || "";
                 ticket.status = issue.fields?.status?.id || "";
                 ticket.statusLabel = issue.fields?.status?.name || "";
+                
+                // Get author (prefer assignee, fallback to reporter)
+                const assignee = issue.fields?.assignee as any;
+                const reporter = issue.fields?.reporter as any;
+                if (assignee?.displayName) {
+                    ticket.author = assignee.accountId || assignee.name || "";
+                    ticket.authorLabel = assignee.displayName;
+                } else if (reporter?.displayName) {
+                    ticket.author = reporter.accountId || reporter.name || "";
+                    ticket.authorLabel = reporter.displayName;
+                }
                 
                 // Extract body from description (ADF format)
                 const description = issue.fields?.description as any;

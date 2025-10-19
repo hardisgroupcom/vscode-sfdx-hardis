@@ -116,6 +116,17 @@ export class AzureBoardsProvider extends TicketProvider {
                 ticket.status = workItem.fields["System.State"] || "";
                 ticket.statusLabel = workItem.fields["System.State"] || "";
                 
+                // Get author (prefer assigned to, fallback to created by)
+                const assignedTo = workItem.fields["System.AssignedTo"];
+                const createdBy = workItem.fields["System.CreatedBy"];
+                if (assignedTo?.displayName) {
+                    ticket.author = assignedTo.uniqueName || assignedTo.id || "";
+                    ticket.authorLabel = assignedTo.displayName;
+                } else if (createdBy?.displayName) {
+                    ticket.author = createdBy.uniqueName || createdBy.id || "";
+                    ticket.authorLabel = createdBy.displayName;
+                }
+                
                 // Get the web URL from _links if available
                 if (workItem._links && workItem._links["html"] && workItem._links["html"]["href"]) {
                     ticket.url = workItem._links["html"]["href"];

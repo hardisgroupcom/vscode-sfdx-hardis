@@ -140,7 +140,7 @@ export async function listMajorOrgs(
           );
           org.pullRequestsInBranchSinceLastMerge = prs;
           // Complete with tickets
-          await gitProvider.completePullRequestsWithTickets(prs, { fetchDetails: false });
+          await gitProvider.completePullRequestsWithTickets(prs, { fetchDetails: true });
         }),
       );
     }

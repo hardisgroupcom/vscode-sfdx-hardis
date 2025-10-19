@@ -129,6 +129,42 @@ export default class Pipeline extends LightningElement {
     },
   ];
 
+  modalTicketColumns = [
+    {
+      key: "id",
+      label: "ID",
+      fieldName: "url",
+      type: "url",
+      typeAttributes: { label: { fieldName: "id" }, target: "_blank" },
+      initialWidth: 120,
+      wrapText: true,
+    },
+    {
+      key: "subject",
+      label: "Subject",
+      fieldName: "subject",
+      type: "text",
+      initialWidth: 400,
+      wrapText: true,
+    },
+    {
+      key: "status",
+      label: "Status",
+      fieldName: "statusLabel",
+      type: "text",
+      initialWidth: 120,
+      wrapText: true,
+    },
+    {
+      key: "author",
+      label: "Author",
+      fieldName: "authorLabel",
+      type: "text",
+      initialWidth: 150,
+      wrapText: true,
+    },
+  ];
+
   pipelineData;
   repoInfo;
   error;
@@ -140,6 +176,7 @@ export default class Pipeline extends LightningElement {
   showPRModal = false;
   modalBranchName = "";
   modalPullRequests = [];
+  modalTickets = [];
   branchPullRequestsMap = new Map();
 
   // Dynamically compute the icon URL for the PR button
@@ -879,8 +916,12 @@ export default class Pipeline extends LightningElement {
     if (prs && prs.length > 0) {
       this.modalBranchName = branchName;
       this.modalPullRequests = this._mapPrsWithIcons(prs);
+      
+      // Aggregate all tickets from all PRs
+      this.modalTickets = this._aggregateTicketsFromPRs(prs);
+      
       this.showPRModal = true;
-      console.log("Modal data:", { branchName, prCount: prs.length });
+      console.log("Modal data:", { branchName, prCount: prs.length, ticketCount: this.modalTickets.length });
     }
     else {
       console.warn("No PRs found for branch:", branchName);
@@ -891,11 +932,66 @@ export default class Pipeline extends LightningElement {
     this.showPRModal = false;
     this.modalBranchName = "";
     this.modalPullRequests = [];
+    this.modalTickets = [];
+  }
+
+  _aggregateTicketsFromPRs(prs) {
+    if (!Array.isArray(prs)) {
+      return [];
+    }
+    
+    const ticketsMap = new Map();
+    
+    // Collect all unique tickets from all PRs
+    for (const pr of prs) {
+      if (pr.relatedTickets && Array.isArray(pr.relatedTickets)) {
+        for (const ticket of pr.relatedTickets) {
+          if (ticket && ticket.id) {
+            // Use ticket ID as key to avoid duplicates
+            if (!ticketsMap.has(ticket.id)) {
+              ticketsMap.set(ticket.id, {
+                id: ticket.id,
+                subject: ticket.subject || '',
+                status: ticket.status || '',
+                statusLabel: ticket.statusLabel || '',
+                author: ticket.author || '',
+                authorLabel: ticket.authorLabel || '',
+                url: ticket.url || '',
+              });
+            }
+          }
+        }
+      }
+    }
+    
+    // Convert map to array and sort by ID
+    const tickets = Array.from(ticketsMap.values());
+    tickets.sort((a, b) => {
+      // Natural sort: compare numeric parts if both are numbers, otherwise alphabetic
+      const aNum = parseInt(a.id);
+      const bNum = parseInt(b.id);
+      if (!isNaN(aNum) && !isNaN(bNum)) {
+        return aNum - bNum;
+      }
+      return a.id.localeCompare(b.id);
+    });
+    return tickets;
   }
 
   get modalTitle() {
     const prLabel = this.prButtonInfo?.pullRequestLabel || "Pull Request";
     const count = this.modalPullRequests.length;
     return `${prLabel}s in ${this.modalBranchName} (${count})`;
+  }
+
+  get modalPrsTabLabel() {
+    const prLabel = this.prButtonInfo?.pullRequestLabel || "Pull Request";
+    const count = this.modalPullRequests.length;
+    return `${prLabel}s (${count})`;
+  }
+
+  get modalTicketsTabLabel() {
+    const count = this.modalTickets.length;
+    return `Tickets (${count})`;
   }
 }

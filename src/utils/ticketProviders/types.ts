@@ -8,6 +8,8 @@ export interface Ticket {
   body?: string;
   status?: string;
   statusLabel?: string;
+  author?: string;
+  authorLabel?: string;
   foundOnServer?: boolean;
 }
 
