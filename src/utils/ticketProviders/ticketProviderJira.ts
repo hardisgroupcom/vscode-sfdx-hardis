@@ -4,12 +4,12 @@ import { Ticket, TicketProviderName } from "./types";
 import { Logger } from "../../logger";
 import { getConfig } from "../pipeline/sfdxHardisConfig";
 import { SecretsManager } from "../secretsManager";
-import axios, { AxiosInstance } from "axios";
+import { Version3Client } from 'jira.js';
 
 export class JiraProvider extends TicketProvider {
     static readonly providerName: TicketProviderName = "JIRA";
 
-    private jiraClient: AxiosInstance | null = null;
+    private jiraClient: Version3Client | null = null;
     private jiraHost: string = "";
 
     constructor() {
@@ -150,26 +150,27 @@ export class JiraProvider extends TicketProvider {
 
     private async initializeClient(pat: string, email: string, token: string): Promise<boolean> {
         try {
-            const baseURL = this.jiraHost.replace(/\/$/, "") + "/rest/api/3";
+            const host = this.jiraHost.replace(/\/$/, "");
             
             if (pat) {
-                this.jiraClient = axios.create({
-                    baseURL,
-                    headers: {
-                        'Authorization': `Bearer ${pat}`,
-                        'Content-Type': 'application/json',
+                // For Personal Access Token, use oauth2 with accessToken
+                this.jiraClient = new Version3Client({
+                    host,
+                    authentication: {
+                        oauth2: {
+                            accessToken: pat,
+                        },
                     },
                 });
             } 
             else if (email && token) {
-                this.jiraClient = axios.create({
-                    baseURL,
-                    auth: {
-                        username: email,
-                        password: token,
-                    },
-                    headers: {
-                        'Content-Type': 'application/json',
+                this.jiraClient = new Version3Client({
+                    host,
+                    authentication: {
+                        basic: {
+                            email,
+                            apiToken: token,
+                        },
                     },
                 });
             }
@@ -179,7 +180,7 @@ export class JiraProvider extends TicketProvider {
             }
 
             // Validate credentials by making a test request
-            await this.jiraClient.get('/myself');
+            await this.jiraClient.myself.getCurrentUser();
             this.isAuthenticated = true;
             Logger.log("JIRA authentication successful");
             return true;
@@ -227,18 +228,30 @@ export class JiraProvider extends TicketProvider {
         }
 
         try {
-            const response = await this.jiraClient.get(`/issue/${ticket.id}`);
-            const issueData = response.data;
+            const issue = await this.jiraClient.issues.getIssue({
+                issueIdOrKey: ticket.id,
+                fields: ['summary', 'status', 'description'],
+            });
 
-            if (issueData) {
-                ticket.subject = issueData.fields?.summary || "";
-                ticket.status = issueData.fields?.status?.id || "";
-                ticket.statusLabel = issueData.fields?.status?.name || "";
+            if (issue) {
+                ticket.subject = issue.fields?.summary || "";
+                ticket.status = issue.fields?.status?.id || "";
+                ticket.statusLabel = issue.fields?.status?.name || "";
                 
-                // Extract body from description
-                const description = issueData.fields?.description;
-                if (description?.content && description.content.length > 0) {
-                    ticket.body = description.content.map((content: any) => content.text || "").join("\n");
+                // Extract body from description (ADF format)
+                const description = issue.fields?.description as any;
+                if (description?.content && Array.isArray(description.content)) {
+                    // Flatten ADF content tree to extract text
+                    const extractText = (node: any): string => {
+                        if (node.type === 'text') {
+                            return node.text || '';
+                        }
+                        if (node.content && Array.isArray(node.content)) {
+                            return node.content.map(extractText).join('');
+                        }
+                        return '';
+                    };
+                    ticket.body = description.content.map(extractText).join("\n");
                 }
                 
                 ticket.foundOnServer = true;

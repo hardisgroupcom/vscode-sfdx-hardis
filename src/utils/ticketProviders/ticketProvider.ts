@@ -1,11 +1,7 @@
 import { Logger } from "../../logger";
 import { getConfig } from "../pipeline/sfdxHardisConfig";
 import { Ticket, TicketProviderName } from "./types";
-import { JiraProvider } from "./ticketProviderJira";
-import { GenericTicketingProvider } from "./ticketProviderGeneric";
-import { AzureBoardsProvider } from "./ticketProviderAzure";
 
-export const allTicketProviders = [JiraProvider, GenericTicketingProvider, AzureBoardsProvider];
 export class TicketProvider {
     static instance: TicketProvider | null = null;
     providerName: TicketProviderName|null = null;
@@ -19,6 +15,17 @@ export class TicketProvider {
                 this.instance = null;
                 return this.instance;
             }
+            
+            // Lazy load providers to avoid circular dependencies
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            const { JiraProvider } = await import("./ticketProviderJira");
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            const { GenericTicketingProvider } = await import("./ticketProviderGeneric");
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            const { AzureBoardsProvider } = await import("./ticketProviderAzure");
+            
+            const allTicketProviders = [JiraProvider, GenericTicketingProvider, AzureBoardsProvider];
+            
             const providerClass = allTicketProviders.find(
               (provider) => provider.providerName === providerName
             );
