@@ -81,7 +81,7 @@ export class SfdxHardisConfigHelper {
     { name: "jiraHost", scopes: ["global"] },
     { name: "jiraTicketRegex", scopes: ["global"] },
     { name: "genericTicketingProviderRegex", scopes: ["global"] },
-    { name: "genericTicketingProviderUrlBuilder", scopes: ["global"]}
+    { name: "genericTicketingProviderUrlBuilder", scopes: ["global"] },
   ];
   static readonly SECTIONS = [
     {
@@ -138,7 +138,7 @@ export class SfdxHardisConfigHelper {
         "jiraHost",
         "jiraTicketRegex",
         "genericTicketingProviderRegex",
-        "genericTicketingProviderUrlBuilder"
+        "genericTicketingProviderUrlBuilder",
       ],
     },
     {
