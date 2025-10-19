@@ -11,6 +11,7 @@ export class JiraProvider extends TicketProvider {
 
   private jiraClient: Version3Client | null = null;
   private jiraHost: string = "";
+  private hostKey: string = "";
 
   constructor() {
     super();
@@ -24,9 +25,10 @@ export class JiraProvider extends TicketProvider {
       Logger.log("JIRA host not configured.");
       return false;
     }
-    let jiraPAT = (await SecretsManager.getSecret("JIRA_PAT")) || "";
-    let jiraEmail = (await SecretsManager.getSecret("JIRA_EMAIL")) || "";
-    let jiraToken = (await SecretsManager.getSecret("JIRA_TOKEN")) || "";
+    this.hostKey = this.jiraHost.replace(/\./g, "_").toUpperCase();
+    let jiraPAT = (await SecretsManager.getSecret(this.hostKey +"_JIRA_PAT")) || "";
+    let jiraEmail = (await SecretsManager.getSecret(this.hostKey + "_JIRA_EMAIL")) || "";
+    let jiraToken = (await SecretsManager.getSecret(this.hostKey + "_JIRA_TOKEN")) || "";
     if (jiraPAT) {
       return await this.initializeClient(jiraPAT, "", "");
     }
@@ -49,6 +51,7 @@ export class JiraProvider extends TicketProvider {
       );
       return false;
     }
+    this.hostKey = this.jiraHost.replace(/\./g, "_").toUpperCase();
 
     // Prompt user for authentication method
     const choice = await vscode.window.showQuickPick(
@@ -89,7 +92,7 @@ export class JiraProvider extends TicketProvider {
       return null;
     }
 
-    await SecretsManager.setSecret("JIRA_PAT", token);
+    await SecretsManager.setSecret(this.hostKey + "_JIRA_PAT", token);
     return await this.initializeClient(token, "", "");
   }
 
@@ -116,8 +119,8 @@ export class JiraProvider extends TicketProvider {
       return null;
     }
 
-    await SecretsManager.setSecret("JIRA_EMAIL", email);
-    await SecretsManager.setSecret("JIRA_TOKEN", token);
+    await SecretsManager.setSecret(this.hostKey + "_JIRA_EMAIL", email);
+    await SecretsManager.setSecret(this.hostKey + "_JIRA_TOKEN", token);
     return await this.initializeClient("", email, token);
   }
 
