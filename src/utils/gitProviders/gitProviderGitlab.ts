@@ -140,7 +140,7 @@ export class GitProviderGitlab extends GitProvider {
   async listPullRequestsInBranchSinceLastMerge(
     currentBranchName: string, // ex: uat
     targetBranchName: string, // ex: preprod
-    childBranchesNames: string[],// ex: [integ]
+    childBranchesNames: string[], // ex: [integ]
   ): Promise<PullRequest[]> {
     if (!this.gitlabClient || !this.gitlabProjectId) {
       return [];
@@ -168,7 +168,7 @@ export class GitProviderGitlab extends GitProvider {
 
       // Step 3: Get all merged MRs targeting currentBranch and child branches (parallelized)
       const allBranches = [currentBranchName, ...childBranchesNames];
-      
+
       const mrPromises = allBranches.map(async (branchName) => {
         try {
           const mergedMRs = await this.gitlabClient!.MergeRequests.all({
@@ -178,8 +178,7 @@ export class GitProviderGitlab extends GitProvider {
             perPage: 100,
           });
           return mergedMRs;
-        }
-        catch (err) {
+        } catch (err) {
           Logger.log(
             `Error fetching merged MRs for branch ${branchName}: ${String(err)}`,
           );
@@ -210,7 +209,7 @@ export class GitProviderGitlab extends GitProvider {
       });
 
       // Step 5: Remove duplicates (same MR might be found through different branches)
-      const uniqueMRsMap = new Map<number, typeof relevantMRs[0]>();
+      const uniqueMRsMap = new Map<number, (typeof relevantMRs)[0]>();
       for (const mr of relevantMRs) {
         if (mr.iid && !uniqueMRsMap.has(mr.iid)) {
           uniqueMRsMap.set(mr.iid, mr);
@@ -221,8 +220,7 @@ export class GitProviderGitlab extends GitProvider {
 
       // Step 6: Convert to PullRequest format with jobs
       return await this.convertAndCollectJobsList(uniqueMRs);
-    }
-    catch (err) {
+    } catch (err) {
       Logger.log(
         `Error in listPullRequestsInBranchSinceLastMerge: ${String(err)}`,
       );
@@ -253,8 +251,7 @@ export class GitProviderGitlab extends GitProvider {
       });
 
       return mergedMRs.length > 0 ? mergedMRs[0] : null;
-    }
-    catch (err) {
+    } catch (err) {
       Logger.log(
         `Error finding last merged MR from ${sourceBranch} to ${targetBranch}: ${String(err)}`,
       );
@@ -294,8 +291,7 @@ export class GitProviderGitlab extends GitProvider {
       );
 
       return commits || [];
-    }
-    catch (err) {
+    } catch (err) {
       Logger.log(
         `Error fetching commits for branch ${branchName}: ${String(err)}`,
       );

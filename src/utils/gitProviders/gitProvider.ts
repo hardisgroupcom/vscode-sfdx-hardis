@@ -243,7 +243,10 @@ export class GitProvider {
     _pullRequests: PullRequest[],
     options: { fetchDetails: boolean } = { fetchDetails: false },
   ): Promise<PullRequest[]> {
-    const ticketProvider = await TicketProvider.getInstance({reset: false, authenticate: false});
+    const ticketProvider = await TicketProvider.getInstance({
+      reset: false,
+      authenticate: false,
+    });
     if (!ticketProvider) {
       return _pullRequests;
     }
@@ -252,9 +255,12 @@ export class GitProvider {
         pr.title,
         pr.description,
         pr.sourceBranch,
-      ]
-      const concatenated = allpullRequestRelatedStrings.filter(Boolean).join("\n");
-      const tickets: Ticket[] = await ticketProvider.getTicketsFromString(concatenated);
+      ];
+      const concatenated = allpullRequestRelatedStrings
+        .filter(Boolean)
+        .join("\n");
+      const tickets: Ticket[] =
+        await ticketProvider.getTicketsFromString(concatenated);
       pr.relatedTickets = tickets;
     }
     if (options.fetchDetails && ticketProvider.isAuthenticated) {
@@ -276,8 +282,7 @@ export class GitProvider {
           try {
             const updated = await ticketProvider.completeTicketDetails(t);
             return updated ?? t;
-          } 
-          catch (err: any) {
+          } catch (err: any) {
             Logger.log(
               `completeTicketDetails failed for ticket=${t.id}: ${err?.message || err}`,
             );
@@ -291,8 +296,8 @@ export class GitProvider {
       // Update details back to PRs
       for (const pr of _pullRequests) {
         if (pr.relatedTickets) {
-          pr.relatedTickets = pr.relatedTickets.map((t) =>
-            uniqueTicketsMap.get(t.id) || t
+          pr.relatedTickets = pr.relatedTickets.map(
+            (t) => uniqueTicketsMap.get(t.id) || t,
           );
         }
       }

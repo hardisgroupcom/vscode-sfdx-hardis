@@ -68,7 +68,8 @@ export class PipelineDataProvider {
         type: org.orgType,
         alias: org.alias,
         level: org.level,
-        pullRequestsInBranchSinceLastMerge: org.pullRequestsInBranchSinceLastMerge || [],
+        pullRequestsInBranchSinceLastMerge:
+          org.pullRequestsInBranchSinceLastMerge || [],
       }));
       const links: OrgLink[] = [];
       for (const org of majorOrgs) {

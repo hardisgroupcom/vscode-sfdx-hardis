@@ -96,9 +96,11 @@ export function registerShowPipeline(commands: Commands) {
               "Failed to connect to Git provider. Please check the logs for details.",
             );
           }
-        }
-        else if (type === "connectToTicketing") {
-          const ticketProvider = await TicketProvider.getInstance({reset: true, authenticate: true});
+        } else if (type === "connectToTicketing") {
+          const ticketProvider = await TicketProvider.getInstance({
+            reset: true,
+            authenticate: true,
+          });
           if (!ticketProvider || ticketProvider.isAuthenticated === false) {
             vscode.window.showErrorMessage(
               "No supported Ticketing provider detected or authentication failed.",
@@ -182,7 +184,10 @@ export function registerShowPipeline(commands: Commands) {
       const displayFeatureBranches =
         config.get<boolean>("pipelineDisplayFeatureBranches") ?? false;
 
-      const ticketProvider = await TicketProvider.getInstance({reset: false, authenticate: false});
+      const ticketProvider = await TicketProvider.getInstance({
+        reset: false,
+        authenticate: false,
+      });
       let ticketAuthenticated = false;
       let ticketProviderName = "";
       if (ticketProvider) {

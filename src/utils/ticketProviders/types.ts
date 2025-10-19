@@ -12,4 +12,3 @@ export interface Ticket {
   authorLabel?: string;
   foundOnServer?: boolean;
 }
-

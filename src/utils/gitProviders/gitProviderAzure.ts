@@ -207,7 +207,8 @@ export class GitProviderAzure extends GitProvider {
         this.repoInfo.owner,
       );
 
-      const lastMergeToTarget = lastMergePRs && lastMergePRs.length > 0 ? lastMergePRs[0] : null;
+      const lastMergeToTarget =
+        lastMergePRs && lastMergePRs.length > 0 ? lastMergePRs[0] : null;
 
       // Step 2: Get commits between branches
       const gitApiCommits = await this.gitApi.getCommitsBatch(
@@ -217,7 +218,9 @@ export class GitProviderAzure extends GitProvider {
             versionType: 0, // branch
           },
           compareVersion: {
-            version: lastMergeToTarget ? lastMergeToTarget.lastMergeSourceCommit?.commitId : targetBranchName,
+            version: lastMergeToTarget
+              ? lastMergeToTarget.lastMergeSourceCommit?.commitId
+              : targetBranchName,
             versionType: lastMergeToTarget ? 2 : 0, // commit or branch
           },
         },
@@ -233,7 +236,7 @@ export class GitProviderAzure extends GitProvider {
 
       // Step 3: Get all completed PRs targeting currentBranch and child branches (parallelized)
       const allBranches = [currentBranchName, ...childBranchesNames];
-      
+
       const prPromises = allBranches.map(async (branchName) => {
         try {
           const prs = await this.gitApi!.getPullRequests(
@@ -245,8 +248,7 @@ export class GitProviderAzure extends GitProvider {
             this.repoInfo!.owner,
           );
           return prs || [];
-        }
-        catch (err) {
+        } catch (err) {
           Logger.log(
             `Error fetching completed PRs for branch ${branchName}: ${String(err)}`,
           );
@@ -274,7 +276,10 @@ export class GitProviderAzure extends GitProvider {
       const uniquePRs = Array.from(uniquePRsMap.values());
 
       // Step 6: Convert to PullRequest format with jobs
-      return await this.convertAndEnrichPullRequests(uniquePRs, currentBranchName);
+      return await this.convertAndEnrichPullRequests(
+        uniquePRs,
+        currentBranchName,
+      );
     } catch (err) {
       Logger.log(
         `Error in listPullRequestsInBranchSinceLastMerge: ${String(err)}`,
@@ -531,7 +536,10 @@ export class GitProviderAzure extends GitProvider {
       targetBranch: pr.targetRefName
         ? pr.targetRefName.replace(/^refs\/heads\//, "")
         : "",
-      mergeDate: (pr.status === 3 && pr.closedDate) ? pr.closedDate.toISOString() : undefined,
+      mergeDate:
+        pr.status === 3 && pr.closedDate
+          ? pr.closedDate.toISOString()
+          : undefined,
       createdAt: pr.creationDate ? pr.creationDate.toISOString() : undefined,
       updatedAt: pr.closedDate ? pr.closedDate.toISOString() : undefined,
       jobsStatus: "unknown",

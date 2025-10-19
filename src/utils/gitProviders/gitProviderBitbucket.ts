@@ -144,17 +144,22 @@ export class GitProviderBitbucket extends GitProvider {
       } as any);
 
       const lastMergePRs =
-        lastMergeResponse && lastMergeResponse.data && lastMergeResponse.data.values
+        lastMergeResponse &&
+        lastMergeResponse.data &&
+        lastMergeResponse.data.values
           ? lastMergeResponse.data.values
           : [];
-      const lastMergeToTarget = lastMergePRs.length > 0 ? lastMergePRs[0] : null;
+      const lastMergeToTarget =
+        lastMergePRs.length > 0 ? lastMergePRs[0] : null;
 
       // Step 2: Get commits between branches
       const commitsResponse = await this.bitbucketClient.commits.list({
         workspace: this.workspace,
         repo_slug: this.repoSlug,
         include: currentBranchName,
-        exclude: lastMergeToTarget ? lastMergeToTarget.merge_commit?.hash : targetBranchName,
+        exclude: lastMergeToTarget
+          ? lastMergeToTarget.merge_commit?.hash
+          : targetBranchName,
       } as any);
 
       const commits =
@@ -170,7 +175,7 @@ export class GitProviderBitbucket extends GitProvider {
 
       // Step 3: Get all merged PRs targeting currentBranch and child branches (parallelized)
       const allBranches = [currentBranchName, ...childBranchesNames];
-      
+
       const prPromises = allBranches.map(async (branchName) => {
         try {
           const response = await this.bitbucketClient!.pullrequests.list({
@@ -184,8 +189,7 @@ export class GitProviderBitbucket extends GitProvider {
               ? response.data.values
               : [];
           return values;
-        }
-        catch (err) {
+        } catch (err) {
           Logger.log(
             `Error fetching merged PRs for branch ${branchName}: ${String(err)}`,
           );
@@ -233,7 +237,8 @@ export class GitProviderBitbucket extends GitProvider {
       webUrl: pr.links?.html?.href || pr.links?.self?.href || "",
       sourceBranch: pr.source?.branch?.name || "",
       targetBranch: pr.destination?.branch?.name || "",
-      mergeDate: (pr.state === "MERGED" && pr.updated_on) ? pr.updated_on : undefined,
+      mergeDate:
+        pr.state === "MERGED" && pr.updated_on ? pr.updated_on : undefined,
       createdAt: pr.created_on || undefined,
       updatedAt: pr.updated_on || undefined,
       jobsStatus: "unknown",

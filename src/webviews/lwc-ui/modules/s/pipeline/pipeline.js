@@ -109,7 +109,7 @@ export default class Pipeline extends LightningElement {
       fieldName: "mergeDateFormatted",
       type: "text",
       wrapText: true,
-      initialWidth: 100
+      initialWidth: 100,
     },
     {
       key: "source",
@@ -117,7 +117,7 @@ export default class Pipeline extends LightningElement {
       fieldName: "sourceBranch",
       type: "text",
       wrapText: true,
-      initialWidth: 200
+      initialWidth: 200,
     },
     {
       key: "target",
@@ -166,7 +166,7 @@ export default class Pipeline extends LightningElement {
           fieldName: "authorLabel",
           type: "text",
           wrapText: true,
-        }
+        },
       );
     }
 
@@ -225,13 +225,19 @@ export default class Pipeline extends LightningElement {
     this.hasWarnings = this.warnings.length > 0;
     this.showOnlyMajor = false;
     this.displayFeatureBranches = data?.displayFeatureBranches ?? false;
-    
+
     // Store branch PR data for modal display
     this.branchPullRequestsMap = new Map();
     if (this.pipelineData && this.pipelineData.orgs) {
       for (const org of this.pipelineData.orgs) {
-        if (org.pullRequestsInBranchSinceLastMerge && org.pullRequestsInBranchSinceLastMerge.length > 0) {
-          this.branchPullRequestsMap.set(org.name, org.pullRequestsInBranchSinceLastMerge);
+        if (
+          org.pullRequestsInBranchSinceLastMerge &&
+          org.pullRequestsInBranchSinceLastMerge.length > 0
+        ) {
+          this.branchPullRequestsMap.set(
+            org.name,
+            org.pullRequestsInBranchSinceLastMerge,
+          );
         }
       }
     }
@@ -248,7 +254,7 @@ export default class Pipeline extends LightningElement {
     this.connectedIconName = this.gitAuthenticated
       ? "utility:check"
       : "utility:link";
-    
+
     // Update ticketing authentication state
     this.ticketAuthenticated = data?.ticketAuthenticated ?? false;
     this.ticketProviderName = data?.ticketProviderName || "Ticketing";
@@ -258,8 +264,10 @@ export default class Pipeline extends LightningElement {
     this.ticketConnectedIconName = this.ticketAuthenticated
       ? "utility:check"
       : "utility:link";
-    this.ticketConnectedVariant = this.ticketAuthenticated ? "success" : "neutral";
-    
+    this.ticketConnectedVariant = this.ticketAuthenticated
+      ? "success"
+      : "neutral";
+
     this.openPullRequests = this._mapPrsWithIcons(data.openPullRequests || []);
     // ensure reactivity for computed label
     this.openPullRequests = Array.isArray(this.openPullRequests)
@@ -301,21 +309,19 @@ export default class Pipeline extends LightningElement {
       };
       // Show emoji only (accessibility: we may add a visually-hidden label later if needed)
       copy.jobsStatusEmoji = emojiMap[normalized] || emojiMap.unknown;
-      
+
       // Format merge date for display
       if (pr.mergeDate) {
         try {
           const date = new Date(pr.mergeDate);
           copy.mergeDateFormatted = date.toLocaleString();
-        }
-        catch (e) {
+        } catch (e) {
           copy.mergeDateFormatted = pr.mergeDate;
         }
+      } else {
+        copy.mergeDateFormatted = "";
       }
-      else {
-        copy.mergeDateFormatted = '';
-      }
-      
+
       return copy;
     });
   }
@@ -934,14 +940,17 @@ export default class Pipeline extends LightningElement {
     if (prs && prs.length > 0) {
       this.modalBranchName = branchName;
       this.modalPullRequests = this._mapPrsWithIcons(prs);
-      
+
       // Aggregate all tickets from all PRs
       this.modalTickets = this._aggregateTicketsFromPRs(prs);
-      
+
       this.showPRModal = true;
-      console.log("Modal data:", { branchName, prCount: prs.length, ticketCount: this.modalTickets.length });
-    }
-    else {
+      console.log("Modal data:", {
+        branchName,
+        prCount: prs.length,
+        ticketCount: this.modalTickets.length,
+      });
+    } else {
       console.warn("No PRs found for branch:", branchName);
     }
   }
@@ -957,9 +966,9 @@ export default class Pipeline extends LightningElement {
     if (!Array.isArray(prs)) {
       return [];
     }
-    
+
     const ticketsMap = new Map();
-    
+
     // Collect all tickets from all PRs, tracking ALL PRs each ticket belongs to
     for (const pr of prs) {
       if (pr.relatedTickets && Array.isArray(pr.relatedTickets)) {
@@ -969,17 +978,19 @@ export default class Pipeline extends LightningElement {
               // First time seeing this ticket - create entry with first PR
               ticketsMap.set(ticket.id, {
                 ticketId: ticket.id,
-                subject: ticket.subject || '',
-                status: ticket.status || '',
-                statusLabel: ticket.statusLabel || '',
-                author: ticket.author || '',
-                authorLabel: ticket.authorLabel || '',
-                url: ticket.url || '',
-                prs: [{
-                  number: pr.number,
-                  title: pr.title,
-                  webUrl: pr.webUrl
-                }]
+                subject: ticket.subject || "",
+                status: ticket.status || "",
+                statusLabel: ticket.statusLabel || "",
+                author: ticket.author || "",
+                authorLabel: ticket.authorLabel || "",
+                url: ticket.url || "",
+                prs: [
+                  {
+                    number: pr.number,
+                    title: pr.title,
+                    webUrl: pr.webUrl,
+                  },
+                ],
               });
             } else {
               // Ticket already exists - add this PR to the list
@@ -987,14 +998,14 @@ export default class Pipeline extends LightningElement {
               existingTicket.prs.push({
                 number: pr.number,
                 title: pr.title,
-                webUrl: pr.webUrl
+                webUrl: pr.webUrl,
               });
             }
           }
         }
       }
     }
-    
+
     // Convert to array with one row per ticket (multiple PRs shown in same row)
     const ticketRows = [];
     for (const ticketData of ticketsMap.values()) {
@@ -1007,14 +1018,16 @@ export default class Pipeline extends LightningElement {
         }
         return String(a.number).localeCompare(String(b.number));
       });
-      
+
       // Create multi-line PR label (one line per PR)
-      const prLabels = ticketData.prs.map(pr => `#${pr.number || ''} - ${pr.title || ''}`);
-      const prLabel = prLabels.join('\n');
-      
+      const prLabels = ticketData.prs.map(
+        (pr) => `#${pr.number || ""} - ${pr.title || ""}`,
+      );
+      const prLabel = prLabels.join("\n");
+
       // Use first PR's webUrl for the link (or could omit link if multiple)
-      const prWebUrl = ticketData.prs[0]?.webUrl || '';
-      
+      const prWebUrl = ticketData.prs[0]?.webUrl || "";
+
       ticketRows.push({
         id: ticketData.ticketId,
         subject: ticketData.subject,
@@ -1027,7 +1040,7 @@ export default class Pipeline extends LightningElement {
         prWebUrl: prWebUrl,
       });
     }
-    
+
     // Sort by ticket ID
     ticketRows.sort((a, b) => {
       const aTicketNum = parseInt(a.id);
@@ -1037,7 +1050,7 @@ export default class Pipeline extends LightningElement {
       }
       return a.id.localeCompare(b.id);
     });
-    
+
     return ticketRows;
   }
 

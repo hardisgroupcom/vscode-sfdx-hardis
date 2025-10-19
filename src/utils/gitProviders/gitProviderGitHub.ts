@@ -109,13 +109,16 @@ export class GitProviderGitHub extends GitProvider {
       const compareOptions: any = {
         owner,
         repo,
-        base: lastMergeToTarget ? lastMergeToTarget.merge_commit_sha! : targetBranchName,
+        base: lastMergeToTarget
+          ? lastMergeToTarget.merge_commit_sha!
+          : targetBranchName,
         head: currentBranchName,
         per_page: 100,
       };
 
-      const { data: comparison } = await this.gitHubClient.repos.compareCommits(compareOptions);
-      
+      const { data: comparison } =
+        await this.gitHubClient.repos.compareCommits(compareOptions);
+
       if (!comparison.commits || comparison.commits.length === 0) {
         return [];
       }
@@ -124,7 +127,7 @@ export class GitProviderGitHub extends GitProvider {
 
       // Step 3: Get all merged PRs targeting currentBranch and child branches (parallelized)
       const allBranches = [currentBranchName, ...childBranchesNames];
-      
+
       const prPromises = allBranches.map(async (branchName) => {
         try {
           const { data: prs } = await this.gitHubClient!.pulls.list({
@@ -135,8 +138,7 @@ export class GitProviderGitHub extends GitProvider {
             per_page: 100,
           });
           return prs.filter((pr) => pr.merged_at);
-        }
-        catch (err) {
+        } catch (err) {
           Logger.log(
             `Error fetching merged PRs for branch ${branchName}: ${String(err)}`,
           );

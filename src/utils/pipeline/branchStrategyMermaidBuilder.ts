@@ -157,7 +157,10 @@ export class BranchStrategyMermaidBuilder {
           activePR: activePR,
         });
       }
-      const branchLabel = branchAndOrg?.pullRequestsInBranchSinceLastMerge?.length > 0 ? `${branchAndOrg.branchName}<br/>(${branchAndOrg?.pullRequestsInBranchSinceLastMerge?.length})` : branchAndOrg.branchName;
+      const branchLabel =
+        branchAndOrg?.pullRequestsInBranchSinceLastMerge?.length > 0
+          ? `${branchAndOrg.branchName}<br/>(${branchAndOrg?.pullRequestsInBranchSinceLastMerge?.length})`
+          : branchAndOrg.branchName;
       return {
         name: branchAndOrg.branchName,
         nodeName: nodeName,
@@ -165,7 +168,9 @@ export class BranchStrategyMermaidBuilder {
         class: isProduction(branchAndOrg.branchName) ? "gitMain" : "gitMajor",
         level: branchAndOrg.level,
         instanceUrl: branchAndOrg.instanceUrl,
-        hasPullRequests: branchAndOrg?.pullRequestsInBranchSinceLastMerge && branchAndOrg.pullRequestsInBranchSinceLastMerge.length > 0,
+        hasPullRequests:
+          branchAndOrg?.pullRequestsInBranchSinceLastMerge &&
+          branchAndOrg.pullRequestsInBranchSinceLastMerge.length > 0,
       };
     });
 
@@ -519,7 +524,7 @@ export class BranchStrategyMermaidBuilder {
         `linkStyle ${positions[key].join(",")} ${styleDef}`,
       );
     }
-    
+
     // Add click callbacks for branches with pull requests (must be at the end)
     for (const gitBranch of this.gitBranches) {
       if (gitBranch.hasPullRequests) {
