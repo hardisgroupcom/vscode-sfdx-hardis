@@ -11,6 +11,8 @@ export default class MetadataRetriever extends LightningElement {
   @track metadataType = "All";
   @track metadataName = "";
   @track lastUpdatedBy = "";
+  @track dateFrom = "";
+  @track dateTo = "";
   @track searchTerm = "";
   @track isLoading = false;
   @track metadata = [];
@@ -174,6 +176,16 @@ export default class MetadataRetriever extends LightningElement {
     this.applyFilters();
   }
 
+  handleDateFromChange(event) {
+    this.dateFrom = event.target.value;
+    this.applyFilters();
+  }
+
+  handleDateToChange(event) {
+    this.dateTo = event.target.value;
+    this.applyFilters();
+  }
+
   handleSearchChange(event) {
     this.searchTerm = event.target.value;
     this.applyFilters();
@@ -199,6 +211,8 @@ export default class MetadataRetriever extends LightningElement {
         metadataType: this.metadataType && this.metadataType !== "All" ? this.metadataType : null,
         metadataName: this.metadataName || null,
         lastUpdatedBy: this.lastUpdatedBy || null,
+        dateFrom: this.dateFrom || null,
+        dateTo: this.dateTo || null,
       },
     });
   }
@@ -229,6 +243,8 @@ export default class MetadataRetriever extends LightningElement {
     this.metadataType = "All";
     this.metadataName = "";
     this.lastUpdatedBy = "";
+    this.dateFrom = "";
+    this.dateTo = "";
     this.searchTerm = "";
     this.selectedRows = [];
     this.selectedRowKeys = [];

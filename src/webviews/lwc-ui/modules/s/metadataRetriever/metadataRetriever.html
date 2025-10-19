@@ -5,7 +5,7 @@
       <div class="slds-p-around_small">
         <div class="slds-grid slds-gutters slds-wrap">
           <!-- Org Selection -->
-          <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-large-size_1-of-4">
+          <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-large-size_1-of-6">
             <lightning-combobox
               label="Selected Org"
               value={selectedOrg}
@@ -16,7 +16,7 @@
           </div>
 
           <!-- Metadata Type Filter -->
-          <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-large-size_1-of-4">
+          <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-large-size_1-of-6">
             <lightning-combobox
               label="Metadata Type"
               value={metadataType}
@@ -27,7 +27,7 @@
           </div>
 
           <!-- Metadata Name Filter -->
-          <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-large-size_1-of-4">
+          <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-large-size_1-of-6">
             <lightning-input
               label="Metadata Name"
               value={metadataName}
@@ -37,12 +37,32 @@
           </div>
 
           <!-- Last Updated By Filter -->
-          <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-large-size_1-of-4">
+          <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-large-size_1-of-6">
             <lightning-input
               label="Last Updated By"
               value={lastUpdatedBy}
               onchange={handleLastUpdatedByChange}
               placeholder="e.g., John Doe"
+            ></lightning-input>
+          </div>
+
+          <!-- Date From Filter -->
+          <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-large-size_1-of-6">
+            <lightning-input
+              type="date"
+              label="Updated From"
+              value={dateFrom}
+              onchange={handleDateFromChange}
+            ></lightning-input>
+          </div>
+
+          <!-- Date To Filter -->
+          <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-large-size_1-of-6">
+            <lightning-input
+              type="date"
+              label="Updated To"
+              value={dateTo}
+              onchange={handleDateToChange}
             ></lightning-input>
           </div>
         </div>

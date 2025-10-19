@@ -66,7 +66,9 @@ async function executeMetadataRetrieve(
   workspaceRoot: string,
   displayTitle: string,
 ): Promise<void> {
-  const command = `sf project retrieve start --metadata ${metadataList} --target-org ${username} --json`;
+  // Split metadata list and create separate --metadata flags for each item
+  const metadataItems = metadataList.split(',').map(item => `--metadata "${item}"`).join(' ');
+  const command = `sf project retrieve start ${metadataItems} --target-org ${username} --json`;
   Logger.log(`Retrieving metadata: ${command}`);
 
   await vscode.window.withProgress(
@@ -98,7 +100,13 @@ async function executeMetadataRetrieve(
 
           // Display success or warning
           if (failedFiles.length === 0 && success) {
-            vscode.window.showInformationMessage(resultMessage || "Metadata retrieved successfully");
+            const action = await vscode.window.showInformationMessage(
+              resultMessage || "Metadata retrieved successfully",
+              "View and commit files"
+            );
+            if (action === "View and commit files") {
+              vscode.commands.executeCommand("workbench.view.scm");
+            }
           }
           else {
             // Show warning with details
@@ -108,17 +116,31 @@ async function executeMetadataRetrieve(
             else {
               resultMessage = `Failed to retrieve ${failedFiles.length} file(s)`;
             }
-            vscode.window.showWarningMessage(resultMessage);
-
-            // Log detailed errors
+            
+            // Collect error details for display
+            const errorDetails: string[] = [];
             if (messages.length > 0) {
               messages.forEach((msg: any) => {
-                Logger.log(`Retrieve error in ${msg.fileName}: ${msg.problem}`);
+                const error = `${msg.fileName}: ${msg.problem}`;
+                errorDetails.push(error);
+                Logger.log(`Retrieve error - ${error}`);
               });
             }
             failedFiles.forEach((file: any) => {
-              Logger.log(`Failed to retrieve ${file.type}: ${file.fullName} - ${file.error}`);
+              const error = `${file.type}: ${file.fullName} - ${file.error}`;
+              errorDetails.push(error);
+              Logger.log(`Failed to retrieve ${error}`);
             });
+            
+            // Display warning with first few errors in message
+            if (errorDetails.length > 0) {
+              const displayErrors = errorDetails.slice(0, 3).join("; ");
+              const moreErrors = errorDetails.length > 3 ? ` (and ${errorDetails.length - 3} more - see logs)` : "";
+              vscode.window.showWarningMessage(`${resultMessage}. Errors: ${displayErrors}${moreErrors}`);
+            }
+            else {
+              vscode.window.showWarningMessage(resultMessage);
+            }
           }
         }
         else {
@@ -136,7 +158,7 @@ async function executeMetadataRetrieve(
 
 async function handleQueryMetadata(panel: any, data: any) {
   try {
-    const { username, metadataType, metadataName, lastUpdatedBy } = data;
+    const { username, metadataType, metadataName, lastUpdatedBy, dateFrom, dateTo } = data;
 
     if (!username) {
       panel.sendMessage({
@@ -166,6 +188,23 @@ async function handleQueryMetadata(panel: any, data: any) {
       // Escape single quotes and wildcards for SOQL LIKE
       const escapedUser = lastUpdatedBy.replace(/'/g, "\\'").replace(/%/g, "\\%").replace(/_/g, "\\_");
       conditions.push(`LastModifiedBy.Name LIKE '%${escapedUser}%'`);
+    }
+
+    // Add date range filters if provided
+    if (dateFrom) {
+      const fromDate = new Date(dateFrom);
+      if (!isNaN(fromDate.getTime())) {
+        conditions.push(`LastModifiedDate >= ${fromDate.toISOString()}`);
+      }
+    }
+
+    if (dateTo) {
+      const toDate = new Date(dateTo);
+      if (!isNaN(toDate.getTime())) {
+        // Set to end of day
+        toDate.setHours(23, 59, 59, 999);
+        conditions.push(`LastModifiedDate <= ${toDate.toISOString()}`);
+      }
     }
 
     if (conditions.length > 0) {
