@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+## [6.13.0] 2024-10-19
+
+- Live DevOps Pipelines
+  - Display the number of PR that are currently in a major branch
+  - When clicking on a major branch node, display related Pull Requests and Related Tickets in a modal
+  - JIRA and Azure Boards integration and connect button
+
 ## [6.12.0] 2024-10-16
 
 - New feature: Contextual menu on apex files to run as anonymous Apex (like in Developer Console)

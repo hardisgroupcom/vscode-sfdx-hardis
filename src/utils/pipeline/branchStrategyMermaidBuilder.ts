@@ -157,13 +157,20 @@ export class BranchStrategyMermaidBuilder {
           activePR: activePR,
         });
       }
+      const branchLabel =
+        branchAndOrg?.pullRequestsInBranchSinceLastMerge?.length > 0
+          ? `${branchAndOrg.branchName}<br/>(${branchAndOrg?.pullRequestsInBranchSinceLastMerge?.length})`
+          : branchAndOrg.branchName;
       return {
         name: branchAndOrg.branchName,
         nodeName: nodeName,
-        label: branchAndOrg.branchName,
+        label: branchLabel,
         class: isProduction(branchAndOrg.branchName) ? "gitMain" : "gitMajor",
         level: branchAndOrg.level,
         instanceUrl: branchAndOrg.instanceUrl,
+        hasPullRequests:
+          branchAndOrg?.pullRequestsInBranchSinceLastMerge &&
+          branchAndOrg.pullRequestsInBranchSinceLastMerge.length > 0,
       };
     });
 
@@ -516,6 +523,15 @@ export class BranchStrategyMermaidBuilder {
       this.mermaidLines.push(
         `linkStyle ${positions[key].join(",")} ${styleDef}`,
       );
+    }
+
+    // Add click callbacks for branches with pull requests (must be at the end)
+    for (const gitBranch of this.gitBranches) {
+      if (gitBranch.hasPullRequests) {
+        this.mermaidLines.push(
+          `click ${gitBranch.nodeName} call handleMermaidClick() "Show ${gitBranch.name} PRs"`,
+        );
+      }
     }
   }
 
