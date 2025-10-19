@@ -202,17 +202,21 @@ lightning-datatable .hardis-emoji-cell a {
 .slds-modal__content {
     max-height: calc(95vh - 180px) !important;
     overflow-y: auto !important;
-    overflow-x: auto !important;
+    overflow-x: hidden !important;
     flex: 1 1 auto !important;
     position: relative !important;
 }
 
-/* Datatable should display fully without internal scrolling
+/* Ensure tabset takes full width */
+.slds-modal__content lightning-tabset {
+    display: block !important;
+    width: 100% !important;
+}
+
+/* Ensure datatables fit within modal without horizontal scroll */
 .slds-modal__content lightning-datatable {
-    width: max-content !important;
-    min-width: 100% !important;
-    height: auto !important;
-    min-height: auto !important;
-} */
+    width: 100% !important;
+    max-width: 100% !important;
+}
 
 
