@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import { Commands } from "../commands";
 import { LwcPanelManager } from "../lwc-panel-manager";
 import { listAllOrgs } from "../utils/orgUtils";
-import { execSfdxJson, execCommand } from "../utils";
+import { execSfdxJson } from "../utils";
 import { Logger } from "../logger";
 import { listMetadataTypes } from "../utils/metadataList";
 
@@ -58,6 +58,80 @@ export function registerShowMetadataRetriever(commands: Commands) {
     },
   );
   commands.disposables.push(disposable);
+}
+
+async function executeMetadataRetrieve(
+  username: string,
+  metadataList: string,
+  workspaceRoot: string,
+  displayTitle: string,
+): Promise<void> {
+  const command = `sf project retrieve start --metadata ${metadataList} --target-org ${username} --json`;
+  Logger.log(`Retrieving metadata: ${command}`);
+
+  await vscode.window.withProgress(
+    {
+      location: vscode.ProgressLocation.Notification,
+      title: displayTitle,
+      cancellable: false,
+    },
+    async (_progress) => {
+      try {
+        const result = await execSfdxJson(command, { cwd: workspaceRoot });
+
+        // Check if command executed and has result
+        if (result && result.result) {
+          const retrieveResult = result.result;
+          const success = retrieveResult.success === true;
+          const files = retrieveResult.files || [];
+          const messages = retrieveResult.messages || [];
+
+          // Count successful and failed files
+          const successfulFiles = files.filter((f: any) => f.state !== "Failed");
+          const failedFiles = files.filter((f: any) => f.state === "Failed");
+
+          // Build result message
+          let resultMessage = "";
+          if (successfulFiles.length > 0) {
+            resultMessage += `Successfully retrieved ${successfulFiles.length} file(s)`;
+          }
+
+          // Display success or warning
+          if (failedFiles.length === 0 && success) {
+            vscode.window.showInformationMessage(resultMessage || "Metadata retrieved successfully");
+          }
+          else {
+            // Show warning with details
+            if (successfulFiles.length > 0) {
+              resultMessage += `, but ${failedFiles.length} failed`;
+            }
+            else {
+              resultMessage = `Failed to retrieve ${failedFiles.length} file(s)`;
+            }
+            vscode.window.showWarningMessage(resultMessage);
+
+            // Log detailed errors
+            if (messages.length > 0) {
+              messages.forEach((msg: any) => {
+                Logger.log(`Retrieve error in ${msg.fileName}: ${msg.problem}`);
+              });
+            }
+            failedFiles.forEach((file: any) => {
+              Logger.log(`Failed to retrieve ${file.type}: ${file.fullName} - ${file.error}`);
+            });
+          }
+        }
+        else {
+          const errorMsg = result?.message || "Unknown error occurred";
+          vscode.window.showErrorMessage(`Failed to retrieve metadata: ${errorMsg}`);
+        }
+      }
+      catch (error: any) {
+        Logger.log(`Error retrieving metadata: ${error.message}`);
+        vscode.window.showErrorMessage(`Failed to retrieve metadata: ${error.message}`);
+      }
+    },
+  );
 }
 
 async function handleQueryMetadata(panel: any, data: any) {
@@ -148,24 +222,12 @@ async function handleRetrieveSelectedMetadata(panel: any, data: any) {
 
     // Build metadata list for command
     const metadataList = metadata.map(m => `${m.memberType}:${m.memberName}`).join(",");
-    const command = `sf project retrieve start --metadata ${metadataList} --target-org ${username}`;
-    Logger.log(`Retrieving ${metadata.length} metadata items: ${command}`);
-
-    vscode.window.withProgress(
-      {
-        location: vscode.ProgressLocation.Notification,
-        title: `Retrieving ${metadata.length} metadata item(s)`,
-        cancellable: false,
-      },
-      async (_progress) => {
-        try {
-          await execCommand(command, { cwd: workspaceRoot, output: true });
-          vscode.window.showInformationMessage(`Successfully retrieved ${metadata.length} metadata item(s)`);
-        }
-        catch (error: any) {
-          vscode.window.showErrorMessage(`Failed to retrieve metadata: ${error.message}`);
-        }
-      },
+    
+    await executeMetadataRetrieve(
+      username,
+      metadataList,
+      workspaceRoot,
+      `Retrieving ${metadata.length} metadata item(s)`,
     );
   }
   catch (error: any) {
@@ -192,25 +254,14 @@ async function handleRetrieveMetadata(panel: any, data: any) {
 
     const workspaceRoot = workspaceFolders[0].uri.fsPath;
 
-    // Use sf project retrieve start with metadata flag
-    const command = `sf project retrieve start --metadata ${memberType}:${memberName} --target-org ${username}`;
-    Logger.log(`Retrieving metadata: ${command}`);
-
-    vscode.window.withProgress(
-      {
-        location: vscode.ProgressLocation.Notification,
-        title: `Retrieving ${memberType}: ${memberName}`,
-        cancellable: false,
-      },
-      async (_progress) => {
-        try {
-          await execCommand(command, { cwd: workspaceRoot, output: true });
-          vscode.window.showInformationMessage(`Successfully retrieved ${memberType}: ${memberName}`);
-        }
-        catch (error: any) {
-          vscode.window.showErrorMessage(`Failed to retrieve metadata: ${error.message}`);
-        }
-      },
+    // Build metadata list for command
+    const metadataList = `${memberType}:${memberName}`;
+    
+    await executeMetadataRetrieve(
+      username,
+      metadataList,
+      workspaceRoot,
+      `Retrieving ${memberType}: ${memberName}`,
     );
   }
   catch (error: any) {

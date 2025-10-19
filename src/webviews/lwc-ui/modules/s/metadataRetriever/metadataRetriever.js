@@ -17,7 +17,7 @@ export default class MetadataRetriever extends LightningElement {
   @track filteredMetadata = [];
   @track error = null;
   @track selectedRows = [];
-  @track selectedRowKeys = new Set();
+  @track selectedRowKeys = [];
 
   // Datatable columns
   columns = [
@@ -156,9 +156,7 @@ export default class MetadataRetriever extends LightningElement {
   handleRowSelection(event) {
     this.selectedRows = event.detail.selectedRows;
     // Track selected row keys for persistence during filtering
-    this.selectedRowKeys = new Set(
-      this.selectedRows.map(row => this.getRowKey(row))
-    );
+    this.selectedRowKeys = this.selectedRows.map(row => row.MemberName);
   }
 
   handleMetadataTypeChange(event) {
@@ -181,10 +179,6 @@ export default class MetadataRetriever extends LightningElement {
     this.applyFilters();
   }
 
-  getRowKey(row) {
-    return `${row.MemberType}::${row.MemberName}`;
-  }
-
   handleSearch() {
     if (!this.canSearch) {
       return;
@@ -195,7 +189,7 @@ export default class MetadataRetriever extends LightningElement {
     this.metadata = [];
     this.filteredMetadata = [];
     this.selectedRows = [];
-    this.selectedRowKeys = new Set();
+    this.selectedRowKeys = [];
 
     // Send filter criteria to VS Code (backend will build the SOQL query)
     window.sendMessageToVSCode({
@@ -237,7 +231,7 @@ export default class MetadataRetriever extends LightningElement {
     this.lastUpdatedBy = "";
     this.searchTerm = "";
     this.selectedRows = [];
-    this.selectedRowKeys = new Set();
+    this.selectedRowKeys = [];
     this.applyFilters();
   }
 
@@ -285,27 +279,6 @@ export default class MetadataRetriever extends LightningElement {
     }
 
     this.filteredMetadata = filtered;
-
-    // Preserve selection: update selectedRows to only include rows that are still visible
-    if (this.selectedRowKeys.size > 0) {
-      this.selectedRows = filtered.filter(row => 
-        this.selectedRowKeys.has(this.getRowKey(row))
-      );
-      // Force datatable to update selection by requesting re-render
-      this.updateDatatableSelection();
-    }
-  }
-
-  updateDatatableSelection() {
-    // Use setTimeout to ensure DOM updates before setting selection
-    // eslint-disable-next-line @lwc/lwc/no-async-operation
-    setTimeout(() => {
-      const datatable = this.template.querySelector('lightning-datatable');
-      if (datatable && this.selectedRows.length > 0) {
-        const selectedRowKeys = this.selectedRows.map(row => row.MemberName);
-        datatable.selectedRows = selectedRowKeys;
-      }
-    }, 0);
   }
 
   handleRowAction(event) {
