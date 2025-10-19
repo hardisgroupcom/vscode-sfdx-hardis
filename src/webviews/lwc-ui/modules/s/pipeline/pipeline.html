@@ -22,6 +22,13 @@
                         title="Connect to a Git provider"
                         onclick={handleGitConnect}
                     ></lightning-button>
+                    <lightning-button
+                        icon-name={ticketConnectedIconName}
+                        variant={ticketConnectedVariant}
+                        label={ticketConnectedLabel}
+                        title="Connect to a Ticketing provider"
+                        onclick={handleTicketConnect}
+                    ></lightning-button>
                     <lightning-button-menu 
                         alternative-text="Pipeline Settings" 
                         icon-name="utility:settings"
@@ -212,4 +219,52 @@
         </template>
     </template>
     </div>
+
+    <!-- PR Modal -->
+    <template if:true={showPRModal}>
+        <section role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="modal-heading-01" class="slds-modal slds-fade-in-open">
+            <div class="slds-modal__container">
+                <header class="slds-modal__header">
+                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick={handleClosePRModal}>
+                        <lightning-icon icon-name="utility:close" size="small" alternative-text="Close"></lightning-icon>
+                        <span class="slds-assistive-text">Close</span>
+                    </button>
+                    <h2 id="modal-heading-01" class="slds-modal__title slds-hyphenate">{modalTitle}</h2>
+                </header>
+                <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                    <lightning-tabset>
+                        <lightning-tab label={modalPrsTabLabel} value="prs">
+                            <lightning-datatable
+                                key-field="id"
+                                data={modalPullRequests}
+                                columns={modalPrColumns}
+                                hide-checkbox-column
+                                column-widths-mode="auto"
+                            ></lightning-datatable>
+                        </lightning-tab>
+                        <lightning-tab label={modalTicketsTabLabel} value="tickets">
+                            <template if:true={modalTickets.length}>
+                                <lightning-datatable
+                                    key-field="id"
+                                    data={modalTickets}
+                                    columns={computedModalTicketColumns}
+                                    hide-checkbox-column
+                                    column-widths-mode="auto"
+                                ></lightning-datatable>
+                            </template>
+                            <template if:false={modalTickets.length}>
+                                <div class="slds-align_absolute-center slds-p-around_medium">
+                                    <p class="slds-text-color_weak">No tickets found in the pull requests for this branch.</p>
+                                </div>
+                            </template>
+                        </lightning-tab>
+                    </lightning-tabset>
+                </div>
+                <footer class="slds-modal__footer">
+                    <lightning-button variant="neutral" label="Close" onclick={handleClosePRModal}></lightning-button>
+                </footer>
+            </div>
+        </section>
+        <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
 </template>
