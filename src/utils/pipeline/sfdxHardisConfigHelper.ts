@@ -77,6 +77,11 @@ export class SfdxHardisConfigHelper {
     { name: "installedPackages", scopes: ["global"] },
     { name: "commandsPreDeploy", scopes: ["global", "branch"] },
     { name: "commandsPostDeploy", scopes: ["global", "branch"] },
+    { name: "ticketingProvider", scopes: ["global"] },
+    { name: "jiraHost", scopes: ["global"] },
+    { name: "jiraTicketRegex", scopes: ["global"] },
+    { name: "genericTicketingProviderRegex", scopes: ["global"] },
+    { name: "genericTicketingProviderUrlBuilder", scopes: ["global"] },
   ];
   static readonly SECTIONS = [
     {
@@ -123,6 +128,17 @@ export class SfdxHardisConfigHelper {
         "autoCleanTypes",
         "autoRetrieveWhenPull",
         "autoRemoveUserPermissions",
+      ],
+    },
+    {
+      label: "Ticketing",
+      description: "",
+      keys: [
+        "ticketingProvider",
+        "jiraHost",
+        "jiraTicketRegex",
+        "genericTicketingProviderRegex",
+        "genericTicketingProviderUrlBuilder",
       ],
     },
     {
@@ -225,6 +241,8 @@ export class SfdxHardisConfigHelper {
             description: value.description,
             examples: value.examples || [],
             docUrl: value.docUrl || null,
+            enum: value.enum || null,
+            enumNames: value.enumNames || null,
             globalAllowed:
               this.CONFIGURABLE_FIELDS.find(
                 (field) => field.name === key,

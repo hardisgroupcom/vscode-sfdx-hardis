@@ -68,6 +68,8 @@ export class PipelineDataProvider {
         type: org.orgType,
         alias: org.alias,
         level: org.level,
+        pullRequestsInBranchSinceLastMerge:
+          org.pullRequestsInBranchSinceLastMerge || [],
       }));
       const links: OrgLink[] = [];
       for (const org of majorOrgs) {
@@ -151,25 +153,3 @@ export class PipelineDataProvider {
     }
   }
 }
-
-// async function completeOrgsWithPullRequests(orgs: MajorOrg[]): Promise<MajorOrg[]> {
-//   const gitProvider = await GitProvider.getInstance();
-//   if (!gitProvider || !gitProvider.isActive) {
-//     return orgs;
-//   }
-//   const config = vscode.workspace.getConfiguration('sfdxHardis');
-//   const fetchPrs = config.get<boolean>('pipeline.fetchPullRequests', true);
-//   if (!fetchPrs) {
-//     return orgs;
-//   }
-//   for (const org of orgs) {
-//     try {
-//       const prs = await gitProvider.listPullRequestsForBranch(org.branchName);
-//       org.openPullRequestsAsTarget = prs.filter(pr => pr.state === 'open');
-//       org.mergedPullRequestsAsTarget = prs.filter(pr => pr.state === 'merged');
-//     } catch (error) {
-//       Logger.log(`Error fetching PRs for branch ${org.branchName}: ${String(error)}`);
-//     }
-//   }
-//   return orgs;
-// }
