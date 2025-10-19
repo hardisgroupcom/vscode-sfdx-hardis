@@ -241,6 +241,8 @@ export class SfdxHardisConfigHelper {
             description: value.description,
             examples: value.examples || [],
             docUrl: value.docUrl || null,
+            enum: value.enum || null,
+            enumNames: value.enumNames || null,
             globalAllowed:
               this.CONFIGURABLE_FIELDS.find(
                 (field) => field.name === key,
