@@ -1,0 +1,159 @@
+<template>
+  <div class="slds-p-around_small blue-back">
+    <lightning-card title="Metadata Retriever" icon-name="custom:custom63">
+      <!-- Filters Section -->
+      <div class="slds-p-around_small">
+        <div class="slds-grid slds-gutters slds-wrap">
+          <!-- Org Selection -->
+          <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-large-size_1-of-4">
+            <lightning-combobox
+              label="Selected Org"
+              value={selectedOrg}
+              options={orgOptions}
+              onchange={handleOrgChange}
+              required
+            ></lightning-combobox>
+          </div>
+
+          <!-- Metadata Type Filter -->
+          <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-large-size_1-of-4">
+            <lightning-combobox
+              label="Metadata Type"
+              value={metadataType}
+              options={metadataTypeOptions}
+              onchange={handleMetadataTypeChange}
+              placeholder="Select metadata type"
+            ></lightning-combobox>
+          </div>
+
+          <!-- Metadata Name Filter -->
+          <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-large-size_1-of-4">
+            <lightning-input
+              label="Metadata Name"
+              value={metadataName}
+              onchange={handleMetadataNameChange}
+              placeholder="e.g., MyClass, Account"
+            ></lightning-input>
+          </div>
+
+          <!-- Last Updated By Filter -->
+          <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-large-size_1-of-4">
+            <lightning-input
+              label="Last Updated By"
+              value={lastUpdatedBy}
+              onchange={handleLastUpdatedByChange}
+              placeholder="e.g., John Doe"
+            ></lightning-input>
+          </div>
+        </div>
+
+        <!-- Search and Action Buttons -->
+        <div class="slds-grid slds-gutters slds-wrap slds-m-top_small">
+          <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+            <lightning-input
+              label="Search"
+              value={searchTerm}
+              onchange={handleSearchChange}
+              placeholder="Search in results..."
+            ></lightning-input>
+          </div>
+          <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-align-bottom">
+            <div class="slds-grid slds-gutters">
+              <div class="slds-col">
+                <lightning-button
+                  variant="brand"
+                  label="Search"
+                  icon-name="utility:search"
+                  onclick={handleSearch}
+                  disabled={cannotSearch}
+                  class="slds-m-right_x-small"
+                ></lightning-button>
+                <lightning-button
+                  variant="neutral"
+                  label="Refresh"
+                  icon-name="utility:refresh"
+                  onclick={handleRefresh}
+                  disabled={cannotSearch}
+                  class="slds-m-right_x-small"
+                ></lightning-button>
+                <lightning-button
+                  variant="neutral"
+                  label="Clear Filters"
+                  icon-name="utility:clear"
+                  onclick={handleClearFilters}
+                ></lightning-button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Retrieve Selected Button -->
+        <template if:true={hasSelectedRows}>
+          <div class="slds-m-top_small">
+            <lightning-button
+              variant="brand"
+              label="Retrieve Selected Metadata"
+              icon-name="utility:download"
+              onclick={handleRetrieveSelected}
+            ></lightning-button>
+            <span class="slds-m-left_small slds-text-color_weak">
+              {selectedRows.length} item(s) selected
+            </span>
+          </div>
+        </template>
+      </div>
+
+      <!-- Loading Spinner -->
+      <template if:true={isLoading}>
+        <div class="slds-p-around_small slds-text-align_center">
+          <lightning-spinner alternative-text="Loading metadata..." size="medium"></lightning-spinner>
+        </div>
+      </template>
+
+      <!-- Error Message -->
+      <template if:true={hasError}>
+        <div class="slds-p-around_small">
+          <div class="slds-notify slds-notify_alert slds-alert_error" role="alert">
+            <span class="slds-assistive-text">error</span>
+            <lightning-icon icon-name="utility:error" size="x-small" variant="inverse" class="slds-m-right_x-small"></lightning-icon>
+            <h2>{error}</h2>
+          </div>
+        </div>
+      </template>
+
+      <!-- Results Datatable -->
+      <template if:true={hasResults}>
+        <div class="slds-p-around_small">
+          <div class="slds-m-bottom_small">
+            <span class="slds-text-title_caps slds-text-color_weak">
+              {filteredMetadata.length} result(s) found
+            </span>
+          </div>
+          <lightning-datatable
+            key-field="MemberName"
+            data={filteredMetadata}
+            columns={columns}
+            column-widths-mode="auto"
+            onrowaction={handleRowAction}
+            onrowselection={handleRowSelection}
+            onsort={handleSort}
+            sorted-by={sortBy}
+            sorted-direction={sortDirection}
+          ></lightning-datatable>
+        </div>
+      </template>
+
+      <!-- No Results Message -->
+      <template if:true={noResults}>
+        <div class="slds-p-around_small slds-text-align_center">
+          <div class="slds-illustration slds-illustration_small">
+            <div class="slds-text-color_weak">
+              <h3 class="slds-text-heading_medium">No metadata found</h3>
+              <p class="slds-text-body_regular">Try adjusting your search criteria</p>
+            </div>
+          </div>
+        </div>
+      </template>
+    </lightning-card>
+  </div>
+</template>

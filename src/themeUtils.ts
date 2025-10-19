@@ -158,6 +158,10 @@ export class ThemeUtils {
         vscode: "cloud-download",
         hardis: "pull.svg",
       },
+      "vscode-sfdx-hardis.showMetadataRetriever": {
+        vscode: "cloud-download",
+        hardis: "pull.svg",
+      },
       "hardis:work:save": { vscode: "save", hardis: "save.svg" },
       "hardis:work:resetselection": { vscode: "history", hardis: "reset.svg" },
       "vscode-sfdx-hardis.showPipeline": {
