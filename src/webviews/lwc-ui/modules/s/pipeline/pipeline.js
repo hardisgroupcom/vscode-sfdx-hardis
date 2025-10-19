@@ -59,7 +59,6 @@ export default class Pipeline extends LightningElement {
       label: "Author",
       fieldName: "authorLabel",
       type: "text",
-      initialWidth: 160,
       wrapText: true,
     },
     {
@@ -67,7 +66,6 @@ export default class Pipeline extends LightningElement {
       label: "Source",
       fieldName: "sourceBranch",
       type: "text",
-      initialWidth: 280,
       wrapText: true,
     },
     {
@@ -75,7 +73,6 @@ export default class Pipeline extends LightningElement {
       label: "Target",
       fieldName: "targetBranch",
       type: "text",
-      initialWidth: 180,
       wrapText: true,
     },
   ];
@@ -112,6 +109,7 @@ export default class Pipeline extends LightningElement {
       fieldName: "mergeDateFormatted",
       type: "text",
       wrapText: true,
+      initialWidth: 100
     },
     {
       key: "source",
@@ -119,6 +117,7 @@ export default class Pipeline extends LightningElement {
       fieldName: "sourceBranch",
       type: "text",
       wrapText: true,
+      initialWidth: 200
     },
     {
       key: "target",
@@ -129,41 +128,60 @@ export default class Pipeline extends LightningElement {
     },
   ];
 
-  modalTicketColumns = [
-    {
-      key: "id",
-      label: "ID",
-      fieldName: "url",
+  modalTicketColumns = [];
+
+  // Compute ticket columns based on authentication state
+  get computedModalTicketColumns() {
+    const columns = [
+      {
+        key: "id",
+        label: "ID",
+        fieldName: "url",
+        type: "url",
+        typeAttributes: { label: { fieldName: "id" }, target: "_blank" },
+        wrapText: true,
+      },
+    ];
+
+    // Only show subject, status, and author if ticketing provider is authenticated
+    if (this.ticketAuthenticated) {
+      columns.push(
+        {
+          key: "subject",
+          label: "Subject",
+          fieldName: "subject",
+          type: "text",
+          wrapText: true,
+        },
+        {
+          key: "status",
+          label: "Status",
+          fieldName: "statusLabel",
+          type: "text",
+          wrapText: true,
+        },
+        {
+          key: "author",
+          label: "Author",
+          fieldName: "authorLabel",
+          type: "text",
+          wrapText: true,
+        }
+      );
+    }
+
+    // Add PR column (clickable if single PR, text if multiple)
+    columns.push({
+      key: "pullRequest",
+      label: this.prButtonInfo?.pullRequestLabel || "Pull Request",
+      fieldName: "prWebUrl",
       type: "url",
-      typeAttributes: { label: { fieldName: "id" }, target: "_blank" },
-      initialWidth: 120,
+      typeAttributes: { label: { fieldName: "prLabel" }, target: "_blank" },
       wrapText: true,
-    },
-    {
-      key: "subject",
-      label: "Subject",
-      fieldName: "subject",
-      type: "text",
-      initialWidth: 400,
-      wrapText: true,
-    },
-    {
-      key: "status",
-      label: "Status",
-      fieldName: "statusLabel",
-      type: "text",
-      initialWidth: 120,
-      wrapText: true,
-    },
-    {
-      key: "author",
-      label: "Author",
-      fieldName: "authorLabel",
-      type: "text",
-      initialWidth: 150,
-      wrapText: true,
-    },
-  ];
+    });
+
+    return columns;
+  }
 
   pipelineData;
   repoInfo;
@@ -942,21 +960,34 @@ export default class Pipeline extends LightningElement {
     
     const ticketsMap = new Map();
     
-    // Collect all unique tickets from all PRs
+    // Collect all tickets from all PRs, tracking ALL PRs each ticket belongs to
     for (const pr of prs) {
       if (pr.relatedTickets && Array.isArray(pr.relatedTickets)) {
         for (const ticket of pr.relatedTickets) {
           if (ticket && ticket.id) {
-            // Use ticket ID as key to avoid duplicates
             if (!ticketsMap.has(ticket.id)) {
+              // First time seeing this ticket - create entry with first PR
               ticketsMap.set(ticket.id, {
-                id: ticket.id,
+                ticketId: ticket.id,
                 subject: ticket.subject || '',
                 status: ticket.status || '',
                 statusLabel: ticket.statusLabel || '',
                 author: ticket.author || '',
                 authorLabel: ticket.authorLabel || '',
                 url: ticket.url || '',
+                prs: [{
+                  number: pr.number,
+                  title: pr.title,
+                  webUrl: pr.webUrl
+                }]
+              });
+            } else {
+              // Ticket already exists - add this PR to the list
+              const existingTicket = ticketsMap.get(ticket.id);
+              existingTicket.prs.push({
+                number: pr.number,
+                title: pr.title,
+                webUrl: pr.webUrl
               });
             }
           }
@@ -964,18 +995,50 @@ export default class Pipeline extends LightningElement {
       }
     }
     
-    // Convert map to array and sort by ID
-    const tickets = Array.from(ticketsMap.values());
-    tickets.sort((a, b) => {
-      // Natural sort: compare numeric parts if both are numbers, otherwise alphabetic
-      const aNum = parseInt(a.id);
-      const bNum = parseInt(b.id);
-      if (!isNaN(aNum) && !isNaN(bNum)) {
-        return aNum - bNum;
+    // Convert to array with one row per ticket (multiple PRs shown in same row)
+    const ticketRows = [];
+    for (const ticketData of ticketsMap.values()) {
+      // Sort PRs by number for consistent display
+      ticketData.prs.sort((a, b) => {
+        const aNum = parseInt(a.number);
+        const bNum = parseInt(b.number);
+        if (!isNaN(aNum) && !isNaN(bNum)) {
+          return aNum - bNum;
+        }
+        return String(a.number).localeCompare(String(b.number));
+      });
+      
+      // Create multi-line PR label (one line per PR)
+      const prLabels = ticketData.prs.map(pr => `#${pr.number || ''} - ${pr.title || ''}`);
+      const prLabel = prLabels.join('\n');
+      
+      // Use first PR's webUrl for the link (or could omit link if multiple)
+      const prWebUrl = ticketData.prs[0]?.webUrl || '';
+      
+      ticketRows.push({
+        id: ticketData.ticketId,
+        subject: ticketData.subject,
+        status: ticketData.status,
+        statusLabel: ticketData.statusLabel,
+        author: ticketData.author,
+        authorLabel: ticketData.authorLabel,
+        url: ticketData.url,
+        prLabel: prLabel,
+        prWebUrl: prWebUrl,
+      });
+    }
+    
+    // Sort by ticket ID
+    ticketRows.sort((a, b) => {
+      const aTicketNum = parseInt(a.id);
+      const bTicketNum = parseInt(b.id);
+      if (!isNaN(aTicketNum) && !isNaN(bTicketNum)) {
+        return aTicketNum - bTicketNum;
       }
       return a.id.localeCompare(b.id);
     });
-    return tickets;
+    
+    return ticketRows;
   }
 
   get modalTitle() {
