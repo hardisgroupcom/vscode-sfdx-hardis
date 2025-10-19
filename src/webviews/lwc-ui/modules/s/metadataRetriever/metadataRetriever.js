@@ -156,9 +156,20 @@ export default class MetadataRetriever extends LightningElement {
   }
 
   handleRowSelection(event) {
-    this.selectedRows = event.detail.selectedRows;
-    // Track selected row keys for persistence during filtering
-    this.selectedRowKeys = this.selectedRows.map(row => row.MemberName);
+    const currentlySelectedRows = event.detail.selectedRows;
+    const currentlySelectedKeys = currentlySelectedRows.map(row => row.uniqueKey);
+    
+    // Get keys of currently visible rows in the datatable
+    const visibleKeys = this.filteredMetadata.map(row => row.uniqueKey);
+    
+    // Remove unselected visible keys from master list
+    this.selectedRowKeys = this.selectedRowKeys.filter(key => !visibleKeys.includes(key));
+    
+    // Add newly selected keys
+    this.selectedRowKeys = [...this.selectedRowKeys, ...currentlySelectedKeys];
+    
+    // Update selectedRows to include all selected items from metadata (not just filtered)
+    this.selectedRows = this.metadata.filter(row => this.selectedRowKeys.includes(row.uniqueKey));
   }
 
   handleMetadataTypeChange(event) {
@@ -333,12 +344,13 @@ export default class MetadataRetriever extends LightningElement {
   handleQueryResults(data) {
     this.isLoading = false;
     if (data && data.records && Array.isArray(data.records)) {
-      // Transform records to include LastModifiedByName
+      // Transform records to include LastModifiedByName and unique key
       this.metadata = data.records.map((record) => ({
         MemberName: record.MemberName,
         MemberType: record.MemberType,
         LastModifiedDate: record.LastModifiedDate,
         LastModifiedByName: record.LastModifiedBy ? record.LastModifiedBy.Name : "",
+        uniqueKey: `${record.MemberType}::${record.MemberName}`,
       }));
       this.applyFilters();
     }

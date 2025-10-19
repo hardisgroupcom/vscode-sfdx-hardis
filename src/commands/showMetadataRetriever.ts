@@ -71,89 +71,89 @@ async function executeMetadataRetrieve(
   const command = `sf project retrieve start ${metadataItems} --target-org ${username} --json`;
   Logger.log(`Retrieving metadata: ${command}`);
 
-  await vscode.window.withProgress(
-    {
-      location: vscode.ProgressLocation.Notification,
-      title: displayTitle,
-      cancellable: false,
-    },
-    async (_progress) => {
-      try {
-        const result = await execSfdxJson(command, { cwd: workspaceRoot });
+  try {
+    const result = await vscode.window.withProgress(
+      {
+        location: vscode.ProgressLocation.Notification,
+        title: displayTitle,
+        cancellable: false,
+      },
+      async (_progress) => {
+        return await execSfdxJson(command, { cwd: workspaceRoot });
+      },
+    );
 
-        // Check if command executed and has result
-        if (result && result.result) {
-          const retrieveResult = result.result;
-          const success = retrieveResult.success === true;
-          const files = retrieveResult.files || [];
-          const messages = retrieveResult.messages || [];
+    // Check if command executed and has result
+    if (result && result.result) {
+      const retrieveResult = result.result;
+      const success = retrieveResult.success === true;
+      const files = retrieveResult.files || [];
+      const messages = retrieveResult.messages || [];
 
-          // Count successful and failed files
-          const successfulFiles = files.filter((f: any) => f.state !== "Failed");
-          const failedFiles = files.filter((f: any) => f.state === "Failed");
+      // Count successful and failed files
+      const successfulFiles = files.filter((f: any) => f.state !== "Failed");
+      const failedFiles = files.filter((f: any) => f.state === "Failed");
 
-          // Build result message
-          let resultMessage = "";
-          if (successfulFiles.length > 0) {
-            resultMessage += `Successfully retrieved ${successfulFiles.length} file(s)`;
-          }
+      // Build result message
+      let resultMessage = "";
+      if (successfulFiles.length > 0) {
+        resultMessage += `Successfully retrieved ${successfulFiles.length} file(s)`;
+      }
 
-          // Display success or warning
-          if (failedFiles.length === 0 && success) {
-            const action = await vscode.window.showInformationMessage(
-              resultMessage || "Metadata retrieved successfully",
-              "View and commit files"
-            );
-            if (action === "View and commit files") {
-              vscode.commands.executeCommand("workbench.view.scm");
-            }
-          }
-          else {
-            // Show warning with details
-            if (successfulFiles.length > 0) {
-              resultMessage += `, but ${failedFiles.length} failed`;
-            }
-            else {
-              resultMessage = `Failed to retrieve ${failedFiles.length} file(s)`;
-            }
-            
-            // Collect error details for display
-            const errorDetails: string[] = [];
-            if (messages.length > 0) {
-              messages.forEach((msg: any) => {
-                const error = `${msg.fileName}: ${msg.problem}`;
-                errorDetails.push(error);
-                Logger.log(`Retrieve error - ${error}`);
-              });
-            }
-            failedFiles.forEach((file: any) => {
-              const error = `${file.type}: ${file.fullName} - ${file.error}`;
-              errorDetails.push(error);
-              Logger.log(`Failed to retrieve ${error}`);
-            });
-            
-            // Display warning with first few errors in message
-            if (errorDetails.length > 0) {
-              const displayErrors = errorDetails.slice(0, 3).join("; ");
-              const moreErrors = errorDetails.length > 3 ? ` (and ${errorDetails.length - 3} more - see logs)` : "";
-              vscode.window.showWarningMessage(`${resultMessage}. Errors: ${displayErrors}${moreErrors}`);
-            }
-            else {
-              vscode.window.showWarningMessage(resultMessage);
-            }
-          }
+      // Display success or warning
+      if (failedFiles.length === 0 && success) {
+        const action = await vscode.window.showInformationMessage(
+          resultMessage || "Metadata retrieved successfully",
+          "View and commit files"
+        );
+        if (action === "View and commit files") {
+          vscode.commands.executeCommand("workbench.view.scm");
+        }
+      }
+      else {
+        // Show warning with details
+        if (successfulFiles.length > 0) {
+          resultMessage += `, but ${failedFiles.length} failed`;
         }
         else {
-          const errorMsg = result?.message || "Unknown error occurred";
-          vscode.window.showErrorMessage(`Failed to retrieve metadata: ${errorMsg}`);
+          resultMessage = `Failed to retrieve ${failedFiles.length} file(s)`;
+        }
+        
+        // Collect error details for display
+        const errorDetails: string[] = [];
+        if (messages.length > 0) {
+          messages.forEach((msg: any) => {
+            const error = `${msg.fileName}: ${msg.problem}`;
+            errorDetails.push(error);
+            Logger.log(`Retrieve error - ${error}`);
+          });
+        }
+        failedFiles.forEach((file: any) => {
+          const error = `${file.type}: ${file.fullName} - ${file.error}`;
+          errorDetails.push(error);
+          Logger.log(`Failed to retrieve ${error}`);
+        });
+        
+        // Display warning with first few errors in message
+        if (errorDetails.length > 0) {
+          const displayErrors = errorDetails.slice(0, 3).join("; ");
+          const moreErrors = errorDetails.length > 3 ? ` (and ${errorDetails.length - 3} more - see logs)` : "";
+          vscode.window.showWarningMessage(`${resultMessage}. Errors: ${displayErrors}${moreErrors}`);
+        }
+        else {
+          vscode.window.showWarningMessage(resultMessage);
         }
       }
-      catch (error: any) {
-        Logger.log(`Error retrieving metadata: ${error.message}`);
-        vscode.window.showErrorMessage(`Failed to retrieve metadata: ${error.message}`);
-      }
-    },
-  );
+    }
+    else {
+      const errorMsg = result?.message || "Unknown error occurred";
+      vscode.window.showErrorMessage(`Failed to retrieve metadata: ${errorMsg}`);
+    }
+  }
+  catch (error: any) {
+    Logger.log(`Error retrieving metadata: ${error.message}`);
+    vscode.window.showErrorMessage(`Failed to retrieve metadata: ${error.message}`);
+  }
 }
 
 async function handleQueryMetadata(panel: any, data: any) {
