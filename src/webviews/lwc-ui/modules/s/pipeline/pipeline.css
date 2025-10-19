@@ -174,3 +174,49 @@ lightning-datatable .hardis-emoji-cell a {
     animation: edgeAnimationSlow 2s ease-in-out infinite !important;
 }
 
+/* Make clickable branch nodes show pointer cursor */
+.mermaid svg .node[style*="cursor"] {
+    cursor: pointer !important;
+}
+
+/* Modal overlay styling */
+.slds-modal {
+    z-index: 9000;
+}
+
+.slds-backdrop {
+    z-index: 8999;
+}
+
+/* Make modal take up more space - responsive to content */
+.slds-modal__container {
+    width: 95% !important;
+    max-width: 95vw !important;
+    max-height: 95vh !important;
+    height: 95vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+/* Ensure modal content area is flexible and scrollable */
+.slds-modal__content {
+    max-height: calc(95vh - 180px) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    flex: 1 1 auto !important;
+    position: relative !important;
+}
+
+/* Ensure tabset takes full width */
+.slds-modal__content lightning-tabset {
+    display: block !important;
+    width: 100% !important;
+}
+
+/* Ensure datatables fit within modal without horizontal scroll */
+.slds-modal__content lightning-datatable {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+
