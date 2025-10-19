@@ -101,27 +101,27 @@ export function registerShowPipeline(commands: Commands) {
             reset: true,
             authenticate: true,
           });
-          if (!ticketProvider || ticketProvider.isAuthenticated === false) {
+          if (!ticketProvider) {
             vscode.window.showErrorMessage(
-              "No supported Ticketing provider detected or authentication failed.",
-            );
+              "No supported Ticketing provider detected in the current project. You can define one in Pipeline Settings",
+            ); 
             return;
           }
-          if (ticketProvider.isAuthenticated === true) {
-            vscode.window.showInformationMessage(
-              `Successfully connected to ${ticketProvider.providerName}.`,
-            );
-            pipelineProperties = await loadAllPipelineInfo({
-              browseGitProvider: true,
-              resetGit: false,
-              withProgress: true,
-            });
-            panel.sendInitializationData(pipelineProperties);
-          } else {
+          if (ticketProvider.isAuthenticated === false) {
             vscode.window.showErrorMessage(
               `Failed to connect to ${ticketProvider.providerName}. Please check the logs for details.`,
             );
+            return;
           }
+          vscode.window.showInformationMessage(
+            `Successfully connected to ${ticketProvider.providerName}.`,
+          );
+          pipelineProperties = await loadAllPipelineInfo({
+            browseGitProvider: true,
+            resetGit: false,
+            withProgress: true,
+          });
+          panel.sendInitializationData(pipelineProperties);
         }
       });
     },
