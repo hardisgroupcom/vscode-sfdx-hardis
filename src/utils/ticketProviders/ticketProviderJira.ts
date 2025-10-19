@@ -187,7 +187,7 @@ export class JiraProvider extends TicketProvider {
         return regexes;
     }
 
-    async buildTicketurl(ticketId: string): Promise<string> {
+    async buildTicketUrl(ticketId: string): Promise<string> {
         const config = await getConfig("project");
         const jiraHost = config.jiraHost || this.jiraHost;
         const baseUrl = jiraHost.replace(/\/$/, "");

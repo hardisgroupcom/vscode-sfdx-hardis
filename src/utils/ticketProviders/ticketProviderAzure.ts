@@ -86,7 +86,7 @@ export class AzureBoardsProvider extends TicketProvider {
         return regexes;
     }
 
-    async buildTicketurl(ticketId: string): Promise<string> {
+    async buildTicketUrl(ticketId: string): Promise<string> {
         if (!this.serverUrl || !this.teamProject) {
             Logger.log("Azure Boards not authenticated. Call authenticate() first.");
             return "";

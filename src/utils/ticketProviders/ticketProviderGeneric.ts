@@ -40,7 +40,7 @@ export class GenericTicketingProvider extends TicketProvider {
         return [new RegExp(regex, "g")];
     }
 
-    async buildTicketurl(ticketId: string): Promise<string> {
+    async buildTicketUrl(ticketId: string): Promise<string> {
         const config = await getConfig("project");
         const urlBuilder = config.genericTicketingProviderUrlBuilder || this.ticketUrlBuilder;
         

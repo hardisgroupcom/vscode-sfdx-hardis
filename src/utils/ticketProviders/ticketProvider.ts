@@ -61,8 +61,8 @@ export class TicketProvider {
         return [];
     }
 
-    async buildTicketurl(_ticketId: string): Promise<string> {
-        Logger.log("buildTicketurl should be implemented on provider class");
+    async buildTicketUrl(_ticketId: string): Promise<string> {
+        Logger.log("buildTicketUrl should be implemented on provider class");
         return "";
     }
 
@@ -103,7 +103,7 @@ export class TicketProvider {
                 else {
                     // It's an identifier, build the URL
                     ticketId = matchedText;
-                    ticketUrl = await this.buildTicketurl(ticketId);
+                    ticketUrl = await this.buildTicketUrl(ticketId);
                 }
 
                 // Avoid duplicates
