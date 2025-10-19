@@ -369,6 +369,14 @@
                                   <span class="slds-text-color_weak">None</span>
                                 </template>
                               </template>
+                              <template if:true={entry.isEnum}>
+                                <template if:true={entry.value}>
+                                  <span class="slds-text-color_weak">{entry.valueDisplay}</span>
+                                </template>
+                                <template if:false={entry.value}>
+                                  <span class="slds-text-color_weak">None</span>
+                                </template>
+                              </template>
                               <template if:true={entry.isText}>
                                 <template if:true={entry.hasValue}>
                                   <span class="slds-text-color_weak">{entry.value}</span>
