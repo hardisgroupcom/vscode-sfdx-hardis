@@ -57,7 +57,7 @@ export default class MetadataRetriever extends LightningElement {
         hour: "2-digit",
         minute: "2-digit",
       },
-      initialWidth: 150,
+      initialWidth: 180,
     },
     {
       type: "action",
@@ -229,10 +229,6 @@ export default class MetadataRetriever extends LightningElement {
         dateTo: this.dateTo || null,
       },
     });
-  }
-
-  handleRefresh() {
-    this.handleSearch();
   }
 
   handleRetrieveSelected() {
