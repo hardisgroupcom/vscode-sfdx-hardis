@@ -228,6 +228,15 @@
     --slds-c-icon-color-foreground: white !important;
 }
 
+.feature-icon-container.metadata-retriever {
+    background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+    box-shadow: 0 3px 10px rgba(139, 92, 246, 0.25);
+}
+
+.feature-icon-container.metadata-retriever lightning-icon {
+    --slds-c-icon-color-foreground: white !important;
+}
+
 .feature-icon-container.org-monitoring {
     background: linear-gradient(135deg, #54a4a6 0%, #026d71 100%);
     box-shadow: 0 3px 10px rgba(84, 164, 166, 0.25);

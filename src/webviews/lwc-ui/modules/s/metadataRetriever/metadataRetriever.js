@@ -36,7 +36,6 @@ export default class MetadataRetriever extends LightningElement {
       type: "text",
       sortable: true,
       wrapText: true,
-      initialWidth: 250,
     },
     {
       label: "Last Updated By",
@@ -44,6 +43,7 @@ export default class MetadataRetriever extends LightningElement {
       type: "text",
       sortable: true,
       wrapText: true,
+      initialWidth: 180,
     },
     {
       label: "Last Updated Date",
@@ -57,6 +57,7 @@ export default class MetadataRetriever extends LightningElement {
         hour: "2-digit",
         minute: "2-digit",
       },
+      initialWidth: 150,
     },
     {
       type: "action",
@@ -65,7 +66,7 @@ export default class MetadataRetriever extends LightningElement {
           { label: "Retrieve", name: "retrieve" },
         ],
       },
-      initialWidth: 80,
+      initialWidth: 50,
     },
   ];
 
@@ -200,6 +201,8 @@ export default class MetadataRetriever extends LightningElement {
   handleSearchChange(event) {
     this.searchTerm = event.target.value;
     this.applyFilters();
+    // Force re-render of datatable to restore selection state
+    this.selectedRowKeys = [...this.selectedRowKeys];
   }
 
   handleSearch() {
