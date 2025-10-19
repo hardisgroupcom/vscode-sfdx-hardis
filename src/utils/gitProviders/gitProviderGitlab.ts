@@ -134,6 +134,175 @@ export class GitProviderGitlab extends GitProvider {
     return await this.convertAndCollectJobsList(mergeRequests);
   }
 
+  // The goal if this method is to list all MRs that have been merged in branch name, but also those who has been merged in branches at previous level
+  // For example, on a pipeline integ -> uat -> preprod -> prod
+  // If we call this method with branch name uat, we need to have the MRs merged in uat, but also the MRs merged to integ (whose commits are present in uat) since the last MR merged between uat and preprod
+  async listPullRequestsInBranchSinceLastMerge(
+    currentBranchName: string, // ex: uat
+    targetBranchName: string, // ex: preprod
+    childBranchesNames: string[],// ex: [integ]
+  ): Promise<PullRequest[]> {
+    if (!this.gitlabClient || !this.gitlabProjectId) {
+      return [];
+    }
+
+    try {
+      // Step 1: Find the last merge from currentBranch to targetBranch
+      const lastMergeToTarget = await this.findLastMergedMR(
+        currentBranchName,
+        targetBranchName,
+      );
+
+      // Step 2: Get all commits in currentBranch since that merge (or all if no previous merge)
+      const commitsSinceLastMerge = await this.getCommitsSinceLastMerge(
+        currentBranchName,
+        lastMergeToTarget,
+      );
+
+      if (commitsSinceLastMerge.length === 0) {
+        return [];
+      }
+
+      // Create a Set of commit SHAs for fast lookup
+      const commitSHAs = new Set(commitsSinceLastMerge.map((c) => c.id));
+
+      // Step 3: Get all merged MRs targeting currentBranch and child branches (parallelized)
+      const allBranches = [currentBranchName, ...childBranchesNames];
+      
+      const mrPromises = allBranches.map(async (branchName) => {
+        try {
+          const mergedMRs = await this.gitlabClient!.MergeRequests.all({
+            projectId: this.gitlabProjectId!,
+            targetBranch: branchName,
+            state: "merged",
+            perPage: 100,
+          });
+          return mergedMRs;
+        }
+        catch (err) {
+          Logger.log(
+            `Error fetching merged MRs for branch ${branchName}: ${String(err)}`,
+          );
+          return [];
+        }
+      });
+
+      const mrResults = await Promise.all(mrPromises);
+      const allMergedMRs: Array<
+        | MergeRequestSchemaWithBasicLabels
+        | Camelize<MergeRequestSchemaWithBasicLabels>
+      > = mrResults.flat();
+
+      // Step 4: Filter MRs whose merge commit SHA is in our commit list
+      const relevantMRs = allMergedMRs.filter((mr) => {
+        // Check if the merge commit SHA is in our commits
+        const mergeCommitSha = mr.mergeCommitSha || mr.merge_commit_sha;
+        if (mergeCommitSha && commitSHAs.has(mergeCommitSha)) {
+          return true;
+        }
+
+        // Also check if the MR's SHA (last commit before merge) is in our commits
+        if (mr.sha && commitSHAs.has(mr.sha)) {
+          return true;
+        }
+
+        return false;
+      });
+
+      // Step 5: Remove duplicates (same MR might be found through different branches)
+      const uniqueMRsMap = new Map<number, typeof relevantMRs[0]>();
+      for (const mr of relevantMRs) {
+        if (mr.iid && !uniqueMRsMap.has(mr.iid)) {
+          uniqueMRsMap.set(mr.iid, mr);
+        }
+      }
+
+      const uniqueMRs = Array.from(uniqueMRsMap.values());
+
+      // Step 6: Convert to PullRequest format with jobs
+      return await this.convertAndCollectJobsList(uniqueMRs);
+    }
+    catch (err) {
+      Logger.log(
+        `Error in listPullRequestsInBranchSinceLastMerge: ${String(err)}`,
+      );
+      return [];
+    }
+  }
+
+  /**
+   * Find the last merge request that was merged from sourceBranch to targetBranch
+   */
+  private async findLastMergedMR(
+    sourceBranch: string,
+    targetBranch: string,
+  ): Promise<
+    | MergeRequestSchemaWithBasicLabels
+    | Camelize<MergeRequestSchemaWithBasicLabels>
+    | null
+  > {
+    try {
+      const mergedMRs = await this.gitlabClient!.MergeRequests.all({
+        projectId: this.gitlabProjectId!,
+        sourceBranch: sourceBranch,
+        targetBranch: targetBranch,
+        state: "merged",
+        orderBy: "updated_at",
+        sort: "desc",
+        perPage: 1,
+      });
+
+      return mergedMRs.length > 0 ? mergedMRs[0] : null;
+    }
+    catch (err) {
+      Logger.log(
+        `Error finding last merged MR from ${sourceBranch} to ${targetBranch}: ${String(err)}`,
+      );
+      return null;
+    }
+  }
+
+  /**
+   * Get all commits in the branch since the last merge (or all commits if no previous merge)
+   */
+  private async getCommitsSinceLastMerge(
+    branchName: string,
+    lastMerge:
+      | MergeRequestSchemaWithBasicLabels
+      | Camelize<MergeRequestSchemaWithBasicLabels>
+      | null,
+  ): Promise<any[]> {
+    try {
+      const options: any = {
+        refName: branchName,
+        perPage: 100,
+      };
+
+      // If there was a previous merge, get commits since that merge commit
+      if (lastMerge) {
+        const mergeCommitSha =
+          lastMerge.mergeCommitSha || lastMerge.merge_commit_sha;
+        if (mergeCommitSha) {
+          // Get commits since the merge commit
+          options.since = lastMerge.mergedAt || lastMerge.merged_at;
+        }
+      }
+
+      const commits = await this.gitlabClient!.Commits.all(
+        this.gitlabProjectId!,
+        options,
+      );
+
+      return commits || [];
+    }
+    catch (err) {
+      Logger.log(
+        `Error fetching commits for branch ${branchName}: ${String(err)}`,
+      );
+      return [];
+    }
+  }
+
   // Batch helper: convert an array of raw merge requests and enrich each with jobs
   private async convertAndCollectJobsList(
     rawMrs: Array<
@@ -277,6 +446,9 @@ export class GitProviderGitlab extends GitProvider {
       authorLabel: mr.author?.username || mr.author?.name || "unknown",
       sourceBranch: String(mr.source_branch),
       targetBranch: String(mr.target_branch),
+      mergeDate: mr.merged_at || undefined,
+      createdAt: mr.created_at || undefined,
+      updatedAt: mr.updated_at || undefined,
       jobsStatus: "unknown",
     };
   }

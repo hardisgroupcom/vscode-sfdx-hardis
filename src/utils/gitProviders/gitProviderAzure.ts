@@ -186,6 +186,103 @@ export class GitProviderAzure extends GitProvider {
     );
   }
 
+  async listPullRequestsInBranchSinceLastMerge(
+    currentBranchName: string,
+    targetBranchName: string,
+    childBranchesNames: string[],
+  ): Promise<PullRequest[]> {
+    if (!this.repoInfo || !this.gitApi) {
+      return [];
+    }
+
+    try {
+      // Step 1: Find the last completed PR from currentBranch to targetBranch
+      const lastMergePRs = await this.gitApi.getPullRequests(
+        this.repoInfo.repo,
+        {
+          sourceRefName: `refs/heads/${currentBranchName}`,
+          targetRefName: `refs/heads/${targetBranchName}`,
+          status: PullRequestStatus.Completed,
+        },
+        this.repoInfo.owner,
+      );
+
+      const lastMergeToTarget = lastMergePRs && lastMergePRs.length > 0 ? lastMergePRs[0] : null;
+
+      // Step 2: Get commits between branches
+      const gitApiCommits = await this.gitApi.getCommitsBatch(
+        {
+          itemVersion: {
+            version: currentBranchName,
+            versionType: 0, // branch
+          },
+          compareVersion: {
+            version: lastMergeToTarget ? lastMergeToTarget.lastMergeSourceCommit?.commitId : targetBranchName,
+            versionType: lastMergeToTarget ? 2 : 0, // commit or branch
+          },
+        },
+        this.repoInfo.repo,
+        this.repoInfo.owner,
+      );
+
+      if (!gitApiCommits || gitApiCommits.length === 0) {
+        return [];
+      }
+
+      const commitIds = new Set(gitApiCommits.map((c) => c.commitId));
+
+      // Step 3: Get all completed PRs targeting currentBranch and child branches (parallelized)
+      const allBranches = [currentBranchName, ...childBranchesNames];
+      
+      const prPromises = allBranches.map(async (branchName) => {
+        try {
+          const prs = await this.gitApi!.getPullRequests(
+            this.repoInfo!.repo,
+            {
+              targetRefName: `refs/heads/${branchName}`,
+              status: PullRequestStatus.Completed,
+            },
+            this.repoInfo!.owner,
+          );
+          return prs || [];
+        }
+        catch (err) {
+          Logger.log(
+            `Error fetching completed PRs for branch ${branchName}: ${String(err)}`,
+          );
+          return [];
+        }
+      });
+
+      const prResults = await Promise.all(prPromises);
+      const allMergedPRs: any[] = prResults.flat();
+
+      // Step 4: Filter PRs whose merge commit is in our commit list
+      const relevantPRs = allMergedPRs.filter((pr) => {
+        const mergeCommitId = pr.lastMergeSourceCommit?.commitId;
+        return mergeCommitId && commitIds.has(mergeCommitId);
+      });
+
+      // Step 5: Remove duplicates
+      const uniquePRsMap = new Map();
+      for (const pr of relevantPRs) {
+        if (!uniquePRsMap.has(pr.pullRequestId)) {
+          uniquePRsMap.set(pr.pullRequestId, pr);
+        }
+      }
+
+      const uniquePRs = Array.from(uniquePRsMap.values());
+
+      // Step 6: Convert to PullRequest format with jobs
+      return await this.convertAndEnrichPullRequests(uniquePRs, currentBranchName);
+    } catch (err) {
+      Logger.log(
+        `Error in listPullRequestsInBranchSinceLastMerge: ${String(err)}`,
+      );
+      return [];
+    }
+  }
+
   private async listPullRequestsWithCriteria(
     searchCriteria: any,
     branchName: string = "",
@@ -434,6 +531,9 @@ export class GitProviderAzure extends GitProvider {
       targetBranch: pr.targetRefName
         ? pr.targetRefName.replace(/^refs\/heads\//, "")
         : "",
+      mergeDate: (pr.status === 3 && pr.closedDate) ? pr.closedDate.toISOString() : undefined,
+      createdAt: pr.creationDate ? pr.creationDate.toISOString() : undefined,
+      updatedAt: pr.closedDate ? pr.closedDate.toISOString() : undefined,
       jobsStatus: "unknown",
     };
     return prConverted;

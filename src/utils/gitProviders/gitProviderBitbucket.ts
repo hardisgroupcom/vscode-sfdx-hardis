@@ -126,6 +126,102 @@ export class GitProviderBitbucket extends GitProvider {
     }
   }
 
+  async listPullRequestsInBranchSinceLastMerge(
+    currentBranchName: string,
+    targetBranchName: string,
+    childBranchesNames: string[],
+  ): Promise<PullRequest[]> {
+    if (!this.bitbucketClient || !this.workspace || !this.repoSlug) {
+      return [];
+    }
+
+    try {
+      // Step 1: Find the last merged PR from currentBranch to targetBranch
+      const lastMergeResponse = await this.bitbucketClient.pullrequests.list({
+        workspace: this.workspace,
+        repo_slug: this.repoSlug,
+        q: `source.branch.name = "${currentBranchName}" AND destination.branch.name = "${targetBranchName}" AND state = "MERGED"`,
+      } as any);
+
+      const lastMergePRs =
+        lastMergeResponse && lastMergeResponse.data && lastMergeResponse.data.values
+          ? lastMergeResponse.data.values
+          : [];
+      const lastMergeToTarget = lastMergePRs.length > 0 ? lastMergePRs[0] : null;
+
+      // Step 2: Get commits between branches
+      const commitsResponse = await this.bitbucketClient.commits.list({
+        workspace: this.workspace,
+        repo_slug: this.repoSlug,
+        include: currentBranchName,
+        exclude: lastMergeToTarget ? lastMergeToTarget.merge_commit?.hash : targetBranchName,
+      } as any);
+
+      const commits =
+        commitsResponse && commitsResponse.data && commitsResponse.data.values
+          ? commitsResponse.data.values
+          : [];
+
+      if (commits.length === 0) {
+        return [];
+      }
+
+      const commitHashes = new Set(commits.map((c: any) => c.hash));
+
+      // Step 3: Get all merged PRs targeting currentBranch and child branches (parallelized)
+      const allBranches = [currentBranchName, ...childBranchesNames];
+      
+      const prPromises = allBranches.map(async (branchName) => {
+        try {
+          const response = await this.bitbucketClient!.pullrequests.list({
+            workspace: this.workspace!,
+            repo_slug: this.repoSlug!,
+            q: `destination.branch.name = "${branchName}" AND state = "MERGED"`,
+          } as any);
+
+          const values =
+            response && response.data && response.data.values
+              ? response.data.values
+              : [];
+          return values;
+        }
+        catch (err) {
+          Logger.log(
+            `Error fetching merged PRs for branch ${branchName}: ${String(err)}`,
+          );
+          return [];
+        }
+      });
+
+      const prResults = await Promise.all(prPromises);
+      const allMergedPRs: any[] = prResults.flat();
+
+      // Step 4: Filter PRs whose merge commit is in our commit list
+      const relevantPRs = allMergedPRs.filter((pr) => {
+        const mergeCommitHash = pr.merge_commit?.hash;
+        return mergeCommitHash && commitHashes.has(mergeCommitHash);
+      });
+
+      // Step 5: Remove duplicates
+      const uniquePRsMap = new Map();
+      for (const pr of relevantPRs) {
+        if (!uniquePRsMap.has(pr.id)) {
+          uniquePRsMap.set(pr.id, pr);
+        }
+      }
+
+      const uniquePRs = Array.from(uniquePRsMap.values());
+
+      // Step 6: Convert to PullRequest format with jobs
+      return await this.convertAndCollectJobsList(uniquePRs);
+    } catch (err) {
+      Logger.log(
+        `Error in listPullRequestsInBranchSinceLastMerge: ${String(err)}`,
+      );
+      return [];
+    }
+  }
+
   convertToPullRequest(pr: any): PullRequest {
     return {
       id: pr.id,
@@ -137,6 +233,9 @@ export class GitProviderBitbucket extends GitProvider {
       webUrl: pr.links?.html?.href || pr.links?.self?.href || "",
       sourceBranch: pr.source?.branch?.name || "",
       targetBranch: pr.destination?.branch?.name || "",
+      mergeDate: (pr.state === "MERGED" && pr.updated_on) ? pr.updated_on : undefined,
+      createdAt: pr.created_on || undefined,
+      updatedAt: pr.updated_on || undefined,
       jobsStatus: "unknown",
     };
   }
