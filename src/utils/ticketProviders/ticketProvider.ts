@@ -13,7 +13,7 @@ export class TicketProvider {
   }): Promise<TicketProvider | null> {
     if (options.reset || this.instance === null) {
       const config = await getConfig("project");
-      const providerName = config.ticketProvider || null;
+      const providerName = config.ticketingProvider || null;
       if (!providerName) {
         this.instance = null;
         return this.instance;
