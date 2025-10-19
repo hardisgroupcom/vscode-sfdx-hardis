@@ -26,9 +26,12 @@ export class JiraProvider extends TicketProvider {
       return false;
     }
     this.hostKey = this.jiraHost.replace(/\./g, "_").toUpperCase();
-    let jiraPAT = (await SecretsManager.getSecret(this.hostKey +"_JIRA_PAT")) || "";
-    let jiraEmail = (await SecretsManager.getSecret(this.hostKey + "_JIRA_EMAIL")) || "";
-    let jiraToken = (await SecretsManager.getSecret(this.hostKey + "_JIRA_TOKEN")) || "";
+    let jiraPAT =
+      (await SecretsManager.getSecret(this.hostKey + "_JIRA_PAT")) || "";
+    let jiraEmail =
+      (await SecretsManager.getSecret(this.hostKey + "_JIRA_EMAIL")) || "";
+    let jiraToken =
+      (await SecretsManager.getSecret(this.hostKey + "_JIRA_TOKEN")) || "";
     if (jiraPAT) {
       return await this.initializeClient(jiraPAT, "", "");
     }
