@@ -104,7 +104,7 @@ export function registerShowPipeline(commands: Commands) {
           if (!ticketProvider) {
             vscode.window.showErrorMessage(
               "No supported Ticketing provider detected in the current project. You can define one in Pipeline Settings",
-            ); 
+            );
             return;
           }
           if (ticketProvider.isAuthenticated === false) {
