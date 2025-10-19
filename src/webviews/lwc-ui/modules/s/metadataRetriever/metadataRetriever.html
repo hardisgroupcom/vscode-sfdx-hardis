@@ -47,60 +47,31 @@
           </div>
         </div>
 
-        <!-- Search and Action Buttons -->
-        <div class="slds-grid slds-gutters slds-wrap slds-m-top_small">
-          <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-            <lightning-input
-              label="Search"
-              value={searchTerm}
-              onchange={handleSearchChange}
-              placeholder="Search in results..."
-            ></lightning-input>
-          </div>
-          <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-align-bottom">
-            <div class="slds-grid slds-gutters">
-              <div class="slds-col">
-                <lightning-button
-                  variant="brand"
-                  label="Search"
-                  icon-name="utility:search"
-                  onclick={handleSearch}
-                  disabled={cannotSearch}
-                  class="slds-m-right_x-small"
-                ></lightning-button>
-                <lightning-button
-                  variant="neutral"
-                  label="Refresh"
-                  icon-name="utility:refresh"
-                  onclick={handleRefresh}
-                  disabled={cannotSearch}
-                  class="slds-m-right_x-small"
-                ></lightning-button>
-                <lightning-button
-                  variant="neutral"
-                  label="Clear Filters"
-                  icon-name="utility:clear"
-                  onclick={handleClearFilters}
-                ></lightning-button>
-              </div>
-            </div>
-          </div>
+        <!-- Action Buttons -->
+        <div class="slds-m-top_small">
+          <lightning-button
+            variant="brand"
+            label="Search"
+            icon-name="utility:search"
+            onclick={handleSearch}
+            disabled={cannotSearch}
+            class="slds-m-right_x-small"
+          ></lightning-button>
+          <lightning-button
+            variant="neutral"
+            label="Refresh"
+            icon-name="utility:refresh"
+            onclick={handleRefresh}
+            disabled={cannotSearch}
+            class="slds-m-right_x-small"
+          ></lightning-button>
+          <lightning-button
+            variant="neutral"
+            label="Clear Filters"
+            icon-name="utility:clear"
+            onclick={handleClearFilters}
+          ></lightning-button>
         </div>
-
-        <!-- Retrieve Selected Button -->
-        <template if:true={hasSelectedRows}>
-          <div class="slds-m-top_small">
-            <lightning-button
-              variant="brand"
-              label="Retrieve Selected Metadata"
-              icon-name="utility:download"
-              onclick={handleRetrieveSelected}
-            ></lightning-button>
-            <span class="slds-m-left_small slds-text-color_weak">
-              {selectedRows.length} item(s) selected
-            </span>
-          </div>
-        </template>
       </div>
 
       <!-- Loading Spinner -->
@@ -124,10 +95,32 @@
       <!-- Results Datatable -->
       <template if:true={hasResults}>
         <div class="slds-p-around_small">
-          <div class="slds-m-bottom_small">
-            <span class="slds-text-title_caps slds-text-color_weak">
-              {filteredMetadata.length} result(s) found
-            </span>
+          <div class="slds-grid slds-grid_vertical-align-center slds-m-bottom_small">
+            <div class="slds-col slds-no-flex">
+              <span class="slds-text-title_caps slds-text-color_weak">
+                {filteredMetadata.length} result(s) found
+              </span>
+            </div>
+            <div class="slds-col slds-grow slds-p-left_small slds-p-right_small">
+              <lightning-input
+                value={searchTerm}
+                onchange={handleSearchChange}
+                placeholder="Search in results..."
+                variant="label-hidden"
+                icon-name="utility:clear"
+              ></lightning-input>
+            </div>
+            <template if:true={hasSelectedRows}>
+              <div class="slds-col slds-no-flex">
+                <lightning-button
+                  variant="success"
+                  label={retrieveSelectedLabel}
+                  icon-name="utility:download"
+                  onclick={handleRetrieveSelected}
+                  size="small"
+                ></lightning-button>
+              </div>
+            </template>
           </div>
           <lightning-datatable
             key-field="MemberName"

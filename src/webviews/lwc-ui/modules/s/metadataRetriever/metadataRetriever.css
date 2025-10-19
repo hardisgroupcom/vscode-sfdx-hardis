@@ -9,6 +9,11 @@
 }
 
 /* Compact layout */
+lightning-card {
+  --slds-c-card-spacing-block-start: 0.5rem;
+  --slds-c-card-spacing-block-end: 0.5rem;
+}
+
 lightning-input,
 lightning-combobox {
   margin-bottom: 0;

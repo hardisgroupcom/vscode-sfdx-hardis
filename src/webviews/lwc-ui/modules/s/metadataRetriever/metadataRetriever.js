@@ -17,6 +17,7 @@ export default class MetadataRetriever extends LightningElement {
   @track filteredMetadata = [];
   @track error = null;
   @track selectedRows = [];
+  @track selectedRowKeys = new Set();
 
   // Datatable columns
   columns = [
@@ -26,7 +27,6 @@ export default class MetadataRetriever extends LightningElement {
       type: "text",
       sortable: true,
       wrapText: true,
-      initialWidth: 150,
     },
     {
       label: "Metadata Name",
@@ -42,7 +42,6 @@ export default class MetadataRetriever extends LightningElement {
       type: "text",
       sortable: true,
       wrapText: true,
-      initialWidth: 200,
     },
     {
       label: "Last Updated Date",
@@ -56,7 +55,6 @@ export default class MetadataRetriever extends LightningElement {
         hour: "2-digit",
         minute: "2-digit",
       },
-      initialWidth: 200,
     },
     {
       type: "action",
@@ -65,7 +63,7 @@ export default class MetadataRetriever extends LightningElement {
           { label: "Retrieve", name: "retrieve" },
         ],
       },
-      initialWidth: 100,
+      initialWidth: 80,
     },
   ];
 
@@ -127,6 +125,11 @@ export default class MetadataRetriever extends LightningElement {
     return this.selectedRows && this.selectedRows.length > 0;
   }
 
+  get retrieveSelectedLabel() {
+    const count = this.selectedRows ? this.selectedRows.length : 0;
+    return count > 0 ? `Retrieve ${count} Selected Metadata` : "Retrieve Selected Metadata";
+  }
+
   @api
   initialize(data) {
     if (data) {
@@ -152,6 +155,10 @@ export default class MetadataRetriever extends LightningElement {
 
   handleRowSelection(event) {
     this.selectedRows = event.detail.selectedRows;
+    // Track selected row keys for persistence during filtering
+    this.selectedRowKeys = new Set(
+      this.selectedRows.map(row => this.getRowKey(row))
+    );
   }
 
   handleMetadataTypeChange(event) {
@@ -174,6 +181,10 @@ export default class MetadataRetriever extends LightningElement {
     this.applyFilters();
   }
 
+  getRowKey(row) {
+    return `${row.MemberType}::${row.MemberName}`;
+  }
+
   handleSearch() {
     if (!this.canSearch) {
       return;
@@ -183,6 +194,8 @@ export default class MetadataRetriever extends LightningElement {
     this.error = null;
     this.metadata = [];
     this.filteredMetadata = [];
+    this.selectedRows = [];
+    this.selectedRowKeys = new Set();
 
     // Send filter criteria to VS Code (backend will build the SOQL query)
     window.sendMessageToVSCode({
@@ -223,6 +236,8 @@ export default class MetadataRetriever extends LightningElement {
     this.metadataName = "";
     this.lastUpdatedBy = "";
     this.searchTerm = "";
+    this.selectedRows = [];
+    this.selectedRowKeys = new Set();
     this.applyFilters();
   }
 
@@ -270,6 +285,27 @@ export default class MetadataRetriever extends LightningElement {
     }
 
     this.filteredMetadata = filtered;
+
+    // Preserve selection: update selectedRows to only include rows that are still visible
+    if (this.selectedRowKeys.size > 0) {
+      this.selectedRows = filtered.filter(row => 
+        this.selectedRowKeys.has(this.getRowKey(row))
+      );
+      // Force datatable to update selection by requesting re-render
+      this.updateDatatableSelection();
+    }
+  }
+
+  updateDatatableSelection() {
+    // Use setTimeout to ensure DOM updates before setting selection
+    // eslint-disable-next-line @lwc/lwc/no-async-operation
+    setTimeout(() => {
+      const datatable = this.template.querySelector('lightning-datatable');
+      if (datatable && this.selectedRows.length > 0) {
+        const selectedRowKeys = this.selectedRows.map(row => row.MemberName);
+        datatable.selectedRows = selectedRowKeys;
+      }
+    }, 0);
   }
 
   handleRowAction(event) {
