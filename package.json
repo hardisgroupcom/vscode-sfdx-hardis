@@ -233,6 +233,11 @@
         "icon": "$(gear)"
       },
       {
+        "command": "vscode-sfdx-hardis.showMetadataRetriever",
+        "title": "SFDX Hardis: Metadata Retriever",
+        "icon": "$(download)"
+      },
+      {
         "command": "vscode-sfdx-hardis.showPipelineConfig",
         "title": "SFDX Hardis: Show Pipeline Settings",
         "icon": "$(settings-gear)"

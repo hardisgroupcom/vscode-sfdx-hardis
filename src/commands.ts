@@ -22,6 +22,7 @@ import { registerRunLocalHtmlDocPages } from "./commands/runLocalHtmlDoc";
 import { registerShowExtensionConfig } from "./commands/showExtensionConfig";
 import { LwcPanelManager } from "./lwc-panel-manager";
 import { registerRunAnonymousApex } from "./commands/runAnonymousApex";
+import { registerShowMetadataRetriever } from "./commands/showMetadataRetriever";
 
 export class Commands {
   public readonly extensionUri: vscode.Uri;
@@ -80,6 +81,7 @@ export class Commands {
     registerShowFilesWorkbench(this);
     registerRunLocalHtmlDocPages(this);
     registerRunAnonymousApex(this);
+    registerShowMetadataRetriever(this);
   }
 
   registerExecuteCommand() {

@@ -1,0 +1,194 @@
+<template>
+  <div class="slds-p-around_small blue-back">
+    <lightning-card title="Sfdx-Hardis Metadata Retriever" icon-name="custom:custom63">
+      <!-- Selected Org and Query Mode in Card Header -->
+      <div slot="actions" class="slds-grid slds-grid_align-end slds-gutters_small slds-grid_vertical-align-start">
+        <div class="slds-col slds-no-flex slds-align-top">
+          <fieldset class="slds-form-element" role="group" aria-label="Selected Org">
+            <legend class="slds-form-element__legend slds-form-element__label" part=""></legend>
+            <div class="slds-form-element__control">
+              <lightning-combobox
+                label="Selected Org"
+                value={selectedOrg}
+                options={orgOptions}
+                onchange={handleOrgChange}
+                required
+                variant="label-hidden"
+              ></lightning-combobox>
+            </div>
+          </fieldset>
+        </div>
+        <div class="slds-col slds-no-flex slds-align-top">
+          <lightning-radio-group
+            options={queryModeOptions}
+            value={queryMode}
+            onchange={handleQueryModeChange}
+            type="button"
+          ></lightning-radio-group>
+        </div>
+      </div>
+
+      <!-- Filters Section -->
+      <div class="slds-p-around_small">
+        <div class="slds-grid slds-gutters slds-wrap">
+          <!-- Metadata Type Filter -->
+          <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-large-size_1-of-6">
+            <lightning-combobox
+              label="Metadata Type"
+              value={metadataType}
+              options={metadataTypeOptions}
+              onchange={handleMetadataTypeChange}
+              placeholder="Select metadata type"
+              required={isAllMetadataMode}
+            ></lightning-combobox>
+          </div>
+
+          <!-- Metadata Name Filter -->
+          <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-large-size_1-of-6">
+            <lightning-input
+              label="Metadata Name"
+              value={metadataName}
+              onchange={handleMetadataNameChange}
+              placeholder="e.g., MyClass, Account"
+            ></lightning-input>
+          </div>
+
+          <!-- Last Updated By Filter -->
+          <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-large-size_1-of-6">
+            <lightning-input
+              label="Last Updated By"
+              value={lastUpdatedBy}
+              onchange={handleLastUpdatedByChange}
+              placeholder="e.g., John Doe"
+            ></lightning-input>
+          </div>
+
+          <!-- Date From Filter -->
+          <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-large-size_1-of-6">
+            <lightning-input
+              type="date"
+              label="Updated From"
+              value={dateFrom}
+              onchange={handleDateFromChange}
+            ></lightning-input>
+          </div>
+
+          <!-- Date To Filter -->
+          <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-large-size_1-of-6">
+            <lightning-input
+              type="date"
+              label="Updated To"
+              value={dateTo}
+              onchange={handleDateToChange}
+            ></lightning-input>
+          </div>
+
+          <!-- Package Filter -->
+          <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-large-size_1-of-6">
+            <lightning-combobox
+              label="Package"
+              value={packageFilter}
+              options={packageOptions}
+              onchange={handlePackageChange}
+              placeholder="Select package"
+            ></lightning-combobox>
+          </div>
+
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="slds-m-top_small">
+          <lightning-button
+            variant="brand"
+            label="Search"
+            icon-name="utility:search"
+            onclick={handleSearch}
+            disabled={cannotSearch}
+            class="slds-m-right_x-small"
+          ></lightning-button>
+          <lightning-button
+            variant="neutral"
+            label="Clear Filters"
+            icon-name="utility:clear"
+            onclick={handleClearFilters}
+          ></lightning-button>
+        </div>
+      </div>
+
+      <!-- Loading Spinner -->
+      <template if:true={isLoading}>
+        <div class="slds-p-around_small slds-text-align_center">
+          <lightning-spinner alternative-text="Loading metadata..." size="medium"></lightning-spinner>
+        </div>
+      </template>
+
+      <!-- Error Message -->
+      <template if:true={hasError}>
+        <div class="slds-p-around_small">
+          <div class="slds-notify slds-notify_alert slds-alert_error" role="alert">
+            <span class="slds-assistive-text">error</span>
+            <lightning-icon icon-name="utility:error" size="x-small" variant="inverse" class="slds-m-right_x-small"></lightning-icon>
+            <h2>{error}</h2>
+          </div>
+        </div>
+      </template>
+
+      <!-- Results Datatable -->
+      <template if:true={hasResults}>
+        <div class="slds-p-around_small">
+          <div class="slds-grid slds-grid_vertical-align-center slds-m-bottom_small">
+            <div class="slds-col slds-no-flex">
+              <span class="slds-text-title_caps slds-text-color_weak">
+                {filteredMetadata.length} result(s) found
+              </span>
+            </div>
+            <div class="slds-col slds-grow slds-p-left_small slds-p-right_small">
+              <lightning-input
+                value={searchTerm}
+                onchange={handleSearchChange}
+                placeholder="Search in results..."
+                variant="label-hidden"
+                icon-name="utility:clear"
+              ></lightning-input>
+            </div>
+            <template if:true={hasSelectedRows}>
+              <div class="slds-col slds-no-flex">
+                <lightning-button
+                  variant="success"
+                  label={retrieveSelectedLabel}
+                  icon-name="utility:download"
+                  onclick={handleRetrieveSelected}
+                  size="small"
+                ></lightning-button>
+              </div>
+            </template>
+          </div>
+          <lightning-datatable
+            key-field="uniqueKey"
+            data={filteredMetadata}
+            columns={columns}
+            column-widths-mode="auto"
+            selected-rows={selectedRowKeys}
+            onrowaction={handleRowAction}
+            onrowselection={handleRowSelection}
+            onsort={handleSort}
+            sorted-by={sortBy}
+            sorted-direction={sortDirection}
+          ></lightning-datatable>
+        </div>
+      </template>
+
+      <!-- No Results Message -->
+      <template if:true={noResults}>
+        <div class="slds-p-around_small slds-text-align_center">
+          <div class="slds-illustration slds-illustration_small">
+            <div class="slds-text-color_weak">
+              <h3 class="slds-text-heading_medium">No metadata found</h3>
+              <p class="slds-text-body_regular">Try adjusting your search criteria</p>
+            </div>
+          </div>
+        </div>
+      </template>
+    </lightning-card>
+  </div>
+</template>

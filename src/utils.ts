@@ -454,6 +454,50 @@ export function findInOrgCache(orgCriteria: any) {
   return null;
 }
 
+export function listLocalSfConfigFilePaths(): string[] {
+  return [".sf/config.json", ".sfdx/sfdx-config.json"];
+}
+
+export async function listLocalSfConfigFiles(): Promise<string[]> {
+  const configFiles = listLocalSfConfigFilePaths();
+  const workspaceRoot = getWorkspaceRoot();
+  const foundFiles: string[] = [];
+  for (const configFile of configFiles) {
+    const fullPath = path.join(workspaceRoot, configFile);
+    if (fs.existsSync(fullPath)) {
+      foundFiles.push(fullPath);
+    }
+  }
+  return foundFiles;
+}
+
+export async function listLocalSfConfigFilesContent(): Promise<any[]> {
+  const configFilePaths = await listLocalSfConfigFiles();
+  const configFilesContent: any[] = [];
+  for (const configFilePath of configFilePaths) {
+    try {
+      const fileContent = fs.readFileSync(configFilePath).toString();
+      const parsedContent = JSON.parse(fileContent);
+      configFilesContent.push(parsedContent);
+    } catch {
+      // ignore parse errors
+    }
+  }
+  return configFilesContent;
+}
+
+export async function getDefaultTargetOrgUsername(): Promise<string | null> {
+  const sfdxConfigs = await listLocalSfConfigFilesContent();
+  for (const sfdxConfig of sfdxConfigs) {
+    if (sfdxConfig["target-org"]) {
+      return sfdxConfig["target-org"];
+    } else if (sfdxConfig["defaultusername"]) {
+      return sfdxConfig["defaultusername"];
+    }
+  }
+  return null;
+}
+
 export async function getUsernameInstanceUrl(
   username: string,
 ): Promise<string | null> {

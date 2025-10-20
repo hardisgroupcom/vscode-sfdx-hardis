@@ -1,0 +1,29 @@
+.blue-back {
+	background: #EDF4FF;
+	min-height: 100vh;
+}
+
+.slds-align-bottom {
+  display: flex;
+  align-items: flex-end;
+}
+
+/* Compact layout */
+lightning-card {
+  --slds-c-card-spacing-block-start: 0.5rem;
+  --slds-c-card-spacing-block-end: 0.5rem;
+}
+
+lightning-input,
+lightning-combobox {
+  margin-bottom: 0;
+}
+
+lightning-datatable {
+  font-size: 0.875rem;
+}
+
+/* Reduce vertical spacing in datatable */
+:host ::part(table) {
+  line-height: 1.2;
+}

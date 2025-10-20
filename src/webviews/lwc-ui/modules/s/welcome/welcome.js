@@ -71,6 +71,12 @@ export default class Welcome extends LightningElement {
     });
   }
 
+  navigateToMetadataRetriever() {
+    window.sendMessageToVSCode({
+      type: "navigateToMetadataRetriever",
+    });
+  }
+
   navigateToFilesWorkbench() {
     window.sendMessageToVSCode({
       type: "navigateToFilesWorkbench",

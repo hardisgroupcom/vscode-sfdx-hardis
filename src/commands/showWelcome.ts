@@ -28,6 +28,11 @@ export function registerShowWelcome(command: Commands) {
           case "navigateToPipeline":
             vscode.commands.executeCommand("vscode-sfdx-hardis.showPipeline");
             break;
+          case "navigateToMetadataRetriever":
+            vscode.commands.executeCommand(
+              "vscode-sfdx-hardis.showMetadataRetriever",
+            );
+            break;
           case "navigateToFilesWorkbench":
             vscode.commands.executeCommand(
               "vscode-sfdx-hardis.showFilesWorkbench",

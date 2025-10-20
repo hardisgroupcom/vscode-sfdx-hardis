@@ -6,7 +6,8 @@
     ".vscode",
     "package-lock.json",
     "report",
-    "megalinter-reports"
+    "megalinter-reports",
+    "**/metadataList.ts"
   ],
   "language": "en",
   "version": "0.1",
@@ -49,6 +50,7 @@
     "Queueable",
     "Quickfix",
     "RWAAA",
+    "SBQQ",
     "SFDXHARDIS",
     "SLDS",
     "Schedulable",

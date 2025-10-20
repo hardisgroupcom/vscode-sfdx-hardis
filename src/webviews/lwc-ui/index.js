@@ -13,6 +13,7 @@ const lwcModules = {
   "s-pipeline": () => import("s/pipeline"),
   "s-pipeline-config": () => import("s/pipelineConfig"),
   "s-extension-config": () => import("s/extensionConfig"),
+  "s-metadata-retriever": () => import("s/metadataRetriever"),
   "s-multiline-helptext": () => import("s/multilineHelptext"),
   "s-installed-packages": () => import("s/installedPackages"),
   "s-org-manager": () => import("s/orgManager"),
