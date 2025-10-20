@@ -77,6 +77,18 @@
               onchange={handleDateToChange}
             ></lightning-input>
           </div>
+
+          <!-- Package Filter -->
+          <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-large-size_1-of-6">
+            <lightning-combobox
+              label="Package"
+              value={packageFilter}
+              options={packageOptions}
+              onchange={handlePackageChange}
+              placeholder="Select package"
+            ></lightning-combobox>
+          </div>
+
         </div>
 
         <!-- Action Buttons -->

@@ -11,6 +11,8 @@ export default class MetadataRetriever extends LightningElement {
   @track selectedOrg = null;
   @track queryMode = "recentChanges"; // "recentChanges" or "allMetadata"
   @track metadataType = "All";
+  @track packageFilter = "All";
+  @track packageOptions = [{ label: "All", value: "All" }, { label: "Local", value: "Local" }];
   @track metadataName = "";
   @track lastUpdatedBy = "";
   @track dateFrom = "";
@@ -204,7 +206,11 @@ export default class MetadataRetriever extends LightningElement {
 
   handleOrgChange(event) {
     this.selectedOrg = event.detail.value;
-    
+    // When org changes, lazy-load installed package namespaces for that org
+    this.isLoadingPackages = true;
+    window.sendMessageToVSCode({ type: "listPackages", data: { username: this.selectedOrg } });
+    // Reset package filter to All
+    this.packageFilter = "All";
   }
 
   handleQueryModeChange(event) {
@@ -247,6 +253,12 @@ export default class MetadataRetriever extends LightningElement {
 
   handleMetadataTypeChange(event) {
     this.metadataType = event.detail.value;
+    this.applyFilters();
+  }
+
+  handlePackageChange(event) {
+    this.packageFilter = event.detail.value;
+    // Update filters immediately
     this.applyFilters();
   }
 
@@ -304,6 +316,7 @@ export default class MetadataRetriever extends LightningElement {
         queryMode: this.queryMode,
         metadataType: this.metadataType && this.metadataType !== "All" ? this.metadataType : null,
         metadataName: this.metadataName || null,
+        packageFilter: this.packageFilter && this.packageFilter !== "All" ? this.packageFilter : null,
         lastUpdatedBy: this.isRecentChangesMode ? (this.lastUpdatedBy || null) : null,
         dateFrom: this.isRecentChangesMode ? (this.dateFrom || null) : null,
         dateTo: this.isRecentChangesMode ? (this.dateTo || null) : null,
@@ -336,6 +349,7 @@ export default class MetadataRetriever extends LightningElement {
     this.dateFrom = "";
     this.dateTo = "";
     this.searchTerm = "";
+    this.packageFilter = "All";
     this.selectedRows = [];
     this.selectedRowKeys = [];
     this.applyFilters();
@@ -413,6 +427,26 @@ export default class MetadataRetriever extends LightningElement {
         }
       }
 
+      // Apply package filter (client-side)
+      if (this.packageFilter && this.packageFilter !== "All") {
+        const pf = this.packageFilter;
+        const fullName = item.MemberName || "";
+        const compName = fullName.includes(".") ? fullName.split(".").pop() || fullName : fullName;
+        if (pf === "Local") {
+          // Local = component segment does NOT start with ns__ pattern
+          if (compName.match(/^\w+__/)) {
+            return false; // packaged -> exclude
+          }
+        }
+        else {
+          // Component segment must start with namespace__ pattern
+          const nsPattern = `${pf}__`;
+          if (!compName.startsWith(nsPattern)) {
+            return false; // not this namespace -> exclude
+          }
+        }
+      }
+
       // Apply search term filter (searches across all fields)
       if (searchLower) {
         const matchesSearch =
@@ -456,6 +490,9 @@ export default class MetadataRetriever extends LightningElement {
     else if (type === "listOrgsResults") {
       this.handleOrgResults(data);
     }
+    else if (type === "listPackagesResults") {
+      this.handleListPackagesResults(data);
+    }
     else if (type === "queryResults") {
       this.handleQueryResults(data);
     }
@@ -471,7 +508,21 @@ export default class MetadataRetriever extends LightningElement {
       // Set default org if provided or use first available
       if (data.selectedOrgUsername) {
         this.selectedOrg = data.selectedOrgUsername;
+        // Trigger package loading for the selected org
+        this.isLoadingPackages = true;
+        window.sendMessageToVSCode({ type: "listPackages", data: { username: this.selectedOrg } });
       }
+    }
+  }
+
+  handleListPackagesResults(data) {
+    this.isLoadingPackages = false;
+    if (data && data.packages && Array.isArray(data.packages)) {
+      this.packageOptions = data.packages;
+    }
+    else {
+      // Fallback to default options
+      this.packageOptions = [{ label: "All", value: "All" }, { label: "Local", value: "Local" }];
     }
   }
 

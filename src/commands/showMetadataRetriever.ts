@@ -49,6 +49,9 @@ export function registerShowMetadataRetriever(commands: Commands) {
         else if (type === "queryMetadata") {
           await handleQueryMetadata(panel, data);
         }
+        else if (type === "listPackages") {
+          await handleListPackages(panel, data && data.username ? data.username : null);
+        }
         else if (type === "retrieveMetadata") {
           await handleRetrieveMetadata(panel, data);
         }
@@ -175,7 +178,7 @@ async function executeMetadataRetrieve(
 
 async function handleQueryMetadata(panel: any, data: any) {
   try {
-    const { username, queryMode, metadataType, metadataName, lastUpdatedBy, dateFrom, dateTo } = data;
+    const { username, queryMode, metadataType, metadataName, lastUpdatedBy, dateFrom, dateTo, packageFilter } = data;
 
     if (!username) {
       panel.sendMessage({
@@ -187,11 +190,11 @@ async function handleQueryMetadata(panel: any, data: any) {
 
     // Handle different query modes
     if (queryMode === "allMetadata") {
-      await handleListMetadata(panel, username, metadataType, metadataName);
+      await handleListMetadata(panel, username, metadataType, metadataName, packageFilter);
     }
     else {
       // Default to recentChanges mode (SourceMember query)
-      await handleSourceMemberQuery(panel, username, metadataType, metadataName, lastUpdatedBy, dateFrom, dateTo);
+      await handleSourceMemberQuery(panel, username, metadataType, metadataName, lastUpdatedBy, dateFrom, dateTo, packageFilter);
     }
   }
   catch (error: any) {
@@ -203,6 +206,85 @@ async function handleQueryMetadata(panel: any, data: any) {
   }
 }
 
+async function handleListPackages(panel: LwcUiPanel, username: string | null) {
+  try {
+    if (!username) {
+      // No username - return default options only
+      panel.sendMessage({
+        type: "listPackagesResults",
+        data: { packages: [{ label: "All", value: "All" }, { label: "Local", value: "Local" }] },
+      });
+      return;
+    }
+
+    // Execute SF command directly from the extension and return results
+    try {
+      const command = `sf package installed list --target-org ${username} --json`;
+      const result = await execSfdxJson(command,
+        {
+          cacheExpiration: 1000 * 60 * 60 * 24, // 1 day
+          cacheSection: "project",
+        }
+      );
+
+      const pkgOptions: Array<any> = [];
+      // Keep All and Local at the top
+      pkgOptions.push({ label: "All", value: "All" });
+      pkgOptions.push({ label: "Local", value: "Local" });
+
+      if (result && result.status === 0 && Array.isArray(result.result) && result.result.length > 0) {
+        // Map by normalized namespace -> keep a single representative (preserve original casing for label)
+        const namespaceMap: Map<string, { ns: string; names: Set<string> }> = new Map();
+        for (const p of result.result) {
+          const rawNs = (p.SubscriberPackageNamespace || "").toString();
+          const nsTrim = rawNs.trim();
+          if (!nsTrim) {
+            // empty namespace => local, skip (we already have 'Local')
+            continue;
+          }
+          const key = nsTrim.toLowerCase();
+          const name = (p.SubscriberPackageName || p.Name || "").toString().trim();
+          if (!namespaceMap.has(key)) {
+            namespaceMap.set(key, { ns: nsTrim, names: new Set() });
+          }
+          const entry = namespaceMap.get(key)!;
+          if (name) {
+            entry.names.add(name);
+          }
+        }
+
+        // Build options: for each normalized namespace produce one option
+        const namespaceOptions: Array<{ label: string; value: string }> = [];
+        for (const entry of namespaceMap.values()) {
+          const names = Array.from(entry.names).filter(Boolean);
+          names.sort((a, b) => a.localeCompare(b));
+          const displayName = names.length === 0 ? entry.ns : (names.length === 1 ? names[0] : names.join("/"));
+          const label = `${displayName} (${entry.ns})`;
+          namespaceOptions.push({ label: label, value: entry.ns });
+        }
+
+        // Sort namespaceOptions alphabetically by label
+        namespaceOptions.sort((a, b) => a.label.localeCompare(b.label));
+
+        // Append to pkgOptions after All and Local
+        pkgOptions.push(...namespaceOptions);
+      }
+
+      panel.sendMessage({ type: "listPackagesResults", data: { packages: pkgOptions } });
+      return;
+    }
+    catch (err) {
+      Logger.log(`Error executing package list command: ${err}`);
+      panel.sendMessage({ type: "listPackagesResults", data: { packages: [{ label: "All", value: "All" }, { label: "Local", value: "Local" }] } });
+      return;
+    }
+  }
+  catch (error: any) {
+    Logger.log(`Error listing packages: ${error.message}`);
+    panel.sendMessage({ type: "listPackagesResults", data: { packages: [{ label: "All", value: "All" }, { label: "Local", value: "Local" }] } });
+  }
+}
+
 async function handleSourceMemberQuery(
   panel: any,
   username: string,
@@ -211,6 +293,7 @@ async function handleSourceMemberQuery(
   lastUpdatedBy: string | null,
   dateFrom: string | null,
   dateTo: string | null,
+  packageFilter: string | null,
 ) {
   // Build SOQL query safely on backend
   let query = "SELECT MemberName, MemberType, LastModifiedDate, LastModifiedBy.Name FROM SourceMember";
@@ -264,9 +347,33 @@ async function handleSourceMemberQuery(
   const result = await execSfdxJson(command);
 
   if (result && result.result && result.result.records) {
+    let records = result.result.records as any[];
+    // Apply packageFilter post-query if provided
+    if (packageFilter && packageFilter !== "All") {
+      if (packageFilter === "Local") {
+        // Local = component segment (after last '.') does NOT start with ns__ pattern
+        records = records.filter(r => {
+          const fullName = (r.MemberName || "").toString();
+          const compName = fullName.includes(".") ? fullName.split(".").pop() || fullName : fullName;
+          // Check if component starts with namespace__ pattern (e.g., SBQQ__)
+          return !compName.match(/^\w+__/);
+        });
+      }
+      else {
+        // Keep only records whose component segment starts with namespace__ pattern
+        const ns = packageFilter;
+        const nsPattern = `${ns}__`;
+        records = records.filter(r => {
+          const fullName = (r.MemberName || "").toString();
+          const compName = fullName.includes(".") ? fullName.split(".").pop() || fullName : fullName;
+          return compName.startsWith(nsPattern);
+        });
+      }
+    }
+
     panel.sendMessage({
       type: "queryResults",
-      data: { records: result.result.records },
+      data: { records },
     });
   }
   else {
@@ -282,6 +389,7 @@ async function handleListMetadata(
   username: string,
   metadataType: string | null,
   metadataName: string | null,
+  packageFilter: string | null,
 ) {
   // Require specific metadata type for All Metadata mode
   if (!metadataType) {
@@ -319,6 +427,28 @@ async function handleListMetadata(
           typeResults = typeResults.filter((item: any) =>
             item.fullName && item.fullName.toLowerCase().includes(nameLower)
           );
+        }
+
+        // Apply packageFilter post-listing
+        if (packageFilter && packageFilter !== "All") {
+          if (packageFilter === "Local") {
+            // Local = component segment (after last '.') does NOT start with ns__ pattern
+            typeResults = typeResults.filter((item: any) => {
+              const fn = (item.fullName || "").toString();
+              const compName = fn.includes(".") ? fn.split(".").pop() || fn : fn;
+              return !compName.match(/^\w+__/);
+            });
+          }
+          else {
+            // Component segment starts with namespace__ pattern
+            const ns = packageFilter;
+            const nsPattern = `${ns}__`;
+            typeResults = typeResults.filter((item: any) => {
+              const fn = (item.fullName || "").toString();
+              const compName = fn.includes(".") ? fn.split(".").pop() || fn : fn;
+              return compName.startsWith(nsPattern);
+            });
+          }
         }
 
         allResults.push(...typeResults);
