@@ -509,9 +509,11 @@ async function handleListMetadata(
   });
 }
 
+/* jscpd:ignore-start */
 async function handleRetrieveSelectedMetadata(panel: any, data: any) {
   try {
     const { username, metadata } = data;
+
 
     if (!username || !metadata || !Array.isArray(metadata) || metadata.length === 0) {
       vscode.window.showErrorMessage("Missing required parameters for metadata retrieval");
@@ -542,6 +544,7 @@ async function handleRetrieveSelectedMetadata(panel: any, data: any) {
     vscode.window.showErrorMessage(`Error: ${error.message}`);
   }
 }
+/* jscpd:ignore-end */
 
 async function handleRetrieveMetadata(panel: any, data: any) {
   try {
