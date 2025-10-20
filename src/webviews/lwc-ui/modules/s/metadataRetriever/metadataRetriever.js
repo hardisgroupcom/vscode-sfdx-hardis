@@ -23,6 +23,11 @@ export default class MetadataRetriever extends LightningElement {
   @track selectedRows = [];
   @track selectedRowKeys = [];
 
+  // Performance optimization properties
+  searchDebounceTimer = null;
+  cachedDateFrom = null;
+  cachedDateTo = null;
+
   // Datatable columns - computed based on mode
   get columns() {
     const baseColumns = [
@@ -252,9 +257,16 @@ export default class MetadataRetriever extends LightningElement {
 
   handleSearchChange(event) {
     this.searchTerm = event.target.value;
-    this.applyFilters();
-    // Force re-render of datatable to restore selection state
-    this.selectedRowKeys = [...this.selectedRowKeys];
+    // Debounce the filter application
+    if (this.searchDebounceTimer) {
+      clearTimeout(this.searchDebounceTimer);
+    }
+    this.searchDebounceTimer = setTimeout(() => {
+      this.applyFilters();
+      // Force re-render of datatable to restore selection state
+      this.selectedRowKeys = [...this.selectedRowKeys];
+      this.searchDebounceTimer = null;
+    }, 300);
   }
 
   handleSearch() {
@@ -320,73 +332,85 @@ export default class MetadataRetriever extends LightningElement {
       return;
     }
 
-    let filtered = [...this.metadata];
-
-    // Apply metadata type filter
-    if (this.metadataType && this.metadataType !== "All") {
-      filtered = filtered.filter((item) => {
-        return item.MemberType === this.metadataType;
-      });
-    }
-
-    // Apply metadata name filter
-    if (this.metadataName) {
-      const nameLower = this.metadataName.toLowerCase();
-      filtered = filtered.filter((item) => {
-        return item.MemberName && item.MemberName.toLowerCase().includes(nameLower);
-      });
-    }
-
-    // Apply last updated by filter
-    if (this.lastUpdatedBy) {
-      const userLower = this.lastUpdatedBy.toLowerCase();
-      filtered = filtered.filter((item) => {
-        return item.LastModifiedByName && item.LastModifiedByName.toLowerCase().includes(userLower);
-      });
-    }
-
-    // Apply date range filters
+    // Cache date objects to avoid creating new ones for every item
+    let fromDate = null;
     if (this.dateFrom) {
-      const fromDate = new Date(this.dateFrom);
+      fromDate = new Date(this.dateFrom);
       if (!isNaN(fromDate.getTime())) {
         fromDate.setHours(0, 0, 0, 0);
-        filtered = filtered.filter((item) => {
-          if (!item.LastModifiedDate) {
-            return false;
-          }
-          const itemDate = new Date(item.LastModifiedDate);
-          return itemDate >= fromDate;
-        });
+      }
+      else {
+        fromDate = null;
       }
     }
 
+    let toDate = null;
     if (this.dateTo) {
-      const toDate = new Date(this.dateTo);
+      toDate = new Date(this.dateTo);
       if (!isNaN(toDate.getTime())) {
         toDate.setHours(23, 59, 59, 999);
-        filtered = filtered.filter((item) => {
-          if (!item.LastModifiedDate) {
-            return false;
-          }
-          const itemDate = new Date(item.LastModifiedDate);
-          return itemDate <= toDate;
-        });
+      }
+      else {
+        toDate = null;
       }
     }
 
-    // Apply search term filter (searches across all fields)
-    if (this.searchTerm) {
-      const searchLower = this.searchTerm.toLowerCase();
-      filtered = filtered.filter((item) => {
-        return (
+    // Cache lowercase strings to avoid multiple toLowerCase() calls
+    const metadataNameLower = this.metadataName ? this.metadataName.toLowerCase() : null;
+    const userLower = this.lastUpdatedBy ? this.lastUpdatedBy.toLowerCase() : null;
+    const searchLower = this.searchTerm ? this.searchTerm.toLowerCase() : null;
+
+    // Single pass filtering
+    this.filteredMetadata = this.metadata.filter((item) => {
+      // Apply metadata type filter
+      if (this.metadataType && this.metadataType !== "All") {
+        if (item.MemberType !== this.metadataType) {
+          return false;
+        }
+      }
+
+      // Apply metadata name filter
+      if (metadataNameLower) {
+        if (!item.MemberName || !item.MemberName.toLowerCase().includes(metadataNameLower)) {
+          return false;
+        }
+      }
+
+      // Apply last updated by filter
+      if (userLower) {
+        if (!item.LastModifiedByName || !item.LastModifiedByName.toLowerCase().includes(userLower)) {
+          return false;
+        }
+      }
+
+      // Apply date range filters
+      if (fromDate && item.LastModifiedDate) {
+        const itemDate = new Date(item.LastModifiedDate);
+        if (itemDate < fromDate) {
+          return false;
+        }
+      }
+
+      if (toDate && item.LastModifiedDate) {
+        const itemDate = new Date(item.LastModifiedDate);
+        if (itemDate > toDate) {
+          return false;
+        }
+      }
+
+      // Apply search term filter (searches across all fields)
+      if (searchLower) {
+        const matchesSearch =
           (item.MemberType && item.MemberType.toLowerCase().includes(searchLower)) ||
           (item.MemberName && item.MemberName.toLowerCase().includes(searchLower)) ||
-          (item.LastModifiedByName && item.LastModifiedByName.toLowerCase().includes(searchLower))
-        );
-      });
-    }
+          (item.LastModifiedByName && item.LastModifiedByName.toLowerCase().includes(searchLower));
+        if (!matchesSearch) {
+          return false;
+        }
+      }
 
-    this.filteredMetadata = filtered;
+      return true;
+    });
   }
 
   handleRowAction(event) {
