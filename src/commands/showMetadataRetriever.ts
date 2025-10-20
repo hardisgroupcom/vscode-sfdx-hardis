@@ -413,7 +413,7 @@ async function handleSourceMemberQuery(
   else if (JSON.stringify(result).includes("INVALID_TYPE")) {
     panel.sendMessage({
       type: "queryError",
-      data: { message: "It seems that the selected org does not support SourceMember queries (Full Sandbox, patial sandbox, developer org or production org). Please use 'All Metadata' mode." },
+      data: { message: "It seems that the selected org does not support SourceMember queries (Full Sandbox, partial sandbox, developer org or production org). Please use 'All Metadata' mode." },
     });
   }
   else {
