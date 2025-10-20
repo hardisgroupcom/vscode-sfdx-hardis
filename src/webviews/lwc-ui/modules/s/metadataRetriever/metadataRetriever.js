@@ -433,10 +433,26 @@ export default class MetadataRetriever extends LightningElement {
         const fullName = item.MemberName || "";
         const compName = fullName.includes(".") ? fullName.split(".").pop() || fullName : fullName;
         if (pf === "Local") {
-          // Local = component segment does NOT start with ns__ pattern
-          if (compName.match(/^\w+__/)) {
-            return false; // packaged -> exclude
+          // Local = ends with official suffix and has no namespace prefix
+          const officialSuffixes = ["__c", "__r", "__x", "__s", "__mdt", "__b"];
+          const hasOfficialSuffix = officialSuffixes.some(suffix => compName.endsWith(suffix));
+          
+          if (!hasOfficialSuffix) {
+            // No official suffix -> local (standard metadata)
+            return true;
           }
+          
+          // Has official suffix: check if there's a namespace prefix
+          const firstDoubleUnderscoreIndex = compName.indexOf("__");
+          const lastDoubleUnderscoreIndex = compName.lastIndexOf("__");
+          
+          // If first __ and last __ are same, it's just the suffix -> local
+          if (firstDoubleUnderscoreIndex === lastDoubleUnderscoreIndex) {
+            return true;
+          }
+          
+          // Multiple __, so has namespace prefix -> packaged
+          return false;
         }
         else {
           // Component segment must start with namespace__ pattern

@@ -206,6 +206,44 @@ async function handleQueryMetadata(panel: any, data: any) {
   }
 }
 
+/**
+ * Determines if a metadata component (fullName) is local or packaged.
+ * Local = component segment ends with an official Salesforce suffix (__c, __r, __x, __s, __mdt, __b)
+ *         AND the first __ is the official suffix (no namespace prefix)
+ * Packaged = component segment has a namespace prefix followed by the official suffix
+ * 
+ * Examples:
+ * - "SBQQ__Field__c" -> packaged (has namespace SBQQ__ before the __c suffix)
+ * - "LocalField__c" -> local (only one __, which is the __c suffix)
+ * - "Account.Name" -> local (no official suffix, standard field)
+ * - "SBQQ__Cpq__c.LocalField__c" -> local (component is LocalField__c, no namespace prefix)
+ * - "MyNamespace__CpqField__c" -> packaged (has MyNamespace__ prefix)
+ * 
+ * @param fullName The complete fullName
+ * @returns true if local, false if packaged
+ */
+function isLocalMetadata(fullName: string): boolean {
+  // Extract component segment (after last '.')
+  const compName = fullName.includes(".") ? fullName.split(".").pop() || fullName : fullName;
+  
+  // Official Salesforce custom field/object suffixes
+  const officialSuffixes = ["__c", "__r", "__x", "__s", "__mdt", "__b"];
+  const hasOfficialSuffix = officialSuffixes.some(suffix => compName.endsWith(suffix));
+  
+  if (!hasOfficialSuffix) {
+    // No official suffix (standard metadata like Account, Name) -> local
+    return true;
+  }
+  
+  // Has official suffix: check if there's a namespace prefix before it
+  const firstDoubleUnderscoreIndex = compName.indexOf("__");
+  const lastDoubleUnderscoreIndex = compName.lastIndexOf("__");
+  
+  // If first __ and last __ are the same position, it means there's only one __ (the suffix) -> local
+  // If they're different, there's a namespace prefix -> packaged
+  return firstDoubleUnderscoreIndex === lastDoubleUnderscoreIndex;
+}
+
 async function handleListPackages(panel: LwcUiPanel, username: string | null) {
   try {
     if (!username) {
@@ -351,13 +389,7 @@ async function handleSourceMemberQuery(
     // Apply packageFilter post-query if provided
     if (packageFilter && packageFilter !== "All") {
       if (packageFilter === "Local") {
-        // Local = component segment (after last '.') does NOT start with ns__ pattern
-        records = records.filter(r => {
-          const fullName = (r.MemberName || "").toString();
-          const compName = fullName.includes(".") ? fullName.split(".").pop() || fullName : fullName;
-          // Check if component starts with namespace__ pattern (e.g., SBQQ__)
-          return !compName.match(/^\w+__/);
-        });
+        records = records.filter(r => isLocalMetadata(r.MemberName || ""));
       }
       else {
         // Keep only records whose component segment starts with namespace__ pattern
@@ -432,12 +464,7 @@ async function handleListMetadata(
         // Apply packageFilter post-listing
         if (packageFilter && packageFilter !== "All") {
           if (packageFilter === "Local") {
-            // Local = component segment (after last '.') does NOT start with ns__ pattern
-            typeResults = typeResults.filter((item: any) => {
-              const fn = (item.fullName || "").toString();
-              const compName = fn.includes(".") ? fn.split(".").pop() || fn : fn;
-              return !compName.match(/^\w+__/);
-            });
+            typeResults = typeResults.filter((item: any) => isLocalMetadata(item.fullName || ""));
           }
           else {
             // Component segment starts with namespace__ pattern
