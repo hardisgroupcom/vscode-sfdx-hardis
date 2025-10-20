@@ -481,7 +481,7 @@ async function handleSourceMemberQuery(
     query += " WHERE " + conditions.join(" AND ");
   }
 
-  query += " ORDER BY MemberType, MemberName DESC LIMIT 2000";
+  query += " ORDER BY MemberType, MemberName LIMIT 2000";
 
   // Execute SOQL query using Tooling API
   const command = `sf data query --query "${query.replace(/"/g, '\\"')}" --target-org ${username} --use-tooling-api --json`;
