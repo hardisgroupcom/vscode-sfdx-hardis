@@ -410,6 +410,12 @@ async function handleSourceMemberQuery(
       data: { records },
     });
   }
+  else if (JSON.stringify(result).includes("INVALID_TYPE")) {
+    panel.sendMessage({
+      type: "queryError",
+      data: { message: "It seems that the selected org does not support SourceMember queries (Full Sandbox, patial sandbox, developer org or production org). Please use 'All Metadata' mode." },
+    });
+  }
   else {
     panel.sendMessage({
       type: "queryResults",
