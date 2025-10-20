@@ -209,15 +209,16 @@ async function handleQueryMetadata(panel: any, data: any) {
 /**
  * Determines if a metadata component (fullName) is local or packaged.
  * Local = component segment ends with an official Salesforce suffix (__c, __r, __x, __s, __mdt, __b)
- *         AND the first __ is the official suffix (no namespace prefix)
- * Packaged = component segment has a namespace prefix followed by the official suffix
+ *         AND has only one __ (the suffix itself, no namespace prefix)
+ * Packaged = component segment has multiple __ (namespace prefix + other separators) or has __ without official suffix
  * 
  * Examples:
- * - "SBQQ__Field__c" -> packaged (has namespace SBQQ__ before the __c suffix)
- * - "LocalField__c" -> local (only one __, which is the __c suffix)
- * - "Account.Name" -> local (no official suffix, standard field)
- * - "SBQQ__Cpq__c.LocalField__c" -> local (component is LocalField__c, no namespace prefix)
- * - "MyNamespace__CpqField__c" -> packaged (has MyNamespace__ prefix)
+ * - "SBQQ__Field__c" -> packaged (2x __, namespace SBQQ__ + suffix __c)
+ * - "LocalField__c" -> local (1x __, which is the __c suffix)
+ * - "CodeBuilder__CodeBuilderGroup" -> packaged (1x __, but no official suffix = namespace prefix)
+ * - "Account.Name" -> local (0x __, standard field)
+ * - "SBQQ__Cpq__c.LocalField__c" -> local (component is LocalField__c, 1x __, official suffix)
+ * - "MyNamespace__CpqField__c" -> packaged (2x __)
  * 
  * @param fullName The complete fullName
  * @returns true if local, false if packaged
@@ -226,22 +227,23 @@ function isLocalMetadata(fullName: string): boolean {
   // Extract component segment (after last '.')
   const compName = fullName.includes(".") ? fullName.split(".").pop() || fullName : fullName;
   
-  // Official Salesforce custom field/object suffixes
-  const officialSuffixes = ["__c", "__r", "__x", "__s", "__mdt", "__b"];
-  const hasOfficialSuffix = officialSuffixes.some(suffix => compName.endsWith(suffix));
+  // Count total occurrences of __
+  const doubleUnderscoreCount = (compName.match(/__/g) || []).length;
   
-  if (!hasOfficialSuffix) {
-    // No official suffix (standard metadata like Account, Name) -> local
+  // If no __, it's local (standard metadata)
+  if (doubleUnderscoreCount === 0) {
     return true;
   }
   
-  // Has official suffix: check if there's a namespace prefix before it
-  const firstDoubleUnderscoreIndex = compName.indexOf("__");
-  const lastDoubleUnderscoreIndex = compName.lastIndexOf("__");
+  // If exactly one __, check if it's an official suffix
+  if (doubleUnderscoreCount === 1) {
+    const officialSuffixes = ["__c", "__r", "__x", "__s", "__mdt", "__b"];
+    const hasOfficialSuffix = officialSuffixes.some(suffix => compName.endsWith(suffix));
+    return hasOfficialSuffix; // local if ends with official suffix
+  }
   
-  // If first __ and last __ are the same position, it means there's only one __ (the suffix) -> local
-  // If they're different, there's a namespace prefix -> packaged
-  return firstDoubleUnderscoreIndex === lastDoubleUnderscoreIndex;
+  // Multiple __ -> packaged (has namespace prefix)
+  return false;
 }
 
 async function handleListPackages(panel: LwcUiPanel, username: string | null) {

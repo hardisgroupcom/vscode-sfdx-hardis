@@ -433,25 +433,26 @@ export default class MetadataRetriever extends LightningElement {
         const fullName = item.MemberName || "";
         const compName = fullName.includes(".") ? fullName.split(".").pop() || fullName : fullName;
         if (pf === "Local") {
-          // Local = ends with official suffix and has no namespace prefix
-          const officialSuffixes = ["__c", "__r", "__x", "__s", "__mdt", "__b"];
-          const hasOfficialSuffix = officialSuffixes.some(suffix => compName.endsWith(suffix));
+          // Local = ends with official suffix AND has only one __ (no namespace prefix)
+          const doubleUnderscoreCount = (compName.match(/__/g) || []).length;
           
-          if (!hasOfficialSuffix) {
-            // No official suffix -> local (standard metadata)
+          if (doubleUnderscoreCount === 0) {
+            // No __ at all -> local (standard metadata)
             return true;
           }
           
-          // Has official suffix: check if there's a namespace prefix
-          const firstDoubleUnderscoreIndex = compName.indexOf("__");
-          const lastDoubleUnderscoreIndex = compName.lastIndexOf("__");
-          
-          // If first __ and last __ are same, it's just the suffix -> local
-          if (firstDoubleUnderscoreIndex === lastDoubleUnderscoreIndex) {
-            return true;
+          if (doubleUnderscoreCount === 1) {
+            // One __: check if it's an official suffix
+            const officialSuffixes = ["__c", "__r", "__x", "__s", "__mdt", "__b"];
+            const hasOfficialSuffix = officialSuffixes.some(suffix => compName.endsWith(suffix));
+            if (hasOfficialSuffix) {
+              return true; // local
+            }
+            // One __ but no official suffix (e.g., CodeBuilder__something) -> packaged
+            return false;
           }
           
-          // Multiple __, so has namespace prefix -> packaged
+          // Multiple __ -> packaged
           return false;
         }
         else {
