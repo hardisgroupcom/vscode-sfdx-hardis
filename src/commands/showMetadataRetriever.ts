@@ -13,8 +13,26 @@ export function registerShowMetadataRetriever(commands: Commands) {
     async () => {
 
       // Get selected org username
-      const selectedOrgUsername = await getDefaultTargetOrgUsername();
-      const instanceUrl = await getUsernameInstanceUrl(selectedOrgUsername || "");
+      let selectedOrgUsername: string | null = null;
+      let instanceUrl: string | null = null;
+
+      await vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Notification,
+          title: "Initializing Metadata Retriever...",
+          cancellable: false,
+        },
+        async () => {
+          try {
+            selectedOrgUsername = await getDefaultTargetOrgUsername();
+            instanceUrl = await getUsernameInstanceUrl(selectedOrgUsername || "");
+          }
+          catch (err: any) {
+            Logger.log(`Error detecting default org: ${err?.message || err}`);
+            vscode.window.showWarningMessage("Could not detect default org. Please select an org in the UI.");
+          }
+        },
+      );
       const connectedOrgs: SalesforceOrg[] = selectedOrgUsername ? [
         {
           username: selectedOrgUsername,
