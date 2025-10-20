@@ -321,8 +321,15 @@ export default class MetadataRetriever extends LightningElement {
 
     this.isLoading = true;
     this.error = null;
+    // Clear existing metadata and client-side text filter to ensure a fresh server search
     this.metadata = [];
     this.filteredMetadata = [];
+    // Clear client-side search term and any pending debounce
+    this.searchTerm = "";
+    if (this.searchDebounceTimer) {
+      clearTimeout(this.searchDebounceTimer);
+      this.searchDebounceTimer = null;
+    }
     this.selectedRows = [];
     this.selectedRowKeys = [];
 
