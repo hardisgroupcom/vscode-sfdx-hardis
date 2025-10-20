@@ -425,12 +425,13 @@ export default class MetadataRetriever extends LightningElement {
   handleQueryResults(data) {
     this.isLoading = false;
     if (data && data.records && Array.isArray(data.records)) {
-      // Transform records - both modes now include date fields
+      // Transform records - handle both SourceMember (nested) and Metadata API (flat) formats
       this.metadata = data.records.map((record) => ({
         MemberName: record.MemberName,
         MemberType: record.MemberType,
         LastModifiedDate: record.LastModifiedDate,
-        LastModifiedByName: record.LastModifiedByName || "",
+        // Handle both SourceMember format (LastModifiedBy.Name) and Metadata API format (lastModifiedByName)
+        LastModifiedByName: record.LastModifiedByName || (record.LastModifiedBy ? record.LastModifiedBy.Name : "") || "",
         uniqueKey: `${record.MemberType}::${record.MemberName}`,
       }));
       this.applyFilters();
