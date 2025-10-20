@@ -2,7 +2,14 @@
 
 ## [Unreleased]
 
-- New UI: Metadata Retriever
+## [6.13.0] 2024-10-21
+
+- New UI: Metadata Retriever allowing to search in recent changes or all metadatas, with filters
+  - Metadata type
+  - Metadata name
+  - Last Updated By
+  - Last Updated Date
+  - Package
 
 ## [6.13.0] 2024-10-19
 

@@ -27,19 +27,3 @@ lightning-datatable {
 :host ::part(table) {
   line-height: 1.2;
 }
-
-/* Match org combobox height to button height */
-.metadata-retriever-org-combobox {
-  display: flex;
-  align-items: stretch;
-  min-height: 2.25rem;
-}
-
-.metadata-retriever-org-combobox lightning-combobox {
-  width: 100%;
-  --slds-c-combobox-sizing-height: 2.25rem;
-}
-
-.metadata-retriever-org-combobox lightning-combobox::part(form-element) {
-  height: 2.25rem;
-}
