@@ -5,6 +5,8 @@ import {
   execSfdxJson,
   getUsernameInstanceUrl,
   hasSfdxProjectJson,
+  listLocalSfConfigFilePaths,
+  listLocalSfConfigFiles,
   loadFromLocalConfigFile,
   readSfdxHardisConfig,
   writeSfdxHardisConfig,
@@ -22,7 +24,6 @@ const PRODUCTION_EDITIONS = [
 ];
 
 export class HardisColors {
-  sfdxConfigPaths = [".sf/config.json", ".sfdx/sfdx-config.json"];
   disposables: vscode.Disposable[] = [];
   majorOrgInstanceUrls: any[] = [];
   currentDefaultOrg: string | undefined = undefined;
@@ -55,7 +56,8 @@ export class HardisColors {
   // Set color at initialization by reading sfdx local file(s)
   async initColor() {
     if (vscode.workspace.workspaceFolders) {
-      for (const sfdxConfigPath of this.sfdxConfigPaths) {
+      const sfdxConfigPaths = await listLocalSfConfigFiles()
+      for (const sfdxConfigPath of sfdxConfigPaths) {
         const sfdxConfigFullPath = path.join(
           vscode.workspace.workspaceFolders[0].uri.fsPath,
           sfdxConfigPath,
@@ -72,7 +74,8 @@ export class HardisColors {
   registerFileSystemWatchers() {
     if (vscode.workspace.workspaceFolders) {
       let prevValues: any = {};
-      for (const sfdxConfigPath of this.sfdxConfigPaths) {
+      const sfdxConfigPaths = listLocalSfConfigFilePaths();
+      for (const sfdxConfigPath of sfdxConfigPaths) {
         const watcher = vscode.workspace.createFileSystemWatcher(
           new vscode.RelativePattern(
             vscode.workspace.workspaceFolders[0],

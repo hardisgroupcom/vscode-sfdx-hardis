@@ -186,6 +186,14 @@ export class HardisCommandsProvider
             helpUrl: "https://sfdx-hardis.cloudity.com/hardis/scratch/pull/",
           },
           {
+            id: "vscode-sfdx-hardis.showMetadataRetriever",
+            label: "Metadata Retriever",
+            command: "vscode-sfdx-hardis.showMetadataRetriever",
+            requiresProject: true,
+            tooltip:
+              "Open the Metadata Retriever panel to select and retrieve metadata from your Salesforce org.",
+          },
+          {
             id: "hardis:work:save",
             label: "Save / Publish User Story",
             command: "sf hardis:work:save",
