@@ -2,7 +2,11 @@ import * as vscode from "vscode";
 import { Commands } from "../commands";
 import { LwcPanelManager } from "../lwc-panel-manager";
 import { listAllOrgs, SalesforceOrg } from "../utils/orgUtils";
-import { execSfdxJson, getDefaultTargetOrgUsername, getUsernameInstanceUrl } from "../utils";
+import {
+  execSfdxJson,
+  getDefaultTargetOrgUsername,
+  getUsernameInstanceUrl,
+} from "../utils";
 import { Logger } from "../logger";
 import { listMetadataTypes } from "../utils/metadataList";
 import { LwcUiPanel } from "../webviews/lwc-ui-panel";
@@ -11,7 +15,6 @@ export function registerShowMetadataRetriever(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
     "vscode-sfdx-hardis.showMetadataRetriever",
     async () => {
-
       // Get selected org username
       let selectedOrgUsername: string | null = null;
       let instanceUrl: string | null = null;
@@ -25,29 +28,36 @@ export function registerShowMetadataRetriever(commands: Commands) {
         async () => {
           try {
             selectedOrgUsername = await getDefaultTargetOrgUsername();
-            instanceUrl = await getUsernameInstanceUrl(selectedOrgUsername || "");
-          }
-          catch (err: any) {
+            instanceUrl = await getUsernameInstanceUrl(
+              selectedOrgUsername || "",
+            );
+          } catch (err: any) {
             Logger.log(`Error detecting default org: ${err?.message || err}`);
-            vscode.window.showWarningMessage("Could not detect default org. Please select an org in the UI.");
+            vscode.window.showWarningMessage(
+              "Could not detect default org. Please select an org in the UI.",
+            );
           }
         },
       );
-      const connectedOrgs: SalesforceOrg[] = selectedOrgUsername ? [
-        {
-          username: selectedOrgUsername,
-          isDefaultUsername: true,
-          connectedStatus: "Connected",
-          instanceUrl: instanceUrl || "",
-        },
-      ] : [];
+      const connectedOrgs: SalesforceOrg[] = selectedOrgUsername
+        ? [
+            {
+              username: selectedOrgUsername,
+              isDefaultUsername: true,
+              connectedStatus: "Connected",
+              instanceUrl: instanceUrl || "",
+            },
+          ]
+        : [];
 
       // Get metadata types list
       const metadataTypes = listMetadataTypes();
-      const metadataTypeOptions = metadataTypes.map(mt => ({
-        label: mt.xmlName,
-        value: mt.xmlName,
-      })).sort((a, b) => a.label.localeCompare(b.label));
+      const metadataTypeOptions = metadataTypes
+        .map((mt) => ({
+          label: mt.xmlName,
+          value: mt.xmlName,
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label));
 
       const panel = LwcPanelManager.getInstance().getOrCreatePanel(
         "s-metadata-retriever",
@@ -63,17 +73,16 @@ export function registerShowMetadataRetriever(commands: Commands) {
       panel.onMessage(async (type, data) => {
         if (type === "listOrgs") {
           await handleListOrgs(panel);
-        }
-        else if (type === "queryMetadata") {
+        } else if (type === "queryMetadata") {
           await handleQueryMetadata(panel, data);
-        }
-        else if (type === "listPackages") {
-          await handleListPackages(panel, data && data.username ? data.username : null);
-        }
-        else if (type === "retrieveMetadata") {
+        } else if (type === "listPackages") {
+          await handleListPackages(
+            panel,
+            data && data.username ? data.username : null,
+          );
+        } else if (type === "retrieveMetadata") {
           await handleRetrieveMetadata(panel, data);
-        }
-        else if (type === "retrieveSelectedMetadata") {
+        } else if (type === "retrieveSelectedMetadata") {
           await handleRetrieveSelectedMetadata(panel, data);
         }
       });
@@ -85,10 +94,13 @@ export function registerShowMetadataRetriever(commands: Commands) {
 async function handleListOrgs(panel: LwcUiPanel) {
   // List all orgs and get default one
   const orgs = await listAllOrgs(false);
-  
+
   // Filter connected orgs and find default from the connected list
-  const connectedOrgs = orgs.filter((org) => org.connectedStatus === "Connected");
-  const selectedOrg = connectedOrgs.find((org) => org.isDefaultUsername) || connectedOrgs[0];
+  const connectedOrgs = orgs.filter(
+    (org) => org.connectedStatus === "Connected",
+  );
+  const selectedOrg =
+    connectedOrgs.find((org) => org.isDefaultUsername) || connectedOrgs[0];
   panel.sendMessage({
     type: "listOrgsResults",
     data: {
@@ -105,7 +117,10 @@ async function executeMetadataRetrieve(
   displayTitle: string,
 ): Promise<void> {
   // Split metadata list and create separate --metadata flags for each item
-  const metadataItems = metadataList.split(',').map(item => `--metadata "${item}"`).join(' ');
+  const metadataItems = metadataList
+    .split(",")
+    .map((item) => `--metadata "${item}"`)
+    .join(" ");
   const command = `sf project retrieve start ${metadataItems} --target-org ${username} --json`;
   Logger.log(`Retrieving metadata: ${command}`);
 
@@ -142,21 +157,19 @@ async function executeMetadataRetrieve(
       if (failedFiles.length === 0 && success) {
         const action = await vscode.window.showInformationMessage(
           resultMessage || "Metadata retrieved successfully",
-          "View and commit files"
+          "View and commit files",
         );
         if (action === "View and commit files") {
           vscode.commands.executeCommand("workbench.view.scm");
         }
-      }
-      else {
+      } else {
         // Show warning with details
         if (successfulFiles.length > 0) {
           resultMessage += `, but ${failedFiles.length} failed`;
-        }
-        else {
+        } else {
           resultMessage = `Failed to retrieve ${failedFiles.length} file(s)`;
         }
-        
+
         // Collect error details for display
         const errorDetails: string[] = [];
         if (messages.length > 0) {
@@ -171,32 +184,47 @@ async function executeMetadataRetrieve(
           errorDetails.push(error);
           Logger.log(`Failed to retrieve ${error}`);
         });
-        
+
         // Display warning with first few errors in message
         if (errorDetails.length > 0) {
           const displayErrors = errorDetails.slice(0, 3).join("; ");
-          const moreErrors = errorDetails.length > 3 ? ` (and ${errorDetails.length - 3} more - see logs)` : "";
-          vscode.window.showWarningMessage(`${resultMessage}. Errors: ${displayErrors}${moreErrors}`);
-        }
-        else {
+          const moreErrors =
+            errorDetails.length > 3
+              ? ` (and ${errorDetails.length - 3} more - see logs)`
+              : "";
+          vscode.window.showWarningMessage(
+            `${resultMessage}. Errors: ${displayErrors}${moreErrors}`,
+          );
+        } else {
           vscode.window.showWarningMessage(resultMessage);
         }
       }
-    }
-    else {
+    } else {
       const errorMsg = result?.message || "Unknown error occurred";
-      vscode.window.showErrorMessage(`Failed to retrieve metadata: ${errorMsg}`);
+      vscode.window.showErrorMessage(
+        `Failed to retrieve metadata: ${errorMsg}`,
+      );
     }
-  }
-  catch (error: any) {
+  } catch (error: any) {
     Logger.log(`Error retrieving metadata: ${error.message}`);
-    vscode.window.showErrorMessage(`Failed to retrieve metadata: ${error.message}`);
+    vscode.window.showErrorMessage(
+      `Failed to retrieve metadata: ${error.message}`,
+    );
   }
 }
 
 async function handleQueryMetadata(panel: any, data: any) {
   try {
-    const { username, queryMode, metadataType, metadataName, lastUpdatedBy, dateFrom, dateTo, packageFilter } = data;
+    const {
+      username,
+      queryMode,
+      metadataType,
+      metadataName,
+      lastUpdatedBy,
+      dateFrom,
+      dateTo,
+      packageFilter,
+    } = data;
 
     if (!username) {
       panel.sendMessage({
@@ -208,14 +236,27 @@ async function handleQueryMetadata(panel: any, data: any) {
 
     // Handle different query modes
     if (queryMode === "allMetadata") {
-      await handleListMetadata(panel, username, metadataType, metadataName, packageFilter);
-    }
-    else {
+      await handleListMetadata(
+        panel,
+        username,
+        metadataType,
+        metadataName,
+        packageFilter,
+      );
+    } else {
       // Default to recentChanges mode (SourceMember query)
-      await handleSourceMemberQuery(panel, username, metadataType, metadataName, lastUpdatedBy, dateFrom, dateTo, packageFilter);
+      await handleSourceMemberQuery(
+        panel,
+        username,
+        metadataType,
+        metadataName,
+        lastUpdatedBy,
+        dateFrom,
+        dateTo,
+        packageFilter,
+      );
     }
-  }
-  catch (error: any) {
+  } catch (error: any) {
     Logger.log(`Error querying metadata: ${error.message}`);
     panel.sendMessage({
       type: "queryError",
@@ -229,7 +270,7 @@ async function handleQueryMetadata(panel: any, data: any) {
  * Local = component segment ends with an official Salesforce suffix (__c, __r, __x, __s, __mdt, __b)
  *         AND has only one __ (the suffix itself, no namespace prefix)
  * Packaged = component segment has multiple __ (namespace prefix + other separators) or has __ without official suffix
- * 
+ *
  * Examples:
  * - "SBQQ__Field__c" -> packaged (2x __, namespace SBQQ__ + suffix __c)
  * - "LocalField__c" -> local (1x __, which is the __c suffix)
@@ -237,29 +278,33 @@ async function handleQueryMetadata(panel: any, data: any) {
  * - "Account.Name" -> local (0x __, standard field)
  * - "SBQQ__Cpq__c.LocalField__c" -> local (component is LocalField__c, 1x __, official suffix)
  * - "MyNamespace__CpqField__c" -> packaged (2x __)
- * 
+ *
  * @param fullName The complete fullName
  * @returns true if local, false if packaged
  */
 function isLocalMetadata(fullName: string): boolean {
   // Extract component segment (after last '.')
-  const compName = fullName.includes(".") ? fullName.split(".").pop() || fullName : fullName;
-  
+  const compName = fullName.includes(".")
+    ? fullName.split(".").pop() || fullName
+    : fullName;
+
   // Count total occurrences of __
   const doubleUnderscoreCount = (compName.match(/__/g) || []).length;
-  
+
   // If no __, it's local (standard metadata)
   if (doubleUnderscoreCount === 0) {
     return true;
   }
-  
+
   // If exactly one __, check if it's an official suffix
   if (doubleUnderscoreCount === 1) {
     const officialSuffixes = ["__c", "__r", "__x", "__s", "__mdt", "__b"];
-    const hasOfficialSuffix = officialSuffixes.some(suffix => compName.endsWith(suffix));
+    const hasOfficialSuffix = officialSuffixes.some((suffix) =>
+      compName.endsWith(suffix),
+    );
     return hasOfficialSuffix; // local if ends with official suffix
   }
-  
+
   // Multiple __ -> packaged (has namespace prefix)
   return false;
 }
@@ -270,7 +315,12 @@ async function handleListPackages(panel: LwcUiPanel, username: string | null) {
       // No username - return default options only
       panel.sendMessage({
         type: "listPackagesResults",
-        data: { packages: [{ label: "All", value: "All" }, { label: "Local", value: "Local" }] },
+        data: {
+          packages: [
+            { label: "All", value: "All" },
+            { label: "Local", value: "Local" },
+          ],
+        },
       });
       return;
     }
@@ -278,21 +328,25 @@ async function handleListPackages(panel: LwcUiPanel, username: string | null) {
     // Execute SF command directly from the extension and return results
     try {
       const command = `sf package installed list --target-org ${username} --json`;
-      const result = await execSfdxJson(command,
-        {
-          cacheExpiration: 1000 * 60 * 60 * 24, // 1 day
-          cacheSection: "project",
-        }
-      );
+      const result = await execSfdxJson(command, {
+        cacheExpiration: 1000 * 60 * 60 * 24, // 1 day
+        cacheSection: "project",
+      });
 
       const pkgOptions: Array<any> = [];
       // Keep All and Local at the top
       pkgOptions.push({ label: "All", value: "All" });
       pkgOptions.push({ label: "Local", value: "Local" });
 
-      if (result && result.status === 0 && Array.isArray(result.result) && result.result.length > 0) {
+      if (
+        result &&
+        result.status === 0 &&
+        Array.isArray(result.result) &&
+        result.result.length > 0
+      ) {
         // Map by normalized namespace -> keep a single representative (preserve original casing for label)
-        const namespaceMap: Map<string, { ns: string; names: Set<string> }> = new Map();
+        const namespaceMap: Map<string, { ns: string; names: Set<string> }> =
+          new Map();
         for (const p of result.result) {
           const rawNs = (p.SubscriberPackageNamespace || "").toString();
           const nsTrim = rawNs.trim();
@@ -301,7 +355,9 @@ async function handleListPackages(panel: LwcUiPanel, username: string | null) {
             continue;
           }
           const key = nsTrim.toLowerCase();
-          const name = (p.SubscriberPackageName || p.Name || "").toString().trim();
+          const name = (p.SubscriberPackageName || p.Name || "")
+            .toString()
+            .trim();
           if (!namespaceMap.has(key)) {
             namespaceMap.set(key, { ns: nsTrim, names: new Set() });
           }
@@ -316,7 +372,12 @@ async function handleListPackages(panel: LwcUiPanel, username: string | null) {
         for (const entry of namespaceMap.values()) {
           const names = Array.from(entry.names).filter(Boolean);
           names.sort((a, b) => a.localeCompare(b));
-          const displayName = names.length === 0 ? entry.ns : (names.length === 1 ? names[0] : names.join("/"));
+          const displayName =
+            names.length === 0
+              ? entry.ns
+              : names.length === 1
+                ? names[0]
+                : names.join("/");
           const label = `${displayName} (${entry.ns})`;
           namespaceOptions.push({ label: label, value: entry.ns });
         }
@@ -328,18 +389,35 @@ async function handleListPackages(panel: LwcUiPanel, username: string | null) {
         pkgOptions.push(...namespaceOptions);
       }
 
-      panel.sendMessage({ type: "listPackagesResults", data: { packages: pkgOptions } });
+      panel.sendMessage({
+        type: "listPackagesResults",
+        data: { packages: pkgOptions },
+      });
       return;
-    }
-    catch (err) {
+    } catch (err) {
       Logger.log(`Error executing package list command: ${err}`);
-      panel.sendMessage({ type: "listPackagesResults", data: { packages: [{ label: "All", value: "All" }, { label: "Local", value: "Local" }] } });
+      panel.sendMessage({
+        type: "listPackagesResults",
+        data: {
+          packages: [
+            { label: "All", value: "All" },
+            { label: "Local", value: "Local" },
+          ],
+        },
+      });
       return;
     }
-  }
-  catch (error: any) {
+  } catch (error: any) {
     Logger.log(`Error listing packages: ${error.message}`);
-    panel.sendMessage({ type: "listPackagesResults", data: { packages: [{ label: "All", value: "All" }, { label: "Local", value: "Local" }] } });
+    panel.sendMessage({
+      type: "listPackagesResults",
+      data: {
+        packages: [
+          { label: "All", value: "All" },
+          { label: "Local", value: "Local" },
+        ],
+      },
+    });
   }
 }
 
@@ -354,7 +432,8 @@ async function handleSourceMemberQuery(
   packageFilter: string | null,
 ) {
   // Build SOQL query safely on backend
-  let query = "SELECT MemberName, MemberType, LastModifiedDate, LastModifiedBy.Name FROM SourceMember";
+  let query =
+    "SELECT MemberName, MemberType, LastModifiedDate, LastModifiedBy.Name FROM SourceMember";
   const conditions: string[] = [];
 
   if (metadataType) {
@@ -365,13 +444,19 @@ async function handleSourceMemberQuery(
 
   if (metadataName) {
     // Escape single quotes and wildcards for SOQL LIKE
-    const escapedName = metadataName.replace(/'/g, "\\'").replace(/%/g, "\\%").replace(/_/g, "\\_");
+    const escapedName = metadataName
+      .replace(/'/g, "\\'")
+      .replace(/%/g, "\\%")
+      .replace(/_/g, "\\_");
     conditions.push(`MemberName LIKE '%${escapedName}%'`);
   }
 
   if (lastUpdatedBy) {
     // Escape single quotes and wildcards for SOQL LIKE
-    const escapedUser = lastUpdatedBy.replace(/'/g, "\\'").replace(/%/g, "\\%").replace(/_/g, "\\_");
+    const escapedUser = lastUpdatedBy
+      .replace(/'/g, "\\'")
+      .replace(/%/g, "\\%")
+      .replace(/_/g, "\\_");
     conditions.push(`LastModifiedBy.Name LIKE '%${escapedUser}%'`);
   }
 
@@ -409,15 +494,16 @@ async function handleSourceMemberQuery(
     // Apply packageFilter post-query if provided
     if (packageFilter && packageFilter !== "All") {
       if (packageFilter === "Local") {
-        records = records.filter(r => isLocalMetadata(r.MemberName || ""));
-      }
-      else {
+        records = records.filter((r) => isLocalMetadata(r.MemberName || ""));
+      } else {
         // Keep only records whose component segment starts with namespace__ pattern
         const ns = packageFilter;
         const nsPattern = `${ns}__`;
-        records = records.filter(r => {
+        records = records.filter((r) => {
           const fullName = (r.MemberName || "").toString();
-          const compName = fullName.includes(".") ? fullName.split(".").pop() || fullName : fullName;
+          const compName = fullName.includes(".")
+            ? fullName.split(".").pop() || fullName
+            : fullName;
           return compName.startsWith(nsPattern);
         });
       }
@@ -427,14 +513,15 @@ async function handleSourceMemberQuery(
       type: "queryResults",
       data: { records },
     });
-  }
-  else if (JSON.stringify(result).includes("INVALID_TYPE")) {
+  } else if (JSON.stringify(result).includes("INVALID_TYPE")) {
     panel.sendMessage({
       type: "queryError",
-      data: { message: "It seems that the selected org does not support SourceMember queries (Full Sandbox, partial sandbox, developer org or production org). Please use 'All Metadata' mode." },
+      data: {
+        message:
+          "It seems that the selected org does not support SourceMember queries (Full Sandbox, partial sandbox, developer org or production org). Please use 'All Metadata' mode.",
+      },
     });
-  }
-  else {
+  } else {
     panel.sendMessage({
       type: "queryResults",
       data: { records: [] },
@@ -453,7 +540,9 @@ async function handleListMetadata(
   if (!metadataType) {
     panel.sendMessage({
       type: "queryError",
-      data: { message: "Please select a specific metadata type for All Metadata mode" },
+      data: {
+        message: "Please select a specific metadata type for All Metadata mode",
+      },
     });
     return;
   }
@@ -482,23 +571,27 @@ async function handleListMetadata(
         // Apply name filter if provided
         if (metadataName) {
           const nameLower = metadataName.toLowerCase();
-          typeResults = typeResults.filter((item: any) =>
-            item.fullName && item.fullName.toLowerCase().includes(nameLower)
+          typeResults = typeResults.filter(
+            (item: any) =>
+              item.fullName && item.fullName.toLowerCase().includes(nameLower),
           );
         }
 
         // Apply packageFilter post-listing
         if (packageFilter && packageFilter !== "All") {
           if (packageFilter === "Local") {
-            typeResults = typeResults.filter((item: any) => isLocalMetadata(item.fullName || ""));
-          }
-          else {
+            typeResults = typeResults.filter((item: any) =>
+              isLocalMetadata(item.fullName || ""),
+            );
+          } else {
             // Component segment starts with namespace__ pattern
             const ns = packageFilter;
             const nsPattern = `${ns}__`;
             typeResults = typeResults.filter((item: any) => {
               const fn = (item.fullName || "").toString();
-              const compName = fn.includes(".") ? fn.split(".").pop() || fn : fn;
+              const compName = fn.includes(".")
+                ? fn.split(".").pop() || fn
+                : fn;
               return compName.startsWith(nsPattern);
             });
           }
@@ -506,8 +599,7 @@ async function handleListMetadata(
 
         allResults.push(...typeResults);
       }
-    }
-    catch (error: any) {
+    } catch (error: any) {
       Logger.log(`Error listing metadata for type ${type}: ${error.message}`);
       // Continue with other types
     }
@@ -532,9 +624,15 @@ async function handleRetrieveSelectedMetadata(panel: any, data: any) {
   try {
     const { username, metadata } = data;
 
-
-    if (!username || !metadata || !Array.isArray(metadata) || metadata.length === 0) {
-      vscode.window.showErrorMessage("Missing required parameters for metadata retrieval");
+    if (
+      !username ||
+      !metadata ||
+      !Array.isArray(metadata) ||
+      metadata.length === 0
+    ) {
+      vscode.window.showErrorMessage(
+        "Missing required parameters for metadata retrieval",
+      );
       return;
     }
 
@@ -548,16 +646,17 @@ async function handleRetrieveSelectedMetadata(panel: any, data: any) {
     const workspaceRoot = workspaceFolders[0].uri.fsPath;
 
     // Build metadata list for command
-    const metadataList = metadata.map(m => `${m.memberType}:${m.memberName}`).join(",");
-    
+    const metadataList = metadata
+      .map((m) => `${m.memberType}:${m.memberName}`)
+      .join(",");
+
     await executeMetadataRetrieve(
       username,
       metadataList,
       workspaceRoot,
       `Retrieving ${metadata.length} metadata item(s)`,
     );
-  }
-  catch (error: any) {
+  } catch (error: any) {
     Logger.log(`Error retrieving selected metadata: ${error.message}`);
     vscode.window.showErrorMessage(`Error: ${error.message}`);
   }
@@ -569,7 +668,9 @@ async function handleRetrieveMetadata(panel: any, data: any) {
     const { username, memberType, memberName } = data;
 
     if (!username || !memberType || !memberName) {
-      vscode.window.showErrorMessage("Missing required parameters for metadata retrieval");
+      vscode.window.showErrorMessage(
+        "Missing required parameters for metadata retrieval",
+      );
       return;
     }
 
@@ -584,15 +685,14 @@ async function handleRetrieveMetadata(panel: any, data: any) {
 
     // Build metadata list for command
     const metadataList = `${memberType}:${memberName}`;
-    
+
     await executeMetadataRetrieve(
       username,
       metadataList,
       workspaceRoot,
       `Retrieving ${memberType}: ${memberName}`,
     );
-  }
-  catch (error: any) {
+  } catch (error: any) {
     Logger.log(`Error retrieving metadata: ${error.message}`);
     vscode.window.showErrorMessage(`Error: ${error.message}`);
   }

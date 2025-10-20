@@ -56,7 +56,7 @@ export class HardisColors {
   // Set color at initialization by reading sfdx local file(s)
   async initColor() {
     if (vscode.workspace.workspaceFolders) {
-      const sfdxConfigPaths = await listLocalSfConfigFiles()
+      const sfdxConfigPaths = await listLocalSfConfigFiles();
       for (const sfdxConfigPath of sfdxConfigPaths) {
         const sfdxConfigFullPath = path.join(
           vscode.workspace.workspaceFolders[0].uri.fsPath,

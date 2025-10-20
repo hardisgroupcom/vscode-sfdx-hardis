@@ -12,7 +12,10 @@ export default class MetadataRetriever extends LightningElement {
   @track queryMode = "recentChanges"; // "recentChanges" or "allMetadata"
   @track metadataType = "All";
   @track packageFilter = "All";
-  @track packageOptions = [{ label: "All", value: "All" }, { label: "Local", value: "Local" }];
+  @track packageOptions = [
+    { label: "All", value: "All" },
+    { label: "Local", value: "Local" },
+  ];
   @track metadataName = "";
   @track lastUpdatedBy = "";
   @track dateFrom = "";
@@ -77,9 +80,7 @@ export default class MetadataRetriever extends LightningElement {
     baseColumns.push({
       type: "action",
       typeAttributes: {
-        rowActions: [
-          { label: "Retrieve", name: "retrieve" },
-        ],
+        rowActions: [{ label: "Retrieve", name: "retrieve" }],
       },
       initialWidth: 50,
     });
@@ -121,7 +122,8 @@ export default class MetadataRetriever extends LightningElement {
 
   get metadataTypeOptions() {
     // In All Metadata mode, don't include "All" option
-    const options = this.queryMode === "allMetadata" ? [] : [{ label: "All", value: "All" }];
+    const options =
+      this.queryMode === "allMetadata" ? [] : [{ label: "All", value: "All" }];
     if (this.metadataTypes && Array.isArray(this.metadataTypes)) {
       return options.concat(this.metadataTypes);
     }
@@ -148,7 +150,11 @@ export default class MetadataRetriever extends LightningElement {
   }
 
   get noResults() {
-    return !this.isLoading && this.filteredMetadata && this.filteredMetadata.length === 0;
+    return (
+      !this.isLoading &&
+      this.filteredMetadata &&
+      this.filteredMetadata.length === 0
+    );
   }
 
   get hasError() {
@@ -160,7 +166,10 @@ export default class MetadataRetriever extends LightningElement {
       return false;
     }
     // In All Metadata mode, require a specific metadata type
-    if (this.queryMode === "allMetadata" && (this.metadataType === "All" || !this.metadataType)) {
+    if (
+      this.queryMode === "allMetadata" &&
+      (this.metadataType === "All" || !this.metadataType)
+    ) {
       return false;
     }
     return true;
@@ -176,7 +185,9 @@ export default class MetadataRetriever extends LightningElement {
 
   get retrieveSelectedLabel() {
     const count = this.selectedRows ? this.selectedRows.length : 0;
-    return count > 0 ? `Retrieve ${count} Selected Metadata` : "Retrieve Selected Metadata";
+    return count > 0
+      ? `Retrieve ${count} Selected Metadata`
+      : "Retrieve Selected Metadata";
   }
 
   connectedCallback() {
@@ -193,8 +204,7 @@ export default class MetadataRetriever extends LightningElement {
         // Set default org if provided or use first available
         if (data.selectedOrgUsername) {
           this.selectedOrg = data.selectedOrgUsername;
-        }
-        else if (this.orgs.length > 0) {
+        } else if (this.orgs.length > 0) {
           this.selectedOrg = this.orgs[0].username;
         }
       }
@@ -208,7 +218,10 @@ export default class MetadataRetriever extends LightningElement {
     this.selectedOrg = event.detail.value;
     // When org changes, lazy-load installed package namespaces for that org
     this.isLoadingPackages = true;
-    window.sendMessageToVSCode({ type: "listPackages", data: { username: this.selectedOrg } });
+    window.sendMessageToVSCode({
+      type: "listPackages",
+      data: { username: this.selectedOrg },
+    });
     // Reset package filter to All
     this.packageFilter = "All";
   }
@@ -220,8 +233,7 @@ export default class MetadataRetriever extends LightningElement {
       if (this.metadataType === "All") {
         this.metadataType = "";
       }
-    }
-    else {
+    } else {
       // Reset to "All" when switching back to Recent Changes mode
       if (!this.metadataType) {
         this.metadataType = "All";
@@ -236,19 +248,25 @@ export default class MetadataRetriever extends LightningElement {
 
   handleRowSelection(event) {
     const currentlySelectedRows = event.detail.selectedRows;
-    const currentlySelectedKeys = currentlySelectedRows.map(row => row.uniqueKey);
-    
+    const currentlySelectedKeys = currentlySelectedRows.map(
+      (row) => row.uniqueKey,
+    );
+
     // Get keys of currently visible rows in the datatable
-    const visibleKeys = this.filteredMetadata.map(row => row.uniqueKey);
-    
+    const visibleKeys = this.filteredMetadata.map((row) => row.uniqueKey);
+
     // Remove unselected visible keys from master list
-    this.selectedRowKeys = this.selectedRowKeys.filter(key => !visibleKeys.includes(key));
-    
+    this.selectedRowKeys = this.selectedRowKeys.filter(
+      (key) => !visibleKeys.includes(key),
+    );
+
     // Add newly selected keys
     this.selectedRowKeys = [...this.selectedRowKeys, ...currentlySelectedKeys];
-    
+
     // Update selectedRows to include all selected items from metadata (not just filtered)
-    this.selectedRows = this.metadata.filter(row => this.selectedRowKeys.includes(row.uniqueKey));
+    this.selectedRows = this.metadata.filter((row) =>
+      this.selectedRowKeys.includes(row.uniqueKey),
+    );
   }
 
   handleMetadataTypeChange(event) {
@@ -314,12 +332,20 @@ export default class MetadataRetriever extends LightningElement {
       data: {
         username: this.selectedOrg,
         queryMode: this.queryMode,
-        metadataType: this.metadataType && this.metadataType !== "All" ? this.metadataType : null,
+        metadataType:
+          this.metadataType && this.metadataType !== "All"
+            ? this.metadataType
+            : null,
         metadataName: this.metadataName || null,
-        packageFilter: this.packageFilter && this.packageFilter !== "All" ? this.packageFilter : null,
-        lastUpdatedBy: this.isRecentChangesMode ? (this.lastUpdatedBy || null) : null,
-        dateFrom: this.isRecentChangesMode ? (this.dateFrom || null) : null,
-        dateTo: this.isRecentChangesMode ? (this.dateTo || null) : null,
+        packageFilter:
+          this.packageFilter && this.packageFilter !== "All"
+            ? this.packageFilter
+            : null,
+        lastUpdatedBy: this.isRecentChangesMode
+          ? this.lastUpdatedBy || null
+          : null,
+        dateFrom: this.isRecentChangesMode ? this.dateFrom || null : null,
+        dateTo: this.isRecentChangesMode ? this.dateTo || null : null,
       },
     });
   }
@@ -334,7 +360,7 @@ export default class MetadataRetriever extends LightningElement {
       type: "retrieveSelectedMetadata",
       data: {
         username: this.selectedOrg,
-        metadata: this.selectedRows.map(row => ({
+        metadata: this.selectedRows.map((row) => ({
           memberType: row.MemberType,
           memberName: row.MemberName,
         })),
@@ -367,8 +393,7 @@ export default class MetadataRetriever extends LightningElement {
       fromDate = new Date(this.dateFrom);
       if (!isNaN(fromDate.getTime())) {
         fromDate.setHours(0, 0, 0, 0);
-      }
-      else {
+      } else {
         fromDate = null;
       }
     }
@@ -378,15 +403,18 @@ export default class MetadataRetriever extends LightningElement {
       toDate = new Date(this.dateTo);
       if (!isNaN(toDate.getTime())) {
         toDate.setHours(23, 59, 59, 999);
-      }
-      else {
+      } else {
         toDate = null;
       }
     }
 
     // Cache lowercase strings to avoid multiple toLowerCase() calls
-    const metadataNameLower = this.metadataName ? this.metadataName.toLowerCase() : null;
-    const userLower = this.lastUpdatedBy ? this.lastUpdatedBy.toLowerCase() : null;
+    const metadataNameLower = this.metadataName
+      ? this.metadataName.toLowerCase()
+      : null;
+    const userLower = this.lastUpdatedBy
+      ? this.lastUpdatedBy.toLowerCase()
+      : null;
     const searchLower = this.searchTerm ? this.searchTerm.toLowerCase() : null;
 
     // Single pass filtering
@@ -400,14 +428,20 @@ export default class MetadataRetriever extends LightningElement {
 
       // Apply metadata name filter
       if (metadataNameLower) {
-        if (!item.MemberName || !item.MemberName.toLowerCase().includes(metadataNameLower)) {
+        if (
+          !item.MemberName ||
+          !item.MemberName.toLowerCase().includes(metadataNameLower)
+        ) {
           return false;
         }
       }
 
       // Apply last updated by filter
       if (userLower) {
-        if (!item.LastModifiedByName || !item.LastModifiedByName.toLowerCase().includes(userLower)) {
+        if (
+          !item.LastModifiedByName ||
+          !item.LastModifiedByName.toLowerCase().includes(userLower)
+        ) {
           return false;
         }
       }
@@ -431,31 +465,41 @@ export default class MetadataRetriever extends LightningElement {
       if (this.packageFilter && this.packageFilter !== "All") {
         const pf = this.packageFilter;
         const fullName = item.MemberName || "";
-        const compName = fullName.includes(".") ? fullName.split(".").pop() || fullName : fullName;
+        const compName = fullName.includes(".")
+          ? fullName.split(".").pop() || fullName
+          : fullName;
         if (pf === "Local") {
           // Local = ends with official suffix AND has only one __ (no namespace prefix)
           const doubleUnderscoreCount = (compName.match(/__/g) || []).length;
-          
+
           if (doubleUnderscoreCount === 0) {
             // No __ at all -> local (standard metadata)
             return true;
           }
-          
+
           if (doubleUnderscoreCount === 1) {
             // One __: check if it's an official suffix
-            const officialSuffixes = ["__c", "__r", "__x", "__s", "__mdt", "__b"];
-            const hasOfficialSuffix = officialSuffixes.some(suffix => compName.endsWith(suffix));
+            const officialSuffixes = [
+              "__c",
+              "__r",
+              "__x",
+              "__s",
+              "__mdt",
+              "__b",
+            ];
+            const hasOfficialSuffix = officialSuffixes.some((suffix) =>
+              compName.endsWith(suffix),
+            );
             if (hasOfficialSuffix) {
               return true; // local
             }
             // One __ but no official suffix (e.g., CodeBuilder__something) -> packaged
             return false;
           }
-          
+
           // Multiple __ -> packaged
           return false;
-        }
-        else {
+        } else {
           // Component segment must start with namespace__ pattern
           const nsPattern = `${pf}__`;
           if (!compName.startsWith(nsPattern)) {
@@ -467,9 +511,12 @@ export default class MetadataRetriever extends LightningElement {
       // Apply search term filter (searches across all fields)
       if (searchLower) {
         const matchesSearch =
-          (item.MemberType && item.MemberType.toLowerCase().includes(searchLower)) ||
-          (item.MemberName && item.MemberName.toLowerCase().includes(searchLower)) ||
-          (item.LastModifiedByName && item.LastModifiedByName.toLowerCase().includes(searchLower));
+          (item.MemberType &&
+            item.MemberType.toLowerCase().includes(searchLower)) ||
+          (item.MemberName &&
+            item.MemberName.toLowerCase().includes(searchLower)) ||
+          (item.LastModifiedByName &&
+            item.LastModifiedByName.toLowerCase().includes(searchLower));
         if (!matchesSearch) {
           return false;
         }
@@ -503,17 +550,13 @@ export default class MetadataRetriever extends LightningElement {
   handleMessage(type, data) {
     if (type === "initialize") {
       this.initialize(data);
-    }
-    else if (type === "listOrgsResults") {
+    } else if (type === "listOrgsResults") {
       this.handleOrgResults(data);
-    }
-    else if (type === "listPackagesResults") {
+    } else if (type === "listPackagesResults") {
       this.handleListPackagesResults(data);
-    }
-    else if (type === "queryResults") {
+    } else if (type === "queryResults") {
       this.handleQueryResults(data);
-    }
-    else if (type === "queryError") {
+    } else if (type === "queryError") {
       this.handleQueryError(data);
     }
   }
@@ -527,7 +570,10 @@ export default class MetadataRetriever extends LightningElement {
         this.selectedOrg = data.selectedOrgUsername;
         // Trigger package loading for the selected org
         this.isLoadingPackages = true;
-        window.sendMessageToVSCode({ type: "listPackages", data: { username: this.selectedOrg } });
+        window.sendMessageToVSCode({
+          type: "listPackages",
+          data: { username: this.selectedOrg },
+        });
       }
     }
   }
@@ -536,10 +582,12 @@ export default class MetadataRetriever extends LightningElement {
     this.isLoadingPackages = false;
     if (data && data.packages && Array.isArray(data.packages)) {
       this.packageOptions = data.packages;
-    }
-    else {
+    } else {
       // Fallback to default options
-      this.packageOptions = [{ label: "All", value: "All" }, { label: "Local", value: "Local" }];
+      this.packageOptions = [
+        { label: "All", value: "All" },
+        { label: "Local", value: "Local" },
+      ];
     }
   }
 
@@ -552,12 +600,14 @@ export default class MetadataRetriever extends LightningElement {
         MemberType: record.MemberType,
         LastModifiedDate: record.LastModifiedDate,
         // Handle both SourceMember format (LastModifiedBy.Name) and Metadata API format (lastModifiedByName)
-        LastModifiedByName: record.LastModifiedByName || (record.LastModifiedBy ? record.LastModifiedBy.Name : "") || "",
+        LastModifiedByName:
+          record.LastModifiedByName ||
+          (record.LastModifiedBy ? record.LastModifiedBy.Name : "") ||
+          "",
         uniqueKey: `${record.MemberType}::${record.MemberName}`,
       }));
       this.applyFilters();
-    }
-    else {
+    } else {
       this.metadata = [];
       this.filteredMetadata = [];
     }
@@ -565,7 +615,10 @@ export default class MetadataRetriever extends LightningElement {
 
   handleQueryError(data) {
     this.isLoading = false;
-    this.error = data && data.message ? data.message : "An error occurred while querying metadata";
+    this.error =
+      data && data.message
+        ? data.message
+        : "An error occurred while querying metadata";
     this.metadata = [];
     this.filteredMetadata = [];
   }

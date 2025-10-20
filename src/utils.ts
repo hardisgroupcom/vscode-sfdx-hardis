@@ -456,7 +456,6 @@ export function findInOrgCache(orgCriteria: any) {
 
 export function listLocalSfConfigFilePaths(): string[] {
   return [".sf/config.json", ".sfdx/sfdx-config.json"];
-;
 }
 
 export async function listLocalSfConfigFiles(): Promise<string[]> {
@@ -480,8 +479,7 @@ export async function listLocalSfConfigFilesContent(): Promise<any[]> {
       const fileContent = fs.readFileSync(configFilePath).toString();
       const parsedContent = JSON.parse(fileContent);
       configFilesContent.push(parsedContent);
-    }
-    catch {
+    } catch {
       // ignore parse errors
     }
   }
@@ -493,8 +491,7 @@ export async function getDefaultTargetOrgUsername(): Promise<string | null> {
   for (const sfdxConfig of sfdxConfigs) {
     if (sfdxConfig["target-org"]) {
       return sfdxConfig["target-org"];
-    }
-    else if (sfdxConfig["defaultusername"]) {
+    } else if (sfdxConfig["defaultusername"]) {
       return sfdxConfig["defaultusername"];
     }
   }
