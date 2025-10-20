@@ -1,30 +1,28 @@
 import * as vscode from "vscode";
 import { Commands } from "../commands";
 import { LwcPanelManager } from "../lwc-panel-manager";
-import { listAllOrgs } from "../utils/orgUtils";
-import { execSfdxJson } from "../utils";
+import { listAllOrgs, SalesforceOrg } from "../utils/orgUtils";
+import { execSfdxJson, getDefaultTargetOrgUsername, getUsernameInstanceUrl } from "../utils";
 import { Logger } from "../logger";
 import { listMetadataTypes } from "../utils/metadataList";
+import { LwcUiPanel } from "../webviews/lwc-ui-panel";
 
 export function registerShowMetadataRetriever(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
     "vscode-sfdx-hardis.showMetadataRetriever",
     async () => {
 
-      // List all orgs and get default one
-      const orgs = await vscode.window.withProgress({
-          location: vscode.ProgressLocation.Notification,
-          title: "Initializing Metadata Retriever...",
-          cancellable: false,
+      // Get selected org username
+      const selectedOrgUsername = await getDefaultTargetOrgUsername();
+      const instanceUrl = await getUsernameInstanceUrl(selectedOrgUsername || "");
+      const connectedOrgs: SalesforceOrg[] = selectedOrgUsername ? [
+        {
+          username: selectedOrgUsername,
+          isDefaultUsername: true,
+          connectedStatus: "Connected",
+          instanceUrl: instanceUrl || "",
         },
-        async () => {
-          return await listAllOrgs(false);
-        }
-      );
-      
-      // Filter connected orgs and find default from the connected list
-      const connectedOrgs = orgs.filter((org) => org.connectedStatus === "Connected");
-      const selectedOrg = connectedOrgs.find((org) => org.isDefaultUsername) || connectedOrgs[0];
+      ] : [];
 
       // Get metadata types list
       const metadataTypes = listMetadataTypes();
@@ -37,7 +35,7 @@ export function registerShowMetadataRetriever(commands: Commands) {
         "s-metadata-retriever",
         {
           orgs: connectedOrgs,
-          selectedOrgUsername: selectedOrg?.username || null,
+          selectedOrgUsername: selectedOrgUsername,
           metadataTypes: metadataTypeOptions,
         },
       );
@@ -45,7 +43,10 @@ export function registerShowMetadataRetriever(commands: Commands) {
 
       // Register message handlers
       panel.onMessage(async (type, data) => {
-        if (type === "queryMetadata") {
+        if (type === "listOrgs") {
+          await handleListOrgs(panel);
+        }
+        else if (type === "queryMetadata") {
           await handleQueryMetadata(panel, data);
         }
         else if (type === "retrieveMetadata") {
@@ -58,6 +59,22 @@ export function registerShowMetadataRetriever(commands: Commands) {
     },
   );
   commands.disposables.push(disposable);
+}
+
+async function handleListOrgs(panel: LwcUiPanel) {
+  // List all orgs and get default one
+  const orgs = await listAllOrgs(false);
+  
+  // Filter connected orgs and find default from the connected list
+  const connectedOrgs = orgs.filter((org) => org.connectedStatus === "Connected");
+  const selectedOrg = connectedOrgs.find((org) => org.isDefaultUsername) || connectedOrgs[0];
+  panel.sendMessage({
+    type: "listOrgsResults",
+    data: {
+      orgs: connectedOrgs,
+      selectedOrgUsername: selectedOrg?.username || null,
+    },
+  });
 }
 
 async function executeMetadataRetrieve(

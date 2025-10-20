@@ -16,6 +16,8 @@ export default class MetadataRetriever extends LightningElement {
   @track dateFrom = "";
   @track dateTo = "";
   @track searchTerm = "";
+  @track isLoadingOrgs = false;
+  @track isLoadingPackages = false;
   @track isLoading = false;
   @track metadata = [];
   @track filteredMetadata = [];
@@ -103,10 +105,16 @@ export default class MetadataRetriever extends LightningElement {
       return nameA.localeCompare(nameB);
     });
 
-    return sortedOrgs.map((org) => ({
+    const sortedOrgsValues = sortedOrgs.map((org) => ({
       label: formatLabel(org),
       value: org.username,
     }));
+
+    if (this.isLoadingOrgs) {
+      sortedOrgsValues.push({ label: "Loading...", value: "" });
+    }
+
+    return sortedOrgsValues;
   }
 
   get metadataTypeOptions() {
@@ -169,6 +177,12 @@ export default class MetadataRetriever extends LightningElement {
     return count > 0 ? `Retrieve ${count} Selected Metadata` : "Retrieve Selected Metadata";
   }
 
+  connectedCallback() {
+    // Notify VS Code that the component is initialized
+    this.isLoadingOrgs = true;
+    window.sendMessageToVSCode({ type: "listOrgs" });
+  }
+
   @api
   initialize(data) {
     if (data) {
@@ -190,6 +204,7 @@ export default class MetadataRetriever extends LightningElement {
 
   handleOrgChange(event) {
     this.selectedOrg = event.detail.value;
+    
   }
 
   handleQueryModeChange(event) {
@@ -438,11 +453,25 @@ export default class MetadataRetriever extends LightningElement {
     if (type === "initialize") {
       this.initialize(data);
     }
+    else if (type === "listOrgsResults") {
+      this.handleOrgResults(data);
+    }
     else if (type === "queryResults") {
       this.handleQueryResults(data);
     }
     else if (type === "queryError") {
       this.handleQueryError(data);
+    }
+  }
+
+  handleOrgResults(data) {
+    this.isLoadingOrgs = false;
+    if (data && data.orgs && Array.isArray(data.orgs)) {
+      this.orgs = data.orgs;
+      // Set default org if provided or use first available
+      if (data.selectedOrgUsername) {
+        this.selectedOrg = data.selectedOrgUsername;
+      }
     }
   }
 
