@@ -773,6 +773,6 @@ export async function listSfdxProjectPackageDirectories() {
     }
   } catch {
     packageDirs = [];
-  } 
+  }
   return packageDirs;
 }

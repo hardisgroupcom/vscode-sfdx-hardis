@@ -716,7 +716,9 @@ export default class MetadataRetriever extends LightningElement {
     // button-icon columns provide event.detail.name directly
     const row = event.detail.row || event.detail.payload;
     const actionName =
-      (event.detail.action && event.detail.action.name) || event.detail.name || null;
+      (event.detail.action && event.detail.action.name) ||
+      event.detail.name ||
+      null;
 
     if (actionName === "download") {
       // support legacy 'retrieve' and new 'download' name
@@ -794,9 +796,13 @@ export default class MetadataRetriever extends LightningElement {
 
       if (this.selectedRowKeys && this.selectedRowKeys.length > 0) {
         const beforeCount = this.selectedRowKeys.length;
-        this.selectedRowKeys = this.selectedRowKeys.filter((k) => !keysToRemove.has(k));
+        this.selectedRowKeys = this.selectedRowKeys.filter(
+          (k) => !keysToRemove.has(k),
+        );
         // Recompute selectedRows based on remaining selectedRowKeys
-        this.selectedRows = this.metadata.filter((row) => this.selectedRowKeys.includes(row.uniqueKey));
+        this.selectedRows = this.metadata.filter((row) =>
+          this.selectedRowKeys.includes(row.uniqueKey),
+        );
         if (this.selectedRowKeys.length !== beforeCount) {
           changed = true;
         }
@@ -921,8 +927,12 @@ export default class MetadataRetriever extends LightningElement {
   // is visible in the viewport and whether there are selected rows.
   checkRetrieveButtonVisibility() {
     try {
-      const floating = this.template.querySelector('[data-id="retrieve-button-floating"]');
-      const mainBtn = this.template.querySelector('[data-id="retrieve-button"]');
+      const floating = this.template.querySelector(
+        '[data-id="retrieve-button-floating"]',
+      );
+      const mainBtn = this.template.querySelector(
+        '[data-id="retrieve-button"]',
+      );
 
       if (!floating) {
         return;
@@ -942,7 +952,8 @@ export default class MetadataRetriever extends LightningElement {
 
       // Check if main button is fully visible in the viewport
       const rect = mainBtn.getBoundingClientRect();
-      const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+      const viewportHeight =
+        window.innerHeight || document.documentElement.clientHeight;
       const isFullyVisible = rect.top >= 0 && rect.bottom <= viewportHeight;
 
       if (isFullyVisible) {
@@ -953,7 +964,9 @@ export default class MetadataRetriever extends LightningElement {
     } catch (e) {
       // In case of any unexpected DOM issues, hide the floating button to be safe
       try {
-        const floating = this.template.querySelector('[data-id="retrieve-button-floating"]');
+        const floating = this.template.querySelector(
+          '[data-id="retrieve-button-floating"]',
+        );
         if (floating) {
           floating.classList.remove("visible");
         }
