@@ -1,5 +1,5 @@
 <template>
-  <div class="slds-p-around_small blue-back">
+  <div class="slds-p-around_x-small blue-back">
     <lightning-card title="Sfdx-Hardis Metadata Retriever" icon-name="custom:custom63">
       <!-- Selected Org and Query Mode in Card Header -->
       <div slot="actions" class="slds-grid slds-grid_align-end slds-gutters_small slds-grid_vertical-align-start">
@@ -29,8 +29,8 @@
       </div>
 
       <!-- Filters Section -->
-      <div class="slds-p-around_small">
-        <div class="slds-grid slds-gutters slds-wrap">
+      <div class="slds-p-around_x-small">
+        <div class="slds-grid slds-gutters_x-small slds-wrap">
           <!-- Metadata Type Filter -->
           <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-large-size_1-of-6">
             <lightning-combobox
@@ -97,21 +97,40 @@
         </div>
 
         <!-- Action Buttons -->
-        <div class="slds-m-top_small">
-          <lightning-button
-            variant="brand"
-            label="Search"
-            icon-name="utility:search"
-            onclick={handleSearch}
-            disabled={cannotSearch}
-            class="slds-m-right_x-small"
-          ></lightning-button>
-          <lightning-button
-            variant="neutral"
-            label="Clear Filters"
-            icon-name="utility:clear"
-            onclick={handleClearFilters}
-          ></lightning-button>
+        <div class="slds-m-top_x-small slds-grid slds-grid_vertical-align-center slds-grid_align-spread">
+          <div class="slds-col">
+            <lightning-button
+              variant="brand"
+              label="Search"
+              icon-name="utility:search"
+              onclick={handleSearch}
+              disabled={cannotSearch}
+              class="slds-m-right_small"
+              size="small"
+            ></lightning-button>
+            <lightning-button
+              variant="neutral"
+              label="Clear Filters"
+              icon-name="utility:clear"
+              onclick={handleClearFilters}
+              size="small"
+            ></lightning-button>
+          </div>
+          <div class="slds-col slds-no-flex slds-form-element slds-form-element_compact">
+            <div class="slds-form-element__control slds-grid slds-grid_vertical-align-center" style="align-items:center;">
+              <div class="slds-m-right_x-small slds-text-body_regular slds-align-middle">Check local files</div>
+              <lightning-input
+                type="toggle"
+                label="Check local files"
+                aria-label="Check local files"
+                checked={checkLocalFiles}
+                onchange={handleCheckLocalChange}
+                variant="label-hidden"
+                disabled={checkLocalDisabled}
+                title={checkLocalTooltip}
+              ></lightning-input>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -133,9 +152,17 @@
         </div>
       </template>
 
+      <!-- Initial Prompt (before any search) -->
+      <template if:false={hasSearched}>
+        <div class="slds-p-around_small slds-text-align_center slds-text-color_weak">
+          <h3 class="slds-text-heading_medium">No search performed yet</h3>
+          <p>Click the <strong>Search</strong> button to query metadata for the selected org.</p>
+        </div>
+      </template>
+
       <!-- Results Datatable -->
       <template if:true={hasResults}>
-        <div class="slds-p-around_small">
+        <div class="slds-p-around_x-small">
           <div class="slds-grid slds-grid_vertical-align-center slds-m-bottom_small">
             <div class="slds-col slds-no-flex">
               <span class="slds-text-title_caps slds-text-color_weak">
@@ -154,6 +181,7 @@
             <template if:true={hasSelectedRows}>
               <div class="slds-col slds-no-flex">
                 <lightning-button
+                  data-id="retrieve-button"
                   variant="success"
                   label={retrieveSelectedLabel}
                   icon-name="utility:download"
@@ -176,6 +204,31 @@
             sorted-direction={sortDirection}
           ></lightning-datatable>
         </div>
+      </template>
+
+      <!-- Floating retrieve button (shown when main retrieve button is off-screen) -->
+      <div class="retrieve-floating" data-id="retrieve-button-floating">
+        <lightning-button
+          variant="success"
+          label={retrieveSelectedLabel}
+          icon-name="utility:download"
+          onclick={handleRetrieveSelected}
+        ></lightning-button>
+      </div>
+
+      <!-- Hidden feature modal (obfuscated identifiers) -->
+      <template if:true={showFeature}>
+        <section role="dialog" tabindex="-1" data-feature data-feature-id={featureId} aria-modal="true">
+          <div data-feature-backdrop onclick={hideFeature}></div>
+          <div data-feature-content>
+            <button data-feature-close onclick={hideFeature} title="Close">×</button>
+            <div data-feature-body>
+              <img src={featureLogoImg} alt="" />
+              <h2>Surprise ❤️</h2>
+              <p>You've found the secret, enjoy!</p>
+            </div>
+          </div>
+        </section>
       </template>
 
       <!-- No Results Message -->
