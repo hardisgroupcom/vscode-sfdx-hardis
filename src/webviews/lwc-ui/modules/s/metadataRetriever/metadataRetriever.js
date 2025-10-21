@@ -481,6 +481,7 @@ export default class MetadataRetriever extends LightningElement {
         metadata: this.selectedRows.map((row) => ({
           memberType: row.MemberType,
           memberName: row.MemberName,
+          deleted: row.ChangeIcon === "🔴",
         })),
       },
     });
@@ -664,6 +665,7 @@ export default class MetadataRetriever extends LightningElement {
         username: this.selectedOrg,
         memberType: row.MemberType,
         memberName: row.MemberName,
+        deleted: row.ChangeIcon === "🔴",
       },
     });
   }

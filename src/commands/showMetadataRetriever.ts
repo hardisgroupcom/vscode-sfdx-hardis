@@ -6,12 +6,14 @@ import {
   execSfdxJson,
   getDefaultTargetOrgUsername,
   getUsernameInstanceUrl,
+  getWorkspaceRoot,
   listSfdxProjectPackageDirectories,
 } from "../utils";
 import { Logger } from "../logger";
 import { listMetadataTypes } from "../utils/metadataList";
 import fg from "fast-glob";
 import * as path from "path";
+import * as fs from "fs-extra";
 import { LwcUiPanel } from "../webviews/lwc-ui-panel";
 
 export function registerShowMetadataRetriever(commands: Commands) {
@@ -125,16 +127,16 @@ async function handleListOrgs(panel: LwcUiPanel) {
 
 async function executeMetadataRetrieve(
   username: string,
-  metadataList: string,
-  workspaceRoot: string,
+  metadataList: any[],
   displayTitle: string,
   panel: LwcUiPanel,
   forceOverwrite = false
 ): Promise<any> {
   // Split metadata list and create separate --metadata flags for each item
+  const workspaceRoot = getWorkspaceRoot();
   const metadataItems = metadataList
-    .split(",")
-    .map((item) => `--metadata "${item}"`)
+    .filter((item) => !(item?.deleted === true))
+    .map((item) => `--metadata "${item.memberType}:${item.memberName}"`)
     .join(" ");
   const command = `sf project retrieve start ${metadataItems} --target-org ${username}`
                   + (forceOverwrite ? ' --ignore-conflicts' : '')
@@ -164,7 +166,6 @@ async function executeMetadataRetrieve(
        return await executeMetadataRetrieve(
           username,
           metadataList,
-          workspaceRoot,
           displayTitle,
           panel,
           true
@@ -174,6 +175,43 @@ async function executeMetadataRetrieve(
     }
 
     finalResult = result;
+
+    // Delete files corresponding to deleted items
+    const deletedItems = metadataList.filter((item) => item?.deleted === true);
+    if (deletedItems.length > 0) {
+      const packages = await listSfdxProjectPackageDirectories();
+      const metadataTypes = listMetadataTypes();
+      const deletedItemsSuccess: any = [];
+      for (const delItem of deletedItems) {
+        const metadataType = metadataTypes.find(mt => mt.xmlName === delItem.memberType);
+        if (!metadataType) {
+          continue;
+        }
+        const candidateGlobPatterns = [...buildMetadataKeys(delItem.memberName,metadataType)];
+        const fileSearchPatterns = candidateGlobPatterns.flatMap((pattern => {
+          return packages.map((pkgDir) => path.join(pkgDir,"**", pattern).replace(/\\/g, "/" ));
+        }));
+        const filesToDelete = await fg(fileSearchPatterns, { dot: true });
+        for (const filePath of filesToDelete) {
+          try {
+            await fs.rm(filePath);
+            deletedItemsSuccess.push(delItem);
+          } catch (err) {
+            Logger.log(`Error deleting file ${filePath}: ${err}`);
+          }
+        }
+      }
+      if (deletedItemsSuccess.length > 0) {
+        vscode.window.showInformationMessage(
+          `Successfully deleted ${deletedItemsSuccess.length} local file(s) corresponding to deleted metadata.`,
+          "View and commit files"
+        ).then((action) => {
+          if (action === "View and commit files") {
+            vscode.commands.executeCommand("workbench.view.scm");
+          }
+        });
+      }
+    }
 
     // Prepare singleName here so it's available both when result has content and in the fallback error branch
     let singleName: string | null = null;
@@ -199,7 +237,6 @@ async function executeMetadataRetrieve(
       }
       if (!singleName && metadataList) {
         const requested = metadataList
-          .split(",")
           .map((s) => s.trim())
           .filter(Boolean);
         if (requested.length === 1) {
@@ -894,25 +931,7 @@ async function annotateLocalFiles(records: any[]): Promise<any[]> {
         const name = (r.MemberName || r.fullName || "");
 
         // keys to try
-        const candidateKeys = new Set<string>();
-        const splitName = name.includes(".") ? name.split(".") : [name];
-        if (splitName.length > 1 && mt.directoryName) {
-          // handle foldered metadata (e.g. CustomField, EmailTemplate, Dashboard, Report)
-          const parentApiName = splitName.slice(0, -1).join("/");
-          const componentName = splitName.slice(-1)[0];
-          if (mt.suffix) {
-            candidateKeys.add(`/${parentApiName}/${mt.directoryName}/${componentName}.${mt.suffix}`);
-            candidateKeys.add(`/${parentApiName}/${mt.directoryName}/${componentName}.${mt.suffix}-meta.xml`);
-          }
-          else {
-            candidateKeys.add(`/${parentApiName}/${mt.directoryName}/${componentName}`);
-            candidateKeys.add(`/${parentApiName}/${mt.directoryName}/${componentName}-meta.xml`);
-          }
-        }
-        else if (mt.suffix) {
-          candidateKeys.add(`/${name}.${mt.suffix}`);
-          candidateKeys.add(`/${name}.${mt.suffix}-meta.xml`);
-        }
+        const candidateKeys = buildMetadataKeys(name, mt);
 
         // check per packageDir index
         let exists = false;
@@ -945,6 +964,29 @@ async function annotateLocalFiles(records: any[]): Promise<any[]> {
   }
 }
 
+function buildMetadataKeys(name: any, mt: any) {
+  const candidateKeys = new Set<string>();
+  const splitName = name.includes(".") ? name.split(".") : [name];
+  if (splitName.length > 1 && mt.directoryName) {
+    // handle foldered metadata (e.g. CustomField, EmailTemplate, Dashboard, Report)
+    const parentApiName = splitName.slice(0, -1).join("/");
+    const componentName = splitName.slice(-1)[0];
+    if (mt.suffix) {
+      candidateKeys.add(`/${parentApiName}/${mt.directoryName}/${componentName}.${mt.suffix}`);
+      candidateKeys.add(`/${parentApiName}/${mt.directoryName}/${componentName}.${mt.suffix}-meta.xml`);
+    }
+    else {
+      candidateKeys.add(`/${parentApiName}/${mt.directoryName}/${componentName}`);
+      candidateKeys.add(`/${parentApiName}/${mt.directoryName}/${componentName}-meta.xml`);
+    }
+  }
+  else if (mt.suffix) {
+    candidateKeys.add(`/${name}.${mt.suffix}`);
+    candidateKeys.add(`/${name}.${mt.suffix}-meta.xml`);
+  }
+  return candidateKeys;
+}
+
 /* jscpd:ignore-start */
 async function handleRetrieveSelectedMetadata(panel: any, data: any) {
   try {
@@ -969,17 +1011,9 @@ async function handleRetrieveSelectedMetadata(panel: any, data: any) {
       return;
     }
 
-    const workspaceRoot = workspaceFolders[0].uri.fsPath;
-
-    // Build metadata list for command
-    const metadataList = metadata
-      .map((m) => `${m.memberType}:${m.memberName}`)
-      .join(",");
-
     await executeMetadataRetrieve(
       username,
-      metadataList,
-      workspaceRoot,
+      metadata,
       `Retrieving ${metadata.length} metadata item(s)`,
       panel,
     );
@@ -992,7 +1026,7 @@ async function handleRetrieveSelectedMetadata(panel: any, data: any) {
 
 async function handleRetrieveMetadata(panel: any, data: any) {
   try {
-    const { username, memberType, memberName } = data;
+    const { username, memberType, memberName, deleted } = data;
 
     if (!username || !memberType || !memberName) {
       vscode.window.showErrorMessage(
@@ -1008,15 +1042,18 @@ async function handleRetrieveMetadata(panel: any, data: any) {
       return;
     }
 
-    const workspaceRoot = workspaceFolders[0].uri.fsPath;
-
     // Build metadata list for command
-    const metadataList = `${memberType}:${memberName}`;
+    const metadata = [
+      {
+        memberType,
+        memberName,
+        deleted: deleted ??  false
+      }
+    ]
 
     await executeMetadataRetrieve(
       username,
-      metadataList,
-      workspaceRoot,
+      metadata,
       `Retrieving ${memberType}: ${memberName}`,
       panel
     );
