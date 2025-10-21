@@ -1,3 +1,29 @@
+/* Smooth transition for floating retrieve button */
+.retrieve-floating {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 9999;
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+  transition: opacity 200ms ease, transform 200ms ease;
+}
+
+.retrieve-floating.visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .retrieve-floating,
+  .retrieve-floating.visible {
+    transition: none;
+    transform: none;
+  }
+}
 .blue-back {
 	background: #EDF4FF;
 	min-height: 100vh;

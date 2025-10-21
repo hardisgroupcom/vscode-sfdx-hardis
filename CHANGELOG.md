@@ -11,6 +11,7 @@
   - When operation is deleted, delete locally the file in the repo if existing
   - Unselect retrieved files from results after retrieval
   - List the metadatas available in the selected org (lazy loading)
+  - Display floating button to retrieve metadata when we scrolled down
 
 ## [6.14.0] 2024-10-21
 

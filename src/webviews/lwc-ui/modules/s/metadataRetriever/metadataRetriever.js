@@ -254,6 +254,37 @@ export default class MetadataRetriever extends LightningElement {
     // Notify VS Code that the component is initialized
     this.isLoadingOrgs = true;
     window.sendMessageToVSCode({ type: "listOrgs" });
+    // Bind a debounced visibility check for the floating retrieve button
+    this._visibilityDebounceTimer = null;
+    this._boundDoDebouncedCheck = () => {
+      // Debounce: wait a small time before performing the expensive DOM checks
+      if (this._visibilityDebounceTimer) {
+        clearTimeout(this._visibilityDebounceTimer);
+      }
+      this._visibilityDebounceTimer = setTimeout(() => {
+        this.checkRetrieveButtonVisibility();
+        this._visibilityDebounceTimer = null;
+      }, 120); // 120ms debounce to avoid layout thrashing during scroll/resize
+    };
+
+    // Listen to global scroll/resize events to detect when the main button goes off-screen
+    window.addEventListener("scroll", this._boundDoDebouncedCheck, true);
+    window.addEventListener("resize", this._boundDoDebouncedCheck);
+    // Initial evaluation after the UI has rendered
+    setTimeout(() => this._boundDoDebouncedCheck(), 50);
+  }
+
+  disconnectedCallback() {
+    // Clean up listeners
+    if (this._boundDoDebouncedCheck) {
+      window.removeEventListener("scroll", this._boundDoDebouncedCheck, true);
+      window.removeEventListener("resize", this._boundDoDebouncedCheck);
+      this._boundDoDebouncedCheck = null;
+    }
+    if (this._visibilityDebounceTimer) {
+      clearTimeout(this._visibilityDebounceTimer);
+      this._visibilityDebounceTimer = null;
+    }
   }
 
   @api
@@ -375,6 +406,10 @@ export default class MetadataRetriever extends LightningElement {
     this.selectedRows = this.metadata.filter((row) =>
       this.selectedRowKeys.includes(row.uniqueKey),
     );
+
+    // Update floating retrieve button visibility after selection changes
+    // Use a timeout to ensure DOM updates are applied before measuring
+    setTimeout(() => this.checkRetrieveButtonVisibility(), 0);
   }
 
   handleMetadataTypeChange(event) {
@@ -737,6 +772,8 @@ export default class MetadataRetriever extends LightningElement {
     if (changed) {
       // Re-apply client-side filters to refresh the datatable
       this.applyFilters();
+      // Re-evaluate floating button visibility since selection/rows might have changed
+      setTimeout(() => this.checkRetrieveButtonVisibility(), 0);
     }
   }
 
@@ -842,5 +879,51 @@ export default class MetadataRetriever extends LightningElement {
       return isReverse * ((x > y) - (y > x));
     });
     this.filteredMetadata = parseData;
+  }
+
+  // Show/hide the floating retrieve button depending on whether the main button
+  // is visible in the viewport and whether there are selected rows.
+  checkRetrieveButtonVisibility() {
+    try {
+      const floating = this.template.querySelector('[data-id="retrieve-button-floating"]');
+      const mainBtn = this.template.querySelector('[data-id="retrieve-button"]');
+
+      if (!floating) {
+        return;
+      }
+
+      // If no selected rows, always hide floating button
+      if (!this.hasSelectedRows) {
+        floating.classList.remove("visible");
+        return;
+      }
+
+      // If main button is not present in DOM, show floating button
+      if (!mainBtn) {
+        floating.classList.add("visible");
+        return;
+      }
+
+      // Check if main button is fully visible in the viewport
+      const rect = mainBtn.getBoundingClientRect();
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+      const isFullyVisible = rect.top >= 0 && rect.bottom <= viewportHeight;
+
+      if (isFullyVisible) {
+        floating.classList.remove("visible");
+      } else {
+        floating.classList.add("visible");
+      }
+    } catch (e) {
+      // In case of any unexpected DOM issues, hide the floating button to be safe
+      try {
+        const floating = this.template.querySelector('[data-id="retrieve-button-floating"]');
+        if (floating) {
+          floating.classList.remove("visible");
+        }
+      } catch (e2) {
+        // swallow
+      }
+    }
   }
 }

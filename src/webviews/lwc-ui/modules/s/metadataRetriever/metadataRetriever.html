@@ -181,6 +181,7 @@
             <template if:true={hasSelectedRows}>
               <div class="slds-col slds-no-flex">
                 <lightning-button
+                  data-id="retrieve-button"
                   variant="success"
                   label={retrieveSelectedLabel}
                   icon-name="utility:download"
@@ -204,6 +205,16 @@
           ></lightning-datatable>
         </div>
       </template>
+
+      <!-- Floating retrieve button (shown when main retrieve button is off-screen) -->
+      <div class="retrieve-floating" data-id="retrieve-button-floating">
+        <lightning-button
+          variant="success"
+          label={retrieveSelectedLabel}
+          icon-name="utility:download"
+          onclick={handleRetrieveSelected}
+        ></lightning-button>
+      </div>
 
       <!-- No Results Message -->
       <template if:true={noResults}>
