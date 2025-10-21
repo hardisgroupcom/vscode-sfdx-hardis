@@ -267,6 +267,10 @@ export default class MetadataRetriever extends LightningElement {
         } else if (this.orgs.length > 0) {
           this.selectedOrg = this.orgs[0].username;
         }
+        window.sendMessageToVSCode({
+          type: "listMetadataTypes",
+          data: { username: this.selectedOrg },
+        });
       }
       if (data.metadataTypes && Array.isArray(data.metadataTypes)) {
         this.metadataTypes = data.metadataTypes;
@@ -301,6 +305,11 @@ export default class MetadataRetriever extends LightningElement {
     });
     // Reset package filter to All
     this.packageFilter = "All";
+    // When org changes, lazy-load available metadatas for that org
+    window.sendMessageToVSCode({
+      type: "listMetadataTypes",
+      data: { username: this.selectedOrg },
+    });
   }
 
   handleCheckLocalChange(event) {
@@ -667,6 +676,8 @@ export default class MetadataRetriever extends LightningElement {
       this.handleOrgResults(data);
     } else if (type === "listPackagesResults") {
       this.handleListPackagesResults(data);
+    } else if (type === "listMetadataTypesResults") {
+      this.handleListMetadataTypesResults(data);
     } else if (type === "queryResults") {
       this.handleQueryResults(data);
     } else if (type === "queryError") {
@@ -754,6 +765,12 @@ export default class MetadataRetriever extends LightningElement {
         { label: "All", value: "All" },
         { label: "Local", value: "Local" },
       ];
+    }
+  }
+
+  handleListMetadataTypesResults(data) {
+    if (data && data.metadataTypes && Array.isArray(data.metadataTypes)) {
+      this.metadataTypes = data.metadataTypes;
     }
   }
 

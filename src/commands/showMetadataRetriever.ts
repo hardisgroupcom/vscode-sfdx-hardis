@@ -87,7 +87,13 @@ export function registerShowMetadataRetriever(commands: Commands) {
             panel,
             data && data.username ? data.username : null,
           );
-        } else if (type === "retrieveMetadata") {
+        } else if (type === "listMetadataTypes") {
+          await handleListMetadataTypes(
+            panel,
+            data && data.username ? data.username : null,
+          );
+        }
+        else if (type === "retrieveMetadata") {
           await handleRetrieveMetadata(panel, data);
         } else if (type === "retrieveSelectedMetadata") {
           await handleRetrieveSelectedMetadata(panel, data);
@@ -536,6 +542,56 @@ async function handleListPackages(panel: LwcUiPanel, username: string | null) {
   }
 }
 
+async function handleListMetadataTypes(
+  _panel: LwcUiPanel,
+  _username: string | null,
+) {
+  Logger.log(`Listing metadata types for org disabled until the SF Cli commands forgets CustomField !`);
+  // try {
+  //   const command = `sf org list metadata-types --target-org ${username} --json`;
+  //   const result = await execSfdxJson(command, {
+  //     cacheExpiration: 1000 * 60 * 60 * 24, // 1 day
+  //     cacheSection: "project",
+  //   });
+  //   // Only accept the newer response shape: result.result.metadataObjects
+  //   if (
+  //     result &&
+  //     result.status === 0 &&
+  //     result.result &&
+  //     typeof result.result === "object" &&
+  //     Array.isArray(result.result.metadataObjects) &&
+  //     result.result.metadataObjects.length > 0
+  //   ) {
+  //     const items: any[] = result.result.metadataObjects;
+  //     const metadataTypeOptions = items
+  //       .map((mt: any) => ({
+  //         label: mt.xmlName,
+  //         value: mt.xmlName,
+  //       }))
+  //       .sort((a: any, b: any) => a.label.localeCompare(b.label));
+  //     panel.sendMessage({
+  //       type: "listMetadataTypesResults",
+  //       data: { metadataTypes: metadataTypeOptions },
+  //     });
+  //     return;
+  //   }
+  // } catch (error: any) {
+  //   Logger.log(`Error listing metadata types: ${error.message}`);
+  // }
+  // // Send default metadata list
+  // const metadataTypes = listMetadataTypes();
+  // const metadataTypeOptions = metadataTypes
+  //   .map((mt) => ({
+  //     label: mt.xmlName,
+  //     value: mt.xmlName,
+  //   }))
+  //   .sort((a, b) => a.label.localeCompare(b.label));
+  // panel.sendMessage({
+  //   type: "listMetadataTypesResults",
+  //   data: { metadataTypes: metadataTypeOptions },
+  // });
+}
+
 async function handleSourceMemberQuery(
   panel: any,
   username: string,
@@ -549,7 +605,7 @@ async function handleSourceMemberQuery(
 ) {
   // Build SOQL query safely on backend
   let query =
-          "SELECT MemberName, MemberType, LastModifiedDate, LastModifiedBy.Name, IsNewMember, IsDeleted FROM SourceMember";
+          "SELECT MemberName, MemberType, LastModifiedDate, LastModifiedBy.Name, IsNewMember, IsDeleted, IsNameObsolete FROM SourceMember";
   const conditions: string[] = [];
 
   if (metadataType) {
@@ -630,7 +686,7 @@ async function handleSourceMemberQuery(
       let operation = "modified";
       if (r.IsNewMember) {
         operation = "created";
-      } else if (r.IsDeleted) {
+      } else if (r.IsDeleted || r.IsNameObsolete) {
         operation = "deleted";
       }
       return { ...r, Operation: operation };
