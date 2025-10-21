@@ -77,9 +77,27 @@ export function registerShowMetadataRetriever(commands: Commands) {
           packageDirectories: packageDirs,
         },
       );
+      
+      // Compute and send feature logo URI to LWC
+      if ((panel as any).panel && (panel as any).extensionUri) {
+        const logoPath = vscode.Uri.joinPath(
+          (panel as any).extensionUri,
+          "out",
+          "resources",
+          "logo-m.png",
+        );
+        const logoUri = (panel as any).panel.webview.asWebviewUri(logoPath).toString();
+        panel.sendMessage({
+          type: "initialize-feature-logo",
+          data: {
+            featureLogoUri: logoUri,
+          },
+        });
+      }
+
       panel.updateTitle("Metadata Retriever");
       // Register message handlers
-      panel.onMessage(async (type, data) => {
+      panel.onMessage(async (type: string, data: any) => {
         if (type === "listOrgs") {
           await handleListOrgs(panel);
         } else if (type === "queryMetadata") {
@@ -94,8 +112,7 @@ export function registerShowMetadataRetriever(commands: Commands) {
             panel,
             data && data.username ? data.username : null,
           );
-        }
-        else if (type === "retrieveMetadata") {
+        } else if (type === "retrieveMetadata") {
           await handleRetrieveMetadata(panel, data);
         } else if (type === "retrieveSelectedMetadata") {
           await handleRetrieveSelectedMetadata(panel, data);
@@ -236,9 +253,7 @@ async function executeMetadataRetrieve(
         // ignore
       }
       if (!singleName && metadataList) {
-        const requested = metadataList
-          .map((s) => s.trim())
-          .filter(Boolean);
+        const requested = metadataList.map((s) => `${s.memberType}: ${s.memberName}`)
         if (requested.length === 1) {
           singleName = requested[0];
         }

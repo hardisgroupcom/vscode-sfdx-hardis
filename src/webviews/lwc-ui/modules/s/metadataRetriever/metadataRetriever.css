@@ -24,6 +24,45 @@
     transform: none;
   }
 }
+
+/* Easter egg modal (obfuscated selectors) */
+[data-feature] {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+[data-feature-backdrop] {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+}
+[data-feature-content] {
+  position: relative;
+  background: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  min-width: 280px;
+  max-width: 90vw;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  z-index: 10001;
+  text-align: center;
+}
+[data-feature-content] img {
+  max-width: 160px;
+  height: auto;
+}
+[data-feature-close] {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+}
 .blue-back {
 	background: #EDF4FF;
 	min-height: 100vh;

@@ -181,6 +181,11 @@ const lwcWebviewConfig = {
           noErrorOnMissing: true,
         },
         {
+          from: path.resolve(__dirname, "resources/logo-m.png"),
+          to: path.resolve(__dirname, "out/resources/logo-m.png"),
+          noErrorOnMissing: true,
+        },
+        {
           from: path.resolve(
             __dirname,
             "resources/sfdx-hardis.jsonschema.json",

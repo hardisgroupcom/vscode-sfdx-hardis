@@ -32,6 +32,9 @@ export default class MetadataRetriever extends LightningElement {
   @track error = null;
   @track selectedRows = [];
   @track selectedRowKeys = [];
+  @track showFeature = false;
+  @track featureId = null;
+  @track featureLogoImg = "";
 
   // Performance optimization properties
   searchDebounceTimer = null;
@@ -430,7 +433,35 @@ export default class MetadataRetriever extends LightningElement {
 
   handleLastUpdatedByChange(event) {
     this.lastUpdatedBy = event.target.value;
+    // Easter egg: show modal when user types 'Masha' (case-insensitive)
+    try {
+      const v = (this.lastUpdatedBy || "").toString().trim();
+      if (v.toLowerCase() === "masha") {
+        // random feature id for element attributes
+        this.featureId = Math.random().toString(36).slice(2, 10);
+        this.showFeature = true;
+        // Add keydown listener to close on ESC
+        this._boundFeatureKeydown = (e) => {
+          if (e.key === "Escape") {
+            this.hideFeature();
+          }
+        };
+        window.addEventListener("keydown", this._boundFeatureKeydown);
+      }
+    } catch (e) {
+      // ignore
+    }
+
     this.applyFilters();
+  }
+
+  hideFeature() {
+    this.showFeature = false;
+    this.featureId = null;
+    if (this._boundFeatureKeydown) {
+      window.removeEventListener("keydown", this._boundFeatureKeydown);
+      this._boundFeatureKeydown = null;
+    }
   }
 
   handleDateFromChange(event) {
@@ -709,6 +740,11 @@ export default class MetadataRetriever extends LightningElement {
   handleMessage(type, data) {
     if (type === "initialize") {
       this.initialize(data);
+    } else if (type === "initialize-feature-logo") {
+      // Set feature logo URI from dedicated message
+      if (data && data.featureLogoUri) {
+        this.featureLogoImg = data.featureLogoUri;
+      }
     } else if (type === "listOrgsResults") {
       this.handleOrgResults(data);
     } else if (type === "listPackagesResults") {

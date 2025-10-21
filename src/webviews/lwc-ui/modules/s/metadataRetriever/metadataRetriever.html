@@ -216,6 +216,21 @@
         ></lightning-button>
       </div>
 
+      <!-- Hidden feature modal (obfuscated identifiers) -->
+      <template if:true={showFeature}>
+        <section role="dialog" tabindex="-1" data-feature data-feature-id={featureId} aria-modal="true">
+          <div data-feature-backdrop onclick={hideFeature}></div>
+          <div data-feature-content>
+            <button data-feature-close onclick={hideFeature} title="Close">×</button>
+            <div data-feature-body>
+              <img src={featureLogoImg} alt="" />
+              <h2>Surprise ❤️</h2>
+              <p>You've found the secret — enjoy!</p>
+            </div>
+          </div>
+        </section>
+      </template>
+
       <!-- No Results Message -->
       <template if:true={noResults}>
         <div class="slds-p-around_small slds-text-align_center">
