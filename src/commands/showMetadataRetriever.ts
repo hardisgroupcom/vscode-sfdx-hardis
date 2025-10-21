@@ -123,13 +123,16 @@ async function executeMetadataRetrieve(
   workspaceRoot: string,
   displayTitle: string,
   panel: LwcUiPanel,
+  forceOverwrite = false
 ): Promise<any> {
   // Split metadata list and create separate --metadata flags for each item
   const metadataItems = metadataList
     .split(",")
     .map((item) => `--metadata "${item}"`)
     .join(" ");
-  const command = `sf project retrieve start ${metadataItems} --target-org ${username} --json`;
+  const command = `sf project retrieve start ${metadataItems} --target-org ${username}`
+                  + (forceOverwrite ? ' --ignore-conflicts' : '')
+                  + ' --json';
   Logger.log(`Retrieving metadata: ${command}`);
 
   let finalResult: any = null;
@@ -145,7 +148,29 @@ async function executeMetadataRetrieve(
       },
     );
 
+    // Suggest user to force in case of conflicts
+    if (result.code === 'SourceConflictError') {
+      const choice = await vscode.window.showErrorMessage(
+        `Failed to retrieve metadata due to source conflicts.`,
+        "I don't care, overwrite! 🤪",
+        "Ok, nevermind 😑");
+      if (choice === "I don't care, overwrite! 🤪") {
+       return await executeMetadataRetrieve(
+          username,
+          metadataList,
+          workspaceRoot,
+          displayTitle,
+          panel,
+          true
+        );
+      }
+      return result;
+    }
+
     finalResult = result;
+
+    // Prepare singleName here so it's available both when result has content and in the fallback error branch
+    let singleName: string | null = null;
 
     // Check if command executed and has result
     if (result && result.result) {
@@ -153,6 +178,28 @@ async function executeMetadataRetrieve(
       const success = retrieveResult.success === true;
       const files = retrieveResult.files || [];
       const messages = retrieveResult.messages || [];
+
+      // If only one metadata item was requested or returned, compute a readable name
+      // Format: "MemberType: MemberName"
+      try {
+        if (files && files.length === 1) {
+          const f = files[0] as any;
+          if (f && f.type && f.fullName) {
+            singleName = `${f.type}: ${f.fullName}`;
+          }
+        }
+      } catch {
+        // ignore
+      }
+      if (!singleName && metadataList) {
+        const requested = metadataList
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+        if (requested.length === 1) {
+          singleName = requested[0];
+        }
+      }
 
       // Count successful and failed files
       const successfulFiles = files.filter((f: any) => f.state !== "Failed");
@@ -171,6 +218,7 @@ async function executeMetadataRetrieve(
           failedFiles.length === 0 && success
             ? resultMessage || "Metadata retrieved successfully"
             : `${resultMessage}${failedFiles.length > 0 ? `, but ${failedFiles.length} failed` : ""}`;
+        const titleWithName = singleName ? `${title} (${singleName})` : title;
 
         // Collect error details for partial failures
         const errorDetails: string[] = [];
@@ -182,14 +230,13 @@ async function executeMetadataRetrieve(
           });
         }
 
+        const displayMsg = errorDetails.length > 0
+          ? `${titleWithName}. Errors: ${errorDetails.slice(0, 3).join("; ")}${errorDetails.length > 3 ? ` (and ${errorDetails.length - 3} more - see logs)` : ""}`
+          : titleWithName;
+
         const promAction = failedFiles.length === 0 && success
-          ?  vscode.window.showInformationMessage(title, "View and commit files")
-          :  vscode.window.showWarningMessage(
-              errorDetails.length > 0
-                ? `${title}. Errors: ${errorDetails.slice(0, 3).join("; ")}${errorDetails.length > 3 ? ` (and ${errorDetails.length - 3} more - see logs)` : ""}`
-                : title,
-              "View and commit files",
-            );
+          ?  vscode.window.showInformationMessage(titleWithName, "View and commit files")
+          :  vscode.window.showWarningMessage(displayMsg, "View and commit files");
         promAction.then((action) => {
           if (action === "View and commit files") {
             vscode.commands.executeCommand("workbench.view.scm");
@@ -198,19 +245,25 @@ async function executeMetadataRetrieve(
 
         // After a retrieve that returned at least one successful file, re-check local files and notify webview if present
         try {
-          if (panel && successfulFiles.length > 0) {
             // Build minimal records expected by annotateLocalFiles
             const recordsToAnnotate = successfulFiles.map((f: any) => ({
               MemberType: f.type,
               MemberName: f.fullName,
               fullName: f.fullName,
             }));
-            const annotated = await annotateLocalFiles(recordsToAnnotate);
+            const recordsSuccessAnnotated = await annotateLocalFiles(recordsToAnnotate);
+            // Add failed downloads
+            const recordsFailed = failedFiles.map((f: any) => ({
+              MemberType: f.type,
+              MemberName: f.fullName,
+              fullName: f.fullName,
+              LocalFileExists: false
+            }));
+            const resultRecords = [...recordsSuccessAnnotated,...recordsFailed];
             panel.sendMessage({
               type: "postRetrieveLocalCheck",
-              data: { files: annotated },
+              data: { files: resultRecords },
             });
-          }
         } catch {
           // non-fatal
         }
@@ -230,26 +283,38 @@ async function executeMetadataRetrieve(
           Logger.log(`Failed to retrieve ${error}`);
         });
 
+        if (failedFiles.length > 0) {
+          const recordsFailed = failedFiles.map((f: any) => ({
+              MemberType: f.type,
+              MemberName: f.fullName,
+              fullName: f.fullName,
+              LocalFileExists: false
+          }));
+          panel.sendMessage({
+            type: "postRetrieveLocalCheck",
+            data: { files: recordsFailed },
+          });
+        }
+
         if (errorDetails.length > 0) {
           const displayErrors = errorDetails.slice(0, 3).join("; ");
           const moreErrors =
             errorDetails.length > 3
               ? ` (and ${errorDetails.length - 3} more - see logs)`
               : "";
-          vscode.window.showWarningMessage(
-            `Failed to retrieve ${failedFiles.length} file(s). Errors: ${displayErrors}${moreErrors}`,
-          );
+          const msg = `Failed to retrieve ${failedFiles.length} file(s)${singleName ? ` (${singleName})` : ""}. Errors: ${displayErrors}${moreErrors}`;
+          vscode.window.showWarningMessage(msg);
         } else {
-          vscode.window.showWarningMessage(
-            `Failed to retrieve ${failedFiles.length} file(s)`,
-          );
+          const msg = `Failed to retrieve ${failedFiles.length} file(s)${singleName ? ` (${singleName})` : ""}`;
+          vscode.window.showWarningMessage(msg);
         }
       }
-    } else {
+      } else {
       const errorMsg = result?.message || "Unknown error occurred";
-      vscode.window.showErrorMessage(
-        `Failed to retrieve metadata: ${errorMsg}`,
-      );
+      const msg = singleName
+        ? `Failed to retrieve ${singleName}: ${errorMsg}`
+        : `Failed to retrieve metadata: ${errorMsg}`;
+      vscode.window.showErrorMessage(msg);
     }
   } catch (error: any) {
     Logger.log(`Error retrieving metadata: ${error.message}`);
@@ -774,7 +839,21 @@ async function annotateLocalFiles(records: any[]): Promise<any[]> {
 
         // keys to try
         const candidateKeys = new Set<string>();
-        if (mt.suffix) {
+        const splitName = name.includes(".") ? name.split(".") : [name];
+        if (splitName.length > 1 && mt.directoryName) {
+          // handle foldered metadata (e.g. CustomField, EmailTemplate, Dashboard, Report)
+          const parentApiName = splitName.slice(0, -1).join("/");
+          const componentName = splitName.slice(-1)[0];
+          if (mt.suffix) {
+            candidateKeys.add(`/${parentApiName}/${mt.directoryName}/${componentName}.${mt.suffix}`);
+            candidateKeys.add(`/${parentApiName}/${mt.directoryName}/${componentName}.${mt.suffix}-meta.xml`);
+          }
+          else {
+            candidateKeys.add(`/${parentApiName}/${mt.directoryName}/${componentName}`);
+            candidateKeys.add(`/${parentApiName}/${mt.directoryName}/${componentName}-meta.xml`);
+          }
+        }
+        else if (mt.suffix) {
           candidateKeys.add(`/${name}.${mt.suffix}`);
           candidateKeys.add(`/${name}.${mt.suffix}-meta.xml`);
         }

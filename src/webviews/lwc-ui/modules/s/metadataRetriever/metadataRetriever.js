@@ -57,19 +57,6 @@ export default class MetadataRetriever extends LightningElement {
       });
     }
 
-    // Local file existence column (centered) - only when the user enabled the toggle
-    if (this.checkLocalFiles) {
-      cols.push({
-        label: "Local",
-        fieldName: "LocalFileIcon",
-        type: "text",
-        cellAttributes: {
-          alignment: "center",
-        },
-        initialWidth: 30,
-      });
-    }
-
     // Metadata Type
     cols.push({
       label: "Metadata Type",
@@ -77,6 +64,7 @@ export default class MetadataRetriever extends LightningElement {
       type: "text",
       sortable: true,
       wrapText: true,
+      initialWidth: 160,
     });
 
     // Metadata Name
@@ -95,7 +83,7 @@ export default class MetadataRetriever extends LightningElement {
       type: "text",
       sortable: true,
       wrapText: true,
-      initialWidth: 180,
+      initialWidth: 165,
     });
 
     // Last Updated Date
@@ -111,16 +99,37 @@ export default class MetadataRetriever extends LightningElement {
         hour: "2-digit",
         minute: "2-digit",
       },
-      initialWidth: 180,
+      initialWidth: 165,
     });
 
-    // Add action column
+    // Local file existence column (centered) - only when the user enabled the toggle
+    if (this.checkLocalFiles) {
+      cols.push({
+        label: "Local",
+        fieldName: "LocalFileIcon",
+        type: "text",
+        cellAttributes: {
+          alignment: "center",
+        },
+        initialWidth: 30,
+      });
+    }
+
+    // Add download icon column (single-icon button)
+    // Use a 'button-icon' column so users can click the download icon directly
     cols.push({
-      type: "action",
+      type: "button-icon",
       typeAttributes: {
-        rowActions: [{ label: "Retrieve", name: "retrieve" }],
+        iconName: "utility:download",
+        title: "Download",
+        variant: "bare",
+        alternativeText: "Download",
+        name: "download",
       },
-      initialWidth: 50,
+      initialWidth: 30,
+      cellAttributes: {
+        alignment: "center",
+      },
     });
 
     return cols;
@@ -627,10 +636,14 @@ export default class MetadataRetriever extends LightningElement {
   }
 
   handleRowAction(event) {
-    const action = event.detail.action;
-    const row = event.detail.row;
+    // datatable action events provide event.detail.action (with a name)
+    // button-icon columns provide event.detail.name directly
+    const row = event.detail.row || event.detail.payload;
+    const actionName =
+      (event.detail.action && event.detail.action.name) || event.detail.name || null;
 
-    if (action.name === "retrieve") {
+    if (actionName === "download") {
+      // support legacy 'retrieve' and new 'download' name
       this.handleRetrieve(row);
     }
   }
@@ -682,7 +695,7 @@ export default class MetadataRetriever extends LightningElement {
       if (updates.has(key)) {
         const exists = updates.get(key);
         changed = true;
-        return { ...row, LocalFileIcon: exists === true ? "✔️" : "" };
+        return { ...row, LocalFileIcon: exists === true ? "✅" : "❌" };
       }
       return row;
     });
@@ -770,8 +783,8 @@ export default class MetadataRetriever extends LightningElement {
             "",
           uniqueKey: `${record.MemberType}::${record.MemberName}`,
           ChangeIcon: icon,
-          // Local file indicator: show ✅ when present; otherwise leave empty
-          LocalFileIcon: record.LocalFileExists === true ? "✅" : "",
+          // Local file indicator: show  when present; otherwise leave empty
+          LocalFileIcon: record.LocalFileExists === true ? "✔️" : "",
         };
       });
       this.applyFilters();
