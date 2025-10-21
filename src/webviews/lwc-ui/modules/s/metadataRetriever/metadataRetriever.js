@@ -21,6 +21,7 @@ export default class MetadataRetriever extends LightningElement {
   @track dateFrom = "";
   @track dateTo = "";
   @track searchTerm = "";
+  @track hasSearched = false;
   @track isLoadingOrgs = false;
   @track isLoadingPackages = false;
   @track isLoading = false;
@@ -37,47 +38,69 @@ export default class MetadataRetriever extends LightningElement {
 
   // Datatable columns - computed based on mode
   get columns() {
-    const baseColumns = [
-      {
-        label: "Metadata Type",
-        fieldName: "MemberType",
+    // Build columns step by step so we can insert the Change icon column
+    const cols = [];
+
+    // Metadata Type
+    cols.push({
+      label: "Metadata Type",
+      fieldName: "MemberType",
+      type: "text",
+      sortable: true,
+      wrapText: true,
+    });
+
+    // Metadata Name
+    cols.push({
+      label: "Metadata Name",
+      fieldName: "MemberName",
+      type: "text",
+      sortable: true,
+      wrapText: true,
+    });
+
+    // If in Recent Changes mode, insert change icon column after Metadata Name
+    if (this.isRecentChangesMode) {
+      // Emoji column for change operation (created/modified/deleted)
+      cols.push({
+        label: "",
+        fieldName: "ChangeIcon",
         type: "text",
-        sortable: true,
-        wrapText: true,
-      },
-      {
-        label: "Metadata Name",
-        fieldName: "MemberName",
-        type: "text",
-        sortable: true,
-        wrapText: true,
-      },
-      {
-        label: "Last Updated By",
-        fieldName: "LastModifiedByName",
-        type: "text",
-        sortable: true,
-        wrapText: true,
-        initialWidth: 180,
-      },
-      {
-        label: "Last Updated Date",
-        fieldName: "LastModifiedDate",
-        type: "date",
-        sortable: true,
-        typeAttributes: {
-          year: "numeric",
-          month: "short",
-          day: "2-digit",
-          hour: "2-digit",
-          minute: "2-digit",
+        cellAttributes: {
+          alignment: "center",
         },
-        initialWidth: 180,
+        initialWidth: 30,
+      });
+    }
+
+    // Last Updated By
+    cols.push({
+      label: "Last Updated By",
+      fieldName: "LastModifiedByName",
+      type: "text",
+      sortable: true,
+      wrapText: true,
+      initialWidth: 180,
+    });
+
+    // Last Updated Date
+    cols.push({
+      label: "Last Updated Date",
+      fieldName: "LastModifiedDate",
+      type: "date",
+      sortable: true,
+      typeAttributes: {
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
       },
-    ];
+      initialWidth: 180,
+    });
 
     // Add action column
-    baseColumns.push({
+    cols.push({
       type: "action",
       typeAttributes: {
         rowActions: [{ label: "Retrieve", name: "retrieve" }],
@@ -85,7 +108,7 @@ export default class MetadataRetriever extends LightningElement {
       initialWidth: 50,
     });
 
-    return baseColumns;
+    return cols;
   }
 
   get orgOptions() {
@@ -150,7 +173,9 @@ export default class MetadataRetriever extends LightningElement {
   }
 
   get noResults() {
+    // Only show the No Results state when a search has been performed
     return (
+      this.hasSearched &&
       !this.isLoading &&
       this.filteredMetadata &&
       this.filteredMetadata.length === 0
@@ -216,6 +241,16 @@ export default class MetadataRetriever extends LightningElement {
 
   handleOrgChange(event) {
     this.selectedOrg = event.detail.value;
+    // When org changes, clear any current results and selections
+    this.metadata = [];
+    this.filteredMetadata = [];
+    this.selectedRows = [];
+    this.selectedRowKeys = [];
+    this.error = null;
+    this.isLoading = false;
+    // Reset search state when switching orgs
+    this.hasSearched = false;
+
     // When org changes, lazy-load installed package namespaces for that org
     this.isLoadingPackages = true;
     window.sendMessageToVSCode({
@@ -244,6 +279,8 @@ export default class MetadataRetriever extends LightningElement {
     this.filteredMetadata = [];
     this.selectedRows = [];
     this.selectedRowKeys = [];
+    // Reset search state when switching query modes
+    this.hasSearched = false;
   }
 
   handleRowSelection(event) {
@@ -321,6 +358,8 @@ export default class MetadataRetriever extends LightningElement {
 
     this.isLoading = true;
     this.error = null;
+    // Mark that a search has been performed
+    this.hasSearched = true;
     // Clear existing metadata and client-side text filter to ensure a fresh server search
     this.metadata = [];
     this.filteredMetadata = [];
@@ -602,17 +641,30 @@ export default class MetadataRetriever extends LightningElement {
     this.isLoading = false;
     if (data && data.records && Array.isArray(data.records)) {
       // Transform records - handle both SourceMember (nested) and Metadata API (flat) formats
-      this.metadata = data.records.map((record) => ({
-        MemberName: record.MemberName,
-        MemberType: record.MemberType,
-        LastModifiedDate: record.LastModifiedDate,
-        // Handle both SourceMember format (LastModifiedBy.Name) and Metadata API format (lastModifiedByName)
-        LastModifiedByName:
-          record.LastModifiedByName ||
-          (record.LastModifiedBy ? record.LastModifiedBy.Name : "") ||
-          "",
-        uniqueKey: `${record.MemberType}::${record.MemberName}`,
-      }));
+      this.metadata = data.records.map((record) => {
+        // Use Operation from backend (created/modified/deleted) — guaranteed to be set
+        const opVal = (record.Operation || "").toString().toLowerCase();
+        // Map operation to colored emoji: created -> green, modified -> yellow, deleted -> red
+        let icon = "🟡"; // default = modified
+        if (opVal === "created") {
+          icon = "🟢";
+        } else if (opVal === "deleted") {
+          icon = "🔴";
+        }
+
+        return {
+          MemberName: record.MemberName,
+          MemberType: record.MemberType,
+          LastModifiedDate: record.LastModifiedDate,
+          // Handle both SourceMember format (LastModifiedBy.Name) and Metadata API format (lastModifiedByName)
+          LastModifiedByName:
+            record.LastModifiedByName ||
+            (record.LastModifiedBy ? record.LastModifiedBy.Name : "") ||
+            "",
+          uniqueKey: `${record.MemberType}::${record.MemberName}`,
+          ChangeIcon: icon,
+        };
+      });
       this.applyFilters();
     } else {
       this.metadata = [];

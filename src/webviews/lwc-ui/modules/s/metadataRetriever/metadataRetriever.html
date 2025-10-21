@@ -133,6 +133,14 @@
         </div>
       </template>
 
+      <!-- Initial Prompt (before any search) -->
+      <template if:false={hasSearched}>
+        <div class="slds-p-around_small slds-text-align_center slds-text-color_weak">
+          <h3 class="slds-text-heading_medium">No search performed yet</h3>
+          <p>Click the <strong>Search</strong> button to query metadata for the selected org.</p>
+        </div>
+      </template>
+
       <!-- Results Datatable -->
       <template if:true={hasResults}>
         <div class="slds-p-around_small">

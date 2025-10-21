@@ -433,7 +433,7 @@ async function handleSourceMemberQuery(
 ) {
   // Build SOQL query safely on backend
   let query =
-    "SELECT MemberName, MemberType, LastModifiedDate, LastModifiedBy.Name FROM SourceMember";
+          "SELECT MemberName, MemberType, LastModifiedDate, LastModifiedBy.Name, IsNewMember, IsDeleted FROM SourceMember";
   const conditions: string[] = [];
 
   if (metadataType) {
@@ -508,6 +508,17 @@ async function handleSourceMemberQuery(
         });
       }
     }
+
+    // Add Operation property (created,modified,deleted) using values of IsNewMember, IsDeleted
+    records = records.map((r) => {
+      let operation = "modified";
+      if (r.IsNewMember) {
+        operation = "created";
+      } else if (r.IsDeleted) {
+        operation = "deleted";
+      }
+      return { ...r, Operation: operation };
+    });
 
     panel.sendMessage({
       type: "queryResults",
