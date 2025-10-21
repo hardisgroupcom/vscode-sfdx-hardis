@@ -21,6 +21,9 @@ export default class MetadataRetriever extends LightningElement {
   @track dateFrom = "";
   @track dateTo = "";
   @track searchTerm = "";
+  @track hasSearched = false;
+  @track checkLocalFiles = false;
+  @track checkLocalAvailable = true;
   @track isLoadingOrgs = false;
   @track isLoadingPackages = false;
   @track isLoading = false;
@@ -29,6 +32,9 @@ export default class MetadataRetriever extends LightningElement {
   @track error = null;
   @track selectedRows = [];
   @track selectedRowKeys = [];
+  @track showFeature = false;
+  @track featureId = null;
+  @track featureLogoImg = "";
 
   // Performance optimization properties
   searchDebounceTimer = null;
@@ -37,55 +43,99 @@ export default class MetadataRetriever extends LightningElement {
 
   // Datatable columns - computed based on mode
   get columns() {
-    const baseColumns = [
-      {
-        label: "Metadata Type",
-        fieldName: "MemberType",
-        type: "text",
-        sortable: true,
-        wrapText: true,
-      },
-      {
-        label: "Metadata Name",
-        fieldName: "MemberName",
-        type: "text",
-        sortable: true,
-        wrapText: true,
-      },
-      {
-        label: "Last Updated By",
-        fieldName: "LastModifiedByName",
-        type: "text",
-        sortable: true,
-        wrapText: true,
-        initialWidth: 180,
-      },
-      {
-        label: "Last Updated Date",
-        fieldName: "LastModifiedDate",
-        type: "date",
-        sortable: true,
-        typeAttributes: {
-          year: "numeric",
-          month: "short",
-          day: "2-digit",
-          hour: "2-digit",
-          minute: "2-digit",
-        },
-        initialWidth: 180,
-      },
-    ];
+    // Build columns step by step so we can insert the Change icon column
+    const cols = [];
 
-    // Add action column
-    baseColumns.push({
-      type: "action",
-      typeAttributes: {
-        rowActions: [{ label: "Retrieve", name: "retrieve" }],
-      },
-      initialWidth: 50,
+    // If in Recent Changes mode, insert change icon column after Metadata Name
+    if (this.isRecentChangesMode) {
+      // Emoji column for change operation (created/modified/deleted)
+      cols.push({
+        label: "Operation",
+        fieldName: "ChangeIcon",
+        type: "text",
+        cellAttributes: {
+          alignment: "center",
+        },
+        initialWidth: 30,
+      });
+    }
+
+    // Metadata Type
+    cols.push({
+      label: "Metadata Type",
+      fieldName: "MemberType",
+      type: "text",
+      sortable: true,
+      wrapText: true,
+      initialWidth: 160,
     });
 
-    return baseColumns;
+    // Metadata Name
+    cols.push({
+      label: "Metadata Name",
+      fieldName: "MemberName",
+      type: "text",
+      sortable: true,
+      wrapText: true,
+    });
+
+    // Last Updated By
+    cols.push({
+      label: "Last Updated By",
+      fieldName: "LastModifiedByName",
+      type: "text",
+      sortable: true,
+      wrapText: true,
+      initialWidth: 165,
+    });
+
+    // Last Updated Date
+    cols.push({
+      label: "Last Updated Date",
+      fieldName: "LastModifiedDate",
+      type: "date",
+      sortable: true,
+      typeAttributes: {
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      },
+      initialWidth: 165,
+    });
+
+    // Local file existence column (centered) - only when the user enabled the toggle
+    if (this.checkLocalFiles) {
+      cols.push({
+        label: "Local",
+        fieldName: "LocalFileIcon",
+        type: "text",
+        cellAttributes: {
+          alignment: "center",
+        },
+        initialWidth: 30,
+      });
+    }
+
+    // Add download icon column (single-icon button)
+    // Use a 'button-icon' column so users can click the download icon directly
+    cols.push({
+      type: "button-icon",
+      typeAttributes: {
+        iconName: "utility:download",
+        title: "Download",
+        variant: "bare",
+        alternativeText: "Download",
+        name: "download",
+      },
+      initialWidth: 30,
+      cellAttributes: {
+        alignment: "center",
+      },
+    });
+
+    return cols;
   }
 
   get orgOptions() {
@@ -145,12 +195,25 @@ export default class MetadataRetriever extends LightningElement {
     return this.queryMode === "allMetadata";
   }
 
+  // Template-friendly properties (avoid inline expressions in HTML)
+  get checkLocalDisabled() {
+    return !this.checkLocalAvailable;
+  }
+
+  get checkLocalTooltip() {
+    return this.checkLocalAvailable
+      ? ""
+      : "No sfdx-project.json found in workspace root - local file checks disabled";
+  }
+
   get hasResults() {
     return this.filteredMetadata && this.filteredMetadata.length > 0;
   }
 
   get noResults() {
+    // Only show the No Results state when a search has been performed
     return (
+      this.hasSearched &&
       !this.isLoading &&
       this.filteredMetadata &&
       this.filteredMetadata.length === 0
@@ -194,6 +257,37 @@ export default class MetadataRetriever extends LightningElement {
     // Notify VS Code that the component is initialized
     this.isLoadingOrgs = true;
     window.sendMessageToVSCode({ type: "listOrgs" });
+    // Bind a debounced visibility check for the floating retrieve button
+    this._visibilityDebounceTimer = null;
+    this._boundDoDebouncedCheck = () => {
+      // Debounce: wait a small time before performing the expensive DOM checks
+      if (this._visibilityDebounceTimer) {
+        clearTimeout(this._visibilityDebounceTimer);
+      }
+      this._visibilityDebounceTimer = setTimeout(() => {
+        this.checkRetrieveButtonVisibility();
+        this._visibilityDebounceTimer = null;
+      }, 120); // 120ms debounce to avoid layout thrashing during scroll/resize
+    };
+
+    // Listen to global scroll/resize events to detect when the main button goes off-screen
+    window.addEventListener("scroll", this._boundDoDebouncedCheck, true);
+    window.addEventListener("resize", this._boundDoDebouncedCheck);
+    // Initial evaluation after the UI has rendered
+    setTimeout(() => this._boundDoDebouncedCheck(), 50);
+  }
+
+  disconnectedCallback() {
+    // Clean up listeners
+    if (this._boundDoDebouncedCheck) {
+      window.removeEventListener("scroll", this._boundDoDebouncedCheck, true);
+      window.removeEventListener("resize", this._boundDoDebouncedCheck);
+      this._boundDoDebouncedCheck = null;
+    }
+    if (this._visibilityDebounceTimer) {
+      clearTimeout(this._visibilityDebounceTimer);
+      this._visibilityDebounceTimer = null;
+    }
   }
 
   @api
@@ -207,15 +301,36 @@ export default class MetadataRetriever extends LightningElement {
         } else if (this.orgs.length > 0) {
           this.selectedOrg = this.orgs[0].username;
         }
+        window.sendMessageToVSCode({
+          type: "listMetadataTypes",
+          data: { username: this.selectedOrg },
+        });
       }
       if (data.metadataTypes && Array.isArray(data.metadataTypes)) {
         this.metadataTypes = data.metadataTypes;
+      }
+      // Backend can indicate whether local file checking is available
+      if (typeof data.checkLocalAvailable === "boolean") {
+        this.checkLocalAvailable = data.checkLocalAvailable;
+        if (!this.checkLocalAvailable) {
+          this.checkLocalFiles = false; // force-uncheck
+        }
       }
     }
   }
 
   handleOrgChange(event) {
     this.selectedOrg = event.detail.value;
+    // When org changes, clear any current results and selections
+    this.metadata = [];
+    this.filteredMetadata = [];
+    this.selectedRows = [];
+    this.selectedRowKeys = [];
+    this.error = null;
+    this.isLoading = false;
+    // Reset search state when switching orgs
+    this.hasSearched = false;
+
     // When org changes, lazy-load installed package namespaces for that org
     this.isLoadingPackages = true;
     window.sendMessageToVSCode({
@@ -224,6 +339,31 @@ export default class MetadataRetriever extends LightningElement {
     });
     // Reset package filter to All
     this.packageFilter = "All";
+    // When org changes, lazy-load available metadatas for that org
+    window.sendMessageToVSCode({
+      type: "listMetadataTypes",
+      data: { username: this.selectedOrg },
+    });
+  }
+
+  handleCheckLocalChange(event) {
+    if (!this.checkLocalAvailable) {
+      this.checkLocalFiles = false;
+      return;
+    }
+    // lightning-input toggle may expose the boolean on event.target.checked or event.detail.checked
+    const newVal =
+      event.target?.checked === true ||
+      event.detail?.checked === true ||
+      event.detail?.value === true;
+    this.checkLocalFiles = newVal;
+
+    // If the user just enabled the toggle and we already performed a search,
+    // re-run the server query to request annotated results (LocalFileExists).
+    if (newVal === true && this.hasSearched && this.canSearch) {
+      // small timeout to allow UI to update toggle state before triggering search
+      setTimeout(() => this.handleSearch(), 50);
+    }
   }
 
   handleQueryModeChange(event) {
@@ -244,6 +384,8 @@ export default class MetadataRetriever extends LightningElement {
     this.filteredMetadata = [];
     this.selectedRows = [];
     this.selectedRowKeys = [];
+    // Reset search state when switching query modes
+    this.hasSearched = false;
   }
 
   handleRowSelection(event) {
@@ -267,6 +409,10 @@ export default class MetadataRetriever extends LightningElement {
     this.selectedRows = this.metadata.filter((row) =>
       this.selectedRowKeys.includes(row.uniqueKey),
     );
+
+    // Update floating retrieve button visibility after selection changes
+    // Use a timeout to ensure DOM updates are applied before measuring
+    setTimeout(() => this.checkRetrieveButtonVisibility(), 0);
   }
 
   handleMetadataTypeChange(event) {
@@ -287,7 +433,35 @@ export default class MetadataRetriever extends LightningElement {
 
   handleLastUpdatedByChange(event) {
     this.lastUpdatedBy = event.target.value;
+    // Easter egg: show modal when user types 'Masha' (case-insensitive)
+    try {
+      const v = (this.lastUpdatedBy || "").toString().trim();
+      if (v.toLowerCase() === "masha") {
+        // random feature id for element attributes
+        this.featureId = Math.random().toString(36).slice(2, 10);
+        this.showFeature = true;
+        // Add keydown listener to close on ESC
+        this._boundFeatureKeydown = (e) => {
+          if (e.key === "Escape") {
+            this.hideFeature();
+          }
+        };
+        window.addEventListener("keydown", this._boundFeatureKeydown);
+      }
+    } catch (e) {
+      // ignore
+    }
+
     this.applyFilters();
+  }
+
+  hideFeature() {
+    this.showFeature = false;
+    this.featureId = null;
+    if (this._boundFeatureKeydown) {
+      window.removeEventListener("keydown", this._boundFeatureKeydown);
+      this._boundFeatureKeydown = null;
+    }
   }
 
   handleDateFromChange(event) {
@@ -321,6 +495,8 @@ export default class MetadataRetriever extends LightningElement {
 
     this.isLoading = true;
     this.error = null;
+    // Mark that a search has been performed
+    this.hasSearched = true;
     // Clear existing metadata and client-side text filter to ensure a fresh server search
     this.metadata = [];
     this.filteredMetadata = [];
@@ -353,6 +529,7 @@ export default class MetadataRetriever extends LightningElement {
           : null,
         dateFrom: this.isRecentChangesMode ? this.dateFrom || null : null,
         dateTo: this.isRecentChangesMode ? this.dateTo || null : null,
+        checkLocalFiles: this.checkLocalFiles || false,
       },
     });
   }
@@ -370,6 +547,7 @@ export default class MetadataRetriever extends LightningElement {
         metadata: this.selectedRows.map((row) => ({
           memberType: row.MemberType,
           memberName: row.MemberName,
+          deleted: row.ChangeIcon === "🔴",
         })),
       },
     });
@@ -534,10 +712,16 @@ export default class MetadataRetriever extends LightningElement {
   }
 
   handleRowAction(event) {
-    const action = event.detail.action;
-    const row = event.detail.row;
+    // datatable action events provide event.detail.action (with a name)
+    // button-icon columns provide event.detail.name directly
+    const row = event.detail.row || event.detail.payload;
+    const actionName =
+      (event.detail.action && event.detail.action.name) ||
+      event.detail.name ||
+      null;
 
-    if (action.name === "retrieve") {
+    if (actionName === "download") {
+      // support legacy 'retrieve' and new 'download' name
       this.handleRetrieve(row);
     }
   }
@@ -549,6 +733,7 @@ export default class MetadataRetriever extends LightningElement {
         username: this.selectedOrg,
         memberType: row.MemberType,
         memberName: row.MemberName,
+        deleted: row.ChangeIcon === "🔴",
       },
     });
   }
@@ -557,14 +742,80 @@ export default class MetadataRetriever extends LightningElement {
   handleMessage(type, data) {
     if (type === "initialize") {
       this.initialize(data);
+    } else if (type === "initialize-feature-logo") {
+      // Set feature logo URI from dedicated message
+      if (data && data.featureLogoUri) {
+        this.featureLogoImg = data.featureLogoUri;
+      }
     } else if (type === "listOrgsResults") {
       this.handleOrgResults(data);
     } else if (type === "listPackagesResults") {
       this.handleListPackagesResults(data);
+    } else if (type === "listMetadataTypesResults") {
+      this.handleListMetadataTypesResults(data);
     } else if (type === "queryResults") {
       this.handleQueryResults(data);
     } else if (type === "queryError") {
       this.handleQueryError(data);
+    } else if (type === "postRetrieveLocalCheck") {
+      this.handlePostRetrieveLocalCheck(data);
+    }
+  }
+
+  handlePostRetrieveLocalCheck(data) {
+    if (!data || !Array.isArray(data.files) || data.files.length === 0) {
+      return;
+    }
+
+    // data.files contains annotated records with MemberType, MemberName, LocalFileExists
+    const updates = new Map();
+    for (const f of data.files) {
+      const key = `${f.MemberType}::${f.MemberName}`;
+      updates.set(key, f.LocalFileExists);
+    }
+
+    // Update existing metadata entries if present
+    let changed = false;
+    this.metadata = this.metadata.map((row) => {
+      const key = `${row.MemberType}::${row.MemberName}`;
+      if (updates.has(key)) {
+        const exists = updates.get(key);
+        changed = true;
+        return { ...row, LocalFileIcon: exists === true ? "✅" : "❌" };
+      }
+      return row;
+    });
+
+    // Also unselect any rows that were successfully retrieved (present in data.files)
+    try {
+      const keysToRemove = new Set();
+      for (const f of data.files) {
+        const k = `${f.MemberType}::${f.MemberName}`;
+        keysToRemove.add(k);
+      }
+
+      if (this.selectedRowKeys && this.selectedRowKeys.length > 0) {
+        const beforeCount = this.selectedRowKeys.length;
+        this.selectedRowKeys = this.selectedRowKeys.filter(
+          (k) => !keysToRemove.has(k),
+        );
+        // Recompute selectedRows based on remaining selectedRowKeys
+        this.selectedRows = this.metadata.filter((row) =>
+          this.selectedRowKeys.includes(row.uniqueKey),
+        );
+        if (this.selectedRowKeys.length !== beforeCount) {
+          changed = true;
+        }
+      }
+    } catch (e) {
+      // non-fatal
+    }
+
+    if (changed) {
+      // Re-apply client-side filters to refresh the datatable
+      this.applyFilters();
+      // Re-evaluate floating button visibility since selection/rows might have changed
+      setTimeout(() => this.checkRetrieveButtonVisibility(), 0);
     }
   }
 
@@ -598,21 +849,42 @@ export default class MetadataRetriever extends LightningElement {
     }
   }
 
+  handleListMetadataTypesResults(data) {
+    if (data && data.metadataTypes && Array.isArray(data.metadataTypes)) {
+      this.metadataTypes = data.metadataTypes;
+    }
+  }
+
   handleQueryResults(data) {
     this.isLoading = false;
     if (data && data.records && Array.isArray(data.records)) {
       // Transform records - handle both SourceMember (nested) and Metadata API (flat) formats
-      this.metadata = data.records.map((record) => ({
-        MemberName: record.MemberName,
-        MemberType: record.MemberType,
-        LastModifiedDate: record.LastModifiedDate,
-        // Handle both SourceMember format (LastModifiedBy.Name) and Metadata API format (lastModifiedByName)
-        LastModifiedByName:
-          record.LastModifiedByName ||
-          (record.LastModifiedBy ? record.LastModifiedBy.Name : "") ||
-          "",
-        uniqueKey: `${record.MemberType}::${record.MemberName}`,
-      }));
+      this.metadata = data.records.map((record) => {
+        // Use Operation from backend (created/modified/deleted) — guaranteed to be set
+        const opVal = (record.Operation || "").toString().toLowerCase();
+        // Map operation to colored emoji: created -> green, modified -> yellow, deleted -> red
+        let icon = "🟡"; // default = modified
+        if (opVal === "created") {
+          icon = "🟢";
+        } else if (opVal === "deleted") {
+          icon = "🔴";
+        }
+
+        return {
+          MemberName: record.MemberName,
+          MemberType: record.MemberType,
+          LastModifiedDate: record.LastModifiedDate,
+          // Handle both SourceMember format (LastModifiedBy.Name) and Metadata API format (lastModifiedByName)
+          LastModifiedByName:
+            record.LastModifiedByName ||
+            (record.LastModifiedBy ? record.LastModifiedBy.Name : "") ||
+            "",
+          uniqueKey: `${record.MemberType}::${record.MemberName}`,
+          ChangeIcon: icon,
+          // Local file indicator: show  when present; otherwise leave empty
+          LocalFileIcon: record.LocalFileExists === true ? "✔️" : "",
+        };
+      });
       this.applyFilters();
     } else {
       this.metadata = [];
@@ -649,5 +921,58 @@ export default class MetadataRetriever extends LightningElement {
       return isReverse * ((x > y) - (y > x));
     });
     this.filteredMetadata = parseData;
+  }
+
+  // Show/hide the floating retrieve button depending on whether the main button
+  // is visible in the viewport and whether there are selected rows.
+  checkRetrieveButtonVisibility() {
+    try {
+      const floating = this.template.querySelector(
+        '[data-id="retrieve-button-floating"]',
+      );
+      const mainBtn = this.template.querySelector(
+        '[data-id="retrieve-button"]',
+      );
+
+      if (!floating) {
+        return;
+      }
+
+      // If no selected rows, always hide floating button
+      if (!this.hasSelectedRows) {
+        floating.classList.remove("visible");
+        return;
+      }
+
+      // If main button is not present in DOM, show floating button
+      if (!mainBtn) {
+        floating.classList.add("visible");
+        return;
+      }
+
+      // Check if main button is fully visible in the viewport
+      const rect = mainBtn.getBoundingClientRect();
+      const viewportHeight =
+        window.innerHeight || document.documentElement.clientHeight;
+      const isFullyVisible = rect.top >= 0 && rect.bottom <= viewportHeight;
+
+      if (isFullyVisible) {
+        floating.classList.remove("visible");
+      } else {
+        floating.classList.add("visible");
+      }
+    } catch (e) {
+      // In case of any unexpected DOM issues, hide the floating button to be safe
+      try {
+        const floating = this.template.querySelector(
+          '[data-id="retrieve-button-floating"]',
+        );
+        if (floating) {
+          floating.classList.remove("visible");
+        }
+      } catch (e2) {
+        // swallow
+      }
+    }
   }
 }

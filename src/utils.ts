@@ -750,3 +750,29 @@ export async function getReportDirectory() {
   await fs.ensureDir(reportDir);
   return reportDir;
 }
+
+export async function listSfdxProjectPackageDirectories() {
+  let packageDirs: string[] = [];
+  const workspaceRoot = getWorkspaceRoot();
+  try {
+    const sfdxProjectPath = path.join(workspaceRoot, "sfdx-project.json");
+    try {
+      const txt = await fs.readFile(sfdxProjectPath, "utf8");
+      const pj = JSON.parse(txt || "{}");
+      if (
+        pj &&
+        Array.isArray(pj.packageDirectories) &&
+        pj.packageDirectories.length > 0
+      ) {
+        packageDirs = pj.packageDirectories
+          .map((d: any) => (d && d.path ? d.path.toString() : null))
+          .filter(Boolean);
+      }
+    } catch {
+      packageDirs = [];
+    }
+  } catch {
+    packageDirs = [];
+  }
+  return packageDirs;
+}
