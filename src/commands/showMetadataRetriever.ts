@@ -697,6 +697,11 @@ async function handleListMetadata(
  * Annotate an array of records with LocalFileExists boolean based on metadataList patterns
  */
 async function annotateLocalFiles(records: any[]): Promise<any[]> {
+  // Rapid path: empty records
+  if (!records || records.length === 0) {
+    return [];
+  }
+
   try {
     const metadataTypes = listMetadataTypes();
     const typeMap: Record<string, any> = {};
@@ -706,59 +711,99 @@ async function annotateLocalFiles(records: any[]): Promise<any[]> {
       }
     }
 
-    // Read available package directories from panel creation metadata if present
-    // Fallback: use folders from sfdx-project.json read earlier
-    // For performance, restrict searches to each packageDir under workspaceRoot
     const packageDirs = await listSfdxProjectPackageDirectories();
-    if (packageDirs.length === 0) {
-      // No package directories found - cannot check local files
+    if (!packageDirs || packageDirs.length === 0) {
       return records.map((r) => ({ ...r, LocalFileExists: false }));
     }
 
-    // For each record, build candidate patterns and run async fast-glob searches in parallel (across packageDirs)
-    const annotated = await Promise.all(
-      records.map(async (r) => {
-        try {
-          const mt = typeMap[r.MemberType || r.type || r.MemberType];
-          let exists = false;
-          if (mt) {
-            const dir = mt.directoryName || "";
-            const suffix = mt.suffix || "";
-            const name = (r.MemberName || r.fullName || "").toString();
+    // Build list of unique metadata types present in records to limit scanning
+    const typesNeeded = new Set<string>();
+    for (const r of records) {
+      const mtName = (r.MemberType || r.type || "") as string;
+      if (mtName) {
+        typesNeeded.add(mtName);
+      }
+    }
 
-            // Build patterns scoped to each packageDir
-            const allPatterns: string[] = [];
-            if (suffix) {
-              for (const pkg of packageDirs) {
-                allPatterns.push(path.join(pkg, "**", dir, "**", `${name}.${suffix}`));
-                allPatterns.push(path.join(pkg, "**", dir, "**", `${name}.${suffix}-meta.xml`));
-              }
-            }
-            // Fallback generic xml file
-            for (const pkg of packageDirs) {
-              allPatterns.push(path.join(pkg, "**", dir, "**", `${name}.xml`));
-            }
+    // Build index: key => set of normalized candidate strings
+    const index: Map<string, Set<string>> = new Map();
 
-            // Run fast-glob searches sequentially across patterns but overall records are parallel
-            for (const pat of allPatterns.map((p) => p.replace(/\\/g, "/"))) {
-              try {
-                const matches = await fg(pat, { dot: true, onlyFiles: true, followSymbolicLinks: true });
-                if (matches && matches.length > 0) {
-                  exists = true;
-                  break;
-                }
-              } catch {
-                // ignore and continue
+    // For each packageDir and each needed type, scan the directory once and populate keys
+    const scanPromises: Promise<void>[] = [];
+    for (const pkg of packageDirs) {
+      for (const tName of Array.from(typesNeeded)) {
+        const mt = typeMap[tName];
+        if (!mt) {
+          continue;
+        }
+        const dirName = mt.directoryName || "";
+        // pattern to list all files under the metadata dir
+        const baseGlob = path.join(pkg, "**", dirName , "**", "*").replace(/\\/g, "/");
+        const key = `${pkg}::${tName}`;
+
+        const prom = new Promise<void>((resolve) => {
+          fg(baseGlob, { dot: true, onlyFiles: true, followSymbolicLinks: true })
+            .then((files: string[]) => {
+              const set = new Set<string>();
+              for (const f of files) {
+                set.add(f);
               }
-            }
-          }
-          return { ...r, LocalFileExists: exists };
-        } catch {
+              index.set(key, set);
+              resolve();
+            })
+            .catch(() => {
+              // ignore scanning errors
+              index.set(key, new Set());
+              resolve();
+            });
+        });
+        scanPromises.push(prom);
+      }
+    }
+    await Promise.allSettled(scanPromises);
+
+    // Now annotate each record by checking candidate keys against index
+    const annotated = records.map((r) => {
+      try {
+        const mtName = (r.MemberType || r.type || "") as string;
+        const mt = typeMap[mtName];
+        if (!mt) {
           return { ...r, LocalFileExists: false };
         }
-      }),
-    );
+        const name = (r.MemberName || r.fullName || "");
 
+        // keys to try
+        const candidateKeys = new Set<string>();
+        if (mt.suffix) {
+          candidateKeys.add(`/${name}.${mt.suffix}`);
+          candidateKeys.add(`/${name}.${mt.suffix}-meta.xml`);
+        }
+
+        // check per packageDir index
+        let exists = false;
+        for (const pkg of packageDirs) {
+          const key = `${pkg}::${mtName}`;
+          const set = index.get(key);
+          if (!set) {
+            continue;
+          }
+          const setList = [...set];
+          // check normalized comparisons
+          for (const cand of candidateKeys) {
+            if (setList.some((p) => p.endsWith(cand))) {
+              exists = true;
+              break;
+            }
+          }
+          if (exists) {
+            break;
+          }
+        }
+        return { ...r, LocalFileExists: exists };
+      } catch {
+        return { ...r, LocalFileExists: false };
+      }
+    });
     return annotated;
   } catch {
     return records.map((r) => ({ ...r, LocalFileExists: false }));
