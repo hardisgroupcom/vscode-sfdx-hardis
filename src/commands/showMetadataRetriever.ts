@@ -122,7 +122,7 @@ async function executeMetadataRetrieve(
   metadataList: string,
   workspaceRoot: string,
   displayTitle: string,
-  panel?: LwcUiPanel,
+  panel: LwcUiPanel,
 ): Promise<any> {
   // Split metadata list and create separate --metadata flags for each item
   const metadataItems = metadataList
@@ -181,24 +181,20 @@ async function executeMetadataRetrieve(
             Logger.log(`Retrieve error - ${error}`);
           });
         }
-        failedFiles.forEach((file: any) => {
-          const error = `${file.type}: ${file.fullName} - ${file.error}`;
-          errorDetails.push(error);
-          Logger.log(`Failed to retrieve ${error}`);
-        });
 
-        const action = failedFiles.length === 0 && success
-          ? await vscode.window.showInformationMessage(title, "View and commit files")
-          : await vscode.window.showWarningMessage(
+        const promAction = failedFiles.length === 0 && success
+          ?  vscode.window.showInformationMessage(title, "View and commit files")
+          :  vscode.window.showWarningMessage(
               errorDetails.length > 0
                 ? `${title}. Errors: ${errorDetails.slice(0, 3).join("; ")}${errorDetails.length > 3 ? ` (and ${errorDetails.length - 3} more - see logs)` : ""}`
                 : title,
               "View and commit files",
             );
-
-        if (action === "View and commit files") {
-          vscode.commands.executeCommand("workbench.view.scm");
-        }
+        promAction.then((action) => {
+          if (action === "View and commit files") {
+            vscode.commands.executeCommand("workbench.view.scm");
+          }
+        });
 
         // After a retrieve that returned at least one successful file, re-check local files and notify webview if present
         try {
@@ -728,23 +724,19 @@ async function annotateLocalFiles(records: any[]): Promise<any[]> {
           if (mt) {
             const dir = mt.directoryName || "";
             const suffix = mt.suffix || "";
-            const metaFile = mt.metaFile === true;
             const name = (r.MemberName || r.fullName || "").toString();
 
             // Build patterns scoped to each packageDir
             const allPatterns: string[] = [];
             if (suffix) {
               for (const pkg of packageDirs) {
-                allPatterns.push(path.join(pkg, dir, "**",`${name}.${suffix}`));
-                if (metaFile) {
-                  allPatterns.push(path.join(pkg, dir,"**", `${name}.${suffix}-meta.xml`));
-                  allPatterns.push(path.join(pkg, dir,"**", `${name}.${suffix}.meta.xml`));
-                }
+                allPatterns.push(path.join(pkg, "**", dir, "**", `${name}.${suffix}`));
+                allPatterns.push(path.join(pkg, "**", dir, "**", `${name}.${suffix}-meta.xml`));
               }
             }
             // Fallback generic xml file
             for (const pkg of packageDirs) {
-              allPatterns.push(path.join(pkg, dir, "**", `${name}.xml`));
+              allPatterns.push(path.join(pkg, "**", dir, "**", `${name}.xml`));
             }
 
             // Run fast-glob searches sequentially across patterns but overall records are parallel
@@ -809,6 +801,7 @@ async function handleRetrieveSelectedMetadata(panel: any, data: any) {
       metadataList,
       workspaceRoot,
       `Retrieving ${metadata.length} metadata item(s)`,
+      panel,
     );
   } catch (error: any) {
     Logger.log(`Error retrieving selected metadata: ${error.message}`);
@@ -845,6 +838,7 @@ async function handleRetrieveMetadata(panel: any, data: any) {
       metadataList,
       workspaceRoot,
       `Retrieving ${memberType}: ${memberName}`,
+      panel
     );
   } catch (error: any) {
     Logger.log(`Error retrieving metadata: ${error.message}`);

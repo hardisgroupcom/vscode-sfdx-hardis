@@ -43,6 +43,33 @@ export default class MetadataRetriever extends LightningElement {
     // Build columns step by step so we can insert the Change icon column
     const cols = [];
 
+    // If in Recent Changes mode, insert change icon column after Metadata Name
+    if (this.isRecentChangesMode) {
+      // Emoji column for change operation (created/modified/deleted)
+      cols.push({
+        label: "Operation",
+        fieldName: "ChangeIcon",
+        type: "text",
+        cellAttributes: {
+          alignment: "center",
+        },
+        initialWidth: 30,
+      });
+    }
+
+    // Local file existence column (centered) - only when the user enabled the toggle
+    if (this.checkLocalFiles) {
+      cols.push({
+        label: "Local",
+        fieldName: "LocalFileIcon",
+        type: "text",
+        cellAttributes: {
+          alignment: "center",
+        },
+        initialWidth: 30,
+      });
+    }
+
     // Metadata Type
     cols.push({
       label: "Metadata Type",
@@ -60,32 +87,6 @@ export default class MetadataRetriever extends LightningElement {
       sortable: true,
       wrapText: true,
     });
-
-    // If in Recent Changes mode, insert change icon column after Metadata Name
-    if (this.isRecentChangesMode) {
-      // Emoji column for change operation (created/modified/deleted)
-      cols.push({
-        label: "Operation",
-        fieldName: "ChangeIcon",
-        type: "text",
-        cellAttributes: {
-          alignment: "center",
-        },
-        initialWidth: 30,
-      });
-      // Local file existence column (centered) - only when the user enabled the toggle
-      if (this.checkLocalFiles) {
-        cols.push({
-          label: "Local",
-          fieldName: "LocalFileIcon",
-          type: "text",
-          cellAttributes: {
-            alignment: "center",
-          },
-          initialWidth: 30,
-        });
-      }
-    }
 
     // Last Updated By
     cols.push({
@@ -681,10 +682,31 @@ export default class MetadataRetriever extends LightningElement {
       if (updates.has(key)) {
         const exists = updates.get(key);
         changed = true;
-        return { ...row, LocalFileIcon: exists === true ? "✅" : "" };
+        return { ...row, LocalFileIcon: exists === true ? "✔️" : "" };
       }
       return row;
     });
+
+    // Also unselect any rows that were successfully retrieved (present in data.files)
+    try {
+      const keysToRemove = new Set();
+      for (const f of data.files) {
+        const k = `${f.MemberType}::${f.MemberName}`;
+        keysToRemove.add(k);
+      }
+
+      if (this.selectedRowKeys && this.selectedRowKeys.length > 0) {
+        const beforeCount = this.selectedRowKeys.length;
+        this.selectedRowKeys = this.selectedRowKeys.filter((k) => !keysToRemove.has(k));
+        // Recompute selectedRows based on remaining selectedRowKeys
+        this.selectedRows = this.metadata.filter((row) => this.selectedRowKeys.includes(row.uniqueKey));
+        if (this.selectedRowKeys.length !== beforeCount) {
+          changed = true;
+        }
+      }
+    } catch (e) {
+      // non-fatal
+    }
 
     if (changed) {
       // Re-apply client-side filters to refresh the datatable
