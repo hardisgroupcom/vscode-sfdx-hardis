@@ -75,7 +75,12 @@ export function registerShowPipeline(commands: Commands) {
           } catch (e) {
             vscode.window.showErrorMessage(
               "Error during Git provider authentication. Please check the logs for details.",
-            );
+              "View logs"
+            ).then((action) => {
+              if (action === "View logs") {
+                Logger.showOutputChannel();
+              }
+            });
             Logger.log(
               `Error during Git provider authentication: ${String(e)}`,
             );
@@ -94,7 +99,12 @@ export function registerShowPipeline(commands: Commands) {
           } else if (authRes === false) {
             vscode.window.showErrorMessage(
               "Failed to connect to Git provider. Please check the logs for details.",
-            );
+              "View logs"
+            ).then((action) => {
+              if (action === "View logs") {
+                Logger.showOutputChannel();
+              }
+            });;
           }
         } else if (type === "connectToTicketing") {
           const ticketProvider = await TicketProvider.getInstance({
@@ -110,7 +120,12 @@ export function registerShowPipeline(commands: Commands) {
           if (ticketProvider.isAuthenticated === false) {
             vscode.window.showErrorMessage(
               `Failed to connect to ${ticketProvider.providerName}. Please check the logs for details.`,
-            );
+              "View logs"
+            ).then((action) => {
+              if (action === "View logs") {
+                Logger.showOutputChannel();
+              }
+            });
             return;
           }
           vscode.window.showInformationMessage(

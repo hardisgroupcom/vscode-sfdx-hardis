@@ -8,6 +8,12 @@ export class Logger {
     loggerInstance = this;
   }
 
+  static showOutputChannel(): void {
+    if (loggerInstance) {
+      loggerInstance.outputChannel.show();
+    }
+  }
+
   static log(str: any): void {
     if (loggerInstance) {
       console.log(str);
