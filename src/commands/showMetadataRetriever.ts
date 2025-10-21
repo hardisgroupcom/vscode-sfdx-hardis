@@ -6,9 +6,12 @@ import {
   execSfdxJson,
   getDefaultTargetOrgUsername,
   getUsernameInstanceUrl,
+  listSfdxProjectPackageDirectories,
 } from "../utils";
 import { Logger } from "../logger";
 import { listMetadataTypes } from "../utils/metadataList";
+import fg from "fast-glob";
+import * as path from "path";
 import { LwcUiPanel } from "../webviews/lwc-ui-panel";
 
 export function registerShowMetadataRetriever(commands: Commands) {
@@ -59,16 +62,20 @@ export function registerShowMetadataRetriever(commands: Commands) {
         }))
         .sort((a, b) => a.label.localeCompare(b.label));
 
+      // Determine whether local file checking is available by looking for sfdx-project.json
+      const packageDirs = await listSfdxProjectPackageDirectories();
+
       const panel = LwcPanelManager.getInstance().getOrCreatePanel(
         "s-metadata-retriever",
         {
           orgs: connectedOrgs,
           selectedOrgUsername: selectedOrgUsername,
           metadataTypes: metadataTypeOptions,
+          checkLocalAvailable: packageDirs.length > 0,
+          packageDirectories: packageDirs,
         },
       );
       panel.updateTitle("Metadata Retriever");
-
       // Register message handlers
       panel.onMessage(async (type, data) => {
         if (type === "listOrgs") {
@@ -115,7 +122,8 @@ async function executeMetadataRetrieve(
   metadataList: string,
   workspaceRoot: string,
   displayTitle: string,
-): Promise<void> {
+  panel?: LwcUiPanel,
+): Promise<any> {
   // Split metadata list and create separate --metadata flags for each item
   const metadataItems = metadataList
     .split(",")
@@ -124,6 +132,7 @@ async function executeMetadataRetrieve(
   const command = `sf project retrieve start ${metadataItems} --target-org ${username} --json`;
   Logger.log(`Retrieving metadata: ${command}`);
 
+  let finalResult: any = null;
   try {
     const result = await vscode.window.withProgress(
       {
@@ -135,6 +144,8 @@ async function executeMetadataRetrieve(
         return await execSfdxJson(command, { cwd: workspaceRoot });
       },
     );
+
+    finalResult = result;
 
     // Check if command executed and has result
     if (result && result.result) {
@@ -153,24 +164,15 @@ async function executeMetadataRetrieve(
         resultMessage += `Successfully retrieved ${successfulFiles.length} file(s)`;
       }
 
-      // Display success or warning
-      if (failedFiles.length === 0 && success) {
-        const action = await vscode.window.showInformationMessage(
-          resultMessage || "Metadata retrieved successfully",
-          "View and commit files",
-        );
-        if (action === "View and commit files") {
-          vscode.commands.executeCommand("workbench.view.scm");
-        }
-      } else {
-        // Show warning with details
-        if (successfulFiles.length > 0) {
-          resultMessage += `, but ${failedFiles.length} failed`;
-        } else {
-          resultMessage = `Failed to retrieve ${failedFiles.length} file(s)`;
-        }
+      // Display success or warning. If at least one file succeeded, offer "View and commit files" action
+      if (successfulFiles.length > 0) {
+        // If everything succeeded and overall command success, use information message; otherwise warn
+        const title =
+          failedFiles.length === 0 && success
+            ? resultMessage || "Metadata retrieved successfully"
+            : `${resultMessage}${failedFiles.length > 0 ? `, but ${failedFiles.length} failed` : ""}`;
 
-        // Collect error details for display
+        // Collect error details for partial failures
         const errorDetails: string[] = [];
         if (messages.length > 0) {
           messages.forEach((msg: any) => {
@@ -185,7 +187,53 @@ async function executeMetadataRetrieve(
           Logger.log(`Failed to retrieve ${error}`);
         });
 
-        // Display warning with first few errors in message
+        const action = failedFiles.length === 0 && success
+          ? await vscode.window.showInformationMessage(title, "View and commit files")
+          : await vscode.window.showWarningMessage(
+              errorDetails.length > 0
+                ? `${title}. Errors: ${errorDetails.slice(0, 3).join("; ")}${errorDetails.length > 3 ? ` (and ${errorDetails.length - 3} more - see logs)` : ""}`
+                : title,
+              "View and commit files",
+            );
+
+        if (action === "View and commit files") {
+          vscode.commands.executeCommand("workbench.view.scm");
+        }
+
+        // After a retrieve that returned at least one successful file, re-check local files and notify webview if present
+        try {
+          if (panel && successfulFiles.length > 0) {
+            // Build minimal records expected by annotateLocalFiles
+            const recordsToAnnotate = successfulFiles.map((f: any) => ({
+              MemberType: f.type,
+              MemberName: f.fullName,
+              fullName: f.fullName,
+            }));
+            const annotated = await annotateLocalFiles(recordsToAnnotate);
+            panel.sendMessage({
+              type: "postRetrieveLocalCheck",
+              data: { files: annotated },
+            });
+          }
+        } catch {
+          // non-fatal
+        }
+      } else {
+        // No successful files at all - show warning with details if any
+        const errorDetails: string[] = [];
+        if (messages.length > 0) {
+          messages.forEach((msg: any) => {
+            const error = `${msg.fileName}: ${msg.problem}`;
+            errorDetails.push(error);
+            Logger.log(`Retrieve error - ${error}`);
+          });
+        }
+        failedFiles.forEach((file: any) => {
+          const error = `${file.type}: ${file.fullName} - ${file.error}`;
+          errorDetails.push(error);
+          Logger.log(`Failed to retrieve ${error}`);
+        });
+
         if (errorDetails.length > 0) {
           const displayErrors = errorDetails.slice(0, 3).join("; ");
           const moreErrors =
@@ -193,10 +241,12 @@ async function executeMetadataRetrieve(
               ? ` (and ${errorDetails.length - 3} more - see logs)`
               : "";
           vscode.window.showWarningMessage(
-            `${resultMessage}. Errors: ${displayErrors}${moreErrors}`,
+            `Failed to retrieve ${failedFiles.length} file(s). Errors: ${displayErrors}${moreErrors}`,
           );
         } else {
-          vscode.window.showWarningMessage(resultMessage);
+          vscode.window.showWarningMessage(
+            `Failed to retrieve ${failedFiles.length} file(s)`,
+          );
         }
       }
     } else {
@@ -211,6 +261,7 @@ async function executeMetadataRetrieve(
       `Failed to retrieve metadata: ${error.message}`,
     );
   }
+  return finalResult;
 }
 
 async function handleQueryMetadata(panel: any, data: any) {
@@ -224,6 +275,7 @@ async function handleQueryMetadata(panel: any, data: any) {
       dateFrom,
       dateTo,
       packageFilter,
+      checkLocalFiles,
     } = data;
 
     if (!username) {
@@ -242,6 +294,7 @@ async function handleQueryMetadata(panel: any, data: any) {
         metadataType,
         metadataName,
         packageFilter,
+        !!checkLocalFiles,
       );
     } else {
       // Default to recentChanges mode (SourceMember query)
@@ -254,6 +307,7 @@ async function handleQueryMetadata(panel: any, data: any) {
         dateFrom,
         dateTo,
         packageFilter,
+        !!checkLocalFiles,
       );
     }
   } catch (error: any) {
@@ -430,6 +484,7 @@ async function handleSourceMemberQuery(
   dateFrom: string | null,
   dateTo: string | null,
   packageFilter: string | null,
+  checkLocalFiles: boolean = false,
 ) {
   // Build SOQL query safely on backend
   let query =
@@ -520,6 +575,11 @@ async function handleSourceMemberQuery(
       return { ...r, Operation: operation };
     });
 
+    // If requested, check for local files matching each record
+    if (checkLocalFiles) {
+      records = await annotateLocalFiles(records);
+    }
+
     panel.sendMessage({
       type: "queryResults",
       data: { records },
@@ -546,6 +606,7 @@ async function handleListMetadata(
   metadataType: string | null,
   metadataName: string | null,
   packageFilter: string | null,
+  checkLocalFiles: boolean = false,
 ) {
   // Require specific metadata type for All Metadata mode
   if (!metadataType) {
@@ -624,10 +685,92 @@ async function handleListMetadata(
     return a.MemberType.localeCompare(b.MemberType);
   });
 
+  // If requested, annotate results with local file existence
+  let finalResults = allResults;
+  if (checkLocalFiles && finalResults.length > 0) {
+    finalResults = await annotateLocalFiles(finalResults);
+  }
+
   panel.sendMessage({
     type: "queryResults",
-    data: { records: allResults },
+    data: { records: finalResults },
   });
+}
+
+/**
+ * Annotate an array of records with LocalFileExists boolean based on metadataList patterns
+ */
+async function annotateLocalFiles(records: any[]): Promise<any[]> {
+  try {
+    const metadataTypes = listMetadataTypes();
+    const typeMap: Record<string, any> = {};
+    for (const t of metadataTypes) {
+      if (t.xmlName) {
+        typeMap[t.xmlName] = t;
+      }
+    }
+
+    // Read available package directories from panel creation metadata if present
+    // Fallback: use folders from sfdx-project.json read earlier
+    // For performance, restrict searches to each packageDir under workspaceRoot
+    const packageDirs = await listSfdxProjectPackageDirectories();
+    if (packageDirs.length === 0) {
+      // No package directories found - cannot check local files
+      return records.map((r) => ({ ...r, LocalFileExists: false }));
+    }
+
+    // For each record, build candidate patterns and run async fast-glob searches in parallel (across packageDirs)
+    const annotated = await Promise.all(
+      records.map(async (r) => {
+        try {
+          const mt = typeMap[r.MemberType || r.type || r.MemberType];
+          let exists = false;
+          if (mt) {
+            const dir = mt.directoryName || "";
+            const suffix = mt.suffix || "";
+            const metaFile = mt.metaFile === true;
+            const name = (r.MemberName || r.fullName || "").toString();
+
+            // Build patterns scoped to each packageDir
+            const allPatterns: string[] = [];
+            if (suffix) {
+              for (const pkg of packageDirs) {
+                allPatterns.push(path.join(pkg, dir, "**",`${name}.${suffix}`));
+                if (metaFile) {
+                  allPatterns.push(path.join(pkg, dir,"**", `${name}.${suffix}-meta.xml`));
+                  allPatterns.push(path.join(pkg, dir,"**", `${name}.${suffix}.meta.xml`));
+                }
+              }
+            }
+            // Fallback generic xml file
+            for (const pkg of packageDirs) {
+              allPatterns.push(path.join(pkg, dir, "**", `${name}.xml`));
+            }
+
+            // Run fast-glob searches sequentially across patterns but overall records are parallel
+            for (const pat of allPatterns.map((p) => p.replace(/\\/g, "/"))) {
+              try {
+                const matches = await fg(pat, { dot: true, onlyFiles: true, followSymbolicLinks: true });
+                if (matches && matches.length > 0) {
+                  exists = true;
+                  break;
+                }
+              } catch {
+                // ignore and continue
+              }
+            }
+          }
+          return { ...r, LocalFileExists: exists };
+        } catch {
+          return { ...r, LocalFileExists: false };
+        }
+      }),
+    );
+
+    return annotated;
+  } catch {
+    return records.map((r) => ({ ...r, LocalFileExists: false }));
+  }
 }
 
 /* jscpd:ignore-start */

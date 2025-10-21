@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+## [6.14.1] 2024-10-21
+
+- Improve Metadata retriever
+  - Display operation in the org: created, modified, deleted
+  - New option to check if there is a matching local file in the repo
+  - When operation is deleted, delete locally the file in the repo if existing
+
 ## [6.14.0] 2024-10-21
 
 - New UI: Metadata Retriever allowing to search in recent changes or all metadatas, with filters

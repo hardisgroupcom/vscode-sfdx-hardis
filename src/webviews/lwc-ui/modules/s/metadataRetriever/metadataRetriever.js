@@ -22,6 +22,8 @@ export default class MetadataRetriever extends LightningElement {
   @track dateTo = "";
   @track searchTerm = "";
   @track hasSearched = false;
+  @track checkLocalFiles = false;
+  @track checkLocalAvailable = true;
   @track isLoadingOrgs = false;
   @track isLoadingPackages = false;
   @track isLoading = false;
@@ -63,7 +65,7 @@ export default class MetadataRetriever extends LightningElement {
     if (this.isRecentChangesMode) {
       // Emoji column for change operation (created/modified/deleted)
       cols.push({
-        label: "",
+        label: "Operation",
         fieldName: "ChangeIcon",
         type: "text",
         cellAttributes: {
@@ -71,6 +73,18 @@ export default class MetadataRetriever extends LightningElement {
         },
         initialWidth: 30,
       });
+      // Local file existence column (centered) - only when the user enabled the toggle
+      if (this.checkLocalFiles) {
+        cols.push({
+          label: "Local",
+          fieldName: "LocalFileIcon",
+          type: "text",
+          cellAttributes: {
+            alignment: "center",
+          },
+          initialWidth: 30,
+        });
+      }
     }
 
     // Last Updated By
@@ -168,6 +182,17 @@ export default class MetadataRetriever extends LightningElement {
     return this.queryMode === "allMetadata";
   }
 
+  // Template-friendly properties (avoid inline expressions in HTML)
+  get checkLocalDisabled() {
+    return !this.checkLocalAvailable;
+  }
+
+  get checkLocalTooltip() {
+    return this.checkLocalAvailable
+      ? ""
+      : "No sfdx-project.json found in workspace root - local file checks disabled";
+  }
+
   get hasResults() {
     return this.filteredMetadata && this.filteredMetadata.length > 0;
   }
@@ -236,6 +261,13 @@ export default class MetadataRetriever extends LightningElement {
       if (data.metadataTypes && Array.isArray(data.metadataTypes)) {
         this.metadataTypes = data.metadataTypes;
       }
+      // Backend can indicate whether local file checking is available
+      if (typeof data.checkLocalAvailable === "boolean") {
+        this.checkLocalAvailable = data.checkLocalAvailable;
+        if (!this.checkLocalAvailable) {
+          this.checkLocalFiles = false; // force-uncheck
+        }
+      }
     }
   }
 
@@ -259,6 +291,26 @@ export default class MetadataRetriever extends LightningElement {
     });
     // Reset package filter to All
     this.packageFilter = "All";
+  }
+
+  handleCheckLocalChange(event) {
+    if (!this.checkLocalAvailable) {
+      this.checkLocalFiles = false;
+      return;
+    }
+    // lightning-input toggle may expose the boolean on event.target.checked or event.detail.checked
+    const newVal =
+      event.target?.checked === true ||
+      event.detail?.checked === true ||
+      event.detail?.value === true;
+    this.checkLocalFiles = newVal;
+
+    // If the user just enabled the toggle and we already performed a search,
+    // re-run the server query to request annotated results (LocalFileExists).
+    if (newVal === true && this.hasSearched && this.canSearch) {
+      // small timeout to allow UI to update toggle state before triggering search
+      setTimeout(() => this.handleSearch(), 50);
+    }
   }
 
   handleQueryModeChange(event) {
@@ -392,6 +444,7 @@ export default class MetadataRetriever extends LightningElement {
           : null,
         dateFrom: this.isRecentChangesMode ? this.dateFrom || null : null,
         dateTo: this.isRecentChangesMode ? this.dateTo || null : null,
+        checkLocalFiles: this.checkLocalFiles || false,
       },
     });
   }
@@ -604,6 +657,38 @@ export default class MetadataRetriever extends LightningElement {
       this.handleQueryResults(data);
     } else if (type === "queryError") {
       this.handleQueryError(data);
+    } else if (type === "postRetrieveLocalCheck") {
+      this.handlePostRetrieveLocalCheck(data);
+    }
+  }
+
+  handlePostRetrieveLocalCheck(data) {
+    if (!data || !Array.isArray(data.files) || data.files.length === 0) {
+      return;
+    }
+
+    // data.files contains annotated records with MemberType, MemberName, LocalFileExists
+    const updates = new Map();
+    for (const f of data.files) {
+      const key = `${f.MemberType}::${f.MemberName}`;
+      updates.set(key, f.LocalFileExists);
+    }
+
+    // Update existing metadata entries if present
+    let changed = false;
+    this.metadata = this.metadata.map((row) => {
+      const key = `${row.MemberType}::${row.MemberName}`;
+      if (updates.has(key)) {
+        const exists = updates.get(key);
+        changed = true;
+        return { ...row, LocalFileIcon: exists === true ? "✅" : "" };
+      }
+      return row;
+    });
+
+    if (changed) {
+      // Re-apply client-side filters to refresh the datatable
+      this.applyFilters();
     }
   }
 
@@ -663,6 +748,8 @@ export default class MetadataRetriever extends LightningElement {
             "",
           uniqueKey: `${record.MemberType}::${record.MemberName}`,
           ChangeIcon: icon,
+          // Local file indicator: show ✅ when present; otherwise leave empty
+          LocalFileIcon: record.LocalFileExists === true ? "✅" : "",
         };
       });
       this.applyFilters();
