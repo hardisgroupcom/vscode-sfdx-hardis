@@ -160,8 +160,10 @@
         </div>
       </template>
 
-      <!-- Results Datatable -->
-      <template if:true={hasResults}>
+       <!-- Results Datatable (visible when there are results OR when metadata was loaded from backend)
+         This keeps the "search in results" input and action buttons visible even when client-side
+         filters temporarily remove all displayed rows. -->
+       <template if:true={showResultsArea}>
         <div class="slds-p-around_x-small">
           <div class="slds-grid slds-grid_vertical-align-center slds-m-bottom_small">
             <div class="slds-col slds-no-flex">

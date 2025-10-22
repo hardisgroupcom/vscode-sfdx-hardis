@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [6.14.3] 2024-10-22
+
+- Metadata Retriever fixes
+  - Always display "Search in results" filters once there are loaded results.
+  - Unselect deleted files
+
 ## [6.14.2] 2024-10-22
 
 - Add button to view logs when it is relevant

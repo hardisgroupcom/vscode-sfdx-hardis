@@ -210,6 +210,22 @@ export default class MetadataRetriever extends LightningElement {
     return this.filteredMetadata && this.filteredMetadata.length > 0;
   }
 
+  // Show results area when there are displayed results OR when metadata was loaded
+  // from the backend (even if client-side filtering currently hides all rows). This
+  // ensures the "search in results" input and retrieve actions remain accessible
+  // so the user can refine or clear client-side filters.
+  get showResultsArea() {
+    return this.hasResults || this.hasMetadataLoaded;
+  }
+
+  // True when any metadata records have been loaded from the backend
+  // even if client-side filters reduce displayed rows to zero. This
+  // lets the UI keep the "search in results" input and actions visible
+  // so users can refine the client-side search.
+  get hasMetadataLoaded() {
+    return this.metadata && this.metadata.length > 0;
+  }
+
   get noResults() {
     // Only show the No Results state when a search has been performed
     return (
@@ -763,10 +779,6 @@ export default class MetadataRetriever extends LightningElement {
   }
 
   handlePostRetrieveLocalCheck(data) {
-    if (!data || !Array.isArray(data.files) || data.files.length === 0) {
-      return;
-    }
-
     // data.files contains annotated records with MemberType, MemberName, LocalFileExists
     const updates = new Map();
     for (const f of data.files) {
@@ -789,8 +801,8 @@ export default class MetadataRetriever extends LightningElement {
     // Also unselect any rows that were successfully retrieved (present in data.files)
     try {
       const keysToRemove = new Set();
-      for (const f of data.files) {
-        const k = `${f.MemberType}::${f.MemberName}`;
+      for (const f of [...data.files, ...(data.deletedFiles || [])]) {
+        const k = `${f.MemberType || f.memberType}::${f.MemberName || f.memberName}`;
         keysToRemove.add(k);
       }
 
