@@ -78,15 +78,13 @@ export function registerShowMetadataRetriever(commands: Commands) {
         },
       );
 
-      const logoUri = panel.asWebviewUri([
-        "resources",
-        "webviews",
-        "logo-m.png",
-      ]);
+      const logoUri = panel.asWebviewUri(["logo-m.png"]);
       panel.sendMessage({
-        type: "initialize-feature-logo",
+        type: "imageResources",
         data: {
-          featureLogoUri: logoUri,
+          images: {
+            featureLogo: logoUri
+          },
         },
       });
 

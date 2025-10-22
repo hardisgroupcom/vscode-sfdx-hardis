@@ -114,12 +114,7 @@ export class LwcUiPanel {
   }
 
   public asWebviewUri(path: string[]): string {
-    if (path.length === 0) {
-      return "";
-    }
-    if (path[0] !== "out") {
-      path.unshift("out");
-    }
+    path.unshift("out","resources","webviews");
     const resourceUri = vscode.Uri.joinPath(this.extensionUri, ...path);
     return this.panel.webview.asWebviewUri(resourceUri).toString();
   }

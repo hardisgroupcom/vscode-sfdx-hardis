@@ -34,7 +34,7 @@ export default class MetadataRetriever extends LightningElement {
   @track selectedRowKeys = [];
   @track showFeature = false;
   @track featureId = null;
-  @track featureLogoImg = "";
+  @track imgFeatureLogo = "";
 
   // Performance optimization properties
   searchDebounceTimer = null;
@@ -758,11 +758,8 @@ export default class MetadataRetriever extends LightningElement {
   handleMessage(type, data) {
     if (type === "initialize") {
       this.initialize(data);
-    } else if (type === "initialize-feature-logo") {
-      // Set feature logo URI from dedicated message
-      if (data && data.featureLogoUri) {
-        this.featureLogoImg = data.featureLogoUri;
-      }
+    } else if (type === "imageResources") {
+      this.handleImageResources(data);
     } else if (type === "listOrgsResults") {
       this.handleOrgResults(data);
     } else if (type === "listPackagesResults") {
@@ -775,6 +772,12 @@ export default class MetadataRetriever extends LightningElement {
       this.handleQueryError(data);
     } else if (type === "postRetrieveLocalCheck") {
       this.handlePostRetrieveLocalCheck(data);
+    }
+  }
+
+  handleImageResources(data) {
+    if (data && data?.images?.featureLogo) {
+      this.imgFeatureLogo = data.images.featureLogo;
     }
   }
 
