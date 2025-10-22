@@ -18,6 +18,8 @@ vsc-extension-quickstart.md
 .github/**
 docs/**
 !**/sfdx-hardis-logo-square.png
+!out/resources/webviews/**
+!resources/webviews/**
 **/*.png
 **/*.gif
 node_modules

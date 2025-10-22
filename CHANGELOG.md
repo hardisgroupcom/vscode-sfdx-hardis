@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [6.14.5] 2024-10-22
+
+- Fix WebPack compile in production
+
 ## [6.14.4] 2024-10-22
 
 - Fix images display within WebView panels
