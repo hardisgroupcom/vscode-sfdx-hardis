@@ -229,6 +229,10 @@ async function executeMetadataRetrieve(
         }
       }
       if (deletedItemsSuccess.length > 0) {
+        panel.sendMessage({
+          type: "postRetrieveLocalCheck",
+          data: { files: [], deletedFiles: deletedItemsSuccess },
+        });
         vscode.window
           .showInformationMessage(
             `Successfully deleted ${deletedItemsSuccess.length} local file(s) corresponding to deleted metadata.`,
