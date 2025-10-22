@@ -801,8 +801,8 @@ export default class MetadataRetriever extends LightningElement {
     // Also unselect any rows that were successfully retrieved (present in data.files)
     try {
       const keysToRemove = new Set();
-      for (const f of [...data.files,...(data.deletedFiles||[])]) {
-        const k = `${f.MemberType || f.memberType}::${f.MemberName || f.memberName }`;
+      for (const f of [...data.files, ...(data.deletedFiles || [])]) {
+        const k = `${f.MemberType || f.memberType}::${f.MemberName || f.memberName}`;
         keysToRemove.add(k);
       }
 
