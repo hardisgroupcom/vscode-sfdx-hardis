@@ -113,7 +113,7 @@ export class LwcUiPanel {
     this.panel.title = title;
   }
 
-  public asWebviewUri(path: string[]): string{
+  public asWebviewUri(path: string[]): string {
     if (path.length === 0) {
       return "";
     }
