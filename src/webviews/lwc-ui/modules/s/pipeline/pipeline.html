@@ -3,82 +3,80 @@
             <!-- Status icon styles moved to pipeline.css (LWC requires CSS in the component bundle) -->
     <lightning-card title="🚀 SFDX-Hardis DevOps Pipeline">
         <div slot="actions" class="slds-float_right">
-            <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
-                <template if:true={gitAuthenticated}>
-                    <div style="margin-top: 0.25rem;">
-                        <lightning-input
-                            type="toggle"
-                            label="Show feature branches"
-                            checked={displayFeatureBranches}
-                            onchange={handleToggleFeatureBranches}
-                        ></lightning-input>
-                    </div>
-                </template>
-                <lightning-button-group>
-                    <lightning-button
-                        icon-name={connectedIconName}
-                        variant={connectedVariant}
-                        label={connectedLabel}
-                        title="Connect to a Git provider"
-                        onclick={handleGitConnect}
-                    ></lightning-button>
-                    <lightning-button
-                        icon-name={ticketConnectedIconName}
-                        variant={ticketConnectedVariant}
-                        label={ticketConnectedLabel}
-                        title="Connect to a Ticketing provider"
-                        onclick={handleTicketConnect}
-                    ></lightning-button>
-                    <lightning-button-menu 
-                        alternative-text="Pipeline Settings" 
-                        icon-name="utility:settings"
-                        variant="border-filled"
-                        menu-alignment="right"
-                    >
-                        <lightning-menu-item 
-                            value="pipelineSettings" 
-                            label="Pipeline Settings"
+            <div class="actions-row">
+                <div style="display:flex;align-items:center;gap:0.5rem;">
+                    <!-- Provider icon button for Git -->
+                    <button class="slds-button provider-button" title={connectedLabel} onclick={handleGitConnect}>
+                        <img class={gitProviderIconClass} src={gitProviderIconUrl} alt="Git Provider" />
+                    </button>
+                    <!-- Provider icon button for Ticketing -->
+                    <button class="slds-button provider-button" title={ticketConnectedLabel} onclick={handleTicketConnect}>
+                        <img class={ticketProviderIconClass} src={ticketProviderIconUrl} alt="Ticket Provider" />
+                    </button>
+
+                    <template if:true={gitAuthenticated}>
+                        <div class="toggle-wrapper">
+                            <lightning-input
+                                type="toggle"
+                                label="Show feature branches"
+                                checked={displayFeatureBranches}
+                                onchange={handleToggleFeatureBranches}
+                            ></lightning-input>
+                        </div>
+                    </template>
+
+                    <lightning-button-group>
+                        <lightning-button-menu
+                            alternative-text="Pipeline Settings"
                             icon-name="utility:settings"
-                            onclick={handleShowPipelineConfig}
-                        ></lightning-menu-item>
-                        <lightning-menu-item 
-                            value="addOrg" 
-                            label="Add/Configure Org"
-                            icon-name="utility:key"
-                            onclick={configureAuth}
-                        ></lightning-menu-item>
-                    </lightning-button-menu>
-                    <lightning-button-menu 
-                        alternative-text="Deployment Packages" 
-                        icon-name="utility:package_org"
-                        variant="border-filled"
-                        menu-alignment="right"
-                    >
-                        <lightning-menu-item 
-                            value="packageXml" 
-                            label="Package XML"
-                            icon-name="utility:upload"
-                            onclick={handleShowPackageXml}
-                        ></lightning-menu-item>
-                        <lightning-menu-item 
-                            value="noOverwrite" 
-                            label="No Overwrite"
-                            icon-name="utility:ban"
-                            onclick={handleShowNoOverwrite}
-                        ></lightning-menu-item>
-                        <lightning-menu-item 
-                            value="destructive" 
-                            label="Destructive Changes"
-                            icon-name="utility:delete"
-                            onclick={handleShowDestructiveChanges}
-                        ></lightning-menu-item>
-                    </lightning-button-menu>
-                    <lightning-button 
-                        icon-name="utility:refresh" 
-                        title="Refresh pipeline data" 
-                        onclick={handleRefresh}
-                    ></lightning-button>
-                </lightning-button-group>
+                            variant="border-filled"
+                            menu-alignment="right"
+                        >
+                            <lightning-menu-item
+                                value="pipelineSettings"
+                                label="Pipeline Settings"
+                                icon-name="utility:settings"
+                                onclick={handleShowPipelineConfig}
+                            ></lightning-menu-item>
+                            <lightning-menu-item
+                                value="addOrg"
+                                label="Add/Configure Org"
+                                icon-name="utility:key"
+                                onclick={configureAuth}
+                            ></lightning-menu-item>
+                        </lightning-button-menu>
+                        <lightning-button-menu
+                            alternative-text="Deployment Packages"
+                            icon-name="utility:package_org"
+                            variant="border-filled"
+                            menu-alignment="right"
+                        >
+                            <lightning-menu-item
+                                value="packageXml"
+                                label="Package XML"
+                                icon-name="utility:upload"
+                                onclick={handleShowPackageXml}
+                            ></lightning-menu-item>
+                            <lightning-menu-item
+                                value="noOverwrite"
+                                label="No Overwrite"
+                                icon-name="utility:ban"
+                                onclick={handleShowNoOverwrite}
+                            ></lightning-menu-item>
+                            <lightning-menu-item
+                                value="destructive"
+                                label="Destructive Changes"
+                                icon-name="utility:delete"
+                                onclick={handleShowDestructiveChanges}
+                            ></lightning-menu-item>
+                        </lightning-button-menu>
+                        <lightning-button
+                            icon-name="utility:refresh"
+                            title="Refresh pipeline data"
+                            onclick={handleRefresh}
+                        ></lightning-button>
+                    </lightning-button-group>
+                </div>
             </div>
         </div>
         <template if:true={pipelineData}>

@@ -24,6 +24,24 @@ export function registerShowPipeline(commands: Commands) {
           firstDisplay: true,
         },
       );
+
+      panel.sendMessage({
+        type: "imageResources",
+        data: {
+          images: {
+            git: panel.asWebviewUri(["icons", "git.svg"]),
+            ticket: panel.asWebviewUri(["icons", "ticket.svg"]),
+            github: panel.asWebviewUri(["icons", "github.svg"]),
+            gitlab: panel.asWebviewUri(["icons", "gitlab.svg"]),
+            bitbucket: panel.asWebviewUri(["icons", "bitbucket.svg"]),
+            azuredevops: panel.asWebviewUri(["icons", "azuredevops.svg"]),
+            gitea: panel.asWebviewUri(["icons", "gitea.svg"]),
+            jira: panel.asWebviewUri(["icons", "jira.svg"]),
+            azureboards: panel.asWebviewUri(["icons", "azureboards.svg"]),
+          },
+        },
+      });
+
       panel.updateTitle("DevOps Pipeline");
 
       panel.onMessage(async (type, data) => {
@@ -121,7 +139,7 @@ export function registerShowPipeline(commands: Commands) {
             );
             return;
           }
-          if (ticketProvider.isAuthenticated === false) {
+          if (!ticketProvider.isAuthenticated) {
             vscode.window
               .showErrorMessage(
                 `Failed to connect to ${ticketProvider.providerName}. Please check the logs for details.`,
