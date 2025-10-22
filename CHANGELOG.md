@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [6.14.4] 2024-10-22
+
+- Fix images display within WebView panels
+
 ## [6.14.3] 2024-10-22
 
 - Metadata Retriever fixes
