@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [6.14.2] 2024-10-22
+
 - Add button to view logs when it is relevant
 
 ## [6.14.1] 2024-10-21
