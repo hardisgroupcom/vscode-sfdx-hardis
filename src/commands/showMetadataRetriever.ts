@@ -316,10 +316,13 @@ async function executeMetadataRetrieve(
             : vscode.window.showWarningMessage(
                 displayMsg,
                 "View and commit files",
+                "View logs",
               );
         promAction.then((action) => {
           if (action === "View and commit files") {
             vscode.commands.executeCommand("workbench.view.scm");
+          } else if (action === "View logs") {
+            Logger.showOutputChannel();
           }
         });
 
@@ -384,10 +387,18 @@ async function executeMetadataRetrieve(
               ? ` (and ${errorDetails.length - 3} more - see logs)`
               : "";
           const msg = `Failed to retrieve ${failedFiles.length} file(s)${singleName ? ` (${singleName})` : ""}. Errors: ${displayErrors}${moreErrors}`;
-          vscode.window.showWarningMessage(msg);
+          vscode.window.showWarningMessage(msg, "View logs").then((action) => {
+            if (action === "View logs") {
+              Logger.showOutputChannel();
+            }
+          });
         } else {
           const msg = `Failed to retrieve ${failedFiles.length} file(s)${singleName ? ` (${singleName})` : ""}`;
-          vscode.window.showWarningMessage(msg);
+          vscode.window.showWarningMessage(msg, "View logs").then((action) => {
+            if (action === "View logs") {
+              Logger.showOutputChannel();
+            }
+          });
         }
       }
     } else {
