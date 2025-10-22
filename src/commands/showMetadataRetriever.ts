@@ -78,24 +78,13 @@ export function registerShowMetadataRetriever(commands: Commands) {
         },
       );
 
-      // Compute and send feature logo URI to LWC
-      if ((panel as any).panel && (panel as any).extensionUri) {
-        const logoPath = vscode.Uri.joinPath(
-          (panel as any).extensionUri,
-          "out",
-          "resources",
-          "logo-m.png",
-        );
-        const logoUri = (panel as any).panel.webview
-          .asWebviewUri(logoPath)
-          .toString();
-        panel.sendMessage({
-          type: "initialize-feature-logo",
-          data: {
-            featureLogoUri: logoUri,
-          },
-        });
-      }
+      const logoUri = panel.asWebviewUri(["resources", "webviews", "logo-m.png"]);
+      panel.sendMessage({
+        type: "initialize-feature-logo",
+        data: {
+          featureLogoUri: logoUri,
+        },
+      });
 
       panel.updateTitle("Metadata Retriever");
       // Register message handlers
