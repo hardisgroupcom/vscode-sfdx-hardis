@@ -88,6 +88,7 @@ export class LwcUiPanel {
             "@salesforce-ux",
             "design-system",
           ),
+          vscode.Uri.joinPath(extensionUri, "out", "resources"),
         ],
       },
     );
@@ -110,6 +111,17 @@ export class LwcUiPanel {
    */
   public updateTitle(title: string): void {
     this.panel.title = title;
+  }
+
+  public asWebviewUri(path: string[]): string {
+    if (path.length === 0) {
+      return "";
+    }
+    if (path[0] !== "out") {
+      path.unshift("out");
+    }
+    const resourceUri = vscode.Uri.joinPath(this.extensionUri, ...path);
+    return this.panel.webview.asWebviewUri(resourceUri).toString();
   }
 
   /**

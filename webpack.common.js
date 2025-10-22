@@ -176,13 +176,8 @@ const lwcWebviewConfig = {
           noErrorOnMissing: true,
         },
         {
-          from: path.resolve(__dirname, "resources/git-icons"),
-          to: path.resolve(__dirname, "out/resources/git-icons"),
-          noErrorOnMissing: true,
-        },
-        {
-          from: path.resolve(__dirname, "resources/logo-m.png"),
-          to: path.resolve(__dirname, "out/resources/logo-m.png"),
+          from: path.resolve(__dirname, "resources/webviews"),
+          to: path.resolve(__dirname, "out/resources/webviews"),
           noErrorOnMissing: true,
         },
         {
