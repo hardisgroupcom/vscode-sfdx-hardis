@@ -43,13 +43,14 @@ export class JiraProvider extends TicketProvider {
       (await SecretsManager.getSecret(this.hostKey + "_JIRA_EMAIL")) || "";
     let jiraToken =
       (await SecretsManager.getSecret(this.hostKey + "_JIRA_TOKEN")) || "";
+    let connected: boolean|null = null;
     if (jiraPAT) {
-      return await this.initializeClient(jiraPAT, "", "");
+      connected = await this.initializeClient(jiraPAT, "", "");
     }
-    if (jiraEmail && jiraToken) {
-      return await this.initializeClient("", jiraEmail, jiraToken);
+    if (!connected && jiraEmail && jiraToken) {
+      connected = await this.initializeClient("", jiraEmail, jiraToken);
     }
-    return null;
+    return connected;
   }
 
   async authenticate(): Promise<boolean | null> {
@@ -74,11 +75,11 @@ export class JiraProvider extends TicketProvider {
     // Prompt user for authentication method
     const choice = await vscode.window.showQuickPick(
       [
+        { label: "Use Email + API Token", value: "basic" },
         {
-          label: "Use Personal Access Token (PAT) - Recommended",
+          label: "Use Personal Access Token (PAT)",
           value: "pat",
         },
-        { label: "Use Email + API Token", value: "basic" },
       ],
       {
         placeHolder: "How would you like to authenticate to JIRA?",
