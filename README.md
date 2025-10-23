@@ -33,6 +33,7 @@ _Graciously provided by [**Cloudity**](https://cloudity.com/), and based on sfdx
   - [Status](#status)
   - [Dependencies](#dependencies)
 - [Assisted UI](#assisted-ui)
+  - [Metadata Retriever](#metadata-retriever)
   - [CI/CD (Simple)](#work-on-a-user-story-simple)
   - [CI/CD (Advanced)](#work-on-a-user-story-expert)
   - [Data Import & Export](#data-import-export)
@@ -119,6 +120,16 @@ If some a missing or with deprecated versions, a message is displayed to invite 
 ## Assisted UI
 
 Integration between VsCode SFDX Hardis UI and sfdx-hardis CLI, so you don't need to know the commands or their arguments
+
+### Metadata Retriever
+
+Browse your org Metadatas with an easy to use UI, select what you want to retrieve, and click retrieve.
+
+Filter by type, name, user who last updated, date of last update, and related Managed Package.
+
+This is a replacement of standard extension "Org Browser" with more features.
+
+![Metadata Retriever](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/metadata-retriever.gif)
 
 ### Work on a User Story (Simple)
 
