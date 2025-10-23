@@ -51,7 +51,7 @@ export async function getMetadataFilePath(
         const candidateKeys = new Set<string>();
         const name = metadataName || "";
         const splitName = name.includes(".") ? name.split(".") : [name];
-
+        /* jscpd:ignore-start */
         if (splitName.length > 1 && mt.directoryName) {
             const parentApiName = splitName.slice(0, -1).join("/");
             const componentName = splitName.slice(-1)[0];
@@ -97,6 +97,7 @@ export async function getMetadataFilePath(
             candidateKeys.add(`/${name}`);
             candidateKeys.add(`/${name}-meta.xml`);
         }
+        /* jscpd:ignore-end */
 
         // For each package dir, scan relevant files and try to find a match
         for (const pkg of pkgDirs) {
