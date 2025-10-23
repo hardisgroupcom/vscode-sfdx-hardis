@@ -34,7 +34,7 @@ export function registerShowPipeline(commands: Commands) {
             github: panel.asWebviewUri(["icons", "github.svg"]),
             gitlab: panel.asWebviewUri(["icons", "gitlab.svg"]),
             bitbucket: panel.asWebviewUri(["icons", "bitbucket.svg"]),
-            azuredevops: panel.asWebviewUri(["icons", "azuredevops.svg"]),
+            azure: panel.asWebviewUri(["icons", "azure.svg"]),
             gitea: panel.asWebviewUri(["icons", "gitea.svg"]),
             jira: panel.asWebviewUri(["icons", "jira.svg"]),
             azureboards: panel.asWebviewUri(["icons", "azureboards.svg"]),
