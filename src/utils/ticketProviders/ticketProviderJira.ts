@@ -18,9 +18,20 @@ export class JiraProvider extends TicketProvider {
     this.providerName = "JIRA";
   }
 
+  completeJiraHostUrl(hostUrl: string): string {
+    if (!hostUrl || hostUrl === "") {
+      return hostUrl;
+    }
+    let completedUrl = hostUrl.trim();
+    if (!completedUrl.startsWith("http://") && !completedUrl.startsWith("https://")) {
+      completedUrl = "https://" + completedUrl;
+    }
+    return completedUrl;
+  }
+
   async initializeConnection(): Promise<boolean | null> {
     const config = await getConfig("project");
-    this.jiraHost = config.jiraHost || "";
+    this.jiraHost = this.completeJiraHostUrl(config.jiraHost || "");
     if (!this.jiraHost) {
       Logger.log("JIRA host not configured.");
       return false;
@@ -43,8 +54,7 @@ export class JiraProvider extends TicketProvider {
 
   async authenticate(): Promise<boolean | null> {
     const config = await getConfig("project");
-    this.jiraHost = config.jiraHost || "";
-
+    this.jiraHost = this.completeJiraHostUrl(config.jiraHost || "");
     if (!this.jiraHost) {
       Logger.log(
         "JIRA host not configured. Please set jiraHost in .sfdx-hardis.yml",
@@ -210,7 +220,7 @@ export class JiraProvider extends TicketProvider {
 
   async buildTicketUrl(ticketId: string): Promise<string> {
     const config = await getConfig("project");
-    const jiraHost = config.jiraHost || this.jiraHost;
+    const jiraHost = this.jiraHost || this.completeJiraHostUrl(config.jiraHost) ;
     const baseUrl = jiraHost.replace(/\/$/, "");
     return `${baseUrl}/browse/${ticketId}`;
   }
