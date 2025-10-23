@@ -3,8 +3,8 @@ import * as fs from "fs-extra";
 import path from "path";
 import { LwcPanelManager } from "../lwc-panel-manager";
 import { getWorkspaceRoot } from "../utils";
-import { getMetadataFilePath } from "../utils/projectUtils";
 import { LwcUiPanel } from "../webviews/lwc-ui-panel";
+import { openMetadataFile } from "../utils/projectUtils";
 
 export async function showPackageXmlPanel(
   packageConfig: any = {},
@@ -79,33 +79,9 @@ export async function showPackageXmlPanel(
 }
 
 async function handleOpenMetadataMember(data: any) {
-  try {
-    const metadataType = data?.metadataType;
-    const metadataName = data?.metadataName;
-    if (!metadataType || !metadataName) {
-      vscode.window.showErrorMessage("Missing metadata type or name");
-      return;
-    }
-    const filePath = await getMetadataFilePath(metadataType, metadataName);
-    if (!filePath) {
-      vscode.window.showInformationMessage(
-        `No local file found for ${metadataType}: ${metadataName}`,
-      );
-      return;
-    }
-    try {
-      const document = await vscode.workspace.openTextDocument(filePath);
-      await vscode.window.showTextDocument(document);
-    } catch (err: any) {
-      vscode.window.showErrorMessage(
-        `Failed to open metadata file: ${err?.message || err}`,
-      );
-    }
-  } catch (err: any) {
-    vscode.window.showErrorMessage(
-      `Error locating metadata file: ${err?.message || err}`,
-    );
-  }
+  const metadataType = data?.metadataType;
+  const metadataName = data?.metadataName;
+  await openMetadataFile(metadataType, metadataName);
 }
 
 async function openPackageFile(data: any, config: { packageType: any; filePath: any; fallbackFilePath: any; title: any; }) {

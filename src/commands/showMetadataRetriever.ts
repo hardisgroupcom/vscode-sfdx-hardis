@@ -11,6 +11,7 @@ import {
 } from "../utils";
 import { Logger } from "../logger";
 import { listMetadataTypes } from "../utils/metadataList";
+import { openMetadataFile } from "../utils/projectUtils";
 import fg from "fast-glob";
 import * as path from "path";
 import * as fs from "fs-extra";
@@ -109,6 +110,12 @@ export function registerShowMetadataRetriever(commands: Commands) {
           await handleRetrieveMetadata(panel, data);
         } else if (type === "retrieveSelectedMetadata") {
           await handleRetrieveSelectedMetadata(panel, data);
+        } else if (type === "openMetadataFile") {
+            const metadataType = data?.metadataType;
+            const metadataName = data?.metadataName;
+            if (metadataType && metadataName) {
+              await openMetadataFile(metadataType, metadataName);
+            }
         }
       });
     },

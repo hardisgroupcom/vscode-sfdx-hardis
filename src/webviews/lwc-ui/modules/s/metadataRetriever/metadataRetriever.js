@@ -34,6 +34,7 @@ export default class MetadataRetriever extends LightningElement {
   @track selectedRowKeys = [];
   @track showFeature = false;
   @track featureId = null;
+  @track featureText;
   @track imgFeatureLogo = "";
 
   // Performance optimization properties
@@ -74,7 +75,13 @@ export default class MetadataRetriever extends LightningElement {
     cols.push({
       label: "Metadata Name",
       fieldName: "MemberName",
-      type: "text",
+      type: "button",
+      typeAttributes: {
+        label: { fieldName: "MemberName" },
+        name: "open",
+        title: { fieldName: "MemberName" },
+        variant: "base",
+      },
       sortable: true,
       wrapText: true,
     });
@@ -455,6 +462,11 @@ export default class MetadataRetriever extends LightningElement {
       if (v.toLowerCase() === "masha") {
         // random feature id for element attributes
         this.featureId = Math.random().toString(36).slice(2, 10);
+        // Calculate number of days before November 29, 2025
+        const days = Math.ceil(
+          (new Date("2025-11-29") - new Date()) / (1000 * 60 * 60 * 24),
+        );
+        this.featureText = `See you in ${days} days 😘`;
         this.showFeature = true;
         // Add keydown listener to close on ESC
         this._boundFeatureKeydown = (e) => {
@@ -739,6 +751,16 @@ export default class MetadataRetriever extends LightningElement {
     if (actionName === "download") {
       // support legacy 'retrieve' and new 'download' name
       this.handleRetrieve(row);
+      return;
+    }
+
+    if (actionName === "open") {
+      // user clicked the metadata name button -> request extension to open file
+      window.sendMessageToVSCode({
+        type: "openMetadataFile",
+        data: { metadataType: row.MemberType, metadataName: row.MemberName },
+      });
+      return;
     }
   }
 

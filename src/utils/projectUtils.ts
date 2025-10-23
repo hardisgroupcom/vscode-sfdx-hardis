@@ -1,8 +1,37 @@
 
+import * as vscode from "vscode";
 import * as path from "path";
 import fg from "fast-glob";
 import { getWorkspaceRoot, listSfdxProjectPackageDirectories } from "../utils";
 import { listMetadataTypes } from "./metadataList";
+
+export async function openMetadataFile(metadataType: string,metadataName: string): Promise<void> {
+    try {
+        if (!metadataType || !metadataName) {
+            vscode.window.showErrorMessage("Missing metadata type or name");
+            return;
+        }
+        const filePath = await getMetadataFilePath(metadataType, metadataName);
+        if (!filePath) {
+            vscode.window.showInformationMessage(
+            `No local file found for ${metadataType}: ${metadataName}`,
+            );
+            return;
+        }
+        try {
+            const document = await vscode.workspace.openTextDocument(filePath);
+            await vscode.window.showTextDocument(document);
+        } catch (err: any) {
+            vscode.window.showErrorMessage(
+            `Failed to open metadata file: ${err?.message || err}`,
+            );
+        }
+        } catch (err: any) {
+        vscode.window.showErrorMessage(
+            `Error locating metadata file: ${err?.message || err}`,
+        );
+    }
+}
 
 export async function getMetadataFilePath(
     metadataType: string, metadataName: string
