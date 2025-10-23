@@ -8,7 +8,10 @@ import { LwcPanelManager } from "../lwc-panel-manager";
 export function registerShowPipelineConfig(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
     "vscode-sfdx-hardis.showPipelineConfig",
-    async (branchName: string | null, initialSectionSelected: string | null) => {
+    async (
+      branchName: string | null,
+      initialSectionSelected: string | null,
+    ) => {
       const workspaceRoot = getWorkspaceRoot();
       const sfdxHardisConfigHelper =
         SfdxHardisConfigHelper.getInstance(workspaceRoot);
@@ -38,7 +41,7 @@ export function registerShowPipelineConfig(commands: Commands) {
         "s-pipeline-config",
         {
           ...configEditorInput,
-          initialSectionSelected: initialSectionSelected
+          initialSectionSelected: initialSectionSelected,
         },
       );
       panel.updateTitle(

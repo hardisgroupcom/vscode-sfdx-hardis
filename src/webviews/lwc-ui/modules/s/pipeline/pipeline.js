@@ -207,7 +207,10 @@ export default class Pipeline extends LightningElement {
 
   // Compute the git provider icon URL (falls back to generic link icon when missing)
   get gitProviderIconUrl() {
-    const key = (this.prButtonInfo && this.prButtonInfo.icon) || this.repoPlatformLabel || "";
+    const key =
+      (this.prButtonInfo && this.prButtonInfo.icon) ||
+      this.repoPlatformLabel ||
+      "";
     if (key && this.images && this.images[key.toLowerCase()]) {
       return this.images[key.toLowerCase()];
     }
@@ -221,7 +224,7 @@ export default class Pipeline extends LightningElement {
       return this.images[key];
     }
     // default ticket icon (jira) if available
-    return this.images["ticket"]
+    return this.images["ticket"];
   }
 
   // CSS classes to toggle colored vs greyed appearance

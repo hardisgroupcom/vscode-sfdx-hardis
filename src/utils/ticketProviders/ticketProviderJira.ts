@@ -23,7 +23,10 @@ export class JiraProvider extends TicketProvider {
       return hostUrl;
     }
     let completedUrl = hostUrl.trim();
-    if (!completedUrl.startsWith("http://") && !completedUrl.startsWith("https://")) {
+    if (
+      !completedUrl.startsWith("http://") &&
+      !completedUrl.startsWith("https://")
+    ) {
       completedUrl = "https://" + completedUrl;
     }
     return completedUrl;
@@ -43,7 +46,7 @@ export class JiraProvider extends TicketProvider {
       (await SecretsManager.getSecret(this.hostKey + "_JIRA_EMAIL")) || "";
     let jiraToken =
       (await SecretsManager.getSecret(this.hostKey + "_JIRA_TOKEN")) || "";
-    let connected: boolean|null = null;
+    let connected: boolean | null = null;
     if (jiraPAT) {
       connected = await this.initializeClient(jiraPAT, "", "");
     }
@@ -60,14 +63,20 @@ export class JiraProvider extends TicketProvider {
       Logger.log(
         "JIRA host not configured. Please set jiraHost in .sfdx-hardis.yml",
       );
-      vscode.window.showErrorMessage(
-        "JIRA host not configured. Please set jiraHost in .sfdx-hardis.yml (use Pipeline Settings)",
-        "View Pipeline Settings",
-      ).then((action) => {
-        if (action === "View Pipeline Settings") {
-          vscode.commands.executeCommand("vscode-sfdx-hardis.showPipelineConfig", null, "Ticketing");
-        }
-      });
+      vscode.window
+        .showErrorMessage(
+          "JIRA host not configured. Please set jiraHost in .sfdx-hardis.yml (use Pipeline Settings)",
+          "View Pipeline Settings",
+        )
+        .then((action) => {
+          if (action === "View Pipeline Settings") {
+            vscode.commands.executeCommand(
+              "vscode-sfdx-hardis.showPipelineConfig",
+              null,
+              "Ticketing",
+            );
+          }
+        });
       return false;
     }
     this.hostKey = this.jiraHost.replace(/\./g, "_").toUpperCase();
@@ -221,7 +230,7 @@ export class JiraProvider extends TicketProvider {
 
   async buildTicketUrl(ticketId: string): Promise<string> {
     const config = await getConfig("project");
-    const jiraHost = this.jiraHost || this.completeJiraHostUrl(config.jiraHost) ;
+    const jiraHost = this.jiraHost || this.completeJiraHostUrl(config.jiraHost);
     const baseUrl = jiraHost.replace(/\/$/, "");
     return `${baseUrl}/browse/${ticketId}`;
   }

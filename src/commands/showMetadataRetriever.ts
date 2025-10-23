@@ -83,7 +83,7 @@ export function registerShowMetadataRetriever(commands: Commands) {
         type: "imageResources",
         data: {
           images: {
-            featureLogo: logoUri
+            featureLogo: logoUri,
           },
         },
       });

@@ -328,7 +328,7 @@ export default class PipelineConfig extends LightningElement {
         };
       })
       .filter((section) => section.entries.length > 0);
-      return allConfigSections;
+    return allConfigSections;
     /* jscpd:ignore-end */
   }
 
@@ -362,7 +362,10 @@ export default class PipelineConfig extends LightningElement {
 
   renderedCallback() {
     // Set active tab if initialActiveTableValue is set
-    if (this.initialActiveTableValue && this.activeTabValue !== this.initialActiveTableValue) {
+    if (
+      this.initialActiveTableValue &&
+      this.activeTabValue !== this.initialActiveTableValue
+    ) {
       this.activeTabValue = this.initialActiveTableValue;
       this.initialActiveTableValue = null; // Clear after setting
     }
