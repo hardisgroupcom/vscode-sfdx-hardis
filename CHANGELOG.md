@@ -9,6 +9,7 @@
   - Add button to view pipeline configuration from pipeline view
   - Allow more formats of jiraHost
   - Fix issue when both Jira PAT and Email + Token are set
+- Package XML viewer: Direct link to the Metadata file
 
 ## [6.14.5] 2024-10-22
 

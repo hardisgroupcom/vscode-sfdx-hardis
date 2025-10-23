@@ -3,6 +3,8 @@ import * as fs from "fs-extra";
 import path from "path";
 import { LwcPanelManager } from "../lwc-panel-manager";
 import { getWorkspaceRoot } from "../utils";
+import { getMetadataFilePath } from "../utils/projectUtils";
+import { LwcUiPanel } from "../webviews/lwc-ui-panel";
 
 export async function showPackageXmlPanel(
   packageConfig: any = {},
@@ -47,46 +49,21 @@ export async function showPackageXmlPanel(
     panel.onMessage(async (type: string, data: any) => {
       switch (type) {
         case "refreshPackageConfig": {
-          try {
-            const refreshFilePath = data?.filePath || config.filePath;
-            const newPackageData = await loadPackageXmlData(refreshFilePath);
-            panel.sendMessage({
-              type: "packageDataUpdated",
-              data: {
-                packageData: newPackageData,
-                config: { ...config, filePath: refreshFilePath },
-              },
-            });
-          } catch (error: any) {
-            panel.sendMessage({
-              type: "packageDataUpdated",
-              data: {
-                error: error.message,
-                config: config,
-              },
-            });
-          }
+          await refreshPackageData(data, config, panel);
           break;
         }
         case "editPackageFile": {
-          const workspaceRoot = getWorkspaceRoot();
-          const editFilePath = data?.filePath || config.filePath;
-          const packagePath = path.join(workspaceRoot, editFilePath);
-          try {
-            const document =
-              await vscode.workspace.openTextDocument(packagePath);
-            await vscode.window.showTextDocument(document);
-          } catch (error: any) {
-            vscode.window.showErrorMessage(
-              `Failed to open package file: ${error.message}`,
-            );
-          }
+          await openPackageFile(data, config);
           break;
         }
         case "backToMonitoring": {
           vscode.commands.executeCommand(
             "vscode-sfdx-hardis.showOrgMonitoring",
           );
+          break;
+        }
+        case "openMetadataMember": {
+          await handleOpenMetadataMember(data);
           break;
         }
         default:
@@ -98,6 +75,72 @@ export async function showPackageXmlPanel(
       error: error.message,
     });
     panel.updateTitle("Package Configuration - Error");
+  }
+}
+
+async function handleOpenMetadataMember(data: any) {
+  try {
+    const metadataType = data?.metadataType;
+    const metadataName = data?.metadataName;
+    if (!metadataType || !metadataName) {
+      vscode.window.showErrorMessage("Missing metadata type or name");
+      return;
+    }
+    const filePath = await getMetadataFilePath(metadataType, metadataName);
+    if (!filePath) {
+      vscode.window.showInformationMessage(
+        `No local file found for ${metadataType}: ${metadataName}`,
+      );
+      return;
+    }
+    try {
+      const document = await vscode.workspace.openTextDocument(filePath);
+      await vscode.window.showTextDocument(document);
+    } catch (err: any) {
+      vscode.window.showErrorMessage(
+        `Failed to open metadata file: ${err?.message || err}`,
+      );
+    }
+  } catch (err: any) {
+    vscode.window.showErrorMessage(
+      `Error locating metadata file: ${err?.message || err}`,
+    );
+  }
+}
+
+async function openPackageFile(data: any, config: { packageType: any; filePath: any; fallbackFilePath: any; title: any; }) {
+  const workspaceRoot = getWorkspaceRoot();
+  const editFilePath = data?.filePath || config.filePath;
+  const packagePath = path.join(workspaceRoot, editFilePath);
+  try {
+    const document = await vscode.workspace.openTextDocument(packagePath);
+    await vscode.window.showTextDocument(document);
+  } catch (error: any) {
+    vscode.window.showErrorMessage(
+      `Failed to open package file: ${error.message}`
+    );
+  }
+}
+
+async function refreshPackageData(data: any, config: { packageType: any; filePath: any; fallbackFilePath: any; title: any; }, panel: LwcUiPanel) {
+  try {
+    const refreshFilePath = data?.filePath || config.filePath;
+    const newPackageData = await loadPackageXmlData(refreshFilePath);
+    panel.sendMessage({
+      type: "packageDataUpdated",
+      data: {
+        packageData: newPackageData,
+        config: { ...config, filePath: refreshFilePath },
+      },
+    });
+  } catch (error: any) {
+    panel.sendMessage({
+      type: "packageDataUpdated",
+      data: {
+        error: error.message,
+        config: config,
+      },
+    });
   }
 }
 
