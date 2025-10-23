@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-## [6.15.0] 2024-10-22
+## [6.15.0] 2024-10-23
 
 - Live DevOps Pipelines enhancements
   - Display Git & ticketing providers icons
