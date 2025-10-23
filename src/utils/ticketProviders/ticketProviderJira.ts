@@ -51,7 +51,12 @@ export class JiraProvider extends TicketProvider {
       );
       vscode.window.showErrorMessage(
         "JIRA host not configured. Please set jiraHost in .sfdx-hardis.yml (use Pipeline Settings)",
-      );
+        "View Pipeline Settings",
+      ).then((action) => {
+        if (action === "View Pipeline Settings") {
+          vscode.commands.executeCommand("vscode-sfdx-hardis.showPipelineConfig", null, "Ticketing");
+        }
+      });
       return false;
     }
     this.hostKey = this.jiraHost.replace(/\./g, "_").toUpperCase();
