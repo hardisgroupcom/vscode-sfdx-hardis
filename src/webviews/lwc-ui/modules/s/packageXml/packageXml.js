@@ -532,4 +532,18 @@ export default class PackageXml extends LightningElement {
       },
     });
   }
+
+  openMember(event) {
+    try {
+      const typeName = event.currentTarget?.dataset?.typeName || null;
+      const member = event.currentTarget?.dataset?.memberName || null;
+      if (!typeName || !member) return;
+      window.sendMessageToVSCode({
+        type: "openMetadataMember",
+        data: { metadataType: typeName, metadataName: member },
+      });
+    } catch (e) {
+      // ignore
+    }
+  }
 }

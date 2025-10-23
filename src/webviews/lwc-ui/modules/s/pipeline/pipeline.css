@@ -132,6 +132,68 @@ lightning-datatable .hardis-emoji-cell a {
     cursor: pointer !important;
 }
 
+/* Provider icon button (replaces connect buttons) */
+.provider-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 10px; /* more clickable area */
+    background: transparent;
+    border: 0;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-left: 6px; /* spacing between buttons */
+    transition: transform 120ms ease, box-shadow 160ms ease;
+}
+
+.provider-button:hover {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 6px 14px rgba(0,0,0,0.08);
+}
+
+.provider-button img.provider-icon {
+    width: 40px;
+    height: 40px;
+    display: block;
+}
+
+/* Layout helpers for action row in card header */
+.actions-row {
+    display: flex;
+    align-items: center; /* vertical center alignment */
+    gap: 0.5rem;
+}
+
+.left-actions {
+    display: flex;
+    align-items: center;
+    margin-right: 0.5rem;
+}
+
+.right-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.toggle-wrapper {
+    display: flex;
+    align-items: center;
+    margin-top: 0.6rem;
+}
+
+/* Greyed (not connected) - apply filter to SVG images */
+.provider-icon.provider-grey {
+    filter: grayscale(100%) brightness(80%);
+    opacity: 0.85;
+}
+
+/* Colored (connected) - show as-is, but increase saturation slightly */
+.provider-icon.provider-colored {
+    filter: none;
+    opacity: 1;
+}
+
 /* Mermaid link animations for running/pending PRs */
 /* Apply subtle pulsing animation to links with red color */
 @keyframes edgeAnimationFast {

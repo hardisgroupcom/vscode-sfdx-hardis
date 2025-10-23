@@ -149,7 +149,7 @@
                                             <template if:false={metadataType.hasWildcard}>
                                                 <div class="members-grid">
                                                     <template for:each={metadataType.members} for:item="member">
-                                                        <div key={member} class="member-item">
+                                                        <div key={member} class="member-item" onclick={openMember} data-type-name={metadataType.name} data-member-name={member} role="button" tabindex="0">
                                                             <lightning-icon icon-name={metadataType.memberIconName} size="x-small" class="member-icon"></lightning-icon>
                                                             <span class="member-name">{member}</span>
                                                         </div>

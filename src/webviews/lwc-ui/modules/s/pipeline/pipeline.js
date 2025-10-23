@@ -22,6 +22,7 @@ export default class Pipeline extends LightningElement {
   _refreshTimer = null;
   _isVisible = true;
   _isAutoRefresh = false;
+  images = {};
   prColumns = [
     {
       key: "number",
@@ -202,6 +203,37 @@ export default class Pipeline extends LightningElement {
     if (!this.prButtonInfo || !this.prButtonInfo.icon) return null;
     // The icons are copied to /resources/git-icons in the webview root
     return `/resources/git-icons/${this.prButtonInfo.icon}.svg`;
+  }
+
+  // Compute the git provider icon URL (falls back to generic link icon when missing)
+  get gitProviderIconUrl() {
+    const key =
+      (this.prButtonInfo && this.prButtonInfo.icon) ||
+      this.repoPlatformLabel ||
+      "";
+    if (key && this.images && this.images[key.toLowerCase()]) {
+      return this.images[key.toLowerCase()];
+    }
+    // fallback to a neutral link icon if none available
+    return this.images["git"];
+  }
+
+  get ticketProviderIconUrl() {
+    const key = (this.ticketProviderName || "").toLowerCase();
+    if (key && this.images && this.images[key]) {
+      return this.images[key];
+    }
+    // default ticket icon (jira) if available
+    return this.images["ticket"];
+  }
+
+  // CSS classes to toggle colored vs greyed appearance
+  get gitProviderIconClass() {
+    return `provider-icon ${this.gitAuthenticated ? "provider-colored" : "provider-grey"}`;
+  }
+
+  get ticketProviderIconClass() {
+    return `provider-icon ${this.ticketAuthenticated ? "provider-colored" : "provider-grey"}`;
   }
 
   handleShowPipelineConfig() {
@@ -737,6 +769,9 @@ export default class Pipeline extends LightningElement {
       case "refreshPipeline":
         this.refreshPipeline();
         break;
+      case "imageResources":
+        this.handleImageResources(data);
+        break;
       case "openPullRequestsUpdated":
         // allow dynamic updates from extension host
         this.openPullRequests = this._mapPrsWithIcons(data || []);
@@ -745,6 +780,21 @@ export default class Pipeline extends LightningElement {
         break;
       default:
         console.log("Unknown message type:", messageType, data);
+    }
+  }
+
+  handleImageResources(data) {
+    if (data && data?.images) {
+      // Normalize keys to lowercase for easy lookup (e.g., GitHub -> github)
+      const normalized = {};
+      for (const [key, url] of Object.entries(data.images)) {
+        if (!key) {
+          continue;
+        }
+        normalized[key.toLowerCase()] = url;
+      }
+      // merge into existing images map
+      this.images = Object.assign({}, this.images || {}, normalized);
     }
   }
 

@@ -24,6 +24,8 @@ export default class PipelineConfig extends LightningElement {
   @track sections = [];
   @track selectedConfigScope = "global";
   @track arrayObjectEditorState = {}; // { key: { showForm: bool, editIndex: number, formData: {} } }
+  @track activeTabValue;
+  @track initialActiveTableValue;
   initData = {};
 
   get isEditMode() {
@@ -57,7 +59,7 @@ export default class PipelineConfig extends LightningElement {
     // configSchema is an object: { [key]: schema }
     const configSchema = this.configSchema || {};
     /* jscpd:ignore-start */
-    return (this.sections || [])
+    const allConfigSections = (this.sections || [])
       .map((section) => {
         const entries = [];
         for (const key of section.keys) {
@@ -326,7 +328,47 @@ export default class PipelineConfig extends LightningElement {
         };
       })
       .filter((section) => section.entries.length > 0);
+    return allConfigSections;
     /* jscpd:ignore-end */
+  }
+
+  @api
+  initialize(data) {
+    if (data && data.config && data.configSchema) {
+      this.initData = Object.assign({}, data);
+      this.config = this.initData.config;
+      this.configSchema = this.initData.configSchema;
+      this.branchConfig = this.initData.branchConfig || null;
+      this.globalConfig = this.initData.globalConfig || null;
+      this.isBranch =
+        typeof this.initData.isBranch === "boolean"
+          ? this.initData.isBranch
+          : false;
+      this.branchName = this.initData.branchName || "";
+      this.sections = this.initData.sections || [];
+      this.availableBranches = this.initData.availableBranches || [];
+
+      // Set the selected config scope based on current state
+      if (this.isBranch && this.branchName) {
+        this.selectedConfigScope = `branch:${this.branchName}`;
+      } else {
+        this.selectedConfigScope = "global";
+      }
+    }
+    if (data && data.initialSectionSelected) {
+      this.initialActiveTableValue = data.initialSectionSelected;
+    }
+  }
+
+  renderedCallback() {
+    // Set active tab if initialActiveTableValue is set
+    if (
+      this.initialActiveTableValue &&
+      this.activeTabValue !== this.initialActiveTableValue
+    ) {
+      this.activeTabValue = this.initialActiveTableValue;
+      this.initialActiveTableValue = null; // Clear after setting
+    }
   }
 
   handleEdit() {
@@ -372,31 +414,6 @@ export default class PipelineConfig extends LightningElement {
   handleOpenDocUrl(event) {
     const url = event.target.dataset.docUrl;
     window.sendMessageToVSCode({ type: "openExternal", data: url });
-  }
-
-  @api
-  initialize(data) {
-    if (data && data.config && data.configSchema) {
-      this.initData = Object.assign({}, data);
-      this.config = this.initData.config;
-      this.configSchema = this.initData.configSchema;
-      this.branchConfig = this.initData.branchConfig || null;
-      this.globalConfig = this.initData.globalConfig || null;
-      this.isBranch =
-        typeof this.initData.isBranch === "boolean"
-          ? this.initData.isBranch
-          : false;
-      this.branchName = this.initData.branchName || "";
-      this.sections = this.initData.sections || [];
-      this.availableBranches = this.initData.availableBranches || [];
-
-      // Set the selected config scope based on current state
-      if (this.isBranch && this.branchName) {
-        this.selectedConfigScope = `branch:${this.branchName}`;
-      } else {
-        this.selectedConfigScope = "global";
-      }
-    }
   }
 
   handleInputChange(event) {
