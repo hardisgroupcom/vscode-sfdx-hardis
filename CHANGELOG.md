@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+## [6.15.0] 2024-10-22
+
+- Live DevOps Pipelines enhancements
+  - Display Git & ticketing providers icons
+  - Add button to view pipeline configuration from pipeline view
+  - Allow more formats of jiraHost
+  - Fix issue when both Jira PAT and Email + Token are set
+
 ## [6.14.5] 2024-10-22
 
 - Fix WebPack compile in production

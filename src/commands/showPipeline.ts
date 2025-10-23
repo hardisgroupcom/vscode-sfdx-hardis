@@ -24,6 +24,24 @@ export function registerShowPipeline(commands: Commands) {
           firstDisplay: true,
         },
       );
+
+      panel.sendMessage({
+        type: "imageResources",
+        data: {
+          images: {
+            git: panel.asWebviewUri(["icons", "git.svg"]),
+            ticket: panel.asWebviewUri(["icons", "ticket.svg"]),
+            github: panel.asWebviewUri(["icons", "github.svg"]),
+            gitlab: panel.asWebviewUri(["icons", "gitlab.svg"]),
+            bitbucket: panel.asWebviewUri(["icons", "bitbucket.svg"]),
+            azure: panel.asWebviewUri(["icons", "azure.svg"]),
+            gitea: panel.asWebviewUri(["icons", "gitea.svg"]),
+            jira: panel.asWebviewUri(["icons", "jira.svg"]),
+            azureboards: panel.asWebviewUri(["icons", "azureboards.svg"]),
+          },
+        },
+      });
+
       panel.updateTitle("DevOps Pipeline");
 
       panel.onMessage(async (type, data) => {
@@ -118,10 +136,15 @@ export function registerShowPipeline(commands: Commands) {
           if (!ticketProvider) {
             vscode.window.showErrorMessage(
               "No supported Ticketing provider detected in the current project. You can define one in Pipeline Settings",
-            );
+              "Pipeline Settings",
+            ).then((action) => {
+              if (action === "Pipeline Settings") {
+                vscode.commands.executeCommand("vscode-sfdx-hardis.showPipelineConfig", null, "Ticketing");
+              }
+            });
             return;
           }
-          if (ticketProvider.isAuthenticated === false) {
+          if (!ticketProvider.isAuthenticated) {
             vscode.window
               .showErrorMessage(
                 `Failed to connect to ${ticketProvider.providerName}. Please check the logs for details.`,

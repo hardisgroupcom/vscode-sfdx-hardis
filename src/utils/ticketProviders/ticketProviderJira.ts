@@ -18,9 +18,20 @@ export class JiraProvider extends TicketProvider {
     this.providerName = "JIRA";
   }
 
+  completeJiraHostUrl(hostUrl: string): string {
+    if (!hostUrl || hostUrl === "") {
+      return hostUrl;
+    }
+    let completedUrl = hostUrl.trim();
+    if (!completedUrl.startsWith("http://") && !completedUrl.startsWith("https://")) {
+      completedUrl = "https://" + completedUrl;
+    }
+    return completedUrl;
+  }
+
   async initializeConnection(): Promise<boolean | null> {
     const config = await getConfig("project");
-    this.jiraHost = config.jiraHost || "";
+    this.jiraHost = this.completeJiraHostUrl(config.jiraHost || "");
     if (!this.jiraHost) {
       Logger.log("JIRA host not configured.");
       return false;
@@ -32,26 +43,31 @@ export class JiraProvider extends TicketProvider {
       (await SecretsManager.getSecret(this.hostKey + "_JIRA_EMAIL")) || "";
     let jiraToken =
       (await SecretsManager.getSecret(this.hostKey + "_JIRA_TOKEN")) || "";
+    let connected: boolean|null = null;
     if (jiraPAT) {
-      return await this.initializeClient(jiraPAT, "", "");
+      connected = await this.initializeClient(jiraPAT, "", "");
     }
-    if (jiraEmail && jiraToken) {
-      return await this.initializeClient("", jiraEmail, jiraToken);
+    if (!connected && jiraEmail && jiraToken) {
+      connected = await this.initializeClient("", jiraEmail, jiraToken);
     }
-    return null;
+    return connected;
   }
 
   async authenticate(): Promise<boolean | null> {
     const config = await getConfig("project");
-    this.jiraHost = config.jiraHost || "";
-
+    this.jiraHost = this.completeJiraHostUrl(config.jiraHost || "");
     if (!this.jiraHost) {
       Logger.log(
         "JIRA host not configured. Please set jiraHost in .sfdx-hardis.yml",
       );
       vscode.window.showErrorMessage(
         "JIRA host not configured. Please set jiraHost in .sfdx-hardis.yml (use Pipeline Settings)",
-      );
+        "View Pipeline Settings",
+      ).then((action) => {
+        if (action === "View Pipeline Settings") {
+          vscode.commands.executeCommand("vscode-sfdx-hardis.showPipelineConfig", null, "Ticketing");
+        }
+      });
       return false;
     }
     this.hostKey = this.jiraHost.replace(/\./g, "_").toUpperCase();
@@ -59,11 +75,11 @@ export class JiraProvider extends TicketProvider {
     // Prompt user for authentication method
     const choice = await vscode.window.showQuickPick(
       [
+        { label: "Use Email + API Token", value: "basic" },
         {
-          label: "Use Personal Access Token (PAT) - Recommended",
+          label: "Use Personal Access Token (PAT)",
           value: "pat",
         },
-        { label: "Use Email + API Token", value: "basic" },
       ],
       {
         placeHolder: "How would you like to authenticate to JIRA?",
@@ -205,7 +221,7 @@ export class JiraProvider extends TicketProvider {
 
   async buildTicketUrl(ticketId: string): Promise<string> {
     const config = await getConfig("project");
-    const jiraHost = config.jiraHost || this.jiraHost;
+    const jiraHost = this.jiraHost || this.completeJiraHostUrl(config.jiraHost) ;
     const baseUrl = jiraHost.replace(/\/$/, "");
     return `${baseUrl}/browse/${ticketId}`;
   }
