@@ -136,7 +136,12 @@ export function registerShowPipeline(commands: Commands) {
           if (!ticketProvider) {
             vscode.window.showErrorMessage(
               "No supported Ticketing provider detected in the current project. You can define one in Pipeline Settings",
-            );
+              "Pipeline Settings",
+            ).then((action) => {
+              if (action === "Pipeline Settings") {
+                vscode.commands.executeCommand("vscode-sfdx-hardis.showPipelineConfig", null, "Ticketing");
+              }
+            });
             return;
           }
           if (!ticketProvider.isAuthenticated) {
