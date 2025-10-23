@@ -84,7 +84,15 @@ async function handleOpenMetadataMember(data: any) {
   await openMetadataFile(metadataType, metadataName);
 }
 
-async function openPackageFile(data: any, config: { packageType: any; filePath: any; fallbackFilePath: any; title: any; }) {
+async function openPackageFile(
+  data: any,
+  config: {
+    packageType: any;
+    filePath: any;
+    fallbackFilePath: any;
+    title: any;
+  },
+) {
   const workspaceRoot = getWorkspaceRoot();
   const editFilePath = data?.filePath || config.filePath;
   const packagePath = path.join(workspaceRoot, editFilePath);
@@ -93,12 +101,21 @@ async function openPackageFile(data: any, config: { packageType: any; filePath: 
     await vscode.window.showTextDocument(document);
   } catch (error: any) {
     vscode.window.showErrorMessage(
-      `Failed to open package file: ${error.message}`
+      `Failed to open package file: ${error.message}`,
     );
   }
 }
 
-async function refreshPackageData(data: any, config: { packageType: any; filePath: any; fallbackFilePath: any; title: any; }, panel: LwcUiPanel) {
+async function refreshPackageData(
+  data: any,
+  config: {
+    packageType: any;
+    filePath: any;
+    fallbackFilePath: any;
+    title: any;
+  },
+  panel: LwcUiPanel,
+) {
   try {
     const refreshFilePath = data?.filePath || config.filePath;
     const newPackageData = await loadPackageXmlData(refreshFilePath);

@@ -111,11 +111,11 @@ export function registerShowMetadataRetriever(commands: Commands) {
         } else if (type === "retrieveSelectedMetadata") {
           await handleRetrieveSelectedMetadata(panel, data);
         } else if (type === "openMetadataFile") {
-            const metadataType = data?.metadataType;
-            const metadataName = data?.metadataName;
-            if (metadataType && metadataName) {
-              await openMetadataFile(metadataType, metadataName);
-            }
+          const metadataType = data?.metadataType;
+          const metadataName = data?.metadataName;
+          if (metadataType && metadataName) {
+            await openMetadataFile(metadataType, metadataName);
+          }
         }
       });
     },
