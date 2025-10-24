@@ -158,7 +158,6 @@ export class JiraProvider extends TicketProvider {
     token: string,
   ): Promise<boolean> {
     try {
-
       if (!email && !token && !pat) {
         Logger.log("No valid JIRA credentials provided");
         return false;
@@ -188,14 +187,13 @@ export class JiraProvider extends TicketProvider {
           },
         });
         await this.checkActiveUser("EmailAndToken");
-      } 
-      
+      }
+
       if (this.isAuthenticated) {
         return true;
       }
       this.jiraClient = null;
       return false;
-
     } catch (error: any) {
       Logger.log(
         `JIRA authentication failed: ${error?.message || String(error)}`,
@@ -207,12 +205,14 @@ export class JiraProvider extends TicketProvider {
   }
 
   async checkActiveUser(mode: "PersonalAccessToken" | "EmailAndToken") {
-      const user = await this.jiraClient!.myself.getCurrentUser();
-      if (user.active) {
-        this.isAuthenticated = true;
-        Logger.log("JIRA authentication successful with mode: " + mode);
-      }
-      Logger.log(`JIRA authentication failed with mode ${mode}: Active user check failed. ${user ? JSON.stringify(user): user}`);
+    const user = await this.jiraClient!.myself.getCurrentUser();
+    if (user.active) {
+      this.isAuthenticated = true;
+      Logger.log("JIRA authentication successful with mode: " + mode);
+    }
+    Logger.log(
+      `JIRA authentication failed with mode ${mode}: Active user check failed. ${user ? JSON.stringify(user) : user}`,
+    );
   }
 
   async getTicketIdentifierRegexes(): Promise<RegExp[]> {
