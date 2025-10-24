@@ -463,9 +463,10 @@ export default class MetadataRetriever extends LightningElement {
         // random feature id for element attributes
         this.featureId = Math.random().toString(36).slice(2, 10);
         // Calculate number of days before November 29, 2025
-        const days = Math.ceil(
-          (new Date("2025-11-29") - new Date()) / (1000 * 60 * 60 * 24),
-        ) - 1;
+        const days =
+          Math.ceil(
+            (new Date("2025-11-29") - new Date()) / (1000 * 60 * 60 * 24),
+          ) - 1;
         this.featureText = `See you in ${days} days 😘`;
         this.showFeature = true;
         // Add keydown listener to close on ESC

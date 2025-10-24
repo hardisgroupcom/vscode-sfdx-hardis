@@ -158,10 +158,13 @@ export class JiraProvider extends TicketProvider {
     token: string,
   ): Promise<boolean> {
     try {
+      if (!email && !token && !pat) {
+        Logger.log("No valid JIRA credentials provided");
+        return false;
+      }
       const host = this.jiraHost.replace(/\/$/, "");
-
+      // Check with Personal Access Token
       if (pat) {
-        // For Personal Access Token, use oauth2 with accessToken
         this.jiraClient = new Version3Client({
           host,
           authentication: {
@@ -170,7 +173,10 @@ export class JiraProvider extends TicketProvider {
             },
           },
         });
-      } else if (email && token) {
+        await this.checkActiveUser("PersonalAccessToken");
+      }
+      // Check with Email and API Token
+      if (email && token && !this.isAuthenticated) {
         this.jiraClient = new Version3Client({
           host,
           authentication: {
@@ -180,21 +186,13 @@ export class JiraProvider extends TicketProvider {
             },
           },
         });
-      } else {
-        Logger.log("No valid JIRA credentials provided");
-        return false;
+        await this.checkActiveUser("EmailAndToken");
       }
 
-      // Validate credentials by making a test request
-      const user = await this.jiraClient.myself.getCurrentUser();
-      if (user.active) {
-        this.isAuthenticated = true;
-        Logger.log("JIRA authentication successful");
+      if (this.isAuthenticated) {
         return true;
       }
-      this.isAuthenticated = false;
       this.jiraClient = null;
-      Logger.log("JIRA authentication failed: User is not active");
       return false;
     } catch (error: any) {
       Logger.log(
@@ -204,6 +202,17 @@ export class JiraProvider extends TicketProvider {
       this.isAuthenticated = false;
       return false;
     }
+  }
+
+  async checkActiveUser(mode: "PersonalAccessToken" | "EmailAndToken") {
+    const user = await this.jiraClient!.myself.getCurrentUser();
+    if (user.active) {
+      this.isAuthenticated = true;
+      Logger.log("JIRA authentication successful with mode: " + mode);
+    }
+    Logger.log(
+      `JIRA authentication failed with mode ${mode}: Active user check failed. ${user ? JSON.stringify(user) : user}`,
+    );
   }
 
   async getTicketIdentifierRegexes(): Promise<RegExp[]> {
