@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Refactor JIRA authentication: centralize active-user check and simplify credential handling.
+
 ## [6.15.0] 2024-10-23
 
 - Live DevOps Pipelines enhancements
