@@ -839,11 +839,10 @@ export default class Pipeline extends LightningElement {
   }
 
   handlePullFromOrg() {
+    // legacy: pull from org -> replaced by metadata retriever command
     window.sendMessageToVSCode({
-      type: "runCommand",
-      data: {
-        command: "sf hardis:scratch:pull",
-      },
+      type: "showMetadataRetriever",
+      data: {},
     });
   }
 
