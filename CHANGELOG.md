@@ -3,6 +3,8 @@
 ## [Unreleased]
 
 - Refactor JIRA authentication: centralize active-user check and simplify credential handling.
+- DevOps Pipeline: Replace Pull command shortcut by Metadata Retriever
+- Reorganize DevOps menu
 
 ## [6.15.0] 2024-10-23
 

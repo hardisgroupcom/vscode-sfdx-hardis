@@ -168,6 +168,15 @@ export class HardisCommandsProvider
         defaultExpand: true,
         commands: [
           {
+            id: "vscode-sfdx-hardis.showPipeline",
+            label: "DevOps Pipeline",
+            command: "vscode-sfdx-hardis.showPipeline",
+            tooltip:
+              "Open the DevOps Pipeline panel to visualize and manage your CI/CD pipeline.",
+            requiresProject: false,
+            helpUrl: "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/",
+          },
+          {
             id: "hardis:work:new",
             label: "New User Story",
             command: "sf hardis:work:new",
@@ -175,15 +184,6 @@ export class HardisCommandsProvider
               "Start to work, it will:\n- Create a new git branch where it is needed to \n- Allow to select or create a Salesforce org to work in (sandbox or scratch)",
             requiresProject: true,
             helpUrl: "https://sfdx-hardis.cloudity.com/hardis/work/new/",
-          },
-          {
-            id: "scratch:pull-from-org-to-git",
-            label: "Pull from SF Org to local files",
-            tooltip:
-              'Once you have made your configuration in your org Setup, click here to download your updates.\nThen, you can commit the updates you want to publish (use VsCode Git extension)\nThen you can run command "Save / Publish User Story"\nNote: if you don\'t see all your updates, you can manually retrieve it using VsCode Extension "Org Browser"(Salesforce logo)',
-            command: "sf hardis:scratch:pull",
-            requiresProject: true,
-            helpUrl: "https://sfdx-hardis.cloudity.com/hardis/scratch/pull/",
           },
           {
             id: "vscode-sfdx-hardis.showMetadataRetriever",
@@ -212,15 +212,6 @@ export class HardisCommandsProvider
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/work/resetselection/",
           },
-          {
-            id: "vscode-sfdx-hardis.showPipeline",
-            label: "DevOps Pipeline",
-            command: "vscode-sfdx-hardis.showPipeline",
-            tooltip:
-              "Open the DevOps Pipeline panel to visualize and manage your CI/CD pipeline.",
-            requiresProject: false,
-            helpUrl: "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/",
-          },
         ],
       },
       {
@@ -228,29 +219,11 @@ export class HardisCommandsProvider
         label: "CI/CD (advanced)",
         commands: [
           {
-            id: "scratch:push-from-git-to-org",
-            label: "Push from local files to Salesforce org",
-            tooltip:
-              "Propagates your local updates within Vs Code into your remote Salesforce scratch org",
-            command: "sf hardis:scratch:push",
+            id: "vsCodeSfdxHardis.packageManager",
+            label: "Installed Packages Manager",
+            tooltip: "Manage installed packages in your Salesforce dev org and add them to CI/CD pipeline",
+            command: "vscode-sfdx-hardis.showInstalledPackages",
             requiresProject: true,
-            helpUrl: "https://sfdx-hardis.cloudity.com/hardis/scratch/push/",
-          },
-          {
-            id: "package:install",
-            label: "Install a package",
-            tooltip:
-              "This will update project .sfdx-hardis.yml so the package will always be installed in new scratch orgs and future deployments",
-            command: "sf hardis:package:install",
-            requiresProject: true,
-            helpUrl: "https://sfdx-hardis.cloudity.com/hardis/package/install/",
-          },
-          {
-            id: "org:retrieve:packageconfig",
-            label: "Retrieve packages configuration from org",
-            tooltip:
-              "Retrieve package configuration from an org and propose to update project sfdx-hardis configuration",
-            command: "sf hardis:org:retrieve:packageconfig",
           },
           {
             id: "project:clean:references",
@@ -261,6 +234,24 @@ export class HardisCommandsProvider
             requiresProject: true,
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/project/clean/references/",
+          },
+          {
+            id: "scratch:push-from-git-to-org",
+            label: "Push from local files to Salesforce org",
+            tooltip:
+              "Propagates your local updates within Vs Code into your remote Salesforce scratch org",
+            command: "sf hardis:scratch:push",
+            requiresProject: true,
+            helpUrl: "https://sfdx-hardis.cloudity.com/hardis/scratch/push/",
+          },
+          {
+            id: "scratch:pull-from-org-to-git",
+            label: "Pull from SF Org to local files",
+            tooltip:
+              'Once you have made your configuration in your org Setup, click here to download your updates.\nThen, you can commit the updates you want to publish (use VsCode Git extension)\nThen you can run command "Save / Publish User Story"\nNote: if you don\'t see all your updates, you can manually retrieve it using VsCode Extension "Org Browser"(Salesforce logo)',
+            command: "sf hardis:scratch:pull",
+            requiresProject: true,
+            helpUrl: "https://sfdx-hardis.cloudity.com/hardis/scratch/pull/",
           },
           {
             id: "force:source:tracking:clear",
@@ -299,6 +290,22 @@ export class HardisCommandsProvider
             command: "sf hardis:scratch:create --forcenew",
             requiresProject: true,
             helpUrl: "https://sfdx-hardis.cloudity.com/hardis/scratch/create/",
+          },
+          {
+            id: "package:install",
+            label: "Install a package",
+            tooltip:
+              "This will update project .sfdx-hardis.yml so the package will always be installed in new scratch orgs and future deployments",
+            command: "sf hardis:package:install",
+            requiresProject: true,
+            helpUrl: "https://sfdx-hardis.cloudity.com/hardis/package/install/",
+          },
+          {
+            id: "org:retrieve:packageconfig",
+            label: "Retrieve packages configuration from org",
+            tooltip:
+              "Retrieve package configuration from an org and propose to update project sfdx-hardis configuration",
+            command: "sf hardis:org:retrieve:packageconfig",
           },
           {
             id: "org:password:generate",
