@@ -63,6 +63,18 @@ export function registerShowPipeline(commands: Commands) {
           // Handle package XML display requests from pipeline
           await showPackageXmlPanel(data);
         }
+        // Show Metadata Retriever panel from pipeline quick action
+        else if (type === "showMetadataRetriever") {
+          try {
+            await vscode.commands.executeCommand(
+              "vscode-sfdx-hardis.showMetadataRetriever",
+            );
+          } catch (e) {
+            Logger.log(
+              `Error executing showMetadataRetriever command: ${String(e)}`,
+            );
+          }
+        }
         // Update VS Code configuration
         else if (type === "updateVsCodeSfdxHardisConfiguration") {
           const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
