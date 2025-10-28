@@ -221,7 +221,8 @@ export class HardisCommandsProvider
           {
             id: "vsCodeSfdxHardis.packageManager",
             label: "Installed Packages Manager",
-            tooltip: "Manage installed packages in your Salesforce dev org and add them to CI/CD pipeline",
+            tooltip:
+              "Manage installed packages in your Salesforce dev org and add them to CI/CD pipeline",
             command: "vscode-sfdx-hardis.showInstalledPackages",
             requiresProject: true,
           },
