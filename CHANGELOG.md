@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [6.15.2] 2024-10-29
+
+- Metadata Retriever: Handle case when line is too long, generate and use a temporary package.xml
+
 ## [6.15.1] 2024-10-28
 
 - Refactor JIRA authentication: centralize active-user check and simplify credential handling.
