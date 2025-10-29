@@ -195,17 +195,22 @@ async function executeMetadataRetrieve(
 
     // Command line too long: Create a package.xml in a temp dir and use --manifest
     const errorMsg = result?.error?.message || "";
-    if (errorMsg.includes(`command line is too long`) || errorMsg.includes(`ENAMETOOLONG`)) {
-      const tempDir = await fs.mkdtemp(path.join(require('os').tmpdir(), 'sfdx-retrieve-'));
-      const tmpPackageXml = path.join(tempDir, 'package.xml');
+    if (
+      errorMsg.includes(`command line is too long`) ||
+      errorMsg.includes(`ENAMETOOLONG`)
+    ) {
+      const tempDir = await fs.mkdtemp(
+        path.join(require("os").tmpdir(), "sfdx-retrieve-"),
+      );
+      const tmpPackageXml = path.join(tempDir, "package.xml");
       // Group metadata by type
       const metadataByType = new Map<string, string[]>();
-      
+
       metadataList
         .filter((item) => !(item?.deleted === true))
         .forEach((item) => {
           if (!metadataByType.has(item.memberType)) {
-        metadataByType.set(item.memberType, []);
+            metadataByType.set(item.memberType, []);
           }
           metadataByType.get(item.memberType)!.push(item.memberName);
         });
@@ -213,17 +218,20 @@ async function executeMetadataRetrieve(
       const apiVersion = sfdxProject?.sourceApiVersion || "65.0";
       // Build package.xml content with grouped types
       const typesBlocks = Array.from(metadataByType.entries())
-        .map(([memberType, memberNames]) => 
-          `  <types>\n${memberNames.map(name => `    <members>${name}</members>`).join('\n')}\n    <name>${memberType}</name>\n  </types>`
+        .map(
+          ([memberType, memberNames]) =>
+            `  <types>\n${memberNames.map((name) => `    <members>${name}</members>`).join("\n")}\n    <name>${memberType}</name>\n  </types>`,
         )
-        .join('\n');
+        .join("\n");
 
       const packageXmlContent = `<?xml version="1.0" encoding="UTF-8"?>
     <Package xmlns="http://soap.sforce.com/2006/04/metadata">
     ${typesBlocks}
       <version>${apiVersion}</version>
     </Package>`;
-      await fs.writeFile(tmpPackageXml, packageXmlContent, { encoding: 'utf8' });
+      await fs.writeFile(tmpPackageXml, packageXmlContent, {
+        encoding: "utf8",
+      });
       const commandManifest =
         `sf project retrieve start --manifest "${tmpPackageXml}" --target-org ${username}` +
         (forceOverwrite ? " --ignore-conflicts" : "") +
@@ -232,7 +240,8 @@ async function executeMetadataRetrieve(
       result = await vscode.window.withProgress(
         {
           location: vscode.ProgressLocation.Notification,
-          title: "Retrieving metadata (using manifest to avoid too long command line)...",
+          title:
+            "Retrieving metadata (using manifest to avoid too long command line)...",
           cancellable: false,
         },
         async (_progress) => {
@@ -792,9 +801,7 @@ async function handleSourceMemberQuery(
   }
 
   // Exclude MemberTypes that are not retrievable via Metadata API
-  const excludedTypes = [
-    "AuraDefinition"
-  ];
+  const excludedTypes = ["AuraDefinition"];
   if (excludedTypes.length > 0) {
     const excludedConditions = excludedTypes
       .map((t) => `'${t.replace(/'/g, "\\'")}'`)
