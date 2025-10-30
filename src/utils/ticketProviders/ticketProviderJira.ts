@@ -239,7 +239,10 @@ export class JiraProvider extends TicketProvider {
 
   async buildTicketUrl(ticketId: string): Promise<string> {
     const config = await getConfig("project");
-    const jiraHost = this.jiraHost || this.completeJiraHostUrl(config.jiraHost) || "https://define.jiraHost.in.your.sfdx-hardis.yml";
+    const jiraHost =
+      this.jiraHost ||
+      this.completeJiraHostUrl(config.jiraHost) ||
+      "https://define.jiraHost.in.your.sfdx-hardis.yml";
     const baseUrl = jiraHost.replace(/\/$/, "");
     return `${baseUrl}/browse/${ticketId}`;
   }
