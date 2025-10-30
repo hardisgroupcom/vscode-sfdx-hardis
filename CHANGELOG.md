@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+## [6.15.3] 2024-10-30
+
+- DevOps Pipeline
+  - Fallback when jiraHost is not defined
+  - Initialize title when clicking on "Create pull request"
+
 ## [6.15.2] 2024-10-29
 
 - Metadata Retriever: Handle case when line is too long, generate and use a temporary package.xml

@@ -607,7 +607,8 @@ export class GitProviderAzure extends GitProvider {
     ) {
       return null;
     }
-    // Azure DevOps: https://dev.azure.com/org/project/_git/repo/pullrequestcreate?sourceRef=source&targetRef=target
-    return `${this.repoInfo.webUrl}/pullrequestcreate?sourceRef=${encodeURIComponent(sourceBranch)}&targetRef=${encodeURIComponent(targetBranch)}`;
+    // Azure DevOps: https://dev.azure.com/org/project/_git/repo/pullrequestcreate?sourceRef=source&targetRef=target&title=MAJOR:%20sourceBranch%20to%20targetBranch
+    const title = `MAJOR: ${sourceBranch} to ${targetBranch}`;
+    return `${this.repoInfo.webUrl}/pullrequestcreate?sourceRef=${encodeURIComponent(sourceBranch)}&targetRef=${encodeURIComponent(targetBranch)}&title=${encodeURIComponent(title)}`;
   }
 }
