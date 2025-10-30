@@ -168,6 +168,10 @@ export class ThemeUtils {
         vscode: "rocket",
         hardis: "flow.svg",
       },
+      "vsCodeSfdxHardis.packageManager": {
+        vscode: "package",
+        hardis: "package.svg",
+      },
       "scratch:push-from-git-to-org": {
         vscode: "cloud-upload",
         hardis: "push.svg",
