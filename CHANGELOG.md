@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- New command: [Data Storage Statistics](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/storage-stats/)
+
 ## [6.15.3] 2024-10-30
 
 - DevOps Pipeline

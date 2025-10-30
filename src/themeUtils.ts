@@ -330,6 +330,11 @@ export class ThemeUtils {
         vscode: "plug",
         hardis: "extract.svg",
       },
+      "hardis:org:diagnose:storage-stats": {
+        vscode: "database",
+        hardis: "gauge.svg",
+      },
+      "hardis:lint:missinglabels": { vscode: "law", hardis: "tag.svg" },
       "hardis:lint:access": { vscode: "law", hardis: "password.svg" },
       "hardis:lint:unusedmetadatas": { vscode: "law", hardis: "trash.svg" },
       "hardis:lint:metadatastatus": { vscode: "law", hardis: "flow.svg" },
