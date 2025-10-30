@@ -456,7 +456,8 @@ export class GitProviderGitlab extends GitProvider {
     if (!this.repoInfo?.webUrl) {
       return null;
     }
-    // GitLab: https://gitlab.com/owner/repo/-/merge_requests/new?merge_request[source_branch]=source&merge_request[target_branch]=target
-    return `${this.repoInfo.webUrl}/-/merge_requests/new?merge_request[source_branch]=${encodeURIComponent(sourceBranch)}&merge_request[target_branch]=${encodeURIComponent(targetBranch)}`;
+    // GitLab: https://gitlab.com/owner/repo/-/merge_requests/new?merge_request[source_branch]=source&merge_request[target_branch]=target&merge_request[title]=MAJOR:%20sourceBranch%20to%20targetBranch
+    const title = `MAJOR: ${sourceBranch} to ${targetBranch}`;
+    return `${this.repoInfo.webUrl}/-/merge_requests/new?merge_request[source_branch]=${encodeURIComponent(sourceBranch)}&merge_request[target_branch]=${encodeURIComponent(targetBranch)}&merge_request[title]=${encodeURIComponent(title)}`;
   }
 }

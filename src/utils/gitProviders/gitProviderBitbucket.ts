@@ -252,8 +252,9 @@ export class GitProviderBitbucket extends GitProvider {
     if (!this.repoInfo?.webUrl) {
       return null;
     }
-    // Bitbucket: https://bitbucket.org/owner/repo/pull-requests/new?source=source&dest=target
-    return `${this.repoInfo.webUrl}/pull-requests/new?source=${encodeURIComponent(sourceBranch)}&dest=${encodeURIComponent(targetBranch)}`;
+    // Bitbucket: https://bitbucket.org/owner/repo/pull-requests/new?source=source&dest=target&title=MAJOR:%20sourceBranch%20to%20targetBranch
+    const title = `MAJOR: ${sourceBranch} to ${targetBranch}`;
+    return `${this.repoInfo.webUrl}/pull-requests/new?source=${encodeURIComponent(sourceBranch)}&dest=${encodeURIComponent(targetBranch)}&title=${encodeURIComponent(title)}`;
   }
 
   // Fetch pipelines for a Bitbucket PR (Bitbucket Cloud). Best-effort: query pipelines by commit/branch

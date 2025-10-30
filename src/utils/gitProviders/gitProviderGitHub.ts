@@ -327,7 +327,8 @@ export class GitProviderGitHub extends GitProvider {
     if (!this.repoInfo?.webUrl) {
       return null;
     }
-    // GitHub: https://github.com/owner/repo/compare/target...source?expand=1
-    return `${this.repoInfo.webUrl}/compare/${encodeURIComponent(targetBranch)}...${encodeURIComponent(sourceBranch)}?expand=1`;
+    // GitHub: https://github.com/owner/repo/compare/target...source?expand=1&title=MAJOR:%20sourceBranch%20to%20targetBranch
+    const title = `MAJOR: ${sourceBranch} to ${targetBranch}`;
+    return `${this.repoInfo.webUrl}/compare/${encodeURIComponent(targetBranch)}...${encodeURIComponent(sourceBranch)}?expand=1&title=${encodeURIComponent(title)}`;
   }
 }
