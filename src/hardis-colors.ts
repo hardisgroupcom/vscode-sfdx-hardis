@@ -276,19 +276,37 @@ export class HardisColors {
           colorCustomObj["activityBar.backgroundPrevious"] &&
           orgColors.includes(colorCustomObj["activityBar.backgroundPrevious"]);
 
+        // Check if current colors are part of custom config defined for sfdx-hardis
+        const sfdxHardisConfig = await readSfdxHardisConfig();
+        const customOrgColors = Object.values(sfdxHardisConfig.customOrgColors || {});
+        const statusBarIsCustomColor =
+          colorCustomObj["statusBar.background"] &&
+          customOrgColors.includes(colorCustomObj["statusBar.background"]);
+        const activityBarIsCustomColor =
+          colorCustomObj["activityBar.background"] &&
+          customOrgColors.includes(colorCustomObj["activityBar.background"]);
+
+        // Check if previous colors are custom colors
+        const statusBarPreviousIsCustomColor =
+          colorCustomObj["statusBar.backgroundPrevious"] &&
+          customOrgColors.includes(colorCustomObj["statusBar.backgroundPrevious"]);
+        const activityBarPreviousIsCustomColor =
+          colorCustomObj["activityBar.backgroundPrevious"] &&
+          customOrgColors.includes(colorCustomObj["activityBar.backgroundPrevious"]);
+
         let updated = false;
 
         // Handle statusBar.background
         if (colorCustomObj["statusBar.background"]) {
-          if (statusBarIsOrgColor) {
-            // Current color is an org color, remove it
+          if (statusBarIsOrgColor || statusBarIsCustomColor) {
+            // Current color is an org or custom color, remove it
             delete colorCustomObj["statusBar.background"];
             updated = true;
           } else if (
             colorCustomObj["statusBar.backgroundPrevious"] &&
-            !statusBarPreviousIsOrgColor
+            !statusBarPreviousIsOrgColor && !statusBarPreviousIsCustomColor
           ) {
-            // There's a previous backup and it's not an org color, restore it
+            // There's a previous backup and it's not an org or custom color, restore it
             colorCustomObj["statusBar.background"] =
               colorCustomObj["statusBar.backgroundPrevious"];
             delete colorCustomObj["statusBar.backgroundPrevious"];
@@ -299,15 +317,15 @@ export class HardisColors {
 
         // Handle activityBar.background
         if (colorCustomObj["activityBar.background"]) {
-          if (activityBarIsOrgColor) {
-            // Current color is an org color, remove it
+          if (activityBarIsOrgColor || activityBarIsCustomColor) {
+            // Current color is an org color or custom color, remove it
             delete colorCustomObj["activityBar.background"];
             updated = true;
           } else if (
             colorCustomObj["activityBar.backgroundPrevious"] &&
-            !activityBarPreviousIsOrgColor
+            !activityBarPreviousIsOrgColor && !activityBarPreviousIsCustomColor
           ) {
-            // There's a previous backup and it's not an org color, restore it
+            // There's a previous backup and it's not an org or custom color, restore it
             colorCustomObj["activityBar.background"] =
               colorCustomObj["activityBar.backgroundPrevious"];
             delete colorCustomObj["activityBar.backgroundPrevious"];
