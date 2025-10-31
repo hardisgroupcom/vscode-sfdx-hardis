@@ -278,7 +278,9 @@ export class HardisColors {
 
         // Check if current colors are part of custom config defined for sfdx-hardis
         const sfdxHardisConfig = await readSfdxHardisConfig();
-        const customOrgColors = Object.values(sfdxHardisConfig.customOrgColors || {});
+        const customOrgColors = Object.values(
+          sfdxHardisConfig.customOrgColors || {},
+        );
         const statusBarIsCustomColor =
           colorCustomObj["statusBar.background"] &&
           customOrgColors.includes(colorCustomObj["statusBar.background"]);
@@ -289,10 +291,14 @@ export class HardisColors {
         // Check if previous colors are custom colors
         const statusBarPreviousIsCustomColor =
           colorCustomObj["statusBar.backgroundPrevious"] &&
-          customOrgColors.includes(colorCustomObj["statusBar.backgroundPrevious"]);
+          customOrgColors.includes(
+            colorCustomObj["statusBar.backgroundPrevious"],
+          );
         const activityBarPreviousIsCustomColor =
           colorCustomObj["activityBar.backgroundPrevious"] &&
-          customOrgColors.includes(colorCustomObj["activityBar.backgroundPrevious"]);
+          customOrgColors.includes(
+            colorCustomObj["activityBar.backgroundPrevious"],
+          );
 
         let updated = false;
 
@@ -304,7 +310,8 @@ export class HardisColors {
             updated = true;
           } else if (
             colorCustomObj["statusBar.backgroundPrevious"] &&
-            !statusBarPreviousIsOrgColor && !statusBarPreviousIsCustomColor
+            !statusBarPreviousIsOrgColor &&
+            !statusBarPreviousIsCustomColor
           ) {
             // There's a previous backup and it's not an org or custom color, restore it
             colorCustomObj["statusBar.background"] =
@@ -323,7 +330,8 @@ export class HardisColors {
             updated = true;
           } else if (
             colorCustomObj["activityBar.backgroundPrevious"] &&
-            !activityBarPreviousIsOrgColor && !activityBarPreviousIsCustomColor
+            !activityBarPreviousIsOrgColor &&
+            !activityBarPreviousIsCustomColor
           ) {
             // There's a previous backup and it's not an org or custom color, restore it
             colorCustomObj["activityBar.background"] =

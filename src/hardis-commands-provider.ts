@@ -755,7 +755,7 @@ export class HardisCommandsProvider
             command: "sf hardis:org:diagnose:storage-stats",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/org/diagnose/storage-stats/",
-          }
+          },
         ],
       },
       {
