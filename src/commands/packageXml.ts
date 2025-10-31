@@ -7,7 +7,6 @@ import { LwcUiPanel } from "../webviews/lwc-ui-panel";
 import { openMetadataFile } from "../utils/projectUtils";
 import { Commands } from "../commands";
 
-
 export function registerShowPackageXml(commandThis: Commands) {
   const disposable = vscode.commands.registerCommand(
     "vscode-sfdx-hardis.showPackageXml",
@@ -17,7 +16,7 @@ export function registerShowPackageXml(commandThis: Commands) {
         ? path.relative(getWorkspaceRoot(), packageXml.fsPath)
         : undefined;
       const packageConfig = {
-        filePath: packageXmlRelativePath 
+        filePath: packageXmlRelativePath,
       };
       await showPackageXmlPanel(packageConfig);
     },
@@ -32,8 +31,8 @@ export async function showPackageXmlPanel(
 
   // Default to skip items if no config provided (backward compatibility)
   const config = {
-    packageType: packageConfig.packageType || '',
-    filePath: packageConfig.filePath || '',
+    packageType: packageConfig.packageType || "",
+    filePath: packageConfig.filePath || "",
     fallbackFilePath: packageConfig.fallbackFilePath || null,
     title: packageConfig.title || "Package Configuration",
   };
@@ -43,8 +42,10 @@ export async function showPackageXmlPanel(
     let actualFilePath = config.filePath;
 
     const showLoadError = (err: any) => {
-      vscode.window.showErrorMessage(`Unable to load package XML: ${err.message}`);
-    }
+      vscode.window.showErrorMessage(
+        `Unable to load package XML: ${err.message}`,
+      );
+    };
 
     try {
       packageData = await loadPackageXmlData(config.filePath);
