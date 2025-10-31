@@ -747,6 +747,15 @@ export class HardisCommandsProvider
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/lint/missingattributes/",
           },
+          {
+            id: "hardis:org:diagnose:storage-stats",
+            label: "Data Storage Statistics",
+            tooltip:
+              "Provides detailed statistics on data storage usage in the org",
+            command: "sf hardis:org:diagnose:storage-stats",
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/org/diagnose/storage-stats/",
+          }
         ],
       },
       {

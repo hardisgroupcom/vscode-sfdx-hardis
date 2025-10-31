@@ -208,6 +208,7 @@
     "minimizeprofiles",
     "minimumapiversion",
     "missingattributes",
+    "missinglabels",
     "mkdir",
     "mkdocs",
     "multiselect",

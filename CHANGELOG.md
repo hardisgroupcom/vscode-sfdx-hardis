@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- New command: [Data Storage Statistics](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/storage-stats/)
+- Fix: When switching org, remove current custom color if it is a custom one
+
 ## [6.15.3] 2024-10-30
 
 - DevOps Pipeline
