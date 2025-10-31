@@ -23,6 +23,7 @@ import { registerShowExtensionConfig } from "./commands/showExtensionConfig";
 import { LwcPanelManager } from "./lwc-panel-manager";
 import { registerRunAnonymousApex } from "./commands/runAnonymousApex";
 import { registerShowMetadataRetriever } from "./commands/showMetadataRetriever";
+import { registerShowPackageXml } from "./commands/packageXml";
 
 export class Commands {
   public readonly extensionUri: vscode.Uri;
@@ -82,6 +83,7 @@ export class Commands {
     registerRunLocalHtmlDocPages(this);
     registerRunAnonymousApex(this);
     registerShowMetadataRetriever(this);
+    registerShowPackageXml(this);
   }
 
   registerExecuteCommand() {

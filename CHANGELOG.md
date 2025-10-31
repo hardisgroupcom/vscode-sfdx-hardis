@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Contextual menu for PackageXML viewer
+
 ## [6.16.0] 2024-10-31
 
 - New command: [Data Storage Statistics](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/storage-stats/)
