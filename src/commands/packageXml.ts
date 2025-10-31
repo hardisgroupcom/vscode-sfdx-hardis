@@ -5,6 +5,25 @@ import { LwcPanelManager } from "../lwc-panel-manager";
 import { getWorkspaceRoot } from "../utils";
 import { LwcUiPanel } from "../webviews/lwc-ui-panel";
 import { openMetadataFile } from "../utils/projectUtils";
+import { Commands } from "../commands";
+
+
+export function registerShowPackageXml(commandThis: Commands) {
+  const disposable = vscode.commands.registerCommand(
+    "vscode-sfdx-hardis.showPackageXml",
+    async (packageXml) => {
+      // get relative path if uri is absolute
+      const packageXmlRelativePath = packageXml?.fsPath
+        ? path.relative(getWorkspaceRoot(), packageXml.fsPath)
+        : undefined;
+      const packageConfig = {
+        filePath: packageXmlRelativePath 
+      };
+      await showPackageXmlPanel(packageConfig);
+    },
+  );
+  commandThis.disposables.push(disposable);
+}
 
 export async function showPackageXmlPanel(
   packageConfig: any = {},
@@ -13,8 +32,8 @@ export async function showPackageXmlPanel(
 
   // Default to skip items if no config provided (backward compatibility)
   const config = {
-    packageType: packageConfig.packageType || "skip",
-    filePath: packageConfig.filePath || "manifest/package-skip-items.xml",
+    packageType: packageConfig.packageType || '',
+    filePath: packageConfig.filePath || '',
     fallbackFilePath: packageConfig.fallbackFilePath || null,
     title: packageConfig.title || "Package Configuration",
   };
@@ -22,6 +41,10 @@ export async function showPackageXmlPanel(
   try {
     let packageData;
     let actualFilePath = config.filePath;
+
+    const showLoadError = (err: any) => {
+      vscode.window.showErrorMessage(`Unable to load package XML: ${err.message}`);
+    }
 
     try {
       packageData = await loadPackageXmlData(config.filePath);
@@ -32,10 +55,12 @@ export async function showPackageXmlPanel(
           packageData = await loadPackageXmlData(config.fallbackFilePath);
           actualFilePath = config.fallbackFilePath; // Update to show the actual loaded file
         } catch {
-          throw error; // Throw original error if fallback also fails
+          showLoadError(error);
+          return;
         }
       } else {
-        throw error;
+        showLoadError(error);
+        return;
       }
     }
 
