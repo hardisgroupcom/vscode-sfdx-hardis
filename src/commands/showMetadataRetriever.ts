@@ -9,6 +9,7 @@ import {
   getUsernameInstanceUrl,
   getWorkspaceRoot,
   listSfdxProjectPackageDirectories,
+  getReportDirectory,
 } from "../utils";
 import { Logger } from "../logger";
 import { listMetadataTypes } from "../utils/metadataList";
@@ -17,6 +18,7 @@ import fg from "fast-glob";
 import * as path from "path";
 import * as fs from "fs-extra";
 import { LwcUiPanel } from "../webviews/lwc-ui-panel";
+import { generatePackageXml, mergeIntoPackageXml } from "./packageXml";
 
 export function registerShowMetadataRetriever(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
@@ -141,6 +143,62 @@ async function handleListOrgs(panel: LwcUiPanel) {
       selectedOrgUsername: selectedOrg?.username || null,
     },
   });
+}
+
+/**
+ * Generate package.xml files for successfully retrieved metadata
+ * Creates:
+ * 1. A timestamped file: retrieved-package-YYYYMMDD-HHMMSS.xml
+ * 2. Updates the global all-retrieved-package.xml with all retrieved metadata
+ */
+async function generateRetrievePackageXmls(
+  successfulFiles: any[],
+): Promise<void> {
+  if (!successfulFiles || successfulFiles.length === 0) {
+    return;
+  }
+
+  // Convert successful files to metadata list format
+  const metadataList = successfulFiles.map((f: any) => ({
+    memberType: f.type,
+    memberName: f.fullName,
+  }));
+
+  // Get API version from project
+  const sfdxProject = getSfdxProjectJson();
+  const apiVersion = sfdxProject?.sourceApiVersion || "65.0";
+
+  // Get report directory and create retrieve subdirectory
+  const reportDir = await getReportDirectory();
+  const retrieveDir = path.join(reportDir, "retrieve");
+  await fs.ensureDir(retrieveDir);
+
+  // Generate timestamp for the file name
+  const now = new Date();
+  const timestamp = now
+    .toISOString()
+    .replace(/[-:]/g, "")
+    .replace(/\..+/, "")
+    .replace("T", "-");
+
+  // Generate and save timestamped package.xml
+  const timestampedPackageXml = generatePackageXml(metadataList, apiVersion);
+  const timestampedFilePath = path.join(
+    retrieveDir,
+    `retrieved-package-${timestamp}.xml`,
+  );
+  await fs.writeFile(timestampedFilePath, timestampedPackageXml, {
+    encoding: "utf8",
+  });
+  Logger.log(`Generated retrieve package.xml: ${timestampedFilePath}`);
+
+  // Merge into global all-retrieved-package.xml
+  const globalPackageXmlPath = path.join(
+    retrieveDir,
+    "all-retrieved-package.xml",
+  );
+  await mergeIntoPackageXml(globalPackageXmlPath, metadataList, apiVersion);
+  Logger.log(`Updated global package.xml: ${globalPackageXmlPath}`);
 }
 
 async function executeMetadataRetrieve(
@@ -413,6 +471,16 @@ async function executeMetadataRetrieve(
           });
         } catch {
           // non-fatal
+        }
+
+        // Generate package.xml files for successful retrieval
+        try {
+          await generateRetrievePackageXmls(successfulFiles);
+        }
+        catch (error: any) {
+          Logger.log(
+            `Non-fatal error generating retrieve package.xml: ${error.message}`,
+          );
         }
       } else {
         // No successful files at all - show warning with details if any
