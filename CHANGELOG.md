@@ -3,6 +3,9 @@
 ## [Unreleased]
 
 - Contextual menu for PackageXML viewer
+- Metadata Retriever: Keep history of retrieved metadata in `hardis-report/retrieve`
+  - Individual retrievals
+  - Global package with all retrievals
 
 ## [6.16.0] 2024-10-31
 

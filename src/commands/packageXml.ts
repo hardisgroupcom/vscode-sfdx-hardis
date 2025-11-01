@@ -181,7 +181,7 @@ async function loadPackageXmlData(
   }
 }
 
-async function parsePackageXml(xmlContent: string): Promise<any> {
+export async function parsePackageXml(xmlContent: string): Promise<any> {
   // Simple XML parsing for package.xml structure
   try {
     // Extract API version
@@ -223,5 +223,133 @@ async function parsePackageXml(xmlContent: string): Promise<any> {
     };
   } catch (error: any) {
     throw new Error(`Failed to parse XML content: ${error.message}`);
+  }
+}
+
+/**
+ * Generate package.xml content from metadata list
+ * @param metadataList Array of {memberType, memberName} objects
+ * @param apiVersion API version to use (defaults to project version)
+ * @returns Package XML string
+ */
+export function generatePackageXml(
+  metadataList: Array<{ memberType: string; memberName: string }>,
+  apiVersion: string = "65.0",
+): string {
+  // Group metadata by type
+  const metadataByType = new Map<string, Set<string>>();
+
+  for (const item of metadataList) {
+    if (!metadataByType.has(item.memberType)) {
+      metadataByType.set(item.memberType, new Set<string>());
+    }
+    metadataByType.get(item.memberType)!.add(item.memberName);
+  }
+
+  // Build package.xml content with grouped types (sorted alphabetically)
+  const sortedTypes = Array.from(metadataByType.entries()).sort((a, b) =>
+    a[0].localeCompare(b[0]),
+  );
+
+  const typesBlocks = sortedTypes
+    .map(([memberType, memberNames]) => {
+      const sortedMembers = Array.from(memberNames).sort();
+      return `  <types>\n${sortedMembers.map((name) => `    <members>${name}</members>`).join("\n")}\n    <name>${memberType}</name>\n  </types>`;
+    })
+    .join("\n");
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<Package xmlns="http://soap.sforce.com/2006/04/metadata">
+${typesBlocks}
+  <version>${apiVersion}</version>
+</Package>`;
+}
+
+/**
+ * Merge new metadata into an existing package.xml file
+ * Creates the file if it doesn't exist
+ * @param packageXmlPath Path to the package.xml file
+ * @param metadataList Array of {memberType, memberName} objects to merge
+ * @param apiVersion API version to use for new files
+ */
+export async function mergeIntoPackageXml(
+  packageXmlPath: string,
+  metadataList: Array<{ memberType: string; memberName: string }>,
+  apiVersion: string = "65.0",
+): Promise<void> {
+  try {
+    // Group new metadata by type
+    const newMetadataByType = new Map<string, Set<string>>();
+    for (const item of metadataList) {
+      if (!newMetadataByType.has(item.memberType)) {
+        newMetadataByType.set(item.memberType, new Set<string>());
+      }
+      newMetadataByType.get(item.memberType)!.add(item.memberName);
+    }
+
+    let existingPackageData: any = null;
+    let existingApiVersion = apiVersion;
+
+    // Try to load existing package.xml
+    if (await fs.pathExists(packageXmlPath)) {
+      try {
+        const xmlContent = await fs.readFile(packageXmlPath, "utf8");
+        existingPackageData = await parsePackageXml(xmlContent);
+        existingApiVersion = existingPackageData.apiVersion || apiVersion;
+      }
+      catch {
+        // If parsing fails, we'll create a new file
+      }
+    }
+
+    // Merge existing and new metadata
+    const mergedMetadataByType = new Map<string, Set<string>>();
+
+    // Add existing metadata
+    if (existingPackageData && existingPackageData.types) {
+      for (const type of existingPackageData.types) {
+        if (!mergedMetadataByType.has(type.name)) {
+          mergedMetadataByType.set(type.name, new Set<string>());
+        }
+        for (const member of type.members) {
+          mergedMetadataByType.get(type.name)!.add(member);
+        }
+      }
+    }
+
+    // Add new metadata (will deduplicate automatically)
+    for (const [memberType, members] of newMetadataByType) {
+      if (!mergedMetadataByType.has(memberType)) {
+        mergedMetadataByType.set(memberType, new Set<string>());
+      }
+      for (const member of members) {
+        mergedMetadataByType.get(memberType)!.add(member);
+      }
+    }
+
+    // Generate merged package.xml
+    const mergedMetadataList: Array<{ memberType: string; memberName: string }> =
+      [];
+    for (const [memberType, members] of mergedMetadataByType) {
+      for (const memberName of members) {
+        mergedMetadataList.push({ memberType, memberName });
+      }
+    }
+
+    const packageXmlContent = generatePackageXml(
+      mergedMetadataList,
+      existingApiVersion,
+    );
+
+    // Ensure directory exists
+    await fs.ensureDir(path.dirname(packageXmlPath));
+
+    // Write the merged package.xml
+    await fs.writeFile(packageXmlPath, packageXmlContent, { encoding: "utf8" });
+  }
+  catch (error: any) {
+    throw new Error(
+      `Failed to merge package.xml at ${packageXmlPath}: ${error.message}`,
+    );
   }
 }
