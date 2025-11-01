@@ -296,8 +296,7 @@ export async function mergeIntoPackageXml(
         const xmlContent = await fs.readFile(packageXmlPath, "utf8");
         existingPackageData = await parsePackageXml(xmlContent);
         existingApiVersion = existingPackageData.apiVersion || apiVersion;
-      }
-      catch {
+      } catch {
         // If parsing fails, we'll create a new file
       }
     }
@@ -328,8 +327,10 @@ export async function mergeIntoPackageXml(
     }
 
     // Generate merged package.xml
-    const mergedMetadataList: Array<{ memberType: string; memberName: string }> =
-      [];
+    const mergedMetadataList: Array<{
+      memberType: string;
+      memberName: string;
+    }> = [];
     for (const [memberType, members] of mergedMetadataByType) {
       for (const memberName of members) {
         mergedMetadataList.push({ memberType, memberName });
@@ -346,8 +347,7 @@ export async function mergeIntoPackageXml(
 
     // Write the merged package.xml
     await fs.writeFile(packageXmlPath, packageXmlContent, { encoding: "utf8" });
-  }
-  catch (error: any) {
+  } catch (error: any) {
     throw new Error(
       `Failed to merge package.xml at ${packageXmlPath}: ${error.message}`,
     );

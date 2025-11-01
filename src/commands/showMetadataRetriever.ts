@@ -476,8 +476,7 @@ async function executeMetadataRetrieve(
         // Generate package.xml files for successful retrieval
         try {
           await generateRetrievePackageXmls(successfulFiles);
-        }
-        catch (error: any) {
+        } catch (error: any) {
           Logger.log(
             `Non-fatal error generating retrieve package.xml: ${error.message}`,
           );
