@@ -595,6 +595,13 @@ export default class MetadataRetriever extends LightningElement {
     this.applyFilters();
   }
 
+  handleViewHistory() {
+    window.sendMessageToVSCode({
+      type: "openRetrieveFolder",
+      data: {},
+    });
+  }
+
   applyFilters() {
     if (!this.metadata || this.metadata.length === 0) {
       this.filteredMetadata = [];

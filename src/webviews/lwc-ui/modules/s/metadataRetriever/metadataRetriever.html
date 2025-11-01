@@ -101,7 +101,7 @@
           <div class="slds-col">
             <lightning-button
               variant="brand"
-              label="Search"
+              label="Search Metadata"
               icon-name="utility:search"
               onclick={handleSearch}
               disabled={cannotSearch}
@@ -113,6 +113,14 @@
               label="Clear Filters"
               icon-name="utility:clear"
               onclick={handleClearFilters}
+              size="small"
+              class="slds-m-right_small"
+            ></lightning-button>
+            <lightning-button
+              variant="neutral"
+              label="Retrieve History"
+              icon-name="utility:real_time"
+              onclick={handleViewHistory}
               size="small"
             ></lightning-button>
           </div>
