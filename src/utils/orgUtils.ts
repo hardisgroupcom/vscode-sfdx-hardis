@@ -16,6 +16,7 @@ export type SalesforceOrg = {
   createdDate?: string;
   expirationDate?: string | null;
   connectedStatus?: string;
+  status?: string; // For scratch orgs: "Active" | "Expired" | "Deleted"
   name?: string;
 };
 
@@ -80,6 +81,7 @@ export async function listAllOrgs(all = false): Promise<SalesforceOrg[]> {
       createdDate: org.createdDate,
       expirationDate: org.expirationDate || org.trailExpirationDate,
       connectedStatus: org.connectedStatus,
+      status: org.status, // Pass through scratch org status
       name: org.name,
     };
     seen.set(key, normalized);
