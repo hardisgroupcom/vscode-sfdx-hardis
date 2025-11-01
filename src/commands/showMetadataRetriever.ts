@@ -1232,15 +1232,14 @@ async function handleOpenRetrieveFolder() {
   try {
     const reportDir = await getReportDirectory();
     const retrieveDir = path.join(reportDir, "retrieve");
-    
+
     // Ensure the directory exists
     await fs.ensureDir(retrieveDir);
-    
+
     // Open the retrieve folder in VS Code explorer
     const retrieveDirUri = vscode.Uri.file(retrieveDir);
     await vscode.commands.executeCommand("revealInExplorer", retrieveDirUri);
-  }
-  catch (error: any) {
+  } catch (error: any) {
     Logger.log(`Error opening retrieve folder: ${error.message}`);
     vscode.window.showErrorMessage(
       `Failed to open retrieve folder: ${error.message}`,
