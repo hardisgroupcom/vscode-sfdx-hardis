@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [6.16.3] 2024-11-02
+
 - Handle command line too long in french
 - Display error message in case of unknown error
 
