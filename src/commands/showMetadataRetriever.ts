@@ -133,8 +133,9 @@ async function handleListOrgs(panel: LwcUiPanel) {
   const orgs = await listAllOrgs(false);
 
   // Filter connected orgs and find default from the connected list
+  // Include both regular orgs (connectedStatus: "Connected") and scratch orgs (status: "Active")
   const connectedOrgs = orgs.filter(
-    (org) => org.connectedStatus === "Connected",
+    (org) => org.connectedStatus === "Connected" || org.status === "Active",
   );
   const selectedOrg =
     connectedOrgs.find((org) => org.isDefaultUsername) || connectedOrgs[0];
