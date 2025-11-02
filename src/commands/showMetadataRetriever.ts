@@ -258,6 +258,7 @@ async function executeMetadataRetrieve(
     const errorMsg = result?.error?.message || "";
     if (
       errorMsg.includes(`command line is too long`) ||
+      errorMsg.includes(`ligne de commande est trop longue`) ||
       errorMsg.includes(`ENAMETOOLONG`)
     ) {
       const tempDir = await fs.mkdtemp(
@@ -535,7 +536,8 @@ async function executeMetadataRetrieve(
         }
       }
     } else {
-      const errorMsg = result?.message || "Unknown error occurred";
+      const errorMsg =
+        result?.error?.message || result?.message || "Unknown error occurred";
       const msg = singleName
         ? `Failed to retrieve ${singleName}: ${errorMsg}`
         : `Failed to retrieve metadata: ${errorMsg}`;
