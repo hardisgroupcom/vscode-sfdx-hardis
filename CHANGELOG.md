@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Handle command line too long in french
+- Display error message in case of unknown error
+
 ## [6.16.2] 2024-11-02
 
 - Contextual menu for PackageXML viewer
