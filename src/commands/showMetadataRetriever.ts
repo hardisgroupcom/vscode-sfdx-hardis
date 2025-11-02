@@ -536,7 +536,8 @@ async function executeMetadataRetrieve(
         }
       }
     } else {
-      const errorMsg = result?.error?.message || result?.message || "Unknown error occurred";
+      const errorMsg =
+        result?.error?.message || result?.message || "Unknown error occurred";
       const msg = singleName
         ? `Failed to retrieve ${singleName}: ${errorMsg}`
         : `Failed to retrieve metadata: ${errorMsg}`;
