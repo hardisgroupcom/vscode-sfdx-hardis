@@ -599,7 +599,6 @@ export default class PromptInput extends LightningElement {
     return result;
   }
 
-
   get showOnlySelectedLabel() {
     const selectedCount = this.selectedValues.length;
     if (selectedCount === 0) {
