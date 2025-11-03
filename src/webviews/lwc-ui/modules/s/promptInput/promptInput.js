@@ -599,6 +599,14 @@ export default class PromptInput extends LightningElement {
     return result;
   }
 
+  get showOnlySelectedLabel() {
+    const selectedCount = this.selectedValues.length;
+    if (selectedCount === 0) {
+      return "Show only selected";
+    }
+    return `Show only ${selectedCount} selected`;
+  }
+
   handleInputChange(event) {
     // Try to get the value from both event.target.value and event.detail.value
     const newValue = event.detail?.value ?? event.target?.value ?? "";
