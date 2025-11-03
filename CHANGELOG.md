@@ -2,7 +2,10 @@
 
 ## [Unreleased]
 
+## [6.16.4] 2024-11-03
+
 - Displays selected item count in multiselect
+- DevOps Pipeline: fix click on Commit changes
 
 ## [6.16.3] 2024-11-02
 

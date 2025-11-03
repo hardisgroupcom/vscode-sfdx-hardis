@@ -846,6 +846,13 @@ export default class Pipeline extends LightningElement {
     });
   }
 
+  handleOpenMetadataRetriever() {
+    window.sendMessageToVSCode({
+      type: "showMetadataRetriever",
+      data: {},
+    });
+  }
+
   handleSaveUserStory() {
     window.sendMessageToVSCode({
       type: "runCommand",
