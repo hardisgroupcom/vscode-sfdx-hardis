@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Displays selected item count in multiselect
+
 ## [6.16.3] 2024-11-02
 
 - Handle command line too long in french
