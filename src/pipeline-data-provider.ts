@@ -142,9 +142,10 @@ export class PipelineDataProvider {
       Array.isArray(projectConfig.availableTargetBranches)
     ) {
       const orgBranchNames = orgs.map((org) => org.branchName);
-      const availableTargetBranchesWithoutLabels = projectConfig.availableTargetBranches.map((branch: string) =>
-        branch.includes(",") ? branch.split(",")[0] : branch,
-      );
+      const availableTargetBranchesWithoutLabels =
+        projectConfig.availableTargetBranches.map((branch: string) =>
+          branch.includes(",") ? branch.split(",")[0] : branch,
+        );
       const invalidBranches = availableTargetBranchesWithoutLabels.filter(
         (branch: string) => !orgBranchNames.includes(branch),
       );
