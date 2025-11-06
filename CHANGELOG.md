@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [6.16.5] 2024-11-06
+
+- Pipeline view: Fix available target branches check
+
 ## [6.16.4] 2024-11-03
 
 - Displays selected item count in multiselect
