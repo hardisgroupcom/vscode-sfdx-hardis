@@ -18,9 +18,10 @@ export function registerShowOrgsManager(commandThis: Commands) {
     "vscode-sfdx-hardis.openOrgsManager",
     async () => {
       const lwcManager = LwcPanelManager.getInstance();
+      let orgs: any = [];
       // Load orgs using orgUtils
       try {
-        const orgs = await loadOrgsWithProgress(
+         orgs = await loadOrgsWithProgress(
           false,
           "Loading Salesforce orgs...\n(it can be long, make some cleaning to make it faster 🙃)",
         );
@@ -37,8 +38,8 @@ export function registerShowOrgsManager(commandThis: Commands) {
           if (type === "refreshOrgsFromUi") {
             const allFlag = !!(data && data.all === true);
             currentAllFlag = allFlag;
-            const newOrgs = await loadOrgsWithProgress(allFlag);
-            panel.sendInitializationData({ orgs: newOrgs });
+            orgs = await loadOrgsWithProgress(allFlag);
+            panel.sendInitializationData({ orgs: orgs });
           } else if (type === "connectOrg") {
             // run hardis:org:select
             const username = data.username;
@@ -60,8 +61,8 @@ export function registerShowOrgsManager(commandThis: Commands) {
               );
 
               // send back result and refresh list
-              const newOrgs = await loadOrgsWithProgress(currentAllFlag);
-              panel.sendInitializationData({ orgs: newOrgs });
+              orgs = await loadOrgsWithProgress(currentAllFlag);
+              panel.sendInitializationData({ orgs: orgs });
               vscode.window.showInformationMessage(
                 `Forgot ${result.successUsernames.length} org(s).`,
               );
@@ -106,8 +107,8 @@ export function registerShowOrgsManager(commandThis: Commands) {
               vscode.window.showInformationMessage(
                 `Forgot ${result.successUsernames.length} recommended org(s).`,
               );
-              const newOrgs = await loadOrgsWithProgress(currentAllFlag);
-              panel.sendInitializationData({ orgs: newOrgs });
+              orgs = await loadOrgsWithProgress(currentAllFlag);
+              panel.sendInitializationData({ orgs: orgs });
             } catch (error: any) {
               vscode.window.showErrorMessage(
                 `Error removing recommended orgs: ${error?.message || error}`,
@@ -132,22 +133,33 @@ export function registerShowOrgsManager(commandThis: Commands) {
                   cancellable: false,
                 },
                 async () => {
+                  const prevOrgs = [...orgs];
                   const aliasCommands = aliasChanges.map(
                     (change: { username: string; alias: string }) => {
                       const alias = change.alias.trim();
+                      const existingOrg = prevOrgs.find(
+                        (o) => o.username === change.username,
+                      );
                       if (alias) {
+                        // If username found in prevOrgs, unset its alias first to avoid duplicates
+                        if (existingOrg && existingOrg.alias) {
+                          return execSfdxJson(
+                            `sf alias unset ${existingOrg.alias} && sf alias set ${alias}=${change.username}`,
+                          );
+                        }
                         return execSfdxJson(
                           `sf alias set ${alias}=${change.username}`,
                         );
                       } else {
                         // If alias is empty, unset it
-                        return execSfdxJson(
-                          `sf alias unset ${change.username}`,
-                        );
+                        if (existingOrg && existingOrg.alias) {
+                          return execSfdxJson(
+                            `sf alias unset ${existingOrg.alias}`,
+                          );
+                        }
                       }
                     },
                   );
-
                   await Promise.all(aliasCommands);
                 },
               );
@@ -157,8 +169,8 @@ export function registerShowOrgsManager(commandThis: Commands) {
               );
 
               // Refresh the orgs list to show the updated aliases
-              const newOrgs = await loadOrgsWithProgress(currentAllFlag);
-              panel.sendInitializationData({ orgs: newOrgs });
+              orgs = await loadOrgsWithProgress(currentAllFlag);
+              panel.sendInitializationData({ orgs: orgs });
             } catch (error: any) {
               vscode.window.showErrorMessage(
                 `Error setting aliases: ${error?.message || error}`,
