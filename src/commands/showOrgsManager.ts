@@ -39,7 +39,7 @@ export function registerShowOrgsManager(commandThis: Commands) {
             const allFlag = !!(data && data.all === true);
             currentAllFlag = allFlag;
             orgs = await loadOrgsWithProgress(allFlag);
-            panel.sendInitializationData({ orgs: orgs });
+            panel.sendInitializationData({ orgs: [...orgs] });
           } else if (type === "connectOrg") {
             // run hardis:org:select
             const username = data.username;
@@ -61,11 +61,13 @@ export function registerShowOrgsManager(commandThis: Commands) {
               );
 
               // send back result and refresh list
-              orgs = await loadOrgsWithProgress(currentAllFlag);
-              panel.sendInitializationData({ orgs: orgs });
-              vscode.window.showInformationMessage(
-                `Forgot ${result.successUsernames.length} org(s).`,
-              );
+              setTimeout(async () => {
+                orgs = await loadOrgsWithProgress(currentAllFlag, undefined, true);
+                panel.sendInitializationData({ orgs: [...orgs] });
+                vscode.window.showInformationMessage(
+                  `Forgot ${result.successUsernames.length} org(s).`,
+                );
+              }, 1000);
             } catch (error: any) {
               vscode.window.showErrorMessage(
                 `Error forgetting orgs: ${error?.message || error}`,
@@ -107,8 +109,10 @@ export function registerShowOrgsManager(commandThis: Commands) {
               vscode.window.showInformationMessage(
                 `Forgot ${result.successUsernames.length} recommended org(s).`,
               );
-              orgs = await loadOrgsWithProgress(currentAllFlag);
-              panel.sendInitializationData({ orgs: orgs });
+              setTimeout(async () => {
+                orgs = await loadOrgsWithProgress(currentAllFlag, undefined, true);
+                panel.sendInitializationData({ orgs: [...orgs] });
+              }, 1000);
             } catch (error: any) {
               vscode.window.showErrorMessage(
                 `Error removing recommended orgs: ${error?.message || error}`,
@@ -169,8 +173,10 @@ export function registerShowOrgsManager(commandThis: Commands) {
               );
 
               // Refresh the orgs list to show the updated aliases
-              orgs = await loadOrgsWithProgress(currentAllFlag);
-              panel.sendInitializationData({ orgs: orgs });
+              setTimeout(async () => {
+                orgs = await loadOrgsWithProgress(currentAllFlag, undefined, true);
+                panel.sendInitializationData({ orgs: [...orgs] });
+              }, 1000);
             } catch (error: any) {
               vscode.window.showErrorMessage(
                 `Error setting aliases: ${error?.message || error}`,
@@ -238,13 +244,21 @@ async function forgetOrgsWithProgress(usernames: string[], title: string) {
 async function loadOrgsWithProgress(
   all: boolean = false,
   title?: string,
+  forceReload: boolean = false,
 ): Promise<any> {
   return new Promise((resolve, reject) => {
     // Add this request to the queue
     loadOrgsQueue.push({ all, title, resolve, reject });
 
-    // If there's already a load in progress, just wait for it
-    if (loadOrgsInProgressPromise) {
+    // If forceReload is true, cancel any in-progress operation and force a new load
+    if (forceReload && loadOrgsInProgressPromise) {
+      // Mark the current promise as cancelled by setting it to null
+      // The new processLoadOrgsQueue will pick up all queued requests
+      loadOrgsInProgressPromise = null;
+    }
+
+    // If there's already a load in progress and we're not forcing reload, just wait for it
+    if (loadOrgsInProgressPromise && !forceReload) {
       return;
     }
 
