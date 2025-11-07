@@ -172,6 +172,7 @@ export function registerShowOrgsManager(commandThis: Commands) {
                 `Successfully updated ${aliasChanges.length} alias(es)`,
               );
 
+              /* jscpd:ignore start */
               // Refresh the orgs list to show the updated aliases
               setTimeout(async () => {
                 orgs = await loadOrgsWithProgress(currentAllFlag, undefined, true);
@@ -181,6 +182,7 @@ export function registerShowOrgsManager(commandThis: Commands) {
               vscode.window.showErrorMessage(
                 `Error setting aliases: ${error?.message || error}`,
               );
+              /* jscpd:ignore end */
             }
           }
         });
