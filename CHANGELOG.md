@@ -2,8 +2,6 @@
 
 ## [Unreleased]
 
-## [6.16.6] 2024-11-07
-
 - Orgs Manager: Fix issue when renaming or removing an existing org alias
 - Upgrade dependencies
 
