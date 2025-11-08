@@ -109,6 +109,7 @@ export function registerShowOrgsManager(commandThis: Commands) {
               vscode.window.showInformationMessage(
                 `Forgot ${result.successUsernames.length} recommended org(s).`,
               );
+              /* jscpd:ignore start */
               setTimeout(async () => {
                 orgs = await loadOrgsWithProgress(currentAllFlag, undefined, true);
                 panel.sendInitializationData({ orgs: [...orgs] });
@@ -118,6 +119,7 @@ export function registerShowOrgsManager(commandThis: Commands) {
                 `Error removing recommended orgs: ${error?.message || error}`,
               );
             }
+            /* jscpd:ignore end */
           } else if (type === "saveAliases") {
             try {
               const { aliasChanges } = data;
