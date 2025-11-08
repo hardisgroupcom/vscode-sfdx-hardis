@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Orgs Manager: Fix issue when renaming or removing an existing org alias
+- Upgrade dependencies
+
 ## [6.16.5] 2024-11-06
 
 - Pipeline view: Fix available target branches check
