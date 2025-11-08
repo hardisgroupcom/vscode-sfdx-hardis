@@ -18,9 +18,10 @@ export function registerShowOrgsManager(commandThis: Commands) {
     "vscode-sfdx-hardis.openOrgsManager",
     async () => {
       const lwcManager = LwcPanelManager.getInstance();
+      let orgs: any = [];
       // Load orgs using orgUtils
       try {
-        const orgs = await loadOrgsWithProgress(
+         orgs = await loadOrgsWithProgress(
           false,
           "Loading Salesforce orgs...\n(it can be long, make some cleaning to make it faster 🙃)",
         );
@@ -37,8 +38,8 @@ export function registerShowOrgsManager(commandThis: Commands) {
           if (type === "refreshOrgsFromUi") {
             const allFlag = !!(data && data.all === true);
             currentAllFlag = allFlag;
-            const newOrgs = await loadOrgsWithProgress(allFlag);
-            panel.sendInitializationData({ orgs: newOrgs });
+            orgs = await loadOrgsWithProgress(allFlag);
+            panel.sendInitializationData({ orgs: [...orgs] });
           } else if (type === "connectOrg") {
             // run hardis:org:select
             const username = data.username;
@@ -60,11 +61,13 @@ export function registerShowOrgsManager(commandThis: Commands) {
               );
 
               // send back result and refresh list
-              const newOrgs = await loadOrgsWithProgress(currentAllFlag);
-              panel.sendInitializationData({ orgs: newOrgs });
-              vscode.window.showInformationMessage(
-                `Forgot ${result.successUsernames.length} org(s).`,
-              );
+              setTimeout(async () => {
+                orgs = await loadOrgsWithProgress(currentAllFlag, undefined, true);
+                panel.sendInitializationData({ orgs: [...orgs] });
+                vscode.window.showInformationMessage(
+                  `Forgot ${result.successUsernames.length} org(s).`,
+                );
+              }, 1000);
             } catch (error: any) {
               vscode.window.showErrorMessage(
                 `Error forgetting orgs: ${error?.message || error}`,
@@ -106,13 +109,17 @@ export function registerShowOrgsManager(commandThis: Commands) {
               vscode.window.showInformationMessage(
                 `Forgot ${result.successUsernames.length} recommended org(s).`,
               );
-              const newOrgs = await loadOrgsWithProgress(currentAllFlag);
-              panel.sendInitializationData({ orgs: newOrgs });
+              /* jscpd:ignore-start */
+              setTimeout(async () => {
+                orgs = await loadOrgsWithProgress(currentAllFlag, undefined, true);
+                panel.sendInitializationData({ orgs: [...orgs] });
+              }, 1000);
             } catch (error: any) {
               vscode.window.showErrorMessage(
                 `Error removing recommended orgs: ${error?.message || error}`,
               );
             }
+            /* jscpd:ignore-end */
           } else if (type === "saveAliases") {
             try {
               const { aliasChanges } = data;
@@ -132,23 +139,32 @@ export function registerShowOrgsManager(commandThis: Commands) {
                   cancellable: false,
                 },
                 async () => {
-                  const aliasCommands = aliasChanges.map(
-                    (change: { username: string; alias: string }) => {
-                      const alias = change.alias.trim();
-                      if (alias) {
-                        return execSfdxJson(
-                          `sf alias set ${alias}=${change.username}`,
-                        );
-                      } else {
-                        // If alias is empty, unset it
-                        return execSfdxJson(
-                          `sf alias unset ${change.username}`,
-                        );
+                  const prevOrgs = [...orgs];
+                  for (const change of aliasChanges) {
+                    const alias = change.alias.trim();
+                    const existingOrg = prevOrgs.find(
+                      (o) => o.username === change.username,
+                    );
+                    if (alias) {
+                      // If username found in prevOrgs, unset its alias first to avoid duplicates
+                      if (existingOrg && existingOrg.alias) {
+                      await execSfdxJson(
+                        `sf alias unset ${existingOrg.alias}`,
+                      );
                       }
-                    },
-                  );
-
-                  await Promise.all(aliasCommands);
+                      await execSfdxJson(
+                      `sf alias set ${alias}=${change.username}`,
+                      );
+                    }
+                    else {
+                      // If alias is empty, unset it
+                      if (existingOrg && existingOrg.alias) {
+                      await execSfdxJson(
+                        `sf alias unset ${existingOrg.alias}`,
+                      );
+                      }
+                    }
+                  }
                 },
               );
 
@@ -156,13 +172,17 @@ export function registerShowOrgsManager(commandThis: Commands) {
                 `Successfully updated ${aliasChanges.length} alias(es)`,
               );
 
+              /* jscpd:ignore start */
               // Refresh the orgs list to show the updated aliases
-              const newOrgs = await loadOrgsWithProgress(currentAllFlag);
-              panel.sendInitializationData({ orgs: newOrgs });
+              setTimeout(async () => {
+                orgs = await loadOrgsWithProgress(currentAllFlag, undefined, true);
+                panel.sendInitializationData({ orgs: [...orgs] });
+              }, 1000);
             } catch (error: any) {
               vscode.window.showErrorMessage(
                 `Error setting aliases: ${error?.message || error}`,
               );
+              /* jscpd:ignore end */
             }
           }
         });
@@ -226,13 +246,21 @@ async function forgetOrgsWithProgress(usernames: string[], title: string) {
 async function loadOrgsWithProgress(
   all: boolean = false,
   title?: string,
+  forceReload: boolean = false,
 ): Promise<any> {
   return new Promise((resolve, reject) => {
     // Add this request to the queue
     loadOrgsQueue.push({ all, title, resolve, reject });
 
-    // If there's already a load in progress, just wait for it
-    if (loadOrgsInProgressPromise) {
+    // If forceReload is true, cancel any in-progress operation and force a new load
+    if (forceReload && loadOrgsInProgressPromise) {
+      // Mark the current promise as cancelled by setting it to null
+      // The new processLoadOrgsQueue will pick up all queued requests
+      loadOrgsInProgressPromise = null;
+    }
+
+    // If there's already a load in progress and we're not forcing reload, just wait for it
+    if (loadOrgsInProgressPromise && !forceReload) {
       return;
     }
 
