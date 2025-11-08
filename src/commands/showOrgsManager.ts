@@ -140,33 +140,31 @@ export function registerShowOrgsManager(commandThis: Commands) {
                 },
                 async () => {
                   const prevOrgs = [...orgs];
-                  const aliasCommands = aliasChanges.map(
-                    (change: { username: string; alias: string }) => {
-                      const alias = change.alias.trim();
-                      const existingOrg = prevOrgs.find(
-                        (o) => o.username === change.username,
+                  for (const change of aliasChanges) {
+                    const alias = change.alias.trim();
+                    const existingOrg = prevOrgs.find(
+                      (o) => o.username === change.username,
+                    );
+                    if (alias) {
+                      // If username found in prevOrgs, unset its alias first to avoid duplicates
+                      if (existingOrg && existingOrg.alias) {
+                      await execSfdxJson(
+                        `sf alias unset ${existingOrg.alias}`,
                       );
-                      if (alias) {
-                        // If username found in prevOrgs, unset its alias first to avoid duplicates
-                        if (existingOrg && existingOrg.alias) {
-                          return execSfdxJson(
-                            `sf alias unset ${existingOrg.alias} && sf alias set ${alias}=${change.username}`,
-                          );
-                        }
-                        return execSfdxJson(
-                          `sf alias set ${alias}=${change.username}`,
-                        );
-                      } else {
-                        // If alias is empty, unset it
-                        if (existingOrg && existingOrg.alias) {
-                          return execSfdxJson(
-                            `sf alias unset ${existingOrg.alias}`,
-                          );
-                        }
                       }
-                    },
-                  );
-                  await Promise.all(aliasCommands);
+                      await execSfdxJson(
+                      `sf alias set ${alias}=${change.username}`,
+                      );
+                    }
+                    else {
+                      // If alias is empty, unset it
+                      if (existingOrg && existingOrg.alias) {
+                      await execSfdxJson(
+                        `sf alias unset ${existingOrg.alias}`,
+                      );
+                      }
+                    }
+                  }
                 },
               );
 
