@@ -21,7 +21,7 @@ export function registerShowOrgsManager(commandThis: Commands) {
       let orgs: any = [];
       // Load orgs using orgUtils
       try {
-         orgs = await loadOrgsWithProgress(
+        orgs = await loadOrgsWithProgress(
           false,
           "Loading Salesforce orgs...\n(it can be long, make some cleaning to make it faster 🙃)",
         );
@@ -62,7 +62,11 @@ export function registerShowOrgsManager(commandThis: Commands) {
 
               // send back result and refresh list
               setTimeout(async () => {
-                orgs = await loadOrgsWithProgress(currentAllFlag, undefined, true);
+                orgs = await loadOrgsWithProgress(
+                  currentAllFlag,
+                  undefined,
+                  true,
+                );
                 panel.sendInitializationData({ orgs: [...orgs] });
                 vscode.window.showInformationMessage(
                   `Forgot ${result.successUsernames.length} org(s).`,
@@ -111,7 +115,11 @@ export function registerShowOrgsManager(commandThis: Commands) {
               );
               /* jscpd:ignore-start */
               setTimeout(async () => {
-                orgs = await loadOrgsWithProgress(currentAllFlag, undefined, true);
+                orgs = await loadOrgsWithProgress(
+                  currentAllFlag,
+                  undefined,
+                  true,
+                );
                 panel.sendInitializationData({ orgs: [...orgs] });
               }, 1000);
             } catch (error: any) {
@@ -148,20 +156,19 @@ export function registerShowOrgsManager(commandThis: Commands) {
                     if (alias) {
                       // If username found in prevOrgs, unset its alias first to avoid duplicates
                       if (existingOrg && existingOrg.alias) {
-                      await execSfdxJson(
-                        `sf alias unset ${existingOrg.alias}`,
-                      );
+                        await execSfdxJson(
+                          `sf alias unset ${existingOrg.alias}`,
+                        );
                       }
                       await execSfdxJson(
-                      `sf alias set ${alias}=${change.username}`,
+                        `sf alias set ${alias}=${change.username}`,
                       );
-                    }
-                    else {
+                    } else {
                       // If alias is empty, unset it
                       if (existingOrg && existingOrg.alias) {
-                      await execSfdxJson(
-                        `sf alias unset ${existingOrg.alias}`,
-                      );
+                        await execSfdxJson(
+                          `sf alias unset ${existingOrg.alias}`,
+                        );
                       }
                     }
                   }
@@ -175,7 +182,11 @@ export function registerShowOrgsManager(commandThis: Commands) {
               /* jscpd:ignore start */
               // Refresh the orgs list to show the updated aliases
               setTimeout(async () => {
-                orgs = await loadOrgsWithProgress(currentAllFlag, undefined, true);
+                orgs = await loadOrgsWithProgress(
+                  currentAllFlag,
+                  undefined,
+                  true,
+                );
                 panel.sendInitializationData({ orgs: [...orgs] });
               }, 1000);
             } catch (error: any) {
