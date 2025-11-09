@@ -175,17 +175,15 @@
                                     </div>
                                     <p class="command-description">Save your work and publish changes to the remote repository</p>
                                 </div>
-                                <template if:true={hasCurrentBranchPullRequest}>
-                                    <div class="command-card" onclick={handleOpenCurrentPR}>
-                                        <div class="command-header">
-                                            <div class="command-icon-container pr-action" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                                                <lightning-icon icon-name="utility:topic2" size="small" variant="inverse"></lightning-icon>
-                                            </div>
-                                            <h3 class="command-title">My Current Pull Request</h3>
+                                <div class="command-card" onclick={handleOpenCurrentPR}>
+                                    <div class="command-header">
+                                        <div class="command-icon-container pr-action" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                            <lightning-icon icon-name="utility:topic2" size="small" variant="inverse"></lightning-icon>
                                         </div>
-                                        <p class="command-description">{currentPRDescription}</p>
+                                        <h3 class="command-title">{currentPRCardTitle}</h3>
                                     </div>
-                                </template>
+                                    <p class="command-description">{currentPRDescription}</p>
+                                </div>
                             </div>
                         </lightning-tab>
                         <lightning-tab label={openPrTabLabel} value="prs">

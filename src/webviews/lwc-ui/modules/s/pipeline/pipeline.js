@@ -642,9 +642,14 @@ export default class Pipeline extends LightningElement {
     return !!(this.currentBranchPullRequest && this.currentBranchPullRequest.number);
   }
 
+  get currentPRCardTitle() {
+    const prLabel = this.prButtonInfo?.pullRequestLabel || "Pull Request";
+    return `My User Story ${prLabel}`;
+  }
+
   get currentPRDescription() {
     if (!this.currentBranchPullRequest) {
-      return "";
+      return "You need to connect to your Git Server to see pull request details.";
     }
     return `#${this.currentBranchPullRequest.number} - ${this.currentBranchPullRequest.title || ""}. Click to see related tickets and manage deployment actions.`;
   }

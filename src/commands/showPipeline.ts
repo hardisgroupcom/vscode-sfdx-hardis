@@ -279,27 +279,39 @@ export function registerShowPipeline(commands: Commands) {
           openPullRequests = await gitProvider.listOpenPullRequests();
           const currentGitBranch = await getCurrentGitBranch();
           if (currentGitBranch){
+            const prActionsFileDraft = path.join(getWorkspaceRoot(), "scripts", "actions", ".sfdx-hardis.draft.yml");
             currentBranchPullRequest = await gitProvider.getActivePullRequestFromBranch(currentGitBranch);
             if (currentBranchPullRequest) {
-            const prActionsFile = path.join(getWorkspaceRoot(), "scripts", "actions", ".sfdx-hardis.draft.yml");
-            if (fs.existsSync(prActionsFile)) {
-                // Rename draft file to associate it with the current PR
-                const prNumber = currentBranchPullRequest.number;
-                const prActionsFileNewName = path.join(getWorkspaceRoot(), "scripts", "actions", `.sfdx-hardis.${prNumber}.yml`);
-                await fs.rename(prActionsFile, prActionsFileNewName);
-                vscode.window.showInformationMessage(
-                  `Draft deployment actions file has been found and associated to ${prButtonInfo.pullRequestLabel || "Pull Request"} #${currentBranchPullRequest.number}. Don't forget to commit & push :)`,
-                  `Commit & Push .sfdx-hardis.${prNumber}.yml`
-                ).then ((action) => {
-                  if (action ===  `Commit & Push .sfdx-hardis.${prNumber}.yml`) {
-                    vscode.commands.executeCommand("workbench.view.scm");
-                  }
-                });
+              if (fs.existsSync(prActionsFileDraft)) {
+                  // Rename draft file to associate it with the current PR
+                  const prNumber = currentBranchPullRequest.number;
+                  const prActionsFileNewName = path.join(getWorkspaceRoot(), "scripts", "actions", `.sfdx-hardis.${prNumber}.yml`);
+                  await fs.rename(prActionsFileDraft, prActionsFileNewName);
+                  vscode.window.showInformationMessage(
+                    `Draft deployment actions file has been found and associated to ${prButtonInfo.pullRequestLabel || "Pull Request"} #${currentBranchPullRequest.number}. Don't forget to commit & push :)`,
+                    `Commit & Push .sfdx-hardis.${prNumber}.yml`
+                  ).then ((action) => {
+                    if (action ===  `Commit & Push .sfdx-hardis.${prNumber}.yml`) {
+                      vscode.commands.executeCommand("workbench.view.scm");
+                    }
+                  });
+                }
+                // Complete with tickets and deployment actions
+                const prList = await gitProvider.completePullRequestsWithPrePostCommands([currentBranchPullRequest]);
+                const prListWithTickets = await gitProvider.completePullRequestsWithTickets(prList);
+                currentBranchPullRequest = prListWithTickets[0];
+            }
+            else if (fs.existsSync(prActionsFileDraft)) {
+              // No PR found for current branch but draft file exists
+              currentBranchPullRequest = {
+                id: "",
+                authorLabel: "",
+                jobsStatus: "unknown",
+                number: -1,
+                title: `${prButtonInfo.pullRequestLabel} not created yet`,
               }
-              // Complete with tickets and deployment actions
               const prList = await gitProvider.completePullRequestsWithPrePostCommands([currentBranchPullRequest]);
-              const prListWithTickets = await gitProvider.completePullRequestsWithTickets(prList);
-              currentBranchPullRequest = prListWithTickets[0];
+              currentBranchPullRequest = prList[0];
             }
           }
         }

@@ -41,7 +41,8 @@ export async function listPrePostCommandsForPullRequest(pr: PullRequest | undefi
   }
   // Check if there is a .sfdx-hardis.PULL_REQUEST_ID.yml file in the PR
   const workspaceRoot = getWorkspaceRoot();
-  const prConfigFileName = path.join(workspaceRoot, "scripts", "actions", `.sfdx-hardis.${pr.number}.yml`);
+  const fileName = pr.number === -1 ? ".sfdx-hardis.draft.yml" : `.sfdx-hardis.${pr.number}.yml`;
+  const prConfigFileName = path.join(workspaceRoot, "scripts", "actions", fileName);
     if (!fs.existsSync(prConfigFileName)) {
     return commands;
   }
@@ -98,7 +99,8 @@ function removePrCircularReferences(pr: PullRequest): PullRequest {
 // Helper function to get PR config file path
 function getPrConfigFilePath(prNumber: number): string {
   const workspaceRoot = getWorkspaceRoot();
-  return path.join(workspaceRoot, "scripts", "actions", `.sfdx-hardis.${prNumber}.yml`);
+  const fileName = prNumber === -1 ? ".sfdx-hardis.draft.yml" : `.sfdx-hardis.${prNumber}.yml`;
+  return path.join(workspaceRoot, "scripts", "actions", fileName);
 }
 
 // Helper function to load PR config file
