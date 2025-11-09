@@ -1186,29 +1186,33 @@ export default class Pipeline extends LightningElement {
       if (pr.deploymentActions && Array.isArray(pr.deploymentActions)) {
         for (const action of pr.deploymentActions) {
           if (action) {
+            const when = action.when;
+            const whenLabel = when === "pre-deploy" ? "Pre-Deploy" :
+                             when === "post-deploy" ? "Post-Deploy" : "Unknown";
+            
             actionRows.push({
               id: `${pr.number}-${action.type || "action"}-${actionRows.length}`,
               label: action.label || "Unnamed Action",
               type: action.type || "command",
+              when: whenLabel,
               prLabel: `#${pr.number} - ${pr.title || ""}`,
               prWebUrl: pr.webUrl || "",
               prNumber: pr.number || 0,
-              deploymentPhase: action.deploymentPhase || "unknown",
             });
           }
         }
       }
     }
 
-    // Sort by deployment phase (pre-deploy first, then post-deploy), then by PR number
+    // Sort by when (Pre-Deploy first, then Post-Deploy), then by PR number
     actionRows.sort((a, b) => {
-      // First sort by deployment phase
-      const phaseOrder = { "pre-deploy": 0, "post-deploy": 1, "unknown": 2 };
-      const phaseA = phaseOrder[a.deploymentPhase] ?? 2;
-      const phaseB = phaseOrder[b.deploymentPhase] ?? 2;
+      // First sort by when label
+      const whenOrder = { "Pre-Deploy": 0, "Post-Deploy": 1, "Unknown": 2 };
+      const whenA = whenOrder[a.when] ?? 2;
+      const whenB = whenOrder[b.when] ?? 2;
       
-      if (phaseA !== phaseB) {
-        return phaseA - phaseB;
+      if (whenA !== whenB) {
+        return whenA - whenB;
       }
       
       // Then sort by PR number
