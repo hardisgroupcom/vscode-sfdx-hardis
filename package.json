@@ -590,6 +590,7 @@
     "lightning-base-components": "^1.27.2-alpha",
     "mermaid": "^11.10.0",
     "moment": "^2.29.1",
+    "normalize-url": "^8.1.0",
     "process": "^0.11.10",
     "simple-git": "^3.18.0",
     "sort-array": "^5.1.1",
