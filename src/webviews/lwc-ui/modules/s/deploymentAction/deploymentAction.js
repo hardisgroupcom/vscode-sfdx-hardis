@@ -23,12 +23,34 @@ export default class DeploymentAction extends LightningElement {
 
   // apexScripts already come as {label, value} objects from backend
   get apexScriptOptions() {
-    return this.apexScripts || [];
+    const options = this.apexScripts || [];
+    const selectedValue = this.displayedAction?.parameters?.apexScript;
+    
+    // If a value is selected but not in the available options, add it with a special label
+    if (selectedValue && !options.find(opt => opt.value === selectedValue)) {
+      return [
+        { label: `${selectedValue} (not visible from this git branch)`, value: selectedValue },
+        ...options
+      ];
+    }
+    
+    return options;
   }
 
   // sfdmuWorkspaces already come as {label, value} objects from backend
   get sfdmuWorkspaceOptions() {
-    return this.sfdmuWorkspaces || [];
+    const options = this.sfdmuWorkspaces || [];
+    const selectedValue = this.displayedAction?.parameters?.sfdmuProject;
+    
+    // If a value is selected but not in the available options, add it with a special label
+    if (selectedValue && !options.find(opt => opt.value === selectedValue)) {
+      return [
+        { label: `${selectedValue} (not visible from this git branch)`, value: selectedValue },
+        ...options
+      ];
+    }
+    
+    return options;
   }
 
   // When options
