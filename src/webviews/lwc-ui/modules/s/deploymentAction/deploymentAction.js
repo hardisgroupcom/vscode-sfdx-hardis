@@ -21,13 +21,13 @@ export default class DeploymentAction extends LightningElement {
 
   // When options
   whenOptions = [
-    { label: "Pre-Deploy", value: "pre-deploy" },
-    { label: "Post-Deploy", value: "post-deploy" },
+    { label: "Before Deployment", value: "pre-deploy" },
+    { label: "After Deployment", value: "post-deploy" },
   ];
 
   // Context options
   contextOptions = [
-    { label: "All", value: "all" },
+    { label: "Check & Process Deployment", value: "all" },
     { label: "Check Deployment Only", value: "check-deployment-only" },
     { label: "Process Deployment Only", value: "process-deployment-only" },
   ];
@@ -39,10 +39,20 @@ export default class DeploymentAction extends LightningElement {
       if (!this.editedAction.parameters) {
         this.editedAction.parameters = {};
       }
+      // Set default type to "command" if not set
+      if (!this.editedAction.type) {
+        this.editedAction.type = "command";
+      }
     }
-    else if (this.action && !this.action.parameters) {
+    else if (this.action) {
       // Ensure action has parameters object for view mode
-      this.action.parameters = {};
+      if (!this.action.parameters) {
+        this.action.parameters = {};
+      }
+      // Set default type to "command" if not set
+      if (!this.action.type) {
+        this.action.type = "command";
+      }
     }
   }
 
