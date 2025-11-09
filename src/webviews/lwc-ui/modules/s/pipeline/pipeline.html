@@ -6,13 +6,17 @@
             <div class="actions-row">
                 <div style="display:flex;align-items:center;gap:0.5rem;">
                     <!-- Provider icon button for Git -->
-                    <button class="slds-button provider-button" title={connectedLabel} onclick={handleGitConnect}>
-                        <img class={gitProviderIconClass} src={gitProviderIconUrl} alt="Git Provider" />
-                    </button>
+                    <template if:true={gitProviderIconUrl}>
+                        <button class="slds-button provider-button" title={connectedLabel} onclick={handleGitConnect}>
+                            <img class={gitProviderIconClass} src={gitProviderIconUrl} alt="Git Provider" />
+                        </button>
+                    </template>
                     <!-- Provider icon button for Ticketing -->
-                    <button class="slds-button provider-button slds-m-right_medium" title={ticketConnectedLabel} onclick={handleTicketConnect}>
-                        <img class={ticketProviderIconClass} src={ticketProviderIconUrl} alt="Ticket Provider" />
-                    </button>
+                    <template if:true={ticketProviderIconUrl}>
+                        <button class="slds-button provider-button slds-m-right_medium" title={ticketConnectedLabel} onclick={handleTicketConnect}>
+                            <img class={ticketProviderIconClass} src={ticketProviderIconUrl} alt="Ticket Provider" />
+                        </button>
+                    </template>
 
                     <template if:true={gitAuthenticated}>
                         <div class="toggle-wrapper">
