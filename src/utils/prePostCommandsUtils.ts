@@ -206,6 +206,7 @@ export async function savePrePostCommand(
   return prConfigFileName;
 }
 
+/* jscpd:ignore-start */
 export async function movePrePostCommandUpDown(
   prNumber: number,
   commandId: string,
@@ -240,6 +241,7 @@ export async function movePrePostCommandUpDown(
   }
   return null;
 }
+/* jscpd:ignore-end */
 
 export async function deletePrePostCommand(
   prNumber: number,

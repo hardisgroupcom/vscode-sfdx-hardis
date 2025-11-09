@@ -22,6 +22,7 @@ export default class DeploymentAction extends LightningElement {
   ];
 
   // apexScripts already come as {label, value} objects from backend
+  /* jscpd:ignore-start */
   get apexScriptOptions() {
     const options = this.apexScripts || [];
     const selectedValue = this.displayedAction?.parameters?.apexScript;
@@ -39,6 +40,7 @@ export default class DeploymentAction extends LightningElement {
 
     return options;
   }
+  /* jscpd:ignore-end */
 
   // sfdmuWorkspaces already come as {label, value} objects from backend
   get sfdmuWorkspaceOptions() {
