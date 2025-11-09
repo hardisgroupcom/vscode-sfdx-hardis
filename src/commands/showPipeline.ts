@@ -7,6 +7,15 @@ import { Commands } from "../commands";
 import { showPackageXmlPanel } from "./packageXml";
 import { PullRequest } from "../utils/gitProviders/types";
 import { TicketProvider } from "../utils/ticketProviders/ticketProvider";
+import {
+  listProjectApexScripts,
+  listProjectDataWorkspaces,
+  savePrePostCommand,
+} from "../utils/prePostCommandsUtils";
+import { getCurrentGitBranch } from "../utils/pipeline/sfdxHardisConfig";
+import { getWorkspaceRoot } from "../utils";
+import path from "path";
+import fs from "fs-extra";
 
 export function registerShowPipeline(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
@@ -72,6 +81,59 @@ export function registerShowPipeline(commands: Commands) {
           } catch (e) {
             Logger.log(
               `Error executing showMetadataRetriever command: ${String(e)}`,
+            );
+          }
+        }
+        // Save Deployment Action
+        else if (type === "saveDeploymentAction") {
+          // call savePrePostCommand to save the command
+          const updatedFile = await savePrePostCommand(
+            data.prNumber,
+            data.command,
+          );
+          Logger.log(
+            `Saved deployment action for PR #${data.prNumber}: ${JSON.stringify(
+              data.command,
+            )}`,
+          );
+          const prLabel =
+            pipelineProperties?.prButtonInfo?.pullRequestLabel ||
+            "Pull Request";
+          const msg =
+            data.prNumber === -1
+              ? `Deployment action saved in draft file for the future ${prLabel}.\nIt will be linked to the ${prLabel} once created.`
+              : `Deployment action saved for ${prLabel} #${data.prNumber}.\nDon't forget to commit and push ${updatedFile}`;
+          vscode.window.showInformationMessage(msg);
+        }
+        // Get PR info for modal
+        else if (type === "getPrInfoForModal") {
+          const gitProvider = await GitProvider.getInstance();
+          if (!gitProvider) {
+            Logger.log("No Git provider available for getPrInfoForModal");
+            return;
+          }
+          try {
+            // Get full PR details with tickets and deployment actions
+            let prList = [{ ...data.pullRequest }];
+            prList =
+              await gitProvider.completePullRequestsWithPrePostCommands(prList);
+            prList = await gitProvider.completePullRequestsWithTickets(prList, {
+              fetchDetails: true,
+            });
+            const prDetails = prList[0];
+            if (prDetails) {
+              panel.sendMessage({
+                type: "returnGetPrInfoForModal",
+                data: prDetails,
+              });
+            }
+          } catch (e) {
+            const prLabel =
+              pipelineProperties?.prButtonInfo?.pullRequestLabel ||
+              "Pull Request";
+            Logger.log(`Error getting ${prLabel} info for modal: ${String(e)}`);
+            vscode.window.showErrorMessage(
+              `Error getting ${prLabel} info. Please check the logs for details.`,
             );
           }
         }
@@ -212,20 +274,8 @@ export function registerShowPipeline(commands: Commands) {
       const gitProvider = await GitProvider.getInstance(resetGit);
       let openPullRequests: PullRequest[] = [];
       let gitAuthenticated = false;
-      if (gitProvider?.isActive) {
-        gitAuthenticated = true;
-        if (browseGitProvider) {
-          openPullRequests = await gitProvider.listOpenPullRequests();
-        }
-      }
-      const pipelineDataProvider = new PipelineDataProvider();
-      const pipelineData = await pipelineDataProvider.getPipelineData(
-        gitAuthenticated,
-        {
-          openPullRequests: openPullRequests,
-          browseGitProvider: browseGitProvider,
-        },
-      );
+      let currentBranchPullRequest: PullRequest | null = null;
+
       const prButtonInfo: any = {};
       let repoPlatformLabel = "";
       if (gitProvider?.repoInfo) {
@@ -240,6 +290,83 @@ export function registerShowPipeline(commands: Commands) {
         prButtonInfo.label = "View Pull Requests";
         prButtonInfo.icon = "";
       }
+
+      if (gitProvider?.isActive) {
+        gitAuthenticated = true;
+        if (browseGitProvider) {
+          openPullRequests = await gitProvider.listOpenPullRequests();
+          const currentGitBranch = await getCurrentGitBranch();
+          if (currentGitBranch) {
+            const prActionsFileDraft = path.join(
+              getWorkspaceRoot(),
+              "scripts",
+              "actions",
+              ".sfdx-hardis.draft.yml",
+            );
+            currentBranchPullRequest =
+              await gitProvider.getActivePullRequestFromBranch(
+                currentGitBranch,
+              );
+            if (currentBranchPullRequest) {
+              if (fs.existsSync(prActionsFileDraft)) {
+                // Rename draft file to associate it with the current PR
+                const prNumber = currentBranchPullRequest.number;
+                const prActionsFileNewName = path.join(
+                  getWorkspaceRoot(),
+                  "scripts",
+                  "actions",
+                  `.sfdx-hardis.${prNumber}.yml`,
+                );
+                await fs.rename(prActionsFileDraft, prActionsFileNewName);
+                vscode.window
+                  .showInformationMessage(
+                    `Draft deployment actions file has been found and associated to ${prButtonInfo.pullRequestLabel || "Pull Request"} #${currentBranchPullRequest.number}. Don't forget to commit & push :)`,
+                    `Commit & Push .sfdx-hardis.${prNumber}.yml`,
+                  )
+                  .then((action) => {
+                    if (
+                      action === `Commit & Push .sfdx-hardis.${prNumber}.yml`
+                    ) {
+                      vscode.commands.executeCommand("workbench.view.scm");
+                    }
+                  });
+              }
+              // Complete with tickets and deployment actions
+              const prList =
+                await gitProvider.completePullRequestsWithPrePostCommands([
+                  currentBranchPullRequest,
+                ]);
+              const prListWithTickets =
+                await gitProvider.completePullRequestsWithTickets(prList, {
+                  fetchDetails: true,
+                });
+              currentBranchPullRequest = prListWithTickets[0];
+            } else {
+              // No PR found for current branch but draft file exists
+              currentBranchPullRequest = {
+                id: "",
+                authorLabel: "",
+                jobsStatus: "unknown",
+                number: -1,
+                title: `${prButtonInfo.pullRequestLabel} not created yet`,
+              };
+              const prList =
+                await gitProvider.completePullRequestsWithPrePostCommands([
+                  currentBranchPullRequest,
+                ]);
+              currentBranchPullRequest = prList[0];
+            }
+          }
+        }
+      }
+      const pipelineDataProvider = new PipelineDataProvider();
+      const pipelineData = await pipelineDataProvider.getPipelineData(
+        gitAuthenticated,
+        {
+          openPullRequests: openPullRequests,
+          browseGitProvider: browseGitProvider,
+        },
+      );
 
       // Read displayFeatureBranches configuration
       const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
@@ -259,15 +386,21 @@ export function registerShowPipeline(commands: Commands) {
         ticketAuthenticated = true;
       }
 
+      const projectApexScripts = await listProjectApexScripts();
+      const projectDataWorkspaces = await listProjectDataWorkspaces();
+
       return {
         pipelineData: pipelineData,
         prButtonInfo: prButtonInfo,
         gitAuthenticated: gitAuthenticated,
         ticketAuthenticated: ticketAuthenticated,
         ticketProviderName: ticketProviderName,
+        currentBranchPullRequest: currentBranchPullRequest,
         openPullRequests: openPullRequests,
         repoPlatformLabel: repoPlatformLabel,
         displayFeatureBranches: displayFeatureBranches,
+        projectApexScripts: projectApexScripts,
+        projectSfdmuWorkspaces: projectDataWorkspaces,
       };
     };
 

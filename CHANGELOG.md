@@ -2,7 +2,11 @@
 
 ## [Unreleased]
 
+## [6.17.0] 2024-11-09
+
+- Live DevOps Pipeline: UI part for deployment actions
 - Orgs Manager: Fix issue when renaming or removing an existing org alias
+- Fix Git / Jira icons display issue
 - Upgrade dependencies
 
 ## [6.16.5] 2024-11-06

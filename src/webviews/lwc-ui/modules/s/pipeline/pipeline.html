@@ -6,13 +6,17 @@
             <div class="actions-row">
                 <div style="display:flex;align-items:center;gap:0.5rem;">
                     <!-- Provider icon button for Git -->
-                    <button class="slds-button provider-button" title={connectedLabel} onclick={handleGitConnect}>
-                        <img class={gitProviderIconClass} src={gitProviderIconUrl} alt="Git Provider" />
-                    </button>
+                    <template if:true={gitProviderIconUrl}>
+                        <button class="slds-button provider-button" title={connectedLabel} onclick={handleGitConnect}>
+                            <img class={gitProviderIconClass} src={gitProviderIconUrl} alt="Git Provider" />
+                        </button>
+                    </template>
                     <!-- Provider icon button for Ticketing -->
-                    <button class="slds-button provider-button slds-m-right_medium" title={ticketConnectedLabel} onclick={handleTicketConnect}>
-                        <img class={ticketProviderIconClass} src={ticketProviderIconUrl} alt="Ticket Provider" />
-                    </button>
+                    <template if:true={ticketProviderIconUrl}>
+                        <button class="slds-button provider-button slds-m-right_medium" title={ticketConnectedLabel} onclick={handleTicketConnect}>
+                            <img class={ticketProviderIconClass} src={ticketProviderIconUrl} alt="Ticket Provider" />
+                        </button>
+                    </template>
 
                     <template if:true={gitAuthenticated}>
                         <div class="toggle-wrapper">
@@ -175,6 +179,15 @@
                                     </div>
                                     <p class="command-description">Save your work and publish changes to the remote repository</p>
                                 </div>
+                                <div class="command-card" onclick={handleOpenCurrentPR}>
+                                    <div class="command-header">
+                                        <div class="command-icon-container pr-action" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                            <lightning-icon icon-name="utility:topic2" size="small" variant="inverse"></lightning-icon>
+                                        </div>
+                                        <h3 class="command-title">{currentPRCardTitle}</h3>
+                                    </div>
+                                    <p class="command-description">{currentPRDescription}</p>
+                                </div>
                             </div>
                         </lightning-tab>
                         <lightning-tab label={openPrTabLabel} value="prs">
@@ -185,6 +198,7 @@
                                         column-widths-mode="auto"
                                         columns={prColumns}
                                         hide-checkbox-column
+                                        onrowaction={handlePRRowAction}
                                     ></lightning-datatable>
                                     <template if:true={prButtonInfo}>
                                         <div class="slds-m-top_small slds-align_absolute-center">
@@ -227,11 +241,19 @@
                         <lightning-icon icon-name="utility:close" size="small" alternative-text="Close"></lightning-icon>
                         <span class="slds-assistive-text">Close</span>
                     </button>
-                    <h2 id="modal-heading-01" class="slds-modal__title slds-hyphenate">{modalTitle}</h2>
+                    <h2 id="modal-heading-01" class="slds-modal__title slds-hyphenate">
+                        <template if:true={isSinglePRMode}>
+                            <a href="#" onclick={handleOpenSinglePRUrl} style="color: inherit; text-decoration: underline;">{modalTitle}</a>
+                        </template>
+                        <template if:false={isSinglePRMode}>
+                            {modalTitle}
+                        </template>
+                    </h2>
                 </header>
                 <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
                     <lightning-tabset>
-                        <lightning-tab label={modalPrsTabLabel} value="prs">
+                        <template if:true={showPRTab}>
+                            <lightning-tab label={modalPrsTabLabel} value="prs">
                             <lightning-datatable
                                 key-field="id"
                                 data={modalPullRequests}
@@ -240,6 +262,7 @@
                                 column-widths-mode="auto"
                             ></lightning-datatable>
                         </lightning-tab>
+                        </template>
                         <lightning-tab label={modalTicketsTabLabel} value="tickets">
                             <template if:true={modalTickets.length}>
                                 <lightning-datatable
@@ -256,13 +279,65 @@
                                 </div>
                             </template>
                         </lightning-tab>
+                        <lightning-tab label={modalActionsTabLabel} value="actions">
+                            <template if:true={showAddActionButton}>
+                                <div class="slds-m-bottom_small">
+                                    <lightning-button
+                                        variant="brand"
+                                        label="Add New Action"
+                                        icon-name="utility:add"
+                                        onclick={handleAddNewAction}
+                                    ></lightning-button>
+                                </div>
+                            </template>
+                            <template if:true={modalActions.length}>
+                                <lightning-datatable
+                                    key-field="id"
+                                    data={modalActions}
+                                    columns={computedModalActionsColumns}
+                                    hide-checkbox-column
+                                    column-widths-mode="auto"
+                                    onrowaction={handleActionRowClick}
+                                ></lightning-datatable>
+                            </template>
+                            <template if:false={modalActions.length}>
+                                <div class="slds-align_absolute-center slds-p-around_medium">
+                                    <p class="slds-text-color_weak">No deployment actions found in the pull requests for this branch.</p>
+                                </div>
+                            </template>
+                        </lightning-tab>
                     </lightning-tabset>
                 </div>
-                <footer class="slds-modal__footer">
-                    <lightning-button variant="neutral" label="Close" onclick={handleClosePRModal}></lightning-button>
+                <footer class="slds-modal__footer" style="display: flex; justify-content: space-between;">
+                    <div>
+                        <template if:true={isSinglePRMode}>
+                            <lightning-button 
+                                variant="brand" 
+                                label={singlePRViewButtonLabel} 
+                                icon-name="utility:new_window"
+                                onclick={handleOpenSinglePRUrl}
+                            ></lightning-button>
+                        </template>
+                    </div>
+                    <div>
+                        <lightning-button variant="neutral" label="Close" onclick={handleClosePRModal}></lightning-button>
+                    </div>
                 </footer>
             </div>
         </section>
         <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+
+    <!-- Deployment Action Modal (nested) -->
+    <template if:true={showDeploymentActionModal}>
+        <s-deployment-action
+            action={currentDeploymentAction}
+            is-edit-mode={isDeploymentActionEditMode}
+            apex-scripts={projectApexScripts}
+            sfdmu-workspaces={projectSfdmuWorkspaces}
+            onclose={handleCloseDeploymentActionModal}
+            onedit={handleEditDeploymentAction}
+            onsave={handleSaveDeploymentAction}
+        ></s-deployment-action>
     </template>
 </template>

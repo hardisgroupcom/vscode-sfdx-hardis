@@ -1,3 +1,4 @@
+import { PrePostCommand } from "../prePostCommandsUtils";
 import { Ticket } from "../ticketProviders/types";
 
 export type ProviderName = "gitlab" | "github" | "azure" | "bitbucket";
@@ -115,6 +116,8 @@ export type PullRequest = {
   jobsStatus: "running" | "pending" | "success" | "failed" | "unknown";
 
   relatedTickets?: Ticket[]; // tickets associated with the PR (from title/description/branches)
+
+  deploymentActions?: PrePostCommand[]; // pre/post deployment commands associated with the PR
 };
 
 /**
