@@ -122,7 +122,7 @@ export async function listMajorOrgs(
     if (gitProvider?.isActive) {
       // Complete with list of Pull Requests merged in each branch, using listPullRequestsInBranchSinceLastMerge
       // Parallelize calls for better performance
-      await Promise.all(
+      await Promise.allSettled(
         majorOrgsSorted.map(async (org) => {
           // Get child branches names, then recursively child branches names of child branches
           const childBranchesNames = recursiveGetChildBranches(
@@ -143,6 +143,7 @@ export async function listMajorOrgs(
           await gitProvider.completePullRequestsWithTickets(prs, {
             fetchDetails: true,
           });
+          await gitProvider.completePullRequestsWithPrePostCommands(prs);
         }),
       );
     }

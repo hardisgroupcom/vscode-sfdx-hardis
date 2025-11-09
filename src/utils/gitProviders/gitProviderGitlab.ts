@@ -134,6 +134,33 @@ export class GitProviderGitlab extends GitProvider {
     return await this.convertAndCollectJobsList(mergeRequests);
   }
 
+  async getActivePullRequestFromBranch(
+    branchName: string,
+  ): Promise<PullRequest | null> {
+    if (!this.gitlabClient || !this.gitlabProjectId) {
+      return null;
+    }
+    try {
+      const mergeRequests = await this.gitlabClient.MergeRequests.all({
+        projectId: this.gitlabProjectId,
+        sourceBranch: branchName,
+        state: "opened",
+        perPage: 1,
+      });
+      if (!mergeRequests || mergeRequests.length === 0) {
+        return null;
+      }
+      const converted = await this.convertAndCollectJobsList(mergeRequests);
+      return converted[0] || null;
+    }
+    catch (err) {
+      Logger.log(
+        `Error fetching active MR for branch ${branchName}: ${String(err)}`,
+      );
+      return null;
+    }
+  }
+
   // The goal if this method is to list all MRs that have been merged in branch name, but also those who has been merged in branches at previous level
   // For example, on a pipeline integ -> uat -> preprod -> prod
   // If we call this method with branch name uat, we need to have the MRs merged in uat, but also the MRs merged to integ (whose commits are present in uat) since the last MR merged between uat and preprod

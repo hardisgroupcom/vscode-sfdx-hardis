@@ -186,6 +186,38 @@ export class GitProviderAzure extends GitProvider {
     );
   }
 
+  async getActivePullRequestFromBranch(
+    branchName: string,
+  ): Promise<PullRequest | null> {
+    if (!this.repoInfo || !this.gitApi) {
+      return null;
+    }
+    try {
+      const prs = await this.gitApi.getPullRequests(
+        this.repoInfo.repo,
+        {
+          sourceRefName: `refs/heads/${branchName}`,
+          status: PullRequestStatus.Active,
+        },
+        this.repoInfo.owner,
+      );
+      if (!prs || prs.length === 0) {
+        return null;
+      }
+      const converted = await this.convertAndEnrichPullRequests(
+        prs.slice(0, 1),
+        branchName,
+      );
+      return converted[0] || null;
+    }
+    catch (err) {
+      Logger.log(
+        `Error fetching active PR for branch ${branchName}: ${String(err)}`,
+      );
+      return null;
+    }
+  }
+
   async listPullRequestsInBranchSinceLastMerge(
     currentBranchName: string,
     targetBranchName: string,

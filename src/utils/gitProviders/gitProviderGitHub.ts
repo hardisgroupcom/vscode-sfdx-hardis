@@ -79,6 +79,35 @@ export class GitProviderGitHub extends GitProvider {
     return await this.convertAndCollectJobsList(pullRequests);
   }
 
+  async getActivePullRequestFromBranch(
+    branchName: string,
+  ): Promise<PullRequest | null> {
+    if (!this.gitHubClient || !this.repoInfo) {
+      return null;
+    }
+    const [owner, repo] = [this.repoInfo.owner, this.repoInfo.repo];
+    try {
+      const { data: pullRequests } = await this.gitHubClient.pulls.list({
+        owner,
+        repo,
+        head: `${owner}:${branchName}`,
+        state: "open",
+        per_page: 1,
+      });
+      if (pullRequests.length === 0) {
+        return null;
+      }
+      const converted = await this.convertAndCollectJobsList(pullRequests);
+      return converted[0] || null;
+    }
+    catch (err) {
+      Logger.log(
+        `Error fetching active PR for branch ${branchName}: ${String(err)}`,
+      );
+      return null;
+    }
+  }
+
   async listPullRequestsInBranchSinceLastMerge(
     currentBranchName: string,
     targetBranchName: string,
