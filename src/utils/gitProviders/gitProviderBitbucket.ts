@@ -126,6 +126,37 @@ export class GitProviderBitbucket extends GitProvider {
     }
   }
 
+  async getActivePullRequestFromBranch(
+    branchName: string,
+  ): Promise<PullRequest | null> {
+    if (!this.bitbucketClient || !this.workspace || !this.repoSlug) {
+      return null;
+    }
+    try {
+      const response = await this.bitbucketClient.pullrequests.list({
+        workspace: this.workspace,
+        repo_slug: this.repoSlug,
+        q: `source.branch.name = "${branchName}" AND state = "OPEN"`,
+      } as any);
+      const values =
+        response && response.data && response.data.values
+          ? response.data.values
+          : [];
+      if (!values || values.length === 0) {
+        return null;
+      }
+      const converted = await this.convertAndCollectJobsList(
+        values.slice(0, 1),
+      );
+      return converted[0] || null;
+    } catch (err) {
+      Logger.log(
+        `Error fetching active PR for branch ${branchName}: ${String(err)}`,
+      );
+      return null;
+    }
+  }
+
   async listPullRequestsInBranchSinceLastMerge(
     currentBranchName: string,
     targetBranchName: string,

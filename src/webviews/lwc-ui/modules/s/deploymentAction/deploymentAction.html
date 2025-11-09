@@ -1,0 +1,344 @@
+<template>
+  <div class="slds-scope slds-theme_default">
+    <section
+      role="dialog"
+      tabindex="-1"
+      aria-modal="true"
+      aria-labelledby="deployment-action-modal-heading"
+      class="slds-modal slds-fade-in-open slds-modal_large"
+    >
+      <div class="slds-modal__container">
+        <header class="slds-modal__header">
+          <button
+            class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+            title="Close"
+            onclick={handleClose}
+          >
+            <lightning-icon
+              icon-name="utility:close"
+              size="small"
+              alternative-text="Close"
+            ></lightning-icon>
+            <span class="slds-assistive-text">Close</span>
+          </button>
+          <h2
+            id="deployment-action-modal-heading"
+            class="slds-modal__title slds-hyphenate"
+          >
+            {modalTitle}
+          </h2>
+        </header>
+        <div class="slds-modal__content slds-p-around_medium">
+          <div class="slds-grid slds-wrap slds-gutters">
+            <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+              <div class="slds-form-element">
+                <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                  <span>
+                    <abbr class="slds-required" title="required">*</abbr>
+                    Label
+                  </span>
+                  <s-multiline-helptext content="Label of the action (what does it do ?)" class="slds-icon-text-info"></s-multiline-helptext>
+                </label>
+                <lightning-input
+                  value={displayedAction.label}
+                  data-field="label"
+                  onchange={handleFieldChange}
+                  required={isEditMode}
+                  disabled={isViewMode}
+                  variant="label-hidden"
+                ></lightning-input>
+              </div>
+            </div>
+
+            <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
+              <div class="slds-form-element">
+                <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                  <span>
+                    <abbr class="slds-required" title="required">*</abbr>
+                    Type
+                  </span>
+                  <s-multiline-helptext content="Type of the action" class="slds-icon-text-info"></s-multiline-helptext>
+                </label>
+                <lightning-combobox
+                  value={displayedAction.type}
+                  options={typeOptions}
+                  onchange={handleTypeChange}
+                  required={isEditMode}
+                  disabled={isViewMode}
+                  variant="label-hidden"
+                ></lightning-combobox>
+              </div>
+            </div>
+
+            <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
+              <div class="slds-form-element">
+                <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                  <span>
+                    <abbr class="slds-required" title="required">*</abbr>
+                    When
+                  </span>
+                  <s-multiline-helptext content="Pre-Deploy or Post-Deploy" class="slds-icon-text-info"></s-multiline-helptext>
+                </label>
+                <lightning-combobox
+                  value={displayedAction.when}
+                  options={whenOptions}
+                  data-field="when"
+                  onchange={handleFieldChange}
+                  required={isEditMode}
+                  disabled={isViewMode}
+                  variant="label-hidden"
+                ></lightning-combobox>
+              </div>
+            </div>
+
+            <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
+              <div class="slds-form-element">
+                <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                  <span>Execution Contexts</span>
+                  <s-multiline-helptext content="Contexts when the action must be run" class="slds-icon-text-info"></s-multiline-helptext>
+                </label>
+                <lightning-combobox
+                  value={displayedAction.context}
+                  options={contextOptions}
+                  data-field="context"
+                  onchange={handleFieldChange}
+                  disabled={isViewMode}
+                  variant="label-hidden"
+                ></lightning-combobox>
+              </div>
+            </div>
+
+            <!-- Type-specific fields -->
+            <template if:true={showCommandField}>
+              <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                <div class="slds-form-element">
+                  <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                    <span>
+                      <abbr class="slds-required" title="required">*</abbr>
+                      Command
+                    </span>
+                    <s-multiline-helptext content="Command line to run" class="slds-icon-text-info"></s-multiline-helptext>
+                  </label>
+                  <lightning-input
+                    value={displayedAction.command}
+                    data-field="command"
+                    onchange={handleFieldChange}
+                    required={isEditMode}
+                    disabled={isViewMode}
+                    variant="label-hidden"
+                  ></lightning-input>
+                </div>
+              </div>
+            </template>
+
+            <template if:true={showApexScriptField}>
+              <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                <div class="slds-form-element">
+                  <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                    <span>Apex Script</span>
+                    <s-multiline-helptext content="Apex script path to run for 'apex' actions" class="slds-icon-text-info"></s-multiline-helptext>
+                  </label>
+                  <div style="display:flex;align-items:center;gap:0.5rem;">
+                    <div style="flex:1;">
+                      <lightning-combobox
+                        value={displayedAction.parameters.apexScript}
+                        options={apexScriptOptions}
+                        data-field="parameters.apexScript"
+                        onchange={handleFieldChange}
+                        disabled={isViewMode}
+                        variant="label-hidden"
+                        placeholder="Select an Apex script"
+                      ></lightning-combobox>
+                    </div>
+                    <template if:true={hasApexScriptSelected}>
+                      <lightning-button-icon
+                        icon-name="utility:new_window"
+                        alternative-text="Open Apex Script"
+                        title="Open Apex Script in VS Code"
+                        onclick={handleOpenApexScript}
+                      ></lightning-button-icon>
+                    </template>
+                  </div>
+                </div>
+              </div>
+            </template>
+
+            <template if:true={showSfdmuProjectField}>
+              <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                <div class="slds-form-element">
+                  <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                    <span>SFDMU Project Path</span>
+                    <s-multiline-helptext content="Path to SFDMU project for 'data' actions" class="slds-icon-text-info"></s-multiline-helptext>
+                  </label>
+                  <div style="display:flex;align-items:center;gap:0.5rem;">
+                    <div style="flex:1;">
+                      <lightning-combobox
+                        value={displayedAction.parameters.sfdmuProject}
+                        options={sfdmuWorkspaceOptions}
+                        data-field="parameters.sfdmuProject"
+                        onchange={handleFieldChange}
+                        disabled={isViewMode}
+                        variant="label-hidden"
+                        placeholder="Select a data workspace"
+                      ></lightning-combobox>
+                    </div>
+                    <template if:true={hasSfdmuProjectSelected}>
+                      <lightning-button-icon
+                        icon-name="utility:new_window"
+                        alternative-text="Open export.json"
+                        title="Open export.json in VS Code"
+                        onclick={handleOpenSfdmuExport}
+                      ></lightning-button-icon>
+                    </template>
+                  </div>
+                </div>
+              </div>
+            </template>
+
+            <template if:true={showCommunityNameField}>
+              <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                <div class="slds-form-element">
+                  <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                    <span>Community Name</span>
+                    <s-multiline-helptext content="Community name for 'publish-community' actions" class="slds-icon-text-info"></s-multiline-helptext>
+                  </label>
+                  <lightning-input
+                    value={displayedAction.parameters.communityName}
+                    data-field="parameters.communityName"
+                    onchange={handleFieldChange}
+                    disabled={isViewMode}
+                    variant="label-hidden"
+                  ></lightning-input>
+                </div>
+              </div>
+            </template>
+
+            <template if:true={showInstructionsField}>
+              <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                <div class="slds-form-element">
+                  <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                    <span>Instructions</span>
+                    <s-multiline-helptext content="Human-readable instructions for 'manual' actions" class="slds-icon-text-info"></s-multiline-helptext>
+                  </label>
+                  <lightning-textarea
+                    value={displayedAction.parameters.instructions}
+                    data-field="parameters.instructions"
+                    onchange={handleFieldChange}
+                    disabled={isViewMode}
+                    variant="label-hidden"
+                    style="--slds-c-textarea-sizing-min-height: 200px;">
+                  ></lightning-textarea>
+                </div>
+              </div>
+            </template>
+
+            <!-- Additional flags -->
+            <template if:true={showSkipIfErrorField}>
+              <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
+                <div class="slds-form-element">
+                  <div style="display:flex;align-items:center;gap:0.25rem;margin-bottom:0.25rem;">
+                    <span class="slds-form-element__label">Skip If Deployment Error</span>
+                    <s-multiline-helptext content="Do not run the action if there is a deployment error" class="slds-icon-text-info"></s-multiline-helptext>
+                  </div>
+                  <lightning-input
+                    type="toggle"
+                    label="Skip If Deployment Error"
+                    checked={displayedAction.skipIfError}
+                    data-field="skipIfError"
+                    onchange={handleCheckboxChange}
+                    disabled={isViewMode}
+                    variant="label-hidden"
+                  ></lightning-input>
+                </div>
+              </div>
+            </template>
+
+            <template if:true={showAllowFailureField}>
+              <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
+                <div class="slds-form-element">
+                  <div style="display:flex;align-items:center;gap:0.25rem;margin-bottom:0.25rem;">
+                    <span class="slds-form-element__label">Allow Failure</span>
+                    <s-multiline-helptext content="Allow action to fail without marking the deployment as failed" class="slds-icon-text-info"></s-multiline-helptext>
+                  </div>
+                  <lightning-input
+                    type="toggle"
+                    label="Allow Action Failure"
+                    checked={displayedAction.allowFailure}
+                    data-field="allowFailure"
+                    onchange={handleCheckboxChange}
+                    disabled={isViewMode}
+                    variant="label-hidden"
+                  ></lightning-input>
+                </div>
+              </div>
+            </template>
+
+            <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
+              <div class="slds-form-element">
+                <div style="display:flex;align-items:center;gap:0.25rem;margin-bottom:0.25rem;">
+                  <span class="slds-form-element__label">Run Only Once By Org</span>
+                  <s-multiline-helptext content="Run this action only once per target org (useful for idempotent post-deploy tasks)" class="slds-icon-text-info"></s-multiline-helptext>
+                </div>
+                <lightning-input
+                  type="toggle"
+                  label="Run Only Once By Org"
+                  checked={displayedAction.runOnlyOnceByOrg}
+                  data-field="runOnlyOnceByOrg"
+                  onchange={handleCheckboxChange}
+                  disabled={isViewMode}
+                  variant="label-hidden"
+                ></lightning-input>
+              </div>
+            </div>
+
+            <!-- customUsername (optional) -->
+            <template if:true={showCustomUsernameField}>
+              <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
+                <div class="slds-form-element">
+                  <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                    <span>Execute with custom username</span>
+                    <s-multiline-helptext content="Optional custom username to use to run the action. If you input user@company.com, user@company.com.uat and user.company.com.preprod will be found in related orgs." class="slds-icon-text-info"></s-multiline-helptext>
+                  </label>
+                  <lightning-input
+                    value={displayedAction.customUsername}
+                    data-field="customUsername"
+                    onchange={handleFieldChange}
+                    disabled={isViewMode}
+                    variant="label-hidden"
+                  ></lightning-input>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+        <footer class="slds-modal__footer">
+          <template if:false={isEditMode}>
+            <lightning-button
+              variant="brand"
+              label="Edit"
+              onclick={handleEdit}
+            ></lightning-button>
+            <lightning-button
+              variant="neutral"
+              label="Close"
+              onclick={handleClose}
+            ></lightning-button>
+          </template>
+          <template if:true={isEditMode}>
+            <lightning-button
+              variant="neutral"
+              label="Cancel"
+              onclick={handleCancel}
+            ></lightning-button>
+            <lightning-button
+              variant="brand"
+              label="Save"
+              onclick={handleSave}
+            ></lightning-button>
+          </template>
+        </footer>
+      </div>
+    </section>
+    <div class="slds-backdrop slds-backdrop_open"></div>
+  </div>
+</template>
