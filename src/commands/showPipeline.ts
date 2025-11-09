@@ -104,7 +104,7 @@ export function registerShowPipeline(commands: Commands) {
             // Get full PR details with tickets and deployment actions
             let prList = [{...data.pullRequest}];
             prList = await gitProvider.completePullRequestsWithPrePostCommands(prList);
-            prList = await gitProvider.completePullRequestsWithTickets(prList);
+            prList = await gitProvider.completePullRequestsWithTickets(prList, {fetchDetails: true});
             const prDetails = prList[0];
             if (prDetails) {
               panel.sendMessage({
@@ -298,10 +298,10 @@ export function registerShowPipeline(commands: Commands) {
                 }
                 // Complete with tickets and deployment actions
                 const prList = await gitProvider.completePullRequestsWithPrePostCommands([currentBranchPullRequest]);
-                const prListWithTickets = await gitProvider.completePullRequestsWithTickets(prList);
+                const prListWithTickets = await gitProvider.completePullRequestsWithTickets(prList, {fetchDetails: true});
                 currentBranchPullRequest = prListWithTickets[0];
             }
-            else if (fs.existsSync(prActionsFileDraft)) {
+            else {
               // No PR found for current branch but draft file exists
               currentBranchPullRequest = {
                 id: "",

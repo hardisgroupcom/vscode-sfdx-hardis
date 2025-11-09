@@ -638,13 +638,9 @@ export default class Pipeline extends LightningElement {
     return count > 0 ? `Open ${prLabel} (${count})` : `Open ${prLabel}`;
   }
 
-  get hasCurrentBranchPullRequest() {
-    return !!(this.currentBranchPullRequest && this.currentBranchPullRequest.number);
-  }
-
   get currentPRCardTitle() {
     const prLabel = this.prButtonInfo?.pullRequestLabel || "Pull Request";
-    return `My User Story ${prLabel}`;
+    return `My ${prLabel}`;
   }
 
   get currentPRDescription() {
@@ -1394,6 +1390,40 @@ export default class Pipeline extends LightningElement {
 
   get showPRTab() {
     return this.modalMode !== "singlePR";
+  }
+
+  get isSinglePRMode() {
+    if (this.modalMode !== "singlePR") {
+      return false;
+    }
+    // Don't show PR-specific features if PR number is -1 (not yet created)
+    if (this.modalPullRequests.length === 1) {
+      const pr = this.modalPullRequests[0];
+      return pr.number !== -1;
+    }
+    return false;
+  }
+
+  get singlePRViewButtonLabel() {
+    if (this.modalPullRequests.length === 1) {
+      const pr = this.modalPullRequests[0];
+      const gitProvider = this.repoPlatformLabel || "Git";
+      return `View #${pr.number} - ${pr.title || ""} on ${gitProvider}`;
+    }
+    return "View Pull Request";
+  }
+
+  handleOpenSinglePRUrl(event) {
+    event.preventDefault();
+    if (this.modalPullRequests.length === 1) {
+      const pr = this.modalPullRequests[0];
+      if (pr.webUrl) {
+        window.sendMessageToVSCode({
+          type: "openExternal",
+          data: { url: pr.webUrl },
+        });
+      }
+    }
   }
 
   get showAddActionButton() {
