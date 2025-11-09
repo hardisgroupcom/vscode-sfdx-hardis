@@ -1385,7 +1385,7 @@ export default class Pipeline extends LightningElement {
 
   get modalActionsTabLabel() {
     const count = this.modalActions.length;
-    return `Deployment Actions (${count})`;
+    return `Deployment Actions (${count}) (beta)`;
   }
 
   get showPRTab() {
