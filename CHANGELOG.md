@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Live DevOps Pipeline: UI part for deployment actions
 - Orgs Manager: Fix issue when renaming or removing an existing org alias
 - Upgrade dependencies
 
