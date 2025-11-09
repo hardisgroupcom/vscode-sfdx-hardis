@@ -1117,6 +1117,41 @@ export default class Pipeline extends LightningElement {
       console.error("Cannot save deployment action: PR number not found");
       return;
     }
+    
+    // Update the modalActions list immediately with the new values
+    const actionIndex = this.modalActions.findIndex(
+      a => a._fullAction && a._fullAction.id === action.id && a.prNumber === prNumber
+    );
+    
+    if (actionIndex >= 0) {
+      const when = action.when;
+      const whenLabel = when === "pre-deploy" ? "Pre-Deploy" :
+                       when === "post-deploy" ? "Post-Deploy" : "Unknown";
+      
+      // Update the action row with new values
+      const updatedRow = {
+        ...this.modalActions[actionIndex],
+        label: action.label || "Unnamed Action",
+        type: action.type || "command",
+        when: whenLabel,
+        _fullAction: {
+          ...action,
+          pullRequest: {
+            number: prNumber,
+            title: action.pullRequest?.title,
+            webUrl: action.pullRequest?.webUrl,
+          },
+        },
+      };
+      
+      // Create new array to trigger reactivity
+      this.modalActions = [
+        ...this.modalActions.slice(0, actionIndex),
+        updatedRow,
+        ...this.modalActions.slice(actionIndex + 1)
+      ];
+    }
+    
     // Send message to extension to save
     window.sendMessageToVSCode({
       type: "saveDeploymentAction",
@@ -1125,6 +1160,7 @@ export default class Pipeline extends LightningElement {
         command: JSON.parse(JSON.stringify(action)),
       },
     });
+    
     // Close modal
     this.showDeploymentActionModal = false;
     this.currentDeploymentAction = null;
