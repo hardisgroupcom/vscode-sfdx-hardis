@@ -75,6 +75,16 @@ export function registerShowPipeline(commands: Commands) {
             );
           }
         }
+        // Save Deployment Action
+        else if (type === "saveDeploymentAction") {
+          // TODO: Implement save logic to update the YAML file
+          Logger.log(
+            `Saving deployment action: ${JSON.stringify(data.action)}`,
+          );
+          vscode.window.showInformationMessage(
+            "Deployment action save functionality will be implemented soon.",
+          );
+        }
         // Update VS Code configuration
         else if (type === "updateVsCodeSfdxHardisConfiguration") {
           const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");

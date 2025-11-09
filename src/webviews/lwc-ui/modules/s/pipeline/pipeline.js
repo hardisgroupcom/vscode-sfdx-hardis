@@ -138,7 +138,12 @@ export default class Pipeline extends LightningElement {
         key: "label",
         label: "Label",
         fieldName: "label",
-        type: "text",
+        type: "button",
+        typeAttributes: {
+          label: { fieldName: "label" },
+          name: "view_action",
+          variant: "base",
+        },
         wrapText: true,
       },
       {
@@ -235,6 +240,11 @@ export default class Pipeline extends LightningElement {
   modalTickets = [];
   modalActions = [];
   branchPullRequestsMap = new Map();
+  
+  // Deployment action modal state
+  @track showDeploymentActionModal = false;
+  @track currentDeploymentAction = null;
+  @track isDeploymentActionEditMode = false;
 
   // Dynamically compute the icon URL for the PR button
   get prButtonIconUrl() {
@@ -1061,6 +1071,53 @@ export default class Pipeline extends LightningElement {
     this.modalActions = [];
   }
 
+  handleActionRowClick(event) {
+    const action = event.detail.action;
+    const row = event.detail.row;
+    
+    if (!action || !row) {
+      return;
+    }
+
+    // Handle the view_action button click
+    if (action.name === "view_action") {
+      // Find the full action object
+      const actionRow = this.modalActions.find(a => a.id === row.id);
+      if (!actionRow || !actionRow._fullAction) {
+        return;
+      }
+
+      // Show deployment action modal inline
+      this.currentDeploymentAction = actionRow._fullAction;
+      this.isDeploymentActionEditMode = false;
+      this.showDeploymentActionModal = true;
+    }
+  }
+
+  handleCloseDeploymentActionModal() {
+    this.showDeploymentActionModal = false;
+    this.currentDeploymentAction = null;
+    this.isDeploymentActionEditMode = false;
+  }
+
+  handleEditDeploymentAction() {
+    this.isDeploymentActionEditMode = true;
+  }
+
+  handleSaveDeploymentAction(event) {
+    const action = event.detail;
+    // Send message to extension to save
+    window.sendMessageToVSCode({
+      type: "saveDeploymentAction",
+      data: {
+        action: action,
+      },
+    });
+    // Update local state
+    this.currentDeploymentAction = action;
+    this.isDeploymentActionEditMode = false;
+  }
+
   _aggregateTicketsFromPRs(prs) {
     if (!Array.isArray(prs)) {
       return [];
@@ -1190,6 +1247,16 @@ export default class Pipeline extends LightningElement {
             const whenLabel = when === "pre-deploy" ? "Pre-Deploy" :
                              when === "post-deploy" ? "Post-Deploy" : "Unknown";
             
+            // Store full action object for modal
+            const fullAction = {
+              ...action,
+              pullRequest: {
+                number: pr.number,
+                title: pr.title,
+                webUrl: pr.webUrl,
+              },
+            };
+            
             actionRows.push({
               id: `${pr.number}-${action.type || "action"}-${actionRows.length}`,
               label: action.label || "Unnamed Action",
@@ -1198,6 +1265,7 @@ export default class Pipeline extends LightningElement {
               prLabel: `#${pr.number} - ${pr.title || ""}`,
               prWebUrl: pr.webUrl || "",
               prNumber: pr.number || 0,
+              _fullAction: fullAction,
             });
           }
         }

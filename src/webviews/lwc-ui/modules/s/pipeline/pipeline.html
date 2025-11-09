@@ -264,6 +264,7 @@
                                     columns={computedModalActionsColumns}
                                     hide-checkbox-column
                                     column-widths-mode="auto"
+                                    onrowaction={handleActionRowClick}
                                 ></lightning-datatable>
                             </template>
                             <template if:false={modalActions.length}>
@@ -280,5 +281,16 @@
             </div>
         </section>
         <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+
+    <!-- Deployment Action Modal (nested) -->
+    <template if:true={showDeploymentActionModal}>
+        <s-deployment-action
+            action={currentDeploymentAction}
+            is-edit-mode={isDeploymentActionEditMode}
+            onclose={handleCloseDeploymentActionModal}
+            onedit={handleEditDeploymentAction}
+            onsave={handleSaveDeploymentAction}
+        ></s-deployment-action>
     </template>
 </template>
