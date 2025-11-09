@@ -99,8 +99,7 @@ export class GitProviderGitHub extends GitProvider {
       }
       const converted = await this.convertAndCollectJobsList(pullRequests);
       return converted[0] || null;
-    }
-    catch (err) {
+    } catch (err) {
       Logger.log(
         `Error fetching active PR for branch ${branchName}: ${String(err)}`,
       );

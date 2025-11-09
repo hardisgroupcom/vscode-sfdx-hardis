@@ -209,8 +209,7 @@ export class GitProviderAzure extends GitProvider {
         branchName,
       );
       return converted[0] || null;
-    }
-    catch (err) {
+    } catch (err) {
       Logger.log(
         `Error fetching active PR for branch ${branchName}: ${String(err)}`,
       );

@@ -25,15 +25,18 @@ export default class DeploymentAction extends LightningElement {
   get apexScriptOptions() {
     const options = this.apexScripts || [];
     const selectedValue = this.displayedAction?.parameters?.apexScript;
-    
+
     // If a value is selected but not in the available options, add it with a special label
-    if (selectedValue && !options.find(opt => opt.value === selectedValue)) {
+    if (selectedValue && !options.find((opt) => opt.value === selectedValue)) {
       return [
-        { label: `${selectedValue} (not visible from this git branch)`, value: selectedValue },
-        ...options
+        {
+          label: `${selectedValue} (not visible from this git branch)`,
+          value: selectedValue,
+        },
+        ...options,
       ];
     }
-    
+
     return options;
   }
 
@@ -41,15 +44,18 @@ export default class DeploymentAction extends LightningElement {
   get sfdmuWorkspaceOptions() {
     const options = this.sfdmuWorkspaces || [];
     const selectedValue = this.displayedAction?.parameters?.sfdmuProject;
-    
+
     // If a value is selected but not in the available options, add it with a special label
-    if (selectedValue && !options.find(opt => opt.value === selectedValue)) {
+    if (selectedValue && !options.find((opt) => opt.value === selectedValue)) {
       return [
-        { label: `${selectedValue} (not visible from this git branch)`, value: selectedValue },
-        ...options
+        {
+          label: `${selectedValue} (not visible from this git branch)`,
+          value: selectedValue,
+        },
+        ...options,
       ];
     }
-    
+
     return options;
   }
 
@@ -77,8 +83,7 @@ export default class DeploymentAction extends LightningElement {
       if (!this.editedAction.type) {
         this.editedAction.type = "command";
       }
-    }
-    else if (this.action) {
+    } else if (this.action) {
       // Ensure action has parameters object for view mode
       if (!this.action.parameters) {
         this.action.parameters = {};
@@ -159,11 +164,11 @@ export default class DeploymentAction extends LightningElement {
   }
 
   get hasApexScriptSelected() {
-    return !!(this.displayedAction?.parameters?.apexScript);
+    return !!this.displayedAction?.parameters?.apexScript;
   }
 
   get hasSfdmuProjectSelected() {
-    return !!(this.displayedAction?.parameters?.sfdmuProject);
+    return !!this.displayedAction?.parameters?.sfdmuProject;
   }
 
   // Get parameter values
@@ -209,7 +214,7 @@ export default class DeploymentAction extends LightningElement {
       this.editedAction.parameters = {};
     }
     // Dispatch event to parent
-    this.dispatchEvent(new CustomEvent('edit'));
+    this.dispatchEvent(new CustomEvent("edit"));
   }
 
   handleCancel() {
@@ -219,21 +224,20 @@ export default class DeploymentAction extends LightningElement {
 
   handleClose() {
     // Dispatch close event to parent
-    this.dispatchEvent(new CustomEvent('close'));
+    this.dispatchEvent(new CustomEvent("close"));
   }
 
   handleFieldChange(event) {
     const field = event.target.dataset.field;
     const value = event.target.value;
-    
+
     if (field.startsWith("parameters.")) {
       const paramName = field.substring(11);
       if (!this.editedAction.parameters) {
         this.editedAction.parameters = {};
       }
       this.editedAction.parameters[paramName] = value;
-    }
-    else {
+    } else {
       this.editedAction[field] = value;
     }
   }
@@ -255,9 +259,11 @@ export default class DeploymentAction extends LightningElement {
 
   handleSave() {
     // Dispatch save event to parent with edited action
-    this.dispatchEvent(new CustomEvent('save', {
-      detail: this.editedAction
-    }));
+    this.dispatchEvent(
+      new CustomEvent("save", {
+        detail: this.editedAction,
+      }),
+    );
   }
 
   handleOpenApexScript() {
@@ -265,7 +271,7 @@ export default class DeploymentAction extends LightningElement {
     if (apexScriptPath) {
       window.sendMessageToVSCode({
         type: "openFile",
-        data: { filePath: apexScriptPath}
+        data: { filePath: apexScriptPath },
       });
     }
   }
@@ -274,11 +280,11 @@ export default class DeploymentAction extends LightningElement {
     const sfdmuProjectPath = this.displayedAction?.parameters?.sfdmuProject;
     if (sfdmuProjectPath) {
       // Construct path to export.json
-        const exportJsonPath = `scripts/data/${sfdmuProjectPath}/export.json`;
-        window.sendMessageToVSCode({
-            type: "openFile",
-            data: { filePath: exportJsonPath }
-        });
+      const exportJsonPath = `scripts/data/${sfdmuProjectPath}/export.json`;
+      window.sendMessageToVSCode({
+        type: "openFile",
+        data: { filePath: exportJsonPath },
+      });
     }
   }
 }

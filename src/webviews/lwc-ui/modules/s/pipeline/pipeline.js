@@ -171,7 +171,7 @@ export default class Pipeline extends LightningElement {
         initialWidth: 120,
       },
     ];
-    
+
     // Only show PR column in branch mode
     if (this.modalMode !== "singlePR") {
       columns.push({
@@ -183,7 +183,7 @@ export default class Pipeline extends LightningElement {
         wrapText: true,
       });
     }
-    
+
     return columns;
   }
 
@@ -257,7 +257,7 @@ export default class Pipeline extends LightningElement {
   modalTickets = [];
   modalActions = [];
   branchPullRequestsMap = new Map();
-  
+
   // Deployment action modal state
   @track showDeploymentActionModal = false;
   @track currentDeploymentAction = null;
@@ -1112,10 +1112,10 @@ export default class Pipeline extends LightningElement {
   handlePRRowAction(event) {
     const action = event.detail.action;
     const row = event.detail.row;
-    
+
     if (action.name === "view_pr" && row) {
       // Find the full PR object
-      const pr = this.openPullRequests.find(p => p.id === row.id);
+      const pr = this.openPullRequests.find((p) => p.id === row.id);
       if (pr) {
         this.showSinglePRModal(pr);
       }
@@ -1143,20 +1143,20 @@ export default class Pipeline extends LightningElement {
     this.modalMode = "singlePR";
     this.modalBranchName = pr.sourceBranch || "";
     this.modalPullRequests = [pr];
-    
+
     // Aggregate tickets from this single PR
     this.modalTickets = this._aggregateTicketsFromPRs([pr]);
-    
+
     // Aggregate deployment actions from this single PR
     this.modalActions = this._aggregateActionsFromPRs([pr]);
-    
+
     this.showPRModal = true;
   }
 
   handleActionRowClick(event) {
     const action = event.detail.action;
     const row = event.detail.row;
-    
+
     if (!action || !row) {
       return;
     }
@@ -1164,7 +1164,7 @@ export default class Pipeline extends LightningElement {
     // Handle the view_action button click
     if (action.name === "view_action") {
       // Find the full action object
-      const actionRow = this.modalActions.find(a => a.id === row.id);
+      const actionRow = this.modalActions.find((a) => a.id === row.id);
       if (!actionRow || !actionRow._fullAction) {
         return;
       }
@@ -1194,16 +1194,23 @@ export default class Pipeline extends LightningElement {
       console.error("Cannot save deployment action: PR number not found");
       return;
     }
-    
+
     const when = action.when;
-    const whenLabel = when === "pre-deploy" ? "Pre-Deploy" :
-                     when === "post-deploy" ? "Post-Deploy" : "Unknown";
-    
+    const whenLabel =
+      when === "pre-deploy"
+        ? "Pre-Deploy"
+        : when === "post-deploy"
+          ? "Post-Deploy"
+          : "Unknown";
+
     // Update the modalActions list immediately with the new values
     const actionIndex = this.modalActions.findIndex(
-      a => a._fullAction && a._fullAction.id === action.id && a.prNumber === prNumber
+      (a) =>
+        a._fullAction &&
+        a._fullAction.id === action.id &&
+        a.prNumber === prNumber,
     );
-    
+
     if (actionIndex >= 0) {
       // Update existing action
       const updatedRow = {
@@ -1220,14 +1227,14 @@ export default class Pipeline extends LightningElement {
           },
         },
       };
-      
+
       // Create new array with updated action
       const updatedActions = [
         ...this.modalActions.slice(0, actionIndex),
         updatedRow,
-        ...this.modalActions.slice(actionIndex + 1)
+        ...this.modalActions.slice(actionIndex + 1),
       ];
-      
+
       // Sort the actions (Pre-Deploy first, then Post-Deploy)
       this.modalActions = this._sortActions(updatedActions);
     } else {
@@ -1249,12 +1256,12 @@ export default class Pipeline extends LightningElement {
           },
         },
       };
-      
+
       // Add to the list and sort
       const updatedActions = [...this.modalActions, newRow];
       this.modalActions = this._sortActions(updatedActions);
     }
-    
+
     // Send message to extension to save
     window.sendMessageToVSCode({
       type: "saveDeploymentAction",
@@ -1263,7 +1270,7 @@ export default class Pipeline extends LightningElement {
         command: JSON.parse(JSON.stringify(action)),
       },
     });
-    
+
     // Close modal
     this.showDeploymentActionModal = false;
     this.currentDeploymentAction = null;
@@ -1456,14 +1463,14 @@ export default class Pipeline extends LightningElement {
     // Sort by when (Pre-Deploy first, then Post-Deploy), then by PR number
     return actionRows.sort((a, b) => {
       // First sort by when label
-      const whenOrder = { "Pre-Deploy": 0, "Post-Deploy": 1, "Unknown": 2 };
+      const whenOrder = { "Pre-Deploy": 0, "Post-Deploy": 1, Unknown: 2 };
       const whenA = whenOrder[a.when] ?? 2;
       const whenB = whenOrder[b.when] ?? 2;
-      
+
       if (whenA !== whenB) {
         return whenA - whenB;
       }
-      
+
       // Then sort by PR number
       const prNumA = parseInt(a.prNumber) || 0;
       const prNumB = parseInt(b.prNumber) || 0;
@@ -1483,9 +1490,13 @@ export default class Pipeline extends LightningElement {
         for (const action of pr.deploymentActions) {
           if (action) {
             const when = action.when;
-            const whenLabel = when === "pre-deploy" ? "Pre-Deploy" :
-                             when === "post-deploy" ? "Post-Deploy" : "Unknown";
-            
+            const whenLabel =
+              when === "pre-deploy"
+                ? "Pre-Deploy"
+                : when === "post-deploy"
+                  ? "Post-Deploy"
+                  : "Unknown";
+
             // Store full action object for modal
             const fullAction = {
               ...action,
@@ -1495,7 +1506,7 @@ export default class Pipeline extends LightningElement {
                 webUrl: pr.webUrl,
               },
             };
-            
+
             actionRows.push({
               id: `${pr.number}-${action.type || "action"}-${actionRows.length}`,
               label: action.label || "Unnamed Action",

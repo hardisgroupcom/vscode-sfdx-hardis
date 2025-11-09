@@ -145,10 +145,11 @@ export class GitProviderBitbucket extends GitProvider {
       if (!values || values.length === 0) {
         return null;
       }
-      const converted = await this.convertAndCollectJobsList(values.slice(0, 1));
+      const converted = await this.convertAndCollectJobsList(
+        values.slice(0, 1),
+      );
       return converted[0] || null;
-    }
-    catch (err) {
+    } catch (err) {
       Logger.log(
         `Error fetching active PR for branch ${branchName}: ${String(err)}`,
       );

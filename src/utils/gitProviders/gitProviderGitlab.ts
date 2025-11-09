@@ -152,8 +152,7 @@ export class GitProviderGitlab extends GitProvider {
       }
       const converted = await this.convertAndCollectJobsList(mergeRequests);
       return converted[0] || null;
-    }
-    catch (err) {
+    } catch (err) {
       Logger.log(
         `Error fetching active MR for branch ${branchName}: ${String(err)}`,
       );

@@ -7,7 +7,11 @@ import { Commands } from "../commands";
 import { showPackageXmlPanel } from "./packageXml";
 import { PullRequest } from "../utils/gitProviders/types";
 import { TicketProvider } from "../utils/ticketProviders/ticketProvider";
-import { listProjectApexScripts, listProjectDataWorkspaces, savePrePostCommand } from "../utils/prePostCommandsUtils";
+import {
+  listProjectApexScripts,
+  listProjectDataWorkspaces,
+  savePrePostCommand,
+} from "../utils/prePostCommandsUtils";
 import { getCurrentGitBranch } from "../utils/pipeline/sfdxHardisConfig";
 import { getWorkspaceRoot } from "../utils";
 import path from "path";
@@ -83,7 +87,10 @@ export function registerShowPipeline(commands: Commands) {
         // Save Deployment Action
         else if (type === "saveDeploymentAction") {
           // call savePrePostCommand to save the command
-          const updatedFile = await savePrePostCommand(data.prNumber, data.command);
+          const updatedFile = await savePrePostCommand(
+            data.prNumber,
+            data.command,
+          );
           Logger.log(
             `Saved deployment action for PR #${data.prNumber}: ${JSON.stringify(
               data.command,
@@ -102,9 +109,12 @@ export function registerShowPipeline(commands: Commands) {
           }
           try {
             // Get full PR details with tickets and deployment actions
-            let prList = [{...data.pullRequest}];
-            prList = await gitProvider.completePullRequestsWithPrePostCommands(prList);
-            prList = await gitProvider.completePullRequestsWithTickets(prList, {fetchDetails: true});
+            let prList = [{ ...data.pullRequest }];
+            prList =
+              await gitProvider.completePullRequestsWithPrePostCommands(prList);
+            prList = await gitProvider.completePullRequestsWithTickets(prList, {
+              fetchDetails: true,
+            });
             const prDetails = prList[0];
             if (prDetails) {
               panel.sendMessage({
@@ -256,7 +266,7 @@ export function registerShowPipeline(commands: Commands) {
       const gitProvider = await GitProvider.getInstance(resetGit);
       let openPullRequests: PullRequest[] = [];
       let gitAuthenticated = false;
-      let currentBranchPullRequest: PullRequest|null = null;
+      let currentBranchPullRequest: PullRequest | null = null;
 
       const prButtonInfo: any = {};
       let repoPlatformLabel = "";
@@ -278,30 +288,52 @@ export function registerShowPipeline(commands: Commands) {
         if (browseGitProvider) {
           openPullRequests = await gitProvider.listOpenPullRequests();
           const currentGitBranch = await getCurrentGitBranch();
-          if (currentGitBranch){
-            const prActionsFileDraft = path.join(getWorkspaceRoot(), "scripts", "actions", ".sfdx-hardis.draft.yml");
-            currentBranchPullRequest = await gitProvider.getActivePullRequestFromBranch(currentGitBranch);
+          if (currentGitBranch) {
+            const prActionsFileDraft = path.join(
+              getWorkspaceRoot(),
+              "scripts",
+              "actions",
+              ".sfdx-hardis.draft.yml",
+            );
+            currentBranchPullRequest =
+              await gitProvider.getActivePullRequestFromBranch(
+                currentGitBranch,
+              );
             if (currentBranchPullRequest) {
               if (fs.existsSync(prActionsFileDraft)) {
-                  // Rename draft file to associate it with the current PR
-                  const prNumber = currentBranchPullRequest.number;
-                  const prActionsFileNewName = path.join(getWorkspaceRoot(), "scripts", "actions", `.sfdx-hardis.${prNumber}.yml`);
-                  await fs.rename(prActionsFileDraft, prActionsFileNewName);
-                  vscode.window.showInformationMessage(
+                // Rename draft file to associate it with the current PR
+                const prNumber = currentBranchPullRequest.number;
+                const prActionsFileNewName = path.join(
+                  getWorkspaceRoot(),
+                  "scripts",
+                  "actions",
+                  `.sfdx-hardis.${prNumber}.yml`,
+                );
+                await fs.rename(prActionsFileDraft, prActionsFileNewName);
+                vscode.window
+                  .showInformationMessage(
                     `Draft deployment actions file has been found and associated to ${prButtonInfo.pullRequestLabel || "Pull Request"} #${currentBranchPullRequest.number}. Don't forget to commit & push :)`,
-                    `Commit & Push .sfdx-hardis.${prNumber}.yml`
-                  ).then ((action) => {
-                    if (action ===  `Commit & Push .sfdx-hardis.${prNumber}.yml`) {
+                    `Commit & Push .sfdx-hardis.${prNumber}.yml`,
+                  )
+                  .then((action) => {
+                    if (
+                      action === `Commit & Push .sfdx-hardis.${prNumber}.yml`
+                    ) {
                       vscode.commands.executeCommand("workbench.view.scm");
                     }
                   });
-                }
-                // Complete with tickets and deployment actions
-                const prList = await gitProvider.completePullRequestsWithPrePostCommands([currentBranchPullRequest]);
-                const prListWithTickets = await gitProvider.completePullRequestsWithTickets(prList, {fetchDetails: true});
-                currentBranchPullRequest = prListWithTickets[0];
-            }
-            else {
+              }
+              // Complete with tickets and deployment actions
+              const prList =
+                await gitProvider.completePullRequestsWithPrePostCommands([
+                  currentBranchPullRequest,
+                ]);
+              const prListWithTickets =
+                await gitProvider.completePullRequestsWithTickets(prList, {
+                  fetchDetails: true,
+                });
+              currentBranchPullRequest = prListWithTickets[0];
+            } else {
               // No PR found for current branch but draft file exists
               currentBranchPullRequest = {
                 id: "",
@@ -309,8 +341,11 @@ export function registerShowPipeline(commands: Commands) {
                 jobsStatus: "unknown",
                 number: -1,
                 title: `${prButtonInfo.pullRequestLabel} not created yet`,
-              }
-              const prList = await gitProvider.completePullRequestsWithPrePostCommands([currentBranchPullRequest]);
+              };
+              const prList =
+                await gitProvider.completePullRequestsWithPrePostCommands([
+                  currentBranchPullRequest,
+                ]);
               currentBranchPullRequest = prList[0];
             }
           }
