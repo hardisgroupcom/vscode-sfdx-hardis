@@ -256,6 +256,22 @@
                                 </div>
                             </template>
                         </lightning-tab>
+                        <lightning-tab label={modalActionsTabLabel} value="actions">
+                            <template if:true={modalActions.length}>
+                                <lightning-datatable
+                                    key-field="id"
+                                    data={modalActions}
+                                    columns={computedModalActionsColumns}
+                                    hide-checkbox-column
+                                    column-widths-mode="auto"
+                                ></lightning-datatable>
+                            </template>
+                            <template if:false={modalActions.length}>
+                                <div class="slds-align_absolute-center slds-p-around_medium">
+                                    <p class="slds-text-color_weak">No deployment actions found in the pull requests for this branch.</p>
+                                </div>
+                            </template>
+                        </lightning-tab>
                     </lightning-tabset>
                 </div>
                 <footer class="slds-modal__footer">

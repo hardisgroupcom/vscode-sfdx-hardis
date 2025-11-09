@@ -131,6 +131,43 @@ export default class Pipeline extends LightningElement {
 
   modalTicketColumns = [];
 
+  // Compute actions columns to dynamically set Pull Request label
+  get computedModalActionsColumns() {
+    return [
+      {
+        key: "label",
+        label: "Label",
+        fieldName: "label",
+        type: "text",
+        wrapText: true,
+      },
+      {
+        key: "type",
+        label: "Type",
+        fieldName: "type",
+        type: "text",
+        wrapText: true,
+        initialWidth: 150,
+      },
+      {
+        key: "when",
+        label: "When",
+        fieldName: "when",
+        type: "text",
+        wrapText: true,
+        initialWidth: 120,
+      },
+      {
+        key: "pullRequest",
+        label: this.prButtonInfo?.pullRequestLabel || "Pull Request",
+        fieldName: "prWebUrl",
+        type: "url",
+        typeAttributes: { label: { fieldName: "prLabel" }, target: "_blank" },
+        wrapText: true,
+      },
+    ];
+  }
+
   // Compute ticket columns based on authentication state
   get computedModalTicketColumns() {
     const columns = [
@@ -196,6 +233,7 @@ export default class Pipeline extends LightningElement {
   modalBranchName = "";
   modalPullRequests = [];
   modalTickets = [];
+  modalActions = [];
   branchPullRequestsMap = new Map();
 
   // Dynamically compute the icon URL for the PR button
@@ -1000,11 +1038,15 @@ export default class Pipeline extends LightningElement {
       // Aggregate all tickets from all PRs
       this.modalTickets = this._aggregateTicketsFromPRs(prs);
 
+      // Aggregate all deployment actions from all PRs
+      this.modalActions = this._aggregateActionsFromPRs(prs);
+
       this.showPRModal = true;
       console.log("Modal data:", {
         branchName,
         prCount: prs.length,
         ticketCount: this.modalTickets.length,
+        actionCount: this.modalActions.length,
       });
     } else {
       console.warn("No PRs found for branch:", branchName);
@@ -1016,6 +1058,7 @@ export default class Pipeline extends LightningElement {
     this.modalBranchName = "";
     this.modalPullRequests = [];
     this.modalTickets = [];
+    this.modalActions = [];
   }
 
   _aggregateTicketsFromPRs(prs) {
@@ -1125,5 +1168,55 @@ export default class Pipeline extends LightningElement {
   get modalTicketsTabLabel() {
     const count = this.modalTickets.length;
     return `Tickets (${count})`;
+  }
+
+  get modalActionsTabLabel() {
+    const count = this.modalActions.length;
+    return `Deployment Actions (${count})`;
+  }
+
+  _aggregateActionsFromPRs(prs) {
+    if (!Array.isArray(prs)) {
+      return [];
+    }
+
+    const actionRows = [];
+
+    for (const pr of prs) {
+      if (pr.deploymentActions && Array.isArray(pr.deploymentActions)) {
+        for (const action of pr.deploymentActions) {
+          if (action) {
+            actionRows.push({
+              id: `${pr.number}-${action.type || "action"}-${actionRows.length}`,
+              label: action.label || "Unnamed Action",
+              type: action.type || "command",
+              prLabel: `#${pr.number} - ${pr.title || ""}`,
+              prWebUrl: pr.webUrl || "",
+              prNumber: pr.number || 0,
+              deploymentPhase: action.deploymentPhase || "unknown",
+            });
+          }
+        }
+      }
+    }
+
+    // Sort by deployment phase (pre-deploy first, then post-deploy), then by PR number
+    actionRows.sort((a, b) => {
+      // First sort by deployment phase
+      const phaseOrder = { "pre-deploy": 0, "post-deploy": 1, "unknown": 2 };
+      const phaseA = phaseOrder[a.deploymentPhase] ?? 2;
+      const phaseB = phaseOrder[b.deploymentPhase] ?? 2;
+      
+      if (phaseA !== phaseB) {
+        return phaseA - phaseB;
+      }
+      
+      // Then sort by PR number
+      const prNumA = parseInt(a.prNumber) || 0;
+      const prNumB = parseInt(b.prNumber) || 0;
+      return prNumA - prNumB;
+    });
+
+    return actionRows;
   }
 }
