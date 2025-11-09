@@ -96,9 +96,11 @@ export function registerShowPipeline(commands: Commands) {
               data.command,
             )}`,
           );
-          vscode.window.showInformationMessage(
-            `Deployment action saved for PR #${data.prNumber}.\nDon't forget to commit and push ${updatedFile}`,
-          );
+          const prLabel = pipelineProperties?.prButtonInfo?.pullRequestLabel || "Pull Request";
+          const msg = data.prNumber === -1 ?
+           `Deployment action saved in draft file for the future ${prLabel}.\nIt will be linked to the ${prLabel} once created.` :
+           `Deployment action saved for ${prLabel} #${data.prNumber}.\nDon't forget to commit and push ${updatedFile}`;
+          vscode.window.showInformationMessage(msg);
         }
         // Get PR info for modal
         else if (type === "getPrInfoForModal") {
@@ -123,9 +125,10 @@ export function registerShowPipeline(commands: Commands) {
               });
             }
           } catch (e) {
-            Logger.log(`Error getting PR info for modal: ${String(e)}`);
+            const prLabel = pipelineProperties?.prButtonInfo?.pullRequestLabel || "Pull Request";
+            Logger.log(`Error getting ${prLabel} info for modal: ${String(e)}`);
             vscode.window.showErrorMessage(
-              `Error getting PR info. Please check the logs for details.`,
+              `Error getting ${prLabel} info. Please check the logs for details.`,
             );
           }
         }
