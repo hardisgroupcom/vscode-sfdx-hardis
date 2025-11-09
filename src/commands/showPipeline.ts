@@ -7,6 +7,7 @@ import { Commands } from "../commands";
 import { showPackageXmlPanel } from "./packageXml";
 import { PullRequest } from "../utils/gitProviders/types";
 import { TicketProvider } from "../utils/ticketProviders/ticketProvider";
+import { listProjectApexScripts, listProjectDataWorkspaces } from "../utils/prePostCommandsUtils";
 
 export function registerShowPipeline(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
@@ -269,6 +270,9 @@ export function registerShowPipeline(commands: Commands) {
         ticketAuthenticated = true;
       }
 
+      const projectApexScripts = await listProjectApexScripts();
+      const projectDataWorkspaces = await listProjectDataWorkspaces();
+
       return {
         pipelineData: pipelineData,
         prButtonInfo: prButtonInfo,
@@ -278,6 +282,8 @@ export function registerShowPipeline(commands: Commands) {
         openPullRequests: openPullRequests,
         repoPlatformLabel: repoPlatformLabel,
         displayFeatureBranches: displayFeatureBranches,
+        projectApexScripts: projectApexScripts,
+        projectSfdmuWorkspaces: projectDataWorkspaces,
       };
     };
 

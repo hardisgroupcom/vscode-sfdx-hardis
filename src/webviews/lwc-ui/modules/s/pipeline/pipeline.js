@@ -19,6 +19,8 @@ export default class Pipeline extends LightningElement {
   @track openPullRequests = [];
   @track displayFeatureBranches = false;
   @track loading = false;
+  @track projectApexScripts = [];
+  @track projectSfdmuWorkspaces = [];
   _refreshTimer = null;
   _isVisible = true;
   _isAutoRefresh = false;
@@ -353,6 +355,9 @@ export default class Pipeline extends LightningElement {
     this.openPullRequests = Array.isArray(this.openPullRequests)
       ? this.openPullRequests
       : [];
+    // Store project resources
+    this.projectApexScripts = data.projectApexScripts || [];
+    this.projectSfdmuWorkspaces = data.projectSfdmuWorkspaces || [];
     // adjust columns to fit the available width immediately
     setTimeout(() => this.adjustPrColumns(), 50);
     // Render the Mermaid diagram after a brief delay to ensure DOM is ready

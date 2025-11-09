@@ -138,13 +138,15 @@
                     <span>Apex Script</span>
                     <s-multiline-helptext content="Apex script path to run for 'apex' actions" class="slds-icon-text-info"></s-multiline-helptext>
                   </label>
-                  <lightning-input
+                  <lightning-combobox
                     value={displayedAction.parameters.apexScript}
+                    options={apexScriptOptions}
                     data-field="parameters.apexScript"
                     onchange={handleFieldChange}
                     disabled={isViewMode}
                     variant="label-hidden"
-                  ></lightning-input>
+                    placeholder="Select an Apex script"
+                  ></lightning-combobox>
                 </div>
               </div>
             </template>
@@ -156,13 +158,15 @@
                     <span>SFDMU Project Path</span>
                     <s-multiline-helptext content="Path to SFDMU project for 'data' actions" class="slds-icon-text-info"></s-multiline-helptext>
                   </label>
-                  <lightning-input
+                  <lightning-combobox
                     value={displayedAction.parameters.sfdmuProject}
+                    options={sfdmuWorkspaceOptions}
                     data-field="parameters.sfdmuProject"
                     onchange={handleFieldChange}
                     disabled={isViewMode}
                     variant="label-hidden"
-                  ></lightning-input>
+                    placeholder="Select a data workspace"
+                  ></lightning-combobox>
                 </div>
               </div>
             </template>

@@ -53,18 +53,20 @@ export async function listPrePostCommandsForPullRequest(pr: PullRequest | undefi
       if (prConfigParsed.commandsPreDeploy && Array.isArray(prConfigParsed.commandsPreDeploy)) {
         const preDeployCommands = prConfigParsed.commandsPreDeploy as PrePostCommand[];
         for (const cmd of preDeployCommands) {
-          cmd.pullRequest = removePrCircularReferences(pr);
-          cmd.when = 'pre-deploy';
-          commands.push(cmd);
+            cmd.type = cmd.type || 'command';
+            cmd.pullRequest = removePrCircularReferences(pr);
+            cmd.when = 'pre-deploy';
+            commands.push(cmd);
         }
       }
       // Extract commandsPostDeploy
       if (prConfigParsed.commandsPostDeploy && Array.isArray(prConfigParsed.commandsPostDeploy)) {
         const postDeployCommands = prConfigParsed.commandsPostDeploy as PrePostCommand[];
         for (const cmd of postDeployCommands) {
-          cmd.pullRequest = removePrCircularReferences(pr);
-          cmd.when = 'post-deploy';
-          commands.push(cmd);
+            cmd.type = cmd.type || 'command';
+            cmd.pullRequest = removePrCircularReferences(pr);
+            cmd.when = 'post-deploy';
+            commands.push(cmd);
         }
       }
     }
@@ -82,4 +84,51 @@ function removePrCircularReferences(pr: PullRequest): PullRequest {
   prCopy.jobs = [];
   prCopy.relatedTickets = [];
   return prCopy;
+}
+
+export async function listProjectApexScripts(): Promise<{ label: string; value: string }[]> {
+  const workspaceRoot = getWorkspaceRoot();
+  const apexScriptsDir = path.join(workspaceRoot, 'scripts', 'apex');
+  const options: { label: string; value: string }[] = [];
+    if (fs.existsSync(apexScriptsDir)) {
+        const files = await fs.readdir(apexScriptsDir);
+        for (const file of files) {
+        if (file.endsWith('.apex')) {
+            options.push({
+                label: file,
+                value: path.join('scripts', 'apex', file).replace(/\\/g, '/'),
+            });
+        }
+        }
+    }
+    return options;
+}
+
+export async function listProjectDataWorkspaces(): Promise<{ label: string; value: string }[]> {
+    const workspaceRoot = getWorkspaceRoot();
+    const sfdmuProjectsDir = path.join(workspaceRoot,'scripts','data');
+    const options: { label: string; value: string }[] = [];
+    // List all folders in data that contain an export.json
+    if (fs.existsSync(sfdmuProjectsDir)) {
+        const items = await fs.readdir(sfdmuProjectsDir);
+        for (const item of items) {
+            const itemPath = path.join(sfdmuProjectsDir, item);
+            const exportJsonPath = path.join(itemPath, 'export.json');
+            if ((await fs.stat(itemPath)).isDirectory() && fs.existsSync(exportJsonPath)) {
+                let hardisLabel = '';
+                try {
+                    const jsonContent = await fs.readFile(exportJsonPath, 'utf8');
+                    const parsed = JSON.parse(jsonContent);
+                    hardisLabel = parsed.sfdxHardisLabel || item;
+                } catch {
+                    // Ignore JSON parse errors
+                }
+                options.push({
+                    label: `${item} - ${item !== hardisLabel ? `: ${hardisLabel}` : 'Label not defined in export.json'}`,
+                    value: item.replace(/\\/g, '/'),
+                });
+            }
+        }
+    }
+    return options;
 }

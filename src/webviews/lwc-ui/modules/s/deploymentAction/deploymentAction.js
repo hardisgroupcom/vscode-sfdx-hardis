@@ -8,6 +8,8 @@ import "s/forceLightTheme"; // Ensure light theme is applied
 export default class DeploymentAction extends LightningElement {
   @api action = null;
   @api isEditMode = false;
+  @api apexScripts = [];
+  @api sfdmuWorkspaces = [];
   @track editedAction = {};
 
   // Available action types
@@ -18,6 +20,16 @@ export default class DeploymentAction extends LightningElement {
     { label: "Publish Community", value: "publish-community" },
     { label: "Manual", value: "manual" },
   ];
+
+  // apexScripts already come as {label, value} objects from backend
+  get apexScriptOptions() {
+    return this.apexScripts || [];
+  }
+
+  // sfdmuWorkspaces already come as {label, value} objects from backend
+  get sfdmuWorkspaceOptions() {
+    return this.sfdmuWorkspaces || [];
+  }
 
   // When options
   whenOptions = [
@@ -200,11 +212,6 @@ export default class DeploymentAction extends LightningElement {
     // Validate required fields
     if (!this.editedAction.label || !this.editedAction.label.trim()) {
       alert("Label is required");
-      return;
-    }
-
-    if (!this.editedAction.id || !this.editedAction.id.trim()) {
-      alert("ID is required");
       return;
     }
 

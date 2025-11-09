@@ -288,6 +288,8 @@
         <s-deployment-action
             action={currentDeploymentAction}
             is-edit-mode={isDeploymentActionEditMode}
+            apex-scripts={projectApexScripts}
+            sfdmu-workspaces={projectSfdmuWorkspaces}
             onclose={handleCloseDeploymentActionModal}
             onedit={handleEditDeploymentAction}
             onsave={handleSaveDeploymentAction}
