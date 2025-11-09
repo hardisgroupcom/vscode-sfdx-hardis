@@ -3,7 +3,6 @@ import * as yaml from "js-yaml";
 import * as path from "path";
 import { getWorkspaceRoot } from "../utils";
 import { PullRequest } from "./gitProviders/types";
-import { handleUndefinedAttr } from "mermaid/dist/utils";
 
 export interface PrePostCommand {
   id: string;

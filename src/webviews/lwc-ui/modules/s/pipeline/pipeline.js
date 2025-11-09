@@ -16,6 +16,7 @@ export default class Pipeline extends LightningElement {
   @track ticketConnectedVariant = "neutral";
   @track ticketConnectedIconName = "utility:link";
   @track ticketProviderName = "";
+  @track currentBranchPullRequest = null;
   @track openPullRequests = [];
   @track displayFeatureBranches = false;
   @track loading = false;
@@ -29,17 +30,22 @@ export default class Pipeline extends LightningElement {
     {
       key: "number",
       label: "#",
-      fieldName: "number",
-      type: "text",
+      fieldName: "webUrl",
+      type: "url",
+      typeAttributes: { label: { fieldName: "number" }, target: "_blank" },
       initialWidth: 80,
       wrapText: true,
     },
     {
       key: "title",
       label: "Title",
-      fieldName: "webUrl",
-      type: "url",
-      typeAttributes: { label: { fieldName: "title" }, target: "_blank" },
+      fieldName: "title",
+      type: "button",
+      typeAttributes: {
+        label: { fieldName: "title" },
+        name: "view_pr",
+        variant: "base",
+      },
       initialWidth: 420,
       wrapText: true,
     },
@@ -135,7 +141,7 @@ export default class Pipeline extends LightningElement {
 
   // Compute actions columns to dynamically set Pull Request label
   get computedModalActionsColumns() {
-    return [
+    const columns = [
       {
         key: "label",
         label: "Label",
@@ -164,15 +170,21 @@ export default class Pipeline extends LightningElement {
         wrapText: true,
         initialWidth: 120,
       },
-      {
+    ];
+    
+    // Only show PR column in branch mode
+    if (this.modalMode !== "singlePR") {
+      columns.push({
         key: "pullRequest",
         label: this.prButtonInfo?.pullRequestLabel || "Pull Request",
         fieldName: "prWebUrl",
         type: "url",
         typeAttributes: { label: { fieldName: "prLabel" }, target: "_blank" },
         wrapText: true,
-      },
-    ];
+      });
+    }
+    
+    return columns;
   }
 
   // Compute ticket columns based on authentication state
@@ -215,15 +227,17 @@ export default class Pipeline extends LightningElement {
       );
     }
 
-    // Add PR column (clickable if single PR, text if multiple)
-    columns.push({
-      key: "pullRequest",
-      label: this.prButtonInfo?.pullRequestLabel || "Pull Request",
-      fieldName: "prWebUrl",
-      type: "url",
-      typeAttributes: { label: { fieldName: "prLabel" }, target: "_blank" },
-      wrapText: true,
-    });
+    // Only show PR column in branch mode (not in singlePR mode)
+    if (this.modalMode !== "singlePR") {
+      columns.push({
+        key: "pullRequest",
+        label: this.prButtonInfo?.pullRequestLabel || "Pull Request",
+        fieldName: "prWebUrl",
+        type: "url",
+        typeAttributes: { label: { fieldName: "prLabel" }, target: "_blank" },
+        wrapText: true,
+      });
+    }
 
     return columns;
   }
@@ -237,6 +251,7 @@ export default class Pipeline extends LightningElement {
   warnings = [];
   showOnlyMajor = false;
   showPRModal = false;
+  modalMode = "branch"; // "branch" or "singlePR"
   modalBranchName = "";
   modalPullRequests = [];
   modalTickets = [];
@@ -355,6 +370,8 @@ export default class Pipeline extends LightningElement {
     this.openPullRequests = Array.isArray(this.openPullRequests)
       ? this.openPullRequests
       : [];
+    // Store current branch PR
+    this.currentBranchPullRequest = data.currentBranchPullRequest || null;
     // Store project resources
     this.projectApexScripts = data.projectApexScripts || [];
     this.projectSfdmuWorkspaces = data.projectSfdmuWorkspaces || [];
@@ -621,6 +638,17 @@ export default class Pipeline extends LightningElement {
     return count > 0 ? `Open ${prLabel} (${count})` : `Open ${prLabel}`;
   }
 
+  get hasCurrentBranchPullRequest() {
+    return !!(this.currentBranchPullRequest && this.currentBranchPullRequest.number);
+  }
+
+  get currentPRDescription() {
+    if (!this.currentBranchPullRequest) {
+      return "";
+    }
+    return `#${this.currentBranchPullRequest.number} - ${this.currentBranchPullRequest.title || ""}. Click to see related tickets and manage deployment actions.`;
+  }
+
   openPrPage() {
     if (
       this.prButtonInfo &&
@@ -830,6 +858,9 @@ export default class Pipeline extends LightningElement {
         this.openPullRequests = this._mapPrsWithIcons(data || []);
         setTimeout(() => this.adjustPrColumns(), 50);
         this._updatePanelTitle();
+        break;
+      case "returnGetPrInfoForModal":
+        this.handleReturnGetPrInfoForModal(data);
         break;
       default:
         console.log("Unknown message type:", messageType, data);
@@ -1070,10 +1101,55 @@ export default class Pipeline extends LightningElement {
 
   handleClosePRModal() {
     this.showPRModal = false;
+    this.modalMode = "branch";
     this.modalBranchName = "";
     this.modalPullRequests = [];
     this.modalTickets = [];
     this.modalActions = [];
+  }
+
+  handlePRRowAction(event) {
+    const action = event.detail.action;
+    const row = event.detail.row;
+    
+    if (action.name === "view_pr" && row) {
+      // Find the full PR object
+      const pr = this.openPullRequests.find(p => p.id === row.id);
+      if (pr) {
+        this.showSinglePRModal(pr);
+      }
+    }
+  }
+
+  handleOpenCurrentPR() {
+    if (this.currentBranchPullRequest) {
+      // Open modal in singlePR mode with current branch PR
+      this.showSinglePRModal(this.currentBranchPullRequest);
+    }
+  }
+
+  showSinglePRModal(pr) {
+    // Call VsCode backend to get PR info with tickets and actions
+    window.sendMessageToVSCode({
+      type: "getPrInfoForModal",
+      data: {
+        pullRequest: JSON.parse(JSON.stringify(pr)),
+      },
+    });
+  }
+
+  handleReturnGetPrInfoForModal(pr) {
+    this.modalMode = "singlePR";
+    this.modalBranchName = pr.sourceBranch || "";
+    this.modalPullRequests = [pr];
+    
+    // Aggregate tickets from this single PR
+    this.modalTickets = this._aggregateTicketsFromPRs([pr]);
+    
+    // Aggregate deployment actions from this single PR
+    this.modalActions = this._aggregateActionsFromPRs([pr]);
+    
+    this.showPRModal = true;
   }
 
   handleActionRowClick(event) {
@@ -1118,17 +1194,17 @@ export default class Pipeline extends LightningElement {
       return;
     }
     
+    const when = action.when;
+    const whenLabel = when === "pre-deploy" ? "Pre-Deploy" :
+                     when === "post-deploy" ? "Post-Deploy" : "Unknown";
+    
     // Update the modalActions list immediately with the new values
     const actionIndex = this.modalActions.findIndex(
       a => a._fullAction && a._fullAction.id === action.id && a.prNumber === prNumber
     );
     
     if (actionIndex >= 0) {
-      const when = action.when;
-      const whenLabel = when === "pre-deploy" ? "Pre-Deploy" :
-                       when === "post-deploy" ? "Post-Deploy" : "Unknown";
-      
-      // Update the action row with new values
+      // Update existing action
       const updatedRow = {
         ...this.modalActions[actionIndex],
         label: action.label || "Unnamed Action",
@@ -1144,12 +1220,38 @@ export default class Pipeline extends LightningElement {
         },
       };
       
-      // Create new array to trigger reactivity
-      this.modalActions = [
+      // Create new array with updated action
+      const updatedActions = [
         ...this.modalActions.slice(0, actionIndex),
         updatedRow,
         ...this.modalActions.slice(actionIndex + 1)
       ];
+      
+      // Sort the actions (Pre-Deploy first, then Post-Deploy)
+      this.modalActions = this._sortActions(updatedActions);
+    } else {
+      // Add new action to the list
+      const newRow = {
+        id: `${prNumber}-${action.type || "action"}-${this.modalActions.length}`,
+        label: action.label || "Unnamed Action",
+        type: action.type || "command",
+        when: whenLabel,
+        prLabel: `#${prNumber} - ${action.pullRequest?.title || ""}`,
+        prWebUrl: action.pullRequest?.webUrl || "",
+        prNumber: prNumber,
+        _fullAction: {
+          ...action,
+          pullRequest: {
+            number: prNumber,
+            title: action.pullRequest?.title,
+            webUrl: action.pullRequest?.webUrl,
+          },
+        },
+      };
+      
+      // Add to the list and sort
+      const updatedActions = [...this.modalActions, newRow];
+      this.modalActions = this._sortActions(updatedActions);
     }
     
     // Send message to extension to save
@@ -1260,6 +1362,10 @@ export default class Pipeline extends LightningElement {
   }
 
   get modalTitle() {
+    if (this.modalMode === "singlePR" && this.modalPullRequests.length === 1) {
+      const pr = this.modalPullRequests[0];
+      return `#${pr.number} - ${pr.title || "Pull Request"}`;
+    }
     const prLabel = this.prButtonInfo?.pullRequestLabel || "Pull Request";
     const count = this.modalPullRequests.length;
     return `${prLabel}s in ${this.modalBranchName} (${count})`;
@@ -1279,6 +1385,55 @@ export default class Pipeline extends LightningElement {
   get modalActionsTabLabel() {
     const count = this.modalActions.length;
     return `Deployment Actions (${count})`;
+  }
+
+  get showPRTab() {
+    return this.modalMode !== "singlePR";
+  }
+
+  get showAddActionButton() {
+    return this.modalMode === "singlePR";
+  }
+
+  handleAddNewAction() {
+    // Create a new empty action with PR info
+    if (this.modalPullRequests.length === 1) {
+      const pr = this.modalPullRequests[0];
+      this.currentDeploymentAction = {
+        id: "",
+        label: "",
+        type: null,
+        when: null,
+        command: "",
+        parameters: {},
+        pullRequest: {
+          number: pr.number,
+          title: pr.title,
+          webUrl: pr.webUrl,
+        },
+      };
+      this.isDeploymentActionEditMode = true;
+      this.showDeploymentActionModal = true;
+    }
+  }
+
+  _sortActions(actionRows) {
+    // Sort by when (Pre-Deploy first, then Post-Deploy), then by PR number
+    return actionRows.sort((a, b) => {
+      // First sort by when label
+      const whenOrder = { "Pre-Deploy": 0, "Post-Deploy": 1, "Unknown": 2 };
+      const whenA = whenOrder[a.when] ?? 2;
+      const whenB = whenOrder[b.when] ?? 2;
+      
+      if (whenA !== whenB) {
+        return whenA - whenB;
+      }
+      
+      // Then sort by PR number
+      const prNumA = parseInt(a.prNumber) || 0;
+      const prNumB = parseInt(b.prNumber) || 0;
+      return prNumA - prNumB;
+    });
   }
 
   _aggregateActionsFromPRs(prs) {
@@ -1321,23 +1476,7 @@ export default class Pipeline extends LightningElement {
       }
     }
 
-    // Sort by when (Pre-Deploy first, then Post-Deploy), then by PR number
-    actionRows.sort((a, b) => {
-      // First sort by when label
-      const whenOrder = { "Pre-Deploy": 0, "Post-Deploy": 1, "Unknown": 2 };
-      const whenA = whenOrder[a.when] ?? 2;
-      const whenB = whenOrder[b.when] ?? 2;
-      
-      if (whenA !== whenB) {
-        return whenA - whenB;
-      }
-      
-      // Then sort by PR number
-      const prNumA = parseInt(a.prNumber) || 0;
-      const prNumB = parseInt(b.prNumber) || 0;
-      return prNumA - prNumB;
-    });
-
-    return actionRows;
+    // Use the shared sorting method
+    return this._sortActions(actionRows);
   }
 }

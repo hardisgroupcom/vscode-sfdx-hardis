@@ -138,15 +138,27 @@
                     <span>Apex Script</span>
                     <s-multiline-helptext content="Apex script path to run for 'apex' actions" class="slds-icon-text-info"></s-multiline-helptext>
                   </label>
-                  <lightning-combobox
-                    value={displayedAction.parameters.apexScript}
-                    options={apexScriptOptions}
-                    data-field="parameters.apexScript"
-                    onchange={handleFieldChange}
-                    disabled={isViewMode}
-                    variant="label-hidden"
-                    placeholder="Select an Apex script"
-                  ></lightning-combobox>
+                  <div style="display:flex;align-items:center;gap:0.5rem;">
+                    <div style="flex:1;">
+                      <lightning-combobox
+                        value={displayedAction.parameters.apexScript}
+                        options={apexScriptOptions}
+                        data-field="parameters.apexScript"
+                        onchange={handleFieldChange}
+                        disabled={isViewMode}
+                        variant="label-hidden"
+                        placeholder="Select an Apex script"
+                      ></lightning-combobox>
+                    </div>
+                    <template if:true={hasApexScriptSelected}>
+                      <lightning-button-icon
+                        icon-name="utility:new_window"
+                        alternative-text="Open Apex Script"
+                        title="Open Apex Script in VS Code"
+                        onclick={handleOpenApexScript}
+                      ></lightning-button-icon>
+                    </template>
+                  </div>
                 </div>
               </div>
             </template>
@@ -158,15 +170,27 @@
                     <span>SFDMU Project Path</span>
                     <s-multiline-helptext content="Path to SFDMU project for 'data' actions" class="slds-icon-text-info"></s-multiline-helptext>
                   </label>
-                  <lightning-combobox
-                    value={displayedAction.parameters.sfdmuProject}
-                    options={sfdmuWorkspaceOptions}
-                    data-field="parameters.sfdmuProject"
-                    onchange={handleFieldChange}
-                    disabled={isViewMode}
-                    variant="label-hidden"
-                    placeholder="Select a data workspace"
-                  ></lightning-combobox>
+                  <div style="display:flex;align-items:center;gap:0.5rem;">
+                    <div style="flex:1;">
+                      <lightning-combobox
+                        value={displayedAction.parameters.sfdmuProject}
+                        options={sfdmuWorkspaceOptions}
+                        data-field="parameters.sfdmuProject"
+                        onchange={handleFieldChange}
+                        disabled={isViewMode}
+                        variant="label-hidden"
+                        placeholder="Select a data workspace"
+                      ></lightning-combobox>
+                    </div>
+                    <template if:true={hasSfdmuProjectSelected}>
+                      <lightning-button-icon
+                        icon-name="utility:new_window"
+                        alternative-text="Open export.json"
+                        title="Open export.json in VS Code"
+                        onclick={handleOpenSfdmuExport}
+                      ></lightning-button-icon>
+                    </template>
+                  </div>
                 </div>
               </div>
             </template>
@@ -209,41 +233,45 @@
             </template>
 
             <!-- Additional flags -->
-            <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
-              <div class="slds-form-element">
-                <div style="display:flex;align-items:center;gap:0.25rem;margin-bottom:0.25rem;">
-                  <span class="slds-form-element__label">Skip If Deployment Error</span>
-                  <s-multiline-helptext content="Do not run the action if there is a deployment error" class="slds-icon-text-info"></s-multiline-helptext>
+            <template if:true={showSkipIfErrorField}>
+              <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
+                <div class="slds-form-element">
+                  <div style="display:flex;align-items:center;gap:0.25rem;margin-bottom:0.25rem;">
+                    <span class="slds-form-element__label">Skip If Deployment Error</span>
+                    <s-multiline-helptext content="Do not run the action if there is a deployment error" class="slds-icon-text-info"></s-multiline-helptext>
+                  </div>
+                  <lightning-input
+                    type="toggle"
+                    label="Skip If Deployment Error"
+                    checked={displayedAction.skipIfError}
+                    data-field="skipIfError"
+                    onchange={handleCheckboxChange}
+                    disabled={isViewMode}
+                    variant="label-hidden"
+                  ></lightning-input>
                 </div>
-                <lightning-input
-                  type="toggle"
-                  label="Skip If Deployment Error"
-                  checked={displayedAction.skipIfError}
-                  data-field="skipIfError"
-                  onchange={handleCheckboxChange}
-                  disabled={isViewMode}
-                  variant="label-hidden"
-                ></lightning-input>
               </div>
-            </div>
+            </template>
 
-            <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
-              <div class="slds-form-element">
-                <div style="display:flex;align-items:center;gap:0.25rem;margin-bottom:0.25rem;">
-                  <span class="slds-form-element__label">Allow Failure</span>
-                  <s-multiline-helptext content="Allow action to fail without marking the deployment as failed" class="slds-icon-text-info"></s-multiline-helptext>
+            <template if:true={showAllowFailureField}>
+              <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
+                <div class="slds-form-element">
+                  <div style="display:flex;align-items:center;gap:0.25rem;margin-bottom:0.25rem;">
+                    <span class="slds-form-element__label">Allow Failure</span>
+                    <s-multiline-helptext content="Allow action to fail without marking the deployment as failed" class="slds-icon-text-info"></s-multiline-helptext>
+                  </div>
+                  <lightning-input
+                    type="toggle"
+                    label="Allow Action Failure"
+                    checked={displayedAction.allowFailure}
+                    data-field="allowFailure"
+                    onchange={handleCheckboxChange}
+                    disabled={isViewMode}
+                    variant="label-hidden"
+                  ></lightning-input>
                 </div>
-                <lightning-input
-                  type="toggle"
-                  label="Allow Action Failure"
-                  checked={displayedAction.allowFailure}
-                  data-field="allowFailure"
-                  onchange={handleCheckboxChange}
-                  disabled={isViewMode}
-                  variant="label-hidden"
-                ></lightning-input>
               </div>
-            </div>
+            </template>
 
             <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
               <div class="slds-form-element">
@@ -262,6 +290,25 @@
                 ></lightning-input>
               </div>
             </div>
+
+            <!-- customUsername (optional) -->
+            <template if:true={showCustomUsernameField}>
+              <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
+                <div class="slds-form-element">
+                  <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                    <span>Execute with custom username</span>
+                    <s-multiline-helptext content="Optional custom username to use to run the action. If you input user@company.com, user@company.com.uat and user.company.com.preprod will be found in related orgs." class="slds-icon-text-info"></s-multiline-helptext>
+                  </label>
+                  <lightning-input
+                    value={displayedAction.customUsername}
+                    data-field="customUsername"
+                    onchange={handleFieldChange}
+                    disabled={isViewMode}
+                    variant="label-hidden"
+                  ></lightning-input>
+                </div>
+              </div>
+            </template>
           </div>
         </div>
         <footer class="slds-modal__footer">

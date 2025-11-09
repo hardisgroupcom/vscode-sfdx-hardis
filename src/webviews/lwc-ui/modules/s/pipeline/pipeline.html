@@ -175,6 +175,17 @@
                                     </div>
                                     <p class="command-description">Save your work and publish changes to the remote repository</p>
                                 </div>
+                                <template if:true={hasCurrentBranchPullRequest}>
+                                    <div class="command-card" onclick={handleOpenCurrentPR}>
+                                        <div class="command-header">
+                                            <div class="command-icon-container pr-action" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                                <lightning-icon icon-name="utility:topic2" size="small" variant="inverse"></lightning-icon>
+                                            </div>
+                                            <h3 class="command-title">My Current Pull Request</h3>
+                                        </div>
+                                        <p class="command-description">{currentPRDescription}</p>
+                                    </div>
+                                </template>
                             </div>
                         </lightning-tab>
                         <lightning-tab label={openPrTabLabel} value="prs">
@@ -185,6 +196,7 @@
                                         column-widths-mode="auto"
                                         columns={prColumns}
                                         hide-checkbox-column
+                                        onrowaction={handlePRRowAction}
                                     ></lightning-datatable>
                                     <template if:true={prButtonInfo}>
                                         <div class="slds-m-top_small slds-align_absolute-center">
@@ -231,7 +243,8 @@
                 </header>
                 <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
                     <lightning-tabset>
-                        <lightning-tab label={modalPrsTabLabel} value="prs">
+                        <template if:true={showPRTab}>
+                            <lightning-tab label={modalPrsTabLabel} value="prs">
                             <lightning-datatable
                                 key-field="id"
                                 data={modalPullRequests}
@@ -240,6 +253,7 @@
                                 column-widths-mode="auto"
                             ></lightning-datatable>
                         </lightning-tab>
+                        </template>
                         <lightning-tab label={modalTicketsTabLabel} value="tickets">
                             <template if:true={modalTickets.length}>
                                 <lightning-datatable
@@ -257,6 +271,16 @@
                             </template>
                         </lightning-tab>
                         <lightning-tab label={modalActionsTabLabel} value="actions">
+                            <template if:true={showAddActionButton}>
+                                <div class="slds-m-bottom_small">
+                                    <lightning-button
+                                        variant="brand"
+                                        label="Add New Action"
+                                        icon-name="utility:add"
+                                        onclick={handleAddNewAction}
+                                    ></lightning-button>
+                                </div>
+                            </template>
                             <template if:true={modalActions.length}>
                                 <lightning-datatable
                                     key-field="id"

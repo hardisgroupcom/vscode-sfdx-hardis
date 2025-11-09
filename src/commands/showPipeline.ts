@@ -8,6 +8,10 @@ import { showPackageXmlPanel } from "./packageXml";
 import { PullRequest } from "../utils/gitProviders/types";
 import { TicketProvider } from "../utils/ticketProviders/ticketProvider";
 import { listProjectApexScripts, listProjectDataWorkspaces, savePrePostCommand } from "../utils/prePostCommandsUtils";
+import { getCurrentGitBranch } from "../utils/pipeline/sfdxHardisConfig";
+import { getWorkspaceRoot } from "../utils";
+import path from "path";
+import fs from "fs-extra";
 
 export function registerShowPipeline(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
@@ -88,6 +92,32 @@ export function registerShowPipeline(commands: Commands) {
           vscode.window.showInformationMessage(
             `Deployment action saved for PR #${data.prNumber}.\nDon't forget to commit and push ${updatedFile}`,
           );
+        }
+        // Get PR info for modal
+        else if (type === "getPrInfoForModal") {
+          const gitProvider = await GitProvider.getInstance();
+          if (!gitProvider) {
+            Logger.log("No Git provider available for getPrInfoForModal");
+            return;
+          }
+          try {
+            // Get full PR details with tickets and deployment actions
+            let prList = [{...data.pullRequest}];
+            prList = await gitProvider.completePullRequestsWithPrePostCommands(prList);
+            prList = await gitProvider.completePullRequestsWithTickets(prList);
+            const prDetails = prList[0];
+            if (prDetails) {
+              panel.sendMessage({
+                type: "returnGetPrInfoForModal",
+                data: prDetails,
+              });
+            }
+          } catch (e) {
+            Logger.log(`Error getting PR info for modal: ${String(e)}`);
+            vscode.window.showErrorMessage(
+              `Error getting PR info. Please check the logs for details.`,
+            );
+          }
         }
         // Update VS Code configuration
         else if (type === "updateVsCodeSfdxHardisConfiguration") {
@@ -226,20 +256,8 @@ export function registerShowPipeline(commands: Commands) {
       const gitProvider = await GitProvider.getInstance(resetGit);
       let openPullRequests: PullRequest[] = [];
       let gitAuthenticated = false;
-      if (gitProvider?.isActive) {
-        gitAuthenticated = true;
-        if (browseGitProvider) {
-          openPullRequests = await gitProvider.listOpenPullRequests();
-        }
-      }
-      const pipelineDataProvider = new PipelineDataProvider();
-      const pipelineData = await pipelineDataProvider.getPipelineData(
-        gitAuthenticated,
-        {
-          openPullRequests: openPullRequests,
-          browseGitProvider: browseGitProvider,
-        },
-      );
+      let currentBranchPullRequest: PullRequest|null = null;
+
       const prButtonInfo: any = {};
       let repoPlatformLabel = "";
       if (gitProvider?.repoInfo) {
@@ -254,6 +272,46 @@ export function registerShowPipeline(commands: Commands) {
         prButtonInfo.label = "View Pull Requests";
         prButtonInfo.icon = "";
       }
+
+      if (gitProvider?.isActive) {
+        gitAuthenticated = true;
+        if (browseGitProvider) {
+          openPullRequests = await gitProvider.listOpenPullRequests();
+          const currentGitBranch = await getCurrentGitBranch();
+          if (currentGitBranch){
+            currentBranchPullRequest = await gitProvider.getActivePullRequestFromBranch(currentGitBranch);
+            if (currentBranchPullRequest) {
+            const prActionsFile = path.join(getWorkspaceRoot(), "scripts", "actions", ".sfdx-hardis.draft.yml");
+            if (fs.existsSync(prActionsFile)) {
+                // Rename draft file to associate it with the current PR
+                const prNumber = currentBranchPullRequest.number;
+                const prActionsFileNewName = path.join(getWorkspaceRoot(), "scripts", "actions", `.sfdx-hardis.${prNumber}.yml`);
+                await fs.rename(prActionsFile, prActionsFileNewName);
+                vscode.window.showInformationMessage(
+                  `Draft deployment actions file has been found and associated to ${prButtonInfo.pullRequestLabel || "Pull Request"} #${currentBranchPullRequest.number}. Don't forget to commit & push :)`,
+                  `Commit & Push .sfdx-hardis.${prNumber}.yml`
+                ).then ((action) => {
+                  if (action ===  `Commit & Push .sfdx-hardis.${prNumber}.yml`) {
+                    vscode.commands.executeCommand("workbench.view.scm");
+                  }
+                });
+              }
+              // Complete with tickets and deployment actions
+              const prList = await gitProvider.completePullRequestsWithPrePostCommands([currentBranchPullRequest]);
+              const prListWithTickets = await gitProvider.completePullRequestsWithTickets(prList);
+              currentBranchPullRequest = prListWithTickets[0];
+            }
+          }
+        }
+      }
+      const pipelineDataProvider = new PipelineDataProvider();
+      const pipelineData = await pipelineDataProvider.getPipelineData(
+        gitAuthenticated,
+        {
+          openPullRequests: openPullRequests,
+          browseGitProvider: browseGitProvider,
+        },
+      );
 
       // Read displayFeatureBranches configuration
       const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
@@ -282,6 +340,7 @@ export function registerShowPipeline(commands: Commands) {
         gitAuthenticated: gitAuthenticated,
         ticketAuthenticated: ticketAuthenticated,
         ticketProviderName: ticketProviderName,
+        currentBranchPullRequest: currentBranchPullRequest,
         openPullRequests: openPullRequests,
         repoPlatformLabel: repoPlatformLabel,
         displayFeatureBranches: displayFeatureBranches,

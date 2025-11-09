@@ -225,6 +225,15 @@ export class GitProvider {
     return [];
   }
 
+  async getActivePullRequestFromBranch(
+    _branchName: string,
+  ): Promise<PullRequest | null> {
+    Logger.log(
+      `getActivePullRequestFromBranch not implemented on ${this.repoInfo?.providerName || "unknown provider"}`,
+    );
+    return null;
+  }
+
   async listPullRequestsInBranchSinceLastMerge(
     _currentBranchName: string,
     _targetBranchName: string,

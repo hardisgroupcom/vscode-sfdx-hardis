@@ -121,6 +121,29 @@ export default class DeploymentAction extends LightningElement {
     return type === "command";
   }
 
+  get showAllowFailureField() {
+    const type = this.displayedAction?.type;
+    return type !== "manual";
+  }
+
+  get showSkipIfErrorField() {
+    const when = this.displayedAction?.when;
+    return when !== "pre-deploy";
+  }
+
+  get showCustomUsernameField() {
+    const type = this.displayedAction?.type;
+    return type !== "manual";
+  }
+
+  get hasApexScriptSelected() {
+    return !!(this.displayedAction?.parameters?.apexScript);
+  }
+
+  get hasSfdmuProjectSelected() {
+    return !!(this.displayedAction?.parameters?.sfdmuProject);
+  }
+
   // Get parameter values
   get apexScript() {
     return this.action?.parameters?.apexScript || "";
@@ -213,5 +236,27 @@ export default class DeploymentAction extends LightningElement {
     this.dispatchEvent(new CustomEvent('save', {
       detail: this.editedAction
     }));
+  }
+
+  handleOpenApexScript() {
+    const apexScriptPath = this.displayedAction?.parameters?.apexScript;
+    if (apexScriptPath) {
+      window.sendMessageToVSCode({
+        type: "openFile",
+        data: { filePath: apexScriptPath}
+      });
+    }
+  }
+
+  handleOpenSfdmuExport() {
+    const sfdmuProjectPath = this.displayedAction?.parameters?.sfdmuProject;
+    if (sfdmuProjectPath) {
+      // Construct path to export.json
+        const exportJsonPath = `scripts/data/${sfdmuProjectPath}/export.json`;
+        window.sendMessageToVSCode({
+            type: "openFile",
+            data: { filePath: exportJsonPath }
+        });
+    }
   }
 }
