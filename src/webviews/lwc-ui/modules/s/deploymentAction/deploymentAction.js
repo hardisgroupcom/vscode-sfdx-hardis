@@ -209,12 +209,6 @@ export default class DeploymentAction extends LightningElement {
   }
 
   handleSave() {
-    // Validate required fields
-    if (!this.editedAction.label || !this.editedAction.label.trim()) {
-      alert("Label is required");
-      return;
-    }
-
     // Dispatch save event to parent with edited action
     this.dispatchEvent(new CustomEvent('save', {
       detail: this.editedAction

@@ -1111,15 +1111,23 @@ export default class Pipeline extends LightningElement {
 
   handleSaveDeploymentAction(event) {
     const action = event.detail;
+    // Get PR number from the action
+    const prNumber = action.pullRequest?.number;
+    if (!prNumber) {
+      console.error("Cannot save deployment action: PR number not found");
+      return;
+    }
     // Send message to extension to save
     window.sendMessageToVSCode({
       type: "saveDeploymentAction",
       data: {
-        action: action,
+        prNumber: prNumber,
+        command: JSON.parse(JSON.stringify(action)),
       },
     });
-    // Update local state
-    this.currentDeploymentAction = action;
+    // Close modal
+    this.showDeploymentActionModal = false;
+    this.currentDeploymentAction = null;
     this.isDeploymentActionEditMode = false;
   }
 

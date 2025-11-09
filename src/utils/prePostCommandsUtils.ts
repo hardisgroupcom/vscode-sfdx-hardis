@@ -3,6 +3,7 @@ import * as yaml from "js-yaml";
 import * as path from "path";
 import { getWorkspaceRoot } from "../utils";
 import { PullRequest } from "./gitProviders/types";
+import { handleUndefinedAttr } from "mermaid/dist/utils";
 
 export interface PrePostCommand {
   id: string;
@@ -53,7 +54,7 @@ export async function listPrePostCommandsForPullRequest(pr: PullRequest | undefi
       if (prConfigParsed.commandsPreDeploy && Array.isArray(prConfigParsed.commandsPreDeploy)) {
         const preDeployCommands = prConfigParsed.commandsPreDeploy as PrePostCommand[];
         for (const cmd of preDeployCommands) {
-            cmd.type = cmd.type || 'command';
+            handleDefaultAttributes(cmd);
             cmd.pullRequest = removePrCircularReferences(pr);
             cmd.when = 'pre-deploy';
             commands.push(cmd);
@@ -63,7 +64,7 @@ export async function listPrePostCommandsForPullRequest(pr: PullRequest | undefi
       if (prConfigParsed.commandsPostDeploy && Array.isArray(prConfigParsed.commandsPostDeploy)) {
         const postDeployCommands = prConfigParsed.commandsPostDeploy as PrePostCommand[];
         for (const cmd of postDeployCommands) {
-            cmd.type = cmd.type || 'command';
+            handleDefaultAttributes(cmd);
             cmd.pullRequest = removePrCircularReferences(pr);
             cmd.when = 'post-deploy';
             commands.push(cmd);
@@ -78,12 +79,142 @@ export async function listPrePostCommandsForPullRequest(pr: PullRequest | undefi
   return commands;
 }
 
+function handleDefaultAttributes(cmd: PrePostCommand): void {
+    cmd.type = cmd.type ?? 'command';
+    cmd.context = cmd.context ?? "process-deployment-only";
+    cmd.skipIfError = cmd.skipIfError ?? true;
+    cmd.allowFailure = cmd.allowFailure ?? false;
+    cmd.runOnlyOnceByOrg = cmd.runOnlyOnceByOrg ?? false;
+    cmd.parameters = cmd.parameters ?? {};
+}
+
 function removePrCircularReferences(pr: PullRequest): PullRequest {
   const prCopy = { ...pr };
   prCopy.deploymentActions = []; // avoid circular reference
   prCopy.jobs = [];
   prCopy.relatedTickets = [];
   return prCopy;
+}
+
+// Helper function to get PR config file path
+function getPrConfigFilePath(prNumber: number): string {
+  const workspaceRoot = getWorkspaceRoot();
+  return path.join(workspaceRoot, "scripts", "actions", `.sfdx-hardis.${prNumber}.yml`);
+}
+
+// Helper function to load PR config file
+async function loadPrConfig(prConfigFileName: string): Promise<any> {
+  if (!fs.existsSync(prConfigFileName)) {
+    return {};
+  }
+  const prConfig = await fs.readFile(prConfigFileName, 'utf8');
+  const prConfigParsed = yaml.load(prConfig) as any;
+  return prConfigParsed || {};
+}
+
+// Helper function to save PR config file
+async function savePrConfig(prConfigFileName: string, prConfigParsed: any): Promise<void> {
+  const yamlContent = yaml.dump(prConfigParsed);
+  await fs.writeFile(prConfigFileName, yamlContent, 'utf8');
+}
+
+// Helper function to get target array name from when value
+function getTargetArrayName(when: 'pre-deploy' | 'post-deploy'): string {
+  return when === 'pre-deploy' ? 'commandsPreDeploy' : 'commandsPostDeploy';
+}
+
+// Helper function to ensure target array exists in config
+function ensureTargetArray(prConfigParsed: any, targetArrayName: string): void {
+  if (!prConfigParsed[targetArrayName] || !Array.isArray(prConfigParsed[targetArrayName])) {
+    prConfigParsed[targetArrayName] = [];
+  }
+}
+
+export async function savePrePostCommand(prNumber: number, command: PrePostCommand): Promise<string> {
+  const prConfigFileName = getPrConfigFilePath(prNumber);
+  const prConfigParsed = await loadPrConfig(prConfigFileName);
+  
+  const targetArrayName = getTargetArrayName(command.when);
+  ensureTargetArray(prConfigParsed, targetArrayName);
+  
+  // Check if command with same id exists, replace it
+  const existingIndex = prConfigParsed[targetArrayName].findIndex((cmd: PrePostCommand) => cmd.id === command.id);
+  if (existingIndex >= 0) {
+    prConfigParsed[targetArrayName][existingIndex] = normalizePrePostCommandToSave(command);
+  } 
+  else {
+    // If Id not set, generate a new one with uuid
+    if (!command.id || command.id.trim() === '') {
+      const { v4: uuidv4 } = await import('uuid');
+      command.id = uuidv4();
+    }
+    prConfigParsed[targetArrayName].push(normalizePrePostCommandToSave(command));
+  }
+  
+  await savePrConfig(prConfigFileName, prConfigParsed);
+  return prConfigFileName;
+}
+
+export async function movePrePostCommandUpDown(prNumber: number, commandId: string, when: 'pre-deploy' | 'post-deploy', direction: 'up' | 'down'): Promise<string | null> {
+  const prConfigFileName = getPrConfigFilePath(prNumber);
+  const prConfigParsed = await loadPrConfig(prConfigFileName);
+  
+  if (!prConfigParsed || Object.keys(prConfigParsed).length === 0) {
+    return null;
+  }
+  
+  const targetArrayName = getTargetArrayName(when);
+  if (!prConfigParsed[targetArrayName] || !Array.isArray(prConfigParsed[targetArrayName])) {
+    return null;
+  }
+  
+  // Find command
+  const existingIndex = prConfigParsed[targetArrayName].findIndex((cmd: PrePostCommand) => cmd.id === commandId);
+  if (existingIndex >= 0) {
+    const newIndex = direction === 'up' ? existingIndex - 1 : existingIndex + 1;
+    if (newIndex < 0 || newIndex >= prConfigParsed[targetArrayName].length) {
+      return null; // out of bounds
+    }
+    // Swap commands
+    const temp = prConfigParsed[targetArrayName][newIndex];
+    prConfigParsed[targetArrayName][newIndex] = prConfigParsed[targetArrayName][existingIndex];
+    prConfigParsed[targetArrayName][existingIndex] = temp;
+    
+    await savePrConfig(prConfigFileName, prConfigParsed);
+    return prConfigFileName;
+  }
+  return null;
+}
+
+export async function deletePrePostCommand(prNumber: number, commandId: string, when: 'pre-deploy' | 'post-deploy'): Promise<string|null> {
+  const prConfigFileName = getPrConfigFilePath(prNumber);
+  const prConfigParsed = await loadPrConfig(prConfigFileName);
+  
+  if (!prConfigParsed || Object.keys(prConfigParsed).length === 0) {
+    return null;
+  }
+  
+  const targetArrayName = getTargetArrayName(when);
+  if (!prConfigParsed[targetArrayName] || !Array.isArray(prConfigParsed[targetArrayName])) {
+    return null;
+  }
+  
+  // Find and remove command
+  const existingIndex = prConfigParsed[targetArrayName].findIndex((cmd: PrePostCommand) => cmd.id === commandId);
+  if (existingIndex >= 0) {
+    prConfigParsed[targetArrayName].splice(existingIndex, 1);
+    await savePrConfig(prConfigFileName, prConfigParsed);
+  }
+  return prConfigFileName;
+}
+
+function normalizePrePostCommandToSave(command: PrePostCommand): PrePostCommand {
+    const commandToSave: any = { ...command };
+    // Remove pullRequest and result before saving
+    delete commandToSave.pullRequest;
+    delete commandToSave.result;
+    delete commandToSave.when;
+    return commandToSave;
 }
 
 export async function listProjectApexScripts(): Promise<{ label: string; value: string }[]> {

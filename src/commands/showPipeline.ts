@@ -7,7 +7,7 @@ import { Commands } from "../commands";
 import { showPackageXmlPanel } from "./packageXml";
 import { PullRequest } from "../utils/gitProviders/types";
 import { TicketProvider } from "../utils/ticketProviders/ticketProvider";
-import { listProjectApexScripts, listProjectDataWorkspaces } from "../utils/prePostCommandsUtils";
+import { listProjectApexScripts, listProjectDataWorkspaces, savePrePostCommand } from "../utils/prePostCommandsUtils";
 
 export function registerShowPipeline(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
@@ -78,12 +78,15 @@ export function registerShowPipeline(commands: Commands) {
         }
         // Save Deployment Action
         else if (type === "saveDeploymentAction") {
-          // TODO: Implement save logic to update the YAML file
+          // call savePrePostCommand to save the command
+          const updatedFile = await savePrePostCommand(data.prNumber, data.command);
           Logger.log(
-            `Saving deployment action: ${JSON.stringify(data.action)}`,
+            `Saved deployment action for PR #${data.prNumber}: ${JSON.stringify(
+              data.command,
+            )}`,
           );
           vscode.window.showInformationMessage(
-            "Deployment action save functionality will be implemented soon.",
+            `Deployment action saved for PR #${data.prNumber}.\nDon't forget to commit and push ${updatedFile}`,
           );
         }
         // Update VS Code configuration
