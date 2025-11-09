@@ -131,6 +131,17 @@ function ensureTargetArray(prConfigParsed: any, targetArrayName: string): void {
   }
 }
 
+// Helper function to validate config and target array
+function validateConfigAndArray(prConfigParsed: any, targetArrayName: string): boolean {
+  if (!prConfigParsed || Object.keys(prConfigParsed).length === 0) {
+    return false;
+  }
+  if (!prConfigParsed[targetArrayName] || !Array.isArray(prConfigParsed[targetArrayName])) {
+    return false;
+  }
+  return true;
+}
+
 export async function savePrePostCommand(prNumber: number, command: PrePostCommand): Promise<string> {
   const prConfigFileName = getPrConfigFilePath(prNumber);
   const prConfigParsed = await loadPrConfig(prConfigFileName);
@@ -159,13 +170,9 @@ export async function savePrePostCommand(prNumber: number, command: PrePostComma
 export async function movePrePostCommandUpDown(prNumber: number, commandId: string, when: 'pre-deploy' | 'post-deploy', direction: 'up' | 'down'): Promise<string | null> {
   const prConfigFileName = getPrConfigFilePath(prNumber);
   const prConfigParsed = await loadPrConfig(prConfigFileName);
-  
-  if (!prConfigParsed || Object.keys(prConfigParsed).length === 0) {
-    return null;
-  }
-  
   const targetArrayName = getTargetArrayName(when);
-  if (!prConfigParsed[targetArrayName] || !Array.isArray(prConfigParsed[targetArrayName])) {
+  
+  if (!validateConfigAndArray(prConfigParsed, targetArrayName)) {
     return null;
   }
   
@@ -190,13 +197,9 @@ export async function movePrePostCommandUpDown(prNumber: number, commandId: stri
 export async function deletePrePostCommand(prNumber: number, commandId: string, when: 'pre-deploy' | 'post-deploy'): Promise<string|null> {
   const prConfigFileName = getPrConfigFilePath(prNumber);
   const prConfigParsed = await loadPrConfig(prConfigFileName);
-  
-  if (!prConfigParsed || Object.keys(prConfigParsed).length === 0) {
-    return null;
-  }
-  
   const targetArrayName = getTargetArrayName(when);
-  if (!prConfigParsed[targetArrayName] || !Array.isArray(prConfigParsed[targetArrayName])) {
+  
+  if (!validateConfigAndArray(prConfigParsed, targetArrayName)) {
     return null;
   }
   
