@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Fix mermaid node name sanitization to avoid multiple consecutive hyphens (mermaid crashes in that case)
+
 ## [6.17.0] 2024-11-09
 
 - Live DevOps Pipeline: UI part for deployment actions

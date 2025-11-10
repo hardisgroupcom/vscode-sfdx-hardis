@@ -656,6 +656,7 @@ export class BranchStrategyMermaidBuilder {
     return branchName
       .replace(/[^a-zA-Z0-9_-]/g, "_") // Replace special chars with underscore
       .replace(/_{2,}/g, "_") // Replace multiple underscores with single
-      .replace(/^_+|_+$/g, ""); // Remove leading/trailing underscores
+      .replace(/^_+|_+$/g, "") // Remove leading/trailing underscores
+      .replace(/-+/g, "-"); // Replace multiple hyphens with single
   }
 }
