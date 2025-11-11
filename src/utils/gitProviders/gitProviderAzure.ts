@@ -235,29 +235,84 @@ export class GitProviderAzure extends GitProvider {
       const lastMergeToTarget =
         lastMergePRs && lastMergePRs.length > 0 ? lastMergePRs[0] : null;
 
-      // Step 2: Get commits between branches
-      const gitApiCommits = await this.gitApi.getCommitsBatch(
-        {
-          itemVersion: {
-            version: currentBranchName,
-            versionType: 0, // branch
-          },
-          compareVersion: {
-            version: lastMergeToTarget
-              ? lastMergeToTarget.lastMergeSourceCommit?.commitId
-              : targetBranchName,
-            versionType: lastMergeToTarget ? 2 : 0, // commit or branch
-          },
+      // Step 2: Get commits since last merge
+      // First, get the latest commit SHA for the current branch
+      const currentBranchRef = await this.gitApi.getBranch(
+        this.repoInfo.repo,
+        currentBranchName,
+        this.repoInfo.owner,
+      );
+      const currentCommitSha = currentBranchRef?.commit?.commitId;
+
+      if (!currentCommitSha) {
+        Logger.log(
+          `Could not find commit SHA for branch ${currentBranchName}`,
+        );
+        return [];
+      }
+
+      const commitsCriteria: any = {
+        itemVersion: {
+          version: currentCommitSha,
+          versionType: 2, // GitVersionType.Commit
         },
+        $top: 300, // Limit results similar to GitHub
+      };
+
+      // If there was a previous merge, use the merge commit as the base
+      if (lastMergeToTarget?.lastMergeSourceCommit?.commitId) {
+        commitsCriteria.compareVersion = {
+          version: lastMergeToTarget.lastMergeSourceCommit.commitId,
+          versionType: 2, // GitVersionType.Commit
+        };
+      }
+      else {
+        // No previous merge, compare against target branch's latest commit
+        const targetBranchRef = await this.gitApi.getBranch(
+          this.repoInfo.repo,
+          targetBranchName,
+          this.repoInfo.owner,
+        );
+        const targetCommitSha = targetBranchRef?.commit?.commitId;
+
+        if (!targetCommitSha) {
+          Logger.log(
+        `Could not find commit SHA for branch ${targetBranchName}`,
+          );
+          return [];
+        }
+
+        commitsCriteria.compareVersion = {
+          version: targetCommitSha,
+          versionType: 2, // GitVersionType.Commit
+        };
+      }
+
+      const commits = await this.gitApi.getCommitsBatch(
+        commitsCriteria,
         this.repoInfo.repo,
         this.repoInfo.owner,
       );
 
-      if (!gitApiCommits || gitApiCommits.length === 0) {
+      // If there is not commit between the 2 commits compared, but if the currentCommitSha is different from the last merged commit,
+      // it means there is at least one commit (the current one)
+      if (
+        (!commits || commits.length === 0) &&
+        currentCommitSha !== 
+          lastMergeToTarget?.lastMergeSourceCommit?.commitId &&
+        currentBranchRef?.commit
+      ) {
+        commits!.push(currentBranchRef.commit);
+      }
+
+      if (!commits || commits.length === 0) {
         return [];
       }
 
-      const commitIds = new Set(gitApiCommits.map((c) => c.commitId));
+      // Create a Set of commit IDs for fast lookup
+      const commitIds = new Set(
+        commits.map((c) => c.commitId).filter((id) => id),
+      );
 
       // Step 3: Get all completed PRs targeting currentBranch and child branches (parallelized)
       const allBranches = [currentBranchName, ...childBranchesNames];
@@ -273,7 +328,8 @@ export class GitProviderAzure extends GitProvider {
             this.repoInfo!.owner,
           );
           return prs || [];
-        } catch (err) {
+        }
+        catch (err) {
           Logger.log(
             `Error fetching completed PRs for branch ${branchName}: ${String(err)}`,
           );
@@ -286,8 +342,19 @@ export class GitProviderAzure extends GitProvider {
 
       // Step 4: Filter PRs whose merge commit is in our commit list
       const relevantPRs = allMergedPRs.filter((pr) => {
-        const mergeCommitId = pr.lastMergeSourceCommit?.commitId;
-        return mergeCommitId && commitIds.has(mergeCommitId);
+        // Check if the merge commit ID is in our commits
+        const mergeCommitId = pr.lastMergeCommit?.commitId;
+        if (mergeCommitId && commitIds.has(mergeCommitId)) {
+          return true;
+        }
+
+        // Also check the source commit (last commit from the PR branch before merge)
+        const sourceCommitId = pr.lastMergeSourceCommit?.commitId;
+        if (sourceCommitId && commitIds.has(sourceCommitId)) {
+          return true;
+        }
+
+        return false;
       });
 
       // Step 5: Remove duplicates
@@ -300,13 +367,14 @@ export class GitProviderAzure extends GitProvider {
 
       const uniquePRs = Array.from(uniquePRsMap.values());
 
-      // Step 6: Convert to PullRequest format with jobs
+      // Step 6: Convert to PullRequest format
       return await this.convertAndCollectJobsList(
         uniquePRs,
         currentBranchName,
         { withJobs: false },
       );
-    } catch (err) {
+    }
+    catch (err) {
       Logger.log(
         `Error in listPullRequestsInBranchSinceLastMerge: ${String(err)}`,
       );

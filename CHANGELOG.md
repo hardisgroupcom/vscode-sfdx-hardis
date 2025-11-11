@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Sort pending PRs by merge date descending in branch configuration
+- Improves PR detection in Azure DevOps
 
 ## [6.17.1] 2024-11-10
 

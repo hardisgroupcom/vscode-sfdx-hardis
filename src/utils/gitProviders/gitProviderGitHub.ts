@@ -134,7 +134,7 @@ export class GitProviderGitHub extends GitProvider {
           ? lastMergeToTarget.merge_commit_sha!
           : targetBranchName,
         head: currentBranchName,
-        per_page: 100,
+        per_page: 300,
       };
 
       const { data: comparison } =
