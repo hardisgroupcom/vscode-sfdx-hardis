@@ -247,7 +247,7 @@ export class GitProviderAzure extends GitProvider {
 
     try {
       // Step 1: Find the last completed PR from currentBranch to targetBranch
-      const lastMergePRs = await this.gitApi.getPullRequests(
+      const lastMergedPRs = await this.gitApi.getPullRequests(
         this.repoInfo.repo,
         {
           sourceRefName: `refs/heads/${currentBranchName}`,
@@ -261,61 +261,30 @@ export class GitProviderAzure extends GitProvider {
       );
       await this.logApiCall("gitApi.getPullRequests", { caller: "listPullRequestsInBranchSinceLastMerge", action: "findLastMerged", sourceRefName: `refs/heads/${currentBranchName}`, targetRefName: `refs/heads/${targetBranchName}`, status: "Completed" });
 
-      const lastMergeToTarget =
-        lastMergePRs && lastMergePRs.length > 0 ? lastMergePRs[0] : null;
+      const lastMergedPrToTarget =
+        lastMergedPRs && lastMergedPRs.length > 0 ? lastMergedPRs[0] : null;
 
       // Step 2: Get commits since last merge
-      // First, get the latest commit SHA for the current branch
-      const currentBranchRef = await this.gitApi.getBranch(
-        this.repoInfo.repo,
-        currentBranchName,
-        this.repoInfo.owner,
-      );
-      await this.logApiCall("gitApi.getBranch", { caller: "listPullRequestsInBranchSinceLastMerge", name: currentBranchName });
-      const currentCommitSha = currentBranchRef?.commit?.commitId;
-
-      if (!currentCommitSha) {
-        Logger.log(
-          `Could not find commit SHA for branch ${currentBranchName}`,
-        );
-        return [];
-      }
-
       const commitsCriteria: any = {
-        itemVersion: {
-          version: currentCommitSha,
-          versionType: 2, // GitVersionType.Commit
+        compareVersion: {
+          version: currentBranchName,
+          versionType: 0, // GitVersionType.Branch
         },
-        $top: 300, // Limit results similar to GitHub
       };
 
-      // If there was a previous merge, use the merge commit as the base
-      if (lastMergeToTarget?.lastMergeSourceCommit?.commitId) {
-        commitsCriteria.compareVersion = {
-          version: lastMergeToTarget.lastMergeSourceCommit.commitId,
+      // If there was a previous merge, use the merge commit (from target branch) as the base comparison point
+      if (lastMergedPrToTarget?.lastMergeSourceCommit?.commitId){
+        commitsCriteria.itemVersion = {
+          version: lastMergedPrToTarget?.lastMergeSourceCommit?.commitId,
           versionType: 2, // GitVersionType.Commit
         };
       }
       else {
-        // No previous merge, compare against target branch's latest commit
-        const targetBranchRef = await this.gitApi.getBranch(
-          this.repoInfo.repo,
-          targetBranchName,
-          this.repoInfo.owner,
-        );
-        await this.logApiCall("gitApi.getBranch", { caller: "listPullRequestsInBranchSinceLastMerge", name: targetBranchName });
-        const targetCommitSha = targetBranchRef?.commit?.commitId;
-
-        if (!targetCommitSha) {
-          Logger.log(
-        `Could not find commit SHA for branch ${targetBranchName}`,
-          );
-          return [];
-        }
-
-        commitsCriteria.compareVersion = {
-          version: targetCommitSha,
-          versionType: 2, // GitVersionType.Commit
+        // No previous merge, compare against target branch to get all commits
+        // Just list all commits in currentBranch
+        commitsCriteria.itemVersion = {
+          version: targetBranchName,
+          versionType: 0, // GitVersionType.Branch
         };
       }
 
@@ -325,17 +294,6 @@ export class GitProviderAzure extends GitProvider {
         this.repoInfo.owner,
       );
       await this.logApiCall("gitApi.getCommitsBatch", { caller: "listPullRequestsInBranchSinceLastMerge", ...commitsCriteria });
-
-      // If there is not commit between the 2 commits compared, but if the currentCommitSha is different from the last merged commit,
-      // it means there is at least one commit (the current one)
-      if (
-        (!commits || commits.length === 0) &&
-        currentCommitSha !== 
-          lastMergeToTarget?.lastMergeSourceCommit?.commitId &&
-        currentBranchRef?.commit
-      ) {
-        commits!.push(currentBranchRef.commit);
-      }
 
       if (!commits || commits.length === 0) {
         return [];
