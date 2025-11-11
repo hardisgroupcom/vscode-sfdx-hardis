@@ -123,7 +123,9 @@ export class GitProviderGitlab extends GitProvider {
       projectId: this.gitlabProjectId!,
       state: "opened",
     });
-    return await this.convertAndCollectJobsList(mergeRequests, {withJobs:true});
+    return await this.convertAndCollectJobsList(mergeRequests, {
+      withJobs: true,
+    });
   }
 
   async getActivePullRequestFromBranch(
@@ -142,7 +144,9 @@ export class GitProviderGitlab extends GitProvider {
       if (!mergeRequests || mergeRequests.length === 0) {
         return null;
       }
-      const converted = await this.convertAndCollectJobsList(mergeRequests, {withJobs:true});
+      const converted = await this.convertAndCollectJobsList(mergeRequests, {
+        withJobs: true,
+      });
       return converted[0] || null;
     } catch (err) {
       Logger.log(
@@ -237,7 +241,9 @@ export class GitProviderGitlab extends GitProvider {
       const uniqueMRs = Array.from(uniqueMRsMap.values());
 
       // Step 6: Convert to PullRequest format
-      return await this.convertAndCollectJobsList(uniqueMRs, {withJobs: false});
+      return await this.convertAndCollectJobsList(uniqueMRs, {
+        withJobs: false,
+      });
     } catch (err) {
       Logger.log(
         `Error in listPullRequestsInBranchSinceLastMerge: ${String(err)}`,
@@ -323,7 +329,7 @@ export class GitProviderGitlab extends GitProvider {
       | MergeRequestSchemaWithBasicLabels
       | Camelize<MergeRequestSchemaWithBasicLabels>
     >,
-    options: {withJobs:boolean}
+    options: { withJobs: boolean },
   ): Promise<PullRequest[]> {
     if (!rawMrs || rawMrs.length === 0) {
       return [];
@@ -331,13 +337,15 @@ export class GitProviderGitlab extends GitProvider {
     const converted: PullRequest[] = await Promise.all(
       rawMrs.map(async (mr) => {
         const pr = this.convertToPullRequest(mr);
-        if (options.withJobs === true){
+        if (options.withJobs === true) {
           try {
             const jobs = await this.fetchLatestJobsForMergeRequest(mr);
             pr.jobs = jobs;
             pr.jobsStatus = this.computeJobsStatus(jobs);
           } catch (e) {
-            Logger.log(`Error fetching jobs for MR !${pr.number}: ${String(e)}`);
+            Logger.log(
+              `Error fetching jobs for MR !${pr.number}: ${String(e)}`,
+            );
           }
         }
         return pr;

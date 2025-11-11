@@ -65,7 +65,9 @@ export class GitProviderGitHub extends GitProvider {
       state: "open",
       per_page: 100,
     });
-    return await this.convertAndCollectJobsList(pullRequests, {withJobs:true});
+    return await this.convertAndCollectJobsList(pullRequests, {
+      withJobs: true,
+    });
   }
 
   async getActivePullRequestFromBranch(
@@ -86,7 +88,9 @@ export class GitProviderGitHub extends GitProvider {
       if (pullRequests.length === 0) {
         return null;
       }
-      const converted = await this.convertAndCollectJobsList(pullRequests, {withJobs:true});
+      const converted = await this.convertAndCollectJobsList(pullRequests, {
+        withJobs: true,
+      });
       return converted[0] || null;
     } catch (err) {
       Logger.log(
@@ -182,7 +186,9 @@ export class GitProviderGitHub extends GitProvider {
       const uniquePRs = Array.from(uniquePRsMap.values());
 
       // Step 6: Convert to PullRequest format
-      return await this.convertAndCollectJobsList(uniquePRs, {withJobs: false});
+      return await this.convertAndCollectJobsList(uniquePRs, {
+        withJobs: false,
+      });
     } catch (err) {
       Logger.log(
         `Error in listPullRequestsInBranchSinceLastMerge: ${String(err)}`,
@@ -195,7 +201,7 @@ export class GitProviderGitHub extends GitProvider {
   // Batch helper: convert an array of raw GitHub PRs and enrich each with jobs
   private async convertAndCollectJobsList(
     rawPrs: Endpoints["GET /repos/{owner}/{repo}/pulls"]["response"]["data"],
-    options: {withJobs:boolean}
+    options: { withJobs: boolean },
   ): Promise<PullRequest[]> {
     if (!rawPrs || rawPrs.length === 0) {
       return [];
@@ -203,7 +209,7 @@ export class GitProviderGitHub extends GitProvider {
     const converted: PullRequest[] = await Promise.all(
       rawPrs.map(async (r) => {
         const converted = this.convertToPullRequest(r);
-        if (options.withJobs === true){
+        if (options.withJobs === true) {
           try {
             const jobs = await this.fetchLatestJobsForPullRequest(converted);
             converted.jobs = jobs;
@@ -234,12 +240,12 @@ export class GitProviderGitHub extends GitProvider {
         sha: pr.sourceBranch,
         per_page: 1,
       });
-      
+
       if (!commitsResp.data || commitsResp.data.length === 0) {
         return [];
       }
       const latestCommitSha = commitsResp.data[0].sha;
-      
+
       // List workflow runs for the PR using the commit SHA
       const runsResp = await this.gitHubClient.actions.listWorkflowRunsForRepo({
         owner,
@@ -248,8 +254,7 @@ export class GitProviderGitHub extends GitProvider {
         event: "pull_request",
         per_page: 10,
       });
-      const runs =
-        runsResp.data && runsResp.data.workflow_runs;
+      const runs = runsResp.data && runsResp.data.workflow_runs;
 
       // If there are multiple attempts for the same run, pick the latest attempt for each name
       const latestAttempts = this.filterLatestRunByName(runs);
@@ -308,8 +313,16 @@ export class GitProviderGitHub extends GitProvider {
 
       // Put any job containing "deploy" at the beginning of the list
       latestAttempts.sort((a, b) => {
-        const aIsDeploy = a.name?.toLowerCase().includes("deploy") && !a.name?.toLowerCase().includes("simulate") ? 1 : 0;
-        const bIsDeploy = b.name?.toLowerCase().includes("deploy") && !b.name?.toLowerCase().includes("simulate") ? 1 : 0;
+        const aIsDeploy =
+          a.name?.toLowerCase().includes("deploy") &&
+          !a.name?.toLowerCase().includes("simulate")
+            ? 1
+            : 0;
+        const bIsDeploy =
+          b.name?.toLowerCase().includes("deploy") &&
+          !b.name?.toLowerCase().includes("simulate")
+            ? 1
+            : 0;
         return bIsDeploy - aIsDeploy;
       });
 
@@ -323,20 +336,32 @@ export class GitProviderGitHub extends GitProvider {
   }
 
   private mapWorkflowRunsToJobs(latestAttempts: any[]): Job[] {
-    return latestAttempts.map((j: Endpoints["GET /repos/{owner}/{repo}/actions/runs"]["response"]["data"]["workflow_runs"][0]) => ({
-      name: j.name!,
-      status: this.convertJobStatusToJobStatus(j.status || j.conclusion || ""),
-      webUrl: j.html_url,
-      updatedAt: j.updated_at,
-      raw: j,
-    }));
+    return latestAttempts.map(
+      (
+        j: Endpoints["GET /repos/{owner}/{repo}/actions/runs"]["response"]["data"]["workflow_runs"][0],
+      ) => ({
+        name: j.name!,
+        status: this.convertJobStatusToJobStatus(
+          j.status || j.conclusion || "",
+        ),
+        webUrl: j.html_url,
+        updatedAt: j.updated_at,
+        raw: j,
+      }),
+    );
   }
 
   private filterLatestRunByName(runs: any[]) {
-    const latestAttemptsMap: Map<string, Endpoints["GET /repos/{owner}/{repo}/actions/runs"]["response"]["data"]["workflow_runs"][0]> = new Map();
+    const latestAttemptsMap: Map<
+      string,
+      Endpoints["GET /repos/{owner}/{repo}/actions/runs"]["response"]["data"]["workflow_runs"][0]
+    > = new Map();
     for (const run of runs) {
       const existing = latestAttemptsMap.get(run.name!);
-      if (!existing || (new Date(run.created_at) > new Date(existing.created_at))) {
+      if (
+        !existing ||
+        new Date(run.created_at) > new Date(existing.created_at)
+      ) {
         latestAttemptsMap.set(run.name!, run);
       }
     }

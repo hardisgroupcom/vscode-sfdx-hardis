@@ -200,7 +200,7 @@ export class GitProviderAzure extends GitProvider {
       const converted = await this.convertAndCollectJobsList(
         prs.slice(0, 1),
         branchName,
-        {withJobs:true}
+        { withJobs: true },
       );
       return converted[0] || null;
     } catch (err) {
@@ -304,7 +304,7 @@ export class GitProviderAzure extends GitProvider {
       return await this.convertAndCollectJobsList(
         uniquePRs,
         currentBranchName,
-        {withJobs:false}
+        { withJobs: false },
       );
     } catch (err) {
       Logger.log(
@@ -328,7 +328,9 @@ export class GitProviderAzure extends GitProvider {
         searchCriteria,
         this.repoInfo.owner,
       );
-      return await this.convertAndCollectJobsList(prs || [], branchName, {withJobs:true});
+      return await this.convertAndCollectJobsList(prs || [], branchName, {
+        withJobs: true,
+      });
     } catch {
       return [];
     }
@@ -337,7 +339,7 @@ export class GitProviderAzure extends GitProvider {
   private async convertAndCollectJobsList(
     rawPrs: GitPullRequest[],
     branchName: string,
-    options: {withJobs:boolean}
+    options: { withJobs: boolean },
   ): Promise<PullRequest[]> {
     if (rawPrs.length === 0) {
       return [];
@@ -345,12 +347,14 @@ export class GitProviderAzure extends GitProvider {
     return await Promise.all(
       rawPrs.map(async (rawPr) => {
         const pr = this.convertToPullRequest(rawPr, branchName);
-        if (options.withJobs === true){
+        if (options.withJobs === true) {
           try {
             pr.jobs = await this.fetchLatestJobsForPullRequest(rawPr, pr);
             pr.jobsStatus = this.computeJobsStatus(pr.jobs);
           } catch (e) {
-            Logger.log(`Error fetching jobs for PR #${pr.number}: ${String(e)}`);
+            Logger.log(
+              `Error fetching jobs for PR #${pr.number}: ${String(e)}`,
+            );
           }
         }
         return pr;
