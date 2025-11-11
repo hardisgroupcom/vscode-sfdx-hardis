@@ -96,30 +96,7 @@ export class GitProviderBitbucket extends GitProvider {
         response && response.data && response.data.values
           ? response.data.values
           : [];
-      return await this.convertAndCollectJobsList(values);
-    } catch (err) {
-      Logger.log(`Error fetching Bitbucket pull requests: ${String(err)}`);
-      return [];
-    }
-  }
-
-  async listPullRequestsForBranch(branchName: string): Promise<PullRequest[]> {
-    if (!this.bitbucketClient || !this.workspace || !this.repoSlug) {
-      return [];
-    }
-    try {
-      // Bitbucket Cloud API: GET /repositories/{workspace}/{repo_slug}/pullrequests?q=source.branch.name="branchName"
-      const response = await this.bitbucketClient.pullrequests.list({
-        workspace: this.workspace,
-        repo_slug: this.repoSlug,
-        q: `source.branch.name = "${branchName}"`,
-      } as any);
-
-      const values =
-        response && response.data && response.data.values
-          ? response.data.values
-          : [];
-      return await this.convertAndCollectJobsList(values);
+      return await this.convertAndCollectJobsList(values, { withJobs: true });
     } catch (err) {
       Logger.log(`Error fetching Bitbucket pull requests: ${String(err)}`);
       return [];
@@ -147,6 +124,7 @@ export class GitProviderBitbucket extends GitProvider {
       }
       const converted = await this.convertAndCollectJobsList(
         values.slice(0, 1),
+        { withJobs: true },
       );
       return converted[0] || null;
     } catch (err) {
@@ -248,7 +226,9 @@ export class GitProviderBitbucket extends GitProvider {
       const uniquePRs = Array.from(uniquePRsMap.values());
 
       // Step 6: Convert to PullRequest format with jobs
-      return await this.convertAndCollectJobsList(uniquePRs);
+      return await this.convertAndCollectJobsList(uniquePRs, {
+        withJobs: false,
+      });
     } catch (err) {
       Logger.log(
         `Error in listPullRequestsInBranchSinceLastMerge: ${String(err)}`,
@@ -411,6 +391,7 @@ export class GitProviderBitbucket extends GitProvider {
   // Batch helper: convert an array of raw Bitbucket PRs and enrich each with jobs
   private async convertAndCollectJobsList(
     rawPrs: Schema.PaginatedPullrequests["values"],
+    options: { withJobs: boolean },
   ): Promise<PullRequest[]> {
     if (!rawPrs || rawPrs.length === 0) {
       return [];
@@ -418,14 +399,16 @@ export class GitProviderBitbucket extends GitProvider {
     const converted: PullRequest[] = await Promise.all(
       rawPrs.map(async (r) => {
         const conv = this.convertToPullRequest(r);
-        try {
-          const jobs = await this.fetchLatestJobsForPrBitbucket(r, conv);
-          conv.jobs = jobs;
-          conv.jobsStatus = this.computeJobsStatus(jobs);
-        } catch (e) {
-          Logger.log(
-            `Error fetching jobs for PR #${conv.number}: ${String(e)}`,
-          );
+        if (options.withJobs === true) {
+          try {
+            const jobs = await this.fetchLatestJobsForPrBitbucket(r, conv);
+            conv.jobs = jobs;
+            conv.jobsStatus = this.computeJobsStatus(jobs);
+          } catch (e) {
+            Logger.log(
+              `Error fetching jobs for PR #${conv.number}: ${String(e)}`,
+            );
+          }
         }
         return conv;
       }),

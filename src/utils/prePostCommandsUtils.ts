@@ -139,6 +139,7 @@ async function savePrConfig(
   prConfigParsed: any,
 ): Promise<void> {
   const yamlContent = yaml.dump(prConfigParsed);
+  await fs.ensureDir(path.dirname(prConfigFileName));
   await fs.writeFile(prConfigFileName, yamlContent, "utf8");
 }
 

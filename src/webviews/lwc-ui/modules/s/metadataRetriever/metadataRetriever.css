@@ -51,8 +51,10 @@
   text-align: center;
 }
 [data-feature-content] img {
-  max-width: 160px;
+  width: 100%;
   height: auto;
+  display: block;
+  margin: 0 auto;
 }
 [data-feature-close] {
   position: absolute;

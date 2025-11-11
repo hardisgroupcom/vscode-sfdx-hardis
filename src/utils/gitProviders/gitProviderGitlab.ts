@@ -123,15 +123,9 @@ export class GitProviderGitlab extends GitProvider {
       projectId: this.gitlabProjectId!,
       state: "opened",
     });
-    return await this.convertAndCollectJobsList(mergeRequests);
-  }
-
-  async listPullRequestsForBranch(branchName: string): Promise<PullRequest[]> {
-    const mergeRequests = await this.gitlabClient!.MergeRequests.all({
-      projectId: this.gitlabProjectId!,
-      targetBranch: branchName,
+    return await this.convertAndCollectJobsList(mergeRequests, {
+      withJobs: true,
     });
-    return await this.convertAndCollectJobsList(mergeRequests);
   }
 
   async getActivePullRequestFromBranch(
@@ -150,7 +144,9 @@ export class GitProviderGitlab extends GitProvider {
       if (!mergeRequests || mergeRequests.length === 0) {
         return null;
       }
-      const converted = await this.convertAndCollectJobsList(mergeRequests);
+      const converted = await this.convertAndCollectJobsList(mergeRequests, {
+        withJobs: true,
+      });
       return converted[0] || null;
     } catch (err) {
       Logger.log(
@@ -244,8 +240,10 @@ export class GitProviderGitlab extends GitProvider {
 
       const uniqueMRs = Array.from(uniqueMRsMap.values());
 
-      // Step 6: Convert to PullRequest format with jobs
-      return await this.convertAndCollectJobsList(uniqueMRs);
+      // Step 6: Convert to PullRequest format
+      return await this.convertAndCollectJobsList(uniqueMRs, {
+        withJobs: false,
+      });
     } catch (err) {
       Logger.log(
         `Error in listPullRequestsInBranchSinceLastMerge: ${String(err)}`,
@@ -331,6 +329,7 @@ export class GitProviderGitlab extends GitProvider {
       | MergeRequestSchemaWithBasicLabels
       | Camelize<MergeRequestSchemaWithBasicLabels>
     >,
+    options: { withJobs: boolean },
   ): Promise<PullRequest[]> {
     if (!rawMrs || rawMrs.length === 0) {
       return [];
@@ -338,12 +337,16 @@ export class GitProviderGitlab extends GitProvider {
     const converted: PullRequest[] = await Promise.all(
       rawMrs.map(async (mr) => {
         const pr = this.convertToPullRequest(mr);
-        try {
-          const jobs = await this.fetchLatestJobsForMergeRequest(mr);
-          pr.jobs = jobs;
-          pr.jobsStatus = this.computeJobsStatus(jobs);
-        } catch (e) {
-          Logger.log(`Error fetching jobs for MR !${pr.number}: ${String(e)}`);
+        if (options.withJobs === true) {
+          try {
+            const jobs = await this.fetchLatestJobsForMergeRequest(mr);
+            pr.jobs = jobs;
+            pr.jobsStatus = this.computeJobsStatus(jobs);
+          } catch (e) {
+            Logger.log(
+              `Error fetching jobs for MR !${pr.number}: ${String(e)}`,
+            );
+          }
         }
         return pr;
       }),
