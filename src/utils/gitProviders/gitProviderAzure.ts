@@ -179,13 +179,6 @@ export class GitProviderAzure extends GitProvider {
     });
   }
 
-  async listPullRequestsForBranch(branchName: string): Promise<PullRequest[]> {
-    return this.listPullRequestsWithCriteria(
-      { sourceRefName: `refs/heads/${branchName}` },
-      branchName,
-    );
-  }
-
   async getActivePullRequestFromBranch(
     branchName: string,
   ): Promise<PullRequest | null> {
@@ -204,9 +197,10 @@ export class GitProviderAzure extends GitProvider {
       if (!prs || prs.length === 0) {
         return null;
       }
-      const converted = await this.convertAndEnrichPullRequests(
+      const converted = await this.convertAndCollectJobsList(
         prs.slice(0, 1),
         branchName,
+        {withJobs:true}
       );
       return converted[0] || null;
     } catch (err) {
@@ -307,9 +301,10 @@ export class GitProviderAzure extends GitProvider {
       const uniquePRs = Array.from(uniquePRsMap.values());
 
       // Step 6: Convert to PullRequest format with jobs
-      return await this.convertAndEnrichPullRequests(
+      return await this.convertAndCollectJobsList(
         uniquePRs,
         currentBranchName,
+        {withJobs:false}
       );
     } catch (err) {
       Logger.log(
@@ -333,28 +328,30 @@ export class GitProviderAzure extends GitProvider {
         searchCriteria,
         this.repoInfo.owner,
       );
-      return await this.convertAndEnrichPullRequests(prs || [], branchName);
+      return await this.convertAndCollectJobsList(prs || [], branchName, {withJobs:true});
     } catch {
       return [];
     }
   }
 
-  private async convertAndEnrichPullRequests(
+  private async convertAndCollectJobsList(
     rawPrs: GitPullRequest[],
     branchName: string,
+    options: {withJobs:boolean}
   ): Promise<PullRequest[]> {
     if (rawPrs.length === 0) {
       return [];
     }
-
     return await Promise.all(
       rawPrs.map(async (rawPr) => {
         const pr = this.convertToPullRequest(rawPr, branchName);
-        try {
-          pr.jobs = await this.fetchLatestJobsForPullRequest(rawPr, pr);
-          pr.jobsStatus = this.computeJobsStatus(pr.jobs);
-        } catch (e) {
-          Logger.log(`Error fetching jobs for PR #${pr.number}: ${String(e)}`);
+        if (options.withJobs === true){
+          try {
+            pr.jobs = await this.fetchLatestJobsForPullRequest(rawPr, pr);
+            pr.jobsStatus = this.computeJobsStatus(pr.jobs);
+          } catch (e) {
+            Logger.log(`Error fetching jobs for PR #${pr.number}: ${String(e)}`);
+          }
         }
         return pr;
       }),
