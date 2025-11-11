@@ -6,7 +6,9 @@
   - Sort pending PRs by merge date descending in branch configuration
   - Optimize loading performances
   - Improves PR detection in Azure DevOps
+  - Fix listing of Pull Requests with Azure DevOps
   - Adds debug mode for VS Code extension with API call logging to investigate issues
+  - Change the default refresh interval to 10 minutes instead of 5 minutes to reduce API calls
 
 ## [6.17.1] 2024-11-10
 
