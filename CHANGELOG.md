@@ -2,8 +2,11 @@
 
 ## [Unreleased]
 
-- Sort pending PRs by merge date descending in branch configuration
-- Improves PR detection in Azure DevOps
+- Live DevOps Pipeline enhancements & fixes
+  - Sort pending PRs by merge date descending in branch configuration
+  - Optimize loading performances
+  - Improves PR detection in Azure DevOps
+  - Adds debug mode for VS Code extension with API call logging to investigate issues
 
 ## [6.17.1] 2024-11-10
 
