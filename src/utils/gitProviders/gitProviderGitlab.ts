@@ -124,6 +124,7 @@ export class GitProviderGitlab extends GitProvider {
     const mergeRequests = await this.gitlabClient!.MergeRequests.all({
       projectId: this.gitlabProjectId!,
       state: "opened",
+      perPage: 100,
     });
     await this.logApiCall("MergeRequests.all", { caller: "listOpenPullRequests", state: "opened" });
     return await this.convertAndCollectJobsList(mergeRequests, {
@@ -142,7 +143,9 @@ export class GitProviderGitlab extends GitProvider {
         projectId: this.gitlabProjectId,
         sourceBranch: branchName,
         state: "opened",
-        perPage: 1,
+        perPage: 2,
+        orderBy: "updated_at",
+        sort: "desc",
       });
       await this.logApiCall("MergeRequests.all", { caller: "getActivePullRequestFromBranch", sourceBranch: branchName, state: "opened" });
       if (!mergeRequests || mergeRequests.length === 0) {
@@ -277,6 +280,7 @@ export class GitProviderGitlab extends GitProvider {
         orderBy: "updated_at",
         sort: "desc",
         perPage: 1,
+        maxPages: 1,
       });
       await this.logApiCall("MergeRequests.all", { caller: "findLastMergedMR", sourceBranch, targetBranch });
 
@@ -377,6 +381,10 @@ export class GitProviderGitlab extends GitProvider {
         // @ts-ignore - method signature may differ across gitbeaker versions
         pipelines = await this.gitlabClient?.Pipelines.all(projectId, {
           sha: mr.sha,
+          perPage: 5,
+          maxPages: 1,
+          orderBy: "updated_at",
+          sort: "desc",
         });
         await this.logApiCall("Pipelines.all", { caller: "fetchLatestJobsForPullRequest", pr: mrIid, sha: mr.sha });
       } catch (e) {
@@ -419,7 +427,10 @@ export class GitProviderGitlab extends GitProvider {
         // @ts-ignore - method signature may differ across gitbeaker versions
         pipelines = await this.gitlabClient.Pipelines.all(projectId, {
           ref: branchName,
-          perPage: 10,
+          orderBy: "updated_at",
+          sort: "desc",
+          perPage: 5,
+          maxPages: 1,
         });
         await this.logApiCall("Pipelines.all", { caller: "getJobsForBranchLatestCommit", ref: branchName, perPage: 10 });
       } catch (e) {
