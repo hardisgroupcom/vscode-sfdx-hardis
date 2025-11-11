@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Sort pending PRs by merge date descending in branch configuration
+
 ## [6.17.1] 2024-11-10
 
 - Refactors PR fetching to optimize job collection

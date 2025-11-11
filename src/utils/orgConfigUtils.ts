@@ -138,6 +138,12 @@ export async function listMajorOrgs(
             org.mergeTargets[0], // use first merge target as target branch
             [...childBranchesNames],
           );
+          // Sort PRs by mergeDate date desc
+          prs.sort((a, b) => {
+            const dateA = a.mergeDate ? new Date(a.mergeDate).getTime() : 0;
+            const dateB = b.mergeDate ? new Date(b.mergeDate).getTime() : 0;
+            return dateB - dateA;
+          });
           org.pullRequestsInBranchSinceLastMerge = prs;
           // Complete with tickets
           await gitProvider.completePullRequestsWithTickets(prs, {
