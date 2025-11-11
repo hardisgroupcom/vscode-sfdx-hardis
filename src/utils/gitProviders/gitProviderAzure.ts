@@ -304,7 +304,7 @@ export class GitProviderAzure extends GitProvider {
         this.repoInfo.repo,
         this.repoInfo.owner,
       );
-      await this.logApiCall("gitApi.getCommitsBatch", { caller: "listPullRequestsInBranchSinceLastMerge" });
+      await this.logApiCall("gitApi.getCommitsBatch", { caller: "listPullRequestsInBranchSinceLastMerge", ...commitsCriteria });
 
       // If there is not commit between the 2 commits compared, but if the currentCommitSha is different from the last merged commit,
       // it means there is at least one commit (the current one)

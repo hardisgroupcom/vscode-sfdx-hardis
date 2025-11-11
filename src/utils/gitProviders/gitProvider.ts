@@ -266,9 +266,6 @@ export class GitProvider {
       params: params,
       dateTime: new Date().toISOString(),
     });
-    Logger.log(
-      `[GitApiCall] #${this.apiCallsCounter}: ${endpointOrMethod} - ${JSON.stringify(params)}`,
-    );
   }
 
   async completePullRequestsWithTickets(

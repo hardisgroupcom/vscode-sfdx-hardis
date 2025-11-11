@@ -319,7 +319,7 @@ export class GitProviderGitlab extends GitProvider {
         this.gitlabProjectId!,
         options,
       );
-      await this.logApiCall("Commits.all", { caller: "getCommitsSinceLastMerge", refName: options.refName });
+      await this.logApiCall("Commits.all", { caller: "getCommitsSinceLastMerge", ...options });
 
       return commits || [];
     } catch (err) {
@@ -378,7 +378,7 @@ export class GitProviderGitlab extends GitProvider {
         pipelines = await this.gitlabClient?.Pipelines.all(projectId, {
           sha: mr.sha,
         });
-        await this.logApiCall("Pipelines.all", { caller: "fetchLatestJobsForPullRequest" });
+        await this.logApiCall("Pipelines.all", { caller: "fetchLatestJobsForPullRequest", pr: mrIid, sha: mr.sha });
       } catch (e) {
         Logger.log(`Error fetching pipelines for MR !${mrIid}: ${String(e)}`);
         return [];

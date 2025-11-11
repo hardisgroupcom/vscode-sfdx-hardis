@@ -174,7 +174,7 @@ export class GitProviderBitbucket extends GitProvider {
           ? lastMergeToTarget.merge_commit?.hash
           : targetBranchName,
       } as any);
-      await this.logApiCall("commits.list", { caller: "listPullRequestsInBranchSinceLastMerge", include: currentBranchName });
+      await this.logApiCall("commits.list", { caller: "listPullRequestsInBranchSinceLastMerge", include: currentBranchName, exclude: lastMergeToTarget ? lastMergeToTarget.merge_commit?.hash : targetBranchName });
 
       const commits =
         commitsResponse && commitsResponse.data && commitsResponse.data.values
@@ -298,7 +298,7 @@ export class GitProviderBitbucket extends GitProvider {
         q,
         sort: "-created_on",
       } as any);
-      await this.logApiCall("pipelines.list", { caller: "fetchLatestJobsForPullRequest" });
+      await this.logApiCall("pipelines.list", { caller: "fetchLatestJobsForPullRequest", q: q });
       const values =
         response && response.data && response.data.values
           ? response.data.values
