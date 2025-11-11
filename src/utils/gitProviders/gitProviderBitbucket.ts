@@ -306,27 +306,17 @@ export class GitProviderBitbucket extends GitProvider {
       if (!values || values.length === 0) {
         return [];
       }
-      const pipeline = values[0];
+      const pipeline1 = values[0];
       // Map pipeline steps to PullRequestJob if available
-      const p: any = pipeline as any;
+      const pipeline: any = pipeline1 as any;
       const converted: Job[] = [
         {
-          name: String((p && p.target && p.target.ref_name) || p.id || ""),
-          status: String(
-            (p &&
-              p.state &&
-              ((p.state.result && p.state.result.name) || p.state.name)) ||
-              "",
-          ) as Job["status"],
-          webUrl:
-            String(
-              (p && p.links && p.links.html && p.links.html.href) || undefined,
-            ) || undefined,
-          updatedAt:
-            String((p && (p.updated_on || p.created_on)) || undefined) ||
-            undefined,
-          raw: p,
-        },
+          name: pipeline?.target?.selector?.target || pipeline.target?.type || pipeline.uuid || "Default pipeline name",
+          status: this.mapPipelineStateToJobStatus(pipeline.state),
+          webUrl: pipeline.links?.html?.href || undefined,
+          updatedAt: pipeline.updated_on || undefined,
+          raw: pipeline,
+        }
       ];
       return converted;
     } catch {
