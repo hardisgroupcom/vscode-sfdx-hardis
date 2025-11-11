@@ -82,7 +82,9 @@ export class GitProviderGitlab extends GitProvider {
         try {
           // validate token by calling the user endpoint first
           const currentUser = await this.gitlabClient.Users.showCurrentUser();
-          await this.logApiCall("Users.showCurrentUser", { caller: "initialize" });
+          await this.logApiCall("Users.showCurrentUser", {
+            caller: "initialize",
+          });
           if (currentUser && currentUser.id) {
             // Find related project Id
             const project = await this.gitlabClient.Projects.show(
@@ -126,7 +128,10 @@ export class GitProviderGitlab extends GitProvider {
       state: "opened",
       perPage: 100,
     });
-    await this.logApiCall("MergeRequests.all", { caller: "listOpenPullRequests", state: "opened" });
+    await this.logApiCall("MergeRequests.all", {
+      caller: "listOpenPullRequests",
+      state: "opened",
+    });
     return await this.convertAndCollectJobsList(mergeRequests, {
       withJobs: true,
     });
@@ -147,7 +152,11 @@ export class GitProviderGitlab extends GitProvider {
         orderBy: "updated_at",
         sort: "desc",
       });
-      await this.logApiCall("MergeRequests.all", { caller: "getActivePullRequestFromBranch", sourceBranch: branchName, state: "opened" });
+      await this.logApiCall("MergeRequests.all", {
+        caller: "getActivePullRequestFromBranch",
+        sourceBranch: branchName,
+        state: "opened",
+      });
       if (!mergeRequests || mergeRequests.length === 0) {
         return null;
       }
@@ -206,7 +215,11 @@ export class GitProviderGitlab extends GitProvider {
             state: "merged",
             perPage: 100,
           });
-          await this.logApiCall("MergeRequests.all", { caller: "listPullRequestsInBranchSinceLastMerge", action: "fetchMergedMRs", targetBranch: branchName });
+          await this.logApiCall("MergeRequests.all", {
+            caller: "listPullRequestsInBranchSinceLastMerge",
+            action: "fetchMergedMRs",
+            targetBranch: branchName,
+          });
           return mergedMRs;
         } catch (err) {
           Logger.log(
@@ -282,7 +295,11 @@ export class GitProviderGitlab extends GitProvider {
         perPage: 1,
         maxPages: 1,
       });
-      await this.logApiCall("MergeRequests.all", { caller: "findLastMergedMR", sourceBranch, targetBranch });
+      await this.logApiCall("MergeRequests.all", {
+        caller: "findLastMergedMR",
+        sourceBranch,
+        targetBranch,
+      });
 
       return mergedMRs.length > 0 ? mergedMRs[0] : null;
     } catch (err) {
@@ -323,7 +340,10 @@ export class GitProviderGitlab extends GitProvider {
         this.gitlabProjectId!,
         options,
       );
-      await this.logApiCall("Commits.all", { caller: "getCommitsSinceLastMerge", ...options });
+      await this.logApiCall("Commits.all", {
+        caller: "getCommitsSinceLastMerge",
+        ...options,
+      });
 
       return commits || [];
     } catch (err) {
@@ -386,7 +406,11 @@ export class GitProviderGitlab extends GitProvider {
           orderBy: "updated_at",
           sort: "desc",
         });
-        await this.logApiCall("Pipelines.all", { caller: "fetchLatestJobsForPullRequest", pr: mrIid, sha: mr.sha });
+        await this.logApiCall("Pipelines.all", {
+          caller: "fetchLatestJobsForPullRequest",
+          pr: mrIid,
+          sha: mr.sha,
+        });
       } catch (e) {
         Logger.log(`Error fetching pipelines for MR !${mrIid}: ${String(e)}`);
         return [];
@@ -432,7 +456,11 @@ export class GitProviderGitlab extends GitProvider {
           perPage: 5,
           maxPages: 1,
         });
-        await this.logApiCall("Pipelines.all", { caller: "getJobsForBranchLatestCommit", ref: branchName, perPage: 10 });
+        await this.logApiCall("Pipelines.all", {
+          caller: "getJobsForBranchLatestCommit",
+          ref: branchName,
+          perPage: 10,
+        });
       } catch (e) {
         Logger.log(
           `Error fetching pipelines for branch ${branchName}: ${String(e)}`,

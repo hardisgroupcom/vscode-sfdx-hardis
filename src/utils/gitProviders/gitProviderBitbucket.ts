@@ -93,7 +93,9 @@ export class GitProviderBitbucket extends GitProvider {
         workspace: this.workspace,
         repo_slug: this.repoSlug,
       } as any);
-      await this.logApiCall("pullrequests.list", { caller: "listOpenPullRequests" });
+      await this.logApiCall("pullrequests.list", {
+        caller: "listOpenPullRequests",
+      });
       const values =
         response && response.data && response.data.values
           ? response.data.values
@@ -117,7 +119,10 @@ export class GitProviderBitbucket extends GitProvider {
         repo_slug: this.repoSlug,
         q: `source.branch.name = "${branchName}" AND state = "OPEN"`,
       } as any);
-      await this.logApiCall("pullrequests.list", { caller: "getActivePullRequestFromBranch", q: `source.branch.name = "${branchName}" AND state = "OPEN"` });
+      await this.logApiCall("pullrequests.list", {
+        caller: "getActivePullRequestFromBranch",
+        q: `source.branch.name = "${branchName}" AND state = "OPEN"`,
+      });
       const values =
         response && response.data && response.data.values
           ? response.data.values
@@ -154,7 +159,11 @@ export class GitProviderBitbucket extends GitProvider {
         repo_slug: this.repoSlug,
         q: `source.branch.name = "${currentBranchName}" AND destination.branch.name = "${targetBranchName}" AND state = "MERGED"`,
       } as any);
-      await this.logApiCall("pullrequests.list", { caller: "listPullRequestsInBranchSinceLastMerge", action: "findLastMerged", q: `source.branch.name = "${currentBranchName}" AND destination.branch.name = "${targetBranchName}" AND state = "MERGED"` });
+      await this.logApiCall("pullrequests.list", {
+        caller: "listPullRequestsInBranchSinceLastMerge",
+        action: "findLastMerged",
+        q: `source.branch.name = "${currentBranchName}" AND destination.branch.name = "${targetBranchName}" AND state = "MERGED"`,
+      });
 
       const lastMergePRs =
         lastMergeResponse &&
@@ -174,7 +183,13 @@ export class GitProviderBitbucket extends GitProvider {
           ? lastMergeToTarget.merge_commit?.hash
           : targetBranchName,
       } as any);
-      await this.logApiCall("commits.list", { caller: "listPullRequestsInBranchSinceLastMerge", include: currentBranchName, exclude: lastMergeToTarget ? lastMergeToTarget.merge_commit?.hash : targetBranchName });
+      await this.logApiCall("commits.list", {
+        caller: "listPullRequestsInBranchSinceLastMerge",
+        include: currentBranchName,
+        exclude: lastMergeToTarget
+          ? lastMergeToTarget.merge_commit?.hash
+          : targetBranchName,
+      });
 
       const commits =
         commitsResponse && commitsResponse.data && commitsResponse.data.values
@@ -197,7 +212,11 @@ export class GitProviderBitbucket extends GitProvider {
             repo_slug: this.repoSlug!,
             q: `destination.branch.name = "${branchName}" AND state = "MERGED"`,
           } as any);
-          await this.logApiCall("pullrequests.list", { caller: "listPullRequestsInBranchSinceLastMerge", action: "fetchMergedPRs", q: `destination.branch.name = "${branchName}" AND state = "MERGED"` });
+          await this.logApiCall("pullrequests.list", {
+            caller: "listPullRequestsInBranchSinceLastMerge",
+            action: "fetchMergedPRs",
+            q: `destination.branch.name = "${branchName}" AND state = "MERGED"`,
+          });
 
           const values =
             response && response.data && response.data.values
@@ -298,7 +317,10 @@ export class GitProviderBitbucket extends GitProvider {
         q,
         sort: "-created_on",
       } as any);
-      await this.logApiCall("pipelines.list", { caller: "fetchLatestJobsForPullRequest", q: q });
+      await this.logApiCall("pipelines.list", {
+        caller: "fetchLatestJobsForPullRequest",
+        q: q,
+      });
       const values =
         response && response.data && response.data.values
           ? response.data.values
@@ -311,12 +333,16 @@ export class GitProviderBitbucket extends GitProvider {
       const pipeline: any = pipeline1 as any;
       const converted: Job[] = [
         {
-          name: pipeline?.target?.selector?.target || pipeline.target?.type || pipeline.uuid || "Default pipeline name",
+          name:
+            pipeline?.target?.selector?.target ||
+            pipeline.target?.type ||
+            pipeline.uuid ||
+            "Default pipeline name",
           status: this.mapPipelineStateToJobStatus(pipeline.state),
           webUrl: pipeline.links?.html?.href || undefined,
           updatedAt: pipeline.updated_on || undefined,
           raw: pipeline,
-        }
+        },
       ];
       return converted;
     } catch {
@@ -338,7 +364,10 @@ export class GitProviderBitbucket extends GitProvider {
         q: `target.ref_name = "${branchName}"`,
         sort: "-created_on",
       } as any);
-      await this.logApiCall("pipelines.list", { caller: "getJobsForBranchLatestCommit", q: `target.ref_name = "${branchName}"` });
+      await this.logApiCall("pipelines.list", {
+        caller: "getJobsForBranchLatestCommit",
+        q: `target.ref_name = "${branchName}"`,
+      });
       const values =
         response && response.data && response.data.values
           ? response.data.values
@@ -362,7 +391,11 @@ export class GitProviderBitbucket extends GitProvider {
       const pipeline1 = commitPipelines[0];
       const pipeline = pipeline1 as any;
       const job: Job = {
-        name: pipeline?.target?.selector?.target || pipeline.target?.type || pipeline.uuid || "Default pipeline name",
+        name:
+          pipeline?.target?.selector?.target ||
+          pipeline.target?.type ||
+          pipeline.uuid ||
+          "Default pipeline name",
         status: this.mapPipelineStateToJobStatus(pipeline.state),
         webUrl: pipeline.links?.html?.href || undefined,
         updatedAt: pipeline.updated_on || undefined,
@@ -375,7 +408,9 @@ export class GitProviderBitbucket extends GitProvider {
     }
   }
 
-  private mapPipelineStateToJobStatus(state: Schema.PipelineState | undefined): JobStatus {
+  private mapPipelineStateToJobStatus(
+    state: Schema.PipelineState | undefined,
+  ): JobStatus {
     if (!state) {
       return "unknown";
     }

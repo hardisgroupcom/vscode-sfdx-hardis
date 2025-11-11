@@ -218,7 +218,11 @@ export class GitProviderAzure extends GitProvider {
         undefined,
         1, // top: only need the first one
       );
-      await this.logApiCall("gitApi.getPullRequests", { caller: "getActivePullRequestFromBranch", sourceRefName: `refs/heads/${branchName}`, status: "Active" });
+      await this.logApiCall("gitApi.getPullRequests", {
+        caller: "getActivePullRequestFromBranch",
+        sourceRefName: `refs/heads/${branchName}`,
+        status: "Active",
+      });
       if (!prs || prs.length === 0) {
         return null;
       }
@@ -259,7 +263,13 @@ export class GitProviderAzure extends GitProvider {
         undefined,
         1, // top: only need the latest one
       );
-      await this.logApiCall("gitApi.getPullRequests", { caller: "listPullRequestsInBranchSinceLastMerge", action: "findLastMerged", sourceRefName: `refs/heads/${currentBranchName}`, targetRefName: `refs/heads/${targetBranchName}`, status: "Completed" });
+      await this.logApiCall("gitApi.getPullRequests", {
+        caller: "listPullRequestsInBranchSinceLastMerge",
+        action: "findLastMerged",
+        sourceRefName: `refs/heads/${currentBranchName}`,
+        targetRefName: `refs/heads/${targetBranchName}`,
+        status: "Completed",
+      });
 
       const lastMergedPrToTarget =
         lastMergedPRs && lastMergedPRs.length > 0 ? lastMergedPRs[0] : null;
@@ -273,13 +283,12 @@ export class GitProviderAzure extends GitProvider {
       };
 
       // If there was a previous merge, use the merge commit (from target branch) as the base comparison point
-      if (lastMergedPrToTarget?.lastMergeSourceCommit?.commitId){
+      if (lastMergedPrToTarget?.lastMergeSourceCommit?.commitId) {
         commitsCriteria.itemVersion = {
           version: lastMergedPrToTarget?.lastMergeSourceCommit?.commitId,
           versionType: 2, // GitVersionType.Commit
         };
-      }
-      else {
+      } else {
         // No previous merge, compare against target branch to get all commits
         // Just list all commits in currentBranch
         commitsCriteria.itemVersion = {
@@ -293,7 +302,10 @@ export class GitProviderAzure extends GitProvider {
         this.repoInfo.repo,
         this.repoInfo.owner,
       );
-      await this.logApiCall("gitApi.getCommitsBatch", { caller: "listPullRequestsInBranchSinceLastMerge", ...commitsCriteria });
+      await this.logApiCall("gitApi.getCommitsBatch", {
+        caller: "listPullRequestsInBranchSinceLastMerge",
+        ...commitsCriteria,
+      });
 
       if (!commits || commits.length === 0) {
         return [];
@@ -317,10 +329,14 @@ export class GitProviderAzure extends GitProvider {
             },
             this.repoInfo!.owner,
           );
-          await this.logApiCall("gitApi.getPullRequests", { caller: "listPullRequestsInBranchSinceLastMerge", action: "fetchMergedPRs", targetRefName: `refs/heads/${branchName}`, status: "Completed" });
+          await this.logApiCall("gitApi.getPullRequests", {
+            caller: "listPullRequestsInBranchSinceLastMerge",
+            action: "fetchMergedPRs",
+            targetRefName: `refs/heads/${branchName}`,
+            status: "Completed",
+          });
           return prs || [];
-        }
-        catch (err) {
+        } catch (err) {
           Logger.log(
             `Error fetching completed PRs for branch ${branchName}: ${String(err)}`,
           );
@@ -364,8 +380,7 @@ export class GitProviderAzure extends GitProvider {
         currentBranchName,
         { withJobs: false },
       );
-    }
-    catch (err) {
+    } catch (err) {
       Logger.log(
         `Error in listPullRequestsInBranchSinceLastMerge: ${String(err)}`,
       );
@@ -408,7 +423,6 @@ export class GitProviderAzure extends GitProvider {
     }
 
     try {
-      
       // Get builds triggered by this specific pull request
       // For PR builds, Azure DevOps uses refs/pull/{prId}/merge as the source branch
       // Use reasonFilter to only get PR-triggered builds
@@ -432,7 +446,10 @@ export class GitProviderAzure extends GitProvider {
         4, // queryOrder: QueueTimeDescending (4) ensures most recently triggered build first
         pr.number ? `refs/pull/${pr.number}/merge` : undefined, // branchName: PR merge ref
       );
-      await this.logApiCall("buildApi.getBuilds", { caller: "fetchLatestJobsForPullRequest", prNumber: pr.number });
+      await this.logApiCall("buildApi.getBuilds", {
+        caller: "fetchLatestJobsForPullRequest",
+        prNumber: pr.number,
+      });
 
       // Filter builds that match this specific PR
       const matchingBuilds = (builds || []).filter((b: any) => {
@@ -559,7 +576,10 @@ export class GitProviderAzure extends GitProvider {
         4, // queryOrder: QueueTimeDescending (4) ensures most recently triggered build first
         `refs/heads/${branchName}`, // branchName: exact branch reference
       );
-      await this.logApiCall("buildApi.getBuilds", { caller: "getJobsForBranchLatestCommit", branchName: `refs/heads/${branchName}` });
+      await this.logApiCall("buildApi.getBuilds", {
+        caller: "getJobsForBranchLatestCommit",
+        branchName: `refs/heads/${branchName}`,
+      });
 
       // Additional filter to exclude PR-triggered builds (reason code varies)
       const commitBuilds = (builds || []).filter(

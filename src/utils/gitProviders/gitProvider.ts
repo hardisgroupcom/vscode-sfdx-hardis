@@ -253,10 +253,7 @@ export class GitProvider {
     return false;
   }
 
-  async logApiCall(
-    endpointOrMethod: string,
-    params: any = {},
-  ): Promise<void> {
+  async logApiCall(endpointOrMethod: string, params: any = {}): Promise<void> {
     if (!this.isLoggerOn) {
       return;
     }
@@ -427,8 +424,7 @@ export class GitProvider {
       `${logTime}.csv`,
     );
     await fs.ensureDir(path.dirname(reportFile));
-    const csvHeader =
-      "DateTime,Endpoint or Method,Caller,Params(json)\n";
+    const csvHeader = "DateTime,Endpoint or Method,Caller,Params(json)\n";
     await fs.writeFile(reportFile, csvHeader, { encoding: "utf8" });
     setInterval(async () => {
       if (this.apiCallsLogs.length === 0) {

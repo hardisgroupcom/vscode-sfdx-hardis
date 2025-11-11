@@ -66,7 +66,10 @@ export class GitProviderGitHub extends GitProvider {
       state: "open",
       per_page: 100,
     });
-    await this.logApiCall("pulls.list", { caller: "listOpenPullRequests", state: "open" });
+    await this.logApiCall("pulls.list", {
+      caller: "listOpenPullRequests",
+      state: "open",
+    });
     return await this.convertAndCollectJobsList(pullRequests, {
       withJobs: true,
     });
@@ -87,7 +90,11 @@ export class GitProviderGitHub extends GitProvider {
         state: "open",
         per_page: 1,
       });
-      await this.logApiCall("pulls.list", { caller: "getActivePullRequestFromBranch", head: `${owner}:${branchName}`, state: "open" });
+      await this.logApiCall("pulls.list", {
+        caller: "getActivePullRequestFromBranch",
+        head: `${owner}:${branchName}`,
+        state: "open",
+      });
       if (pullRequests.length === 0) {
         return null;
       }
@@ -126,7 +133,12 @@ export class GitProviderGitHub extends GitProvider {
         direction: "desc",
         per_page: 1,
       });
-      await this.logApiCall("pulls.list", { caller: "listPullRequestsInBranchSinceLastMerge", action: "findLastMerged", sourceBranch: currentBranchName, targetBranch: targetBranchName });
+      await this.logApiCall("pulls.list", {
+        caller: "listPullRequestsInBranchSinceLastMerge",
+        action: "findLastMerged",
+        sourceBranch: currentBranchName,
+        targetBranch: targetBranchName,
+      });
 
       const lastMergeToTarget = mergedPRs.find((pr) => pr.merged_at);
 
@@ -143,7 +155,11 @@ export class GitProviderGitHub extends GitProvider {
 
       const { data: comparison } =
         await this.gitHubClient.repos.compareCommits(compareOptions);
-      await this.logApiCall("repos.compareCommits", { caller: "listPullRequestsInBranchSinceLastMerge", base: compareOptions.base, head: compareOptions.head });
+      await this.logApiCall("repos.compareCommits", {
+        caller: "listPullRequestsInBranchSinceLastMerge",
+        base: compareOptions.base,
+        head: compareOptions.head,
+      });
 
       if (!comparison.commits || comparison.commits.length === 0) {
         return [];
@@ -163,7 +179,11 @@ export class GitProviderGitHub extends GitProvider {
             base: branchName,
             per_page: 100,
           });
-          await this.logApiCall("pulls.list", { caller: "listPullRequestsInBranchSinceLastMerge", action: "fetchMergedPRs", targetBranch: branchName });
+          await this.logApiCall("pulls.list", {
+            caller: "listPullRequestsInBranchSinceLastMerge",
+            action: "fetchMergedPRs",
+            targetBranch: branchName,
+          });
           return prs.filter((pr) => pr.merged_at);
         } catch (err) {
           Logger.log(
@@ -246,7 +266,10 @@ export class GitProviderGitHub extends GitProvider {
         sha: pr.sourceBranch,
         per_page: 1,
       });
-      await this.logApiCall("repos.listCommits", { caller: "fetchLatestJobsForPullRequest", sha: pr.sourceBranch });
+      await this.logApiCall("repos.listCommits", {
+        caller: "fetchLatestJobsForPullRequest",
+        sha: pr.sourceBranch,
+      });
 
       if (!commitsResp.data || commitsResp.data.length === 0) {
         return [];
@@ -261,7 +284,10 @@ export class GitProviderGitHub extends GitProvider {
         event: "pull_request",
         per_page: 50,
       });
-      await this.logApiCall("actions.listWorkflowRunsForRepo", { caller: "fetchLatestJobsForPullRequest", event: "pull_request" });
+      await this.logApiCall("actions.listWorkflowRunsForRepo", {
+        caller: "fetchLatestJobsForPullRequest",
+        event: "pull_request",
+      });
       const runs = runsResp.data && runsResp.data.workflow_runs;
 
       // If there are multiple attempts for the same run, pick the latest attempt for each name
@@ -296,7 +322,10 @@ export class GitProviderGitHub extends GitProvider {
         sha: branchName,
         per_page: 1,
       });
-      await this.logApiCall("repos.listCommits", { caller: "getJobsForBranchLatestCommit", sha: branchName });
+      await this.logApiCall("repos.listCommits", {
+        caller: "getJobsForBranchLatestCommit",
+        sha: branchName,
+      });
       if (commitsResp.data.length === 0) {
         return { jobs: [], jobsStatus: "unknown" };
       }
@@ -309,7 +338,10 @@ export class GitProviderGitHub extends GitProvider {
         exclude_pull_requests: true,
         per_page: 10,
       });
-      await this.logApiCall("actions.listWorkflowRunsForRepo", { caller: "getJobsForBranchLatestCommit", exclude_pull_requests: true });
+      await this.logApiCall("actions.listWorkflowRunsForRepo", {
+        caller: "getJobsForBranchLatestCommit",
+        exclude_pull_requests: true,
+      });
       const runs =
         runsResp.data && runsResp.data.workflow_runs
           ? runsResp.data.workflow_runs

@@ -259,7 +259,9 @@ export function registerShowPipeline(commands: Commands) {
   ): Promise<PipelineInfo> {
     // If a load is already in progress, wait for it to complete
     if (loadInProgress) {
-      Logger.log("Pipeline load already in progress, waiting for completion...");
+      Logger.log(
+        "Pipeline load already in progress, waiting for completion...",
+      );
       return await loadInProgress;
     }
     // Start new load and track it
@@ -267,8 +269,7 @@ export function registerShowPipeline(commands: Commands) {
     try {
       const result = await loadInProgress;
       return result;
-    }
-    finally {
+    } finally {
       // Clear the in-progress flag when done
       loadInProgress = null;
     }
@@ -296,8 +297,7 @@ export function registerShowPipeline(commands: Commands) {
         prButtonInfo.icon = gitProvider.repoInfo.providerName;
         prButtonInfo.pullRequestLabel = desc.pullRequestLabel;
         repoPlatformLabel = desc.providerLabel;
-      }
-      else {
+      } else {
         prButtonInfo.url = "";
         prButtonInfo.label = "View Pull Requests";
         prButtonInfo.icon = "";
@@ -353,8 +353,7 @@ export function registerShowPipeline(commands: Commands) {
                   fetchDetails: true,
                 });
               currentBranchPullRequest = prListWithTickets[0];
-            }
-            else {
+            } else {
               // No PR found for current branch but draft file exists
               currentBranchPullRequest = {
                 id: "",
@@ -426,8 +425,7 @@ export function registerShowPipeline(commands: Commands) {
         },
         loadData,
       );
-    }
-    else {
+    } else {
       return await loadData();
     }
   }
