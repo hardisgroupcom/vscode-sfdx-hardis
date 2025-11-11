@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [6.17.2] 2024-11-10
+
 - Live DevOps Pipeline enhancements & fixes
   - Sort pending PRs by merge date descending in branch configuration
   - Optimize loading performances
