@@ -64,7 +64,7 @@ export class GitProviderGitHub extends GitProvider {
       owner,
       repo,
       state: "open",
-      per_page: 100,
+      per_page: 1000,
     });
     await this.logApiCall("pulls.list", {
       caller: "listOpenPullRequests",
@@ -177,7 +177,7 @@ export class GitProviderGitHub extends GitProvider {
             repo,
             state: "closed",
             base: branchName,
-            per_page: 100,
+            per_page: 1000,
           });
           await this.logApiCall("pulls.list", {
             caller: "listPullRequestsInBranchSinceLastMerge",
