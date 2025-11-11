@@ -181,9 +181,23 @@ export class GitProviderAzure extends GitProvider {
   }
 
   async listOpenPullRequests(): Promise<PullRequest[]> {
-    return this.listPullRequestsWithCriteria({
-      status: PullRequestStatus.Active,
-    });
+    if (!this.repoInfo || !this.gitApi) {
+      return [];
+    }
+    try {
+      const prs = await this.gitApi.getPullRequests(
+        this.repoInfo.repo,
+        {
+          status: PullRequestStatus.Active,
+        },
+        this.repoInfo.owner,
+      );
+      return await this.convertAndCollectJobsList(prs || [], "", {
+        withJobs: true,
+      });
+    } catch {
+      return [];
+    }
   }
 
   async getActivePullRequestFromBranch(
@@ -200,6 +214,9 @@ export class GitProviderAzure extends GitProvider {
           status: PullRequestStatus.Active,
         },
         this.repoInfo.owner,
+        undefined,
+        undefined,
+        1, // top: only need the first one
       );
       await this.logApiCall("gitApi.getPullRequests", { caller: "getActivePullRequestFromBranch", sourceRefName: `refs/heads/${branchName}`, status: "Active" });
       if (!prs || prs.length === 0) {
@@ -238,6 +255,9 @@ export class GitProviderAzure extends GitProvider {
           status: PullRequestStatus.Completed,
         },
         this.repoInfo.owner,
+        undefined,
+        undefined,
+        1, // top: only need the latest one
       );
       await this.logApiCall("gitApi.getPullRequests", { caller: "listPullRequestsInBranchSinceLastMerge", action: "findLastMerged", sourceRefName: `refs/heads/${currentBranchName}`, targetRefName: `refs/heads/${targetBranchName}`, status: "Completed" });
 
@@ -391,28 +411,6 @@ export class GitProviderAzure extends GitProvider {
       Logger.log(
         `Error in listPullRequestsInBranchSinceLastMerge: ${String(err)}`,
       );
-      return [];
-    }
-  }
-
-  private async listPullRequestsWithCriteria(
-    searchCriteria: any,
-    branchName: string = "",
-  ): Promise<PullRequest[]> {
-    if (!this.repoInfo || !this.gitApi) {
-      return [];
-    }
-
-    try {
-      const prs = await this.gitApi.getPullRequests(
-        this.repoInfo.repo,
-        searchCriteria,
-        this.repoInfo.owner,
-      );
-      return await this.convertAndCollectJobsList(prs || [], branchName, {
-        withJobs: true,
-      });
-    } catch {
       return [];
     }
   }
