@@ -1044,7 +1044,7 @@ export default class Pipeline extends LightningElement {
     }
 
     // Set interval based on visibility: 1 minute if visible, 5 minutes if not
-    const interval = this._isVisible ? 60000 : 300000; // 60s or 300s
+    const interval = this._isVisible ? 60000 : 600000; // 60s or 600s (10min)
 
     this._refreshTimer = setInterval(() => {
       console.log("Auto-refreshing pipeline (visible:", this._isVisible, ")");

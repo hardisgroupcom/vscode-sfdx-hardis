@@ -66,6 +66,7 @@ export class GitProviderBitbucket extends GitProvider {
             workspace: this.workspace,
             repo_slug: this.repoSlug,
           } as any);
+          await this.logApiCall("repositories.get", { caller: "initialize" });
           this.isActive = true;
         } catch (err) {
           Logger.log(
@@ -92,6 +93,9 @@ export class GitProviderBitbucket extends GitProvider {
         workspace: this.workspace,
         repo_slug: this.repoSlug,
       } as any);
+      await this.logApiCall("pullrequests.list", {
+        caller: "listOpenPullRequests",
+      });
       const values =
         response && response.data && response.data.values
           ? response.data.values
@@ -115,6 +119,10 @@ export class GitProviderBitbucket extends GitProvider {
         repo_slug: this.repoSlug,
         q: `source.branch.name = "${branchName}" AND state = "OPEN"`,
       } as any);
+      await this.logApiCall("pullrequests.list", {
+        caller: "getActivePullRequestFromBranch",
+        q: `source.branch.name = "${branchName}" AND state = "OPEN"`,
+      });
       const values =
         response && response.data && response.data.values
           ? response.data.values
@@ -151,6 +159,11 @@ export class GitProviderBitbucket extends GitProvider {
         repo_slug: this.repoSlug,
         q: `source.branch.name = "${currentBranchName}" AND destination.branch.name = "${targetBranchName}" AND state = "MERGED"`,
       } as any);
+      await this.logApiCall("pullrequests.list", {
+        caller: "listPullRequestsInBranchSinceLastMerge",
+        action: "findLastMerged",
+        q: `source.branch.name = "${currentBranchName}" AND destination.branch.name = "${targetBranchName}" AND state = "MERGED"`,
+      });
 
       const lastMergePRs =
         lastMergeResponse &&
@@ -170,6 +183,13 @@ export class GitProviderBitbucket extends GitProvider {
           ? lastMergeToTarget.merge_commit?.hash
           : targetBranchName,
       } as any);
+      await this.logApiCall("commits.list", {
+        caller: "listPullRequestsInBranchSinceLastMerge",
+        include: currentBranchName,
+        exclude: lastMergeToTarget
+          ? lastMergeToTarget.merge_commit?.hash
+          : targetBranchName,
+      });
 
       const commits =
         commitsResponse && commitsResponse.data && commitsResponse.data.values
@@ -192,6 +212,11 @@ export class GitProviderBitbucket extends GitProvider {
             repo_slug: this.repoSlug!,
             q: `destination.branch.name = "${branchName}" AND state = "MERGED"`,
           } as any);
+          await this.logApiCall("pullrequests.list", {
+            caller: "listPullRequestsInBranchSinceLastMerge",
+            action: "fetchMergedPRs",
+            q: `destination.branch.name = "${branchName}" AND state = "MERGED"`,
+          });
 
           const values =
             response && response.data && response.data.values
@@ -269,7 +294,7 @@ export class GitProviderBitbucket extends GitProvider {
   }
 
   // Fetch pipelines for a Bitbucket PR (Bitbucket Cloud). Best-effort: query pipelines by commit/branch
-  private async fetchLatestJobsForPrBitbucket(
+  private async fetchLatestJobsForPullRequest(
     rawPr: any,
     pr: PullRequest,
   ): Promise<Job[]> {
@@ -292,6 +317,10 @@ export class GitProviderBitbucket extends GitProvider {
         q,
         sort: "-created_on",
       } as any);
+      await this.logApiCall("pipelines.list", {
+        caller: "fetchLatestJobsForPullRequest",
+        q: q,
+      });
       const values =
         response && response.data && response.data.values
           ? response.data.values
@@ -299,26 +328,20 @@ export class GitProviderBitbucket extends GitProvider {
       if (!values || values.length === 0) {
         return [];
       }
-      const pipeline = values[0];
+      const pipeline1 = values[0];
       // Map pipeline steps to PullRequestJob if available
-      const p: any = pipeline as any;
+      const pipeline: any = pipeline1 as any;
       const converted: Job[] = [
         {
-          name: String((p && p.target && p.target.ref_name) || p.id || ""),
-          status: String(
-            (p &&
-              p.state &&
-              ((p.state.result && p.state.result.name) || p.state.name)) ||
-              "",
-          ) as Job["status"],
-          webUrl:
-            String(
-              (p && p.links && p.links.html && p.links.html.href) || undefined,
-            ) || undefined,
-          updatedAt:
-            String((p && (p.updated_on || p.created_on)) || undefined) ||
-            undefined,
-          raw: p,
+          name:
+            pipeline?.target?.selector?.target ||
+            pipeline.target?.type ||
+            pipeline.uuid ||
+            "Default pipeline name",
+          status: this.mapPipelineStateToJobStatus(pipeline.state),
+          webUrl: pipeline.links?.html?.href || undefined,
+          updatedAt: pipeline.updated_on || undefined,
+          raw: pipeline,
         },
       ];
       return converted;
@@ -341,6 +364,10 @@ export class GitProviderBitbucket extends GitProvider {
         q: `target.ref_name = "${branchName}"`,
         sort: "-created_on",
       } as any);
+      await this.logApiCall("pipelines.list", {
+        caller: "getJobsForBranchLatestCommit",
+        q: `target.ref_name = "${branchName}"`,
+      });
       const values =
         response && response.data && response.data.values
           ? response.data.values
@@ -361,30 +388,70 @@ export class GitProviderBitbucket extends GitProvider {
       }
 
       // Use the most recent commit-triggered pipeline
-      const pipeline = commitPipelines[0];
-      const p: any = pipeline as any;
+      const pipeline1 = commitPipelines[0];
+      const pipeline = pipeline1 as any;
       const job: Job = {
-        name: String((p && p.target && p.target.ref_name) || p.id || ""),
-        status: String(
-          (p &&
-            p.state &&
-            ((p.state.result && p.state.result.name) || p.state.name)) ||
-            "",
-        ) as JobStatus,
-        webUrl:
-          String(
-            (p && p.links && p.links.html && p.links.html.href) || undefined,
-          ) || undefined,
-        updatedAt:
-          String((p && (p.updated_on || p.created_on)) || undefined) ||
-          undefined,
-        raw: p,
+        name:
+          pipeline?.target?.selector?.target ||
+          pipeline.target?.type ||
+          pipeline.uuid ||
+          "Default pipeline name",
+        status: this.mapPipelineStateToJobStatus(pipeline.state),
+        webUrl: pipeline.links?.html?.href || undefined,
+        updatedAt: pipeline.updated_on || undefined,
+        raw: pipeline,
       };
       return { jobs: [job], jobsStatus: this.computeJobsStatus([job]) };
     } catch (e) {
       Logger.log(`Error fetching jobs for branch ${branchName}: ${String(e)}`);
       return null;
     }
+  }
+
+  private mapPipelineStateToJobStatus(
+    state: Schema.PipelineState | undefined,
+  ): JobStatus {
+    if (!state) {
+      return "unknown";
+    }
+    // Bitbucket Pipeline state structure:
+    // - state.name: Current stage (e.g., "PENDING", "IN_PROGRESS", "COMPLETED")
+    // - state.result.name: Final result (e.g., "SUCCESSFUL", "FAILED", "STOPPED", "ERROR")
+    // Priority: check result first for completed pipelines, then stage
+    const stateAny = state as any;
+    const resultName = stateAny.result?.name;
+    const stageName = stateAny.name;
+    const statusString = resultName || stageName;
+    if (!statusString) {
+      return "unknown";
+    }
+    const statusLower = String(statusString).toLowerCase();
+    // Map Bitbucket pipeline states to JobStatus
+    // Stage states
+    if (statusLower === "pending" || statusLower === "queued") {
+      return "pending";
+    }
+    if (statusLower === "in_progress" || statusLower === "running") {
+      return "running";
+    }
+    // Result states (for completed pipelines)
+    if (statusLower === "successful" || statusLower === "passed") {
+      return "success";
+    }
+    if (
+      statusLower === "failed" ||
+      statusLower === "error" ||
+      statusLower === "stopped" ||
+      statusLower === "expired" ||
+      statusLower === "unhandled"
+    ) {
+      return "failed";
+    }
+    // If completed but no clear result
+    if (statusLower === "completed") {
+      return "unknown";
+    }
+    return "unknown";
   }
 
   // Helper to convert raw Bitbucket PR and attach jobs/jobsStatus
@@ -401,7 +468,7 @@ export class GitProviderBitbucket extends GitProvider {
         const conv = this.convertToPullRequest(r);
         if (options.withJobs === true) {
           try {
-            const jobs = await this.fetchLatestJobsForPrBitbucket(r, conv);
+            const jobs = await this.fetchLatestJobsForPullRequest(r, conv);
             conv.jobs = jobs;
             conv.jobsStatus = this.computeJobsStatus(jobs);
           } catch (e) {

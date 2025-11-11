@@ -82,11 +82,15 @@ export class GitProviderGitlab extends GitProvider {
         try {
           // validate token by calling the user endpoint first
           const currentUser = await this.gitlabClient.Users.showCurrentUser();
+          await this.logApiCall("Users.showCurrentUser", {
+            caller: "initialize",
+          });
           if (currentUser && currentUser.id) {
             // Find related project Id
             const project = await this.gitlabClient.Projects.show(
               this.gitlabProjectPath,
             );
+            await this.logApiCall("Projects.show", { caller: "initialize" });
             if (project && project.id) {
               this.gitlabProjectId = project.id;
               this.isActive = true;
@@ -122,6 +126,11 @@ export class GitProviderGitlab extends GitProvider {
     const mergeRequests = await this.gitlabClient!.MergeRequests.all({
       projectId: this.gitlabProjectId!,
       state: "opened",
+      perPage: 100,
+    });
+    await this.logApiCall("MergeRequests.all", {
+      caller: "listOpenPullRequests",
+      state: "opened",
     });
     return await this.convertAndCollectJobsList(mergeRequests, {
       withJobs: true,
@@ -139,7 +148,14 @@ export class GitProviderGitlab extends GitProvider {
         projectId: this.gitlabProjectId,
         sourceBranch: branchName,
         state: "opened",
-        perPage: 1,
+        perPage: 2,
+        orderBy: "updated_at",
+        sort: "desc",
+      });
+      await this.logApiCall("MergeRequests.all", {
+        caller: "getActivePullRequestFromBranch",
+        sourceBranch: branchName,
+        state: "opened",
       });
       if (!mergeRequests || mergeRequests.length === 0) {
         return null;
@@ -198,6 +214,11 @@ export class GitProviderGitlab extends GitProvider {
             targetBranch: branchName,
             state: "merged",
             perPage: 100,
+          });
+          await this.logApiCall("MergeRequests.all", {
+            caller: "listPullRequestsInBranchSinceLastMerge",
+            action: "fetchMergedMRs",
+            targetBranch: branchName,
           });
           return mergedMRs;
         } catch (err) {
@@ -272,6 +293,12 @@ export class GitProviderGitlab extends GitProvider {
         orderBy: "updated_at",
         sort: "desc",
         perPage: 1,
+        maxPages: 1,
+      });
+      await this.logApiCall("MergeRequests.all", {
+        caller: "findLastMergedMR",
+        sourceBranch,
+        targetBranch,
       });
 
       return mergedMRs.length > 0 ? mergedMRs[0] : null;
@@ -313,6 +340,10 @@ export class GitProviderGitlab extends GitProvider {
         this.gitlabProjectId!,
         options,
       );
+      await this.logApiCall("Commits.all", {
+        caller: "getCommitsSinceLastMerge",
+        ...options,
+      });
 
       return commits || [];
     } catch (err) {
@@ -339,7 +370,7 @@ export class GitProviderGitlab extends GitProvider {
         const pr = this.convertToPullRequest(mr);
         if (options.withJobs === true) {
           try {
-            const jobs = await this.fetchLatestJobsForMergeRequest(mr);
+            const jobs = await this.fetchLatestJobsForPullRequest(mr);
             pr.jobs = jobs;
             pr.jobsStatus = this.computeJobsStatus(jobs);
           } catch (e) {
@@ -356,7 +387,7 @@ export class GitProviderGitlab extends GitProvider {
 
   // Fetch jobs for the latest pipeline related to the merge request.
   // Prefer mr.head_pipeline if available, otherwise try pipelines by SHA or MR pipelines endpoint.
-  private async fetchLatestJobsForMergeRequest(
+  private async fetchLatestJobsForPullRequest(
     mr:
       | MergeRequestSchemaWithBasicLabels
       | Camelize<MergeRequestSchemaWithBasicLabels>,
@@ -369,6 +400,15 @@ export class GitProviderGitlab extends GitProvider {
       try {
         // @ts-ignore - method signature may differ across gitbeaker versions
         pipelines = await this.gitlabClient?.Pipelines.all(projectId, {
+          sha: mr.sha,
+          perPage: 5,
+          maxPages: 1,
+          orderBy: "updated_at",
+          sort: "desc",
+        });
+        await this.logApiCall("Pipelines.all", {
+          caller: "fetchLatestJobsForPullRequest",
+          pr: mrIid,
           sha: mr.sha,
         });
       } catch (e) {
@@ -410,6 +450,14 @@ export class GitProviderGitlab extends GitProvider {
       try {
         // @ts-ignore - method signature may differ across gitbeaker versions
         pipelines = await this.gitlabClient.Pipelines.all(projectId, {
+          ref: branchName,
+          orderBy: "updated_at",
+          sort: "desc",
+          perPage: 5,
+          maxPages: 1,
+        });
+        await this.logApiCall("Pipelines.all", {
+          caller: "getJobsForBranchLatestCommit",
           ref: branchName,
           perPage: 10,
         });

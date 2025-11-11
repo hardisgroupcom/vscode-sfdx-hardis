@@ -1,3 +1,4 @@
+import * as vscode from "vscode";
 import simpleGit from "simple-git";
 import type {
   ProviderDescription,
@@ -7,12 +8,14 @@ import type {
   RepoInfo,
   JobStatus,
 } from "./types";
-import { getWorkspaceRoot } from "../../utils";
+import { getReportDirectory, getWorkspaceRoot } from "../../utils";
 import { Logger } from "../../logger";
 import { SecretsManager } from "../secretsManager";
 import { TicketProvider } from "../ticketProviders/ticketProvider";
 import { Ticket } from "../ticketProviders/types";
 import { listPrePostCommandsForPullRequest } from "../prePostCommandsUtils";
+import path from "path";
+import fs from "fs-extra";
 
 export class GitProvider {
   static instance: GitProvider;
@@ -20,6 +23,9 @@ export class GitProvider {
   isActive: boolean = false;
   repoInfo: RepoInfo | null = null;
   hostKey: string = "";
+  isLoggerOn: boolean = false;
+  apiCallsCounter: number = 0;
+  apiCallsLogs: any[] = [];
 
   static async getInstance(reset = false): Promise<GitProvider | null> {
     if (!this.instance || reset === true) {
@@ -57,6 +63,11 @@ export class GitProvider {
       );
       this.instance.hostKey = gitInfo.host.replace(/\./g, "_").toUpperCase();
       await this.instance.initialize();
+      const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+      this.instance.isLoggerOn = config.get("debugVsCodeSfdxHardis") ?? false;
+      if (this.instance.isLoggerOn) {
+        this.instance.setIntervalWriteApiLogs();
+      }
     }
     return this.instance;
   }
@@ -242,6 +253,18 @@ export class GitProvider {
     return false;
   }
 
+  async logApiCall(endpointOrMethod: string, params: any = {}): Promise<void> {
+    if (!this.isLoggerOn) {
+      return;
+    }
+    this.apiCallsCounter += 1;
+    this.apiCallsLogs.push({
+      endpointOrMethod: endpointOrMethod,
+      params: params,
+      dateTime: new Date().toISOString(),
+    });
+  }
+
   async completePullRequestsWithTickets(
     _pullRequests: PullRequest[],
     options: { fetchDetails: boolean } = { fetchDetails: false },
@@ -388,5 +411,38 @@ export class GitProvider {
       `getCreatePullRequestUrl not implemented on ${this.repoInfo?.providerName || "unknown provider"}`,
     );
     return null;
+  }
+
+  private async setIntervalWriteApiLogs() {
+    const reportDir = await getReportDirectory();
+    // get time when logging started and convert as string for log file name
+    const logTime = new Date().toISOString().replace(/[:.]/g, "-");
+    const reportFile = path.join(
+      reportDir,
+      "vscode_sfdx_hardis",
+      "gitProviders",
+      `${logTime}.csv`,
+    );
+    await fs.ensureDir(path.dirname(reportFile));
+    const csvHeader = "DateTime,Endpoint or Method,Caller,Params(json)\n";
+    await fs.writeFile(reportFile, csvHeader, { encoding: "utf8" });
+    setInterval(async () => {
+      if (this.apiCallsLogs.length === 0) {
+        return;
+      }
+      const toWrite = this.apiCallsLogs;
+      this.apiCallsLogs = [];
+      let logLines = "";
+      for (const logEntry of toWrite) {
+        const dateTime = logEntry.dateTime || "";
+        const endpointOrMethod = logEntry.endpointOrMethod || "";
+        const caller = logEntry.params?.caller || "";
+        const params = { ...logEntry.params };
+        delete params.caller;
+        const paramsJson = JSON.stringify(params).replace(/"/g, '""');
+        logLines += `${dateTime},"${endpointOrMethod}","${caller}","${paramsJson}"\n`;
+      }
+      await fs.appendFile(reportFile, logLines, { encoding: "utf8" });
+    }, 5 * 1000); // every 5 seconds
   }
 }

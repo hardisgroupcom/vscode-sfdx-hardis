@@ -18,6 +18,8 @@ import path from "path";
 import fs from "fs-extra";
 
 export function registerShowPipeline(commands: Commands) {
+  let loadInProgress: Promise<PipelineInfo> | null = null;
+
   const disposable = vscode.commands.registerCommand(
     "vscode-sfdx-hardis.showPipeline",
     async () => {
@@ -252,20 +254,30 @@ export function registerShowPipeline(commands: Commands) {
   );
   commands.disposables.push(disposable);
 
-  async function loadAllPipelineInfo(options: {
-    browseGitProvider: boolean;
-    resetGit: boolean;
-    withProgress?: boolean;
-  }): Promise<{
-    pipelineData: any;
-    gitAuthenticated: boolean;
-    ticketAuthenticated?: boolean;
-    ticketProviderName?: string;
-    prButtonInfo: any;
-    openPullRequests: PullRequest[];
-    repoPlatformLabel: string;
-    displayFeatureBranches: boolean;
-  }> {
+  async function loadAllPipelineInfo(
+    options: LoadPipelineOptions,
+  ): Promise<PipelineInfo> {
+    // If a load is already in progress, wait for it to complete
+    if (loadInProgress) {
+      Logger.log(
+        "Pipeline load already in progress, waiting for completion...",
+      );
+      return await loadInProgress;
+    }
+    // Start new load and track it
+    loadInProgress = processLoadAllPipelineInfo(options);
+    try {
+      const result = await loadInProgress;
+      return result;
+    } finally {
+      // Clear the in-progress flag when done
+      loadInProgress = null;
+    }
+  }
+
+  async function processLoadAllPipelineInfo(
+    options: LoadPipelineOptions,
+  ): Promise<PipelineInfo> {
     const withProgress = options?.withProgress ?? true;
 
     const loadData = async () => {
@@ -418,3 +430,23 @@ export function registerShowPipeline(commands: Commands) {
     }
   }
 }
+
+type LoadPipelineOptions = {
+  browseGitProvider: boolean;
+  resetGit: boolean;
+  withProgress?: boolean;
+};
+
+type PipelineInfo = {
+  pipelineData: any;
+  gitAuthenticated: boolean;
+  ticketAuthenticated?: boolean;
+  ticketProviderName?: string;
+  prButtonInfo: any;
+  currentBranchPullRequest?: PullRequest | null;
+  openPullRequests: PullRequest[];
+  repoPlatformLabel: string;
+  displayFeatureBranches: boolean;
+  projectApexScripts: any[];
+  projectSfdmuWorkspaces: any[];
+};
