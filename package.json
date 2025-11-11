@@ -83,6 +83,11 @@
           "default": false,
           "description": "Adds NODE_OPTIONS=--inspect-brk to sfdx-hardis commands to debug them in VsCode"
         },
+        "vsCodeSfdxHardis.debugVsCodeSfdxHardis": {
+          "type": "boolean",
+          "default": false,
+          "description": "Activate more internal logs in order to investigate issues with this VS Code Extension"
+        },
         "vsCodeSfdxHardis.disableDefaultOrgAuthenticationCheck": {
           "type": "boolean",
           "default": false,

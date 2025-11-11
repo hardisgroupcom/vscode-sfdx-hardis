@@ -47,6 +47,7 @@ export const sectionDefs = [
     description: "Other settings related to the extension.",
     keys: [
       "vsCodeSfdxHardis.debugSfdxHardisCommands",
+      "vsCodeSfdxHardis.debugVsCodeSfdxHardis",
       "vsCodeSfdxHardis.disableGitBashCheck",
       "vsCodeSfdxHardis.disableGitMergeRequiredCheck",
       "vsCodeSfdxHardis.ignoreSfdxCliRecommendedVersion",

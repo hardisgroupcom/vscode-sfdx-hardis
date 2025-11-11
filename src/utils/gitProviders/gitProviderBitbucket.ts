@@ -66,6 +66,7 @@ export class GitProviderBitbucket extends GitProvider {
             workspace: this.workspace,
             repo_slug: this.repoSlug,
           } as any);
+          await this.logApiCall("repositories.get", { caller: "initialize" });
           this.isActive = true;
         } catch (err) {
           Logger.log(
@@ -92,6 +93,7 @@ export class GitProviderBitbucket extends GitProvider {
         workspace: this.workspace,
         repo_slug: this.repoSlug,
       } as any);
+      await this.logApiCall("pullrequests.list", { caller: "listOpenPullRequests" });
       const values =
         response && response.data && response.data.values
           ? response.data.values
@@ -115,6 +117,7 @@ export class GitProviderBitbucket extends GitProvider {
         repo_slug: this.repoSlug,
         q: `source.branch.name = "${branchName}" AND state = "OPEN"`,
       } as any);
+      await this.logApiCall("pullrequests.list", { caller: "getActivePullRequestFromBranch", q: `source.branch.name = "${branchName}" AND state = "OPEN"` });
       const values =
         response && response.data && response.data.values
           ? response.data.values
@@ -151,6 +154,7 @@ export class GitProviderBitbucket extends GitProvider {
         repo_slug: this.repoSlug,
         q: `source.branch.name = "${currentBranchName}" AND destination.branch.name = "${targetBranchName}" AND state = "MERGED"`,
       } as any);
+      await this.logApiCall("pullrequests.list", { caller: "listPullRequestsInBranchSinceLastMerge", action: "findLastMerged", q: `source.branch.name = "${currentBranchName}" AND destination.branch.name = "${targetBranchName}" AND state = "MERGED"` });
 
       const lastMergePRs =
         lastMergeResponse &&
@@ -170,6 +174,7 @@ export class GitProviderBitbucket extends GitProvider {
           ? lastMergeToTarget.merge_commit?.hash
           : targetBranchName,
       } as any);
+      await this.logApiCall("commits.list", { caller: "listPullRequestsInBranchSinceLastMerge", include: currentBranchName });
 
       const commits =
         commitsResponse && commitsResponse.data && commitsResponse.data.values
@@ -192,6 +197,7 @@ export class GitProviderBitbucket extends GitProvider {
             repo_slug: this.repoSlug!,
             q: `destination.branch.name = "${branchName}" AND state = "MERGED"`,
           } as any);
+          await this.logApiCall("pullrequests.list", { caller: "listPullRequestsInBranchSinceLastMerge", action: "fetchMergedPRs", q: `destination.branch.name = "${branchName}" AND state = "MERGED"` });
 
           const values =
             response && response.data && response.data.values
@@ -292,6 +298,7 @@ export class GitProviderBitbucket extends GitProvider {
         q,
         sort: "-created_on",
       } as any);
+      await this.logApiCall("pipelines.list", { caller: "fetchLatestJobsForPullRequest" });
       const values =
         response && response.data && response.data.values
           ? response.data.values
@@ -341,6 +348,7 @@ export class GitProviderBitbucket extends GitProvider {
         q: `target.ref_name = "${branchName}"`,
         sort: "-created_on",
       } as any);
+      await this.logApiCall("pipelines.list", { caller: "getJobsForBranchLatestCommit", q: `target.ref_name = "${branchName}"` });
       const values =
         response && response.data && response.data.values
           ? response.data.values

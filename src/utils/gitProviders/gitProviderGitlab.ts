@@ -82,11 +82,13 @@ export class GitProviderGitlab extends GitProvider {
         try {
           // validate token by calling the user endpoint first
           const currentUser = await this.gitlabClient.Users.showCurrentUser();
+          await this.logApiCall("Users.showCurrentUser", { caller: "initialize" });
           if (currentUser && currentUser.id) {
             // Find related project Id
             const project = await this.gitlabClient.Projects.show(
               this.gitlabProjectPath,
             );
+            await this.logApiCall("Projects.show", { caller: "initialize" });
             if (project && project.id) {
               this.gitlabProjectId = project.id;
               this.isActive = true;
@@ -123,6 +125,7 @@ export class GitProviderGitlab extends GitProvider {
       projectId: this.gitlabProjectId!,
       state: "opened",
     });
+    await this.logApiCall("MergeRequests.all", { caller: "listOpenPullRequests", state: "opened" });
     return await this.convertAndCollectJobsList(mergeRequests, {
       withJobs: true,
     });
@@ -141,6 +144,7 @@ export class GitProviderGitlab extends GitProvider {
         state: "opened",
         perPage: 1,
       });
+      await this.logApiCall("MergeRequests.all", { caller: "getActivePullRequestFromBranch", sourceBranch: branchName, state: "opened" });
       if (!mergeRequests || mergeRequests.length === 0) {
         return null;
       }
@@ -199,6 +203,7 @@ export class GitProviderGitlab extends GitProvider {
             state: "merged",
             perPage: 100,
           });
+          await this.logApiCall("MergeRequests.all", { caller: "listPullRequestsInBranchSinceLastMerge", action: "fetchMergedMRs", targetBranch: branchName });
           return mergedMRs;
         } catch (err) {
           Logger.log(
@@ -273,6 +278,7 @@ export class GitProviderGitlab extends GitProvider {
         sort: "desc",
         perPage: 1,
       });
+      await this.logApiCall("MergeRequests.all", { caller: "findLastMergedMR", sourceBranch, targetBranch });
 
       return mergedMRs.length > 0 ? mergedMRs[0] : null;
     } catch (err) {
@@ -313,6 +319,7 @@ export class GitProviderGitlab extends GitProvider {
         this.gitlabProjectId!,
         options,
       );
+      await this.logApiCall("Commits.all", { caller: "getCommitsSinceLastMerge", refName: options.refName });
 
       return commits || [];
     } catch (err) {
@@ -371,6 +378,7 @@ export class GitProviderGitlab extends GitProvider {
         pipelines = await this.gitlabClient?.Pipelines.all(projectId, {
           sha: mr.sha,
         });
+        await this.logApiCall("Pipelines.all", { caller: "fetchLatestJobsForPullRequest" });
       } catch (e) {
         Logger.log(`Error fetching pipelines for MR !${mrIid}: ${String(e)}`);
         return [];
@@ -413,6 +421,7 @@ export class GitProviderGitlab extends GitProvider {
           ref: branchName,
           perPage: 10,
         });
+        await this.logApiCall("Pipelines.all", { caller: "getJobsForBranchLatestCommit", ref: branchName, perPage: 10 });
       } catch (e) {
         Logger.log(
           `Error fetching pipelines for branch ${branchName}: ${String(e)}`,
