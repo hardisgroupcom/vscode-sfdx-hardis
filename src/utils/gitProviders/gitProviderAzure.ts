@@ -506,6 +506,7 @@ export class GitProviderAzure extends GitProvider {
       // Use server-side filtering with exact branch reference
       // reasonFilter excludes PR-triggered builds (256 = PullRequest)
       // Azure DevOps uses refs/heads/{branch} format for branch builds
+      // queryOrder 4 = QueueTimeDescending to get most recently triggered build first
       const builds = await buildApi.getBuilds(
         this.repoInfo.owner, // project
         undefined, // definitions
@@ -523,7 +524,7 @@ export class GitProviderAzure extends GitProvider {
         undefined, // continuationToken
         undefined, // maxBuildsPerDefinition
         undefined, // deletedFilter
-        undefined, // queryOrder
+        4, // queryOrder: QueueTimeDescending (4) ensures most recently triggered build first
         `refs/heads/${branchName}`, // branchName: exact branch reference
       );
 

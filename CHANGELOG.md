@@ -5,7 +5,8 @@
 ## [6.17.1] 2024-11-10
 
 - Refactors PR fetching to optimize job collection
-- Fix ways to collect GitHub workflows
+- GitHub integration: Fix ways to collect GitHub workflows
+- Azure DevOps: Fix way to collect latest build from a branch
 - Fix mermaid node name sanitization to avoid multiple consecutive hyphens (mermaid crashes in that case)
 - Create actions folder if not existing when saving PR config file
 
