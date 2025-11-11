@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [6.17.1] 2024-11-10
+
 - Refactors PR fetching to optimize job collection
 - Fix ways to collect GitHub workflows
 - Fix mermaid node name sanitization to avoid multiple consecutive hyphens (mermaid crashes in that case)
