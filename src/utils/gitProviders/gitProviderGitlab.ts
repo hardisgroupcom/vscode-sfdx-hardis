@@ -339,7 +339,7 @@ export class GitProviderGitlab extends GitProvider {
         const pr = this.convertToPullRequest(mr);
         if (options.withJobs === true) {
           try {
-            const jobs = await this.fetchLatestJobsForMergeRequest(mr);
+            const jobs = await this.fetchLatestJobsForPullRequest(mr);
             pr.jobs = jobs;
             pr.jobsStatus = this.computeJobsStatus(jobs);
           } catch (e) {
@@ -356,7 +356,7 @@ export class GitProviderGitlab extends GitProvider {
 
   // Fetch jobs for the latest pipeline related to the merge request.
   // Prefer mr.head_pipeline if available, otherwise try pipelines by SHA or MR pipelines endpoint.
-  private async fetchLatestJobsForMergeRequest(
+  private async fetchLatestJobsForPullRequest(
     mr:
       | MergeRequestSchemaWithBasicLabels
       | Camelize<MergeRequestSchemaWithBasicLabels>,

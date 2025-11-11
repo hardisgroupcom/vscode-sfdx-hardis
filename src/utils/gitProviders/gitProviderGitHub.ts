@@ -252,7 +252,7 @@ export class GitProviderGitHub extends GitProvider {
         repo,
         head_sha: latestCommitSha,
         event: "pull_request",
-        per_page: 10,
+        per_page: 50,
       });
       const runs = runsResp.data && runsResp.data.workflow_runs;
 

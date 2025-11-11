@@ -269,7 +269,7 @@ export class GitProviderBitbucket extends GitProvider {
   }
 
   // Fetch pipelines for a Bitbucket PR (Bitbucket Cloud). Best-effort: query pipelines by commit/branch
-  private async fetchLatestJobsForPrBitbucket(
+  private async fetchLatestJobsForPullRequest(
     rawPr: any,
     pr: PullRequest,
   ): Promise<Job[]> {
@@ -361,30 +361,64 @@ export class GitProviderBitbucket extends GitProvider {
       }
 
       // Use the most recent commit-triggered pipeline
-      const pipeline = commitPipelines[0];
-      const p: any = pipeline as any;
+      const pipeline1 = commitPipelines[0];
+      const pipeline = pipeline1 as any;
       const job: Job = {
-        name: String((p && p.target && p.target.ref_name) || p.id || ""),
-        status: String(
-          (p &&
-            p.state &&
-            ((p.state.result && p.state.result.name) || p.state.name)) ||
-            "",
-        ) as JobStatus,
-        webUrl:
-          String(
-            (p && p.links && p.links.html && p.links.html.href) || undefined,
-          ) || undefined,
-        updatedAt:
-          String((p && (p.updated_on || p.created_on)) || undefined) ||
-          undefined,
-        raw: p,
+        name: pipeline?.target?.selector?.target || pipeline.target?.type || pipeline.uuid || "Default pipeline name",
+        status: this.mapPipelineStateToJobStatus(pipeline.state),
+        webUrl: pipeline.links?.html?.href || undefined,
+        updatedAt: pipeline.updated_on || undefined,
+        raw: pipeline,
       };
       return { jobs: [job], jobsStatus: this.computeJobsStatus([job]) };
     } catch (e) {
       Logger.log(`Error fetching jobs for branch ${branchName}: ${String(e)}`);
       return null;
     }
+  }
+
+  private mapPipelineStateToJobStatus(state: Schema.PipelineState | undefined): JobStatus {
+    if (!state) {
+      return "unknown";
+    }
+    // Bitbucket Pipeline state structure:
+    // - state.name: Current stage (e.g., "PENDING", "IN_PROGRESS", "COMPLETED")
+    // - state.result.name: Final result (e.g., "SUCCESSFUL", "FAILED", "STOPPED", "ERROR")
+    // Priority: check result first for completed pipelines, then stage
+    const stateAny = state as any;
+    const resultName = stateAny.result?.name;
+    const stageName = stateAny.name;
+    const statusString = resultName || stageName;
+    if (!statusString) {
+      return "unknown";
+    }
+    const statusLower = String(statusString).toLowerCase();
+    // Map Bitbucket pipeline states to JobStatus
+    // Stage states
+    if (statusLower === "pending" || statusLower === "queued") {
+      return "pending";
+    }
+    if (statusLower === "in_progress" || statusLower === "running") {
+      return "running";
+    }
+    // Result states (for completed pipelines)
+    if (statusLower === "successful" || statusLower === "passed") {
+      return "success";
+    }
+    if (
+      statusLower === "failed" ||
+      statusLower === "error" ||
+      statusLower === "stopped" ||
+      statusLower === "expired" ||
+      statusLower === "unhandled"
+    ) {
+      return "failed";
+    }
+    // If completed but no clear result
+    if (statusLower === "completed") {
+      return "unknown";
+    }
+    return "unknown";
   }
 
   // Helper to convert raw Bitbucket PR and attach jobs/jobsStatus
@@ -401,7 +435,7 @@ export class GitProviderBitbucket extends GitProvider {
         const conv = this.convertToPullRequest(r);
         if (options.withJobs === true) {
           try {
-            const jobs = await this.fetchLatestJobsForPrBitbucket(r, conv);
+            const jobs = await this.fetchLatestJobsForPullRequest(r, conv);
             conv.jobs = jobs;
             conv.jobsStatus = this.computeJobsStatus(jobs);
           } catch (e) {
