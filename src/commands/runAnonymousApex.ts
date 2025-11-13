@@ -12,6 +12,7 @@ export async function registerRunAnonymousApex(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
     "vscode-sfdx-hardis.runAnonymousApex",
     async (params) => {
+      let codeAnalyzerIsInstalled = false;
       // Get anonymous apex from the file (if context menu of file) or from the current editor (if right click in an .apex file editor)
       const reportDir = await getReportDirectory();
       const anonymousApexReportDir = `${reportDir}/anonymousApex`;
@@ -108,21 +109,59 @@ System.debug('sfdx-hardis rocks !!!');
         logFile: string,
       ) => {
         const openLogAction = "Open Log";
+        const openLogActionDebugOnly = "Open Log (debug only)"
+        const openAnalysisLog = "Open Log (Analysis)";
         let selection: string | undefined;
         if (type === "info") {
           selection = await vscode.window.showInformationMessage(
             message,
             openLogAction,
+            openLogActionDebugOnly,
+            openAnalysisLog
           );
         } else {
           selection = await vscode.window.showErrorMessage(
             message,
             openLogAction,
+            openLogActionDebugOnly,
+            openAnalysisLog
           );
         }
         if (selection === openLogAction) {
           const document = await vscode.workspace.openTextDocument(logFile);
           await vscode.window.showTextDocument(document);
+        }
+        else if (selection === openLogActionDebugOnly) {
+          const logFileVsCodeUri = vscode.Uri.file(logFile);
+          vscode.commands.executeCommand(
+            "vscode-sfdx-hardis.displayLogDebugOnly",
+            logFileVsCodeUri,
+          );
+        }
+        else if (selection === openAnalysisLog) {
+          // Check if the Lana extension command is available
+          const lanaCommand = 'lana.showLogAnalysis';
+          if (codeAnalyzerIsInstalled === false) {
+            const availableCommands = await vscode.commands.getCommands();
+            if (availableCommands.includes(lanaCommand)) {
+              codeAnalyzerIsInstalled = true;
+            }
+            else {
+              vscode.window.showWarningMessage(
+                '🦙 Log Analysis command not available. Please install the Apex Log Analyzer extension.',
+                "Install Apex Log Analyzer"
+              ).then((selection) => {
+                if (selection === "Install Apex Log Analyzer") {
+                  vscode.commands.executeCommand('workbench.extensions.search', 'financialforce.lana');
+                }
+              });
+              return;
+            }
+          }
+          if (codeAnalyzerIsInstalled === true) {
+            const fileUri = vscode.Uri.file(logFile);
+            vscode.commands.executeCommand(lanaCommand, fileUri);
+          }
         }
       };
 
@@ -158,5 +197,32 @@ System.debug('sfdx-hardis rocks !!!');
       }
     },
   );
+  commands.disposables.push(disposable);
+}
+
+
+export async function registerDisplayLogDebugOnly(commands: Commands) {
+  const disposable = vscode.commands.registerCommand(
+    "vscode-sfdx-hardis.displayLogDebugOnly",
+    async (logFileVsCodeUri: vscode.Uri) => {
+      const logFile = logFileVsCodeUri.fsPath;
+      const debugLogFile = logFile.replace(".log",".debug.log");
+      const logContent = await fs.readFile(logFile, "utf8");
+      const debugLines = logContent
+        .split("\n")
+        .filter((line) => line.includes("|USER_DEBUG|"))
+        .map((line) => {
+          // Extract the debug message after |USER_DEBUG| and the tab character
+          const debugIndex = line.indexOf("|USER_DEBUG|");
+          if (debugIndex !== -1) {
+            return line.substring(debugIndex + "|USER_DEBUG|".length).trim();
+          }
+          return line;
+        })
+        .join("\n");
+      await fs.writeFile(debugLogFile, debugLines, "utf8");
+      const document = await vscode.workspace.openTextDocument(debugLogFile);
+      await vscode.window.showTextDocument(document);
+    });
   commands.disposables.push(disposable);
 }

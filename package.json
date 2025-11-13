@@ -203,6 +203,11 @@
         "icon": "$(zap)"
       },
       {
+        "command": "vscode-sfdx-hardis.displayLogDebugOnly",
+        "title": "SFDX Hardis: Display log - Debug Only",
+        "icon": "$(bug)"
+      },
+      {
         "command": "vscode-sfdx-hardis.generateFlowDocumentation",
         "title": "SFDX Hardis: Generate Flow Documentation",
         "icon": "$(book)"
@@ -394,6 +399,11 @@
           "group": "z_sfdxhardis@10"
         },
         {
+          "command": "vscode-sfdx-hardis.displayLogDebugOnly",
+          "when": "resourceExtname == '.log'",
+          "group": "z_sfdxhardis@10"
+        },
+        {
           "command": "vscode-sfdx-hardis.generatePackageXmlDoc",
           "when": "resourceExtname == '.xml'",
           "group": "z_sfdxhardis@10"
@@ -490,6 +500,11 @@
         {
           "command": "vscode-sfdx-hardis.runAnonymousApex",
           "when": "resourceExtname == '.apex'",
+          "group": "z_sfdxhardis@10"
+        },
+        {
+          "command": "vscode-sfdx-hardis.displayLogDebugOnly",
+          "when": "resourceExtname == '.log'",
           "group": "z_sfdxhardis@10"
         },
         {
