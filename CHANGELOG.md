@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [6.18.0] 2024-11-13
+
 - Live DevOps Pipeline: Update "in progress" emoji
 - Adds Run Anonymous Apex to Welcome page + Log Analyzer button and install link if not present.
 
