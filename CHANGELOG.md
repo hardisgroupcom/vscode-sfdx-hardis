@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Live DevOps Pipeline: Update "in progress" emoji
+
 ## [6.17.2] 2024-11-10
 
 - Live DevOps Pipeline enhancements & fixes

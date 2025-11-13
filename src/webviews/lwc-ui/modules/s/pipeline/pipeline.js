@@ -403,7 +403,7 @@ export default class Pipeline extends LightningElement {
         : "unknown";
       // Add a SLDS-friendly emoji indicator column (quick, robust fallback)
       const emojiMap = {
-        running: "🔄",
+        running: "⚙️",
         pending: "⏳",
         success: "✅",
         failed: "❌",
@@ -828,8 +828,8 @@ export default class Pipeline extends LightningElement {
       // Get the text content from the label (may be nested in foreignObject/div/span/p/a)
       const labelText = label.textContent || "";
 
-      // Check for running (🔄) or pending (⏳) emoji
-      const hasRunning = labelText.includes("🔄");
+      // Check for running (⚙️) or pending (⏳) emoji
+      const hasRunning = labelText.includes("⚙️");
       const hasPending = labelText.includes("⏳");
 
       if (hasRunning || hasPending) {
