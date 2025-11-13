@@ -633,7 +633,7 @@ export class BranchStrategyMermaidBuilder {
 
   private getPrStatusEmoji(status: JobStatus): string {
     const emojiMap: Record<JobStatus, string> = {
-      running: "🔄",
+      running: "⚙️",
       pending: "⏳",
       success: "✅",
       failed: "❌",
