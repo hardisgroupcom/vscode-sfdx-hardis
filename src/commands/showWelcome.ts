@@ -62,7 +62,9 @@ export function registerShowWelcome(command: Commands) {
             vscode.commands.executeCommand("vscode-sfdx-hardis.showSetup");
             break;
           case "navigateToRunAnonymousApex":
-            vscode.commands.executeCommand("vscode-sfdx-hardis.runAnonymousApex");
+            vscode.commands.executeCommand(
+              "vscode-sfdx-hardis.runAnonymousApex",
+            );
             break;
           default:
             break;
