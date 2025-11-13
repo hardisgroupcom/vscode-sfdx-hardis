@@ -6,6 +6,7 @@
 
 - Live DevOps Pipeline: Update "in progress" emoji
 - Adds Run Anonymous Apex to Welcome page + Log Analyzer button and install link if not present.
+- Allow to display filtered logs with only DEBUG statements
 
 ## [6.17.2] 2024-11-10
 
