@@ -12,6 +12,7 @@ export async function registerRunAnonymousApex(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
     "vscode-sfdx-hardis.runAnonymousApex",
     async (params) => {
+      let codeAnalyzerIsInstalled = false;
       // Get anonymous apex from the file (if context menu of file) or from the current editor (if right click in an .apex file editor)
       const reportDir = await getReportDirectory();
       const anonymousApexReportDir = `${reportDir}/anonymousApex`;
@@ -107,7 +108,8 @@ System.debug('sfdx-hardis rocks !!!');
         message: string,
         logFile: string,
       ) => {
-        const openLogAction = "Open Log";
+        const openLogAction = "Open Raw Log";
+        const openAnalysisLog = "Open Log Analysis";
         let selection: string | undefined;
         if (type === "info") {
           selection = await vscode.window.showInformationMessage(
@@ -123,6 +125,30 @@ System.debug('sfdx-hardis rocks !!!');
         if (selection === openLogAction) {
           const document = await vscode.workspace.openTextDocument(logFile);
           await vscode.window.showTextDocument(document);
+        }
+        else if (selection === openAnalysisLog) {
+          // Check if the Lana extension command is available
+          const lanaCommand = 'lana.showLogAnalysis';
+          if (codeAnalyzerIsInstalled === false) {
+            const availableCommands = await vscode.commands.getCommands();
+            if (availableCommands.includes(lanaCommand)) {
+              codeAnalyzerIsInstalled = true;
+            }
+            else {
+              vscode.window.showWarningMessage(
+                '🦙 Log Analysis command not available. Please install the Apex Log Analyzer extension.',
+                "Install Apex Log Analyzer"
+              ).then((selection) => {
+                if (selection === "Install Apex Log Analyzer") {
+                  vscode.commands.executeCommand('workbench.extensions.search', 'financialforce.lana');
+                }
+              });
+              return;
+            }
+          }
+          if (codeAnalyzerIsInstalled === true) {
+            vscode.commands.executeCommand(lanaCommand, logFile);
+          }
         }
       };
 

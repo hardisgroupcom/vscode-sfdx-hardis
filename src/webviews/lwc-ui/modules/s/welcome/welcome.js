@@ -95,6 +95,12 @@ export default class Welcome extends LightningElement {
     });
   }
 
+  navigateToRunAnonymousApex() {
+    window.sendMessageToVSCode({
+      type: "navigateToRunAnonymousApex",
+    });
+  }
+
   // Quick action methods
   handleConnectToOrg() {
     window.sendMessageToVSCode({
