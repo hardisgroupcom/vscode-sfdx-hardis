@@ -115,11 +115,13 @@ System.debug('sfdx-hardis rocks !!!');
           selection = await vscode.window.showInformationMessage(
             message,
             openLogAction,
+            openAnalysisLog
           );
         } else {
           selection = await vscode.window.showErrorMessage(
             message,
             openLogAction,
+            openAnalysisLog
           );
         }
         if (selection === openLogAction) {
@@ -147,7 +149,8 @@ System.debug('sfdx-hardis rocks !!!');
             }
           }
           if (codeAnalyzerIsInstalled === true) {
-            vscode.commands.executeCommand(lanaCommand, logFile);
+            const fileUri = vscode.Uri.file(logFile);
+            vscode.commands.executeCommand(lanaCommand, fileUri);
           }
         }
       };
