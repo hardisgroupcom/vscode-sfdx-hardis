@@ -21,7 +21,10 @@ import { registerOpenKeyFile } from "./commands/openKeyFile";
 import { registerRunLocalHtmlDocPages } from "./commands/runLocalHtmlDoc";
 import { registerShowExtensionConfig } from "./commands/showExtensionConfig";
 import { LwcPanelManager } from "./lwc-panel-manager";
-import { registerRunAnonymousApex } from "./commands/runAnonymousApex";
+import {
+  registerRunAnonymousApex,
+  registerDisplayLogDebugOnly,
+} from "./commands/runAnonymousApex";
 import { registerShowMetadataRetriever } from "./commands/showMetadataRetriever";
 import { registerShowPackageXml } from "./commands/packageXml";
 
@@ -82,6 +85,7 @@ export class Commands {
     registerShowFilesWorkbench(this);
     registerRunLocalHtmlDocPages(this);
     registerRunAnonymousApex(this);
+    registerDisplayLogDebugOnly(this);
     registerShowMetadataRetriever(this);
     registerShowPackageXml(this);
   }

@@ -370,6 +370,16 @@
     --slds-c-icon-color-foreground-default: white !important;
 }
 
+.feature-icon-container.run-anonymous {
+    background: linear-gradient(135deg, #1589ee 0%, #005fb2 100%);
+    box-shadow: 0 3px 10px rgba(21, 137, 238, 0.25);
+}
+
+.feature-icon-container.run-anonymous lightning-icon {
+    --slds-c-icon-color-foreground: white !important;
+    --slds-c-icon-color-foreground-default: white !important;
+}
+
 .tool-icon-container {
     width: 40px;
     height: 40px;
