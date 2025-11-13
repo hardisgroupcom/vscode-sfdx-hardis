@@ -211,6 +211,14 @@ export async function registerDisplayLogDebugOnly(commands: Commands) {
       const debugLines = logContent
         .split("\n")
         .filter((line) => line.includes("|USER_DEBUG|"))
+        .map((line) => {
+          // Extract the debug message after |USER_DEBUG| and the tab character
+          const debugIndex = line.indexOf("|USER_DEBUG|");
+          if (debugIndex !== -1) {
+            return line.substring(debugIndex + "|USER_DEBUG|".length).trim();
+          }
+          return line;
+        })
         .join("\n");
       await fs.writeFile(debugLogFile, debugLines, "utf8");
       const document = await vscode.workspace.openTextDocument(debugLogFile);
