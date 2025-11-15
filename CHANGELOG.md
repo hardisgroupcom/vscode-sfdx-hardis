@@ -2,7 +2,10 @@
 
 ## [Unreleased]
 
-- Adds "View logs" option on retrieve failures to see detailed error in output channel
+- Metadata Retriever enhancements
+  - Add "View logs" option on retrieve failures to see detailed error in output channel
+  - Fix managed layout name resolution
+- Upgrade js-yaml
 
 ## [6.18.0] 2024-11-13
 

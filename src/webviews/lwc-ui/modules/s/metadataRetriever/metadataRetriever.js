@@ -76,14 +76,17 @@ export default class MetadataRetriever extends LightningElement {
       label: "Metadata Name",
       fieldName: "MemberName",
       type: "button",
+      sortable: true,
+      wrapText: true,
       typeAttributes: {
         label: { fieldName: "MemberName" },
         name: "open",
-        title: { fieldName: "MemberName" },
         variant: "base",
       },
-      sortable: true,
-      wrapText: true,
+      cellAttributes: { 
+        alignment: 'left',
+        class: 'metadata-name-button'
+      }
     });
 
     // Last Updated By

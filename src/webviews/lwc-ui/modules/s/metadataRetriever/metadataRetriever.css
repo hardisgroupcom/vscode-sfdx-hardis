@@ -94,3 +94,12 @@ lightning-datatable {
 :host ::part(table) {
   line-height: 1.2;
 }
+
+/* Left-align button cells in Metadata Name column */
+.metadata-name-button {
+  text-align: left !important;
+  justify-content: flex-start !important;
+  white-space: normal !important;
+  word-wrap: break-word !important;
+  padding-left: 0.5rem !important;
+}
