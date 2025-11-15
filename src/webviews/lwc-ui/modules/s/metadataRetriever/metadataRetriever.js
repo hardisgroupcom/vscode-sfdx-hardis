@@ -83,10 +83,10 @@ export default class MetadataRetriever extends LightningElement {
         name: "open",
         variant: "base",
       },
-      cellAttributes: { 
-        alignment: 'left',
-        class: 'metadata-name-button'
-      }
+      cellAttributes: {
+        alignment: "left",
+        class: "metadata-name-button",
+      },
     });
 
     // Last Updated By

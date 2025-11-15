@@ -1074,25 +1074,26 @@ function fixMemberName(name: string, type: string): string {
     // - Managed on managed: abc__object__c-abc__object Layout
     // - Custom on managed: abc__object__c-custom name Layout
     // - Packaged on standard: Object-abc__Object layout
-    
+
     const parts = name.split("-");
     if (parts.length >= 2) {
       const objectName = parts[0];
       const layoutName = parts.slice(1).join("-");
-      
+
       // Check if object has namespace (namespace__ObjectName__c vs ObjectName__c)
       // Match pattern: anything__anything__c (captures everything before the last __ObjectName__c)
-      const objectNamespaceMatch = objectName.match(/^(.+?)__([^_]+(?:_[^_]+)*)__(?:c|mdt)$/);
+      const objectNamespaceMatch = objectName.match(
+        /^(.+?)__([^_]+(?:_[^_]+)*)__(?:c|mdt)$/,
+      );
       if (objectNamespaceMatch) {
         const namespace = objectNamespaceMatch[1];
-        
+
         // Add namespace to layout if missing
         // e.g., CHANNEL_ORDERS__Customer__c-COA Customer Layout
         //    -> CHANNEL_ORDERS__Customer__c-CHANNEL_ORDERS__COA Customer Layout
         if (!layoutName.startsWith(namespace + "__")) {
           fixedName = `${objectName}-${namespace}__${layoutName}`;
-        }
-        else {
+        } else {
           fixedName = name;
         }
       }
