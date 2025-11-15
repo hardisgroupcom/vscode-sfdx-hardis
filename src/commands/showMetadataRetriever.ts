@@ -541,13 +541,23 @@ async function executeMetadataRetrieve(
       const msg = singleName
         ? `Failed to retrieve ${singleName}: ${errorMsg}`
         : `Failed to retrieve metadata: ${errorMsg}`;
-      vscode.window.showErrorMessage(msg);
+      Logger.log("Retrieve result:" + JSON.stringify(result));
+      vscode.window.showErrorMessage(msg, "View logs").then((action) => {
+        if (action === "View logs") {
+          Logger.showOutputChannel();
+        }
+      });
     }
   } catch (error: any) {
     Logger.log(`Error retrieving metadata: ${error.message}`);
     vscode.window.showErrorMessage(
       `Failed to retrieve metadata: ${error.message}`,
-    );
+      "View logs",
+    ).then((action) => {
+      if (action === "View logs") {
+        Logger.showOutputChannel();
+      }
+    });
   }
   return result;
 }
