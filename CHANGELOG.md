@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Adds "View logs" option on retrieve failures to see detailed error in output channel
+
 ## [6.18.0] 2024-11-13
 
 - Live DevOps Pipeline: Update "in progress" emoji
