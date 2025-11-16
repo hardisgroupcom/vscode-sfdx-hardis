@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [6.18.1] 2024-11-16
+
 - Metadata Retriever enhancements
   - Add "View logs" option on retrieve failures to see detailed error in output channel
   - Fix managed layout name resolution
