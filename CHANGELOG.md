@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [6.18.2] 2024-11-17
+
+- Update README badges labels
+
 ## [6.18.1] 2024-11-16
 
 - Metadata Retriever enhancements
