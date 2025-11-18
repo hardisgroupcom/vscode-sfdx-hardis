@@ -14,6 +14,28 @@ export class GenericTicketingProvider extends TicketProvider {
     this.providerName = "GENERIC";
   }
 
+  async disconnect(): Promise<void> {
+    // Generic provider doesn't store credentials, just configuration
+    // Simply clear the authenticated state
+    this.isAuthenticated = false;
+    Logger.log("Disconnected from Generic ticketing provider");
+  }
+
+  async getTicketingWebUrl(): Promise<string | null> {
+    const config = await getConfig("project");
+    const urlBuilder =
+      config.genericTicketingProviderUrlBuilder || this.ticketUrlBuilder;
+
+    if (!urlBuilder) {
+      return null;
+    }
+
+    // Extract base URL from the URL builder pattern (remove placeholder parts)
+    // Example: "https://tickets.example.com/view/{{TICKET_ID}}" -> "https://tickets.example.com"
+    const urlMatch = urlBuilder.match(/^(https?:\/\/[^/]+)/);
+    return urlMatch ? urlMatch[1] : null;
+  }
+
   async authenticate(): Promise<boolean | null> {
     const config = await getConfig("project");
     this.ticketRefRegex = config.genericTicketingProviderRegex || "";

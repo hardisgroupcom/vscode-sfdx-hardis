@@ -3,12 +3,40 @@ import { Octokit } from "@octokit/rest";
 import { ProviderDescription } from "./types";
 import { GitProviderGitHub } from "./gitProviderGitHub";
 import { SecretsManager } from "../secretsManager";
+import { Logger } from "../../logger";
 
 export class GitProviderGitea extends GitProviderGitHub {
   secretTokenIdentifier: string = "";
 
   handlesNativeGitAuth(): boolean {
     return false;
+  }
+
+  async disconnect(): Promise<void> {
+    // Gitea uses PAT tokens stored in secrets, not VS Code embedded auth
+    // Delete the stored token
+    if (this.secretTokenIdentifier) {
+      try {
+        await SecretsManager.deleteSecret(this.secretTokenIdentifier);
+      } catch {
+        // Ignore if secret doesn't exist
+      }
+    } else if (this.repoInfo?.host) {
+      // Fallback if secretTokenIdentifier wasn't set
+      const hostKey = this.repoInfo.host.replace(/\./g, "_").toUpperCase();
+      try {
+        await SecretsManager.deleteSecret(`${hostKey}_TOKEN`);
+      } catch {
+        // Ignore if secret doesn't exist
+      }
+    }
+
+    this.gitHubClient = null;
+    this.isActive = false;
+    Logger.log(
+      `Disconnected from Gitea (${this.repoInfo?.host || "unknown host"})`,
+    );
+    await super.disconnect();
   }
 
   describeGitProvider(): ProviderDescription {

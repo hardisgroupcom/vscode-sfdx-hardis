@@ -54,6 +54,27 @@ export class GitProviderAzure extends GitProvider {
     return true;
   }
 
+  async disconnect(): Promise<void> {
+    // Azure DevOps can use either OAuth (VS Code authentication) or PAT
+    // Delete PAT if stored
+    try {
+      await SecretsManager.deleteSecret(this.hostKey + "_TOKEN");
+    } catch {
+      // Ignore if secret doesn't exist
+    }
+
+    // OAuth sessions are managed by VS Code, so we don't delete them
+    // Just clear local state
+    this.connection = null;
+    this.gitApi = null;
+    this.buildApi = null;
+    this.isActive = false;
+    Logger.log(
+      `Disconnected from Azure DevOps (${this.repoInfo?.host || "unknown host"})`,
+    );
+    await super.disconnect();
+  }
+
   async authenticate(): Promise<boolean | null> {
     const choice = await vscode.window.showQuickPick(
       [

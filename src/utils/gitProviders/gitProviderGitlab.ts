@@ -29,6 +29,35 @@ export class GitProviderGitlab extends GitProvider {
     return null;
   }
 
+  async disconnect(): Promise<void> {
+    // GitLab uses PAT tokens stored in secrets
+    // Delete the stored token
+    if (this.secretTokenIdentifier) {
+      try {
+        await SecretsManager.deleteSecret(this.secretTokenIdentifier);
+      } catch {
+        // Ignore if secret doesn't exist
+      }
+    } else if (this.repoInfo?.host) {
+      // Fallback if secretTokenIdentifier wasn't set
+      const hostKey = this.repoInfo.host.replace(/\./g, "_").toUpperCase();
+      try {
+        await SecretsManager.deleteSecret(`${hostKey}_TOKEN`);
+      } catch {
+        // Ignore if secret doesn't exist
+      }
+    }
+
+    this.gitlabClient = null;
+    this.gitlabProjectPath = null;
+    this.gitlabProjectId = null;
+    this.isActive = false;
+    Logger.log(
+      `Disconnected from GitLab (${this.repoInfo?.host || "unknown host"})`,
+    );
+    await super.disconnect();
+  }
+
   describeGitProvider(): ProviderDescription {
     return {
       providerLabel: "GitLab",
