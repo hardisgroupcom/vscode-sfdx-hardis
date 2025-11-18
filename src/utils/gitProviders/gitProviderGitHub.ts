@@ -12,6 +12,18 @@ export class GitProviderGitHub extends GitProvider {
     return true;
   }
 
+  async disconnect(): Promise<void> {
+    // GitHub uses VS Code's embedded authentication
+    // We don't delete the session here as it's managed by VS Code
+    // Just clear local state
+    this.gitHubClient = null;
+    this.isActive = false;
+    Logger.log(
+      `Disconnected from GitHub (${this.repoInfo?.host || "unknown host"})`,
+    );
+    await super.disconnect();
+  }
+
   describeGitProvider(): ProviderDescription {
     return {
       providerLabel: "GitHub",

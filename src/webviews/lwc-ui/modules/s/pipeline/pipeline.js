@@ -983,17 +983,40 @@ export default class Pipeline extends LightningElement {
   }
 
   handleGitConnect() {
-    window.sendMessageToVSCode({
-      type: "connectToGit",
-      data: {},
-    });
+    if (this.gitAuthenticated) {
+      // Already connected - prompt user for action
+      window.sendMessageToVSCode({
+        type: "promptGitProviderAction",
+        data: {
+          providerName: this.repoPlatformLabel || "Git",
+          repoUrl: this.repoInfo?.webUrl || null,
+        },
+      });
+    } else {
+      // Not connected - initiate connection
+      window.sendMessageToVSCode({
+        type: "connectToGit",
+        data: {},
+      });
+    }
   }
 
   handleTicketConnect() {
-    window.sendMessageToVSCode({
-      type: "connectToTicketing",
-      data: {},
-    });
+    if (this.ticketAuthenticated) {
+      // Already connected - prompt user for action
+      window.sendMessageToVSCode({
+        type: "promptTicketProviderAction",
+        data: {
+          providerName: this.ticketProviderName || "Ticketing",
+        },
+      });
+    } else {
+      // Not connected - initiate connection
+      window.sendMessageToVSCode({
+        type: "connectToTicketing",
+        data: {},
+      });
+    }
   }
 
   handleToggleFeatureBranches(event) {

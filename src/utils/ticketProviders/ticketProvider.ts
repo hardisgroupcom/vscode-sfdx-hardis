@@ -63,6 +63,12 @@ export class TicketProvider {
     return false;
   }
 
+  async disconnect(): Promise<void> {
+    // This method should be overridden by each provider to clean up their specific credentials
+    Logger.log(`disconnect not fully implemented on provider ${this.providerName}`);
+    this.isAuthenticated = false;
+  }
+
   async getTicketIdentifierRegexes(): Promise<RegExp[]> {
     Logger.log(
       "getTicketIdentifierRegexes should be implemented on provider class",

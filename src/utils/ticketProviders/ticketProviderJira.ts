@@ -32,6 +32,30 @@ export class JiraProvider extends TicketProvider {
     return completedUrl;
   }
 
+  async disconnect(): Promise<void> {
+    if (this.hostKey) {
+      // Remove all JIRA credentials for this host
+      const secretKeys = [
+        `${this.hostKey}_JIRA_PAT`,
+        `${this.hostKey}_JIRA_EMAIL`,
+        `${this.hostKey}_JIRA_TOKEN`,
+      ];
+      
+      for (const key of secretKeys) {
+        try {
+          await SecretsManager.deleteSecret(key);
+        } catch {
+          // Ignore errors for non-existent keys
+        }
+      }
+      
+      Logger.log(`Disconnected from JIRA host: ${this.jiraHost}`);
+    }
+    
+    this.isAuthenticated = false;
+    this.jiraClient = null;
+  }
+
   async initializeConnection(): Promise<boolean | null> {
     const config = await getConfig("project");
     this.jiraHost = this.completeJiraHostUrl(config.jiraHost || "");

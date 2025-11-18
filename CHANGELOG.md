@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- Live DevOps Pipeline:
+  - When connected, open Git Provider or Ticketing provider in browser
+  - Add disconnect functionality for Git & Ticketing providers
+
 ## [6.18.2] 2024-11-17
 
 - Update README badges labels

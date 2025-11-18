@@ -24,6 +24,16 @@ export class AzureBoardsProvider extends TicketProvider {
     return await this.authenticate();
   }
 
+  async disconnect(): Promise<void> {
+    // Azure Boards uses the same authentication as Azure DevOps Git
+    // Authentication (OAuth or PAT) is managed by GitProviderAzure
+    // We don't delete credentials here, just clear local state
+    this.azureApi = null;
+    this.workItemApi = null;
+    this.isAuthenticated = false;
+    Logger.log(`Disconnected from Azure Boards (Project: ${this.teamProject})`);
+  }
+
   async authenticate(): Promise<boolean | null> {
     // Get Azure DevOps connection info from GitProvider
     const gitProvider = await GitProvider.getInstance();

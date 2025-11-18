@@ -249,6 +249,77 @@ export function registerShowPipeline(commands: Commands) {
           });
           panel.sendInitializationData(pipelineProperties);
         }
+        // Prompt user for Git provider action when already connected
+        else if (type === "promptGitProviderAction") {
+          const providerName = data?.providerName || "Git";
+          const repoUrl = data?.repoUrl;
+          
+          const actions = repoUrl 
+            ? ["Open Remote Repository", "Disconnect", "Cancel"]
+            : ["Disconnect", "Cancel"];
+          
+          const choice = await vscode.window.showInformationMessage(
+            `You are connected to ${providerName}. What would you like to do?`,
+            { modal: true },
+            ...actions
+          );
+
+          if (choice === "Open Remote Repository" && repoUrl) {
+            vscode.env.openExternal(vscode.Uri.parse(repoUrl));
+          } else if (choice === "Disconnect") {
+            const gitProvider = await GitProvider.getInstance();
+            if (gitProvider) {
+              await gitProvider.disconnect();
+              vscode.window.showInformationMessage(
+                `Disconnected from ${providerName}.`
+              );
+              // Refresh pipeline with unauthenticated state
+              pipelineProperties = await loadAllPipelineInfo({
+                browseGitProvider: false,
+                resetGit: true,
+                withProgress: true,
+              });
+              panel.sendInitializationData(pipelineProperties);
+            }
+          }
+        }
+        // Prompt user for Ticketing provider action when already connected
+        else if (type === "promptTicketProviderAction") {
+          const providerName = data?.providerName || "Ticketing";
+          
+          const choice = await vscode.window.showInformationMessage(
+            `You are connected to ${providerName}. What would you like to do?`,
+            { modal: true },
+            "Disconnect",
+            "Cancel"
+          );
+
+          if (choice === "Disconnect") {
+            const ticketProvider = await TicketProvider.getInstance({
+              reset: false,
+              authenticate: false,
+            });
+            
+            if (ticketProvider) {
+              await ticketProvider.disconnect();
+              vscode.window.showInformationMessage(
+                `Disconnected from ${providerName}.`
+              );
+            } else {
+              vscode.window.showWarningMessage(
+                `Unable to find active ticketing provider connection.`
+              );
+            }
+            
+            // Refresh pipeline with unauthenticated ticketing state
+            pipelineProperties = await loadAllPipelineInfo({
+              browseGitProvider: true,
+              resetGit: false,
+              withProgress: true,
+            });
+            panel.sendInitializationData(pipelineProperties);
+          }
+        }
       });
     },
   );
@@ -410,6 +481,7 @@ export function registerShowPipeline(commands: Commands) {
         currentBranchPullRequest: currentBranchPullRequest,
         openPullRequests: openPullRequests,
         repoPlatformLabel: repoPlatformLabel,
+        repoInfo: gitProvider?.repoInfo || null,
         displayFeatureBranches: displayFeatureBranches,
         projectApexScripts: projectApexScripts,
         projectSfdmuWorkspaces: projectDataWorkspaces,
@@ -446,6 +518,7 @@ type PipelineInfo = {
   currentBranchPullRequest?: PullRequest | null;
   openPullRequests: PullRequest[];
   repoPlatformLabel: string;
+  repoInfo?: any;
   displayFeatureBranches: boolean;
   projectApexScripts: any[];
   projectSfdmuWorkspaces: any[];

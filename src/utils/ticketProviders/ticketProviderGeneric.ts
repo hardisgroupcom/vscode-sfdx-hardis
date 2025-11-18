@@ -14,6 +14,13 @@ export class GenericTicketingProvider extends TicketProvider {
     this.providerName = "GENERIC";
   }
 
+  async disconnect(): Promise<void> {
+    // Generic provider doesn't store credentials, just configuration
+    // Simply clear the authenticated state
+    this.isAuthenticated = false;
+    Logger.log("Disconnected from Generic ticketing provider");
+  }
+
   async authenticate(): Promise<boolean | null> {
     const config = await getConfig("project");
     this.ticketRefRegex = config.genericTicketingProviderRegex || "";
