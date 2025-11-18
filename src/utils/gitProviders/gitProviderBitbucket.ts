@@ -22,6 +22,35 @@ export class GitProviderBitbucket extends GitProvider {
     };
   }
 
+  async disconnect(): Promise<void> {
+    // Bitbucket uses PAT tokens stored in secrets
+    // Delete the stored token
+    if (this.secretTokenIdentifier) {
+      try {
+        await SecretsManager.deleteSecret(this.secretTokenIdentifier);
+      } catch {
+        // Ignore if secret doesn't exist
+      }
+    } else if (this.repoInfo?.host) {
+      // Fallback if secretTokenIdentifier wasn't set
+      const hostKey = this.repoInfo.host.replace(/\./g, "_").toUpperCase();
+      try {
+        await SecretsManager.deleteSecret(`${hostKey}_TOKEN`);
+      } catch {
+        // Ignore if secret doesn't exist
+      }
+    }
+    
+    this.bitbucketClient = null;
+    this.workspace = null;
+    this.repoSlug = null;
+    this.isActive = false;
+    Logger.log(
+      `Disconnected from Bitbucket (${this.repoInfo?.host || "unknown host"})`,
+    );
+    await super.disconnect();
+  }
+
   async authenticate(): Promise<boolean | null> {
     const token = await vscode.window.showInputBox({
       prompt: "Enter your Bitbucket Token",

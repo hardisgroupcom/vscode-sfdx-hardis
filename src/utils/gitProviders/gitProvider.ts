@@ -18,7 +18,7 @@ import path from "path";
 import fs from "fs-extra";
 
 export class GitProvider {
-  static instance: GitProvider;
+  static instance: GitProvider | null;
 
   isActive: boolean = false;
   repoInfo: RepoInfo | null = null;
@@ -205,6 +205,10 @@ export class GitProvider {
       `authenticate not implemented on ${this.repoInfo?.providerName || "unknown provider"}`,
     );
     return false;
+  }
+
+  async disconnect(): Promise<void> {
+    GitProvider.instance = null;
   }
 
   async initialize() {
