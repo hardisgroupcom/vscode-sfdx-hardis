@@ -30,7 +30,7 @@ export class GitProviderGitea extends GitProviderGitHub {
         // Ignore if secret doesn't exist
       }
     }
-    
+
     this.gitHubClient = null;
     this.isActive = false;
     Logger.log(

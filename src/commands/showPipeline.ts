@@ -256,7 +256,7 @@ export function registerShowPipeline(commands: Commands) {
           const choice = await vscode.window.showInformationMessage(
             `You are connected to ${providerName}. What would you like to do?`,
             { modal: true },
-            ...actions
+            ...actions,
           );
           if (choice === "Open Remote Repository") {
             const gitProvider = await GitProvider.getInstance();
@@ -273,7 +273,7 @@ export function registerShowPipeline(commands: Commands) {
             if (gitProvider) {
               await gitProvider.disconnect();
               vscode.window.showInformationMessage(
-                `Disconnected from ${providerName}.`
+                `Disconnected from ${providerName}.`,
               );
               // Refresh pipeline with unauthenticated state
               pipelineProperties = await loadAllPipelineInfo({
@@ -288,12 +288,12 @@ export function registerShowPipeline(commands: Commands) {
         // Prompt user for Ticketing provider action when already connected
         else if (type === "promptTicketProviderAction") {
           const providerName = data?.providerName || "Ticketing";
-          
+
           const choice = await vscode.window.showInformationMessage(
             `You are connected to ${providerName}. What would you like to do?`,
             { modal: true },
             `Open ${providerName}`,
-            "Disconnect"
+            "Disconnect",
           );
           if (choice === `Open ${providerName}`) {
             const ticketProvider = await TicketProvider.getInstance({
@@ -314,24 +314,23 @@ export function registerShowPipeline(commands: Commands) {
               return;
             }
             vscode.env.openExternal(vscode.Uri.parse(ticketingUrl));
-          }
-          else if (choice === "Disconnect") {
+          } else if (choice === "Disconnect") {
             const ticketProvider = await TicketProvider.getInstance({
               reset: false,
               authenticate: false,
             });
-            
+
             if (ticketProvider) {
               await ticketProvider.disconnect();
               vscode.window.showInformationMessage(
-                `Disconnected from ${providerName}.`
+                `Disconnected from ${providerName}.`,
               );
             } else {
               vscode.window.showWarningMessage(
-                `Unable to find active ticketing provider connection.`
+                `Unable to find active ticketing provider connection.`,
               );
             }
-            
+
             // Refresh pipeline with unauthenticated ticketing state
             pipelineProperties = await loadAllPipelineInfo({
               browseGitProvider: true,

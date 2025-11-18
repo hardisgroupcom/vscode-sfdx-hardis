@@ -40,7 +40,7 @@ export class JiraProvider extends TicketProvider {
         `${this.hostKey}_JIRA_EMAIL`,
         `${this.hostKey}_JIRA_TOKEN`,
       ];
-      
+
       for (const key of secretKeys) {
         try {
           await SecretsManager.deleteSecret(key);
@@ -48,10 +48,10 @@ export class JiraProvider extends TicketProvider {
           // Ignore errors for non-existent keys
         }
       }
-      
+
       Logger.log(`Disconnected from JIRA host: ${this.jiraHost}`);
     }
-    
+
     this.isAuthenticated = false;
     this.jiraClient = null;
   }

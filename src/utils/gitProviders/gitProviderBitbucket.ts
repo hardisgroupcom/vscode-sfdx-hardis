@@ -40,7 +40,7 @@ export class GitProviderBitbucket extends GitProvider {
         // Ignore if secret doesn't exist
       }
     }
-    
+
     this.bitbucketClient = null;
     this.workspace = null;
     this.repoSlug = null;

@@ -23,12 +23,13 @@ export class GenericTicketingProvider extends TicketProvider {
 
   async getTicketingWebUrl(): Promise<string | null> {
     const config = await getConfig("project");
-    const urlBuilder = config.genericTicketingProviderUrlBuilder || this.ticketUrlBuilder;
-    
+    const urlBuilder =
+      config.genericTicketingProviderUrlBuilder || this.ticketUrlBuilder;
+
     if (!urlBuilder) {
       return null;
     }
-    
+
     // Extract base URL from the URL builder pattern (remove placeholder parts)
     // Example: "https://tickets.example.com/view/{{TICKET_ID}}" -> "https://tickets.example.com"
     const urlMatch = urlBuilder.match(/^(https?:\/\/[^\/]+)/);

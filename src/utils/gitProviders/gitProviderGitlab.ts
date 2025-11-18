@@ -47,7 +47,7 @@ export class GitProviderGitlab extends GitProvider {
         // Ignore if secret doesn't exist
       }
     }
-    
+
     this.gitlabClient = null;
     this.gitlabProjectPath = null;
     this.gitlabProjectId = null;

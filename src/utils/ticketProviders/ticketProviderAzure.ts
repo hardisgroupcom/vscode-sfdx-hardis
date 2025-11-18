@@ -39,7 +39,9 @@ export class AzureBoardsProvider extends TicketProvider {
       const gitProvider = await GitProvider.getInstance();
       if (gitProvider?.repoInfo?.webUrl) {
         // Extract organization URL from repo webUrl
-        const match = gitProvider.repoInfo.webUrl.match(/^https?:\/\/([^\/]+)\/([^\/]+)/);
+        const match = gitProvider.repoInfo.webUrl.match(
+          /^https?:\/\/([^\/]+)\/([^\/]+)/,
+        );
         if (match) {
           const [, host, organization] = match;
           return `https://${host}/${organization}`;

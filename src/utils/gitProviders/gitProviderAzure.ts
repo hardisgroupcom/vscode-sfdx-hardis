@@ -62,7 +62,7 @@ export class GitProviderAzure extends GitProvider {
     } catch {
       // Ignore if secret doesn't exist
     }
-    
+
     // OAuth sessions are managed by VS Code, so we don't delete them
     // Just clear local state
     this.connection = null;
