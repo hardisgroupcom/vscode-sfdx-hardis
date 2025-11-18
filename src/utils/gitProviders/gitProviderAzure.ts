@@ -72,6 +72,7 @@ export class GitProviderAzure extends GitProvider {
     Logger.log(
       `Disconnected from Azure DevOps (${this.repoInfo?.host || "unknown host"})`,
     );
+    await super.disconnect();
   }
 
   async authenticate(): Promise<boolean | null> {

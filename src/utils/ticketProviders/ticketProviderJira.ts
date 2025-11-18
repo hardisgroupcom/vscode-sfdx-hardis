@@ -56,6 +56,14 @@ export class JiraProvider extends TicketProvider {
     this.jiraClient = null;
   }
 
+  async getTicketingWebUrl(): Promise<string | null> {
+    if (!this.jiraHost) {
+      const config = await getConfig("project");
+      this.jiraHost = this.completeJiraHostUrl(config.jiraHost || "");
+    }
+    return this.jiraHost || null;
+  }
+
   async initializeConnection(): Promise<boolean | null> {
     const config = await getConfig("project");
     this.jiraHost = this.completeJiraHostUrl(config.jiraHost || "");

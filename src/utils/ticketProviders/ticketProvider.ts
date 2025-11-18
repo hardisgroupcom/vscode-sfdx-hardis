@@ -69,6 +69,11 @@ export class TicketProvider {
     this.isAuthenticated = false;
   }
 
+  async getTicketingWebUrl(): Promise<string | null> {
+    Logger.log(`getTicketingWebUrl not implemented on provider ${this.providerName}`);
+    return null;
+  }
+
   async getTicketIdentifierRegexes(): Promise<RegExp[]> {
     Logger.log(
       "getTicketIdentifierRegexes should be implemented on provider class",

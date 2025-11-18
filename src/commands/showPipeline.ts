@@ -252,19 +252,21 @@ export function registerShowPipeline(commands: Commands) {
         // Prompt user for Git provider action when already connected
         else if (type === "promptGitProviderAction") {
           const providerName = data?.providerName || "Git";
-          const repoUrl = data?.repoUrl;
-          
-          const actions = repoUrl 
-            ? ["Open Remote Repository", "Disconnect", "Cancel"]
-            : ["Disconnect", "Cancel"];
-          
+          const actions = ["Open Remote Repository", "Disconnect"];
           const choice = await vscode.window.showInformationMessage(
             `You are connected to ${providerName}. What would you like to do?`,
             { modal: true },
             ...actions
           );
-
-          if (choice === "Open Remote Repository" && repoUrl) {
+          if (choice === "Open Remote Repository") {
+            const gitProvider = await GitProvider.getInstance();
+            const repoUrl = gitProvider?.repoInfo?.webUrl || "";
+            if (!repoUrl) {
+              vscode.window.showWarningMessage(
+                `No web URL found for the remote repository on ${providerName}.`,
+              );
+              return;
+            }
             vscode.env.openExternal(vscode.Uri.parse(repoUrl));
           } else if (choice === "Disconnect") {
             const gitProvider = await GitProvider.getInstance();
@@ -290,11 +292,30 @@ export function registerShowPipeline(commands: Commands) {
           const choice = await vscode.window.showInformationMessage(
             `You are connected to ${providerName}. What would you like to do?`,
             { modal: true },
-            "Disconnect",
-            "Cancel"
+            `Open ${providerName}`,
+            "Disconnect"
           );
-
-          if (choice === "Disconnect") {
+          if (choice === `Open ${providerName}`) {
+            const ticketProvider = await TicketProvider.getInstance({
+              reset: false,
+              authenticate: false,
+            });
+            if (!ticketProvider) {
+              vscode.window.showWarningMessage(
+                `Unable to find active ticketing provider connection.`,
+              );
+              return;
+            }
+            const ticketingUrl = await ticketProvider.getTicketingWebUrl();
+            if (!ticketingUrl) {
+              vscode.window.showWarningMessage(
+                `No web URL found for the ticketing provider ${providerName}.`,
+              );
+              return;
+            }
+            vscode.env.openExternal(vscode.Uri.parse(ticketingUrl));
+          }
+          else if (choice === "Disconnect") {
             const ticketProvider = await TicketProvider.getInstance({
               reset: false,
               authenticate: false,
