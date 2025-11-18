@@ -40,7 +40,7 @@ export class AzureBoardsProvider extends TicketProvider {
       if (gitProvider?.repoInfo?.webUrl) {
         // Extract organization URL from repo webUrl
         const match = gitProvider.repoInfo.webUrl.match(
-          /^https?:\/\/([^\/]+)\/([^\/]+)/,
+          /^https?:\/\/([^/]+)\/([^/]+)/,
         );
         if (match) {
           const [, host, organization] = match;

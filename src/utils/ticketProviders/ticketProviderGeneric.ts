@@ -32,7 +32,7 @@ export class GenericTicketingProvider extends TicketProvider {
 
     // Extract base URL from the URL builder pattern (remove placeholder parts)
     // Example: "https://tickets.example.com/view/{{TICKET_ID}}" -> "https://tickets.example.com"
-    const urlMatch = urlBuilder.match(/^(https?:\/\/[^\/]+)/);
+    const urlMatch = urlBuilder.match(/^(https?:\/\/[^/]+)/);
     return urlMatch ? urlMatch[1] : null;
   }
 
