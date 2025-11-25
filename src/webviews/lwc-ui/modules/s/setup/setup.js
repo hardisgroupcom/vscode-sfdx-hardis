@@ -346,6 +346,9 @@ export default class Setup extends LightningElement {
         buttonLabel = "Upgrade";
         buttonVariant = "brand";
         buttonAction = "install";
+        if (c.id === "node") {
+          buttonAction = "instructions";
+        }
       } else if (status === "ok") {
         buttonLabel = "Re-check";
         buttonVariant = "neutral";
@@ -434,6 +437,9 @@ export default class Setup extends LightningElement {
   listInstallCandidates() {
     const installCandidates = this.checks.filter((c) => {
       if (!c.installable) {
+        return false;
+      }
+      if (c.id === "node" || c.id === "git") {
         return false;
       }
       if (
