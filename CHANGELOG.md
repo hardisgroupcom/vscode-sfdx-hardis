@@ -2,31 +2,35 @@
 
 ## [Unreleased]
 
-## [6.18.3] 2024-11-18
+## [6.19.0] 2025-11-25
+
+- Upgrade minimal NodeJS version to 24.0
+
+## [6.18.3] 2025-11-18
 
 - Live DevOps Pipeline:
   - When connected, open Git Provider or Ticketing provider in browser
   - Add disconnect functionality for Git & Ticketing providers
 
-## [6.18.2] 2024-11-17
+## [6.18.2] 2025-11-17
 
 - Update README badges labels
 - Upgrade dependencies
 
-## [6.18.1] 2024-11-16
+## [6.18.1] 2025-11-16
 
 - Metadata Retriever enhancements
   - Add "View logs" option on retrieve failures to see detailed error in output channel
   - Fix managed layout name resolution
 - Upgrade js-yaml
 
-## [6.18.0] 2024-11-13
+## [6.18.0] 2025-11-13
 
 - Live DevOps Pipeline: Update "in progress" emoji
 - Adds Run Anonymous Apex to Welcome page + Log Analyzer button and install link if not present.
 - Allow to display filtered logs with only DEBUG statements
 
-## [6.17.2] 2024-11-10
+## [6.17.2] 2025-11-10
 
 - Live DevOps Pipeline enhancements & fixes
   - Sort pending PRs by merge date descending in branch configuration
@@ -36,7 +40,7 @@
   - Adds debug mode for VS Code extension with API call logging to investigate issues
   - Change the default refresh interval to 10 minutes instead of 5 minutes to reduce API calls
 
-## [6.17.1] 2024-11-10
+## [6.17.1] 2025-11-10
 
 - Refactors PR fetching to optimize job collection
 - GitHub integration: Fix ways to collect GitHub workflows
@@ -44,28 +48,28 @@
 - Fix mermaid node name sanitization to avoid multiple consecutive hyphens (mermaid crashes in that case)
 - Create actions folder if not existing when saving PR config file
 
-## [6.17.0] 2024-11-09
+## [6.17.0] 2025-11-09
 
 - Live DevOps Pipeline: UI part for deployment actions
 - Orgs Manager: Fix issue when renaming or removing an existing org alias
 - Fix Git / Jira icons display issue
 - Upgrade dependencies
 
-## [6.16.5] 2024-11-06
+## [6.16.5] 2025-11-06
 
 - Pipeline view: Fix available target branches check
 
-## [6.16.4] 2024-11-03
+## [6.16.4] 2025-11-03
 
 - Displays selected item count in multiselect
 - DevOps Pipeline: fix click on Commit changes
 
-## [6.16.3] 2024-11-02
+## [6.16.3] 2025-11-02
 
 - Handle command line too long in french
 - Display error message in case of unknown error
 
-## [6.16.2] 2024-11-02
+## [6.16.2] 2025-11-02
 
 - Contextual menu for PackageXML viewer
 - Metadata Retriever: Keep history of retrieved metadata in `hardis-report/retrieve`
@@ -73,28 +77,28 @@
   - Global package with all retrievals
   - fix: Include scratch orgs in Metadata Retriever org selection
 
-## [6.16.0] 2024-10-31
+## [6.16.0] 2025-10-31
 
 - New command: [Data Storage Statistics](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/storage-stats/)
 - Fix: When switching org, remove current custom color if it is a custom one
 
-## [6.15.3] 2024-10-30
+## [6.15.3] 2025-10-30
 
 - DevOps Pipeline
   - Fallback when jiraHost is not defined
   - Initialize title when clicking on "Create pull request"
 
-## [6.15.2] 2024-10-29
+## [6.15.2] 2025-10-29
 
 - Metadata Retriever: Handle case when line is too long, generate and use a temporary package.xml
 
-## [6.15.1] 2024-10-28
+## [6.15.1] 2025-10-28
 
 - Refactor JIRA authentication: centralize active-user check and simplify credential handling.
 - DevOps Pipeline: Replace Pull command shortcut by Metadata Retriever
 - Reorganize DevOps menu
 
-## [6.15.0] 2024-10-23
+## [6.15.0] 2025-10-23
 
 - Live DevOps Pipelines enhancements
   - Display Git & ticketing providers icons
@@ -103,25 +107,25 @@
   - Fix issue when both Jira PAT and Email + Token are set
 - Package XML viewer: Direct link to the Metadata file
 
-## [6.14.5] 2024-10-22
+## [6.14.5] 2025-10-22
 
 - Fix WebPack compile in production
 
-## [6.14.4] 2024-10-22
+## [6.14.4] 2025-10-22
 
 - Fix images display within WebView panels
 
-## [6.14.3] 2024-10-22
+## [6.14.3] 2025-10-22
 
 - Metadata Retriever fixes
   - Always display "Search in results" filters once there are loaded results.
   - Unselect deleted files
 
-## [6.14.2] 2024-10-22
+## [6.14.2] 2025-10-22
 
 - Add button to view logs when it is relevant
 
-## [6.14.1] 2024-10-21
+## [6.14.1] 2025-10-21
 
 - Improve Metadata retriever
   - Display operation in the org: created, modified, deleted
@@ -132,7 +136,7 @@
   - List the metadatas available in the selected org (lazy loading)
   - Display floating button to retrieve metadata when we scrolled down
 
-## [6.14.0] 2024-10-21
+## [6.14.0] 2025-10-21
 
 - New UI: Metadata Retriever allowing to search in recent changes or all metadatas, with filters
   - Metadata type
@@ -141,45 +145,45 @@
   - Last Updated Date
   - Package
 
-## [6.13.0] 2024-10-19
+## [6.13.0] 2025-10-19
 
 - Live DevOps Pipelines
   - Display the number of PR that are currently in a major branch
   - When clicking on a major branch node, display related Pull Requests and Related Tickets in a modal
   - JIRA and Azure Boards integration and connect button
 
-## [6.12.0] 2024-10-16
+## [6.12.0] 2025-10-16
 
 - New feature: Contextual menu on apex files to run as anonymous Apex (like in Developer Console)
 
-## [6.11.2] 2024-10-13
+## [6.11.2] 2025-10-13
 
 - Improves datatable column width handling
 - Add AutoClose command toggle and setting
 
-## [6.11.1] 2024-10-13
+## [6.11.1] 2025-10-13
 
 - Fix issue related to VsCode theme colorization sometimes keeping custom colors when not necessary
 - Fix mermaid diagram display issue by sanitizing node names
 
-## [6.11.0] 2024-10-12
+## [6.11.0] 2025-10-12
 
 - Pipeline Settings: Allow to configure commands to run before deployment in pipeline configuration
 - Add new menu: CI/CD (Misc) -> [Activate decomposed format for metadata (beta)](https://sfdx-hardis.cloudity.com/hardis/project/metadata/activate-decomposed/)
 - Display [**useDeltaDeploymentWithDependencies**](https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-delta-deployment/#delta-with-dependencies-beta) in pipeline configuration
 
-## [6.10.2] 2024-10-11
+## [6.10.2] 2025-10-11
 
 - Adds create PR URL to branch strategy diagram
 - Allow to connect to Azure with Personal Access Token (only way when your are guest user on another tenant)
 - Fix issue when fetching PRs and builds for PRs in Azure DevOps
 - Fix pull requests table auto-sizing
 
-## [6.10.1] 2024-10-08
+## [6.10.1] 2025-10-08
 
 - Adds pipeline configuration validations (developmentBranch and availableTargetBranches)
 
-## [6.10.0] 2024-10-05
+## [6.10.0] 2025-10-05
 
 - Pipeline view
   - Display Pull Requests within the mermaid diagram, with status and hyperlinks
@@ -187,26 +191,26 @@
   - Refactor buttons organization for optimized distribution
 - Package XML view: Add filter
 
-## [6.9.1] 2024-09-30
+## [6.9.1] 2025-09-30
 
 - Pipeline view: Display jobs status of each Pull Request
 - Fix bug when opening Files Workbench panel
 - Prompt select: autofocus filtering field when displayed
 
-## [6.9.0] 2024-09-25
+## [6.9.0] 2025-09-25
 
 - Connect to Git provider to display the list of open Pull Requests
 
-## [6.8.1] 2024-09-23
+## [6.8.1] 2025-09-23
 
 - Display spinner when checking or installing dependencies
 
-## [6.8.0] 2024-09-23
+## [6.8.0] 2025-09-23
 
 - New feature: **Install dependencies** , available from Welcome LWC & plugins status panel.
 - New setting: **autoUpdateDependencies**
 
-## [6.7.0] 2024-09-21
+## [6.7.0] 2025-09-21
 
 - Welcome view
 - Org Monitoring Workbench + Package XML Viewer
@@ -218,29 +222,29 @@
 - Many UI/UX improvements
 - Enable MegaLinter LLM Advisor with Google Gemini free tier
 
-## [6.6.1] 2024-09-20
+## [6.6.1] 2025-09-20
 
 - Auto-collapse progress sections when they are completed.
 
-## [6.6.0] 2024-09-19
+## [6.6.0] 2025-09-19
 
 - New command to start Salesforce CLI MCP server from VsCode SFDX Hardis
 - New configuration item to auto-start Salesforce CLI MCP server when starting VsCode SFDX Hardis
 - Display extension settings with tabs for better UX
 
-## [6.5.1] 2024-09-14
+## [6.5.1] 2025-09-14
 
 - Open report folder in explorer instead of VSCode window
 - Add configuration item to set minimum file size to export in Files Workbench
 
-## [6.5.0] 2024-09-14
+## [6.5.0] 2025-09-14
 
 - Add progress action when executing a command in background mode
 - New command: Files Workbench to manage multiple files export/import configurations
 - Display only one button per report if it is available in CSV and XLSX
 - Fix position of helper texts
 
-## [6.4.1] 2024-09-07
+## [6.4.1] 2025-09-07
 
 - Enhance pipeline configuration
   - Allow to update branch-scoped configuration
@@ -248,21 +252,21 @@
 - Orgs Manager: Fix refresh issue after setting default org
 - Optimize LWC performances by removing unnecessary method existence check
 
-## [6.4.0] 2024-09-06
+## [6.4.0] 2025-09-06
 
 - Add command **Org Monitoring -> Unsecured Connected Apps**
 - Detect when there is a crash at the beginning of a sf hardis command, and display error on running LWC panel
 
-## [6.3.5] 2024-09-04
+## [6.3.5] 2025-09-04
 
 - Installed packages manager: allow to pre-input packages using org installed packages
 - Use white background for branches in DevOps Pipeline UI
 
-## [6.3.4] 2024-09-04
+## [6.3.4] 2025-09-04
 
 - Optimize org-related refreshes
 
-## [6.3.3] 2024-09-03
+## [6.3.3] 2025-09-03
 
 - Allow user to override the check of duplicate running commands
 - Orgs Manager enhancements
@@ -270,29 +274,29 @@
   - Display default org & default dev hub
 - Improve refresh org handling by watching config files
 
-## [6.3.2] 2024-09-01
+## [6.3.2] 2025-09-01
 
 - Open org using SF Cli + Adds internal command execution with progress
 - Fix issue when reusing an already open panel
 
-## [6.3.1] 2024-09-01
+## [6.3.1] 2025-09-01
 
 - Change icon of Orgs Manager
 
-## [6.3.0] 2024-09-01
+## [6.3.0] 2025-09-01
 
 - Show combobox filter to simplify selection when there are many values
 - New feature: Orgs Manager to list, manage and clean all orgs known by Salesforce CLI
 
-## [6.2.2] 2024-08-29
+## [6.2.2] 2025-08-29
 
 - Analyze local environment to find Python executable to use to call command **Run Local HTML Doc Pages**. Display a link to install python if not found.
 
-## [6.2.1] 2024-08-26
+## [6.2.1] 2025-08-26
 
 - Display toggles instead of checkboxes for boolean values in Pipeline Settings and Extension Settings UIs
 
-## [6.2.0] 2024-08-25
+## [6.2.0] 2025-08-25
 
 - DevOps Pipeline
   - Installed packages Manager
@@ -301,29 +305,29 @@
 - Remove declaration of welcome command that is not existing anymore
 - Update Copilot instructions
 
-## [6.1.3] 2024-08-24
+## [6.1.3] 2025-08-24
 
 - Allow hardis:project:configure:auth to call itself when necessary
 - Run background commands in Git bash for Windows if available (required for openssl)
 
-## [6.1.2] 2024-08-24
+## [6.1.2] 2025-08-24
 
 - Improves sfdx plugins version matching
 
-## [6.1.1] 2024-08-24
+## [6.1.1] 2025-08-24
 
 - Fixes related to Code Builder integration
 - Fix cache manager issue
 - Handle binary file download in web context
 - Wait for LWC to be ready before continuing the sfdx-hardis command
 
-## [6.1.0] 2024-08-23
+## [6.1.0] 2025-08-23
 
 - Add Monitoring command [Unused Connected Apps](https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unused-connected-apps/)
 - Add filtering capability to multiselect prompt
 - Enhance design & forms
 
-## [6.0.10 (pre-release)] 2024-08-17
+## [6.0.10 (pre-release)] 2025-08-17
 
 - Add debug options for sfdx-hardis commands
 - Add new sandbox refresh commands
@@ -333,41 +337,41 @@
 - Add Pipeline Settings command & LWC
 - Build custom LWC helptext component to handle multiline display
 
-## [6.0.9 (pre-release)] 2024-08-14
+## [6.0.9 (pre-release)] 2025-08-14
 
 - Add a new mode (by default) to execute sfdx-hardis commands in background, not in terminal
 
-## [6.0.8 (pre-release)] 2024-08-12
+## [6.0.8 (pre-release)] 2025-08-12
 
 - Command execution: Add simple/advanced mode
 - DevOps pipeline: Add warnings if `mergeTargets` is not defined in branch config.
 
-## [6.0.6 (pre-release)] 2024-08-11
+## [6.0.6 (pre-release)] 2025-08-11
 
 - Improve UI & Buttons
 - Rename Task into User Story
 
-## [6.0.5 (pre-release)] 2024-08-11
+## [6.0.5 (pre-release)] 2025-08-11
 
 - Display more kind of buttons (action link, action command, url, doc)
 - Display tables in command execution LWC
 
-## [6.0.1 (pre-release)] 2024-08-10
+## [6.0.1 (pre-release)] 2025-08-10
 
 - Improve sfdx-hardis dependency detection for pre-release mode
 - Improve performance at initialization by using a single multi-threaded worker
 
-## [6.0.0 (pre-release)] 2024-08-09
+## [6.0.0 (pre-release)] 2025-08-09
 
 - New UI with LWC
   - Command execution
   - DevOps Pipeline view and configuration
 
-## [5.10.1] 2024-06-27
+## [5.10.1] 2025-06-27
 
 - Add newest api version labels
 
-## [5.10.0] 2024-06-21
+## [5.10.0] 2025-06-21
 
 - Do not display error message if sf is installed via CodeBuilder
 - Debugger: perform SF related actions only if the breakpoint detected is on an Apex Class
@@ -377,41 +381,41 @@
 - Replace deprecated vscode-test with @vscode/test-electron
 - Fix issue that messed with user VsCode theme / colors customizations
 
-## [5.9.0] 2024-06-18
+## [5.9.0] 2025-06-18
 
 - New command Doc -> [Override prompt templates](https://sfdx-hardis.cloudity.com/hardis/doc/override-prompts/)
 
-## [5.8.0] 2024-02-27
+## [5.8.0] 2025-02-27
 
 - Add PDF generation commands
 - Add another python commands combination to locally run documentation
 
-## [5.7.0] 2024-02-14
+## [5.7.0] 2025-02-14
 
 - New command [hardis:project:generate:bypass](https://sfdx-hardis.cloudity.com/hardis/project/generate/bypass/) : Generates bypass custom permissions and permission sets for specified sObjects and automations
 
-## [5.6.3] 2024-02-03
+## [5.6.3] 2025-02-03
 
 - Add mkdocs-exclude-search to mkdocs plugins
 
-## [5.6.2] 2024-01-21
+## [5.6.2] 2025-01-21
 
 - Fix wrong message for Mac users when sf is installed in /usr/local/bin , which is ok :)
 - Arrange documentation menu
 
-## [5.6.1] 2024-01-10
+## [5.6.1] 2025-01-10
 
 - Update python commands so they work on any type of python installation, including Windows
 
-## [5.6.0] 2024-01-04
+## [5.6.0] 2025-01-04
 
 - New command [hardis:doc:mkdocs-to-salesforce](https://sfdx-hardis.cloudity.com/hardis/doc/mkdocs-to-salesforce/) to upload HTML doc as static resource to your Salesforce org
 
-## [5.5.1] 2024-01-03
+## [5.5.1] 2025-01-03
 
 - Reorder menu
 
-## [5.5.0] 2024-01-03
+## [5.5.0] 2025-01-03
 
 - New Documentation menu section
   - [Generate SF project documentation](https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/) (including Visual Flows)

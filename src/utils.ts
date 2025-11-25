@@ -13,7 +13,7 @@ import { CacheManager, CacheSection } from "./utils/cache-manager";
 import { getConfig } from "./utils/pipeline/sfdxHardisConfig";
 
 export const RECOMMENDED_SFDX_CLI_VERSION = null; //"7.111.6";
-export const NODE_JS_MINIMUM_VERSION = 20.0;
+export const NODE_JS_MINIMUM_VERSION = 24.0;
 export const RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION: string = "6.7.1";
 
 // Interface for execCommand and execSfdxJson options
