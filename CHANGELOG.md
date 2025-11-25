@@ -4,7 +4,7 @@
 
 ## [6.19.0] 2025-11-25
 
-- Upgrade minimal NodeJS version to 24.0
+- Upgrade minimal NodeJS version to 24.0 (except on CodeBuilder / Agentforce Vibes as it can't be changed there)
 
 ## [6.18.3] 2025-11-18
 

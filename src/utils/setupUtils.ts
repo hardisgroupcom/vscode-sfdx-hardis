@@ -188,7 +188,7 @@ export class SetupHelper {
       if (ok) {
         const major = parseInt(version.split(".")[0] || "0", 10);
         const minMajor = Math.floor(Number(NODE_JS_MINIMUM_VERSION) || 0);
-        if (!Number.isNaN(major) && major < minMajor) {
+        if (!Number.isNaN(major) && major < minMajor && !process.env.PATH?.includes("/home/codebuilder/")) {
           const platformLabel = process.platform === "win32" ? "Windows Installer" : "the official installer";
           return {
             id: "node",

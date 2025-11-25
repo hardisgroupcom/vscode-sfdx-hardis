@@ -140,7 +140,7 @@ export class HardisPluginsProvider
                 );
               }
             }));
-      } else if (parseInt(nodeVersionMatch[1]) < NODE_JS_MINIMUM_VERSION) {
+      } else if (parseInt(nodeVersionMatch[1]) < NODE_JS_MINIMUM_VERSION && !process.env.PATH?.includes("/home/codebuilder/")) {
         nodeItem.label += " v" + nodeVersionMatch[1];
         nodeItem.status = "dependency-warning";
         nodeItem.tooltip = "Node.js is outdated";
