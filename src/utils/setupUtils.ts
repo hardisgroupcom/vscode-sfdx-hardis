@@ -188,7 +188,15 @@ export class SetupHelper {
       if (ok) {
         const major = parseInt(version.split(".")[0] || "0", 10);
         const minMajor = Math.floor(Number(NODE_JS_MINIMUM_VERSION) || 0);
-        if (!Number.isNaN(major) && major < minMajor) {
+        if (
+          !Number.isNaN(major) &&
+          major < minMajor &&
+          !process.env.PATH?.includes("/home/codebuilder/")
+        ) {
+          const platformLabel =
+            process.platform === "win32"
+              ? "Windows Installer"
+              : "the official installer";
           return {
             id: "node",
             label: "Node.js",
@@ -197,10 +205,9 @@ export class SetupHelper {
             recommended: String(NODE_JS_MINIMUM_VERSION),
             status: "outdated",
             helpUrl: "https://nodejs.org/",
-            message: `Installed Node.js major version ${major} is older than the required ${minMajor}`,
+            message: `Installed NodeJS major version ${major} is older than the recommended one ${minMajor}.\nIt is recommended to install NodeJS ${minMajor}, then restart VsCode.`,
             installCommand: "https://nodejs.org/",
-            messageLinkLabel:
-              "Download and install latest Node.js (use Windows Installer)",
+            messageLinkLabel: `Download & install NodeJS (use ${platformLabel})`,
             upgradeAvailable: true,
           };
         }

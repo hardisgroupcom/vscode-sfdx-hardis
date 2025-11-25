@@ -130,7 +130,7 @@ export class HardisPluginsProvider
         )}`),
           vscode.window
             .showWarningMessage(
-              "🦙 You need Node.js installed on your computer. Please download and install it (version 14 minimum), then restart VsCode",
+              `🦙 You need Node.js installed on your computer. Please download and install it (version ${NODE_JS_MINIMUM_VERSION}), then restart VsCode.`,
               "Download and install Node.js LTS",
             )
             .then((selection) => {
@@ -140,7 +140,10 @@ export class HardisPluginsProvider
                 );
               }
             }));
-      } else if (parseInt(nodeVersionMatch[1]) < NODE_JS_MINIMUM_VERSION) {
+      } else if (
+        parseInt(nodeVersionMatch[1]) < NODE_JS_MINIMUM_VERSION &&
+        !process.env.PATH?.includes("/home/codebuilder/")
+      ) {
         nodeItem.label += " v" + nodeVersionMatch[1];
         nodeItem.status = "dependency-warning";
         nodeItem.tooltip = "Node.js is outdated";
@@ -149,7 +152,7 @@ export class HardisPluginsProvider
         )}`),
           vscode.window
             .showWarningMessage(
-              `🦙 You have a too old version (${nodeVersionMatch[1]}) of Node.js installed on your computer. Please download and install it (version 20 minimum), then restart VsCode`,
+              `🦙 You have a too old version (${nodeVersionMatch[1]}) of Node.js installed on your computer. Please download and install it (version ${NODE_JS_MINIMUM_VERSION}), then restart VsCode.`,
               "Download and install Node.js LTS",
             )
             .then((selection) => {
