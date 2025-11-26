@@ -48,6 +48,18 @@
     cursor: pointer;
 }
 
+.command-card.disabled {
+    cursor: default;
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.command-card.disabled:hover {
+    transform: none;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    border-color: #e5e5e5;
+}
+
 .command-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);

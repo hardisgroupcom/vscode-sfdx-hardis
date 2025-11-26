@@ -75,10 +75,11 @@ export class GitProvider {
   static async detectRepoInfo(): Promise<RepoInfo | null> {
     const git = simpleGit(getWorkspaceRoot());
     const remotes = await git.getRemotes(true);
-    if (remotes.length === 0) {
+    const gitRemotesOrigins = remotes.filter((remote) => remote.name === "origin");
+    if (gitRemotesOrigins.length === 0) {
       return null;
     }
-    const remoteUrl = remotes[0].refs.fetch;
+    const remoteUrl = gitRemotesOrigins[0].refs.fetch;
     // Match GitLab, GitHub, Azure DevOps, Bitbucket remote URLs
     // Accept nested group paths (e.g. group/subgroup/.../repo.git) and both HTTPS and SSH forms
     // Examples:

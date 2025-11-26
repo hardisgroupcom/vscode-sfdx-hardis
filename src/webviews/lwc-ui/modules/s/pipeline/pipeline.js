@@ -301,6 +301,14 @@ export default class Pipeline extends LightningElement {
     return `provider-icon ${this.ticketAuthenticated ? "provider-colored" : "provider-grey"}`;
   }
 
+  get hasCurrentBranchPullRequest() {
+    return !!this.currentBranchPullRequest;
+  }
+
+  get currentPrCardClasses() {
+    return `command-card${this.hasCurrentBranchPullRequest ? "" : " disabled"}`;
+  }
+
   handleShowPipelineConfig() {
     window.sendMessageToVSCode({
       type: "runVsCodeCommand",
@@ -645,9 +653,12 @@ export default class Pipeline extends LightningElement {
 
   get currentPRDescription() {
     if (!this.currentBranchPullRequest) {
-      return "You need to connect to your Git Server to see pull request details.";
+      return "You need to connect to your Git Server to see pull request details and manage pre-post deployment actions.";
     }
-    return `#${this.currentBranchPullRequest.number} - ${this.currentBranchPullRequest.title || ""}. Click to see related tickets and manage deployment actions.`;
+    if (this.currentBranchPullRequest.number === -1) {
+      return `${this.prButtonInfo.pullRequestLabel} not created yet. Click to manage pre-post deployment actions.`;
+    }
+    return `#${this.currentBranchPullRequest.number} - ${this.currentBranchPullRequest.title || ""}. Click to see related tickets and manage pre-post deployment actions.`;
   }
 
   openPrPage() {
@@ -1395,6 +1406,9 @@ export default class Pipeline extends LightningElement {
   get modalTitle() {
     if (this.modalMode === "singlePR" && this.modalPullRequests.length === 1) {
       const pr = this.modalPullRequests[0];
+      if (pr.number === -1) {
+        return pr.title || "Pull Request";
+      }
       return `#${pr.number} - ${pr.title || "Pull Request"}`;
     }
     const prLabel = this.prButtonInfo?.pullRequestLabel || "Pull Request";
