@@ -301,6 +301,14 @@ export default class Pipeline extends LightningElement {
     return `provider-icon ${this.ticketAuthenticated ? "provider-colored" : "provider-grey"}`;
   }
 
+  get hasCurrentBranchPullRequest() {
+    return !!this.currentBranchPullRequest;
+  }
+
+  get currentPrCardClasses() {
+    return `command-card${this.hasCurrentBranchPullRequest ? "" : " disabled"}`;
+  }
+
   handleShowPipelineConfig() {
     window.sendMessageToVSCode({
       type: "runVsCodeCommand",
@@ -645,7 +653,7 @@ export default class Pipeline extends LightningElement {
 
   get currentPRDescription() {
     if (!this.currentBranchPullRequest) {
-      return "You need to connect to your Git Server to see pull request details.";
+      return "You need to connect to your Git Server to see pull request details and manage pre-post deployment actions.";
     }
     return `#${this.currentBranchPullRequest.number} - ${this.currentBranchPullRequest.title || ""}. Click to see related tickets and manage deployment actions.`;
   }
