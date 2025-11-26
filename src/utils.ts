@@ -253,8 +253,12 @@ export async function execCommand(
   const execOptions: any = {
     maxBuffer: 10000 * 10000,
     cwd: options.cwd || vscode.workspace.rootPath,
-    env: process.env,
+    env: { ...process.env },
   };
+  const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+  if (config.get("disableTlsRejectUnauthorized") === true) {
+    execOptions.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+  }
   const cacheSection = options.cacheSection;
   const cacheExpiration = options.cacheExpiration;
   // Try to get from CacheManager if cacheSection is set
@@ -314,6 +318,9 @@ export async function execCommand(
     } catch {
       res.unableToParseJson = true;
     }
+    await promptToDisableTlsIfNeeded(
+      `${e?.stderr || ""}\n${e?.stdout || ""}\n${e?.message || ""}`,
+    );
     return res;
   }
   // Display output if requested, for better user understanding of the logs
@@ -724,6 +731,83 @@ export async function getPythonCommand() {
     }
   }
   return null;
+}
+
+const certificateErrorPatterns: RegExp[] = [
+  /self[-\s]?signed certificate/i,
+  /unable to get local issuer certificate/i,
+  /unable to verify the first certificate/i,
+  /certificate verify failed/i,
+  /certificate has expired/i,
+  /cert_has_expired/i,
+  /depth_zero_self_signed_cert/i,
+  /unable_to_get_issuer_cert_locally/i,
+  /unable_to_verify_leaf_signature/i,
+  /err_tls_cert_altname_invalid/i,
+];
+
+function stringifyCertificateMessage(message?: unknown): string {
+  if (!message) {
+    return "";
+  }
+  if (typeof message === "string") {
+    return message;
+  }
+  if (Buffer.isBuffer(message)) {
+    return message.toString();
+  }
+  if (message instanceof Error) {
+    return `${message.name}: ${message.message}`;
+  }
+  return String(message);
+}
+
+export function containsCertificateIssue(message?: unknown): boolean {
+  const content = stringifyCertificateMessage(message);
+  if (!content) {
+    return false;
+  }
+  return certificateErrorPatterns.some((pattern) => pattern.test(content));
+}
+
+let tlsPromptInProgress = false;
+
+export async function promptToDisableTlsIfNeeded(
+  message?: unknown,
+): Promise<boolean> {
+  if (!containsCertificateIssue(message)) {
+    return false;
+  }
+  const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+  if (config.get("disableTlsRejectUnauthorized") === true) {
+    return false;
+  }
+  if (tlsPromptInProgress) {
+    return false;
+  }
+  tlsPromptInProgress = true;
+  try {
+    const enableLabel = "Enable TLS override";
+    const selection = await vscode.window.showWarningMessage(
+      "Certificate issues were detected while running an SFDX Hardis command. Do you want to enable the setting 'vsCodeSfdxHardis.disableTlsRejectUnauthorized' to ignore TLS errors? (this is not very secured, but may be required in some corporate environments with self-signed certificates)",
+      enableLabel,
+      "Cancel",
+    );
+    if (selection === enableLabel) {
+      await config.update(
+        "disableTlsRejectUnauthorized",
+        true,
+        vscode.ConfigurationTarget.Global,
+      );
+      vscode.window.showInformationMessage(
+        "TLS certificate validation is now disabled for SFDX Hardis commands. Re-run the command to continue. (you might need to restart VS Code for this change to take effect)",
+      );
+      return true;
+    }
+    return false;
+  } finally {
+    tlsPromptInProgress = false;
+  }
 }
 
 export function openFolderInExplorer(folderPath: string) {

@@ -48,6 +48,7 @@ export const sectionDefs = [
     keys: [
       "vsCodeSfdxHardis.debugSfdxHardisCommands",
       "vsCodeSfdxHardis.debugVsCodeSfdxHardis",
+      "vsCodeSfdxHardis.disableTlsRejectUnauthorized",
       "vsCodeSfdxHardis.disableGitBashCheck",
       "vsCodeSfdxHardis.disableGitMergeRequiredCheck",
       "vsCodeSfdxHardis.ignoreSfdxCliRecommendedVersion",
