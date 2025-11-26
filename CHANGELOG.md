@@ -10,6 +10,7 @@
   - Improve labels when the PR is not created yet
   - Fix missing initial display for Git provider images
 - Git integration: look specifically for remote "origin"
+- Improve LWC loading performances
 
 ## [6.19.0] 2025-11-25
 
