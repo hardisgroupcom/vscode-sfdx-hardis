@@ -2,7 +2,12 @@ import treeKill from "tree-kill";
 import * as vscode from "vscode";
 import { LwcPanelManager } from "./lwc-panel-manager";
 import { spawn } from "child_process";
-import { getGitBashPath, stripAnsi } from "./utils";
+import {
+  containsCertificateIssue,
+  getGitBashPath,
+  promptToDisableTlsIfNeeded,
+  stripAnsi,
+} from "./utils";
 import { Logger } from "./logger";
 
 /**
@@ -303,6 +308,17 @@ export class CommandRunner {
       }
     }
     const stderrLines: string[] = [];
+    let certificatePromptTriggered = false;
+    const tryNotifyCertificateIssue = (message?: string) => {
+      if (certificatePromptTriggered) {
+        return;
+      }
+      if (!containsCertificateIssue(message)) {
+        return;
+      }
+      certificatePromptTriggered = true;
+      void promptToDisableTlsIfNeeded(message);
+    };
 
     // Handle output and errors
     childProcess.stdout?.on("data", (data: any) => {
@@ -315,11 +331,15 @@ export class CommandRunner {
       output.append(`[stderr] ${clean}`);
       handleLogLine(clean);
       stderrLines.push(clean);
+      tryNotifyCertificateIssue(clean);
     });
     childProcess.on("close", (code: any) => {
       output.appendLine(`[Ended] ${preprocessedCommand} (exit code: ${code})`);
       this.activeCommands.delete(preprocessedCommand);
       closeProgress();
+      if (code && code !== 0) {
+        tryNotifyCertificateIssue(stderrLines.join("\n"));
+      }
       // Send message to panel if still marked as active and running
       setTimeout(() => {
         const panelManager = LwcPanelManager.getInstance();
@@ -344,6 +364,7 @@ export class CommandRunner {
       output.appendLine(`[Error] ${err.message}`);
       this.activeCommands.delete(preprocessedCommand);
       closeProgress();
+      tryNotifyCertificateIssue(err?.message || "");
     });
   }
 
