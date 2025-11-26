@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [6.20.0] 2025-11-26
+
+- Prompts to disable TLS for certificate issues
+
 ## [6.19.0] 2025-11-25
 
 - Upgrade minimal NodeJS version to 24.0 (except on CodeBuilder / Agentforce Vibes as it can't be changed there)

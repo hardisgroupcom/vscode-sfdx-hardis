@@ -2,7 +2,12 @@ import treeKill from "tree-kill";
 import * as vscode from "vscode";
 import { LwcPanelManager } from "./lwc-panel-manager";
 import { spawn } from "child_process";
-import { getGitBashPath, stripAnsi } from "./utils";
+import {
+  containsCertificateIssue,
+  getGitBashPath,
+  promptToDisableTlsIfNeeded,
+  stripAnsi,
+} from "./utils";
 import { Logger } from "./logger";
 
 /**
@@ -182,9 +187,20 @@ export class CommandRunner {
     const spawnOptions: any = {
       shell: true,
       cwd: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.cwd(),
+      env: { ...process.env }
     };
+    const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+    if (config.get("disableTlsRejectUnauthorized") === true) {
+      spawnOptions.env = {
+        ...spawnOptions.env,
+        NODE_TLS_REJECT_UNAUTHORIZED: "0",
+      };
+    }
     if (this.debugNodeJs) {
-      spawnOptions.env = { ...process.env, NODE_OPTIONS: "--inspect-brk" };
+      spawnOptions.env = {
+        ...spawnOptions.env,
+        NODE_OPTIONS: "--inspect-brk" 
+      };
     }
     const gitBashPath = getGitBashPath();
     if (process.platform === "win32" && gitBashPath) {
@@ -292,6 +308,17 @@ export class CommandRunner {
       }
     }
     const stderrLines: string[] = [];
+    let certificatePromptTriggered = false;
+    const tryNotifyCertificateIssue = (message?: string) => {
+      if (certificatePromptTriggered) {
+        return;
+      }
+      if (!containsCertificateIssue(message)) {
+        return;
+      }
+      certificatePromptTriggered = true;
+      void promptToDisableTlsIfNeeded(message);
+    };
 
     // Handle output and errors
     childProcess.stdout?.on("data", (data: any) => {
@@ -304,11 +331,15 @@ export class CommandRunner {
       output.append(`[stderr] ${clean}`);
       handleLogLine(clean);
       stderrLines.push(clean);
+      tryNotifyCertificateIssue(clean);
     });
     childProcess.on("close", (code: any) => {
       output.appendLine(`[Ended] ${preprocessedCommand} (exit code: ${code})`);
       this.activeCommands.delete(preprocessedCommand);
       closeProgress();
+      if (code && code !== 0) {
+        tryNotifyCertificateIssue(stderrLines.join("\n"));
+      }
       // Send message to panel if still marked as active and running
       setTimeout(() => {
         const panelManager = LwcPanelManager.getInstance();
@@ -333,6 +364,7 @@ export class CommandRunner {
       output.appendLine(`[Error] ${err.message}`);
       this.activeCommands.delete(preprocessedCommand);
       closeProgress();
+      tryNotifyCertificateIssue(err?.message || "");
     });
   }
 
@@ -456,11 +488,15 @@ export class CommandRunner {
     if (!cmd) {
       return;
     }
-    if (terminal?.name?.includes("powershell")) {
-      cmd = cmd.replace(/ && /g, " ; ").replace(/echo y/g, "Write-Output 'y'");
-    }
     if (this.debugNodeJs) {
       cmd = `NODE_OPTIONS=--inspect-brk ${cmd}`;
+    }
+    const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+    if (config.get("disableTlsRejectUnauthorized") === true) {
+      cmd = `export NODE_TLS_REJECT_UNAUTHORIZED=0 && ${cmd}`;
+    }
+    if (terminal?.name?.includes("powershell")) {
+      cmd = cmd.replace(/ && /g, " ; ").replace(/echo y/g, "Write-Output 'y'");
     }
     // Send command to terminal
     terminal.sendText(cmd);

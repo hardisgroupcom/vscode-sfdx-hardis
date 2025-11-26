@@ -103,6 +103,11 @@
           "default": false,
           "description": "Disable check if parent branch might need to be merged into current branch"
         },
+        "vsCodeSfdxHardis.disableTlsRejectUnauthorized": {
+          "type": "boolean",
+          "default": false,
+          "description": "Disable TLS reject unauthorized for sfdx-hardis commands (useful if you have self-signed certificates in your network)"
+        },
         "vsCodeSfdxHardis.disableVsCodeColors": {
           "type": "boolean",
           "default": false,
