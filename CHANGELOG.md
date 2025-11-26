@@ -3,7 +3,9 @@
 ## [Unreleased]
 
 - Prompts to disable TLS for certificate issues
-- Live DevOps Pipeline: Disables PR button when no PR exists or Git not connected
+- Live DevOps Pipeline:
+  - Disables PR button when no PR exists or Git not connected
+  - Improve labels when the PR is not created yet
 - Git integration: look specifically for remote "origin"
 
 ## [6.19.0] 2025-11-25
