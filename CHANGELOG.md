@@ -8,6 +8,7 @@
 - Live DevOps Pipeline:
   - Disables PR button when no PR exists or Git not connected
   - Improve labels when the PR is not created yet
+  - Fix missing initial display for Git provider images
 - Git integration: look specifically for remote "origin"
 
 ## [6.19.0] 2025-11-25

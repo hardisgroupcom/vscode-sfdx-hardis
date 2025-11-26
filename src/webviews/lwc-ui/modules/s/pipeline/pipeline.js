@@ -25,7 +25,7 @@ export default class Pipeline extends LightningElement {
   _refreshTimer = null;
   _isVisible = true;
   _isAutoRefresh = false;
-  images = {};
+  @track images = {};
   prColumns = [
     {
       key: "number",
