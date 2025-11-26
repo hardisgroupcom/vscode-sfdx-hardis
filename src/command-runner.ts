@@ -187,7 +187,7 @@ export class CommandRunner {
     const spawnOptions: any = {
       shell: true,
       cwd: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.cwd(),
-      env: { ...process.env }
+      env: { ...process.env },
     };
     const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
     if (config.get("disableTlsRejectUnauthorized") === true) {
@@ -199,7 +199,7 @@ export class CommandRunner {
     if (this.debugNodeJs) {
       spawnOptions.env = {
         ...spawnOptions.env,
-        NODE_OPTIONS: "--inspect-brk" 
+        NODE_OPTIONS: "--inspect-brk",
       };
     }
     const gitBashPath = getGitBashPath();
