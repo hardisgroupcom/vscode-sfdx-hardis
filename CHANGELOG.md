@@ -2,8 +2,6 @@
 
 ## [Unreleased]
 
-## [6.20.0] 2025-11-26
-
 - Prompts to disable TLS for certificate issues
 
 ## [6.19.0] 2025-11-25
