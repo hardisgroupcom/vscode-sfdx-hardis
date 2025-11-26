@@ -182,9 +182,20 @@ export class CommandRunner {
     const spawnOptions: any = {
       shell: true,
       cwd: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || process.cwd(),
+      env: { ...process.env }
     };
+    const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+    if (config.get("disableTlsRejectUnauthorized") === true) {
+      spawnOptions.env = {
+        ...spawnOptions.env,
+        NODE_TLS_REJECT_UNAUTHORIZED: "0",
+      };
+    }
     if (this.debugNodeJs) {
-      spawnOptions.env = { ...process.env, NODE_OPTIONS: "--inspect-brk" };
+      spawnOptions.env = {
+        ...spawnOptions.env,
+        NODE_OPTIONS: "--inspect-brk" 
+      };
     }
     const gitBashPath = getGitBashPath();
     if (process.platform === "win32" && gitBashPath) {
@@ -456,11 +467,15 @@ export class CommandRunner {
     if (!cmd) {
       return;
     }
-    if (terminal?.name?.includes("powershell")) {
-      cmd = cmd.replace(/ && /g, " ; ").replace(/echo y/g, "Write-Output 'y'");
-    }
     if (this.debugNodeJs) {
       cmd = `NODE_OPTIONS=--inspect-brk ${cmd}`;
+    }
+    const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+    if (config.get("disableTlsRejectUnauthorized") === true) {
+      cmd = `export NODE_TLS_REJECT_UNAUTHORIZED=0 && ${cmd}`;
+    }
+    if (terminal?.name?.includes("powershell")) {
+      cmd = cmd.replace(/ && /g, " ; ").replace(/echo y/g, "Write-Output 'y'");
     }
     // Send command to terminal
     terminal.sendText(cmd);

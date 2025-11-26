@@ -255,6 +255,10 @@ export async function execCommand(
     cwd: options.cwd || vscode.workspace.rootPath,
     env: process.env,
   };
+  const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+  if (config.get("disableTlsRejectUnauthorized") === true) {
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+  }
   const cacheSection = options.cacheSection;
   const cacheExpiration = options.cacheExpiration;
   // Try to get from CacheManager if cacheSection is set
