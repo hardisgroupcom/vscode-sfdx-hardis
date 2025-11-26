@@ -493,7 +493,7 @@ export class CommandRunner {
     }
     const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
     if (config.get("disableTlsRejectUnauthorized") === true) {
-      cmd = `export NODE_TLS_REJECT_UNAUTHORIZED=0 && ${cmd}`;
+      cmd = `NODE_TLS_REJECT_UNAUTHORIZED=0 ${cmd}`;
     }
     if (terminal?.name?.includes("powershell")) {
       cmd = cmd.replace(/ && /g, " ; ").replace(/echo y/g, "Write-Output 'y'");

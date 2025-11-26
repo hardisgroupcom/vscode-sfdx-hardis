@@ -253,11 +253,11 @@ export async function execCommand(
   const execOptions: any = {
     maxBuffer: 10000 * 10000,
     cwd: options.cwd || vscode.workspace.rootPath,
-    env: process.env,
+    env: { ...process.env },
   };
   const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
   if (config.get("disableTlsRejectUnauthorized") === true) {
-    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+    execOptions.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
   }
   const cacheSection = options.cacheSection;
   const cacheExpiration = options.cacheExpiration;
@@ -789,7 +789,7 @@ export async function promptToDisableTlsIfNeeded(
   try {
     const enableLabel = "Enable TLS override";
     const selection = await vscode.window.showWarningMessage(
-      "Certificate issues were detected while running an SFDX Hardis command. Do you want to enable the setting 'vsCodeSfdxHardis.disableTlsRejectUnauthorized' to ignore TLS errors?",
+      "Certificate issues were detected while running an SFDX Hardis command. Do you want to enable the setting 'vsCodeSfdxHardis.disableTlsRejectUnauthorized' to ignore TLS errors? (this is not very secured, but may be required in some corporate environments with self-signed certificates)",
       enableLabel,
       "Cancel",
     );
@@ -800,7 +800,7 @@ export async function promptToDisableTlsIfNeeded(
         vscode.ConfigurationTarget.Global,
       );
       vscode.window.showInformationMessage(
-        "TLS certificate validation is now disabled for SFDX Hardis commands. Re-run the command to continue.",
+        "TLS certificate validation is now disabled for SFDX Hardis commands. Re-run the command to continue. (you might need to restart VS Code for this change to take effect)",
       );
       return true;
     }
