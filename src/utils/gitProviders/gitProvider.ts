@@ -75,7 +75,9 @@ export class GitProvider {
   static async detectRepoInfo(): Promise<RepoInfo | null> {
     const git = simpleGit(getWorkspaceRoot());
     const remotes = await git.getRemotes(true);
-    const gitRemotesOrigins = remotes.filter((remote) => remote.name === "origin");
+    const gitRemotesOrigins = remotes.filter(
+      (remote) => remote.name === "origin",
+    );
     if (gitRemotesOrigins.length === 0) {
       return null;
     }
