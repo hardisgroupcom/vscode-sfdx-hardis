@@ -5,6 +5,35 @@ import { createElement } from "lwc";
 
 console.log("LWC UI initializing...");
 
+const pendingMessages = [];
+
+function routeMessageToComponent(message) {
+  const component = window.lwcComponentInstance;
+  if (!component) {
+    return;
+  }
+
+  if (message.type === "initialize") {
+    if (typeof component.initialize === "function") {
+      component.initialize(message.data);
+    } else if (typeof component.showPrompt === "function") {
+      component.showPrompt(message.data);
+    }
+  }
+
+  if (typeof component.handleMessage === "function") {
+    component.handleMessage(message.type, message.data);
+  }
+}
+
+function flushPendingMessages() {
+  if (!window.lwcComponentInstance || pendingMessages.length === 0) {
+    return;
+  }
+  const messagesToProcess = pendingMessages.splice(0, pendingMessages.length);
+  messagesToProcess.forEach((msg) => routeMessageToComponent(msg));
+}
+
 // Static import map for all LWC modules (ensures Webpack bundles them)
 const lwcModules = {
   "s-welcome": () => import("s/welcome"),
@@ -38,23 +67,12 @@ window.addEventListener("message", (event) => {
   const message = event.data;
   console.log("Received message from VS Code:", message);
 
-  // Handle initialization message
-  if (message.type === "initialize" && window.lwcComponentInstance) {
-    if (typeof window.lwcComponentInstance.initialize === "function") {
-      window.lwcComponentInstance.initialize(message.data);
-    } else if (typeof window.lwcComponentInstance.showPrompt === "function") {
-      // For prompt input component
-      window.lwcComponentInstance.showPrompt(message.data);
-    }
+  if (!window.lwcComponentInstance) {
+    pendingMessages.push(message);
+    return;
   }
 
-  // Handle messages for command execution component
-  if (
-    window.lwcComponentInstance &&
-    typeof window.lwcComponentInstance.handleMessage === "function"
-  ) {
-    window.lwcComponentInstance.handleMessage(message.type, message.data);
-  }
+  routeMessageToComponent(message);
 });
 
 // Wait for DOM to be ready
@@ -113,6 +131,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       // Add element to DOM first
       appContainer.appendChild(element);
       console.log("✅ LWC component mounted successfully!");
+
+      flushPendingMessages();
 
       // Wait a bit for the component to fully initialize
       setTimeout(() => {
