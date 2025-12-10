@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Metadata Retriever: Filter metadatas types that are not retrievable (ex: `PicklistValue`)
+
 ## [6.20.0] 2025-11-25
 
 - Prompts to disable TLS for certificate issues
