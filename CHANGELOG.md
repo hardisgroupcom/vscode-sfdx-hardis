@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [6.20.1] 2025-12-12
+
 - Metadata Retriever: Filter metadatas types that are not retrievable (ex: `PicklistValue`)
 
 ## [6.20.0] 2025-11-25
