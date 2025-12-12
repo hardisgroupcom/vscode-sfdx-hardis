@@ -907,10 +907,15 @@ async function handleSourceMemberQuery(
 
   if (result && result.result && result.result.records) {
     let records = result.result.records as any[];
+    // Fix MemberName for certain types if needed
     records = records.map((r) => {
-      // Fix MemberName for certain types if needed
       r.MemberName = fixMemberName(r.MemberName, r.MemberType);
       return r;
+    });
+    // Filter Metadata Types that are not retrievable via Metadata API
+    const nonRetrievableTypes = ["PicklistValue"];
+    records = records.filter((r) => {
+      return !nonRetrievableTypes.includes(r.MemberType);
     });
     // Apply packageFilter post-query if provided
     if (packageFilter && packageFilter !== "All") {
