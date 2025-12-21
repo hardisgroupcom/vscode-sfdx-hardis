@@ -61,11 +61,7 @@ const defaultLocalPackageGuard = new DefaultLocalPackageGuard();
 let packageGuardDisposableRegistered = false;
 
 function normalizeSfdxProjectPath(p: string): string {
-  return (p || "")
-    .toString()
-    .trim()
-    .replace(/\\/g, "/")
-    .replace(/\/+$/, "");
+  return (p || "").toString().trim().replace(/\\/g, "/").replace(/\/+$/, "");
 }
 
 function getSfdxProjectJsonFullPath(): string {
@@ -84,7 +80,11 @@ async function writeSfdxProjectJsonToDisk(pj: any): Promise<void> {
 }
 
 function getDefaultPackageDirectoryPathFromProjectJson(pj: any): string | null {
-  if (!pj || !Array.isArray(pj.packageDirectories) || pj.packageDirectories.length === 0) {
+  if (
+    !pj ||
+    !Array.isArray(pj.packageDirectories) ||
+    pj.packageDirectories.length === 0
+  ) {
     return null;
   }
 
@@ -99,7 +99,9 @@ function getDefaultPackageDirectoryPathFromProjectJson(pj: any): string | null {
   return first && first.path ? first.path.toString() : null;
 }
 
-async function getDefaultPackageDirectoryPathFromSfdxProjectJson(): Promise<string | null> {
+async function getDefaultPackageDirectoryPathFromSfdxProjectJson(): Promise<
+  string | null
+> {
   try {
     const pj = await readSfdxProjectJsonFromDisk();
     return getDefaultPackageDirectoryPathFromProjectJson(pj);
@@ -108,11 +110,17 @@ async function getDefaultPackageDirectoryPathFromSfdxProjectJson(): Promise<stri
   }
 }
 
-async function setDefaultPackageDirectoryPathInSfdxProjectJson(packagePath: string): Promise<void> {
+async function setDefaultPackageDirectoryPathInSfdxProjectJson(
+  packagePath: string,
+): Promise<void> {
   const normalizedTarget = normalizeSfdxProjectPath(packagePath);
   const pj = await readSfdxProjectJsonFromDisk();
 
-  if (!pj || !Array.isArray(pj.packageDirectories) || pj.packageDirectories.length === 0) {
+  if (
+    !pj ||
+    !Array.isArray(pj.packageDirectories) ||
+    pj.packageDirectories.length === 0
+  ) {
     return;
   }
 
@@ -162,7 +170,8 @@ async function getLocalPackageOptionsFromSfdxProjectJson(): Promise<{
     const defaultValue = getDefaultPackageDirectoryPathFromProjectJson(pj);
     return {
       options,
-      defaultValue: defaultValue || (options.length > 0 ? options[0].value : null),
+      defaultValue:
+        defaultValue || (options.length > 0 ? options[0].value : null),
     };
   } catch {
     return { options: [], defaultValue: null };
@@ -395,7 +404,8 @@ async function executeMetadataRetrieve(
   }
 
   // Switch default package directory only for the duration of the retrieve
-  const initialDefaultPackage = defaultLocalPackageGuard.getInitialDefaultPackagePath();
+  const initialDefaultPackage =
+    defaultLocalPackageGuard.getInitialDefaultPackagePath();
   const shouldSwitchPackage =
     !!localPackagePath &&
     !!initialDefaultPackage &&
@@ -404,7 +414,9 @@ async function executeMetadataRetrieve(
 
   if (shouldSwitchPackage) {
     try {
-      await setDefaultPackageDirectoryPathInSfdxProjectJson(localPackagePath as string);
+      await setDefaultPackageDirectoryPathInSfdxProjectJson(
+        localPackagePath as string,
+      );
     } catch (e: any) {
       Logger.log(
         `Failed to switch default package in sfdx-project.json: ${e?.message || e}`,
