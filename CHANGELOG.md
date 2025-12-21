@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [6.21.0] 2025-12-21
+
+- Metadata Retriever: Add option to retrieve metadatas in a specific local sfdx package folder
+
 ## [6.20.1] 2025-12-12
 
 - Metadata Retriever: Filter metadatas types that are not retrievable (ex: `PicklistValue`)

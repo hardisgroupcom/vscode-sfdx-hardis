@@ -16,6 +16,14 @@
   pointer-events: auto;
 }
 
+.local-package-combo {
+  min-width: 220px;
+}
+
+.local-package-combo-floating {
+  max-width: 260px;
+}
+
 /* Respect reduced motion preferences */
 @media (prefers-reduced-motion: reduce) {
   .retrieve-floating,
