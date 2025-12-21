@@ -20,6 +20,155 @@ import * as fs from "fs-extra";
 import { LwcUiPanel } from "../webviews/lwc-ui-panel";
 import { generatePackageXml, mergeIntoPackageXml } from "./packageXml";
 
+type LocalPackageOption = { label: string; value: string };
+
+class DefaultLocalPackageGuard {
+  private initialDefaultPackagePath: string | null = null;
+
+  public setInitialDefaultPackagePathIfEmpty(packagePath: string | null): void {
+    if (!this.initialDefaultPackagePath) {
+      this.initialDefaultPackagePath = packagePath;
+    }
+  }
+
+  public getInitialDefaultPackagePath(): string | null {
+    return this.initialDefaultPackagePath;
+  }
+
+  public async restoreInitialDefaultIfNeeded(): Promise<void> {
+    if (!this.initialDefaultPackagePath) {
+      return;
+    }
+
+    try {
+      const current = await getDefaultPackageDirectoryPathFromSfdxProjectJson();
+      if (
+        current &&
+        normalizeSfdxProjectPath(current) !==
+          normalizeSfdxProjectPath(this.initialDefaultPackagePath)
+      ) {
+        await setDefaultPackageDirectoryPathInSfdxProjectJson(
+          this.initialDefaultPackagePath,
+        );
+      }
+    } catch {
+      // ignore restore failures
+    }
+  }
+}
+
+const defaultLocalPackageGuard = new DefaultLocalPackageGuard();
+let packageGuardDisposableRegistered = false;
+
+function normalizeSfdxProjectPath(p: string): string {
+  return (p || "")
+    .toString()
+    .trim()
+    .replace(/\\/g, "/")
+    .replace(/\/+$/, "");
+}
+
+function getSfdxProjectJsonFullPath(): string {
+  return path.join(getWorkspaceRoot(), "sfdx-project.json");
+}
+
+async function readSfdxProjectJsonFromDisk(): Promise<any> {
+  const pjPath = getSfdxProjectJsonFullPath();
+  const txt = await fs.readFile(pjPath, "utf8");
+  return JSON.parse(txt || "{}");
+}
+
+async function writeSfdxProjectJsonToDisk(pj: any): Promise<void> {
+  const pjPath = getSfdxProjectJsonFullPath();
+  await fs.writeFile(pjPath, JSON.stringify(pj, null, 2) + "\n", "utf8");
+}
+
+function getDefaultPackageDirectoryPathFromProjectJson(pj: any): string | null {
+  if (!pj || !Array.isArray(pj.packageDirectories) || pj.packageDirectories.length === 0) {
+    return null;
+  }
+
+  const found = pj.packageDirectories.find(
+    (d: any) => d && d.default === true && d.path,
+  );
+  if (found && found.path) {
+    return found.path.toString();
+  }
+
+  const first = pj.packageDirectories.find((d: any) => d && d.path);
+  return first && first.path ? first.path.toString() : null;
+}
+
+async function getDefaultPackageDirectoryPathFromSfdxProjectJson(): Promise<string | null> {
+  try {
+    const pj = await readSfdxProjectJsonFromDisk();
+    return getDefaultPackageDirectoryPathFromProjectJson(pj);
+  } catch {
+    return null;
+  }
+}
+
+async function setDefaultPackageDirectoryPathInSfdxProjectJson(packagePath: string): Promise<void> {
+  const normalizedTarget = normalizeSfdxProjectPath(packagePath);
+  const pj = await readSfdxProjectJsonFromDisk();
+
+  if (!pj || !Array.isArray(pj.packageDirectories) || pj.packageDirectories.length === 0) {
+    return;
+  }
+
+  let matched = false;
+  pj.packageDirectories = pj.packageDirectories.map((d: any) => {
+    if (!d || !d.path) {
+      return d;
+    }
+
+    const normalizedEntry = normalizeSfdxProjectPath(d.path.toString());
+    if (normalizedEntry === normalizedTarget) {
+      matched = true;
+      return { ...d, default: true };
+    }
+
+    if (d.default === true) {
+      const clone = { ...d };
+      delete clone.default;
+      return clone;
+    }
+    return d;
+  });
+
+  if (!matched) {
+    return;
+  }
+
+  await writeSfdxProjectJsonToDisk(pj);
+}
+
+async function getLocalPackageOptionsFromSfdxProjectJson(): Promise<{
+  options: LocalPackageOption[];
+  defaultValue: string | null;
+}> {
+  try {
+    const pj = await readSfdxProjectJsonFromDisk();
+    const dirs: any[] = Array.isArray(pj.packageDirectories)
+      ? pj.packageDirectories
+      : [];
+    const options: LocalPackageOption[] = dirs
+      .filter((d) => d && d.path)
+      .map((d) => {
+        const p = d.path.toString();
+        return { label: p, value: p };
+      });
+
+    const defaultValue = getDefaultPackageDirectoryPathFromProjectJson(pj);
+    return {
+      options,
+      defaultValue: defaultValue || (options.length > 0 ? options[0].value : null),
+    };
+  } catch {
+    return { options: [], defaultValue: null };
+  }
+}
+
 export function registerShowMetadataRetriever(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
     "vscode-sfdx-hardis.showMetadataRetriever",
@@ -71,6 +220,25 @@ export function registerShowMetadataRetriever(commands: Commands) {
       // Determine whether local file checking is available by looking for sfdx-project.json
       const packageDirs = await listSfdxProjectPackageDirectories();
 
+      // Local package combobox options (from sfdx-project.json)
+      const {
+        options: localPackageOptions,
+        defaultValue: defaultLocalPackage,
+      } = await getLocalPackageOptionsFromSfdxProjectJson();
+      defaultLocalPackageGuard.setInitialDefaultPackagePathIfEmpty(
+        defaultLocalPackage,
+      );
+
+      // Ensure we restore initial default when extension deactivates
+      if (!packageGuardDisposableRegistered) {
+        packageGuardDisposableRegistered = true;
+        commands.disposables.push(
+          new vscode.Disposable(() => {
+            void defaultLocalPackageGuard.restoreInitialDefaultIfNeeded();
+          }),
+        );
+      }
+
       const panel = LwcPanelManager.getInstance().getOrCreatePanel(
         "s-metadata-retriever",
         {
@@ -79,6 +247,8 @@ export function registerShowMetadataRetriever(commands: Commands) {
           metadataTypes: metadataTypeOptions,
           checkLocalAvailable: packageDirs.length > 0,
           packageDirectories: packageDirs,
+          localPackageOptions,
+          defaultLocalPackage,
         },
       );
 
@@ -121,6 +291,8 @@ export function registerShowMetadataRetriever(commands: Commands) {
           }
         } else if (type === "openRetrieveFolder") {
           await handleOpenRetrieveFolder();
+        } else if (type === "panelDisposed") {
+          await defaultLocalPackageGuard.restoreInitialDefaultIfNeeded();
         }
       });
     },
@@ -210,7 +382,36 @@ async function executeMetadataRetrieve(
   displayTitle: string,
   panel: LwcUiPanel,
   forceOverwrite = false,
+  localPackagePath: string | null = null,
 ): Promise<any> {
+  // Lock local package selector while retrieving
+  try {
+    panel.sendMessage({
+      type: "retrieveState",
+      data: { isRetrieving: true },
+    });
+  } catch {
+    // ignore
+  }
+
+  // Switch default package directory only for the duration of the retrieve
+  const initialDefaultPackage = defaultLocalPackageGuard.getInitialDefaultPackagePath();
+  const shouldSwitchPackage =
+    !!localPackagePath &&
+    !!initialDefaultPackage &&
+    normalizeSfdxProjectPath(localPackagePath) !==
+      normalizeSfdxProjectPath(initialDefaultPackage);
+
+  if (shouldSwitchPackage) {
+    try {
+      await setDefaultPackageDirectoryPathInSfdxProjectJson(localPackagePath as string);
+    } catch (e: any) {
+      Logger.log(
+        `Failed to switch default package in sfdx-project.json: ${e?.message || e}`,
+      );
+    }
+  }
+
   // Split metadata list and create separate --metadata flags for each item
   const workspaceRoot = getWorkspaceRoot();
   const metadataItems = metadataList
@@ -250,6 +451,7 @@ async function executeMetadataRetrieve(
           displayTitle,
           panel,
           true,
+          localPackagePath,
         );
       }
     }
@@ -560,6 +762,23 @@ async function executeMetadataRetrieve(
           Logger.showOutputChannel();
         }
       });
+  }
+
+  // Always restore initial default package as a safety net
+  try {
+    await defaultLocalPackageGuard.restoreInitialDefaultIfNeeded();
+  } catch {
+    // ignore
+  }
+
+  // Unlock local package selector
+  try {
+    panel.sendMessage({
+      type: "retrieveState",
+      data: { isRetrieving: false },
+    });
+  } catch {
+    // ignore
   }
   return result;
 }
@@ -1258,7 +1477,7 @@ function buildMetadataKeys(name: any, mt: any) {
 /* jscpd:ignore-start */
 async function handleRetrieveSelectedMetadata(panel: any, data: any) {
   try {
-    const { username, metadata } = data;
+    const { username, metadata, localPackage } = data;
 
     if (
       !username ||
@@ -1284,6 +1503,8 @@ async function handleRetrieveSelectedMetadata(panel: any, data: any) {
       metadata,
       `Retrieving ${metadata.length} metadata item(s)`,
       panel,
+      false,
+      localPackage || null,
     );
   } catch (error: any) {
     Logger.log(`Error retrieving selected metadata: ${error.message}`);
@@ -1313,7 +1534,7 @@ async function handleOpenRetrieveFolder() {
 
 async function handleRetrieveMetadata(panel: any, data: any) {
   try {
-    const { username, memberType, memberName, deleted } = data;
+    const { username, memberType, memberName, deleted, localPackage } = data;
 
     if (!username || !memberType || !memberName) {
       vscode.window.showErrorMessage(
@@ -1343,6 +1564,8 @@ async function handleRetrieveMetadata(panel: any, data: any) {
       metadata,
       `Retrieving ${memberType}: ${memberName}`,
       panel,
+      false,
+      localPackage || null,
     );
   } catch (error: any) {
     Logger.log(`Error retrieving metadata: ${error.message}`);

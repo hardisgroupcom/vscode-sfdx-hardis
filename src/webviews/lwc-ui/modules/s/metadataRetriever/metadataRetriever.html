@@ -189,16 +189,30 @@
               ></lightning-input>
             </div>
             <template if:true={hasSelectedRows}>
-              <div class="slds-col slds-no-flex">
-                <lightning-button
-                  data-id="retrieve-button"
-                  variant="success"
-                  label={retrieveSelectedLabel}
-                  icon-name="utility:download"
-                  onclick={handleRetrieveSelected}
-                  size="small"
-                ></lightning-button>
-              </div>
+                <template if:true={showLocalPackageSelector}>
+                    <div class="slds-col slds-no-flex">
+                      <lightning-combobox
+                        label="Local package"
+                        value={selectedLocalPackage}
+                        options={localPackageOptions}
+                        onchange={handleLocalPackageChange}
+                        disabled={localPackageDisabled}
+                        variant="label-hidden"
+                        placeholder="Local package"
+                        title="Local package"
+                      ></lightning-combobox>
+                    </div>
+                </template>
+                <div class="slds-col slds-no-flex">
+                    <lightning-button
+                      data-id="retrieve-button"
+                      variant="success"
+                      label={retrieveSelectedLabel}
+                      icon-name="utility:download"
+                      onclick={handleRetrieveSelected}
+                      size="small"
+                    ></lightning-button>
+                  </div>
             </template>
           </div>
           <lightning-datatable
