@@ -37,6 +37,12 @@ export default class MetadataRetriever extends LightningElement {
   @track featureText;
   @track imgFeatureLogo = "";
 
+  // Local package selector (sfdx-project.json packageDirectories)
+  @track localPackageOptions = [];
+  @track selectedLocalPackage = null;
+  @track initialLocalPackage = null;
+  @track isRetrieving = false;
+
   // Performance optimization properties
   searchDebounceTimer = null;
   cachedDateFrom = null;
@@ -342,7 +348,44 @@ export default class MetadataRetriever extends LightningElement {
           this.checkLocalFiles = false; // force-uncheck
         }
       }
+
+      // Local packages from sfdx-project.json
+      if (data.localPackageOptions && Array.isArray(data.localPackageOptions)) {
+        this.localPackageOptions = data.localPackageOptions;
+      }
+      if (data.defaultLocalPackage) {
+        this.selectedLocalPackage = data.defaultLocalPackage;
+        this.initialLocalPackage = data.defaultLocalPackage;
+      } else if (
+        this.localPackageOptions &&
+        Array.isArray(this.localPackageOptions) &&
+        this.localPackageOptions.length > 0
+      ) {
+        this.selectedLocalPackage = this.localPackageOptions[0].value;
+        this.initialLocalPackage = this.selectedLocalPackage;
+      }
     }
+  }
+
+  // Show the selector only when the retrieve action is visible
+  get showLocalPackageSelector() {
+    return (
+      this.hasSelectedRows &&
+      this.localPackageOptions &&
+      Array.isArray(this.localPackageOptions) &&
+      this.localPackageOptions.length > 1
+    );
+  }
+
+  get localPackageDisabled() {
+    return this.isRetrieving === true;
+  }
+
+  handleLocalPackageChange(event) {
+    if (this.isRetrieving === true) {
+      return;
+    }
+    this.selectedLocalPackage = event.detail.value;
   }
 
   handleOrgChange(event) {
@@ -576,6 +619,7 @@ export default class MetadataRetriever extends LightningElement {
       type: "retrieveSelectedMetadata",
       data: {
         username: this.selectedOrg,
+        localPackage: this.selectedLocalPackage,
         metadata: this.selectedRows.map((row) => ({
           memberType: row.MemberType,
           memberName: row.MemberName,
@@ -780,6 +824,7 @@ export default class MetadataRetriever extends LightningElement {
       type: "retrieveMetadata",
       data: {
         username: this.selectedOrg,
+        localPackage: this.selectedLocalPackage,
         memberType: row.MemberType,
         memberName: row.MemberName,
         deleted: row.ChangeIcon === "🔴",
@@ -805,6 +850,14 @@ export default class MetadataRetriever extends LightningElement {
       this.handleQueryError(data);
     } else if (type === "postRetrieveLocalCheck") {
       this.handlePostRetrieveLocalCheck(data);
+    } else if (type === "retrieveState") {
+      this.handleRetrieveState(data);
+    }
+  }
+
+  handleRetrieveState(data) {
+    if (data && typeof data.isRetrieving === "boolean") {
+      this.isRetrieving = data.isRetrieving;
     }
   }
 
