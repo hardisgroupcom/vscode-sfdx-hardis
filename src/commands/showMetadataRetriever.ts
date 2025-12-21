@@ -91,12 +91,7 @@ function getDefaultPackageDirectoryPathFromProjectJson(pj: any): string | null {
   const found = pj.packageDirectories.find(
     (d: any) => d && d.default === true && d.path,
   );
-  if (found && found.path) {
-    return found.path.toString();
-  }
-
-  const first = pj.packageDirectories.find((d: any) => d && d.path);
-  return first && first.path ? first.path.toString() : null;
+  return found && found.path ? found.path.toString() : null;
 }
 
 async function getDefaultPackageDirectoryPathFromSfdxProjectJson(): Promise<
@@ -116,11 +111,7 @@ async function setDefaultPackageDirectoryPathInSfdxProjectJson(
   const normalizedTarget = normalizeSfdxProjectPath(packagePath);
   const pj = await readSfdxProjectJsonFromDisk();
 
-  if (
-    !pj ||
-    !Array.isArray(pj.packageDirectories) ||
-    pj.packageDirectories.length === 0
-  ) {
+  if (!pj || !Array.isArray(pj.packageDirectories)) {
     return;
   }
 
@@ -170,8 +161,7 @@ async function getLocalPackageOptionsFromSfdxProjectJson(): Promise<{
     const defaultValue = getDefaultPackageDirectoryPathFromProjectJson(pj);
     return {
       options,
-      defaultValue:
-        defaultValue || (options.length > 0 ? options[0].value : null),
+      defaultValue,
     };
   } catch {
     return { options: [], defaultValue: null };
