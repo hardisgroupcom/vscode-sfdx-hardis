@@ -107,7 +107,17 @@ export function registerShowPipeline(commands: Commands) {
             data.prNumber === -1
               ? `Deployment action saved in draft file for the future ${prLabel}.\nIt will be linked to the ${prLabel} once created.`
               : `Deployment action saved for ${prLabel} #${data.prNumber}.\nDon't forget to commit and push ${updatedFile}`;
-          vscode.window.showInformationMessage(msg);
+          if (data.prNumber === -1) {
+            vscode.window.showInformationMessage(msg);
+          } else {
+            vscode.window
+              .showInformationMessage(msg, "Open Git")
+              .then((action) => {
+                if (action === "Open Git") {
+                  vscode.commands.executeCommand("workbench.view.scm");
+                }
+              });
+          }
         }
         // Save Deployment Apex Test Classes
         else if (type === "saveDeploymentApexTestClasses") {
@@ -127,7 +137,17 @@ export function registerShowPipeline(commands: Commands) {
             data.prNumber === -1
               ? `Apex tests configuration saved in draft file for the future ${prLabel}.\nIt will be linked to the ${prLabel} once created.`
               : `Apex tests configuration saved for ${prLabel} #${data.prNumber}.\nDon't forget to commit and push ${updatedFile}`;
-          vscode.window.showInformationMessage(msg);
+          if (data.prNumber === -1) {
+            vscode.window.showInformationMessage(msg);
+          } else {
+            vscode.window
+              .showInformationMessage(msg, "Open Git")
+              .then((action) => {
+                if (action === "Open Git") {
+                  vscode.commands.executeCommand("workbench.view.scm");
+                }
+              });
+          }
         }
         // Get PR info for modal
         else if (type === "getPrInfoForModal") {
@@ -447,10 +467,12 @@ export function registerShowPipeline(commands: Commands) {
                   .showInformationMessage(
                     `Draft deployment actions file has been found and associated to ${prButtonInfo.pullRequestLabel || "Pull Request"} #${currentBranchPullRequest.number}. Don't forget to commit & push :)`,
                     `Commit & Push .sfdx-hardis.${prNumber}.yml`,
+                    "Open Git",
                   )
                   .then((action) => {
                     if (
                       action === `Commit & Push .sfdx-hardis.${prNumber}.yml`
+                      || action === "Open Git"
                     ) {
                       vscode.commands.executeCommand("workbench.view.scm");
                     }
