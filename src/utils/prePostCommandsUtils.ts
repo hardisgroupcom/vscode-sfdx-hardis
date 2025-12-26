@@ -1,7 +1,8 @@
 import * as fs from "fs-extra";
 import * as yaml from "js-yaml";
 import * as path from "path";
-import { getWorkspaceRoot } from "../utils";
+import fg from "fast-glob";
+import { getWorkspaceRoot, listSfdxProjectPackageDirectories } from "../utils";
 import { PullRequest } from "./gitProviders/types";
 
 export interface PrePostCommand {
@@ -254,6 +255,65 @@ export async function saveDeploymentApexTestClasses(
 
   await savePrConfig(prConfigFileName, prConfigParsed);
   return prConfigFileName;
+}
+
+export async function listProjectApexTestClasses(): Promise<string[]> {
+  const workspaceRoot = getWorkspaceRoot();
+  if (!workspaceRoot) {
+    return [];
+  }
+
+  const packageDirs = await listSfdxProjectPackageDirectories();
+  const pkgDirs = Array.isArray(packageDirs) && packageDirs.length > 0 ? packageDirs : ["."];
+
+  const patterns = pkgDirs.map((pkgDir) => {
+    const normalized = String(pkgDir || ".").replace(/\\/g, "/");
+    return `${normalized}/**/classes/*.cls`;
+  });
+
+  const files = await fg(patterns, {
+    cwd: workspaceRoot,
+    onlyFiles: true,
+    unique: true,
+    dot: false,
+    ignore: [
+      "**/node_modules/**",
+      "**/.git/**",
+      "**/dist/**",
+      "**/out/**",
+      "**/.sf/**",
+      "**/.sfdx/**",
+      "**/.vscode/**",
+    ],
+  });
+
+  const isTestRegex = /@istest\b/i;
+  const found: string[] = [];
+  const seen = new Set<string>();
+
+  for (const relFile of files) {
+    try {
+      const fullPath = path.join(workspaceRoot, relFile);
+      const content = await fs.readFile(fullPath, "utf8");
+      if (!isTestRegex.test(content || "")) {
+        continue;
+      }
+      const className = path.basename(relFile, ".cls").trim();
+      if (!className) {
+        continue;
+      }
+      const key = className.toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        found.push(className);
+      }
+    } catch {
+      // ignore file read errors
+    }
+  }
+
+  found.sort((a, b) => a.localeCompare(b));
+  return found;
 }
 
 /* jscpd:ignore-start */

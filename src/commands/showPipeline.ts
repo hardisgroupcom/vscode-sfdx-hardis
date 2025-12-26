@@ -10,6 +10,7 @@ import { TicketProvider } from "../utils/ticketProviders/ticketProvider";
 import {
   listProjectApexScripts,
   listProjectDataWorkspaces,
+  listProjectApexTestClasses,
   saveDeploymentApexTestClasses,
   savePrePostCommand,
 } from "../utils/prePostCommandsUtils";
@@ -518,6 +519,10 @@ export function registerShowPipeline(commands: Commands) {
       const enableDeploymentApexTestClasses =
         projectHardisConfig?.enableDeploymentApexTestClasses === true;
 
+      const availableApexTestClasses = enableDeploymentApexTestClasses
+        ? await listProjectApexTestClasses()
+        : [];
+
       return {
         pipelineData: pipelineData,
         prButtonInfo: prButtonInfo,
@@ -532,6 +537,7 @@ export function registerShowPipeline(commands: Commands) {
         projectApexScripts: projectApexScripts,
         projectSfdmuWorkspaces: projectDataWorkspaces,
         enableDeploymentApexTestClasses: enableDeploymentApexTestClasses,
+        availableApexTestClasses: availableApexTestClasses,
       };
     };
 
@@ -570,4 +576,5 @@ type PipelineInfo = {
   projectApexScripts: any[];
   projectSfdmuWorkspaces: any[];
   enableDeploymentApexTestClasses: boolean;
+  availableApexTestClasses: string[];
 };

@@ -1,9 +1,10 @@
 import * as vscode from "vscode";
 import { Commands } from "../commands";
-import { getWorkspaceRoot } from "../utils";
+import { getWorkspaceRoot, readSfdxHardisConfig } from "../utils";
 import { SfdxHardisConfigHelper } from "../utils/pipeline/sfdxHardisConfigHelper";
 import { listMajorOrgs } from "../utils/orgConfigUtils";
 import { LwcPanelManager } from "../lwc-panel-manager";
+import { listProjectApexTestClasses } from "../utils/prePostCommandsUtils";
 
 export function registerShowPipelineConfig(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
@@ -20,6 +21,14 @@ export function registerShowPipelineConfig(commands: Commands) {
       const majorOrgs = await listMajorOrgs();
       const availableBranches = majorOrgs.map((org) => org.branchName);
 
+      const projectHardisConfig = await readSfdxHardisConfig();
+      const enableDeploymentApexTestClasses =
+        projectHardisConfig?.enableDeploymentApexTestClasses === true;
+
+      const availableApexTestClasses = enableDeploymentApexTestClasses
+        ? await listProjectApexTestClasses()
+        : [];
+
       // Show progress while loading config editor input
       const configEditorInput = await vscode.window.withProgress(
         {
@@ -33,6 +42,7 @@ export function registerShowPipelineConfig(commands: Commands) {
           const input = await sfdxHardisConfigHelper.getEditorInput(branchName);
           // Add available branches to the input
           input.availableBranches = availableBranches;
+          input.availableApexTestClasses = availableApexTestClasses;
           return input;
         },
       );
@@ -78,6 +88,7 @@ export function registerShowPipelineConfig(commands: Commands) {
                   await sfdxHardisConfigHelper.getEditorInput(newBranchName);
                 // Add available branches to the input
                 input.availableBranches = availableBranches;
+                input.availableApexTestClasses = availableApexTestClasses;
                 return input;
               },
             );

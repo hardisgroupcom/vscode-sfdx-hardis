@@ -19,6 +19,7 @@ export default class PipelineConfig extends LightningElement {
   @api isBranch = false;
   @api branchName = "";
   @api availableBranches = [];
+  @api availableApexTestClasses = [];
   @track mode = "view";
   @track editedConfig = {};
   @track sections = [];
@@ -26,10 +27,25 @@ export default class PipelineConfig extends LightningElement {
   @track arrayObjectEditorState = {}; // { key: { showForm: bool, editIndex: number, formData: {} } }
   @track activeTabValue;
   @track initialActiveTableValue;
+  @track apexTestsFieldMode = "view"; // 'view' | 'edit' (field-level toggle)
+  _apexTestsFieldOriginal = [];
   initData = {};
 
   get isEditMode() {
     return this.mode === "edit";
+  }
+
+  get isApexTestsFieldEditMode() {
+    return this.apexTestsFieldMode === "edit";
+  }
+
+  get isApexTestsFieldViewMode() {
+    return this.apexTestsFieldMode === "view";
+  }
+
+  resetApexTestsFieldToggle() {
+    this.apexTestsFieldMode = "view";
+    this._apexTestsFieldOriginal = [];
   }
 
   get configScopeOptions() {
@@ -256,6 +272,11 @@ export default class PipelineConfig extends LightningElement {
           } else if (isNumber) {
             hasValue = value !== undefined && value !== null && value !== "";
           }
+
+          const isApexTestsSelect =
+            key === "deploymentApexTestClasses" && isArrayText === true;
+          const hasApexTestsSelected =
+            isApexTestsSelect && Array.isArray(valueEdit) && valueEdit.length > 0;
           entries.push({
             key,
             label,
@@ -270,6 +291,8 @@ export default class PipelineConfig extends LightningElement {
             isEnum,
             isArrayEnum,
             isArrayText,
+            isApexTestsSelect,
+            hasApexTestsSelected,
             isArrayObject,
             isText,
             isBoolean,
@@ -338,6 +361,11 @@ export default class PipelineConfig extends LightningElement {
       this.initData = Object.assign({}, data);
       this.config = this.initData.config;
       this.configSchema = this.initData.configSchema;
+      this.availableApexTestClasses = Array.isArray(
+        this.initData.availableApexTestClasses,
+      )
+        ? this.initData.availableApexTestClasses
+        : [];
       this.branchConfig = this.initData.branchConfig || null;
       this.globalConfig = this.initData.globalConfig || null;
       this.isBranch =
@@ -347,6 +375,8 @@ export default class PipelineConfig extends LightningElement {
       this.branchName = this.initData.branchName || "";
       this.sections = this.initData.sections || [];
       this.availableBranches = this.initData.availableBranches || [];
+
+      this.resetApexTestsFieldToggle();
 
       // Set the selected config scope based on current state
       if (this.isBranch && this.branchName) {
@@ -374,12 +404,39 @@ export default class PipelineConfig extends LightningElement {
   handleEdit() {
     this.mode = "edit";
     this.editedConfig = JSON.parse(JSON.stringify(this.config));
+    this.resetApexTestsFieldToggle();
   }
 
   handleCancel() {
     this.mode = "view";
     this.editedConfig = {};
+    this.resetApexTestsFieldToggle();
     this.handleRefresh();
+  }
+
+  handleEditApexTestsField() {
+    if (!this.isEditMode) {
+      return;
+    }
+    const key = "deploymentApexTestClasses";
+    const current = Array.isArray(this.editedConfig[key])
+      ? this.editedConfig[key]
+      : [];
+    this._apexTestsFieldOriginal = [...current];
+    this.apexTestsFieldMode = "edit";
+  }
+
+  handleDoneApexTestsField() {
+    this.apexTestsFieldMode = "view";
+  }
+
+  handleCancelApexTestsField() {
+    const key = "deploymentApexTestClasses";
+    this.editedConfig[key] = Array.isArray(this._apexTestsFieldOriginal)
+      ? [...this._apexTestsFieldOriginal]
+      : [];
+    this.editedConfig = { ...this.editedConfig };
+    this.apexTestsFieldMode = "view";
   }
 
   handleConfigScopeChange(event) {
@@ -488,6 +545,20 @@ export default class PipelineConfig extends LightningElement {
       // Fallback: assign value
       this.editedConfig[key] = value;
     }
+  }
+
+  handleApexTestsSelectChange(event) {
+    const key = event.target?.dataset?.key;
+    const value = event?.detail?.value;
+    if (!key) {
+      return;
+    }
+
+    const normalized = Array.isArray(value)
+      ? value.map((v) => String(v || "").trim()).filter(Boolean)
+      : [];
+    this.editedConfig[key] = normalized;
+    this.editedConfig = { ...this.editedConfig };
   }
 
   // For template: expose input type checks as properties for each entry

@@ -30,6 +30,7 @@ export interface SfdxHardisConfigEditorInput {
   configSchema: SfdxHardisConfigSchema;
   sections: Array<{ label: string; description: string; keys: string[] }>;
   availableBranches?: string[];
+  availableApexTestClasses?: string[];
 }
 
 export interface SfdxHardisConfigEditorSaveData {
@@ -163,6 +164,8 @@ export class SfdxHardisConfigHelper {
         "enableDeltaDeploymentBetweenMajorBranches",
         "enableDeploymentApexTestClasses",
         "deploymentApexTestClasses",
+        "testLevel",
+        "testCoverageNotBlocking",
         "enableDeprecatedDeploymentPlan"
       ],
     },

@@ -85,7 +85,7 @@
                               ></lightning-dual-listbox>
                             </div>
                           </template>
-                          <template if:true={entry.isArrayText}>
+                          <template if:true={entry.isApexTestsSelect}>
                             <div class="slds-form-element slds-m-bottom_xx-small">
                               <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
                                 <span>{entry.label}</span>
@@ -93,15 +93,74 @@
                                   <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
                                 </template>
                               </label>
-                              <lightning-textarea
-                                data-key={entry.key}
-                                value={entry.valueEditText}
-                                onchange={handleInputChange}
-                                rows="2"
-                                variant="label-hidden"
-                              ></lightning-textarea>
-                              <div class="slds-text-body_small slds-text-color_weak">One value per line</div>
+                              <template if:true={isApexTestsFieldViewMode}>
+                                <div class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center slds-m-bottom_x-small">
+                                  <div class="slds-text-body_small slds-text-color_weak">
+                                    Selected: {entry.valueEdit.length}
+                                  </div>
+                                  <lightning-button
+                                    variant="neutral"
+                                    label="Edit"
+                                    onclick={handleEditApexTestsField}
+                                    size="small"
+                                  ></lightning-button>
+                                </div>
+                                <template if:true={entry.hasApexTestsSelected}>
+                                  <ul class="slds-list_dotted slds-m-left_medium">
+                                    <template for:each={entry.valueEdit} for:item="item">
+                                      <li key={item}>{item}</li>
+                                    </template>
+                                  </ul>
+                                </template>
+                                <template if:false={entry.hasApexTestsSelected}>
+                                  <span class="slds-text-color_weak">None</span>
+                                </template>
+                              </template>
+
+                              <template if:true={isApexTestsFieldEditMode}>
+                                <s-apex-tests-select
+                                  data-key={entry.key}
+                                  value={entry.valueEdit}
+                                  available-classes={availableApexTestClasses}
+                                  onchange={handleApexTestsSelectChange}
+                                ></s-apex-tests-select>
+                                <div class="slds-m-top_small">
+                                  <lightning-button
+                                    variant="neutral"
+                                    label="Done"
+                                    onclick={handleDoneApexTestsField}
+                                    size="small"
+                                  ></lightning-button>
+                                  <lightning-button
+                                    class="slds-m-left_small"
+                                    variant="neutral"
+                                    label="Cancel"
+                                    onclick={handleCancelApexTestsField}
+                                    size="small"
+                                  ></lightning-button>
+                                </div>
+                              </template>
                             </div>
+                          </template>
+                          <template if:true={entry.isArrayText}>
+                            <template if:false={entry.isApexTestsSelect}>
+                              <div class="slds-form-element slds-m-bottom_xx-small">
+                                <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                                  <span>{entry.label}</span>
+                                  <template if:true={entry.description}>
+                                    <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
+                                  </template>
+                                </label>
+                                <lightning-textarea
+                                  data-key={entry.key}
+                                  value={entry.valueEditText}
+                                  onchange={handleInputChange}
+                                  rows="2"
+                                  variant="label-hidden"
+                                ></lightning-textarea>
+                                <div class="slds-text-body_small slds-text-color_weak">One value per line</div>
+                              </div>
+                            </template>
                           </template>
                           <template if:true={entry.isArrayObject}>
                             <div class="slds-form-element slds-m-bottom_xx-small">

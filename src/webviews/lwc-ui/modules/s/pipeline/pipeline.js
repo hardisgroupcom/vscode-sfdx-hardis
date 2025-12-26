@@ -260,24 +260,27 @@ export default class Pipeline extends LightningElement {
   branchPullRequestsMap = new Map();
 
   // Apex tests modal state (per-PR)
-  apexTestClassesText = "";
+  availableApexTestClasses = [];
+  deploymentApexTestClasses = [];
+  _deploymentApexTestClassesOriginal = [];
+  apexTestsMode = "view"; // 'view' | 'edit'
   apexTestsByLineRows = [];
 
   get apexTestsByLineColumns() {
     return [
+      {
+        key: "apexTestClass",
+        label: "Apex Test Class",
+        fieldName: "apexTestClass",
+        type: "text",
+        wrapText: true,
+      },
       {
         key: "pullRequest",
         label: this.prButtonInfo?.pullRequestLabel || "Pull Request",
         fieldName: "prWebUrl",
         type: "url",
         typeAttributes: { label: { fieldName: "prLabel" }, target: "_blank" },
-        wrapText: true,
-      },
-      {
-        key: "apexTestClass",
-        label: "Apex Test Class",
-        fieldName: "apexTestClass",
-        type: "text",
         wrapText: true,
       },
     ];
@@ -288,6 +291,48 @@ export default class Pipeline extends LightningElement {
       Array.isArray(this.apexTestsByLineRows) &&
       this.apexTestsByLineRows.length > 0
     );
+  }
+
+  get isApexTestsEditMode() {
+    return this.apexTestsMode === "edit";
+  }
+
+  get isApexTestsViewMode() {
+    return this.apexTestsMode === "view";
+  }
+
+  get hasSelectedApexTests() {
+    return (
+      Array.isArray(this.deploymentApexTestClasses) &&
+      this.deploymentApexTestClasses.length > 0
+    );
+  }
+
+  get apexTestsSelectedRows() {
+    const rows = [];
+    const list = Array.isArray(this.deploymentApexTestClasses)
+      ? this.deploymentApexTestClasses
+      : [];
+    for (const apexTestClass of list) {
+      rows.push({
+        id: `apexTest-${apexTestClass}`,
+        apexTestClass: apexTestClass,
+      });
+    }
+    rows.sort((a, b) => (a.apexTestClass || "").localeCompare(b.apexTestClass || ""));
+    return rows;
+  }
+
+  get apexTestsSelectedColumns() {
+    return [
+      {
+        key: "apexTestClass",
+        label: "Apex Test Class",
+        fieldName: "apexTestClass",
+        type: "text",
+        wrapText: true,
+      },
+    ];
   }
 
   // Deployment action modal state
@@ -363,6 +408,9 @@ export default class Pipeline extends LightningElement {
     this.showOnlyMajor = false;
     this.displayFeatureBranches = data?.displayFeatureBranches ?? false;
     this.enableDeploymentApexTestClasses = !!data?.enableDeploymentApexTestClasses;
+    this.availableApexTestClasses = Array.isArray(data?.availableApexTestClasses)
+      ? data.availableApexTestClasses
+      : [];
 
     // Store branch PR data for modal display
     this.branchPullRequestsMap = new Map();
@@ -439,44 +487,75 @@ export default class Pipeline extends LightningElement {
   }
 
   get modalApexTestsTabLabel() {
-    return "Apex Tests (beta)";
+    let count = 0;
+    if (this.canEditApexTestsInModal) {
+      count = Array.isArray(this.deploymentApexTestClasses)
+        ? this.deploymentApexTestClasses.length
+        : 0;
+    } else {
+      const rows = Array.isArray(this.apexTestsByLineRows)
+        ? this.apexTestsByLineRows
+        : [];
+      const uniq = new Set();
+      for (const row of rows) {
+        const name = String(row?.apexTestClass || "").trim();
+        if (!name) {
+          continue;
+        }
+        uniq.add(name.toLowerCase());
+      }
+      count = uniq.size;
+    }
+    return `Apex Tests (${count}) (beta)`;
   }
 
   get canEditApexTestsInModal() {
     return this.modalMode === "singlePR" && this.modalPullRequests.length === 1;
   }
 
-  get hasApexTestsConfigured() {
-    return this.parseApexTestClassesText(this.apexTestClassesText).length > 0;
-  }
-
-  parseApexTestClassesText(value) {
-    const raw = (value || "")
-      .split(/\r?\n|,/g)
-      .map((s) => (s || "").trim())
-      .filter((s) => s.length > 0);
-
+  normalizeApexTestClasses(list) {
+    const raw = Array.isArray(list) ? list : [];
     const seen = new Set();
-    const deduped = [];
+    const out = [];
     for (const item of raw) {
-      const key = item.toLowerCase();
-      if (!seen.has(key)) {
-        seen.add(key);
-        deduped.push(item);
+      const v = String(item || "").trim();
+      if (!v) {
+        continue;
       }
+      const key = v.toLowerCase();
+      if (seen.has(key)) {
+        continue;
+      }
+      seen.add(key);
+      out.push(v);
     }
-    return deduped;
+    return out;
   }
 
-  formatApexTestClassesText(list) {
-    if (!Array.isArray(list) || list.length === 0) {
-      return "";
-    }
-    return list.filter((s) => !!s).join("\n");
+  handleApexTestsSelectChange(event) {
+    const value = event?.detail?.value;
+    this.deploymentApexTestClasses = this.normalizeApexTestClasses(value);
   }
 
-  handleApexTestsTextChange(event) {
-    this.apexTestClassesText = event.detail.value;
+  handleEditApexTests() {
+    if (!this.canEditApexTestsInModal) {
+      return;
+    }
+    this._deploymentApexTestClassesOriginal = Array.isArray(
+      this.deploymentApexTestClasses,
+    )
+      ? [...this.deploymentApexTestClasses]
+      : [];
+    this.apexTestsMode = "edit";
+  }
+
+  handleCancelApexTestsEdit() {
+    this.deploymentApexTestClasses = Array.isArray(
+      this._deploymentApexTestClassesOriginal,
+    )
+      ? [...this._deploymentApexTestClassesOriginal]
+      : [];
+    this.apexTestsMode = "view";
   }
 
   handleSaveApexTests() {
@@ -484,9 +563,13 @@ export default class Pipeline extends LightningElement {
       return;
     }
     const pr = this.modalPullRequests[0];
-    const deploymentApexTestClasses = this.parseApexTestClassesText(
-      this.apexTestClassesText,
+    const deploymentApexTestClasses = this.normalizeApexTestClasses(
+      this.deploymentApexTestClasses,
     );
+    // Optimistically switch back to view mode
+    this._deploymentApexTestClassesOriginal = [...deploymentApexTestClasses];
+    this.deploymentApexTestClasses = [...deploymentApexTestClasses];
+    this.apexTestsMode = "view";
     window.sendMessageToVSCode({
       type: "saveDeploymentApexTestClasses",
       data: {
@@ -1229,9 +1312,7 @@ export default class Pipeline extends LightningElement {
             ? pr.deploymentApexTestClasses
             : [];
 
-        const normalized = this.parseApexTestClassesText(
-          Array.isArray(classes) ? classes.join("\n") : "",
-        );
+        const normalized = this.normalizeApexTestClasses(classes);
 
         for (const apexTestClass of normalized) {
           rows.push({
@@ -1243,25 +1324,27 @@ export default class Pipeline extends LightningElement {
         }
       }
 
-      // stable order by PR number then class
+      // stable order by class then PR number
       rows.sort((a, b) => {
+        const classCmp = (a.apexTestClass || "").localeCompare(
+          b.apexTestClass || "",
+        );
+        if (classCmp !== 0) {
+          return classCmp;
+        }
+
         const aNum = parseInt((a.prLabel || "").replace(/^#(\d+).*/, "$1"));
         const bNum = parseInt((b.prLabel || "").replace(/^#(\d+).*/, "$1"));
         if (!isNaN(aNum) && !isNaN(bNum)) {
-          if (aNum !== bNum) {
-            return aNum - bNum;
-          }
-          return (a.apexTestClass || "").localeCompare(b.apexTestClass || "");
+          return aNum - bNum;
         }
-        const prCmp = (a.prLabel || "").localeCompare(b.prLabel || "");
-        if (prCmp !== 0) {
-          return prCmp;
-        }
-        return (a.apexTestClass || "").localeCompare(b.apexTestClass || "");
+        return (a.prLabel || "").localeCompare(b.prLabel || "");
       });
 
       this.apexTestsByLineRows = rows;
-      this.apexTestClassesText = "";
+      this.deploymentApexTestClasses = [];
+      this._deploymentApexTestClassesOriginal = [];
+      this.apexTestsMode = "view";
 
       this.showPRModal = true;
       console.log("Modal data:", {
@@ -1282,7 +1365,9 @@ export default class Pipeline extends LightningElement {
     this.modalPullRequests = [];
     this.modalTickets = [];
     this.modalActions = [];
-    this.apexTestClassesText = "";
+    this.deploymentApexTestClasses = [];
+    this._deploymentApexTestClassesOriginal = [];
+    this.apexTestsMode = "view";
     this.apexTestsByLineRows = [];
   }
 
@@ -1332,7 +1417,9 @@ export default class Pipeline extends LightningElement {
       pr && pr.deploymentApexTestClasses && Array.isArray(pr.deploymentApexTestClasses)
         ? pr.deploymentApexTestClasses
         : [];
-    this.apexTestClassesText = this.formatApexTestClassesText(apexTests);
+    this.deploymentApexTestClasses = this.normalizeApexTestClasses(apexTests);
+    this._deploymentApexTestClassesOriginal = [...this.deploymentApexTestClasses];
+    this.apexTestsMode = "view";
     this.apexTestsByLineRows = [];
 
     this.showPRModal = true;
