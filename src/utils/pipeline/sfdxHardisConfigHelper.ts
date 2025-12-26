@@ -87,6 +87,8 @@ export class SfdxHardisConfigHelper {
     { name: "enableDeploymentApexTestClasses", scopes: ["global"] },
     { name: "deploymentApexTestClasses", scopes: ["global","branch"] },
     { name: "enableDeprecatedDeploymentPlan", scopes: ["global"] },
+    { name: "testLevel", scopes: ["branch"] },
+    { name: "testCoverageNotBlocking", scopes: ["branch"] },
   ];
   static readonly SECTIONS = [
     {
