@@ -57,6 +57,20 @@ export function registerShowPipeline(commands: Commands) {
 
       panel.updateTitle("DevOps Pipeline");
 
+      function showCommitReminder(prNumber: number, msg: string) {
+        if (prNumber === -1) {
+          vscode.window.showInformationMessage(msg);
+        } else {
+          vscode.window
+            .showInformationMessage(msg, "Open Git")
+            .then((action) => {
+              if (action === "Open Git") {
+                vscode.commands.executeCommand("workbench.view.scm");
+              }
+            });
+        }
+      }
+
       panel.onMessage(async (type, data) => {
         // Refresh
         if (type === "refreshPipeline") {
@@ -107,17 +121,7 @@ export function registerShowPipeline(commands: Commands) {
             data.prNumber === -1
               ? `Deployment action saved in draft file for the future ${prLabel}.\nIt will be linked to the ${prLabel} once created.`
               : `Deployment action saved for ${prLabel} #${data.prNumber}.\nDon't forget to commit and push ${updatedFile}`;
-          if (data.prNumber === -1) {
-            vscode.window.showInformationMessage(msg);
-          } else {
-            vscode.window
-              .showInformationMessage(msg, "Open Git")
-              .then((action) => {
-                if (action === "Open Git") {
-                  vscode.commands.executeCommand("workbench.view.scm");
-                }
-              });
-          }
+          showCommitReminder(data.prNumber, msg);
         }
         // Save Deployment Apex Test Classes
         else if (type === "saveDeploymentApexTestClasses") {
@@ -137,17 +141,7 @@ export function registerShowPipeline(commands: Commands) {
             data.prNumber === -1
               ? `Apex tests configuration saved in draft file for the future ${prLabel}.\nIt will be linked to the ${prLabel} once created.`
               : `Apex tests configuration saved for ${prLabel} #${data.prNumber}.\nDon't forget to commit and push ${updatedFile}`;
-          if (data.prNumber === -1) {
-            vscode.window.showInformationMessage(msg);
-          } else {
-            vscode.window
-              .showInformationMessage(msg, "Open Git")
-              .then((action) => {
-                if (action === "Open Git") {
-                  vscode.commands.executeCommand("workbench.view.scm");
-                }
-              });
-          }
+          showCommitReminder(data.prNumber, msg);
         }
         // Get PR info for modal
         else if (type === "getPrInfoForModal") {
