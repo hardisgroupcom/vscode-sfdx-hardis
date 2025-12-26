@@ -118,6 +118,9 @@ export type PullRequest = {
   relatedTickets?: Ticket[]; // tickets associated with the PR (from title/description/branches)
 
   deploymentActions?: PrePostCommand[]; // pre/post deployment commands associated with the PR
+
+  // Optional list of Apex Test Classes to run during deployments (stored in scripts/actions/.sfdx-hardis.<PR>.yml)
+  deploymentApexTestClasses?: string[];
 };
 
 /**

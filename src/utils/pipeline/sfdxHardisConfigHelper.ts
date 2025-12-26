@@ -30,6 +30,7 @@ export interface SfdxHardisConfigEditorInput {
   configSchema: SfdxHardisConfigSchema;
   sections: Array<{ label: string; description: string; keys: string[] }>;
   availableBranches?: string[];
+  availableApexTestClasses?: string[];
 }
 
 export interface SfdxHardisConfigEditorSaveData {
@@ -82,6 +83,12 @@ export class SfdxHardisConfigHelper {
     { name: "jiraTicketRegex", scopes: ["global"] },
     { name: "genericTicketingProviderRegex", scopes: ["global"] },
     { name: "genericTicketingProviderUrlBuilder", scopes: ["global"] },
+    { name: "enableDeltaDeploymentBetweenMajorBranches", scopes: ["global"] },
+    { name: "enableDeploymentApexTestClasses", scopes: ["global"] },
+    { name: "deploymentApexTestClasses", scopes: ["global","branch"] },
+    { name: "enableDeprecatedDeploymentPlan", scopes: ["global"] },
+    { name: "testLevel", scopes: ["branch"] },
+    { name: "testCoverageNotBlocking", scopes: ["branch"] },
   ];
   static readonly SECTIONS = [
     {
@@ -153,13 +160,26 @@ export class SfdxHardisConfigHelper {
       ],
     },
     {
+      label: "Danger Zone",
+      description: "Use these settings with caution, be sure to understand their impact as they drift from DevOps best practices.",
+      keys: [
+        "enableDeltaDeploymentBetweenMajorBranches",
+        "enableDeploymentApexTestClasses",
+        "deploymentApexTestClasses",
+        "testLevel",
+        "testCoverageNotBlocking",
+        "enableDeprecatedDeploymentPlan"
+      ],
+    },
+    {
       label: "Other",
       description: "",
       keys: ["extends"],
     },
   ];
+  // Todo: replace alpha by main when stable
   static readonly REMOTE_SCHEMA_URL =
-    "https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/main/config/sfdx-hardis.jsonschema.json";
+    "https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/alpha/config/sfdx-hardis.jsonschema.json";
   // Always resolve to the resources directory, compatible with both Node and Webpack
   static readonly LOCAL_SCHEMA_PATH = (() => {
     // Try to resolve in out/resources (webpacked/prod) first

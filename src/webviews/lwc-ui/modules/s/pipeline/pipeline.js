@@ -7,6 +7,7 @@ import "s/forceLightTheme"; // Ensure light theme is applied
 
 export default class Pipeline extends LightningElement {
   @track prButtonInfo;
+  enableDeploymentApexTestClasses = false;
   @track gitAuthenticated = false;
   @track connectedLabel = "Connect to Git";
   @track connectedVariant = "neutral";
@@ -258,6 +259,103 @@ export default class Pipeline extends LightningElement {
   modalActions = [];
   branchPullRequestsMap = new Map();
 
+  // Apex tests modal state (per-PR)
+  availableApexTestClasses = [];
+  deploymentApexTestClasses = [];
+  _deploymentApexTestClassesOriginal = [];
+  apexTestsMode = "view"; // 'view' | 'edit'
+  apexTestsByLineRows = [];
+
+  get apexTestsByLineColumns() {
+    return [
+      {
+        key: "apexTestClass",
+        label: "Apex Test Class",
+        fieldName: "apexTestClass",
+        type: "text",
+        wrapText: true,
+      },
+      {
+        key: "pullRequest",
+        label: this.prButtonInfo?.pullRequestLabel || "Pull Request",
+        fieldName: "prWebUrl",
+        type: "url",
+        typeAttributes: { label: { fieldName: "prLabel" }, target: "_blank" },
+        wrapText: true,
+      },
+    ];
+  }
+
+  get hasApexTestsByLineRows() {
+    return (
+      Array.isArray(this.apexTestsByLineRows) &&
+      this.apexTestsByLineRows.length > 0
+    );
+  }
+
+  get isApexTestsEditMode() {
+    return this.apexTestsMode === "edit";
+  }
+
+  get isApexTestsViewMode() {
+    return this.apexTestsMode === "view";
+  }
+
+  get hasSelectedApexTests() {
+    return (
+      Array.isArray(this.deploymentApexTestClasses) &&
+      this.deploymentApexTestClasses.length > 0
+    );
+  }
+
+  get apexTestsSelectedRows() {
+    const rows = [];
+    const list = Array.isArray(this.deploymentApexTestClasses)
+      ? this.deploymentApexTestClasses
+      : [];
+    // Determine current PR info when in single PR modal
+    let currentPr = null;
+    if (this.modalMode === "singlePR" && Array.isArray(this.modalPullRequests) && this.modalPullRequests.length === 1) {
+      currentPr = this.modalPullRequests[0];
+    }
+    for (const apexTestClass of list) {
+      const row = {
+        id: `apexTest-${apexTestClass}`,
+        apexTestClass: apexTestClass,
+      };
+      if (currentPr) {
+        row.prLabel = `#${currentPr.number || ""} - ${currentPr.title || ""}`;
+        row.prWebUrl = currentPr.webUrl || "";
+      } else {
+        row.prLabel = "";
+        row.prWebUrl = "";
+      }
+      rows.push(row);
+    }
+    rows.sort((a, b) => (a.apexTestClass || "").localeCompare(b.apexTestClass || ""));
+    return rows;
+  }
+
+  get apexTestsSelectedColumns() {
+    return [
+      {
+        key: "apexTestClass",
+        label: "Apex Test Class",
+        fieldName: "apexTestClass",
+        type: "text",
+        wrapText: true,
+      },
+      {
+        key: "pullRequest",
+        label: this.prButtonInfo?.pullRequestLabel || "Pull Request",
+        fieldName: "prWebUrl",
+        type: "url",
+        typeAttributes: { label: { fieldName: "prLabel" }, target: "_blank" },
+        wrapText: true,
+      },
+    ];
+  }
+
   // Deployment action modal state
   @track showDeploymentActionModal = false;
   @track currentDeploymentAction = null;
@@ -330,6 +428,10 @@ export default class Pipeline extends LightningElement {
     this.hasWarnings = this.warnings.length > 0;
     this.showOnlyMajor = false;
     this.displayFeatureBranches = data?.displayFeatureBranches ?? false;
+    this.enableDeploymentApexTestClasses = !!data?.enableDeploymentApexTestClasses;
+    this.availableApexTestClasses = Array.isArray(data?.availableApexTestClasses)
+      ? data.availableApexTestClasses
+      : [];
 
     // Store branch PR data for modal display
     this.branchPullRequestsMap = new Map();
@@ -395,6 +497,107 @@ export default class Pipeline extends LightningElement {
     if (data.firstDisplay) {
       this.refreshPipeline();
     }
+  }
+
+  get prLabel() {
+    return this.prButtonInfo?.pullRequestLabel || "Pull Request";
+  }
+
+  get showApexTestsTab() {
+    return this.enableDeploymentApexTestClasses === true;
+  }
+
+  get modalApexTestsTabLabel() {
+    let count = 0;
+    if (this.canEditApexTestsInModal) {
+      count = Array.isArray(this.deploymentApexTestClasses)
+        ? this.deploymentApexTestClasses.length
+        : 0;
+    } else {
+      const rows = Array.isArray(this.apexTestsByLineRows)
+        ? this.apexTestsByLineRows
+        : [];
+      const uniq = new Set();
+      for (const row of rows) {
+        const name = String(row?.apexTestClass || "").trim();
+        if (!name) {
+          continue;
+        }
+        uniq.add(name.toLowerCase());
+      }
+      count = uniq.size;
+    }
+    return `Apex Tests (${count}) (beta)`;
+  }
+
+  get canEditApexTestsInModal() {
+    return this.modalMode === "singlePR" && this.modalPullRequests.length === 1;
+  }
+
+  normalizeApexTestClasses(list) {
+    const raw = Array.isArray(list) ? list : [];
+    const seen = new Set();
+    const out = [];
+    for (const item of raw) {
+      const v = String(item || "").trim();
+      if (!v) {
+        continue;
+      }
+      const key = v.toLowerCase();
+      if (seen.has(key)) {
+        continue;
+      }
+      seen.add(key);
+      out.push(v);
+    }
+    return out;
+  }
+
+  handleApexTestsSelectChange(event) {
+    const value = event?.detail?.value;
+    this.deploymentApexTestClasses = this.normalizeApexTestClasses(value);
+  }
+
+  handleEditApexTests() {
+    if (!this.canEditApexTestsInModal) {
+      return;
+    }
+    this._deploymentApexTestClassesOriginal = Array.isArray(
+      this.deploymentApexTestClasses,
+    )
+      ? [...this.deploymentApexTestClasses]
+      : [];
+    this.apexTestsMode = "edit";
+  }
+
+  handleCancelApexTestsEdit() {
+    this.deploymentApexTestClasses = Array.isArray(
+      this._deploymentApexTestClassesOriginal,
+    )
+      ? [...this._deploymentApexTestClassesOriginal]
+      : [];
+    this.apexTestsMode = "view";
+  }
+
+  handleSaveApexTests() {
+    if (!this.canEditApexTestsInModal) {
+      return;
+    }
+    const pr = this.modalPullRequests[0];
+    const deploymentApexTestClasses = this.normalizeApexTestClasses(
+      this.deploymentApexTestClasses,
+    );
+    // Optimistically switch back to view mode
+    this._deploymentApexTestClassesOriginal = [...deploymentApexTestClasses];
+    this.deploymentApexTestClasses = [...deploymentApexTestClasses];
+    this.apexTestsMode = "view";
+    window.sendMessageToVSCode({
+      type: "saveDeploymentApexTestClasses",
+      data: {
+        prNumber: pr.number,
+        deploymentApexTestClasses: deploymentApexTestClasses,
+      },
+    });
   }
 
   // Map PRs to include a computed jobsIconName used by datatable cellAttributes
@@ -1122,6 +1325,48 @@ export default class Pipeline extends LightningElement {
       // Aggregate all deployment actions from all PRs
       this.modalActions = this._aggregateActionsFromPRs(prs);
 
+      // Per-line breakdown for Apex tests (read-only in branch mode)
+      const rows = [];
+      for (const pr of prs) {
+        const classes =
+          pr && pr.deploymentApexTestClasses && Array.isArray(pr.deploymentApexTestClasses)
+            ? pr.deploymentApexTestClasses
+            : [];
+
+        const normalized = this.normalizeApexTestClasses(classes);
+
+        for (const apexTestClass of normalized) {
+          rows.push({
+            id: `apexTests-${pr.number || pr.id || "pr"}-${apexTestClass}`,
+            prLabel: `#${pr.number || ""} - ${pr.title || ""}`,
+            prWebUrl: pr.webUrl || "",
+            apexTestClass: apexTestClass,
+          });
+        }
+      }
+
+      // stable order by class then PR number
+      rows.sort((a, b) => {
+        const classCmp = (a.apexTestClass || "").localeCompare(
+          b.apexTestClass || "",
+        );
+        if (classCmp !== 0) {
+          return classCmp;
+        }
+
+        const aNum = parseInt((a.prLabel || "").replace(/^#(\d+).*/, "$1"));
+        const bNum = parseInt((b.prLabel || "").replace(/^#(\d+).*/, "$1"));
+        if (!isNaN(aNum) && !isNaN(bNum)) {
+          return aNum - bNum;
+        }
+        return (a.prLabel || "").localeCompare(b.prLabel || "");
+      });
+
+      this.apexTestsByLineRows = rows;
+      this.deploymentApexTestClasses = [];
+      this._deploymentApexTestClassesOriginal = [];
+      this.apexTestsMode = "view";
+
       this.showPRModal = true;
       console.log("Modal data:", {
         branchName,
@@ -1141,6 +1386,10 @@ export default class Pipeline extends LightningElement {
     this.modalPullRequests = [];
     this.modalTickets = [];
     this.modalActions = [];
+    this.deploymentApexTestClasses = [];
+    this._deploymentApexTestClassesOriginal = [];
+    this.apexTestsMode = "view";
+    this.apexTestsByLineRows = [];
   }
 
   handlePRRowAction(event) {
@@ -1183,6 +1432,16 @@ export default class Pipeline extends LightningElement {
 
     // Aggregate deployment actions from this single PR
     this.modalActions = this._aggregateActionsFromPRs([pr]);
+
+    // Set Apex tests list for this single PR
+    const apexTests =
+      pr && pr.deploymentApexTestClasses && Array.isArray(pr.deploymentApexTestClasses)
+        ? pr.deploymentApexTestClasses
+        : [];
+    this.deploymentApexTestClasses = this.normalizeApexTestClasses(apexTests);
+    this._deploymentApexTestClassesOriginal = [...this.deploymentApexTestClasses];
+    this.apexTestsMode = "view";
+    this.apexTestsByLineRows = [];
 
     this.showPRModal = true;
   }

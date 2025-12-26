@@ -61,11 +61,21 @@
     "allowedOrgTypes": {
       "$id": "#/properties/allowedOrgTypes",
       "description": "Types of Salesforce Orgs allowed for config & development. If not set, Sandbox Orgs and Scratch Orgs are allowed by default",
-      "examples": [["sandbox"]],
+      "examples": [
+        [
+          "sandbox"
+        ]
+      ],
       "items": {
         "type": "string",
-        "enum": ["sandbox", "scratch"],
-        "enumNames": ["Sandbox Orgs", "Scratch Orgs"]
+        "enum": [
+          "sandbox",
+          "scratch"
+        ],
+        "enumNames": [
+          "Sandbox Orgs",
+          "Scratch Orgs"
+        ]
       },
       "title": "Allowed org types",
       "type": "array"
@@ -74,7 +84,13 @@
       "$id": "#/properties/autoCleanTypes",
       "description": "When saving/publishing a User Story, sfdx-hardis can automatically clean the sources before submitting a Pull Request.\nSelect the cleanings that will be automatically applied on your project.",
       "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-config-cleaning/",
-      "examples": [["dashboards", "datadotcom", "destructivechanges"]],
+      "examples": [
+        [
+          "dashboards",
+          "datadotcom",
+          "destructivechanges"
+        ]
+      ],
       "items": {
         "type": "string",
         "enum": [
@@ -133,8 +149,13 @@
       "description": "Sometimes, SF Cli forgets to pull some metadata updates, like Custom Application for example.\nsfdx-hardis can automatically retrieve named metadatas to avoid issues.\nExample:\n- CustomApplication:MyApp1\n- CustomApplication:MyApp2\nWorks also with full metadata types (ex: CustomApplication)",
       "docUrl": "https://sfdx-hardis.cloudity.com/hardis/scratch/pull/#command-behavior",
       "examples": [
-        ["CustomApplication"],
-        ["CustomApplication:MyApp1", "CustomApplication:MyApp2"]
+        [
+          "CustomApplication"
+        ],
+        [
+          "CustomApplication:MyApp1",
+          "CustomApplication:MyApp2"
+        ]
       ],
       "items": {
         "type": "string"
@@ -146,14 +167,23 @@
       "$id": "#/properties/apexTestsMinCoverageOrgWide",
       "default": 75.0,
       "description": "Minimum percentage of apex code coverage accepted.\n75.0% by default, but if you are on a clean project, it's better to define 80.0, 95.0 or 90.0 😎",
-      "examples": [80.0, 95.0],
+      "examples": [
+        80.0,
+        95.0
+      ],
       "title": "Minimum Apex Tests coverage % accepted for a deployment",
       "type": "number"
     },
     "availableProjects": {
       "$id": "#/properties/availableProjects",
       "description": "List of business projects that are managed in the same repository.\nIf defined, when creating a new User Story, it will be prompted to the contributor then used to create the git branch name.\nIf a value contains a comma, the left part will be used for key and the right part as label for the users.",
-      "examples": [["sales_cloud", "service_cloud", "community"]],
+      "examples": [
+        [
+          "sales_cloud",
+          "service_cloud",
+          "community"
+        ]
+      ],
       "items": {
         "type": "string"
       },
@@ -163,7 +193,12 @@
     "availableTargetBranches": {
       "$id": "#/properties/availableTargetBranches",
       "description": "List of git branches that can be used as target for Pull Requests.\nContributors will be prompt to select one of these target branch when creating a new User Story\nA classic example on a project with BUILD & RUN in parallel is to have preprod and integration as available target branches.\nIf defined, makes obsolete the parameter Default Pull Request target branch.",
-      "examples": [["preprod", "integration"]],
+      "examples": [
+        [
+          "preprod",
+          "integration"
+        ]
+      ],
       "items": {
         "type": "string"
       },
@@ -230,7 +265,9 @@
           "globPattern": {
             "$id": "#/properties/cleanXmlPatterns/items/properties/globPattern",
             "description": "Glob pattern to identify XML files to clean",
-            "examples": ["/**/*.flexipage-meta.xml"],
+            "examples": [
+              "/**/*.flexipage-meta.xml"
+            ],
             "title": "Glob pattern",
             "type": "string"
           },
@@ -249,25 +286,34 @@
             "type": "array"
           }
         },
-        "required": ["globPattern", "xpaths"]
+        "required": [
+          "globPattern",
+          "xpaths"
+        ]
       },
       "title": "Clean XML Patterns",
       "type": "array"
     },
     "commandsPreDeploy": {
       "$id": "#/properties/commandsPreDeploy",
-      "description": "List of commands to run before a deployment",
+      "description": "List of actions to run before a deployment",
       "examples": [
         [
           {
             "id": "knowledgeUnassign",
             "label": "Remove KnowledgeUser right to the user who has it",
-            "command": "sf data update record --sobject User --where \"UserPermissionsKnowledgeUser='true'\" --values \"UserPermissionsKnowledgeUser='false'\" --json"
+            "type": "command",
+            "command": "sf data update record --sobject User --where \"UserPermissionsKnowledgeUser='true'\" --values \"UserPermissionsKnowledgeUser='false'\" --json",
+            "context": "all"
           },
           {
-            "id": "knowledgeAssign",
-            "label": "Assign Knowledge user to desired username",
-            "command": "sf data update record --sobject User --where \"Username='deployment-user@myclient.com'\" --values \"UserPermissionsKnowledgeUser='true'\" --json"
+            "id": "importDataPackage",
+            "label": "Import SFDMU data package",
+            "type": "data",
+            "parameters": {
+              "sfdmuProject": "EmailTemplate"
+            },
+            "context": "process-deployment-only"
           }
         ]
       ],
@@ -279,15 +325,71 @@
         "properties": {
           "id": {
             "$id": "#/properties/commandsPreDeploy/items/properties/id",
-            "description": "Identifier of the command (can be any string)",
+            "description": "Identifier of the action (can be any string)",
             "title": "Id",
             "type": "string"
           },
           "label": {
             "$id": "#/properties/commandsPreDeploy/items/properties/label",
-            "description": "Label of the command (what does it do ?)",
+            "description": "Label of the action (what does it do ?)",
             "title": "Label",
             "type": "string"
+          },
+          "type": {
+            "$id": "#/properties/commandsPreDeploy/items/properties/type",
+            "description": "Type of the action",
+            "title": "Type",
+            "type": "string",
+            "enum": [
+              "command",
+              "data",
+              "apex",
+              "publish-community",
+              "manual"
+            ],
+            "enumNames": [
+              "Command",
+              "Data Import",
+              "Apex Script",
+              "Publish Community",
+              "Manual Action"
+            ],
+            "examples": [
+              "command",
+              "data",
+              "apex",
+              "publish-community",
+              "manual"
+            ]
+          },
+          "parameters": {
+            "$id": "#/properties/commandsPreDeploy/items/properties/parameters",
+            "description": "Known parameters used by action implementations. Additional keys allowed.",
+            "title": "Parameters",
+            "type": "object",
+            "properties": {
+              "apexScript": {
+                "$id": "#/properties/commandsPreDeploy/items/properties/parameters/apexScript",
+                "description": "Apex script path to run for 'apex' actions",
+                "type": "string"
+              },
+              "sfdmuProject": {
+                "$id": "#/properties/commandsPreDeploy/items/properties/parameters/sfdmuProject",
+                "description": "Path to SFDMU project for 'data' actions",
+                "type": "string"
+              },
+              "communityName": {
+                "$id": "#/properties/commandsPreDeploy/items/properties/parameters/communityName",
+                "description": "Community name for 'publish-community' actions",
+                "type": "string"
+              },
+              "instructions": {
+                "$id": "#/properties/commandsPreDeploy/items/properties/parameters/instructions",
+                "description": "Human-readable instructions for 'manual' actions",
+                "type": "string"
+              }
+            },
+            "additionalProperties": true
           },
           "command": {
             "$id": "#/properties/commandsPreDeploy/items/properties/command",
@@ -297,11 +399,15 @@
           },
           "context": {
             "$id": "#/properties/commandsPreDeploy/items/properties/context",
-            "description": "Context when the command must be run",
+            "description": "Context when the action must be run",
             "title": "Context",
             "default": "all",
             "type": "string",
-            "enum": ["all", "check-deployment-only", "process-deployment-only"],
+            "enum": [
+              "all",
+              "check-deployment-only",
+              "process-deployment-only"
+            ],
             "enumNames": [
               "All",
               "Check Deployment Only",
@@ -312,28 +418,62 @@
               "check-deployment-only",
               "process-deployment-only"
             ]
+          },
+          "allowFailure": {
+            "$id": "#/properties/commandsPreDeploy/items/properties/allowFailure",
+            "description": "Allow action to fail without marking the deployment as failed",
+            "title": "Allow failure",
+            "default": false,
+            "type": "boolean"
+          },
+          "runOnlyOnceByOrg": {
+            "$id": "#/properties/commandsPreDeploy/items/properties/runOnlyOnceByOrg",
+            "description": "Run this action only once per target org (useful for idempotent post-deploy tasks)",
+            "title": "Run only once by org",
+            "default": false,
+            "type": "boolean"
+          },
+          "customUsername": {
+            "$id": "#/properties/commandsPostDeploy/items/properties/customUsername",
+            "description": "If set, the action will be run using this specific username (instead of the default target org). Can be a full username or a starting string (ex: user@company.com will match user@company.com.integration in integration sandbox). This user must be allowed to authenticate through the Connected App used by deployment user.",
+            "title": "Custom Username",
+            "type": "string"
           }
         },
-        "title": "Command"
+        "required": [
+          "id",
+          "label",
+          "type",
+          "context"
+        ],
+        "title": "Action"
       },
-      "required": ["id", "label", "command"],
-      "title": "Commands Pre-Deployment",
+      "title": "Actions Pre-Deployment",
       "type": "array"
     },
     "commandsPostDeploy": {
       "$id": "#/properties/commandsPostDeploy",
-      "description": "List of commands to run after a deployment",
+      "description": "List of actions to run after a deployment",
       "examples": [
         [
           {
             "id": "knowledgeUnassign",
             "label": "Remove KnowledgeUser right to the user who has it",
-            "command": "sf data update record --sobject User --where \"UserPermissionsKnowledgeUser='true'\" --values \"UserPermissionsKnowledgeUser='false'\" --json"
+            "type": "command",
+            "command": "sf data update record --sobject User --where \"UserPermissionsKnowledgeUser='true'\" --values \"UserPermissionsKnowledgeUser='false'\" --json",
+            "context": "all",
+            "skipIfError": false
           },
           {
-            "id": "knowledgeAssign",
-            "label": "Assign Knowledge user to desired username",
-            "command": "sf data update record --sobject User --where \"Username='admin-user@myclient.com'\" --values \"UserPermissionsKnowledgeUser='true'\" --json"
+            "id": "publishCommunity",
+            "label": "Publish community after deploy",
+            "type": "publish-community",
+            "parameters": {
+              "communityName": "CustomerPortal"
+            },
+            "context": "process-deployment-only",
+            "allowFailure": false,
+            "runOnlyOnceByOrg": true
           }
         ]
       ],
@@ -341,19 +481,75 @@
         "$id": "#/properties/commandsPostDeploy/items",
         "type": "object",
         "additionalProperties": false,
-        "description": "Command definition",
+        "description": "Action definition",
         "properties": {
           "id": {
             "$id": "#/properties/commandsPostDeploy/items/properties/id",
-            "description": "Identifier of the command (can be any string)",
+            "description": "Identifier of the action (can be any string)",
             "title": "Id",
             "type": "string"
           },
           "label": {
             "$id": "#/properties/commandsPostDeploy/items/properties/label",
-            "description": "Label of the command (what does it do ?)",
+            "description": "Label of the action (what does it do ?)",
             "title": "Label",
             "type": "string"
+          },
+          "type": {
+            "$id": "#/properties/commandsPostDeploy/items/properties/type",
+            "description": "Type of the action",
+            "title": "Type",
+            "type": "string",
+            "enum": [
+              "command",
+              "data",
+              "apex",
+              "publish-community",
+              "manual"
+            ],
+            "enumNames": [
+              "Command",
+              "Data Import",
+              "Apex Script",
+              "Publish Community",
+              "Manual Action"
+            ],
+            "examples": [
+              "command",
+              "data",
+              "apex",
+              "publish-community",
+              "manual"
+            ]
+          },
+          "parameters": {
+            "$id": "#/properties/commandsPostDeploy/items/properties/parameters",
+            "description": "Known parameters used by action implementations. Additional keys allowed.",
+            "title": "Parameters",
+            "type": "object",
+            "properties": {
+              "apexScript": {
+                "$id": "#/properties/commandsPostDeploy/items/properties/parameters/apexScript",
+                "description": "Apex script path to run for 'apex' actions",
+                "type": "string"
+              },
+              "sfdmuProject": {
+                "$id": "#/properties/commandsPostDeploy/items/properties/parameters/sfdmuProject",
+                "description": "Path to SFDMU project for 'data' actions",
+                "type": "string"
+              },
+              "communityName": {
+                "$id": "#/properties/commandsPostDeploy/items/properties/parameters/communityName",
+                "description": "Community name for 'publish-community' actions",
+                "type": "string"
+              },
+              "instructions": {
+                "$id": "#/properties/commandsPostDeploy/items/properties/parameters/instructions",
+                "description": "Human-readable instructions for 'manual' actions",
+                "type": "string"
+              }
+            },
+            "additionalProperties": true
           },
           "command": {
             "$id": "#/properties/commandsPostDeploy/items/properties/command",
@@ -363,11 +559,15 @@
           },
           "context": {
             "$id": "#/properties/commandsPostDeploy/items/properties/context",
-            "description": "Context when the command must be run",
+            "description": "Context when the action must be run",
             "title": "Context",
             "default": "all",
             "type": "string",
-            "enum": ["all", "check-deployment-only", "process-deployment-only"],
+            "enum": [
+              "all",
+              "check-deployment-only",
+              "process-deployment-only"
+            ],
             "enumNames": [
               "All",
               "Check Deployment Only",
@@ -381,16 +581,41 @@
           },
           "skipIfError": {
             "$id": "#/properties/commandsPostDeploy/items/properties/skipIfError",
-            "description": "Do not run the command if there is a deployment error",
+            "description": "Do not run the action if there is a deployment error",
             "title": "Skip if deploy error",
-            "default": "false",
+            "default": false,
             "type": "boolean"
+          },
+          "allowFailure": {
+            "$id": "#/properties/commandsPostDeploy/items/properties/allowFailure",
+            "description": "Allow action to fail without marking the deployment as failed",
+            "title": "Allow failure",
+            "default": false,
+            "type": "boolean"
+          },
+          "runOnlyOnceByOrg": {
+            "$id": "#/properties/commandsPostDeploy/items/properties/runOnlyOnceByOrg",
+            "description": "Run this action only once per target org (useful for idempotent post-deploy tasks)",
+            "title": "Run only once by org",
+            "default": false,
+            "type": "boolean"
+          },
+          "customUsername": {
+            "$id": "#/properties/commandsPostDeploy/items/properties/customUsername",
+            "description": "If set, the action will be run using this specific username (instead of the default target org). Can be a full username or a starting string (ex: user@company.com will match user@company.com.integration in integration sandbox). This user must be allowed to authenticate through the Connected App used by deployment user.",
+            "title": "Custom Username",
+            "type": "string"
           }
         },
-        "required": ["id", "label", "command"],
-        "title": "Command"
+        "required": [
+          "id",
+          "label",
+          "type",
+          "context"
+        ],
+        "title": "Action"
       },
-      "title": "Commands Post-Deployment",
+      "title": "Actions Post-Deployment",
       "type": "array"
     },
     "customCommands": {
@@ -497,13 +722,20 @@
                   "type": "string"
                 }
               },
-              "required": ["id", "label", "command"]
+              "required": [
+                "id",
+                "label",
+                "command"
+              ]
             },
             "title": "Label",
             "type": "array"
           }
         },
-        "required": ["id", "label"]
+        "required": [
+          "id",
+          "label"
+        ]
       },
       "title": "Custom commands",
       "type": "array"
@@ -512,9 +744,18 @@
       "$id": "#/properties/customCommandsPosition",
       "description": "Position of custom commands in the menu (first or last)",
       "default": "first",
-      "enum": ["first", "last"],
-      "enumNames": ["First", "Last"],
-      "examples": ["first", "last"],
+      "enum": [
+        "first",
+        "last"
+      ],
+      "enumNames": [
+        "First",
+        "Last"
+      ],
+      "examples": [
+        "first",
+        "last"
+      ],
       "title": "Custom commands position",
       "type": "string"
     },
@@ -549,7 +790,10 @@
           "name": {
             "$Id": "#/properties/customPlugins/items/properties/name",
             "description": "Name of the plugin npm package",
-            "examples": ["mo-dx-plugin", "shane-sfdx-plugins"],
+            "examples": [
+              "mo-dx-plugin",
+              "shane-sfdx-plugins"
+            ],
             "title": "Name",
             "type": "string"
           },
@@ -591,7 +835,10 @@
             "type": "boolean"
           }
         },
-        "required": ["dataPath", "importInScratchOrgs"]
+        "required": [
+          "dataPath",
+          "importInScratchOrgs"
+        ]
       },
       "title": "Data packages",
       "type": "array"
@@ -607,18 +854,37 @@
       "title": "Default package installation key",
       "type": "string"
     },
+    "deploymentApexTestClasses": {
+      "$id": "#/properties/deploymentApexTestClasses",
+      "description": "List of Apex Test Classes that will be run during deployments. Requires enableDeploymentApexTestClasses and enableDeltaDeploymentBetweenMajorBranches to be set to true (Not recommended, use only if you have specific needs)",
+      "examples": [
+        [
+          "MyTestClass1",
+          "MyTestClass2"
+        ]
+      ],
+      "items": {
+        "type": "string"
+      },
+      "title": "Apex Test Classes to run during deployments (NOT RECOMMENDED) (Beta)",
+      "type": "array"
+    },
     "developmentBranch": {
       "$id": "#/properties/developmentBranch",
       "default": "integration",
       "description": "When creating a new sfdx-hardis User Story, this git branch is used as base to create the feature/debug sub branch. The merge request will later have this branch as target.",
       "docUrl": "https://sfdx-hardis.cloudity.com/hardis/work/new/",
-      "examples": ["integration", "dev_lot2", "hotfixes"],
+      "examples": [
+        "integration",
+        "dev_lot2",
+        "hotfixes"
+      ],
       "title": "Default Pull Request/Merge Request target branch when you create a new User Story.",
       "type": "string"
     },
     "deploymentPlan": {
       "$id": "#/properties/deploymentPlan",
-      "description": "Deployment plan that will be performed during deployments. Can be based on packageXmlFile for sources or on dataPath for sfdmu data deployments",
+      "description": "(DEPRECATED) Deployment plan that will be performed during deployments. Can be based on packageXmlFile for sources or on dataPath for sfdmu data deployments",
       "examples": [
         {
           "packages": [
@@ -666,7 +932,9 @@
             "properties": {
               "dataPath": {
                 "$id": "#/properties/install/properties/packages/items/dataPath",
-                "examples": ["scripts/data/EmailTemplate"],
+                "examples": [
+                  "scripts/data/EmailTemplate"
+                ],
                 "title": "Path to SFDMU data project to deploy",
                 "type": "string"
               },
@@ -681,31 +949,43 @@
               },
               "order": {
                 "$id": "#/properties/install/properties/packages/items/order",
-                "examples": [-20, 13, 50],
+                "examples": [
+                  -20,
+                  13,
+                  50
+                ],
                 "title": "Execution order in deployment plan",
                 "type": "number"
               },
               "packageXmlFile": {
                 "$id": "#/properties/install/properties/packages/items/packageXmlFile",
-                "examples": ["manifest/splits/packageXmlEmails.xml"],
+                "examples": [
+                  "manifest/splits/packageXmlEmails.xml"
+                ],
                 "title": "Path to package.xml file to use for deployment",
                 "type": "string"
               },
               "waitAfter": {
                 "$id": "#/properties/install/properties/packages/items/waitAfter",
                 "description": "Delay to wait before installing the next package",
-                "examples": [10, 20],
+                "examples": [
+                  10,
+                  20
+                ],
                 "title": "Wait after install (seconds)",
                 "type": "number"
               }
             }
           },
-          "required": ["label", "order"],
+          "required": [
+            "label",
+            "order"
+          ],
           "title": "List of packages to deploy",
           "type": "array"
         }
       },
-      "title": "Deployment plan",
+      "title": "(DEPRECATED) Deployment plan",
       "type": "object"
     },
     "devHubAlias": {
@@ -724,7 +1004,9 @@
       "$id": "#/properties/devHubInstanceUrl",
       "default": "https://login.salesforce.com",
       "description": "Dev Hub instance URL used for authenticating to DevHub from CI jobs",
-      "examples": ["DevHub_MyClientMyProject"],
+      "examples": [
+        "DevHub_MyClientMyProject"
+      ],
       "title": "Dev Hub Instance URL",
       "type": "string"
     },
@@ -744,7 +1026,9 @@
       "$id": "#/properties/docDeployToCloudflare",
       "default": false,
       "description": "Automatically deploy MkDocs HTML documentation from CI/CD Workflows to Cloudflare",
-      "examples": [true],
+      "examples": [
+        true
+      ],
       "title": "Doc: Deploy to Cloudflare",
       "type": "boolean"
     },
@@ -752,8 +1036,39 @@
       "$id": "#/properties/docDeployToOrg",
       "default": false,
       "description": "Automatically deploy MkDocs HTML documentation from CI/CD Workflows to Salesforce org as static resource",
-      "examples": [true],
+      "examples": [
+        true
+      ],
       "title": "Doc: Deploy to Salesforce Org",
+      "type": "boolean"
+    },
+    "enableDeltaDeploymentBetweenMajorBranches": {
+      "$id": "#/properties/enableDeltaDeploymentBetweenMajorBranches",
+      "description": "Enable delta deployments between major branches (ex: integration -> uat). Not recommended, as real DevOps best practice is to deploy full source: use only if you have specific needs.",
+      "default": false,
+      "examples": [
+        true,
+        false
+      ],
+      "title": "Enable delta deployments between major branches (NOT RECOMMENDED)",
+      "type": "boolean"
+    },
+    "enableDeploymentApexTestClasses": {
+      "$id": "#/properties/enableDeploymentApexTestClasses",
+      "description": "Enable the use of custom Apex Test Classes list during deployments. Requires enableDeltaDeploymentBetweenMajorBranches to be set to true. Not recommended, as real DevOps best practice is to run all local tests: use only if you have specific needs.",
+      "default": false,
+      "examples": [
+        true,
+        false
+      ],
+      "title": "Enable custom Apex Test Classes during deployments (NOT RECOMMENDED) (Beta)",
+      "type": "boolean"
+    },
+    "enableDeprecatedDeploymentPlan": {
+      "$id": "#/properties/enableDeprecatedDeploymentPlan",
+      "description": "If true, allows the use of the deprecated 'deploymentPlan' configuration for deployments. It's better to use deployment actions at branch or PR level",
+      "default": false,
+      "title": "Enable Deprecated Deployment Plan",
       "type": "boolean"
     },
     "extends": {
@@ -768,7 +1083,10 @@
     "genericTicketingProviderRegex": {
       "$id": "#/properties/genericTicketingProviderRegex",
       "description": "Regular expression to identify ticket IDs from your ticketing system. Example: ([R|I][0-9]+-[0-9]+) for EasyVista.",
-      "examples": ["([R|I][0-9]+-[0-9]+)", "(^[A-Z]{2,5}-\\d{1,6}$)"],
+      "examples": [
+        "([R|I][0-9]+-[0-9]+)",
+        "(^[A-Z]{2,5}-\\d{1,6}$)"
+      ],
       "title": "Generic Ticketing Provider Regex",
       "type": "string",
       "visible-conditions": [
@@ -782,7 +1100,9 @@
     "genericTicketingProviderUrlBuilder": {
       "$id": "#/properties/genericTicketingProviderUrlBuilder",
       "description": "URL pattern to build ticket URLs from ticket IDs. Use {ticketId} as placeholder for the ticket ID. Example: https://tickets.mycompany.com/ticket/{ticketId}",
-      "examples": ["https://tickets.mycompany.com/ticket/{ticketId}"],
+      "examples": [
+        "https://tickets.mycompany.com/ticket/{ticketId}"
+      ],
       "title": "Generic Ticketing Provider URL Builder",
       "type": "string",
       "visible-conditions": [
@@ -796,7 +1116,12 @@
     "initPermissionSets": {
       "$id": "#/properties/initPermissionSets",
       "description": "When creating a scratch org, Admin user will be automatically assigned to those permission sets. Example: PS_Admin",
-      "examples": [["MyPermissionSet", "MyPermissionSetGroup"]],
+      "examples": [
+        [
+          "MyPermissionSet",
+          "MyPermissionSetGroup"
+        ]
+      ],
       "items": {
         "type": "string"
       },
@@ -841,43 +1166,60 @@
         "properties": {
           "Id": {
             "$Id": "#/properties/install/properties/packages/items/Id",
-            "examples": ["0A35r000000GveVCAS"],
+            "examples": [
+              "0A35r000000GveVCAS"
+            ],
             "title": "(unused) PackageId",
             "type": "string"
           },
           "SubscriberPackageId": {
             "$Id": "#/properties/install/properties/packages/items/SubscriberPackageId",
-            "examples": ["033b0000000Pf2AAAS"],
+            "examples": [
+              "033b0000000Pf2AAAS"
+            ],
             "title": "Subscriber Package Id",
             "type": "string"
           },
           "SubscriberPackageName": {
             "$Id": "#/properties/install/properties/packages/items/SubscriberPackageName",
-            "examples": ["Files Attachment Notes"],
+            "examples": [
+              "Files Attachment Notes"
+            ],
             "title": "Subscriber Package Name",
             "type": "string"
           },
           "SubscriberPackageNamespace": {
             "$Id": "#/properties/install/properties/packages/items/SubscriberPackageNamespace",
-            "examples": ["fan_astrea"],
+            "examples": [
+              "fan_astrea"
+            ],
             "title": "Subscriber Package NameSpace",
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "SubscriberPackageVersionId": {
             "$Id": "#/properties/install/properties/packages/items/SubscriberPackageVersionId",
-            "examples": ["04t0o000003nRWAAA2"],
+            "examples": [
+              "04t0o000003nRWAAA2"
+            ],
             "title": "Subscriber Version Id (IMPORTANT)",
             "type": "string"
           },
           "SubscriberPackageVersionName": {
             "$Id": "#/properties/install/properties/packages/items/SubscriberPackageVersionName",
-            "examples": ["Summer2021"],
+            "examples": [
+              "Summer2021"
+            ],
             "title": "Subscriber Version Name",
             "type": "string"
           },
           "SubscriberPackageVersionNumber": {
             "$Id": "#/properties/install/properties/packages/items/SubscriberPackageVersionNumber",
-            "examples": ["1.22.0.2"],
+            "examples": [
+              "1.22.0.2"
+            ],
             "title": "Subscriber Version Number",
             "type": "string"
           },
@@ -885,7 +1227,10 @@
             "$Id": "#/properties/install/properties/packages/items/installDuringDeployments",
             "default": false,
             "description": "If true, during deployments this package will be installed in target org if not installed yet",
-            "examples": [true, false],
+            "examples": [
+              true,
+              false
+            ],
             "title": "Install during deployments",
             "type": "boolean"
           },
@@ -893,19 +1238,27 @@
             "$Id": "#/properties/install/properties/packages/items/installOnScratchOrgs",
             "default": false,
             "description": "If true, this package will be installed when creating a new scratch org with sfdx-hardis",
-            "examples": [true, false],
+            "examples": [
+              true,
+              false
+            ],
             "title": "Install on scratch orgs",
             "type": "boolean"
           },
           "installationkey": {
             "$Id": "#/properties/install/properties/packages/items/installationkey",
-            "examples": ["MyInstallationKey", "4FzkMzUSwFfP#@"],
+            "examples": [
+              "MyInstallationKey",
+              "4FzkMzUSwFfP#@"
+            ],
             "description": "Installation key for key-protected package",
             "title": "Package installation key",
             "type": "string"
           }
         },
-        "required": ["SubscriberPackageVersionId"],
+        "required": [
+          "SubscriberPackageVersionId"
+        ],
         "title": "Salesforce package"
       },
       "title": "Installed Packages",
@@ -916,7 +1269,9 @@
       "default": false,
       "description": "If your configuration contains an installedPackages property, activating this option allows you to make sfdx-hardis automatically install packages during the Deployments Check workflow, and not to wait after the merge of the Pull Request.",
       "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-work-on-task-install-packages/",
-      "examples": [true],
+      "examples": [
+        true
+      ],
       "title": "Install packages during deployment checks workflow",
       "type": "boolean"
     },
@@ -935,7 +1290,10 @@
     "jiraHost": {
       "$id": "#/properties/jiraHost",
       "description": "Jira host URL (without https://). Example: mycompany.atlassian.net",
-      "examples": ["mycompany.atlassian.net", "hardisgroup.atlassian.net"],
+      "examples": [
+        "mycompany.atlassian.net",
+        "hardisgroup.atlassian.net"
+      ],
       "title": "Jira Host",
       "type": "string"
     },
@@ -970,7 +1328,13 @@
     "sourcesToRetrofit": {
       "$id": "#/properties/sourcesToRetrofit",
       "description": "List of metadata to retrieve for retrofit job",
-      "examples": [["CustomField", "Layout", "PermissionSet"]],
+      "examples": [
+        [
+          "CustomField",
+          "Layout",
+          "PermissionSet"
+        ]
+      ],
       "items": {
         "type": "string"
       },
@@ -981,14 +1345,23 @@
       "$id": "#/properties/manualActionsFileUrl",
       "default": "",
       "description": "URL of the XLS file that contains manual actions to perform before or after a deployment",
-      "examples": ["https://some.sharepoint.com/file.xlsx"],
+      "examples": [
+        "https://some.sharepoint.com/file.xlsx"
+      ],
       "title": "Manual Actions File URL",
       "type": "string"
     },
     "mergeTargets": {
       "$id": "#/properties/mergeTargets",
       "description": "In branch-scoped config file, declares the list of branches that the current one can have as merge target. For example, integration will have mergeTargets [uat]",
-      "examples": [["preprod"], ["integration"]],
+      "examples": [
+        [
+          "preprod"
+        ],
+        [
+          "integration"
+        ]
+      ],
       "items": {
         "type": "string"
       },
@@ -1045,7 +1418,10 @@
             "type": "string"
           }
         },
-        "required": ["title", "command"]
+        "required": [
+          "title",
+          "command"
+        ]
       },
       "title": "Monitoring commands",
       "type": "array"
@@ -1060,7 +1436,12 @@
     "monitoringDisable": {
       "$id": "#/properties/monitoringDisable",
       "description": "List of commands to skip during monitoring jobs",
-      "examples": [["METADATA_STATUS", "UNUSED_METADATAS"]],
+      "examples": [
+        [
+          "METADATA_STATUS",
+          "UNUSED_METADATAS"
+        ]
+      ],
       "items": {
         "$ref": "#/definitions/enum_monitoring_commands"
       },
@@ -1071,7 +1452,10 @@
       "$id": "#/properties/monitoringExcludeUsernames",
       "description": "List of usernames to exclude while running monitoring commands",
       "examples": [
-        ["deploymentuser@cloudity.com", "mc-cloud-user@cloudity.com"]
+        [
+          "deploymentuser@cloudity.com",
+          "mc-cloud-user@cloudity.com"
+        ]
       ],
       "items": {
         "type": "string"
@@ -1083,7 +1467,9 @@
       "$id": "#/properties/msTeamsWebhookUrl",
       "default": "",
       "description": "Url of the Ms Teams channel Web Hook that can be used to send ALL notifications",
-      "examples": ["https://my.msteams.webhook.url"],
+      "examples": [
+        "https://my.msteams.webhook.url"
+      ],
       "title": "MsTeams WebHook Url (ALL)",
       "type": "string"
     },
@@ -1091,7 +1477,9 @@
       "$id": "#/properties/msTeamsWebhookUrlCritical",
       "default": "",
       "description": "Url of the Ms Teams channel Web Hook that can be used to send CRITICAL notifications",
-      "examples": ["https://my.msteams.webhook.url"],
+      "examples": [
+        "https://my.msteams.webhook.url"
+      ],
       "title": "MsTeams WebHook Url (CRITICAL)",
       "type": "string"
     },
@@ -1099,7 +1487,9 @@
       "$id": "#/properties/msTeamsWebhookUrlSevere",
       "default": "",
       "description": "Url of the Ms Teams channel Web Hook that can be used to send SEVERE notifications",
-      "examples": ["https://my.msteams.webhook.url"],
+      "examples": [
+        "https://my.msteams.webhook.url"
+      ],
       "title": "MsTeams WebHook Url (SEVERE)",
       "type": "string"
     },
@@ -1107,7 +1497,9 @@
       "$id": "#/properties/msTeamsWebhookUrlWarning",
       "default": "",
       "description": "Url of the Ms Teams channel Web Hook that can be used to send WARNING notifications",
-      "examples": ["https://my.msteams.webhook.url"],
+      "examples": [
+        "https://my.msteams.webhook.url"
+      ],
       "title": "MsTeams WebHook Url (WARNING)",
       "type": "string"
     },
@@ -1115,7 +1507,9 @@
       "$id": "#/properties/msTeamsWebhookUrlInfo",
       "default": "",
       "description": "Url of the Ms Teams channel Web Hook that can be used to send INFO notifications",
-      "examples": ["https://my.msteams.webhook.url"],
+      "examples": [
+        "https://my.msteams.webhook.url"
+      ],
       "title": "MsTeams WebHook Url (INFO)",
       "type": "string"
     },
@@ -1135,14 +1529,21 @@
       "$id": "#/properties/newTaskNameRegexExample",
       "default": "",
       "description": "If you activated User Story name validation via RegEx, define an example value that will be displayed to users.\nExample: 'MYPROJECT-168 Update account status validation rule'",
-      "examples": ["MYPROJECT-123 Update account status validation rule"],
+      "examples": [
+        "MYPROJECT-123 Update account status validation rule"
+      ],
       "title": "Example string for User Story name validation regex",
       "type": "string"
     },
     "notificationsDisable": {
       "$id": "#/properties/notificationsDisable",
       "description": "List of notifications types to skip sending",
-      "examples": [["METADATA_STATUS", "UNUSED_METADATAS"]],
+      "examples": [
+        [
+          "METADATA_STATUS",
+          "UNUSED_METADATAS"
+        ]
+      ],
       "items": {
         "$ref": "#/definitions/enum_notification_types"
       },
@@ -1203,7 +1604,11 @@
       "$id": "#/properties/productionBranch",
       "default": "",
       "description": "Name of the git branch corresponding to production environment",
-      "examples": ["master", "main", "production"],
+      "examples": [
+        "master",
+        "main",
+        "production"
+      ],
       "title": "Production branch name",
       "type": "string"
     },
@@ -1211,7 +1616,11 @@
       "$id": "#/properties/projectName",
       "default": "",
       "description": "Identifier for the project (can be the client and project)",
-      "examples": ["MyClientMyProject", "GoogleGmail", "AppleIWatch"],
+      "examples": [
+        "MyClientMyProject",
+        "GoogleGmail",
+        "AppleIWatch"
+      ],
       "title": "Project Name",
       "type": "string"
     },
@@ -1222,7 +1631,12 @@
         "connectedApps": {
           "$id": "#/properties/refreshSandboxConfig/connectedApps",
           "description": "List of connected apps to download before refresh and to upload after refresh",
-          "examples": [["My_Connected_App_1", "My_Connected_App_2"]],
+          "examples": [
+            [
+              "My_Connected_App_1",
+              "My_Connected_App_2"
+            ]
+          ],
           "items": {
             "type": "string"
           },
@@ -1232,7 +1646,12 @@
         "customSettings": {
           "$id": "#/properties/refreshSandboxConfig/customSettings",
           "description": "List of Custom Settings to download before refresh and to upload after refresh",
-          "examples": [["MyCustomSetting1__c", "MyCustomSetting2__c"]],
+          "examples": [
+            [
+              "MyCustomSetting1__c",
+              "MyCustomSetting2__c"
+            ]
+          ],
           "items": {
             "type": "string"
           },
@@ -1264,7 +1683,11 @@
       "$id": "#/properties/retrofitBranch",
       "default": "",
       "description": "Name of the git branch where retrofit merge requests targets to",
-      "examples": ["preprod", "dev", "maintenance"],
+      "examples": [
+        "preprod",
+        "dev",
+        "maintenance"
+      ],
       "title": "Retrofit branch name",
       "type": "string"
     },
@@ -1322,7 +1745,9 @@
       "$id": "#/properties/sfdmuCanModify",
       "default": "",
       "description": "Instance host name to allow SFDMU to deploy data in a production org",
-      "examples": ["myproject.force.com"],
+      "examples": [
+        "myproject.force.com"
+      ],
       "title": "SFDMU can modify",
       "type": "string"
     },
@@ -1337,7 +1762,10 @@
       "$id": "#/properties/skipMinimizeProfiles",
       "description": "These profiles will not be reformatted by command hardis:project:clean:minimizeprofiles",
       "examples": [
-        ["MyClient Customer Community Login User", "MyClientPortail Profile"]
+        [
+          "MyClient Customer Community Login User",
+          "MyClientPortail Profile"
+        ]
       ],
       "items": {
         "type": "string"
@@ -1382,7 +1810,7 @@
       "$id": "#/properties/testCoverageNotBlocking",
       "default": false,
       "description": "Does not make the deployment job fail if apex tests code coverage is failing",
-      "title": "Test Coverage not blocking",
+      "title": "Test Coverage not blocking (not recommended)",
       "type": "boolean"
     },
     "testLevel": {
@@ -1398,23 +1826,37 @@
         "RunAllTestsInOrg"
       ],
       "enumNames": [
-        "No Test Run",
-        "Run Specified Tests",
-        "Run Repository Tests",
-        "Run Repository Tests Except SeeAllData",
-        "Run Local Tests",
-        "Run All Tests In Org"
+        "No Test Run (not recommended, better use Run Local Tests + deploymentApexTestClasses)",
+        "Run Specified Tests (never use it)",
+        "Run Repository Tests (will run only test classes that are present in the repository)",
+        "Run Repository Tests Except SeeAllData (same than RunRepositoryTests but without test classes with SeeAllData=true)",
+        "Run Local Tests (recommended at least for production deployments)",
+        "Run All Tests In Org (never use it)"
       ],
-      "examples": ["RunRepositoryTests", "RunSpecifiedTests"],
+      "examples": [
+        "RunRepositoryTests",
+        "RunSpecifiedTests"
+      ],
       "title": "Test level for deployments",
       "type": "string"
     },
     "ticketingProvider": {
       "$id": "#/properties/ticketingProvider",
       "description": "Ticketing provider used on the project",
-      "enum": ["JIRA", "AZURE", "GENERIC"],
-      "enumNames": ["Jira", "Azure Boards", "Generic"],
-      "examples": ["JIRA", "AZURE"],
+      "enum": [
+        "JIRA",
+        "AZURE",
+        "GENERIC"
+      ],
+      "enumNames": [
+        "Jira",
+        "Azure Boards",
+        "Generic"
+      ],
+      "examples": [
+        "JIRA",
+        "AZURE"
+      ],
       "title": "Ticketing Provider",
       "type": "string"
     },
