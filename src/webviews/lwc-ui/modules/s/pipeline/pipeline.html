@@ -306,6 +306,44 @@
                                 </div>
                             </template>
                         </lightning-tab>
+                            <!-- Apex Tests Tab (only when enabled in .sfdx-hardis.yml) -->
+                            <template if:true={showApexTestsTab}>
+                                <lightning-tab label={modalApexTestsTabLabel} value="apexTests">
+                                    <template if:true={canEditApexTestsInModal}>
+                                        <div class="slds-m-bottom_small slds-text-body_small">
+                                            Enter one Apex test class per line.
+                                        </div>
+                                        <lightning-textarea
+                                            value={apexTestClassesText}
+                                            onchange={handleApexTestsTextChange}
+                                        ></lightning-textarea>
+                                        <div class="slds-m-top_small">
+                                            <lightning-button
+                                                variant="brand"
+                                                label="Save"
+                                                onclick={handleSaveApexTests}
+                                            ></lightning-button>
+                                        </div>
+                                    </template>
+                                    <template if:false={canEditApexTestsInModal}>
+                                        <div class="slds-text-body_regular slds-m-bottom_small">
+                                            Read-only in branch mode. Open a single {prLabel} to edit.
+                                        </div>
+                                        <template if:true={hasApexTestsByLineRows}>
+                                            <lightning-datatable
+                                                key-field="id"
+                                                data={apexTestsByLineRows}
+                                                columns={apexTestsByLineColumns}
+                                                hide-checkbox-column
+                                                column-widths-mode="auto"
+                                            ></lightning-datatable>
+                                        </template>
+                                        <template if:false={hasApexTestsByLineRows}>
+                                            <div class="slds-text-color_weak">No Apex tests configured in this branch.</div>
+                                        </template>
+                                    </template>
+                                </lightning-tab>
+                            </template>
                     </lightning-tabset>
                 </div>
                 <footer class="slds-modal__footer" style="display: flex; justify-content: space-between;">

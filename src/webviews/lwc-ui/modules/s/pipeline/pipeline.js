@@ -7,6 +7,7 @@ import "s/forceLightTheme"; // Ensure light theme is applied
 
 export default class Pipeline extends LightningElement {
   @track prButtonInfo;
+  enableDeploymentApexTestClasses = false;
   @track gitAuthenticated = false;
   @track connectedLabel = "Connect to Git";
   @track connectedVariant = "neutral";
@@ -258,6 +259,37 @@ export default class Pipeline extends LightningElement {
   modalActions = [];
   branchPullRequestsMap = new Map();
 
+  // Apex tests modal state (per-PR)
+  apexTestClassesText = "";
+  apexTestsByLineRows = [];
+
+  get apexTestsByLineColumns() {
+    return [
+      {
+        key: "pullRequest",
+        label: this.prButtonInfo?.pullRequestLabel || "Pull Request",
+        fieldName: "prWebUrl",
+        type: "url",
+        typeAttributes: { label: { fieldName: "prLabel" }, target: "_blank" },
+        wrapText: true,
+      },
+      {
+        key: "apexTestClass",
+        label: "Apex Test Class",
+        fieldName: "apexTestClass",
+        type: "text",
+        wrapText: true,
+      },
+    ];
+  }
+
+  get hasApexTestsByLineRows() {
+    return (
+      Array.isArray(this.apexTestsByLineRows) &&
+      this.apexTestsByLineRows.length > 0
+    );
+  }
+
   // Deployment action modal state
   @track showDeploymentActionModal = false;
   @track currentDeploymentAction = null;
@@ -330,6 +362,7 @@ export default class Pipeline extends LightningElement {
     this.hasWarnings = this.warnings.length > 0;
     this.showOnlyMajor = false;
     this.displayFeatureBranches = data?.displayFeatureBranches ?? false;
+    this.enableDeploymentApexTestClasses = !!data?.enableDeploymentApexTestClasses;
 
     // Store branch PR data for modal display
     this.branchPullRequestsMap = new Map();
@@ -395,6 +428,72 @@ export default class Pipeline extends LightningElement {
     if (data.firstDisplay) {
       this.refreshPipeline();
     }
+  }
+
+  get prLabel() {
+    return this.prButtonInfo?.pullRequestLabel || "Pull Request";
+  }
+
+  get showApexTestsTab() {
+    return this.enableDeploymentApexTestClasses === true;
+  }
+
+  get modalApexTestsTabLabel() {
+    return "Apex Tests (beta)";
+  }
+
+  get canEditApexTestsInModal() {
+    return this.modalMode === "singlePR" && this.modalPullRequests.length === 1;
+  }
+
+  get hasApexTestsConfigured() {
+    return this.parseApexTestClassesText(this.apexTestClassesText).length > 0;
+  }
+
+  parseApexTestClassesText(value) {
+    const raw = (value || "")
+      .split(/\r?\n|,/g)
+      .map((s) => (s || "").trim())
+      .filter((s) => s.length > 0);
+
+    const seen = new Set();
+    const deduped = [];
+    for (const item of raw) {
+      const key = item.toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        deduped.push(item);
+      }
+    }
+    return deduped;
+  }
+
+  formatApexTestClassesText(list) {
+    if (!Array.isArray(list) || list.length === 0) {
+      return "";
+    }
+    return list.filter((s) => !!s).join("\n");
+  }
+
+  handleApexTestsTextChange(event) {
+    this.apexTestClassesText = event.detail.value;
+  }
+
+  handleSaveApexTests() {
+    if (!this.canEditApexTestsInModal) {
+      return;
+    }
+    const pr = this.modalPullRequests[0];
+    const deploymentApexTestClasses = this.parseApexTestClassesText(
+      this.apexTestClassesText,
+    );
+    window.sendMessageToVSCode({
+      type: "saveDeploymentApexTestClasses",
+      data: {
+        prNumber: pr.number,
+        deploymentApexTestClasses: deploymentApexTestClasses,
+      },
+    });
   }
 
   // Map PRs to include a computed jobsIconName used by datatable cellAttributes
@@ -1122,6 +1221,48 @@ export default class Pipeline extends LightningElement {
       // Aggregate all deployment actions from all PRs
       this.modalActions = this._aggregateActionsFromPRs(prs);
 
+      // Per-line breakdown for Apex tests (read-only in branch mode)
+      const rows = [];
+      for (const pr of prs) {
+        const classes =
+          pr && pr.deploymentApexTestClasses && Array.isArray(pr.deploymentApexTestClasses)
+            ? pr.deploymentApexTestClasses
+            : [];
+
+        const normalized = this.parseApexTestClassesText(
+          Array.isArray(classes) ? classes.join("\n") : "",
+        );
+
+        for (const apexTestClass of normalized) {
+          rows.push({
+            id: `apexTests-${pr.number || pr.id || "pr"}-${apexTestClass}`,
+            prLabel: `#${pr.number || ""} - ${pr.title || ""}`,
+            prWebUrl: pr.webUrl || "",
+            apexTestClass: apexTestClass,
+          });
+        }
+      }
+
+      // stable order by PR number then class
+      rows.sort((a, b) => {
+        const aNum = parseInt((a.prLabel || "").replace(/^#(\d+).*/, "$1"));
+        const bNum = parseInt((b.prLabel || "").replace(/^#(\d+).*/, "$1"));
+        if (!isNaN(aNum) && !isNaN(bNum)) {
+          if (aNum !== bNum) {
+            return aNum - bNum;
+          }
+          return (a.apexTestClass || "").localeCompare(b.apexTestClass || "");
+        }
+        const prCmp = (a.prLabel || "").localeCompare(b.prLabel || "");
+        if (prCmp !== 0) {
+          return prCmp;
+        }
+        return (a.apexTestClass || "").localeCompare(b.apexTestClass || "");
+      });
+
+      this.apexTestsByLineRows = rows;
+      this.apexTestClassesText = "";
+
       this.showPRModal = true;
       console.log("Modal data:", {
         branchName,
@@ -1141,6 +1282,8 @@ export default class Pipeline extends LightningElement {
     this.modalPullRequests = [];
     this.modalTickets = [];
     this.modalActions = [];
+    this.apexTestClassesText = "";
+    this.apexTestsByLineRows = [];
   }
 
   handlePRRowAction(event) {
@@ -1183,6 +1326,14 @@ export default class Pipeline extends LightningElement {
 
     // Aggregate deployment actions from this single PR
     this.modalActions = this._aggregateActionsFromPRs([pr]);
+
+    // Set Apex tests list for this single PR
+    const apexTests =
+      pr && pr.deploymentApexTestClasses && Array.isArray(pr.deploymentApexTestClasses)
+        ? pr.deploymentApexTestClasses
+        : [];
+    this.apexTestClassesText = this.formatApexTestClassesText(apexTests);
+    this.apexTestsByLineRows = [];
 
     this.showPRModal = true;
   }

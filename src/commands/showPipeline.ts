@@ -10,10 +10,11 @@ import { TicketProvider } from "../utils/ticketProviders/ticketProvider";
 import {
   listProjectApexScripts,
   listProjectDataWorkspaces,
+  saveDeploymentApexTestClasses,
   savePrePostCommand,
 } from "../utils/prePostCommandsUtils";
 import { getCurrentGitBranch } from "../utils/pipeline/sfdxHardisConfig";
-import { getWorkspaceRoot } from "../utils";
+import { getWorkspaceRoot, readSfdxHardisConfig } from "../utils";
 import path from "path";
 import fs from "fs-extra";
 
@@ -105,6 +106,26 @@ export function registerShowPipeline(commands: Commands) {
             data.prNumber === -1
               ? `Deployment action saved in draft file for the future ${prLabel}.\nIt will be linked to the ${prLabel} once created.`
               : `Deployment action saved for ${prLabel} #${data.prNumber}.\nDon't forget to commit and push ${updatedFile}`;
+          vscode.window.showInformationMessage(msg);
+        }
+        // Save Deployment Apex Test Classes
+        else if (type === "saveDeploymentApexTestClasses") {
+          const updatedFile = await saveDeploymentApexTestClasses(
+            data.prNumber,
+            data.deploymentApexTestClasses,
+          );
+          Logger.log(
+            `Saved deployment apex test classes for PR #${data.prNumber}: ${JSON.stringify(
+              data.deploymentApexTestClasses,
+            )}`,
+          );
+          const prLabel =
+            pipelineProperties?.prButtonInfo?.pullRequestLabel ||
+            "Pull Request";
+          const msg =
+            data.prNumber === -1
+              ? `Apex tests configuration saved in draft file for the future ${prLabel}.\nIt will be linked to the ${prLabel} once created.`
+              : `Apex tests configuration saved for ${prLabel} #${data.prNumber}.\nDon't forget to commit and push ${updatedFile}`;
           vscode.window.showInformationMessage(msg);
         }
         // Get PR info for modal
@@ -492,6 +513,11 @@ export function registerShowPipeline(commands: Commands) {
       const projectApexScripts = await listProjectApexScripts();
       const projectDataWorkspaces = await listProjectDataWorkspaces();
 
+      // Read enableDeploymentApexTestClasses from config/.sfdx-hardis.yml
+      const projectHardisConfig = await readSfdxHardisConfig();
+      const enableDeploymentApexTestClasses =
+        projectHardisConfig?.enableDeploymentApexTestClasses === true;
+
       return {
         pipelineData: pipelineData,
         prButtonInfo: prButtonInfo,
@@ -505,6 +531,7 @@ export function registerShowPipeline(commands: Commands) {
         displayFeatureBranches: displayFeatureBranches,
         projectApexScripts: projectApexScripts,
         projectSfdmuWorkspaces: projectDataWorkspaces,
+        enableDeploymentApexTestClasses: enableDeploymentApexTestClasses,
       };
     };
 
@@ -542,4 +569,5 @@ type PipelineInfo = {
   displayFeatureBranches: boolean;
   projectApexScripts: any[];
   projectSfdmuWorkspaces: any[];
+  enableDeploymentApexTestClasses: boolean;
 };

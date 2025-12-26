@@ -174,7 +174,7 @@ export class SfdxHardisConfigHelper {
   ];
   // Todo: replace alpha by main when stable
   static readonly REMOTE_SCHEMA_URL =
-    "https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/main/config/sfdx-hardis.jsonschema.json";
+    "https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/alpha/config/sfdx-hardis.jsonschema.json";
   // Always resolve to the resources directory, compatible with both Node and Webpack
   static readonly LOCAL_SCHEMA_PATH = (() => {
     // Try to resolve in out/resources (webpacked/prod) first

@@ -866,7 +866,7 @@
       "items": {
         "type": "string"
       },
-      "title": "Apex Test Classes to run during deployments (NOT RECOMMENDED)",
+      "title": "Apex Test Classes to run during deployments (NOT RECOMMENDED) (Beta)",
       "type": "array"
     },
     "developmentBranch": {
@@ -1061,7 +1061,7 @@
         true,
         false
       ],
-      "title": "Enable custom Apex Test Classes during deployments (NOT RECOMMENDED)",
+      "title": "Enable custom Apex Test Classes during deployments (NOT RECOMMENDED) (Beta)",
       "type": "boolean"
     },
     "enableDeprecatedDeploymentPlan": {

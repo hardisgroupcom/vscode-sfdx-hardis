@@ -207,6 +207,55 @@ export async function savePrePostCommand(
   return prConfigFileName;
 }
 
+export async function getDeploymentApexTestClassesForPullRequest(
+  pr: PullRequest | undefined,
+): Promise<string[]> {
+  if (!pr || !pr.number) {
+    return [];
+  }
+
+  const prConfigFileName = getPrConfigFilePath(pr.number);
+  const prConfigParsed = await loadPrConfig(prConfigFileName);
+  const raw = prConfigParsed?.deploymentApexTestClasses;
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+  return raw
+    .map((v: any) => String(v || "").trim())
+    .filter((v: string) => v.length > 0);
+}
+
+export async function saveDeploymentApexTestClasses(
+  prNumber: number,
+  deploymentApexTestClasses: string[],
+): Promise<string> {
+  const prConfigFileName = getPrConfigFilePath(prNumber);
+  const prConfigParsed = await loadPrConfig(prConfigFileName);
+
+  const normalized = (Array.isArray(deploymentApexTestClasses)
+    ? deploymentApexTestClasses
+    : [])
+    .map((v) => String(v || "").trim())
+    .filter((v) => v.length > 0);
+
+  // de-duplicate while preserving order
+  const unique: string[] = [];
+  for (const v of normalized) {
+    if (!unique.includes(v)) {
+      unique.push(v);
+    }
+  }
+
+  if (unique.length > 0) {
+    prConfigParsed.deploymentApexTestClasses = unique;
+  } else {
+    delete prConfigParsed.deploymentApexTestClasses;
+  }
+
+  await savePrConfig(prConfigFileName, prConfigParsed);
+  return prConfigFileName;
+}
+
 /* jscpd:ignore-start */
 export async function movePrePostCommandUpDown(
   prNumber: number,
