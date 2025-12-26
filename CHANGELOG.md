@@ -4,7 +4,7 @@
 
 - Handle display of data cloud queries in command execution LWC
 - DevOps Pipeline enhancements
-  - Add danger zone Settings in pipelien configuration
+  - Add danger zone Settings in pipeline configuration
     - enableDeltaDeploymentBetweenMajorBranches
     - enableDeploymentApexTestClasses
     - deploymentApexTestClasses
