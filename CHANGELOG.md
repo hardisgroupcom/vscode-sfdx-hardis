@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [6.22.0] 2025-12-26
+
 - Handle display of data cloud queries in command execution LWC
 - DevOps Pipeline enhancements
   - Add danger zone Settings in pipeline configuration
