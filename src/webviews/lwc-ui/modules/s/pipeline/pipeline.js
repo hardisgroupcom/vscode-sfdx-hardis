@@ -313,11 +313,24 @@ export default class Pipeline extends LightningElement {
     const list = Array.isArray(this.deploymentApexTestClasses)
       ? this.deploymentApexTestClasses
       : [];
+    // Determine current PR info when in single PR modal
+    let currentPr = null;
+    if (this.modalMode === "singlePR" && Array.isArray(this.modalPullRequests) && this.modalPullRequests.length === 1) {
+      currentPr = this.modalPullRequests[0];
+    }
     for (const apexTestClass of list) {
-      rows.push({
+      const row = {
         id: `apexTest-${apexTestClass}`,
         apexTestClass: apexTestClass,
-      });
+      };
+      if (currentPr) {
+        row.prLabel = `#${currentPr.number || ""} - ${currentPr.title || ""}`;
+        row.prWebUrl = currentPr.webUrl || "";
+      } else {
+        row.prLabel = "";
+        row.prWebUrl = "";
+      }
+      rows.push(row);
     }
     rows.sort((a, b) => (a.apexTestClass || "").localeCompare(b.apexTestClass || ""));
     return rows;
@@ -330,6 +343,14 @@ export default class Pipeline extends LightningElement {
         label: "Apex Test Class",
         fieldName: "apexTestClass",
         type: "text",
+        wrapText: true,
+      },
+      {
+        key: "pullRequest",
+        label: this.prButtonInfo?.pullRequestLabel || "Pull Request",
+        fieldName: "prWebUrl",
+        type: "url",
+        typeAttributes: { label: { fieldName: "prLabel" }, target: "_blank" },
         wrapText: true,
       },
     ];
