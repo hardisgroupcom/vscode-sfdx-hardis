@@ -454,7 +454,8 @@ export default class CommandExecution extends LightningElement {
     const isQueryOrResult =
       logLine.message.includes("[SOQL Query]") ||
       logLine.message.includes("[BulkApiV2]") ||
-      logLine.message.includes("[SOQL Query Tooling]");
+      logLine.message.includes("[SOQL Query Tooling]") ||
+      logLine.message.includes("[DataCloudSqlQuery]");
 
     if (isQueryOrResult) {
       // Clean up the message for queries
@@ -462,6 +463,7 @@ export default class CommandExecution extends LightningElement {
         .replace(/\[SOQL Query\]/g, "")
         .replace(/\[BulkApiV2\]/g, "")
         .replace(/\[SOQL Query Tooling\]/g, "")
+        .replace(/\[DataCloudSqlQuery\]/g, "")
         .trim();
     }
 
