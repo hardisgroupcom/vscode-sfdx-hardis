@@ -306,6 +306,79 @@
                                 </div>
                             </template>
                         </lightning-tab>
+                            <!-- Apex Tests Tab (only when enabled in .sfdx-hardis.yml) -->
+                            <template if:true={showApexTestsTab}>
+                                <lightning-tab label={modalApexTestsTabLabel} value="apexTests">
+                                    <template if:true={canEditApexTestsInModal}>
+                                        <template if:true={isApexTestsViewMode}>
+                                            <div class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center slds-m-bottom_small">
+                                                <div class="slds-text-body_small">
+                                                    Apex test classes configured for this {prLabel}.
+                                                </div>
+                                                <lightning-button
+                                                    variant="neutral"
+                                                    label="Edit"
+                                                    onclick={handleEditApexTests}
+                                                ></lightning-button>
+                                            </div>
+
+                                            <template if:true={hasSelectedApexTests}>
+                                                <lightning-datatable
+                                                    key-field="id"
+                                                    data={apexTestsSelectedRows}
+                                                    columns={apexTestsSelectedColumns}
+                                                    hide-checkbox-column
+                                                    column-widths-mode="auto"
+                                                ></lightning-datatable>
+                                            </template>
+                                            <template if:false={hasSelectedApexTests}>
+                                                <div class="slds-text-color_weak">No Apex test classes configured.</div>
+                                            </template>
+                                        </template>
+
+                                        <template if:true={isApexTestsEditMode}>
+                                            <div class="slds-m-bottom_small slds-text-body_small">
+                                                Select Apex test classes to run.
+                                            </div>
+                                            <s-apex-tests-select
+                                                available-classes={availableApexTestClasses}
+                                                value={deploymentApexTestClasses}
+                                                onchange={handleApexTestsSelectChange}
+                                            ></s-apex-tests-select>
+                                            <div class="slds-m-top_small">
+                                                <lightning-button
+                                                    variant="brand"
+                                                    label="Save"
+                                                    onclick={handleSaveApexTests}
+                                                ></lightning-button>
+                                                <lightning-button
+                                                    class="slds-m-left_small"
+                                                    variant="neutral"
+                                                    label="Cancel"
+                                                    onclick={handleCancelApexTestsEdit}
+                                                ></lightning-button>
+                                            </div>
+                                        </template>
+                                    </template>
+                                    <template if:false={canEditApexTestsInModal}>
+                                        <div class="slds-text-body_regular slds-m-bottom_small">
+                                            Read-only in branch mode. Open a single {prLabel} to edit.
+                                        </div>
+                                        <template if:true={hasApexTestsByLineRows}>
+                                            <lightning-datatable
+                                                key-field="id"
+                                                data={apexTestsByLineRows}
+                                                columns={apexTestsByLineColumns}
+                                                hide-checkbox-column
+                                                column-widths-mode="auto"
+                                            ></lightning-datatable>
+                                        </template>
+                                        <template if:false={hasApexTestsByLineRows}>
+                                            <div class="slds-text-color_weak">No Apex tests configured in this branch.</div>
+                                        </template>
+                                    </template>
+                                </lightning-tab>
+                            </template>
                     </lightning-tabset>
                 </div>
                 <footer class="slds-modal__footer" style="display: flex; justify-content: space-between;">

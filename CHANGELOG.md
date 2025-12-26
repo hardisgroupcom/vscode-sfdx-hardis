@@ -3,6 +3,12 @@
 ## [Unreleased]
 
 - Handle display of data cloud queries in command execution LWC
+- DevOps Pipeline enhancements
+  - Add danger zone Settings in pipeline configuration
+    - enableDeltaDeploymentBetweenMajorBranches
+    - enableDeploymentApexTestClasses
+    - deploymentApexTestClasses
+    - enableDeprecatedDeploymentPlan
 
 ## [6.21.0] 2025-12-21
 

@@ -1,7 +1,8 @@
 import * as fs from "fs-extra";
 import * as yaml from "js-yaml";
 import * as path from "path";
-import { getWorkspaceRoot } from "../utils";
+import fg from "fast-glob";
+import { getWorkspaceRoot, listSfdxProjectPackageDirectories } from "../utils";
 import { PullRequest } from "./gitProviders/types";
 
 export interface PrePostCommand {
@@ -205,6 +206,115 @@ export async function savePrePostCommand(
 
   await savePrConfig(prConfigFileName, prConfigParsed);
   return prConfigFileName;
+}
+
+export async function getDeploymentApexTestClassesForPullRequest(
+  pr: PullRequest | undefined,
+): Promise<string[]> {
+  if (!pr || !pr.number) {
+    return [];
+  }
+
+  const prConfigFileName = getPrConfigFilePath(pr.number);
+  const prConfigParsed = await loadPrConfig(prConfigFileName);
+  const raw = prConfigParsed?.deploymentApexTestClasses;
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+  return raw
+    .map((v: any) => String(v || "").trim())
+    .filter((v: string) => v.length > 0);
+}
+
+export async function saveDeploymentApexTestClasses(
+  prNumber: number,
+  deploymentApexTestClasses: string[],
+): Promise<string> {
+  const prConfigFileName = getPrConfigFilePath(prNumber);
+  const prConfigParsed = await loadPrConfig(prConfigFileName);
+
+  const normalized = (
+    Array.isArray(deploymentApexTestClasses) ? deploymentApexTestClasses : []
+  )
+    .map((v) => String(v || "").trim())
+    .filter((v) => v.length > 0);
+
+  // de-duplicate while preserving order
+  const unique: string[] = [];
+  for (const v of normalized) {
+    if (!unique.includes(v)) {
+      unique.push(v);
+    }
+  }
+
+  if (unique.length > 0) {
+    prConfigParsed.deploymentApexTestClasses = unique;
+  } else {
+    delete prConfigParsed.deploymentApexTestClasses;
+  }
+
+  await savePrConfig(prConfigFileName, prConfigParsed);
+  return prConfigFileName;
+}
+
+export async function listProjectApexTestClasses(): Promise<string[]> {
+  const workspaceRoot = getWorkspaceRoot();
+  if (!workspaceRoot) {
+    return [];
+  }
+
+  const packageDirs = await listSfdxProjectPackageDirectories();
+  const pkgDirs =
+    Array.isArray(packageDirs) && packageDirs.length > 0 ? packageDirs : ["."];
+
+  const patterns = pkgDirs.map((pkgDir) => {
+    const normalized = String(pkgDir || ".").replace(/\\/g, "/");
+    return `${normalized}/**/classes/*.cls`;
+  });
+
+  const files = await fg(patterns, {
+    cwd: workspaceRoot,
+    onlyFiles: true,
+    unique: true,
+    dot: false,
+    ignore: [
+      "**/node_modules/**",
+      "**/.git/**",
+      "**/dist/**",
+      "**/out/**",
+      "**/.sf/**",
+      "**/.sfdx/**",
+      "**/.vscode/**",
+    ],
+  });
+
+  const isTestRegex = /@istest\b/i;
+  const found: string[] = [];
+  const seen = new Set<string>();
+
+  for (const relFile of files) {
+    try {
+      const fullPath = path.join(workspaceRoot, relFile);
+      const content = await fs.readFile(fullPath, "utf8");
+      if (!isTestRegex.test(content || "")) {
+        continue;
+      }
+      const className = path.basename(relFile, ".cls").trim();
+      if (!className) {
+        continue;
+      }
+      const key = className.toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        found.push(className);
+      }
+    } catch {
+      // ignore file read errors
+    }
+  }
+
+  found.sort((a, b) => a.localeCompare(b));
+  return found;
 }
 
 /* jscpd:ignore-start */

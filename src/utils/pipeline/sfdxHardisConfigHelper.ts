@@ -30,6 +30,7 @@ export interface SfdxHardisConfigEditorInput {
   configSchema: SfdxHardisConfigSchema;
   sections: Array<{ label: string; description: string; keys: string[] }>;
   availableBranches?: string[];
+  availableApexTestClasses?: string[];
 }
 
 export interface SfdxHardisConfigEditorSaveData {
@@ -82,6 +83,12 @@ export class SfdxHardisConfigHelper {
     { name: "jiraTicketRegex", scopes: ["global"] },
     { name: "genericTicketingProviderRegex", scopes: ["global"] },
     { name: "genericTicketingProviderUrlBuilder", scopes: ["global"] },
+    { name: "enableDeltaDeploymentBetweenMajorBranches", scopes: ["global"] },
+    { name: "enableDeploymentApexTestClasses", scopes: ["global"] },
+    { name: "deploymentApexTestClasses", scopes: ["global", "branch"] },
+    { name: "enableDeprecatedDeploymentPlan", scopes: ["global"] },
+    { name: "testLevel", scopes: ["branch"] },
+    { name: "testCoverageNotBlocking", scopes: ["branch"] },
   ];
   static readonly SECTIONS = [
     {
@@ -150,6 +157,19 @@ export class SfdxHardisConfigHelper {
         "devHubUsername",
         "initPermissionSets",
         "scratchOrgInitApexScripts",
+      ],
+    },
+    {
+      label: "Danger Zone",
+      description:
+        "Use these settings with caution, be sure to understand their impact as they drift from DevOps best practices.",
+      keys: [
+        "enableDeltaDeploymentBetweenMajorBranches",
+        "enableDeploymentApexTestClasses",
+        "deploymentApexTestClasses",
+        "testLevel",
+        "testCoverageNotBlocking",
+        "enableDeprecatedDeploymentPlan",
       ],
     },
     {

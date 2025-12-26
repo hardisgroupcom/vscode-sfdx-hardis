@@ -13,7 +13,10 @@ import { Logger } from "../../logger";
 import { SecretsManager } from "../secretsManager";
 import { TicketProvider } from "../ticketProviders/ticketProvider";
 import { Ticket } from "../ticketProviders/types";
-import { listPrePostCommandsForPullRequest } from "../prePostCommandsUtils";
+import {
+  getDeploymentApexTestClassesForPullRequest,
+  listPrePostCommandsForPullRequest,
+} from "../prePostCommandsUtils";
 import path from "path";
 import fs from "fs-extra";
 
@@ -344,6 +347,8 @@ export class GitProvider {
     for (const pr of pullRequests) {
       const prePostCommands = await listPrePostCommandsForPullRequest(pr);
       pr.deploymentActions = prePostCommands;
+      pr.deploymentApexTestClasses =
+        await getDeploymentApexTestClassesForPullRequest(pr);
     }
     return pullRequests;
   }
