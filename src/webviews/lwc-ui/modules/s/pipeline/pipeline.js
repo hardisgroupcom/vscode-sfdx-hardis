@@ -267,37 +267,23 @@ export default class Pipeline extends LightningElement {
   apexTestsByLineRows = [];
 
   get apexTestsByLineColumns() {
-    const cols = [];
-    cols.push({
-      key: "apexTestClass",
-      label: "Apex Test Class",
-      fieldName: "apexTestClass",
-      type: "text",
-      wrapText: true,
-      initialWidth: 300,
-    });
-
-    const prLabel = this.prButtonInfo?.pullRequestLabel || "Pull Request";
-    // Only include Pull Request column when we have a meaningful label or rows include PR data
-    const includePR = Boolean(prLabel) && this.apexTestsByLineRows.some((r) => r && r.prWebUrl);
-    if (includePR) {
-      cols.push({
+    return [
+      {
+        key: "apexTestClass",
+        label: "Apex Test Class",
+        fieldName: "apexTestClass",
+        type: "text",
+        wrapText: true,
+      },
+      {
         key: "pullRequest",
-        label: prLabel,
+        label: this.prButtonInfo?.pullRequestLabel || "Pull Request",
         fieldName: "prWebUrl",
         type: "url",
         typeAttributes: { label: { fieldName: "prLabel" }, target: "_blank" },
         wrapText: true,
-        initialWidth: 200,
-      });
-    }
-    return cols;
-  }
-
-  get apexTestsByLineColumnWidthsMode() {
-    // If PR column is present, let datatable autosize; otherwise force fixed layout so single column can expand
-    const cols = this.apexTestsByLineColumns || [];
-    return cols.length > 1 ? "auto" : "fixed";
+      },
+    ];
   }
 
   get hasApexTestsByLineRows() {
@@ -345,14 +331,8 @@ export default class Pipeline extends LightningElement {
         fieldName: "apexTestClass",
         type: "text",
         wrapText: true,
-        initialWidth: 400,
       },
     ];
-  }
-
-  get apexTestsSelectedColumnWidthsMode() {
-    const cols = this.apexTestsSelectedColumns || [];
-    return cols.length > 1 ? "auto" : "fixed";
   }
 
   // Deployment action modal state

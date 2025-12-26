@@ -328,8 +328,7 @@
                                                     data={apexTestsSelectedRows}
                                                     columns={apexTestsSelectedColumns}
                                                     hide-checkbox-column
-                                                    class="apex-tests-selected-datatable"
-                                                    column-widths-mode={apexTestsSelectedColumnWidthsMode}
+                                                    column-widths-mode="auto"
                                                 ></lightning-datatable>
                                             </template>
                                             <template if:false={hasSelectedApexTests}>
@@ -371,8 +370,7 @@
                                                 data={apexTestsByLineRows}
                                                 columns={apexTestsByLineColumns}
                                                 hide-checkbox-column
-                                                class="apex-tests-byline-datatable"
-                                                column-widths-mode={apexTestsByLineColumnWidthsMode}
+                                                column-widths-mode="auto"
                                             ></lightning-datatable>
                                         </template>
                                         <template if:false={hasApexTestsByLineRows}>

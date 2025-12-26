@@ -21,17 +21,6 @@
     pointer-events: none;
 }
 
-/* Ensure single-column datatables expand to fill available width */
-.apex-tests-selected-datatable .slds-table {
-    width: 100% !important;
-}
-.apex-tests-selected-datatable .slds-cell-shrink {
-    width: 100% !important;
-}
-.apex-tests-byline-datatable .slds-table {
-    width: 100% !important;
-}
-
 .blue-back {
     background: linear-gradient(135deg, #f8f9ff 0%, #e8f4fd 100%);
     font-family: "Salesforce Sans", -apple-system, BlinkMacSystemFont, sans-serif;
