@@ -315,7 +315,11 @@ export default class Pipeline extends LightningElement {
       : [];
     // Determine current PR info when in single PR modal
     let currentPr = null;
-    if (this.modalMode === "singlePR" && Array.isArray(this.modalPullRequests) && this.modalPullRequests.length === 1) {
+    if (
+      this.modalMode === "singlePR" &&
+      Array.isArray(this.modalPullRequests) &&
+      this.modalPullRequests.length === 1
+    ) {
       currentPr = this.modalPullRequests[0];
     }
     for (const apexTestClass of list) {
@@ -332,7 +336,9 @@ export default class Pipeline extends LightningElement {
       }
       rows.push(row);
     }
-    rows.sort((a, b) => (a.apexTestClass || "").localeCompare(b.apexTestClass || ""));
+    rows.sort((a, b) =>
+      (a.apexTestClass || "").localeCompare(b.apexTestClass || ""),
+    );
     return rows;
   }
 
@@ -428,8 +434,11 @@ export default class Pipeline extends LightningElement {
     this.hasWarnings = this.warnings.length > 0;
     this.showOnlyMajor = false;
     this.displayFeatureBranches = data?.displayFeatureBranches ?? false;
-    this.enableDeploymentApexTestClasses = !!data?.enableDeploymentApexTestClasses;
-    this.availableApexTestClasses = Array.isArray(data?.availableApexTestClasses)
+    this.enableDeploymentApexTestClasses =
+      !!data?.enableDeploymentApexTestClasses;
+    this.availableApexTestClasses = Array.isArray(
+      data?.availableApexTestClasses,
+    )
       ? data.availableApexTestClasses
       : [];
 
@@ -1329,7 +1338,9 @@ export default class Pipeline extends LightningElement {
       const rows = [];
       for (const pr of prs) {
         const classes =
-          pr && pr.deploymentApexTestClasses && Array.isArray(pr.deploymentApexTestClasses)
+          pr &&
+          pr.deploymentApexTestClasses &&
+          Array.isArray(pr.deploymentApexTestClasses)
             ? pr.deploymentApexTestClasses
             : [];
 
@@ -1435,11 +1446,15 @@ export default class Pipeline extends LightningElement {
 
     // Set Apex tests list for this single PR
     const apexTests =
-      pr && pr.deploymentApexTestClasses && Array.isArray(pr.deploymentApexTestClasses)
+      pr &&
+      pr.deploymentApexTestClasses &&
+      Array.isArray(pr.deploymentApexTestClasses)
         ? pr.deploymentApexTestClasses
         : [];
     this.deploymentApexTestClasses = this.normalizeApexTestClasses(apexTests);
-    this._deploymentApexTestClassesOriginal = [...this.deploymentApexTestClasses];
+    this._deploymentApexTestClassesOriginal = [
+      ...this.deploymentApexTestClasses,
+    ];
     this.apexTestsMode = "view";
     this.apexTestsByLineRows = [];
 

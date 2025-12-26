@@ -465,8 +465,8 @@ export function registerShowPipeline(commands: Commands) {
                   )
                   .then((action) => {
                     if (
-                      action === `Commit & Push .sfdx-hardis.${prNumber}.yml`
-                      || action === "Open Git"
+                      action === `Commit & Push .sfdx-hardis.${prNumber}.yml` ||
+                      action === "Open Git"
                     ) {
                       vscode.commands.executeCommand("workbench.view.scm");
                     }

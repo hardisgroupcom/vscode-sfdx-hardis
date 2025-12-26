@@ -233,9 +233,9 @@ export async function saveDeploymentApexTestClasses(
   const prConfigFileName = getPrConfigFilePath(prNumber);
   const prConfigParsed = await loadPrConfig(prConfigFileName);
 
-  const normalized = (Array.isArray(deploymentApexTestClasses)
-    ? deploymentApexTestClasses
-    : [])
+  const normalized = (
+    Array.isArray(deploymentApexTestClasses) ? deploymentApexTestClasses : []
+  )
     .map((v) => String(v || "").trim())
     .filter((v) => v.length > 0);
 
@@ -264,7 +264,8 @@ export async function listProjectApexTestClasses(): Promise<string[]> {
   }
 
   const packageDirs = await listSfdxProjectPackageDirectories();
-  const pkgDirs = Array.isArray(packageDirs) && packageDirs.length > 0 ? packageDirs : ["."];
+  const pkgDirs =
+    Array.isArray(packageDirs) && packageDirs.length > 0 ? packageDirs : ["."];
 
   const patterns = pkgDirs.map((pkgDir) => {
     const normalized = String(pkgDir || ".").replace(/\\/g, "/");

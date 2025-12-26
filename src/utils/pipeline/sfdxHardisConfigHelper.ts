@@ -85,7 +85,7 @@ export class SfdxHardisConfigHelper {
     { name: "genericTicketingProviderUrlBuilder", scopes: ["global"] },
     { name: "enableDeltaDeploymentBetweenMajorBranches", scopes: ["global"] },
     { name: "enableDeploymentApexTestClasses", scopes: ["global"] },
-    { name: "deploymentApexTestClasses", scopes: ["global","branch"] },
+    { name: "deploymentApexTestClasses", scopes: ["global", "branch"] },
     { name: "enableDeprecatedDeploymentPlan", scopes: ["global"] },
     { name: "testLevel", scopes: ["branch"] },
     { name: "testCoverageNotBlocking", scopes: ["branch"] },
@@ -161,14 +161,15 @@ export class SfdxHardisConfigHelper {
     },
     {
       label: "Danger Zone",
-      description: "Use these settings with caution, be sure to understand their impact as they drift from DevOps best practices.",
+      description:
+        "Use these settings with caution, be sure to understand their impact as they drift from DevOps best practices.",
       keys: [
         "enableDeltaDeploymentBetweenMajorBranches",
         "enableDeploymentApexTestClasses",
         "deploymentApexTestClasses",
         "testLevel",
         "testCoverageNotBlocking",
-        "enableDeprecatedDeploymentPlan"
+        "enableDeprecatedDeploymentPlan",
       ],
     },
     {

@@ -276,7 +276,9 @@ export default class PipelineConfig extends LightningElement {
           const isApexTestsSelect =
             key === "deploymentApexTestClasses" && isArrayText === true;
           const hasApexTestsSelected =
-            isApexTestsSelect && Array.isArray(valueEdit) && valueEdit.length > 0;
+            isApexTestsSelect &&
+            Array.isArray(valueEdit) &&
+            valueEdit.length > 0;
           entries.push({
             key,
             label,
