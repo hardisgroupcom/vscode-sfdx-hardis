@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Integrate Salesforce Git Merge Driver management
+  - Add in sf plugins dependencies
+  - Toggle merge driver from status bar
+- Fix startup error message
+
 ## [6.22.1] 2025-12-27
 
 - Metadata Retriever & Package XML viewer enhancements:

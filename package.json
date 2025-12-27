@@ -178,6 +178,11 @@
         "icon": "$(home)"
       },
       {
+        "command": "vscode-sfdx-hardis.toggleMergeDriver",
+        "title": "SFDX Hardis: Toggle Salesforce merge driver",
+        "icon": "$(git-merge)"
+      },
+      {
         "command": "vscode-sfdx-hardis.execute-command",
         "title": "SFDX Hardis: Execute sfdx-hardis command",
         "icon": "$(run)"

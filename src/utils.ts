@@ -147,6 +147,7 @@ export function preLoadCache() {
     "sfdx-hardis",
     "sfdmu",
     "sfdx-git-delta",
+    "sf-git-merge-driver"
     // "texei-sfdx-plugin",
   ];
   for (const npmPackage of npmPackages) {
