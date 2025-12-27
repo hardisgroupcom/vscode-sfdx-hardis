@@ -1,6 +1,7 @@
 # Changelog
 
-## [Unreleased]
+## [6.23.0]
+- Metadata Retriever & Package XML viewer : Add clickable metadata-type links based on https://sf-explorer.github.io/sf-doc-to-json.
 
 ## [6.22.0] 2025-12-26
 
