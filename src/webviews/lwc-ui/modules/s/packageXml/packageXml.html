@@ -124,9 +124,21 @@
                                         <div class="type-info">
                                             <lightning-icon icon-name={metadataType.iconName} size="small" class="type-icon"></lightning-icon>
                                             <div class="type-details">
-                                                <h3 class="type-name"><a href="#" onclick={openMetadataDocumentation} data-type-name={metadataType.name} class="metadata-type-link">{metadataType.name}</a></h3>
+                                                <h3 class="type-name"><span class="metadata-type-text">{metadataType.name}</span></h3>
                                                 <p class="type-count">{metadataType.memberCount} members</p>
                                             </div>
+                                        
+                                        <div class="type-doc-button slds-align-top">
+                                            <lightning-icon
+                                                icon-name="utility:info"
+                                                size="x-small"
+                                                alternative-text="View documentation"
+                                                title={metadataType.urlTooltip}
+                                                onclick={openMetadataDocumentation}
+                                                data-type-name={metadataType.name}
+                                                class="doc-button"
+                                            ></lightning-icon>
+                                        </div>
                                         </div>
                                         <div class="type-toggle">
                                             <lightning-icon 

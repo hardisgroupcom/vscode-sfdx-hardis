@@ -82,6 +82,7 @@ export default class MetadataRetriever extends LightningElement {
       initialWidth: 160,
       typeAttributes: {
         label: { fieldName: "MemberType" },
+        tooltip: { fieldName: "MemberTypeTitle" },
         target: "_blank",
       },
     });
@@ -95,6 +96,7 @@ export default class MetadataRetriever extends LightningElement {
       wrapText: true,
       typeAttributes: {
         label: { fieldName: "MemberName" },
+        title: { fieldName: "MemberNameTitle" },
         name: "open",
         variant: "base",
       },
@@ -984,6 +986,8 @@ export default class MetadataRetriever extends LightningElement {
           MemberName: record.MemberName,
           MemberType: record.MemberType,
           MemberTypeUrl: `${METADATA_DOC_BASE_URL}${record.MemberType}`,
+          MemberTypeTitle: `View ${record.MemberType} documentation`,
+          MemberNameTitle: `Open metadata for ${record.MemberType} ${record.MemberName}`,
           LastModifiedDate: record.LastModifiedDate,
           // Handle both SourceMember format (LastModifiedBy.Name) and Metadata API format (lastModifiedByName)
           LastModifiedByName:

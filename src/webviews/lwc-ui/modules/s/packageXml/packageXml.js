@@ -455,6 +455,7 @@ export default class PackageXml extends LightningElement {
                 ? "All"
                 : type.members?.length || 0
               : filteredMembers.length,
+            urlTooltip: `View ${type.name} documentation`,
           };
         }
 
