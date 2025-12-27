@@ -23,8 +23,8 @@ export function registerGitMergeDriverToggle(commands: Commands) {
         "No git repository detected in the current workspace.";
     } else {
       mergeDriverStatusBarItem.tooltip = installed
-        ? "Salesforce Git Merge Driver is inactive. Click to activate."
-        : "Salesforce Git Merge Driver is active. Click to deactivate.";
+        ? "Salesforce Git Merge Driver is active. Click to deactivate."
+        : "Salesforce Git Merge Driver is inactive. Click to activate.";
     }
     mergeDriverStatusBarItem.show();
   }
@@ -32,7 +32,7 @@ export function registerGitMergeDriverToggle(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
     "vscode-sfdx-hardis.toggleMergeDriver",
     async () => {
-      const workspaceRoot = getWorkspaceRoot();
+      const workspaceRoot = getWorkspaceFsRoot();
       const installed = await isMergeDriverInstalled(workspaceRoot);
       if (installed === null) {
         vscode.window.showWarningMessage(
@@ -65,11 +65,16 @@ export function registerGitMergeDriverToggle(commands: Commands) {
         );
       }
       await refreshMergeDriverStatusBar();
+
+      // Some environments flush `.git/info/attributes` slightly after the CLI exits.
+      setTimeout(() => {
+        void refreshMergeDriverStatusBar();
+      }, 1500);
     },
   );
   commands.disposables.push(disposable);
 
-  refreshMergeDriverStatusBar();
+  void refreshMergeDriverStatusBar();
 }
 
 function getGitDirPath(workspaceRoot: string): string | null {
@@ -123,7 +128,19 @@ async function isMergeDriverInstalled(
   }
   try {
     const content = await fs.readFile(attributesPath, "utf8");
-    return /merge=salesforce-source/i.test(content);
+    // Detect only active (non-commented) attributes lines.
+    // `sf git merge driver uninstall` can comment out the line, so a raw grep would be misleading.
+    const lines = content.split(/\r?\n/g);
+    for (const line of lines) {
+      const trimmedLeft = line.replace(/^\s+/, "");
+      if (!trimmedLeft || trimmedLeft.startsWith("#")) {
+        continue;
+      }
+      if (/merge=salesforce-source/i.test(trimmedLeft)) {
+        return true;
+      }
+    }
+    return false;
   } catch {
     return false;
   }
