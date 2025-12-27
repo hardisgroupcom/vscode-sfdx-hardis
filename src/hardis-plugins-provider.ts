@@ -245,6 +245,10 @@ export class HardisPluginsProvider
         name: "sfdx-git-delta",
         helpUrl: "https://github.com/scolladon/sfdx-git-delta",
       },
+      {
+        name: "sf-git-merge-driver",
+        helpUrl: "https://github.com/scolladon/sf-git-merge-driver",
+      },
       // {
       //   name: "texei-sfdx-plugin",
       //   helpUrl: "https://texei.github.io/texei-sfdx-plugin/",
