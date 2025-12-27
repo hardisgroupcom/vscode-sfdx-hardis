@@ -124,7 +124,7 @@
                                         <div class="type-info">
                                             <lightning-icon icon-name={metadataType.iconName} size="small" class="type-icon"></lightning-icon>
                                             <div class="type-details">
-                                                <h3 class="type-name">{metadataType.name}</h3>
+                                                <h3 class="type-name"><a href="#" onclick={openMetadataDocumentation} data-type-name={metadataType.name} class="metadata-type-link">{metadataType.name}</a></h3>
                                                 <p class="type-count">{metadataType.memberCount} members</p>
                                             </div>
                                         </div>
