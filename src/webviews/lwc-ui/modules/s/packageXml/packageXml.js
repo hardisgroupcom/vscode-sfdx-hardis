@@ -97,7 +97,20 @@ export default class PackageXml extends LightningElement {
 
     const processedTypes = rawData.types.map((type) => {
       const hasWildcard = type.members && type.members.includes("*");
-      const members = hasWildcard ? [] : type.members || [];
+      const rawMembers = hasWildcard ? [] : type.members || [];
+      const members = rawMembers.map((memberName) => {
+        const showDocLink =
+          type.name === "CustomObject" &&
+          typeof memberName === "string" &&
+          !memberName.includes("__");
+        return {
+          name: memberName,
+          showDocLink: showDocLink,
+          docTooltip: showDocLink
+            ? `View ${memberName} documentation`
+            : "",
+        };
+      });
       const iconInfo = this.getMetadataTypeIcon(type.name);
       return {
         ...type,
@@ -440,9 +453,10 @@ export default class PackageXml extends LightningElement {
         // Filter members that match
         let filteredMembers = type.members || [];
         if (!typeNameMatches && type.members && Array.isArray(type.members)) {
-          filteredMembers = type.members.filter((member) =>
-            member.toLowerCase().includes(this.filterText),
-          );
+          filteredMembers = type.members.filter((member) => {
+            const memberName = member?.name || "";
+            return memberName.toLowerCase().includes(this.filterText);
+          });
         }
 
         // Include type if type name matches OR if any members match
@@ -546,6 +560,27 @@ export default class PackageXml extends LightningElement {
       window.sendMessageToVSCode({
         type: "openMetadataMember",
         data: { metadataType: typeName, metadataName: member },
+      });
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  openStandardObjectDocumentation(event) {
+    try {
+      event.preventDefault();
+      event.stopPropagation();
+      const objectName = event.currentTarget?.dataset?.memberName || null;
+      if (!objectName) {
+        return;
+      }
+      if (objectName.includes("__")) {
+        return;
+      }
+      const docUrl = `${METADATA_DOC_BASE_URL}${objectName}`;
+      window.sendMessageToVSCode({
+        type: "openExternal",
+        data: docUrl,
       });
     } catch (e) {
       // ignore
