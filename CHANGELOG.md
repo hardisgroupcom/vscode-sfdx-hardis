@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [6.22.1] 2025-12-27
+
 - Metadata Retriever & Package XML viewer enhancements:
   - Add clickable metadata-type links based on https://sf-explorer.github.io/sf-doc-to-json
   - Add clickable icon to display standard objects documentation
