@@ -5,6 +5,11 @@ import "s/forceLightTheme"; // Ensure light theme is applied
  * LWC to retrieve and search metadata from a Salesforce org
  * Supports two modes: Recent Changes (SourceMember) and All Metadata (Metadata API)
  */
+
+// Configuration - Base URL for metadata type documentation
+// Modify this URL to change where metadata type links point to
+const METADATA_DOC_BASE_URL = "https://sf-explorer.github.io/sf-doc-to-json/#/cloud/all/object/";
+
 export default class MetadataRetriever extends LightningElement {
   @api orgs = [];
   @api metadataTypes = [];
@@ -70,11 +75,16 @@ export default class MetadataRetriever extends LightningElement {
     // Metadata Type
     cols.push({
       label: "Metadata Type",
-      fieldName: "MemberType",
-      type: "text",
+      fieldName: "MemberTypeUrl",
+      type: "url",
       sortable: true,
       wrapText: true,
       initialWidth: 160,
+      typeAttributes: {
+        label: { fieldName: "MemberType" },
+        tooltip: { fieldName: "MemberTypeTitle" },
+        target: "_blank",
+      },
     });
 
     // Metadata Name
@@ -86,6 +96,7 @@ export default class MetadataRetriever extends LightningElement {
       wrapText: true,
       typeAttributes: {
         label: { fieldName: "MemberName" },
+        title: { fieldName: "MemberNameTitle" },
         name: "open",
         variant: "base",
       },
@@ -974,6 +985,9 @@ export default class MetadataRetriever extends LightningElement {
         return {
           MemberName: record.MemberName,
           MemberType: record.MemberType,
+          MemberTypeUrl: `${METADATA_DOC_BASE_URL}${record.MemberType}`,
+          MemberTypeTitle: `View ${record.MemberType} documentation`,
+          MemberNameTitle: `Open metadata for ${record.MemberType} ${record.MemberName}`,
           LastModifiedDate: record.LastModifiedDate,
           // Handle both SourceMember format (LastModifiedBy.Name) and Metadata API format (lastModifiedByName)
           LastModifiedByName:

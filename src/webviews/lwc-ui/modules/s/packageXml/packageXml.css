@@ -408,6 +408,18 @@
     min-width: 0;
 }
 
+.member-doc-button {
+    margin-left: auto;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+}
+
+.member-doc-icon {
+    color: #1589ee;
+    cursor: pointer;
+}
+
 /* Empty State */
 .empty-state {
     text-align: center;
