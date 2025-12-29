@@ -260,6 +260,12 @@ export async function execCommand(
   if (config.get("disableTlsRejectUnauthorized") === true) {
     execOptions.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
   }
+  if (config.get("debugSfdxHardisCommands") === true) {
+      execOptions.env = {
+      ...execOptions.env,
+      NODE_OPTIONS: "--inspect-brk",
+    };
+  }
   const cacheSection = options.cacheSection;
   const cacheExpiration = options.cacheExpiration;
   // Try to get from CacheManager if cacheSection is set

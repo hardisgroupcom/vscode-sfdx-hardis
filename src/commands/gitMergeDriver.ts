@@ -14,17 +14,17 @@ export function registerGitMergeDriverToggle(commands: Commands) {
 
   async function refreshMergeDriverStatusBar(): Promise<void> {
     const workspaceRoot = getWorkspaceRoot();
-    const installed = await isMergeDriverInstalled(workspaceRoot);
+    const enabled = await isMergeDriverEnabled(workspaceRoot);
     const onEmoji = "🟢";
     const offEmoji = "⚪";
-    mergeDriverStatusBarItem.text = `${installed === true ? onEmoji : offEmoji} SF Merge Driver`;
-    if (installed === null) {
+    mergeDriverStatusBarItem.text = `${enabled === true ? onEmoji : offEmoji} SF Merge Driver`;
+    if (enabled === null) {
       mergeDriverStatusBarItem.tooltip =
         "No git repository detected in the current workspace.";
     } else {
-      mergeDriverStatusBarItem.tooltip = installed
-        ? "Salesforce Git Merge Driver is active. Click to deactivate."
-        : "Salesforce Git Merge Driver is inactive. Click to activate.";
+      mergeDriverStatusBarItem.tooltip = enabled
+        ? "Salesforce Git Merge Driver is enabled. Click to disable."
+        : "Salesforce Git Merge Driver is disabled. Click to enable.";
     }
     mergeDriverStatusBarItem.show();
   }
@@ -32,21 +32,21 @@ export function registerGitMergeDriverToggle(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
     "vscode-sfdx-hardis.toggleMergeDriver",
     async () => {
-      const workspaceRoot = getWorkspaceFsRoot();
-      const installed = await isMergeDriverInstalled(workspaceRoot);
-      if (installed === null) {
+      const workspaceRoot = getWorkspaceRoot();
+      const enabled = await isMergeDriverEnabled(workspaceRoot);
+      if (enabled === null) {
         vscode.window.showWarningMessage(
           "No git repository detected in the current workspace.",
         );
         return;
       }
-      const command = installed
-        ? "sf git merge driver uninstall"
-        : "sf git merge driver install";
+      const command = enabled
+        ? "sf git merge driver disable"
+        : "sf git merge driver enable";
 
-      const progressMessage = installed
-        ? "Uninstalling Salesforce Git Merge Driver..."
-        : "Installing Salesforce Git Merge Driver...";
+      const progressMessage = enabled
+        ? "Disabling Salesforce Git Merge Driver..."
+        : "Enabling Salesforce Git Merge Driver...";
       const result = await execCommandWithProgress(
         command,
         {
@@ -61,7 +61,7 @@ export function registerGitMergeDriverToggle(commands: Commands) {
 
       if (result?.status && result.status !== 0) {
         vscode.window.showErrorMessage(
-          `Merge driver command failed: ${command}`,
+          `Git Merge Driver command failed: ${command}`,
         );
       }
       await refreshMergeDriverStatusBar();
@@ -116,7 +116,7 @@ function getGitInfoAttributesPath(workspaceRoot: string): string | null {
   return path.join(gitDir, "info", "attributes");
 }
 
-async function isMergeDriverInstalled(
+async function isMergeDriverEnabled(
   workspaceRoot: string,
 ): Promise<boolean | null> {
   const attributesPath = getGitInfoAttributesPath(workspaceRoot);
@@ -129,7 +129,7 @@ async function isMergeDriverInstalled(
   try {
     const content = await fs.readFile(attributesPath, "utf8");
     // Detect only active (non-commented) attributes lines.
-    // `sf git merge driver uninstall` can comment out the line, so a raw grep would be misleading.
+    // `sf git merge driver disable` can comment out the line, so a raw grep would be misleading.
     const lines = content.split(/\r?\n/g);
     for (const line of lines) {
       const trimmedLeft = line.replace(/^\s+/, "");
