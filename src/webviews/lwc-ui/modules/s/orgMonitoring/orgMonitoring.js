@@ -216,6 +216,15 @@ export default class OrgMonitoring extends LightningElement {
     });
   }
 
+  runObjectFieldUsage() {
+    window.sendMessageToVSCode({
+      type: "runCommand",
+      data: {
+        command: "sf hardis:doc:object-field-usage",
+      },
+    });
+  }
+
   findUnusedMetadata() {
     window.sendMessageToVSCode({
       type: "runCommand",

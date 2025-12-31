@@ -8,6 +8,7 @@
 - Fix startup error message
 - Add capability to debug internal sfdx-hardis commands by setting `vsCodeSfdxHardis.debugSfdxHardisCommands` to true
 - Implement Data Workbench
+- Add monitoring command: [Object Field Usage](https://sfdx-hardis.cloudity.com/hardis/doc/object-field-usage/)
 
 ## [6.22.1] 2025-12-27
 
