@@ -478,48 +478,60 @@
 
               <div class="slds-form-element slds-m-bottom_medium">
                 <div class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center">
-                  <lightning-input
-                    type="toggle"
-                    name="delete-old-data"
-                    label="deleteOldData (remove records not in dataset)"
-                    checked={obj.deleteOldData}
-                    data-index={index}
-                    data-field="deleteOldData"
-                    onchange={handleObjectToggleChange}
-                    class="slds-no-flex"
-                  ></lightning-input>
+                  <div class="slds-grid slds-grid_vertical-align-center">
+                    <lightning-input
+                      type="toggle"
+                      variant="label-hidden"
+                      name="delete-old-data"
+                      aria-label="deleteOldData (remove records not in dataset)"
+                      checked={obj.deleteOldData}
+                      data-index={index}
+                      data-field="deleteOldData"
+                      onchange={handleObjectToggleChange}
+                      class="slds-no-flex"
+                    ></lightning-input>
+                    <span class="slds-m-left_small">deleteOldData (remove records not in dataset)</span>
+                  </div>
                   <s-multiline-helptext content="If enabled, records not present in the CSV/data set will be deleted in target org."></s-multiline-helptext>
                 </div>
               </div>
 
               <div class="slds-form-element slds-m-bottom_medium">
                 <div class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center">
-                  <lightning-input
-                    type="toggle"
-                    name="use-query-all"
-                    label="useQueryAll (include archived/deleted)"
-                    checked={obj.useQueryAll}
-                    data-index={index}
-                    data-field="useQueryAll"
-                    onchange={handleObjectToggleChange}
-                    class="slds-no-flex"
-                  ></lightning-input>
+                  <div class="slds-grid slds-grid_vertical-align-center">
+                    <lightning-input
+                      type="toggle"
+                      variant="label-hidden"
+                      name="use-query-all"
+                      aria-label="useQueryAll (include archived/deleted)"
+                      checked={obj.useQueryAll}
+                      data-index={index}
+                      data-field="useQueryAll"
+                      onchange={handleObjectToggleChange}
+                      class="slds-no-flex"
+                    ></lightning-input>
+                    <span class="slds-m-left_small">useQueryAll (include archived/deleted)</span>
+                  </div>
                   <s-multiline-helptext content="If enabled, SFDMU uses QueryAll to include archived and soft-deleted records."></s-multiline-helptext>
                 </div>
               </div>
 
               <div class="slds-form-element slds-m-bottom_medium">
                 <div class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center">
-                  <lightning-input
-                    type="toggle"
-                    name="all-or-none"
-                    label="allOrNone"
-                    checked={obj.allOrNone}
-                    data-index={index}
-                    data-field="allOrNone"
-                    onchange={handleObjectToggleChange}
-                    class="slds-no-flex"
-                  ></lightning-input>
+                  <div class="slds-grid slds-grid_vertical-align-center">
+                    <lightning-input
+                      type="toggle"
+                      variant="label-hidden"
+                      name="all-or-none"
+                      aria-label="allOrNone"
+                      checked={obj.allOrNone}
+                      data-index={index}
+                      data-field="allOrNone"
+                      onchange={handleObjectToggleChange}
+                      class="slds-no-flex"
+                    ></lightning-input>
+                    <span class="slds-m-left_small">allOrNone</span>
+                  </div>
                   <s-multiline-helptext content="If enabled, SFDMU will rollback the batch on errors (allOrNone behaviour)."></s-multiline-helptext>
                 </div>
               </div>
