@@ -27,6 +27,15 @@ type SfdmuObjectConfig = {
   [key: string]: any;
 };
 
+type ExportedFile = {
+  name: string;
+  path: string;
+  relativePath: string;
+  size: number;
+  modified: number;
+  lineCount: number;
+};
+
 type DataWorkspace = {
   name: string;
   path: string;
@@ -35,6 +44,7 @@ type DataWorkspace = {
   description: string;
   objects: SfdmuObjectConfig[];
   objectsCount: number;
+  exportedFiles: ExportedFile[];
 };
 
 export function registerShowDataWorkbench(commands: Commands) {
@@ -209,6 +219,8 @@ async function loadDataWorkspaces(): Promise<DataWorkspace[]> {
           }))
         : [];
 
+      const exportedFiles = listExportedFiles(workspacePath);
+
       workspaces.push({
         name: dirent.name,
         path: workspacePath,
@@ -217,6 +229,7 @@ async function loadDataWorkspaces(): Promise<DataWorkspace[]> {
         description: exportConfig.sfdxHardisDescription || "",
         objects: objects,
         objectsCount: objects.length,
+        exportedFiles: exportedFiles,
       });
     } catch (error) {
       Logger.log(
@@ -226,6 +239,67 @@ async function loadDataWorkspaces(): Promise<DataWorkspace[]> {
   }
 
   return workspaces;
+}
+
+function listExportedFiles(workspacePath: string): ExportedFile[] {
+  const allowedExtensions = new Set([".csv", ".zip"]);
+  const maxDepth = 2;
+  const queue: Array<{ dir: string; depth: number }> = [
+    { dir: workspacePath, depth: 0 },
+  ];
+  const files: ExportedFile[] = [];
+  const entries: fs.Dirent[] = fs.readdirSync(workspacePath, {
+    withFileTypes: true,
+  });
+
+  for (const entry of entries) {
+    if (!entry.isFile()) {
+      continue;
+    }
+    const entryPath = path.join(workspacePath, entry.name);
+    const extension = path.extname(entry.name).toLowerCase();
+    if (!allowedExtensions.has(extension)) {
+      continue;
+    }
+
+    try {
+      const stats = fs.statSync(entryPath);
+      const lineCount = countFileLines(entryPath);
+      if (entry.name === "MissingParentRecordsReport.csv" && lineCount === 0) {
+        continue;
+      }
+      files.push({
+        name: entry.name,
+        path: entryPath,
+        relativePath: entry.name,
+        size: stats.size,
+        modified: stats.mtimeMs,
+        lineCount: lineCount,
+      });
+    } catch {
+      // ignore unreadable files
+    }
+  }
+
+  return files.sort((a, b) => a.relativePath.localeCompare(b.relativePath));
+}
+
+function countFileLines(filePath: string): number {
+  try {
+    const buffer = fs.readFileSync(filePath);
+    let lines = 0;
+    for (let i = 0; i < buffer.length; i++) {
+      if (buffer[i] === 10) {
+        lines += 1;
+      }
+    }
+    if (buffer.length > 0 && buffer[buffer.length - 1] !== 10) {
+      lines += 1;
+    }
+    return lines;
+  } catch {
+    return 0;
+  }
 }
 
 async function createDataWorkspace(data: any): Promise<string> {

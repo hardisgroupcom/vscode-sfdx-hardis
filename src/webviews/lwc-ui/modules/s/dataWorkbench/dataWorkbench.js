@@ -12,6 +12,24 @@ function inferObjectNameFromQuery(query) {
   return match ? match[1] : "";
 }
 
+function formatBytes(bytes) {
+  const value = Number(bytes);
+  if (!Number.isFinite(value) || value <= 0) {
+    return "";
+  }
+  if (value < 1024) {
+    return `${value} B`;
+  }
+  const units = ["KB", "MB", "GB", "TB"];
+  let size = value / 1024;
+  let unitIndex = 0;
+  while (size >= 1024 && unitIndex < units.length - 1) {
+    size /= 1024;
+    unitIndex += 1;
+  }
+  return `${size.toFixed(size >= 10 ? 0 : 1)} ${units[unitIndex]}`;
+}
+
 export default class DataWorkbench extends LightningElement {
   workspaces = [];
   selectedWorkspace = null;
@@ -20,6 +38,30 @@ export default class DataWorkbench extends LightningElement {
   editingWorkspace = null;
   pendingSelectedWorkspacePath = null;
   showLargeActions = true;
+  exportedFilesColumns = [
+    {
+      label: "File",
+      fieldName: "relativePath",
+      type: "button",
+      typeAttributes: {
+        label: { fieldName: "relativePath" },
+        name: "open",
+        variant: "base",
+      },
+    },
+    {
+      label: "Size",
+      fieldName: "sizeLabel",
+      type: "text",
+      cellAttributes: { alignment: "right" },
+    },
+    {
+      label: "Lines",
+      fieldName: "lineCount",
+      type: "number",
+      cellAttributes: { alignment: "right" },
+    },
+  ];
 
   @track soqlErrors = [];
 
@@ -141,6 +183,7 @@ export default class DataWorkbench extends LightningElement {
   normalizeWorkspaces(workspacesInput) {
     return (workspacesInput || []).map((ws) => ({
       ...ws,
+      exportedFiles: Array.isArray(ws.exportedFiles) ? ws.exportedFiles : [],
       objects: (ws.objects || []).map((obj) => ({
         ...obj,
         objectName: obj.objectName || inferObjectNameFromQuery(obj.query),
@@ -255,6 +298,19 @@ export default class DataWorkbench extends LightningElement {
     return (this.newWorkspace.objects || []).length > 1;
   }
 
+  get hasExportedFiles() {
+    const files = this.selectedWorkspace?.exportedFiles || [];
+    return files.length > 0;
+  }
+
+  get exportedFilesForDisplay() {
+    return (this.selectedWorkspace?.exportedFiles || []).map((file) => ({
+      ...file,
+      sizeLabel: formatBytes(file.size),
+      modifiedLabel: file.modified ? new Date(file.modified).toLocaleString() : "",
+    }));
+  }
+
   // Event Handlers
   handleWorkspaceSelect(event) {
     const workspacePath = event.currentTarget.dataset.path;
@@ -343,6 +399,14 @@ export default class DataWorkbench extends LightningElement {
         data: { path: this.selectedWorkspace.path },
       });
     }
+  }
+
+  handleRefreshExportedFiles() {
+    if (this.selectedWorkspace?.path) {
+      this.pendingSelectedWorkspacePath = this.selectedWorkspace.path;
+    }
+    this.isLoading = true;
+    this.loadWorkspaces();
   }
 
   handleCancel() {
@@ -512,6 +576,28 @@ export default class DataWorkbench extends LightningElement {
       window.sendMessageToVSCode({
         type: "openFile",
         data: { filePath: this.selectedWorkspace.configPath },
+      });
+    }
+  }
+
+  handleOpenExportedFile(event) {
+    const filePath = event?.currentTarget?.dataset?.path;
+    if (!filePath) {
+      return;
+    }
+    window.sendMessageToVSCode({
+      type: "openFile",
+      data: { filePath },
+    });
+  }
+
+  handleExportedFileAction(event) {
+    const actionName = event?.detail?.action?.name;
+    const row = event?.detail?.row;
+    if (actionName === "open" && row?.path) {
+      window.sendMessageToVSCode({
+        type: "openFile",
+        data: { filePath: row.path },
       });
     }
   }

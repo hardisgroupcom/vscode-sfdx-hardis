@@ -267,6 +267,37 @@
                       </template>
                     </div>
                   </div>
+
+                  <div class="slds-m-bottom_medium">
+                    <div class="slds-grid slds-grid_align-spread slds-m-bottom_x-small">
+                      <h5 class="slds-text-heading_x-small">Exported Files</h5>
+                      <lightning-button
+                        variant="neutral"
+                        label="Refresh"
+                        icon-name="utility:refresh"
+                        icon-position="left"
+                        title="Refresh exported files"
+                        onclick={handleRefreshExportedFiles}
+                        class="slds-m-left_small"
+                      ></lightning-button>
+                    </div>
+                    <template if:true={hasExportedFiles}>
+                      <lightning-datatable
+                        key-field="path"
+                        data={exportedFilesForDisplay}
+                        columns={exportedFilesColumns}
+                        hide-checkbox-column
+                        show-row-number-column
+                        onrowaction={handleExportedFileAction}
+                        class="exported-files-table"
+                      ></lightning-datatable>
+                    </template>
+                    <template if:false={hasExportedFiles}>
+                      <p class="slds-text-body_small slds-text-color_weak">
+                        No exported files found yet. Run an export to generate CSV files for this workspace.
+                      </p>
+                    </template>
+                  </div>
                 </lightning-card>
               </template>
               <template if:false={selectedWorkspace}>
