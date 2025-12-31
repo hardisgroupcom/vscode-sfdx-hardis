@@ -7,7 +7,8 @@ import "s/forceLightTheme"; // Ensure light theme is applied
 
 // Configuration - Base URL for metadata type documentation
 // Modify this URL to change where metadata type links point to
-const METADATA_DOC_BASE_URL = "https://sf-explorer.github.io/sf-doc-to-json/#/cloud/all/object/";
+const METADATA_DOC_BASE_URL =
+  "https://sf-explorer.github.io/sf-doc-to-json/#/cloud/all/object/";
 
 export default class PackageXml extends LightningElement {
   @track packageData = null;
@@ -106,9 +107,7 @@ export default class PackageXml extends LightningElement {
         return {
           name: memberName,
           showDocLink: showDocLink,
-          docTooltip: showDocLink
-            ? `View ${memberName} documentation`
-            : "",
+          docTooltip: showDocLink ? `View ${memberName} documentation` : "",
         };
       });
       const iconInfo = this.getMetadataTypeIcon(type.name);

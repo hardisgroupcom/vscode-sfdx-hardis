@@ -294,9 +294,13 @@ export default class FilesWorkbench extends LightningElement {
       originalPath: this.editingWorkspace?.path,
     };
 
+    // LWC tracked objects are reactive proxies and can't be structured-cloned
+    // by the webview MessagePort. Convert to a plain JSON object before sending.
+    const safeData = JSON.parse(JSON.stringify(data));
+
     window.sendMessageToVSCode({
       type: action,
-      data: data,
+      data: safeData,
     });
   }
 
