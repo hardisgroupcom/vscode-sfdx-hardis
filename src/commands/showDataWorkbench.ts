@@ -90,7 +90,8 @@ export function registerShowDataWorkbench(commands: Commands) {
                 type: "workspaceCreateFailed",
                 data: {
                   message,
-                  soqlErrors: e instanceof SoqlValidationError ? e.soqlErrors : undefined,
+                  soqlErrors:
+                    e instanceof SoqlValidationError ? e.soqlErrors : undefined,
                 },
               });
             }
@@ -110,7 +111,7 @@ export function registerShowDataWorkbench(commands: Commands) {
                 "View and commit files",
               );
               if (pickedAction === "View and commit files") {
-                 vscode.commands.executeCommand("workbench.view.scm");
+                vscode.commands.executeCommand("workbench.view.scm");
               }
             } catch (e: any) {
               const message = e?.message || e;
@@ -122,7 +123,8 @@ export function registerShowDataWorkbench(commands: Commands) {
                 type: "workspaceUpdateFailed",
                 data: {
                   message,
-                  soqlErrors: e instanceof SoqlValidationError ? e.soqlErrors : undefined,
+                  soqlErrors:
+                    e instanceof SoqlValidationError ? e.soqlErrors : undefined,
                 },
               });
             }
@@ -169,11 +171,11 @@ export function registerShowDataWorkbench(commands: Commands) {
             break;
           }
           // jscpd:ignore-end
-        default:
-          break;
-      }
-    });
-  },
+          default:
+            break;
+        }
+      });
+    },
   );
   commands.disposables.push(disposable);
 }
@@ -353,7 +355,8 @@ async function createDataWorkspace(data: any): Promise<string> {
 
 async function updateDataWorkspace(data: any): Promise<string> {
   const workspaceRoot = getWorkspaceRoot();
-  const oldPath = typeof data?.originalPath === "string" ? data.originalPath : "";
+  const oldPath =
+    typeof data?.originalPath === "string" ? data.originalPath : "";
   const workspaceName = typeof data?.name === "string" ? data.name : "";
 
   if (!workspaceName) {

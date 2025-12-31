@@ -313,7 +313,9 @@ export default class DataWorkbench extends LightningElement {
     return (this.selectedWorkspace?.exportedFiles || []).map((file) => ({
       ...file,
       sizeLabel: formatBytes(file.size),
-      modifiedLabel: file.modified ? new Date(file.modified).toLocaleString() : "",
+      modifiedLabel: file.modified
+        ? new Date(file.modified).toLocaleString()
+        : "",
     }));
   }
 
@@ -363,9 +365,9 @@ export default class DataWorkbench extends LightningElement {
           })) || [],
       };
       this.showCreateWorkspace = true;
-      this.soqlErrors = new Array((this.newWorkspace.objects || []).length).fill(
-        "",
-      );
+      this.soqlErrors = new Array(
+        (this.newWorkspace.objects || []).length,
+      ).fill("");
     }
 
     if (event && typeof event.stopPropagation === "function") {
