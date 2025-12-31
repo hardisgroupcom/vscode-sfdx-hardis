@@ -1,0 +1,485 @@
+import { LightningElement, api, track } from "lwc";
+
+export default class DataWorkbench extends LightningElement {
+  workspaces = [];
+  selectedWorkspace = null;
+  isLoading = false;
+  showCreateWorkspace = false;
+  editingWorkspace = null;
+  pendingSelectedWorkspacePath = null;
+  showLargeActions = true;
+
+  @track newWorkspace = {
+    name: "",
+    label: "",
+    description: "",
+    objects: [
+      {
+        query: "SELECT Id, Name FROM Account",
+        operation: "Upsert",
+        externalId: "",
+        deleteOldData: false,
+        useQueryAll: false,
+        allOrNone: true,
+        batchSize: 200,
+        objectName: "Account",
+      },
+    ],
+  };
+
+  connectedCallback() {
+    this.loadWorkspaces();
+    this.updateActionsVisibility();
+    this._boundResize = this.updateActionsVisibility.bind(this);
+    window.addEventListener("resize", this._boundResize);
+  }
+
+  disconnectedCallback() {
+    if (this._boundResize) {
+      window.removeEventListener("resize", this._boundResize);
+      this._boundResize = null;
+    }
+  }
+
+  updateActionsVisibility() {
+    try {
+      this.showLargeActions = (window.innerWidth || 0) > 1024;
+    } catch (e) {
+      this.showLargeActions = true;
+    }
+  }
+
+  @api
+  handleMessage(messageType, data) {
+    switch (messageType) {
+      case "initialize":
+        this.handleInitialize(data);
+        break;
+      case "workspacesLoaded":
+        this.handleWorkspacesLoaded(data);
+        break;
+      case "workspaceCreated":
+        if (data && data.path) {
+          this.pendingSelectedWorkspacePath = data.path;
+        }
+        this.loadWorkspaces();
+        this.showCreateWorkspace = false;
+        this.editingWorkspace = null;
+        break;
+      case "workspaceUpdated":
+        const selectedPath = this.selectedWorkspace?.path;
+        this.loadWorkspaces();
+        this.showCreateWorkspace = false;
+        this.editingWorkspace = null;
+        if (selectedPath) {
+          this.pendingSelectedWorkspacePath = selectedPath;
+        }
+        break;
+      case "workspaceDeleted":
+        this.loadWorkspaces();
+        this.showCreateWorkspace = false;
+        this.editingWorkspace = null;
+        this.selectedWorkspace = null;
+        break;
+      default:
+        break;
+    }
+  }
+
+  @api
+  initialize(data) {
+    if (data && data.workspaces) {
+      this.workspaces = this.normalizeWorkspaces(data.workspaces);
+    }
+  }
+
+  handleInitialize(data) {
+    this.initialize(data);
+  }
+
+  handleWorkspacesLoaded(data) {
+    this.workspaces = this.normalizeWorkspaces(data.workspaces || []);
+    this.isLoading = false;
+
+    if (this.pendingSelectedWorkspacePath) {
+      const updatedWorkspace = this.workspaces.find(
+        (w) => w.path === this.pendingSelectedWorkspacePath,
+      );
+      if (updatedWorkspace) {
+        this.selectedWorkspace = updatedWorkspace;
+      }
+      this.pendingSelectedWorkspacePath = null;
+    }
+  }
+
+  normalizeWorkspaces(workspacesInput) {
+    return (workspacesInput || []).map((ws) => ({
+      ...ws,
+      objects: (ws.objects || []).map((obj) => ({
+        ...obj,
+        objectName: obj.objectName || this.computeObjectName(obj.query),
+      })),
+    }));
+  }
+
+  loadWorkspaces() {
+    this.isLoading = true;
+    window.sendMessageToVSCode({
+      type: "loadWorkspaces",
+      data: {},
+    });
+  }
+
+  get hasWorkspaces() {
+    return this.workspaces && this.workspaces.length > 0;
+  }
+
+  get workspacesForDisplay() {
+    return this.workspaces
+      .map((workspace) => ({
+        ...workspace,
+        iconName: "standard:dataset",
+        hasDescription: !!workspace.description,
+        objectsCount: workspace.objectsCount || 0,
+        operationsSummary: (workspace.objects || [])
+          .map((obj) => obj.operation || "Upsert")
+          .join(", "),
+        cssClass: this.getWorkspaceCssClass(workspace),
+      }))
+      .sort((a, b) => {
+        const labelA = (a.label || a.name || "").toLowerCase();
+        const labelB = (b.label || b.name || "").toLowerCase();
+        return labelA.localeCompare(labelB);
+      });
+  }
+
+  getWorkspaceCssClass(workspace) {
+    const baseClasses = "slds-box slds-box_x-small workspace-item";
+    const isSelected =
+      this.selectedWorkspace && this.selectedWorkspace.path === workspace.path;
+    return isSelected ? `${baseClasses} selected` : baseClasses;
+  }
+
+  get isCreateMode() {
+    return this.showCreateWorkspace && !this.editingWorkspace;
+  }
+
+  get isEditMode() {
+    return this.showCreateWorkspace && !!this.editingWorkspace;
+  }
+
+  get modalTitle() {
+    return this.isEditMode
+      ? "Edit Data Import/Export Workspace"
+      : "Create New Data Import/Export Workspace";
+  }
+
+  get canSaveWorkspace() {
+    const hasName =
+      this.newWorkspace.name && this.newWorkspace.name.trim().length > 0;
+    const hasLabel =
+      this.newWorkspace.label && this.newWorkspace.label.trim().length > 0;
+    const hasObjects =
+      this.newWorkspace.objects &&
+      this.newWorkspace.objects.length > 0 &&
+      this.newWorkspace.objects.every(
+        (obj) => obj.query && obj.query.trim().length > 0,
+      );
+    return hasName && hasLabel && hasObjects;
+  }
+
+  get saveButtonDisabled() {
+    return !this.canSaveWorkspace;
+  }
+
+  get saveButtonLabel() {
+    return this.isEditMode ? "Update Workspace" : "Create Workspace";
+  }
+
+  get operationOptions() {
+    return [
+      { label: "Upsert", value: "Upsert" },
+      { label: "Insert", value: "Insert" },
+      { label: "Update", value: "Update" },
+      { label: "Delete", value: "Delete" },
+      { label: "Export (read-only)", value: "Export" },
+    ];
+  }
+
+  // Event Handlers
+  handleWorkspaceSelect(event) {
+    const workspacePath = event.currentTarget.dataset.path;
+    const workspace = this.workspaces.find((w) => w.path === workspacePath);
+    this.selectedWorkspace = workspace;
+  }
+
+  handleCreateWorkspace() {
+    this.showCreateWorkspace = true;
+    this.editingWorkspace = null;
+    this.resetNewWorkspace();
+  }
+
+  handleEditWorkspace(event) {
+    let workspacePath;
+
+    if (event.detail && event.detail.value === "edit") {
+      workspacePath = this.selectedWorkspace?.path;
+    } else {
+      workspacePath =
+        event.currentTarget?.dataset?.path || this.selectedWorkspace?.path;
+    }
+
+    const workspace = this.workspaces.find((w) => w.path === workspacePath);
+
+    if (workspace) {
+      this.editingWorkspace = workspace;
+      this.newWorkspace = {
+        name: workspace.name,
+        label: workspace.label,
+        description: workspace.description,
+        objects:
+          (workspace.objects || []).map((obj) => ({
+            ...obj,
+            query: obj.query || "",
+            operation: obj.operation || "Upsert",
+            externalId: obj.externalId || "",
+            deleteOldData: obj.deleteOldData === true,
+            useQueryAll: obj.useQueryAll === true,
+            allOrNone: obj.allOrNone !== false,
+            batchSize:
+              obj.batchSize === 0 || obj.batchSize === null
+                ? ""
+                : obj.batchSize ?? "",
+            objectName: this.computeObjectName(obj.query),
+          })) || [],
+      };
+      this.showCreateWorkspace = true;
+    }
+
+    if (event && typeof event.stopPropagation === "function") {
+      event.stopPropagation();
+    }
+  }
+
+  handleDeleteWorkspace(event) {
+    let path;
+
+    if (event.detail && event.detail.value === "delete") {
+      path = this.selectedWorkspace?.path;
+    } else {
+      const pathFromDataset = event?.currentTarget?.dataset?.path;
+      path =
+        (this.selectedWorkspace && this.selectedWorkspace.path) ||
+        pathFromDataset;
+    }
+
+    if (path) {
+      const ws =
+        this.workspaces.find((w) => w.path === path) || this.selectedWorkspace;
+      window.sendMessageToVSCode({
+        type: "deleteWorkspace",
+        data: { path, label: ws?.label || ws?.name || path },
+      });
+    }
+
+    if (event && typeof event.stopPropagation === "function") {
+      event.stopPropagation();
+    }
+  }
+
+  handleOpenFolder() {
+    if (this.selectedWorkspace && this.selectedWorkspace.path) {
+      window.sendMessageToVSCode({
+        type: "openFolder",
+        data: { path: this.selectedWorkspace.path },
+      });
+    }
+  }
+
+  handleCancel() {
+    this.showCreateWorkspace = false;
+    this.editingWorkspace = null;
+    this.resetNewWorkspace();
+  }
+
+  handleSave() {
+    const action = this.isEditMode ? "updateWorkspace" : "createWorkspace";
+    const data = {
+      ...this.newWorkspace,
+      originalPath: this.editingWorkspace?.path,
+    };
+
+    window.sendMessageToVSCode({
+      type: action,
+      data: data,
+    });
+  }
+
+  handleNameChange(event) {
+    this.newWorkspace.name = event.detail?.value ?? event.target.value;
+  }
+
+  handleLabelChange(event) {
+    this.newWorkspace.label = event.detail?.value ?? event.target.value;
+  }
+
+  handleDescriptionChange(event) {
+    this.newWorkspace.description = event.detail?.value ?? event.target.value;
+  }
+
+  handleObjectFieldChange(event) {
+    const index = Number(event.currentTarget.dataset.index);
+    const field = event.currentTarget.dataset.field;
+    const value =
+      event.detail?.value ??
+      (event.target.type === "checkbox"
+        ? event.target.checked
+        : event.target.value);
+    const objects = [...this.newWorkspace.objects];
+    if (!objects[index]) {
+      return;
+    }
+    objects[index] = { ...objects[index], [field]: value };
+    if (field === "query") {
+      objects[index].objectName = this.computeObjectName(value);
+    }
+    this.newWorkspace.objects = objects;
+  }
+
+  handleObjectToggleChange(event) {
+    const index = Number(event.currentTarget.dataset.index);
+    const field = event.currentTarget.dataset.field;
+    const value = event.detail?.checked ?? event.target.checked;
+    const objects = [...this.newWorkspace.objects];
+    if (!objects[index]) {
+      return;
+    }
+    objects[index] = { ...objects[index], [field]: value };
+    this.newWorkspace.objects = objects;
+  }
+
+  handleBatchSizeChange(event) {
+    const index = Number(event.currentTarget.dataset.index);
+    const valueRaw = event.detail?.value ?? event.target.value;
+    const valueNum = valueRaw === "" ? "" : parseInt(valueRaw, 10) || 0;
+    const objects = [...this.newWorkspace.objects];
+    if (!objects[index]) {
+      return;
+    }
+    objects[index] = { ...objects[index], batchSize: valueNum };
+    this.newWorkspace.objects = objects;
+  }
+
+  addObjectConfig() {
+    const objects = [...(this.newWorkspace.objects || [])];
+    objects.push({
+      query: "SELECT Id FROM Account",
+      operation: "Upsert",
+      externalId: "",
+      deleteOldData: false,
+      useQueryAll: false,
+      allOrNone: true,
+      batchSize: 200,
+      objectName: "Account",
+    });
+    this.newWorkspace.objects = objects;
+  }
+
+  removeObjectConfig(event) {
+    const index = Number(event.currentTarget.dataset.index);
+    if ((this.newWorkspace.objects || []).length <= 1) {
+      return;
+    }
+    const objects = [...this.newWorkspace.objects];
+    objects.splice(index, 1);
+    this.newWorkspace.objects = objects;
+  }
+
+  handleExportData(event) {
+    if (event && event.detail && event.detail.value === "export") {
+      // menu click
+    } else if (event && typeof event.stopPropagation === "function") {
+      event.stopPropagation();
+    }
+
+    if (this.selectedWorkspace) {
+      window.sendMessageToVSCode({
+        type: "runCommand",
+        data: {
+          command: `sf hardis:org:data:export --path "${this.selectedWorkspace.path}"`,
+        },
+      });
+    }
+  }
+
+  handleImportData(event) {
+    if (event && event.detail && event.detail.value === "import") {
+      // menu click
+    } else if (event && typeof event.stopPropagation === "function") {
+      event.stopPropagation();
+    }
+
+    if (this.selectedWorkspace) {
+      window.sendMessageToVSCode({
+        type: "runCommand",
+        data: {
+          command: `sf hardis:org:data:import --path "${this.selectedWorkspace.path}"`,
+        },
+      });
+    }
+  }
+
+  handleDeleteData(event) {
+    if (event && event.detail && event.detail.value === "delete") {
+      // menu click
+    } else if (event && typeof event.stopPropagation === "function") {
+      event.stopPropagation();
+    }
+
+    if (this.selectedWorkspace) {
+      window.sendMessageToVSCode({
+        type: "runCommand",
+        data: {
+          command: `sf hardis:org:data:delete --path "${this.selectedWorkspace.path}"`,
+        },
+      });
+    }
+  }
+
+  handleConfigureWorkspace() {
+    if (this.selectedWorkspace) {
+      window.sendMessageToVSCode({
+        type: "openFile",
+        data: { filePath: this.selectedWorkspace.configPath },
+      });
+    }
+  }
+
+  resetNewWorkspace() {
+    this.newWorkspace = {
+      name: "",
+      label: "",
+      description: "",
+      objects: [
+        {
+          query: "SELECT Id, Name FROM Account",
+          operation: "Upsert",
+          externalId: "",
+          deleteOldData: false,
+          useQueryAll: false,
+          allOrNone: true,
+          batchSize: 200,
+          objectName: "Account",
+        },
+      ],
+    };
+  }
+
+  computeObjectName(query) {
+    if (!query) {
+      return "";
+    }
+    const match = query.match(/from\s+([a-zA-Z0-9_]+)/i);
+    return match ? match[1] : "";
+  }
+}
