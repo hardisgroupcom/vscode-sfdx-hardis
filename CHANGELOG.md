@@ -7,11 +7,12 @@
   - Toggle merge driver from status bar
 - Fix startup error message
 - Add capability to debug internal sfdx-hardis commands by setting `vsCodeSfdxHardis.debugSfdxHardisCommands` to true
+- Implement Data Workbench
 
 ## [6.22.1] 2025-12-27
 
 - Metadata Retriever & Package XML viewer enhancements:
-  - Add clickable metadata-type links based on https://sf-explorer.github.io/sf-doc-to-json
+  - Add clickable metadata-type links based on <https://sf-explorer.github.io/sf-doc-to-json>
   - Add clickable icon to display standard objects documentation
 
 ## [6.22.0] 2025-12-26

@@ -409,6 +409,13 @@ export class HardisCommandsProvider
         icon: new vscode.ThemeIcon("database"),
         commands: [
           {
+            id: "vscode-sfdx-hardis.showDataWorkbench",
+            label: "Data Import/Export Workbench",
+            tooltip:
+              "Manage SFDMU data workspaces and run export/import/delete operations with an intuitive interface",
+            command: "vscode-sfdx-hardis.showDataWorkbench",
+          },
+          {
             id: "org:data:export",
             label: "Export data from org with SFDMU",
             tooltip:

@@ -38,6 +38,11 @@ export function registerShowWelcome(command: Commands) {
               "vscode-sfdx-hardis.showFilesWorkbench",
             );
             break;
+          case "navigateToDataWorkbench":
+            vscode.commands.executeCommand(
+              "vscode-sfdx-hardis.showDataWorkbench",
+            );
+            break;
           case "navigateToOrgMonitoring":
             vscode.commands.executeCommand(
               "vscode-sfdx-hardis.showOrgMonitoring",
