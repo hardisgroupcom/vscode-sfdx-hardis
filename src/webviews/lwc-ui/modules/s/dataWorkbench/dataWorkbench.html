@@ -224,7 +224,8 @@
                       <lightning-button
                         variant="neutral"
                         label="Open export.json"
-                        icon-name="utility:code_play"
+                        icon-name="utility:open"
+                        icon-position="left"
                         onclick={handleConfigureWorkspace}
                         title="Open export.json in editor"
                       ></lightning-button>
@@ -478,6 +479,7 @@
 
               <div class="slds-form-element slds-m-bottom_medium">
                 <div class="slds-grid slds-grid_vertical-align-center">
+                  <div class="slds-no-flex">
                     <lightning-input
                       type="toggle"
                       variant="label-hidden"
@@ -489,15 +491,20 @@
                       data-index={index}
                       data-field="allOrNone"
                       onchange={handleObjectToggleChange}
-                      class="slds-no-flex"
                     ></lightning-input>
-                    <span class="slds-m-left_small slds-text-body_regular">All or none (rollback on errors)</span>
-                    <s-multiline-helptext content="If enabled, SFDMU will rollback the batch on errors (allOrNone behaviour)."></s-multiline-helptext>
+                  </div>
+                  <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
+                    <span class="slds-text-body_regular">All or none (rollback on errors)</span>
+                    <span class="slds-no-flex slds-m-left_xx-small">
+                      <s-multiline-helptext content="If enabled, SFDMU will rollback the batch on errors (allOrNone behaviour)."></s-multiline-helptext>
+                    </span>
+                  </div>
                 </div>
               </div>
 
               <div class="slds-form-element slds-m-bottom_medium">
                 <div class="slds-grid slds-grid_vertical-align-center">
+                  <div class="slds-no-flex">
                     <lightning-input
                       type="toggle"
                       variant="label-hidden"
@@ -509,15 +516,20 @@
                       data-index={index}
                       data-field="deleteOldData"
                       onchange={handleObjectToggleChange}
-                      class="slds-no-flex"
                     ></lightning-input>
-                    <span class="slds-m-left_small slds-text-body_regular">Delete records missing from the dataset</span>
-                    <s-multiline-helptext content="If enabled, records not present in the CSV/data set will be deleted in target org."></s-multiline-helptext>
+                  </div>
+                  <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
+                    <span class="slds-text-body_regular">Delete records missing from the dataset</span>
+                    <span class="slds-no-flex slds-m-left_xx-small">
+                      <s-multiline-helptext content="If enabled, records not present in the CSV/data set will be deleted in target org."></s-multiline-helptext>
+                    </span>
+                  </div>
                 </div>
               </div>
 
               <div class="slds-form-element slds-m-bottom_medium">
                 <div class="slds-grid slds-grid_vertical-align-center">
+                  <div class="slds-no-flex">
                     <lightning-input
                       type="toggle"
                       variant="label-hidden"
@@ -529,10 +541,14 @@
                       data-index={index}
                       data-field="useQueryAll"
                       onchange={handleObjectToggleChange}
-                      class="slds-no-flex"
                     ></lightning-input>
-                    <span class="slds-m-left_small slds-text-body_regular">Include archived and deleted records (QueryAll)</span>
-                    <s-multiline-helptext content="If enabled, SFDMU uses QueryAll to include archived and soft-deleted records."></s-multiline-helptext>
+                  </div>
+                  <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
+                    <span class="slds-text-body_regular">Include archived and deleted records (QueryAll)</span>
+                    <span class="slds-no-flex slds-m-left_xx-small">
+                      <s-multiline-helptext content="If enabled, SFDMU uses QueryAll to include archived and soft-deleted records."></s-multiline-helptext>
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>

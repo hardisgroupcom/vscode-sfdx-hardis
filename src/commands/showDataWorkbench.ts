@@ -5,6 +5,7 @@ import { getWorkspaceRoot, openFolderInExplorer } from "../utils";
 import * as fs from "fs-extra";
 import path from "path";
 import { Logger } from "../logger";
+import simpleGit from "simple-git";
 
 type SfdmuObjectConfig = {
   query: string;
@@ -76,11 +77,22 @@ export function registerShowDataWorkbench(commands: Commands) {
 
           case "updateWorkspace": {
             try {
-              await updateDataWorkspace(data);
+              const exportJsonPath = await updateDataWorkspace(data);
               panel.sendMessage({
                 type: "workspaceUpdated",
                 data: {},
               });
+
+              const pickedAction = await vscode.window.showInformationMessage(
+                `Data workspace "${data?.label || data?.name || ""}" updated successfully!`,
+                "Commit export.json",
+              );
+              if (pickedAction === "Commit export.json") {
+                await commitFileToGit(
+                  exportJsonPath,
+                  `Update export.json (${data?.name || data?.label || "SFDMU workspace"})`,
+                );
+              }
             } catch (e: any) {
               const message = e?.message || e;
               Logger.log(`Failed to update data workspace: ${message}`);
@@ -247,7 +259,7 @@ async function createDataWorkspace(data: any): Promise<string> {
   return workspacePath;
 }
 
-async function updateDataWorkspace(data: any): Promise<void> {
+async function updateDataWorkspace(data: any): Promise<string> {
   const workspaceRoot = getWorkspaceRoot();
   const oldPath = typeof data?.originalPath === "string" ? data.originalPath : "";
   const workspaceName = typeof data?.name === "string" ? data.name : "";
@@ -288,9 +300,51 @@ async function updateDataWorkspace(data: any): Promise<void> {
 
   await fs.writeFile(exportJsonPath, JSON.stringify(exportConfig, null, 2));
 
-  vscode.window.showInformationMessage(
-    `Data workspace "${data.label}" updated successfully!`,
-  );
+  return exportJsonPath;
+}
+
+async function commitFileToGit(
+  absoluteFilePath: string,
+  commitMessage: string,
+): Promise<void> {
+  const workspaceRoot = getWorkspaceRoot();
+  const git = simpleGit({ baseDir: workspaceRoot, trimmed: true });
+
+  try {
+    const isRepo = await git.checkIsRepo();
+    if (!isRepo) {
+      vscode.window.showWarningMessage(
+        "This workspace is not a git repository: cannot commit export.json.",
+      );
+      return;
+    }
+
+    const relPath = path
+      .relative(workspaceRoot, absoluteFilePath)
+      .split(path.sep)
+      .join("/");
+
+    await git.add(relPath);
+
+    const status = await git.status();
+    const hasChange = status.files.some(
+      (f) => f.path.split(path.sep).join("/") === relPath,
+    );
+
+    if (!hasChange) {
+      vscode.window.showInformationMessage(
+        "No git changes detected for export.json.",
+      );
+      return;
+    }
+
+    await git.commit(commitMessage, [relPath]);
+    vscode.window.showInformationMessage("Committed export.json successfully.");
+  } catch (e: any) {
+    const message = e?.message || e;
+    Logger.log(`Failed to commit export.json: ${message}`);
+    vscode.window.showErrorMessage(`Failed to commit export.json: ${message}`);
+  }
 }
 
 async function deleteDataWorkspace(workspacePath: string): Promise<void> {

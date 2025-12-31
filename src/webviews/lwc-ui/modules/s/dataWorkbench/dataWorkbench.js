@@ -21,7 +21,7 @@ export default class DataWorkbench extends LightningElement {
         deleteOldData: false,
         useQueryAll: false,
         allOrNone: true,
-        batchSize: 200,
+        batchSize: null,
         objectName: "Account",
       },
     ],
