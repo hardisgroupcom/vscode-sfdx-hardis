@@ -1,0 +1,176 @@
+yarn run v1.22.22
+$ webpack --config webpack.prod.js
+The namespace and name should both be non-empty strings. You may get unexpected behavior at runtime. Found: namespace="s" and name="s"
+The namespace and name should both be non-empty strings. You may get unexpected behavior at runtime. Found: namespace="s" and name="s"
+The namespace and name should both be non-empty strings. You may get unexpected behavior at runtime. Found: namespace="s" and name="s"
+The namespace and name should both be non-empty strings. You may get unexpected behavior at runtime. Found: namespace="s" and name="s"
+The namespace and name should both be non-empty strings. You may get unexpected behavior at runtime. Found: namespace="s" and name="s"
+The namespace and name should both be non-empty strings. You may get unexpected behavior at runtime. Found: namespace="s" and name="s"
+The namespace and name should both be non-empty strings. You may get unexpected behavior at runtime. Found: namespace="s" and name="s"
+The namespace and name should both be non-empty strings. You may get unexpected behavior at runtime. Found: namespace="s" and name="s"
+The namespace and name should both be non-empty strings. You may get unexpected behavior at runtime. Found: namespace="s" and name="s"
+The namespace and name should both be non-empty strings. You may get unexpected behavior at runtime. Found: namespace="s" and name="s"
+The namespace and name should both be non-empty strings. You may get unexpected behavior at runtime. Found: namespace="s" and name="s"
+The namespace and name should both be non-empty strings. You may get unexpected behavior at runtime. Found: namespace="s" and name="s"
+The namespace and name should both be non-empty strings. You may get unexpected behavior at runtime. Found: namespace="s" and name="s"
+The namespace and name should both be non-empty strings. You may get unexpected behavior at runtime. Found: namespace="s" and name="s"
+The namespace and name should both be non-empty strings. You may get unexpected behavior at runtime. Found: namespace="s" and name="s"
+The namespace and name should both be non-empty strings. You may get unexpected behavior at runtime. Found: namespace="s" and name="s"
+The namespace and name should both be non-empty strings. You may get unexpected behavior at runtime. Found: namespace="s" and name="s"
+The namespace and name should both be non-empty strings. You may get unexpected behavior at runtime. Found: namespace="s" and name="s"
+asset [1m[32mextension.js[39m[22m 7.5 MiB [1m[33m[compared for emit][39m[22m [1m[32m[minimized][39m[22m (name: main) 1 related asset
+asset [1m[32m516.extension.js[39m[22m 17.7 KiB [1m[33m[compared for emit][39m[22m [1m[32m[minimized][39m[22m
+asset [1m[32m347.extension.js[39m[22m 5.83 KiB [1m[33m[compared for emit][39m[22m [1m[32m[minimized][39m[22m 1 related asset
+asset [1m[32m147.extension.js[39m[22m 391 bytes [1m[33m[compared for emit][39m[22m [1m[32m[minimized][39m[22m 1 related asset
+asset [1m[32m428.extension.js[39m[22m 281 bytes [1m[33m[compared for emit][39m[22m [1m[32m[minimized][39m[22m
+asset [1m[32m981.extension.js[39m[22m 97 bytes [1m[33m[compared for emit][39m[22m [1m[32m[minimized][39m[22m 1 related asset
+orphan modules 2.17 MiB [1m[33m[orphan][39m[22m 525 modules
+runtime modules 3.61 KiB 10 modules
+modules by path [1m./node_modules/[39m[22m 18.4 MiB
+  cacheable modules 18.4 MiB 1198 modules
+  modules by path [1m./node_modules/diagnostic-channel-publishers/dist/src/ sync ^.*//lib//[39m[22m 320 bytes
+    [1m./node_modules/diagnostic-channel-publishers/dist/src/ sync ^.*\/li...(truncated)[39m[22m 160 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+    [1m./node_modules/diagnostic-channel-publishers/dist/src/ sync ^.*\/lib\/Pool$[39m[22m 160 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  + 9 modules
+modules by path [1m./src/[39m[22m 808 KiB
+  modules by path [1m./src/utils/[39m[22m 334 KiB 23 modules
+  modules by path [1m./src/commands/*.ts[39m[22m 177 KiB 15 modules
+  modules by path [1m./src/*.ts[39m[22m 275 KiB 14 modules
+  [1m./src/webviews/lwc-ui-panel.ts[39m[22m 21.8 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
++ 45 modules
+
+[1m[33mWARNING[39m[22m in [1m./node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js[39m[22m [1m[32m111:39-60[39m[22m
+[1mCritical dependency: the request of a dependency is an expression[39m[22m
+ @ ./node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js 16:0-56 16:0-56
+ @ ./node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js 16:0-56 16:0-56 16:0-56
+ @ ./node_modules/@opentelemetry/instrumentation/build/esm/index.js 17:0-55 17:0-55
+ @ ./node_modules/diagnostic-channel-publishers/dist/src/azure-coretracing.pub.js
+ @ ./node_modules/diagnostic-channel-publishers/dist/src/index.js 6:15-49
+ @ ./node_modules/applicationinsights/out/AutoCollection/diagnostic-channel/initialization.js 12:21-61
+ @ ./node_modules/applicationinsights/out/AutoCollection/Console.js 25:31-77
+ @ ./node_modules/applicationinsights/out/applicationinsights.js 11:25-60
+ @ ./node_modules/@vscode/extension-telemetry/dist/node/node/telemetryReporter.js 49:76-133
+ @ ./src/extension.ts 44:46-84
+
+[1m[33mWARNING[39m[22m in [1m./node_modules/applicationinsights/out/AutoCollection/AzureFunctionsHook.js[39m[22m [1m[32m51:40-72[39m[22m
+[1mModule [1m[31mnot found[39m[22m[1m: [1m[31mError[39m[22m[1m: Can't resolve '@azure/functions-core' in 'C:\git\vscode-sfdx-hardis\node_modules\applicationinsights\out\AutoCollection'[39m[22m
+ @ ./node_modules/applicationinsights/out/applicationinsights.js 23:27-73
+ @ ./node_modules/@vscode/extension-telemetry/dist/node/node/telemetryReporter.js 49:76-133
+ @ ./src/extension.ts 44:46-84
+
+[1m[33mWARNING[39m[22m in [1m./node_modules/applicationinsights/out/AutoCollection/NativePerformance.js[39m[22m [1m[32m45:44-89[39m[22m
+[1mModule [1m[31mnot found[39m[22m[1m: [1m[31mError[39m[22m[1m: Can't resolve 'applicationinsights-native-metrics' in 'C:\git\vscode-sfdx-hardis\node_modules\applicationinsights\out\AutoCollection'[39m[22m
+ @ ./node_modules/applicationinsights/out/applicationinsights.js 22:26-71
+ @ ./node_modules/@vscode/extension-telemetry/dist/node/node/telemetryReporter.js 49:76-133
+ @ ./src/extension.ts 44:46-84
+
+[1m[33mWARNING[39m[22m in [1m./node_modules/cosmiconfig/dist/loaders.js[39m[22m [1m[32m23:22-34[39m[22m
+[1mCritical dependency: the request of a dependency is an expression[39m[22m
+ @ ./node_modules/cosmiconfig/dist/defaults.js 4:18-38
+ @ ./node_modules/cosmiconfig/dist/index.js 4:19-40
+ @ ./src/utils/pipeline/sfdxHardisConfig.ts 56:22-44
+ @ ./src/hardis-status-provider.ts 47:27-71
+ @ ./src/extension.ts 50:33-68
+
+[1m[33mWARNING[39m[22m in [1m./node_modules/import-fresh/index.js[39m[22m [1m[32m33:63-80[39m[22m
+[1mCritical dependency: the request of a dependency is an expression[39m[22m
+ @ ./node_modules/cosmiconfig/dist/loaders.js 15:22-45
+ @ ./node_modules/cosmiconfig/dist/defaults.js 4:18-38
+ @ ./node_modules/cosmiconfig/dist/index.js 4:19-40
+ @ ./src/utils/pipeline/sfdxHardisConfig.ts 56:22-44
+ @ ./src/hardis-status-provider.ts 47:27-71
+ @ ./src/extension.ts 50:33-68
+
+[1m[33mWARNING[39m[22m in [1m./node_modules/require-in-the-middle/index.js[39m[22m [1m[32m73:27-34[39m[22m
+[1mCritical dependency: require function is used in a way in which dependencies cannot be statically extracted[39m[22m
+ @ ./node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js 24:0-60 233:22-33
+ @ ./node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js 16:0-56 16:0-56
+ @ ./node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js 16:0-56 16:0-56 16:0-56
+ @ ./node_modules/@opentelemetry/instrumentation/build/esm/index.js 17:0-55 17:0-55
+ @ ./node_modules/diagnostic-channel-publishers/dist/src/azure-coretracing.pub.js
+ @ ./node_modules/diagnostic-channel-publishers/dist/src/index.js 6:15-49
+ @ ./node_modules/applicationinsights/out/AutoCollection/diagnostic-channel/initialization.js 12:21-61
+ @ ./node_modules/applicationinsights/out/AutoCollection/Console.js 25:31-77
+ @ ./node_modules/applicationinsights/out/applicationinsights.js 11:25-60
+ @ ./node_modules/@vscode/extension-telemetry/dist/node/node/telemetryReporter.js 49:76-133
+ @ ./src/extension.ts 44:46-84
+
+[1m[33mWARNING[39m[22m in [1m./node_modules/require-in-the-middle/index.js[39m[22m [1m[32m75:15-22[39m[22m
+[1mCritical dependency: require function is used in a way in which dependencies cannot be statically extracted[39m[22m
+ @ ./node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js 24:0-60 233:22-33
+ @ ./node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js 16:0-56 16:0-56
+ @ ./node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js 16:0-56 16:0-56 16:0-56
+ @ ./node_modules/@opentelemetry/instrumentation/build/esm/index.js 17:0-55 17:0-55
+ @ ./node_modules/diagnostic-channel-publishers/dist/src/azure-coretracing.pub.js
+ @ ./node_modules/diagnostic-channel-publishers/dist/src/index.js 6:15-49
+ @ ./node_modules/applicationinsights/out/AutoCollection/diagnostic-channel/initialization.js 12:21-61
+ @ ./node_modules/applicationinsights/out/AutoCollection/Console.js 25:31-77
+ @ ./node_modules/applicationinsights/out/applicationinsights.js 11:25-60
+ @ ./node_modules/@vscode/extension-telemetry/dist/node/node/telemetryReporter.js 49:76-133
+ @ ./src/extension.ts 44:46-84
+
+[1m[33mWARNING[39m[22m in [1m./src/utils/pipeline/sfdxHardisConfigHelper.ts[39m[22m [1m[32m190:19-75[39m[22m
+[1mModule [1m[31mnot found[39m[22m[1m: [1m[31mError[39m[22m[1m: Can't resolve 'resources/sfdx-hardis.jsonschema.json' in 'C:\git\vscode-sfdx-hardis\src\utils\pipeline'[39m[22m
+ @ ./src/commands/showInstalledPackages.ts 39:33-84
+ @ ./src/commands.ts 48:32-75
+ @ ./src/extension.ts 45:19-40
+
+[1m[33mWARNING[39m[22m in [1m./node_modules/typescript/lib/typescript.js[39m[22m [1m[32m8395:27-46[39m[22m
+[1mCritical dependency: the request of a dependency is an expression[39m[22m
+ @ ./node_modules/cosmiconfig/dist/loaders.js 74:21-42 103:28-48
+ @ ./node_modules/cosmiconfig/dist/defaults.js 4:18-38
+ @ ./node_modules/cosmiconfig/dist/index.js 4:19-40
+ @ ./src/utils/pipeline/sfdxHardisConfig.ts 56:22-44
+ @ ./src/hardis-status-provider.ts 47:27-71
+ @ ./src/extension.ts 50:33-68
+
+[1m[33mWARNING[39m[22m in [1m./node_modules/ws/lib/buffer-util.js[39m[22m [1m[32m117:23-44[39m[22m
+[1mModule [1m[31mnot found[39m[22m[1m: [1m[31mError[39m[22m[1m: Can't resolve 'bufferutil' in 'C:\git\vscode-sfdx-hardis\node_modules\ws\lib'[39m[22m
+ @ ./node_modules/ws/lib/websocket.js 33:21-45
+ @ ./node_modules/ws/index.js 3:18-44
+ @ ./src/hardis-websocket-server.ts 39:13-26
+ @ ./src/extension.ts 51:34-70
+
+[1m[33mWARNING[39m[22m in [1m./node_modules/ws/lib/validation.js[39m[22m [1m[32m144:24-49[39m[22m
+[1mModule [1m[31mnot found[39m[22m[1m: [1m[31mError[39m[22m[1m: Can't resolve 'utf-8-validate' in 'C:\git\vscode-sfdx-hardis\node_modules\ws\lib'[39m[22m
+ @ ./node_modules/ws/lib/websocket.js 17:19-42
+ @ ./node_modules/ws/index.js 3:18-44
+ @ ./src/hardis-websocket-server.ts 39:13-26
+ @ ./src/extension.ts 51:34-70
+
+11 warnings have detailed information that is not shown.
+Use 'stats.errorDetails: true' resp. '--stats-error-details' to show it.
+
+webpack 5.101.0 compiled with [1m[33m11 warnings[39m[22m in 203175 ms
+
+asset [1m[32mworker.js[39m[22m 1.46 KiB [1m[33m[compared for emit][39m[22m [1m[32m[minimized][39m[22m (name: main) 1 related asset
+[1m./src/worker.ts[39m[22m 2.37 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+[1mexternal "worker_threads"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+[1mexternal "child_process"[39m[22m 42 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+webpack 5.101.0 compiled [1m[32msuccessfully[39m[22m in 41138 ms
+
+assets by status 16.4 MiB [1m[32m[cached][39m[22m 5094 assets
+orphan modules 9.61 MiB [1m[33m[orphan][39m[22m 4142 modules
+runtime modules 7.12 KiB 10 modules
+cacheable modules 11.2 MiB
+  modules by path [1m./node_modules/[39m[22m 10.3 MiB
+    modules by path [1m./node_modules/lightning-base-components/src/lightning/[39m[22m 9.71 MiB 55 modules
+    modules by path [1m./node_modules/lightning-base-components/scopedImports/*.js[39m[22m 4.49 KiB 10 modules
+    modules by path [1m./node_modules/@lwc/[39m[22m 591 KiB 2 modules
+    modules by path [1m./node_modules/lwc-webpack-plugin/dist/mocks/*.js[39m[22m 632 bytes 2 modules
+    [1m./node_modules/process/browser.js[39m[22m 5.29 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+  modules by path [1m./src/webviews/lwc-ui/[39m[22m 906 KiB
+    modules by path [1m./src/webviews/lwc-ui/modules/s/dataWorkbench/[39m[22m 25.5 KiB
+      [1m./src/webviews/lwc-ui/modules/s/dataWorkbench/dataWorkbench.js[39m[22m 25.4 KiB [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m
+      [1m./src/webviews/lwc-ui/modules/s/dataWorkbench/dataWorkbench.html[39m[22m 39 bytes [1m[33m[built][39m[22m [1m[33m[code generated][39m[22m [1m[31m[1 error][39m[22m
+    + 18 modules
+
+[1m[31mERROR[39m[22m in [1m./src/webviews/lwc-ui/modules/s/dataWorkbench/dataWorkbench.html[39m[22m
+[1mModule build [1m[31mfailed[39m[22m[1m (from ./node_modules/lwc-webpack-plugin/dist/loader.js):
+LWC1065: [1m[31mInvalid[39m[22m[1m key value for element <div>. Key cannot reference for:each index index[39m[22m
+ @ ./src/webviews/lwc-ui/modules/s/dataWorkbench/dataWorkbench.js 2:0-42 601:8-14 25:0-41 596:8-13
+ @ ./src/webviews/lwc-ui/index.js 76:11-36
+
+webpack 5.101.0 compiled with [1m[31m1 error[39m[22m in 182724 ms
+error Command failed with exit code 1.
+info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command.

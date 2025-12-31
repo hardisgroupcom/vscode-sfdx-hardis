@@ -360,7 +360,7 @@
           </div>
 
           <template for:each={objectsWithDisplayIndex} for:item="obj" for:index="index">
-            <div key={index} class="slds-box slds-box_x-small slds-m-bottom_small">
+            <div key={obj.displayIndex} class="slds-box slds-box_x-small slds-m-bottom_small">
               <div class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center slds-m-bottom_small">
                 <h4 class="slds-text-title_caps">Object {obj.displayIndex}</h4>
                 <template if:true={hasMultipleObjects}>

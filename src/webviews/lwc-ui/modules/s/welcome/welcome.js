@@ -83,6 +83,12 @@ export default class Welcome extends LightningElement {
     });
   }
 
+  navigateToDataWorkbench() {
+    window.sendMessageToVSCode({
+      type: "navigateToDataWorkbench",
+    });
+  }
+
   navigateToOrgMonitoring() {
     window.sendMessageToVSCode({
       type: "navigateToOrgMonitoring",
