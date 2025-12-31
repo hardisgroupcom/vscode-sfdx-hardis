@@ -145,4 +145,3 @@ async function isMergeDriverEnabled(
     return false;
   }
 }
-

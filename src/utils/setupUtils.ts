@@ -177,7 +177,8 @@ export class SetupHelper {
         installable: true,
         iconName: "utility:git_branch",
         prerequisites: ["sf"],
-        helpUrl: "https://github.com/scolladon/sf-git-merge-driver?tab=readme-ov-file",
+        helpUrl:
+          "https://github.com/scolladon/sf-git-merge-driver?tab=readme-ov-file",
         checkMethod: this.checkSfPlugin.bind(this, "sf-git-merge-driver"),
         installMethod: this.installSfPlugin.bind(this, "sf-git-merge-driver"),
       },
