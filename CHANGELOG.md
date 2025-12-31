@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Implement Data Workbench
+
 ## [6.22.1] 2025-12-27
 
 - Metadata Retriever & Package XML viewer enhancements:

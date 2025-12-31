@@ -5,7 +5,16 @@ import { getWorkspaceRoot, openFolderInExplorer } from "../utils";
 import * as fs from "fs-extra";
 import path from "path";
 import { Logger } from "../logger";
-import simpleGit from "simple-git";
+import { isQueryValid, parseQuery } from "@jetstreamapp/soql-parser-js";
+
+class SoqlValidationError extends Error {
+  soqlErrors: string[];
+
+  constructor(soqlErrors: string[]) {
+    super("SOQL validation failed");
+    this.soqlErrors = soqlErrors;
+  }
+}
 
 type SfdmuObjectConfig = {
   query: string;
@@ -69,7 +78,10 @@ export function registerShowDataWorkbench(commands: Commands) {
               );
               panel.sendMessage({
                 type: "workspaceCreateFailed",
-                data: { message },
+                data: {
+                  message,
+                  soqlErrors: e instanceof SoqlValidationError ? e.soqlErrors : undefined,
+                },
               });
             }
             break;
@@ -77,7 +89,7 @@ export function registerShowDataWorkbench(commands: Commands) {
 
           case "updateWorkspace": {
             try {
-              const exportJsonPath = await updateDataWorkspace(data);
+              await updateDataWorkspace(data);
               panel.sendMessage({
                 type: "workspaceUpdated",
                 data: {},
@@ -85,13 +97,10 @@ export function registerShowDataWorkbench(commands: Commands) {
 
               const pickedAction = await vscode.window.showInformationMessage(
                 `Data workspace "${data?.label || data?.name || ""}" updated successfully!`,
-                "Commit export.json",
+                "View and commit files",
               );
-              if (pickedAction === "Commit export.json") {
-                await commitFileToGit(
-                  exportJsonPath,
-                  `Update export.json (${data?.name || data?.label || "SFDMU workspace"})`,
-                );
+              if (pickedAction === "View and commit files") {
+                 vscode.commands.executeCommand("workbench.view.scm");
               }
             } catch (e: any) {
               const message = e?.message || e;
@@ -101,7 +110,10 @@ export function registerShowDataWorkbench(commands: Commands) {
               );
               panel.sendMessage({
                 type: "workspaceUpdateFailed",
-                data: { message },
+                data: {
+                  message,
+                  soqlErrors: e instanceof SoqlValidationError ? e.soqlErrors : undefined,
+                },
               });
             }
             break;
@@ -243,6 +255,11 @@ async function createDataWorkspace(data: any): Promise<string> {
         },
       ];
 
+  const soqlErrors = validateSoqlQueries(objects);
+  if (soqlErrors.some((e) => !!e)) {
+    throw new SoqlValidationError(soqlErrors);
+  }
+
   const exportConfig = {
     sfdxHardisLabel: data.label,
     sfdxHardisDescription: data.description,
@@ -298,53 +315,89 @@ async function updateDataWorkspace(data: any): Promise<string> {
     objects: normalizeObjectsForSave(data.objects || []),
   };
 
+  const soqlErrors = validateSoqlQueries(data.objects || []);
+  if (soqlErrors.some((e) => !!e)) {
+    throw new SoqlValidationError(soqlErrors);
+  }
+
   await fs.writeFile(exportJsonPath, JSON.stringify(exportConfig, null, 2));
 
   return exportJsonPath;
 }
 
-async function commitFileToGit(
-  absoluteFilePath: string,
-  commitMessage: string,
-): Promise<void> {
-  const workspaceRoot = getWorkspaceRoot();
-  const git = simpleGit({ baseDir: workspaceRoot, trimmed: true });
-
-  try {
-    const isRepo = await git.checkIsRepo();
-    if (!isRepo) {
-      vscode.window.showWarningMessage(
-        "This workspace is not a git repository: cannot commit export.json.",
-      );
-      return;
-    }
-
-    const relPath = path
-      .relative(workspaceRoot, absoluteFilePath)
-      .split(path.sep)
-      .join("/");
-
-    await git.add(relPath);
-
-    const status = await git.status();
-    const hasChange = status.files.some(
-      (f) => f.path.split(path.sep).join("/") === relPath,
-    );
-
-    if (!hasChange) {
-      vscode.window.showInformationMessage(
-        "No git changes detected for export.json.",
-      );
-      return;
-    }
-
-    await git.commit(commitMessage, [relPath]);
-    vscode.window.showInformationMessage("Committed export.json successfully.");
-  } catch (e: any) {
-    const message = e?.message || e;
-    Logger.log(`Failed to commit export.json: ${message}`);
-    vscode.window.showErrorMessage(`Failed to commit export.json: ${message}`);
+function validateSoqlQueries(objects: SfdmuObjectConfig[]): string[] {
+  const list: SfdmuObjectConfig[] = Array.isArray(objects) ? objects : [];
+  if (list.length === 0) {
+    return ["At least one object configuration is required."];
   }
+
+  const errors: string[] = new Array(list.length).fill("");
+
+  for (let idx = 0; idx < list.length; idx++) {
+    const query = (list[idx]?.query || "").toString().trim();
+    if (!query) {
+      errors[idx] = "SOQL query is required.";
+      continue;
+    }
+
+    const valid = isQueryValid(query, {
+      allowApexBindVariables: true,
+      logErrors: false,
+      ignoreParseErrors: false,
+      allowPartialQuery: false,
+    });
+
+    if (!valid) {
+      try {
+        parseQuery(query, {
+          allowApexBindVariables: true,
+          logErrors: false,
+          ignoreParseErrors: false,
+          allowPartialQuery: false,
+        });
+      } catch (e: any) {
+        const raw = e?.message ? String(e.message) : String(e);
+        const firstLine = raw.split("\n")[0] || raw;
+        errors[idx] = `Invalid SOQL: ${firstLine}`;
+        continue;
+      }
+      errors[idx] = "Invalid SOQL syntax.";
+      continue;
+    }
+
+    // Extra strict rule: block field aliases (Salesforce doesn't support them).
+    try {
+      const parsed: any = parseQuery(query, {
+        allowApexBindVariables: true,
+        logErrors: false,
+        ignoreParseErrors: false,
+        allowPartialQuery: false,
+      });
+
+      const fields: any[] = Array.isArray(parsed?.fields) ? parsed.fields : [];
+      const hasFieldAlias = fields.some((f) => {
+        if (!f || typeof f !== "object") {
+          return false;
+        }
+        const alias = (f as any).alias;
+        if (!alias) {
+          return false;
+        }
+        return (f as any).type !== "FieldFunctionExpression";
+      });
+
+      if (hasFieldAlias) {
+        errors[idx] =
+          "Invalid SOQL: field aliases are not supported. Add commas between fields.";
+      }
+    } catch (e: any) {
+      const raw = e?.message ? String(e.message) : String(e);
+      const firstLine = raw.split("\n")[0] || raw;
+      errors[idx] = `Invalid SOQL: ${firstLine}`;
+    }
+  }
+
+  return errors;
 }
 
 async function deleteDataWorkspace(workspacePath: string): Promise<void> {

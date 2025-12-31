@@ -375,7 +375,7 @@
                 </template>
               </div>
 
-              <div class="slds-form-element slds-m-bottom_medium">
+              <div class={obj.soqlFormElementClass}>
                 <label class="slds-form-element__label" for="soql-query">
                   <abbr class="slds-required" title="required">* </abbr>SOQL Query
                   <s-multiline-helptext content="SOQL query defining records for this object. Ensure required External Id is included when using Upsert."></s-multiline-helptext>
@@ -391,6 +391,9 @@
                     onchange={handleObjectFieldChange}
                     required
                   ></lightning-textarea>
+                  <template if:true={obj.soqlHasError}>
+                    <div class="slds-form-element__help" role="alert">{obj.soqlError}</div>
+                  </template>
                 </div>
               </div>
 

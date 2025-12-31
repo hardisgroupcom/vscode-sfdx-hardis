@@ -1,5 +1,17 @@
 import { LightningElement, api, track } from "lwc";
 
+// Lightweight SOQL object name extraction. Full parsing/validation lives in
+// showDataWorkbench.ts to keep @jetstreamapp/soql-parser-js out of the webview bundle.
+function inferObjectNameFromQuery(query) {
+  if (!query) {
+    return "";
+  }
+  const match = query.match(
+    /from\s+([A-Za-z0-9_]+(?::[A-Za-z0-9_]+)?(?:__[A-Za-z0-9_]+)*)/i,
+  );
+  return match ? match[1] : "";
+}
+
 export default class DataWorkbench extends LightningElement {
   workspaces = [];
   selectedWorkspace = null;
@@ -8,6 +20,8 @@ export default class DataWorkbench extends LightningElement {
   editingWorkspace = null;
   pendingSelectedWorkspacePath = null;
   showLargeActions = true;
+
+  @track soqlErrors = [];
 
   @track newWorkspace = {
     name: "",
@@ -65,6 +79,7 @@ export default class DataWorkbench extends LightningElement {
         this.loadWorkspaces();
         this.showCreateWorkspace = false;
         this.editingWorkspace = null;
+        this.soqlErrors = [];
         this.isLoading = false;
         break;
       case "workspaceUpdated":
@@ -75,10 +90,14 @@ export default class DataWorkbench extends LightningElement {
         if (selectedPath) {
           this.pendingSelectedWorkspacePath = selectedPath;
         }
+        this.soqlErrors = [];
         this.isLoading = false;
         break;
       case "workspaceCreateFailed":
       case "workspaceUpdateFailed":
+        if (data && Array.isArray(data.soqlErrors)) {
+          this.soqlErrors = data.soqlErrors;
+        }
         this.isLoading = false;
         break;
       case "workspaceDeleted":
@@ -124,7 +143,7 @@ export default class DataWorkbench extends LightningElement {
       ...ws,
       objects: (ws.objects || []).map((obj) => ({
         ...obj,
-        objectName: obj.objectName || this.computeObjectName(obj.query),
+        objectName: obj.objectName || inferObjectNameFromQuery(obj.query),
       })),
     }));
   }
@@ -192,7 +211,8 @@ export default class DataWorkbench extends LightningElement {
       this.newWorkspace.objects.every(
         (obj) => obj.query && obj.query.trim().length > 0,
       );
-    return hasName && hasLabel && hasObjects;
+
+    return hasName && hasLabel && hasObjects && !this.hasSoqlErrors;
   }
 
   get saveButtonDisabled() {
@@ -217,7 +237,18 @@ export default class DataWorkbench extends LightningElement {
     return (this.newWorkspace.objects || []).map((obj, idx) => ({
       ...obj,
       displayIndex: idx + 1,
+      soqlError: (this.soqlErrors || [])[idx] || "",
+      soqlHasError: !!((this.soqlErrors || [])[idx] || ""),
+      soqlFormElementClass: !!((this.soqlErrors || [])[idx] || "")
+        ? "slds-form-element slds-has-error slds-m-bottom_medium"
+        : "slds-form-element slds-m-bottom_medium",
     }));
+  }
+
+  get hasSoqlErrors() {
+    return (this.newWorkspace.objects || []).some(
+      (_obj, idx) => !!(this.soqlErrors || [])[idx],
+    );
   }
 
   get hasMultipleObjects() {
@@ -265,10 +296,13 @@ export default class DataWorkbench extends LightningElement {
             useQueryAll: obj.useQueryAll === true,
             allOrNone: obj.allOrNone ?? true,
             batchSize: this.normalizeBatchSizeValue(obj.batchSize),
-            objectName: this.computeObjectName(obj.query),
+            objectName: inferObjectNameFromQuery(obj.query),
           })) || [],
       };
       this.showCreateWorkspace = true;
+      this.soqlErrors = new Array((this.newWorkspace.objects || []).length).fill(
+        "",
+      );
     }
 
     if (event && typeof event.stopPropagation === "function") {
@@ -361,7 +395,10 @@ export default class DataWorkbench extends LightningElement {
     }
     objects[index] = { ...objects[index], [field]: value };
     if (field === "query") {
-      objects[index].objectName = this.computeObjectName(value);
+      objects[index].objectName = inferObjectNameFromQuery(value);
+      const nextErrors = [...(this.soqlErrors || [])];
+      nextErrors[index] = "";
+      this.soqlErrors = nextErrors;
     }
     this.newWorkspace.objects = objects;
   }
@@ -399,10 +436,11 @@ export default class DataWorkbench extends LightningElement {
       deleteOldData: false,
       useQueryAll: false,
       allOrNone: true,
-      batchSize: 200,
+      batchSize: "",
       objectName: "Account",
     });
     this.newWorkspace.objects = objects;
+    this.soqlErrors = [...(this.soqlErrors || []), ""];
   }
 
   removeObjectConfig(event) {
@@ -413,6 +451,9 @@ export default class DataWorkbench extends LightningElement {
     const objects = [...this.newWorkspace.objects];
     objects.splice(index, 1);
     this.newWorkspace.objects = objects;
+    const nextErrors = [...(this.soqlErrors || [])];
+    nextErrors.splice(index, 1);
+    this.soqlErrors = nextErrors;
   }
 
   handleExportData(event) {
@@ -488,21 +529,13 @@ export default class DataWorkbench extends LightningElement {
           deleteOldData: false,
           useQueryAll: false,
           allOrNone: true,
-          batchSize: 200,
+          batchSize: "",
           objectName: "Account",
         },
       ],
     };
-  }
 
-  computeObjectName(query) {
-    if (!query) {
-      return "";
-    }
-    const match = query.match(
-      /from\s+([A-Za-z0-9_]+(?::[A-Za-z0-9_]+)?(?:__[A-Za-z0-9_]+)*)/i,
-    );
-    return match ? match[1] : "";
+    this.soqlErrors = [""];
   }
 
   normalizeBatchSizeValue(value) {
