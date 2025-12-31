@@ -828,6 +828,16 @@ export class HardisCommandsProvider
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/misc/custom-label-translations/",
           },
+          {
+            id: "hardis:doc:object-field-usage",
+            label: "Object Field Usage",
+            tooltip:
+              "Analyze object fields usage and produce a documentation report for cleanup decisions",
+            command: "sf hardis:doc:object-field-usage",
+            requiresProject: true,
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/doc/object/field/usage/",
+          },
         ],
       },
       {

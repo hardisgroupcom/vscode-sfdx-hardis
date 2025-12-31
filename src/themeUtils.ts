@@ -358,6 +358,7 @@ export class ThemeUtils {
         vscode: "law",
         hardis: "extract.svg",
       },
+      "hardis:doc:object-field-usage": { vscode: "table", hardis: "doc.svg" },
       "hardis:project:metadata:activate-decomposed": {
         vscode: "symbol-misc",
         hardis: "configure.svg",
