@@ -135,6 +135,7 @@ export class LwcUiPanel {
       "s-pipeline": "DevOps Pipeline",
       "s-pipeline-config": "Pipeline Settings",
       "s-extension-config": "Extension Settings",
+      "s-data-workbench": "Data Import/Export Workbench",
       "s-files-workbench": "Files Import/Export Workbench",
       "s-setup": "Install Dependencies",
     };

@@ -48,6 +48,7 @@ const lwcModules = {
   "s-org-manager": () => import("s/orgManager"),
   "s-org-monitoring": () => import("s/orgMonitoring"),
   "s-package-xml": () => import("s/packageXml"),
+  "s-data-workbench": () => import("s/dataWorkbench"),
   "s-files-workbench": () => import("s/filesWorkbench"),
   "s-setup": () => import("s/setup"),
   "s-spinner": () => import("s/spinner"),
