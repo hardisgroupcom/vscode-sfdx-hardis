@@ -147,6 +147,7 @@ export function preLoadCache() {
     "sfdx-hardis",
     "sfdmu",
     "sfdx-git-delta",
+    "sf-git-merge-driver",
     // "texei-sfdx-plugin",
   ];
   for (const npmPackage of npmPackages) {
@@ -258,6 +259,12 @@ export async function execCommand(
   const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
   if (config.get("disableTlsRejectUnauthorized") === true) {
     execOptions.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+  }
+  if (config.get("debugSfdxHardisCommands") === true) {
+    execOptions.env = {
+      ...execOptions.env,
+      NODE_OPTIONS: "--inspect-brk",
+    };
   }
   const cacheSection = options.cacheSection;
   const cacheExpiration = options.cacheExpiration;

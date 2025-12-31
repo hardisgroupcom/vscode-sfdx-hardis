@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Integrate Salesforce Git Merge Driver management
+  - Add in sf plugins dependencies
+  - Toggle merge driver from status bar
+- Fix startup error message
+- Add capability to debug internal sfdx-hardis commands by setting `vsCodeSfdxHardis.debugSfdxHardisCommands` to true
 - Implement Data Workbench
 
 ## [6.22.1] 2025-12-27

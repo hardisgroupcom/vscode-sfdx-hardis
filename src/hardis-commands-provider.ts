@@ -30,10 +30,13 @@ export class HardisCommandsProvider
     }
     hasSfdxProjectJson({ recalc: true });
     if (element) {
-      return Promise.resolve(this.getTopicCommands(element));
-    } else {
-      return this.listTopics();
+      // VS Code can request children before the root nodes have finished loading.
+      // Ensure the topics/commands cache is initialized to avoid null dereferences.
+      return this.listTopicAndCommands().then(() =>
+        Promise.resolve(this.getTopicCommands(element)),
+      );
     }
+    return this.listTopics();
   }
 
   /**
@@ -41,9 +44,12 @@ export class HardisCommandsProvider
    */
   private getTopicCommands(topic: any): CommandTreeItem[] {
     const items: CommandTreeItem[] = [];
-    const matchingTopic = this.getAllTopicsAndCommands().filter(
+    const matchingTopic = (this.getAllTopicsAndCommands() || []).filter(
       (topicItem: CommandTreeItem) => topicItem.id === topic.id,
     )[0];
+    if (!matchingTopic || !matchingTopic.commands) {
+      return items;
+    }
     for (const item of matchingTopic.commands) {
       const options: any = {};
       if (item.description) {

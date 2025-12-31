@@ -170,6 +170,18 @@ export class SetupHelper {
         checkMethod: this.checkSfPlugin.bind(this, "sfdx-git-delta"),
         installMethod: this.installSfPlugin.bind(this, "sfdx-git-delta"),
       },
+      "sfplugin:sf-git-merge-driver": {
+        label: "sf-git-merge-driver",
+        explanation:
+          "sf-git-merge-driver is a Git merge driver for Salesforce metadata files to reduce merge conflicts.",
+        installable: true,
+        iconName: "utility:git_branch",
+        prerequisites: ["sf"],
+        helpUrl:
+          "https://github.com/scolladon/sf-git-merge-driver?tab=readme-ov-file",
+        checkMethod: this.checkSfPlugin.bind(this, "sf-git-merge-driver"),
+        installMethod: this.installSfPlugin.bind(this, "sf-git-merge-driver"),
+      },
     };
     return dependencies;
   }
