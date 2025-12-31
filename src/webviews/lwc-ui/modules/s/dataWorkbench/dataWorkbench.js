@@ -206,6 +206,17 @@ export default class DataWorkbench extends LightningElement {
     ];
   }
 
+  get objectsWithDisplayIndex() {
+    return (this.newWorkspace.objects || []).map((obj, idx) => ({
+      ...obj,
+      displayIndex: idx + 1,
+    }));
+  }
+
+  get hasMultipleObjects() {
+    return (this.newWorkspace.objects || []).length > 1;
+  }
+
   // Event Handlers
   handleWorkspaceSelect(event) {
     const workspacePath = event.currentTarget.dataset.path;
@@ -245,11 +256,8 @@ export default class DataWorkbench extends LightningElement {
             externalId: obj.externalId || "",
             deleteOldData: obj.deleteOldData === true,
             useQueryAll: obj.useQueryAll === true,
-            allOrNone: obj.allOrNone !== false,
-            batchSize:
-              obj.batchSize === 0 || obj.batchSize === null
-                ? ""
-                : obj.batchSize ?? "",
+            allOrNone: obj.allOrNone ?? true,
+            batchSize: this.normalizeBatchSizeValue(obj.batchSize),
             objectName: this.computeObjectName(obj.query),
           })) || [],
       };
@@ -264,7 +272,7 @@ export default class DataWorkbench extends LightningElement {
   handleDeleteWorkspace(event) {
     let path;
 
-    if (event.detail && event.detail.value === "delete") {
+    if (event.detail && event.detail.value === "deleteWorkspace") {
       path = this.selectedWorkspace?.path;
     } else {
       const pathFromDataset = event?.currentTarget?.dataset?.path;
@@ -361,7 +369,7 @@ export default class DataWorkbench extends LightningElement {
   handleBatchSizeChange(event) {
     const index = Number(event.currentTarget.dataset.index);
     const valueRaw = event.detail?.value ?? event.target.value;
-    const valueNum = valueRaw === "" ? "" : parseInt(valueRaw, 10) || 0;
+    const valueNum = this.normalizeBatchSizeValue(valueRaw);
     const objects = [...this.newWorkspace.objects];
     if (!objects[index]) {
       return;
@@ -430,7 +438,7 @@ export default class DataWorkbench extends LightningElement {
   }
 
   handleDeleteData(event) {
-    if (event && event.detail && event.detail.value === "delete") {
+    if (event && event.detail && event.detail.value === "deleteData") {
       // menu click
     } else if (event && typeof event.stopPropagation === "function") {
       event.stopPropagation();
@@ -479,7 +487,17 @@ export default class DataWorkbench extends LightningElement {
     if (!query) {
       return "";
     }
-    const match = query.match(/from\s+([a-zA-Z0-9_]+)/i);
+    const match = query.match(
+      /from\s+([A-Za-z0-9_]+(?::[A-Za-z0-9_]+)?(?:__[A-Za-z0-9_]+)*)/i,
+    );
     return match ? match[1] : "";
+  }
+
+  normalizeBatchSizeValue(value) {
+    if (value === "" || value === null || value === undefined) {
+      return "";
+    }
+    const numeric = Number(value);
+    return Number.isNaN(numeric) ? "" : numeric;
   }
 }

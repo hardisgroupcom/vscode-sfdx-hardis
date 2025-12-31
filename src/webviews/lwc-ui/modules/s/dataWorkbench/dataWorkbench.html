@@ -174,7 +174,7 @@
                             onclick={handleImportData}
                           ></lightning-menu-item>
                           <lightning-menu-item
-                            value="delete"
+                            value="deleteData"
                             label="Delete Data"
                             icon-name="utility:close"
                             onclick={handleDeleteData}
@@ -359,11 +359,11 @@
             ></lightning-button>
           </div>
 
-          <template for:each={newWorkspace.objects} for:item="obj" for:index="index">
+          <template for:each={objectsWithDisplayIndex} for:item="obj" for:index="index">
             <div key={index} class="slds-box slds-box_x-small slds-m-bottom_small">
               <div class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center slds-m-bottom_small">
-                <h4 class="slds-text-title_caps">Object #{index}</h4>
-                <template if:true={newWorkspace.objects.length}>
+                <h4 class="slds-text-title_caps">Object {obj.displayIndex}</h4>
+                <template if:true={hasMultipleObjects}>
                   <lightning-button
                     variant="destructive-text"
                     icon-name="utility:delete"

@@ -40,6 +40,9 @@ export function registerShowDataWorkbench(commands: Commands) {
       });
 
       panel.onMessage(async (type: string, data: any) => {
+        // Built-in messages (runCommand, openFile, runVsCodeCommand, etc.)
+        // are handled by the LwcUiPanel router. Only workspace-specific
+        // actions are processed here.
         switch (type) {
           case "loadWorkspaces": {
             const updatedWorkspaces = await loadDataWorkspaces();
@@ -107,11 +110,11 @@ export function registerShowDataWorkbench(commands: Commands) {
             break;
           }
 
-          default:
-            break;
-        }
-      });
-    },
+        default:
+          break;
+      }
+    });
+  },
   );
   commands.disposables.push(disposable);
 }
@@ -148,7 +151,7 @@ async function loadDataWorkspaces(): Promise<DataWorkspace[]> {
             externalId: obj.externalId || obj.externalid || "",
             deleteOldData: obj.deleteOldData === true,
             useQueryAll: obj.useQueryAll === true,
-            allOrNone: obj.allOrNone !== false,
+            allOrNone: obj.allOrNone ?? true,
             batchSize:
               obj.batchSize ??
               obj.bulkApiV1BatchSize ??
@@ -270,7 +273,7 @@ function normalizeObjectsForSave(objects: SfdmuObjectConfig[]): any[] {
     cleanedObj.externalId = obj.externalId || obj.externalid || "";
     cleanedObj.deleteOldData = obj.deleteOldData === true;
     cleanedObj.useQueryAll = obj.useQueryAll === true;
-    cleanedObj.allOrNone = obj.allOrNone !== false;
+    cleanedObj.allOrNone = obj.allOrNone ?? true;
 
     if (
       obj.batchSize !== undefined &&
@@ -278,7 +281,11 @@ function normalizeObjectsForSave(objects: SfdmuObjectConfig[]): any[] {
       obj.batchSize !== ""
     ) {
       const batchNumber = Number(obj.batchSize);
-      cleanedObj.batchSize = isNaN(batchNumber) ? obj.batchSize : batchNumber;
+      if (!isNaN(batchNumber)) {
+        cleanedObj.batchSize = batchNumber;
+      } else {
+        delete cleanedObj.batchSize;
+      }
     } else {
       delete cleanedObj.batchSize;
     }
@@ -295,6 +302,8 @@ function extractObjectName(query: string): string {
   if (!query) {
     return "";
   }
-  const match = query.match(/from\s+([a-zA-Z0-9_]+)/i);
+  const match = query.match(
+    /from\s+([A-Za-z0-9_]+(?::[A-Za-z0-9_]+)?(?:__[A-Za-z0-9_]+)*)/i,
+  );
   return match ? match[1] : "";
 }
