@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [6.23.0] 2025-12-31
+
 - Integrate Salesforce Git Merge Driver management
   - Add in sf plugins dependencies
   - Toggle merge driver from status bar
