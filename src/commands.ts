@@ -28,6 +28,7 @@ import {
 } from "./commands/runAnonymousApex";
 import { registerShowMetadataRetriever } from "./commands/showMetadataRetriever";
 import { registerShowPackageXml } from "./commands/packageXml";
+import { registerGitMergeDriverToggle } from "./commands/gitMergeDriver";
 
 export class Commands {
   public readonly extensionUri: vscode.Uri;
@@ -74,6 +75,7 @@ export class Commands {
     this.registerGenerateFlowDocumentation();
     this.registerGenerateFlowVisualGitDiff();
     this.registerRunSalesforceCliMcpServer();
+    registerGitMergeDriverToggle(this);
     registerShowExtensionConfig(this);
     registerOpenKeyFile(this);
     registerShowPipeline(this);
