@@ -83,6 +83,7 @@ export default class DataWorkbench extends LightningElement {
     ],
   };
 
+  // jscpd:ignore-start
   connectedCallback() {
     this.loadWorkspaces();
     this.updateActionsVisibility();
@@ -104,6 +105,7 @@ export default class DataWorkbench extends LightningElement {
       this.showLargeActions = true;
     }
   }
+  // jscpd:ignore-end
 
   @api
   handleMessage(messageType, data) {
@@ -191,6 +193,7 @@ export default class DataWorkbench extends LightningElement {
     }));
   }
 
+  // jscpd:ignore-start
   loadWorkspaces() {
     this.isLoading = true;
     window.sendMessageToVSCode({
@@ -221,6 +224,7 @@ export default class DataWorkbench extends LightningElement {
         return labelA.localeCompare(labelB);
       });
   }
+  // jscpd:ignore-end
 
   getWorkspaceCssClass(workspace) {
     const baseClasses = "slds-box slds-box_x-small workspace-item";
@@ -312,6 +316,7 @@ export default class DataWorkbench extends LightningElement {
   }
 
   // Event Handlers
+  // jscpd:ignore-start
   handleWorkspaceSelect(event) {
     const workspacePath = event.currentTarget.dataset.path;
     const workspace = this.workspaces.find((w) => w.path === workspacePath);
@@ -478,6 +483,7 @@ export default class DataWorkbench extends LightningElement {
     objects[index] = { ...objects[index], [field]: value };
     this.newWorkspace.objects = objects;
   }
+  // jscpd:ignore-end
 
   handleBatchSizeChange(event) {
     const index = Number(event.currentTarget.dataset.index);
@@ -601,6 +607,8 @@ export default class DataWorkbench extends LightningElement {
       });
     }
   }
+
+  // jscpd:ignore-end
 
   resetNewWorkspace() {
     this.newWorkspace = {

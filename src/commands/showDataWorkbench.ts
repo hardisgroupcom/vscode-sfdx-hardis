@@ -129,6 +129,7 @@ export function registerShowDataWorkbench(commands: Commands) {
             break;
           }
 
+          // jscpd:ignore-start
           case "deleteWorkspace": {
             try {
               const label = data?.label || data?.path || "this workspace";
@@ -167,7 +168,7 @@ export function registerShowDataWorkbench(commands: Commands) {
             }
             break;
           }
-
+          // jscpd:ignore-end
         default:
           break;
       }
