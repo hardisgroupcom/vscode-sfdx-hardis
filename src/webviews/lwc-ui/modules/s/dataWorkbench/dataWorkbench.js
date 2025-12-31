@@ -226,6 +226,7 @@ export default class DataWorkbench extends LightningElement {
   }
   // jscpd:ignore-end
 
+  // jscpd:ignore-start
   getWorkspaceCssClass(workspace) {
     const baseClasses = "slds-box slds-box_x-small workspace-item";
     const isSelected =
@@ -261,6 +262,7 @@ export default class DataWorkbench extends LightningElement {
 
     return hasName && hasLabel && hasObjects && !this.hasSoqlErrors;
   }
+  // jscpd:ignore-end
 
   get saveButtonDisabled() {
     return !this.canSaveWorkspace;
