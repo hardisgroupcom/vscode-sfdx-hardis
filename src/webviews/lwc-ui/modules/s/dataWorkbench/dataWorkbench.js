@@ -65,6 +65,7 @@ export default class DataWorkbench extends LightningElement {
         this.loadWorkspaces();
         this.showCreateWorkspace = false;
         this.editingWorkspace = null;
+        this.isLoading = false;
         break;
       case "workspaceUpdated":
         const selectedPath = this.selectedWorkspace?.path;
@@ -74,12 +75,18 @@ export default class DataWorkbench extends LightningElement {
         if (selectedPath) {
           this.pendingSelectedWorkspacePath = selectedPath;
         }
+        this.isLoading = false;
+        break;
+      case "workspaceCreateFailed":
+      case "workspaceUpdateFailed":
+        this.isLoading = false;
         break;
       case "workspaceDeleted":
         this.loadWorkspaces();
         this.showCreateWorkspace = false;
         this.editingWorkspace = null;
         this.selectedWorkspace = null;
+        this.isLoading = false;
         break;
       default:
         break;
@@ -311,15 +318,20 @@ export default class DataWorkbench extends LightningElement {
   }
 
   handleSave() {
+    this.isLoading = true;
     const action = this.isEditMode ? "updateWorkspace" : "createWorkspace";
     const data = {
       ...this.newWorkspace,
       originalPath: this.editingWorkspace?.path,
     };
 
+    // LWC tracked objects are reactive proxies and can't be structured-cloned
+    // by the webview MessagePort. Convert to a plain JSON object before sending.
+    const safeData = JSON.parse(JSON.stringify(data));
+
     window.sendMessageToVSCode({
       type: action,
-      data: data,
+      data: safeData,
     });
   }
 

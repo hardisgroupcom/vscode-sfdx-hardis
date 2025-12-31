@@ -54,20 +54,44 @@ export function registerShowDataWorkbench(commands: Commands) {
           }
 
           case "createWorkspace": {
-            const createdPath = await createDataWorkspace(data);
-            panel.sendMessage({
-              type: "workspaceCreated",
-              data: { path: createdPath },
-            });
+            try {
+              const createdPath = await createDataWorkspace(data);
+              panel.sendMessage({
+                type: "workspaceCreated",
+                data: { path: createdPath },
+              });
+            } catch (e: any) {
+              const message = e?.message || e;
+              Logger.log(`Failed to create data workspace: ${message}`);
+              vscode.window.showErrorMessage(
+                `Failed to create workspace: ${message}`,
+              );
+              panel.sendMessage({
+                type: "workspaceCreateFailed",
+                data: { message },
+              });
+            }
             break;
           }
 
           case "updateWorkspace": {
-            await updateDataWorkspace(data);
-            panel.sendMessage({
-              type: "workspaceUpdated",
-              data: {},
-            });
+            try {
+              await updateDataWorkspace(data);
+              panel.sendMessage({
+                type: "workspaceUpdated",
+                data: {},
+              });
+            } catch (e: any) {
+              const message = e?.message || e;
+              Logger.log(`Failed to update data workspace: ${message}`);
+              vscode.window.showErrorMessage(
+                `Failed to update workspace: ${message}`,
+              );
+              panel.sendMessage({
+                type: "workspaceUpdateFailed",
+                data: { message },
+              });
+            }
             break;
           }
 
@@ -225,11 +249,24 @@ async function createDataWorkspace(data: any): Promise<string> {
 
 async function updateDataWorkspace(data: any): Promise<void> {
   const workspaceRoot = getWorkspaceRoot();
-  const oldPath = data.originalPath;
-  const newPath = path.join(workspaceRoot, "scripts", "data", data.name);
+  const oldPath = typeof data?.originalPath === "string" ? data.originalPath : "";
+  const workspaceName = typeof data?.name === "string" ? data.name : "";
 
-  if (oldPath !== newPath && fs.existsSync(oldPath)) {
-    await fs.move(oldPath, newPath, { overwrite: true });
+  if (!workspaceName) {
+    throw new Error("Workspace name is required");
+  }
+
+  const newPath = path.join(workspaceRoot, "scripts", "data", workspaceName);
+
+  if (oldPath && oldPath !== newPath && fs.existsSync(oldPath)) {
+    if (fs.existsSync(newPath)) {
+      throw new Error(
+        `A workspace named "${workspaceName}" already exists. Choose another name.`,
+      );
+    }
+    await fs.move(oldPath, newPath, { overwrite: false });
+  } else {
+    await fs.ensureDir(newPath);
   }
 
   const exportJsonPath = path.join(newPath, "export.json");
