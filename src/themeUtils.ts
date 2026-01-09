@@ -4,14 +4,16 @@ import * as vscode from "vscode";
 export class ThemeUtils {
   public emojisInSections: boolean;
   public menuIconType: "vscode" | "hardis";
+  public colorTheme: "auto" | "light" | "dark" | "dark-high" | "light-high";
   public allTopicEmojis: any;
   public allCommandIcons: any;
 
   constructor() {
-    const { emojisInSections, menuIconType } =
+    const { emojisInSections, menuIconType, colorTheme } =
       ThemeUtils.getThemeConfiguration();
     this.emojisInSections = emojisInSections;
     this.menuIconType = menuIconType;
+    this.colorTheme = colorTheme;
     this.allTopicEmojis = this.getAllTopicEmojis();
     this.allCommandIcons = this.getAllCommandIcons();
   }
@@ -38,11 +40,13 @@ export class ThemeUtils {
   public static getThemeConfiguration(): {
     emojisInSections: boolean;
     menuIconType: "vscode" | "hardis";
+    colorTheme: "auto" | "light" | "dark" | "dark-high" | "light-high";
   } {
     const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis.theme");
     return {
       emojisInSections: config.get("emojisInSections", false),
       menuIconType: config.get("menuIconType", "vscode"),
+      colorTheme: config.get("colorTheme", "auto"),
     };
   }
 

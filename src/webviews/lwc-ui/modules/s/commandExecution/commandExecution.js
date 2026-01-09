@@ -4,7 +4,6 @@
 // eslint-env es6
 import { LightningElement, track, api } from "lwc";
 import PromptInput from "s/promptInput";
-import "s/forceLightTheme"; // Ensure light theme is applied
 
 export default class CommandExecution extends LightningElement {
   // Track user-toggled expanded state for sections in simple mode

@@ -1,12 +1,17 @@
 <template>
-    <div class="blue-back">
+    <div class="slds-scope blue-back" data-theme={colorTheme} data-contrast={colorContrast}>
         <div class="slds-scope slds-p-around_small blue-back">
-            <div class="slds-grid slds-grid_align-spread slds-m-bottom_medium">
-                <div class="slds-col slds-size_8-of-12 slds-align-left">
-                    <span class="slds-text-heading_medium slds-text-title_bold">Extension Configuration</span>
-                </div>
-                <div class="slds-col slds-size_4-of-12 slds-no-flex slds-align-middle" style="text-align:right;">
-                    <lightning-button variant="neutral" label="Refresh" onclick={handleRefresh} class="slds-m-top_medium"></lightning-button>
+            <div class="header-section">
+                <div class="header-content no-bg">
+                    <div class="header-icon-container gray">
+                        <lightning-icon icon-name="utility:settings" size="medium" variant="inverse"></lightning-icon>
+                    </div>
+                    <div class="header-text">
+                        <h1 class="header-title single-line">SFDX Hardis Settings</h1>
+                    </div>
+                    <div class="header-actions">
+                        <lightning-button variant="neutral" label="Refresh" onclick={handleRefresh} class="slds-m-top_medium"></lightning-button>
+                    </div>
                 </div>
             </div>
             
@@ -21,9 +26,9 @@
                 <template if:false={loading}>
                     <template if:true={sections}>
                         <lightning-card hide-header="true" label="Extension Settings">
-                            <lightning-tabset>
+                            <lightning-tabset active-tab-value={activeTabValue}>
                                 <template for:each={sections} for:item="section" for:index="index">
-                                    <lightning-tab key={section.label} label={section.label}>
+                                    <lightning-tab key={section.value} value={section.value} label={section.label} icon-name={section.iconName}>
                                         <div class="slds-p-around_medium">
                                             <template if:true={section.description}>
                                                 <div class="slds-text-body_regular slds-text-color_weak slds-m-bottom_medium">

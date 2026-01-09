@@ -1,6 +1,7 @@
 import { LightningElement, api, track } from "lwc";
+import { ColorThemeMixin } from "s/colorThemeMixin";
 
-export default class FilesWorkbench extends LightningElement {
+export default class FilesWorkbench extends ColorThemeMixin(LightningElement) {
   workspaces = [];
   selectedWorkspace = null;
   isLoading = false;
@@ -88,6 +89,13 @@ export default class FilesWorkbench extends LightningElement {
       default:
         break;
     }
+  }
+
+  @api
+  handleColorThemeMessage(type, data) {
+    // Delegate to the mixin's implementation
+    if (super.handleColorThemeMessage)
+      super.handleColorThemeMessage(type, data);
   }
 
   @api

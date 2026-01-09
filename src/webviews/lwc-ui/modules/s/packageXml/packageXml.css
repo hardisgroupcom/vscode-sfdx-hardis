@@ -1,11 +1,11 @@
 /* Package XML Display Styles */
 
 /* Blue background for consistency with other panels */
-.blue-back {
-    background: linear-gradient(135deg, #f8f9ff 0%, #e8f4fd 100%);
+.slds-scope {
     min-height: 100vh;
     font-family: "Salesforce Sans", -apple-system, BlinkMacSystemFont, sans-serif;
 }
+
 
 /* Main container */
 .package-container {
@@ -16,7 +16,11 @@
 
 /* Header Section */
 .header-section {
-    margin-bottom: 0.4rem;
+    margin-bottom: 1rem;
+/* Removed custom theming and background rules */
+    gap: 0.75rem;
+    padding: 0.75rem;
+/* Removed dark theme overrides */
 }
 
 .header-content {
@@ -39,15 +43,11 @@
 .header-icon-container {
     width: 56px;
     height: 56px;
-    background: linear-gradient(135deg, #0176d3 0%, #014486 100%);
     border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
     flex-shrink: 0;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
-    border: 2px solid rgba(255, 255, 255, 0.16);
 }
 
 /* simplified header icon spacing */
@@ -57,6 +57,7 @@
 }
 
 /* Dynamic header colors based on package type */
+/*
 .header-icon-container[data-package-type="deploy"] {
     background: linear-gradient(135deg, #27ae60 0%, #1e8449 100%);
 }
@@ -76,17 +77,16 @@
 .header-icon-container[data-package-type="manifest"] {
     background: linear-gradient(135deg, #9f4fea 0%, #7b2cbf 100%);
 }
+    */
 
 .header-title {
     font-size: 1.25rem;
     font-weight: 700;
-    color: #181818;
     margin: 0 0 0.25rem 0;
     line-height: 1.15;
 }
 .header-subtitle {
     font-size: 0.9rem;
-    color: #6f6d6b;
     margin: 0;
     line-height: 1.25;
 }
@@ -132,7 +132,6 @@
 
 .loading-text {
     margin-top: 1rem;
-    color: #706e6b;
     font-size: 1rem;
 }
 
@@ -142,11 +141,8 @@
 }
 
 .error-card {
-    background: white;
     border-radius: 12px;
     padding: 2rem;
-    border: 1px solid #e5e5e5;
-    border-left: 4px solid #e74c3c;
     display: flex;
     align-items: flex-start;
     gap: 1.5rem;
@@ -155,12 +151,10 @@
 .error-icon-container {
     width: 48px;
     height: 48px;
-    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
     border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
     flex-shrink: 0;
 }
 
@@ -172,12 +166,10 @@
 .error-title {
     font-size: 1.25rem;
     font-weight: 600;
-    color: #181818;
     margin: 0 0 0.5rem 0;
 }
 
 .error-description {
-    color: #706e6b;
     margin: 0 0 1.5rem 0;
     line-height: 1.5;
 }
@@ -242,7 +234,6 @@
 .section-title {
     font-size: 1.5rem;
     font-weight: 600;
-    color: #181818;
     margin-bottom: 0.25rem;
     display: flex;
     align-items: center;
@@ -255,7 +246,6 @@
 
 .section-subtitle {
     font-size: 0.9rem;
-    color: #706e6b;
     margin: 0;
 }
 
@@ -271,7 +261,6 @@
 .info-title {
     font-size: 1rem;
     font-weight: 600;
-    color: #181818;
     margin: 0;
 }
 
@@ -290,12 +279,11 @@
 .info-label {
     font-size: 0.8rem;
     font-weight: 500;
-    color: #706e6b;
 }
 
 .info-value {
-    font-size: 0.95rem;
-    font-weight: 650;
+    font-size: 1rem;
+    font-weight: 600;
     color: #181818;
 }
 
@@ -305,10 +293,8 @@
     gap: 0.5rem; /* compact */
 }
 
-.type-card {
-    background: white;
+.slds-scope .type-card {
     border-radius: 6px;
-    border: 1px solid #ececec;
     overflow: hidden;
     transition: all 0.12s ease;
 }
@@ -327,7 +313,6 @@
 }
 
 .type-header:hover {
-    background-color: #f8f9fa;
 }
 
 .type-info {
@@ -370,7 +355,6 @@
 .type-name {
     font-size: 0.98rem;
     font-weight: 700;
-    color: #0b2545; /* darker for emphasis */
     margin: 0 0 0.125rem 0;
 }
 
@@ -401,7 +385,6 @@
 }
 
 .toggle-icon {
-    color: #706e6b;
     transition: transform 0.2s ease;
 }
 
@@ -422,19 +405,15 @@
     align-items: center;
     gap: 0.5rem;
     padding: 1rem;
-    background: #f3f9ff;
-    border: 1px solid #bbdefb;
     border-radius: 6px;
     margin-top: 1rem;
 }
 
 .wildcard-icon {
-    color: #1589ee;
 }
 
 .wildcard-text {
     font-size: 0.875rem;
-    color: #181818;
     font-weight: 500;
 }
 
@@ -450,8 +429,6 @@
     align-items: flex-start;
     gap: 0.5rem;
     padding: 0.5rem 0.75rem;
-    background: #f8f9fa;
-    border: 1px solid #e9ecef;
     border-radius: 4px;
     font-size: 0.875rem;
     transition: all 0.2s ease;
@@ -460,8 +437,6 @@
 }
 
 .member-item:hover {
-    background: #e8f4fd;
-    border-color: #1589ee;
     transform: translateX(4px);
 }
 
@@ -476,7 +451,6 @@
 }
 
 .member-name {
-    color: #181818;
     font-weight: 500;
     word-break: break-word;
     line-height: 1.3;
@@ -582,18 +556,12 @@
 .empty-title {
     font-size: 1.25rem;
     font-weight: 600;
-    color: #181818;
     margin: 0 0 0.5rem 0;
 }
 
 .empty-description {
-    color: #706e6b;
     margin: 0;
     line-height: 1.5;
-}
-
-.member-item {
-    cursor: pointer; /* indicate clickable */
 }
 
 /* Responsive Design */
@@ -634,6 +602,85 @@
     }
 }
 
+
+.slds-scope[data-theme="light"] .header-content,
+.slds-scope[data-theme="light"] .info-card,
+.slds-scope[data-theme="light"] .type-card,
+.slds-scope[data-theme="light"] .member-item,
+.slds-scope[data-theme="light"] .error-card {
+    background: #ffffff;
+    border: 1px solid #e5e5e5;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    color: #181818;
+}
+
+.slds-scope[data-theme="light"] .header-title,
+.slds-scope[data-theme="light"] .info-title,
+.slds-scope[data-theme="light"] .info-value,
+.slds-scope[data-theme="light"] .type-name,
+.slds-scope[data-theme="light"] .member-name,
+.slds-scope[data-theme="light"] .empty-title {
+    color: #181818;
+}
+
+.slds-scope[data-theme="light"] .header-icon-container {
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+    border: 2px solid rgba(255, 255, 255, 0.16);
+}
+
+.slds-scope[data-theme="light"] .header-subtitle,
+.slds-scope[data-theme="light"] .info-label,
+.slds-scope[data-theme="light"] .empty-description,
+.slds-scope[data-theme="light"] .section-subtitle {
+    color: #706e6b;
+}
+.slds-scope[data-theme="light"] .member-item:hover {
+    background: #e8f4fd;
+    border-color: #1589ee;
+    transform: translateX(4px);
+}
+
+.slds-scope[data-theme="dark"] .header-content,
+.slds-scope[data-theme="dark"] .info-card,
+.slds-scope[data-theme="dark"] .type-card,
+.slds-scope[data-theme="dark"] .member-item,
+.slds-scope[data-theme="dark"] .error-card,
+.slds-scope[data-theme="dark-high-contrast"] .header-content,
+.slds-scope[data-theme="dark-high-contrast"] .info-card,
+.slds-scope[data-theme="dark-high-contrast"] .type-card,
+.slds-scope[data-theme="dark-high-contrast"] .member-item,
+.slds-scope[data-theme="dark-high-contrast"] .error-card {
+    background: #071428;
+    border: 1px solid rgba(255,255,255,0.04);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+    color: #dbefff;
+}
+
+
+
+.slds-scope[data-theme="dark"] .header-icon-container,
+.slds-scope[data-theme="dark-high-contrast"] .header-icon-container {
+    box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+    border: 1px solid rgba(255,255,255,0.04);
+}
+
+.slds-scope[data-theme="dark"] .header-subtitle,
+.slds-scope[data-theme="dark"] .info-label,
+.slds-scope[data-theme="dark"] .empty-description,
+.slds-scope[data-theme="dark"] .section-subtitle,
+.slds-scope[data-theme="dark-high-contrast"] .header-subtitle,
+.slds-scope[data-theme="dark-high-contrast"] .info-label,
+.slds-scope[data-theme="dark-high-contrast"] .empty-description,
+.slds-scope[data-theme="dark-high-contrast"] .section-subtitle {
+    color: #9fb0cc;
+}
+
+.slds-scope[data-theme="dark"] .member-item:hover,
+.slds-scope[data-theme="dark-high-contrast"] .member-item:hover {
+    background: rgba(255,255,255,0.02);
+    border-color: rgba(62,166,255,0.08);
+    transform: translateX(0);
+}
 /* Icon container to allow colored backgrounds per metadata type.
     Per-type color tokens were removed to avoid empty rulesets. If
     future per-type backgrounds are required, add a concrete rule

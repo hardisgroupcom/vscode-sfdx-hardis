@@ -14,7 +14,6 @@
 
 .select-option-desc {
     font-weight: normal;
-    color: #54698d;
     font-size: 0.95em;
     margin-top: 0.15rem;
     text-align: left;
@@ -42,14 +41,9 @@
 }
 
 .select-option-button:focus {
-    outline: 2px solid #1589ee;
     outline-offset: 1px;
 }
 
-.select-option-button:hover {
-    background: #f3f6fb;
-    border-color: #1589ee;
-}
 
 .select-options-btn-row {
     margin-bottom: 0.25rem;
@@ -108,22 +102,24 @@ lightning-helptext lightning-icon {
     right: 0;
     bottom: 0;
     z-index: 9999;
-    background-color: rgba(0, 0, 0, 0.5);
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .submission-modal {
-    background: white;
     border-radius: 0.5rem;
     min-width: 300px;
     max-width: 500px;
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
-    border: 1px solid #d8dde6;
 }
 
 /* Ensure the spinner uses brand colors (blue) */
 .submission-modal lightning-spinner {
     --slds-c-spinner-color-foreground: #1589ee; /* Brand blue color */
 }
+
+.slds-col>.slds-text-color_weak {
+    background: transparent;
+}
+
+

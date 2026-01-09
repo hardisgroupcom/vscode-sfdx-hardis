@@ -1,4 +1,5 @@
 import { LightningElement, api, track } from "lwc";
+import { ColorThemeMixin } from "s/colorThemeMixin";
 
 // Lightweight SOQL object name extraction. Full parsing/validation lives in
 // showDataWorkbench.ts to keep @jetstreamapp/soql-parser-js out of the webview bundle.
@@ -30,7 +31,7 @@ function formatBytes(bytes) {
   return `${size.toFixed(size >= 10 ? 0 : 1)} ${units[unitIndex]}`;
 }
 
-export default class DataWorkbench extends LightningElement {
+export default class DataWorkbench extends ColorThemeMixin(LightningElement) {
   workspaces = [];
   selectedWorkspace = null;
   isLoading = false;
@@ -154,6 +155,13 @@ export default class DataWorkbench extends LightningElement {
       default:
         break;
     }
+  }
+
+  @api
+  handleColorThemeMessage(type, data) {
+    // Delegate to the mixin's implementation
+    if (super.handleColorThemeMessage)
+      super.handleColorThemeMessage(type, data);
   }
 
   @api

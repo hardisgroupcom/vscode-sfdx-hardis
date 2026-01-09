@@ -1,5 +1,4 @@
 import { LightningElement, api, track } from "lwc";
-import "s/forceLightTheme"; // Ensure light theme is applied
 
 /**
  * LWC to display and edit .sfdx-hardis.yml configuration (global or branch-scoped)
