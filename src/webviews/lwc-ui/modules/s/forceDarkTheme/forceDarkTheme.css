@@ -1,0 +1,28 @@
+:host {
+  /* Force dark background */
+  background-color: #1e1e1e !important;
+  color: #d4d4d4 !important;
+
+  /* Dark SLDS token overrides */
+  --lwc-colorBackground: #1e1e1e;
+  --lwc-colorBackgroundAlt: #252526;
+  --lwc-colorBorder: #333333;
+  --lwc-colorTextDefault: #d4d4d4;
+  --lwc-colorTextWeak: #9a9a9a;
+  --lwc-colorTextInverse: #000000;
+}
+
+/* Common SLDS containers */
+:host .slds-card,
+:host .slds-box,
+:host .slds-page-header,
+:host .slds-modal__content {
+  background-color: #1e1e1e !important;
+  color: #d4d4d4 !important;
+}
+
+/* Slightly lighter alt backgrounds */
+:host .slds-card .slds-card__body,
+:host .slds-box .slds-box__body {
+  background-color: #252526 !important;
+}

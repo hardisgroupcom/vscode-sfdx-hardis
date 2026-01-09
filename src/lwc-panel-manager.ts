@@ -227,10 +227,30 @@ export class LwcPanelManager {
   }
 
   /**
+   * Refresh all active panels (useful when configuration changes, like theme)
+   */
+  public refreshAllPanels(data: any): void {
+    this.activePanels.forEach((panel, lwcId) => {
+      if (!panel.isDisposed()) {
+        panel.refresh(data || {});
+      }
+    });
+  }
+
+  /**
    * Clean up the manager instance
    */
   public dispose(): void {
     this.disposeAllPanels();
     LwcPanelManager.instance = null;
+  }
+
+  
+  /**
+   * Resolve the theme to use based on the input and VS Code's active theme
+   * @returns An object with colorTheme and colorContrast properties
+   */
+  public static resolveTheme(colorTheme: string): any {
+    return LwcUiPanel.resolveTheme(colorTheme);
   }
 }

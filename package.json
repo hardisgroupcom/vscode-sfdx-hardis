@@ -141,6 +141,25 @@
           "default": false,
           "description": "Display emojis in menu section titles"
         },
+        "vsCodeSfdxHardis.theme.colorTheme": {
+          "type": "string",
+          "default": "auto",
+          "enum": [
+            "auto",
+            "light",
+            "dark",
+            "light-high",
+            "dark-high"
+          ],
+          "enumDescriptions": [
+            "🔄 Automatic (VS Code theme)",
+            "☀️ Light theme",
+            "🌙 Dark theme",
+            "🔆 Light High contrast theme",
+            "🌑 Dark High contrast theme"
+          ],
+          "description": "Display theme for SFDX-Hardis webview panels (Pipeline, Configuration, etc.)"
+        },
         "vsCodeSfdxHardis.theme.menuIconType": {
           "type": "string",
           "default": "vscode",
@@ -149,8 +168,8 @@
             "vscode"
           ],
           "enumDescriptions": [
-            "Colored SVG Icons",
-            "Standard Visual Studio Code Icons"
+            "✅ Colored SVG Icons",
+            "✓ Standard Visual Studio Code Icons"
           ],
           "description": "Theme of SFDX-Hardis menu icons"
         },

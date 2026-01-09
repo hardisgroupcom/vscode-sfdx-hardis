@@ -195,6 +195,14 @@ export class LwcUiPanel {
     if (vsCodeSfdxHardisConfiguration) {
       data.vsCodeSfdxHardisConfiguration = vsCodeSfdxHardisConfiguration;
     }
+
+    // Always add colorTheme to initialization data for consistent theme support
+    const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis.theme");
+    const colorThemeConfig = config.get("colorTheme", "auto");
+    const { colorTheme, colorContrast } = LwcUiPanel.resolveTheme(colorThemeConfig);
+    data.colorTheme = colorTheme;
+    data.colorContrast = colorContrast;
+
     this.panel.webview.postMessage({
       type: "initialize",
       data: data,
@@ -627,6 +635,59 @@ export class LwcUiPanel {
     this.panel.webview.html = this.getHtmlForWebview(webview);
   }
 
+  /**
+   * Refresh the webview HTML (useful when configuration changes, like theme)
+   */
+  public refresh(data: any): void {
+    if (data?.colorTheme) {
+      this.sendMessage({
+        type: "updateTheme",
+        data
+      });
+    }
+    else {
+      this.update();
+    }
+  }
+
+  /**
+   * Resolve the theme to use based on the input and VS Code's active theme
+   * @param theme The input theme, can be "auto", "dark", "light", "dark-high" or "light-high"
+   * @returns An object with colorTheme and colorContrast properties
+   */
+  public static resolveTheme(theme: string): any {
+    const resultTheme = {
+      colorTheme: "light",
+      colorContrast: ""
+    }
+    if (!theme || theme === "auto") {
+      const vsCodeTheme = vscode.window.activeColorTheme.kind;
+      switch (vsCodeTheme) {
+        case vscode.ColorThemeKind.HighContrast:
+          resultTheme.colorTheme = "dark";
+          resultTheme.colorContrast = "high";
+          break;
+        case vscode.ColorThemeKind.Dark:
+          resultTheme.colorTheme = "dark";
+          break;
+        case vscode.ColorThemeKind.HighContrastLight:
+          resultTheme.colorTheme = "light";
+          resultTheme.colorContrast = "high";
+          break;
+        case vscode.ColorThemeKind.Light:
+        default:
+          resultTheme.colorTheme = "light";
+          break;
+      }
+    } else {
+      const themeParts = theme.split("-", 2);
+      resultTheme.colorTheme = themeParts[0];
+      resultTheme.colorContrast = themeParts.length > 1 ? themeParts[1] : "";
+    }
+
+    return resultTheme;
+  }
+
   private getHtmlForWebview(webview: vscode.Webview) {
     // Get the local path to main script run in the webview, then convert it to a uri we can use in the webview.
     const scriptUri = webview.asWebviewUri(
@@ -649,12 +710,32 @@ export class LwcUiPanel {
       vscode.Uri.joinPath(this.extensionUri, "out", "assets", "icons"),
     );
 
+    // Global theme stylesheet (built/copied to out/assets/styles/global-theme.css by the build)
+    const globalThemeCssUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.extensionUri, "out", "assets", "styles", "global-theme.css"),
+    );
+
+    // Determine theme based on configuration
+    const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis.theme");
+    const colorThemeConfig = config.get("colorTheme", "auto");
+    const { colorTheme, colorContrast } = LwcUiPanel.resolveTheme(colorThemeConfig);
+    const initData = this.initializationData || {};
+    initData.colorTheme = colorTheme;
+    initData.colorContrast = colorContrast;
+
     // Safely serialize initialization data
-    const initDataJson = this.initializationData
-      ? JSON.stringify(this.initializationData)
+    const initDataJson = JSON.stringify(initData)
           .replace(/'/g, "&#39;")
-          .replace(/"/g, "&quot;")
-      : "{}";
+          .replace(/"/g, "&quot;");
+
+    const mermaidTheme = {
+      clusterBkg: "#EAF5FC",
+      edgeLabelBackground: "rgba(232,232,232, 0.8)"
+    }
+    if (colorTheme == "dark") {
+      mermaidTheme.clusterBkg = "#333";
+      mermaidTheme.edgeLabelBackground = "rgba(77, 77, 77, 0.5)";
+    }
 
     return `<!DOCTYPE html>
       <html lang="en">
@@ -668,10 +749,13 @@ export class LwcUiPanel {
         <title>SFDX Hardis LWC UI</title>
         <style>
           body { margin: 0; padding: 0; }
-          #app { width: 100%; height: 100vh; }
+          #app { width: 100%; min-height: 100vh; height: auto; }
         </style>
+
+        <!-- Global theme stylesheet: always included, handles both light and dark themes. -->
+        <link rel="stylesheet" href="${globalThemeCssUri}">
       </head>
-      <body class="slds-scope slds-theme_default">
+      <body class="slds-scope blue-back" data-theme="${colorTheme}" data-contrast="${colorContrast}">
         <div id="app" data-lwc-id="${this.lwcId}" data-init-data="${initDataJson}"></div>
         
         <script>
@@ -684,7 +768,8 @@ export class LwcUiPanel {
               startOnLoad: false,
               securityLevel: 'loose',
               themeVariables: {
-                clusterBkg: "#EAF5FC"
+                clusterBkg: "${mermaidTheme.clusterBkg}",
+                edgeLabelBackground: "${mermaidTheme.edgeLabelBackground}"
               }
             });
         </script>

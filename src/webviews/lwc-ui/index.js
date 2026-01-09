@@ -21,6 +21,16 @@ function routeMessageToComponent(message) {
     }
   }
 
+  if (message.type === "updateTheme") {
+    if (message.data?.colorTheme && document?.body) {
+      document.body.setAttribute("data-theme", message.data?.colorTheme);
+      document.body.setAttribute("data-contrast", message.data?.colorContrast);
+      if (typeof component.handleColorThemeMessage === "function") {
+        component.handleColorThemeMessage(message.type, message.data);
+      }
+    }
+  }
+
   if (typeof component.handleMessage === "function") {
     component.handleMessage(message.type, message.data);
   }
@@ -137,6 +147,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       console.log("✅ LWC component mounted successfully!");
 
       flushPendingMessages();
+
+      // Avoid flash of unthemed content by applying theme early
+      if (initData?.colorTheme && element.handleColorThemeMessage) {
+        element.handleColorThemeMessage("updateTheme", { colorTheme: initData.colorTheme, colorContrast: initData.colorContrast } );
+      }
 
       // Wait a bit for the component to fully initialize
       setTimeout(() => {
