@@ -342,6 +342,29 @@
   white-space: pre-wrap;
 }
 
+/* Copy token styling for <copy>...</copy> log segments */
+.copy-token {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.copy-token__value {
+  font-family: inherit;
+}
+
+.copy-token__icon {
+  text-decoration: none;
+  cursor: pointer;
+  font-size: 0.9em;
+  line-height: 1;
+  opacity: 0.75;
+}
+
+.copy-token__icon:hover {
+  opacity: 1;
+}
+
 .log-timestamp {
   font-size: 0.75rem;
   white-space: nowrap;
