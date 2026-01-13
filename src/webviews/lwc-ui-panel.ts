@@ -260,6 +260,9 @@ export class LwcUiPanel {
         case "updateVsCodeSfdxHardisConfiguration":
           this.handleUpdateVsCodeSfdxHardisConfiguration(data);
           break;
+        case "copyToClipboard":
+          await this.handleCopyToClipboard(data);
+          break;
       }
     } catch (error) {
       Logger.log(
@@ -267,6 +270,27 @@ export class LwcUiPanel {
           JSON.stringify(error),
       );
     }
+  }
+
+  private async handleCopyToClipboard(data: any): Promise<void> {
+    const text: string =
+      (data && typeof data.text === "string" ? data.text : null) ||
+      (typeof data === "string" ? data : "");
+
+    if (!text) {
+      return;
+    }
+
+    // Avoid accidental massive clipboard payloads
+    const clipped = text.length > 10000 ? text.slice(0, 10000) : text;
+    await vscode.env.clipboard.writeText(clipped);
+    vscode.window.showInformationMessage("Copied to clipboard.");
+
+    // Optional ack (allows webview toast in the future)
+    this.sendMessage({
+      type: "copiedToClipboard",
+      data: { length: clipped.length },
+    });
   }
 
   /**

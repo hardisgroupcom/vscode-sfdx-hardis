@@ -19,9 +19,7 @@ import { ThemeUtils } from "./themeUtils";
 import { getConfig } from "./utils/pipeline/sfdxHardisConfig";
 import { LwcPanelManager } from "./lwc-panel-manager";
 
-export class HardisStatusProvider
-  implements vscode.TreeDataProvider<StatusTreeItem>
-{
+export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeItem> {
   public themeUtils: ThemeUtils;
   constructor(private workspaceRoot: string) {
     this.themeUtils = new ThemeUtils();

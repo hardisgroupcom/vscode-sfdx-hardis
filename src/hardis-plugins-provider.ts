@@ -20,9 +20,7 @@ import { SetupHelper } from "./utils/setupUtils";
 let nodeInstallOk = false;
 let gitInstallOk = false;
 
-export class HardisPluginsProvider
-  implements vscode.TreeDataProvider<StatusTreeItem>
-{
+export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTreeItem> {
   protected themeUtils: ThemeUtils;
   constructor(private workspaceRoot: string) {
     this.themeUtils = new ThemeUtils();

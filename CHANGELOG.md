@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Adds copy-to-clipboard functionality to logs to enhance UX when configuring new org authentication
+
 ## [6.23.0] 2025-12-31
 
 - Integrate Salesforce Git Merge Driver management

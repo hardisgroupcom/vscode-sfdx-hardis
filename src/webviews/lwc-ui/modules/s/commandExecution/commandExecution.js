@@ -36,6 +36,12 @@ export default class CommandExecution extends LightningElement {
   @track isInAutocloseList = false;
   @track autocloseCommands = [];
 
+  containsCopyMarkup(message) {
+    return (
+      typeof message === "string" && /<copy>[\s\S]*?<\/copy>/i.test(message)
+    );
+  }
+
   connectedCallback() {
     // Make component available globally for VS Code message handling
     if (typeof window !== "undefined") {
@@ -90,6 +96,10 @@ export default class CommandExecution extends LightningElement {
     if (this.embeddedPromptListener) {
       this.removeEventListener("promptsubmit", this.embeddedPromptListener);
       this.removeEventListener("promptexit", this.embeddedPromptListener);
+    }
+
+    if (this._boundHandleDocumentClick) {
+      document.removeEventListener("click", this._boundHandleDocumentClick);
     }
   }
 
@@ -297,14 +307,6 @@ export default class CommandExecution extends LightningElement {
     }
   }
 
-  disconnectedCallback() {
-    // ...existing code...
-    // Remove embedded prompt listeners if any
-    if (this.embeddedPromptListener) {
-      this.removeEventListener("promptsubmit", this.embeddedPromptListener);
-      this.removeEventListener("promptexit", this.embeddedPromptListener);
-    }
-  }
   // Handler for embedded prompt events (for template wiring)
   handleEmbeddedPromptSubmit(event) {
     // Dispatch as DOM event for showPromptInPanel to catch
@@ -325,6 +327,128 @@ export default class CommandExecution extends LightningElement {
         composed: true,
       }),
     );
+  }
+
+  handleLogContainerClick(event) {
+    // Handles clicks inside lightning-formatted-rich-text content
+    try {
+      const target = event && event.target;
+
+      // In shadow DOM (lightning-formatted-rich-text), event.target is often retargeted.
+      // Use composedPath() to find the actual anchor element.
+      const path =
+        event && typeof event.composedPath === "function"
+          ? event.composedPath()
+          : [];
+      let copyLink = null;
+
+      for (const node of path) {
+        if (!node || !node.getAttribute || !node.tagName) {
+          continue;
+        }
+        if (String(node.tagName).toUpperCase() !== "A") {
+          continue;
+        }
+        const href = node.getAttribute("href") || "";
+        const hasData = !!node.getAttribute("data-copy");
+        const isCopyHref =
+          href.startsWith("#copy=") || href.startsWith("#copy:");
+        const hasCopyClass =
+          node.classList && node.classList.contains("copy-token__icon");
+        if (hasData || isCopyHref || hasCopyClass) {
+          copyLink = node;
+          break;
+        }
+      }
+
+      // Fallback for cases where composedPath isn't available
+      if (!copyLink && target && target.closest) {
+        copyLink = target.closest("a.copy-token__icon");
+      }
+      if (!copyLink) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      // Prefer data attribute if it survives sanitization, otherwise parse from href hash
+      const encodedFromData = copyLink.getAttribute("data-copy") || "";
+      let value = "";
+      if (encodedFromData) {
+        value = decodeURIComponent(encodedFromData);
+      } else {
+        const href = copyLink.getAttribute("href") || "";
+        const match = href.match(/^#copy[=:](.*)$/);
+        if (match && match[1]) {
+          value = decodeURIComponent(match[1]);
+        }
+      }
+      if (!value) {
+        return;
+      }
+
+      this.copyToClipboard(value);
+
+      // Lightweight UI feedback
+      const previousTitle = copyLink.getAttribute("title") || "";
+      copyLink.setAttribute("title", "Copied!");
+      setTimeout(() => {
+        try {
+          copyLink.setAttribute("title", previousTitle);
+        } catch (e) {
+          // ignore
+        }
+      }, 1000);
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  async copyToClipboard(text) {
+    if (!text) {
+      return;
+    }
+
+    // Prefer VS Code backend clipboard for reliability in webviews
+    try {
+      if (typeof window !== "undefined" && window.sendMessageToVSCode) {
+        window.sendMessageToVSCode({
+          type: "copyToClipboard",
+          data: { text },
+        });
+        return;
+      }
+    } catch (e) {
+      // fallback below
+    }
+
+    try {
+      if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+        return;
+      }
+    } catch (e) {
+      // fallback below
+    }
+
+    // Fallback for environments where Clipboard API is unavailable
+    try {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.setAttribute("readonly", "");
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      textarea.style.left = "-9999px";
+      textarea.style.top = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      textarea.setSelectionRange(0, textarea.value.length);
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+    } catch (e) {
+      // ignore
+    }
   }
 
   @api
@@ -592,12 +716,17 @@ export default class CommandExecution extends LightningElement {
       isExpanded: true,
       hasError: false,
       isQuestion: actionLog.isQuestion || false,
+      hasCopyTokens: this.containsCopyMarkup(actionLog.message),
     };
 
     // Collapse the previous section if it's not a question
     if (this.logSections.length > 0) {
       const previousSection = this.logSections[this.logSections.length - 1];
-      if (previousSection && !previousSection.isQuestion) {
+      if (
+        previousSection &&
+        !previousSection.isQuestion &&
+        !previousSection.hasCopyTokens
+      ) {
         previousSection.isExpanded = false;
       }
     }
@@ -644,6 +773,11 @@ export default class CommandExecution extends LightningElement {
       formattedLog.formattedMessage = this.formatMultiLineMessage(
         formattedLog.message,
       );
+    }
+
+    // If this section contains copy values, keep it expanded by default
+    if (this.containsCopyMarkup(formattedLog.message)) {
+      this.currentSection.hasCopyTokens = true;
     }
 
     this.currentSection.logs = [...this.currentSection.logs, formattedLog];
@@ -1098,7 +1232,10 @@ ${resultMessage}`;
         // Progress sections are expanded when active, collapsed when ended (unless user manually toggled)
         isExpanded = section.isActive === true;
       } else if (isSimple) {
-        if (this.showEmbeddedPrompt) {
+        // In simple mode, keep sections containing copyable values open
+        if (section.hasCopyTokens) {
+          isExpanded = true;
+        } else if (this.showEmbeddedPrompt) {
           isExpanded = isLatest;
         } else if (idx === lastSectionIdx && isCompletedOrAborted) {
           isExpanded = true;
@@ -1594,19 +1731,79 @@ ${resultMessage}`;
 
   formatMultiLineMessage(message) {
     if (!message || typeof message !== "string") return "";
-    if (!message.includes("\n") && !message.trim().startsWith("- "))
-      return this.linkifyUrls(message);
 
-    // Convert HTML characters so they are displayed as HTML
-    message = message
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;")
-      .replace(/`/g, "&#96;"); // Escape backticks
+    // 1) Extract <copy>...</copy> tokens first (message can contain multiple)
+    const copyTokens = [];
+    const tokenizedMessage = message.replace(
+      /<copy>([\s\S]*?)<\/copy>/gi,
+      (match, value) => {
+        const token = `__COPY_TOKEN_${copyTokens.length}__`;
+        copyTokens.push(value);
+        return token;
+      },
+    );
 
-    const lines = message.split("\n");
+    const escapeHtml = (str) => {
+      if (str === null || str === undefined) {
+        return "";
+      }
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;")
+        .replace(/`/g, "&#96;");
+    };
+
+    // Linkify on already-escaped HTML text (so we never insert raw user HTML)
+    const linkifyEscapedText = (escapedText) => {
+      if (!escapedText || typeof escapedText !== "string") {
+        return escapedText;
+      }
+      const urlRegex = /(https?:\/\/[^\s"'`<>]+)/g;
+      return escapedText.replace(urlRegex, (url) => {
+        // url is already escaped for display, but href must be a real URL
+        const href = url.replace(/&amp;/g, "&");
+        const safeHref = href.replace(/"/g, "%22");
+        return `<a href="${safeHref}" target="_blank" rel="noopener noreferrer">${url}</a>`;
+      });
+    };
+
+    const renderCopyToken = (value) => {
+      const displayed = escapeHtml(value);
+      const encoded = encodeURIComponent(value);
+
+      // Use a hash URL so it never opens an external browser even if interception fails.
+      // We intercept clicks in handleLogContainerClick and prevent default.
+      const href = `#copy=${encoded}`;
+      return `<span class="copy-token"><span class="copy-token__value">${displayed}</span><a href="${href}" data-copy="${encoded}" class="copy-token__icon" title="Copy to clipboard" aria-label="Copy to clipboard">&#128203;</a></span>`;
+    };
+
+    const replaceCopyTokens = (html) => {
+      let output = html;
+      for (let i = 0; i < copyTokens.length; i++) {
+        const token = `__COPY_TOKEN_${i}__`;
+        output = output.split(token).join(renderCopyToken(copyTokens[i]));
+      }
+      return output;
+    };
+
+    const hasMultilineOrList =
+      tokenizedMessage.includes("\n") ||
+      tokenizedMessage.trim().startsWith("- ");
+
+    // 2) Single-line: escape -> linkify -> replace copy tokens
+    if (!hasMultilineOrList) {
+      const escaped = escapeHtml(tokenizedMessage);
+      const withLinks = linkifyEscapedText(escaped);
+      return replaceCopyTokens(withLinks);
+    }
+
+    // 3) Multi-line: escape first (keeps token markers intact), then build list/html
+    const safeMessage = escapeHtml(tokenizedMessage);
+
+    const lines = safeMessage.split("\n");
     let html = "";
     let inList = false;
 
@@ -1619,14 +1816,14 @@ ${resultMessage}`;
           html += "<ul>";
           inList = true;
         }
-        // Remove the leading hyphen and space before adding to list item
-        html += `<li>${this.linkifyUrls(line.substring(line.indexOf("- ") + 2))}</li>`;
+        const item = line.substring(line.indexOf("- ") + 2);
+        html += `<li>${replaceCopyTokens(linkifyEscapedText(item))}</li>`;
       } else {
         if (inList) {
           html += "</ul>";
           inList = false;
         }
-        html += this.linkifyUrls(line);
+        html += replaceCopyTokens(linkifyEscapedText(line));
         if (i < lines.length - 1) {
           html += "<br/>";
         }
