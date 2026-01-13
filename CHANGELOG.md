@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Adds copy-to-clipboard functionality to logs to enhance UX when configuring new org authentication
+- Update messages to replace text emojis by real emojis 😁
 
 ## [6.23.0] 2025-12-31
 

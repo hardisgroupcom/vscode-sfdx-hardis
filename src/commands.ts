@@ -347,7 +347,7 @@ export class Commands {
         const relativePath = vscode.workspace.asRelativePath(uri);
         if (!relativePath.endsWith(".flow-meta.xml")) {
           vscode.window.showWarningMessage(
-            "This command only works with Flow files :)",
+            "This command only works with Flow files 😅",
           );
           return;
         }
@@ -370,7 +370,7 @@ export class Commands {
         const relativePath = vscode.workspace.asRelativePath(uri);
         if (!relativePath.endsWith(".flow-meta.xml")) {
           vscode.window.showWarningMessage(
-            "This command only works with Flow files :)",
+            "This command only works with Flow files 😅",
           );
           return;
         }
