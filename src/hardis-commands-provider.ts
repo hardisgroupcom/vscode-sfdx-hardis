@@ -8,9 +8,7 @@ import {
 } from "./utils";
 import { ThemeUtils } from "./themeUtils";
 
-export class HardisCommandsProvider
-  implements vscode.TreeDataProvider<CommandTreeItem>
-{
+export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTreeItem> {
   private allTopicsAndCommands: any = null;
   private themeUtils: ThemeUtils;
   constructor(private workspaceRoot: string) {

@@ -336,7 +336,10 @@ export default class CommandExecution extends LightningElement {
 
       // In shadow DOM (lightning-formatted-rich-text), event.target is often retargeted.
       // Use composedPath() to find the actual anchor element.
-      const path = event && typeof event.composedPath === "function" ? event.composedPath() : [];
+      const path =
+        event && typeof event.composedPath === "function"
+          ? event.composedPath()
+          : [];
       let copyLink = null;
 
       for (const node of path) {
@@ -348,8 +351,10 @@ export default class CommandExecution extends LightningElement {
         }
         const href = node.getAttribute("href") || "";
         const hasData = !!node.getAttribute("data-copy");
-        const isCopyHref = href.startsWith("#copy=") || href.startsWith("#copy:");
-        const hasCopyClass = node.classList && node.classList.contains("copy-token__icon");
+        const isCopyHref =
+          href.startsWith("#copy=") || href.startsWith("#copy:");
+        const hasCopyClass =
+          node.classList && node.classList.contains("copy-token__icon");
         if (hasData || isCopyHref || hasCopyClass) {
           copyLink = node;
           break;
@@ -1230,8 +1235,7 @@ ${resultMessage}`;
         // In simple mode, keep sections containing copyable values open
         if (section.hasCopyTokens) {
           isExpanded = true;
-        } else
-        if (this.showEmbeddedPrompt) {
+        } else if (this.showEmbeddedPrompt) {
           isExpanded = isLatest;
         } else if (idx === lastSectionIdx && isCompletedOrAborted) {
           isExpanded = true;
@@ -1786,7 +1790,8 @@ ${resultMessage}`;
     };
 
     const hasMultilineOrList =
-      tokenizedMessage.includes("\n") || tokenizedMessage.trim().startsWith("- ");
+      tokenizedMessage.includes("\n") ||
+      tokenizedMessage.trim().startsWith("- ");
 
     // 2) Single-line: escape -> linkify -> replace copy tokens
     if (!hasMultilineOrList) {
