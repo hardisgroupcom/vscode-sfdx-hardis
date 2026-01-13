@@ -96,7 +96,7 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
       ? {
           id: `plugin-info-node`,
           label: "Node.js",
-          command: `echo "Nothing to do here :)"`,
+          command: `echo "Nothing to do here 😁"`,
           tooltip: `Node.js is installed`,
           status: "dependency-ok",
           helpUrl: "https://nodejs.org/en/",
@@ -173,7 +173,7 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
       ? {
           id: `plugin-info-git`,
           label: "Git",
-          command: `echo "Nothing to do here :)"`,
+          command: `echo "Nothing to do here 😁"`,
           tooltip: `Git is installed`,
           status: "dependency-ok",
           helpUrl: "https://git-scm.com/",
@@ -319,7 +319,7 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
     const sfdxCliItem = {
       id: `sfdx-cli-info`,
       label: `@salesforce/cli v${sfdxCliVersion}`,
-      command: `echo "Nothing to do here :)"`,
+      command: `echo "Nothing to do here 😁"`,
       tooltip: `Recommended version of @salesforce/cli is installed`,
       status: "dependency-ok",
       helpUrl:
@@ -454,7 +454,7 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
       const pluginItem = {
         id: `plugin-info-${plugin.name}`,
         label: pluginLabel,
-        command: `echo "Nothing to do here :)"`,
+        command: `echo "Nothing to do here 😁"`,
         tooltip: `Latest version of SFDX plugin ${plugin.name} is installed`,
         status: "dependency-ok",
         helpUrl: plugin.helpUrl,
@@ -625,7 +625,7 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
       const extensionItem = {
         id: extension.id,
         label: extension.label,
-        command: `echo "Nothing to do here :)"`,
+        command: `echo "Nothing to do here 😁"`,
         tooltip: `${extension.label} is installed`,
         status: "dependency-ok",
       };

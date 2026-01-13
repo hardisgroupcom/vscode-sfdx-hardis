@@ -360,7 +360,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             label: "Logout from current Org and DevHub",
             command:
               "sf org logout --noprompt || true && sf config:unset target-org target-dev-hub -g && sf config:unset target-org target-dev-hub || true",
-            tooltip: "Log out from orgs :)",
+            tooltip: "Log out from orgs",
 
             helpText:
               "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_org_commands_unified.htm#cli_reference_org_logout_unified",
@@ -946,7 +946,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             label: "Run Local HTML Doc Pages",
             command: "vscode-sfdx-hardis.runLocalHtmlDocPages",
             tooltip:
-              "Run Documentation local web server, then open http://127.0.0.1:8000/ . You need Python on your computer :)",
+              "Run Documentation local web server, then open http://127.0.0.1:8000/ . You need Python on your computer",
             requiresProject: true,
             helpUrl:
               "https://sfdx-hardis.cloudity.com/salesforce-project-documentation/",
@@ -956,7 +956,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             label: "Upload HTML Doc to Salesforce",
             command: "sf hardis:doc:mkdocs-to-salesforce",
             tooltip:
-              "Generates HTML Doc and Uploads it to Salesforce as a static resource with a VfPage & a CustomTab. You need Python on your computer :)",
+              "Generates HTML Doc and Uploads it to Salesforce as a static resource with a VfPage & a CustomTab. You need Python on your computer",
             requiresProject: true,
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/doc/mkdocs-to-salesforce/",
@@ -1085,7 +1085,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
         commands: [
           {
             id: "contact:us",
-            label: "Contact us to get help :)",
+            label: "Contact us to get help 🤗",
             command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
               "https://cloudity.com/#form",
             )}`,

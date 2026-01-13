@@ -459,7 +459,7 @@ export function registerShowPipeline(commands: Commands) {
                 await fs.rename(prActionsFileDraft, prActionsFileNewName);
                 vscode.window
                   .showInformationMessage(
-                    `Draft deployment actions file has been found and associated to ${prButtonInfo.pullRequestLabel || "Pull Request"} #${currentBranchPullRequest.number}. Don't forget to commit & push :)`,
+                    `Draft deployment actions file has been found and associated to ${prButtonInfo.pullRequestLabel || "Pull Request"} #${currentBranchPullRequest.number}. Don't forget to commit & push 😇`,
                     `Commit & Push .sfdx-hardis.${prNumber}.yml`,
                     "Open Git",
                   )

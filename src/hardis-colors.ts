@@ -118,7 +118,7 @@ export class HardisColors {
           await this.applyColor(color);
         } else {
           vscode.window.showWarningMessage(
-            "🦙 You need to select a default org to define a color for it :)",
+            "🦙 You need first to select a default org to define a color for it 😊",
             "Close",
           );
         }
@@ -208,7 +208,7 @@ export class HardisColors {
         );
         if (isMajorOrg) {
           vscode.window.showWarningMessage(
-            `🦙 Your default org is a MAJOR org linked to git branch ${this.majorOrgBranch}, be careful because the CI/CD Server is supposed to deploy there, not you :)`,
+            `🦙 Your default org is a MAJOR org linked to git branch ${this.majorOrgBranch}, be careful because the CI/CD Server is supposed to deploy in this org, not you 😘`,
             "Close",
           );
           return forcedColor || this.describeOrgColors()["major"]; // orange !
@@ -217,7 +217,7 @@ export class HardisColors {
       } else if (PRODUCTION_EDITIONS.includes(org.OrganizationType)) {
         // We are in production !!
         vscode.window.showWarningMessage(
-          "🦙 Your default org is a PRODUCTION org, be careful what you do :)",
+          "🦙 Your default org is a PRODUCTION org, be careful what you do 😲",
           "Close",
         );
         return forcedColor || this.describeOrgColors()["production"]; // red !
