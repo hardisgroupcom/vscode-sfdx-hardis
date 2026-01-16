@@ -89,6 +89,7 @@ export class SfdxHardisConfigHelper {
     { name: "enableDeprecatedDeploymentPlan", scopes: ["global"] },
     { name: "testLevel", scopes: ["branch"] },
     { name: "testCoverageNotBlocking", scopes: ["branch"] },
+    { name: "skipCodeCoverage", scopes: ["branch"] },
   ];
   static readonly SECTIONS = [
     {
@@ -169,6 +170,7 @@ export class SfdxHardisConfigHelper {
         "deploymentApexTestClasses",
         "testLevel",
         "testCoverageNotBlocking",
+        "skipCodeCoverage",
         "enableDeprecatedDeploymentPlan",
       ],
     },
