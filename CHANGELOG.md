@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [6.24.1] 2025-01-16
+
 - Add **skipCodeCoverage** in pipeline configuration (branch scoped)
 
 ## [6.24.0] 2025-01-13
