@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add **skipCodeCoverage** in pipeline configuration (branch scoped)
+
 ## [6.24.0] 2025-01-13
 
 - Adds copy-to-clipboard functionality to logs to enhance UX when configuring new org authentication
