@@ -96,10 +96,10 @@ export class CommandRunner {
     // Add --websocket argument when necessary
     // Exclude commands that need to output files directly (like flow-git-diff)
     const skipWebSocketCommands = [
-      "hardis:project:generate:flow-git-diff",
+      /hardis:project:generate:flow-git-diff\b/,
     ];
-    const shouldSkipWebSocket = skipWebSocketCommands.some(cmdPattern => 
-      cmd.includes(cmdPattern)
+    const shouldSkipWebSocket = skipWebSocketCommands.some(pattern => 
+      pattern.test(cmd)
     );
     
     if (
@@ -591,18 +591,28 @@ export class CommandRunner {
               vscode.window.showTextDocument(doc);
               // Show markdown preview after a short delay to allow the document to render
               setTimeout(() => {
-                vscode.commands.executeCommand("markdown.showPreview", doc);
+                try {
+                  vscode.commands.executeCommand("markdown.showPreview", doc);
+                }
+                catch (previewError: any) {
+                  Logger.log(`Failed to show markdown preview: ${previewError.message}`);
+                  // Preview is optional, so we don't need to notify the user
+                }
               }, CommandRunner.MARKDOWN_PREVIEW_DELAY);
             },
             (error: any) => {
-              Logger.log(`Failed to open generated flow diff file: ${error.message}`);
+              const errorMsg = `Failed to open generated flow diff file: ${error.message}`;
+              Logger.log(errorMsg);
+              vscode.window.showErrorMessage(errorMsg);
             }
           );
         }
       }
     } 
     catch (error: any) {
-      Logger.log(`Error opening flow diff file: ${error.message}`);
+      const errorMsg = `Error opening flow diff file: ${error.message}`;
+      Logger.log(errorMsg);
+      vscode.window.showWarningMessage(`Flow diff file could not be opened automatically. Check the command output for the file location.`);
     }
   }
 }
