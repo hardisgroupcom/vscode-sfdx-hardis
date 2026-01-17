@@ -22,6 +22,10 @@ export class CommandRunner {
   private allowNextDuplicateCommand = false;
   private debugNodeJs = false;
   /**
+   * Delay in milliseconds before showing markdown preview after opening a file
+   */
+  private static readonly MARKDOWN_PREVIEW_DELAY = 500;
+  /**
    * Map of active commands: key is command string, value is { type: 'background'|'terminal', process?: ChildProcess, sentToTerminal?: boolean }
    */
   private activeCommands: Map<
@@ -546,7 +550,7 @@ export class CommandRunner {
    */
   private openGeneratedFlowDiffFile(stdoutLines: string[]) {
     try {
-      const output = stdoutLines.join("");
+      const output = stdoutLines.join("\n");
       // Look for patterns that indicate a generated file
       // The sfdx-hardis CLI typically outputs file paths like:
       // "Generated flow diff: docs/flow-diffs/MyFlow.md"
@@ -579,16 +583,16 @@ export class CommandRunner {
         // Clean up the path
         filePath = filePath.trim().replace(/^["']|["']$/g, '');
         
-        const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-        if (workspaceRoot) {
-          const fullPath = vscode.Uri.file(`${workspaceRoot}/${filePath}`);
+        const workspaceRootUri = vscode.workspace.workspaceFolders?.[0]?.uri;
+        if (workspaceRootUri) {
+          const fullPath = vscode.Uri.joinPath(workspaceRootUri, filePath);
           vscode.workspace.openTextDocument(fullPath).then(
             (doc) => {
               vscode.window.showTextDocument(doc);
-              // Show markdown preview after a short delay
+              // Show markdown preview after a short delay to allow the document to render
               setTimeout(() => {
                 vscode.commands.executeCommand("markdown.showPreview", doc);
-              }, 500);
+              }, CommandRunner.MARKDOWN_PREVIEW_DELAY);
             },
             (error: any) => {
               Logger.log(`Failed to open generated flow diff file: ${error.message}`);
