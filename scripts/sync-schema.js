@@ -2,8 +2,14 @@ const fs = require("fs");
 const https = require("https");
 const path = require("path");
 
-const REMOTE_URL = "https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/refs/heads/main/config/sfdx-hardis.jsonschema.json";
-const DESTINATION_PATH = path.resolve(__dirname, "..", "resources", "sfdx-hardis.jsonschema.json");
+const REMOTE_URL =
+  "https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/refs/heads/main/config/sfdx-hardis.jsonschema.json";
+const DESTINATION_PATH = path.resolve(
+  __dirname,
+  "..",
+  "resources",
+  "sfdx-hardis.jsonschema.json",
+);
 const MAX_REDIRECTS = 5;
 
 function fetchRemote(url, redirectCount = 0) {
@@ -17,13 +23,18 @@ function fetchRemote(url, redirectCount = 0) {
       url,
       {
         headers: {
-          "User-Agent": "vscode-sfdx-hardis-schema-sync"
-        }
+          "User-Agent": "vscode-sfdx-hardis-schema-sync",
+        },
       },
       (response) => {
         const { statusCode, headers } = response;
 
-        if (statusCode && statusCode >= 300 && statusCode < 400 && headers.location) {
+        if (
+          statusCode &&
+          statusCode >= 300 &&
+          statusCode < 400 &&
+          headers.location
+        ) {
           response.resume();
           resolve(fetchRemote(headers.location, redirectCount + 1));
           return;
@@ -31,7 +42,11 @@ function fetchRemote(url, redirectCount = 0) {
 
         if (statusCode !== 200) {
           response.resume();
-          reject(new Error(`Unexpected status code ${statusCode} while fetching schema`));
+          reject(
+            new Error(
+              `Unexpected status code ${statusCode} while fetching schema`,
+            ),
+          );
           return;
         }
 
@@ -43,7 +58,7 @@ function fetchRemote(url, redirectCount = 0) {
         response.on("end", () => {
           resolve(rawData);
         });
-      }
+      },
     );
 
     request.on("error", (error) => {
@@ -58,9 +73,11 @@ async function main() {
 
     JSON.parse(remoteContent);
 
-    const localContent = await fs.promises.readFile(DESTINATION_PATH, "utf8").catch(() => {
-      return null;
-    });
+    const localContent = await fs.promises
+      .readFile(DESTINATION_PATH, "utf8")
+      .catch(() => {
+        return null;
+      });
 
     if (localContent === remoteContent) {
       console.log("Schema already up to date.");
@@ -69,8 +86,7 @@ async function main() {
 
     await fs.promises.writeFile(DESTINATION_PATH, remoteContent, "utf8");
     console.log("Schema synchronized to the latest remote version.");
-  }
-  catch (error) {
+  } catch (error) {
     console.error("Failed to synchronize schema:", error.message);
     process.exit(1);
   }
