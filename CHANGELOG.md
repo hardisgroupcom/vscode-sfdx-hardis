@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [6.25.0] 2025-01-18
+
 - Allow Package XML Viewer to also edit package
 - Add synchronization of JSON Schema in build script
 - Display package and flow contextual menu commands only on relevant files
