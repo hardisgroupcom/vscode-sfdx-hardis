@@ -178,44 +178,46 @@
                                 <div key={metadataType.name} class="type-card">
                                     <div class="type-header" onclick={toggleTypeExpansion} data-type-name={metadataType.name}>
                                         <div class="type-info">
-                                            <lightning-icon icon-name={metadataType.iconName} size="small" class="type-icon"></lightning-icon>
-                                            <div class="type-details">
-                                                <h3 class="type-name"><span class="metadata-type-text">{metadataType.name}</span></h3>
-                                                <p class="type-count">{metadataType.memberCount} members</p>
-                                            </div>
-                                        
-                                        <div class="type-doc-button slds-align-top">
-                                            <lightning-icon
-                                                icon-name="utility:info"
-                                                size="x-small"
-                                                alternative-text="View documentation"
-                                                title={metadataType.urlTooltip}
-                                                onclick={openMetadataDocumentation}
-                                                data-type-name={metadataType.name}
-                                                class="doc-button"
-                                            ></lightning-icon>
-                                        </div>
-                                        <template if:true={editMode}>
-                                            <div class="type-actions-right">
-                                                <lightning-button
-                                                    variant="neutral"
-                                                    label="Add Member"
-                                                    title="Add a metadata element"
-                                                    onclick={addMetadataMember}
+                                            <div class="type-info-left">
+                                                <lightning-icon icon-name={metadataType.iconName} size="small" class="type-icon"></lightning-icon>
+                                                <div class="type-details">
+                                                    <h3 class="type-name"><span class="metadata-type-text">{metadataType.name}</span></h3>
+                                                    <p class="type-count">{metadataType.memberCount} members</p>
+                                                </div>
+                                            
+                                            <div class="type-doc-button slds-align-top">
+                                                <lightning-icon
+                                                    icon-name="utility:info"
+                                                    size="x-small"
+                                                    alternative-text="View documentation"
+                                                    title={metadataType.urlTooltip}
+                                                    onclick={openMetadataDocumentation}
                                                     data-type-name={metadataType.name}
-                                                    icon-name="utility:add"
-                                                    class="member-action-button"
-                                                ></lightning-button>
-                                                <lightning-button
-                                                    variant="destructive"
-                                                    label="Delete"
-                                                    title="Remove metadata type"
-                                                    onclick={removeMetadataType}
-                                                    data-type-name={metadataType.name}
-                                                    class="type-delete-button"
-                                                ></lightning-button>
+                                                    class="doc-button"
+                                                ></lightning-icon>
                                             </div>
-                                        </template>
+                                            </div>
+                                            <template if:true={editMode}>
+                                                <div class="type-actions-center">
+                                                    <lightning-button
+                                                        variant="neutral"
+                                                        label="Add Member"
+                                                        title="Add a metadata element"
+                                                        onclick={addMetadataMember}
+                                                        data-type-name={metadataType.name}
+                                                        icon-name="utility:add"
+                                                        class="member-action-button"
+                                                    ></lightning-button>
+                                                    <lightning-button
+                                                        variant="destructive"
+                                                        label="Delete"
+                                                        title="Remove metadata type"
+                                                        onclick={removeMetadataType}
+                                                        data-type-name={metadataType.name}
+                                                        class="type-delete-button"
+                                                    ></lightning-button>
+                                                </div>
+                                            </template>
                                         </div>
                                         <div class="type-toggle">
                                             <lightning-icon 

@@ -334,6 +334,14 @@
     display: flex;
     align-items: center;
     gap: 1rem;
+    width: 100%;
+}
+
+.type-info-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    min-width: 0;
 }
 
 .type-action-buttons {
@@ -352,6 +360,14 @@
     align-items: center;
     gap: 0.35rem;
     margin-left: auto;
+}
+
+.type-actions-center {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .type-details {
