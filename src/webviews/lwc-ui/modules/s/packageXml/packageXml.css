@@ -362,14 +362,6 @@
     margin-left: auto;
 }
 
-.type-actions-center {
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    margin-left: auto;
-    margin-right: auto;
-}
-
 .type-details {
     display: flex;
     flex-direction: column;
