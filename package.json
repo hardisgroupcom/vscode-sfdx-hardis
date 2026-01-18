@@ -406,17 +406,17 @@
         {
           "command": "vscode-sfdx-hardis.showPackageXml",
           "when": "resourceExtname == '.xml' && resourceFilename =~ /([Pp]ackage|[Dd]estructive)/",
-          "group": "z_sfdxhardis@8"
+          "group": "navigation@1"
         },
         {
           "command": "vscode-sfdx-hardis.runAnonymousApex",
           "when": "resourceExtname == '.apex'",
-          "group": "z_sfdxhardis@10"
+          "group": "navigation@2"
         },
         {
           "command": "vscode-sfdx-hardis.displayLogDebugOnly",
           "when": "resourceExtname == '.log'",
-          "group": "z_sfdxhardis@10"
+          "group": "navigation@3"
         },
         {
           "command": "vscode-sfdx-hardis.generatePackageXmlDoc",
@@ -510,17 +510,17 @@
         {
           "command": "vscode-sfdx-hardis.showPackageXml",
           "when": "resourceExtname == '.xml' && resourceFilename =~ /([Pp]ackage|[Dd]estructive)/",
-          "group": "z_sfdxhardis@8"
+          "group": "navigation@1"
         },
         {
           "command": "vscode-sfdx-hardis.runAnonymousApex",
           "when": "resourceExtname == '.apex'",
-          "group": "z_sfdxhardis@10"
+          "group": "navigation@2"
         },
         {
           "command": "vscode-sfdx-hardis.displayLogDebugOnly",
           "when": "resourceExtname == '.log'",
-          "group": "z_sfdxhardis@10"
+          "group": "navigation@3"
         },
         {
           "command": "vscode-sfdx-hardis.generatePackageXmlDoc",

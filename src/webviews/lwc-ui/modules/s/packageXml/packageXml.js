@@ -10,7 +10,11 @@ import "s/forceLightTheme"; // Ensure light theme is applied
 const METADATA_DOC_BASE_URL =
   "https://sf-explorer.github.io/sf-doc-to-json/#/cloud/all/object/";
 
-const createEmptyPackageData = () => ({ apiVersion: "", namespace: "", types: [] });
+const createEmptyPackageData = () => ({
+  apiVersion: "",
+  namespace: "",
+  types: [],
+});
 
 export default class PackageXml extends LightningElement {
   @track packageData = createEmptyPackageData();
@@ -27,6 +31,8 @@ export default class PackageXml extends LightningElement {
   @track showAddMemberModal = false;
   @track newEntryName = "";
   @track pendingTypeNameForMember = "";
+
+  modalNeedsFocus = false;
 
   expandedTypes = new Set();
   shouldRestoreViewPosition = false;
@@ -97,16 +103,25 @@ export default class PackageXml extends LightningElement {
     if (fileName.includes("skip-items") || fileName.includes("package-skip")) {
       return "skip";
     }
-    if (fileName.includes("backup-items") || fileName.includes("package-backup")) {
+    if (
+      fileName.includes("backup-items") ||
+      fileName.includes("package-backup")
+    ) {
       return "backup";
     }
-    if (fileName.includes("all-org-items") || fileName.includes("package-all-org")) {
+    if (
+      fileName.includes("all-org-items") ||
+      fileName.includes("package-all-org")
+    ) {
       return "all-org";
     }
     if (fileName.includes("destructive")) {
       return "destructive";
     }
-    if (fileName.includes("no-overwrite") || fileName.includes("packagedeployonce")) {
+    if (
+      fileName.includes("no-overwrite") ||
+      fileName.includes("packagedeployonce")
+    ) {
       return "no-overwrite";
     }
     if (fileName.includes("deploy")) {
@@ -653,6 +668,7 @@ export default class PackageXml extends LightningElement {
     this.newEntryName = "";
     this.showAddTypeModal = !typeName;
     this.showAddMemberModal = !!typeName;
+    this.modalNeedsFocus = true;
   }
 
   addMetadataType(event) {
@@ -791,5 +807,32 @@ export default class PackageXml extends LightningElement {
     this.showAddMemberModal = false;
     this.newEntryName = "";
     this.pendingTypeNameForMember = "";
+    this.modalNeedsFocus = false;
+  }
+
+  renderedCallback() {
+    if (!this.modalNeedsFocus) {
+      return;
+    }
+
+    if (!this.showAddTypeModal && !this.showAddMemberModal) {
+      this.modalNeedsFocus = false;
+      return;
+    }
+
+    const input = this.template.querySelector('[data-modal-input="new-entry"]');
+    if (input && typeof input.focus === "function") {
+      // Defer focus until DOM is painted to avoid race conditions.
+      window.requestAnimationFrame(() => {
+        try {
+          input.focus();
+        } finally {
+          this.modalNeedsFocus = false;
+        }
+      });
+      return;
+    }
+
+    this.modalNeedsFocus = false;
   }
 }

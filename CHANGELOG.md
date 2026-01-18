@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Refactor command groups for improved navigation in context menus
+- Add focus management for modal input fields in package XML component
+
 ## [6.25.0] 2025-01-18
 
 - Allow Package XML Viewer to also edit package
