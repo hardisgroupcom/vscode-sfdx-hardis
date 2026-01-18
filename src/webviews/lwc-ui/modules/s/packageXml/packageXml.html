@@ -196,6 +196,21 @@
                                             ></lightning-icon>
                                         </div>
                                         <template if:true={editMode}>
+                                            <template if:true={metadataType.isExpanded}>
+                                                <div class="type-action-buttons">
+                                                    <lightning-button
+                                                        variant="neutral"
+                                                        label="Add Member"
+                                                        title="Add a metadata element"
+                                                        onclick={addMetadataMember}
+                                                        data-type-name={metadataType.name}
+                                                        icon-name="utility:add"
+                                                        class="member-action-button"
+                                                    ></lightning-button>
+                                                </div>
+                                            </template>
+                                        </template>
+                                        <template if:true={editMode}>
                                             <div class="type-action-buttons">
                                                 <lightning-button-icon
                                                     icon-name="utility:delete"
@@ -228,19 +243,6 @@
                                             </template>
                                             
                                             <template if:false={metadataType.hasWildcard}>
-                                                <template if:true={editMode}>
-                                                    <div class="type-members-actions">
-                                                        <lightning-button
-                                                            variant="neutral"
-                                                            label="Add Member"
-                                                            title="Add a metadata element"
-                                                            onclick={addMetadataMember}
-                                                            data-type-name={metadataType.name}
-                                                            icon-name="utility:add"
-                                                            class="member-action-button"
-                                                        ></lightning-button>
-                                                    </div>
-                                                </template>
                                                 <div class="members-grid">
                                                     <template for:each={metadataType.members} for:item="member">
                                                         <div key={member.name} class="member-item" onclick={openMember} data-type-name={metadataType.name} data-member-name={member.name} role="button" tabindex="0">
