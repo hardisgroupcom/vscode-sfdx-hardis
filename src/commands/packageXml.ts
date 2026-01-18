@@ -122,7 +122,12 @@ export async function showPackageXmlPanel(
 
 async function handleAddMetadataType(
   data: any,
-  config: { packageType: any; filePath: any; fallbackFilePath: any; title: any },
+  config: {
+    packageType: any;
+    filePath: any;
+    fallbackFilePath: any;
+    title: any;
+  },
   panel: LwcUiPanel,
 ) {
   await mutateWithType(data, config, panel, (packageData, typeName) => {
@@ -139,7 +144,12 @@ async function handleAddMetadataType(
 
 async function handleAddMetadataMember(
   data: any,
-  config: { packageType: any; filePath: any; fallbackFilePath: any; title: any },
+  config: {
+    packageType: any;
+    filePath: any;
+    fallbackFilePath: any;
+    title: any;
+  },
   panel: LwcUiPanel,
 ) {
   await mutateWithTypeAndMember(
@@ -165,7 +175,12 @@ async function handleAddMetadataMember(
 
 async function handleRemoveMetadataType(
   data: any,
-  config: { packageType: any; filePath: any; fallbackFilePath: any; title: any },
+  config: {
+    packageType: any;
+    filePath: any;
+    fallbackFilePath: any;
+    title: any;
+  },
   panel: LwcUiPanel,
 ) {
   await mutateWithType(data, config, panel, (packageData, typeName) => ({
@@ -176,7 +191,12 @@ async function handleRemoveMetadataType(
 
 async function handleRemoveMetadataMember(
   data: any,
-  config: { packageType: any; filePath: any; fallbackFilePath: any; title: any },
+  config: {
+    packageType: any;
+    filePath: any;
+    fallbackFilePath: any;
+    title: any;
+  },
   panel: LwcUiPanel,
 ) {
   await mutateWithTypeAndMember(
@@ -189,7 +209,9 @@ async function handleRemoveMetadataMember(
           if (t.name !== typeName) {
             return t;
           }
-          const remainingMembers = t.members.filter((m: string) => m !== memberName);
+          const remainingMembers = t.members.filter(
+            (m: string) => m !== memberName,
+          );
           if (remainingMembers.length === 0) {
             return null;
           }
@@ -204,7 +226,12 @@ async function handleRemoveMetadataMember(
 
 async function mutatePackageXml(
   data: any,
-  config: { packageType: any; filePath: any; fallbackFilePath: any; title: any },
+  config: {
+    packageType: any;
+    filePath: any;
+    fallbackFilePath: any;
+    title: any;
+  },
   panel: LwcUiPanel,
   mutator: (pkg: any) => any,
 ) {
@@ -231,16 +258,26 @@ async function mutatePackageXml(
         config: config,
       },
     });
-    vscode.window.showErrorMessage(`Unable to update package.xml: ${error.message}`);
+    vscode.window.showErrorMessage(
+      `Unable to update package.xml: ${error.message}`,
+    );
   }
 }
 
 async function mutateWithRequiredFields(
   data: any,
-  config: { packageType: any; filePath: any; fallbackFilePath: any; title: any },
+  config: {
+    packageType: any;
+    filePath: any;
+    fallbackFilePath: any;
+    title: any;
+  },
   panel: LwcUiPanel,
   requiredFields: Array<"metadataType" | "memberName">,
-  mutator: (pkg: any, values: { metadataType?: string; memberName?: string }) => any,
+  mutator: (
+    pkg: any,
+    values: { metadataType?: string; memberName?: string },
+  ) => any,
 ) {
   const values: { metadataType?: string; memberName?: string } = {};
   for (const field of requiredFields) {
@@ -258,7 +295,12 @@ async function mutateWithRequiredFields(
 
 async function mutateWithType(
   data: any,
-  config: { packageType: any; filePath: any; fallbackFilePath: any; title: any },
+  config: {
+    packageType: any;
+    filePath: any;
+    fallbackFilePath: any;
+    title: any;
+  },
   panel: LwcUiPanel,
   mutator: (pkg: any, typeName: string) => any,
 ) {
@@ -267,13 +309,19 @@ async function mutateWithType(
     config,
     panel,
     ["metadataType"],
-    (packageData, values) => mutator(packageData, values.metadataType as string),
+    (packageData, values) =>
+      mutator(packageData, values.metadataType as string),
   );
 }
 
 async function mutateWithTypeAndMember(
   data: any,
-  config: { packageType: any; filePath: any; fallbackFilePath: any; title: any },
+  config: {
+    packageType: any;
+    filePath: any;
+    fallbackFilePath: any;
+    title: any;
+  },
   panel: LwcUiPanel,
   mutator: (pkg: any, typeName: string, memberName: string) => any,
 ) {
@@ -432,7 +480,10 @@ export async function parsePackageXml(xmlContent: string): Promise<any> {
 
 async function savePackageXmlData(
   relativeFilePath: string,
-  packageData: { apiVersion?: string; types: Array<{ name: string; members: string[] }> },
+  packageData: {
+    apiVersion?: string;
+    types: Array<{ name: string; members: string[] }>;
+  },
 ) {
   const workspaceRoot = getWorkspaceRoot();
   const packagePath = path.join(workspaceRoot, relativeFilePath);

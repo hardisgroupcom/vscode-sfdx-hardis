@@ -10,7 +10,11 @@ import "s/forceLightTheme"; // Ensure light theme is applied
 const METADATA_DOC_BASE_URL =
   "https://sf-explorer.github.io/sf-doc-to-json/#/cloud/all/object/";
 
-const createEmptyPackageData = () => ({ apiVersion: "", namespace: "", types: [] });
+const createEmptyPackageData = () => ({
+  apiVersion: "",
+  namespace: "",
+  types: [],
+});
 
 export default class PackageXml extends LightningElement {
   @track packageData = createEmptyPackageData();
@@ -99,16 +103,25 @@ export default class PackageXml extends LightningElement {
     if (fileName.includes("skip-items") || fileName.includes("package-skip")) {
       return "skip";
     }
-    if (fileName.includes("backup-items") || fileName.includes("package-backup")) {
+    if (
+      fileName.includes("backup-items") ||
+      fileName.includes("package-backup")
+    ) {
       return "backup";
     }
-    if (fileName.includes("all-org-items") || fileName.includes("package-all-org")) {
+    if (
+      fileName.includes("all-org-items") ||
+      fileName.includes("package-all-org")
+    ) {
       return "all-org";
     }
     if (fileName.includes("destructive")) {
       return "destructive";
     }
-    if (fileName.includes("no-overwrite") || fileName.includes("packagedeployonce")) {
+    if (
+      fileName.includes("no-overwrite") ||
+      fileName.includes("packagedeployonce")
+    ) {
       return "no-overwrite";
     }
     if (fileName.includes("deploy")) {
@@ -813,8 +826,7 @@ export default class PackageXml extends LightningElement {
       window.requestAnimationFrame(() => {
         try {
           input.focus();
-        }
-        finally {
+        } finally {
           this.modalNeedsFocus = false;
         }
       });
