@@ -196,31 +196,24 @@
                                             ></lightning-icon>
                                         </div>
                                         <template if:true={editMode}>
-                                            <template if:true={metadataType.isExpanded}>
-                                                <div class="type-action-buttons">
-                                                    <lightning-button
-                                                        variant="neutral"
-                                                        label="Add Member"
-                                                        title="Add a metadata element"
-                                                        onclick={addMetadataMember}
-                                                        data-type-name={metadataType.name}
-                                                        icon-name="utility:add"
-                                                        class="member-action-button"
-                                                    ></lightning-button>
-                                                </div>
-                                            </template>
-                                        </template>
-                                        <template if:true={editMode}>
-                                            <div class="type-action-buttons">
-                                                <lightning-button-icon
-                                                    icon-name="utility:delete"
-                                                    variant="bare"
-                                                    alternative-text="Remove metadata type"
+                                            <div class="type-actions-right">
+                                                <lightning-button
+                                                    variant="neutral"
+                                                    label="Add Member"
+                                                    title="Add a metadata element"
+                                                    onclick={addMetadataMember}
+                                                    data-type-name={metadataType.name}
+                                                    icon-name="utility:add"
+                                                    class="member-action-button"
+                                                ></lightning-button>
+                                                <lightning-button
+                                                    variant="destructive"
+                                                    label="Delete"
                                                     title="Remove metadata type"
                                                     onclick={removeMetadataType}
                                                     data-type-name={metadataType.name}
-                                                    class="icon-button"
-                                                ></lightning-button-icon>
+                                                    class="type-delete-button"
+                                                ></lightning-button>
                                             </div>
                                         </template>
                                         </div>

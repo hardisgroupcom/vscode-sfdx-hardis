@@ -340,7 +340,18 @@
     display: flex;
     align-items: center;
     gap: 0.25rem;
-    margin-left: 0.5rem;
+    margin-left: 0;
+}
+
+.type-delete-button {
+    min-width: 84px;
+}
+
+.type-actions-right {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-left: auto;
 }
 
 .type-details {
