@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add synchronization of JSON Schema in build script
+
 ## [6.24.1] 2025-01-16
 
 - Add **skipCodeCoverage** in pipeline configuration (branch scoped)

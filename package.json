@@ -556,7 +556,9 @@
   },
   "scripts": {
     "vscode:prepublish": "yarn run package",
+    "sync:schema": "node scripts/sync-schema.js",
     "compile": "tsc -p ./",
+    "prebuild": "yarn run sync:schema",
     "build": "webpack --config webpack.prod.js",
     "watch": "webpack --config webpack.dev.js --watch",
     "dev": "webpack --config webpack.dev.js",
