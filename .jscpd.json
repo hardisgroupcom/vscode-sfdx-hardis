@@ -20,7 +20,7 @@
     "**/*.json",
     "**/pipelineConfig.js",
     "**/sfdxHardisConfig.ts",
-    "**packageXml.js",
+    "**packageXml.ts",
     "**/src/utils/gitProviders/**"
   ]
 }
