@@ -28,6 +28,8 @@ export default class PackageXml extends LightningElement {
   @track newEntryName = "";
   @track pendingTypeNameForMember = "";
 
+  modalNeedsFocus = false;
+
   expandedTypes = new Set();
   shouldRestoreViewPosition = false;
   lastScrollY = 0;
@@ -653,6 +655,7 @@ export default class PackageXml extends LightningElement {
     this.newEntryName = "";
     this.showAddTypeModal = !typeName;
     this.showAddMemberModal = !!typeName;
+    this.modalNeedsFocus = true;
   }
 
   addMetadataType(event) {
@@ -791,5 +794,33 @@ export default class PackageXml extends LightningElement {
     this.showAddMemberModal = false;
     this.newEntryName = "";
     this.pendingTypeNameForMember = "";
+    this.modalNeedsFocus = false;
+  }
+
+  renderedCallback() {
+    if (!this.modalNeedsFocus) {
+      return;
+    }
+
+    if (!this.showAddTypeModal && !this.showAddMemberModal) {
+      this.modalNeedsFocus = false;
+      return;
+    }
+
+    const input = this.template.querySelector('[data-modal-input="new-entry"]');
+    if (input && typeof input.focus === "function") {
+      // Defer focus until DOM is painted to avoid race conditions.
+      window.requestAnimationFrame(() => {
+        try {
+          input.focus();
+        }
+        finally {
+          this.modalNeedsFocus = false;
+        }
+      });
+      return;
+    }
+
+    this.modalNeedsFocus = false;
   }
 }
