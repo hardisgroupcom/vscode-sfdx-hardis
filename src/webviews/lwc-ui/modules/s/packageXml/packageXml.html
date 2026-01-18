@@ -10,6 +10,13 @@
                         <p class="header-subtitle">{packageDescription}</p>
                     </div>
                     <div class="header-actions">
+                            <lightning-input
+                                type="toggle"
+                                label="Edit mode"
+                                checked={editMode}
+                                onchange={toggleEditMode}
+                                class="edit-toggle"
+                            ></lightning-input>
                         <lightning-button 
                             variant="outline-brand" 
                             label="Refresh" 
@@ -37,6 +44,53 @@
                     <p class="loading-text">Loading package configuration...</p>
                 </div>
             </template>
+
+            <template if:true={isMutating}>
+                <div class="mutating-overlay">
+                    <lightning-spinner alternative-text="Updating package..." size="small"></lightning-spinner>
+                </div>
+            </template>
+
+                        <!-- Add Type Modal -->
+                        <template if:true={showAddTypeModal}>
+                            <div class="modal-backdrop" onclick={closeModals}></div>
+                            <div class="modal-dialog">
+                                <div class="modal-header">Add Metadata Type</div>
+                                <div class="modal-body">
+                                    <lightning-input
+                                        type="text"
+                                        label="Metadata Type API Name"
+                                        value={newEntryName}
+                                        onchange={handleModalInputChange}
+                                    ></lightning-input>
+                                </div>
+                                <div class="modal-footer">
+                                    <lightning-button variant="neutral" label="Cancel" onclick={closeModals}></lightning-button>
+                                    <lightning-button variant="brand" label="Add" onclick={confirmAddType} class="modal-primary"></lightning-button>
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- Add Member Modal -->
+                        <template if:true={showAddMemberModal}>
+                            <div class="modal-backdrop" onclick={closeModals}></div>
+                            <div class="modal-dialog">
+                                <div class="modal-header">Add Member to {pendingTypeNameForMember}</div>
+                                <div class="modal-body">
+                                    <lightning-input
+                                        type="text"
+                                        label="Member Name"
+                                        value={newEntryName}
+                                        onchange={handleModalInputChange}
+                                    ></lightning-input>
+                                </div>
+                                <div class="modal-footer">
+                                    <lightning-button variant="neutral" label="Cancel" onclick={closeModals}></lightning-button>
+                                    <lightning-button variant="brand" label="Add" onclick={confirmAddMember} class="modal-primary"></lightning-button>
+                                </div>
+                            </div>
+                        </template>
+
 
             <template if:true={hasError}>
                 <!-- Error State -->
@@ -97,13 +151,6 @@
                 <div class="section">
                     <div class="section-header">
                         <div class="section-header-top">
-                            <div class="section-title-group">
-                                <h2 class="section-title">
-                                    <span class="section-icon">{metadataTypesIcon}</span>
-                                    {metadataTypesTitle}
-                                </h2>
-                                <p class="section-subtitle">{metadataTypesDescription}</p>
-                            </div>
                             <div class="filter-container">
                                 <lightning-input
                                     type="search"
@@ -113,6 +160,18 @@
                                     class="filter-input"
                                 ></lightning-input>
                             </div>
+                            <template if:true={editMode}>
+                                <div class="section-actions">
+                                    <lightning-button
+                                        variant="brand"
+                                        label="Add Type"
+                                        title="Add a new metadata type"
+                                        onclick={addMetadataType}
+                                        icon-name="utility:add"
+                                        class="header-button"
+                                    ></lightning-button>
+                                </div>
+                            </template>
                         </div>
                     </div>
 
@@ -139,6 +198,19 @@
                                                 class="doc-button"
                                             ></lightning-icon>
                                         </div>
+                                        <template if:true={editMode}>
+                                            <div class="type-action-buttons">
+                                                <lightning-button-icon
+                                                    icon-name="utility:delete"
+                                                    variant="bare"
+                                                    alternative-text="Remove metadata type"
+                                                    title="Remove metadata type"
+                                                    onclick={removeMetadataType}
+                                                    data-type-name={metadataType.name}
+                                                    class="icon-button"
+                                                ></lightning-button-icon>
+                                            </div>
+                                        </template>
                                         </div>
                                         <div class="type-toggle">
                                             <lightning-icon 
@@ -159,6 +231,19 @@
                                             </template>
                                             
                                             <template if:false={metadataType.hasWildcard}>
+                                                <template if:true={editMode}>
+                                                    <div class="type-members-actions">
+                                                        <lightning-button
+                                                            variant="neutral"
+                                                            label="Add Member"
+                                                            title="Add a metadata element"
+                                                            onclick={addMetadataMember}
+                                                            data-type-name={metadataType.name}
+                                                            icon-name="utility:add"
+                                                            class="member-action-button"
+                                                        ></lightning-button>
+                                                    </div>
+                                                </template>
                                                 <div class="members-grid">
                                                     <template for:each={metadataType.members} for:item="member">
                                                         <div key={member.name} class="member-item" onclick={openMember} data-type-name={metadataType.name} data-member-name={member.name} role="button" tabindex="0">
@@ -176,6 +261,20 @@
                                                                         data-member-name={member.name}
                                                                         class="member-doc-icon"
                                                                     ></lightning-icon>
+                                                                </div>
+                                                            </template>
+                                                            <template if:true={editMode}>
+                                                                <div class="member-delete-button">
+                                                                    <lightning-button-icon
+                                                                        icon-name="utility:delete"
+                                                                        variant="bare"
+                                                                        alternative-text="Remove metadata member"
+                                                                        title="Remove metadata member"
+                                                                        onclick={removeMetadataMember}
+                                                                        data-type-name={metadataType.name}
+                                                                        data-member-name={member.name}
+                                                                        class="icon-button"
+                                                                    ></lightning-button-icon>
                                                                 </div>
                                                             </template>
                                                         </div>

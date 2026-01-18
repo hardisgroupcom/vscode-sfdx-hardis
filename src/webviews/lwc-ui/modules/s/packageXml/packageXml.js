@@ -19,18 +19,26 @@ export default class PackageXml extends LightningElement {
   @track packageFilePath = "";
   @track packageConfig = null;
   @track filterText = "";
+  @track editMode = false;
+  @track isMutating = false;
+  @track showAddTypeModal = false;
+  @track showAddMemberModal = false;
+  @track newEntryName = "";
+  @track pendingTypeNameForMember = "";
+
+  expandedTypes = new Set();
+  shouldRestoreViewPosition = false;
+  lastScrollY = 0;
 
   @api
   initialize(data) {
     console.log("Package XML component initialized:", data);
     this.isLoading = false;
 
-    // Extract package configuration
     this.packageConfig = data?.config || {};
     this.packageFilePath =
       this.packageConfig.filePath || "manifest/package.xml";
 
-    // Auto-detect package type from file path if not explicitly provided
     this.packageType =
       this.packageConfig.type ||
       this.detectPackageTypeFromPath(this.packageFilePath);
@@ -39,13 +47,32 @@ export default class PackageXml extends LightningElement {
       this.hasError = true;
       this.errorMessage = data.error;
       this.packageData = null;
-    } else if (data?.packageData) {
-      this.hasError = false;
-      this.packageData = this.processPackageData(data.packageData);
-    } else {
-      this.hasError = true;
-      this.errorMessage = "No package data provided";
+      this.isMutating = false;
+      this.shouldRestoreViewPosition = false;
+      return;
     }
+
+    if (data?.packageData) {
+      this.hasError = false;
+      const restorePosition = this.shouldRestoreViewPosition;
+      this.packageData = this.processPackageData(data.packageData);
+      this.isMutating = false;
+      this.shouldRestoreViewPosition = false;
+
+      if (restorePosition) {
+        window.requestAnimationFrame(() => {
+          window.scrollTo(0, this.lastScrollY || 0);
+          this.isMutating = false;
+          this.shouldRestoreViewPosition = false;
+        });
+      }
+      return;
+    }
+
+    this.hasError = true;
+    this.errorMessage = "No package data provided";
+    this.isMutating = false;
+    this.shouldRestoreViewPosition = false;
   }
 
   @api
@@ -58,36 +85,34 @@ export default class PackageXml extends LightningElement {
 
   // Auto-detect package type from file path
   detectPackageTypeFromPath(filePath) {
-    if (!filePath) return "manifest";
+    if (!filePath) {
+      return "manifest";
+    }
 
     const fileName = filePath.toLowerCase();
 
     if (fileName.includes("skip-items") || fileName.includes("package-skip")) {
       return "skip";
-    } else if (
-      fileName.includes("backup-items") ||
-      fileName.includes("package-backup")
-    ) {
-      return "backup";
-    } else if (
-      fileName.includes("all-org-items") ||
-      fileName.includes("package-all-org")
-    ) {
-      return "all-org";
-    } else if (fileName.includes("destructive")) {
-      return "destructive";
-    } else if (
-      fileName.includes("no-overwrite") ||
-      fileName.includes("packagedeployonce")
-    ) {
-      return "no-overwrite";
-    } else if (fileName.includes("deploy")) {
-      return "deploy";
-    } else if (fileName.includes("retrieve")) {
-      return "retrieve";
-    } else {
-      return "manifest"; // Default fallback
     }
+    if (fileName.includes("backup-items") || fileName.includes("package-backup")) {
+      return "backup";
+    }
+    if (fileName.includes("all-org-items") || fileName.includes("package-all-org")) {
+      return "all-org";
+    }
+    if (fileName.includes("destructive")) {
+      return "destructive";
+    }
+    if (fileName.includes("no-overwrite") || fileName.includes("packagedeployonce")) {
+      return "no-overwrite";
+    }
+    if (fileName.includes("deploy")) {
+      return "deploy";
+    }
+    if (fileName.includes("retrieve")) {
+      return "retrieve";
+    }
+    return "manifest";
   }
 
   // Process and enhance package data
@@ -116,8 +141,10 @@ export default class PackageXml extends LightningElement {
         memberCount: hasWildcard ? "All" : members.length,
         hasWildcard: hasWildcard,
         members: members,
-        isExpanded: false,
-        expandIcon: "utility:chevronright",
+        isExpanded: this.expandedTypes.has(type.name),
+        expandIcon: this.expandedTypes.has(type.name)
+          ? "utility:chevrondown"
+          : "utility:chevronright",
         iconName: iconInfo.icon,
         memberIconName: iconInfo.memberIcon,
       };
@@ -505,6 +532,10 @@ export default class PackageXml extends LightningElement {
     this.filterText = event.target.value.toLowerCase();
   }
 
+  toggleEditMode(event) {
+    this.editMode = !!event.target?.checked;
+  }
+
   toggleTypeExpansion(event) {
     const typeName = event.currentTarget.dataset.typeName;
     if (!typeName || !this.packageData?.types) return;
@@ -515,6 +546,11 @@ export default class PackageXml extends LightningElement {
       types: this.packageData.types.map((type) => {
         if (type.name === typeName) {
           const isExpanded = !type.isExpanded;
+          if (isExpanded) {
+            this.expandedTypes.add(typeName);
+          } else {
+            this.expandedTypes.delete(typeName);
+          }
           return {
             ...type,
             isExpanded: isExpanded,
@@ -599,5 +635,147 @@ export default class PackageXml extends LightningElement {
     } catch (e) {
       // ignore
     }
+  }
+
+  addMetadataType(event) {
+    try {
+      if (event && typeof event.stopPropagation === "function") {
+        event.stopPropagation();
+      }
+
+      this.newEntryName = "";
+      this.showAddTypeModal = true;
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  addMetadataMember(event) {
+    try {
+      if (event && typeof event.stopPropagation === "function") {
+        event.stopPropagation();
+      }
+
+      const typeName = event?.currentTarget?.dataset?.typeName;
+      if (!typeName) {
+        return;
+      }
+
+      this.pendingTypeNameForMember = typeName;
+      this.newEntryName = "";
+      this.showAddMemberModal = true;
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  removeMetadataType(event) {
+    try {
+      if (event && typeof event.stopPropagation === "function") {
+        event.stopPropagation();
+      }
+
+      const typeName = event?.currentTarget?.dataset?.typeName;
+      if (!typeName) {
+        return;
+      }
+
+      this.captureViewPosition();
+      this.isMutating = true;
+      this.expandedTypes.add(typeName);
+      this.shouldRestoreViewPosition = true;
+
+      window.sendMessageToVSCode({
+        type: "removeMetadataType",
+        data: {
+          filePath: this.packageFilePath,
+          metadataType: typeName,
+        },
+      });
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  removeMetadataMember(event) {
+    try {
+      if (event && typeof event.stopPropagation === "function") {
+        event.stopPropagation();
+      }
+
+      const typeName = event?.currentTarget?.dataset?.typeName;
+      const memberName = event?.currentTarget?.dataset?.memberName;
+      if (!typeName || !memberName) {
+        return;
+      }
+
+      this.captureViewPosition();
+      this.isMutating = true;
+      this.expandedTypes.add(typeName);
+      this.shouldRestoreViewPosition = true;
+
+      window.sendMessageToVSCode({
+        type: "removeMetadataMember",
+        data: {
+          filePath: this.packageFilePath,
+          metadataType: typeName,
+          memberName: memberName,
+        },
+      });
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  captureViewPosition() {
+    this.lastScrollY = window.scrollY || 0;
+  }
+
+  handleModalInputChange(event) {
+    this.newEntryName = event.target.value || "";
+  }
+
+  confirmAddType() {
+    const cleanName = (this.newEntryName || "").trim();
+    if (!cleanName) {
+      this.closeModals();
+      return;
+    }
+
+    this.isMutating = true;
+    window.sendMessageToVSCode({
+      type: "addMetadataType",
+      data: {
+        filePath: this.packageFilePath,
+        metadataType: cleanName,
+      },
+    });
+    this.closeModals();
+  }
+
+  confirmAddMember() {
+    const cleanName = (this.newEntryName || "").trim();
+    if (!cleanName || !this.pendingTypeNameForMember) {
+      this.closeModals();
+      return;
+    }
+
+    this.isMutating = true;
+    window.sendMessageToVSCode({
+      type: "addMetadataMember",
+      data: {
+        filePath: this.packageFilePath,
+        metadataType: this.pendingTypeNameForMember,
+        memberName: cleanName,
+      },
+    });
+    this.closeModals();
+  }
+
+  closeModals() {
+    this.showAddTypeModal = false;
+    this.showAddMemberModal = false;
+    this.newEntryName = "";
+    this.pendingTypeNameForMember = "";
   }
 }
