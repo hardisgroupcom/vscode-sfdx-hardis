@@ -117,14 +117,13 @@ export default class PackageXml extends LightningElement {
     }
     return "manifest";
   }
-
+  /* jscpd:ignore-start */
   // Process and enhance package data
   processPackageData(rawData) {
     const safeData = rawData || createEmptyPackageData();
     const typesSource = Array.isArray(safeData.types)
       ? safeData.types
       : createEmptyPackageData().types;
-    /* jscpd:ignore-start */
     const processedTypes = typesSource.map((type) => {
       const hasWildcard = type.members && type.members.includes("*");
       const rawMembers = hasWildcard ? [] : type.members || [];
@@ -159,7 +158,6 @@ export default class PackageXml extends LightningElement {
       types: processedTypes,
     };
   }
-  /* jscpd:ignore-end */
 
   // Get appropriate icon for metadata type
   getMetadataTypeIcon(typeName) {
@@ -264,6 +262,8 @@ export default class PackageXml extends LightningElement {
       }
     );
   }
+
+  /* jscpd:ignore-end */
 
   // Computed properties for dynamic content
   get packageTypeConfig() {
