@@ -10,8 +10,10 @@ import "s/forceLightTheme"; // Ensure light theme is applied
 const METADATA_DOC_BASE_URL =
   "https://sf-explorer.github.io/sf-doc-to-json/#/cloud/all/object/";
 
+const createEmptyPackageData = () => ({ apiVersion: "", namespace: "", types: [] });
+
 export default class PackageXml extends LightningElement {
-  @track packageData = null;
+  @track packageData = createEmptyPackageData();
   @track isLoading = true;
   @track hasError = false;
   @track errorMessage = "";
@@ -46,7 +48,7 @@ export default class PackageXml extends LightningElement {
     if (data?.error) {
       this.hasError = true;
       this.errorMessage = data.error;
-      this.packageData = null;
+      this.packageData = createEmptyPackageData();
       this.isMutating = false;
       this.shouldRestoreViewPosition = false;
       return;
@@ -71,6 +73,7 @@ export default class PackageXml extends LightningElement {
 
     this.hasError = true;
     this.errorMessage = "No package data provided";
+    this.packageData = createEmptyPackageData();
     this.isMutating = false;
     this.shouldRestoreViewPosition = false;
   }
@@ -117,11 +120,12 @@ export default class PackageXml extends LightningElement {
 
   // Process and enhance package data
   processPackageData(rawData) {
-    if (!rawData || !rawData.types) {
-      return null;
-    }
+    const safeData = rawData || createEmptyPackageData();
+    const typesSource = Array.isArray(safeData.types)
+      ? safeData.types
+      : createEmptyPackageData().types;
 
-    const processedTypes = rawData.types.map((type) => {
+    const processedTypes = typesSource.map((type) => {
       const hasWildcard = type.members && type.members.includes("*");
       const rawMembers = hasWildcard ? [] : type.members || [];
       const members = rawMembers.map((memberName) => {
@@ -151,7 +155,7 @@ export default class PackageXml extends LightningElement {
     });
 
     return {
-      ...rawData,
+      ...safeData,
       types: processedTypes,
     };
   }
@@ -724,6 +728,24 @@ export default class PackageXml extends LightningElement {
 
   handleModalInputChange(event) {
     this.newEntryName = event.target.value || "";
+  }
+
+  handleModalKeydown(event) {
+    if (event?.key !== "Enter") {
+      return;
+    }
+
+    this.stopPropagation(event);
+    if (typeof event.preventDefault === "function") {
+      event.preventDefault();
+    }
+
+    if (this.showAddMemberModal) {
+      this.confirmAddMember();
+      return;
+    }
+
+    this.confirmAddType();
   }
 
   confirmAddType() {

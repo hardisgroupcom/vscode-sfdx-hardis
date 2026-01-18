@@ -235,19 +235,39 @@ async function mutatePackageXml(
   }
 }
 
+async function mutateWithRequiredFields(
+  data: any,
+  config: { packageType: any; filePath: any; fallbackFilePath: any; title: any },
+  panel: LwcUiPanel,
+  requiredFields: Array<"metadataType" | "memberName">,
+  mutator: (pkg: any, values: { metadataType?: string; memberName?: string }) => any,
+) {
+  const values: { metadataType?: string; memberName?: string } = {};
+  for (const field of requiredFields) {
+    const value = data?.[field];
+    if (!value) {
+      return;
+    }
+    values[field] = value;
+  }
+
+  await mutatePackageXml(data, config, panel, (packageData) =>
+    mutator(packageData, values),
+  );
+}
+
 async function mutateWithType(
   data: any,
   config: { packageType: any; filePath: any; fallbackFilePath: any; title: any },
   panel: LwcUiPanel,
   mutator: (pkg: any, typeName: string) => any,
 ) {
-  const typeName = data?.metadataType;
-  if (!typeName) {
-    return;
-  }
-
-  await mutatePackageXml(data, config, panel, (packageData) =>
-    mutator(packageData, typeName),
+  await mutateWithRequiredFields(
+    data,
+    config,
+    panel,
+    ["metadataType"],
+    (packageData, values) => mutator(packageData, values.metadataType as string),
   );
 }
 
@@ -257,14 +277,17 @@ async function mutateWithTypeAndMember(
   panel: LwcUiPanel,
   mutator: (pkg: any, typeName: string, memberName: string) => any,
 ) {
-  const typeName = data?.metadataType;
-  const memberName = data?.memberName;
-  if (!typeName || !memberName) {
-    return;
-  }
-
-  await mutatePackageXml(data, config, panel, (packageData) =>
-    mutator(packageData, typeName, memberName),
+  await mutateWithRequiredFields(
+    data,
+    config,
+    panel,
+    ["metadataType", "memberName"],
+    (packageData, values) =>
+      mutator(
+        packageData,
+        values.metadataType as string,
+        values.memberName as string,
+      ),
   );
 }
 

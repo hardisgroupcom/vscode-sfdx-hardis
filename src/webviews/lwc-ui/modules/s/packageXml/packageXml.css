@@ -16,7 +16,7 @@
 
 /* Header Section */
 .header-section {
-    margin-bottom: 1rem;
+    margin-bottom: 0.4rem;
 }
 
 .header-content {
@@ -189,11 +189,11 @@
 
 /* Section Styling */
 .section {
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.4rem;
 }
 
 .section-header {
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
 }
 
 .section-header-top {
