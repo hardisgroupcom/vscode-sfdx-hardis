@@ -4,35 +4,63 @@
             <!-- Header Section -->
             <div class="header-section">
                 <div class="header-content">
-                    <lightning-icon icon-name={packageIconName} size="medium" class="header-icon"></lightning-icon>
-                    <div class="header-text">
-                        <h1 class="header-title">{packageTitle}</h1>
-                        <p class="header-subtitle">{packageDescription}</p>
+                    <div class="header-top">
+                        <lightning-icon icon-name={packageIconName} size="medium" class="header-icon"></lightning-icon>
+                        <div class="header-text">
+                            <h1 class="header-title">{packageTitle}</h1>
+                            <p class="header-subtitle">{packageDescription}</p>
+                        </div>
+                        <div class="header-actions">
+                                <lightning-input
+                                    type="toggle"
+                                    label="Edit mode"
+                                    checked={editMode}
+                                    onchange={toggleEditMode}
+                                    class="edit-toggle"
+                                ></lightning-input>
+                            <lightning-button 
+                                variant="outline-brand" 
+                                label="Refresh" 
+                                title={refreshTooltip}
+                                onclick={refreshPackageConfig}
+                                icon-name="utility:refresh"
+                                class="header-button"
+                            ></lightning-button>
+                            <lightning-button 
+                                variant="brand" 
+                                label="Edit File" 
+                                title={editTooltip}
+                                onclick={editPackageFile}
+                                icon-name="utility:edit"
+                                class="header-button"
+                            ></lightning-button>
+                        </div>
                     </div>
-                    <div class="header-actions">
-                            <lightning-input
-                                type="toggle"
-                                label="Edit mode"
-                                checked={editMode}
-                                onchange={toggleEditMode}
-                                class="edit-toggle"
-                            ></lightning-input>
-                        <lightning-button 
-                            variant="outline-brand" 
-                            label="Refresh" 
-                            title={refreshTooltip}
-                            onclick={refreshPackageConfig}
-                            icon-name="utility:refresh"
-                            class="header-button"
-                        ></lightning-button>
-                        <lightning-button 
-                            variant="brand" 
-                            label="Edit File" 
-                            title={editTooltip}
-                            onclick={editPackageFile}
-                            icon-name="utility:edit"
-                            class="header-button"
-                        ></lightning-button>
+                    <div class="header-stats">
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <span class="info-label">API Version:</span>
+                                <span class="info-value">{packageData.apiVersion}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Total Types:</span>
+                                <span class="info-value">{totalTypes}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Total Members:</span>
+                                <span class="info-value">{totalMembers}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">File Location:</span>
+                                <span class="info-value">{packageFilePath}</span>
+                            </div>
+                            <template if:true={packageData.namespace}>
+                                <div class="info-item">
+                                    <span class="info-label">Namespace:</span>
+                                    <span class="info-value">{packageData.namespace}</span>
+                                </div>
+                            </template>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -114,39 +142,6 @@
             </template>
 
             <template if:true={hasPackageData}>
-                <!-- Package Info Section -->
-                <div class="section">
-                    <div class="info-card">
-                        <div class="info-header">
-                            <h2 class="info-title">{packageInfoIcon} Package Information</h2>
-                        </div>
-                        <div class="info-grid">
-                            <div class="info-item">
-                                <span class="info-label">API Version:</span>
-                                <span class="info-value">{packageData.apiVersion}</span>
-                            </div>
-                            <div class="info-item">
-                                <span class="info-label">Total Types:</span>
-                                <span class="info-value">{totalTypes}</span>
-                            </div>
-                            <div class="info-item">
-                                <span class="info-label">Total Members:</span>
-                                <span class="info-value">{totalMembers}</span>
-                            </div>
-                            <div class="info-item">
-                                <span class="info-label">File Location:</span>
-                                <span class="info-value">{packageFilePath}</span>
-                            </div>
-                            <template if:true={packageData.namespace}>
-                                <div class="info-item">
-                                    <span class="info-label">Namespace:</span>
-                                    <span class="info-value">{packageData.namespace}</span>
-                                </div>
-                            </template>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Metadata Types Section -->
                 <div class="section">
                     <div class="section-header">
