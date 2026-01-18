@@ -1,11 +1,7 @@
 /* Org Monitoring Workbench Styles */
 
 /* Blue background for consistency with other panels */
-.blue-back {
-    background: linear-gradient(135deg, #f8f9ff 0%, #e8f4fd 100%);
-    min-height: 100vh;
-    font-family: "Salesforce Sans", -apple-system, BlinkMacSystemFont, sans-serif;
-}
+
 
 .command-icon-container.apex {
     background: linear-gradient(135deg, #ff6b35 0%, #d4471b 100%);
@@ -32,63 +28,13 @@
 .monitoring-container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 2rem 2.5rem;
+    padding: 1rem 1rem; /* reduced outer padding for denser layout */
 }
 
-/* Header Section */
 .header-section {
-    margin-bottom: 2rem;
+    padding: 1rem 1.5rem 0 1.5rem;
 }
 
-.header-content {
-    display: flex;
-    align-items: center;
-    gap: 1.25rem;
-    padding: 1.5rem;
-    background: white;
-    border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    border: 1px solid #e5e5e5;
-    margin: 0.5rem 1rem 1rem 1rem;
-}
-
-.header-icon-container {
-    width: 56px;
-    height: 56px;
-    background: linear-gradient(135deg, #54a4a6 0%, #026d71 100%);
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white !important;
-    flex-shrink: 0;
-    box-shadow: 0 2px 8px rgba(84, 164, 166, 0.25);
-    border: 2px solid rgba(255, 255, 255, 0.2);
-}
-
-.header-icon-container lightning-icon {
-    --slds-c-icon-color-foreground: white !important;
-    --slds-c-icon-color-foreground-default: white !important;
-}
-
-.header-text {
-    flex-grow: 1;
-}
-
-.header-title {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #181818;
-    margin: 0 0 0.25rem 0;
-    line-height: 1.2;
-}
-
-.header-subtitle {
-    font-size: 0.9rem;
-    color: #706e6b;
-    margin: 0;
-    line-height: 1.3;
-}
 
 /* Section Styling */
 .section {
@@ -103,7 +49,6 @@
 .section-title {
     font-size: 1.25rem;
     font-weight: 600;
-    color: #181818;
     margin-bottom: 0.25rem;
     display: flex;
     align-items: center;
@@ -116,17 +61,14 @@
 
 .section-subtitle {
     font-size: 0.875rem;
-    color: #706e6b;
     margin: 0;
 }
 
 /* Status Card Styling */
 .status-card {
-    background: white;
     border-radius: 10px;
     padding: 1.5rem;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    border: 1px solid #e5e5e5;
     display: flex;
     align-items: flex-start;
     gap: 1.25rem;
@@ -192,12 +134,10 @@
 .status-title {
     font-size: 1.125rem;
     font-weight: 600;
-    color: #181818;
     margin: 0 0 0.25rem 0;
 }
 
 .status-description {
-    color: #706e6b;
     margin: 0 0 1rem 0;
     line-height: 1.4;
     font-size: 0.9rem;
@@ -228,10 +168,8 @@
 }
 
 .command-card {
-    background: white;
     border-radius: 8px;
     padding: 1.25rem;
-    border: 1px solid #e5e5e5;
     transition: all 0.2s ease;
     min-height: 130px;
     display: flex;
@@ -344,12 +282,10 @@
 .command-title {
     font-size: 1rem;
     font-weight: 600;
-    color: #181818;
     margin: 0;
 }
 
 .command-description {
-    color: #706e6b;
     line-height: 1.3;
     margin: 0 0 1rem 0;
     flex-grow: 1;
@@ -383,8 +319,6 @@
 
 /* Documentation Section */
 .docs-section {
-    background: linear-gradient(135deg, #f3f9ff 0%, #dbeafe 100%);
-    border: 1px solid #bbdefb;
     border-radius: 12px;
     padding: 2rem;
     margin-top: 2rem;
@@ -411,12 +345,10 @@
 .docs-title {
     font-size: 1.25rem;
     font-weight: 600;
-    color: #181818;
     margin: 0;
 }
 
 .docs-text {
-    color: #706e6b;
     line-height: 1.6;
     margin: 0 0 1.5rem 0;
     font-size: 1rem;
@@ -443,12 +375,11 @@
     .section {
         margin: 0 0.5rem 2rem 0.5rem;
     }
-    
+
     .header-content {
         flex-direction: column;
         text-align: center;
         gap: 1rem;
-        margin: 0.5rem 0.5rem 1rem 0.5rem;
     }
     
     .status-card {

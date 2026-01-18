@@ -5,6 +5,7 @@ import * as fs from "fs-extra";
 export const sectionDefs = [
   {
     label: "User Input",
+    value: "user-input",
     iconName: "utility:user",
     description: "How user input is handled in the extension.",
     keys: [
@@ -16,10 +17,12 @@ export const sectionDefs = [
   },
   {
     label: "Theme",
+    value: "theme",
     iconName: "utility:brush",
     description: "UI and theming options.",
     keys: [
       "vsCodeSfdxHardis.showWelcomeAtStartup",
+      "vsCodeSfdxHardis.theme.colorTheme",
       "vsCodeSfdxHardis.theme.menuIconType",
       "vsCodeSfdxHardis.theme.emojisInSections",
       "vsCodeSfdxHardis.disableVsCodeColors",
@@ -27,7 +30,8 @@ export const sectionDefs = [
   },
   {
     label: "Performance",
-    iconName: "utility:performance",
+    value: "performance",
+    iconName: "utility:indicator_performance_period",
     description: "Performance and optimization settings.",
     keys: [
       "vsCodeSfdxHardis.autoUpdateDependencies",
@@ -37,12 +41,14 @@ export const sectionDefs = [
   },
   {
     label: "MCP",
-    iconName: "utility:server",
+    value: "mcp",
+    iconName: "utility:lightning_extension",
     description: "MCP Server settings.",
     keys: ["vsCodeSfdxHardis.mcp.autoStartSalesforceCliMcp"],
   },
   {
     label: "Other",
+    value: "other",
     iconName: "utility:settings",
     description: "Other settings related to the extension.",
     keys: [
@@ -73,6 +79,7 @@ export async function getExtensionConfigSections(
   // Build sections with merged config info
   const sections = sectionDefs.map((section) => ({
     label: section.label,
+    value: section.value,
     iconName: section.iconName,
     description: section.description,
     entries: section.keys.map((key) => {

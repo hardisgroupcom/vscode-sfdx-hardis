@@ -1,15 +1,18 @@
 import { LightningElement, track, api } from "lwc";
-import "s/forceLightTheme"; // Ensure light theme is applied
+import { ColorThemeMixin } from "s/colorThemeMixin";
 
-export default class ExtensionConfig extends LightningElement {
+export default class ExtensionConfig extends ColorThemeMixin(LightningElement) {
   @track sections = [];
   @track loading = true;
   @track error = null;
+  @track activeTabValue = null;
 
   @api
   initialize(data) {
     this.loading = false;
     this.error = null;
+    this.activeTabValue = data.activeTabValue || null;
+
     // Precompute all values for Lightning base components
     this.sections = (data.sections || []).map((section) => ({
       ...section,
@@ -110,8 +113,16 @@ export default class ExtensionConfig extends LightningElement {
   handleMessage(type, data) {
     if (type === "updateSuccess") {
       this.error = null;
-    } else if (type === "updateError") {
+    } 
+    else if (type === "updateError") {
       this.error = data;
     }
+  }
+
+  @api
+  handleColorThemeMessage(type, data) {
+    // Delegate to the mixin's implementation
+    if (super.handleColorThemeMessage)
+      super.handleColorThemeMessage(type, data);
   }
 }

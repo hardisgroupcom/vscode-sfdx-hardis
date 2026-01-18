@@ -3,7 +3,6 @@
 // @ts-nocheck
 // eslint-env es6
 import { LightningElement, api, track } from "lwc";
-import "s/forceLightTheme"; // Ensure light theme is applied
 
 export default class Pipeline extends LightningElement {
   @track prButtonInfo;
@@ -858,21 +857,6 @@ export default class Pipeline extends LightningElement {
     return count > 0 ? `Open ${prLabel} (${count})` : `Open ${prLabel}`;
   }
 
-  get currentPRCardTitle() {
-    const prLabel = this.prButtonInfo?.pullRequestLabel || "Pull Request";
-    return `My ${prLabel}`;
-  }
-
-  get currentPRDescription() {
-    if (!this.currentBranchPullRequest) {
-      return "You need to connect to your Git Server to see pull request details and manage pre-post deployment actions.";
-    }
-    if (this.currentBranchPullRequest.number === -1) {
-      return `${this.prButtonInfo.pullRequestLabel} not created yet. Click to manage pre-post deployment actions.`;
-    }
-    return `#${this.currentBranchPullRequest.number} - ${this.currentBranchPullRequest.title || ""}. Click to see related tickets and manage pre-post deployment actions.`;
-  }
-
   openPrPage() {
     if (
       this.prButtonInfo &&
@@ -970,26 +954,6 @@ export default class Pipeline extends LightningElement {
         this.error = undefined;
         console.log("Mermaid diagram rendered successfully");
 
-        // Catch clicks on Nodes
-        const mermaidSvg = this.template.querySelector(".mermaid svg");
-        if (mermaidSvg) {
-          mermaidSvg.addEventListener("click", (event) => {
-            const target = event.target;
-            // Get node where the click happened
-            const mermaidNode = target.closest("g.node");
-            if (!mermaidNode) {
-              return;
-            }
-            const targetId = mermaidNode.getAttribute("id") || "";
-            // Extract branch name from id (id example: from "flowchart-uatBranch-6" extract "uat" without "Branch")
-            const branchMatch = targetId.match(/flowchart-(.+?)(Branch)?-\d+/);
-            if (branchMatch && branchMatch[1]) {
-              const branchName = branchMatch[1];
-              this.handleShowBranchPRs(branchName);
-            }
-          });
-        }
-
         // Apply animation classes to links with running/pending PRs
         // Find all edge paths and check if they need animation based on link styling
         setTimeout(() => this.applyLinkAnimations(), 100);
@@ -1051,8 +1015,8 @@ export default class Pipeline extends LightningElement {
       // Get the text content from the label (may be nested in foreignObject/div/span/p/a)
       const labelText = label.textContent || "";
 
-      // Check for running (⚙️) or pending (⏳) emoji
-      const hasRunning = labelText.includes("⚙️");
+      // Check for running (🔄) or pending (⏳) emoji
+      const hasRunning = labelText.includes("🔄");
       const hasPending = labelText.includes("⏳");
 
       if (hasRunning || hasPending) {
@@ -1074,35 +1038,14 @@ export default class Pipeline extends LightningElement {
       case "refreshPipeline":
         this.refreshPipeline();
         break;
-      case "imageResources":
-        this.handleImageResources(data);
-        break;
       case "openPullRequestsUpdated":
         // allow dynamic updates from extension host
         this.openPullRequests = this._mapPrsWithIcons(data || []);
         setTimeout(() => this.adjustPrColumns(), 50);
         this._updatePanelTitle();
         break;
-      case "returnGetPrInfoForModal":
-        this.handleReturnGetPrInfoForModal(data);
-        break;
       default:
         console.log("Unknown message type:", messageType, data);
-    }
-  }
-
-  handleImageResources(data) {
-    if (data && data?.images) {
-      // Normalize keys to lowercase for easy lookup (e.g., GitHub -> github)
-      const normalized = {};
-      for (const [key, url] of Object.entries(data.images)) {
-        if (!key) {
-          continue;
-        }
-        normalized[key.toLowerCase()] = url;
-      }
-      // merge into existing images map
-      this.images = Object.assign({}, this.images || {}, normalized);
     }
   }
 
@@ -1147,17 +1090,11 @@ export default class Pipeline extends LightningElement {
   }
 
   handlePullFromOrg() {
-    // legacy: pull from org -> replaced by metadata retriever command
     window.sendMessageToVSCode({
-      type: "showMetadataRetriever",
-      data: {},
-    });
-  }
-
-  handleOpenMetadataRetriever() {
-    window.sendMessageToVSCode({
-      type: "showMetadataRetriever",
-      data: {},
+      type: "runCommand",
+      data: {
+        command: "sf hardis:scratch:pull",
+      },
     });
   }
 
@@ -1206,40 +1143,10 @@ export default class Pipeline extends LightningElement {
   }
 
   handleGitConnect() {
-    if (this.gitAuthenticated) {
-      // Already connected - prompt user for action
-      window.sendMessageToVSCode({
-        type: "promptGitProviderAction",
-        data: {
-          providerName: this.repoPlatformLabel || "Git",
-          repoUrl: this.repoInfo?.webUrl || null,
-        },
-      });
-    } else {
-      // Not connected - initiate connection
-      window.sendMessageToVSCode({
-        type: "connectToGit",
-        data: {},
-      });
-    }
-  }
-
-  handleTicketConnect() {
-    if (this.ticketAuthenticated) {
-      // Already connected - prompt user for action
-      window.sendMessageToVSCode({
-        type: "promptTicketProviderAction",
-        data: {
-          providerName: this.ticketProviderName || "Ticketing",
-        },
-      });
-    } else {
-      // Not connected - initiate connection
-      window.sendMessageToVSCode({
-        type: "connectToTicketing",
-        data: {},
-      });
-    }
+    window.sendMessageToVSCode({
+      type: "connectToGit",
+      data: {},
+    });
   }
 
   handleToggleFeatureBranches(event) {
@@ -1290,7 +1197,7 @@ export default class Pipeline extends LightningElement {
     }
 
     // Set interval based on visibility: 1 minute if visible, 5 minutes if not
-    const interval = this._isVisible ? 60000 : 600000; // 60s or 600s (10min)
+    const interval = this._isVisible ? 60000 : 300000; // 60s or 300s
 
     this._refreshTimer = setInterval(() => {
       console.log("Auto-refreshing pipeline (visible:", this._isVisible, ")");
@@ -1319,521 +1226,5 @@ export default class Pipeline extends LightningElement {
       type: "updatePanelTitle",
       data: { title: title },
     });
-  }
-
-  handleShowBranchPRs(branchName) {
-    console.log("Showing PRs for branch:", branchName);
-    const prs = this.branchPullRequestsMap.get(branchName);
-    if (prs && prs.length > 0) {
-      this.modalBranchName = branchName;
-      this.modalPullRequests = this._mapPrsWithIcons(prs);
-
-      // Aggregate all tickets from all PRs
-      this.modalTickets = this._aggregateTicketsFromPRs(prs);
-
-      // Aggregate all deployment actions from all PRs
-      this.modalActions = this._aggregateActionsFromPRs(prs);
-
-      // Per-line breakdown for Apex tests (read-only in branch mode)
-      const rows = [];
-      for (const pr of prs) {
-        const classes =
-          pr &&
-          pr.deploymentApexTestClasses &&
-          Array.isArray(pr.deploymentApexTestClasses)
-            ? pr.deploymentApexTestClasses
-            : [];
-
-        const normalized = this.normalizeApexTestClasses(classes);
-
-        for (const apexTestClass of normalized) {
-          rows.push({
-            id: `apexTests-${pr.number || pr.id || "pr"}-${apexTestClass}`,
-            prLabel: `#${pr.number || ""} - ${pr.title || ""}`,
-            prWebUrl: pr.webUrl || "",
-            apexTestClass: apexTestClass,
-          });
-        }
-      }
-
-      // stable order by class then PR number
-      rows.sort((a, b) => {
-        const classCmp = (a.apexTestClass || "").localeCompare(
-          b.apexTestClass || "",
-        );
-        if (classCmp !== 0) {
-          return classCmp;
-        }
-
-        const aNum = parseInt((a.prLabel || "").replace(/^#(\d+).*/, "$1"));
-        const bNum = parseInt((b.prLabel || "").replace(/^#(\d+).*/, "$1"));
-        if (!isNaN(aNum) && !isNaN(bNum)) {
-          return aNum - bNum;
-        }
-        return (a.prLabel || "").localeCompare(b.prLabel || "");
-      });
-
-      this.apexTestsByLineRows = rows;
-      this.deploymentApexTestClasses = [];
-      this._deploymentApexTestClassesOriginal = [];
-      this.apexTestsMode = "view";
-
-      this.showPRModal = true;
-      console.log("Modal data:", {
-        branchName,
-        prCount: prs.length,
-        ticketCount: this.modalTickets.length,
-        actionCount: this.modalActions.length,
-      });
-    } else {
-      console.warn("No PRs found for branch:", branchName);
-    }
-  }
-
-  handleClosePRModal() {
-    this.showPRModal = false;
-    this.modalMode = "branch";
-    this.modalBranchName = "";
-    this.modalPullRequests = [];
-    this.modalTickets = [];
-    this.modalActions = [];
-    this.deploymentApexTestClasses = [];
-    this._deploymentApexTestClassesOriginal = [];
-    this.apexTestsMode = "view";
-    this.apexTestsByLineRows = [];
-  }
-
-  handlePRRowAction(event) {
-    const action = event.detail.action;
-    const row = event.detail.row;
-
-    if (action.name === "view_pr" && row) {
-      // Find the full PR object
-      const pr = this.openPullRequests.find((p) => p.id === row.id);
-      if (pr) {
-        this.showSinglePRModal(pr);
-      }
-    }
-  }
-
-  handleOpenCurrentPR() {
-    if (this.currentBranchPullRequest) {
-      // Open modal in singlePR mode with current branch PR
-      this.showSinglePRModal(this.currentBranchPullRequest);
-    }
-  }
-
-  showSinglePRModal(pr) {
-    // Call VsCode backend to get PR info with tickets and actions
-    window.sendMessageToVSCode({
-      type: "getPrInfoForModal",
-      data: {
-        pullRequest: JSON.parse(JSON.stringify(pr)),
-      },
-    });
-  }
-
-  handleReturnGetPrInfoForModal(pr) {
-    this.modalMode = "singlePR";
-    this.modalBranchName = pr.sourceBranch || "";
-    this.modalPullRequests = [pr];
-
-    // Aggregate tickets from this single PR
-    this.modalTickets = this._aggregateTicketsFromPRs([pr]);
-
-    // Aggregate deployment actions from this single PR
-    this.modalActions = this._aggregateActionsFromPRs([pr]);
-
-    // Set Apex tests list for this single PR
-    const apexTests =
-      pr &&
-      pr.deploymentApexTestClasses &&
-      Array.isArray(pr.deploymentApexTestClasses)
-        ? pr.deploymentApexTestClasses
-        : [];
-    this.deploymentApexTestClasses = this.normalizeApexTestClasses(apexTests);
-    this._deploymentApexTestClassesOriginal = [
-      ...this.deploymentApexTestClasses,
-    ];
-    this.apexTestsMode = "view";
-    this.apexTestsByLineRows = [];
-
-    this.showPRModal = true;
-  }
-
-  handleActionRowClick(event) {
-    const action = event.detail.action;
-    const row = event.detail.row;
-
-    if (!action || !row) {
-      return;
-    }
-
-    // Handle the view_action button click
-    if (action.name === "view_action") {
-      // Find the full action object
-      const actionRow = this.modalActions.find((a) => a.id === row.id);
-      if (!actionRow || !actionRow._fullAction) {
-        return;
-      }
-
-      // Show deployment action modal inline
-      this.currentDeploymentAction = actionRow._fullAction;
-      this.isDeploymentActionEditMode = false;
-      this.showDeploymentActionModal = true;
-    }
-  }
-
-  handleCloseDeploymentActionModal() {
-    this.showDeploymentActionModal = false;
-    this.currentDeploymentAction = null;
-    this.isDeploymentActionEditMode = false;
-  }
-
-  handleEditDeploymentAction() {
-    this.isDeploymentActionEditMode = true;
-  }
-
-  handleSaveDeploymentAction(event) {
-    const action = event.detail;
-    // Get PR number from the action
-    const prNumber = action.pullRequest?.number;
-    if (!prNumber) {
-      console.error("Cannot save deployment action: PR number not found");
-      return;
-    }
-
-    const when = action.when;
-    const whenLabel =
-      when === "pre-deploy"
-        ? "Pre-Deploy"
-        : when === "post-deploy"
-          ? "Post-Deploy"
-          : "Unknown";
-
-    // Update the modalActions list immediately with the new values
-    const actionIndex = this.modalActions.findIndex(
-      (a) =>
-        a._fullAction &&
-        a._fullAction.id === action.id &&
-        a.prNumber === prNumber,
-    );
-
-    if (actionIndex >= 0) {
-      // Update existing action
-      const updatedRow = {
-        ...this.modalActions[actionIndex],
-        label: action.label || "Unnamed Action",
-        type: action.type || "command",
-        when: whenLabel,
-        _fullAction: {
-          ...action,
-          pullRequest: {
-            number: prNumber,
-            title: action.pullRequest?.title,
-            webUrl: action.pullRequest?.webUrl,
-          },
-        },
-      };
-
-      // Create new array with updated action
-      const updatedActions = [
-        ...this.modalActions.slice(0, actionIndex),
-        updatedRow,
-        ...this.modalActions.slice(actionIndex + 1),
-      ];
-
-      // Sort the actions (Pre-Deploy first, then Post-Deploy)
-      this.modalActions = this._sortActions(updatedActions);
-    } else {
-      // Add new action to the list
-      const newRow = {
-        id: `${prNumber}-${action.type || "action"}-${this.modalActions.length}`,
-        label: action.label || "Unnamed Action",
-        type: action.type || "command",
-        when: whenLabel,
-        prLabel: `#${prNumber} - ${action.pullRequest?.title || ""}`,
-        prWebUrl: action.pullRequest?.webUrl || "",
-        prNumber: prNumber,
-        _fullAction: {
-          ...action,
-          pullRequest: {
-            number: prNumber,
-            title: action.pullRequest?.title,
-            webUrl: action.pullRequest?.webUrl,
-          },
-        },
-      };
-
-      // Add to the list and sort
-      const updatedActions = [...this.modalActions, newRow];
-      this.modalActions = this._sortActions(updatedActions);
-    }
-
-    // Send message to extension to save
-    window.sendMessageToVSCode({
-      type: "saveDeploymentAction",
-      data: {
-        prNumber: prNumber,
-        command: JSON.parse(JSON.stringify(action)),
-      },
-    });
-
-    // Close modal
-    this.showDeploymentActionModal = false;
-    this.currentDeploymentAction = null;
-    this.isDeploymentActionEditMode = false;
-  }
-
-  _aggregateTicketsFromPRs(prs) {
-    if (!Array.isArray(prs)) {
-      return [];
-    }
-
-    const ticketsMap = new Map();
-
-    // Collect all tickets from all PRs, tracking ALL PRs each ticket belongs to
-    for (const pr of prs) {
-      if (pr.relatedTickets && Array.isArray(pr.relatedTickets)) {
-        for (const ticket of pr.relatedTickets) {
-          if (ticket && ticket.id) {
-            if (!ticketsMap.has(ticket.id)) {
-              // First time seeing this ticket - create entry with first PR
-              ticketsMap.set(ticket.id, {
-                ticketId: ticket.id,
-                subject: ticket.subject || "",
-                status: ticket.status || "",
-                statusLabel: ticket.statusLabel || "",
-                author: ticket.author || "",
-                authorLabel: ticket.authorLabel || "",
-                url: ticket.url || "",
-                prs: [
-                  {
-                    number: pr.number,
-                    title: pr.title,
-                    webUrl: pr.webUrl,
-                  },
-                ],
-              });
-            } else {
-              // Ticket already exists - add this PR to the list
-              const existingTicket = ticketsMap.get(ticket.id);
-              existingTicket.prs.push({
-                number: pr.number,
-                title: pr.title,
-                webUrl: pr.webUrl,
-              });
-            }
-          }
-        }
-      }
-    }
-
-    // Convert to array with one row per ticket (multiple PRs shown in same row)
-    const ticketRows = [];
-    for (const ticketData of ticketsMap.values()) {
-      // Sort PRs by number for consistent display
-      ticketData.prs.sort((a, b) => {
-        const aNum = parseInt(a.number);
-        const bNum = parseInt(b.number);
-        if (!isNaN(aNum) && !isNaN(bNum)) {
-          return aNum - bNum;
-        }
-        return String(a.number).localeCompare(String(b.number));
-      });
-
-      // Create multi-line PR label (one line per PR)
-      const prLabels = ticketData.prs.map(
-        (pr) => `#${pr.number || ""} - ${pr.title || ""}`,
-      );
-      const prLabel = prLabels.join("\n");
-
-      // Use first PR's webUrl for the link (or could omit link if multiple)
-      const prWebUrl = ticketData.prs[0]?.webUrl || "";
-
-      ticketRows.push({
-        id: ticketData.ticketId,
-        subject: ticketData.subject,
-        status: ticketData.status,
-        statusLabel: ticketData.statusLabel,
-        author: ticketData.author,
-        authorLabel: ticketData.authorLabel,
-        url: ticketData.url,
-        prLabel: prLabel,
-        prWebUrl: prWebUrl,
-      });
-    }
-
-    // Sort by ticket ID
-    ticketRows.sort((a, b) => {
-      const aTicketNum = parseInt(a.id);
-      const bTicketNum = parseInt(b.id);
-      if (!isNaN(aTicketNum) && !isNaN(bTicketNum)) {
-        return aTicketNum - bTicketNum;
-      }
-      return a.id.localeCompare(b.id);
-    });
-
-    return ticketRows;
-  }
-
-  get modalTitle() {
-    if (this.modalMode === "singlePR" && this.modalPullRequests.length === 1) {
-      const pr = this.modalPullRequests[0];
-      if (pr.number === -1) {
-        return pr.title || "Pull Request";
-      }
-      return `#${pr.number} - ${pr.title || "Pull Request"}`;
-    }
-    const prLabel = this.prButtonInfo?.pullRequestLabel || "Pull Request";
-    const count = this.modalPullRequests.length;
-    return `${prLabel}s in ${this.modalBranchName} (${count})`;
-  }
-
-  get modalPrsTabLabel() {
-    const prLabel = this.prButtonInfo?.pullRequestLabel || "Pull Request";
-    const count = this.modalPullRequests.length;
-    return `${prLabel}s (${count})`;
-  }
-
-  get modalTicketsTabLabel() {
-    const count = this.modalTickets.length;
-    return `Tickets (${count})`;
-  }
-
-  get modalActionsTabLabel() {
-    const count = this.modalActions.length;
-    return `Deployment Actions (${count}) (beta)`;
-  }
-
-  get showPRTab() {
-    return this.modalMode !== "singlePR";
-  }
-
-  get isSinglePRMode() {
-    if (this.modalMode !== "singlePR") {
-      return false;
-    }
-    // Don't show PR-specific features if PR number is -1 (not yet created)
-    if (this.modalPullRequests.length === 1) {
-      const pr = this.modalPullRequests[0];
-      return pr.number !== -1;
-    }
-    return false;
-  }
-
-  get singlePRViewButtonLabel() {
-    if (this.modalPullRequests.length === 1) {
-      const pr = this.modalPullRequests[0];
-      const gitProvider = this.repoPlatformLabel || "Git";
-      return `View #${pr.number} - ${pr.title || ""} on ${gitProvider}`;
-    }
-    return "View Pull Request";
-  }
-
-  handleOpenSinglePRUrl(event) {
-    event.preventDefault();
-    if (this.modalPullRequests.length === 1) {
-      const pr = this.modalPullRequests[0];
-      if (pr.webUrl) {
-        window.sendMessageToVSCode({
-          type: "openExternal",
-          data: { url: pr.webUrl },
-        });
-      }
-    }
-  }
-
-  get showAddActionButton() {
-    return this.modalMode === "singlePR";
-  }
-
-  handleAddNewAction() {
-    // Create a new empty action with PR info
-    if (this.modalPullRequests.length === 1) {
-      const pr = this.modalPullRequests[0];
-      this.currentDeploymentAction = {
-        id: "",
-        label: "",
-        type: null,
-        when: null,
-        command: "",
-        parameters: {},
-        pullRequest: {
-          number: pr.number,
-          title: pr.title,
-          webUrl: pr.webUrl,
-        },
-      };
-      this.isDeploymentActionEditMode = true;
-      this.showDeploymentActionModal = true;
-    }
-  }
-
-  _sortActions(actionRows) {
-    // Sort by when (Pre-Deploy first, then Post-Deploy), then by PR number
-    return actionRows.sort((a, b) => {
-      // First sort by when label
-      const whenOrder = { "Pre-Deploy": 0, "Post-Deploy": 1, Unknown: 2 };
-      const whenA = whenOrder[a.when] ?? 2;
-      const whenB = whenOrder[b.when] ?? 2;
-
-      if (whenA !== whenB) {
-        return whenA - whenB;
-      }
-
-      // Then sort by PR number
-      const prNumA = parseInt(a.prNumber) || 0;
-      const prNumB = parseInt(b.prNumber) || 0;
-      return prNumA - prNumB;
-    });
-  }
-
-  _aggregateActionsFromPRs(prs) {
-    if (!Array.isArray(prs)) {
-      return [];
-    }
-
-    const actionRows = [];
-
-    for (const pr of prs) {
-      if (pr.deploymentActions && Array.isArray(pr.deploymentActions)) {
-        for (const action of pr.deploymentActions) {
-          if (action) {
-            const when = action.when;
-            const whenLabel =
-              when === "pre-deploy"
-                ? "Pre-Deploy"
-                : when === "post-deploy"
-                  ? "Post-Deploy"
-                  : "Unknown";
-
-            // Store full action object for modal
-            const fullAction = {
-              ...action,
-              pullRequest: {
-                number: pr.number,
-                title: pr.title,
-                webUrl: pr.webUrl,
-              },
-            };
-
-            actionRows.push({
-              id: `${pr.number}-${action.type || "action"}-${actionRows.length}`,
-              label: action.label || "Unnamed Action",
-              type: action.type || "command",
-              when: whenLabel,
-              prLabel: `#${pr.number} - ${pr.title || ""}`,
-              prWebUrl: pr.webUrl || "",
-              prNumber: pr.number || 0,
-              _fullAction: fullAction,
-            });
-          }
-        }
-      }
-    }
-
-    // Use the shared sorting method
-    return this._sortActions(actionRows);
   }
 }
