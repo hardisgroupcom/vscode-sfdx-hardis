@@ -78,6 +78,22 @@ export async function showPackageXmlPanel(
           await refreshPackageData(data, config, panel);
           break;
         }
+        case "addMetadataType": {
+          await handleAddMetadataType(data, config, panel);
+          break;
+        }
+        case "addMetadataMember": {
+          await handleAddMetadataMember(data, config, panel);
+          break;
+        }
+        case "removeMetadataType": {
+          await handleRemoveMetadataType(data, config, panel);
+          break;
+        }
+        case "removeMetadataMember": {
+          await handleRemoveMetadataMember(data, config, panel);
+          break;
+        }
         case "editPackageFile": {
           await openPackageFile(data, config);
           break;
@@ -102,6 +118,194 @@ export async function showPackageXmlPanel(
     });
     panel.updateTitle("Package Configuration - Error");
   }
+}
+
+async function handleAddMetadataType(
+  data: any,
+  config: { packageType: any; filePath: any; fallbackFilePath: any; title: any },
+  panel: LwcUiPanel,
+) {
+  await mutateWithType(data, config, panel, (packageData, typeName) => {
+    const typeExists = packageData.types.some((t: any) => t.name === typeName);
+    if (typeExists) {
+      return packageData;
+    }
+    return {
+      ...packageData,
+      types: [...packageData.types, { name: typeName, members: [] }],
+    };
+  });
+}
+
+async function handleAddMetadataMember(
+  data: any,
+  config: { packageType: any; filePath: any; fallbackFilePath: any; title: any },
+  panel: LwcUiPanel,
+) {
+  await mutateWithTypeAndMember(
+    data,
+    config,
+    panel,
+    (packageData, typeName, memberName) => {
+      const updatedTypes = [...packageData.types];
+      let type = updatedTypes.find((t: any) => t.name === typeName);
+      if (!type) {
+        type = { name: typeName, members: [] };
+        updatedTypes.push(type);
+      }
+
+      if (!type.members.includes(memberName)) {
+        type.members = [...type.members, memberName];
+      }
+
+      return { ...packageData, types: updatedTypes };
+    },
+  );
+}
+
+async function handleRemoveMetadataType(
+  data: any,
+  config: { packageType: any; filePath: any; fallbackFilePath: any; title: any },
+  panel: LwcUiPanel,
+) {
+  await mutateWithType(data, config, panel, (packageData, typeName) => ({
+    ...packageData,
+    types: packageData.types.filter((t: any) => t.name !== typeName),
+  }));
+}
+
+async function handleRemoveMetadataMember(
+  data: any,
+  config: { packageType: any; filePath: any; fallbackFilePath: any; title: any },
+  panel: LwcUiPanel,
+) {
+  await mutateWithTypeAndMember(
+    data,
+    config,
+    panel,
+    (packageData, typeName, memberName) => {
+      const updatedTypes = packageData.types
+        .map((t: any) => {
+          if (t.name !== typeName) {
+            return t;
+          }
+          const remainingMembers = t.members.filter((m: string) => m !== memberName);
+          if (remainingMembers.length === 0) {
+            return null;
+          }
+          return { ...t, members: remainingMembers };
+        })
+        .filter((t: any) => t !== null);
+
+      return { ...packageData, types: updatedTypes };
+    },
+  );
+}
+
+async function mutatePackageXml(
+  data: any,
+  config: { packageType: any; filePath: any; fallbackFilePath: any; title: any },
+  panel: LwcUiPanel,
+  mutator: (pkg: any) => any,
+) {
+  try {
+    const relativeFilePath = data?.filePath || config.filePath;
+    const currentData = await loadPackageXmlData(relativeFilePath);
+    const mutatedData = mutator(currentData);
+    const sortedData = sortPackageData(mutatedData);
+
+    await savePackageXmlData(relativeFilePath, sortedData);
+
+    panel.sendMessage({
+      type: "packageDataUpdated",
+      data: {
+        packageData: sortedData,
+        config: { ...config, filePath: relativeFilePath },
+      },
+    });
+  } catch (error: any) {
+    panel.sendMessage({
+      type: "packageDataUpdated",
+      data: {
+        error: error.message,
+        config: config,
+      },
+    });
+    vscode.window.showErrorMessage(`Unable to update package.xml: ${error.message}`);
+  }
+}
+
+async function mutateWithRequiredFields(
+  data: any,
+  config: { packageType: any; filePath: any; fallbackFilePath: any; title: any },
+  panel: LwcUiPanel,
+  requiredFields: Array<"metadataType" | "memberName">,
+  mutator: (pkg: any, values: { metadataType?: string; memberName?: string }) => any,
+) {
+  const values: { metadataType?: string; memberName?: string } = {};
+  for (const field of requiredFields) {
+    const value = data?.[field];
+    if (!value) {
+      return;
+    }
+    values[field] = value;
+  }
+
+  await mutatePackageXml(data, config, panel, (packageData) =>
+    mutator(packageData, values),
+  );
+}
+
+async function mutateWithType(
+  data: any,
+  config: { packageType: any; filePath: any; fallbackFilePath: any; title: any },
+  panel: LwcUiPanel,
+  mutator: (pkg: any, typeName: string) => any,
+) {
+  await mutateWithRequiredFields(
+    data,
+    config,
+    panel,
+    ["metadataType"],
+    (packageData, values) => mutator(packageData, values.metadataType as string),
+  );
+}
+
+async function mutateWithTypeAndMember(
+  data: any,
+  config: { packageType: any; filePath: any; fallbackFilePath: any; title: any },
+  panel: LwcUiPanel,
+  mutator: (pkg: any, typeName: string, memberName: string) => any,
+) {
+  await mutateWithRequiredFields(
+    data,
+    config,
+    panel,
+    ["metadataType", "memberName"],
+    (packageData, values) =>
+      mutator(
+        packageData,
+        values.metadataType as string,
+        values.memberName as string,
+      ),
+  );
+}
+
+function sortPackageData(packageData: {
+  apiVersion?: string;
+  types: Array<{ name: string; members: string[] }>;
+}) {
+  const sortedTypes = [...(packageData.types || [])]
+    .map((type) => ({
+      ...type,
+      members: [...(type.members || [])].sort((a, b) => a.localeCompare(b)),
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  return {
+    ...packageData,
+    types: sortedTypes,
+  };
 }
 
 async function handleOpenMetadataMember(data: any) {
@@ -148,7 +352,7 @@ async function refreshPackageData(
     panel.sendMessage({
       type: "packageDataUpdated",
       data: {
-        packageData: newPackageData,
+        packageData: sortPackageData(newPackageData),
         config: { ...config, filePath: refreshFilePath },
       },
     });
@@ -224,6 +428,39 @@ export async function parsePackageXml(xmlContent: string): Promise<any> {
   } catch (error: any) {
     throw new Error(`Failed to parse XML content: ${error.message}`);
   }
+}
+
+async function savePackageXmlData(
+  relativeFilePath: string,
+  packageData: { apiVersion?: string; types: Array<{ name: string; members: string[] }> },
+) {
+  const workspaceRoot = getWorkspaceRoot();
+  const packagePath = path.join(workspaceRoot, relativeFilePath);
+
+  const apiVersion = packageData.apiVersion || "65.0";
+
+  const metadataList: Array<{ memberType: string; memberName: string }> = [];
+  for (const type of packageData.types || []) {
+    for (const member of type.members || []) {
+      metadataList.push({ memberType: type.name, memberName: member });
+    }
+    if (!type.members || type.members.length === 0) {
+      // Allow empty type: keep the type with no members only if explicitly desired?
+      // Here we skip writing empty types to keep package lean.
+    }
+  }
+
+  // Sort types and members for deterministic output
+  metadataList.sort((a, b) => {
+    if (a.memberType === b.memberType) {
+      return a.memberName.localeCompare(b.memberName);
+    }
+    return a.memberType.localeCompare(b.memberType);
+  });
+
+  const xmlContent = generatePackageXml(metadataList, apiVersion);
+  await fs.ensureDir(path.dirname(packagePath));
+  await fs.writeFile(packagePath, xmlContent, { encoding: "utf8" });
 }
 
 /**

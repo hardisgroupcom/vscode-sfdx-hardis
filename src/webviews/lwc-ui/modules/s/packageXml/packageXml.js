@@ -10,8 +10,10 @@ import "s/forceLightTheme"; // Ensure light theme is applied
 const METADATA_DOC_BASE_URL =
   "https://sf-explorer.github.io/sf-doc-to-json/#/cloud/all/object/";
 
+const createEmptyPackageData = () => ({ apiVersion: "", namespace: "", types: [] });
+
 export default class PackageXml extends LightningElement {
-  @track packageData = null;
+  @track packageData = createEmptyPackageData();
   @track isLoading = true;
   @track hasError = false;
   @track errorMessage = "";
@@ -19,18 +21,26 @@ export default class PackageXml extends LightningElement {
   @track packageFilePath = "";
   @track packageConfig = null;
   @track filterText = "";
+  @track editMode = false;
+  @track isMutating = false;
+  @track showAddTypeModal = false;
+  @track showAddMemberModal = false;
+  @track newEntryName = "";
+  @track pendingTypeNameForMember = "";
+
+  expandedTypes = new Set();
+  shouldRestoreViewPosition = false;
+  lastScrollY = 0;
 
   @api
   initialize(data) {
     console.log("Package XML component initialized:", data);
     this.isLoading = false;
 
-    // Extract package configuration
     this.packageConfig = data?.config || {};
     this.packageFilePath =
       this.packageConfig.filePath || "manifest/package.xml";
 
-    // Auto-detect package type from file path if not explicitly provided
     this.packageType =
       this.packageConfig.type ||
       this.detectPackageTypeFromPath(this.packageFilePath);
@@ -38,14 +48,34 @@ export default class PackageXml extends LightningElement {
     if (data?.error) {
       this.hasError = true;
       this.errorMessage = data.error;
-      this.packageData = null;
-    } else if (data?.packageData) {
-      this.hasError = false;
-      this.packageData = this.processPackageData(data.packageData);
-    } else {
-      this.hasError = true;
-      this.errorMessage = "No package data provided";
+      this.packageData = createEmptyPackageData();
+      this.isMutating = false;
+      this.shouldRestoreViewPosition = false;
+      return;
     }
+
+    if (data?.packageData) {
+      this.hasError = false;
+      const restorePosition = this.shouldRestoreViewPosition;
+      this.packageData = this.processPackageData(data.packageData);
+      this.isMutating = false;
+      this.shouldRestoreViewPosition = false;
+
+      if (restorePosition) {
+        window.requestAnimationFrame(() => {
+          window.scrollTo(0, this.lastScrollY || 0);
+          this.isMutating = false;
+          this.shouldRestoreViewPosition = false;
+        });
+      }
+      return;
+    }
+
+    this.hasError = true;
+    this.errorMessage = "No package data provided";
+    this.packageData = createEmptyPackageData();
+    this.isMutating = false;
+    this.shouldRestoreViewPosition = false;
   }
 
   @api
@@ -58,45 +88,43 @@ export default class PackageXml extends LightningElement {
 
   // Auto-detect package type from file path
   detectPackageTypeFromPath(filePath) {
-    if (!filePath) return "manifest";
+    if (!filePath) {
+      return "manifest";
+    }
 
     const fileName = filePath.toLowerCase();
 
     if (fileName.includes("skip-items") || fileName.includes("package-skip")) {
       return "skip";
-    } else if (
-      fileName.includes("backup-items") ||
-      fileName.includes("package-backup")
-    ) {
-      return "backup";
-    } else if (
-      fileName.includes("all-org-items") ||
-      fileName.includes("package-all-org")
-    ) {
-      return "all-org";
-    } else if (fileName.includes("destructive")) {
-      return "destructive";
-    } else if (
-      fileName.includes("no-overwrite") ||
-      fileName.includes("packagedeployonce")
-    ) {
-      return "no-overwrite";
-    } else if (fileName.includes("deploy")) {
-      return "deploy";
-    } else if (fileName.includes("retrieve")) {
-      return "retrieve";
-    } else {
-      return "manifest"; // Default fallback
     }
+    if (fileName.includes("backup-items") || fileName.includes("package-backup")) {
+      return "backup";
+    }
+    if (fileName.includes("all-org-items") || fileName.includes("package-all-org")) {
+      return "all-org";
+    }
+    if (fileName.includes("destructive")) {
+      return "destructive";
+    }
+    if (fileName.includes("no-overwrite") || fileName.includes("packagedeployonce")) {
+      return "no-overwrite";
+    }
+    if (fileName.includes("deploy")) {
+      return "deploy";
+    }
+    if (fileName.includes("retrieve")) {
+      return "retrieve";
+    }
+    return "manifest";
   }
-
+  /* jscpd:ignore-start */
   // Process and enhance package data
   processPackageData(rawData) {
-    if (!rawData || !rawData.types) {
-      return null;
-    }
-
-    const processedTypes = rawData.types.map((type) => {
+    const safeData = rawData || createEmptyPackageData();
+    const typesSource = Array.isArray(safeData.types)
+      ? safeData.types
+      : createEmptyPackageData().types;
+    const processedTypes = typesSource.map((type) => {
       const hasWildcard = type.members && type.members.includes("*");
       const rawMembers = hasWildcard ? [] : type.members || [];
       const members = rawMembers.map((memberName) => {
@@ -116,15 +144,17 @@ export default class PackageXml extends LightningElement {
         memberCount: hasWildcard ? "All" : members.length,
         hasWildcard: hasWildcard,
         members: members,
-        isExpanded: false,
-        expandIcon: "utility:chevronright",
+        isExpanded: this.expandedTypes.has(type.name),
+        expandIcon: this.expandedTypes.has(type.name)
+          ? "utility:chevrondown"
+          : "utility:chevronright",
         iconName: iconInfo.icon,
         memberIconName: iconInfo.memberIcon,
       };
     });
 
     return {
-      ...rawData,
+      ...safeData,
       types: processedTypes,
     };
   }
@@ -232,6 +262,8 @@ export default class PackageXml extends LightningElement {
       }
     );
   }
+
+  /* jscpd:ignore-end */
 
   // Computed properties for dynamic content
   get packageTypeConfig() {
@@ -505,6 +537,10 @@ export default class PackageXml extends LightningElement {
     this.filterText = event.target.value.toLowerCase();
   }
 
+  toggleEditMode(event) {
+    this.editMode = !!event.target?.checked;
+  }
+
   toggleTypeExpansion(event) {
     const typeName = event.currentTarget.dataset.typeName;
     if (!typeName || !this.packageData?.types) return;
@@ -515,6 +551,11 @@ export default class PackageXml extends LightningElement {
       types: this.packageData.types.map((type) => {
         if (type.name === typeName) {
           const isExpanded = !type.isExpanded;
+          if (isExpanded) {
+            this.expandedTypes.add(typeName);
+          } else {
+            this.expandedTypes.delete(typeName);
+          }
           return {
             ...type,
             isExpanded: isExpanded,
@@ -599,5 +640,156 @@ export default class PackageXml extends LightningElement {
     } catch (e) {
       // ignore
     }
+  }
+
+  stopPropagation(event) {
+    if (event && typeof event.stopPropagation === "function") {
+      event.stopPropagation();
+    }
+  }
+
+  openAddModal(typeName = "") {
+    this.pendingTypeNameForMember = typeName;
+    this.newEntryName = "";
+    this.showAddTypeModal = !typeName;
+    this.showAddMemberModal = !!typeName;
+  }
+
+  addMetadataType(event) {
+    try {
+      this.stopPropagation(event);
+      this.openAddModal();
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  addMetadataMember(event) {
+    try {
+      this.stopPropagation(event);
+      const typeName = event?.currentTarget?.dataset?.typeName;
+      if (!typeName) {
+        return;
+      }
+      this.openAddModal(typeName);
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  removeMetadataType(event) {
+    try {
+      const typeName = event?.currentTarget?.dataset?.typeName;
+      this.handleRemoval(event, typeName, null, "removeMetadataType");
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  removeMetadataMember(event) {
+    try {
+      const typeName = event?.currentTarget?.dataset?.typeName;
+      const memberName = event?.currentTarget?.dataset?.memberName;
+      this.handleRemoval(event, typeName, memberName, "removeMetadataMember");
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  handleRemoval(event, typeName, memberName, messageType) {
+    this.stopPropagation(event);
+
+    if (!typeName || (messageType === "removeMetadataMember" && !memberName)) {
+      return;
+    }
+
+    this.captureViewPosition();
+    this.isMutating = true;
+    this.expandedTypes.add(typeName);
+    this.shouldRestoreViewPosition = true;
+
+    const data = {
+      filePath: this.packageFilePath,
+      metadataType: typeName,
+    };
+
+    if (messageType === "removeMetadataMember") {
+      data.memberName = memberName;
+    }
+
+    window.sendMessageToVSCode({
+      type: messageType,
+      data,
+    });
+  }
+
+  captureViewPosition() {
+    this.lastScrollY = window.scrollY || 0;
+  }
+
+  handleModalInputChange(event) {
+    this.newEntryName = event.target.value || "";
+  }
+
+  handleModalKeydown(event) {
+    if (event?.key !== "Enter") {
+      return;
+    }
+
+    this.stopPropagation(event);
+    if (typeof event.preventDefault === "function") {
+      event.preventDefault();
+    }
+
+    if (this.showAddMemberModal) {
+      this.confirmAddMember();
+      return;
+    }
+
+    this.confirmAddType();
+  }
+
+  confirmAddType() {
+    const cleanName = (this.newEntryName || "").trim();
+    if (!cleanName) {
+      this.closeModals();
+      return;
+    }
+
+    this.isMutating = true;
+    window.sendMessageToVSCode({
+      type: "addMetadataType",
+      data: {
+        filePath: this.packageFilePath,
+        metadataType: cleanName,
+      },
+    });
+    this.closeModals();
+  }
+
+  confirmAddMember() {
+    const cleanName = (this.newEntryName || "").trim();
+    if (!cleanName || !this.pendingTypeNameForMember) {
+      this.closeModals();
+      return;
+    }
+
+    this.isMutating = true;
+    window.sendMessageToVSCode({
+      type: "addMetadataMember",
+      data: {
+        filePath: this.packageFilePath,
+        metadataType: this.pendingTypeNameForMember,
+        memberName: cleanName,
+      },
+    });
+    this.closeModals();
+  }
+
+  closeModals() {
+    this.showAddTypeModal = false;
+    this.showAddMemberModal = false;
+    this.newEntryName = "";
+    this.pendingTypeNameForMember = "";
   }
 }
