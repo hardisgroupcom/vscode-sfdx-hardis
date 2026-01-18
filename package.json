@@ -405,7 +405,7 @@
         },
         {
           "command": "vscode-sfdx-hardis.showPackageXml",
-          "when": "resourceExtname == '.xml'",
+          "when": "resourceExtname == '.xml' && resourceFilename =~ /([Pp]ackage|[Dd]estructive)/",
           "group": "z_sfdxhardis@8"
         },
         {
@@ -420,17 +420,17 @@
         },
         {
           "command": "vscode-sfdx-hardis.generatePackageXmlDoc",
-          "when": "resourceExtname == '.xml'",
+          "when": "resourceExtname == '.xml' && resourceFilename =~ /([Pp]ackage|[Dd]estructive)/",
           "group": "z_sfdxhardis@10"
         },
         {
           "command": "vscode-sfdx-hardis.generateFlowDocumentation",
-          "when": "resourceExtname == '.xml'",
+          "when": "resourceExtname == '.xml' && resourceFilename =~ /\\.flow-meta\\.xml$/",
           "group": "z_sfdxhardis@15"
         },
         {
           "command": "vscode-sfdx-hardis.flowVisualGitDiff",
-          "when": "resourceExtname == '.xml'",
+          "when": "resourceExtname == '.xml' && resourceFilename =~ /\\.flow-meta\\.xml$/",
           "group": "z_sfdxhardis@20"
         }
       ],
@@ -509,7 +509,7 @@
         },
         {
           "command": "vscode-sfdx-hardis.showPackageXml",
-          "when": "resourceExtname == '.xml'",
+          "when": "resourceExtname == '.xml' && resourceFilename =~ /([Pp]ackage|[Dd]estructive)/",
           "group": "z_sfdxhardis@8"
         },
         {
@@ -524,17 +524,17 @@
         },
         {
           "command": "vscode-sfdx-hardis.generatePackageXmlDoc",
-          "when": "resourceExtname == '.xml'",
+          "when": "resourceExtname == '.xml' && resourceFilename =~ /([Pp]ackage|[Dd]estructive)/",
           "group": "z_sfdxhardis@10"
         },
         {
           "command": "vscode-sfdx-hardis.generateFlowDocumentation",
-          "when": "resourceExtname == '.xml'",
+          "when": "resourceExtname == '.xml' && resourceFilename =~ /\\.flow-meta\\.xml$/",
           "group": "z_sfdxhardis@15"
         },
         {
           "command": "vscode-sfdx-hardis.flowVisualGitDiff",
-          "when": "resourceExtname == '.xml'",
+          "when": "resourceExtname == '.xml' && resourceFilename =~ /\\.flow-meta\\.xml$/",
           "group": "z_sfdxhardis@20"
         }
       ],
