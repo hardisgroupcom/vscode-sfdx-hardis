@@ -637,14 +637,23 @@ export default class PackageXml extends LightningElement {
     }
   }
 
+  stopPropagation(event) {
+    if (event && typeof event.stopPropagation === "function") {
+      event.stopPropagation();
+    }
+  }
+
+  openAddModal(typeName = "") {
+    this.pendingTypeNameForMember = typeName;
+    this.newEntryName = "";
+    this.showAddTypeModal = !typeName;
+    this.showAddMemberModal = !!typeName;
+  }
+
   addMetadataType(event) {
     try {
-      if (event && typeof event.stopPropagation === "function") {
-        event.stopPropagation();
-      }
-
-      this.newEntryName = "";
-      this.showAddTypeModal = true;
+      this.stopPropagation(event);
+      this.openAddModal();
     } catch (e) {
       // ignore
     }
@@ -652,18 +661,12 @@ export default class PackageXml extends LightningElement {
 
   addMetadataMember(event) {
     try {
-      if (event && typeof event.stopPropagation === "function") {
-        event.stopPropagation();
-      }
-
+      this.stopPropagation(event);
       const typeName = event?.currentTarget?.dataset?.typeName;
       if (!typeName) {
         return;
       }
-
-      this.pendingTypeNameForMember = typeName;
-      this.newEntryName = "";
-      this.showAddMemberModal = true;
+      this.openAddModal(typeName);
     } catch (e) {
       // ignore
     }
@@ -671,27 +674,8 @@ export default class PackageXml extends LightningElement {
 
   removeMetadataType(event) {
     try {
-      if (event && typeof event.stopPropagation === "function") {
-        event.stopPropagation();
-      }
-
       const typeName = event?.currentTarget?.dataset?.typeName;
-      if (!typeName) {
-        return;
-      }
-
-      this.captureViewPosition();
-      this.isMutating = true;
-      this.expandedTypes.add(typeName);
-      this.shouldRestoreViewPosition = true;
-
-      window.sendMessageToVSCode({
-        type: "removeMetadataType",
-        data: {
-          filePath: this.packageFilePath,
-          metadataType: typeName,
-        },
-      });
+      this.handleRemoval(event, typeName, null, "removeMetadataType");
     } catch (e) {
       // ignore
     }
@@ -699,32 +683,39 @@ export default class PackageXml extends LightningElement {
 
   removeMetadataMember(event) {
     try {
-      if (event && typeof event.stopPropagation === "function") {
-        event.stopPropagation();
-      }
-
       const typeName = event?.currentTarget?.dataset?.typeName;
       const memberName = event?.currentTarget?.dataset?.memberName;
-      if (!typeName || !memberName) {
-        return;
-      }
-
-      this.captureViewPosition();
-      this.isMutating = true;
-      this.expandedTypes.add(typeName);
-      this.shouldRestoreViewPosition = true;
-
-      window.sendMessageToVSCode({
-        type: "removeMetadataMember",
-        data: {
-          filePath: this.packageFilePath,
-          metadataType: typeName,
-          memberName: memberName,
-        },
-      });
+      this.handleRemoval(event, typeName, memberName, "removeMetadataMember");
     } catch (e) {
       // ignore
     }
+  }
+
+  handleRemoval(event, typeName, memberName, messageType) {
+    this.stopPropagation(event);
+
+    if (!typeName || (messageType === "removeMetadataMember" && !memberName)) {
+      return;
+    }
+
+    this.captureViewPosition();
+    this.isMutating = true;
+    this.expandedTypes.add(typeName);
+    this.shouldRestoreViewPosition = true;
+
+    const data = {
+      filePath: this.packageFilePath,
+      metadataType: typeName,
+    };
+
+    if (messageType === "removeMetadataMember") {
+      data.memberName = memberName;
+    }
+
+    window.sendMessageToVSCode({
+      type: messageType,
+      data,
+    });
   }
 
   captureViewPosition() {
