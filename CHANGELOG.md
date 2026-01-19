@@ -4,6 +4,8 @@
 
 - Refactor command groups for improved navigation in context menus
 - Add focus management for modal input fields in package XML component
+- Extension settings: Move debug settings to a dedicated "Debug" section
+- Org Manager: Display API version of the orgs
 
 ## [6.25.0] 2025-01-18
 

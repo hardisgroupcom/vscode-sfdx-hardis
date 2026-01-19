@@ -33,6 +33,12 @@ export default class OrgManager extends LightningElement {
       cellAttributes: { class: { fieldName: "rowClass" } },
     },
     {
+      label: "API Version",
+      fieldName: "apiVersion",
+      type: "text",
+      cellAttributes: { class: { fieldName: "rowClass" } },
+    },
+    {
       label: "Alias",
       fieldName: "alias",
       type: "text",
@@ -85,6 +91,7 @@ export default class OrgManager extends LightningElement {
       ...o,
       username: o.username || o.loginUrl || o.instanceUrl,
       alias: o.alias || "",
+      apiVersion: o.apiVersion || o.instanceApiVersion || "",
       // strip protocol for display (label) and remove trailing slash
       instanceLabel: (o.instanceUrl || "")
         .replace(/^https?:\/\//, "")

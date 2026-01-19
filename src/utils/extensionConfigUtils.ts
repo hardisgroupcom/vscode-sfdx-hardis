@@ -42,12 +42,19 @@ export const sectionDefs = [
     keys: ["vsCodeSfdxHardis.mcp.autoStartSalesforceCliMcp"],
   },
   {
+    label: "Debug",
+    iconName: "utility:bug",
+    description: "Debugging options for the extension.",
+    keys: [
+      "vsCodeSfdxHardis.debugSfdxHardisCommands",
+      "vsCodeSfdxHardis.debugVsCodeSfdxHardis",
+    ],
+  },
+  {
     label: "Other",
     iconName: "utility:settings",
     description: "Other settings related to the extension.",
     keys: [
-      "vsCodeSfdxHardis.debugSfdxHardisCommands",
-      "vsCodeSfdxHardis.debugVsCodeSfdxHardis",
       "vsCodeSfdxHardis.disableTlsRejectUnauthorized",
       "vsCodeSfdxHardis.disableGitBashCheck",
       "vsCodeSfdxHardis.disableGitMergeRequiredCheck",
