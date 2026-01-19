@@ -11,6 +11,7 @@ export type SalesforceOrg = {
   isSandbox?: boolean;
   instanceUrl?: string;
   instanceApiVersion?: string;
+  apiVersion?: string;
   loginUrl?: string;
   orgId?: string;
   createdDate?: string;
@@ -76,6 +77,8 @@ export async function listAllOrgs(all = false): Promise<SalesforceOrg[]> {
       isScratch: !!org.isScratch,
       isSandbox: !!org.isSandbox,
       instanceUrl: org.instanceUrl,
+      instanceApiVersion: org.instanceApiVersion,
+      apiVersion: org.instanceApiVersion || org.apiVersion,
       loginUrl: org.loginUrl,
       orgId: org.orgId,
       createdDate: org.createdDate,
