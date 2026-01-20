@@ -32,12 +32,12 @@
 .monitoring-container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 2rem 2.5rem;
+    padding: 1.5rem 2rem;
 }
 
 /* Header Section */
 .header-section {
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
 }
 
 .header-content {
@@ -49,7 +49,13 @@
     border-radius: 10px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     border: 1px solid #e5e5e5;
-    margin: 0.5rem 1rem 1rem 1rem;
+    margin: 0.5rem 1rem 0.5rem 1rem;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 .header-icon-container {
@@ -92,7 +98,7 @@
 
 /* Section Styling */
 .section {
-    margin: 0 1rem 2rem 1rem;
+    margin: 0 1rem 1.25rem 1rem;
 }
 
 .section-header {
@@ -144,6 +150,26 @@
 /* Info style for CI/CD repositories where monitoring is intentionally absent */
 .status-card.cicd {
     border-left: 4px solid #1589ee;
+}
+
+.status-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+}
+
+.status-heading {
+    min-width: 240px;
+}
+
+.auth-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
 }
 
 .status-icon-container.info {
@@ -203,10 +229,34 @@
     font-size: 0.9rem;
 }
 
+.instance-url-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0 0 1rem 0;
+    flex-wrap: wrap;
+}
+
+.instance-url-label {
+    font-weight: 600;
+    color: #181818;
+}
+
+.instance-url-button {
+    padding-left: 0;
+}
+
 .status-actions {
     display: flex;
     gap: 1rem;
     flex-wrap: wrap;
+}
+
+.config-actions {
+    margin-bottom: 0.75rem;
+}
+.package-actions {
+    margin-top: 0.25rem;
 }
 
 .status-button {

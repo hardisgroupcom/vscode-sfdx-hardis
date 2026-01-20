@@ -6,6 +6,9 @@
 - Add focus management for modal input fields in package XML component
 - Extension settings: Move debug settings to a dedicated "Debug" section
 - Org Manager: Display API version of the orgs
+- Org Monitoring enhancements:
+  - Display monitored org url
+  - Rearrange buttons for better UX
 
 ## [6.25.0] 2025-01-18
 
