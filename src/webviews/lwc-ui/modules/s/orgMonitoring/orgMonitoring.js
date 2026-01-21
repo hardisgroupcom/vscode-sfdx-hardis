@@ -10,6 +10,7 @@ export default class OrgMonitoring extends LightningElement {
   @track isLoading = true;
   @track isCiCdRepo = false;
   @track monitoringRepository = null;
+  @track instanceUrl = null;
 
   @api
   initialize(data) {
@@ -17,6 +18,7 @@ export default class OrgMonitoring extends LightningElement {
     this.isInstalled = data?.isInstalled || false;
     this.isCiCdRepo = data?.isCiCdRepo || false;
     this.monitoringRepository = data?.monitoringRepository || null;
+    this.instanceUrl = data?.instanceUrl || null;
     this.isLoading = false;
   }
 
@@ -32,6 +34,18 @@ export default class OrgMonitoring extends LightningElement {
       if (data?.monitoringRepository !== undefined) {
         this.monitoringRepository = data.monitoringRepository || null;
       }
+      if (data?.instanceUrl !== undefined) {
+        this.instanceUrl = data.instanceUrl || null;
+      }
+    }
+  }
+
+  openInstanceUrl() {
+    if (this.instanceUrl) {
+      window.sendMessageToVSCode({
+        type: "openExternal",
+        data: this.instanceUrl,
+      });
     }
   }
 
@@ -52,6 +66,24 @@ export default class OrgMonitoring extends LightningElement {
   }
 
   installOrgMonitoring() {
+    window.sendMessageToVSCode({
+      type: "runCommand",
+      data: {
+        command: "sf hardis:org:configure:monitoring",
+      },
+    });
+  }
+
+  reconfigureMonitoringAuth() {
+    window.sendMessageToVSCode({
+      type: "runCommand",
+      data: {
+        command: "sf hardis:org:configure:monitoring",
+      },
+    });
+  }
+
+  configureAnotherOrg() {
     window.sendMessageToVSCode({
       type: "runCommand",
       data: {

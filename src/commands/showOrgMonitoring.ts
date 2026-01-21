@@ -46,10 +46,13 @@ export function registerShowOrgMonitoring(commands: Commands) {
         Logger.log(`Unable to read monitoring_repository from config: ${e}`);
       }
 
+      const instanceUrl = await resolveMonitoringInstanceUrl();
+
       const panel = lwcManager.getOrCreatePanel("s-org-monitoring", {
         isInstalled: isInstalled,
         isCiCdRepo: isCiCdRepo,
         monitoringRepository: monitoringRepository,
+        instanceUrl: instanceUrl,
       });
       panel.updateTitle("Org Monitoring Workbench");
 
@@ -58,6 +61,7 @@ export function registerShowOrgMonitoring(commands: Commands) {
         switch (type) {
           case "checkOrgMonitoringInstallation": {
             const currentStatus = await checkOrgMonitoringInstallation();
+            const instanceUrl2 = await resolveMonitoringInstanceUrl();
             // Recompute CI/CD detection and config in case workspace changed
             const workspaceRoot2 = getWorkspaceRoot();
             const ciCdManifestPath2 = path.join(
@@ -92,6 +96,7 @@ export function registerShowOrgMonitoring(commands: Commands) {
                 isInstalled: currentStatus,
                 isCiCdRepo: isCiCdRepo2,
                 monitoringRepository: monitoringRepository2,
+                instanceUrl: instanceUrl2,
               },
             });
             break;
@@ -112,6 +117,10 @@ export function registerShowOrgMonitoring(commands: Commands) {
 
 async function checkOrgMonitoringInstallation(): Promise<boolean> {
   const workspaceRoot = getWorkspaceRoot();
+  if (!workspaceRoot) {
+    return false;
+  }
+
   const packageSkipItemsPath = path.join(
     workspaceRoot,
     "manifest",
@@ -123,5 +132,26 @@ async function checkOrgMonitoringInstallation(): Promise<boolean> {
   } catch (error) {
     Logger.log("Error checking org monitoring installation: " + error);
     return false;
+  }
+}
+
+async function resolveMonitoringInstanceUrl(): Promise<string | null> {
+  try {
+    const workspaceRoot = getWorkspaceRoot();
+    if (!workspaceRoot) {
+      return null;
+    }
+    const configPath = path.join(workspaceRoot, ".sfdx-hardis.yml");
+    if (!fs.existsSync(configPath)) {
+      return null;
+    }
+    const raw = fs.readFileSync(configPath, "utf8");
+    const parsed = yaml.load(raw) as any;
+    const instanceUrl =
+      (parsed && (parsed.instanceUrl || parsed.instance_url)) || null;
+    return instanceUrl || null;
+  } catch (error) {
+    Logger.log("Error resolving monitoring instance URL: " + error);
+    return null;
   }
 }
