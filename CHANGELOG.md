@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [6.25.1] 2025-01-21
+
 - Refactor command groups for improved navigation in context menus
 - Add focus management for modal input fields in package XML component
 - Extension settings: Move debug settings to a dedicated "Debug" section
