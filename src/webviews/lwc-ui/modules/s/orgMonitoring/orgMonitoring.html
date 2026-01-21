@@ -11,6 +11,16 @@
                         <h1 class="header-title">Org Monitoring Workbench</h1>
                         <p class="header-subtitle">Monitor your Salesforce org health, security, and performance</p>
                     </div>
+                    <div class="header-actions">
+                        <lightning-button 
+                            variant="neutral" 
+                            label="Refresh" 
+                            title="Check installation status again"
+                            onclick={checkInstallationStatus}
+                            icon-name="utility:refresh"
+                            class="status-button"
+                        ></lightning-button>
+                    </div>
                 </div>
             </div>
 
@@ -23,9 +33,44 @@
                             <lightning-icon icon-name="utility:success" size="small" variant="inverse"></lightning-icon>
                         </div>
                         <div class="status-content">
-                            <h3 class="status-title">Org Monitoring is Installed</h3>
-                            <p class="status-description">Your org monitoring configuration is active and ready to use.</p>
-                            <div class="status-actions">
+                            <div class="status-header">
+                                <div class="status-heading">
+                                    <h3 class="status-title">Org Monitoring is Installed</h3>
+                                    <p class="status-description">Your org monitoring configuration is active and ready to use.</p>
+                                </div>
+                                <div class="status-actions auth-actions">
+                                    <lightning-button 
+                                        variant="brand"
+                                        label="Reconfigure authentication" 
+                                        title="Reconfigure authentication to the monitored org"
+                                        onclick={reconfigureMonitoringAuth}
+                                        icon-name="utility:redo"
+                                        class="status-button"
+                                    ></lightning-button>
+                                    <lightning-button 
+                                        variant="neutral" 
+                                        label="Monitor another org" 
+                                        title="Configure monitoring for a different org"
+                                        onclick={configureAnotherOrg}
+                                        icon-name="utility:adduser"
+                                        class="status-button"
+                                    ></lightning-button>
+                                </div>
+                            </div>
+                            <template if:true={instanceUrl}>
+                                <div class="instance-url-row">
+                                    <span class="instance-url-label">Monitored org:</span>
+                                    <lightning-button 
+                                        variant="base"
+                                        label={instanceUrl}
+                                        icon-name="utility:new_window"
+                                        icon-position="right"
+                                        onclick={openInstanceUrl}
+                                        class="instance-url-button"
+                                    ></lightning-button>
+                                </div>
+                            </template>
+                            <div class="status-actions package-actions">
                                 <lightning-button 
                                     variant="brand" 
                                     label="Skip Items Package" 
@@ -50,14 +95,6 @@
                                     icon-name="utility:package"
                                     class="status-button"
                                 ></lightning-button>
-                                <lightning-button 
-                                    variant="neutral" 
-                                    label="Refresh Status" 
-                                    title="Check installation status again"
-                                    onclick={checkInstallationStatus}
-                                    icon-name="utility:refresh"
-                                    class="status-button"
-                                ></lightning-button>
                             </div>
                         </div>
                     </div>
@@ -77,13 +114,11 @@
                                         This workspace appears to be a CI/CD / DevOps repository (manifest/package.xml found). It's normal for org monitoring not to be installed here.
                                     </p>
                                     <template if:true={monitoringRepository}>
-                                        <p class="status-description">
-                                            You can view the monitoring tooling in the configured repository for this project.
-                                        </p>
                                         <div class="status-actions">
                                             <lightning-button 
-                                                variant="brand"
-                                                label="Open Monitoring Repository"
+                                                variant="brand" 
+                                                label="Open Monitoring Repository" 
+                                                title="Open the repository that hosts monitoring configuration"
                                                 onclick={openMonitoringRepository}
                                                 icon-name="utility:new_window"
                                                 class="status-button"
@@ -149,14 +184,6 @@
 
             <!-- Monitoring Commands Section -->
             <div class="section">
-                <div class="section-header">
-                    <h2 class="section-title">
-                        <span class="section-icon">⚡</span>
-                        Monitoring Commands
-                    </h2>
-                    <p class="section-subtitle">Run monitoring and diagnostic commands to check your org's health</p>
-                </div>
-
                 <div class="commands-grid">
                     <!-- Backup and Monitoring -->
                     <div class="command-card">
