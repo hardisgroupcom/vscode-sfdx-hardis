@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Deactivate and re-active sf-git-merge-driver during plugin upgrade.
+
 ## [6.25.1] 2025-01-21
 
 - Refactor command groups for improved navigation in context menus
