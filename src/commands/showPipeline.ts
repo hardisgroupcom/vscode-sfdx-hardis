@@ -241,10 +241,23 @@ export function registerShowPipeline(commands: Commands) {
             try {
               await execCommandWithProgress(
                 command,
-                { fail: false, output: true, spinner: true },
+                { fail: true, output: true, spinner: true },
                 progressLabel,
               );
             } catch (error: any) {
+              if (instanceUrl) {
+                try {
+                  await vscode.env.openExternal(
+                    vscode.Uri.parse(instanceUrl),
+                  );
+                  return;
+                } catch (fallbackError: any) {
+                  vscode.window.showErrorMessage(
+                    `Failed to open org via CLI and URL: ${fallbackError?.message || fallbackError}`,
+                  );
+                  return;
+                }
+              }
               vscode.window.showErrorMessage(
                 `Failed to open org: ${error?.message || error}`,
               );
