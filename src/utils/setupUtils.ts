@@ -3,11 +3,13 @@ import {
   execCommand,
   execCommandWithProgress,
   getNpmLatestVersion,
+  getWorkspaceRoot,
   NODE_JS_MINIMUM_VERSION,
   RECOMMENDED_SFDX_CLI_VERSION,
   RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION,
 } from "../utils";
 import which from "which";
+import { isMergeDriverEnabled } from "./gitMergeDriverUtils";
 
 export type DependencyInfo = {
   explanation: string;
@@ -565,11 +567,33 @@ export class SetupHelper {
     }
     this.setUpdateInProgress(true, pluginName);
     try {
+      const isMergeDriver = pluginName === "sf-git-merge-driver";
+      let mergeDriverWasEnabled = false;
+      if (isMergeDriver) {
+        const mergeDriverStatus = await isMergeDriverEnabled(
+          getWorkspaceRoot(),
+        );
+        mergeDriverWasEnabled = mergeDriverStatus === true;
+        if (mergeDriverWasEnabled) {
+          await execCommandWithProgress(
+            "sf git merge driver disable",
+            { fail: false, output: true },
+            "Disabling Salesforce Git Merge Driver before upgrade...",
+          );
+        }
+      }
       await execCommandWithProgress(
         `echo y | sf plugins install ${pluginName}@latest`,
         { fail: true, output: true },
         `Running install command for ${pluginName}...`,
       );
+      if (mergeDriverWasEnabled) {
+        await execCommandWithProgress(
+          "sf git merge driver enable",
+          { fail: false, output: true },
+          "Re-enabling Salesforce Git Merge Driver after upgrade...",
+        );
+      }
       this.setUpdateInProgress(false, pluginName);
       vscode.commands.executeCommand("vscode-sfdx-hardis.refreshPluginsView");
       return { success: true };
