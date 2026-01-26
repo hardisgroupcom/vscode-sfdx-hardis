@@ -973,18 +973,23 @@ export default class Pipeline extends LightningElement {
         // Catch clicks on Nodes
         const mermaidSvg = this.template.querySelector(".mermaid svg");
         if (mermaidSvg) {
+          this._decorateMermaidNodes(mermaidSvg);
           mermaidSvg.addEventListener("click", (event) => {
             const target = event.target;
-            // Get node where the click happened
             const mermaidNode = target.closest("g.node");
             if (!mermaidNode) {
               return;
             }
             const targetId = mermaidNode.getAttribute("id") || "";
-            // Extract branch name from id (id example: from "flowchart-uatBranch-6" extract "uat" without "Branch")
-            const branchMatch = targetId.match(/flowchart-(.+?)(Branch)?-\d+/);
-            if (branchMatch && branchMatch[1]) {
-              const branchName = branchMatch[1];
+            const nodeIdentifier = this._extractNodeIdentifier(targetId);
+
+            if (nodeIdentifier && nodeIdentifier.endsWith("Org")) {
+              this.handleOpenOrgNode(nodeIdentifier);
+              return;
+            }
+
+            if (nodeIdentifier && nodeIdentifier.endsWith("Branch")) {
+              const branchName = this._resolveBranchNameFromNode(nodeIdentifier);
               this.handleShowBranchPRs(branchName);
             }
           });
@@ -1388,6 +1393,61 @@ export default class Pipeline extends LightningElement {
     } else {
       console.warn("No PRs found for branch:", branchName);
     }
+  }
+
+  handleOpenOrgNode(nodeIdentifier) {
+    const org = this._findOrgByNodeName(nodeIdentifier);
+    if (!org) {
+      return;
+    }
+    if (typeof window !== "undefined" && window.sendMessageToVSCode) {
+      window.sendMessageToVSCode({
+        type: "openOrg",
+        data: {
+          branchName: org.name,
+          alias: org.alias,
+          instanceUrl: org.instanceUrl,
+          nodeName: nodeIdentifier,
+        },
+      });
+    }
+  }
+
+  _findOrgByNodeName(nodeIdentifier) {
+    if (!this.pipelineData || !Array.isArray(this.pipelineData.orgs)) {
+      return null;
+    }
+    return (
+      this.pipelineData.orgs.find((org) => org.nodeName === nodeIdentifier) ||
+      null
+    );
+  }
+
+  _resolveBranchNameFromNode(nodeIdentifier) {
+    const sanitizedBranch = nodeIdentifier.replace(/(Branch|Org)$/i, "");
+    const orgMatch = this._findOrgByNodeName(`${sanitizedBranch}Org`);
+    if (orgMatch && orgMatch.name) {
+      return orgMatch.name;
+    }
+    return sanitizedBranch;
+  }
+
+  _extractNodeIdentifier(nodeId) {
+    if (!nodeId) {
+      return "";
+    }
+    return nodeId.replace(/^flowchart-/, "").replace(/-\d+$/, "");
+  }
+
+  _decorateMermaidNodes(mermaidSvg) {
+    if (!mermaidSvg) {
+      return;
+    }
+    const nodes = mermaidSvg.querySelectorAll("g.node");
+    nodes.forEach((node) => {
+      node.style.cursor = "pointer";
+      node.setAttribute("tabindex", "0");
+    });
   }
 
   handleClosePRModal() {

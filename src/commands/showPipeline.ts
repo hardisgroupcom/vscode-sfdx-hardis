@@ -15,9 +15,14 @@ import {
   savePrePostCommand,
 } from "../utils/prePostCommandsUtils";
 import { getCurrentGitBranch } from "../utils/pipeline/sfdxHardisConfig";
-import { getWorkspaceRoot, readSfdxHardisConfig } from "../utils";
+import {
+  execCommandWithProgress,
+  getWorkspaceRoot,
+  readSfdxHardisConfig,
+} from "../utils";
 import path from "path";
 import fs from "fs-extra";
+import { listAllOrgs } from "../utils/orgUtils";
 
 export function registerShowPipeline(commands: Commands) {
   let loadInProgress: Promise<PipelineInfo> | null = null;
@@ -186,6 +191,77 @@ export function registerShowPipeline(commands: Commands) {
           Logger.log(
             `Updated configuration: ${data.configKey} = ${data.value}`,
           );
+        }
+        // Open org via sf org open, preferring a known username when available
+        else if (type === "openOrg") {
+          const instanceUrl: string | undefined = data?.instanceUrl;
+          const alias: string | undefined = data?.alias;
+          const normalizeUrl = (url?: string) =>
+            (url || "").replace(/\/*$/, "").toLowerCase();
+          let targetOrgUsername: string | undefined;
+          if (instanceUrl) {
+            try {
+              const orgs = await vscode.window.withProgress(
+                {
+                  location: vscode.ProgressLocation.Notification,
+                  title: "Searching orgs for a matching instance URL...",
+                  cancellable: false,
+                },
+                async () => {
+                  return await listAllOrgs(false,true);
+                },
+              );
+              const normalizedTarget = normalizeUrl(instanceUrl);
+              const match = orgs.find((org) =>
+                normalizeUrl(org.instanceUrl) === normalizedTarget,
+              );
+              if (match?.username) {
+                targetOrgUsername = match.username;
+              }
+            } catch (error: any) {
+              Logger.log(
+                `Error while listing orgs for openOrg: ${error?.message || error}`,
+              );
+            }
+          }
+
+          let command: string | null = null;
+          if (targetOrgUsername) {
+            command = `sf org open --target-org ${targetOrgUsername}`;
+          } else if (alias) {
+            command = `sf org open --target-org ${alias}`;
+          }
+
+          if (command) {
+            const progressLabel = targetOrgUsername
+              ? `Opening org ${targetOrgUsername}`
+              : alias
+                ? `Opening org ${alias}`
+                : "Opening org";
+            try {
+              await execCommandWithProgress(
+                command,
+                { fail: false, output: true, spinner: true },
+                progressLabel,
+              );
+            } catch (error: any) {
+              vscode.window.showErrorMessage(
+                `Failed to open org: ${error?.message || error}`,
+              );
+            }
+          } else if (instanceUrl) {
+            try {
+              await vscode.env.openExternal(vscode.Uri.parse(instanceUrl));
+            } catch (error: any) {
+              vscode.window.showErrorMessage(
+                `Failed to open org URL: ${error?.message || error}`,
+              );
+            }
+          } else {
+            vscode.window.showWarningMessage(
+              "Unable to open org: no target-org or instance URL provided.",
+            );
+          }
         }
         // Authenticate or re-authenticate to Git provider
         else if (type === "connectToGit") {

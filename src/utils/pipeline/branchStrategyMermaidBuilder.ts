@@ -402,15 +402,8 @@ export class BranchStrategyMermaidBuilder {
       );
       this.mermaidLines.push(this.indent("direction TB", 2));
       for (const salesforceOrg of majorOrgs) {
-        // Make node clickable if instanceUrl is present and not login.salesforce.com or test.salesforce.com
-        let nodeLine = `${salesforceOrg.nodeName}(["☁️${salesforceOrg.label}"]):::${salesforceOrg.class}`;
-        if (
-          salesforceOrg.instanceUrl &&
-          !salesforceOrg.instanceUrl.includes("login.salesforce.com") &&
-          !salesforceOrg.instanceUrl.includes("test.salesforce.com")
-        ) {
-          nodeLine += `\nclick ${salesforceOrg.nodeName} "${salesforceOrg.instanceUrl}" _blank`;
-        }
+        // Node click is handled in the pipeline webview to run sf org open with proper targeting.
+        const nodeLine = `${salesforceOrg.nodeName}(["☁️${salesforceOrg.label}"]):::${salesforceOrg.class}`;
         this.mermaidLines.push(this.indent(nodeLine, 2));
       }
       this.mermaidLines.push(this.indent("end", 1));
