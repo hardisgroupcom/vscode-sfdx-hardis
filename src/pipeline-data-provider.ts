@@ -9,6 +9,8 @@ export interface OrgNode {
   name: string;
   type: string; // e.g., "prod", "preprod", "uat", "integration", "other"
   alias?: string;
+  instanceUrl?: string;
+  nodeName?: string;
   level: number;
 }
 
@@ -67,6 +69,8 @@ export class PipelineDataProvider {
         name: org.branchName,
         type: org.orgType,
         alias: org.alias,
+        instanceUrl: org.instanceUrl,
+        nodeName: `${this.sanitizeNodeName(org.branchName)}Org`,
         level: org.level,
         pullRequestsInBranchSinceLastMerge:
           org.pullRequestsInBranchSinceLastMerge || [],
@@ -155,5 +159,16 @@ export class PipelineDataProvider {
         );
       }
     }
+  }
+
+  private sanitizeNodeName(branchName: string | undefined): string {
+    if (!branchName) {
+      return "unknown";
+    }
+    return branchName
+      .replace(/[^a-zA-Z0-9_-]/g, "_")
+      .replace(/_{2,}/g, "_")
+      .replace(/^_+|_+$/g, "")
+      .replace(/-+/g, "-");
   }
 }

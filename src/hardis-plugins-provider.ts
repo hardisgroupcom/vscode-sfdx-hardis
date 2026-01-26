@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import {
   execCommand,
   getNpmLatestVersion,
+  getWorkspaceRoot,
   isCachePreloaded,
   isProjectSfdxConfigLoaded,
   loadExternalSfdxHardisConfiguration,
@@ -16,6 +17,7 @@ import { Logger } from "./logger";
 import which from "which";
 import { ThemeUtils } from "./themeUtils";
 import { SetupHelper } from "./utils/setupUtils";
+import { isMergeDriverEnabled } from "./utils/gitMergeDriverUtils";
 
 let nodeInstallOk = false;
 let gitInstallOk = false;
@@ -496,12 +498,18 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
     // Await parallel promises to be completed
     await Promise.allSettled(pluginPromises);
     // Propose user to upgrade if necessary
+    let mergeDriverWasEnabled = false;
+    if (outdated.some((plugin) => plugin.name === "sf-git-merge-driver")) {
+      const mergeDriverStatus = await isMergeDriverEnabled(getWorkspaceRoot());
+      mergeDriverWasEnabled = mergeDriverStatus === true;
+    }
     if (outdated.length > 0) {
       const command = this.buildUpgradeCommand(
         outdated,
         plugins,
         legacySfdx,
         sfdxCliOutdated,
+        mergeDriverWasEnabled,
       );
       const setupHelper = SetupHelper.getInstance();
       const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
@@ -555,6 +563,7 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
     plugins: any,
     legacySfdx: boolean,
     sfdxCliOutdated: boolean,
+    mergeDriverWasEnabled: boolean,
   ): string {
     let command = outdated
       .map((plugin) => `echo y|sf plugins:install ${plugin.name}`)
@@ -567,6 +576,12 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
           .join(" && ");
     } else if (sfdxCliOutdated === true) {
       command = "npm install @salesforce/cli -g && " + command;
+    }
+    if (mergeDriverWasEnabled) {
+      command =
+        "sf git merge driver disable && " +
+        command +
+        " && sf git merge driver enable";
     }
     command = command + ` && sf hardis:work:ws --event refreshPlugins`;
     return command;
