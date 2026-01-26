@@ -989,7 +989,8 @@ export default class Pipeline extends LightningElement {
             }
 
             if (nodeIdentifier && nodeIdentifier.endsWith("Branch")) {
-              const branchName = this._resolveBranchNameFromNode(nodeIdentifier);
+              const branchName =
+                this._resolveBranchNameFromNode(nodeIdentifier);
               this.handleShowBranchPRs(branchName);
             }
           });

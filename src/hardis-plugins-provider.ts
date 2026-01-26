@@ -500,9 +500,7 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
     // Propose user to upgrade if necessary
     let mergeDriverWasEnabled = false;
     if (outdated.some((plugin) => plugin.name === "sf-git-merge-driver")) {
-      const mergeDriverStatus = await isMergeDriverEnabled(
-        getWorkspaceRoot(),
-      );
+      const mergeDriverStatus = await isMergeDriverEnabled(getWorkspaceRoot());
       mergeDriverWasEnabled = mergeDriverStatus === true;
     }
     if (outdated.length > 0) {

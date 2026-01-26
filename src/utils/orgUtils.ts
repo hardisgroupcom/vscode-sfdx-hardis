@@ -21,11 +21,16 @@ export type SalesforceOrg = {
   name?: string;
 };
 
-export async function listAllOrgs(all = false, useCache = false): Promise<SalesforceOrg[]> {
+export async function listAllOrgs(
+  all = false,
+  useCache = false,
+): Promise<SalesforceOrg[]> {
   // List all orgs
   const orgListRes = await execSfdxJson(
     `sf org list${all ? " --all" : ""}`,
-    useCache ? {cacheSection: "orgs", cacheExpiration: 1000 * 60 * 60 * 24 * 7}: {} // 1 week (milliseconds
+    useCache
+      ? { cacheSection: "orgs", cacheExpiration: 1000 * 60 * 60 * 24 * 7 }
+      : {}, // 1 week (milliseconds
   );
 
   // orgListRes.result may contain several arrays grouped by type (other, sandboxes, nonScratchOrgs, devHubs, scratchOrgs, ...)

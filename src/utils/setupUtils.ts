@@ -570,9 +570,8 @@ export class SetupHelper {
       const isMergeDriver = pluginName === "sf-git-merge-driver";
       let mergeDriverWasEnabled = false;
       if (isMergeDriver) {
-        const mergeDriverStatus = await isMergeDriverEnabled(
-          getWorkspaceRoot(),
-        );
+        const mergeDriverStatus =
+          await isMergeDriverEnabled(getWorkspaceRoot());
         mergeDriverWasEnabled = mergeDriverStatus === true;
         if (mergeDriverWasEnabled) {
           await execCommandWithProgress(

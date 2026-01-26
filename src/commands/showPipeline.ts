@@ -208,12 +208,12 @@ export function registerShowPipeline(commands: Commands) {
                   cancellable: false,
                 },
                 async () => {
-                  return await listAllOrgs(false,true);
+                  return await listAllOrgs(false, true);
                 },
               );
               const normalizedTarget = normalizeUrl(instanceUrl);
-              const match = orgs.find((org) =>
-                normalizeUrl(org.instanceUrl) === normalizedTarget,
+              const match = orgs.find(
+                (org) => normalizeUrl(org.instanceUrl) === normalizedTarget,
               );
               if (match?.username) {
                 targetOrgUsername = match.username;
@@ -247,9 +247,7 @@ export function registerShowPipeline(commands: Commands) {
             } catch (error: any) {
               if (instanceUrl) {
                 try {
-                  await vscode.env.openExternal(
-                    vscode.Uri.parse(instanceUrl),
-                  );
+                  await vscode.env.openExternal(vscode.Uri.parse(instanceUrl));
                   return;
                 } catch (fallbackError: any) {
                   vscode.window.showErrorMessage(
