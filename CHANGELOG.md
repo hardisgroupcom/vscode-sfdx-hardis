@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Suggest to clone a repository if not in a git repo (status panel)
+
 ## [6.25.2] 2025-01-26
 
 - Deactivate and re-active sf-git-merge-driver during plugin upgrade.

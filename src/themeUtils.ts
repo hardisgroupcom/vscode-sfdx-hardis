@@ -194,6 +194,7 @@ export class ThemeUtils {
       org: { vscode: "cloud", hardis: "salesforce.svg" },
       "git:repo": { vscode: "repo", hardis: "git.svg" },
       "git:branch": { vscode: "git-branch", hardis: "git.svg" },
+      "git:clone": { vscode: "repo-clone", hardis: "git.svg" },
       "git:branch:warning": { vscode: "warning", hardis: "warning.svg" },
       "git:pull-request": { vscode: "git-pull-request", hardis: "merge.svg" },
       "org:connect": { vscode: "globe", hardis: "select.svg" },
