@@ -334,7 +334,20 @@ Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if you
   private async loadGitMenus() {
     const items: any = [];
     const git = simpleGit(this.workspaceRoot);
-    if (git && (await git.checkIsRepo()) === true) {
+    const isRepo = git && (await git.checkIsRepo()) === true;
+
+    if (!isRepo) {
+      items.push({
+        id: "git-clone-repo",
+        label: "Clone a repository❓",
+        command: "vscode:git.clone",
+        iconId: "git:clone",
+        tooltip: "Clone a repository using VS Code's Git clone command",
+      });
+      return items;
+    }
+
+    if (isRepo) {
       let gitRemotesOrigins: any = [];
       try {
         const gitRemotes = await git.getRemotes(true);
@@ -577,6 +590,14 @@ class StatusTreeItem extends vscode.TreeItem {
           title: label,
           command: hardisCommand.split(" ")[0],
           arguments: [hardisCommand.split(" ")[1]],
+        };
+      } else if (hardisCommand.startsWith("vscode:")) {
+        const vsCommandParts = hardisCommand.replace(/^vscode:/, "").split(" ");
+        const commandId = vsCommandParts.shift() || "";
+        this.command = {
+          title: label,
+          command: commandId,
+          arguments: vsCommandParts.length > 0 ? vsCommandParts : undefined,
         };
       } else {
         this.command = {
