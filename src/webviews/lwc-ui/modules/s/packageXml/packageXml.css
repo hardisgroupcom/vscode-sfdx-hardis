@@ -16,11 +16,10 @@
 
 /* Header Section */
 .header-section {
-    margin-bottom: 1rem;
-/* Removed custom theming and background rules */
+    margin-bottom: 0.4rem;
+    /* FIXME */
     gap: 0.75rem;
     padding: 0.75rem;
-/* Removed dark theme overrides */
 }
 
 .header-content {
@@ -257,6 +256,18 @@
     border: 0;
     box-shadow: none;
 }
+/* FIXME
+.info-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1rem;
+    border: 1px solid #eaeaea;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.info-header {
+    margin-bottom: 1rem;
+} */
 
 .info-title {
     font-size: 1rem;

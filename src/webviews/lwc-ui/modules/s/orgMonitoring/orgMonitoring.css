@@ -28,24 +28,14 @@
 .monitoring-container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 1rem 1rem; /* reduced outer padding for denser layout */
+    padding: 1.5rem 2rem;
 }
 
 .header-section {
+    margin-bottom: 1rem;
     padding: 1rem 1.5rem 0 1.5rem;
 }
 
-.header-content {
-    display: flex;
-    align-items: center;
-    gap: 1.25rem;
-    padding: 1.5rem;
-    background: white;
-    border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    border: 1px solid #e5e5e5;
-    margin: 0.5rem 1rem 0.5rem 1rem;
-}
 
 .header-actions {
     display: flex;
@@ -228,7 +218,12 @@
 
 .instance-url-label {
     font-weight: 600;
+}
+.slds-scope[data-theme="light"] .instance-url-label {
     color: #181818;
+} 
+.slds-scope[data-theme="dark"] .instance-url-label {
+  color: #d4d4d4;
 }
 
 .instance-url-button {
