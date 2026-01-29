@@ -28,11 +28,14 @@
 .monitoring-container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 1rem 1rem; /* reduced outer padding for denser layout */
+    padding: 1.5rem 2rem;
+    /* FIXME
+    padding: 1rem 1rem; */
 }
 
 .header-section {
-    padding: 1rem 1.5rem 0 1.5rem;
+    margin-bottom: 1rem;
+    /* FIXME padding: 1rem 1.5rem 0 1.5rem; */
 }
 
 .header-content {
