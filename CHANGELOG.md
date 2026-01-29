@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## [6.25.4] 2025-01-29
+
+- January egg
+
 ## [6.25.3] 2025-01-27
 
 - Suggest to clone a repository if not in a git repo (status panel)

@@ -523,9 +523,9 @@ export default class MetadataRetriever extends LightningElement {
         // Calculate number of days before November 29, 2025
         const days =
           Math.ceil(
-            (new Date("2025-11-29") - new Date()) / (1000 * 60 * 60 * 24),
+            (new Date("2026-02-13") - new Date()) / (1000 * 60 * 60 * 24),
           ) - 1;
-        this.featureText = `See you in ${days} days 😘`;
+        this.featureText = `See you in ${days} days ? 🥰`;
         this.showFeature = true;
         // Add keydown listener to close on ESC
         this._boundFeatureKeydown = (e) => {
