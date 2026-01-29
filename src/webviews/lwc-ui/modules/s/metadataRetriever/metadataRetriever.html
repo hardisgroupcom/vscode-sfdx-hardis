@@ -243,7 +243,7 @@
       <!-- Hidden feature modal (obfuscated identifiers) -->
       <template if:true={showFeature}>
         <section role="dialog" tabindex="-1" data-feature data-feature-id={featureId} aria-modal="true">
-          <div data-feature-backdrop onclick={hideFeature}></div>
+          <div data-feature-backdrop class="slds-backdrop" onclick={hideFeature}></div>
           <div data-feature-content>
             <button data-feature-close onclick={hideFeature} title="Close">×</button>
             <div data-feature-body>
