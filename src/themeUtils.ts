@@ -282,6 +282,10 @@ export class ThemeUtils {
         vscode: "plug",
         hardis: "extract.svg",
       },
+      "hardis:org:monitor:health-check": {
+        vscode: "shield",
+        hardis: "monitoring.svg",
+      },
       "hardis:doc:project2markdown": { vscode: "book", hardis: "doc.svg" },
       "hardis:doc:project2markdown-pdf": { vscode: "book", hardis: "doc.svg" },
       "hardis:doc:project2markdown-history": {
