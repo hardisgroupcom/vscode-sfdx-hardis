@@ -175,6 +175,15 @@ export default class OrgMonitoring extends LightningElement {
     });
   }
 
+  runHealthCheck() {
+    window.sendMessageToVSCode({
+      type: "runCommand",
+      data: {
+        command: "sf hardis:org:monitor:health-check",
+      },
+    });
+  }
+
   checkReleaseUpdates() {
     window.sendMessageToVSCode({
       type: "runCommand",

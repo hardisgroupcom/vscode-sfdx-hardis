@@ -386,6 +386,11 @@
     box-shadow: 0 2px 8px rgba(142, 68, 173, 0.3);
 }
 
+.command-icon-container.health {
+    background: linear-gradient(135deg, #1abc9c 0%, #13866f 100%);
+    box-shadow: 0 2px 8px rgba(26, 188, 156, 0.3);
+}
+
 .command-icon-container.unused-metadata {
     background: linear-gradient(135deg, #27ae60 0%, #1e8449 100%);
     box-shadow: 0 2px 8px rgba(39, 174, 96, 0.3);

@@ -253,6 +253,23 @@
                         ></lightning-button>
                     </div>
 
+                    <!-- Health Check -->
+                    <div class="command-card">
+                        <div class="command-header">
+                            <div class="command-icon-container health">
+                                <lightning-icon icon-name="utility:check" size="small" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="command-title">Health Check</h3>
+                        </div>
+                        <p class="command-description">Run a comprehensive org health check (limits, security, performance)</p>
+                        <lightning-button 
+                            variant="outline-brand" 
+                            label="Run Health Check" 
+                            onclick={runHealthCheck}
+                            class="command-button"
+                        ></lightning-button>
+                    </div>
+
                     <!-- Release Updates -->
                     <div class="command-card">
                         <div class="command-header">
