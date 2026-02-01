@@ -681,6 +681,15 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
               "https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-connected-apps/",
           },
           {
+            id: "hardis:org:monitor:health-check",
+            label: "Security Health Check",
+            tooltip:
+              "Extract score and indicators of org Security health check",
+            command: "sf hardis:org:monitor:health-check",
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/org/monitor/health-check/",
+          },
+          {
             id: "org:diagnose:legacyapi",
             label: "Legacy API versions usage",
             tooltip: "Detects if deprected APIs are your in a production org",

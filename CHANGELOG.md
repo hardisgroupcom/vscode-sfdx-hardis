@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## [6.26.0] 2025-02-01
+
+- Add new monitoring command **Health Check** to audit security policies of an org
+
 ## [6.25.5] 2025-01-29
 
 - January egg
