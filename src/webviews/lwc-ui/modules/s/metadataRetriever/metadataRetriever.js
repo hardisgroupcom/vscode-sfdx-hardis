@@ -525,7 +525,7 @@ export default class MetadataRetriever extends LightningElement {
           Math.ceil(
             (new Date("2026-02-13") - new Date()) / (1000 * 60 * 60 * 24),
           ) - 1;
-        this.featureText = `See you in ${days} days ? 🥰`;
+        this.featureText = `See you in ${days} days 🥰`;
         this.showFeature = true;
         // Add keydown listener to close on ESC
         this._boundFeatureKeydown = (e) => {
