@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## [6.26.2] 2025-02-04
+
+- Improve release workflows
+
 ## [6.26.1] 2025-02-04
 
 - Upgrade npm dependencies
