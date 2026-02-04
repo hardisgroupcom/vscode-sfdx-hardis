@@ -711,6 +711,9 @@ export class LwcUiPanel {
     );
 
     // Global theme stylesheet (built/copied to out/assets/styles/global-theme.css by the build)
+    const globalThemeVarsCssUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.extensionUri, "out", "assets", "styles", "global-theme-variables.css"),
+    );
     const globalThemeCssUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this.extensionUri, "out", "assets", "styles", "global-theme.css"),
     );
@@ -753,6 +756,7 @@ export class LwcUiPanel {
         </style>
 
         <!-- Global theme stylesheet: always included, handles both light and dark themes. -->
+        <link rel="stylesheet" href="${globalThemeVarsCssUri}">
         <link rel="stylesheet" href="${globalThemeCssUri}">
       </head>
       <body class="slds-scope blue-back" data-theme="${colorTheme}" data-contrast="${colorContrast}">
