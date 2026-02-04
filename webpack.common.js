@@ -151,6 +151,18 @@ const lwcWebviewConfig = {
         {
           from: path.resolve(
             __dirname,
+            "resources/global-theme-variables.css",
+          ),
+          to: path.resolve(
+            __dirname,
+            "out/assets/styles/global-theme-variables.css",
+          ),
+          toType: "file",
+          noErrorOnMissing: true,
+        },
+        {
+          from: path.resolve(
+            __dirname,
             "resources/global-theme.css",
           ),
           to: path.resolve(

@@ -1,14 +1,6 @@
-/* Theme Variables - Base for Light and Dark themes */
-/* This module defines CSS custom properties for theming all LWC components */
+/* Requires ColorMixin if you want to use variables in your webview */
 
-:host .blue-back {
-  /* --theme-gradient-bg: red;
-  background: red; */
-    /* background: var(--theme-gradient-bg); */
-}
-
-
-.light-themee {
+.slds-scope[data-theme="light"] {
   /* ===== BACKGROUND COLORS ===== */
   --theme-bg-primary: #f8f9ff;              /* Main background gradient start */
   --theme-bg-primary-end: #e8f4fd;          /* Main background gradient end */
@@ -114,7 +106,7 @@
   --theme-icon-white: white !important;
 }
 
-.dark-themee {
+.slds-scope[data-theme="dark"] {
   /* ===== BACKGROUND COLORS ===== */
   --theme-bg-primary: #1a1d24;              /* Main background dark */
   --theme-bg-primary-end: #0f1318;          /* Main background gradient end */
@@ -207,12 +199,12 @@
   --theme-gradient-success: linear-gradient(135deg, var(--theme-success) 0%, var(--theme-success-dark) 100%);
   --theme-gradient-highlight: linear-gradient(135deg, var(--theme-bg-highlight) 0%, var(--theme-bg-highlight-end) 100%);
   --theme-gradient-success-bg: linear-gradient(135deg, var(--theme-bg-success) 0%, var(--theme-bg-success-end) 100%);
-
 }
 
-
-/* 
-html
+.slds-scope[data-theme="light"]
+{
+}
+.slds-scope[data-theme="dark"]
 {
     --vscode-font-family: "Segoe WPC", "Segoe UI", sans-serif;
     --vscode-font-weight: normal;
@@ -1021,4 +1013,39 @@ html
     --vscode-git-blame\.editorDecorationForeground: #969696;
     --vscode-editor-font-feature-settings: "liga" off, "calt" off;
 }
+
+.slds-scope[data-theme="light"][data-contrast="high"] {
+  
+}
+.slds-scope[data-theme="dark"][data-contrast="high"] {
+
+}
+
+/*
+ --vscode to --slds
 */
+.slds-scope[data-theme] {
+  --slds-c-icon-color-foreground: white !important;
+  --slds-c-icon-color-foreground-default: white !important;
+
+  /* background-color: #EDF4FF !important;
+  color: #080707 !important;
+
+  --lwc-colorBackground: #EDF4FF;
+  --lwc-colorBackgroundAlt: #EDF4FF;
+  --lwc-colorBorder: #dddbda;
+  --lwc-colorTextDefault: #080707;
+  --lwc-colorTextWeak: #3e3e3c;
+  --lwc-colorTextInverse: #ffffff;
+  */
+  /*   
+  background-color: #1e1e1e !important;
+  color: #d4d4d4 !important;
+
+  --lwc-colorBackground: #1e1e1e;
+  --lwc-colorBackgroundAlt: #252526;
+  --lwc-colorBorder: #333333;
+  --lwc-colorTextDefault: #d4d4d4;
+  --lwc-colorTextWeak: #9a9a9a;
+  --lwc-colorTextInverse: #000000; */
+}
