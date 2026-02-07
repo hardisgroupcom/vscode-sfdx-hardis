@@ -1,0 +1,310 @@
+/* Documentation Workbench Styles – consistent with setup & orgMonitoring panels */
+.blue-back {
+    background: linear-gradient(135deg, #f8f9ff 0%, #e8f4fd 100%);
+    min-height: 100vh;
+    font-family: "Salesforce Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.doc-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem 1rem;
+}
+
+/* Header */
+.header-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e5e5e5;
+    margin-bottom: 1rem;
+}
+
+.header-icon-container {
+    width: 52px;
+    height: 52px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, #54a4a6 0%, #026d71 100%);
+    color: white !important;
+}
+
+.header-icon-container lightning-icon {
+    --slds-c-icon-color-foreground: white !important;
+    --slds-c-icon-color-foreground-default: white !important;
+}
+
+.header-text {
+    flex-grow: 1;
+}
+
+.header-title {
+    font-size: 1.35rem;
+    margin: 0;
+    font-weight: 700;
+}
+
+.header-subtitle {
+    margin: 0.15rem 0 0 0;
+    color: #6b7280;
+    font-size: 0.92rem;
+}
+
+.header-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Sections */
+.section {
+    margin-bottom: 1.25rem;
+}
+
+.section-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #181818;
+    margin: 0 0 0.25rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.section-icon {
+    --slds-c-icon-color-foreground: #54a4a6;
+    --slds-c-icon-color-foreground-default: #54a4a6;
+}
+
+.section-description {
+    color: #6b7280;
+    font-size: 0.9rem;
+    margin: 0 0 0.75rem 0;
+    line-height: 1.4;
+}
+
+/* Generate options card */
+.generate-options-card {
+    background: white;
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e9eef3;
+}
+
+.option-row {
+    margin-bottom: 0.6rem;
+}
+
+.option-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.option-checkbox {
+    flex-shrink: 0;
+}
+
+.option-help {
+    color: #9ca3af;
+    font-size: 0.85rem;
+    margin: 0;
+}
+
+.generate-actions {
+    margin-top: 1rem;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.options-note {
+    color: #6b7280;
+    font-size: 0.85rem;
+    margin: 0.75rem 0 0 0;
+    line-height: 1.4;
+}
+
+/* Commands grid */
+.commands-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+.commands-grid.single-column {
+    grid-template-columns: 1fr;
+}
+
+.command-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e9eef3;
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+}
+
+.command-icon-container {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: white !important;
+}
+
+.command-icon-container lightning-icon {
+    --slds-c-icon-color-foreground: white !important;
+    --slds-c-icon-color-foreground-default: white !important;
+}
+
+.command-icon-container.cloudflare {
+    background: linear-gradient(135deg, #f6821f 0%, #e05d00 100%);
+    box-shadow: 0 2px 6px rgba(246, 130, 31, 0.3);
+}
+
+.command-icon-container.salesforce {
+    background: linear-gradient(135deg, #1589ee 0%, #005fb2 100%);
+    box-shadow: 0 2px 6px rgba(21, 137, 238, 0.3);
+}
+
+.command-icon-container.local {
+    background: linear-gradient(135deg, #27ae60 0%, #1e8449 100%);
+    box-shadow: 0 2px 6px rgba(39, 174, 96, 0.3);
+}
+
+.command-icon-container.prompts {
+    background: linear-gradient(135deg, #8e44ad 0%, #6c3483 100%);
+    box-shadow: 0 2px 6px rgba(142, 68, 173, 0.3);
+}
+
+.command-icon-container.prompts-overwrite {
+    background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+    box-shadow: 0 2px 6px rgba(217, 119, 6, 0.3);
+}
+
+.command-content {
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.command-title {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0 0 0.15rem 0;
+}
+
+.command-description {
+    color: #6b7280;
+    font-size: 0.85rem;
+    margin: 0;
+    line-height: 1.3;
+}
+
+.command-actions {
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+/* Config Section */
+.config-loading {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.5rem;
+    color: #6b7280;
+}
+
+.config-section {
+    background: white;
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e9eef3;
+    margin-bottom: 0.75rem;
+}
+
+.config-section-title {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0 0 0.25rem 0;
+    color: #181818;
+}
+
+.config-section-description {
+    color: #6b7280;
+    font-size: 0.85rem;
+    margin: 0 0 0.75rem 0;
+}
+
+.config-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+.config-field {
+    margin-bottom: 0.25rem;
+}
+
+.field-description {
+    color: #9ca3af;
+    font-size: 0.78rem;
+    margin: 0.15rem 0 0 0;
+    line-height: 1.3;
+}
+
+.config-save-actions {
+    margin-top: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.save-feedback {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.save-feedback.success {
+    color: #04844b;
+}
+
+.save-feedback.error {
+    color: #b91c1c;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .header-content {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .commands-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .config-fields {
+        grid-template-columns: 1fr;
+    }
+
+    .command-card {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

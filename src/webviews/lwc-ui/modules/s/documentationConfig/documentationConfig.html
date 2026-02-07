@@ -1,0 +1,142 @@
+<template>
+    <div class="slds-scope slds-theme_default blue-back">
+        <div class="config-container">
+            <!-- Header -->
+            <div class="header-content">
+                <div class="header-icon-container">
+                    <lightning-icon icon-name="utility:settings" size="medium" variant="inverse"></lightning-icon>
+                </div>
+                <div class="header-text">
+                    <h1 class="header-title">Documentation Configuration</h1>
+                    <p class="header-subtitle">Configure AI providers, prompt templates, and deployment options</p>
+                </div>
+            </div>
+
+            <!-- Prompt Templates Section -->
+            <div class="section">
+                <h2 class="section-title">
+                    <lightning-icon icon-name="utility:note" size="x-small" class="section-icon"></lightning-icon>
+                    Prompt Templates
+                </h2>
+                <p class="section-description">Override and customize AI prompt templates used for documentation generation. These templates control how LLMs describe Flows, Objects, Apex classes, etc.</p>
+
+                <div class="commands-grid">
+                    <div class="command-card">
+                        <div class="command-icon-container prompts">
+                            <lightning-icon icon-name="utility:edit" size="small" variant="inverse"></lightning-icon>
+                        </div>
+                        <div class="command-content">
+                            <h3 class="command-title">Override Prompt Templates</h3>
+                            <p class="command-description">Copy default templates into your project so you can customize them. Existing local templates are preserved.</p>
+                        </div>
+                        <div class="command-actions">
+                            <lightning-button variant="brand" label="Override" onclick={handleOverridePrompts}></lightning-button>
+                        </div>
+                    </div>
+
+                    <div class="command-card">
+                        <div class="command-icon-container prompts-overwrite">
+                            <lightning-icon icon-name="utility:refresh" size="small" variant="inverse"></lightning-icon>
+                        </div>
+                        <div class="command-content">
+                            <h3 class="command-title">Override Templates (Overwrite)</h3>
+                            <p class="command-description">Reset local templates by overwriting them with the latest defaults from sfdx-hardis.</p>
+                        </div>
+                        <div class="command-actions">
+                            <lightning-button variant="destructive" label="Overwrite" onclick={handleOverridePromptsOverwrite}></lightning-button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI & Documentation Configuration Section -->
+            <div class="section">
+                <h2 class="section-title">
+                    <lightning-icon icon-name="utility:magicwand" size="x-small" class="section-icon"></lightning-icon>
+                    AI &amp; Documentation Configuration
+                </h2>
+                <p class="section-description">Configure AI providers and documentation deployment settings. These values are saved in your project's <strong>.sfdx-hardis.yml</strong> file.</p>
+
+                <template if:true={configLoading}>
+                    <div class="config-loading">
+                        <s-spinner alternative-text="Loading configuration..." size="small" variant="brand"></s-spinner>
+                        <p>Loading configuration...</p>
+                    </div>
+                </template>
+
+                <template if:false={configLoading}>
+                    <div class="config-section">
+                        <h3 class="config-section-title">AI Provider</h3>
+                        <p class="config-section-description">Select which AI provider is used for documentation generation.</p>
+                        <div class="config-fields">
+                            <div class="config-field">
+                                <lightning-combobox
+                                    label="Provider"
+                                    value={providerSelection}
+                                    options={providerOptions}
+                                    onchange={handleProviderChange}
+                                    placeholder="Select provider"
+                                ></lightning-combobox>
+                            </div>
+                        </div>
+                    </div>
+
+                    <template for:each={configSections} for:item="sect">
+                        <template if:true={sect.visible}>
+                            <div key={sect.label} class="config-section">
+                                <h3 class="config-section-title">{sect.label}</h3>
+                                <template if:true={sect.description}>
+                                    <p class="config-section-description">{sect.description}</p>
+                                </template>
+                                <div class="config-fields">
+                                    <template for:each={sect.fields} for:item="field">
+                                        <div key={field.key} class="config-field">
+                                            <template if:true={field.isBoolean}>
+                                                <lightning-input
+                                                    type="checkbox"
+                                                    label={field.title}
+                                                    name={field.key}
+                                                    checked={field.value}
+                                                    onchange={handleConfigFieldChange}
+                                                    data-key={field.key}
+                                                ></lightning-input>
+                                            </template>
+                                            <template if:true={field.isEnum}>
+                                                <lightning-combobox
+                                                    label={field.title}
+                                                    value={field.value}
+                                                    options={field.options}
+                                                    data-key={field.key}
+                                                    onchange={handleConfigFieldChange}
+                                                ></lightning-combobox>
+                                            </template>
+                                            <template if:true={field.isText}>
+                                                <lightning-input
+                                                    type="text"
+                                                    label={field.title}
+                                                    value={field.value}
+                                                    data-key={field.key}
+                                                    onchange={handleConfigFieldChange}
+                                                ></lightning-input>
+                                            </template>
+                                            <template if:true={field.isNumber}>
+                                                <lightning-input
+                                                    type="number"
+                                                    label={field.title}
+                                                    value={field.value}
+                                                    data-key={field.key}
+                                                    onchange={handleConfigFieldChange}
+                                                ></lightning-input>
+                                            </template>
+                                            <p class="field-description">{field.description}</p>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                    </template>
+                </template>
+            </div>
+        </div>
+    </div>
+</template>

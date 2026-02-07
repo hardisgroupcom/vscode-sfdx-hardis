@@ -198,6 +198,11 @@
         "icon": "$(database)"
       },
       {
+        "command": "vscode-sfdx-hardis.showDocumentationWorkbench",
+        "title": "SFDX Hardis: Documentation Workbench",
+        "icon": "$(book)"
+      },
+      {
         "command": "vscode-sfdx-hardis.simulateMetadataDeployment",
         "title": "SFDX Hardis: Simulate Metadata Deployment",
         "icon": "$(cloud-upload)"

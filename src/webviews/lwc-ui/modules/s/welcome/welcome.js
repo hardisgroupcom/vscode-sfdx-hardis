@@ -95,6 +95,12 @@ export default class Welcome extends LightningElement {
     });
   }
 
+  navigateToDocumentationWorkbench() {
+    window.sendMessageToVSCode({
+      type: "navigateToDocumentationWorkbench",
+    });
+  }
+
   navigateToExtensionConfig() {
     window.sendMessageToVSCode({
       type: "navigateToExtensionConfig",
