@@ -134,14 +134,12 @@
           "enum": [
             "auto",
             "light",
-            "dark",
-            "vscode"
+            "dark"
           ],
           "enumDescriptions": [
             "🔄 Automatic (Light/Dark theme)",
             "☀️ Light theme",
-            "🌑 Dark theme",
-            "🎨 Your VS Code theme"
+            "🌑 Dark theme"
           ],
           "description": "Display theme for SFDX-Hardis webview panels (Pipeline, Configuration, etc.)"
         },
