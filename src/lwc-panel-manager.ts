@@ -230,7 +230,7 @@ export class LwcPanelManager {
    * Refresh all active panels (useful when configuration changes, like theme)
    */
   public refreshAllPanels(data: any): void {
-    this.activePanels.forEach((panel, lwcId) => {
+    this.activePanels.forEach((panel, _) => {
       if (!panel.isDisposed()) {
         panel.refresh(data || {});
       }
