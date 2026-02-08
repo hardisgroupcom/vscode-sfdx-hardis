@@ -77,7 +77,7 @@ export default class DocumentationWorkbench extends LightningElement {
   handleRunLocally() {
     window.sendMessageToVSCode({
       type: "runVsCodeCommand",
-      data: "vscode-sfdx-hardis.runLocalHtmlDocPages",
+      data: { command: "vscode-sfdx-hardis.runLocalHtmlDocPages"},
     });
   }
 

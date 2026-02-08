@@ -74,9 +74,9 @@
                                 <template if:true={sect.description}>
                                     <p class="config-section-description">{sect.description}</p>
                                 </template>
-                                <div class="config-fields slds-grid slds-wrap slds-gutters">
+                                <div class="config-fields" class:compact-row={sect.isCompactRow}>
                                     <template for:each={sect.fields} for:item="field">
-                                        <div key={field.key} class="config-field slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                                        <div key={field.key} class="config-field slds-m-bottom_medium" class:compact-field={sect.isCompactRow}>
                                             <template if:true={sect.showInlineDescriptions}>
                                                 <!-- Inline descriptions for deployment section -->
                                                 <template if:true={field.isBoolean}>
@@ -121,108 +121,88 @@
                                                 </template>
                                             </template>
                                             <template if:false={sect.showInlineDescriptions}>
-                                                <!-- Help text icons for provider sections -->
-                                                <div class="field-label-with-help slds-form-element">
+                                                <!-- Extension Settings style: Label with inline helptext -->
+                                                <div class="slds-form-element">
                                                     <template if:true={field.isProviderSelect}>
-                                                        <div class="field-label-row slds-grid slds-grid_vertical-align-center slds-gutters_xx-small">
-                                                            <div class="slds-col">
-                                                                <span class="slds-form-element__label">{field.title}</span>
-                                                            </div>
-                                                        </div>
-                                                        <div class="slds-form-element__control">
-                                                            <lightning-combobox
-                                                                label={field.title}
-                                                                variant="label-hidden"
-                                                                value={field.value}
-                                                                options={field.options}
-                                                                onchange={handleProviderChange}
-                                                            ></lightning-combobox>
-                                                        </div>
+                                                        <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                                                            <span>{field.title}</span>
+                                                            <template if:true={field.description}>
+                                                                <s-multiline-helptext content={field.description}></s-multiline-helptext>
+                                                            </template>
+                                                        </label>
+                                                        <lightning-combobox
+                                                            name={field.key}
+                                                            value={field.value}
+                                                            options={field.options}
+                                                            onchange={handleProviderChange}
+                                                            variant="label-hidden"
+                                                        ></lightning-combobox>
                                                     </template>
                                                     <template if:true={field.isBoolean}>
-                                                        <div class="field-boolean-row slds-grid slds-wrap slds-grid_vertical-align-center slds-gutters_xx-small">
-                                                            <div class="slds-col slds-size_1-of-1">
-                                                                <lightning-input
-                                                                    type="checkbox"
-                                                                    label={field.title}
-                                                                    name={field.key}
-                                                                    checked={field.value}
-                                                                    onchange={handleConfigFieldChange}
-                                                                    data-key={field.key}
-                                                                ></lightning-input>
-                                                            </div>
+                                                        <label class="slds-form-element__label" style="display:block;">
+                                                            {field.title}
                                                             <template if:true={field.description}>
-                                                                <div class="slds-col slds-size_1-of-1">
-                                                                    <s-multiline-helptext content={field.description}></s-multiline-helptext>
-                                                                </div>
+                                                                <s-multiline-helptext content={field.description}></s-multiline-helptext>
                                                             </template>
-                                                        </div>
+                                                        </label>
+                                                        <lightning-input
+                                                            type="toggle"
+                                                            name={field.key}
+                                                            checked={field.value}
+                                                            onchange={handleConfigFieldChange}
+                                                            data-key={field.key}
+                                                            variant="label-hidden"
+                                                        ></lightning-input>
                                                     </template>
                                                     <template if:true={field.isEnum}>
-                                                        <div class="field-label-row slds-grid slds-grid_vertical-align-center slds-gutters_xx-small">
-                                                            <div class="slds-col">
-                                                                <span class="slds-form-element__label">{field.title}</span>
-                                                            </div>
+                                                        <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                                                            <span>{field.title}</span>
                                                             <template if:true={field.description}>
-                                                                <div class="slds-col slds-no-flex field-help-icon">
-                                                                    <s-multiline-helptext content={field.description}></s-multiline-helptext>
-                                                                </div>
+                                                                <s-multiline-helptext content={field.description}></s-multiline-helptext>
                                                             </template>
-                                                        </div>
-                                                        <div class="slds-form-element__control">
-                                                            <lightning-combobox
-                                                                label={field.title}
-                                                                variant="label-hidden"
-                                                                value={field.value}
-                                                                options={field.options}
-                                                                data-key={field.key}
-                                                                onchange={handleConfigFieldChange}
-                                                            ></lightning-combobox>
-                                                        </div>
+                                                        </label>
+                                                        <lightning-combobox
+                                                            name={field.key}
+                                                            value={field.value}
+                                                            options={field.options}
+                                                            data-key={field.key}
+                                                            onchange={handleConfigFieldChange}
+                                                            variant="label-hidden"
+                                                        ></lightning-combobox>
                                                     </template>
                                                     <template if:true={field.isText}>
-                                                        <div class="field-label-row slds-grid slds-grid_vertical-align-center slds-gutters_xx-small">
-                                                            <div class="slds-col">
-                                                                <span class="slds-form-element__label">{field.title}</span>
-                                                            </div>
+                                                        <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                                                            <span>{field.title}</span>
                                                             <template if:true={field.description}>
-                                                                <div class="slds-col slds-no-flex field-help-icon">
-                                                                    <s-multiline-helptext content={field.description}></s-multiline-helptext>
-                                                                </div>
+                                                                <s-multiline-helptext content={field.description}></s-multiline-helptext>
                                                             </template>
-                                                        </div>
-                                                        <div class="slds-form-element__control">
-                                                            <lightning-input
-                                                                type="text"
-                                                                label={field.title}
-                                                                variant="label-hidden"
-                                                                value={field.value}
-                                                                data-key={field.key}
-                                                                onchange={handleConfigFieldChange}
-                                                            ></lightning-input>
-                                                        </div>
+                                                        </label>
+                                                        <lightning-input
+                                                            type="text"
+                                                            name={field.key}
+                                                            value={field.value}
+                                                            placeholder={field.defaultValue}
+                                                            data-key={field.key}
+                                                            onchange={handleConfigFieldChange}
+                                                            variant="label-hidden"
+                                                        ></lightning-input>
                                                     </template>
                                                     <template if:true={field.isNumber}>
-                                                        <div class="field-label-row slds-grid slds-grid_vertical-align-center slds-gutters_xx-small">
-                                                            <div class="slds-col">
-                                                                <span class="slds-form-element__label">{field.title}</span>
-                                                            </div>
+                                                        <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                                                            <span>{field.title}</span>
                                                             <template if:true={field.description}>
-                                                                <div class="slds-col slds-no-flex field-help-icon">
-                                                                    <s-multiline-helptext content={field.description}></s-multiline-helptext>
-                                                                </div>
+                                                                <s-multiline-helptext content={field.description}></s-multiline-helptext>
                                                             </template>
-                                                        </div>
-                                                        <div class="slds-form-element__control">
-                                                            <lightning-input
-                                                                type="number"
-                                                                label={field.title}
-                                                                variant="label-hidden"
-                                                                value={field.value}
-                                                                data-key={field.key}
-                                                                onchange={handleConfigFieldChange}
-                                                            ></lightning-input>
-                                                        </div>
+                                                        </label>
+                                                        <lightning-input
+                                                            type="number"
+                                                            name={field.key}
+                                                            value={field.value}
+                                                            placeholder={field.defaultValue}
+                                                            data-key={field.key}
+                                                            onchange={handleConfigFieldChange}
+                                                            variant="label-hidden"
+                                                        ></lightning-input>
                                                     </template>
                                                 </div>
                                             </template>

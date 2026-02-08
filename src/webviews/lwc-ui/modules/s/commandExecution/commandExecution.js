@@ -1261,7 +1261,13 @@ ${resultMessage}`;
           (section.currentStep / section.totalSteps) * 100,
         );
         progressStepText = `${section.currentStep} of ${section.totalSteps} steps`;
-        progressTimeEstimation = section.estimatedRemainingTime || "";
+        if (section.isActive) {
+          progressTimeEstimation = section.estimatedRemainingTime || "";
+        }
+        else {
+          const elapsed = this.calculateSectionDuration(section);
+          progressTimeEstimation = elapsed ? `Elapsed: ${elapsed}` : "";
+        }
 
         // Add shine animation for active progress with known steps
         if (section.isActive) {
@@ -1281,6 +1287,10 @@ ${resultMessage}`;
         isIndeterminate = true;
         if (section.isActive) {
           progressAnimationClass = "animated-progress-bar is-indeterminate";
+        }
+        if (!section.isActive) {
+          const elapsed = this.calculateSectionDuration(section);
+          progressTimeEstimation = elapsed ? `Elapsed: ${elapsed}` : "";
         }
       }
 

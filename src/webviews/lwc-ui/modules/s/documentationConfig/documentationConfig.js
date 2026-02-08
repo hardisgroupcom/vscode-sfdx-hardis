@@ -15,6 +15,7 @@ export default class DocumentationConfig extends LightningElement {
   @track providerSelection = "";
   @track providerOptions = [];
   @track promptsLanguageField = null;
+  @track promptsParallelCallNumberField = null;
   @track hasLocalPromptTemplates = false;
   @track promptTemplatesPath = "";
   @track overwriteLocalTemplates = false;
@@ -61,6 +62,11 @@ export default class DocumentationConfig extends LightningElement {
     this.promptsLanguageField = this._buildFieldDef(
       "promptsLanguage",
       (this._schema && this._schema.promptsLanguage) || {},
+      this.configValues,
+    );
+    this.promptsParallelCallNumberField = this._buildFieldDef(
+      "promptsParallelCallNumber",
+      (this._schema && this._schema.promptsParallelCallNumber) || {},
       this.configValues,
     );
     this._buildSections();
@@ -158,6 +164,9 @@ export default class DocumentationConfig extends LightningElement {
     if (this.providerSelection !== "" && this.promptsLanguageField) {
       providerFields.push({ ...this.promptsLanguageField });
     }
+    if (this.providerSelection !== "" && this.promptsParallelCallNumberField) {
+      providerFields.push({ ...this.promptsParallelCallNumberField });
+    }
 
     let providerKeys = [];
     if (this.providerSelection === "langchain") {
@@ -196,6 +205,7 @@ export default class DocumentationConfig extends LightningElement {
         [...providerFields, ...providerSpecificFields],
         true,
         false,
+        true,
       ),
     );
 
@@ -228,18 +238,22 @@ export default class DocumentationConfig extends LightningElement {
     };
   }
 
-  _buildSectionFromFields(label, description, fields, visible, showInlineDescriptions = false) {
+  _buildSectionFromFields(label, description, fields, visible, showInlineDescriptions = false, isCompactRow = false) {
     return {
       label,
       description,
       fields,
       visible,
       showInlineDescriptions,
+      isCompactRow,
     };
   }
 
   _buildFieldDef(key, schemaDef, config) {
-    const value = config && config[key] !== undefined ? config[key] : (schemaDef.default !== undefined ? schemaDef.default : "");
+    const schemaDefault = schemaDef.default;
+    const configValue = config && config[key] !== undefined ? config[key] : undefined;
+    const value = configValue !== undefined ? configValue : (schemaDefault !== undefined ? schemaDefault : "");
+    
     const type = schemaDef.type || "string";
     const title = schemaDef.title || this._prettifyKey(key);
     const description = schemaDef.description || "";
@@ -259,11 +273,22 @@ export default class DocumentationConfig extends LightningElement {
       options = [{ label: "-- None --", value: "" }, ...options];
     }
 
+    // Format the display value
+    let displayValue = value;
+    if (isBoolean) {
+      displayValue = !!value;
+    } else if (isNumber && value !== "") {
+      displayValue = typeof value === "string" ? Number(value) : value;
+    } else if (value === undefined || value === null) {
+      displayValue = "";
+    }
+
     return {
       key,
       title,
       description,
-      value: isBoolean ? !!value : (value ?? ""),
+      value: displayValue,
+      defaultValue: schemaDefault !== undefined ? schemaDefault : "",
       isBoolean,
       isEnum,
       isNumber,
@@ -340,6 +365,12 @@ export default class DocumentationConfig extends LightningElement {
     if (key === "promptsLanguage" && this.promptsLanguageField) {
       this.promptsLanguageField = {
         ...this.promptsLanguageField,
+        value: value ?? "",
+      };
+    }
+    if (key === "promptsParallelCallNumber" && this.promptsParallelCallNumberField) {
+      this.promptsParallelCallNumberField = {
+        ...this.promptsParallelCallNumberField,
         value: value ?? "",
       };
     }

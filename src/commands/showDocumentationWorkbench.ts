@@ -17,6 +17,7 @@ import { Logger } from "../logger";
  */
 const DOC_CONFIG_KEYS = [
   "promptsLanguage",
+  "promptsParallelCallNumber",
   "useLangchainLlm",
   "langchainLlmProvider",
   "langchainLlmModel",

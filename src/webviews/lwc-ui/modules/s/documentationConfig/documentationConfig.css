@@ -224,38 +224,41 @@
 }
 
 .config-field {
-    margin-bottom: 0.25rem;
+    max-width: 600px;
 }
 
-.field-label-with-help {
+/* Compact row layout for provider fields */
+.config-fields.compact-row {
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
+    gap: 1rem;
     align-items: flex-start;
-    gap: 0.35rem;
 }
 
-.field-label-with-help > :first-child {
+.config-fields.compact-row .config-field {
     flex: 1;
-    min-width: 0;
+    min-width: 200px;
+    max-width: none;
 }
 
-.field-label-row {
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    margin-bottom: 0.35rem;
+.config-fields.compact-row .config-field:first-child {
+    min-width: 250px;
 }
 
-.field-help-icon {
-    display: flex;
-    align-items: center;
+/* Match Extension Settings compact spacing */
+.config-field .slds-form-element {
+    margin-bottom: 0.75rem !important;
 }
 
+.config-field .slds-form-element__label {
+    margin-bottom: 0.25rem !important;
+}
 
-.field-boolean-row {
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
+/* Ensure lightning components have no extra spacing */
+lightning-combobox,
+lightning-input {
+    margin-top: 0 !important;
+    display: block;
 }
 
 .field-inline-description {
