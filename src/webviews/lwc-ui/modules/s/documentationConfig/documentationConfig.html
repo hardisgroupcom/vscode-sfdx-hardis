@@ -67,48 +67,6 @@
                 </template>
 
                 <template if:false={configLoading}>
-                    <div class="config-section">
-                        <h3 class="config-section-title">AI Provider</h3>
-                        <p class="config-section-description">Select which AI provider is used for documentation generation.</p>
-                        <div class="config-fields slds-grid slds-wrap slds-gutters">
-                            <div class="config-field slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-                                <lightning-combobox
-                                    label="Provider"
-                                    value={providerSelection}
-                                    options={providerOptions}
-                                    onchange={handleProviderChange}
-                                    placeholder="Select provider"
-                                ></lightning-combobox>
-                            </div>
-                            <template if:true={showPromptsLanguage}>
-                                <div class="config-field slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-                                    <div class="field-label-with-help slds-form-element">
-                                        <div class="field-label-row slds-grid slds-grid_vertical-align-center slds-gutters_xx-small">
-                                            <div class="slds-col">
-                                                <span class="slds-form-element__label">{promptsLanguageField.title}</span>
-                                            </div>
-                                            <template if:true={promptsLanguageField.description}>
-                                                <div class="slds-col slds-no-flex field-help-icon">
-                                                    <s-multiline-helptext content={promptsLanguageField.description}></s-multiline-helptext>
-                                                </div>
-                                            </template>
-                                        </div>
-                                        <div class="slds-form-element__control">
-                                            <lightning-input
-                                                type="text"
-                                                label={promptsLanguageField.title}
-                                                variant="label-hidden"
-                                                value={promptsLanguageField.value}
-                                                data-key="promptsLanguage"
-                                                onchange={handleConfigFieldChange}
-                                            ></lightning-input>
-                                        </div>
-                                    </div>
-                                </div>
-                            </template>
-                        </div>
-                    </div>
-
                     <template for:each={configSections} for:item="sect">
                         <template if:true={sect.visible}>
                             <div key={sect.label} class="config-section">
@@ -165,6 +123,22 @@
                                             <template if:false={sect.showInlineDescriptions}>
                                                 <!-- Help text icons for provider sections -->
                                                 <div class="field-label-with-help slds-form-element">
+                                                    <template if:true={field.isProviderSelect}>
+                                                        <div class="field-label-row slds-grid slds-grid_vertical-align-center slds-gutters_xx-small">
+                                                            <div class="slds-col">
+                                                                <span class="slds-form-element__label">{field.title}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div class="slds-form-element__control">
+                                                            <lightning-combobox
+                                                                label={field.title}
+                                                                variant="label-hidden"
+                                                                value={field.value}
+                                                                options={field.options}
+                                                                onchange={handleProviderChange}
+                                                            ></lightning-combobox>
+                                                        </div>
+                                                    </template>
                                                     <template if:true={field.isBoolean}>
                                                         <div class="field-boolean-row slds-grid slds-wrap slds-grid_vertical-align-center slds-gutters_xx-small">
                                                             <div class="slds-col slds-size_1-of-1">

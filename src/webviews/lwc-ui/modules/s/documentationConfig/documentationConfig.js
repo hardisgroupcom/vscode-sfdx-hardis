@@ -140,41 +140,62 @@ export default class DocumentationConfig extends LightningElement {
   _buildSections() {
     const sections = [];
 
-    sections.push(
-      this._buildSection(
-        "Langchain Settings",
-        "Configure Langchain provider and model settings.",
-        [
-          "langchainLlmProvider",
-          "langchainLlmModel",
-          "langchainLlmTemperature",
-          "langchainLlmMaxTokens",
-          "langchainLlmMaxRetries",
-          "langchainLlmTimeout",
-          "langchainLlmBaseUrl",
-        ],
-        this.providerSelection === "langchain",
-        false, // Use help text icons
+    const providerFields = [
+      {
+        key: "providerSelection",
+        title: "Provider",
+        description: "",
+        value: this.providerSelection,
+        isBoolean: false,
+        isEnum: false,
+        isNumber: false,
+        isText: false,
+        isProviderSelect: true,
+        options: this.providerOptions,
+      },
+    ];
+
+    if (this.providerSelection !== "" && this.promptsLanguageField) {
+      providerFields.push({ ...this.promptsLanguageField });
+    }
+
+    let providerKeys = [];
+    if (this.providerSelection === "langchain") {
+      providerKeys = [
+        "langchainLlmProvider",
+        "langchainLlmModel",
+        "langchainLlmTemperature",
+        "langchainLlmMaxTokens",
+        "langchainLlmMaxRetries",
+        "langchainLlmTimeout",
+        "langchainLlmBaseUrl",
+      ];
+    }
+    else if (this.providerSelection === "openai") {
+      providerKeys = ["openaiModel"];
+    }
+    else if (this.providerSelection === "agentforce") {
+      providerKeys = [
+        "genericAgentforcePromptTemplate",
+        "genericAgentforcePromptUrl",
+      ];
+    }
+
+    const providerSpecificFields = providerKeys.map((key) =>
+      this._buildFieldDef(
+        key,
+        (this._schema && this._schema[key]) || {},
+        this.configValues,
       ),
     );
 
     sections.push(
-      this._buildSection(
-        "OpenAI Direct",
-        "Configure OpenAI model settings for direct API usage.",
-        ["openaiModel"],
-        this.providerSelection === "openai",
-        false, // Use help text icons
-      ),
-    );
-
-    sections.push(
-      this._buildSection(
-        "Agentforce",
-        "Configure Agentforce prompt settings.",
-        ["genericAgentforcePromptTemplate", "genericAgentforcePromptUrl"],
-        this.providerSelection === "agentforce",
-        false, // Use help text icons
+      this._buildSectionFromFields(
+        "AI Provider & Settings",
+        "Select the AI provider, prompts language, and configure provider-specific settings.",
+        [...providerFields, ...providerSpecificFields],
+        true,
+        false,
       ),
     );
 
@@ -191,10 +212,6 @@ export default class DocumentationConfig extends LightningElement {
     this.configSections = sections;
   }
 
-  get showPromptsLanguage() {
-    return this.providerSelection !== "";
-  }
-
   _buildSection(label, description, keys, visible, showInlineDescriptions = false) {
     const fields = [];
     for (const key of keys) {
@@ -202,6 +219,16 @@ export default class DocumentationConfig extends LightningElement {
       const field = this._buildFieldDef(key, schemaDef, this.configValues);
       fields.push(field);
     }
+    return {
+      label,
+      description,
+      fields,
+      visible,
+      showInlineDescriptions,
+    };
+  }
+
+  _buildSectionFromFields(label, description, fields, visible, showInlineDescriptions = false) {
     return {
       label,
       description,
