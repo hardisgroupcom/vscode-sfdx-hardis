@@ -113,10 +113,6 @@ lightning-helptext lightning-icon {
     max-width: 500px;
 }
 
-/* Ensure the spinner uses brand colors (blue) */
-.submission-modal lightning-spinner {
-    --slds-c-spinner-color-foreground: #1589ee; /* Brand blue color */
-}
 
 .slds-col>.slds-text-color_weak {
     background: transparent;
