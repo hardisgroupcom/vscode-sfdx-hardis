@@ -253,7 +253,7 @@ export function activate(context: vscode.ExtensionContext) {
       const colorThemeConfig = config.get("colorTheme", "auto");
       const { colorTheme, colorContrast } = LwcPanelManager.resolveTheme(colorThemeConfig);
       
-      getExtensionConfigSections(context.extensionUri).then((sections) => {
+      getExtensionConfigSections(context.extensionUri).then((_) => {
         LwcPanelManager.getInstance(context).refreshAllPanels({
           colorTheme,
           colorContrast 

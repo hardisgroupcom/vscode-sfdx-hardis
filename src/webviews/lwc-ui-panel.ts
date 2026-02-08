@@ -735,7 +735,7 @@ export class LwcUiPanel {
       clusterBkg: "#EAF5FC",
       edgeLabelBackground: "rgba(232,232,232, 0.8)"
     }
-    if (colorTheme == "dark") {
+    if (colorTheme === "dark") {
       mermaidTheme.clusterBkg = "#333";
       mermaidTheme.edgeLabelBackground = "rgba(77, 77, 77, 0.5)";
     }

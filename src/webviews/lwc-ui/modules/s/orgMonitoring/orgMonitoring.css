@@ -57,10 +57,7 @@
     border: 2px solid rgba(255, 255, 255, 0.2);
 }
 
-.header-icon-container lightning-icon {
-    --slds-c-icon-color-foreground: white !important;
-    --slds-c-icon-color-foreground-default: white !important;
-}
+
 
 .header-text {
     flex-grow: 1;
@@ -172,10 +169,7 @@
     color: white !important;
 }
 
-.status-icon-container lightning-icon {
-    --slds-c-icon-color-foreground: white !important;
-    --slds-c-icon-color-foreground-default: white !important;
-}
+
 
 .status-icon-container:hover {
     transform: translateY(-1px);
@@ -298,10 +292,7 @@
     transition: all 0.2s ease;
 }
 
-.command-icon-container lightning-icon {
-    --slds-c-icon-color-foreground: white !important;
-    --slds-c-icon-color-foreground-default: white !important;
-}
+
 
 .command-icon-container:hover {
     transform: translateY(-1px);

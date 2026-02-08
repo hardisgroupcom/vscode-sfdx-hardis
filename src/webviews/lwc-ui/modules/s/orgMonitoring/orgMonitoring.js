@@ -19,52 +19,6 @@ export default class OrgMonitoring extends LightningElement {
     this.monitoringRepository = data?.monitoringRepository || null;
     this.instanceUrl = data?.instanceUrl || null;
     this.isLoading = false;
-
-    // Mirror current theme from document.body to the component root
-    try {
-      const theme = document.body.getAttribute("data-theme");
-      const root = this.template.querySelector(".blue-back") || this.template.host;
-      if (theme && root) {
-        root.setAttribute("data-theme", theme);
-      }
-    } catch (e) {
-      // no-op
-    }
-  }
-
-  connectedCallback() {
-    // Apply current theme immediately
-    this.applyCurrentTheme();
-    // Observe body attribute changes to mirror theme dynamically
-    try {
-      this._themeObserver = new MutationObserver(() => this.applyCurrentTheme());
-      this._themeObserver.observe(document.body, { attributes: true, attributeFilter: ["data-theme"] });
-    } catch (e) {
-      // no-op
-    }
-  }
-
-  disconnectedCallback() {
-    try {
-      if (this._themeObserver) {
-        this._themeObserver.disconnect();
-        this._themeObserver = null;
-      }
-    } catch (e) {
-      // no-op
-    }
-  }
-
-  applyCurrentTheme() {
-    try {
-      const theme = document.body.getAttribute("data-theme");
-      const root = this.template?.querySelector?.(".blue-back") || this.template?.host;
-      if (theme && root) {
-        root.setAttribute("data-theme", theme);
-      }
-    } catch (e) {
-      // no-op
-    }
   }
 
   @api
@@ -91,19 +45,6 @@ export default class OrgMonitoring extends LightningElement {
         type: "openExternal",
         data: this.instanceUrl,
       });
-    }
-
-    // Apply theme updates locally so CSS selectors can match
-    if (type === "themeChanged") {
-      try {
-        const theme = (data || "").toString();
-        const root = this.template.querySelector(".blue-back") || this.template.host;
-        if (theme && root) {
-          root.setAttribute("data-theme", theme);
-        }
-      } catch (e) {
-        // no-op
-      }
     }
   }
 

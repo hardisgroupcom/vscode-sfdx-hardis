@@ -215,10 +215,6 @@
     transition: all 0.2s ease;
 }
 
-.feature-icon-container lightning-icon {
-    --slds-c-icon-color-foreground: white !important;
-    --slds-c-icon-color-foreground-default: white !important;
-}
 
 .feature-icon-container:hover {
     transform: translateY(-2px);
@@ -230,44 +226,28 @@
     box-shadow: 0 3px 10px rgba(21, 137, 238, 0.25);
 }
 
-.feature-icon-container.org-manager lightning-icon {
-    --slds-c-icon-color-foreground: white !important;
-}
 
 .feature-icon-container.devops-pipeline {
     background: linear-gradient(135deg, #06a59a 0%, #045a55 100%);
     box-shadow: 0 3px 10px rgba(6, 165, 154, 0.25);
 }
 
-.feature-icon-container.devops-pipeline lightning-icon {
-    --slds-c-icon-color-foreground: white !important;
-}
 
 .feature-icon-container.org-monitoring {
     background: linear-gradient(135deg, #54a4a6 0%, #026d71 100%);
     box-shadow: 0 3px 10px rgba(84, 164, 166, 0.25);
 }
 
-.feature-icon-container.org-monitoring lightning-icon {
-    --slds-c-icon-color-foreground: white !important;
-}
 
 .feature-icon-container.files-workbench {
     background: linear-gradient(135deg, #ff6b35 0%, #d4471b 100%);
     box-shadow: 0 3px 10px rgba(255, 107, 53, 0.25);
 }
 
-.feature-icon-container.files-workbench lightning-icon {
-    --slds-c-icon-color-foreground: white !important;
-}
 
 .feature-icon-container.data-workbench {
     background: linear-gradient(135deg, #9f4fea 0%, #7b2cbf 100%);
     box-shadow: 0 3px 10px rgba(159, 79, 234, 0.25);
-}
-
-.feature-icon-container.data-workbench lightning-icon {
-    --slds-c-icon-color-foreground: white !important;
 }
 
 .feature-title {
@@ -361,19 +341,9 @@
     box-shadow: 0 3px 10px rgba(255, 180, 57, 0.25);
 }
 
-.feature-icon-container.documentation lightning-icon {
-    --slds-c-icon-color-foreground: white !important;
-    --slds-c-icon-color-foreground-default: white !important;
-}
-
 .feature-icon-container.settings {
     background: linear-gradient(135deg, #706e6b 0%, #514f4d 100%);
     box-shadow: 0 3px 10px rgba(112, 110, 107, 0.25);
-}
-
-.feature-icon-container.settings lightning-icon {
-    --slds-c-icon-color-foreground: white !important;
-    --slds-c-icon-color-foreground-default: white !important;
 }
 
 .tool-icon-container {
@@ -456,11 +426,6 @@
     flex-shrink: 0;
 }
 
-.getting-started-icon-container lightning-icon {
-    --slds-c-icon-color-foreground: white !important;
-    --slds-c-icon-color-foreground-default: white !important;
-}
-
 .getting-started-text-header {
     flex: 1;
 }
@@ -531,11 +496,6 @@
     justify-content: center;
     box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
     flex-shrink: 0;
-}
-
-.open-source-icon-container lightning-icon {
-    --slds-c-icon-color-foreground: white !important;
-    --slds-c-icon-color-foreground-default: white !important;
 }
 
 .open-source-text-header {
@@ -817,9 +777,6 @@
 }
 
 /* Dark mode overrides for main welcome styles */
-.blue-back[data-theme="dark"] {
-    background: linear-gradient(135deg, #121217 0%, #17171b 100%);
-}
 
 .blue-back[data-theme="dark"] .welcome-container {
     color: #d4d4d4;
