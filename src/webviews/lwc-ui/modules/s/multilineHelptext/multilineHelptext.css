@@ -50,21 +50,18 @@
 }
 
 /* Dark theme overrides (component-scoped) */
-.blue-back[data-theme="dark"] .multiline-helptext-popover,
-.blue-back[data-theme="dark-high-contrast"] .multiline-helptext-popover {
+.blue-back[data-theme="dark"] .multiline-helptext-popover {
     background: #0b2236; /* slightly lighter than surrounding bg */
     color: #e6eef9;
     box-shadow: 0 6px 18px rgba(0,0,0,0.6);
     border: 1px solid rgba(255,255,255,0.04);
 }
 
-.blue-back[data-theme="dark"] .multiline-helptext-popover a,
-.blue-back[data-theme="dark-high-contrast"] .multiline-helptext-popover a {
+.blue-back[data-theme="dark"] .multiline-helptext-popover a {
     color: #7fc7ff;
 }
 
-.blue-back[data-theme="dark"] .multiline-helptext-popover a:hover,
-.blue-back[data-theme="dark-high-contrast"] .multiline-helptext-popover a:hover {
+.blue-back[data-theme="dark"] .multiline-helptext-popover a:hover {
     color: #bde8ff;
 }
 

@@ -320,43 +320,35 @@ lightning-datatable .hardis-emoji-cell a {
 }
 
 /* Dark Mode Colors */
-.slds-scope[data-theme="dark"] .pipeline-container,
-.slds-scope[data-theme="dark-high-contrast"] .pipeline-container {
+.slds-scope[data-theme="dark"] .pipeline-container {
     background: #252526;
 }
 
-.slds-scope[data-theme="dark"] .pipeline-loading-overlay,
-.slds-scope[data-theme="dark-high-contrast"] .pipeline-loading-overlay {
+.slds-scope[data-theme="dark"] .pipeline-loading-overlay {
     background-color: rgba(37, 37, 38, 0.7);
 }
 
-.slds-scope[data-theme="dark"] .blue-back,
-.slds-scope[data-theme="dark-high-contrast"] .blue-back {
+.slds-scope[data-theme="dark"] .blue-back {
     background: linear-gradient(135deg, #121217 0%, #17171b 100%);
 }
 
-.slds-scope[data-theme="dark"] .command-card,
-.slds-scope[data-theme="dark-high-contrast"] .command-card {
+.slds-scope[data-theme="dark"] .command-card {
     background: #1e1e1e;
     border-color: rgba(255, 255, 255, 0.04);
 }
 
-.slds-scope[data-theme="dark"] .command-card.disabled:hover,
-.slds-scope[data-theme="dark-high-contrast"] .command-card.disabled:hover {
+.slds-scope[data-theme="dark"] .command-card.disabled:hover {
     border-color: rgba(255, 255, 255, 0.04);
 }
 
-.slds-scope[data-theme="dark"] .command-card:hover,
-.slds-scope[data-theme="dark-high-contrast"] .command-card:hover {
+.slds-scope[data-theme="dark"] .command-card:hover {
     border-color: #4ea1ff;
 }
 
-.slds-scope[data-theme="dark"] .command-title,
-.slds-scope[data-theme="dark-high-contrast"] .command-title {
+.slds-scope[data-theme="dark"] .command-title {
     color: #ffffff;
 }
 
-.slds-scope[data-theme="dark"] .command-description,
-.slds-scope[data-theme="dark-high-contrast"] .command-description {
+.slds-scope[data-theme="dark"] .command-description {
     color: #a3a3a3;
 }
