@@ -55,18 +55,15 @@ lightning-datatable {
 }
 
 /* Dark theme overrides (component-scoped) */
-.blue-back[data-theme="dark"] .slds-badge,
-.blue-back[data-theme="dark-high-contrast"] .slds-badge {
+.blue-back[data-theme="dark"] .slds-badge {
 	background: rgba(255,255,255,0.04);
 	color: #cfe6ff;
 }
 
-.blue-back[data-theme="dark"] .slds-text-title_bold,
-.blue-back[data-theme="dark-high-contrast"] .slds-text-title_bold {
+.blue-back[data-theme="dark"] .slds-text-title_bold {
 	color: #e6eef9;
 }
 
-.blue-back[data-theme="dark"] lightning-datatable,
-.blue-back[data-theme="dark-high-contrast"] lightning-datatable {
+.blue-back[data-theme="dark"] lightning-datatable {
 	color: #dbefff;
 }

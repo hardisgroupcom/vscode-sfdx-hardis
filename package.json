@@ -135,15 +135,13 @@
             "auto",
             "light",
             "dark",
-            "light-high",
-            "dark-high"
+            "vscode"
           ],
           "enumDescriptions": [
-            "🔄 Automatic (VS Code theme)",
+            "🔄 Automatic (Light/Dark theme)",
             "☀️ Light theme",
-            "🌙 Dark theme",
-            "🔆 Light High contrast theme",
-            "🌑 Dark High contrast theme"
+            "🌑 Dark theme",
+            "🎨 Your VS Code theme"
           ],
           "description": "Display theme for SFDX-Hardis webview panels (Pipeline, Configuration, etc.)"
         },
@@ -601,7 +599,7 @@
     "@lwc/engine-dom": "^8.20.2",
     "@lwc/module-resolver": "^8.20.2",
     "@lwc/synthetic-shadow": "^8.20.2",
-    "@salesforce-ux/design-system": "^2.27.2",
+    "@salesforce-ux/design-system": "2.29.0",
     "@types/fs-extra": "^11.0.4",
     "@types/git-url-parse": "^9.0.1",
     "@types/glob": "^8.0.0",
@@ -649,7 +647,7 @@
     "git-url-parse": "^16.1.0",
     "jira.js": "^5.2.2",
     "js-yaml": "^4.1.0",
-    "lightning-base-components": "^1.27.2-alpha",
+    "lightning-base-components": "1.28.12-alpha",
     "lodash-es": "4.17.23",
     "mermaid": "^11.10.0",
     "moment": "^2.29.1",
