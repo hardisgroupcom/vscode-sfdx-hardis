@@ -609,12 +609,17 @@ async function loadFromRemoteConfigFile(url: string) {
 
 export async function readSfdxHardisConfig(): Promise<any> {
   if (vscode.workspace.workspaceFolders) {
-    const configFile = path.join(
-      vscode.workspace.workspaceFolders[0].uri.fsPath,
+    const workspaceRoot = vscode.workspace.workspaceFolders[0].uri.fsPath;
+    const rootConfigFile = path.join(workspaceRoot, `.sfdx-hardis.yml`);
+    const configConfigFile = path.join(
+      workspaceRoot,
       `config/.sfdx-hardis.yml`,
     );
-    if (fs.existsSync(configFile)) {
-      return await loadFromLocalConfigFile(configFile);
+    if (fs.existsSync(rootConfigFile)) {
+      return await loadFromLocalConfigFile(rootConfigFile);
+    }
+    if (fs.existsSync(configConfigFile)) {
+      return await loadFromLocalConfigFile(configConfigFile);
     }
   }
   return {};
@@ -625,10 +630,15 @@ export async function writeSfdxHardisConfig(
   value: any,
 ): Promise<any> {
   if (vscode.workspace.workspaceFolders) {
-    const configFile = path.join(
-      vscode.workspace.workspaceFolders[0].uri.fsPath,
+    const workspaceRoot = vscode.workspace.workspaceFolders[0].uri.fsPath;
+    const rootConfigFile = path.join(workspaceRoot, `.sfdx-hardis.yml`);
+    const configConfigFile = path.join(
+      workspaceRoot,
       `config/.sfdx-hardis.yml`,
     );
+    const configFile = fs.existsSync(rootConfigFile)
+      ? rootConfigFile
+      : configConfigFile;
     await fs.ensureDir(path.dirname(configFile));
     const config = await readSfdxHardisConfig();
     config[key] = value;

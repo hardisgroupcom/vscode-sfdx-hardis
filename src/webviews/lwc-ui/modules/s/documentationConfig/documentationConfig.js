@@ -14,6 +14,10 @@ export default class DocumentationConfig extends LightningElement {
   @track configValues = {};
   @track providerSelection = "";
   @track providerOptions = [];
+  @track promptsLanguageField = null;
+  @track hasLocalPromptTemplates = false;
+  @track promptTemplatesPath = "";
+  @track overwriteLocalTemplates = false;
 
   _schema = {};
 
@@ -25,11 +29,10 @@ export default class DocumentationConfig extends LightningElement {
   @api
   initialize(data) {
     if (data) {
+      this._applyPromptTemplatesInfo(data);
       // Build config UI
-      if (data.config) {
-        this._buildConfigUI(data.config, data.schema);
-        this.configLoading = false;
-      }
+      this._buildConfigUI(data.config || {}, data.schema || {});
+      this.configLoading = false;
     }
   }
 
@@ -39,7 +42,8 @@ export default class DocumentationConfig extends LightningElement {
       this.initialize(data);
     }
     else if (type === "configLoaded") {
-      this._buildConfigUI(data.config, data.schema);
+      this._applyPromptTemplatesInfo(data);
+      this._buildConfigUI(data?.config || {}, data?.schema || {});
       this.configLoading = false;
     }
   }
@@ -54,27 +58,46 @@ export default class DocumentationConfig extends LightningElement {
     this._extractLlmProviderOptions();
     
     this.providerSelection = this._detectProviderSelection();
+    this.promptsLanguageField = this._buildFieldDef(
+      "promptsLanguage",
+      (this._schema && this._schema.promptsLanguage) || {},
+      this.configValues,
+    );
     this._buildSections();
   }
 
+  _applyPromptTemplatesInfo(data) {
+    if (!data) {
+      return;
+    }
+    this.hasLocalPromptTemplates = !!data.hasLocalPromptTemplates;
+    this.promptTemplatesPath = data.promptTemplatesPath || "";
+    if (!this.hasLocalPromptTemplates) {
+      this.overwriteLocalTemplates = false;
+    }
+  }
+
   _extractLlmProviderOptions() {
-    const langchainProviderDef = this._schema && this._schema.langchainLlmProvider;
-    if (langchainProviderDef && langchainProviderDef.enum) {
-      this.providerOptions = langchainProviderDef.enum.map((v, i) => ({
-        label: (langchainProviderDef.enumNames && langchainProviderDef.enumNames[i]) || v,
-        value: v,
-      }));
-      // Prepend empty option if not already present
-      if (this.providerOptions.length > 0 && this.providerOptions[0].value !== "") {
-        this.providerOptions = [{ label: "-- None --", value: "" }, ...this.providerOptions];
+    // Provider options are fixed based on provider type, not schema
+    this.providerOptions = [
+      { label: "-- None --", value: "" },
+      { label: "Langchain LLMs", value: "langchain" },
+      { label: "Agentforce", value: "agentforce" },
+      { label: "OpenAI Direct", value: "openai" },
+    ];
+  }
+
+  _hasAnyValue(keys) {
+    return keys.some((key) => {
+      const value = this.configValues[key];
+      if (value === undefined || value === null) {
+        return false;
       }
-    }
-    else {
-      // Fallback to default options if schema doesn't have enums
-      this.providerOptions = [
-        { label: "-- None --", value: "" }
-      ];
-    }
+      if (typeof value === "string") {
+        return value.trim() !== "";
+      }
+      return value !== false;
+    });
   }
 
   _detectProviderSelection() {
@@ -85,6 +108,30 @@ export default class DocumentationConfig extends LightningElement {
       return "agentforce";
     }
     if (this.configValues.useOpenaiDirect) {
+      return "openai";
+    }
+    if (
+      this._hasAnyValue([
+        "langchainLlmProvider",
+        "langchainLlmModel",
+        "langchainLlmTemperature",
+        "langchainLlmMaxTokens",
+        "langchainLlmMaxRetries",
+        "langchainLlmTimeout",
+        "langchainLlmBaseUrl",
+      ])
+    ) {
+      return "langchain";
+    }
+    if (
+      this._hasAnyValue([
+        "genericAgentforcePromptTemplate",
+        "genericAgentforcePromptUrl",
+      ])
+    ) {
+      return "agentforce";
+    }
+    if (this._hasAnyValue(["openaiModel"])) {
       return "openai";
     }
     return "";
@@ -107,6 +154,7 @@ export default class DocumentationConfig extends LightningElement {
           "langchainLlmBaseUrl",
         ],
         this.providerSelection === "langchain",
+        false, // Use help text icons
       ),
     );
 
@@ -116,6 +164,7 @@ export default class DocumentationConfig extends LightningElement {
         "Configure OpenAI model settings for direct API usage.",
         ["openaiModel"],
         this.providerSelection === "openai",
+        false, // Use help text icons
       ),
     );
 
@@ -125,6 +174,7 @@ export default class DocumentationConfig extends LightningElement {
         "Configure Agentforce prompt settings.",
         ["genericAgentforcePromptTemplate", "genericAgentforcePromptUrl"],
         this.providerSelection === "agentforce",
+        false, // Use help text icons
       ),
     );
 
@@ -134,13 +184,18 @@ export default class DocumentationConfig extends LightningElement {
         "Configure automatic deployment of generated HTML documentation during sfdx-hardis Org Monitoring metadata backup command.",
         ["docDeployToCloudflare", "docDeployToOrg"],
         true,
+        true, // Show inline descriptions instead of help icons
       ),
     );
 
     this.configSections = sections;
   }
 
-  _buildSection(label, description, keys, visible) {
+  get showPromptsLanguage() {
+    return this.providerSelection !== "";
+  }
+
+  _buildSection(label, description, keys, visible, showInlineDescriptions = false) {
     const fields = [];
     for (const key of keys) {
       const schemaDef = (this._schema && this._schema[key]) || {};
@@ -152,6 +207,7 @@ export default class DocumentationConfig extends LightningElement {
       description,
       fields,
       visible,
+      showInlineDescriptions,
     };
   }
 
@@ -202,27 +258,40 @@ export default class DocumentationConfig extends LightningElement {
   handleProviderChange(event) {
     const selection = event.detail ? event.detail.value : event.target.value;
     this.providerSelection = selection;
+    // Update provider flags: explicitly set each one based on selection
     this.configValues = {
       ...this.configValues,
       useLangchainLlm: selection === "langchain",
       useAgentforce: selection === "agentforce",
       useOpenaiDirect: selection === "openai",
     };
+    // Rebuild sections to show/hide provider-specific fields
     this._buildSections();
+    // Save the provider selection to config
     this._saveConfig();
   }
 
   handleOverridePrompts() {
+    const command = this.overwriteLocalTemplates
+      ? "sf hardis:doc:override-prompts --overwrite"
+      : "sf hardis:doc:override-prompts";
     window.sendMessageToVSCode({
       type: "runCommand",
-      data: "sf hardis:doc:override-prompts",
+      data: { command: command },
     });
   }
 
-  handleOverridePromptsOverwrite() {
+  handleOverwriteLocalTemplatesChange(event) {
+    this.overwriteLocalTemplates = !!event.target.checked;
+  }
+
+  handleShowPromptTemplates() {
+    if (!this.promptTemplatesPath) {
+      return;
+    }
     window.sendMessageToVSCode({
-      type: "runCommand",
-      data: "sf hardis:doc:override-prompts --overwrite",
+      type: "openFolder",
+      data: { folderPath: this.promptTemplatesPath },
     });
   }
 
@@ -241,6 +310,13 @@ export default class DocumentationConfig extends LightningElement {
     }
     this.configValues = { ...this.configValues, [key]: value };
 
+    if (key === "promptsLanguage" && this.promptsLanguageField) {
+      this.promptsLanguageField = {
+        ...this.promptsLanguageField,
+        value: value ?? "",
+      };
+    }
+
     // Update the field value in sections for reactivity
     this.configSections = this.configSections.map((sect) => ({
       ...sect,
@@ -258,7 +334,7 @@ export default class DocumentationConfig extends LightningElement {
   _saveConfig() {
     window.sendMessageToVSCode({
       type: "saveDocConfig",
-      data: { config: this.configValues },
+      data: { config: JSON.parse(JSON.stringify(this.configValues)) },
     });
   }
 }

@@ -137,6 +137,8 @@ export class LwcUiPanel {
       "s-extension-config": "Extension Settings",
       "s-data-workbench": "Data Import/Export Workbench",
       "s-files-workbench": "Files Import/Export Workbench",
+      "s-documentation-workbench": "Documentation Workbench",
+      "s-documentation-config": "Documentation Settings",
       "s-setup": "Install Dependencies",
     };
     const panelTitle = lwcDefinitions[this.lwcId] || "SFDX Hardis";
@@ -244,6 +246,9 @@ export class LwcUiPanel {
           break;
         case "openFile":
           await this.handleFileOpen(data.filePath);
+          break;
+        case "openFolder":
+          await this.handleFolderOpen(data.folderPath);
           break;
         case "openExternal":
           await this.handleOpenExternal(data.url || data);
@@ -491,6 +496,29 @@ export class LwcUiPanel {
     } catch (error) {
       Logger.log("Error opening file:\n" + JSON.stringify(error));
       vscode.window.showErrorMessage(`Failed to open file: ${error}`);
+    }
+  }
+
+  /**
+   * Handle folder reveal request from webview
+   * @param folderPathInit Path to the folder to reveal in the explorer
+   */
+  private async handleFolderOpen(folderPathInit: string): Promise<void> {
+    try {
+      const resolvedPath = this.resolveWorkspacePath(folderPathInit);
+      const folderUri = vscode.Uri.file(resolvedPath);
+      const stat = await vscode.workspace.fs.stat(folderUri);
+      if (!(stat.type & vscode.FileType.Directory)) {
+        vscode.window.showErrorMessage(
+          `Path is not a folder: ${resolvedPath}`,
+        );
+        return;
+      }
+      await vscode.commands.executeCommand("revealInExplorer", folderUri);
+      Logger.log(`Revealed folder in explorer: ${resolvedPath}`);
+    } catch (error) {
+      Logger.log("Error revealing folder:\n" + JSON.stringify(error));
+      vscode.window.showErrorMessage(`Failed to open folder: ${error}`);
     }
   }
 

@@ -28,22 +28,24 @@
                         <div class="command-content">
                             <h3 class="command-title">Override Prompt Templates</h3>
                             <p class="command-description">Copy default templates into your project so you can customize them. Existing local templates are preserved.</p>
+                            <template if:true={hasLocalPromptTemplates}>
+                                <div class="command-options">
+                                    <lightning-input
+                                        type="checkbox"
+                                        label="Overwrite local templates"
+                                        checked={overwriteLocalTemplates}
+                                        onchange={handleOverwriteLocalTemplatesChange}
+                                    ></lightning-input>
+                                    <lightning-button
+                                        variant="neutral"
+                                        label="Show"
+                                        onclick={handleShowPromptTemplates}
+                                    ></lightning-button>
+                                </div>
+                            </template>
                         </div>
                         <div class="command-actions">
                             <lightning-button variant="brand" label="Override" onclick={handleOverridePrompts}></lightning-button>
-                        </div>
-                    </div>
-
-                    <div class="command-card">
-                        <div class="command-icon-container prompts-overwrite">
-                            <lightning-icon icon-name="utility:refresh" size="small" variant="inverse"></lightning-icon>
-                        </div>
-                        <div class="command-content">
-                            <h3 class="command-title">Override Templates (Overwrite)</h3>
-                            <p class="command-description">Reset local templates by overwriting them with the latest defaults from sfdx-hardis.</p>
-                        </div>
-                        <div class="command-actions">
-                            <lightning-button variant="destructive" label="Overwrite" onclick={handleOverridePromptsOverwrite}></lightning-button>
                         </div>
                     </div>
                 </div>
@@ -68,8 +70,8 @@
                     <div class="config-section">
                         <h3 class="config-section-title">AI Provider</h3>
                         <p class="config-section-description">Select which AI provider is used for documentation generation.</p>
-                        <div class="config-fields">
-                            <div class="config-field">
+                        <div class="config-fields slds-grid slds-wrap slds-gutters">
+                            <div class="config-field slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
                                 <lightning-combobox
                                     label="Provider"
                                     value={providerSelection}
@@ -78,6 +80,32 @@
                                     placeholder="Select provider"
                                 ></lightning-combobox>
                             </div>
+                            <template if:true={showPromptsLanguage}>
+                                <div class="config-field slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                                    <div class="field-label-with-help slds-form-element">
+                                        <div class="field-label-row slds-grid slds-grid_vertical-align-center slds-gutters_xx-small">
+                                            <div class="slds-col">
+                                                <span class="slds-form-element__label">{promptsLanguageField.title}</span>
+                                            </div>
+                                            <template if:true={promptsLanguageField.description}>
+                                                <div class="slds-col slds-no-flex field-help-icon">
+                                                    <s-multiline-helptext content={promptsLanguageField.description}></s-multiline-helptext>
+                                                </div>
+                                            </template>
+                                        </div>
+                                        <div class="slds-form-element__control">
+                                            <lightning-input
+                                                type="text"
+                                                label={promptsLanguageField.title}
+                                                variant="label-hidden"
+                                                value={promptsLanguageField.value}
+                                                data-key="promptsLanguage"
+                                                onchange={handleConfigFieldChange}
+                                            ></lightning-input>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
                         </div>
                     </div>
 
@@ -88,47 +116,142 @@
                                 <template if:true={sect.description}>
                                     <p class="config-section-description">{sect.description}</p>
                                 </template>
-                                <div class="config-fields">
+                                <div class="config-fields slds-grid slds-wrap slds-gutters">
                                     <template for:each={sect.fields} for:item="field">
-                                        <div key={field.key} class="config-field">
-                                            <template if:true={field.isBoolean}>
-                                                <lightning-input
-                                                    type="checkbox"
-                                                    label={field.title}
-                                                    name={field.key}
-                                                    checked={field.value}
-                                                    onchange={handleConfigFieldChange}
-                                                    data-key={field.key}
-                                                ></lightning-input>
+                                        <div key={field.key} class="config-field slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                                            <template if:true={sect.showInlineDescriptions}>
+                                                <!-- Inline descriptions for deployment section -->
+                                                <template if:true={field.isBoolean}>
+                                                    <lightning-input
+                                                        type="checkbox"
+                                                        label={field.title}
+                                                        name={field.key}
+                                                        checked={field.value}
+                                                        onchange={handleConfigFieldChange}
+                                                        data-key={field.key}
+                                                    ></lightning-input>
+                                                </template>
+                                                <template if:true={field.isEnum}>
+                                                    <lightning-combobox
+                                                        label={field.title}
+                                                        value={field.value}
+                                                        options={field.options}
+                                                        data-key={field.key}
+                                                        onchange={handleConfigFieldChange}
+                                                    ></lightning-combobox>
+                                                </template>
+                                                <template if:true={field.isText}>
+                                                    <lightning-input
+                                                        type="text"
+                                                        label={field.title}
+                                                        value={field.value}
+                                                        data-key={field.key}
+                                                        onchange={handleConfigFieldChange}
+                                                    ></lightning-input>
+                                                </template>
+                                                <template if:true={field.isNumber}>
+                                                    <lightning-input
+                                                        type="number"
+                                                        label={field.title}
+                                                        value={field.value}
+                                                        data-key={field.key}
+                                                        onchange={handleConfigFieldChange}
+                                                    ></lightning-input>
+                                                </template>
+                                                <template if:true={field.description}>
+                                                    <p class="field-inline-description">{field.description}</p>
+                                                </template>
                                             </template>
-                                            <template if:true={field.isEnum}>
-                                                <lightning-combobox
-                                                    label={field.title}
-                                                    value={field.value}
-                                                    options={field.options}
-                                                    data-key={field.key}
-                                                    onchange={handleConfigFieldChange}
-                                                ></lightning-combobox>
+                                            <template if:false={sect.showInlineDescriptions}>
+                                                <!-- Help text icons for provider sections -->
+                                                <div class="field-label-with-help slds-form-element">
+                                                    <template if:true={field.isBoolean}>
+                                                        <div class="field-boolean-row slds-grid slds-wrap slds-grid_vertical-align-center slds-gutters_xx-small">
+                                                            <div class="slds-col slds-size_1-of-1">
+                                                                <lightning-input
+                                                                    type="checkbox"
+                                                                    label={field.title}
+                                                                    name={field.key}
+                                                                    checked={field.value}
+                                                                    onchange={handleConfigFieldChange}
+                                                                    data-key={field.key}
+                                                                ></lightning-input>
+                                                            </div>
+                                                            <template if:true={field.description}>
+                                                                <div class="slds-col slds-size_1-of-1">
+                                                                    <s-multiline-helptext content={field.description}></s-multiline-helptext>
+                                                                </div>
+                                                            </template>
+                                                        </div>
+                                                    </template>
+                                                    <template if:true={field.isEnum}>
+                                                        <div class="field-label-row slds-grid slds-grid_vertical-align-center slds-gutters_xx-small">
+                                                            <div class="slds-col">
+                                                                <span class="slds-form-element__label">{field.title}</span>
+                                                            </div>
+                                                            <template if:true={field.description}>
+                                                                <div class="slds-col slds-no-flex field-help-icon">
+                                                                    <s-multiline-helptext content={field.description}></s-multiline-helptext>
+                                                                </div>
+                                                            </template>
+                                                        </div>
+                                                        <div class="slds-form-element__control">
+                                                            <lightning-combobox
+                                                                label={field.title}
+                                                                variant="label-hidden"
+                                                                value={field.value}
+                                                                options={field.options}
+                                                                data-key={field.key}
+                                                                onchange={handleConfigFieldChange}
+                                                            ></lightning-combobox>
+                                                        </div>
+                                                    </template>
+                                                    <template if:true={field.isText}>
+                                                        <div class="field-label-row slds-grid slds-grid_vertical-align-center slds-gutters_xx-small">
+                                                            <div class="slds-col">
+                                                                <span class="slds-form-element__label">{field.title}</span>
+                                                            </div>
+                                                            <template if:true={field.description}>
+                                                                <div class="slds-col slds-no-flex field-help-icon">
+                                                                    <s-multiline-helptext content={field.description}></s-multiline-helptext>
+                                                                </div>
+                                                            </template>
+                                                        </div>
+                                                        <div class="slds-form-element__control">
+                                                            <lightning-input
+                                                                type="text"
+                                                                label={field.title}
+                                                                variant="label-hidden"
+                                                                value={field.value}
+                                                                data-key={field.key}
+                                                                onchange={handleConfigFieldChange}
+                                                            ></lightning-input>
+                                                        </div>
+                                                    </template>
+                                                    <template if:true={field.isNumber}>
+                                                        <div class="field-label-row slds-grid slds-grid_vertical-align-center slds-gutters_xx-small">
+                                                            <div class="slds-col">
+                                                                <span class="slds-form-element__label">{field.title}</span>
+                                                            </div>
+                                                            <template if:true={field.description}>
+                                                                <div class="slds-col slds-no-flex field-help-icon">
+                                                                    <s-multiline-helptext content={field.description}></s-multiline-helptext>
+                                                                </div>
+                                                            </template>
+                                                        </div>
+                                                        <div class="slds-form-element__control">
+                                                            <lightning-input
+                                                                type="number"
+                                                                label={field.title}
+                                                                variant="label-hidden"
+                                                                value={field.value}
+                                                                data-key={field.key}
+                                                                onchange={handleConfigFieldChange}
+                                                            ></lightning-input>
+                                                        </div>
+                                                    </template>
+                                                </div>
                                             </template>
-                                            <template if:true={field.isText}>
-                                                <lightning-input
-                                                    type="text"
-                                                    label={field.title}
-                                                    value={field.value}
-                                                    data-key={field.key}
-                                                    onchange={handleConfigFieldChange}
-                                                ></lightning-input>
-                                            </template>
-                                            <template if:true={field.isNumber}>
-                                                <lightning-input
-                                                    type="number"
-                                                    label={field.title}
-                                                    value={field.value}
-                                                    data-key={field.key}
-                                                    onchange={handleConfigFieldChange}
-                                                ></lightning-input>
-                                            </template>
-                                            <p class="field-description">{field.description}</p>
                                         </div>
                                     </template>
                                 </div>

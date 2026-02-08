@@ -57,20 +57,20 @@ export default class DocumentationWorkbench extends LightningElement {
     if (this.withHistory) {
       command += " --with-history";
     }
-    window.sendMessageToVSCode({ type: "runCommand", data: command });
+    window.sendMessageToVSCode({ type: "runCommand", data: {command: command }});
   }
 
   handleDeployCloudflare() {
     window.sendMessageToVSCode({
       type: "runCommand",
-      data: "sf hardis:doc:mkdocs-to-cf",
+      data: { command: "sf hardis:doc:mkdocs-to-cf"},
     });
   }
 
   handleDeployToOrg() {
     window.sendMessageToVSCode({
       type: "runCommand",
-      data: "sf hardis:doc:mkdocs-to-salesforce",
+      data: { command: "sf hardis:doc:mkdocs-to-salesforce"},
     });
   }
 
