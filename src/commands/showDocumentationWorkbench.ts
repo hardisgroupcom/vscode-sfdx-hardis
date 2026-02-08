@@ -38,10 +38,7 @@ const DOC_CONFIG_KEYS = [
 const REMOTE_SCHEMA_URL =
   "https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/main/config/sfdx-hardis.jsonschema.json";
 
-const PROMPT_TEMPLATES_RELATIVE_PATH = path.join(
-  "config",
-  "prompt-templates",
-);
+const PROMPT_TEMPLATES_RELATIVE_PATH = path.join("config", "prompt-templates");
 
 /**
  * Load the JSON schema for sfdx-hardis configuration.
@@ -51,8 +48,7 @@ async function loadJsonSchema(): Promise<any> {
   try {
     const response = await axios.get(REMOTE_SCHEMA_URL, { timeout: 8000 });
     return response.data;
-  }
-  catch (e: any) {
+  } catch (e: any) {
     Logger.log(
       `Failed to fetch remote JSON schema, falling back to local: ${e.message}`,
     );
@@ -152,18 +148,13 @@ export function registerShowDocumentationWorkbench(commands: Commands) {
               case "requestDocConfig": {
                 try {
                   const freshConfig = await readSfdxHardisConfig();
-                  const freshSchema = extractDocSchema(
-                    await loadJsonSchema(),
-                  );
+                  const freshSchema = extractDocSchema(await loadJsonSchema());
                   panel.sendMessage({
                     type: "configLoaded",
                     data: buildDocConfigPayload(freshConfig, freshSchema),
                   });
-                }
-                catch (e: any) {
-                  Logger.log(
-                    `Error loading doc config: ${e.message}`,
-                  );
+                } catch (e: any) {
+                  Logger.log(`Error loading doc config: ${e.message}`);
                 }
                 break;
               }
@@ -171,9 +162,7 @@ export function registerShowDocumentationWorkbench(commands: Commands) {
               case "openDocConfig": {
                 try {
                   const freshConfig = await readSfdxHardisConfig();
-                  const freshSchema = extractDocSchema(
-                    await loadJsonSchema(),
-                  );
+                  const freshSchema = extractDocSchema(await loadJsonSchema());
                   const configPanel = lwcManager.getOrCreatePanel(
                     "s-documentation-config",
                     {
@@ -183,56 +172,58 @@ export function registerShowDocumentationWorkbench(commands: Commands) {
                     },
                   );
 
-                  configPanel.onMessage(async (configType: string, configData: any) => {
-                    if (configType === "requestDocConfig") {
-                      try {
-                        const cfg = await readSfdxHardisConfig();
-                        const sch = extractDocSchema(await loadJsonSchema());
-                        configPanel.sendMessage({
-                          type: "configLoaded",
-                          data: buildDocConfigPayload(cfg, sch),
-                        });
-                      }
-                      catch (e: any) {
-                        Logger.log(`Error loading doc config: ${e.message}`);
-                      }
-                    }
-                    else if (configType === "saveDocConfig") {
-                      try {
-                        const configToSave = configData?.config || {};
-                        for (const key of DOC_CONFIG_KEYS) {
-                          if (
-                            configToSave[key] !== undefined &&
-                            (typeof configToSave[key] === "boolean" || configToSave[key] !== "")
-                          ) {
-                            await writeSfdxHardisConfig(key, configToSave[key]);
-                          }
+                  configPanel.onMessage(
+                    async (configType: string, configData: any) => {
+                      if (configType === "requestDocConfig") {
+                        try {
+                          const cfg = await readSfdxHardisConfig();
+                          const sch = extractDocSchema(await loadJsonSchema());
+                          configPanel.sendMessage({
+                            type: "configLoaded",
+                            data: buildDocConfigPayload(cfg, sch),
+                          });
+                        } catch (e: any) {
+                          Logger.log(`Error loading doc config: ${e.message}`);
                         }
-                        configPanel.sendMessage({ type: "configSaved", data: {} });
-                      }
-                      catch (e: any) {
-                        Logger.log(`Error saving doc config: ${e.message}`);
-                        configPanel.sendMessage({
-                          type: "configSaveError",
-                          data: { message: e.message },
+                      } else if (configType === "saveDocConfig") {
+                        try {
+                          const configToSave = configData?.config || {};
+                          for (const key of DOC_CONFIG_KEYS) {
+                            if (
+                              configToSave[key] !== undefined &&
+                              (typeof configToSave[key] === "boolean" ||
+                                configToSave[key] !== "")
+                            ) {
+                              await writeSfdxHardisConfig(
+                                key,
+                                configToSave[key],
+                              );
+                            }
+                          }
+                          configPanel.sendMessage({
+                            type: "configSaved",
+                            data: {},
+                          });
+                        } catch (e: any) {
+                          Logger.log(`Error saving doc config: ${e.message}`);
+                          configPanel.sendMessage({
+                            type: "configSaveError",
+                            data: { message: e.message },
+                          });
+                          vscode.window.showErrorMessage(
+                            `Error saving configuration: ${e.message}`,
+                          );
+                        }
+                      } else if (configType === "updateGenerationOptions") {
+                        panel.sendMessage({
+                          type: "updateGenerationOptions",
+                          data: configData,
                         });
-                        vscode.window.showErrorMessage(
-                          `Error saving configuration: ${e.message}`,
-                        );
                       }
-                    }
-                    else if (configType === "updateGenerationOptions") {
-                      panel.sendMessage({
-                        type: "updateGenerationOptions",
-                        data: configData,
-                      });
-                    }
-                  });
-                }
-                catch (e: any) {
-                  Logger.log(
-                    `Error opening doc config panel: ${e.message}`,
+                    },
                   );
+                } catch (e: any) {
+                  Logger.log(`Error opening doc config panel: ${e.message}`);
                 }
                 break;
               }
@@ -244,7 +235,8 @@ export function registerShowDocumentationWorkbench(commands: Commands) {
                     // Allow booleans (including false) and non-empty string values
                     if (
                       configToSave[key] !== undefined &&
-                      (typeof configToSave[key] === "boolean" || configToSave[key] !== "")
+                      (typeof configToSave[key] === "boolean" ||
+                        configToSave[key] !== "")
                     ) {
                       await writeSfdxHardisConfig(key, configToSave[key]);
                     }
@@ -253,11 +245,8 @@ export function registerShowDocumentationWorkbench(commands: Commands) {
                   vscode.window.showInformationMessage(
                     "Documentation configuration saved successfully.",
                   );
-                }
-                catch (e: any) {
-                  Logger.log(
-                    `Error saving doc config: ${e.message}`,
-                  );
+                } catch (e: any) {
+                  Logger.log(`Error saving doc config: ${e.message}`);
                   panel.sendMessage({
                     type: "configSaveError",
                     data: { message: e.message },

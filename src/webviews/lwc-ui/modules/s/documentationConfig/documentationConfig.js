@@ -41,8 +41,7 @@ export default class DocumentationConfig extends LightningElement {
   handleMessage(type, data) {
     if (type === "initialize") {
       this.initialize(data);
-    }
-    else if (type === "configLoaded") {
+    } else if (type === "configLoaded") {
       this._applyPromptTemplatesInfo(data);
       this._buildConfigUI(data?.config || {}, data?.schema || {});
       this.configLoading = false;
@@ -54,10 +53,10 @@ export default class DocumentationConfig extends LightningElement {
   _buildConfigUI(config, schema) {
     this.configValues = { ...(config || {}) };
     this._schema = schema || {};
-    
+
     // Extract LLM provider options from schema if available
     this._extractLlmProviderOptions();
-    
+
     this.providerSelection = this._detectProviderSelection();
     this.promptsLanguageField = this._buildFieldDef(
       "promptsLanguage",
@@ -179,11 +178,9 @@ export default class DocumentationConfig extends LightningElement {
         "langchainLlmTimeout",
         "langchainLlmBaseUrl",
       ];
-    }
-    else if (this.providerSelection === "openai") {
+    } else if (this.providerSelection === "openai") {
       providerKeys = ["openaiModel"];
-    }
-    else if (this.providerSelection === "agentforce") {
+    } else if (this.providerSelection === "agentforce") {
       providerKeys = [
         "genericAgentforcePromptTemplate",
         "genericAgentforcePromptUrl",
@@ -222,7 +219,13 @@ export default class DocumentationConfig extends LightningElement {
     this.configSections = sections;
   }
 
-  _buildSection(label, description, keys, visible, showInlineDescriptions = false) {
+  _buildSection(
+    label,
+    description,
+    keys,
+    visible,
+    showInlineDescriptions = false,
+  ) {
     const fields = [];
     for (const key of keys) {
       const schemaDef = (this._schema && this._schema[key]) || {};
@@ -238,7 +241,14 @@ export default class DocumentationConfig extends LightningElement {
     };
   }
 
-  _buildSectionFromFields(label, description, fields, visible, showInlineDescriptions = false, isCompactRow = false) {
+  _buildSectionFromFields(
+    label,
+    description,
+    fields,
+    visible,
+    showInlineDescriptions = false,
+    isCompactRow = false,
+  ) {
     return {
       label,
       description,
@@ -251,9 +261,15 @@ export default class DocumentationConfig extends LightningElement {
 
   _buildFieldDef(key, schemaDef, config) {
     const schemaDefault = schemaDef.default;
-    const configValue = config && config[key] !== undefined ? config[key] : undefined;
-    const value = configValue !== undefined ? configValue : (schemaDefault !== undefined ? schemaDefault : "");
-    
+    const configValue =
+      config && config[key] !== undefined ? config[key] : undefined;
+    const value =
+      configValue !== undefined
+        ? configValue
+        : schemaDefault !== undefined
+          ? schemaDefault
+          : "";
+
     const type = schemaDef.type || "string";
     const title = schemaDef.title || this._prettifyKey(key);
     const description = schemaDef.description || "";
@@ -352,12 +368,10 @@ export default class DocumentationConfig extends LightningElement {
     let value;
     if (event.target.type === "checkbox") {
       value = event.target.checked;
-    }
-    else if (event.target.type === "number") {
+    } else if (event.target.type === "number") {
       value = event.detail ? event.detail.value : event.target.value;
       value = value !== "" && value !== null ? Number(value) : undefined;
-    }
-    else {
+    } else {
       value = event.detail ? event.detail.value : event.target.value;
     }
     this.configValues = { ...this.configValues, [key]: value };
@@ -368,7 +382,10 @@ export default class DocumentationConfig extends LightningElement {
         value: value ?? "",
       };
     }
-    if (key === "promptsParallelCallNumber" && this.promptsParallelCallNumberField) {
+    if (
+      key === "promptsParallelCallNumber" &&
+      this.promptsParallelCallNumberField
+    ) {
       this.promptsParallelCallNumberField = {
         ...this.promptsParallelCallNumberField,
         value: value ?? "",
@@ -381,7 +398,7 @@ export default class DocumentationConfig extends LightningElement {
       fields: sect.fields.map((f) =>
         f.key === key
           ? { ...f, value: f.isBoolean ? !!value : (value ?? "") }
-          : f
+          : f,
       ),
     }));
 

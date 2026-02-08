@@ -509,9 +509,7 @@ export class LwcUiPanel {
       const folderUri = vscode.Uri.file(resolvedPath);
       const stat = await vscode.workspace.fs.stat(folderUri);
       if (!(stat.type & vscode.FileType.Directory)) {
-        vscode.window.showErrorMessage(
-          `Path is not a folder: ${resolvedPath}`,
-        );
+        vscode.window.showErrorMessage(`Path is not a folder: ${resolvedPath}`);
         return;
       }
       await vscode.commands.executeCommand("revealInExplorer", folderUri);

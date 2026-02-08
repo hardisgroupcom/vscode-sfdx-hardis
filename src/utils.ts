@@ -611,7 +611,10 @@ async function loadFromRemoteConfigFile(url: string) {
  * Helper function to get the config file paths for .sfdx-hardis.yml
  * Returns both root and config directory paths
  */
-function getSfdxHardisConfigPaths(): { rootConfigFile: string; configConfigFile: string } | null {
+function getSfdxHardisConfigPaths(): {
+  rootConfigFile: string;
+  configConfigFile: string;
+} | null {
   if (!vscode.workspace.workspaceFolders) {
     return null;
   }

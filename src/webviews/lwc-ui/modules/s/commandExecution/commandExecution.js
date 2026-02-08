@@ -1263,8 +1263,7 @@ ${resultMessage}`;
         progressStepText = `${section.currentStep} of ${section.totalSteps} steps`;
         if (section.isActive) {
           progressTimeEstimation = section.estimatedRemainingTime || "";
-        }
-        else {
+        } else {
           const elapsed = this.calculateSectionDuration(section);
           progressTimeEstimation = elapsed ? `Elapsed: ${elapsed}` : "";
         }
