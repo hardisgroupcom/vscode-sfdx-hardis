@@ -921,6 +921,16 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
         label: "Documentation Generation",
         commands: [
           {
+            id: "vscode-sfdx-hardis.showDocumentationWorkbench",
+            label: "Documentation Workbench",
+            command: "vscode-sfdx-hardis.showDocumentationWorkbench",
+            tooltip:
+              "Open the Documentation Workbench to generate, deploy, and manage project documentation",
+            requiresProject: true,
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/salesforce-project-documentation/",
+          },
+          {
             id: "hardis:doc:project2markdown",
             label: "Project Documentation",
             command: "sf hardis:doc:project2markdown",

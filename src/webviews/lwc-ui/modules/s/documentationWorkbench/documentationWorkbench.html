@@ -1,0 +1,152 @@
+<template>
+    <div class="slds-scope slds-theme_default blue-back">
+        <div class="doc-container">
+            <!-- Header -->
+            <div class="header-content">
+                <div class="header-icon-container">
+                    <lightning-icon icon-name="utility:archive" size="medium" variant="inverse"></lightning-icon>
+                </div>
+                <div class="header-text">
+                    <h1 class="header-title">Documentation Workbench</h1>
+                    <p class="header-subtitle">Generate, deploy and manage your Salesforce project documentation</p>
+                </div>
+                <div class="header-actions">
+                    <lightning-button
+                        variant="neutral"
+                        label="Online Help"
+                        icon-name="utility:new_window"
+                        onclick={handleOpenHelp}
+                    ></lightning-button>
+                </div>
+            </div>
+
+            <!-- Generate Documentation Section -->
+            <div class="section">
+                <h2 class="section-title">
+                    <lightning-icon icon-name="utility:archive" size="x-small" class="section-icon"></lightning-icon>
+                    Generate Documentation
+                </h2>
+                <p class="section-description">Generate Markdown documentation for your Salesforce project. Includes Flows, Apex, Objects, Permissions, and more.</p>
+
+                <div class="generate-options-card">
+                    <div class="option-row">
+                        <div class="option-item">
+                            <lightning-input
+                                type="checkbox"
+                                label="Generate Markdown"
+                                checked
+                                disabled
+                                class="option-checkbox"
+                            ></lightning-input>
+                            <p class="option-help">Always generated (project docs in Markdown format)</p>
+                        </div>
+                    </div>
+                    <div class="option-row">
+                        <div class="option-item">
+                            <lightning-input
+                                type="checkbox"
+                                label="With Flow History"
+                                name="withHistory"
+                                checked={withHistory}
+                                onchange={handleOptionChange}
+                                class="option-checkbox"
+                            ></lightning-input>
+                            <p class="option-help">Include visual diff history for Flows (requires git depth)</p>
+                        </div>
+                    </div>
+                    <div class="option-row">
+                        <div class="option-item">
+                            <lightning-input
+                                type="checkbox"
+                                label="Generate PDF"
+                                name="generatePdf"
+                                checked={generatePdf}
+                                onchange={handleOptionChange}
+                                class="option-checkbox"
+                            ></lightning-input>
+                            <p class="option-help">Also generate PDF files alongside Markdown</p>
+                        </div>
+                    </div>
+                    <div class="generate-actions">
+                        <lightning-button
+                            variant="brand"
+                            label="Generate Documentation"
+                            icon-name="utility:archive"
+                            onclick={handleGenerate}
+                        ></lightning-button>
+                        <lightning-button
+                            variant="neutral"
+                            label="More Options"
+                            icon-name="utility:settings"
+                            onclick={handleMoreOptions}
+                        ></lightning-button>
+                    </div>
+                    <p class="options-note">Use "More Options" to configure AI providers and prompt templates.</p>
+                </div>
+            </div>
+
+            <!-- Deploy Section -->
+            <div class="section">
+                <h2 class="section-title">
+                    <lightning-icon icon-name="utility:upload" size="x-small" class="section-icon"></lightning-icon>
+                    Deploy Documentation
+                </h2>
+                <p class="section-description">Deploy your generated documentation to Cloudflare Pages or as a Salesforce Static Resource.</p>
+
+                <div class="commands-grid">
+                    <div class="command-card">
+                        <div class="command-icon-container cloudflare">
+                            <lightning-icon icon-name="utility:world" size="small" variant="inverse"></lightning-icon>
+                        </div>
+                        <div class="command-content">
+                            <h3 class="command-title">Deploy to Cloudflare Pages</h3>
+                            <p class="command-description">Build HTML docs and publish them to Cloudflare Pages for public or internal access.</p>
+                        </div>
+                        <div class="command-actions">
+                            <lightning-button variant="brand" label="Deploy" onclick={handleDeployCloudflare}></lightning-button>
+                        </div>
+                    </div>
+
+                    <div class="command-card">
+                        <div class="command-icon-container salesforce">
+                            <lightning-icon icon-name="utility:salesforce1" size="small" variant="inverse"></lightning-icon>
+                        </div>
+                        <div class="command-content">
+                            <h3 class="command-title">Deploy to Salesforce</h3>
+                            <p class="command-description">Build HTML docs and upload as a Static Resource with a VisualForce Page and Custom Tab. <strong>Note:</strong> Only works with small projects (5MB max for static resources).</p>
+                        </div>
+                        <div class="command-actions">
+                            <lightning-button variant="brand" label="Deploy" onclick={handleDeployToOrg}></lightning-button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Run Locally Section -->
+            <div class="section">
+                <h2 class="section-title">
+                    <lightning-icon icon-name="utility:desktop" size="x-small" class="section-icon"></lightning-icon>
+                    Run Locally
+                </h2>
+                <p class="section-description">Start a local MkDocs server to preview the documentation in your browser (requires Python).</p>
+
+                <div class="commands-grid single-column">
+                    <div class="command-card">
+                        <div class="command-icon-container local">
+                            <lightning-icon icon-name="utility:play" size="small" variant="inverse"></lightning-icon>
+                        </div>
+                        <div class="command-content">
+                            <h3 class="command-title">Run Local HTML Doc Pages</h3>
+                            <p class="command-description">Starts a local web server at http://127.0.0.1:8000/ to preview your documentation. Python must be installed.</p>
+                        </div>
+                        <div class="command-actions">
+                            <lightning-button variant="brand" label="Run Locally" onclick={handleRunLocally}></lightning-button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+</template>

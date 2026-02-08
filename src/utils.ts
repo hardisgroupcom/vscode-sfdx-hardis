@@ -607,14 +607,29 @@ async function loadFromRemoteConfigFile(url: string) {
 }
 /* jscpd:ignore-end */
 
+/**
+ * Helper function to get the config file paths for .sfdx-hardis.yml
+ * Returns both root and config directory paths
+ */
+function getSfdxHardisConfigPaths(): { rootConfigFile: string; configConfigFile: string } | null {
+  if (!vscode.workspace.workspaceFolders) {
+    return null;
+  }
+  const workspaceRoot = vscode.workspace.workspaceFolders[0].uri.fsPath;
+  const rootConfigFile = path.join(workspaceRoot, `.sfdx-hardis.yml`);
+  const configConfigFile = path.join(workspaceRoot, `config/.sfdx-hardis.yml`);
+  return { rootConfigFile, configConfigFile };
+}
+
 export async function readSfdxHardisConfig(): Promise<any> {
-  if (vscode.workspace.workspaceFolders) {
-    const configFile = path.join(
-      vscode.workspace.workspaceFolders[0].uri.fsPath,
-      `config/.sfdx-hardis.yml`,
-    );
-    if (fs.existsSync(configFile)) {
-      return await loadFromLocalConfigFile(configFile);
+  const configPaths = getSfdxHardisConfigPaths();
+  if (configPaths) {
+    const { rootConfigFile, configConfigFile } = configPaths;
+    if (fs.existsSync(rootConfigFile)) {
+      return await loadFromLocalConfigFile(rootConfigFile);
+    }
+    if (fs.existsSync(configConfigFile)) {
+      return await loadFromLocalConfigFile(configConfigFile);
     }
   }
   return {};
@@ -624,11 +639,12 @@ export async function writeSfdxHardisConfig(
   key: string,
   value: any,
 ): Promise<any> {
-  if (vscode.workspace.workspaceFolders) {
-    const configFile = path.join(
-      vscode.workspace.workspaceFolders[0].uri.fsPath,
-      `config/.sfdx-hardis.yml`,
-    );
+  const configPaths = getSfdxHardisConfigPaths();
+  if (configPaths) {
+    const { rootConfigFile, configConfigFile } = configPaths;
+    const configFile = fs.existsSync(rootConfigFile)
+      ? rootConfigFile
+      : configConfigFile;
     await fs.ensureDir(path.dirname(configFile));
     const config = await readSfdxHardisConfig();
     config[key] = value;
