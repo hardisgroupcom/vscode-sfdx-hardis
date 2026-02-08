@@ -1,211 +1,405 @@
 /* Requires ColorMixin if you want to use variables in your webview */
-
 .slds-scope[data-theme="light"] {
-  /* ===== BACKGROUND COLORS ===== */
-  --theme-bg-primary: #f8f9ff;              /* Main background gradient start */
-  --theme-bg-primary-end: #e8f4fd;          /* Main background gradient end */
-  --theme-bg-secondary: #ffffff;            /* Card/panel background */
-  --theme-bg-tertiary: #f8f9fa;             /* Settings section background */
-  --theme-bg-highlight: #f3f9ff;            /* Getting started section gradient start */
-  --theme-bg-highlight-end: #dbeafe;        /* Getting started section gradient end */
-  --theme-bg-success: #f0fdf4;              /* Open source section gradient start */
-  --theme-bg-success-end: #dcfce7;          /* Open source section gradient end */
-  --theme-bg-overlay: rgba(255, 255, 255, 0.7);  /* Semi-transparent overlay */
-  --theme-bg-overlay-strong: rgba(255, 255, 255, 0.9);  /* Strong overlay */
-
-  /* ===== TEXT COLORS ===== */
-  --theme-text-primary: #181818;            /* Main text, headings */
-  --theme-text-secondary: #706e6b;          /* Subtitles, descriptions */
-  --theme-text-tertiary: #4a5568;           /* Body text in special sections */
-  --theme-text-quaternary: #4b5563;         /* Services card text */
-  --theme-text-dark: #1f2937;               /* Dark emphasis text */
-
-  /* ===== BORDER COLORS ===== */
-  --theme-border-light: #e5e5e5;            /* Light borders */
-  --theme-border-medium: #e9ecef;           /* Medium borders */
-  --theme-border-primary: rgba(21, 137, 238, 0.2);  /* Primary accent border */
-  --theme-border-success: rgba(34, 197, 94, 0.2);   /* Success accent border */
-  --theme-border-highlight: #bbdefb;        /* Highlight section border */
-  --theme-border-success-strong: #bbf7d0;   /* Strong success border */
-  --theme-border-neutral: rgba(156, 163, 175, 0.3); /* Neutral border */
-
-  /* ===== PRIMARY BRAND COLORS ===== */
-  --theme-primary: #1589ee;                 /* Primary blue - links, CTAs */
-  --theme-primary-dark: #005fb2;            /* Primary blue dark - gradients */
-  --theme-primary-darker: #014486;          /* Darker blue variant */
-  --theme-primary-light: #0176d3;           /* Light blue variant */
-
-  /* ===== ACCENT COLORS (Feature Icons) ===== */
-  --theme-accent-teal: #06a59a;             /* DevOps pipeline */
-  --theme-accent-teal-dark: #045a55;
-  --theme-accent-purple: #8b5cf6;           /* Metadata retriever */
-  --theme-accent-purple-dark: #6d28d9;
-  --theme-accent-cyan: #54a4a6;             /* Org monitoring */
-  --theme-accent-cyan-dark: #026d71;
-  --theme-accent-orange: #ff6b35;           /* Files workbench */
-  --theme-accent-orange-dark: #d4471b;
-  --theme-accent-violet: #9f4fea;           /* Data workbench */
-  --theme-accent-violet-dark: #7b2cbf;
-  --theme-accent-amber: #ffb439;            /* Documentation */
-  --theme-accent-amber-dark: #e6930f;
-  --theme-accent-gray: #706e6b;             /* Settings */
-  --theme-accent-gray-dark: #514f4d;
-  --theme-accent-indigo: #6366f1;           /* Services icon */
-
-  /* ===== SUCCESS/POSITIVE COLORS ===== */
-  --theme-success: #22c55e;                 /* Success green */
-  --theme-success-dark: #16a34a;            /* Success green dark */
-  --theme-success-bg: rgba(34, 197, 94, 0.1);  /* Success background */
-
-  /* ===== SHADOW VALUES ===== */
-  --theme-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);           /* Small shadow */
-  --theme-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);          /* Medium shadow */
-  --theme-shadow-lg: 0 8px 25px rgba(0, 0, 0, 0.15);         /* Large shadow */
-  --theme-shadow-xl: 0 4px 20px rgba(0, 0, 0, 0.08);         /* Extra large shadow */
-  --theme-shadow-feature: 0 3px 10px rgba(0, 0, 0, 0.15);    /* Feature card shadow */
-  --theme-shadow-feature-hover: 0 5px 15px rgba(0, 0, 0, 0.2);  /* Feature card hover */
-  
-  /* ===== COLORED SHADOWS (for icon containers) ===== */
-  --theme-shadow-primary: 0 3px 10px rgba(21, 137, 238, 0.25);
-  --theme-shadow-primary-strong: 0 4px 12px rgba(21, 137, 238, 0.3);
-  --theme-shadow-teal: 0 3px 10px rgba(6, 165, 154, 0.25);
-  --theme-shadow-purple: 0 3px 10px rgba(139, 92, 246, 0.25);
-  --theme-shadow-cyan: 0 3px 10px rgba(84, 164, 166, 0.25);
-  --theme-shadow-orange: 0 3px 10px rgba(255, 107, 53, 0.25);
-  --theme-shadow-violet: 0 3px 10px rgba(159, 79, 234, 0.25);
-  --theme-shadow-amber: 0 3px 10px rgba(255, 180, 57, 0.25);
-  --theme-shadow-gray: 0 3px 10px rgba(112, 110, 107, 0.25);
-  --theme-shadow-success: 0 4px 12px rgba(34, 197, 94, 0.3);
-
-  /* ===== GRADIENT DEFINITIONS ===== */
-  --theme-gradient-bg: linear-gradient(135deg, var(--theme-bg-primary) 0%, var(--theme-bg-primary-end) 100%);
-  --theme-gradient-primary: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary-dark) 100%);
-  --theme-gradient-teal: linear-gradient(135deg, var(--theme-accent-teal) 0%, var(--theme-accent-teal-dark) 100%);
-  --theme-gradient-purple: linear-gradient(135deg, var(--theme-accent-purple) 0%, var(--theme-accent-purple-dark) 100%);
-  --theme-gradient-cyan: linear-gradient(135deg, var(--theme-accent-cyan) 0%, var(--theme-accent-cyan-dark) 100%);
-  --theme-gradient-orange: linear-gradient(135deg, var(--theme-accent-orange) 0%, var(--theme-accent-orange-dark) 100%);
-  --theme-gradient-violet: linear-gradient(135deg, var(--theme-accent-violet) 0%, var(--theme-accent-violet-dark) 100%);
-  --theme-gradient-amber: linear-gradient(135deg, var(--theme-accent-amber) 0%, var(--theme-accent-amber-dark) 100%);
-  --theme-gradient-gray: linear-gradient(135deg, var(--theme-accent-gray) 0%, var(--theme-accent-gray-dark) 100%);
-  --theme-gradient-packages: linear-gradient(135deg, var(--theme-primary-light) 0%, var(--theme-primary-darker) 100%);
-  --theme-gradient-success: linear-gradient(135deg, var(--theme-success) 0%, var(--theme-success-dark) 100%);
-  --theme-gradient-highlight: linear-gradient(135deg, var(--theme-bg-highlight) 0%, var(--theme-bg-highlight-end) 100%);
-  --theme-gradient-success-bg: linear-gradient(135deg, var(--theme-bg-success) 0%, var(--theme-bg-success-end) 100%);
-
-  /* ===== COMPONENT-SPECIFIC VALUES ===== */
-  --theme-border-radius-sm: 6px;
-  --theme-border-radius-md: 8px;
-  --theme-border-radius-lg: 12px;
-  --theme-border-radius-xl: 16px;
-  
-  --theme-card-hover-transform: translateY(-4px);
-  --theme-icon-hover-transform: translateY(-2px);
-  --theme-button-hover-transform: translateY(-1px);
-
-  /* ===== ICON COLORS (for lightning-icon override) ===== */
-  --theme-icon-white: white !important;
+  color-scheme: only light;
 }
-
 .slds-scope[data-theme="dark"] {
-  /* ===== BACKGROUND COLORS ===== */
-  --theme-bg-primary: #1a1d24;              /* Main background dark */
-  --theme-bg-primary-end: #0f1318;          /* Main background gradient end */
-  --theme-bg-secondary: #22252d;            /* Card/panel background */
-  --theme-bg-tertiary: #2a2e38;             /* Settings section background */
-  --theme-bg-highlight: #1e2938;            /* Getting started section gradient start */
-  --theme-bg-highlight-end: #152036;        /* Getting started section gradient end */
-  --theme-bg-success: #1a2e23;              /* Open source section gradient start */
-  --theme-bg-success-end: #15261e;          /* Open source section gradient end */
-  --theme-bg-overlay: rgba(34, 37, 45, 0.7);  /* Semi-transparent overlay */
-  --theme-bg-overlay-strong: rgba(34, 37, 45, 0.9);  /* Strong overlay */
+  color-scheme: only dark;
+}
+/* COSMOS START */
+.slds-scope[data-theme] {
+--slds-g-shadow-1: 0px 0px 2px 0px light-dark(#0000002e, #0000005c), 0px 2px 2px 0px light-dark(#0000002e, #0000005c), 0px -1px 2px 0px light-dark(#0000001a, #00000033);
+--slds-g-shadow-2: 0px 0px 5px 0px light-dark(#00000029, #00000052), 0px 3px 3px 0px light-dark(#00000029, #00000052), 0px -1px 2px 0px light-dark(#00000017, #0000002e);
+--slds-g-shadow-3: 0px 0px 7px 0px light-dark(#00000024, #00000047), 0px 5px 5px 0px light-dark(#00000024, #00000047), 0px -1px 2px 0px light-dark(#00000014, #00000029);
+--slds-g-shadow-4: 0px 0px 10px 0px light-dark(#0000001f, #0000003d), 0px 7px 7px 0px light-dark(#0000001f, #0000003d), 0px -1px 3px 0px light-dark(#00000012, #00000024);
+--slds-g-shadow-5: var(--slds-g-shadow-4);
+--slds-g-shadow-6: var(--slds-g-shadow-4);
+--slds-g-shadow-inverse-1: 0 0 3px #f3f3f3;
+--slds-g-color-palette-blue-10: light-dark(#001639, #d8e6fe);
+--slds-g-color-palette-blue-15: light-dark(#03234d, #c2d8ff);
+--slds-g-color-palette-blue-20: light-dark(#032d60, #aacbff);
+--slds-g-color-palette-blue-30: light-dark(#014486, #78b0fd);
+--slds-g-color-palette-blue-40: light-dark(#0b5cab, #1b96ff);
+--slds-g-color-palette-blue-50: #0176d3;
+--slds-g-color-palette-blue-60: light-dark(#1b96ff, #0b5cab);
+--slds-g-color-palette-blue-65: light-dark(#57a3fd, #044f98);
+--slds-g-color-palette-blue-70: light-dark(#78b0fd, #014486);
+--slds-g-color-palette-blue-80: light-dark(#aacbff, #032d60);
+--slds-g-color-palette-blue-90: light-dark(#d8e6fe, #001639);
+--slds-g-color-palette-blue-95: light-dark(#eef4ff, #000310);
+--slds-g-color-palette-cloud-blue-10: light-dark(#001a28, #cfe9fe);
+--slds-g-color-palette-cloud-blue-15: light-dark(#0a2636, #aeddfe);
+--slds-g-color-palette-cloud-blue-20: light-dark(#023248, #90d0fe);
+--slds-g-color-palette-cloud-blue-30: light-dark(#084968, #1ab9ff);
+--slds-g-color-palette-cloud-blue-40: light-dark(#05628a, #0d9dda);
+--slds-g-color-palette-cloud-blue-50: #107cad;
+--slds-g-color-palette-cloud-blue-60: light-dark(#0d9dda, #05628a);
+--slds-g-color-palette-cloud-blue-65: light-dark(#08abed, #075579);
+--slds-g-color-palette-cloud-blue-70: light-dark(#1ab9ff, #084968);
+--slds-g-color-palette-cloud-blue-80: light-dark(#90d0fe, #023248);
+--slds-g-color-palette-cloud-blue-90: light-dark(#cfe9fe, #001a28);
+--slds-g-color-palette-cloud-blue-95: light-dark(#eaf5fe, #000409);
+--slds-g-color-palette-electric-blue-10: light-dark(#001642, #d6e6ff);
+--slds-g-color-palette-electric-blue-15: light-dark(#001e5b, #c2daff);
+--slds-g-color-palette-electric-blue-20: light-dark(#002775, #a8cbff);
+--slds-g-color-palette-electric-blue-30: light-dark(#022ac0, #7cb1fe);
+--slds-g-color-palette-electric-blue-40: light-dark(#0250d9, #4992fe);
+--slds-g-color-palette-electric-blue-50: #066afe;
+--slds-g-color-palette-electric-blue-60: light-dark(#4992fe, #0250d9);
+--slds-g-color-palette-electric-blue-65: light-dark(#5f9ffe, #003ecd);
+--slds-g-color-palette-electric-blue-70: light-dark(#7cb1fe, #022ac0);
+--slds-g-color-palette-electric-blue-80: light-dark(#a8cbff, #002775);
+--slds-g-color-palette-electric-blue-90: light-dark(#d6e6ff, #001642);
+--slds-g-color-palette-electric-blue-95: light-dark(#edf4ff, #000314);
+--slds-g-color-palette-green-10: light-dark(#071b12, #cdefc4);
+--slds-g-color-palette-green-15: light-dark(#0c2912, #aee4a9);
+--slds-g-color-palette-green-20: light-dark(#143b25, #91db8b);
+--slds-g-color-palette-green-30: light-dark(#194e31, #45c65a);
+--slds-g-color-palette-green-40: light-dark(#396547, #3ba755);
+--slds-g-color-palette-green-50: #2e844a;
+--slds-g-color-palette-green-60: light-dark(#3ba755, #396547);
+--slds-g-color-palette-green-65: light-dark(#41b658, #1e5c39);
+--slds-g-color-palette-green-70: light-dark(#45c65a, #194e31);
+--slds-g-color-palette-green-80: light-dark(#91db8b, #143b25);
+--slds-g-color-palette-green-90: light-dark(#cdefc4, #071b12);
+--slds-g-color-palette-green-95: light-dark(#ebf7e6, #010502);
+--slds-g-color-palette-hot-orange-10: light-dark(#281202, #ffded5);
+--slds-g-color-palette-hot-orange-15: light-dark(#421604, #feccbd);
+--slds-g-color-palette-hot-orange-20: light-dark(#4a2413, #feb9a5);
+--slds-g-color-palette-hot-orange-30: light-dark(#7e2600, #ff906e);
+--slds-g-color-palette-hot-orange-40: light-dark(#aa3001, #ff5d2d);
+--slds-g-color-palette-hot-orange-50: #d83a00;
+--slds-g-color-palette-hot-orange-60: light-dark(#ff5d2d, #aa3001);
+--slds-g-color-palette-hot-orange-65: light-dark(#ff784f, #942b00);
+--slds-g-color-palette-hot-orange-70: light-dark(#ff906e, #7e2600);
+--slds-g-color-palette-hot-orange-80: light-dark(#feb9a5, #4a2413);
+--slds-g-color-palette-hot-orange-90: light-dark(#ffded5, #281202);
+--slds-g-color-palette-hot-orange-95: light-dark(#fef1ed, #090200);
+--slds-g-color-palette-indigo-10: light-dark(#17094e, #e0e5f8);
+--slds-g-color-palette-indigo-15: light-dark(#1f0974, #cfd4f7);
+--slds-g-color-palette-indigo-20: light-dark(#270c92, #bec7f6);
+--slds-g-color-palette-indigo-30: light-dark(#2f2cb7, #9ea9f1);
+--slds-g-color-palette-indigo-40: light-dark(#3a49da, #7f8ced);
+--slds-g-color-palette-indigo-50: #5867e8;
+--slds-g-color-palette-indigo-60: light-dark(#7f8ced, #3a49da);
+--slds-g-color-palette-indigo-65: light-dark(#8e9bef, #343bc8);
+--slds-g-color-palette-indigo-70: light-dark(#9ea9f1, #2f2cb7);
+--slds-g-color-palette-indigo-80: light-dark(#bec7f6, #270c92);
+--slds-g-color-palette-indigo-90: light-dark(#e0e5f8, #17094e);
+--slds-g-color-palette-indigo-95: light-dark(#f1f3fb, #060116);
+--slds-g-color-palette-orange-10: light-dark(#201600, #fedfd0);
+--slds-g-color-palette-orange-15: light-dark(#2e2204, #ffccad);
+--slds-g-color-palette-orange-20: light-dark(#3e2b02, #ffba90);
+--slds-g-color-palette-orange-30: light-dark(#5f3e02, #fe9339);
+--slds-g-color-palette-orange-40: light-dark(#825101, #dd7a01);
+--slds-g-color-palette-orange-50: #a96404;
+--slds-g-color-palette-orange-60: light-dark(#dd7a01, #825101);
+--slds-g-color-palette-orange-65: light-dark(#f38303, #704801);
+--slds-g-color-palette-orange-70: light-dark(#fe9339, #5f3e02);
+--slds-g-color-palette-orange-80: light-dark(#ffba90, #3e2b02);
+--slds-g-color-palette-orange-90: light-dark(#fedfd0, #201600);
+--slds-g-color-palette-orange-95: light-dark(#fff1ea, #060300);
+--slds-g-color-palette-pink-10: light-dark(#370114, #fddde3);
+--slds-g-color-palette-pink-15: light-dark(#4b0620, #fec8d4);
+--slds-g-color-palette-pink-20: light-dark(#61022a, #fdb6c5);
+--slds-g-color-palette-pink-30: light-dark(#8a033e, #fe8aa7);
+--slds-g-color-palette-pink-40: light-dark(#b60554, #ff538a);
+--slds-g-color-palette-pink-50: #e3066a;
+--slds-g-color-palette-pink-60: light-dark(#ff538a, #b60554);
+--slds-g-color-palette-pink-65: light-dark(#fe7298, #a00449);
+--slds-g-color-palette-pink-70: light-dark(#fe8aa7, #8a033e);
+--slds-g-color-palette-pink-80: light-dark(#fdb6c5, #61022a);
+--slds-g-color-palette-pink-90: light-dark(#fddde3, #370114);
+--slds-g-color-palette-pink-95: light-dark(#fef0f3, #0f0003);
+--slds-g-color-palette-purple-10: light-dark(#240643, #ece1f9);
+--slds-g-color-palette-purple-15: light-dark(#300b60, #e2d0f6);
+--slds-g-color-palette-purple-20: light-dark(#401075, #d7bff2);
+--slds-g-color-palette-purple-30: light-dark(#5a1ba9, #c29ef1);
+--slds-g-color-palette-purple-40: light-dark(#7526e3, #ad7bee);
+--slds-g-color-palette-purple-50: #9050e9;
+--slds-g-color-palette-purple-60: light-dark(#ad7bee, #7526e3);
+--slds-g-color-palette-purple-65: light-dark(#b78def, #681dc9);
+--slds-g-color-palette-purple-70: light-dark(#c29ef1, #5a1ba9);
+--slds-g-color-palette-purple-80: light-dark(#d7bff2, #401075);
+--slds-g-color-palette-purple-90: light-dark(#ece1f9, #240643);
+--slds-g-color-palette-purple-95: light-dark(#f6f2fb, #070114);
+--slds-g-color-palette-red-10: light-dark(#300c01, #feded8);
+--slds-g-color-palette-red-15: light-dark(#4a0c04, #feccc3);
+--slds-g-color-palette-red-20: light-dark(#640103, #feb8ab);
+--slds-g-color-palette-red-30: light-dark(#8e030f, #fe8f7d);
+--slds-g-color-palette-red-40: light-dark(#ba0517, #fe5c4c);
+--slds-g-color-palette-red-50: #ea001e;
+--slds-g-color-palette-red-60: light-dark(#fe5c4c, #ba0517);
+--slds-g-color-palette-red-65: light-dark(#fe7765, #a40413);
+--slds-g-color-palette-red-70: light-dark(#fe8f7d, #8e030f);
+--slds-g-color-palette-red-80: light-dark(#feb8ab, #640103);
+--slds-g-color-palette-red-90: light-dark(#feded8, #300c01);
+--slds-g-color-palette-red-95: light-dark(#fef1ee, #0c0200);
+--slds-g-color-palette-teal-10: light-dark(#071b12, #acf3e4);
+--slds-g-color-palette-teal-15: light-dark(#072825, #76ead9);
+--slds-g-color-palette-teal-20: light-dark(#023434, #04e1cb);
+--slds-g-color-palette-teal-30: light-dark(#024d4c, #01c3b3);
+--slds-g-color-palette-teal-40: light-dark(#056764, #06a59a);
+--slds-g-color-palette-teal-50: #0b827c;
+--slds-g-color-palette-teal-60: light-dark(#06a59a, #056764);
+--slds-g-color-palette-teal-65: light-dark(#03b4a7, #035a58);
+--slds-g-color-palette-teal-70: light-dark(#01c3b3, #024d4c);
+--slds-g-color-palette-teal-80: light-dark(#04e1cb, #023434);
+--slds-g-color-palette-teal-90: light-dark(#acf3e4, #071b12);
+--slds-g-color-palette-teal-95: light-dark(#def9f3, #010502);
+--slds-g-color-palette-violet-10: light-dark(#2e0039, #f2defe);
+--slds-g-color-palette-violet-15: light-dark(#3d0157, #eccdfe);
+--slds-g-color-palette-violet-20: light-dark(#580276, #e5b9fe);
+--slds-g-color-palette-violet-30: light-dark(#730394, #d892fe);
+--slds-g-color-palette-violet-40: light-dark(#9602c7, #cb65ff);
+--slds-g-color-palette-violet-50: #ba01ff;
+--slds-g-color-palette-violet-60: light-dark(#cb65ff, #9602c7);
+--slds-g-color-palette-violet-65: light-dark(#d17dfe, #8402ad);
+--slds-g-color-palette-violet-70: light-dark(#d892fe, #730394);
+--slds-g-color-palette-violet-80: light-dark(#e5b9fe, #580276);
+--slds-g-color-palette-violet-90: light-dark(#f2defe, #2e0039);
+--slds-g-color-palette-violet-95: light-dark(#f9f0ff, #060300);
+--slds-g-color-palette-yellow-10: light-dark(#281202, #f9e3b6);
+--slds-g-color-palette-yellow-15: light-dark(#371e03, #f8d462);
+--slds-g-color-palette-yellow-20: light-dark(#4f2100, #fcc003);
+--slds-g-color-palette-yellow-30: light-dark(#6f3400, #e4a201);
+--slds-g-color-palette-yellow-40: light-dark(#8c4b02, #ca8501);
+--slds-g-color-palette-yellow-50: #a96504;
+--slds-g-color-palette-yellow-60: light-dark(#ca8501, #8c4b02);
+--slds-g-color-palette-yellow-65: light-dark(#da9401, #824308);
+--slds-g-color-palette-yellow-70: light-dark(#e4a201, #6f3400);
+--slds-g-color-palette-yellow-80: light-dark(#fcc003, #4f2100);
+--slds-g-color-palette-yellow-90: light-dark(#f9e3b6, #281202);
+--slds-g-color-palette-yellow-95: light-dark(#fbf3e0, #090200);
+--slds-g-color-palette-neutral-0: light-dark(#000, #fff);
+--slds-g-color-palette-neutral-10: light-dark(#181818, #e5e5e5);
+--slds-g-color-palette-neutral-15: light-dark(#242424, #d7d7d7);
+--slds-g-color-palette-neutral-20: light-dark(#2e2e2e, #c9c9c9);
+--slds-g-color-palette-neutral-30: light-dark(#444, #aeaeae);
+--slds-g-color-palette-neutral-40: light-dark(#5c5c5c, #939393);
+--slds-g-color-palette-neutral-50: #757575;
+--slds-g-color-palette-neutral-60: light-dark(#939393, #5c5c5c);
+--slds-g-color-palette-neutral-65: light-dark(#a0a0a0, #515151);
+--slds-g-color-palette-neutral-70: light-dark(#aeaeae, #444);
+--slds-g-color-palette-neutral-80: light-dark(#c9c9c9, #2e2e2e);
+--slds-g-color-palette-neutral-90: light-dark(#e5e5e5, #181818);
+--slds-g-color-palette-neutral-95: light-dark(#f3f3f3, #020202);
+--slds-g-color-palette-neutral-100: light-dark(#fff, #000);
+--slds-g-color-neutral-base-100: light-dark(#fff, #000);
+--slds-g-color-neutral-base-95: light-dark(#f3f3f3, #020202);
+--slds-g-color-neutral-base-90: light-dark(#e5e5e5, #181818);
+--slds-g-color-neutral-base-80: light-dark(#c9c9c9, #2e2e2e);
+--slds-g-color-neutral-base-70: light-dark(#aeaeae, #444);
+--slds-g-color-neutral-base-65: light-dark(#a0a0a0, #515151);
+--slds-g-color-neutral-base-60: light-dark(#939393, #5c5c5c);
+--slds-g-color-neutral-base-50: #757575;
+--slds-g-color-neutral-base-40: light-dark(#5c5c5c, #939393);
+--slds-g-color-neutral-base-30: light-dark(#444, #aeaeae);
+--slds-g-color-neutral-base-20: light-dark(#2e2e2e, #c9c9c9);
+--slds-g-color-neutral-base-15: light-dark(#242424, #d7d7d7);
+--slds-g-color-neutral-base-10: light-dark(#181818, #e5e5e5);
+--slds-g-color-neutral-base-0: light-dark(#000, #fff);
+--slds-g-color-brand-base-100: var(--slds-g-color-neutral-base-100);
+--slds-g-color-brand-base-95: light-dark(var(--slds-r-color-brand-95), var(--slds-r-color-brand-5));
+--slds-g-color-brand-base-90: light-dark(var(--slds-r-color-brand-90), var(--slds-r-color-brand-10));
+--slds-g-color-brand-base-80: light-dark(var(--slds-r-color-brand-80), var(--slds-r-color-brand-20));
+--slds-g-color-brand-base-70: light-dark(var(--slds-r-color-brand-70), var(--slds-r-color-brand-30));
+--slds-g-color-brand-base-65: light-dark(var(--slds-r-color-brand-65), var(--slds-r-color-brand-35));
+--slds-g-color-brand-base-60: light-dark(var(--slds-r-color-brand-60), var(--slds-r-color-brand-40));
+--slds-g-color-brand-base-55: light-dark(var(--slds-r-color-brand-55), var(--slds-r-color-brand-45));
+--slds-g-color-brand-base-50: var(--slds-r-color-brand-50);
+--slds-g-color-brand-base-45: light-dark(var(--slds-r-color-brand-45), var(--slds-r-color-brand-55));
+--slds-g-color-brand-base-40: light-dark(var(--slds-r-color-brand-40), var(--slds-r-color-brand-60));
+--slds-g-color-brand-base-30: light-dark(var(--slds-r-color-brand-30), var(--slds-r-color-brand-70));
+--slds-g-color-brand-base-20: light-dark(var(--slds-r-color-brand-20), var(--slds-r-color-brand-80));
+--slds-g-color-brand-base-15: light-dark(var(--slds-r-color-brand-15), var(--slds-r-color-brand-85));
+--slds-g-color-brand-base-10: light-dark(var(--slds-r-color-brand-10), var(--slds-r-color-brand-90));
+--slds-g-color-info-base-100: var(--slds-g-color-neutral-base-100);
+--slds-g-color-info-base-95: light-dark(#eef4ff, #000310);
+--slds-g-color-info-base-90: light-dark(#d8e6fe, #001639);
+--slds-g-color-info-base-80: light-dark(#aacbff, #032d60);
+--slds-g-color-info-base-70: light-dark(#78b0fd, #014486);
+--slds-g-color-info-base-65: light-dark(#57a3fd, #044f98);
+--slds-g-color-info-base-60: light-dark(#1b96ff, #0b5cab);
+--slds-g-color-info-base-50: #0176d3;
+--slds-g-color-info-base-40: light-dark(#0b5cab, #1b96ff);
+--slds-g-color-info-base-30: light-dark(#014486, #78b0fd);
+--slds-g-color-info-base-20: light-dark(#032d60, #aacbff);
+--slds-g-color-info-base-15: light-dark(#03234d, #c2d8ff);
+--slds-g-color-info-base-10: light-dark(#001639, #d8e6fe);
+--slds-g-color-error-base-100: var(--slds-g-color-neutral-base-100);
+--slds-g-color-error-base-95: light-dark(#fef0f3, #0f0003);
+--slds-g-color-error-base-90: light-dark(#fddde3, #370114);
+--slds-g-color-error-base-80: light-dark(#fdb6c5, #61022a);
+--slds-g-color-error-base-70: light-dark(#fe8aa7, #8a033e);
+--slds-g-color-error-base-65: light-dark(#fe7298, #a00449);
+--slds-g-color-error-base-60: light-dark(#ff538a, #b60554);
+--slds-g-color-error-base-50: #e3066a;
+--slds-g-color-error-base-40: light-dark(#b60554, #ff538a);
+--slds-g-color-error-base-30: light-dark(#8a033e, #fe8aa7);
+--slds-g-color-error-base-20: light-dark(#61022a, #fdb6c5);
+--slds-g-color-error-base-15: light-dark(#4b0620, #fec8d4);
+--slds-g-color-error-base-10: light-dark(#370114, #fddde3);
+--slds-g-color-warning-base-100: var(--slds-g-color-neutral-base-100);
+--slds-g-color-warning-base-95: light-dark(#fbf3e0, #090200);
+--slds-g-color-warning-base-90: light-dark(#f9e3b6, #281202);
+--slds-g-color-warning-base-80: light-dark(#fcc003, #4f2100);
+--slds-g-color-warning-base-70: light-dark(#e4a201, #6f3400);
+--slds-g-color-warning-base-65: light-dark(#da9401, #824308);
+--slds-g-color-warning-base-60: light-dark(#ca8501, #8c4b02);
+--slds-g-color-warning-base-50: #a96504;
+--slds-g-color-warning-base-40: light-dark(#8c4b02, #ca8501);
+--slds-g-color-warning-base-30: light-dark(#6f3400, #e4a201);
+--slds-g-color-warning-base-20: light-dark(#4f2100, #fcc003);
+--slds-g-color-warning-base-15: light-dark(#371e03, #f8d462);
+--slds-g-color-warning-base-10: light-dark(#281202, #f9e3b6);
+--slds-g-color-success-base-100: var(--slds-g-color-neutral-base-100);
+--slds-g-color-success-base-95: light-dark(#def9f3, #010502);
+--slds-g-color-success-base-90: light-dark(#acf3e4, #071b12);
+--slds-g-color-success-base-80: light-dark(#04e1cb, #023434);
+--slds-g-color-success-base-70: light-dark(#01c3b3, #024d4c);
+--slds-g-color-success-base-65: light-dark(#03b4a7, #035a58);
+--slds-g-color-success-base-60: light-dark(#06a59a, #056764);
+--slds-g-color-success-base-50: #0b827c;
+--slds-g-color-success-base-40: light-dark(#056764, #06a59a);
+--slds-g-color-success-base-30: light-dark(#024d4c, #01c3b3);
+--slds-g-color-success-base-20: light-dark(#023434, #04e1cb);
+--slds-g-color-success-base-15: light-dark(#072825, #76ead9);
+--slds-g-color-success-base-10: light-dark(#071b12, #acf3e4);
+--slds-g-color-border-1: light-dark(#c9c9c9, #444);
+--slds-g-color-border-2: light-dark(#5c5c5c, #757575);
+--slds-g-color-border-accent-1: var(--slds-r-color-brand-50);
+--slds-g-color-border-accent-2: light-dark(var(--slds-r-color-brand-40), var(--slds-r-color-brand-70));
+--slds-g-color-border-accent-3: light-dark(var(--slds-r-color-brand-30), var(--slds-r-color-brand-80));
+--slds-g-color-surface-1: light-dark(#fff, #242424);
+--slds-g-color-surface-2: light-dark(#f3f3f3, #181818);
+--slds-g-color-surface-3: light-dark(#f3f3f3, #2e2e2e);
+--slds-g-color-surface-container-1: light-dark(#fff, #242424);
+--slds-g-color-surface-container-2: light-dark(#f3f3f3, #181818);
+--slds-g-color-surface-container-3: light-dark(#e5e5e5, #2e2e2e);
+--slds-g-color-on-surface-1: light-dark(#5c5c5c, #aeaeae);
+--slds-g-color-on-surface-2: light-dark(#2e2e2e, #e5e5e5);
+--slds-g-color-on-surface-3: light-dark(#03234d, #d8e6fe);
+--slds-g-color-accent-1: var(--slds-r-color-brand-50);
+--slds-g-color-accent-2: light-dark(var(--slds-r-color-brand-40), var(--slds-r-color-brand-70));
+--slds-g-color-accent-3: light-dark(var(--slds-r-color-brand-30), var(--slds-r-color-brand-80));
+--slds-g-color-accent-container-1: var(--slds-r-color-brand-50);
+--slds-g-color-accent-container-2: light-dark(var(--slds-r-color-brand-40), var(--slds-r-color-brand-90));
+--slds-g-color-accent-container-3: light-dark(var(--slds-r-color-brand-30), var(--slds-r-color-brand-80));
+--slds-g-color-on-accent-1: #fff;
+--slds-g-color-on-accent-2: light-dark(#fff, var(--slds-r-color-brand-40));
+--slds-g-color-on-accent-3: light-dark(#fff, var(--slds-r-color-brand-30));
+--slds-g-color-error-1: light-dark(#b60554, #fe8aa7);
+--slds-g-color-error-container-1: light-dark(#fddde3, #8a033e);
+--slds-g-color-on-error-1: light-dark(#b60554, #fddde3);
+--slds-g-color-border-error-1: light-dark(#b60554, #fe8aa7);
+--slds-g-color-warning-1: light-dark(#8c4b02, #e4a201);
+--slds-g-color-warning-container-1: light-dark(#f9e3b6, #6f3400);
+--slds-g-color-on-warning-1: light-dark(#8c4b02, #f9e3b6);
+--slds-g-color-border-warning-1: light-dark(#dd7a01, #e4a201);
+--slds-g-color-success-1: light-dark(#056764, #01c3b3);
+--slds-g-color-success-container-1: light-dark(#acf3e4, #024d4c);
+--slds-g-color-on-success-1: light-dark(#056764, #acf3e4);
+--slds-g-color-border-success-1: var(--slds-g-color-success-base-40);
+--slds-g-color-info-1: light-dark(#0b5cab, #78b0fd);
+--slds-g-color-info-container-1: light-dark(#d8e6fe, #014486);
+--slds-g-color-on-info-1: light-dark(#0b5cab, #d8e6fe);
+--slds-g-color-disabled-1: var(--slds-g-color-neutral-base-50);
+--slds-g-color-disabled-container-1: light-dark(#e5e5e5, #2e2e2e);
+--slds-g-color-on-disabled-1: #757575;
+--slds-g-color-border-disabled-1: var(--slds-g-color-neutral-base-50);
+--slds-g-shadow-block-start-1: 0px 0px 2px 0px light-dark(#0000002e, #0000005c), 0px -2px 2px 0px light-dark(#0000002e, #0000005c), 0px 1px 2px 0px light-dark(#0000001a, #00000033);
+--slds-g-shadow-inline-end-1: 0px 0px 2px 0px light-dark(#0000002e, #0000005c), 2px 0px 2px 0px light-dark(#0000002e, #0000005c), -1px 0 2px 0 light-dark(#0000001a, #00000033);
+--slds-g-shadow-block-end-1: var(--slds-g-shadow-1);
+--slds-g-shadow-inline-start-1: 0px 0px 2px 0px light-dark(#0000002e, #0000005c), -2px 0px 2px 0px light-dark(#0000002e, #0000005c), 1px 0px 2px 0px light-dark(#0000001a, #00000033);
+--slds-g-shadow-blockstart-1: var(--slds-g-shadow-block-start-1);
+--slds-g-shadow-inlineend-1: var(--slds-g-shadow-inline-end-1);
+--slds-g-shadow-blockend-1: var(--slds-g-shadow-block-end-1);
+--slds-g-shadow-inlinestart-1: var(--slds-g-shadow-inline-start-1);
+--slds-g-shadow-block-start-2: 0px 0px 5px 0px light-dark(#00000029, #00000052), 0px -3px 3px 0px light-dark(#00000029, #00000052), 0px 1px 2px 0px light-dark(#00000017, #0000002e);
+--slds-g-shadow-inline-end-2: 0px 0px 5px 0px light-dark(#00000029, #00000052), 3px 0px 3px 0px light-dark(#00000029, #00000052), -1px 0px 2px 0px light-dark(#00000017, #0000002e);
+--slds-g-shadow-block-end-2: var(--slds-g-shadow-2);
+--slds-g-shadow-inline-start-2: 0px 0px 5px 0px light-dark(#00000029, #00000052), -3px 0px 3px 0px light-dark(#00000029, #00000052), 1px 0px 2px 0px light-dark(#00000017, #0000002e);
+--slds-g-shadow-blockstart-2: var(--slds-g-shadow-block-start-2);
+--slds-g-shadow-inlineend-2: var(--slds-g-shadow-inline-end-2);
+--slds-g-shadow-blockend-2: var(--slds-g-shadow-block-end-2);
+--slds-g-shadow-inlinestart-2: var(--slds-g-shadow-inline-start-2);
+--slds-g-shadow-block-start-3: 0px 0px 7px 0px light-dark(#00000024, #00000047), 0px -5px 5px 0px light-dark(#00000024, #00000047), 0px 1px 2px 0px light-dark(#00000014, #00000029);
+--slds-g-shadow-inline-end-3: 0px 0px 7px 0px light-dark(#00000024, #00000047), 5px 0px 5px 0px light-dark(#00000024, #00000047), -1px 0px 3px 0px light-dark(#00000014, #00000029);
+--slds-g-shadow-block-end-3: var(--slds-g-shadow-3);
+--slds-g-shadow-inline-start-3: 0px 0px 7px 0px light-dark(#00000024, #00000047), -5px 0px 5px 0px light-dark(#00000024, #00000047), 1px 0px 2px 0px light-dark(#00000014, #00000029);
+--slds-g-shadow-blockstart-3: var(--slds-g-shadow-block-start-3);
+--slds-g-shadow-inlineend-3: var(--slds-g-shadow-inline-end-3);
+--slds-g-shadow-blockend-3: var(--slds-g-shadow-block-end-3);
+--slds-g-shadow-inlinestart-3: var(--slds-g-shadow-inline-start-3);
+--slds-g-shadow-block-start-4: 0px 0px 10px 0px light-dark(#0000001f, #0000003d), 0px -7px 7px 0px light-dark(#0000001f, #0000003d), 0px 1px 3px 0px light-dark(#00000012, #00000024);
+--slds-g-shadow-inline-end-4: 0px 0px 10px 0px light-dark(#0000001f, #0000003d), 7px 0px 7px 0px light-dark(#0000001f, #0000003d), -1px 0px 3px 0px light-dark(#00000012, #00000024);
+--slds-g-shadow-block-end-4: var(--slds-g-shadow-4);
+--slds-g-shadow-inline-start-4: 0px 0px 10px 0px light-dark(#0000001f, #0000003d), -7px 0px 7px 0px light-dark(#0000001f, #0000003d), 1px 0px 3px 0px light-dark(#00000012, #00000024);
+--slds-g-shadow-blockstart-4: var(--slds-g-shadow-block-start-4);
+--slds-g-shadow-inlineend-4: var(--slds-g-shadow-inline-end-4);
+--slds-g-shadow-blockend-4: var(--slds-g-shadow-block-end-4);
+--slds-g-shadow-inlinestart-4: var(--slds-g-shadow-inline-start-4);
+--slds-g-shadow-outline-focus-1: 0px 0px 0px 2px var(--slds-g-color-brand-base-15);
+--slds-g-shadow-outset-focus-1: 0px 0px 0px 2px var(--slds-g-color-neutral-base-100), 0px 0px 0px 4px var(--slds-g-color-brand-base-15);
+--slds-g-shadow-inset-focus-1: 0px 0px 0px 2px var(--slds-g-color-brand-base-15) inset;
+--slds-g-shadow-inset-inverse-focus-1: 0px 0px 0px 2px var(--slds-g-color-brand-base-15) inset, 0px 0px 0px 4px var(--slds-g-color-neutral-base-100) inset;
+--slds-g-shadow-insetinverse-focus-1: var(--slds-g-shadow-inset-inverse-focus-1);
+--slds-r-color-brand-95: #edf4ff;
+--slds-r-color-brand-90: #d6e6ff;
+--slds-r-color-brand-85: #c2daff;
+--slds-r-color-brand-80: #a8cbff;
+--slds-r-color-brand-70: #7cb1fe;
+--slds-r-color-brand-65: #5f9ffe;
+--slds-r-color-brand-60: #4992fe;
+--slds-r-color-brand-55: #287efe;
+--slds-r-color-brand-50: #066afe;
+--slds-r-color-brand-45: #045dec;
+--slds-r-color-brand-40: #0250d9;
+--slds-r-color-brand-35: #003ecd;
+--slds-r-color-brand-30: #022ac0;
+--slds-r-color-brand-20: #002775;
+--slds-r-color-brand-15: #001e5b;
+--slds-r-color-brand-10: #001642;
+--slds-r-color-brand-5: #000314;
+--slds-g-color-info-base-55: light-dark(#0684ef, #0469c1);
+--slds-g-color-info-base-45: light-dark(#0469c1, #0684ef);
+--slds-g-color-error-base-55: light-dark(#f42f7c, #ce055f);
+--slds-g-color-error-base-45: light-dark(#ce055f, #f42f7c);
+--slds-g-color-warning-base-55: light-dark(#ba7503, #9a5803);
+--slds-g-color-warning-base-45: light-dark(#9a5803, #ba7503);
+--slds-g-color-success-base-55: light-dark(#09948b, #087570);
+--slds-g-color-success-base-45: light-dark(#087570, #09948b);
+--slds-g-color-accent-light-1: #edf4ff;
+--slds-g-color-accent-light-2: #d6e6ff;
+--slds-g-color-accent-dark-1: #002775;
+--slds-g-color-accent-dark-2: #001642;
+--slds-g-color-disabled-container-2: light-dark(#c9c9c9, #444);
+--slds-g-color-disabled-2: var(--slds-g-color-neutral-base-40);
+--slds-g-color-on-disabled-2: light-dark(#757575, #939393);
+--slds-g-color-border-disabled-2: var(--slds-g-color-neutral-base-40);
+--slds-g-color-error-container-2: light-dark(#fdb6c5, #b60554);
+--slds-g-color-on-error-2: light-dark(#8a033e, #fef0f3);
+--slds-g-color-border-error-2: light-dark(#8a033e, #fdb6c5);
+--slds-g-color-success-container-2: light-dark(#04e1cb, #056764);
+--slds-g-color-on-success-2: var(--slds-g-color-success-base-20);
+--slds-g-color-border-success-2: var(--slds-g-color-success-base-30);
+--slds-g-color-neutral-base-45: light-dark(#696969, #848484);
+--slds-g-color-neutral-base-55: light-dark(#848484, #696969);
+--slds-g-color-surface-inverse-1: light-dark(#032d60, #aacbff);
+--slds-g-color-surface-inverse-2: light-dark(#03234d, #d8e6fe);
+--slds-g-color-surface-container-inverse-1: light-dark(#032d60, #aacbff);
+--slds-g-color-surface-container-inverse-2: light-dark(#03234d, #78b0fd);
+--slds-g-color-on-surface-inverse-1: light-dark(#fff, #181818);
+--slds-g-color-on-surface-inverse-2: light-dark(#a8cbff, #002775);
+--slds-g-color-border-inverse-1: light-dark(#f3f3f3, #181818);
+--slds-g-color-border-inverse-2: light-dark(#032d60, #aacbff);
+}
+/* COSMOS END */
 
-  /* ===== TEXT COLORS ===== */
-  --theme-text-primary: #e8e8e8;            /* Main text, headings */
-  --theme-text-secondary: #a8a6a3;          /* Subtitles, descriptions */
-  --theme-text-tertiary: #b8bcc8;           /* Body text in special sections */
-  --theme-text-quaternary: #a0a5b0;         /* Services card text */
-  --theme-text-dark: #d1d5db;               /* Dark emphasis text (lighter in dark mode) */
-
-  /* ===== BORDER COLORS ===== */
-  --theme-border-light: #3a3d45;            /* Light borders */
-  --theme-border-medium: #2f3239;           /* Medium borders */
-  --theme-border-primary: rgba(21, 137, 238, 0.3);  /* Primary accent border */
-  --theme-border-success: rgba(34, 197, 94, 0.3);   /* Success accent border */
-  --theme-border-highlight: #2d4a6f;        /* Highlight section border */
-  --theme-border-success-strong: #2d5a40;   /* Strong success border */
-  --theme-border-neutral: rgba(156, 163, 175, 0.2); /* Neutral border */
-
-  /* ===== PRIMARY BRAND COLORS ===== */
-  /* Keep primary colors vibrant in dark mode */
-  --theme-primary: #3b9fff;                 /* Slightly lighter blue for dark mode */
-  --theme-primary-dark: #1589ee;            /* Original blue */
-  --theme-primary-darker: #0176d3;          /* Darker variant */
-  --theme-primary-light: #58b3ff;           /* Lighter variant */
-
-  /* ===== ACCENT COLORS (Feature Icons) ===== */
-  /* Keep accent colors vibrant */
-  --theme-accent-teal: #0ec5b9;
-  --theme-accent-teal-dark: #06a59a;
-  --theme-accent-purple: #a78bfa;
-  --theme-accent-purple-dark: #8b5cf6;
-  --theme-accent-cyan: #67c6c8;
-  --theme-accent-cyan-dark: #54a4a6;
-  --theme-accent-orange: #ff8558;
-  --theme-accent-orange-dark: #ff6b35;
-  --theme-accent-violet: #b575ff;
-  --theme-accent-violet-dark: #9f4fea;
-  --theme-accent-amber: #ffc757;
-  --theme-accent-amber-dark: #ffb439;
-  --theme-accent-gray: #8b8986;
-  --theme-accent-gray-dark: #706e6b;
-  --theme-accent-indigo: #818cf8;
-
-  /* ===== SUCCESS/POSITIVE COLORS ===== */
-  --theme-success: #34d87c;
-  --theme-success-dark: #22c55e;
-  --theme-success-bg: rgba(34, 197, 94, 0.15);
-
-  /* ===== SHADOW VALUES ===== */
-  --theme-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
-  --theme-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-  --theme-shadow-lg: 0 8px 25px rgba(0, 0, 0, 0.5);
-  --theme-shadow-xl: 0 4px 20px rgba(0, 0, 0, 0.3);
-  --theme-shadow-feature: 0 3px 10px rgba(0, 0, 0, 0.5);
-  --theme-shadow-feature-hover: 0 5px 15px rgba(0, 0, 0, 0.6);
   
-  /* ===== COLORED SHADOWS (darker/more subtle in dark mode) ===== */
-  --theme-shadow-primary: 0 3px 10px rgba(21, 137, 238, 0.4);
-  --theme-shadow-primary-strong: 0 4px 12px rgba(21, 137, 238, 0.5);
-  --theme-shadow-teal: 0 3px 10px rgba(6, 165, 154, 0.4);
-  --theme-shadow-purple: 0 3px 10px rgba(139, 92, 246, 0.4);
-  --theme-shadow-cyan: 0 3px 10px rgba(84, 164, 166, 0.4);
-  --theme-shadow-orange: 0 3px 10px rgba(255, 107, 53, 0.4);
-  --theme-shadow-violet: 0 3px 10px rgba(159, 79, 234, 0.4);
-  --theme-shadow-amber: 0 3px 10px rgba(255, 180, 57, 0.4);
-  --theme-shadow-gray: 0 3px 10px rgba(112, 110, 107, 0.4);
-  --theme-shadow-success: 0 4px 12px rgba(34, 197, 94, 0.5);
-
-  /* ===== GRADIENT DEFINITIONS ===== */
-  --theme-gradient-bg: linear-gradient(135deg, var(--theme-bg-primary) 0%, var(--theme-bg-primary-end) 100%);
-  --theme-gradient-primary: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary-dark) 100%);
-  --theme-gradient-teal: linear-gradient(135deg, var(--theme-accent-teal) 0%, var(--theme-accent-teal-dark) 100%);
-  --theme-gradient-purple: linear-gradient(135deg, var(--theme-accent-purple) 0%, var(--theme-accent-purple-dark) 100%);
-  --theme-gradient-cyan: linear-gradient(135deg, var(--theme-accent-cyan) 0%, var(--theme-accent-cyan-dark) 100%);
-  --theme-gradient-orange: linear-gradient(135deg, var(--theme-accent-orange) 0%, var(--theme-accent-orange-dark) 100%);
-  --theme-gradient-violet: linear-gradient(135deg, var(--theme-accent-violet) 0%, var(--theme-accent-violet-dark) 100%);
-  --theme-gradient-amber: linear-gradient(135deg, var(--theme-accent-amber) 0%, var(--theme-accent-amber-dark) 100%);
-  --theme-gradient-gray: linear-gradient(135deg, var(--theme-accent-gray) 0%, var(--theme-accent-gray-dark) 100%);
-  --theme-gradient-packages: linear-gradient(135deg, var(--theme-primary-light) 0%, var(--theme-primary-darker) 100%);
-  --theme-gradient-success: linear-gradient(135deg, var(--theme-success) 0%, var(--theme-success-dark) 100%);
-  --theme-gradient-highlight: linear-gradient(135deg, var(--theme-bg-highlight) 0%, var(--theme-bg-highlight-end) 100%);
-  --theme-gradient-success-bg: linear-gradient(135deg, var(--theme-bg-success) 0%, var(--theme-bg-success-end) 100%);
-}
-
-.slds-scope[data-theme="light"]
+.slds-scope[data-theme="vscode"]
 {
-}
-.slds-scope[data-theme="dark"]
-{
+  /*
     --vscode-font-family: "Segoe WPC", "Segoe UI", sans-serif;
     --vscode-font-weight: normal;
     --vscode-font-size: 13px;
@@ -1012,40 +1206,291 @@
     --vscode-gitDecoration-submoduleResourceForeground: #8db9e2;
     --vscode-git-blame\.editorDecorationForeground: #969696;
     --vscode-editor-font-feature-settings: "liga" off, "calt" off;
-}
-
-.slds-scope[data-theme="light"][data-contrast="high"] {
-  
-}
-.slds-scope[data-theme="dark"][data-contrast="high"] {
-
-}
-
-/*
- --vscode to --slds
-*/
-.slds-scope[data-theme] {
-  --slds-c-icon-color-foreground: white !important;
-  --slds-c-icon-color-foreground-default: white !important;
-
-  /* background-color: #EDF4FF !important;
-  color: #080707 !important;
-
-  --lwc-colorBackground: #EDF4FF;
-  --lwc-colorBackgroundAlt: #EDF4FF;
-  --lwc-colorBorder: #dddbda;
-  --lwc-colorTextDefault: #080707;
-  --lwc-colorTextWeak: #3e3e3c;
-  --lwc-colorTextInverse: #ffffff;
   */
-  /*   
-  background-color: #1e1e1e !important;
-  color: #d4d4d4 !important;
-
-  --lwc-colorBackground: #1e1e1e;
-  --lwc-colorBackgroundAlt: #252526;
-  --lwc-colorBorder: #333333;
-  --lwc-colorTextDefault: #d4d4d4;
-  --lwc-colorTextWeak: #9a9a9a;
-  --lwc-colorTextInverse: #000000; */
+    /* COSMOS Variables mapped to VS Code theme */
+    --slds-g-shadow-1: var(--vscode-widget-shadow);
+    --slds-g-shadow-2: var(--vscode-widget-shadow);
+    --slds-g-shadow-3: var(--vscode-widget-shadow);
+    --slds-g-shadow-4: var(--vscode-widget-shadow);
+    --slds-g-shadow-5: var(--vscode-widget-shadow);
+    --slds-g-shadow-6: var(--vscode-widget-shadow);
+    --slds-g-shadow-inverse-1: var(--vscode-widget-shadow);
+    
+    /* Neutral color palette */
+    --slds-g-color-palette-neutral-0: var(--vscode-editor-background);
+    --slds-g-color-palette-neutral-10: var(--vscode-sideBar-background);
+    --slds-g-color-palette-neutral-15: var(--vscode-panel-background);
+    --slds-g-color-palette-neutral-20: var(--vscode-editorWidget-background);
+    --slds-g-color-palette-neutral-30: var(--vscode-input-background);
+    --slds-g-color-palette-neutral-40: var(--vscode-editorIndentGuide-background1);
+    --slds-g-color-palette-neutral-50: var(--vscode-editorLineNumber-foreground);
+    --slds-g-color-palette-neutral-60: var(--vscode-descriptionForeground);
+    --slds-g-color-palette-neutral-65: var(--vscode-descriptionForeground);
+    --slds-g-color-palette-neutral-70: var(--vscode-foreground);
+    --slds-g-color-palette-neutral-80: var(--vscode-list-hoverBackground);
+    --slds-g-color-palette-neutral-90: var(--vscode-editorWidget-border);
+    --slds-g-color-palette-neutral-95: var(--vscode-editorGroup-border);
+    --slds-g-color-palette-neutral-100: var(--vscode-editor-foreground);
+    
+    --slds-g-color-neutral-base-0: var(--vscode-editor-background);
+    --slds-g-color-neutral-base-10: var(--vscode-sideBar-background);
+    --slds-g-color-neutral-base-15: var(--vscode-panel-background);
+    --slds-g-color-neutral-base-20: var(--vscode-editorWidget-background);
+    --slds-g-color-neutral-base-30: var(--vscode-input-background);
+    --slds-g-color-neutral-base-40: var(--vscode-editorIndentGuide-background1);
+    --slds-g-color-neutral-base-45: var(--vscode-editorIndentGuide-activeBackground1);
+    --slds-g-color-neutral-base-50: var(--vscode-editorLineNumber-foreground);
+    --slds-g-color-neutral-base-55: var(--vscode-editorLineNumber-activeForeground);
+    --slds-g-color-neutral-base-60: var(--vscode-descriptionForeground);
+    --slds-g-color-neutral-base-65: var(--vscode-descriptionForeground);
+    --slds-g-color-neutral-base-70: var(--vscode-foreground);
+    --slds-g-color-neutral-base-80: var(--vscode-list-hoverBackground);
+    --slds-g-color-neutral-base-90: var(--vscode-editorWidget-border);
+    --slds-g-color-neutral-base-95: var(--vscode-editorGroup-border);
+    --slds-g-color-neutral-base-100: var(--vscode-editor-foreground);
+    
+    /* Brand colors - using VS Code accent/focus colors */
+    --slds-g-color-brand-base-100: var(--vscode-editor-foreground);
+    --slds-g-color-brand-base-95: var(--vscode-button-background);
+    --slds-g-color-brand-base-90: var(--vscode-button-background);
+    --slds-g-color-brand-base-80: var(--vscode-button-background);
+    --slds-g-color-brand-base-70: var(--vscode-button-hoverBackground);
+    --slds-g-color-brand-base-65: var(--vscode-button-hoverBackground);
+    --slds-g-color-brand-base-60: var(--vscode-textLink-foreground);
+    --slds-g-color-brand-base-55: var(--vscode-textLink-foreground);
+    --slds-g-color-brand-base-50: var(--vscode-focusBorder);
+    --slds-g-color-brand-base-45: var(--vscode-focusBorder);
+    --slds-g-color-brand-base-40: var(--vscode-progressBar-background);
+    --slds-g-color-brand-base-30: var(--vscode-progressBar-background);
+    --slds-g-color-brand-base-20: var(--vscode-button-background);
+    --slds-g-color-brand-base-15: var(--vscode-button-background);
+    --slds-g-color-brand-base-10: var(--vscode-button-background);
+    
+    --slds-r-color-brand-95: var(--vscode-button-background);
+    --slds-r-color-brand-90: var(--vscode-button-background);
+    --slds-r-color-brand-85: var(--vscode-button-background);
+    --slds-r-color-brand-80: var(--vscode-button-background);
+    --slds-r-color-brand-70: var(--vscode-button-hoverBackground);
+    --slds-r-color-brand-65: var(--vscode-button-hoverBackground);
+    --slds-r-color-brand-60: var(--vscode-textLink-foreground);
+    --slds-r-color-brand-55: var(--vscode-textLink-foreground);
+    --slds-r-color-brand-50: var(--vscode-focusBorder);
+    --slds-r-color-brand-45: var(--vscode-focusBorder);
+    --slds-r-color-brand-40: var(--vscode-progressBar-background);
+    --slds-r-color-brand-35: var(--vscode-progressBar-background);
+    --slds-r-color-brand-30: var(--vscode-progressBar-background);
+    --slds-r-color-brand-20: var(--vscode-button-background);
+    --slds-r-color-brand-15: var(--vscode-button-background);
+    --slds-r-color-brand-10: var(--vscode-button-background);
+    --slds-r-color-brand-5: var(--vscode-button-background);
+    
+    /* Info colors - using VS Code info icon colors */
+    --slds-g-color-info-base-100: var(--vscode-editor-foreground);
+    --slds-g-color-info-base-95: var(--vscode-problemsInfoIcon-foreground);
+    --slds-g-color-info-base-90: var(--vscode-problemsInfoIcon-foreground);
+    --slds-g-color-info-base-80: var(--vscode-editorInfo-foreground);
+    --slds-g-color-info-base-70: var(--vscode-editorInfo-foreground);
+    --slds-g-color-info-base-65: var(--vscode-editorInfo-foreground);
+    --slds-g-color-info-base-60: var(--vscode-editorInfo-foreground);
+    --slds-g-color-info-base-55: var(--vscode-editorInfo-foreground);
+    --slds-g-color-info-base-50: var(--vscode-editorInfo-foreground);
+    --slds-g-color-info-base-45: var(--vscode-editorInfo-foreground);
+    --slds-g-color-info-base-40: var(--vscode-editorInfo-foreground);
+    --slds-g-color-info-base-30: var(--vscode-problemsInfoIcon-foreground);
+    --slds-g-color-info-base-20: var(--vscode-problemsInfoIcon-foreground);
+    --slds-g-color-info-base-15: var(--vscode-problemsInfoIcon-foreground);
+    --slds-g-color-info-base-10: var(--vscode-problemsInfoIcon-foreground);
+    
+    /* Error colors - using VS Code error colors */
+    --slds-g-color-error-base-100: var(--vscode-editor-foreground);
+    --slds-g-color-error-base-95: var(--vscode-inputValidation-errorBackground);
+    --slds-g-color-error-base-90: var(--vscode-inputValidation-errorBackground);
+    --slds-g-color-error-base-80: var(--vscode-inputValidation-errorBorder);
+    --slds-g-color-error-base-70: var(--vscode-errorForeground);
+    --slds-g-color-error-base-65: var(--vscode-errorForeground);
+    --slds-g-color-error-base-60: var(--vscode-errorForeground);
+    --slds-g-color-error-base-55: var(--vscode-errorForeground);
+    --slds-g-color-error-base-50: var(--vscode-errorForeground);
+    --slds-g-color-error-base-45: var(--vscode-errorForeground);
+    --slds-g-color-error-base-40: var(--vscode-problemsErrorIcon-foreground);
+    --slds-g-color-error-base-30: var(--vscode-problemsErrorIcon-foreground);
+    --slds-g-color-error-base-20: var(--vscode-inputValidation-errorBorder);
+    --slds-g-color-error-base-15: var(--vscode-inputValidation-errorBackground);
+    --slds-g-color-error-base-10: var(--vscode-inputValidation-errorBackground);
+    
+    /* Warning colors - using VS Code warning colors */
+    --slds-g-color-warning-base-100: var(--vscode-editor-foreground);
+    --slds-g-color-warning-base-95: var(--vscode-inputValidation-warningBackground);
+    --slds-g-color-warning-base-90: var(--vscode-inputValidation-warningBackground);
+    --slds-g-color-warning-base-80: var(--vscode-inputValidation-warningBorder);
+    --slds-g-color-warning-base-70: var(--vscode-editorWarning-foreground);
+    --slds-g-color-warning-base-65: var(--vscode-editorWarning-foreground);
+    --slds-g-color-warning-base-60: var(--vscode-editorWarning-foreground);
+    --slds-g-color-warning-base-55: var(--vscode-editorWarning-foreground);
+    --slds-g-color-warning-base-50: var(--vscode-editorWarning-foreground);
+    --slds-g-color-warning-base-45: var(--vscode-editorWarning-foreground);
+    --slds-g-color-warning-base-40: var(--vscode-problemsWarningIcon-foreground);
+    --slds-g-color-warning-base-30: var(--vscode-problemsWarningIcon-foreground);
+    --slds-g-color-warning-base-20: var(--vscode-inputValidation-warningBorder);
+    --slds-g-color-warning-base-15: var(--vscode-inputValidation-warningBackground);
+    --slds-g-color-warning-base-10: var(--vscode-inputValidation-warningBackground);
+    
+    /* Success colors - using VS Code success/green colors */
+    --slds-g-color-success-base-100: var(--vscode-editor-foreground);
+    --slds-g-color-success-base-95: var(--vscode-charts-green);
+    --slds-g-color-success-base-90: var(--vscode-charts-green);
+    --slds-g-color-success-base-80: var(--vscode-charts-green);
+    --slds-g-color-success-base-70: var(--vscode-charts-green);
+    --slds-g-color-success-base-65: var(--vscode-charts-green);
+    --slds-g-color-success-base-60: var(--vscode-charts-green);
+    --slds-g-color-success-base-55: var(--vscode-charts-green);
+    --slds-g-color-success-base-50: var(--vscode-charts-green);
+    --slds-g-color-success-base-45: var(--vscode-charts-green);
+    --slds-g-color-success-base-40: var(--vscode-charts-green);
+    --slds-g-color-success-base-30: var(--vscode-charts-green);
+    --slds-g-color-success-base-20: var(--vscode-charts-green);
+    --slds-g-color-success-base-15: var(--vscode-charts-green);
+    --slds-g-color-success-base-10: var(--vscode-charts-green);
+    
+    /* Border colors */
+    --slds-g-color-border-1: var(--vscode-editorWidget-border);
+    --slds-g-color-border-2: var(--vscode-widget-border);
+    --slds-g-color-border-accent-1: var(--vscode-focusBorder);
+    --slds-g-color-border-accent-2: var(--vscode-focusBorder);
+    --slds-g-color-border-accent-3: var(--vscode-focusBorder);
+    
+    /* Surface colors */
+    --slds-g-color-surface-1: var(--vscode-editor-background);
+    --slds-g-color-surface-2: var(--vscode-editorWidget-background);
+    --slds-g-color-surface-3: var(--vscode-panel-background);
+    --slds-g-color-surface-container-1: var(--vscode-editor-background);
+    --slds-g-color-surface-container-2: var(--vscode-editorWidget-background);
+    --slds-g-color-surface-container-3: var(--vscode-panel-background);
+    --slds-g-color-on-surface-1: var(--vscode-descriptionForeground);
+    --slds-g-color-on-surface-2: var(--vscode-foreground);
+    --slds-g-color-on-surface-3: var(--vscode-editor-foreground);
+    
+    /* Accent colors */
+    --slds-g-color-accent-1: var(--vscode-focusBorder);
+    --slds-g-color-accent-2: var(--vscode-button-background);
+    --slds-g-color-accent-3: var(--vscode-button-hoverBackground);
+    --slds-g-color-accent-container-1: var(--vscode-button-background);
+    --slds-g-color-accent-container-2: var(--vscode-button-background);
+    --slds-g-color-accent-container-3: var(--vscode-button-hoverBackground);
+    --slds-g-color-on-accent-1: var(--vscode-button-foreground);
+    --slds-g-color-on-accent-2: var(--vscode-button-foreground);
+    --slds-g-color-on-accent-3: var(--vscode-button-foreground);
+    --slds-g-color-accent-light-1: var(--vscode-button-background);
+    --slds-g-color-accent-light-2: var(--vscode-button-background);
+    --slds-g-color-accent-dark-1: var(--vscode-button-hoverBackground);
+    --slds-g-color-accent-dark-2: var(--vscode-button-hoverBackground);
+    
+    /* Semantic colors */
+    --slds-g-color-error-1: var(--vscode-errorForeground);
+    --slds-g-color-error-container-1: var(--vscode-inputValidation-errorBackground);
+    --slds-g-color-on-error-1: var(--vscode-errorForeground);
+    --slds-g-color-border-error-1: var(--vscode-inputValidation-errorBorder);
+    --slds-g-color-error-container-2: var(--vscode-inputValidation-errorBackground);
+    --slds-g-color-on-error-2: var(--vscode-errorForeground);
+    --slds-g-color-border-error-2: var(--vscode-inputValidation-errorBorder);
+    
+    --slds-g-color-warning-1: var(--vscode-editorWarning-foreground);
+    --slds-g-color-warning-container-1: var(--vscode-inputValidation-warningBackground);
+    --slds-g-color-on-warning-1: var(--vscode-editorWarning-foreground);
+    --slds-g-color-border-warning-1: var(--vscode-inputValidation-warningBorder);
+    
+    --slds-g-color-success-1: var(--vscode-charts-green);
+    --slds-g-color-success-container-1: var(--vscode-charts-green);
+    --slds-g-color-success-container-2: var(--vscode-charts-green);
+    --slds-g-color-on-success-1: var(--vscode-charts-green);
+    --slds-g-color-on-success-2: var(--vscode-charts-green);
+    --slds-g-color-border-success-1: var(--vscode-charts-green);
+    --slds-g-color-border-success-2: var(--vscode-charts-green);
+    
+    --slds-g-color-info-1: var(--vscode-editorInfo-foreground);
+    --slds-g-color-info-container-1: var(--vscode-inputValidation-infoBackground);
+    --slds-g-color-on-info-1: var(--vscode-editorInfo-foreground);
+    
+    /* Disabled colors */
+    --slds-g-color-disabled-1: var(--vscode-disabledForeground);
+    --slds-g-color-disabled-2: var(--vscode-disabledForeground);
+    --slds-g-color-disabled-container-1: var(--vscode-input-background);
+    --slds-g-color-disabled-container-2: var(--vscode-input-background);
+    --slds-g-color-on-disabled-1: var(--vscode-disabledForeground);
+    --slds-g-color-on-disabled-2: var(--vscode-disabledForeground);
+    --slds-g-color-border-disabled-1: var(--vscode-editorWidget-border);
+    --slds-g-color-border-disabled-2: var(--vscode-editorWidget-border);
+    
+    /* Inverse colors */
+    --slds-g-color-surface-inverse-1: var(--vscode-list-activeSelectionBackground);
+    --slds-g-color-surface-inverse-2: var(--vscode-list-activeSelectionBackground);
+    --slds-g-color-surface-container-inverse-1: var(--vscode-list-activeSelectionBackground);
+    --slds-g-color-surface-container-inverse-2: var(--vscode-list-activeSelectionBackground);
+    --slds-g-color-on-surface-inverse-1: var(--vscode-list-activeSelectionForeground);
+    --slds-g-color-on-surface-inverse-2: var(--vscode-list-activeSelectionForeground);
+    --slds-g-color-border-inverse-1: var(--vscode-list-focusOutline);
+    --slds-g-color-border-inverse-2: var(--vscode-list-focusOutline);
+    
+    /* Shadow directional variants */
+    --slds-g-shadow-block-start-1: var(--vscode-widget-shadow);
+    --slds-g-shadow-inline-end-1: var(--vscode-widget-shadow);
+    --slds-g-shadow-block-end-1: var(--vscode-widget-shadow);
+    --slds-g-shadow-inline-start-1: var(--vscode-widget-shadow);
+    --slds-g-shadow-blockstart-1: var(--vscode-widget-shadow);
+    --slds-g-shadow-inlineend-1: var(--vscode-widget-shadow);
+    --slds-g-shadow-blockend-1: var(--vscode-widget-shadow);
+    --slds-g-shadow-inlinestart-1: var(--vscode-widget-shadow);
+    --slds-g-shadow-block-start-2: var(--vscode-widget-shadow);
+    --slds-g-shadow-inline-end-2: var(--vscode-widget-shadow);
+    --slds-g-shadow-block-end-2: var(--vscode-widget-shadow);
+    --slds-g-shadow-inline-start-2: var(--vscode-widget-shadow);
+    --slds-g-shadow-blockstart-2: var(--vscode-widget-shadow);
+    --slds-g-shadow-inlineend-2: var(--vscode-widget-shadow);
+    --slds-g-shadow-blockend-2: var(--vscode-widget-shadow);
+    --slds-g-shadow-inlinestart-2: var(--vscode-widget-shadow);
+    --slds-g-shadow-block-start-3: var(--vscode-widget-shadow);
+    --slds-g-shadow-inline-end-3: var(--vscode-widget-shadow);
+    --slds-g-shadow-block-end-3: var(--vscode-widget-shadow);
+    --slds-g-shadow-inline-start-3: var(--vscode-widget-shadow);
+    --slds-g-shadow-blockstart-3: var(--vscode-widget-shadow);
+    --slds-g-shadow-inlineend-3: var(--vscode-widget-shadow);
+    --slds-g-shadow-blockend-3: var(--vscode-widget-shadow);
+    --slds-g-shadow-inlinestart-3: var(--vscode-widget-shadow);
+    --slds-g-shadow-block-start-4: var(--vscode-widget-shadow);
+    --slds-g-shadow-inline-end-4: var(--vscode-widget-shadow);
+    --slds-g-shadow-block-end-4: var(--vscode-widget-shadow);
+    --slds-g-shadow-inline-start-4: var(--vscode-widget-shadow);
+    --slds-g-shadow-blockstart-4: var(--vscode-widget-shadow);
+    --slds-g-shadow-inlineend-4: var(--vscode-widget-shadow);
+    --slds-g-shadow-blockend-4: var(--vscode-widget-shadow);
+    --slds-g-shadow-inlinestart-4: var(--vscode-widget-shadow);
+    
+    /* Focus shadows */
+    --slds-g-shadow-outline-focus-1: 0px 0px 0px 2px var(--vscode-focusBorder);
+    --slds-g-shadow-outset-focus-1: 0px 0px 0px 2px var(--vscode-editor-background), 0px 0px 0px 4px var(--vscode-focusBorder);
+    --slds-g-shadow-inset-focus-1: 0px 0px 0px 2px var(--vscode-focusBorder) inset;
+    --slds-g-shadow-inset-inverse-focus-1: 0px 0px 0px 2px var(--vscode-focusBorder) inset, 0px 0px 0px 4px var(--vscode-editor-background) inset;
+    --slds-g-shadow-insetinverse-focus-1: 0px 0px 0px 2px var(--vscode-focusBorder) inset, 0px 0px 0px 4px var(--vscode-editor-background) inset;
+    
+    /* Color palette mappings - Blue (using VS Code blue theme colors) */
+    --slds-g-color-palette-blue-10: var(--vscode-button-background);
+    --slds-g-color-palette-blue-15: var(--vscode-button-background);
+    --slds-g-color-palette-blue-20: var(--vscode-button-background);
+    --slds-g-color-palette-blue-30: var(--vscode-button-hoverBackground);
+    --slds-g-color-palette-blue-40: var(--vscode-button-hoverBackground);
+    --slds-g-color-palette-blue-50: var(--vscode-focusBorder);
+    --slds-g-color-palette-blue-60: var(--vscode-textLink-foreground);
+    --slds-g-color-palette-blue-65: var(--vscode-textLink-foreground);
+    --slds-g-color-palette-blue-70: var(--vscode-textLink-activeForeground);
+    --slds-g-color-palette-blue-80: var(--vscode-button-background);
+    --slds-g-color-palette-blue-90: var(--vscode-button-background);
+    --slds-g-color-palette-blue-95: var(--vscode-button-background);
+    
+    /* Other color palettes using appropriate VS Code colors */
+    --slds-g-color-palette-green-50: var(--vscode-charts-green);
+    --slds-g-color-palette-red-50: var(--vscode-errorForeground);
+    --slds-g-color-palette-orange-50: var(--vscode-charts-orange);
+    --slds-g-color-palette-yellow-50: var(--vscode-charts-yellow);
+    --slds-g-color-palette-purple-50: var(--vscode-charts-purple);
+    
 }

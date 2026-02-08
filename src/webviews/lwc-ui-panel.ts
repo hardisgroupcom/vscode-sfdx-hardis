@@ -652,7 +652,7 @@ export class LwcUiPanel {
 
   /**
    * Resolve the theme to use based on the input and VS Code's active theme
-   * @param theme The input theme, can be "auto", "dark", "light", "dark-high" or "light-high"
+   * @param theme The input theme, can be "auto", "dark", "light", "vscode"
    * @returns An object with colorTheme and colorContrast properties
    */
   public static resolveTheme(theme: string): any {

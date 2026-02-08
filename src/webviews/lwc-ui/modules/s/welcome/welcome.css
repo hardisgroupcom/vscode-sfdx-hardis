@@ -97,8 +97,7 @@
     cursor: pointer;
 }
 
-.blue-back[data-theme="dark"] .welcome-toggle-label,
-.blue-back[data-theme="dark-high-contrast"] .welcome-toggle-label {
+.blue-back[data-theme="dark"] .welcome-toggle-label {
     color: #e6eef5; /* light text for dark mode */
 }
 
@@ -806,8 +805,7 @@
     z-index: 9999;
 }
 
-.blue-back[data-theme="dark"] .theme-toggle-container,
-.blue-back[data-theme="dark-high-contrast"] .theme-toggle-container {
+.blue-back[data-theme="dark"] .theme-toggle-container {
     background: rgba(30,30,30,0.9);
     color: #fff;
     box-shadow: 0 2px 8px rgba(0,0,0,0.6);
@@ -819,63 +817,39 @@
 }
 
 /* Dark mode overrides for main welcome styles */
-.blue-back[data-theme="dark"],
-.blue-back[data-theme="dark-high-contrast"] {
+.blue-back[data-theme="dark"] {
     background: linear-gradient(135deg, #121217 0%, #17171b 100%);
 }
 
-.blue-back[data-theme="dark"] .welcome-container,
-.blue-back[data-theme="dark-high-contrast"] .welcome-container {
+.blue-back[data-theme="dark"] .welcome-container {
     color: #d4d4d4;
 }
 
-.blue-back[data-theme="dark"] .hero-title,
-.blue-back[data-theme="dark-high-contrast"] .hero-title,
-.blue-back[data-theme="dark-high-contrast"] .hero-title {
+.blue-back[data-theme="dark"] .hero-title {
     color: #ffffff;
 }
 
 .blue-back[data-theme="dark"] .hero-subtitle,
 .blue-back[data-theme="dark"] .feature-description,
 .blue-back[data-theme="dark"] .tool-description,
-.blue-back[data-theme="dark"] .getting-started-text,
-.blue-back[data-theme="dark-high-contrast"] .hero-subtitle,
-.blue-back[data-theme="dark-high-contrast"] .feature-description,
-.blue-back[data-theme="dark-high-contrast"] .tool-description,
-.blue-back[data-theme="dark-high-contrast"] .getting-started-text,
-.blue-back[data-theme="dark-high-contrast"] .hero-subtitle,
-.blue-back[data-theme="dark-high-contrast"] .feature-description,
-.blue-back[data-theme="dark-high-contrast"] .tool-description,
-.blue-back[data-theme="dark-high-contrast"] .getting-started-text {
+.blue-back[data-theme="dark"] .getting-started-text {
     color: #c7c7c7;
 }
 
 .blue-back[data-theme="dark"] .feature-card,
 .blue-back[data-theme="dark"] .tool-card,
 .blue-back[data-theme="dark"] .services-card,
-.blue-back[data-theme="dark"] .getting-started-section,
-.blue-back[data-theme="dark-high-contrast"] .feature-card,
-.blue-back[data-theme="dark-high-contrast"] .tool-card,
-.blue-back[data-theme="dark-high-contrast"] .services-card,
-.blue-back[data-theme="dark-high-contrast"] .getting-started-section,
-.blue-back[data-theme="dark-high-contrast"] .feature-card,
-.blue-back[data-theme="dark-high-contrast"] .tool-card,
-.blue-back[data-theme="dark-high-contrast"] .services-card,
-.blue-back[data-theme="dark-high-contrast"] .getting-started-section {
+.blue-back[data-theme="dark"] .getting-started-section {
     background: #1e1e1e;
     border-color: #2a2a2a;
     box-shadow: none;
 }
 
-.blue-back[data-theme="dark"] .feature-card:hover,
-.blue-back[data-theme="dark-high-contrast"] .feature-card:hover,
-.blue-back[data-theme="dark-high-contrast"] .feature-card:hover {
+.blue-back[data-theme="dark"] .feature-card:hover {
     box-shadow: 0 6px 18px rgba(0,0,0,0.5);
 }
 
-.blue-back[data-theme="dark"] .feature-arrow,
-.blue-back[data-theme="dark-high-contrast"] .feature-arrow,
-.blue-back[data-theme="dark-high-contrast"] .feature-arrow {
+.blue-back[data-theme="dark"] .feature-arrow {
     color: #9fc9ff;
 }
 
@@ -884,91 +858,71 @@
 .blue-back[data-theme="dark"] .feature-title,
 .blue-back[data-theme="dark"] .tool-title,
 .blue-back[data-theme="dark"] .getting-started-title,
-.blue-back[data-theme="dark"] .open-source-title,
-.blue-back[data-theme="dark-high-contrast"] .section-title,
-.blue-back[data-theme="dark-high-contrast"] .feature-title,
-.blue-back[data-theme="dark-high-contrast"] .tool-title,
-.blue-back[data-theme="dark-high-contrast"] .getting-started-title,
-.blue-back[data-theme="dark-high-contrast"] .open-source-title {
+.blue-back[data-theme="dark"] .open-source-title {
     color: #ffffff !important;
 }
 
 /* Darker green styling for the Open Source & Free section */
-.blue-back[data-theme="dark"] .open-source-section,
-.blue-back[data-theme="dark-high-contrast"] .open-source-section {
+.blue-back[data-theme="dark"] .open-source-section {
     background: linear-gradient(135deg, #0b3620 0%, #08321a 100%);
     border-color: #0a3f27;
     box-shadow: 0 4px 14px rgba(6, 40, 24, 0.6);
 }
 
-.blue-back[data-theme="dark"] .open-source-content,
-.blue-back[data-theme="dark-high-contrast"] .open-source-content {
+.blue-back[data-theme="dark"] .open-source-content {
     color: #dbeadb;
 }
 
-.blue-back[data-theme="dark"] .open-source-icon-container,
-.blue-back[data-theme="dark-high-contrast"] .open-source-icon-container,
-.blue-back[data-theme="dark-high-contrast"] .open-source-icon-container {
+.blue-back[data-theme="dark"] .open-source-icon-container {
     background: linear-gradient(135deg, #0b6f3a 0%, #064e2a 100%);
     box-shadow: 0 4px 12px rgba(7, 50, 30, 0.6);
 }
 
-.blue-back[data-theme="dark"] .open-source-description,
-.blue-back[data-theme="dark-high-contrast"] .open-source-description,
-.blue-back[data-theme="dark-high-contrast"] .open-source-description {
+.blue-back[data-theme="dark"] .open-source-description {
     background: rgba(12, 45, 26, 0.45);
     border: 1px solid rgba(10, 63, 39, 0.5);
 }
 
 /* Make the small highlight texts (e.g. "100% Open Source") readable */
-.blue-back[data-theme="dark"] .open-source-highlight .highlight-text,
-.blue-back[data-theme="dark-high-contrast"] .open-source-highlight .highlight-text {
+.blue-back[data-theme="dark"] .open-source-highlight .highlight-text {
     color: #e7f9ea !important; /* brighter pale green */
     font-weight: 700;
 }
 
 /* Services card: ensure title and body are readable in dark mode */
-.blue-back[data-theme="dark"] .services-card,
-.blue-back[data-theme="dark-high-contrast"] .services-card {
+.blue-back[data-theme="dark"] .services-card {
     background: #121212;
     border-color: #1f2a22;
 }
 
-.blue-back[data-theme="dark"] .services-card-title,
-.blue-back[data-theme="dark-high-contrast"] .services-card-title {
+.blue-back[data-theme="dark"] .services-card-title {
     color: #f7fbf7 !important; /* almost white */
 }
 
-.blue-back[data-theme="dark"] .services-card-text,
-.blue-back[data-theme="dark-high-contrast"] .services-card-text {
+.blue-back[data-theme="dark"] .services-card-text {
     color: #cbd7cb !important; /* lighter muted text */
 }
 
 /* Keep 'Getting Started' with a blue tone in dark mode */
-.blue-back[data-theme="dark"] .getting-started-section,
-.blue-back[data-theme="dark-high-contrast"] .getting-started-section {
+.blue-back[data-theme="dark"] .getting-started-section {
     background: linear-gradient(135deg, #081827 0%, #062b45 100%);
     border-color: #0b3a5f;
     box-shadow: 0 4px 18px rgba(2, 18, 34, 0.6);
 }
 
-.blue-back[data-theme="dark"] .getting-started-content,
-.blue-back[data-theme="dark-high-contrast"] .getting-started-content {
+.blue-back[data-theme="dark"] .getting-started-content {
     color: #dbeeff;
 }
 
-.blue-back[data-theme="dark"] .getting-started-title,
-.blue-back[data-theme="dark-high-contrast"] .getting-started-title {
+.blue-back[data-theme="dark"] .getting-started-title {
     color: #eaf6ff;
 }
 
-.blue-back[data-theme="dark"] .getting-started-subtitle,
-.blue-back[data-theme="dark-high-contrast"] .getting-started-subtitle {
+.blue-back[data-theme="dark"] .getting-started-subtitle {
     color: #7fb6ff;
 }
 
-.blue-back[data-theme="dark"] .getting-started-icon-container,
-.blue-back[data-theme="dark-high-contrast"] .getting-started-icon-container {
+.blue-back[data-theme="dark"] .getting-started-icon-container {
     background: linear-gradient(135deg, #1b6fbf 0%, #0a4a8a 100%);
     box-shadow: 0 4px 12px rgba(10, 60, 110, 0.45);
 }
@@ -982,29 +936,18 @@
 .blue-back[data-theme="dark"] .status-description,
 .blue-back[data-theme="dark"] .status-button,
 .blue-back[data-theme="dark"] .setup-status-text,
-.blue-back[data-theme="dark"] .highlight-text,
-.blue-back[data-theme="dark-high-contrast"] .slds-badge,
-.blue-back[data-theme="dark-high-contrast"] .feature-badge,
-.blue-back[data-theme="dark-high-contrast"] .status-label,
-.blue-back[data-theme="dark-high-contrast"] .status-version,
-.blue-back[data-theme="dark-high-contrast"] .status-title,
-.blue-back[data-theme="dark-high-contrast"] .status-description,
-.blue-back[data-theme="dark-high-contrast"] .status-button,
-.blue-back[data-theme="dark-high-contrast"] .setup-status-text,
-.blue-back[data-theme="dark-high-contrast"] .highlight-text {
+.blue-back[data-theme="dark"] .highlight-text {
     color: #eef6ff !important;
 }
 
 /* Ensure small badges have visible background in dark mode */
-.blue-back[data-theme="dark"] .slds-badge,
-.blue-back[data-theme="dark-high-contrast"] .slds-badge {
+.blue-back[data-theme="dark"] .slds-badge {
     background-color: rgba(255,255,255,0.06) !important;
     border-color: rgba(255,255,255,0.06) !important;
 }
 
 /* Give status icon containers a subtle border so they stand out */
-.blue-back[data-theme="dark"] .status-icon-container,
-.blue-back[data-theme="dark-high-contrast"] .status-icon-container {
+.blue-back[data-theme="dark"] .status-icon-container {
     border: 1px solid rgba(255,255,255,0.03);
 }
 
@@ -1016,25 +959,14 @@
 .blue-back[data-theme="dark"] .getting-started-content,
 .blue-back[data-theme="dark"] .getting-started-content *,
 .blue-back[data-theme="dark"] .feature-card,
-.blue-back[data-theme="dark"] .feature-card *,
-.blue-back[data-theme="dark-high-contrast"] .open-source-content,
-.blue-back[data-theme="dark-high-contrast"] .open-source-content *,
-.blue-back[data-theme="dark-high-contrast"] .services-card,
-.blue-back[data-theme="dark-high-contrast"] .services-card *,
-.blue-back[data-theme="dark-high-contrast"] .getting-started-content,
-.blue-back[data-theme="dark-high-contrast"] .getting-started-content *,
-.blue-back[data-theme="dark-high-contrast"] .feature-card,
-.blue-back[data-theme="dark-high-contrast"] .feature-card * {
+.blue-back[data-theme="dark"] .feature-card * {
     color: #e8f4ff !important;
 }
 
 /* Also ensure badges and small labels inside these blocks are visible */
 .blue-back[data-theme="dark"] .open-source-content .slds-badge,
 .blue-back[data-theme="dark"] .services-card .slds-badge,
-.blue-back[data-theme="dark"] .feature-card .slds-badge,
-.blue-back[data-theme="dark-high-contrast"] .open-source-content .slds-badge,
-.blue-back[data-theme="dark-high-contrast"] .services-card .slds-badge,
-.blue-back[data-theme="dark-high-contrast"] .feature-card .slds-badge {
+.blue-back[data-theme="dark"] .feature-card .slds-badge {
     background-color: rgba(255,255,255,0.06) !important;
     color: #e8f4ff !important;
     border-color: rgba(255,255,255,0.06) !important;
