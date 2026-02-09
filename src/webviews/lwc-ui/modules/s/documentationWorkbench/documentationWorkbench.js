@@ -79,35 +79,25 @@ export default class DocumentationWorkbench extends LightningElement {
     const checked = event.target.checked;
     if (name === "generatePdf") {
       this.generatePdf = checked;
-    }
-    else if (name === "generateExcel") {
+    } else if (name === "generateExcel") {
       this.generateExcel = checked;
-    }
-    else if (name === "withHistory") {
+    } else if (name === "withHistory") {
       this.withHistory = checked;
-    }
-    else if (name === "generatePackagesDoc") {
+    } else if (name === "generatePackagesDoc") {
       this.generatePackagesDoc = checked;
-    }
-    else if (name === "generateApexDoc") {
+    } else if (name === "generateApexDoc") {
       this.generateApexDoc = checked;
-    }
-    else if (name === "generateFlowDoc") {
+    } else if (name === "generateFlowDoc") {
       this.generateFlowDoc = checked;
-    }
-    else if (name === "generatePagesDoc") {
+    } else if (name === "generatePagesDoc") {
       this.generatePagesDoc = checked;
-    }
-    else if (name === "generateProfilesDoc") {
+    } else if (name === "generateProfilesDoc") {
       this.generateProfilesDoc = checked;
-    }
-    else if (name === "generateObjectsDoc") {
+    } else if (name === "generateObjectsDoc") {
       this.generateObjectsDoc = checked;
-    }
-    else if (name === "generateAutomationsDoc") {
+    } else if (name === "generateAutomationsDoc") {
       this.generateAutomationsDoc = checked;
-    }
-    else if (name === "generateLwcDoc") {
+    } else if (name === "generateLwcDoc") {
       this.generateLwcDoc = checked;
     }
   }
