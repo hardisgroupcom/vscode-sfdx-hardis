@@ -67,6 +67,19 @@
                             <p class="option-help">Also generate PDF files alongside Markdown</p>
                         </div>
                     </div>
+                    <div class="option-row">
+                        <div class="option-item">
+                            <lightning-input
+                                type="checkbox"
+                                label="Generate Excel"
+                                name="generateExcel"
+                                checked={generateExcel}
+                                onchange={handleOptionChange}
+                                class="option-checkbox"
+                            ></lightning-input>
+                            <p class="option-help">Also generate summary in excel alongside Markdown</p>
+                        </div>
+                    </div>
                     <div class="generate-actions">
                         <lightning-button
                             variant="brand"

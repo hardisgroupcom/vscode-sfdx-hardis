@@ -14,6 +14,7 @@ import { LightningElement, api, track } from "lwc";
 export default class DocumentationWorkbench extends LightningElement {
   // Generation options (state tracked here, synced with config panel)
   @track generatePdf = false;
+  @track generateExcel = false;
   @track withHistory = true;
 
   @api
@@ -22,6 +23,9 @@ export default class DocumentationWorkbench extends LightningElement {
       // Initialize generation options if provided
       if (data.generatePdf !== undefined) {
         this.generatePdf = data.generatePdf;
+      }
+      if (data.generateExcel !== undefined) {
+        this.generateExcel = data.generateExcel;
       }
       if (data.withHistory !== undefined) {
         this.withHistory = data.withHistory;
@@ -43,7 +47,11 @@ export default class DocumentationWorkbench extends LightningElement {
     const checked = event.target.checked;
     if (name === "generatePdf") {
       this.generatePdf = checked;
-    } else if (name === "withHistory") {
+    }
+    else if (name === "generateExcel") {
+      this.generateExcel = checked;
+    }
+    else if (name === "withHistory") {
       this.withHistory = checked;
     }
   }
@@ -52,6 +60,9 @@ export default class DocumentationWorkbench extends LightningElement {
     let command = "sf hardis:doc:project2markdown";
     if (this.generatePdf) {
       command += " --pdf";
+    }
+    if (this.generateExcel) {
+      command += " --excel";
     }
     if (this.withHistory) {
       command += " --with-history";
@@ -88,6 +99,7 @@ export default class DocumentationWorkbench extends LightningElement {
       type: "openDocConfig",
       data: {
         generatePdf: this.generatePdf,
+        generateExcel: this.generateExcel,
         withHistory: this.withHistory,
       },
     });
