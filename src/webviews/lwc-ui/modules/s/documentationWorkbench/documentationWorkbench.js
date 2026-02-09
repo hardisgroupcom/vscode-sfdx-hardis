@@ -16,6 +16,14 @@ export default class DocumentationWorkbench extends LightningElement {
   @track generatePdf = false;
   @track generateExcel = false;
   @track withHistory = true;
+  @track generatePackagesDoc = true;
+  @track generateApexDoc = true;
+  @track generateFlowDoc = true;
+  @track generatePagesDoc = true;
+  @track generateProfilesDoc = true;
+  @track generateObjectsDoc = true;
+  @track generateAutomationsDoc = true;
+  @track generateLwcDoc = true;
 
   @api
   initialize(data) {
@@ -29,6 +37,30 @@ export default class DocumentationWorkbench extends LightningElement {
       }
       if (data.withHistory !== undefined) {
         this.withHistory = data.withHistory;
+      }
+      if (data.generatePackagesDoc !== undefined) {
+        this.generatePackagesDoc = data.generatePackagesDoc;
+      }
+      if (data.generateApexDoc !== undefined) {
+        this.generateApexDoc = data.generateApexDoc;
+      }
+      if (data.generateFlowDoc !== undefined) {
+        this.generateFlowDoc = data.generateFlowDoc;
+      }
+      if (data.generatePagesDoc !== undefined) {
+        this.generatePagesDoc = data.generatePagesDoc;
+      }
+      if (data.generateProfilesDoc !== undefined) {
+        this.generateProfilesDoc = data.generateProfilesDoc;
+      }
+      if (data.generateObjectsDoc !== undefined) {
+        this.generateObjectsDoc = data.generateObjectsDoc;
+      }
+      if (data.generateAutomationsDoc !== undefined) {
+        this.generateAutomationsDoc = data.generateAutomationsDoc;
+      }
+      if (data.generateLwcDoc !== undefined) {
+        this.generateLwcDoc = data.generateLwcDoc;
       }
     }
   }
@@ -54,6 +86,30 @@ export default class DocumentationWorkbench extends LightningElement {
     else if (name === "withHistory") {
       this.withHistory = checked;
     }
+    else if (name === "generatePackagesDoc") {
+      this.generatePackagesDoc = checked;
+    }
+    else if (name === "generateApexDoc") {
+      this.generateApexDoc = checked;
+    }
+    else if (name === "generateFlowDoc") {
+      this.generateFlowDoc = checked;
+    }
+    else if (name === "generatePagesDoc") {
+      this.generatePagesDoc = checked;
+    }
+    else if (name === "generateProfilesDoc") {
+      this.generateProfilesDoc = checked;
+    }
+    else if (name === "generateObjectsDoc") {
+      this.generateObjectsDoc = checked;
+    }
+    else if (name === "generateAutomationsDoc") {
+      this.generateAutomationsDoc = checked;
+    }
+    else if (name === "generateLwcDoc") {
+      this.generateLwcDoc = checked;
+    }
   }
 
   handleGenerate() {
@@ -66,6 +122,30 @@ export default class DocumentationWorkbench extends LightningElement {
     }
     if (this.withHistory) {
       command += " --with-history";
+    }
+    if (!this.generatePackagesDoc) {
+      command += " --no-generate-packages-doc";
+    }
+    if (!this.generateApexDoc) {
+      command += " --no-generate-apex-doc";
+    }
+    if (!this.generateFlowDoc) {
+      command += " --no-generate-flow-doc";
+    }
+    if (!this.generatePagesDoc) {
+      command += " --no-generate-pages-doc";
+    }
+    if (!this.generateProfilesDoc) {
+      command += " --no-generate-profiles-doc";
+    }
+    if (!this.generateObjectsDoc) {
+      command += " --no-generate-objects-doc";
+    }
+    if (!this.generateAutomationsDoc) {
+      command += " --no-generate-automations-doc";
+    }
+    if (!this.generateLwcDoc) {
+      command += " --no-generate-lwc-doc";
     }
     window.sendMessageToVSCode({
       type: "runCommand",
@@ -101,6 +181,14 @@ export default class DocumentationWorkbench extends LightningElement {
         generatePdf: this.generatePdf,
         generateExcel: this.generateExcel,
         withHistory: this.withHistory,
+        generatePackagesDoc: this.generatePackagesDoc,
+        generateApexDoc: this.generateApexDoc,
+        generateFlowDoc: this.generateFlowDoc,
+        generatePagesDoc: this.generatePagesDoc,
+        generateProfilesDoc: this.generateProfilesDoc,
+        generateObjectsDoc: this.generateObjectsDoc,
+        generateAutomationsDoc: this.generateAutomationsDoc,
+        generateLwcDoc: this.generateLwcDoc,
       },
     });
   }

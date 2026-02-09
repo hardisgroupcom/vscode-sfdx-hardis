@@ -100,14 +100,59 @@
     border: 1px solid #e9eef3;
 }
 
+.options-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.options-column {
+    display: flex;
+    flex-direction: column;
+}
+
+.general-column {
+    background: #f9fbff;
+    border: 1px solid #e3ebf7;
+    border-radius: 8px;
+    padding: 0.75rem 0.85rem;
+}
+
+.include-column {
+    background: #f9fbff;
+    border: 1px solid #e3ebf7;
+    border-radius: 8px;
+    padding: 0.75rem 0.85rem;
+}
+
+.subsection-title {
+    margin: 0 0 0.15rem 0;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.subsection-help {
+    margin: 0 0 0.5rem 0;
+    color: #6b7280;
+    font-size: 0.85rem;
+    line-height: 1.3;
+}
+
 .option-row {
     margin-bottom: 0.6rem;
 }
 
 .option-item {
     display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    flex-direction: column;
+}
+
+.option-input {
+    display: inline-flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.35rem;
 }
 
 .option-checkbox {
@@ -115,9 +160,16 @@
 }
 
 .option-help {
-    color: #9ca3af;
+    color: #6b7280;
     font-size: 0.85rem;
     margin: 0;
+    line-height: 1.35;
+}
+
+.include-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem 0.75rem;
 }
 
 .generate-actions {
@@ -300,6 +352,14 @@
     }
 
     .config-fields {
+        grid-template-columns: 1fr;
+    }
+
+    .options-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .include-grid {
         grid-template-columns: 1fr;
     }
 

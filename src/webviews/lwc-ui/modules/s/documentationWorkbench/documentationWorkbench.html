@@ -29,55 +29,195 @@
                 <p class="section-description">Generate Markdown documentation for your Salesforce project. Includes Flows, Apex, Objects, Permissions, and more.</p>
 
                 <div class="generate-options-card">
-                    <div class="option-row">
-                        <div class="option-item">
-                            <lightning-input
-                                type="checkbox"
-                                label="Generate Markdown"
-                                checked
-                                disabled
-                                class="option-checkbox"
-                            ></lightning-input>
-                            <p class="option-help">Always generated (project docs in Markdown format)</p>
+                    <div class="options-grid">
+                        <div class="options-column general-column">
+                            <h3 class="subsection-title">Formats & History</h3>
+                            <p class="subsection-help">Control the output format and change tracking.</p>
+                            <div class="option-row">
+                                <div class="option-item">
+                                    <div class="option-input">
+                                        <lightning-input
+                                            type="checkbox"
+                                            label="Generate Markdown"
+                                            checked
+                                            disabled
+                                            class="option-checkbox"
+                                        ></lightning-input>
+                                        <s-multiline-helptext content="Always generated (project docs in Markdown format)."></s-multiline-helptext>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="option-row">
+                                <div class="option-item">
+                                    <div class="option-input">
+                                        <lightning-input
+                                            type="checkbox"
+                                            label="With Flow History"
+                                            name="withHistory"
+                                            checked={withHistory}
+                                            onchange={handleOptionChange}
+                                            class="option-checkbox"
+                                        ></lightning-input>
+                                        <s-multiline-helptext content="Include visual diff history for Flows (requires git depth)."></s-multiline-helptext>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="option-row">
+                                <div class="option-item">
+                                    <div class="option-input">
+                                        <lightning-input
+                                            type="checkbox"
+                                            label="Generate PDF"
+                                            name="generatePdf"
+                                            checked={generatePdf}
+                                            onchange={handleOptionChange}
+                                            class="option-checkbox"
+                                        ></lightning-input>
+                                        <s-multiline-helptext content="Also generate PDF files alongside Markdown."></s-multiline-helptext>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="option-row">
+                                <div class="option-item">
+                                    <div class="option-input">
+                                        <lightning-input
+                                            type="checkbox"
+                                            label="Generate Excel"
+                                            name="generateExcel"
+                                            checked={generateExcel}
+                                            onchange={handleOptionChange}
+                                            class="option-checkbox"
+                                        ></lightning-input>
+                                        <s-multiline-helptext content="Also generate summary in Excel alongside Markdown."></s-multiline-helptext>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="option-row">
-                        <div class="option-item">
-                            <lightning-input
-                                type="checkbox"
-                                label="With Flow History"
-                                name="withHistory"
-                                checked={withHistory}
-                                onchange={handleOptionChange}
-                                class="option-checkbox"
-                            ></lightning-input>
-                            <p class="option-help">Include visual diff history for Flows (requires git depth)</p>
-                        </div>
-                    </div>
-                    <div class="option-row">
-                        <div class="option-item">
-                            <lightning-input
-                                type="checkbox"
-                                label="Generate PDF"
-                                name="generatePdf"
-                                checked={generatePdf}
-                                onchange={handleOptionChange}
-                                class="option-checkbox"
-                            ></lightning-input>
-                            <p class="option-help">Also generate PDF files alongside Markdown</p>
-                        </div>
-                    </div>
-                    <div class="option-row">
-                        <div class="option-item">
-                            <lightning-input
-                                type="checkbox"
-                                label="Generate Excel"
-                                name="generateExcel"
-                                checked={generateExcel}
-                                onchange={handleOptionChange}
-                                class="option-checkbox"
-                            ></lightning-input>
-                            <p class="option-help">Also generate summary in excel alongside Markdown</p>
+                        <div class="options-column include-column">
+                            <h3 class="subsection-title">Include</h3>
+                            <p class="subsection-help">Select which documentation parts to generate.</p>
+                            <div class="include-grid">
+                                <div class="option-row">
+                                    <div class="option-item">
+                                        <div class="option-input">
+                                            <lightning-input
+                                                type="checkbox"
+                                                label="Objects"
+                                                name="generateObjectsDoc"
+                                                checked={generateObjectsDoc}
+                                                onchange={handleOptionChange}
+                                                class="option-checkbox"
+                                            ></lightning-input>
+                                            <s-multiline-helptext content="Generate Objects documentation."></s-multiline-helptext>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="option-row">
+                                    <div class="option-item">
+                                        <div class="option-input">
+                                            <lightning-input
+                                                type="checkbox"
+                                                label="Flows & Process Builders"
+                                                name="generateFlowDoc"
+                                                checked={generateFlowDoc}
+                                                onchange={handleOptionChange}
+                                                class="option-checkbox"
+                                            ></lightning-input>
+                                            <s-multiline-helptext content="Generate Flows, Process Builders and Workflows documentation."></s-multiline-helptext>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="option-row">
+                                    <div class="option-item">
+                                        <div class="option-input">
+                                            <lightning-input
+                                                type="checkbox"
+                                                label="Profiles & Permissions"
+                                                name="generateProfilesDoc"
+                                                checked={generateProfilesDoc}
+                                                onchange={handleOptionChange}
+                                                class="option-checkbox"
+                                            ></lightning-input>
+                                            <s-multiline-helptext content="Generate Profiles, Permission Sets, Permission Set Groups and Roles documentation."></s-multiline-helptext>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="option-row">
+                                    <div class="option-item">
+                                        <div class="option-input">
+                                            <lightning-input
+                                                type="checkbox"
+                                                label="Automations"
+                                                name="generateAutomationsDoc"
+                                                checked={generateAutomationsDoc}
+                                                onchange={handleOptionChange}
+                                                class="option-checkbox"
+                                            ></lightning-input>
+                                            <s-multiline-helptext content="Generate Automations documentation (Approval Processes, Assignment Rules, AutoResponse Rules, Escalation Rules)."></s-multiline-helptext>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="option-row">
+                                    <div class="option-item">
+                                        <div class="option-input">
+                                            <lightning-input
+                                                type="checkbox"
+                                                label="Lightning Pages"
+                                                name="generatePagesDoc"
+                                                checked={generatePagesDoc}
+                                                onchange={handleOptionChange}
+                                                class="option-checkbox"
+                                            ></lightning-input>
+                                            <s-multiline-helptext content="Generate Lightning Pages documentation."></s-multiline-helptext>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="option-row">
+                                    <div class="option-item">
+                                        <div class="option-input">
+                                            <lightning-input
+                                                type="checkbox"
+                                                label="Apex"
+                                                name="generateApexDoc"
+                                                checked={generateApexDoc}
+                                                onchange={handleOptionChange}
+                                                class="option-checkbox"
+                                            ></lightning-input>
+                                            <s-multiline-helptext content="Generate Apex documentation."></s-multiline-helptext>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="option-row">
+                                    <div class="option-item">
+                                        <div class="option-input">
+                                            <lightning-input
+                                                type="checkbox"
+                                                label="Lightning Web Components"
+                                                name="generateLwcDoc"
+                                                checked={generateLwcDoc}
+                                                onchange={handleOptionChange}
+                                                class="option-checkbox"
+                                            ></lightning-input>
+                                            <s-multiline-helptext content="Generate Lightning Web Components documentation."></s-multiline-helptext>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="option-row">
+                                    <div class="option-item">
+                                        <div class="option-input">
+                                            <lightning-input
+                                                type="checkbox"
+                                                label="Installed Packages"
+                                                name="generatePackagesDoc"
+                                                checked={generatePackagesDoc}
+                                                onchange={handleOptionChange}
+                                                class="option-checkbox"
+                                            ></lightning-input>
+                                            <s-multiline-helptext content="Generate Installed Packages documentation."></s-multiline-helptext>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="generate-actions">
