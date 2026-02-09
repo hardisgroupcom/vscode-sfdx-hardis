@@ -58,9 +58,9 @@ export function registerShowWelcome(command: Commands) {
               "vscode-sfdx-hardis.showInstalledPackages",
             );
             break;
-          case "navigateToDocumentation":
+          case "navigateToDocumentationWorkbench":
             vscode.commands.executeCommand(
-              "vscode-sfdx-hardis.runLocalHtmlDocPages",
+              "vscode-sfdx-hardis.showDocumentationWorkbench",
             );
             break;
           case "navigateToSetup":
