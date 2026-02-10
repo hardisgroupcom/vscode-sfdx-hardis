@@ -29,6 +29,7 @@ import {
 import { registerShowMetadataRetriever } from "./commands/showMetadataRetriever";
 import { registerShowPackageXml } from "./commands/packageXml";
 import { registerGitMergeDriverToggle } from "./commands/gitMergeDriver";
+import { registerShowDocumentationWorkbench } from "./commands/showDocumentationWorkbench";
 
 export class Commands {
   public readonly extensionUri: vscode.Uri;
@@ -92,6 +93,7 @@ export class Commands {
     registerDisplayLogDebugOnly(this);
     registerShowMetadataRetriever(this);
     registerShowPackageXml(this);
+    registerShowDocumentationWorkbench(this);
   }
 
   registerExecuteCommand() {

@@ -286,6 +286,10 @@ export class ThemeUtils {
         vscode: "shield",
         hardis: "monitoring.svg",
       },
+      "vscode-sfdx-hardis.showDocumentationWorkbench": {
+        vscode: "book",
+        hardis: "doc.svg",
+      },
       "hardis:doc:project2markdown": { vscode: "book", hardis: "doc.svg" },
       "hardis:doc:project2markdown-pdf": { vscode: "book", hardis: "doc.svg" },
       "hardis:doc:project2markdown-history": {

@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+## [6.27.0] 2025-02-10
+
+- New Documentation Workbench LWC to gather in one place all documentation related commands, and allow to easily run them and configure related settings. Commands include:
+  - Generate documentation, with options
+    - Generate Markdown (always selected)
+    - Generate PDF (default : false)
+    - With flow history (default: true)
+  - Deploy to Cloudflare Pages
+  - Deploy to Salesforce as static resource
+  - Run locally
+  - Override prompt templates
+- Command runner: Display total elapsed time on progress components when completed.
+
 ## [6.26.2] 2025-02-04
 
 - Improve release workflows
