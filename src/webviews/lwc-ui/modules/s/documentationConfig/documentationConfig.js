@@ -1,4 +1,5 @@
 import { LightningElement, api, track } from "lwc";
+import { ColorThemeMixin } from "s/colorThemeMixin";
 
 /**
  * Documentation Configuration LWC Component
@@ -7,7 +8,7 @@ import { LightningElement, api, track } from "lwc";
  * - Prompt template override
  * - AI provider & doc deployment settings
  */
-export default class DocumentationConfig extends LightningElement {
+export default class DocumentationConfig extends ColorThemeMixin(LightningElement) {
   // Config
   @track configLoading = true;
   @track configSections = [];
@@ -46,6 +47,13 @@ export default class DocumentationConfig extends LightningElement {
       this._buildConfigUI(data?.config || {}, data?.schema || {});
       this.configLoading = false;
     }
+  }
+
+  @api
+  handleColorThemeMessage(type, data) {
+    // Delegate to the ColorThemeMixin's implementation
+    if (super.handleColorThemeMessage)
+      super.handleColorThemeMessage(type, data);
   }
 
   // ─── Config UI builder ───────────────────────────────────────────────
