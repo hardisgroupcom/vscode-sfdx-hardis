@@ -2,6 +2,9 @@
    - Owns all background and text colors for webviews
    - Modules must NOT set background/color/border-color; rely on these rules
    - Keyed by body[data-theme="light"] set by the extension
+
+* Requires ColorThemeMixin for styling in webviews *
+
 */
 
 
@@ -43,6 +46,7 @@ div.slds-scope[data-theme="dark"] {
 .slds-scope[data-theme] .slds-modal__content,
 .slds-scope[data-theme] .panel-surface,
 .slds-scope[data-theme] .docs-section,
+.slds-scope[data-theme] .config-section,
 .slds-scope[data-theme] .header-content,
 .slds-scope[data-theme] .setup-summary-card,
 .slds-scope[data-theme] .status-card,

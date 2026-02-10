@@ -12,7 +12,7 @@
  *    ...
  *    @api
  *    handleColorThemeMessage(type, data) {
- *      // Delegate to the mixin's implementation
+ *      // Delegate to the ColorThemeMixin's implementation
  *      if (super.handleColorThemeMessage)
  *        super.handleColorThemeMessage(type, data);
  *    }
