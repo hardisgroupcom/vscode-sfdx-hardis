@@ -22,22 +22,22 @@ export const ColorThemeMixin = (BaseClass) =>
 	class extends BaseClass {
 		_colorTheme;
         _colorContrast;
-		get colorTheme() {
-        return this._colorTheme || "";
-    }
-    set colorTheme(value) {
-        this._colorTheme = value;
-    }
-		get colorContrast() {
-        return this._colorContrast || "";
-    }
-    set colorContrast(value) {
-        this._colorContrast = value;
-    }
-    handleColorThemeMessage(type, data) {
-        if (type === "updateTheme" && data?.colorTheme) {
-            this._colorTheme = data.colorTheme;
-            this._colorContrast = data.colorContrast;
+        get colorTheme() {
+            return this._colorTheme || "";
         }
-    }
-};
+        set colorTheme(value) {
+            this._colorTheme = value;
+        }
+        get colorContrast() {
+            return this._colorContrast || "";
+        }
+        set colorContrast(value) {
+            this._colorContrast = value;
+        }
+        handleColorThemeMessage(type, data) {
+            if (type === "updateTheme" && data?.colorTheme) {
+                this._colorTheme = data.colorTheme;
+                this._colorContrast = data.colorContrast;
+            }
+        }
+    };

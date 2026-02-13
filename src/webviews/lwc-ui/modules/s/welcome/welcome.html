@@ -32,6 +32,34 @@
                         class="welcome-toggle"
                     ></lightning-input>
                 </div>
+                <div class="hero-bottom-right">
+                    <lightning-button-group>
+                        <lightning-button
+                            label="Auto"
+                            name="auto"
+                            onclick={handleThemeChange}
+                            class="theme-button"
+                            data-theme="auto"
+                            variant={themeVariants.auto}
+                        ></lightning-button>
+                        <lightning-button
+                            label="Light"
+                            name="light"
+                            onclick={handleThemeChange}
+                            class="theme-button"
+                            data-theme="light"
+                            variant={themeVariants.light}
+                        ></lightning-button>
+                        <lightning-button
+                            label="Dark"
+                            name="dark"
+                            onclick={handleThemeChange}
+                            class="theme-button"
+                            data-theme="dark"
+                            variant={themeVariants.dark}
+                        ></lightning-button>
+                    </lightning-button-group>
+                </div>
             </div>
 
             <!-- Main Content Section -->

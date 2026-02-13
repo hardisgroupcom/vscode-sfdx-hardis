@@ -84,19 +84,33 @@
 .welcome-toggle {
     --slds-c-toggle-label-text-align: right;
 }
-
 .welcome-toggle-wrapper {
     display: flex;
     align-items: center;
     gap: 0.5rem;
 }
-
 .welcome-toggle-label {
     font-size: 0.95rem;
     color: var(--slds-g-color-neutral-base-10); /* default dark text */
     cursor: pointer;
 }
 
+.hero-bottom-right {
+    position: fixed;
+    right: 0.75rem;
+    bottom: 0.75rem;
+    z-index: 9999;
+    text-align: right;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+.hero-bottom-right.hidden {
+    opacity: 0;
+    visibility: hidden;
+
+}
+.theme-button {
+    --slds-c-button-line-height: 1.5em;
+}
 
 .hero-title {
     font-size: 1.75rem;

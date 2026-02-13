@@ -16,6 +16,7 @@ export function registerShowWelcome(command: Commands) {
       const { colorTheme, colorContrast } = LwcPanelManager.resolveTheme(colorThemeConfig);
       const panel = lwcManager.getOrCreatePanel("s-welcome", {
         showWelcomeAtStartup: showWelcomeAtStartup,
+        colorThemeConfig,
         colorTheme,
         colorContrast
       });
