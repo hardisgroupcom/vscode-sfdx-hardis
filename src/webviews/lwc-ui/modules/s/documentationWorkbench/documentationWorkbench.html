@@ -1,9 +1,9 @@
 <template>
-    <div class="slds-scope slds-theme_default blue-back">
+    <div class="slds-scope slds-theme_default blue-back" data-theme={colorTheme} data-contrast={colorContrast}>
         <div class="doc-container">
             <!-- Header -->
             <div class="header-content">
-                <div class="header-icon-container">
+                <div class="header-icon-container teal">
                     <lightning-icon icon-name="utility:archive" size="medium" variant="inverse"></lightning-icon>
                 </div>
                 <div class="header-text">
@@ -28,7 +28,7 @@
                 </h2>
                 <p class="section-description">Generate Markdown documentation for your Salesforce project. Includes Flows, Apex, Objects, Permissions, and more.</p>
 
-                <div class="generate-options-card">
+                <div class="generate-options-card panel-surface">
                     <div class="options-grid">
                         <div class="options-column general-column">
                             <h3 class="subsection-title">Formats & History</h3>

@@ -16,6 +16,7 @@ import { HardisColors } from "./hardis-colors";
 import { CacheManager } from "./utils/cache-manager";
 import { runSalesforceCliMcpServer } from "./utils/mcpUtils";
 import { SecretsManager } from "./utils/secretsManager";
+import { getExtensionConfigSections } from "./utils/extensionConfigUtils";
 
 let refreshInterval: any = null;
 let reporter;
@@ -240,6 +241,43 @@ export function activate(context: vscode.ExtensionContext) {
         "vscode-sfdx-hardis.refreshPluginsView",
         true,
       );
+    }
+    
+    // Change UI theme: refresh all opened panels
+    if (
+      event.affectsConfiguration("vsCodeSfdxHardis.theme.colorTheme")
+    ) {
+      // Reload fresh configuration data for extension config panel
+      
+      const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis.theme");
+      const colorThemeConfig = config.get("colorTheme", "auto");
+      const { colorTheme, colorContrast } = LwcPanelManager.resolveTheme(colorThemeConfig);
+      
+      getExtensionConfigSections(context.extensionUri).then((_) => {
+        LwcPanelManager.getInstance(context).refreshAllPanels({
+          colorTheme,
+          colorContrast 
+        });
+      }).catch((err) => {
+        Logger.log("Error refreshing panels with new theme: " + err.message);
+      });
+    }
+  });
+
+  // Listen for VS Code theme changes (when user switches between light/dark/high-contrast)
+  vscode.window.onDidChangeActiveColorTheme(() => {
+    const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis.theme");
+    const colorThemeConfig = config.get("colorTheme", "auto");
+
+    if (!colorThemeConfig || colorThemeConfig === "auto") {
+      const lwcManager = LwcPanelManager.getInstance(context);
+      const { colorTheme, colorContrast } = LwcPanelManager.resolveTheme(colorThemeConfig);
+      
+      // Send theme update to all active panels
+      lwcManager.sendMessageToAllPanels({
+        type: "updateTheme",
+        data: { colorTheme, colorContrast }
+      });
     }
   });
 
