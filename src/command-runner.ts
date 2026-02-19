@@ -22,6 +22,10 @@ export class CommandRunner {
   private allowNextDuplicateCommand = false;
   private debugNodeJs = false;
   /**
+   * Delay in milliseconds before showing markdown preview after opening a file
+   */
+  private static readonly MARKDOWN_PREVIEW_DELAY = 500;
+  /**
    * Map of active commands: key is command string, value is { type: 'background'|'terminal', process?: ChildProcess, sentToTerminal?: boolean }
    */
   private activeCommands: Map<
@@ -90,10 +94,19 @@ export class CommandRunner {
       cmd += ` --skipauth`;
     }
     // Add --websocket argument when necessary
+    // Exclude commands that need to output files directly (like flow-git-diff)
+    const skipWebSocketCommands = [
+      /hardis:project:generate:flow-git-diff\b/,
+    ];
+    const shouldSkipWebSocket = skipWebSocketCommands.some(pattern => 
+      pattern.test(cmd)
+    );
+    
     if (
       (cmd.startsWith("sf hardis") ||
         cmd.includes("sf hardis:work:ws --event")) &&
       !cmd.includes("--websocket") &&
+      !shouldSkipWebSocket &&
       (!cmd.includes("&&") ||
         cmd.endsWith("sf hardis:work:ws --event refreshPlugins"))
     ) {
@@ -308,6 +321,7 @@ export class CommandRunner {
       }
     }
     const stderrLines: string[] = [];
+    const stdoutLines: string[] = [];
     let certificatePromptTriggered = false;
     const tryNotifyCertificateIssue = (message?: string) => {
       if (certificatePromptTriggered) {
@@ -325,6 +339,7 @@ export class CommandRunner {
       let clean = stripAnsi(data.toString());
       output.append(clean);
       handleLogLine(clean);
+      stdoutLines.push(clean);
     });
     childProcess.stderr?.on("data", (data: any) => {
       let clean = stripAnsi(data.toString());
@@ -340,6 +355,12 @@ export class CommandRunner {
       if (code && code !== 0) {
         tryNotifyCertificateIssue(stderrLines.join("\n"));
       }
+      
+      // For flow-git-diff commands, auto-open the generated markdown file
+      if (preprocessedCommand.includes("hardis:project:generate:flow-git-diff") && code === 0) {
+        this.openGeneratedFlowDiffFile(stdoutLines);
+      }
+      
       // Send message to panel if still marked as active and running
       setTimeout(() => {
         const panelManager = LwcPanelManager.getInstance();
@@ -526,4 +547,75 @@ export class CommandRunner {
     });
   }
   /* jscpd:ignore-end */
+
+  /**
+   * Opens the generated flow diff markdown file from command output
+   */
+  private openGeneratedFlowDiffFile(stdoutLines: string[]) {
+    try {
+      const output = stdoutLines.join("\n");
+      // Look for patterns that indicate a generated file
+      // The sfdx-hardis CLI typically outputs file paths like:
+      // "Generated flow diff: docs/flow-diffs/MyFlow.md"
+      // or just the relative path
+      const filePathPatterns = [
+        /Generated .*?: (.*\.md)/i,
+        /Created file: (.*\.md)/i,
+        /Output file: (.*\.md)/i,
+        /docs\/flow-diffs\/.*\.md/,
+      ];
+      
+      let filePath: string | null = null;
+      for (const pattern of filePathPatterns) {
+        const match = output.match(pattern);
+        if (match) {
+          filePath = match[1] || match[0];
+          break;
+        }
+      }
+      
+      if (!filePath) {
+        // If no explicit file path found, look for any .md file mention in docs/flow-diffs/
+        const mdFileMatch = output.match(/docs\/flow-diffs\/[^\s]+\.md/);
+        if (mdFileMatch) {
+          filePath = mdFileMatch[0];
+        }
+      }
+      
+      if (filePath) {
+        // Clean up the path
+        filePath = filePath.trim().replace(/^["']|["']$/g, '');
+        
+        const workspaceRootUri = vscode.workspace.workspaceFolders?.[0]?.uri;
+        if (workspaceRootUri) {
+          const fullPath = vscode.Uri.joinPath(workspaceRootUri, filePath);
+          vscode.workspace.openTextDocument(fullPath).then(
+            (doc) => {
+              vscode.window.showTextDocument(doc);
+              // Show markdown preview after a short delay to allow the document to render
+              setTimeout(() => {
+                try {
+                  vscode.commands.executeCommand("markdown.showPreview", doc);
+                }
+                catch (previewError: any) {
+                  Logger.log(`Failed to show markdown preview: ${previewError.message}`);
+                  // Preview is optional, so we don't need to notify the user
+                }
+              }, CommandRunner.MARKDOWN_PREVIEW_DELAY);
+            },
+            (error: any) => {
+              const errorMsg = `Failed to open generated flow diff file: ${error.message}`;
+              Logger.log(errorMsg);
+              vscode.window.showErrorMessage(errorMsg);
+            }
+          );
+        }
+      }
+    } 
+    catch (error: any) {
+      const errorMsg = `Error opening flow diff file: ${error.message}`;
+      Logger.log(errorMsg);
+      vscode.window.showWarningMessage(`Flow diff file could not be opened automatically. Check the command output for the file location.`);
+    }
+  }
 }
