@@ -132,8 +132,8 @@ export class CommandRunner {
         this.showDuplicateCommandWarning();
         return null;
       }
-      // For terminal: sentToTerminal is true
-      if (existing.type === "terminal" && existing.sentToTerminal) {
+      // For terminal: command was sent to terminal less than 3 seconds ago (heuristic to avoid false positives)
+      if (existing.type === "terminal") {
         this.showDuplicateCommandWarning();
         return null;
       }
@@ -503,7 +503,11 @@ export class CommandRunner {
     // Mark as sent to terminal (for duplicate prevention)
     this.activeCommands.set(cmd, { type: "terminal", sentToTerminal: true });
     vscode.commands.executeCommand("workbench.action.terminal.scrollToBottom");
-    // Optionally, you could remove from activeCommands after a delay or on user action
+    // Remove from activeCommands after a delay
+    setTimeout(() => {
+      this.activeCommands.delete(cmd);
+    }, 3000);
+
   }
 
   /**
