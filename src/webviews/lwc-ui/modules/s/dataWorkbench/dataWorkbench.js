@@ -330,8 +330,8 @@ export default class DataWorkbench extends LightningElement {
         ? "slds-form-element slds-has-error slds-m-bottom_medium"
         : "slds-form-element slds-m-bottom_medium",
       hasMockFields: this.normalizeMockFields(obj.mockFields).length > 0,
-      disableMockFieldRemove: this.normalizeMockFields(obj.mockFields).length <=
-        1,
+      disableMockFieldRemove:
+        this.normalizeMockFields(obj.mockFields).length <= 1,
       showMockFields: obj.updateWithMockData === true,
     }));
   }
@@ -720,7 +720,9 @@ export default class DataWorkbench extends LightningElement {
     if (!objects[objectIndex]) {
       return;
     }
-    const mockFields = this.normalizeMockFields(objects[objectIndex].mockFields);
+    const mockFields = this.normalizeMockFields(
+      objects[objectIndex].mockFields,
+    );
     if (!mockFields[fieldIndex]) {
       return;
     }
