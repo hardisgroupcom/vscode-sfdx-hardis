@@ -242,28 +242,51 @@
                         <dd class="slds-item_detail slds-truncate">{selectedWorkspace.objectsCount}</dd>
                       </dl>
                       <template if:true={selectedWorkspace.objects}>
-                        <ul class="slds-list_dotted slds-m-top_small">
+                        <div class="slds-m-top_small">
                           <template for:each={selectedWorkspace.objects} for:item="obj" for:index="index">
-                            <li key={obj.query} class="slds-m-bottom_x-small">
-                              <p class="slds-text-body_small">
-                                <strong>{obj.operation}</strong>
+                            <div key={obj.query} class="slds-box slds-box_x-small slds-m-bottom_x-small slds-border_bottom">
+                              <div class="slds-grid slds-grid_align-spread slds-m-bottom_x-small">
+                                <div>
+                                  <span class="slds-badge slds-badge_inverse slds-m-right_x-small">{obj.operation}</span>
+                                  <span class="slds-text-body_small slds-text-color_weak">{obj.objectName}</span>
+                                </div>
+                              </div>
+                              <p class="slds-text-body_small slds-text-color_weak slds-truncate slds-m-bottom_x-small" title={obj.query}>{obj.query}</p>
+                              <div class="slds-grid slds-wrap slds-gutters_x-small">
                                 <template if:true={obj.externalId}>
-                                  &nbsp;• External Id: {obj.externalId}
+                                  <div class="slds-size_auto">
+                                    <span class="slds-text-body_xx-small slds-badge">External Id: {obj.externalId}</span>
+                                  </div>
                                 </template>
                                 <template if:true={obj.deleteOldData}>
-                                  &nbsp;• deleteOldData
+                                  <div class="slds-size_auto">
+                                    <span class="slds-text-body_xx-small slds-badge slds-badge_success">deleteOldData</span>
+                                  </div>
                                 </template>
                                 <template if:true={obj.useQueryAll}>
-                                  &nbsp;• useQueryAll
+                                  <div class="slds-size_auto">
+                                    <span class="slds-text-body_xx-small slds-badge slds-badge_success">useQueryAll</span>
+                                  </div>
+                                </template>
+                                <template if:true={obj.updateWithMockData}>
+                                  <div class="slds-size_auto">
+                                    <span class="slds-text-body_xx-small slds-badge slds-badge_success">Mock Data</span>
+                                  </div>
+                                </template>
+                                <template if:true={obj.hasMockFields}>
+                                  <div class="slds-size_auto">
+                                    <span class="slds-text-body_xx-small slds-badge">{obj.mockFieldsCount} field(s)</span>
+                                  </div>
                                 </template>
                                 <template if:true={obj.batchSize}>
-                                  &nbsp;• batchSize: {obj.batchSize}
+                                  <div class="slds-size_auto">
+                                    <span class="slds-text-body_xx-small slds-badge">Batch: {obj.batchSize}</span>
+                                  </div>
                                 </template>
-                              </p>
-                              <p class="slds-text-body_small slds-text-color_weak slds-truncate" title={obj.query}>{obj.query}</p>
-                            </li>
+                              </div>
+                            </div>
                           </template>
-                        </ul>
+                        </div>
                       </template>
                     </div>
                   </div>
@@ -585,6 +608,102 @@
                   </div>
                 </div>
               </div>
+
+              <div class="slds-form-element slds-m-bottom_medium">
+                <div class="slds-grid slds-grid_vertical-align-center">
+                  <div class="slds-no-flex">
+                    <lightning-input
+                      type="toggle"
+                      variant="label-hidden"
+                      name="update-with-mock-data"
+                      aria-label="Update with mock data"
+                      message-toggle-active=""
+                      message-toggle-inactive=""
+                      checked={obj.updateWithMockData}
+                      data-index={index}
+                      data-field="updateWithMockData"
+                      onchange={handleObjectToggleChange}
+                    ></lightning-input>
+                  </div>
+                  <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
+                    <span class="slds-text-body_regular">Update with mock data</span>
+                    <span class="slds-no-flex slds-m-left_xx-small">
+                      <s-multiline-helptext content="Enable mock data generation for fields defined below."></s-multiline-helptext>
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <template if:true={obj.showMockFields}>
+                <div class="slds-box slds-box_x-small slds-m-bottom_medium">
+                  <div class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center slds-m-bottom_small">
+                    <h5 class="slds-text-title_caps">Mock fields</h5>
+                    <lightning-button
+                      variant="neutral"
+                      label="Add mock field"
+                      icon-name="utility:add"
+                      onclick={addMockField}
+                      data-index={index}
+                    ></lightning-button>
+                  </div>
+                  <template for:each={obj.mockFields} for:item="mockField" for:index="fieldIndex">
+                    <div key={mockField.displayIndex} class="slds-grid slds-gutters slds-m-bottom_x-small slds-grid_vertical-align-end">
+                      <div class="slds-col slds-size_5-of-12">
+                        <div class="slds-form-element">
+                          <label class="slds-form-element__label" for="mock-field-name">Field</label>
+                          <div class="slds-form-element__control">
+                            <lightning-input
+                              variant="label-hidden"
+                              type="text"
+                              name="mock-field-name"
+                              placeholder="Email__c"
+                              data-index={index}
+                              data-fieldindex={fieldIndex}
+                              data-field="name"
+                              value={mockField.name}
+                              onchange={handleMockFieldChange}
+                            ></lightning-input>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="slds-col slds-size_5-of-12">
+                        <div class="slds-form-element">
+                          <label class="slds-form-element__label" for="mock-field-pattern">Pattern</label>
+                          <div class="slds-form-element__control">
+                            <lightning-combobox
+                              variant="label-hidden"
+                              name="mock-field-pattern"
+                              placeholder="Select pattern"
+                              data-index={index}
+                              data-fieldindex={fieldIndex}
+                              data-field="pattern"
+                              value={mockField.pattern}
+                              options={mockPatternOptions}
+                              onchange={handleMockFieldChange}
+                            ></lightning-combobox>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="slds-col slds-size_2-of-12">
+                        <div class="slds-form-element">
+                          <label class="slds-form-element__label">&nbsp;</label>
+                          <div class="slds-form-element__control">
+                            <lightning-button
+                              variant="destructive-text"
+                              icon-name="utility:delete"
+                              label="Remove"
+                              data-index={index}
+                              data-fieldindex={fieldIndex}
+                              onclick={removeMockField}
+                              disabled={obj.disableMockFieldRemove}
+                            ></lightning-button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </template>
+                </div>
+              </template>
             </div>
           </template>
         </div>

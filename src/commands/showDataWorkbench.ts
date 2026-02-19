@@ -24,6 +24,8 @@ type SfdmuObjectConfig = {
   useQueryAll?: boolean;
   allOrNone?: boolean;
   batchSize?: number | string;
+  updateWithMockData?: boolean;
+  mockFields?: Array<{ name?: string; pattern?: string }>;
   [key: string]: any;
 };
 
@@ -218,6 +220,8 @@ async function loadDataWorkspaces(): Promise<DataWorkspace[]> {
               obj.bulkApiV1BatchSize ??
               obj.restApiBatchSize ??
               undefined,
+            updateWithMockData: obj.updateWithMockData === true,
+            mockFields: normalizeMockFields(obj.mockFields),
             objectName: extractObjectName(obj.query || ""),
           }))
         : [];
@@ -512,12 +516,34 @@ function normalizeObjectsForSave(objects: SfdmuObjectConfig[]): any[] {
       delete cleanedObj.batchSize;
     }
 
+    cleanedObj.updateWithMockData = obj.updateWithMockData === true;
+    cleanedObj.mockFields = normalizeMockFields(obj.mockFields);
+
+    if (!cleanedObj.updateWithMockData || cleanedObj.mockFields.length === 0) {
+      delete cleanedObj.mockFields;
+    }
+
     if (cleanedObj.objectName) {
       delete cleanedObj.objectName;
     }
 
     return cleanedObj;
   });
+}
+
+function normalizeMockFields(
+  mockFields: Array<{ name?: string; pattern?: string }> | undefined,
+): Array<{ name: string; pattern: string }> {
+  if (!Array.isArray(mockFields)) {
+    return [];
+  }
+  return mockFields
+    .filter((mockField) => mockField && typeof mockField === "object")
+    .map((mockField) => ({
+      name: mockField.name || "",
+      pattern: mockField.pattern || "",
+    }))
+    .filter((mockField) => mockField.name || mockField.pattern);
 }
 
 function extractObjectName(query: string): string {

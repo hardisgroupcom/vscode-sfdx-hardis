@@ -78,6 +78,8 @@ export default class DataWorkbench extends LightningElement {
         useQueryAll: false,
         allOrNone: true,
         batchSize: null,
+        updateWithMockData: false,
+        mockFields: [],
         objectName: "Account",
       },
     ],
@@ -189,6 +191,8 @@ export default class DataWorkbench extends LightningElement {
       objects: (ws.objects || []).map((obj) => ({
         ...obj,
         objectName: obj.objectName || inferObjectNameFromQuery(obj.query),
+        updateWithMockData: obj.updateWithMockData === true,
+        mockFields: this.normalizeMockFields(obj.mockFields),
       })),
     }));
   }
@@ -282,15 +286,53 @@ export default class DataWorkbench extends LightningElement {
     ];
   }
 
+  get mockPatternOptions() {
+    return [
+      { label: "Address - Country", value: "country" },
+      { label: "Address - City", value: "city" },
+      { label: "Address - Street", value: "street" },
+      { label: "Address - Address", value: "address" },
+      { label: "Address - ZIP Code", value: "zip" },
+      { label: "Personal - Name", value: "name" },
+      { label: "Personal - Full Name", value: "full_name" },
+      { label: "Personal - Username", value: "username" },
+      { label: "Personal - First Name", value: "first_name" },
+      { label: "Personal - Last Name", value: "last_name" },
+      { label: "Personal - Email", value: "email" },
+      { label: "Text - Sentence", value: "sentence" },
+      { label: "Text - Title", value: "title" },
+      { label: "Text - Text", value: "text" },
+      { label: "Text - Word", value: "word" },
+      { label: "Internet - IP Address", value: "ip" },
+      { label: "Internet - Domain Name", value: "domain" },
+      { label: "Internet - URL", value: "url" },
+      { label: "Numbers/Date - Random Number", value: "integer" },
+      { label: "Numbers/Date - Date", value: "date" },
+      { label: "Numbers/Date - Time", value: "time" },
+      { label: "Numbers/Date - Year", value: "year" },
+    ];
+  }
+
   get objectsWithDisplayIndex() {
     return (this.newWorkspace.objects || []).map((obj, idx) => ({
       ...obj,
+      mockFields: this.normalizeMockFields(obj.mockFields).map(
+        (mockField, fieldIndex) => ({
+          ...mockField,
+          displayIndex: fieldIndex + 1,
+        }),
+      ),
+      mockFieldsCount: this.normalizeMockFields(obj.mockFields).length,
       displayIndex: idx + 1,
       soqlError: (this.soqlErrors || [])[idx] || "",
       soqlHasError: !!((this.soqlErrors || [])[idx] || ""),
       soqlFormElementClass: !!((this.soqlErrors || [])[idx] || "")
         ? "slds-form-element slds-has-error slds-m-bottom_medium"
         : "slds-form-element slds-m-bottom_medium",
+      hasMockFields: this.normalizeMockFields(obj.mockFields).length > 0,
+      disableMockFieldRemove:
+        this.normalizeMockFields(obj.mockFields).length <= 1,
+      showMockFields: obj.updateWithMockData === true,
     }));
   }
 
@@ -361,6 +403,8 @@ export default class DataWorkbench extends LightningElement {
             useQueryAll: obj.useQueryAll === true,
             allOrNone: obj.allOrNone ?? true,
             batchSize: this.normalizeBatchSizeValue(obj.batchSize),
+            updateWithMockData: obj.updateWithMockData === true,
+            mockFields: this.normalizeMockFields(obj.mockFields),
             objectName: inferObjectNameFromQuery(obj.query),
           })) || [],
       };
@@ -485,7 +529,14 @@ export default class DataWorkbench extends LightningElement {
       return;
     }
     objects[index] = { ...objects[index], [field]: value };
-    this.newWorkspace.objects = objects;
+    if (field === "updateWithMockData" && value === true) {
+      const mockFields = this.normalizeMockFields(objects[index].mockFields);
+      if (mockFields.length === 0) {
+        objects[index].mockFields = [{ name: "", pattern: "" }];
+      }
+    }
+    // Reassign entire newWorkspace to trigger LWC reactivity
+    this.newWorkspace = { ...this.newWorkspace, objects };
   }
   // jscpd:ignore-end
 
@@ -511,6 +562,8 @@ export default class DataWorkbench extends LightningElement {
       useQueryAll: false,
       allOrNone: true,
       batchSize: "",
+      updateWithMockData: false,
+      mockFields: [],
       objectName: "Account",
     });
     this.newWorkspace.objects = objects;
@@ -628,6 +681,8 @@ export default class DataWorkbench extends LightningElement {
           useQueryAll: false,
           allOrNone: true,
           batchSize: "",
+          updateWithMockData: false,
+          mockFields: [],
           objectName: "Account",
         },
       ],
@@ -642,5 +697,65 @@ export default class DataWorkbench extends LightningElement {
     }
     const numeric = Number(value);
     return Number.isNaN(numeric) ? "" : numeric;
+  }
+
+  normalizeMockFields(mockFields) {
+    if (!Array.isArray(mockFields)) {
+      return [];
+    }
+    return mockFields
+      .filter((mockField) => mockField && typeof mockField === "object")
+      .map((mockField) => ({
+        name: mockField.name || "",
+        pattern: mockField.pattern || "",
+      }));
+  }
+
+  handleMockFieldChange(event) {
+    const objectIndex = Number(event.currentTarget.dataset.index);
+    const fieldIndex = Number(event.currentTarget.dataset.fieldindex);
+    const field = event.currentTarget.dataset.field;
+    const value = event.detail?.value ?? event.target.value;
+    const objects = [...this.newWorkspace.objects];
+    if (!objects[objectIndex]) {
+      return;
+    }
+    const mockFields = this.normalizeMockFields(
+      objects[objectIndex].mockFields,
+    );
+    if (!mockFields[fieldIndex]) {
+      return;
+    }
+    mockFields[fieldIndex] = { ...mockFields[fieldIndex], [field]: value };
+    objects[objectIndex] = { ...objects[objectIndex], mockFields };
+    this.newWorkspace.objects = objects;
+  }
+
+  addMockField(event) {
+    const index = Number(event.currentTarget.dataset.index);
+    const objects = [...this.newWorkspace.objects];
+    if (!objects[index]) {
+      return;
+    }
+    const mockFields = this.normalizeMockFields(objects[index].mockFields);
+    mockFields.push({ name: "", pattern: "" });
+    objects[index] = { ...objects[index], mockFields };
+    this.newWorkspace.objects = objects;
+  }
+
+  removeMockField(event) {
+    const index = Number(event.currentTarget.dataset.index);
+    const fieldIndex = Number(event.currentTarget.dataset.fieldindex);
+    const objects = [...this.newWorkspace.objects];
+    if (!objects[index]) {
+      return;
+    }
+    const mockFields = this.normalizeMockFields(objects[index].mockFields);
+    if (mockFields.length <= 1) {
+      return;
+    }
+    mockFields.splice(fieldIndex, 1);
+    objects[index] = { ...objects[index], mockFields };
+    this.newWorkspace.objects = objects;
   }
 }
