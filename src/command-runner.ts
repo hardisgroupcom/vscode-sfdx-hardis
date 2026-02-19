@@ -507,7 +507,6 @@ export class CommandRunner {
     setTimeout(() => {
       this.activeCommands.delete(cmd);
     }, 3000);
-
   }
 
   /**
