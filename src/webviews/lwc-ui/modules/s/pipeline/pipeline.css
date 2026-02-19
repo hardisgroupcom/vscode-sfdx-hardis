@@ -1,13 +1,8 @@
-:host {
-    color: #000000;
-}
-
 .pipeline-container {
     /* Pipeline visualization styling */
     border-radius: 8px;
     padding: 0.25rem 0.75rem 0.75rem 0.75rem;
     min-height: 150px;
-    background: white;
 }
 
 .pipeline-loading-overlay {
@@ -16,13 +11,11 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(243, 243, 243, 0.7);
     z-index: 10;
     pointer-events: none;
 }
 
 .blue-back {
-    background: linear-gradient(135deg, #f8f9ff 0%, #e8f4fd 100%);
     font-family: "Salesforce Sans", -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
@@ -36,10 +29,9 @@
 }
 
 .command-card {
-    background: white;
     border-radius: 8px;
     padding: 1rem;
-    border: 1px solid #e5e5e5;
+    border: 1px solid;
     transition: all 0.2s ease;
     min-height: 90px;
     display: flex;
@@ -57,13 +49,11 @@
 .command-card.disabled:hover {
     transform: none;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    border-color: #e5e5e5;
 }
 
 .command-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    border-color: #1589ee;
 }
 
 .command-header {
@@ -87,10 +77,6 @@
     transition: all 0.2s ease;
 }
 
-.command-icon-container lightning-icon {
-    --slds-c-icon-color-foreground: white !important;
-    --slds-c-icon-color-foreground-default: white !important;
-}
 
 .command-icon-container:hover {
     transform: translateY(-1px);
@@ -120,13 +106,11 @@
 .command-title {
     font-size: 1rem;
     font-weight: 600;
-    color: #181818;
     margin: 0;
     line-height: 1.2;
 }
 
 .command-description {
-    color: #706e6b;
     margin: 0;
     line-height: 1.4;
     font-size: 0.875rem;
@@ -293,4 +277,74 @@ lightning-datatable .hardis-emoji-cell a {
     max-width: 100% !important;
 }
 
+/* ========================================
+   THEME-AWARE COLOR DEFINITIONS
+   ======================================== */
 
+/* Light Mode Colors */
+.slds-scope[data-theme="light"] .pipeline-container {
+    background: white;
+}
+
+.slds-scope[data-theme="light"] .pipeline-loading-overlay {
+    background-color: rgba(243, 243, 243, 0.7);
+}
+
+.slds-scope[data-theme="light"] .blue-back {
+    background: linear-gradient(135deg, #f8f9ff 0%, #e8f4fd 100%);
+}
+
+.slds-scope[data-theme="light"] .command-card {
+    background: white;
+    border-color: #e5e5e5;
+}
+
+.slds-scope[data-theme="light"] .command-card.disabled:hover {
+    border-color: #e5e5e5;
+}
+
+.slds-scope[data-theme="light"] .command-card:hover {
+    border-color: #1589ee;
+}
+
+.slds-scope[data-theme="light"] .command-title {
+    color: #181818;
+}
+
+.slds-scope[data-theme="light"] .command-description {
+    color: #706e6b;
+}
+
+/* Dark Mode Colors */
+.slds-scope[data-theme="dark"] .pipeline-container {
+    background: #252526;
+}
+
+.slds-scope[data-theme="dark"] .pipeline-loading-overlay {
+    background-color: rgba(37, 37, 38, 0.7);
+}
+
+.slds-scope[data-theme="dark"] .blue-back {
+    background: linear-gradient(135deg, #121217 0%, #17171b 100%);
+}
+
+.slds-scope[data-theme="dark"] .command-card {
+    background: #1e1e1e;
+    border-color: rgba(255, 255, 255, 0.04);
+}
+
+.slds-scope[data-theme="dark"] .command-card.disabled:hover {
+    border-color: rgba(255, 255, 255, 0.04);
+}
+
+.slds-scope[data-theme="dark"] .command-card:hover {
+    border-color: #4ea1ff;
+}
+
+.slds-scope[data-theme="dark"] .command-title {
+    color: #ffffff;
+}
+
+.slds-scope[data-theme="dark"] .command-description {
+    color: #a3a3a3;
+}

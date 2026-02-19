@@ -1754,10 +1754,10 @@
     estree-walker "^2.0.2"
     picomatch "^4.0.2"
 
-"@salesforce-ux/design-system@^2.27.2":
-  version "2.27.2"
-  resolved "https://registry.npmjs.org/@salesforce-ux/design-system/-/design-system-2.27.2.tgz"
-  integrity sha512-Vco/SNBLkpZDoVnuf+AwmGH+5vm0Qb5rtRiJ7gPJgWbIu5aYAGnWF2arFH5+91cNkWOu3wC1H3bf1XLw4qvVNg==
+"@salesforce-ux/design-system@2.29.0":
+  version "2.29.0"
+  resolved "https://registry.yarnpkg.com/@salesforce-ux/design-system/-/design-system-2.29.0.tgz#fd2571b81eeebc70c4533bc08e2cc317c6b4b8e2"
+  integrity sha512-5Dt5BDAhjWMq01z9ire04MA4CSGe+indhfH/LvESK06e3Si3EuEcL6TTnDYejXttcLntAQVxn/+p+L1LwxCN4A==
 
 "@secretlint/config-creator@^9.3.4":
   version "9.3.4"
@@ -4947,10 +4947,10 @@ lie@~3.3.0:
   dependencies:
     immediate "~3.0.5"
 
-lightning-base-components@^1.27.2-alpha:
-  version "1.27.2-alpha"
-  resolved "https://registry.npmjs.org/lightning-base-components/-/lightning-base-components-1.27.2-alpha.tgz"
-  integrity sha512-YyxdAVEsECA2JqZnlsBxqPpBEdElfQa88qs5zY+eYHUdjZ/aE15OV0kjcoBB8o/46Z39jkyn+b1Aiy1wDZoqLw==
+lightning-base-components@1.28.12-alpha:
+  version "1.28.12-alpha"
+  resolved "https://registry.yarnpkg.com/lightning-base-components/-/lightning-base-components-1.28.12-alpha.tgz#fb9719ed0eae561df06fcd19c9c6aea1b03c8153"
+  integrity sha512-ZxdNr8np7qIaq4qOBBXM6k+BjysnPFqqlegTE4e6dHbzpDrWDdplddLwcLzCSvWqbGx1xirrnhZh6k3fQYXHAA==
 
 line-column@~1.0.2:
   version "1.0.2"

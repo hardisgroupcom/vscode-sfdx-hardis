@@ -3,13 +3,17 @@
 // @ts-nocheck
 // eslint-env es6
 import { LightningElement, api, track } from "lwc";
-import "s/forceLightTheme"; // Ensure light theme is applied
+import { ColorThemeMixin } from "s/colorThemeMixin";
 
-export default class Welcome extends LightningElement {
+export default class Welcome extends ColorThemeMixin(LightningElement) {
   @track isLoading = false;
   @track showWelcomeAtStartup = true;
+  @track colorThemeConfig = "auto";
+  @track themeVariants = { light: "neutral", dark: "neutral", auto: "brand" };
+ 
   @track setupHidden = false;
   scrollThreshold = 100; // Hide toggle after scrolling 100px
+  
   connectedCallback() {
     // Bind handler once so we can remove it later
     this._boundHandleScroll = this.handleScroll.bind(this);
@@ -21,18 +25,14 @@ export default class Welcome extends LightningElement {
   }
 
   handleScroll() {
-    // hide the setup button area when scrolling past threshold
-    const heroSettings = this.template.querySelector(".hero-settings");
-    const heroTopLeft = this.template.querySelector(".hero-top-left");
+    // hide the setup button areas when scrolling past threshold
     const shouldHide = window.scrollY > this.scrollThreshold;
     this.setupHidden = shouldHide;
 
-    if (heroSettings) {
-      heroSettings.classList.toggle("hidden", shouldHide);
-    }
-    if (heroTopLeft) {
-      heroTopLeft.classList.toggle("hidden", shouldHide);
-    }
+    const heroElements = this.template.querySelectorAll(".hero-settings, .hero-top-left, .hero-bottom-right");
+    heroElements.forEach((element) => {
+      element.classList.toggle("hidden", shouldHide);
+    });
   }
 
   @api
@@ -44,12 +44,28 @@ export default class Welcome extends LightningElement {
     if (data && data.showWelcomeAtStartup !== undefined) {
       this.showWelcomeAtStartup = data.showWelcomeAtStartup;
     }
+    if (data && data.colorThemeConfig) {
+      this.setColorThemeVariants(data.colorThemeConfig);
+    }
+  }
+  
+  setColorThemeVariants(colorThemeConfig) {
+    this.themeVariants.light = (colorThemeConfig === "light") ? "brand" : "neutral";
+    this.themeVariants.dark = (colorThemeConfig === "dark") ? "brand" : "neutral";
+    this.themeVariants.auto = (colorThemeConfig === "auto") ? "brand" : "neutral";
   }
 
   @api
   handleMessage(type, data) {
     console.log("Welcome component received message:", type, data);
     // Handle specific message types if needed
+  }
+
+  @api
+  handleColorThemeMessage(type, data) {
+    // Delegate to the ColorThemeMixin's implementation
+    if (super.handleColorThemeMessage)
+      super.handleColorThemeMessage(type, data);
   }
 
   // Navigation methods for major features
@@ -149,6 +165,22 @@ export default class Welcome extends LightningElement {
       data: {
         configKey: "vsCodeSfdxHardis.showWelcomeAtStartup",
         value: newValue,
+      },
+    });
+  }
+
+  // Settings handler
+  handleThemeChange(event) {
+    const button = event.target;
+    let colorThemeConfig = button.name;
+    this.setColorThemeVariants(colorThemeConfig);
+
+    // Send message to VS Code to update the setting
+    window.sendMessageToVSCode({
+      type: "updateVsCodeSfdxHardisConfiguration",
+      data: {
+        configKey: "vsCodeSfdxHardis.theme.colorTheme",
+        value: colorThemeConfig,
       },
     });
   }

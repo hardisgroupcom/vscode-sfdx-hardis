@@ -1,5 +1,4 @@
 import { LightningElement, api, track } from "lwc";
-import "s/forceLightTheme"; // Ensure light theme is applied
 
 /**
  * LWC to retrieve and search metadata from a Salesforce org

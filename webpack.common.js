@@ -151,6 +151,30 @@ const lwcWebviewConfig = {
         {
           from: path.resolve(
             __dirname,
+            "resources/global-theme-variables.css",
+          ),
+          to: path.resolve(
+            __dirname,
+            "out/assets/styles/global-theme-variables.css",
+          ),
+          toType: "file",
+          noErrorOnMissing: true,
+        },
+        {
+          from: path.resolve(
+            __dirname,
+            "resources/global-theme.css",
+          ),
+          to: path.resolve(
+            __dirname,
+            "out/assets/styles/global-theme.css",
+          ),
+          toType: "file",
+          noErrorOnMissing: true,
+        },
+        {
+          from: path.resolve(
+            __dirname,
             "node_modules/@salesforce-ux/design-system/assets/styles/salesforce-lightning-design-system.min.css",
           ),
           to: path.resolve(

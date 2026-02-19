@@ -49,7 +49,6 @@
 }
 [data-feature-content] {
   position: relative;
-  background: #fff;
   padding: 20px;
   border-radius: 8px;
   min-width: 280px;
@@ -74,7 +73,6 @@
   cursor: pointer;
 }
 .blue-back {
-	background: #EDF4FF;
 	min-height: 100vh;
 }
 

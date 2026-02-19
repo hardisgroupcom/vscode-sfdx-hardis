@@ -3,7 +3,7 @@
 // @ts-nocheck
 // eslint-env es6
 import { LightningElement, api, track } from "lwc";
-import "s/forceLightTheme"; // Ensure light theme is applied
+import { ColorThemeMixin } from "s/colorThemeMixin";
 
 // Configuration - Base URL for metadata type documentation
 // Modify this URL to change where metadata type links point to
@@ -16,7 +16,7 @@ const createEmptyPackageData = () => ({
   types: [],
 });
 
-export default class PackageXml extends LightningElement {
+export default class PackageXml extends ColorThemeMixin(LightningElement) {
   @track packageData = createEmptyPackageData();
   @track isLoading = true;
   @track hasError = false;
@@ -90,6 +90,13 @@ export default class PackageXml extends LightningElement {
     if (type === "packageDataUpdated") {
       this.initialize(data);
     }
+  }
+
+  @api
+  handleColorThemeMessage(type, data) {
+    // Delegate to the ColorThemeMixin's implementation
+    if (super.handleColorThemeMessage)
+      super.handleColorThemeMessage(type, data);
   }
 
   // Auto-detect package type from file path

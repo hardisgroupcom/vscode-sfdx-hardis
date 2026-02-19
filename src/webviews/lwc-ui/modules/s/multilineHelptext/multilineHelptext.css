@@ -34,66 +34,38 @@
     user-select: text;
 }
 
-/* Horizontal positioning - right side (default) */
-.multiline-helptext-popover.position-right {
-    left: 100%;
-    margin-left: 0.25rem;
+/* Light theme (explicit) */
+.slds-scope[data-theme] .multiline-helptext-popover {
+    background: #032d60;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.13);
 }
 
-/* Horizontal positioning - left side */
-.multiline-helptext-popover.position-left {
-    right: 100%;
-    margin-right: 0.25rem;
-}
-
-/* Vertical positioning - bottom (default) */
-.multiline-helptext-popover.position-bottom {
-    top: calc(100% + 0.25rem);
-}
-
-/* Vertical positioning - top */
-.multiline-helptext-popover.position-top {
-    bottom: calc(100% + 0.25rem);
-}
-
-/* Override SLDS popover positioning when using dynamic classes */
-.slds-popover.position-right {
-    left: 100% !important;
-    margin-left: 0.25rem !important;
-    right: auto !important;
-}
-
-.slds-popover.position-left {
-    right: 100% !important;
-    margin-right: 0.25rem !important;
-    left: auto !important;
-}
-
-.slds-popover.position-bottom {
-    top: calc(100% + 0.25rem) !important;
-    bottom: auto !important;
-}
-
-.slds-popover.position-top {
-    bottom: calc(100% + 0.25rem) !important;
-    top: auto !important;
-}
-.slds-form-element__icon.slds-m-left_xx-small {
-    margin-top: 2px;
-}
-
-/* Allow text selection and link interaction in popover */
-.multiline-helptext-popover a {
+.slds-scope[data-theme] .multiline-helptext-popover a {
     color: #87ceeb;
-    text-decoration: underline;
-    cursor: pointer;
 }
 
-.multiline-helptext-popover a:hover {
+.slds-scope[data-theme] .multiline-helptext-popover a:hover {
     color: #b0e0e6;
 }
 
-/* Reduce padding in popover body */
+/* Dark theme overrides (component-scoped) */
+.blue-back[data-theme="dark"] .multiline-helptext-popover {
+    background: #0b2236; /* slightly lighter than surrounding bg */
+    color: #e6eef9;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+    border: 1px solid rgba(255,255,255,0.04);
+}
+
+.blue-back[data-theme="dark"] .multiline-helptext-popover a {
+    color: #7fc7ff;
+}
+
+.blue-back[data-theme="dark"] .multiline-helptext-popover a:hover {
+    color: #bde8ff;
+}
+
+/* Horizontal positioning - right side (default) */
 .multiline-helptext-popover .slds-popover__body {
     padding: 0;
 }
