@@ -2,7 +2,10 @@
 
 ## Unreleased
 
+## [6.27.1] 2025-02-19
+
 - Improves duplicate command prevention
+- Add support of Mock data in Data Workbench
 
 ## [6.27.0] 2025-02-10
 
