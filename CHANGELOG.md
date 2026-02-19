@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Improves duplicate command prevention
+
 ## [6.27.0] 2025-02-10
 
 - New Documentation Workbench LWC to gather in one place all documentation related commands, and allow to easily run them and configure related settings. Commands include:
