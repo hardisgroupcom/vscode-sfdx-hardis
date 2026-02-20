@@ -410,7 +410,7 @@ async function updateDataWorkspace(data: any): Promise<string> {
 function validateSoqlQueries(objects: SfdmuObjectConfig[]): string[] {
   const list: SfdmuObjectConfig[] = Array.isArray(objects) ? objects : [];
   if (list.length === 0) {
-    return ["At least one object configuration is required."];
+    return [];
   }
 
   const errors: string[] = new Array(list.length).fill("");
