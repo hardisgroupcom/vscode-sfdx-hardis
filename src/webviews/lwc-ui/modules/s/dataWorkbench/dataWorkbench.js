@@ -595,7 +595,11 @@ export default class DataWorkbench extends LightningElement {
 
   handleObjToggleChange(event) {
     const field = event.currentTarget.dataset.field;
-    const value = event.detail?.checked ?? event.target.checked;
+    // lightning-input toggle may expose the boolean on event.target.checked or event.detail.checked
+    const value =
+      event.target?.checked === true ||
+      event.detail?.checked === true ||
+      event.detail?.value === true;
     let updated = { ...this.editingObject, [field]: value };
     if (field === "updateWithMockData" && value === true) {
       const mockFields = this.normalizeMockFields(updated.mockFields);
@@ -706,7 +710,7 @@ export default class DataWorkbench extends LightningElement {
   handleOpenFolder() {
     if (this.selectedWorkspace && this.selectedWorkspace.path) {
       window.sendMessageToVSCode({
-        type: "openFolder",
+        type: "openWorkspaceFolder",
         data: { path: this.selectedWorkspace.path },
       });
     }
