@@ -268,13 +268,16 @@
                                 <span class="slds-badge object-badge">External Id: {obj.externalId}</span>
                               </template>
                               <template if:true={obj.deleteOldData}>
-                                <span class="slds-badge slds-badge_success object-badge">deleteOldData</span>
+                                <span class="slds-badge slds-badge_success object-badge" title="Records not present in the CSV/data set will be deleted in target org.">Delete Old Data</span>
                               </template>
                               <template if:true={obj.useQueryAll}>
-                                <span class="slds-badge slds-badge_success object-badge">useQueryAll</span>
+                                <span class="slds-badge slds-badge_success object-badge" title="Include deleted and archived records">Use Query All</span>
+                              </template>
+                              <template if:true={obj.allOrNone}>
+                                <span class="slds-badge slds-badge_success object-badge" title="Rollback all updates if they are not all successful">All Or None</span>
                               </template>
                               <template if:true={obj.updateWithMockData}>
-                                <span class="slds-badge slds-badge_success object-badge">Mock Data</span>
+                                <span class="slds-badge slds-badge_success object-badge" title="Selected fields values will be replaced by random values during upload or download">Mock Data</span>
                               </template>
                               <template if:true={obj.hasMockFields}>
                                 <span class="slds-badge object-badge">{obj.mockFieldsCount} mock field(s)</span>
