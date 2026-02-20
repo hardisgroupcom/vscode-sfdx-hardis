@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## [6.27.2] 2025-02-20
+
+- Improve Data Workbench to individually edit objects in modal, not all objects at once
+- Improve tooltips
+
 ## [6.27.1] 2025-02-19
 
 - Improves duplicate command prevention

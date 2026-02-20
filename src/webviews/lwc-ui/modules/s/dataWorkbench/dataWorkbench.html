@@ -130,26 +130,6 @@
                           size="small"
                           onclick={handleDeleteData}
                         ></lightning-button>
-                        <lightning-button
-                          variant="neutral"
-                          label="Edit"
-                          title="Edit workspace settings and configuration"
-                          icon-name="utility:edit"
-                          icon-position="left"
-                          size="small"
-                          data-path={selectedWorkspace.path}
-                          onclick={handleEditWorkspace}
-                        ></lightning-button>
-                        <lightning-button
-                          variant="destructive"
-                          label="Delete"
-                          title="Delete this workspace permanently"
-                          icon-name="utility:delete"
-                          icon-position="left"
-                          size="small"
-                          data-path={selectedWorkspace.path}
-                          onclick={handleDeleteWorkspace}
-                        ></lightning-button>
                       </div>
                     </template>
 
@@ -179,130 +159,159 @@
                             icon-name="utility:close"
                             onclick={handleDeleteData}
                           ></lightning-menu-item>
-                          <lightning-menu-item
-                            value="edit"
-                            label="Edit Workspace"
-                            icon-name="utility:edit"
-                            onclick={handleEditWorkspace}
-                          ></lightning-menu-item>
-                          <lightning-menu-item
-                            value="deleteWorkspace"
-                            label="Delete Workspace"
-                            icon-name="utility:delete"
-                            onclick={handleDeleteWorkspace}
-                          ></lightning-menu-item>
                         </lightning-button-menu>
                       </div>
                     </template>
                   </div>
 
-                  <div class="slds-media slds-m-bottom_medium">
-                    <div class="slds-media__figure">
-                      <lightning-button-icon
-                        icon-name="utility:open_folder"
-                        variant="bare"
-                        alternative-text="Open folder in explorer"
-                        title="Click to open workspace folder in OS explorer"
-                        size="large"
-                        onclick={handleOpenFolder}
-                        class="slds-p-around_xx-small"
-                      ></lightning-button-icon>
+                  <!-- Section: Workspace Properties -->
+                  <div class="detail-section">
+                    <div class="section-header">
+                      <div class="section-header-left">
+                        <lightning-icon icon-name="utility:info_alt" size="xx-small" class="slds-m-right_x-small"></lightning-icon>
+                        <h3 class="slds-text-title_caps">Properties</h3>
+                      </div>
+                      <div class="section-header-right">
+                        <lightning-button-icon
+                          icon-name="utility:edit"
+                          alternative-text="Edit properties"
+                          title="Edit workspace name, label and description"
+                          size="small"
+                          onclick={handleEditProperties}
+                        ></lightning-button-icon>
+                        <lightning-button-icon
+                          icon-name="utility:open_folder"
+                          alternative-text="Open folder in explorer"
+                          title="Open workspace folder in OS explorer"
+                          size="small"
+                          onclick={handleOpenFolder}
+                        ></lightning-button-icon>
+                        <lightning-button-icon
+                          icon-name="utility:open"
+                          alternative-text="Open export.json"
+                          title="Open export.json in editor"
+                          size="small"
+                          onclick={handleConfigureWorkspace}
+                        ></lightning-button-icon>
+                        <lightning-button-icon
+                          icon-name="utility:delete"
+                          alternative-text="Delete workspace"
+                          title="Delete this workspace permanently"
+                          variant="bare-destructive"
+                          size="small"
+                          data-path={selectedWorkspace.path}
+                          onclick={handleDeleteWorkspace}
+                        ></lightning-button-icon>
+                      </div>
                     </div>
-                    <div class="slds-media__body">
-                      <template if:true={selectedWorkspace.description}>
-                        <p class="slds-text-body_small slds-text-color_weak slds-m-bottom_x-small">{selectedWorkspace.description}</p>
-                      </template>
-                      <p class="slds-text-body_small slds-text-color_weak">
-                        <strong>Path:</strong> {selectedWorkspace.path}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div class="slds-m-top_medium slds-m-bottom_medium slds-p-bottom_small">
-                    <div class="slds-grid slds-grid_align-spread slds-m-bottom_x-small">
-                      <h5 class="slds-text-heading_x-small">Configuration Summary</h5>
-                      <lightning-button
-                        variant="neutral"
-                        label="Open export.json"
-                        icon-name="utility:open"
-                        icon-position="left"
-                        onclick={handleConfigureWorkspace}
-                        title="Open export.json in editor"
-                      ></lightning-button>
-                    </div>
-                    <div class="slds-box slds-box_x-small slds-theme_shade slds-m-bottom_medium">
-                      <dl class="slds-list_horizontal slds-wrap">
-                        <dt class="slds-item_label slds-text-color_weak slds-truncate" title="Workspace Name">Workspace Name:</dt>
-                        <dd class="slds-item_detail slds-truncate" title={selectedWorkspace.name}>{selectedWorkspace.name}</dd>
-                        <template if:true={selectedWorkspace.description}>
-                          <dt class="slds-item_label slds-text-color_weak slds-truncate" title="Description">Description:</dt>
-                          <dd class="slds-item_detail slds-truncate" title={selectedWorkspace.description}>{selectedWorkspace.description}</dd>
-                        </template>
-                        <dt class="slds-item_label slds-text-color_weak slds-truncate" title="Objects">Objects:</dt>
-                        <dd class="slds-item_detail slds-truncate">{selectedWorkspace.objectsCount}</dd>
-                      </dl>
-                      <template if:true={selectedWorkspace.objects}>
-                        <div class="slds-m-top_small">
-                          <template for:each={selectedWorkspace.objects} for:item="obj" for:index="index">
-                            <div key={obj.query} class="slds-box slds-box_x-small slds-m-bottom_x-small slds-border_bottom">
-                              <div class="slds-grid slds-grid_align-spread slds-m-bottom_x-small">
-                                <div>
-                                  <span class="slds-badge slds-badge_inverse slds-m-right_x-small">{obj.operation}</span>
-                                  <span class="slds-text-body_small slds-text-color_weak">{obj.objectName}</span>
-                                </div>
-                              </div>
-                              <p class="slds-text-body_small slds-text-color_weak slds-truncate slds-m-bottom_x-small" title={obj.query}>{obj.query}</p>
-                              <div class="slds-grid slds-wrap slds-gutters_x-small">
-                                <template if:true={obj.externalId}>
-                                  <div class="slds-size_auto">
-                                    <span class="slds-text-body_xx-small slds-badge">External Id: {obj.externalId}</span>
-                                  </div>
-                                </template>
-                                <template if:true={obj.deleteOldData}>
-                                  <div class="slds-size_auto">
-                                    <span class="slds-text-body_xx-small slds-badge slds-badge_success">deleteOldData</span>
-                                  </div>
-                                </template>
-                                <template if:true={obj.useQueryAll}>
-                                  <div class="slds-size_auto">
-                                    <span class="slds-text-body_xx-small slds-badge slds-badge_success">useQueryAll</span>
-                                  </div>
-                                </template>
-                                <template if:true={obj.updateWithMockData}>
-                                  <div class="slds-size_auto">
-                                    <span class="slds-text-body_xx-small slds-badge slds-badge_success">Mock Data</span>
-                                  </div>
-                                </template>
-                                <template if:true={obj.hasMockFields}>
-                                  <div class="slds-size_auto">
-                                    <span class="slds-text-body_xx-small slds-badge">{obj.mockFieldsCount} field(s)</span>
-                                  </div>
-                                </template>
-                                <template if:true={obj.batchSize}>
-                                  <div class="slds-size_auto">
-                                    <span class="slds-text-body_xx-small slds-badge">Batch: {obj.batchSize}</span>
-                                  </div>
-                                </template>
-                              </div>
-                            </div>
-                          </template>
+                    <div class="properties-grid">
+                      <div class="property-item">
+                        <span class="property-label">Folder</span>
+                        <span class="property-value">{selectedWorkspace.name}</span>
+                      </div>
+                      <template if:true={selectedWorkspaceHasDescription}>
+                        <div class="property-item property-item_full">
+                          <span class="property-label">Description</span>
+                          <span class="property-value">{selectedWorkspace.description}</span>
                         </div>
                       </template>
                     </div>
                   </div>
 
-                  <div class="slds-m-bottom_medium">
-                    <div class="slds-grid slds-grid_align-spread slds-m-bottom_x-small">
-                      <h5 class="slds-text-heading_x-small">Exported Files</h5>
+                  <!-- Section: Objects -->
+                  <div class="detail-section">
+                    <div class="section-header">
+                      <div class="section-header-left">
+                        <lightning-icon icon-name="utility:sobject" size="xx-small" class="slds-m-right_x-small"></lightning-icon>
+                        <h3 class="slds-text-title_caps">Objects ({selectedWorkspace.objectsCount})</h3>
+                      </div>
                       <lightning-button
                         variant="neutral"
-                        label="Refresh"
-                        icon-name="utility:refresh"
-                        icon-position="left"
-                        title="Refresh exported files"
-                        onclick={handleRefreshExportedFiles}
-                        class="slds-m-left_small"
+                        label="Add Object"
+                        icon-name="utility:add"
+                        onclick={handleAddObject}
+                        title="Add a new object configuration"
                       ></lightning-button>
+                    </div>
+                    <template if:true={hasSelectedWorkspaceObjects}>
+                      <div class="objects-grid">
+                        <template for:each={selectedWorkspaceObjectsForDisplay} for:item="obj">
+                          <div key={obj.displayIndex} class="object-card">
+                            <div class="object-card-header">
+                              <div class="object-card-title">
+                                <span class="slds-badge slds-badge_inverse object-operation-badge">{obj.operation}</span>
+                                <span class="object-name">{obj.objectName}</span>
+                              </div>
+                              <div class="object-actions">
+                                <lightning-button-icon
+                                  icon-name="utility:edit"
+                                  alternative-text="Edit object"
+                                  title="Edit object"
+                                  size="small"
+                                  data-index={obj.index}
+                                  onclick={handleEditObject}
+                                ></lightning-button-icon>
+                                <lightning-button-icon
+                                  icon-name="utility:delete"
+                                  alternative-text="Delete object"
+                                  title="Delete object"
+                                  size="small"
+                                  variant="bare-destructive"
+                                  data-index={obj.index}
+                                  onclick={handleDeleteObject}
+                                ></lightning-button-icon>
+                              </div>
+                            </div>
+                            <p class="object-query" title={obj.query}>{obj.query}</p>
+                            <div class="object-badges">
+                              <template if:true={obj.externalId}>
+                                <span class="slds-badge object-badge">External Id: {obj.externalId}</span>
+                              </template>
+                              <template if:true={obj.deleteOldData}>
+                                <span class="slds-badge slds-badge_success object-badge" title="Records not present in the CSV/data set will be deleted in target org.">Delete Old Data</span>
+                              </template>
+                              <template if:true={obj.useQueryAll}>
+                                <span class="slds-badge slds-badge_success object-badge" title="Include deleted and archived records">Use Query All</span>
+                              </template>
+                              <template if:true={obj.allOrNone}>
+                                <span class="slds-badge slds-badge_success object-badge" title="Rollback all updates if they are not all successful">All Or None</span>
+                              </template>
+                              <template if:true={obj.updateWithMockData}>
+                                <span class="slds-badge slds-badge_success object-badge" title="Selected fields values will be replaced by random values during upload or download">Mock Data</span>
+                              </template>
+                              <template if:true={obj.hasMockFields}>
+                                <span class="slds-badge object-badge">{obj.mockFieldsCount} mock field(s)</span>
+                              </template>
+                              <template if:true={obj.batchSize}>
+                                <span class="slds-badge object-badge">Batch: {obj.batchSize}</span>
+                              </template>
+                            </div>
+                          </div>
+                        </template>
+                      </div>
+                    </template>
+                    <template if:false={hasSelectedWorkspaceObjects}>
+                      <div class="empty-section-message">
+                        <lightning-icon icon-name="utility:info" size="x-small" class="slds-m-right_x-small"></lightning-icon>
+                        <span>No objects configured yet. Click "Add Object" to add your first object.</span>
+                      </div>
+                    </template>
+                  </div>
+
+                  <!-- Section: Exported Files -->
+                  <div class="detail-section">
+                    <div class="section-header">
+                      <div class="section-header-left">
+                        <lightning-icon icon-name="utility:file" size="xx-small" class="slds-m-right_x-small"></lightning-icon>
+                        <h3 class="slds-text-title_caps">Exported Files</h3>
+                      </div>
+                      <lightning-button-icon
+                        icon-name="utility:refresh"
+                        alternative-text="Refresh exported files"
+                        title="Refresh exported files"
+                        size="small"
+                        onclick={handleRefreshExportedFiles}
+                      ></lightning-button-icon>
                     </div>
                     <template if:true={hasExportedFiles}>
                       <lightning-datatable
@@ -316,9 +325,10 @@
                       ></lightning-datatable>
                     </template>
                     <template if:false={hasExportedFiles}>
-                      <p class="slds-text-body_small slds-text-color_weak">
-                        No exported files found yet. Run an export to generate CSV files for this workspace.
-                      </p>
+                      <div class="empty-section-message">
+                        <lightning-icon icon-name="utility:info" size="x-small" class="slds-m-right_x-small"></lightning-icon>
+                        <span>No exported files yet. Run an export to generate CSV files.</span>
+                      </div>
                     </template>
                   </div>
                 </lightning-card>
@@ -341,17 +351,18 @@
     </template>
   </div>
 
-  <template if:true={showCreateWorkspace}>
+  <!-- Properties Modal (Create / Edit Workspace Properties) -->
+  <template if:true={showPropertiesModal}>
     <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
       <div class="slds-modal__container">
         <header class="slds-modal__header">
-          <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick={handleCancel}>
+          <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick={handleCancelProperties}>
             <lightning-icon icon-name="utility:close" alternative-text="close" size="small"></lightning-icon>
             <span class="slds-assistive-text">Close</span>
           </button>
-          <h2 id="modal-heading-01" class="slds-modal__title slds-hyphenate">{modalTitle}</h2>
+          <h2 class="slds-modal__title slds-hyphenate">{propertiesModalTitle}</h2>
         </header>
-        <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+        <div class="slds-modal__content slds-p-around_medium" id="modal-content-properties">
           <div class="slds-form-element slds-m-bottom_medium">
             <label class="slds-form-element__label" for="workspace-name">
               <abbr class="slds-required" title="required">* </abbr>Workspace Name
@@ -363,8 +374,8 @@
                 type="text"
                 name="workspace-name"
                 placeholder="e.g., AccountsData"
-                value={newWorkspace.name}
-                onchange={handleNameChange}
+                value={workspaceProperties.name}
+                onchange={handlePropertiesNameChange}
                 required
               ></lightning-input>
             </div>
@@ -381,8 +392,8 @@
                 type="text"
                 name="workspace-label"
                 placeholder="e.g., Accounts Upsert"
-                value={newWorkspace.label}
-                onchange={handleLabelChange}
+                value={workspaceProperties.label}
+                onchange={handlePropertiesLabelChange}
                 required
               ></lightning-input>
             </div>
@@ -398,310 +409,305 @@
                 variant="label-hidden"
                 name="workspace-description"
                 placeholder="Describe what this workspace is used for..."
-                value={newWorkspace.description}
-                onchange={handleDescriptionChange}
+                value={workspaceProperties.description}
+                onchange={handlePropertiesDescriptionChange}
               ></lightning-textarea>
             </div>
           </div>
+        </div>
+        <footer class="slds-modal__footer">
+          <lightning-button
+            variant="neutral"
+            label="Cancel"
+            onclick={handleCancelProperties}
+          ></lightning-button>
+          <lightning-button
+            variant="brand"
+            label={savePropertiesButtonLabel}
+            disabled={savePropertiesButtonDisabled}
+            onclick={handleSaveProperties}
+          ></lightning-button>
+        </footer>
+      </div>
+    </section>
+    <div class="slds-backdrop slds-backdrop_open"></div>
+  </template>
 
-          <div class="slds-m-bottom_small slds-grid slds-grid_align-spread slds-grid_vertical-align-center">
-            <h3 class="slds-text-heading_small">Objects</h3>
-            <lightning-button
-              variant="neutral"
-              label="Add Object"
-              icon-name="utility:add"
-              onclick={addObjectConfig}
-            ></lightning-button>
+  <!-- Object Editor Modal (Add / Edit Single Object) -->
+  <template if:true={showObjectModal}>
+    <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+      <div class="slds-modal__container">
+        <header class="slds-modal__header">
+          <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick={handleCancelObject}>
+            <lightning-icon icon-name="utility:close" alternative-text="close" size="small"></lightning-icon>
+            <span class="slds-assistive-text">Close</span>
+          </button>
+          <h2 class="slds-modal__title slds-hyphenate">{objectModalTitle}</h2>
+        </header>
+        <div class="slds-modal__content slds-p-around_medium" id="modal-content-object">
+          <div class={objectSoqlFormElementClass}>
+            <label class="slds-form-element__label">
+              <abbr class="slds-required" title="required">* </abbr>SOQL Query
+              <s-multiline-helptext content="SOQL query defining records for this object. Ensure required External Id is included when using Upsert."></s-multiline-helptext>
+            </label>
+            <div class="slds-form-element__control">
+              <lightning-textarea
+                variant="label-hidden"
+                name="soql-query"
+                placeholder="SELECT Id, Name FROM Account"
+                data-field="query"
+                value={editingObject.query}
+                onchange={handleObjFieldChange}
+                required
+              ></lightning-textarea>
+              <template if:true={objectHasSoqlError}>
+                <div class="slds-form-element__help" role="alert">{objectSoqlError}</div>
+              </template>
+            </div>
           </div>
 
-          <template for:each={objectsWithDisplayIndex} for:item="obj" for:index="index">
-            <div key={obj.displayIndex} class="slds-box slds-box_x-small slds-m-bottom_small">
-              <div class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center slds-m-bottom_small">
-                <h4 class="slds-text-title_caps">Object {obj.displayIndex}</h4>
-                <template if:true={hasMultipleObjects}>
-                  <lightning-button
-                    variant="destructive-text"
-                    icon-name="utility:delete"
-                    onclick={removeObjectConfig}
-                    data-index={index}
-                    label="Remove"
-                  ></lightning-button>
-                </template>
-              </div>
-
-              <div class={obj.soqlFormElementClass}>
-                <label class="slds-form-element__label" for="soql-query">
-                  <abbr class="slds-required" title="required">* </abbr>SOQL Query
-                  <s-multiline-helptext content="SOQL query defining records for this object. Ensure required External Id is included when using Upsert."></s-multiline-helptext>
+          <div class="slds-grid slds-gutters">
+            <div class="slds-col slds-size_1-of-2">
+              <div class="slds-form-element slds-m-bottom_medium">
+                <label class="slds-form-element__label">
+                  Operation
+                  <s-multiline-helptext content="SFDMU operation for this object (Export/Insert/Update/Upsert/Delete)."></s-multiline-helptext>
                 </label>
                 <div class="slds-form-element__control">
-                  <lightning-textarea
+                  <lightning-combobox
                     variant="label-hidden"
-                    name="soql-query"
-                    placeholder="SELECT Id, Name FROM Account"
-                    data-index={index}
-                    data-field="query"
-                    value={obj.query}
-                    onchange={handleObjectFieldChange}
-                    required
-                  ></lightning-textarea>
-                  <template if:true={obj.soqlHasError}>
-                    <div class="slds-form-element__help" role="alert">{obj.soqlError}</div>
-                  </template>
+                    name="operation"
+                    data-field="operation"
+                    value={editingObject.operation}
+                    options={operationOptions}
+                    onchange={handleObjFieldChange}
+                  ></lightning-combobox>
                 </div>
               </div>
+            </div>
 
-              <div class="slds-grid slds-gutters">
-                <div class="slds-col slds-size_1-of-2">
-                  <div class="slds-form-element slds-m-bottom_medium">
-                    <label class="slds-form-element__label" for="operation">
-                      Operation
-                      <s-multiline-helptext content="SFDMU operation for this object (Export/Insert/Update/Upsert/Delete)."></s-multiline-helptext>
-                    </label>
-                    <div class="slds-form-element__control">
-                      <lightning-combobox
-                        variant="label-hidden"
-                        name="operation"
-                        data-index={index}
-                        data-field="operation"
-                        value={obj.operation}
-                        options={operationOptions}
-                        onchange={handleObjectFieldChange}
-                      ></lightning-combobox>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="slds-col slds-size_1-of-2">
-                  <div class="slds-form-element slds-m-bottom_medium">
-                    <label class="slds-form-element__label" for="external-id">
-                      External Id (for Upsert)
-                      <s-multiline-helptext content="External ID field used for upsert or relationship resolution."></s-multiline-helptext>
-                    </label>
-                    <div class="slds-form-element__control">
-                      <lightning-input
-                        variant="label-hidden"
-                        type="text"
-                        name="external-id"
-                        placeholder="AccountExtId__c"
-                        data-index={index}
-                        data-field="externalId"
-                        value={obj.externalId}
-                        onchange={handleObjectFieldChange}
-                      ></lightning-input>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div class="slds-grid slds-gutters">
-                <div class="slds-col slds-size_1-of-2">
-                  <div class="slds-form-element slds-m-bottom_medium">
-                    <label class="slds-form-element__label" for="batch-size">
-                      Batch Size
-                      <s-multiline-helptext content="Number of records per batch (Bulk/REST). Leave blank to use SFDMU default."></s-multiline-helptext>
-                    </label>
-                    <div class="slds-form-element__control">
-                      <lightning-input
-                        variant="label-hidden"
-                        type="number"
-                        name="batch-size"
-                        min="0"
-                        data-index={index}
-                        value={obj.batchSize}
-                        onchange={handleBatchSizeChange}
-                      ></lightning-input>
-                    </div>
-                  </div>
-                </div>
-                <div class="slds-col slds-size_1-of-2">
-                  <div class="slds-form-element slds-m-bottom_medium">
-                    <label class="slds-form-element__label" for="object-name">
-                      Object
-                      <s-multiline-helptext content="Object name inferred from SOQL query."></s-multiline-helptext>
-                    </label>
-                    <div class="slds-form-element__control">
-                      <lightning-input
-                        variant="label-hidden"
-                        type="text"
-                        name="object-name"
-                        value={obj.objectName}
-                        placeholder={obj.objectName}
-                        disabled
-                      ></lightning-input>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
+            <div class="slds-col slds-size_1-of-2">
               <div class="slds-form-element slds-m-bottom_medium">
-                <div class="slds-grid slds-grid_vertical-align-center">
-                  <div class="slds-no-flex">
-                    <lightning-input
-                      type="toggle"
-                      variant="label-hidden"
-                      name="all-or-none"
-                      aria-label="All or none (rollback on errors)"
-                      message-toggle-active=""
-                      message-toggle-inactive=""
-                      checked={obj.allOrNone}
-                      data-index={index}
-                      data-field="allOrNone"
-                      onchange={handleObjectToggleChange}
-                    ></lightning-input>
-                  </div>
-                  <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
-                    <span class="slds-text-body_regular">All or none (rollback on errors)</span>
-                    <span class="slds-no-flex slds-m-left_xx-small">
-                      <s-multiline-helptext content="If enabled, SFDMU will rollback the batch on errors (allOrNone behaviour)."></s-multiline-helptext>
-                    </span>
-                  </div>
+                <label class="slds-form-element__label">
+                  External Id (for Upsert)
+                  <s-multiline-helptext content="External ID field used for upsert or relationship resolution. Can be a single external ID field (ex: 'ExternalId') or a composite field (Ex: 'Name;FirstName;BirthDate' or 'Article__r.Name;Language__r.Name')"></s-multiline-helptext>
+                </label>
+                <div class="slds-form-element__control">
+                  <lightning-input
+                    variant="label-hidden"
+                    type="text"
+                    name="external-id"
+                    placeholder="AccountExtId__c"
+                    data-field="externalId"
+                    value={editingObject.externalId}
+                    onchange={handleObjFieldChange}
+                  ></lightning-input>
                 </div>
               </div>
+            </div>
+          </div>
 
+          <div class="slds-grid slds-gutters">
+            <div class="slds-col slds-size_1-of-2">
               <div class="slds-form-element slds-m-bottom_medium">
-                <div class="slds-grid slds-grid_vertical-align-center">
-                  <div class="slds-no-flex">
-                    <lightning-input
-                      type="toggle"
-                      variant="label-hidden"
-                      name="delete-old-data"
-                      aria-label="Delete records missing from the dataset"
-                      message-toggle-active=""
-                      message-toggle-inactive=""
-                      checked={obj.deleteOldData}
-                      data-index={index}
-                      data-field="deleteOldData"
-                      onchange={handleObjectToggleChange}
-                    ></lightning-input>
-                  </div>
-                  <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
-                    <span class="slds-text-body_regular">Delete records missing from the dataset</span>
-                    <span class="slds-no-flex slds-m-left_xx-small">
-                      <s-multiline-helptext content="If enabled, records not present in the CSV/data set will be deleted in target org."></s-multiline-helptext>
-                    </span>
-                  </div>
+                <label class="slds-form-element__label">
+                  Batch Size
+                  <s-multiline-helptext content="Number of records per batch (Bulk/REST). Leave blank to use SFDMU default."></s-multiline-helptext>
+                </label>
+                <div class="slds-form-element__control">
+                  <lightning-input
+                    variant="label-hidden"
+                    type="number"
+                    name="batch-size"
+                    min="0"
+                    value={editingObject.batchSize}
+                    onchange={handleObjBatchSizeChange}
+                  ></lightning-input>
                 </div>
               </div>
-
+            </div>
+            <div class="slds-col slds-size_1-of-2">
               <div class="slds-form-element slds-m-bottom_medium">
-                <div class="slds-grid slds-grid_vertical-align-center">
-                  <div class="slds-no-flex">
-                    <lightning-input
-                      type="toggle"
-                      variant="label-hidden"
-                      name="use-query-all"
-                      aria-label="Include archived and deleted records (QueryAll)"
-                      message-toggle-active=""
-                      message-toggle-inactive=""
-                      checked={obj.useQueryAll}
-                      data-index={index}
-                      data-field="useQueryAll"
-                      onchange={handleObjectToggleChange}
-                    ></lightning-input>
-                  </div>
-                  <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
-                    <span class="slds-text-body_regular">Include archived and deleted records (QueryAll)</span>
-                    <span class="slds-no-flex slds-m-left_xx-small">
-                      <s-multiline-helptext content="If enabled, SFDMU uses QueryAll to include archived and soft-deleted records."></s-multiline-helptext>
-                    </span>
-                  </div>
+                <label class="slds-form-element__label">
+                  Object
+                  <s-multiline-helptext content="Object name inferred from SOQL query."></s-multiline-helptext>
+                </label>
+                <div class="slds-form-element__control">
+                  <lightning-input
+                    variant="label-hidden"
+                    type="text"
+                    name="object-name"
+                    value={editingObjectName}
+                    placeholder={editingObjectName}
+                    disabled
+                  ></lightning-input>
                 </div>
               </div>
+            </div>
+          </div>
 
-              <div class="slds-form-element slds-m-bottom_medium">
-                <div class="slds-grid slds-grid_vertical-align-center">
-                  <div class="slds-no-flex">
-                    <lightning-input
-                      type="toggle"
-                      variant="label-hidden"
-                      name="update-with-mock-data"
-                      aria-label="Update with mock data"
-                      message-toggle-active=""
-                      message-toggle-inactive=""
-                      checked={obj.updateWithMockData}
-                      data-index={index}
-                      data-field="updateWithMockData"
-                      onchange={handleObjectToggleChange}
-                    ></lightning-input>
-                  </div>
-                  <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
-                    <span class="slds-text-body_regular">Update with mock data</span>
-                    <span class="slds-no-flex slds-m-left_xx-small">
-                      <s-multiline-helptext content="Enable mock data generation for fields defined below."></s-multiline-helptext>
-                    </span>
-                  </div>
-                </div>
+          <div class="slds-form-element slds-m-bottom_medium">
+            <div class="slds-grid slds-grid_vertical-align-center">
+              <div class="slds-no-flex">
+                <lightning-input
+                  type="toggle"
+                  variant="label-hidden"
+                  name="all-or-none"
+                  aria-label="All or none (rollback on errors)"
+                  message-toggle-active=""
+                  message-toggle-inactive=""
+                  checked={editingObject.allOrNone}
+                  data-field="allOrNone"
+                  onclick={handleObjToggleChange}
+                  onchange={handleObjToggleChange}
+                ></lightning-input>
               </div>
+              <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
+                <span class="slds-text-body_regular">All or none (rollback on errors)</span>
+                <span class="slds-no-flex slds-m-left_xx-small">
+                  <s-multiline-helptext content="If enabled, SFDMU will rollback the batch on errors (allOrNone behaviour)."></s-multiline-helptext>
+                </span>
+              </div>
+            </div>
+          </div>
 
-              <template if:true={obj.showMockFields}>
-                <div class="slds-box slds-box_x-small slds-m-bottom_medium">
-                  <div class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center slds-m-bottom_small">
-                    <h5 class="slds-text-title_caps">Mock fields</h5>
-                    <lightning-button
-                      variant="neutral"
-                      label="Add mock field"
-                      icon-name="utility:add"
-                      onclick={addMockField}
-                      data-index={index}
-                    ></lightning-button>
-                  </div>
-                  <template for:each={obj.mockFields} for:item="mockField" for:index="fieldIndex">
-                    <div key={mockField.displayIndex} class="slds-grid slds-gutters slds-m-bottom_x-small slds-grid_vertical-align-end">
-                      <div class="slds-col slds-size_5-of-12">
-                        <div class="slds-form-element">
-                          <label class="slds-form-element__label" for="mock-field-name">Field</label>
-                          <div class="slds-form-element__control">
-                            <lightning-input
-                              variant="label-hidden"
-                              type="text"
-                              name="mock-field-name"
-                              placeholder="Email__c"
-                              data-index={index}
-                              data-fieldindex={fieldIndex}
-                              data-field="name"
-                              value={mockField.name}
-                              onchange={handleMockFieldChange}
-                            ></lightning-input>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="slds-col slds-size_5-of-12">
-                        <div class="slds-form-element">
-                          <label class="slds-form-element__label" for="mock-field-pattern">Pattern</label>
-                          <div class="slds-form-element__control">
-                            <lightning-combobox
-                              variant="label-hidden"
-                              name="mock-field-pattern"
-                              placeholder="Select pattern"
-                              data-index={index}
-                              data-fieldindex={fieldIndex}
-                              data-field="pattern"
-                              value={mockField.pattern}
-                              options={mockPatternOptions}
-                              onchange={handleMockFieldChange}
-                            ></lightning-combobox>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="slds-col slds-size_2-of-12">
-                        <div class="slds-form-element">
-                          <label class="slds-form-element__label">&nbsp;</label>
-                          <div class="slds-form-element__control">
-                            <lightning-button
-                              variant="destructive-text"
-                              icon-name="utility:delete"
-                              label="Remove"
-                              data-index={index}
-                              data-fieldindex={fieldIndex}
-                              onclick={removeMockField}
-                              disabled={obj.disableMockFieldRemove}
-                            ></lightning-button>
-                          </div>
-                        </div>
+          <div class="slds-form-element slds-m-bottom_medium">
+            <div class="slds-grid slds-grid_vertical-align-center">
+              <div class="slds-no-flex">
+                <lightning-input
+                  type="toggle"
+                  variant="label-hidden"
+                  name="delete-old-data"
+                  aria-label="Delete records missing from the dataset"
+                  message-toggle-active=""
+                  message-toggle-inactive=""
+                  checked={editingObject.deleteOldData}
+                  data-field="deleteOldData"
+                  onclick={handleObjToggleChange}
+                  onchange={handleObjToggleChange}
+                ></lightning-input>
+              </div>
+              <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
+                <span class="slds-text-body_regular">Delete records missing from the dataset</span>
+                <span class="slds-no-flex slds-m-left_xx-small">
+                  <s-multiline-helptext content="If enabled, records not present in the CSV/data set will be deleted in target org."></s-multiline-helptext>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="slds-form-element slds-m-bottom_medium">
+            <div class="slds-grid slds-grid_vertical-align-center">
+              <div class="slds-no-flex">
+                <lightning-input
+                  type="toggle"
+                  variant="label-hidden"
+                  name="use-query-all"
+                  aria-label="Include archived and deleted records (QueryAll)"
+                  message-toggle-active=""
+                  message-toggle-inactive=""
+                  checked={editingObject.useQueryAll}
+                  data-field="useQueryAll"
+                  onclick={handleObjToggleChange}
+                  onchange={handleObjToggleChange}
+                ></lightning-input>
+              </div>
+              <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
+                <span class="slds-text-body_regular">Include archived and deleted records in query results (QueryAll)</span>
+                <span class="slds-no-flex slds-m-left_xx-small">
+                  <s-multiline-helptext content="If enabled, SFDMU uses QueryAll to include archived and soft-deleted records."></s-multiline-helptext>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="slds-form-element slds-m-bottom_medium">
+            <div class="slds-grid slds-grid_vertical-align-center">
+              <div class="slds-no-flex">
+                <lightning-input
+                  type="toggle"
+                  variant="label-hidden"
+                  name="update-with-mock-data"
+                  aria-label="Update with mock data"
+                  message-toggle-active=""
+                  message-toggle-inactive=""
+                  checked={editingObject.updateWithMockData}
+                  data-field="updateWithMockData"
+                  onclick={handleObjToggleChange}
+                  onchange={handleObjToggleChange}
+                ></lightning-input>
+              </div>
+              <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
+                <span class="slds-text-body_regular">Update results with mock data</span>
+                <span class="slds-no-flex slds-m-left_xx-small">
+                  <s-multiline-helptext content="Enable mock data generation for fields defined below."></s-multiline-helptext>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <template if:true={editingObjectShowMockFields}>
+            <div class="slds-box slds-box_x-small slds-m-bottom_medium">
+              <div class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center slds-m-bottom_small">
+                <h5 class="slds-text-title_caps">Mock fields</h5>
+                <lightning-button
+                  variant="neutral"
+                  label="Add mock field"
+                  icon-name="utility:add"
+                  onclick={handleAddObjMockField}
+                ></lightning-button>
+              </div>
+              <template for:each={editingObjectMockFieldsWithIndex} for:item="mockField" for:index="fieldIndex">
+                <div key={mockField.displayIndex} class="slds-grid slds-gutters slds-m-bottom_x-small slds-grid_vertical-align-end">
+                  <div class="slds-col slds-size_5-of-12">
+                    <div class="slds-form-element">
+                      <label class="slds-form-element__label">Field</label>
+                      <div class="slds-form-element__control">
+                        <lightning-input
+                          variant="label-hidden"
+                          type="text"
+                          name="mock-field-name"
+                          placeholder="Email__c"
+                          data-fieldindex={fieldIndex}
+                          data-field="name"
+                          value={mockField.name}
+                          onchange={handleObjMockFieldChange}
+                        ></lightning-input>
                       </div>
                     </div>
-                  </template>
+                  </div>
+                  <div class="slds-col slds-size_5-of-12">
+                    <div class="slds-form-element">
+                      <label class="slds-form-element__label">Pattern</label>
+                      <div class="slds-form-element__control">
+                        <lightning-combobox
+                          variant="label-hidden"
+                          name="mock-field-pattern"
+                          placeholder="Select pattern"
+                          data-fieldindex={fieldIndex}
+                          data-field="pattern"
+                          value={mockField.pattern}
+                          options={mockPatternOptions}
+                          onchange={handleObjMockFieldChange}
+                        ></lightning-combobox>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="slds-col slds-size_2-of-12">
+                    <div class="slds-form-element">
+                      <label class="slds-form-element__label">&nbsp;</label>
+                      <div class="slds-form-element__control">
+                        <lightning-button
+                          variant="destructive-text"
+                          icon-name="utility:delete"
+                          label="Remove"
+                          data-fieldindex={fieldIndex}
+                          onclick={handleRemoveObjMockField}
+                          disabled={editingObjectDisableMockFieldRemove}
+                        ></lightning-button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </template>
             </div>
@@ -711,13 +717,13 @@
           <lightning-button
             variant="neutral"
             label="Cancel"
-            onclick={handleCancel}
+            onclick={handleCancelObject}
           ></lightning-button>
           <lightning-button
             variant="brand"
-            label={saveButtonLabel}
-            disabled={saveButtonDisabled}
-            onclick={handleSave}
+            label={saveObjectButtonLabel}
+            disabled={saveObjectButtonDisabled}
+            onclick={handleSaveObject}
           ></lightning-button>
         </footer>
       </div>
