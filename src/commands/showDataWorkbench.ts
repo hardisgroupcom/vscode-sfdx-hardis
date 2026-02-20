@@ -156,7 +156,7 @@ export function registerShowDataWorkbench(commands: Commands) {
             break;
           }
 
-          case "openFolder": {
+          case "openWorkspaceFolder": {
             try {
               if (data.path && fs.existsSync(data.path)) {
                 openFolderInExplorer(data.path);
@@ -212,9 +212,9 @@ async function loadDataWorkspaces(): Promise<DataWorkspace[]> {
             query: obj.query || "",
             operation: obj.operation || "Upsert",
             externalId: obj.externalId || obj.externalid || "",
-            deleteOldData: obj.deleteOldData === true,
-            useQueryAll: obj.useQueryAll === true,
-            allOrNone: obj.allOrNone ?? true,
+            deleteOldData: asBool(obj.deleteOldData),
+            useQueryAll: asBool(obj.useQueryAll),
+            allOrNone: asBool(obj.allOrNone, true),
             batchSize:
               obj.batchSize ??
               obj.bulkApiV1BatchSize ??
@@ -250,10 +250,6 @@ async function loadDataWorkspaces(): Promise<DataWorkspace[]> {
 
 function listExportedFiles(workspacePath: string): ExportedFile[] {
   const allowedExtensions = new Set([".csv", ".zip"]);
-  const maxDepth = 2;
-  const queue: Array<{ dir: string; depth: number }> = [
-    { dir: workspacePath, depth: 0 },
-  ];
   const files: ExportedFile[] = [];
   const entries: fs.Dirent[] = fs.readdirSync(workspacePath, {
     withFileTypes: true,
@@ -410,7 +406,7 @@ async function updateDataWorkspace(data: any): Promise<string> {
 function validateSoqlQueries(objects: SfdmuObjectConfig[]): string[] {
   const list: SfdmuObjectConfig[] = Array.isArray(objects) ? objects : [];
   if (list.length === 0) {
-    return ["At least one object configuration is required."];
+    return [];
   }
 
   const errors: string[] = new Array(list.length).fill("");
@@ -491,15 +487,28 @@ async function deleteDataWorkspace(workspacePath: string): Promise<void> {
   }
 }
 
+function asBool(
+  value: boolean | string | undefined | null,
+  defaultValue = false,
+): boolean {
+  if (value === true || value === "true") {
+    return true;
+  }
+  if (value === false || value === "false") {
+    return false;
+  }
+  return defaultValue;
+}
+
 function normalizeObjectsForSave(objects: SfdmuObjectConfig[]): any[] {
   return (objects || []).map((obj) => {
     const cleanedObj: any = { ...obj };
     cleanedObj.query = obj.query || "";
     cleanedObj.operation = obj.operation || "Upsert";
     cleanedObj.externalId = obj.externalId || obj.externalid || "";
-    cleanedObj.deleteOldData = obj.deleteOldData === true;
-    cleanedObj.useQueryAll = obj.useQueryAll === true;
-    cleanedObj.allOrNone = obj.allOrNone ?? true;
+    cleanedObj.deleteOldData = asBool(obj.deleteOldData);
+    cleanedObj.useQueryAll = asBool(obj.useQueryAll);
+    cleanedObj.allOrNone = asBool(obj.allOrNone, true);
 
     if (
       obj.batchSize !== undefined &&

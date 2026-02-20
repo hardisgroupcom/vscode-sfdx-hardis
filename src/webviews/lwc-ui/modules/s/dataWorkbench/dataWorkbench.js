@@ -30,14 +30,55 @@ function formatBytes(bytes) {
   return `${size.toFixed(size >= 10 ? 0 : 1)} ${units[unitIndex]}`;
 }
 
+function coerceBoolean(value, defaultValue = false) {
+  if (value === true || value === "true" || value === 1 || value === "1") {
+    return true;
+  }
+  if (
+    value === false ||
+    value === "false" ||
+    value === 0 ||
+    value === "0" ||
+    value === ""
+  ) {
+    return false;
+  }
+  return defaultValue;
+}
+
+function createDefaultObject() {
+  return {
+    query: "SELECT Id, Name FROM Account",
+    operation: "Upsert",
+    externalId: "",
+    deleteOldData: false,
+    useQueryAll: false,
+    allOrNone: true,
+    batchSize: null,
+    updateWithMockData: false,
+    mockFields: [],
+    objectName: "Account",
+  };
+}
+
 export default class DataWorkbench extends LightningElement {
   workspaces = [];
   selectedWorkspace = null;
   isLoading = false;
-  showCreateWorkspace = false;
-  editingWorkspace = null;
   pendingSelectedWorkspacePath = null;
   showLargeActions = true;
+
+  // Properties modal state (create / edit workspace properties)
+  showPropertiesModal = false;
+  editingWorkspace = null; // null = create mode, non-null = edit mode
+  @track workspaceProperties = { name: "", label: "", description: "" };
+
+  // Object editor modal state (add / edit single object)
+  showObjectModal = false;
+  editingObjectIndex = -1; // -1 = add new, >= 0 = edit existing
+  @track editingObject = null;
+  objectSoqlError = "";
+
   exportedFilesColumns = [
     {
       label: "File",
@@ -62,28 +103,6 @@ export default class DataWorkbench extends LightningElement {
       cellAttributes: { alignment: "right" },
     },
   ];
-
-  @track soqlErrors = [];
-
-  @track newWorkspace = {
-    name: "",
-    label: "",
-    description: "",
-    objects: [
-      {
-        query: "SELECT Id, Name FROM Account",
-        operation: "Upsert",
-        externalId: "",
-        deleteOldData: false,
-        useQueryAll: false,
-        allOrNone: true,
-        batchSize: null,
-        updateWithMockData: false,
-        mockFields: [],
-        objectName: "Account",
-      },
-    ],
-  };
 
   // jscpd:ignore-start
   connectedCallback() {
@@ -123,33 +142,44 @@ export default class DataWorkbench extends LightningElement {
           this.pendingSelectedWorkspacePath = data.path;
         }
         this.loadWorkspaces();
-        this.showCreateWorkspace = false;
+        this.showPropertiesModal = false;
         this.editingWorkspace = null;
-        this.soqlErrors = [];
         this.isLoading = false;
         break;
-      case "workspaceUpdated":
+      case "workspaceUpdated": {
         const selectedPath = this.selectedWorkspace?.path;
         this.loadWorkspaces();
-        this.showCreateWorkspace = false;
+        this.showPropertiesModal = false;
+        this.showObjectModal = false;
         this.editingWorkspace = null;
+        this.editingObject = null;
+        this.editingObjectIndex = -1;
+        this.objectSoqlError = "";
         if (selectedPath) {
           this.pendingSelectedWorkspacePath = selectedPath;
         }
-        this.soqlErrors = [];
         this.isLoading = false;
         break;
+      }
       case "workspaceCreateFailed":
+        this.isLoading = false;
+        break;
       case "workspaceUpdateFailed":
-        if (data && Array.isArray(data.soqlErrors)) {
-          this.soqlErrors = data.soqlErrors;
+        if (this.showObjectModal && data && Array.isArray(data.soqlErrors)) {
+          const idx =
+            this.editingObjectIndex >= 0
+              ? this.editingObjectIndex
+              : (this.selectedWorkspace?.objects || []).length;
+          this.objectSoqlError = data.soqlErrors[idx] || "";
         }
         this.isLoading = false;
         break;
       case "workspaceDeleted":
         this.loadWorkspaces();
-        this.showCreateWorkspace = false;
+        this.showPropertiesModal = false;
+        this.showObjectModal = false;
         this.editingWorkspace = null;
+        this.editingObject = null;
         this.selectedWorkspace = null;
         this.isLoading = false;
         break;
@@ -187,11 +217,20 @@ export default class DataWorkbench extends LightningElement {
   normalizeWorkspaces(workspacesInput) {
     return (workspacesInput || []).map((ws) => ({
       ...ws,
+      description:
+        typeof ws.description === "string"
+          ? ws.description
+          : typeof ws.sfdxHardisDescription === "string"
+            ? ws.sfdxHardisDescription
+            : "",
       exportedFiles: Array.isArray(ws.exportedFiles) ? ws.exportedFiles : [],
       objects: (ws.objects || []).map((obj) => ({
         ...obj,
         objectName: obj.objectName || inferObjectNameFromQuery(obj.query),
-        updateWithMockData: obj.updateWithMockData === true,
+        deleteOldData: coerceBoolean(obj.deleteOldData),
+        useQueryAll: coerceBoolean(obj.useQueryAll),
+        allOrNone: coerceBoolean(obj.allOrNone, true),
+        updateWithMockData: coerceBoolean(obj.updateWithMockData),
         mockFields: this.normalizeMockFields(obj.mockFields),
       })),
     }));
@@ -238,42 +277,125 @@ export default class DataWorkbench extends LightningElement {
     return isSelected ? `${baseClasses} selected` : baseClasses;
   }
 
-  get isCreateMode() {
-    return this.showCreateWorkspace && !this.editingWorkspace;
+  // --- Properties modal computed ---
+
+  get propertiesModalTitle() {
+    return this.editingWorkspace
+      ? "Edit Workspace Properties"
+      : "Create New Workspace";
   }
 
-  get isEditMode() {
-    return this.showCreateWorkspace && !!this.editingWorkspace;
-  }
-
-  get modalTitle() {
-    return this.isEditMode
-      ? "Edit Data Import/Export Workspace"
-      : "Create New Data Import/Export Workspace";
-  }
-
-  get canSaveWorkspace() {
+  get canSaveProperties() {
     const hasName =
-      this.newWorkspace.name && this.newWorkspace.name.trim().length > 0;
+      this.workspaceProperties.name &&
+      this.workspaceProperties.name.trim().length > 0;
     const hasLabel =
-      this.newWorkspace.label && this.newWorkspace.label.trim().length > 0;
-    const hasObjects =
-      this.newWorkspace.objects &&
-      this.newWorkspace.objects.length > 0 &&
-      this.newWorkspace.objects.every(
-        (obj) => obj.query && obj.query.trim().length > 0,
-      );
-
-    return hasName && hasLabel && hasObjects && !this.hasSoqlErrors;
+      this.workspaceProperties.label &&
+      this.workspaceProperties.label.trim().length > 0;
+    return hasName && hasLabel;
   }
   // jscpd:ignore-end
 
-  get saveButtonDisabled() {
-    return !this.canSaveWorkspace;
+  get savePropertiesButtonDisabled() {
+    return !this.canSaveProperties;
   }
 
-  get saveButtonLabel() {
-    return this.isEditMode ? "Update Workspace" : "Create Workspace";
+  get savePropertiesButtonLabel() {
+    return this.editingWorkspace ? "Update Properties" : "Create Workspace";
+  }
+
+  // --- Object modal computed ---
+
+  get objectModalTitle() {
+    return this.editingObjectIndex >= 0 ? "Edit Object" : "Add Object";
+  }
+
+  get canSaveObject() {
+    return (
+      this.editingObject &&
+      this.editingObject.query &&
+      this.editingObject.query.trim().length > 0 &&
+      !this.objectSoqlError
+    );
+  }
+
+  get saveObjectButtonDisabled() {
+    return !this.canSaveObject;
+  }
+
+  get saveObjectButtonLabel() {
+    return this.editingObjectIndex >= 0 ? "Update Object" : "Add Object";
+  }
+
+  get objectHasSoqlError() {
+    return !!this.objectSoqlError;
+  }
+
+  get objectSoqlFormElementClass() {
+    return this.objectSoqlError
+      ? "slds-form-element slds-has-error slds-m-bottom_medium"
+      : "slds-form-element slds-m-bottom_medium";
+  }
+
+  get editingObjectShowMockFields() {
+    return this.editingObject && this.editingObject.updateWithMockData === true;
+  }
+
+  get editingObjectMockFieldsWithIndex() {
+    if (!this.editingObject) {
+      return [];
+    }
+    return this.normalizeMockFields(this.editingObject.mockFields).map(
+      (f, i) => ({
+        ...f,
+        displayIndex: i + 1,
+      }),
+    );
+  }
+
+  get editingObjectDisableMockFieldRemove() {
+    if (!this.editingObject) {
+      return true;
+    }
+    return this.normalizeMockFields(this.editingObject.mockFields).length <= 1;
+  }
+
+  get editingObjectName() {
+    return this.editingObject ? this.editingObject.objectName : "";
+  }
+
+  get selectedWorkspaceHasDescription() {
+    if (!this.selectedWorkspace) {
+      return false;
+    }
+    if (typeof this.selectedWorkspace.description !== "string") {
+      return false;
+    }
+    return this.selectedWorkspace.description.trim().length > 0;
+  }
+
+  // --- Objects display in main view ---
+
+  get selectedWorkspaceObjectsForDisplay() {
+    if (!this.selectedWorkspace || !this.selectedWorkspace.objects) {
+      return [];
+    }
+    return this.selectedWorkspace.objects.map((obj, idx) => ({
+      ...obj,
+      displayIndex: idx + 1,
+      index: idx,
+      hasMockFields:
+        (this.normalizeMockFields(obj.mockFields) || []).length > 0,
+      mockFieldsCount: (this.normalizeMockFields(obj.mockFields) || []).length,
+    }));
+  }
+
+  get hasSelectedWorkspaceObjects() {
+    return (
+      this.selectedWorkspace &&
+      this.selectedWorkspace.objects &&
+      this.selectedWorkspace.objects.length > 0
+    );
   }
 
   get operationOptions() {
@@ -313,39 +435,6 @@ export default class DataWorkbench extends LightningElement {
     ];
   }
 
-  get objectsWithDisplayIndex() {
-    return (this.newWorkspace.objects || []).map((obj, idx) => ({
-      ...obj,
-      mockFields: this.normalizeMockFields(obj.mockFields).map(
-        (mockField, fieldIndex) => ({
-          ...mockField,
-          displayIndex: fieldIndex + 1,
-        }),
-      ),
-      mockFieldsCount: this.normalizeMockFields(obj.mockFields).length,
-      displayIndex: idx + 1,
-      soqlError: (this.soqlErrors || [])[idx] || "",
-      soqlHasError: !!((this.soqlErrors || [])[idx] || ""),
-      soqlFormElementClass: !!((this.soqlErrors || [])[idx] || "")
-        ? "slds-form-element slds-has-error slds-m-bottom_medium"
-        : "slds-form-element slds-m-bottom_medium",
-      hasMockFields: this.normalizeMockFields(obj.mockFields).length > 0,
-      disableMockFieldRemove:
-        this.normalizeMockFields(obj.mockFields).length <= 1,
-      showMockFields: obj.updateWithMockData === true,
-    }));
-  }
-
-  get hasSoqlErrors() {
-    return (this.newWorkspace.objects || []).some(
-      (_obj, idx) => !!(this.soqlErrors || [])[idx],
-    );
-  }
-
-  get hasMultipleObjects() {
-    return (this.newWorkspace.objects || []).length > 1;
-  }
-
   get hasExportedFiles() {
     const files = this.selectedWorkspace?.exportedFiles || [];
     return files.length > 0;
@@ -362,6 +451,7 @@ export default class DataWorkbench extends LightningElement {
   }
 
   // Event Handlers
+
   // jscpd:ignore-start
   handleWorkspaceSelect(event) {
     const workspacePath = event.currentTarget.dataset.path;
@@ -369,55 +459,260 @@ export default class DataWorkbench extends LightningElement {
     this.selectedWorkspace = workspace;
   }
 
+  // --- Create workspace ---
+
   handleCreateWorkspace() {
-    this.showCreateWorkspace = true;
     this.editingWorkspace = null;
-    this.resetNewWorkspace();
+    this.workspaceProperties = { name: "", label: "", description: "" };
+    this.showPropertiesModal = true;
   }
 
-  handleEditWorkspace(event) {
-    let workspacePath;
+  // --- Edit properties ---
 
-    if (event.detail && event.detail.value === "edit") {
-      workspacePath = this.selectedWorkspace?.path;
-    } else {
-      workspacePath =
-        event.currentTarget?.dataset?.path || this.selectedWorkspace?.path;
-    }
-
-    const workspace = this.workspaces.find((w) => w.path === workspacePath);
-
-    if (workspace) {
-      this.editingWorkspace = workspace;
-      this.newWorkspace = {
-        name: workspace.name,
-        label: workspace.label,
-        description: workspace.description,
-        objects:
-          (workspace.objects || []).map((obj) => ({
-            ...obj,
-            query: obj.query || "",
-            operation: obj.operation || "Upsert",
-            externalId: obj.externalId || "",
-            deleteOldData: obj.deleteOldData === true,
-            useQueryAll: obj.useQueryAll === true,
-            allOrNone: obj.allOrNone ?? true,
-            batchSize: this.normalizeBatchSizeValue(obj.batchSize),
-            updateWithMockData: obj.updateWithMockData === true,
-            mockFields: this.normalizeMockFields(obj.mockFields),
-            objectName: inferObjectNameFromQuery(obj.query),
-          })) || [],
-      };
-      this.showCreateWorkspace = true;
-      this.soqlErrors = new Array(
-        (this.newWorkspace.objects || []).length,
-      ).fill("");
-    }
-
+  handleEditProperties(event) {
     if (event && typeof event.stopPropagation === "function") {
       event.stopPropagation();
     }
+    if (!this.selectedWorkspace) {
+      return;
+    }
+    this.editingWorkspace = this.selectedWorkspace;
+    this.workspaceProperties = {
+      name: this.selectedWorkspace.name,
+      label: this.selectedWorkspace.label,
+      description: this.selectedWorkspace.description || "",
+    };
+    this.showPropertiesModal = true;
   }
+
+  handlePropertiesNameChange(event) {
+    this.workspaceProperties = {
+      ...this.workspaceProperties,
+      name: event.detail?.value ?? event.target.value,
+    };
+  }
+
+  handlePropertiesLabelChange(event) {
+    this.workspaceProperties = {
+      ...this.workspaceProperties,
+      label: event.detail?.value ?? event.target.value,
+    };
+  }
+
+  handlePropertiesDescriptionChange(event) {
+    this.workspaceProperties = {
+      ...this.workspaceProperties,
+      description: event.detail?.value ?? event.target.value,
+    };
+  }
+
+  handleCancelProperties() {
+    this.showPropertiesModal = false;
+    this.editingWorkspace = null;
+  }
+
+  handleSaveProperties() {
+    this.isLoading = true;
+    if (this.editingWorkspace) {
+      const data = {
+        name: this.workspaceProperties.name,
+        label: this.workspaceProperties.label,
+        description: this.workspaceProperties.description,
+        objects: this.editingWorkspace.objects || [],
+        originalPath: this.editingWorkspace.path,
+      };
+      window.sendMessageToVSCode({
+        type: "updateWorkspace",
+        data: JSON.parse(JSON.stringify(data)),
+      });
+    } else {
+      const data = {
+        name: this.workspaceProperties.name,
+        label: this.workspaceProperties.label,
+        description: this.workspaceProperties.description,
+        objects: [],
+      };
+      window.sendMessageToVSCode({
+        type: "createWorkspace",
+        data: JSON.parse(JSON.stringify(data)),
+      });
+    }
+  }
+
+  // --- Add / Edit / Delete object ---
+
+  handleAddObject() {
+    if (!this.selectedWorkspace) {
+      return;
+    }
+    this.editingObjectIndex = -1;
+    this.editingObject = createDefaultObject();
+    this.objectSoqlError = "";
+    this.showObjectModal = true;
+  }
+
+  handleEditObject(event) {
+    if (event && typeof event.stopPropagation === "function") {
+      event.stopPropagation();
+    }
+    const index = Number(event.currentTarget.dataset.index);
+    if (!this.selectedWorkspace || !this.selectedWorkspace.objects[index]) {
+      return;
+    }
+    const obj = this.selectedWorkspace.objects[index];
+    this.editingObjectIndex = index;
+    this.editingObject = {
+      ...obj,
+      query: obj.query || "",
+      operation: obj.operation || "Upsert",
+      externalId: obj.externalId || "",
+      deleteOldData: coerceBoolean(obj.deleteOldData),
+      useQueryAll: coerceBoolean(obj.useQueryAll),
+      allOrNone: coerceBoolean(obj.allOrNone, true),
+      batchSize: this.normalizeBatchSizeValue(obj.batchSize),
+      updateWithMockData: coerceBoolean(obj.updateWithMockData),
+      mockFields: this.normalizeMockFields(obj.mockFields),
+      objectName: inferObjectNameFromQuery(obj.query),
+    };
+    this.objectSoqlError = "";
+    this.showObjectModal = true;
+  }
+
+  handleDeleteObject(event) {
+    if (event && typeof event.stopPropagation === "function") {
+      event.stopPropagation();
+    }
+    const index = Number(event.currentTarget.dataset.index);
+    if (!this.selectedWorkspace || !this.selectedWorkspace.objects[index]) {
+      return;
+    }
+    const objects = [...this.selectedWorkspace.objects];
+    objects.splice(index, 1);
+    this.isLoading = true;
+    const data = {
+      name: this.selectedWorkspace.name,
+      label: this.selectedWorkspace.label,
+      description: this.selectedWorkspace.description,
+      objects: objects,
+      originalPath: this.selectedWorkspace.path,
+    };
+    window.sendMessageToVSCode({
+      type: "updateWorkspace",
+      data: JSON.parse(JSON.stringify(data)),
+    });
+  }
+
+  // --- Object modal field handlers ---
+
+  handleObjFieldChange(event) {
+    const field = event.currentTarget.dataset.field;
+    const value =
+      event.detail?.value ??
+      (event.target.type === "checkbox"
+        ? event.target.checked
+        : event.target.value);
+    this.editingObject = { ...this.editingObject, [field]: value };
+    if (field === "query") {
+      this.editingObject = {
+        ...this.editingObject,
+        objectName: inferObjectNameFromQuery(value),
+      };
+      this.objectSoqlError = "";
+    }
+  }
+
+  handleObjToggleChange(event) {
+    const field =
+      event?.currentTarget?.dataset?.field || event?.target?.dataset?.field;
+    if (!field) {
+      return;
+    }
+    const rawValue =
+      event.detail?.checked ?? event.target?.checked ?? event.detail?.value;
+    const currentValue = this.editingObject ? this.editingObject[field] : false;
+    const defaultValue = field === "allOrNone" ? true : currentValue;
+    const value = coerceBoolean(rawValue, defaultValue);
+    let updated = { ...this.editingObject, [field]: value };
+    if (field === "updateWithMockData" && value === true) {
+      const mockFields = this.normalizeMockFields(updated.mockFields);
+      if (mockFields.length === 0) {
+        updated = { ...updated, mockFields: [{ name: "", pattern: "" }] };
+      }
+    }
+    this.editingObject = updated;
+  }
+
+  handleObjBatchSizeChange(event) {
+    const valueRaw = event.detail?.value ?? event.target.value;
+    const valueNum = this.normalizeBatchSizeValue(valueRaw);
+    this.editingObject = { ...this.editingObject, batchSize: valueNum };
+  }
+
+  handleObjMockFieldChange(event) {
+    const fieldIndex = Number(event.currentTarget.dataset.fieldindex);
+    const field = event.currentTarget.dataset.field;
+    const value = event.detail?.value ?? event.target.value;
+    const mockFields = this.normalizeMockFields(this.editingObject.mockFields);
+    if (!mockFields[fieldIndex]) {
+      return;
+    }
+    mockFields[fieldIndex] = { ...mockFields[fieldIndex], [field]: value };
+    this.editingObject = { ...this.editingObject, mockFields };
+  }
+
+  handleAddObjMockField() {
+    const mockFields = this.normalizeMockFields(this.editingObject.mockFields);
+    mockFields.push({ name: "", pattern: "" });
+    this.editingObject = { ...this.editingObject, mockFields };
+  }
+
+  handleRemoveObjMockField(event) {
+    const fieldIndex = Number(event.currentTarget.dataset.fieldindex);
+    const mockFields = this.normalizeMockFields(this.editingObject.mockFields);
+    if (mockFields.length <= 1) {
+      return;
+    }
+    mockFields.splice(fieldIndex, 1);
+    this.editingObject = { ...this.editingObject, mockFields };
+  }
+
+  handleCancelObject() {
+    this.showObjectModal = false;
+    this.editingObject = null;
+    this.editingObjectIndex = -1;
+    this.objectSoqlError = "";
+  }
+
+  handleSaveObject() {
+    if (!this.selectedWorkspace || !this.editingObject) {
+      return;
+    }
+    this.isLoading = true;
+    const cleanedEditingObject = this.normalizeObjectForSave(
+      this.editingObject,
+    );
+    const objects = [...(this.selectedWorkspace.objects || [])];
+    if (this.editingObjectIndex >= 0) {
+      objects[this.editingObjectIndex] = { ...cleanedEditingObject };
+    } else {
+      objects.push({ ...cleanedEditingObject });
+      // Track index for error handling on validation failure
+      this.editingObjectIndex = objects.length - 1;
+    }
+    const data = {
+      name: this.selectedWorkspace.name,
+      label: this.selectedWorkspace.label,
+      description: this.selectedWorkspace.description,
+      objects: objects,
+      originalPath: this.selectedWorkspace.path,
+    };
+    window.sendMessageToVSCode({
+      type: "updateWorkspace",
+      data: JSON.parse(JSON.stringify(data)),
+    });
+  }
+
+  // --- Workspace actions ---
 
   handleDeleteWorkspace(event) {
     let path;
@@ -448,7 +743,7 @@ export default class DataWorkbench extends LightningElement {
   handleOpenFolder() {
     if (this.selectedWorkspace && this.selectedWorkspace.path) {
       window.sendMessageToVSCode({
-        type: "openFolder",
+        type: "openWorkspaceFolder",
         data: { path: this.selectedWorkspace.path },
       });
     }
@@ -460,127 +755,6 @@ export default class DataWorkbench extends LightningElement {
     }
     this.isLoading = true;
     this.loadWorkspaces();
-  }
-
-  handleCancel() {
-    this.showCreateWorkspace = false;
-    this.editingWorkspace = null;
-    this.resetNewWorkspace();
-  }
-
-  handleSave() {
-    this.isLoading = true;
-    const action = this.isEditMode ? "updateWorkspace" : "createWorkspace";
-    const data = {
-      ...this.newWorkspace,
-      originalPath: this.editingWorkspace?.path,
-    };
-
-    // LWC tracked objects are reactive proxies and can't be structured-cloned
-    // by the webview MessagePort. Convert to a plain JSON object before sending.
-    const safeData = JSON.parse(JSON.stringify(data));
-
-    window.sendMessageToVSCode({
-      type: action,
-      data: safeData,
-    });
-  }
-
-  handleNameChange(event) {
-    this.newWorkspace.name = event.detail?.value ?? event.target.value;
-  }
-
-  handleLabelChange(event) {
-    this.newWorkspace.label = event.detail?.value ?? event.target.value;
-  }
-
-  handleDescriptionChange(event) {
-    this.newWorkspace.description = event.detail?.value ?? event.target.value;
-  }
-
-  handleObjectFieldChange(event) {
-    const index = Number(event.currentTarget.dataset.index);
-    const field = event.currentTarget.dataset.field;
-    const value =
-      event.detail?.value ??
-      (event.target.type === "checkbox"
-        ? event.target.checked
-        : event.target.value);
-    const objects = [...this.newWorkspace.objects];
-    if (!objects[index]) {
-      return;
-    }
-    objects[index] = { ...objects[index], [field]: value };
-    if (field === "query") {
-      objects[index].objectName = inferObjectNameFromQuery(value);
-      const nextErrors = [...(this.soqlErrors || [])];
-      nextErrors[index] = "";
-      this.soqlErrors = nextErrors;
-    }
-    this.newWorkspace.objects = objects;
-  }
-
-  handleObjectToggleChange(event) {
-    const index = Number(event.currentTarget.dataset.index);
-    const field = event.currentTarget.dataset.field;
-    const value = event.detail?.checked ?? event.target.checked;
-    const objects = [...this.newWorkspace.objects];
-    if (!objects[index]) {
-      return;
-    }
-    objects[index] = { ...objects[index], [field]: value };
-    if (field === "updateWithMockData" && value === true) {
-      const mockFields = this.normalizeMockFields(objects[index].mockFields);
-      if (mockFields.length === 0) {
-        objects[index].mockFields = [{ name: "", pattern: "" }];
-      }
-    }
-    // Reassign entire newWorkspace to trigger LWC reactivity
-    this.newWorkspace = { ...this.newWorkspace, objects };
-  }
-  // jscpd:ignore-end
-
-  handleBatchSizeChange(event) {
-    const index = Number(event.currentTarget.dataset.index);
-    const valueRaw = event.detail?.value ?? event.target.value;
-    const valueNum = this.normalizeBatchSizeValue(valueRaw);
-    const objects = [...this.newWorkspace.objects];
-    if (!objects[index]) {
-      return;
-    }
-    objects[index] = { ...objects[index], batchSize: valueNum };
-    this.newWorkspace.objects = objects;
-  }
-
-  addObjectConfig() {
-    const objects = [...(this.newWorkspace.objects || [])];
-    objects.push({
-      query: "SELECT Id FROM Account",
-      operation: "Upsert",
-      externalId: "",
-      deleteOldData: false,
-      useQueryAll: false,
-      allOrNone: true,
-      batchSize: "",
-      updateWithMockData: false,
-      mockFields: [],
-      objectName: "Account",
-    });
-    this.newWorkspace.objects = objects;
-    this.soqlErrors = [...(this.soqlErrors || []), ""];
-  }
-
-  removeObjectConfig(event) {
-    const index = Number(event.currentTarget.dataset.index);
-    if ((this.newWorkspace.objects || []).length <= 1) {
-      return;
-    }
-    const objects = [...this.newWorkspace.objects];
-    objects.splice(index, 1);
-    this.newWorkspace.objects = objects;
-    const nextErrors = [...(this.soqlErrors || [])];
-    nextErrors.splice(index, 1);
-    this.soqlErrors = nextErrors;
   }
 
   handleExportData(event) {
@@ -643,17 +817,6 @@ export default class DataWorkbench extends LightningElement {
     }
   }
 
-  handleOpenExportedFile(event) {
-    const filePath = event?.currentTarget?.dataset?.path;
-    if (!filePath) {
-      return;
-    }
-    window.sendMessageToVSCode({
-      type: "openFile",
-      data: { filePath },
-    });
-  }
-
   handleExportedFileAction(event) {
     const actionName = event?.detail?.action?.name;
     const row = event?.detail?.row;
@@ -664,32 +827,9 @@ export default class DataWorkbench extends LightningElement {
       });
     }
   }
-
   // jscpd:ignore-end
 
-  resetNewWorkspace() {
-    this.newWorkspace = {
-      name: "",
-      label: "",
-      description: "",
-      objects: [
-        {
-          query: "SELECT Id, Name FROM Account",
-          operation: "Upsert",
-          externalId: "",
-          deleteOldData: false,
-          useQueryAll: false,
-          allOrNone: true,
-          batchSize: "",
-          updateWithMockData: false,
-          mockFields: [],
-          objectName: "Account",
-        },
-      ],
-    };
-
-    this.soqlErrors = [""];
-  }
+  // --- Utilities ---
 
   normalizeBatchSizeValue(value) {
     if (value === "" || value === null || value === undefined) {
@@ -697,6 +837,18 @@ export default class DataWorkbench extends LightningElement {
     }
     const numeric = Number(value);
     return Number.isNaN(numeric) ? "" : numeric;
+  }
+
+  normalizeObjectForSave(objectConfig) {
+    return {
+      ...objectConfig,
+      deleteOldData: coerceBoolean(objectConfig?.deleteOldData),
+      useQueryAll: coerceBoolean(objectConfig?.useQueryAll),
+      allOrNone: coerceBoolean(objectConfig?.allOrNone, true),
+      updateWithMockData: coerceBoolean(objectConfig?.updateWithMockData),
+      batchSize: this.normalizeBatchSizeValue(objectConfig?.batchSize),
+      mockFields: this.normalizeMockFields(objectConfig?.mockFields),
+    };
   }
 
   normalizeMockFields(mockFields) {
@@ -709,53 +861,5 @@ export default class DataWorkbench extends LightningElement {
         name: mockField.name || "",
         pattern: mockField.pattern || "",
       }));
-  }
-
-  handleMockFieldChange(event) {
-    const objectIndex = Number(event.currentTarget.dataset.index);
-    const fieldIndex = Number(event.currentTarget.dataset.fieldindex);
-    const field = event.currentTarget.dataset.field;
-    const value = event.detail?.value ?? event.target.value;
-    const objects = [...this.newWorkspace.objects];
-    if (!objects[objectIndex]) {
-      return;
-    }
-    const mockFields = this.normalizeMockFields(
-      objects[objectIndex].mockFields,
-    );
-    if (!mockFields[fieldIndex]) {
-      return;
-    }
-    mockFields[fieldIndex] = { ...mockFields[fieldIndex], [field]: value };
-    objects[objectIndex] = { ...objects[objectIndex], mockFields };
-    this.newWorkspace.objects = objects;
-  }
-
-  addMockField(event) {
-    const index = Number(event.currentTarget.dataset.index);
-    const objects = [...this.newWorkspace.objects];
-    if (!objects[index]) {
-      return;
-    }
-    const mockFields = this.normalizeMockFields(objects[index].mockFields);
-    mockFields.push({ name: "", pattern: "" });
-    objects[index] = { ...objects[index], mockFields };
-    this.newWorkspace.objects = objects;
-  }
-
-  removeMockField(event) {
-    const index = Number(event.currentTarget.dataset.index);
-    const fieldIndex = Number(event.currentTarget.dataset.fieldindex);
-    const objects = [...this.newWorkspace.objects];
-    if (!objects[index]) {
-      return;
-    }
-    const mockFields = this.normalizeMockFields(objects[index].mockFields);
-    if (mockFields.length <= 1) {
-      return;
-    }
-    mockFields.splice(fieldIndex, 1);
-    objects[index] = { ...objects[index], mockFields };
-    this.newWorkspace.objects = objects;
   }
 }
