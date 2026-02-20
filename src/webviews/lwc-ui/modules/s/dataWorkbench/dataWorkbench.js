@@ -595,11 +595,7 @@ export default class DataWorkbench extends LightningElement {
 
   handleObjToggleChange(event) {
     const field = event.currentTarget.dataset.field;
-    // lightning-input toggle may expose the boolean on event.target.checked or event.detail.checked
-    const value =
-      event.target?.checked === true ||
-      event.detail?.checked === true ||
-      event.detail?.value === true;
+    const value = event.detail?.checked ?? event.target.checked;
     let updated = { ...this.editingObject, [field]: value };
     if (field === "updateWithMockData" && value === true) {
       const mockFields = this.normalizeMockFields(updated.mockFields);
