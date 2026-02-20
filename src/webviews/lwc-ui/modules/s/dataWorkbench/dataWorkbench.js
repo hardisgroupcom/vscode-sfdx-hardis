@@ -217,6 +217,12 @@ export default class DataWorkbench extends LightningElement {
   normalizeWorkspaces(workspacesInput) {
     return (workspacesInput || []).map((ws) => ({
       ...ws,
+      description:
+        typeof ws.description === "string"
+          ? ws.description
+          : typeof ws.sfdxHardisDescription === "string"
+            ? ws.sfdxHardisDescription
+            : "",
       exportedFiles: Array.isArray(ws.exportedFiles) ? ws.exportedFiles : [],
       objects: (ws.objects || []).map((obj) => ({
         ...obj,
@@ -356,6 +362,16 @@ export default class DataWorkbench extends LightningElement {
 
   get editingObjectName() {
     return this.editingObject ? this.editingObject.objectName : "";
+  }
+
+  get selectedWorkspaceHasDescription() {
+    if (!this.selectedWorkspace) {
+      return false;
+    }
+    if (typeof this.selectedWorkspace.description !== "string") {
+      return false;
+    }
+    return this.selectedWorkspace.description.trim().length > 0;
   }
 
   // --- Objects display in main view ---

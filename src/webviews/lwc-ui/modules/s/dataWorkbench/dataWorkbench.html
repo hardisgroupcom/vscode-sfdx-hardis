@@ -209,7 +209,7 @@
                         <span class="property-label">Folder</span>
                         <span class="property-value">{selectedWorkspace.name}</span>
                       </div>
-                      <template if:true={selectedWorkspace.description}>
+                      <template if:true={selectedWorkspaceHasDescription}>
                         <div class="property-item property-item_full">
                           <span class="property-label">Description</span>
                           <span class="property-value">{selectedWorkspace.description}</span>
@@ -487,7 +487,7 @@
               <div class="slds-form-element slds-m-bottom_medium">
                 <label class="slds-form-element__label">
                   External Id (for Upsert)
-                  <s-multiline-helptext content="External ID field used for upsert or relationship resolution."></s-multiline-helptext>
+                  <s-multiline-helptext content="External ID field used for upsert or relationship resolution. Can be a single external ID field (ex: 'ExternalId') or a composite field (Ex: 'Name;FirstName;BirthDate' or 'Article__r.Name;Language__r.Name')"></s-multiline-helptext>
                 </label>
                 <div class="slds-form-element__control">
                   <lightning-input
@@ -610,7 +610,7 @@
                 ></lightning-input>
               </div>
               <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
-                <span class="slds-text-body_regular">Include archived and deleted records (QueryAll)</span>
+                <span class="slds-text-body_regular">Include archived and deleted records in query results (QueryAll)</span>
                 <span class="slds-no-flex slds-m-left_xx-small">
                   <s-multiline-helptext content="If enabled, SFDMU uses QueryAll to include archived and soft-deleted records."></s-multiline-helptext>
                 </span>
@@ -635,7 +635,7 @@
                 ></lightning-input>
               </div>
               <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
-                <span class="slds-text-body_regular">Update with mock data</span>
+                <span class="slds-text-body_regular">Update results with mock data</span>
                 <span class="slds-no-flex slds-m-left_xx-small">
                   <s-multiline-helptext content="Enable mock data generation for fields defined below."></s-multiline-helptext>
                 </span>
