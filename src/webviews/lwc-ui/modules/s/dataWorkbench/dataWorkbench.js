@@ -30,6 +30,22 @@ function formatBytes(bytes) {
   return `${size.toFixed(size >= 10 ? 0 : 1)} ${units[unitIndex]}`;
 }
 
+function coerceBoolean(value, defaultValue = false) {
+  if (value === true || value === "true" || value === 1 || value === "1") {
+    return true;
+  }
+  if (
+    value === false ||
+    value === "false" ||
+    value === 0 ||
+    value === "0" ||
+    value === ""
+  ) {
+    return false;
+  }
+  return defaultValue;
+}
+
 function createDefaultObject() {
   return {
     query: "SELECT Id, Name FROM Account",
@@ -205,7 +221,10 @@ export default class DataWorkbench extends LightningElement {
       objects: (ws.objects || []).map((obj) => ({
         ...obj,
         objectName: obj.objectName || inferObjectNameFromQuery(obj.query),
-        updateWithMockData: obj.updateWithMockData === true,
+        deleteOldData: coerceBoolean(obj.deleteOldData),
+        useQueryAll: coerceBoolean(obj.useQueryAll),
+        allOrNone: coerceBoolean(obj.allOrNone, true),
+        updateWithMockData: coerceBoolean(obj.updateWithMockData),
         mockFields: this.normalizeMockFields(obj.mockFields),
       })),
     }));
@@ -535,11 +554,11 @@ export default class DataWorkbench extends LightningElement {
       query: obj.query || "",
       operation: obj.operation || "Upsert",
       externalId: obj.externalId || "",
-      deleteOldData: obj.deleteOldData === true,
-      useQueryAll: obj.useQueryAll === true,
-      allOrNone: obj.allOrNone ?? true,
+      deleteOldData: coerceBoolean(obj.deleteOldData),
+      useQueryAll: coerceBoolean(obj.useQueryAll),
+      allOrNone: coerceBoolean(obj.allOrNone, true),
       batchSize: this.normalizeBatchSizeValue(obj.batchSize),
-      updateWithMockData: obj.updateWithMockData === true,
+      updateWithMockData: coerceBoolean(obj.updateWithMockData),
       mockFields: this.normalizeMockFields(obj.mockFields),
       objectName: inferObjectNameFromQuery(obj.query),
     };
@@ -594,8 +613,16 @@ export default class DataWorkbench extends LightningElement {
   }
 
   handleObjToggleChange(event) {
-    const field = event.currentTarget.dataset.field;
-    const value = event.detail?.checked ?? event.target.checked;
+    const field =
+      event?.currentTarget?.dataset?.field || event?.target?.dataset?.field;
+    if (!field) {
+      return;
+    }
+    const rawValue =
+      event.detail?.checked ?? event.target?.checked ?? event.detail?.value;
+    const currentValue = this.editingObject ? this.editingObject[field] : false;
+    const defaultValue = field === "allOrNone" ? true : currentValue;
+    const value = coerceBoolean(rawValue, defaultValue);
     let updated = { ...this.editingObject, [field]: value };
     if (field === "updateWithMockData" && value === true) {
       const mockFields = this.normalizeMockFields(updated.mockFields);
@@ -652,12 +679,13 @@ export default class DataWorkbench extends LightningElement {
       return;
     }
     this.isLoading = true;
+    const cleanedEditingObject = this.normalizeObjectForSave(this.editingObject);
     const objects = [...(this.selectedWorkspace.objects || [])];
     if (this.editingObjectIndex >= 0) {
-      objects[this.editingObjectIndex] = { ...this.editingObject };
+      objects[this.editingObjectIndex] = { ...cleanedEditingObject };
     }
     else {
-      objects.push({ ...this.editingObject });
+      objects.push({ ...cleanedEditingObject });
       // Track index for error handling on validation failure
       this.editingObjectIndex = objects.length - 1;
     }
@@ -803,6 +831,18 @@ export default class DataWorkbench extends LightningElement {
     }
     const numeric = Number(value);
     return Number.isNaN(numeric) ? "" : numeric;
+  }
+
+  normalizeObjectForSave(objectConfig) {
+    return {
+      ...objectConfig,
+      deleteOldData: coerceBoolean(objectConfig?.deleteOldData),
+      useQueryAll: coerceBoolean(objectConfig?.useQueryAll),
+      allOrNone: coerceBoolean(objectConfig?.allOrNone, true),
+      updateWithMockData: coerceBoolean(objectConfig?.updateWithMockData),
+      batchSize: this.normalizeBatchSizeValue(objectConfig?.batchSize),
+      mockFields: this.normalizeMockFields(objectConfig?.mockFields),
+    };
   }
 
   normalizeMockFields(mockFields) {

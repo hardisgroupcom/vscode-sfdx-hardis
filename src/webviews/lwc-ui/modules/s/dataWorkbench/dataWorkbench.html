@@ -555,6 +555,7 @@
                   message-toggle-inactive=""
                   checked={editingObject.allOrNone}
                   data-field="allOrNone"
+                  onclick={handleObjToggleChange}
                   onchange={handleObjToggleChange}
                 ></lightning-input>
               </div>
@@ -579,6 +580,7 @@
                   message-toggle-inactive=""
                   checked={editingObject.deleteOldData}
                   data-field="deleteOldData"
+                  onclick={handleObjToggleChange}
                   onchange={handleObjToggleChange}
                 ></lightning-input>
               </div>
@@ -603,6 +605,7 @@
                   message-toggle-inactive=""
                   checked={editingObject.useQueryAll}
                   data-field="useQueryAll"
+                  onclick={handleObjToggleChange}
                   onchange={handleObjToggleChange}
                 ></lightning-input>
               </div>
@@ -627,6 +630,7 @@
                   message-toggle-inactive=""
                   checked={editingObject.updateWithMockData}
                   data-field="updateWithMockData"
+                  onclick={handleObjToggleChange}
                   onchange={handleObjToggleChange}
                 ></lightning-input>
               </div>
