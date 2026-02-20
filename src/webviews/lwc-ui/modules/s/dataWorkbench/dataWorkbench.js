@@ -525,8 +525,7 @@ export default class DataWorkbench extends LightningElement {
         type: "updateWorkspace",
         data: JSON.parse(JSON.stringify(data)),
       });
-    }
-    else {
+    } else {
       const data = {
         name: this.workspaceProperties.name,
         label: this.workspaceProperties.label,
@@ -557,10 +556,7 @@ export default class DataWorkbench extends LightningElement {
       event.stopPropagation();
     }
     const index = Number(event.currentTarget.dataset.index);
-    if (
-      !this.selectedWorkspace ||
-      !this.selectedWorkspace.objects[index]
-    ) {
+    if (!this.selectedWorkspace || !this.selectedWorkspace.objects[index]) {
       return;
     }
     const obj = this.selectedWorkspace.objects[index];
@@ -587,10 +583,7 @@ export default class DataWorkbench extends LightningElement {
       event.stopPropagation();
     }
     const index = Number(event.currentTarget.dataset.index);
-    if (
-      !this.selectedWorkspace ||
-      !this.selectedWorkspace.objects[index]
-    ) {
+    if (!this.selectedWorkspace || !this.selectedWorkspace.objects[index]) {
       return;
     }
     const objects = [...this.selectedWorkspace.objects];
@@ -695,12 +688,13 @@ export default class DataWorkbench extends LightningElement {
       return;
     }
     this.isLoading = true;
-    const cleanedEditingObject = this.normalizeObjectForSave(this.editingObject);
+    const cleanedEditingObject = this.normalizeObjectForSave(
+      this.editingObject,
+    );
     const objects = [...(this.selectedWorkspace.objects || [])];
     if (this.editingObjectIndex >= 0) {
       objects[this.editingObjectIndex] = { ...cleanedEditingObject };
-    }
-    else {
+    } else {
       objects.push({ ...cleanedEditingObject });
       // Track index for error handling on validation failure
       this.editingObjectIndex = objects.length - 1;
@@ -725,8 +719,7 @@ export default class DataWorkbench extends LightningElement {
 
     if (event.detail && event.detail.value === "deleteWorkspace") {
       path = this.selectedWorkspace?.path;
-    }
-    else {
+    } else {
       const pathFromDataset = event?.currentTarget?.dataset?.path;
       path =
         (this.selectedWorkspace && this.selectedWorkspace.path) ||
@@ -767,8 +760,7 @@ export default class DataWorkbench extends LightningElement {
   handleExportData(event) {
     if (event && event.detail && event.detail.value === "export") {
       // menu click
-    }
-    else if (event && typeof event.stopPropagation === "function") {
+    } else if (event && typeof event.stopPropagation === "function") {
       event.stopPropagation();
     }
 
@@ -785,8 +777,7 @@ export default class DataWorkbench extends LightningElement {
   handleImportData(event) {
     if (event && event.detail && event.detail.value === "import") {
       // menu click
-    }
-    else if (event && typeof event.stopPropagation === "function") {
+    } else if (event && typeof event.stopPropagation === "function") {
       event.stopPropagation();
     }
 
@@ -803,8 +794,7 @@ export default class DataWorkbench extends LightningElement {
   handleDeleteData(event) {
     if (event && event.detail && event.detail.value === "deleteData") {
       // menu click
-    }
-    else if (event && typeof event.stopPropagation === "function") {
+    } else if (event && typeof event.stopPropagation === "function") {
       event.stopPropagation();
     }
 
