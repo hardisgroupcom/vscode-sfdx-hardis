@@ -600,12 +600,10 @@ function normalizeObjectsForSave(objects: SfdmuObjectConfig[]): any[] {
         const num = Number(cleanedObj[field]);
         if (!isNaN(num)) {
           cleanedObj[field] = num;
-        }
-        else {
+        } else {
           delete cleanedObj[field];
         }
-      }
-      else {
+      } else {
         delete cleanedObj[field];
       }
     }
@@ -632,10 +630,7 @@ function normalizeObjectsForSave(objects: SfdmuObjectConfig[]): any[] {
     }
 
     // Clean up empty array fields
-    const optionalArrayFields = [
-      "excludedFields",
-      "excludedFromUpdateFields",
-    ];
+    const optionalArrayFields = ["excludedFields", "excludedFromUpdateFields"];
     for (const field of optionalArrayFields) {
       if (Array.isArray(cleanedObj[field])) {
         cleanedObj[field] = cleanedObj[field].filter(

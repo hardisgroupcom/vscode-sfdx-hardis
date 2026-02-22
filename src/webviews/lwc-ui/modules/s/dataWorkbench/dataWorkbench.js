@@ -541,8 +541,7 @@ export default class DataWorkbench extends LightningElement {
         type: "updateWorkspace",
         data: JSON.parse(JSON.stringify(data)),
       });
-    }
-    else {
+    } else {
       const data = {
         name: this.workspaceProperties.name,
         label: this.workspaceProperties.label,
@@ -664,8 +663,7 @@ export default class DataWorkbench extends LightningElement {
   }
 
   handleObjBatchSizeChange(event) {
-    const field =
-      event.currentTarget.dataset.field || "bulkApiV1BatchSize";
+    const field = event.currentTarget.dataset.field || "bulkApiV1BatchSize";
     const valueRaw = event.detail?.value ?? event.target.value;
     const valueNum = this.normalizeBatchSizeValue(valueRaw);
     this.editingObject = { ...this.editingObject, [field]: valueNum };
@@ -675,7 +673,9 @@ export default class DataWorkbench extends LightningElement {
     const fieldIndex = Number(event.currentTarget.dataset.fieldindex);
     const field = event.currentTarget.dataset.field;
     const value = event.detail?.value ?? event.target.value;
-    const mockFields = [...this.normalizeMockFields(this.editingObject.mockFields)];
+    const mockFields = [
+      ...this.normalizeMockFields(this.editingObject.mockFields),
+    ];
     if (!mockFields[fieldIndex]) {
       return;
     }
@@ -684,14 +684,18 @@ export default class DataWorkbench extends LightningElement {
   }
 
   handleAddObjMockField() {
-    const mockFields = [...this.normalizeMockFields(this.editingObject.mockFields)];
+    const mockFields = [
+      ...this.normalizeMockFields(this.editingObject.mockFields),
+    ];
     mockFields.push({ name: "", pattern: "" });
     this.editingObject = { ...this.editingObject, mockFields };
   }
 
   handleRemoveObjMockField(event) {
     const fieldIndex = Number(event.currentTarget.dataset.fieldindex);
-    const mockFields = [...this.normalizeMockFields(this.editingObject.mockFields)];
+    const mockFields = [
+      ...this.normalizeMockFields(this.editingObject.mockFields),
+    ];
     if (mockFields.length <= 1) {
       return;
     }
@@ -989,7 +993,9 @@ export default class DataWorkbench extends LightningElement {
   }
 
   get _ss() {
-    return (this.selectedWorkspace && this.selectedWorkspace.scriptSettings) || {};
+    return (
+      (this.selectedWorkspace && this.selectedWorkspace.scriptSettings) || {}
+    );
   }
 
   get ssHasApiVersion() {
@@ -1025,7 +1031,9 @@ export default class DataWorkbench extends LightningElement {
   }
 
   get ssHasConcurrencyMode() {
-    return !!this._ss.concurrencyMode && this._ss.concurrencyMode !== "Parallel";
+    return (
+      !!this._ss.concurrencyMode && this._ss.concurrencyMode !== "Parallel"
+    );
   }
 
   get ssConcurrencyMode() {
@@ -1041,7 +1049,10 @@ export default class DataWorkbench extends LightningElement {
   }
 
   get ssHasQueryBulkApiThreshold() {
-    return this._ss.queryBulkApiThreshold != null && this._ss.queryBulkApiThreshold !== "";
+    return (
+      this._ss.queryBulkApiThreshold != null &&
+      this._ss.queryBulkApiThreshold !== ""
+    );
   }
 
   get ssQueryBulkApiThreshold() {
@@ -1049,7 +1060,9 @@ export default class DataWorkbench extends LightningElement {
   }
 
   get ssHasBulkApiV1BatchSize() {
-    return this._ss.bulkApiV1BatchSize != null && this._ss.bulkApiV1BatchSize !== "";
+    return (
+      this._ss.bulkApiV1BatchSize != null && this._ss.bulkApiV1BatchSize !== ""
+    );
   }
 
   get ssBulkApiV1BatchSize() {
@@ -1057,7 +1070,9 @@ export default class DataWorkbench extends LightningElement {
   }
 
   get ssHasRestApiBatchSize() {
-    return this._ss.restApiBatchSize != null && this._ss.restApiBatchSize !== "";
+    return (
+      this._ss.restApiBatchSize != null && this._ss.restApiBatchSize !== ""
+    );
   }
 
   get ssRestApiBatchSize() {
@@ -1069,7 +1084,11 @@ export default class DataWorkbench extends LightningElement {
   }
 
   get ssHasParallelBulkJobs() {
-    return this._ss.parallelBulkJobs != null && this._ss.parallelBulkJobs !== "" && this._ss.parallelBulkJobs > 1;
+    return (
+      this._ss.parallelBulkJobs != null &&
+      this._ss.parallelBulkJobs !== "" &&
+      this._ss.parallelBulkJobs > 1
+    );
   }
 
   get ssParallelBulkJobs() {
@@ -1077,7 +1096,11 @@ export default class DataWorkbench extends LightningElement {
   }
 
   get ssHasParallelRestJobs() {
-    return this._ss.parallelRestJobs != null && this._ss.parallelRestJobs !== "" && this._ss.parallelRestJobs > 1;
+    return (
+      this._ss.parallelRestJobs != null &&
+      this._ss.parallelRestJobs !== "" &&
+      this._ss.parallelRestJobs > 1
+    );
   }
 
   get ssParallelRestJobs() {
@@ -1085,7 +1108,11 @@ export default class DataWorkbench extends LightningElement {
   }
 
   get ssHasParallelBinaryDownloads() {
-    return this._ss.parallelBinaryDownloads != null && this._ss.parallelBinaryDownloads !== "" && this._ss.parallelBinaryDownloads > 1;
+    return (
+      this._ss.parallelBinaryDownloads != null &&
+      this._ss.parallelBinaryDownloads !== "" &&
+      this._ss.parallelBinaryDownloads > 1
+    );
   }
 
   get ssParallelBinaryDownloads() {
@@ -1113,7 +1140,9 @@ export default class DataWorkbench extends LightningElement {
   }
 
   get ssHasBinaryDataCache() {
-    return !!this._ss.binaryDataCache && this._ss.binaryDataCache !== "InMemory";
+    return (
+      !!this._ss.binaryDataCache && this._ss.binaryDataCache !== "InMemory"
+    );
   }
 
   get ssBinaryDataCache() {
@@ -1121,7 +1150,10 @@ export default class DataWorkbench extends LightningElement {
   }
 
   get ssHasSourceRecordsCache() {
-    return !!this._ss.sourceRecordsCache && this._ss.sourceRecordsCache !== "InMemory";
+    return (
+      !!this._ss.sourceRecordsCache &&
+      this._ss.sourceRecordsCache !== "InMemory"
+    );
   }
 
   get ssSourceRecordsCache() {
@@ -1218,8 +1250,7 @@ export default class DataWorkbench extends LightningElement {
       const updated = { ...this.editingScriptSettings };
       delete updated[field];
       this.editingScriptSettings = updated;
-    }
-    else {
+    } else {
       const num = Number(raw);
       this.editingScriptSettings = {
         ...this.editingScriptSettings,
