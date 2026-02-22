@@ -23,6 +23,7 @@ export const sectionDefs = [
       "vsCodeSfdxHardis.theme.menuIconType",
       "vsCodeSfdxHardis.theme.emojisInSections",
       "vsCodeSfdxHardis.disableVsCodeColors",
+      "vsCodeSfdxHardis.colorUpdateLocation",
     ],
   },
   {
@@ -103,11 +104,11 @@ export async function getExtensionConfigSections(
         default: prop.default,
         options: prop.enum
           ? prop.enum.map((v: any, i: number) => ({
-              value: v,
-              label: prop.enumDescriptions
-                ? prop.enumDescriptions[i]
-                : String(v),
-            }))
+            value: v,
+            label: prop.enumDescriptions
+              ? prop.enumDescriptions[i]
+              : String(v),
+          }))
           : undefined,
       };
     }),

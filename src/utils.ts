@@ -529,7 +529,7 @@ export async function getUsernameInstanceUrl(
       fail: false,
       output: false,
       cacheExpiration: 1000 * 60 * 60 * 24, // 1 day (milliseconds)
-      cacheSection: "project",
+      cacheSection: "orgs",
     },
   );
   if (orgInfoResult.result) {
@@ -596,9 +596,9 @@ async function loadFromRemoteConfigFile(url: string) {
   if (remoteConfigResp.status !== 200) {
     throw new Error(
       "[sfdx-hardis] Unable to read remote configuration file at " +
-        url +
-        "\n" +
-        JSON.stringify(remoteConfigResp),
+      url +
+      "\n" +
+      JSON.stringify(remoteConfigResp),
     );
   }
   const remoteConfig = yaml.load(remoteConfigResp.data);

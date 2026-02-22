@@ -187,7 +187,7 @@ export function activate(context: vscode.ExtensionContext) {
         .catch((e) =>
           Logger.log(
             "Error starting Salesforce CLI MCP server on activation: " +
-              e.message,
+            e.message,
           ),
         );
     }
@@ -203,7 +203,10 @@ export function activate(context: vscode.ExtensionContext) {
         manageWebSocketServer();
       }
       // Enable / Disable org colors
-      if (event.affectsConfiguration("vsCodeSfdxHardis.disableVsCodeColors")) {
+      if (
+        event.affectsConfiguration("vsCodeSfdxHardis.disableVsCodeColors") ||
+        event.affectsConfiguration("vsCodeSfdxHardis.colorUpdateLocation")
+      ) {
         hardisColors.init();
       }
       // Enable / Disable start MCP Server at startup
