@@ -988,6 +988,158 @@ export default class DataWorkbench extends LightningElement {
     return `${keys.length} global setting(s) configured.`;
   }
 
+  get _ss() {
+    return (this.selectedWorkspace && this.selectedWorkspace.scriptSettings) || {};
+  }
+
+  get ssHasApiVersion() {
+    return !!this._ss.apiVersion;
+  }
+
+  get ssApiVersion() {
+    return this._ss.apiVersion || "";
+  }
+
+  get ssSimulationMode() {
+    return !!this._ss.simulationMode;
+  }
+
+  get ssAllOrNone() {
+    return !!this._ss.allOrNone;
+  }
+
+  get ssAllowFieldTruncation() {
+    return !!this._ss.allowFieldTruncation;
+  }
+
+  get ssKeepObjectOrder() {
+    return !!this._ss.keepObjectOrderWhileExecute;
+  }
+
+  get ssHasBulkApiVersion() {
+    return !!this._ss.bulkApiVersion;
+  }
+
+  get ssBulkApiVersion() {
+    return this._ss.bulkApiVersion || "";
+  }
+
+  get ssHasConcurrencyMode() {
+    return !!this._ss.concurrencyMode && this._ss.concurrencyMode !== "Parallel";
+  }
+
+  get ssConcurrencyMode() {
+    return this._ss.concurrencyMode || "";
+  }
+
+  get ssHasBulkThreshold() {
+    return this._ss.bulkThreshold != null && this._ss.bulkThreshold !== "";
+  }
+
+  get ssBulkThreshold() {
+    return this._ss.bulkThreshold;
+  }
+
+  get ssHasQueryBulkApiThreshold() {
+    return this._ss.queryBulkApiThreshold != null && this._ss.queryBulkApiThreshold !== "";
+  }
+
+  get ssQueryBulkApiThreshold() {
+    return this._ss.queryBulkApiThreshold;
+  }
+
+  get ssHasBulkApiV1BatchSize() {
+    return this._ss.bulkApiV1BatchSize != null && this._ss.bulkApiV1BatchSize !== "";
+  }
+
+  get ssBulkApiV1BatchSize() {
+    return this._ss.bulkApiV1BatchSize;
+  }
+
+  get ssHasRestApiBatchSize() {
+    return this._ss.restApiBatchSize != null && this._ss.restApiBatchSize !== "";
+  }
+
+  get ssRestApiBatchSize() {
+    return this._ss.restApiBatchSize;
+  }
+
+  get ssAlwaysUseRestApiToUpdateRecords() {
+    return !!this._ss.alwaysUseRestApiToUpdateRecords;
+  }
+
+  get ssHasParallelBulkJobs() {
+    return this._ss.parallelBulkJobs != null && this._ss.parallelBulkJobs !== "" && this._ss.parallelBulkJobs > 1;
+  }
+
+  get ssParallelBulkJobs() {
+    return this._ss.parallelBulkJobs;
+  }
+
+  get ssHasParallelRestJobs() {
+    return this._ss.parallelRestJobs != null && this._ss.parallelRestJobs !== "" && this._ss.parallelRestJobs > 1;
+  }
+
+  get ssParallelRestJobs() {
+    return this._ss.parallelRestJobs;
+  }
+
+  get ssHasParallelBinaryDownloads() {
+    return this._ss.parallelBinaryDownloads != null && this._ss.parallelBinaryDownloads !== "" && this._ss.parallelBinaryDownloads > 1;
+  }
+
+  get ssParallelBinaryDownloads() {
+    return this._ss.parallelBinaryDownloads;
+  }
+
+  get ssCreateTargetCSVFiles() {
+    return !!this._ss.createTargetCSVFiles;
+  }
+
+  get ssCsvInsertNulls() {
+    return !!this._ss.csvInsertNulls;
+  }
+
+  get ssCsvUseEuropeanDateFormat() {
+    return !!this._ss.csvUseEuropeanDateFormat;
+  }
+
+  get ssHasCsvFileEncoding() {
+    return !!this._ss.csvFileEncoding && this._ss.csvFileEncoding !== "utf8";
+  }
+
+  get ssCsvFileEncoding() {
+    return this._ss.csvFileEncoding || "";
+  }
+
+  get ssHasBinaryDataCache() {
+    return !!this._ss.binaryDataCache && this._ss.binaryDataCache !== "InMemory";
+  }
+
+  get ssBinaryDataCache() {
+    return this._ss.binaryDataCache || "";
+  }
+
+  get ssHasSourceRecordsCache() {
+    return !!this._ss.sourceRecordsCache && this._ss.sourceRecordsCache !== "InMemory";
+  }
+
+  get ssSourceRecordsCache() {
+    return this._ss.sourceRecordsCache || "";
+  }
+
+  get ssHasExcludedObjects() {
+    return !!this._ss.excludedObjects;
+  }
+
+  get ssExcludedObjects() {
+    return this._ss.excludedObjects || "";
+  }
+
+  get ssHasProxyUrl() {
+    return !!this._ss.proxyUrl;
+  }
+
   get bulkApiVersionOptions() {
     return [
       { label: "2.0 (default)", value: "2.0" },

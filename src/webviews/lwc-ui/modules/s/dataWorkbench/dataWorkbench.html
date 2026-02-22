@@ -215,11 +215,88 @@
                           <span class="property-value">{selectedWorkspace.description}</span>
                         </div>
                       </template>
-                      <div class="property-item property-item_full">
-                        <span class="property-label">Global Settings</span>
-                        <span class="property-value">{scriptSettingsSummary}</span>
-                      </div>
                     </div>
+                    <div class="slds-p-horizontal_small slds-p-bottom_x-small">
+                      <span class="property-label">Global Settings</span>
+                    </div>
+                    <template if:true={hasScriptSettings}>
+                      <div class="object-badges slds-p-horizontal_small slds-p-bottom_small">
+                        <template if:true={ssHasApiVersion}>
+                          <span class="slds-badge object-badge" title="Salesforce API version">API: {ssApiVersion}</span>
+                        </template>
+                        <template if:true={ssSimulationMode}>
+                          <span class="slds-badge slds-badge_warning object-badge" title="Dry run without DML operations">Simulation Mode</span>
+                        </template>
+                        <template if:true={ssAllOrNone}>
+                          <span class="slds-badge slds-badge_success object-badge" title="Global rollback on errors">All Or None</span>
+                        </template>
+                        <template if:true={ssAllowFieldTruncation}>
+                          <span class="slds-badge object-badge" title="Allow truncation of string field values">Allow Truncation</span>
+                        </template>
+                        <template if:true={ssKeepObjectOrder}>
+                          <span class="slds-badge object-badge" title="Process objects in config order">Keep Order</span>
+                        </template>
+                        <template if:true={ssHasBulkApiVersion}>
+                          <span class="slds-badge object-badge" title="Bulk API version">Bulk API: {ssBulkApiVersion}</span>
+                        </template>
+                        <template if:true={ssHasConcurrencyMode}>
+                          <span class="slds-badge object-badge" title="Bulk API concurrency mode">Concurrency: {ssConcurrencyMode}</span>
+                        </template>
+                        <template if:true={ssHasBulkThreshold}>
+                          <span class="slds-badge object-badge" title="Records threshold for Bulk API">Bulk Threshold: {ssBulkThreshold}</span>
+                        </template>
+                        <template if:true={ssHasQueryBulkApiThreshold}>
+                          <span class="slds-badge object-badge" title="Records threshold for Bulk API queries">Query Bulk Threshold: {ssQueryBulkApiThreshold}</span>
+                        </template>
+                        <template if:true={ssHasBulkApiV1BatchSize}>
+                          <span class="slds-badge object-badge" title="Bulk API V1 batch size">Bulk Batch: {ssBulkApiV1BatchSize}</span>
+                        </template>
+                        <template if:true={ssHasRestApiBatchSize}>
+                          <span class="slds-badge object-badge" title="REST API batch size">REST Batch: {ssRestApiBatchSize}</span>
+                        </template>
+                        <template if:true={ssAlwaysUseRestApiToUpdateRecords}>
+                          <span class="slds-badge object-badge" title="Force REST API for all DML updates">REST Updates</span>
+                        </template>
+                        <template if:true={ssHasParallelBulkJobs}>
+                          <span class="slds-badge object-badge" title="Parallel Bulk API jobs">Parallel Bulk: {ssParallelBulkJobs}</span>
+                        </template>
+                        <template if:true={ssHasParallelRestJobs}>
+                          <span class="slds-badge object-badge" title="Parallel REST API jobs">Parallel REST: {ssParallelRestJobs}</span>
+                        </template>
+                        <template if:true={ssHasParallelBinaryDownloads}>
+                          <span class="slds-badge object-badge" title="Parallel binary downloads">Parallel Binary: {ssParallelBinaryDownloads}</span>
+                        </template>
+                        <template if:true={ssCreateTargetCSVFiles}>
+                          <span class="slds-badge slds-badge_success object-badge" title="Write target data to CSV files">Target CSV</span>
+                        </template>
+                        <template if:true={ssCsvInsertNulls}>
+                          <span class="slds-badge object-badge" title="#N/A values treated as NULL">CSV Nulls</span>
+                        </template>
+                        <template if:true={ssCsvUseEuropeanDateFormat}>
+                          <span class="slds-badge object-badge" title="Dates in dd/MM/yyyy format">EU Dates</span>
+                        </template>
+                        <template if:true={ssHasCsvFileEncoding}>
+                          <span class="slds-badge object-badge" title="CSV file encoding">Encoding: {ssCsvFileEncoding}</span>
+                        </template>
+                        <template if:true={ssHasBinaryDataCache}>
+                          <span class="slds-badge object-badge" title="Binary data caching strategy">Binary Cache: {ssBinaryDataCache}</span>
+                        </template>
+                        <template if:true={ssHasSourceRecordsCache}>
+                          <span class="slds-badge object-badge" title="Source records caching strategy">Source Cache: {ssSourceRecordsCache}</span>
+                        </template>
+                        <template if:true={ssHasExcludedObjects}>
+                          <span class="slds-badge slds-badge_warning object-badge" title="Globally excluded objects">Excluded: {ssExcludedObjects}</span>
+                        </template>
+                        <template if:true={ssHasProxyUrl}>
+                          <span class="slds-badge object-badge" title="HTTP proxy configured">Proxy</span>
+                        </template>
+                      </div>
+                    </template>
+                    <template if:false={hasScriptSettings}>
+                      <div class="slds-p-horizontal_small slds-p-bottom_small">
+                        <p class="slds-text-body_small slds-text-color_weak">No global settings configured.</p>
+                      </div>
+                    </template>
                     <div class="slds-p-horizontal_small slds-p-bottom_small">
                       <lightning-button
                         variant="neutral"
