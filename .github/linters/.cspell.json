@@ -280,6 +280,8 @@
     "postrun",
     "posttest",
     "preid",
+    "anonymization",
+    "subfolders",
     "prepatch",
     "preprod",
     "prerun",

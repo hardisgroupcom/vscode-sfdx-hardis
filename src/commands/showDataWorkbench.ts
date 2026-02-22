@@ -20,12 +20,49 @@ type SfdmuObjectConfig = {
   query: string;
   operation?: string;
   externalId?: string;
+  // Delete options
   deleteOldData?: boolean;
+  hardDelete?: boolean;
+  deleteByHierarchy?: boolean;
+  deleteFromSource?: boolean;
+  deleteQuery?: string;
+  // Query options
   useQueryAll?: boolean;
+  queryAllTarget?: boolean;
+  useSourceCSVFile?: boolean;
+  sourceRecordsFilter?: string;
+  targetRecordsFilter?: string;
+  // Processing
   allOrNone?: boolean;
-  batchSize?: number | string;
+  master?: boolean;
+  excluded?: boolean;
+  skipExistingRecords?: boolean;
+  skipRecordsComparison?: boolean;
+  // Field options
+  useFieldMapping?: boolean;
+  useValuesMapping?: boolean;
+  excludedFields?: string[];
+  excludedFromUpdateFields?: string[];
+  // Performance
+  bulkApiV1BatchSize?: number;
+  restApiBatchSize?: number;
+  parallelBulkJobs?: number;
+  parallelRestJobs?: number;
+  alwaysUseRestApi?: boolean;
+  alwaysUseBulkApi?: boolean;
+  alwaysUseBulkApiToUpdateRecords?: boolean;
+  respectOrderByOnDeleteRecords?: boolean;
+  // Data anonymization
   updateWithMockData?: boolean;
-  mockFields?: Array<{ name?: string; pattern?: string }>;
+  mockFields?: Array<{
+    name?: string;
+    pattern?: string;
+    locale?: string;
+    excludedRegex?: string;
+    includedRegex?: string;
+  }>;
+  // Legacy
+  batchSize?: number | string;
   [key: string]: any;
 };
 
@@ -47,6 +84,7 @@ type DataWorkspace = {
   objects: SfdmuObjectConfig[];
   objectsCount: number;
   exportedFiles: ExportedFile[];
+  scriptSettings: Record<string, any>;
 };
 
 export function registerShowDataWorkbench(commands: Commands) {
@@ -206,6 +244,15 @@ async function loadDataWorkspaces(): Promise<DataWorkspace[]> {
 
     try {
       const exportConfig = JSON.parse(fs.readFileSync(exportJsonPath, "utf8"));
+
+      // Extract script-level settings (all root properties except objects and sfdxHardis metadata)
+      const {
+        objects: _rawObjects,
+        sfdxHardisLabel: _lbl,
+        sfdxHardisDescription: _desc,
+        ...scriptSettings
+      } = exportConfig;
+
       const objects: SfdmuObjectConfig[] = Array.isArray(exportConfig.objects)
         ? exportConfig.objects.map((obj: any) => ({
             ...obj,
@@ -215,11 +262,9 @@ async function loadDataWorkspaces(): Promise<DataWorkspace[]> {
             deleteOldData: asBool(obj.deleteOldData),
             useQueryAll: asBool(obj.useQueryAll),
             allOrNone: asBool(obj.allOrNone, true),
-            batchSize:
-              obj.batchSize ??
-              obj.bulkApiV1BatchSize ??
-              obj.restApiBatchSize ??
-              undefined,
+            bulkApiV1BatchSize:
+              obj.bulkApiV1BatchSize ?? obj.batchSize ?? undefined,
+            restApiBatchSize: obj.restApiBatchSize ?? undefined,
             updateWithMockData: obj.updateWithMockData === true,
             mockFields: normalizeMockFields(obj.mockFields),
             objectName: extractObjectName(obj.query || ""),
@@ -237,6 +282,7 @@ async function loadDataWorkspaces(): Promise<DataWorkspace[]> {
         objects: objects,
         objectsCount: objects.length,
         exportedFiles: exportedFiles,
+        scriptSettings: scriptSettings,
       });
     } catch (error) {
       Logger.log(
@@ -338,6 +384,7 @@ async function createDataWorkspace(data: any): Promise<string> {
   }
 
   const exportConfig = {
+    ...(data.scriptSettings || {}),
     sfdxHardisLabel: data.label,
     sfdxHardisDescription: data.description,
     objects: normalizeObjectsForSave(objects),
@@ -388,6 +435,7 @@ async function updateDataWorkspace(data: any): Promise<string> {
 
   const exportConfig = {
     ...existingConfig,
+    ...(data.scriptSettings || {}),
     sfdxHardisLabel: data.label,
     sfdxHardisDescription: data.description,
     objects: normalizeObjectsForSave(data.objects || []),
@@ -510,19 +558,88 @@ function normalizeObjectsForSave(objects: SfdmuObjectConfig[]): any[] {
     cleanedObj.useQueryAll = asBool(obj.useQueryAll);
     cleanedObj.allOrNone = asBool(obj.allOrNone, true);
 
-    if (
-      obj.batchSize !== undefined &&
-      obj.batchSize !== null &&
-      obj.batchSize !== ""
-    ) {
-      const batchNumber = Number(obj.batchSize);
-      if (!isNaN(batchNumber)) {
-        cleanedObj.batchSize = batchNumber;
-      } else {
-        delete cleanedObj.batchSize;
+    // Normalize optional boolean fields (only if present)
+    const boolFieldsDefaultFalse = [
+      "hardDelete",
+      "deleteByHierarchy",
+      "deleteFromSource",
+      "excluded",
+      "queryAllTarget",
+      "skipExistingRecords",
+      "skipRecordsComparison",
+      "useFieldMapping",
+      "useValuesMapping",
+      "useSourceCSVFile",
+      "alwaysUseRestApi",
+      "alwaysUseBulkApi",
+      "alwaysUseBulkApiToUpdateRecords",
+      "respectOrderByOnDeleteRecords",
+    ];
+    for (const field of boolFieldsDefaultFalse) {
+      if (cleanedObj[field] !== undefined) {
+        cleanedObj[field] = asBool(cleanedObj[field]);
       }
-    } else {
+    }
+    if (cleanedObj.master !== undefined) {
+      cleanedObj.master = asBool(cleanedObj.master, true);
+    }
+
+    // Normalize integer fields
+    const integerFields = [
+      "bulkApiV1BatchSize",
+      "restApiBatchSize",
+      "parallelBulkJobs",
+      "parallelRestJobs",
+    ];
+    for (const field of integerFields) {
+      if (
+        cleanedObj[field] !== undefined &&
+        cleanedObj[field] !== null &&
+        cleanedObj[field] !== ""
+      ) {
+        const num = Number(cleanedObj[field]);
+        if (!isNaN(num)) {
+          cleanedObj[field] = num;
+        } else {
+          delete cleanedObj[field];
+        }
+      } else {
+        delete cleanedObj[field];
+      }
+    }
+
+    // Migrate legacy batchSize to bulkApiV1BatchSize
+    if (cleanedObj.batchSize !== undefined) {
+      const batchNum = Number(cleanedObj.batchSize);
+      if (!isNaN(batchNum) && cleanedObj.bulkApiV1BatchSize === undefined) {
+        cleanedObj.bulkApiV1BatchSize = batchNum;
+      }
       delete cleanedObj.batchSize;
+    }
+
+    // Clean up empty optional string fields
+    const optionalStringFields = [
+      "deleteQuery",
+      "sourceRecordsFilter",
+      "targetRecordsFilter",
+    ];
+    for (const field of optionalStringFields) {
+      if (cleanedObj[field] !== undefined && !cleanedObj[field]) {
+        delete cleanedObj[field];
+      }
+    }
+
+    // Clean up empty array fields
+    const optionalArrayFields = ["excludedFields", "excludedFromUpdateFields"];
+    for (const field of optionalArrayFields) {
+      if (Array.isArray(cleanedObj[field])) {
+        cleanedObj[field] = cleanedObj[field].filter(
+          (v: any) => v && typeof v === "string" && v.trim(),
+        );
+        if (cleanedObj[field].length === 0) {
+          delete cleanedObj[field];
+        }
+      }
     }
 
     cleanedObj.updateWithMockData = obj.updateWithMockData === true;
@@ -532,8 +649,11 @@ function normalizeObjectsForSave(objects: SfdmuObjectConfig[]): any[] {
       delete cleanedObj.mockFields;
     }
 
-    if (cleanedObj.objectName) {
-      delete cleanedObj.objectName;
+    // Remove internal fields
+    delete cleanedObj.objectName;
+    // Remove legacy alias
+    if (cleanedObj.externalid) {
+      delete cleanedObj.externalid;
     }
 
     return cleanedObj;
@@ -541,17 +661,43 @@ function normalizeObjectsForSave(objects: SfdmuObjectConfig[]): any[] {
 }
 
 function normalizeMockFields(
-  mockFields: Array<{ name?: string; pattern?: string }> | undefined,
-): Array<{ name: string; pattern: string }> {
+  mockFields:
+    | Array<{
+        name?: string;
+        pattern?: string;
+        locale?: string;
+        excludedRegex?: string;
+        includedRegex?: string;
+      }>
+    | undefined,
+): Array<{
+  name: string;
+  pattern: string;
+  locale?: string;
+  excludedRegex?: string;
+  includedRegex?: string;
+}> {
   if (!Array.isArray(mockFields)) {
     return [];
   }
   return mockFields
     .filter((mockField) => mockField && typeof mockField === "object")
-    .map((mockField) => ({
-      name: mockField.name || "",
-      pattern: mockField.pattern || "",
-    }))
+    .map((mockField) => {
+      const result: any = {
+        name: mockField.name || "",
+        pattern: mockField.pattern || "",
+      };
+      if (mockField.locale) {
+        result.locale = mockField.locale;
+      }
+      if (mockField.excludedRegex) {
+        result.excludedRegex = mockField.excludedRegex;
+      }
+      if (mockField.includedRegex) {
+        result.includedRegex = mockField.includedRegex;
+      }
+      return result;
+    })
     .filter((mockField) => mockField.name || mockField.pattern);
 }
 
