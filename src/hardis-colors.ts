@@ -31,7 +31,7 @@ export class HardisColors {
   majorOrgBranch: string | undefined = undefined;
 
   // Initialize file watchers only if we are in a sfdx project
-  constructor() {}
+  constructor() { }
 
   async init() {
     this.initializing = true;
@@ -183,10 +183,26 @@ export class HardisColors {
     if (customOrgColors[this.currentDefaultOrgDomain || ""]) {
       forcedColor = customOrgColors[this.currentDefaultOrgDomain || ""];
     }
-    // https://salesforce.stackexchange.com/questions/297452/determine-if-authorized-org-with-salesforcedx-is-developer-or-production
-    // Detect if sandbox or not
+    if (
+      this.currentDefaultOrgDomain &&
+      (this.currentDefaultOrgDomain.includes(".sandbox.") ||
+        this.currentDefaultOrgDomain.includes(".scratch."))
+    ) {
+      // We are in a dev sandbox or scratch org !
+      const isMajorOrg = await this.isMajorOrg(
+        this.currentDefaultOrgDomain || "",
+      );
+      if (isMajorOrg) {
+        vscode.window.showWarningMessage(
+          `🦙 Your default org is a MAJOR org linked to git branch ${this.majorOrgBranch}, be careful because the CI/CD Server is supposed to deploy in this org, not you 😘`,
+          "Close",
+        );
+      }
+      return forcedColor || this.describeOrgColors()["major"]; // orange !
+    }
+    // Production or dev org
     const orgRes = await execSfdxJson(
-      `sf data query --query "SELECT IsSandbox,OrganizationType FROM Organization LIMIT 1" --target-org "${this.currentDefaultOrg}"`,
+      `sf data query --query "SELECT OrganizationType FROM Organization LIMIT 1" --target-org "${this.currentDefaultOrg}"`,
       {
         fail: false,
         output: true,
@@ -196,20 +212,7 @@ export class HardisColors {
     );
     if (orgRes?.result?.records?.length === 1) {
       const org = orgRes.result.records[0];
-      if (org.IsSandbox === true) {
-        // We are in a dev sandbox or scratch org !
-        const isMajorOrg = await this.isMajorOrg(
-          this.currentDefaultOrgDomain || "",
-        );
-        if (isMajorOrg) {
-          vscode.window.showWarningMessage(
-            `🦙 Your default org is a MAJOR org linked to git branch ${this.majorOrgBranch}, be careful because the CI/CD Server is supposed to deploy in this org, not you 😘`,
-            "Close",
-          );
-          return forcedColor || this.describeOrgColors()["major"]; // orange !
-        }
-        return forcedColor || null; // green !
-      } else if (PRODUCTION_EDITIONS.includes(org.OrganizationType)) {
+      if (PRODUCTION_EDITIONS.includes(org.OrganizationType)) {
         // We are in production !!
         vscode.window.showWarningMessage(
           "🦙 Your default org is a PRODUCTION org, be careful what you do 😲",
