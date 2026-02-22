@@ -174,15 +174,56 @@ export class HardisColors {
     };
   }
 
+  /**
+   * Match a domain against customOrgColors keys, supporting wildcard (`*`) patterns.
+   * Exact matches take priority over wildcard matches.
+   */
+  getCustomOrgColor(
+    domain: string,
+    customOrgColors: Record<string, string>,
+  ): string | null {
+    if (!domain) {
+      return null;
+    }
+    const normalize = (s: string) => s.replace(/\/+$/, "").toLowerCase();
+    const normalizedDomain = normalize(domain);
+    const wildcardPatterns: string[] = [];
+    for (const pattern of Object.keys(customOrgColors)) {
+      const normalizedPattern = normalize(pattern);
+      if (pattern.includes("*")) {
+        wildcardPatterns.push(pattern);
+      } else if (normalizedPattern === normalizedDomain) {
+        return customOrgColors[pattern];
+      }
+    }
+    for (const pattern of wildcardPatterns) {
+      // Build regex: split on '*', escape each part, join with '.*'
+      const regex = new RegExp(
+        "^" +
+        normalize(pattern)
+          .split("*")
+          .map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+          .join(".*") +
+        "$",
+        "i",
+      );
+      if (regex.test(normalizedDomain)) {
+        return customOrgColors[pattern];
+      }
+    }
+
+    return null;
+  }
+
   // Get org color :)
   async getCurrentDefaultOrgColor() {
     // Get user customized color directly in config/.sfdx-hardis.yml
-    let forcedColor = null;
     const sfdxHardisConfig = await readSfdxHardisConfig();
     const customOrgColors = sfdxHardisConfig.customOrgColors || {};
-    if (customOrgColors[this.currentDefaultOrgDomain || ""]) {
-      forcedColor = customOrgColors[this.currentDefaultOrgDomain || ""];
-    }
+    const forcedColor = this.getCustomOrgColor(
+      this.currentDefaultOrgDomain || "",
+      customOrgColors,
+    );
     if (
       this.currentDefaultOrgDomain &&
       (this.currentDefaultOrgDomain.includes(".sandbox.") ||
