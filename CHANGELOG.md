@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## [6.28.0] 2025-02-22
+
+- Data Workbench: Allow to configure all settings related to SFDMU export.json file
+
 ## [6.27.2] 2025-02-20
 
 - Improve Data Workbench to individually edit objects in modal, not all objects at once
