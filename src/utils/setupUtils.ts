@@ -348,6 +348,7 @@ export class SetupHelper {
         !sfdxPath.includes("npm") &&
         !sfdxPath.includes("node") &&
         !sfdxPath.includes("nvm") &&
+        !sfdxPath.includes("fnm") &&
         !sfdxPath.includes("/home/codebuilder/") &&
         !(
           sfdxPath.includes("/usr/local/bin") && process.platform === "darwin"
