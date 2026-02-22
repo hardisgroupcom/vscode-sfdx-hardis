@@ -183,6 +183,7 @@ Key extension settings in `package.json`:
 - `vsCodeSfdxHardis.customCommandsConfiguration`: External config URL
 - `vsCodeSfdxHardis.enableMultithread`: Performance optimization
 - `vsCodeSfdxHardis.disableVsCodeColors`: Org-based theming
+- `vsCodeSfdxHardis.colorUpdateLocation`: Org-based theming update location (Workspace- or User settings)
 - `vsCodeSfdxHardis.theme.menuIconType`: Icon theme selection
 
 ### Remote Configuration

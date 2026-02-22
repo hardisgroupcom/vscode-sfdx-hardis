@@ -233,6 +233,8 @@ export class HardisColors {
   async applyColor(color: string | null) {
     if (vscode.workspace.workspaceFolders) {
       const config = vscode.workspace.getConfiguration();
+      const colorUpdateLocation =
+        config.get("vsCodeSfdxHardis.colorUpdateLocation") || "Workspace";
       let colorCustomization = config.get("workbench.colorCustomizations");
       // Ensure colorCustomization is an object and convert proxy to plain object
       if (
@@ -253,7 +255,9 @@ export class HardisColors {
         await config.update(
           "workbench.colorCustomizations",
           colorCustomObj,
-          vscode.ConfigurationTarget.Workspace,
+          colorUpdateLocation === "Workspace"
+            ? vscode.ConfigurationTarget.Workspace
+            : vscode.ConfigurationTarget.Global,
         );
       } else if (
         colorCustomObj["statusBar.background"] ||
@@ -347,7 +351,9 @@ export class HardisColors {
           await config.update(
             "workbench.colorCustomizations",
             colorCustomObj,
-            vscode.ConfigurationTarget.Workspace,
+            colorUpdateLocation === "Workspace"
+              ? vscode.ConfigurationTarget.Workspace
+              : vscode.ConfigurationTarget.Global,
           );
         }
       }
