@@ -529,7 +529,7 @@ export async function getUsernameInstanceUrl(
       fail: false,
       output: false,
       cacheExpiration: 1000 * 60 * 60 * 24, // 1 day (milliseconds)
-      cacheSection: "project",
+      cacheSection: "orgs",
     },
   );
   if (orgInfoResult.result) {
