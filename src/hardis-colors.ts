@@ -152,7 +152,7 @@ export class HardisColors {
     if (fileDefaultOrg !== this.currentDefaultOrg) {
       this.currentDefaultOrg = fileDefaultOrg;
       this.currentDefaultOrgDomain = await getUsernameInstanceUrl(
-        `"${this.currentDefaultOrg}"` || "",
+        `"${this.currentDefaultOrg}"`,
       );
       const orgColor = await this.getCurrentDefaultOrgColor();
       await this.applyColor(orgColor);
