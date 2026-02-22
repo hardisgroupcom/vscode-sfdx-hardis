@@ -1,6 +1,5 @@
 import * as vscode from "vscode";
 import * as fs from "fs-extra";
-import * as path from "path";
 import {
   execSfdxJson,
   getUsernameInstanceUrl,
@@ -58,12 +57,8 @@ export class HardisColors {
     if (vscode.workspace.workspaceFolders) {
       const sfdxConfigPaths = await listLocalSfConfigFiles();
       for (const sfdxConfigPath of sfdxConfigPaths) {
-        const sfdxConfigFullPath = path.join(
-          vscode.workspace.workspaceFolders[0].uri.fsPath,
-          sfdxConfigPath,
-        );
-        if (fs.existsSync(sfdxConfigFullPath)) {
-          await this.manageColor(sfdxConfigFullPath);
+        if (fs.existsSync(sfdxConfigPath)) {
+          await this.manageColor(sfdxConfigPath);
           break;
         }
       }
