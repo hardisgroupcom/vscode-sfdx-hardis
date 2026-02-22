@@ -474,6 +474,15 @@ export default class DataWorkbench extends LightningElement {
     this.selectedWorkspace = workspace;
   }
 
+  // --- SFDMU Documentation ---
+
+  handleOpenSfdmuDoc() {
+    window.sendMessageToVSCode({
+      type: "openExternal",
+      data: "https://help.sfdmu.com/full-documentation/export-json-file-objects-specification/export-json-file-overview",
+    });
+  }
+
   // --- Create workspace ---
 
   handleCreateWorkspace() {
