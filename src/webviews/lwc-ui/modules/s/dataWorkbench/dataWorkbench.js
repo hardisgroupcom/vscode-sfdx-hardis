@@ -54,7 +54,6 @@ function createDefaultObject() {
     deleteOldData: false,
     useQueryAll: false,
     allOrNone: true,
-    batchSize: null,
     updateWithMockData: false,
     mockFields: [],
     objectName: "Account",
@@ -78,6 +77,10 @@ export default class DataWorkbench extends LightningElement {
   editingObjectIndex = -1; // -1 = add new, >= 0 = edit existing
   @track editingObject = null;
   objectSoqlError = "";
+
+  // Global settings modal state
+  showGlobalSettingsModal = false;
+  @track editingScriptSettings = {};
 
   exportedFilesColumns = [
     {
@@ -217,6 +220,7 @@ export default class DataWorkbench extends LightningElement {
   normalizeWorkspaces(workspacesInput) {
     return (workspacesInput || []).map((ws) => ({
       ...ws,
+      scriptSettings: ws.scriptSettings || {},
       description:
         typeof ws.description === "string"
           ? ws.description
@@ -387,6 +391,17 @@ export default class DataWorkbench extends LightningElement {
       hasMockFields:
         (this.normalizeMockFields(obj.mockFields) || []).length > 0,
       mockFieldsCount: (this.normalizeMockFields(obj.mockFields) || []).length,
+      isExcluded: coerceBoolean(obj.excluded),
+      hasHardDelete: coerceBoolean(obj.hardDelete),
+      hasDeleteByHierarchy: coerceBoolean(obj.deleteByHierarchy),
+      hasDeleteFromSource: coerceBoolean(obj.deleteFromSource),
+      hasQueryAllTarget: coerceBoolean(obj.queryAllTarget),
+      hasSkipExistingRecords: coerceBoolean(obj.skipExistingRecords),
+      hasUseFieldMapping: coerceBoolean(obj.useFieldMapping),
+      hasUseValuesMapping: coerceBoolean(obj.useValuesMapping),
+      hasUseSourceCSVFile: coerceBoolean(obj.useSourceCSVFile),
+      hasBulkApiV1BatchSize: !!obj.bulkApiV1BatchSize,
+      hasRestApiBatchSize: !!obj.restApiBatchSize,
     }));
   }
 
@@ -404,7 +419,7 @@ export default class DataWorkbench extends LightningElement {
       { label: "Insert", value: "Insert" },
       { label: "Update", value: "Update" },
       { label: "Delete", value: "Delete" },
-      { label: "Export (read-only)", value: "Export" },
+      { label: "Readonly", value: "Readonly" },
     ];
   }
 
@@ -519,13 +534,15 @@ export default class DataWorkbench extends LightningElement {
         label: this.workspaceProperties.label,
         description: this.workspaceProperties.description,
         objects: this.editingWorkspace.objects || [],
+        scriptSettings: this.editingWorkspace.scriptSettings || {},
         originalPath: this.editingWorkspace.path,
       };
       window.sendMessageToVSCode({
         type: "updateWorkspace",
         data: JSON.parse(JSON.stringify(data)),
       });
-    } else {
+    }
+    else {
       const data = {
         name: this.workspaceProperties.name,
         label: this.workspaceProperties.label,
@@ -569,7 +586,10 @@ export default class DataWorkbench extends LightningElement {
       deleteOldData: coerceBoolean(obj.deleteOldData),
       useQueryAll: coerceBoolean(obj.useQueryAll),
       allOrNone: coerceBoolean(obj.allOrNone, true),
-      batchSize: this.normalizeBatchSizeValue(obj.batchSize),
+      bulkApiV1BatchSize: this.normalizeBatchSizeValue(
+        obj.bulkApiV1BatchSize ?? obj.batchSize,
+      ),
+      restApiBatchSize: this.normalizeBatchSizeValue(obj.restApiBatchSize),
       updateWithMockData: coerceBoolean(obj.updateWithMockData),
       mockFields: this.normalizeMockFields(obj.mockFields),
       objectName: inferObjectNameFromQuery(obj.query),
@@ -594,6 +614,7 @@ export default class DataWorkbench extends LightningElement {
       label: this.selectedWorkspace.label,
       description: this.selectedWorkspace.description,
       objects: objects,
+      scriptSettings: this.selectedWorkspace.scriptSettings || {},
       originalPath: this.selectedWorkspace.path,
     };
     window.sendMessageToVSCode({
@@ -643,16 +664,18 @@ export default class DataWorkbench extends LightningElement {
   }
 
   handleObjBatchSizeChange(event) {
+    const field =
+      event.currentTarget.dataset.field || "bulkApiV1BatchSize";
     const valueRaw = event.detail?.value ?? event.target.value;
     const valueNum = this.normalizeBatchSizeValue(valueRaw);
-    this.editingObject = { ...this.editingObject, batchSize: valueNum };
+    this.editingObject = { ...this.editingObject, [field]: valueNum };
   }
 
   handleObjMockFieldChange(event) {
     const fieldIndex = Number(event.currentTarget.dataset.fieldindex);
     const field = event.currentTarget.dataset.field;
     const value = event.detail?.value ?? event.target.value;
-    const mockFields = this.normalizeMockFields(this.editingObject.mockFields);
+    const mockFields = [...this.normalizeMockFields(this.editingObject.mockFields)];
     if (!mockFields[fieldIndex]) {
       return;
     }
@@ -661,14 +684,14 @@ export default class DataWorkbench extends LightningElement {
   }
 
   handleAddObjMockField() {
-    const mockFields = this.normalizeMockFields(this.editingObject.mockFields);
+    const mockFields = [...this.normalizeMockFields(this.editingObject.mockFields)];
     mockFields.push({ name: "", pattern: "" });
     this.editingObject = { ...this.editingObject, mockFields };
   }
 
   handleRemoveObjMockField(event) {
     const fieldIndex = Number(event.currentTarget.dataset.fieldindex);
-    const mockFields = this.normalizeMockFields(this.editingObject.mockFields);
+    const mockFields = [...this.normalizeMockFields(this.editingObject.mockFields)];
     if (mockFields.length <= 1) {
       return;
     }
@@ -704,6 +727,7 @@ export default class DataWorkbench extends LightningElement {
       label: this.selectedWorkspace.label,
       description: this.selectedWorkspace.description,
       objects: objects,
+      scriptSettings: this.selectedWorkspace.scriptSettings || {},
       originalPath: this.selectedWorkspace.path,
     };
     window.sendMessageToVSCode({
@@ -840,15 +864,77 @@ export default class DataWorkbench extends LightningElement {
   }
 
   normalizeObjectForSave(objectConfig) {
-    return {
-      ...objectConfig,
-      deleteOldData: coerceBoolean(objectConfig?.deleteOldData),
-      useQueryAll: coerceBoolean(objectConfig?.useQueryAll),
-      allOrNone: coerceBoolean(objectConfig?.allOrNone, true),
-      updateWithMockData: coerceBoolean(objectConfig?.updateWithMockData),
-      batchSize: this.normalizeBatchSizeValue(objectConfig?.batchSize),
-      mockFields: this.normalizeMockFields(objectConfig?.mockFields),
-    };
+    const result = { ...objectConfig };
+
+    // Core fields
+    result.deleteOldData = coerceBoolean(result.deleteOldData);
+    result.useQueryAll = coerceBoolean(result.useQueryAll);
+    result.allOrNone = coerceBoolean(result.allOrNone, true);
+    result.updateWithMockData = coerceBoolean(result.updateWithMockData);
+    result.mockFields = this.normalizeMockFields(result.mockFields);
+
+    // Optional booleans - normalize if present
+    const optionalBooleans = [
+      "hardDelete",
+      "deleteByHierarchy",
+      "deleteFromSource",
+      "excluded",
+      "queryAllTarget",
+      "skipExistingRecords",
+      "skipRecordsComparison",
+      "useFieldMapping",
+      "useValuesMapping",
+      "useSourceCSVFile",
+      "alwaysUseRestApi",
+      "alwaysUseBulkApi",
+      "alwaysUseBulkApiToUpdateRecords",
+      "respectOrderByOnDeleteRecords",
+    ];
+    for (const field of optionalBooleans) {
+      if (result[field] !== undefined) {
+        result[field] = coerceBoolean(result[field]);
+      }
+    }
+    if (result.master !== undefined) {
+      result.master = coerceBoolean(result.master, true);
+    }
+
+    // Integer fields
+    const intFields = [
+      "bulkApiV1BatchSize",
+      "restApiBatchSize",
+      "parallelBulkJobs",
+      "parallelRestJobs",
+    ];
+    for (const field of intFields) {
+      result[field] = this.normalizeBatchSizeValue(result[field]);
+    }
+
+    // Migrate legacy batchSize
+    if (result.batchSize !== undefined) {
+      if (
+        result.bulkApiV1BatchSize === "" ||
+        result.bulkApiV1BatchSize === undefined
+      ) {
+        result.bulkApiV1BatchSize = this.normalizeBatchSizeValue(
+          result.batchSize,
+        );
+      }
+      delete result.batchSize;
+    }
+
+    // Handle excludedFields / excludedFromUpdateFields as arrays
+    const arrayStringFields = ["excludedFields", "excludedFromUpdateFields"];
+    for (const field of arrayStringFields) {
+      if (typeof result[field] === "string") {
+        result[field] = result[field]
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+      }
+    }
+
+    return result;
   }
 
   normalizeMockFields(mockFields) {
@@ -857,9 +943,193 @@ export default class DataWorkbench extends LightningElement {
     }
     return mockFields
       .filter((mockField) => mockField && typeof mockField === "object")
-      .map((mockField) => ({
-        name: mockField.name || "",
-        pattern: mockField.pattern || "",
-      }));
+      .map((mockField) => {
+        const result = {
+          name: mockField.name || "",
+          pattern: mockField.pattern || "",
+        };
+        if (mockField.locale !== undefined) {
+          result.locale = mockField.locale || "";
+        }
+        if (mockField.excludedRegex !== undefined) {
+          result.excludedRegex = mockField.excludedRegex || "";
+        }
+        if (mockField.includedRegex !== undefined) {
+          result.includedRegex = mockField.includedRegex || "";
+        }
+        return result;
+      });
+  }
+
+  // --- Global Settings ---
+
+  get hasScriptSettings() {
+    if (!this.selectedWorkspace || !this.selectedWorkspace.scriptSettings) {
+      return false;
+    }
+    const settings = this.selectedWorkspace.scriptSettings;
+    const keys = Object.keys(settings).filter(
+      (k) => k !== "$schema" && k !== "objectSets",
+    );
+    return keys.length > 0;
+  }
+
+  get scriptSettingsSummary() {
+    if (!this.selectedWorkspace || !this.selectedWorkspace.scriptSettings) {
+      return "No global settings configured.";
+    }
+    const settings = this.selectedWorkspace.scriptSettings;
+    const keys = Object.keys(settings).filter(
+      (k) => k !== "$schema" && k !== "objectSets",
+    );
+    if (keys.length === 0) {
+      return "No global settings configured.";
+    }
+    return `${keys.length} global setting(s) configured.`;
+  }
+
+  get bulkApiVersionOptions() {
+    return [
+      { label: "2.0 (default)", value: "2.0" },
+      { label: "1.0", value: "1.0" },
+    ];
+  }
+
+  get concurrencyModeOptions() {
+    return [
+      { label: "Parallel (default)", value: "Parallel" },
+      { label: "Serial", value: "Serial" },
+    ];
+  }
+
+  get cacheOptions() {
+    return [
+      { label: "InMemory (default)", value: "InMemory" },
+      { label: "CleanFileCache", value: "CleanFileCache" },
+      { label: "FileCache", value: "FileCache" },
+    ];
+  }
+
+  get csvEncodingOptions() {
+    return [
+      { label: "utf8 (default)", value: "utf8" },
+      { label: "utf-16le", value: "utf16le" },
+      { label: "latin1", value: "latin1" },
+      { label: "ascii", value: "ascii" },
+      { label: "base64", value: "base64" },
+    ];
+  }
+
+  handleEditGlobalSettings() {
+    if (!this.selectedWorkspace) {
+      return;
+    }
+    this.editingScriptSettings = {
+      ...(this.selectedWorkspace.scriptSettings || {}),
+    };
+    this.showGlobalSettingsModal = true;
+  }
+
+  handleCancelGlobalSettings() {
+    this.showGlobalSettingsModal = false;
+    this.editingScriptSettings = {};
+  }
+
+  handleScriptSettingChange(event) {
+    const field = event.currentTarget.dataset.field;
+    const value = event.detail?.value ?? event.target.value;
+    this.editingScriptSettings = {
+      ...this.editingScriptSettings,
+      [field]: value,
+    };
+  }
+
+  handleScriptSettingToggle(event) {
+    const field =
+      event?.currentTarget?.dataset?.field || event?.target?.dataset?.field;
+    if (!field) {
+      return;
+    }
+    const rawValue =
+      event.detail?.checked ?? event.target?.checked ?? event.detail?.value;
+    const value = coerceBoolean(rawValue);
+    this.editingScriptSettings = {
+      ...this.editingScriptSettings,
+      [field]: value,
+    };
+  }
+
+  handleScriptSettingNumberChange(event) {
+    const field = event.currentTarget.dataset.field;
+    const raw = event.detail?.value ?? event.target.value;
+    if (raw === "" || raw === null || raw === undefined) {
+      const updated = { ...this.editingScriptSettings };
+      delete updated[field];
+      this.editingScriptSettings = updated;
+    }
+    else {
+      const num = Number(raw);
+      this.editingScriptSettings = {
+        ...this.editingScriptSettings,
+        [field]: Number.isNaN(num) ? undefined : num,
+      };
+    }
+  }
+
+  handleSaveGlobalSettings() {
+    if (!this.selectedWorkspace) {
+      return;
+    }
+    this.isLoading = true;
+    // Clean up scriptSettings: remove empty/undefined values
+    const cleaned = {};
+    for (const [key, value] of Object.entries(this.editingScriptSettings)) {
+      if (value !== undefined && value !== null && value !== "") {
+        cleaned[key] = value;
+      }
+    }
+    const data = {
+      name: this.selectedWorkspace.name,
+      label: this.selectedWorkspace.label,
+      description: this.selectedWorkspace.description,
+      objects: this.selectedWorkspace.objects || [],
+      scriptSettings: cleaned,
+      originalPath: this.selectedWorkspace.path,
+    };
+    window.sendMessageToVSCode({
+      type: "updateWorkspace",
+      data: JSON.parse(JSON.stringify(data)),
+    });
+    this.showGlobalSettingsModal = false;
+  }
+
+  // --- Object editor: excludedFields handling ---
+
+  get editingObjectExcludedFieldsString() {
+    if (!this.editingObject) {
+      return "";
+    }
+    const val = this.editingObject.excludedFields;
+    if (Array.isArray(val)) {
+      return val.join(", ");
+    }
+    return typeof val === "string" ? val : "";
+  }
+
+  get editingObjectExcludedFromUpdateFieldsString() {
+    if (!this.editingObject) {
+      return "";
+    }
+    const val = this.editingObject.excludedFromUpdateFields;
+    if (Array.isArray(val)) {
+      return val.join(", ");
+    }
+    return typeof val === "string" ? val : "";
+  }
+
+  handleObjArrayFieldChange(event) {
+    const field = event.currentTarget.dataset.field;
+    const value = event.detail?.value ?? event.target.value;
+    this.editingObject = { ...this.editingObject, [field]: value };
   }
 }

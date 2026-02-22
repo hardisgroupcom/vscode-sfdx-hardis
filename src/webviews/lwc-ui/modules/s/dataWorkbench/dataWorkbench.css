@@ -566,3 +566,9 @@ lightning-button-menu {
   --slds-c-table-row-hover-color: var(--slds-g-color-neutral-base-95, #f3f3f3);
   width: 100%;
 }
+
+
+.slds-badge_warning {
+  background-color: #fe9339;
+  color: #fff;
+}
