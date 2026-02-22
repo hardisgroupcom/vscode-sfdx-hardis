@@ -23,6 +23,7 @@ export const sectionDefs = [
       "vsCodeSfdxHardis.theme.menuIconType",
       "vsCodeSfdxHardis.theme.emojisInSections",
       "vsCodeSfdxHardis.disableVsCodeColors",
+      "vsCodeSfdxHardis.colorUpdateLocation",
     ],
   },
   {

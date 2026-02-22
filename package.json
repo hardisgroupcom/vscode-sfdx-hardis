@@ -113,6 +113,19 @@
           "default": false,
           "description": "Disable coloration of VsCode depending on the org type selected (red for production, orange for major org...)"
         },
+        "vsCodeSfdxHardis.colorUpdateLocation": {
+          "type": "string",
+          "default": "Workspace",
+          "enum": [
+            "Workspace",
+            "User"
+          ],
+          "enumDescriptions": [
+            "Colors are updated in the current Workspace settings",
+            "Colors are updated in the User settings"
+          ],
+          "description": "Defines where the colors are updated: in the current Workspace or in the User settings"
+        },
         "vsCodeSfdxHardis.enableMultithread": {
           "type": "boolean",
           "default": false,
