@@ -29,6 +29,7 @@ export class HardisColors {
   currentDefaultOrgDomain: string | undefined | null = undefined;
   initializing: boolean = true;
   majorOrgBranch: string | undefined = undefined;
+  invalidCustomOrgColorWarningShown: boolean = false;
 
   // Initialize file watchers only if we are in a sfdx project
   constructor() { }
@@ -210,10 +211,13 @@ export class HardisColors {
       }
     }
     if (hasInvalidPattern) {
-      vscode.window.showWarningMessage(
-        "🦙 One or more custom org color URLs are invalid. Please check your configuration.",
-        "Close",
-      );
+      if (this.invalidCustomOrgColorWarningShown === false) {
+        this.invalidCustomOrgColorWarningShown = true;
+        vscode.window.showWarningMessage(
+          "🦙 One or more custom org color URLs are invalid. Please check your configuration.",
+          "Close",
+        );
+      }
     }
     if (fullURLMatchColor) {
       return fullURLMatchColor;
