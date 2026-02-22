@@ -185,17 +185,40 @@ export class HardisColors {
     if (!domain) {
       return null;
     }
+    const validURL = (s: string) => {
+      try {
+        new URL(s);
+        return true;
+      } catch {
+        return false;
+      }
+    };
     const normalize = (s: string) => s.replace(/\/+$/, "").toLowerCase();
     const normalizedDomain = normalize(domain);
     const wildcardPatterns: string[] = [];
+    let hasInvalidPattern: boolean = false;
+    let fullURLMatchColor: string | null = null;
     for (const pattern of Object.keys(customOrgColors)) {
       const normalizedPattern = normalize(pattern);
+      if (!validURL(normalizedPattern)) {
+        hasInvalidPattern = true;
+      }
       if (pattern.includes("*")) {
         wildcardPatterns.push(pattern);
       } else if (normalizedPattern === normalizedDomain) {
-        return customOrgColors[pattern];
+        fullURLMatchColor = customOrgColors[pattern];
       }
     }
+    if (hasInvalidPattern) {
+      vscode.window.showWarningMessage(
+        "🦙 One or more custom org color URLs are invalid. Please check your configuration.",
+        "Close",
+      );
+    }
+    if (fullURLMatchColor) {
+      return fullURLMatchColor;
+    }
+
     for (const pattern of wildcardPatterns) {
       // Build regex: split on '*', escape each part, join with '.*'
       const regex = new RegExp(
