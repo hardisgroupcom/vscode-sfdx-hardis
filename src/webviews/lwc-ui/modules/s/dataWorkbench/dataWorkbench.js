@@ -249,15 +249,16 @@ export default class DataWorkbench extends LightningElement {
     this.workspaces = this.normalizeWorkspaces(data.workspaces || []);
     this.isLoading = false;
 
-    if (this.pendingSelectedWorkspacePath) {
+    const targetPath =
+      this.pendingSelectedWorkspacePath ||
+      (this.selectedWorkspace ? this.selectedWorkspace.path : null);
+    if (targetPath) {
       const updatedWorkspace = this.workspaces.find(
-        (w) => w.path === this.pendingSelectedWorkspacePath,
+        (w) => w.path === targetPath,
       );
-      if (updatedWorkspace) {
-        this.selectedWorkspace = updatedWorkspace;
-      }
-      this.pendingSelectedWorkspacePath = null;
+      this.selectedWorkspace = updatedWorkspace || null;
     }
+    this.pendingSelectedWorkspacePath = null;
   }
 
   normalizeWorkspaces(workspacesInput) {
