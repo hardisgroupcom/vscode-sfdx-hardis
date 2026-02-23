@@ -342,6 +342,16 @@ export class LocalWebSocketServer {
         });
       }
     }
+    // Request to refresh data workbench
+    else if (data.event === "refreshDataWorkbench") {
+      const panelManager = LwcPanelManager.getInstance();
+      const dataWorkbenchPanel = panelManager.getPanel("s-data-workbench");
+      if (dataWorkbenchPanel) {
+        dataWorkbenchPanel.sendMessage({
+          type: "refreshWorkspaces",
+        });
+      }
+    }
     // Request to refresh commands box
     else if (data.event === "runSfdxHardisCommand") {
       const sfdxHardisCommand = data?.sfdxHardisCommand || "";

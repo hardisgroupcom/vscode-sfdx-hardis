@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Data Workbench:
+  - Adds log file display
+  - Handle refresh event after import, export or delete operations
+
 ## [6.28.0] 2025-02-22
 
 - Data Workbench: Allow to configure all settings related to SFDMU export.json file
