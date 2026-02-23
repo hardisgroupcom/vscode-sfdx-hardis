@@ -186,9 +186,10 @@ export class HardisColors {
     if (!domain) {
       return null;
     }
-    const validURL = (s: string) => {
+    const validURL = (url: string) => {
+      const cleanedUrl = url.replaceAll("*", "placeholder");
       try {
-        new URL(s);
+        new URL(cleanedUrl);
         return true;
       } catch {
         return false;
