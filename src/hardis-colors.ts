@@ -265,8 +265,9 @@ export class HardisColors {
           `🦙 Your default org is a MAJOR org linked to git branch ${this.majorOrgBranch}, be careful because the CI/CD Server is supposed to deploy in this org, not you 😘`,
           "Close",
         );
+        return forcedColor || this.describeOrgColors()["major"]; // orange !
       }
-      return forcedColor || this.describeOrgColors()["major"]; // orange !
+      return forcedColor || this.describeOrgColors()["dev"]; // blue
     }
     // Production or dev org
     const orgRes = await execSfdxJson(
@@ -288,8 +289,6 @@ export class HardisColors {
         );
         return forcedColor || this.describeOrgColors()["production"]; // red !
       }
-      // Dev org, trial org...
-      return forcedColor || this.describeOrgColors()["dev"]; // blue
     }
     // Default color
     return forcedColor || null;
