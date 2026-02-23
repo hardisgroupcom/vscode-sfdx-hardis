@@ -6,6 +6,7 @@ import { getWorkspaceRoot, stripAnsi } from "./utils";
 import { Logger } from "./logger";
 import { LwcPanelManager } from "./lwc-panel-manager";
 import { HardisStatusProvider } from "./hardis-status-provider";
+import { refreshDataWorkbenchPanel } from "./commands/showDataWorkbench";
 
 const DEFAULT_PORT = parseInt(process.env.SFDX_HARDIS_WEBSOCKET_PORT || "2702");
 let globalWss: LocalWebSocketServer | null;
@@ -341,6 +342,10 @@ export class LocalWebSocketServer {
           type: "refreshPackages",
         });
       }
+    }
+    // Request to refresh data workbench
+    else if (data.event === "refreshDataWorkbench") {
+      refreshDataWorkbenchPanel();
     }
     // Request to refresh commands box
     else if (data.event === "runSfdxHardisCommand") {
