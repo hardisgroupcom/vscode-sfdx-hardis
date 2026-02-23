@@ -368,11 +368,12 @@ function listLogFiles(workspacePath: string): LogFile[] {
   const files: LogFile[] = [];
 
   // Scan /source, /target and /logs subdirectories
-  const subDirs: Array<{ dir: string; logType: "source" | "target" | "log" }> = [
-    { dir: "source", logType: "source" },
-    { dir: "target", logType: "target" },
-    { dir: "logs", logType: "log" },
-  ];
+  const subDirs: Array<{ dir: string; logType: "source" | "target" | "log" }> =
+    [
+      { dir: "source", logType: "source" },
+      { dir: "target", logType: "target" },
+      { dir: "logs", logType: "log" },
+    ];
 
   for (const { dir, logType } of subDirs) {
     const dirPath = path.join(workspacePath, dir);

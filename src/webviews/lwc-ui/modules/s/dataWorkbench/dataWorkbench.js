@@ -503,9 +503,7 @@ export default class DataWorkbench extends LightningElement {
     return (this.selectedWorkspace?.exportedFiles || []).map((file) => ({
       ...file,
       sizeLabel: formatBytes(file.size),
-      createdLabel: file.created
-        ? new Date(file.created).toLocaleString()
-        : "",
+      createdLabel: file.created ? new Date(file.created).toLocaleString() : "",
       modifiedLabel: file.modified
         ? new Date(file.modified).toLocaleString()
         : "",
@@ -521,9 +519,7 @@ export default class DataWorkbench extends LightningElement {
     return (this.selectedWorkspace?.logFiles || []).map((file) => ({
       ...file,
       sizeLabel: formatBytes(file.size),
-      createdLabel: file.created
-        ? new Date(file.created).toLocaleString()
-        : "",
+      createdLabel: file.created ? new Date(file.created).toLocaleString() : "",
       modifiedLabel: file.modified
         ? new Date(file.modified).toLocaleString()
         : "",
