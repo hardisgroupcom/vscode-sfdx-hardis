@@ -94,6 +94,46 @@ export default class DataWorkbench extends LightningElement {
       },
     },
     {
+      label: "Created Date",
+      fieldName: "createdLabel",
+      type: "text",
+    },
+    {
+      label: "Size",
+      fieldName: "sizeLabel",
+      type: "text",
+      cellAttributes: { alignment: "right" },
+    },
+    {
+      label: "Lines",
+      fieldName: "lineCount",
+      type: "number",
+      cellAttributes: { alignment: "right" },
+    },
+  ];
+
+  logFilesColumns = [
+    {
+      label: "File",
+      fieldName: "name",
+      type: "button",
+      typeAttributes: {
+        label: { fieldName: "name" },
+        name: "open",
+        variant: "base",
+      },
+    },
+    {
+      label: "Log Type",
+      fieldName: "logType",
+      type: "text",
+    },
+    {
+      label: "Created Date",
+      fieldName: "createdLabel",
+      type: "text",
+    },
+    {
       label: "Size",
       fieldName: "sizeLabel",
       type: "text",
@@ -139,6 +179,9 @@ export default class DataWorkbench extends LightningElement {
         break;
       case "workspacesLoaded":
         this.handleWorkspacesLoaded(data);
+        break;
+      case "refreshWorkspaces":
+        this.loadWorkspaces();
         break;
       case "workspaceCreated":
         if (data && data.path) {
@@ -228,6 +271,7 @@ export default class DataWorkbench extends LightningElement {
             ? ws.sfdxHardisDescription
             : "",
       exportedFiles: Array.isArray(ws.exportedFiles) ? ws.exportedFiles : [],
+      logFiles: Array.isArray(ws.logFiles) ? ws.logFiles : [],
       objects: (ws.objects || []).map((obj) => ({
         ...obj,
         objectName: obj.objectName || inferObjectNameFromQuery(obj.query),
@@ -459,6 +503,27 @@ export default class DataWorkbench extends LightningElement {
     return (this.selectedWorkspace?.exportedFiles || []).map((file) => ({
       ...file,
       sizeLabel: formatBytes(file.size),
+      createdLabel: file.created
+        ? new Date(file.created).toLocaleString()
+        : "",
+      modifiedLabel: file.modified
+        ? new Date(file.modified).toLocaleString()
+        : "",
+    }));
+  }
+
+  get hasLogFiles() {
+    const files = this.selectedWorkspace?.logFiles || [];
+    return files.length > 0;
+  }
+
+  get logFilesForDisplay() {
+    return (this.selectedWorkspace?.logFiles || []).map((file) => ({
+      ...file,
+      sizeLabel: formatBytes(file.size),
+      createdLabel: file.created
+        ? new Date(file.created).toLocaleString()
+        : "",
       modifiedLabel: file.modified
         ? new Date(file.modified).toLocaleString()
         : "",
@@ -855,6 +920,17 @@ export default class DataWorkbench extends LightningElement {
   }
 
   handleExportedFileAction(event) {
+    const actionName = event?.detail?.action?.name;
+    const row = event?.detail?.row;
+    if (actionName === "open" && row?.path) {
+      window.sendMessageToVSCode({
+        type: "openFile",
+        data: { filePath: row.path },
+      });
+    }
+  }
+
+  handleLogFileAction(event) {
     const actionName = event?.detail?.action?.name;
     const row = event?.detail?.row;
     if (actionName === "open" && row?.path) {

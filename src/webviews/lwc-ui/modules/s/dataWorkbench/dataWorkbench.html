@@ -460,6 +460,40 @@
                       </div>
                     </template>
                   </div>
+
+                  <!-- Section: Logs -->
+                  <div class="detail-section">
+                    <div class="section-header">
+                      <div class="section-header-left">
+                        <lightning-icon icon-name="utility:text_template" size="xx-small" class="slds-m-right_x-small"></lightning-icon>
+                        <h3 class="slds-text-title_caps">Logs</h3>
+                      </div>
+                      <lightning-button-icon
+                        icon-name="utility:refresh"
+                        alternative-text="Refresh logs"
+                        title="Refresh logs"
+                        size="small"
+                        onclick={handleRefreshExportedFiles}
+                      ></lightning-button-icon>
+                    </div>
+                    <template if:true={hasLogFiles}>
+                      <lightning-datatable
+                        key-field="path"
+                        data={logFilesForDisplay}
+                        columns={logFilesColumns}
+                        hide-checkbox-column
+                        show-row-number-column
+                        onrowaction={handleLogFileAction}
+                        class="exported-files-table"
+                      ></lightning-datatable>
+                    </template>
+                    <template if:false={hasLogFiles}>
+                      <div class="empty-section-message">
+                        <lightning-icon icon-name="utility:info" size="x-small" class="slds-m-right_x-small"></lightning-icon>
+                        <span>No log files yet. Run an export or import to generate logs.</span>
+                      </div>
+                    </template>
+                  </div>
                 </lightning-card>
               </template>
               <template if:false={selectedWorkspace}>
