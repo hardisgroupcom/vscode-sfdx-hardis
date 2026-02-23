@@ -2,8 +2,9 @@
 
 ## Unreleased
 
-- Data Workbench:
+- Data Workbench enhancements:
   - Adds log file display
+  - Add column "Created date" in Exported files and logs tables
   - Handle refresh event after import, export or delete operations
 
 ## [6.28.0] 2025-02-22

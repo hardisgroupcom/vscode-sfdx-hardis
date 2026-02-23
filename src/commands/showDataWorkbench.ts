@@ -72,6 +72,7 @@ type ExportedFile = {
   relativePath: string;
   size: number;
   modified: number;
+  created: number;
   lineCount: number;
 };
 
@@ -91,6 +92,22 @@ type DataWorkspace = {
   logFiles: LogFile[];
   scriptSettings: Record<string, any>;
 };
+
+/**
+ * Refresh the Data Workbench panel if it is open.
+ * Called from the websocket server when a refreshDataWorkbench event is received.
+ */
+export async function refreshDataWorkbenchPanel(): Promise<void> {
+  const panelManager = LwcPanelManager.getInstance();
+  const dataWorkbenchPanel = panelManager.getPanel("s-data-workbench");
+  if (dataWorkbenchPanel) {
+    const updatedWorkspaces = await loadDataWorkspaces();
+    dataWorkbenchPanel.sendMessage({
+      type: "workspacesLoaded",
+      data: { workspaces: updatedWorkspaces },
+    });
+  }
+}
 
 export function registerShowDataWorkbench(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
@@ -330,6 +347,7 @@ function listExportedFiles(workspacePath: string): ExportedFile[] {
         relativePath: entry.name,
         size: stats.size,
         modified: stats.mtimeMs,
+        created: stats.birthtimeMs,
         lineCount: lineCount,
       });
     } catch {
@@ -385,6 +403,7 @@ function listLogFiles(workspacePath: string): LogFile[] {
           relativePath: `${dir}/${entry.name}`,
           size: stats.size,
           modified: stats.mtimeMs,
+          created: stats.birthtimeMs,
           lineCount: countFileLines(entryPath),
           logType: logType,
         });
@@ -413,6 +432,7 @@ function listLogFiles(workspacePath: string): LogFile[] {
           relativePath: entry.name,
           size: stats.size,
           modified: stats.mtimeMs,
+          created: stats.birthtimeMs,
           lineCount: countFileLines(entryPath),
           logType: "log",
         });

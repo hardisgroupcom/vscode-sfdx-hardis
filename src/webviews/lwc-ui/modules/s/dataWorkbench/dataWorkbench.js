@@ -94,6 +94,11 @@ export default class DataWorkbench extends LightningElement {
       },
     },
     {
+      label: "Created Date",
+      fieldName: "createdLabel",
+      type: "text",
+    },
+    {
       label: "Size",
       fieldName: "sizeLabel",
       type: "text",
@@ -121,6 +126,11 @@ export default class DataWorkbench extends LightningElement {
     {
       label: "Log Type",
       fieldName: "logType",
+      type: "text",
+    },
+    {
+      label: "Created Date",
+      fieldName: "createdLabel",
       type: "text",
     },
     {
@@ -493,6 +503,9 @@ export default class DataWorkbench extends LightningElement {
     return (this.selectedWorkspace?.exportedFiles || []).map((file) => ({
       ...file,
       sizeLabel: formatBytes(file.size),
+      createdLabel: file.created
+        ? new Date(file.created).toLocaleString()
+        : "",
       modifiedLabel: file.modified
         ? new Date(file.modified).toLocaleString()
         : "",
@@ -508,6 +521,9 @@ export default class DataWorkbench extends LightningElement {
     return (this.selectedWorkspace?.logFiles || []).map((file) => ({
       ...file,
       sizeLabel: formatBytes(file.size),
+      createdLabel: file.created
+        ? new Date(file.created).toLocaleString()
+        : "",
       modifiedLabel: file.modified
         ? new Date(file.modified).toLocaleString()
         : "",
