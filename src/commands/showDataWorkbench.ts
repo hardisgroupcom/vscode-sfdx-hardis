@@ -77,7 +77,7 @@ type ExportedFile = {
 };
 
 type LogFile = ExportedFile & {
-  logType: "source" | "target" | "log";
+  logType: "source" | "target" | "log" | "report";
 };
 
 type DataWorkspace = {
@@ -364,15 +364,17 @@ function listLogFiles(workspacePath: string): LogFile[] {
     source: 0,
     target: 1,
     log: 2,
+    report: 3,
   };
   const files: LogFile[] = [];
 
-  // Scan /source, /target and /logs subdirectories
-  const subDirs: Array<{ dir: string; logType: "source" | "target" | "log" }> =
+  // Scan /source, /target, /logs and /reports subdirectories
+  const subDirs: Array<{ dir: string; logType: "source" | "target" | "log" | "report" }> =
     [
       { dir: "source", logType: "source" },
       { dir: "target", logType: "target" },
       { dir: "logs", logType: "log" },
+      { dir: "reports", logType: "report" },
     ];
 
   for (const { dir, logType } of subDirs) {
