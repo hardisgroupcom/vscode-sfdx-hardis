@@ -393,5 +393,7 @@
 --slds-g-color-on-surface-inverse-2: light-dark(#a8cbff, #002775);
 --slds-g-color-border-inverse-1: light-dark(#f3f3f3, #181818);
 --slds-g-color-border-inverse-2: light-dark(#032d60, #aacbff);
+--slds-g-color-border-base-1: light-dark(#e5e5e5, #2e2e2e);
+--slds-g-color-text-default: light-dark(#181818, #e5e5e5);
 }
 /* COSMOS END */
