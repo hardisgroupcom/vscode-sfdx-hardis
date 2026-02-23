@@ -72,7 +72,12 @@ type ExportedFile = {
   relativePath: string;
   size: number;
   modified: number;
+  created: number;
   lineCount: number;
+};
+
+type LogFile = ExportedFile & {
+  logType: "source" | "target" | "log" | "report";
 };
 
 type DataWorkspace = {
@@ -84,8 +89,25 @@ type DataWorkspace = {
   objects: SfdmuObjectConfig[];
   objectsCount: number;
   exportedFiles: ExportedFile[];
+  logFiles: LogFile[];
   scriptSettings: Record<string, any>;
 };
+
+/**
+ * Refresh the Data Workbench panel if it is open.
+ * Called from the websocket server when a refreshDataWorkbench event is received.
+ */
+export async function refreshDataWorkbenchPanel(): Promise<void> {
+  const panelManager = LwcPanelManager.getInstance();
+  const dataWorkbenchPanel = panelManager.getPanel("s-data-workbench");
+  if (dataWorkbenchPanel) {
+    const updatedWorkspaces = await loadDataWorkspaces();
+    dataWorkbenchPanel.sendMessage({
+      type: "workspacesLoaded",
+      data: { workspaces: updatedWorkspaces },
+    });
+  }
+}
 
 export function registerShowDataWorkbench(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
@@ -272,6 +294,7 @@ async function loadDataWorkspaces(): Promise<DataWorkspace[]> {
         : [];
 
       const exportedFiles = listExportedFiles(workspacePath);
+      const logFiles = listLogFiles(workspacePath);
 
       workspaces.push({
         name: dirent.name,
@@ -282,6 +305,7 @@ async function loadDataWorkspaces(): Promise<DataWorkspace[]> {
         objects: objects,
         objectsCount: objects.length,
         exportedFiles: exportedFiles,
+        logFiles: logFiles,
         scriptSettings: scriptSettings,
       });
     } catch (error) {
@@ -323,6 +347,7 @@ function listExportedFiles(workspacePath: string): ExportedFile[] {
         relativePath: entry.name,
         size: stats.size,
         modified: stats.mtimeMs,
+        created: stats.birthtimeMs,
         lineCount: lineCount,
       });
     } catch {
@@ -331,6 +356,108 @@ function listExportedFiles(workspacePath: string): ExportedFile[] {
   }
 
   return files.sort((a, b) => a.relativePath.localeCompare(b.relativePath));
+}
+
+function listLogFiles(workspacePath: string): LogFile[] {
+  const allowedExtensions = new Set([".csv", ".log"]);
+  const logTypeOrder: Record<string, number> = {
+    source: 0,
+    target: 1,
+    log: 2,
+    report: 3,
+  };
+  const files: LogFile[] = [];
+
+  // Scan /source, /target, /logs and /reports subdirectories
+  const subDirs: Array<{
+    dir: string;
+    logType: "source" | "target" | "log" | "report";
+  }> = [
+    { dir: "source", logType: "source" },
+    { dir: "target", logType: "target" },
+    { dir: "logs", logType: "log" },
+    { dir: "reports", logType: "report" },
+  ];
+
+  for (const { dir, logType } of subDirs) {
+    const dirPath = path.join(workspacePath, dir);
+    if (!fs.existsSync(dirPath)) {
+      continue;
+    }
+    let entries: fs.Dirent[];
+    try {
+      entries = fs.readdirSync(dirPath, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+
+    for (const entry of entries) {
+      if (!entry.isFile()) {
+        continue;
+      }
+      const extension = path.extname(entry.name).toLowerCase();
+      if (!allowedExtensions.has(extension)) {
+        continue;
+      }
+      const entryPath = path.join(dirPath, entry.name);
+      try {
+        const stats = fs.statSync(entryPath);
+        files.push({
+          name: entry.name,
+          path: entryPath,
+          relativePath: `${dir}/${entry.name}`,
+          size: stats.size,
+          modified: stats.mtimeMs,
+          created: stats.birthtimeMs,
+          lineCount: countFileLines(entryPath),
+          logType: logType,
+        });
+      } catch {
+        // ignore unreadable files
+      }
+    }
+  }
+
+  // Scan workspace root for .log files
+  try {
+    const rootEntries = fs.readdirSync(workspacePath, { withFileTypes: true });
+    for (const entry of rootEntries) {
+      if (!entry.isFile()) {
+        continue;
+      }
+      if (path.extname(entry.name).toLowerCase() !== ".log") {
+        continue;
+      }
+      const entryPath = path.join(workspacePath, entry.name);
+      try {
+        const stats = fs.statSync(entryPath);
+        files.push({
+          name: entry.name,
+          path: entryPath,
+          relativePath: entry.name,
+          size: stats.size,
+          modified: stats.mtimeMs,
+          created: stats.birthtimeMs,
+          lineCount: countFileLines(entryPath),
+          logType: "log",
+        });
+      } catch {
+        // ignore unreadable files
+      }
+    }
+  } catch {
+    // ignore unreadable root
+  }
+
+  // Sort: by logType order (source → target → log), then alphabetically
+  return files.sort((a, b) => {
+    const typeA = logTypeOrder[a.logType] ?? 99;
+    const typeB = logTypeOrder[b.logType] ?? 99;
+    if (typeA !== typeB) {
+      return typeA - typeB;
+    }
+    return a.relativePath.localeCompare(b.relativePath);
+  });
 }
 
 function countFileLines(filePath: string): number {
