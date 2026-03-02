@@ -257,6 +257,10 @@ export async function execCommand(
     env: { ...process.env },
   };
   const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+  const langSetting = config.get<string>("lang", "auto");
+  if (langSetting && langSetting !== "auto") {
+    execOptions.env.SFDX_HARDIS_LANG = langSetting;
+  }
   if (config.get("disableTlsRejectUnauthorized") === true) {
     execOptions.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
   }

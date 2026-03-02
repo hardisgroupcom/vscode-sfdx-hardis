@@ -191,6 +191,10 @@ export class CommandRunner {
       env: { ...process.env },
     };
     const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+    const langSetting = config.get<string>("lang", "auto");
+    if (langSetting && langSetting !== "auto") {
+      spawnOptions.env.SFDX_HARDIS_LANG = langSetting;
+    }
     if (config.get("disableTlsRejectUnauthorized") === true) {
       spawnOptions.env = {
         ...spawnOptions.env,
@@ -495,6 +499,10 @@ export class CommandRunner {
     const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
     if (config.get("disableTlsRejectUnauthorized") === true) {
       cmd = `NODE_TLS_REJECT_UNAUTHORIZED=0 ${cmd}`;
+    }
+    const langSetting = config.get<string>("lang", "auto");
+    if (langSetting && langSetting !== "auto" && cmd.trimStart().startsWith("sf hardis")) {
+      cmd = `SFDX_HARDIS_LANG=${langSetting} ${cmd}`;
     }
     if (terminal?.name?.includes("powershell")) {
       cmd = cmd.replace(/ && /g, " ; ").replace(/echo y/g, "Write-Output 'y'");
