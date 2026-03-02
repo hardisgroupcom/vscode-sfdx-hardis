@@ -84,73 +84,78 @@ export default class DataWorkbench extends I18nMixin(ColorThemeMixin(LightningEl
   showGlobalSettingsModal = false;
   @track editingScriptSettings = {};
 
-  exportedFilesColumns = [
-    {
-      label: this.t("dwbColumnFile"),
-      fieldName: "relativePath",
-      type: "button",
-      typeAttributes: {
-        label: { fieldName: "relativePath" },
-        name: "open",
-        variant: "base",
+  get exportedFilesColumns() {
+    return [
+      {
+        label: this.t("dwbColumnFile"),
+        fieldName: "relativePath",
+        type: "button",
+        typeAttributes: {
+          label: { fieldName: "relativePath" },
+          name: "open",
+          variant: "base",
+        },
       },
-    },
-    {
-      label: this.t("dwbColumnCreatedDate"),
-      fieldName: "createdLabel",
-      type: "text",
-    },
-    {
-      label: this.t("dwbColumnSize"),
-      fieldName: "sizeLabel",
-      type: "text",
-      cellAttributes: { alignment: "right" },
-    },
-    {
-      label: this.t("dwbColumnLines"),
-      fieldName: "lineCount",
-      type: "number",
-      cellAttributes: { alignment: "right" },
-    },
-  ];
+      {
+        label: this.t("dwbColumnCreatedDate"),
+        fieldName: "createdLabel",
+        type: "text",
+      },
+      {
+        label: this.t("dwbColumnSize"),
+        fieldName: "sizeLabel",
+        type: "text",
+        cellAttributes: { alignment: "right" },
+      },
+      {
+        label: this.t("dwbColumnLines"),
+        fieldName: "lineCount",
+        type: "number",
+        cellAttributes: { alignment: "right" },
+      },
+    ];
+  }
 
-  logFilesColumns = [
-    {
-      label: this.t("dwbColumnFile"),
-      fieldName: "name",
-      type: "button",
-      typeAttributes: {
-        label: { fieldName: "name" },
-        name: "open",
-        variant: "base",
+  get logFilesColumns() {
+    return [
+      {
+        label: this.t("dwbColumnFile"),
+        fieldName: "name",
+        type: "button",
+        typeAttributes: {
+          label: { fieldName: "name" },
+          name: "open",
+          variant: "base",
+        },
       },
-    },
-    {
-      label: this.t("dwbColumnLogType"),
-      fieldName: "logType",
-      type: "text",
-    },
-    {
-      label: this.t("dwbColumnCreatedDate"),
-      fieldName: "createdLabel",
-      type: "text",
-    },
-    {
-      label: this.t("dwbColumnSize"),
-      fieldName: "sizeLabel",
-      type: "text",
-      cellAttributes: { alignment: "right" },
-    },
-    {
-      label: this.t("dwbColumnLines"),
-      fieldName: "lineCount",
-      type: "number",
-      cellAttributes: { alignment: "right" },
-    },
-  ];
+      {
+        label: this.t("dwbColumnLogType"),
+        fieldName: "logType",
+        type: "text",
+      },
+      {
+        label: this.t("dwbColumnCreatedDate"),
+        fieldName: "createdLabel",
+        type: "text",
+      },
+      {
+        label: this.t("dwbColumnSize"),
+        fieldName: "sizeLabel",
+        type: "text",
+        cellAttributes: { alignment: "right" },
+      },
+      {
+        label: this.t("dwbColumnLines"),
+        fieldName: "lineCount",
+        type: "number",
+        cellAttributes: { alignment: "right" },
+      },
+    ];
+  }
 
   // jscpd:ignore-start
   connectedCallback() {
+    super.connectedCallback();
     this.loadWorkspaces();
     this.updateActionsVisibility();
     this._boundResize = this.updateActionsVisibility.bind(this);
@@ -245,7 +250,6 @@ export default class DataWorkbench extends I18nMixin(ColorThemeMixin(LightningEl
 
   @api
   initialize(data) {
-    this.initTranslations(data);
     if (data && data.workspaces) {
       this.workspaces = this.normalizeWorkspaces(data.workspaces);
     }

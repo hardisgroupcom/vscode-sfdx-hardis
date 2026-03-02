@@ -3,74 +3,12 @@ import { I18nMixin } from "s/i18nMixin";
 
 export default class OrgManager extends I18nMixin(LightningElement) {
   @track orgs = [];
+  @track columns = [];
   @track selectedRowKeys = [];
   @track viewAll = false;
   @track draftValues = [];
   @track validationErrors = [];
   internalCommands = [];
-
-  columns = [
-    {
-      label: this.t("instanceUrlLabel"),
-      fieldName: "instanceUrl",
-      type: "url",
-      typeAttributes: {
-        label: { fieldName: "instanceLabel" },
-        target: "_blank",
-      },
-      cellAttributes: { class: { fieldName: "rowClass" } },
-    },
-    {
-      label: this.t("typeLabel"),
-      fieldName: "orgType",
-      type: "text",
-      initialWidth: 100,
-      cellAttributes: { class: { fieldName: "rowClass" } },
-    },
-    {
-      label: this.t("usernameLabel"),
-      fieldName: "username",
-      type: "text",
-      cellAttributes: { class: { fieldName: "rowClass" } },
-    },
-    {
-      label: this.t("apiVersionLabel"),
-      fieldName: "apiVersion",
-      type: "text",
-      cellAttributes: { class: { fieldName: "rowClass" } },
-    },
-    {
-      label: this.t("aliasLabel"),
-      fieldName: "alias",
-      type: "text",
-      editable: true,
-      initialWidth: 120,
-      cellAttributes: { class: { fieldName: "rowClass" } },
-    },
-    {
-      label: this.t("connectedLabel"),
-      fieldName: "connectedLabel",
-      type: "text",
-      initialWidth: 140,
-      cellAttributes: { class: { fieldName: "rowClass" } },
-    },
-    {
-      label: this.t("roleLabel"),
-      fieldName: "defaultLabel",
-      type: "text",
-      initialWidth: 100,
-      cellAttributes: { class: { fieldName: "rowClass" } },
-    },
-    {
-      label: this.t("actionsLabel"),
-      type: "action",
-      fieldName: "rowActions",
-      typeAttributes: {
-        rowActions: { fieldName: "rowActions" },
-      },
-      cellAttributes: { class: { fieldName: "rowClass" } },
-    },
-  ];
 
   get hasSelection() {
     return this.selectedRowKeys && this.selectedRowKeys.length > 0;
@@ -86,7 +24,68 @@ export default class OrgManager extends I18nMixin(LightningElement) {
 
   @api
   initialize(data) {
-    this.initTranslations(data);
+    this.columns = [
+      {
+        label: this.t("instanceUrlLabel"),
+        fieldName: "instanceUrl",
+        type: "url",
+        typeAttributes: {
+          label: { fieldName: "instanceLabel" },
+          target: "_blank",
+        },
+        cellAttributes: { class: { fieldName: "rowClass" } },
+      },
+      {
+        label: this.t("typeLabel"),
+        fieldName: "orgType",
+        type: "text",
+        initialWidth: 100,
+        cellAttributes: { class: { fieldName: "rowClass" } },
+      },
+      {
+        label: this.t("usernameLabel"),
+        fieldName: "username",
+        type: "text",
+        cellAttributes: { class: { fieldName: "rowClass" } },
+      },
+      {
+        label: this.t("apiVersionLabel"),
+        fieldName: "apiVersion",
+        type: "text",
+        cellAttributes: { class: { fieldName: "rowClass" } },
+      },
+      {
+        label: this.t("aliasLabel"),
+        fieldName: "alias",
+        type: "text",
+        editable: true,
+        initialWidth: 120,
+        cellAttributes: { class: { fieldName: "rowClass" } },
+      },
+      {
+        label: this.t("connectedLabel"),
+        fieldName: "connectedLabel",
+        type: "text",
+        initialWidth: 140,
+        cellAttributes: { class: { fieldName: "rowClass" } },
+      },
+      {
+        label: this.t("roleLabel"),
+        fieldName: "defaultLabel",
+        type: "text",
+        initialWidth: 100,
+        cellAttributes: { class: { fieldName: "rowClass" } },
+      },
+      {
+        label: this.t("actionsLabel"),
+        type: "action",
+        fieldName: "rowActions",
+        typeAttributes: {
+          rowActions: { fieldName: "rowActions" },
+        },
+        cellAttributes: { class: { fieldName: "rowClass" } },
+      },
+    ];
     this.orgs = (data && data.orgs) || [];
     // Normalize rows: compute connected label/variant and ensure username exists as key
     this.orgs = this.orgs.map((o) => ({

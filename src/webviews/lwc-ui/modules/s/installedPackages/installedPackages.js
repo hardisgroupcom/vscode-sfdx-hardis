@@ -49,7 +49,6 @@ export default class InstalledPackages extends I18nMixin(LightningElement) {
 
   @api
   initialize(data) {
-    this.initTranslations(data);
     this.packages = data.packages || [];
     // Sort packages by SubscriberPackageName
     this.packages.sort((a, b) => {

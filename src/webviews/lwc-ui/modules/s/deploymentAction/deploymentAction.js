@@ -15,7 +15,6 @@ export default class DeploymentAction extends I18nMixin(LightningElement) {
   @api
   set parentTranslations(val) {
     if (val) {
-      this.initTranslations({ translations: val });
       this._initOptions();
     }
   }
@@ -105,6 +104,9 @@ export default class DeploymentAction extends I18nMixin(LightningElement) {
   ];
 
   connectedCallback() {
+    super.connectedCallback();
+    // Options arrays depend on translations — init them after auto-translation load.
+    this._initOptions();
     if (this.isEditMode && this.action) {
       this.editedAction = JSON.parse(JSON.stringify(this.action));
       // Ensure parameters object exists

@@ -16,6 +16,7 @@ export default class Welcome extends I18nMixin(ColorThemeMixin(LightningElement)
   scrollThreshold = 100; // Hide toggle after scrolling 100px
   
   connectedCallback() {
+    super.connectedCallback();
     // Bind handler once so we can remove it later
     this._boundHandleScroll = this.handleScroll.bind(this);
     window.addEventListener("scroll", this._boundHandleScroll);
@@ -40,7 +41,6 @@ export default class Welcome extends I18nMixin(ColorThemeMixin(LightningElement)
   initialize(data) {
     console.log("Welcome component initialized:", data);
     this.isLoading = false;
-    this.initTranslations(data);
 
     // Initialize the setting value
     if (data && data.showWelcomeAtStartup !== undefined) {

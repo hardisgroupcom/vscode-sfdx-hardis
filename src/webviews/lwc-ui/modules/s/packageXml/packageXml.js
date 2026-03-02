@@ -42,7 +42,6 @@ export default class PackageXml extends I18nMixin(ColorThemeMixin(LightningEleme
   @api
   initialize(data) {
     console.log("Package XML component initialized:", data);
-    this.initTranslations(data);
     this.isLoading = false;
 
     this.packageConfig = data?.config || {};

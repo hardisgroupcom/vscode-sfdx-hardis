@@ -525,7 +525,7 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
         execCommandWithProgress(
           command,
           { fail: false, output: true },
-          `Automatically upgrading dependencies with command: ${command}`,
+          t("autoUpgradingDependencies", { command }),
         )
           .then(() => {
             setupHelper.setUpdateInProgress(false, command);

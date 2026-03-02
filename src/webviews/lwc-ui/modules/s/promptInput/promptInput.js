@@ -113,6 +113,7 @@ export default class PromptInput extends I18nMixin(LightningElement) {
   }
 
   connectedCallback() {
+    super.connectedCallback();
     // Listen for prompt events from parent
     this.addEventListener("promptrequest", this.handlePromptRequest.bind(this));
 
@@ -144,7 +145,6 @@ export default class PromptInput extends I18nMixin(LightningElement) {
 
   @api
   initialize(initData) {
-    this.initTranslations(initData);
     // Handle initialization from VS Code
     if (initData && initData.prompt) {
       this.showPrompt({ prompts: [initData.prompt] });

@@ -10,7 +10,6 @@ export default class ExtensionConfig extends I18nMixin(ColorThemeMixin(Lightning
 
   @api
   initialize(data) {
-    this.initTranslations(data);
     this.loading = false;
     this.error = null;
     this.activeTabValue = data.activeTabValue || null;

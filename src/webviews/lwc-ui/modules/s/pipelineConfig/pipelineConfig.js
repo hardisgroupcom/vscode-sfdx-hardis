@@ -359,7 +359,6 @@ export default class PipelineConfig extends I18nMixin(LightningElement) {
 
   @api
   initialize(data) {
-    this.initTranslations(data);
     if (data && data.config && data.configSchema) {
       this.initData = Object.assign({}, data);
       this.config = this.initData.config;

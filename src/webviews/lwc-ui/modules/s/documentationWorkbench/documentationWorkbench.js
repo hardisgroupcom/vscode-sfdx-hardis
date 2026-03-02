@@ -29,7 +29,6 @@ export default class DocumentationWorkbench extends I18nMixin(ColorThemeMixin(Li
 
   @api
   initialize(data) {
-    this.initTranslations(data);
     if (data) {
       // Initialize generation options if provided
       if (data.generatePdf !== undefined) {

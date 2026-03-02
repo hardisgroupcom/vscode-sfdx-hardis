@@ -63,6 +63,12 @@ export class LwcUiPanel {
     lwcId: string,
     initData?: any,
   ): LwcUiPanel {
+    // Embed translations early so they are available in the initial HTML (data-init-data)
+    // and the LWC bootstrapper never sees raw key names on first render.
+    const data = initData || {};
+    data.translations = getAllTranslations();
+    data.locale = getCurrentLocale();
+
     const column = vscode.window.activeTextEditor
       ? vscode.window.activeTextEditor.viewColumn
       : undefined;
@@ -101,7 +107,7 @@ export class LwcUiPanel {
       "cloudity-logo.svg",
     );
 
-    const lwcUiPanel = new LwcUiPanel(panel, extensionUri, lwcId, initData);
+    const lwcUiPanel = new LwcUiPanel(panel, extensionUri, lwcId, data);
     lwcUiPanel.setPanelTitleFromLwcId();
     return lwcUiPanel;
   }
@@ -197,9 +203,11 @@ export class LwcUiPanel {
       data.vsCodeSfdxHardisConfiguration = vsCodeSfdxHardisConfiguration;
     }
 
-    // Include translations for LWC components
-    data.translations = getAllTranslations();
-    data.locale = getCurrentLocale();
+    // Include translations for LWC components (only if not already set by display())
+    if (!data.translations) {
+      data.translations = getAllTranslations();
+      data.locale = getCurrentLocale();
+    }
 
     // Always add colorTheme to initialization data for consistent theme support
     const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis.theme");

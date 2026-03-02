@@ -6,10 +6,8 @@ export default class ApexTestsSelect extends I18nMixin(LightningElement) {
   @api value = [];
 
   @api
-  set translations(val) {
-    if (val) {
-      this.initTranslations({ translations: val });
-    }
+  set translations(_val) {
+    // translations are auto-initialized from window.__lwcTranslations via I18nMixin.connectedCallback
   }
   get translations() {
     return undefined;

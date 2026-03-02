@@ -27,6 +27,7 @@ export default class FilesWorkbench extends I18nMixin(ColorThemeMixin(LightningE
   };
 
   connectedCallback() {
+    super.connectedCallback();
     this.loadWorkspaces();
     // initialize responsive state and listen to window resize to toggle
     // action controls so only one set is rendered at any time.
@@ -101,7 +102,6 @@ export default class FilesWorkbench extends I18nMixin(ColorThemeMixin(LightningE
 
   @api
   initialize(data) {
-    this.initTranslations(data);
     if (data && data.workspaces) {
       this.workspaces = data.workspaces;
     }

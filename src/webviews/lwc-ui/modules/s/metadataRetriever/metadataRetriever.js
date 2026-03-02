@@ -306,6 +306,7 @@ export default class MetadataRetriever extends I18nMixin(LightningElement) {
   }
 
   connectedCallback() {
+    super.connectedCallback();
     // Notify VS Code that the component is initialized
     this.isLoadingOrgs = true;
     window.sendMessageToVSCode({ type: "listOrgs" });
@@ -344,7 +345,6 @@ export default class MetadataRetriever extends I18nMixin(LightningElement) {
 
   @api
   initialize(data) {
-    this.initTranslations(data);
     // Update packageOptions labels with translations
     this.packageOptions = [
       { label: this.t("allLabel"), value: "All" },

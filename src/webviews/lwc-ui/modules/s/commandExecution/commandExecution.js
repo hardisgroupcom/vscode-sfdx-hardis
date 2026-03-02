@@ -43,6 +43,7 @@ export default class CommandExecution extends I18nMixin(LightningElement) {
   }
 
   connectedCallback() {
+    super.connectedCallback();
     // Make component available globally for VS Code message handling
     if (typeof window !== "undefined") {
       window.commandExecutionComponent = this;
@@ -105,7 +106,6 @@ export default class CommandExecution extends I18nMixin(LightningElement) {
 
   @api
   initialize(initData) {
-    this.initTranslations(initData);
     this.initializeCommand(initData);
   }
 

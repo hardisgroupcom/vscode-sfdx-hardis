@@ -458,32 +458,61 @@ Available exports from `src/i18n/i18n.ts`:
 - `getAllTranslations()` — Get all translations for the current locale (used for LWC)
 - `getCurrentLocale()` — Get the current locale string
 
+Items that must be systematically translated include:
+- any variable that looks like it will be shown to the user, even if it's not a full sentence (e.g., button labels, section titles, status messages)
+- User targeted properties "message", "description"...
+- 3rd argment of calls to method execCommandWithProgress()
+
 ### LWC Usage (Frontend)
 
-LWC components use the `I18nMixin`:
+Translations are injected by `lwc-ui-panel.ts` into `data-init-data` via `getAllTranslations()` / `getCurrentLocale()`. The bootstrapper (`index.js`) sets `window.__lwcTranslations` and `window.__lwcLocale` **before** mounting the component, so translations are available on the very first render with no flash.
+
+LWC components use the `I18nMixin`, which auto-initialises from `window.__lwcTranslations` in `connectedCallback`:
 ```javascript
 import { I18nMixin } from "s/i18nMixin";
 
 export default class MyComponent extends I18nMixin(LightningElement) {
-  initialize(data) {
-    this.initTranslations(data); // Load translations from init data
-    // ... other initialization
-  }
-
-  get someLabel() {
-    return this.t("myTranslationKey");
-  }
-
-  get labelWithVars() {
-    return this.t("orgExpiresInNDays", { days: this.daysLeft });
+  // connectedCallback auto-inits translations from window.__lwcTranslations.
+  // If you define your own connectedCallback, you MUST call super.connectedCallback():
+  connectedCallback() {
+    super.connectedCallback();
+    // ... your init logic
   }
 }
 ```
 
-In LWC HTML templates, use tracked properties (getters) since you cannot call methods directly in templates:
+**In HTML templates**, use `{i18n.keyName}` directly — no getters needed for static labels:
 ```html
-<span>{someLabel}</span>
+<span>{i18n.welcomeTitle}</span>
+<lightning-button label={i18n.saveLabel}></lightning-button>
 ```
+
+**In JavaScript**, use `this.t(key, vars)` only when you need interpolation or must compute the string dynamically:
+```javascript
+get formattedDuration() {
+  return this.t("durationLabel", { duration: this.elapsed });
+}
+
+get expiryText() {
+  return this.t("orgExpiresInNDays", { days: this.daysLeft });
+}
+```
+
+Then bind the getter result in the template:
+```html
+<span>{formattedDuration}</span>
+```
+
+**Rule of thumb:**
+- Static label → `{i18n.keyName}` in template (no getter)
+- Dynamic / interpolated → `this.t("key", { var: value })` in a getter, bind the getter in template
+
+**`I18nMixin` API:**
+- `this.i18n` — Reactive Proxy over all translations; missing keys fall back to the key name itself
+- `this.t(key, vars?)` — Translate with optional `{{varName}}` interpolation
+- `this.translations` — Raw translations object (useful to pass to child components)
+- `this._locale` — Current locale string
+- `this.initTranslations(data)` — Manually re-initialise translations if needed
 
 ### Locale Detection Priority
 1. VS Code setting `vsCodeSfdxHardis.lang` (if not `"auto"`)

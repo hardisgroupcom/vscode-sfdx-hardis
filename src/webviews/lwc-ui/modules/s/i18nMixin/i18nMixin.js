@@ -11,19 +11,25 @@
  *
  * For dynamic interpolation, use `this.t(key, { varName: value })` in JS.
  *
+ * Translations are automatically initialized from `window.__lwcTranslations` in
+ * `connectedCallback`, which is populated by the LWC bootstrapper (index.js) from
+ * the `data-init-data` attribute before mounting. This means static HTML bindings
+ * like `{i18n.someKey}` are correct on the very first render with no flash.
+ *
+ * Components that define their own `connectedCallback` must call
+ * `super.connectedCallback()` to ensure auto-initialization runs.
+ *
  * Usage:
  *   import { I18nMixin } from 's/i18nMixin';
  *   export default class MyComponent extends I18nMixin(LightningElement) {
- *     initialize(data) {
- *       this.initTranslations(data);
+ *     connectedCallback() {
+ *       super.connectedCallback(); // auto-inits translations
  *     }
  *   }
  *
  *   In template:
  *     <span>{i18n.welcomeTitle}</span>
  *     <span>{computedGreeting}</span>  <!-- for interpolated strings, use a getter -->
- *
- * Translations are passed from the extension in `initialize(data)` as `data.translations`.
  */
 
 export const I18nMixin = (BaseClass) =>
@@ -53,8 +59,24 @@ export const I18nMixin = (BaseClass) =>
     translations = {};
 
     /**
-     * Initialize translations from the extension data.
-     * Call this in your component's `initialize(data)` method.
+     * Automatically initialize translations from the globally-preloaded window translations.
+     * Components that override connectedCallback must call super.connectedCallback().
+     */
+    connectedCallback() {
+      if (typeof window !== "undefined" && window.__lwcTranslations) {
+        this.initTranslations({
+          translations: window.__lwcTranslations,
+          locale: window.__lwcLocale || "en",
+        });
+      }
+      if (super.connectedCallback) {
+        super.connectedCallback();
+      }
+    }
+
+    /**
+     * Initialize translations from data. Called automatically by connectedCallback.
+     * Can also be called manually if translations need to be refreshed.
      */
     initTranslations(data) {
       if (data && data.translations) {

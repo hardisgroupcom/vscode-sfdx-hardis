@@ -14,7 +14,6 @@ export default class OrgMonitoring extends I18nMixin(LightningElement) {
 
   @api
   initialize(data) {
-    this.initTranslations(data);
     console.log("Org Monitoring component initialized:", data);
     this.isInstalled = data?.isInstalled || false;
     this.isCiCdRepo = data?.isCiCdRepo || false;

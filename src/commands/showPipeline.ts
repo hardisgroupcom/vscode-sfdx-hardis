@@ -20,6 +20,7 @@ import {
   getWorkspaceRoot,
   readSfdxHardisConfig,
 } from "../utils";
+import { t } from "../i18n/i18n";
 import path from "path";
 import fs from "fs-extra";
 import { listAllOrgs } from "../utils/orgUtils";
@@ -234,10 +235,10 @@ export function registerShowPipeline(commands: Commands) {
 
           if (command) {
             const progressLabel = targetOrgUsername
-              ? `Opening org ${targetOrgUsername}`
+              ? t("openingOrgNamed", { name: targetOrgUsername })
               : alias
-                ? `Opening org ${alias}`
-                : "Opening org";
+                ? t("openingOrgNamed", { name: alias })
+                : t("openingOrg");
             try {
               await execCommandWithProgress(
                 command,

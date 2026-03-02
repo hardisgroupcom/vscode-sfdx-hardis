@@ -25,13 +25,13 @@ export default class DocumentationConfig extends I18nMixin(ColorThemeMixin(Light
   _schema = {};
 
   connectedCallback() {
+    super.connectedCallback();
     // Request config data from extension
     window.sendMessageToVSCode({ type: "requestDocConfig" });
   }
 
   @api
   initialize(data) {
-    this.initTranslations(data);
     if (data) {
       this._applyPromptTemplatesInfo(data);
       // Build config UI

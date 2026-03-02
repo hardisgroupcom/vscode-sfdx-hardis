@@ -12,6 +12,7 @@ export default class Setup extends I18nMixin(LightningElement) {
   // (no fixed-position behaviour needed; toggle will live inside header)
 
   connectedCallback() {
+    super.connectedCallback();
     // Request initialization data (UI should render the list immediately)
     window.sendMessageToVSCode({ type: "requestSetupInit" });
   }
@@ -20,7 +21,6 @@ export default class Setup extends I18nMixin(LightningElement) {
   handleMessage(type, data) {
     console.log("Setup component received message:", type, data);
     if (type === "initialize") {
-      this.initTranslations(data);
       // Render the static list first (no checking yet) so the UI paints quickly
       this._autoUpdateDependencies =
         data && data.autoUpdateDependencies === true;

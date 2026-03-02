@@ -425,7 +425,6 @@ export default class Pipeline extends I18nMixin(LightningElement) {
 
   @api
   initialize(data) {
-    this.initTranslations(data);
     this.loading = this._isAutoRefresh ? false : false;
     this._isAutoRefresh = false;
     this.pipelineData = data.pipelineData;
@@ -650,6 +649,7 @@ export default class Pipeline extends I18nMixin(LightningElement) {
   }
 
   connectedCallback() {
+    super.connectedCallback();
     this._boundAdjust = this.adjustPrColumns.bind(this);
     this._boundVisibilityChange = this._handleVisibilityChange.bind(this);
     if (typeof window !== "undefined" && window.addEventListener) {
