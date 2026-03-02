@@ -137,16 +137,24 @@ export class LwcUiPanel {
     const lwcDefinitions: {
       [key: string]: string;
     } = {
-      "s-prompt-input": t("promptInput"),
+      "s-apex-tests-select": t("apexTests"),
       "s-command-execution": t("commandExecution"),
+      "s-data-workbench": t("dataImportExportWorkbench"),
+      "s-deployment-action": t("deploymentActionDetails"),
+      "s-documentation-config": t("documentationConfig"),
+      "s-documentation-workbench": t("documentationWorkbench"),
+      "s-extension-config": t("extensionConfig"),
+      "s-files-workbench": t("filesImportExportWorkbench"),
+      "s-installed-packages": t("installedPackagesManager"),
+      "s-metadata-retriever": t("metadataRetriever"),
+      "s-org-manager": t("orgsManager"),
+      "s-org-monitoring": t("orgMonitoringWorkbench"),
+      "s-package-xml": t("packageXml"),
       "s-pipeline": t("devOpsPipeline"),
       "s-pipeline-config": t("pipelineConfig"),
-      "s-extension-config": t("extensionConfig"),
-      "s-data-workbench": t("dataImportExportWorkbench"),
-      "s-files-workbench": t("filesImportExportWorkbench"),
-      "s-documentation-workbench": t("documentationWorkbench"),
-      "s-documentation-config": t("documentationConfig"),
+      "s-prompt-input": t("promptInput"),
       "s-setup": t("installDependencies"),
+      "s-welcome": t("welcomeTitle"),
     };
     const panelTitle = lwcDefinitions[this.lwcId] || t("panelTitleDefault");
     this.panel.title = panelTitle;
