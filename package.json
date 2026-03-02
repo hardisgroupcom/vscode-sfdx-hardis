@@ -195,12 +195,14 @@
           "enum": [
             "auto",
             "en",
-            "fr"
+            "fr",
+            "ja"
           ],
           "enumDescriptions": [
             "Automatic (use VS Code display language)",
             "English",
-            "Français"
+            "Français",
+            "日本語"
           ],
           "description": "Language for SFDX Hardis extension interface. 'auto' uses the VS Code display language."
         },
