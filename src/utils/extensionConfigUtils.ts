@@ -1,10 +1,11 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import * as fs from "fs-extra";
+import { t } from "../i18n/i18n";
 
 export const sectionDefs = [
   {
-    label: "User Input",
+    label: "userInputSection",
     value: "user-input",
     iconName: "utility:user",
     description: "How user input is handled in the extension.",
@@ -16,7 +17,7 @@ export const sectionDefs = [
     ],
   },
   {
-    label: "Theme",
+    label: "themeSection",
     value: "theme",
     iconName: "utility:brush",
     description: "UI and theming options.",
@@ -30,7 +31,7 @@ export const sectionDefs = [
     ],
   },
   {
-    label: "Performance",
+    label: "performanceSection",
     value: "performance",
     iconName: "utility:indicator_performance_period",
     description: "Performance and optimization settings.",
@@ -48,7 +49,7 @@ export const sectionDefs = [
     keys: ["vsCodeSfdxHardis.mcp.autoStartSalesforceCliMcp"],
   },
   {
-    label: "Debug",
+    label: "debugSection",
     iconName: "utility:bug",
     description: "Debugging options for the extension.",
     keys: [
@@ -57,7 +58,7 @@ export const sectionDefs = [
     ],
   },
   {
-    label: "Other",
+    label: "other",
     value: "other",
     iconName: "utility:settings",
     description: "Other settings related to the extension.",
@@ -86,7 +87,7 @@ export async function getExtensionConfigSections(
 
   // Build sections with merged config info
   const sections = sectionDefs.map((section) => ({
-    label: section.label,
+    label: t(section.label),
     value: section.value,
     iconName: section.iconName,
     description: section.description,

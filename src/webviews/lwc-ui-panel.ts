@@ -327,7 +327,7 @@ export class LwcUiPanel {
     command: string;
   }): Promise<void> {
     if (!data || !data.command || typeof data.command !== "string") {
-      vscode.window.showErrorMessage("No VS Code command specified to run.");
+      vscode.window.showErrorMessage(t("noVsCodeCommandSpecified"));
       return;
     }
     try {
@@ -357,7 +357,7 @@ export class LwcUiPanel {
     progressMessage: string;
   }): Promise<void> {
     if (!data || !data.command || typeof data.command !== "string") {
-      vscode.window.showErrorMessage("No internal command specified to run.");
+      vscode.window.showErrorMessage(t("noInternalCommandSpecified"));
       return;
     }
     const command = data.command;

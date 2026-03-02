@@ -11,6 +11,7 @@ import {
   writeSfdxHardisConfig,
 } from "./utils";
 import { HardisStatusProvider } from "./hardis-status-provider";
+import { t } from "./i18n/i18n";
 
 const PRODUCTION_EDITIONS = [
   "Team Edition",
@@ -127,8 +128,8 @@ export class HardisColors {
   // Will be replaced by color picker once available in VsCode API: https://github.com/microsoft/vscode/pull/178242
   async promptColor(org: string) {
     const inputBoxOptions: vscode.InputBoxOptions = {
-      prompt: `Please enter a color code for ${org} (type "color picker" in google to get one)`,
-      placeHolder: "Example: #0335fc",
+      prompt: t("enterColorPrompt", { org }),
+      placeHolder: t("enterColorPlaceholder"),
       ignoreFocusOut: true,
       validateInput: (text) => {
         return /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(text)

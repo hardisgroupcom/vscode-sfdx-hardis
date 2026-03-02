@@ -2,6 +2,7 @@ import * as fs from "fs-extra";
 import * as path from "path";
 import yaml from "js-yaml";
 import axios from "axios";
+import { t } from "../../i18n/i18n";
 
 export interface SfdxHardisConfig {
   [key: string]: any;
@@ -93,12 +94,12 @@ export class SfdxHardisConfigHelper {
   ];
   static readonly SECTIONS = [
     {
-      label: "Salesforce Org",
+      label: "salesforceOrg",
       description: "",
       keys: ["instanceUrl", "targetUsername"],
     },
     {
-      label: "Deployment",
+      label: "deployment",
       description: "",
       keys: [
         "useDeltaDeployment",
@@ -112,12 +113,12 @@ export class SfdxHardisConfigHelper {
       ],
     },
     {
-      label: "Pre-Post Deploy Commands",
+      label: "prePostDeployCommands",
       description: "",
       keys: ["commandsPreDeploy", "commandsPostDeploy"],
     },
     {
-      label: "User Stories",
+      label: "userStories",
       description: "",
       keys: [
         "developmentBranch",
@@ -130,7 +131,7 @@ export class SfdxHardisConfigHelper {
       ],
     },
     {
-      label: "Salesforce Project",
+      label: "salesforceProject",
       description: "",
       keys: [
         "autoCleanTypes",
@@ -139,7 +140,7 @@ export class SfdxHardisConfigHelper {
       ],
     },
     {
-      label: "Ticketing",
+      label: "ticketing",
       description: "",
       keys: [
         "ticketingProvider",
@@ -150,7 +151,7 @@ export class SfdxHardisConfigHelper {
       ],
     },
     {
-      label: "Dev Hub",
+      label: "devHub",
       description: "",
       keys: [
         "devHubAlias",
@@ -161,7 +162,7 @@ export class SfdxHardisConfigHelper {
       ],
     },
     {
-      label: "Danger Zone",
+      label: "dangerZone",
       description:
         "Use these settings with caution, be sure to understand their impact as they drift from DevOps best practices.",
       keys: [
@@ -175,7 +176,7 @@ export class SfdxHardisConfigHelper {
       ],
     },
     {
-      label: "Other",
+      label: "other",
       description: "",
       keys: ["extends"],
     },
@@ -364,7 +365,7 @@ export class SfdxHardisConfigHelper {
       isBranch,
       branchName: branchName || "",
       configSchema,
-      sections: SfdxHardisConfigHelper.SECTIONS,
+      sections: SfdxHardisConfigHelper.SECTIONS.map((s) => ({ ...s, label: t(s.label) })),
     };
   }
 

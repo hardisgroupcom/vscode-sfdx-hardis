@@ -1,5 +1,6 @@
 import path from "path";
 import * as vscode from "vscode";
+import { t } from "./i18n/i18n";
 
 export class ThemeUtils {
   public emojisInSections: boolean;
@@ -77,9 +78,10 @@ export class ThemeUtils {
       });
     });
     const quickpick2 = vscode.window.createQuickPick<vscode.QuickPickItem>();
+    const withEmojisLabel = t("withEmojis");
     const emojisChoices: vscode.QuickPickItem[] = [
-      { label: "With Emojis", detail: "Display section titles with emojis" },
-      { label: "Without Emojis", detail: "Hide emojis in section title" },
+      { label: withEmojisLabel, detail: "Display section titles with emojis" },
+      { label: t("withoutEmojis"), detail: "Hide emojis in section title" },
     ];
     const emojisInSections = await new Promise<any>((resolve) => {
       quickpick2.ignoreFocusOut = true;
@@ -115,11 +117,11 @@ export class ThemeUtils {
     }
     if (
       config.get("emojisInSections") !==
-      (emojisInSections === "With Emojis" ? true : false)
+      (emojisInSections === withEmojisLabel ? true : false)
     ) {
       await config.update(
         "emojisInSections",
-        emojisInSections === "With Emojis" ? true : false,
+        emojisInSections === withEmojisLabel ? true : false,
         vscode.ConfigurationTarget.Global,
       );
     }

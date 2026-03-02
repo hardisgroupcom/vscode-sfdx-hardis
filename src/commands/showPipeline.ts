@@ -514,7 +514,7 @@ export function registerShowPipeline(commands: Commands) {
         repoPlatformLabel = desc.providerLabel;
       } else {
         prButtonInfo.url = "";
-        prButtonInfo.label = "View Pull Requests";
+        prButtonInfo.label = t("viewPullRequests");
         prButtonInfo.icon = "";
       }
 

@@ -458,11 +458,6 @@ Available exports from `src/i18n/i18n.ts`:
 - `getAllTranslations()` — Get all translations for the current locale (used for LWC)
 - `getCurrentLocale()` — Get the current locale string
 
-Items that must be systematically translated include:
-- any variable that looks like it will be shown to the user, even if it's not a full sentence (e.g., button labels, section titles, status messages)
-- User targeted properties "message", "description"...
-- 3rd argment of calls to method execCommandWithProgress()
-
 ### LWC Usage (Frontend)
 
 Translations are injected by `lwc-ui-panel.ts` into `data-init-data` via `getAllTranslations()` / `getCurrentLocale()`. The bootstrapper (`index.js`) sets `window.__lwcTranslations` and `window.__lwcLocale` **before** mounting the component, so translations are available on the very first render with no flash.
@@ -528,13 +523,17 @@ When adding new user-facing strings:
 3. For dynamic values, use interpolation: `t("key", { varName: value })`
 
 ### What to Translate vs. Not Translate
-**Translate:** Labels, tooltips, error messages, warning messages, section titles, descriptions shown to users.
+**Translate:** 
+- Labels, tooltips, error messages, warning messages, section titles, descriptions shown to users, any variable that looks like it will be shown to the user, even if it's not a full sentence (e.g., button labels, section titles, status messages)
+- User targeted properties "message", "description"...
+- 3rd argument of calls to method execCommandWithProgress()
+- all arguments of methods showErrorMessage, showInformationMessage, showWarning
 
 **Do NOT translate:**
 - Technical identifiers: command IDs, icon IDs, file paths, CSS classes
 - Technical terms kept as-is: merge request, commit, branch, sandbox, scratch org, package.xml, Apex, SOQL, LWC, DevHub, CLI flags, environment variable names
 - `[markers]` in brackets
-- Brand names: Salesforce, GitHub, GitLab, SFDMU, MegaLinter
+- Brand names: Salesforce, GitHub, GitLab, SFDMU, MegaLinter, SFDX-Hardis, Cloudity, etc.
 
 ### French Translation Guidelines
 - Use official Salesforce French terminology (e.g., "Métadonnées", "Déploiement", "Org Salesforce")

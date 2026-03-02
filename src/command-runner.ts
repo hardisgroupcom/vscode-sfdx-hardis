@@ -1,6 +1,7 @@
 import treeKill from "tree-kill";
 import * as vscode from "vscode";
 import { LwcPanelManager } from "./lwc-panel-manager";
+import { t } from "./i18n/i18n";
 import { spawn } from "child_process";
 import {
   containsCertificateIssue,
@@ -215,7 +216,7 @@ export class CommandRunner {
       } else {
         msg = String(e);
       }
-      vscode.window.showErrorMessage("Failed to start command: " + msg);
+      vscode.window.showErrorMessage(t("failedToStartCommand", { msg }));
       return;
     }
     // Register as active now that process exists

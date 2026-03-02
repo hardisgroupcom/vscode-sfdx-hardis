@@ -245,8 +245,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
           {
             id: "scratch:pull-from-org-to-git",
             label: t("pullFromSfOrgToLocalFiles"),
-            tooltip:
-              'Once you have made your configuration in your org Setup, click here to download your updates.\nThen, you can commit the updates you want to publish (use VsCode Git extension)\nThen you can run command "Save / Publish User Story"\nNote: if you don\'t see all your updates, you can manually retrieve it using VsCode Extension "Org Browser"(Salesforce logo)',
+            tooltip: t("pullFromSfOrgToLocalFilesTooltip"),
             command: "sf hardis:scratch:pull",
             requiresProject: true,
             helpUrl: "https://sfdx-hardis.cloudity.com/hardis/scratch/pull/",
@@ -274,8 +273,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
           {
             id: "scratch:create",
             label: t("createScratchOrg"),
-            tooltip:
-              "If during Work:New you had an error, you can resume the scratch org creation",
+            tooltip: t("createScratchOrgResumeTooltip"),
             command: "sf hardis:scratch:create",
             requiresProject: true,
             helpUrl: "https://sfdx-hardis.cloudity.com/hardis/scratch/create/",
@@ -291,8 +289,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
           {
             id: "package:install",
             label: t("installAPackage"),
-            tooltip:
-              "This will update project .sfdx-hardis.yml so the package will always be installed in new scratch orgs and future deployments",
+            tooltip: t("installPackageTooltip"),
             command: "sf hardis:package:install",
             requiresProject: true,
             helpUrl: "https://sfdx-hardis.cloudity.com/hardis/package/install/",
@@ -300,40 +297,35 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
           {
             id: "org:retrieve:packageconfig",
             label: t("retrievePackagesConfigFromOrg"),
-            tooltip:
-              "Retrieve package configuration from an org and propose to update project sfdx-hardis configuration",
+            tooltip: t("retrievePackagesConfigFromOrgTooltip"),
             command: "sf hardis:org:retrieve:packageconfig",
           },
           {
             id: "org:password:generate",
             label: t("generateNewPassword"),
             command: "sf org generate password",
-            tooltip:
-              "Generates a new password for your current scratch org user",
+            tooltip: t("generateNewPasswordTooltip"),
             helpUrl:
               "https://developer.salesforce.com/docs/atlas.en-us.sfdx_dev.meta/sfdx_dev/sfdx_dev_scratch_orgs_passwd.htm",
           },
           {
             id: "org:connect",
             label: t("connectToSalesforceOrg"),
-            tooltip:
-              "Connects to a Salesforce org without setting it as defaultusername",
+            tooltip: t("connectToOrgTooltip"),
             command: "sf hardis:org:connect",
             helpUrl: "https://sfdx-hardis.cloudity.com/hardis/org/connect/",
           },
           {
             id: "source:retrieve",
             label: t("selectAndRetrieveSfdxSourcesFromOrg"),
-            tooltip:
-              "Allows user to select a list of metadata types and process the retrieve from an org",
+            tooltip: t("selectAndRetrieveSourcesTooltip"),
             command: "sf hardis:source:retrieve",
             helpUrl: "https://sfdx-hardis.cloudity.com/hardis/source/retrieve/",
           },
           {
             id: "org:retrieve:sources:analytics",
             label: t("retrieveAllCrmAnalyticsSources"),
-            tooltip:
-              "Allows user to select a list of metadata types and process the retrieve from an org",
+            tooltip: t("retrieveAnalyticsSourcesTooltip"),
             command: "sf hardis:org:retrieve:sources:analytics",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/org/retrieve/sources/analytics/",
@@ -341,8 +333,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
           {
             id: "force:source:tracking:reset",
             label: t("clearLocalAndRemoteSfdxTrackingFiles"),
-            tooltip:
-              "Removes all local and remote information about updates you already pulled from org",
+            tooltip: t("clearLocalAndRemoteTrackingTooltip"),
             command: "sf project reset tracking",
             helpUrl:
               "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_project_commands_unified.htm#cli_reference_project_reset_tracking_unified",
@@ -352,7 +343,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             label: t("logoutFromCurrentOrgAndDevHub"),
             command:
               "sf org logout --noprompt || true && sf config:unset target-org target-dev-hub -g && sf config:unset target-org target-dev-hub || true",
-            tooltip: "Log out from orgs",
+            tooltip: t("logoutFromOrgsTooltip"),
 
             helpText:
               "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_org_commands_unified.htm#cli_reference_org_logout_unified",
@@ -362,22 +353,20 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             label: t("loginAgainToGit"),
             command:
               "echo 'If you see and error, execute the same commands in PowerShell run as administrator' && git config --system --unset credential.helper && git config credential.helper store && git fetch",
-            tooltip: "Use this command in case you have git login errors",
+            tooltip: t("gitLoginErrorsTooltip"),
           },
           {
             id: "git:pull-requests:extract",
             label: t("extractPullRequests"),
             command: "sf hardis:git:pull-requests:extract",
-            tooltip:
-              "Extract Pull Requests and associated ticketing system references in a CSV / Excel file",
+            tooltip: t("extractPullRequestsTooltip"),
           },
           {
             id: "project:generate:bypass",
             label: t("generateBypassCustomPermissions"),
             command: "sf hardis:project:generate:bypass",
             requiresProject: true,
-            tooltip:
-              "Generates bypass custom permissions and permission sets for specified sObjects and automations (Flows, Triggers, and Validation Rules)",
+            tooltip: t("generateBypassTooltip"),
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/project/generate/bypass/",
           },
@@ -386,8 +375,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             label: t("activateDecomposedFormat"),
             command: "sf hardis:project:metadata:activate-decomposed",
             requiresProject: true,
-            tooltip:
-              "Activate decomposed format for metadata in your SFDX project (beta feature)",
+            tooltip: t("activateDecomposedTooltip"),
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/project/metadata/activate-decomposed/",
           },
@@ -401,8 +389,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
           {
             id: "vscode-sfdx-hardis.showDataWorkbench",
             label: t("dataImportExportWorkbench"),
-            tooltip:
-              "Manage SFDMU data workspaces and run export/import/delete operations with an intuitive interface",
+            tooltip: t("dataWorkbenchTooltip"),
             command: "vscode-sfdx-hardis.showDataWorkbench",
           },
           {
@@ -437,8 +424,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
           {
             id: "org:multi-org-query",
             label: t("multiOrgSoqlQueryReport"),
-            tooltip:
-              "Executes a SOQL query in multiple orgs and generate a single report from it",
+            tooltip: t("multiOrgQueryTooltip"),
             command: "sf hardis:org:multi-org-query",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/org/multi-org-query/",
@@ -453,8 +439,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
           {
             id: "vscode-sfdx-hardis.showFilesWorkbench",
             label: t("filesImportExportWorkbench"),
-            tooltip:
-              "Manage file import/export workspaces and run file operations with an intuitive interface",
+            tooltip: t("filesWorkbenchTooltip"),
             command: "vscode-sfdx-hardis.showFilesWorkbench",
           },
           {
@@ -496,15 +481,13 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
           {
             id: "hardis:debug:activate",
             label: t("activateDebugLogsTracing"),
-            tooltip:
-              "Activate tracing of logs to use the local replay debugger",
+            tooltip: t("activateDebugLogsTooltip"),
             command: "vscode-sfdx-hardis.debug.activate",
           },
           {
             id: "hardis:debug:deactivate",
             label: t("deactivateDebugLogsTracing"),
-            tooltip:
-              "Deactivate tracing of logs to use the local replay debugger",
+            tooltip: t("deactivateDebugLogsTooltip"),
             command: "vscode-sfdx-hardis.debug.deactivate",
           },
           {
@@ -524,8 +507,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
           {
             id: "hardis:debug:importapex",
             label: t("retrieveApexSourcesFromOrg"),
-            tooltip:
-              "Retrieve sources from your org so you can use the replay debugger",
+            tooltip: t("retrieveApexForDebugTooltip"),
             command:
               "sf hardis:org:retrieve:sources:dx -k ApexClass,ApexTrigger,ApexPage",
           },
@@ -538,8 +520,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
           {
             id: "vscode-sfdx-hardis.openOrgsManager",
             label: t("orgsManager"),
-            tooltip:
-              "Open Orgs Manager to connect to new orgs, disconnect from existing orgs and make some cleaning",
+            tooltip: t("orgsManagerTooltip"),
             command: "vscode-sfdx-hardis.openOrgsManager",
           },
           {
@@ -560,8 +541,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
           {
             id: "org:purge:flow",
             label: t("purgeObsoleteFlowsVersions"),
-            tooltip:
-              "Purge all flows with status Obsolete in your org, so you are not bothered by the 50 versions limits",
+            tooltip: t("purgeObsoleteFlowsTooltip"),
             command: "sf hardis:org:purge:flow",
             helpUrl: "https://sfdx-hardis.cloudity.com/hardis/org/purge/flow/",
           },
@@ -583,8 +563,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
           {
             id: "hardis:org:refresh:before-refresh",
             label: t("sandboxRefreshBefore"),
-            tooltip:
-              "Store info that will be needed after a sandbox refresh (Connected Apps, Custom Settings...)",
+            tooltip: t("sandboxRefreshBeforeTooltip"),
             command: "sf hardis:org:refresh:before-refresh",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/org/refresh/before-refresh/",
@@ -592,8 +571,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
           {
             id: "hardis:org:refresh:after-refresh",
             label: t("sandboxRefreshAfter"),
-            tooltip:
-              "Restore info after a sandbox refresh (Connected Apps, Custom Settings...)",
+            tooltip: t("sandboxRefreshAfterTooltip"),
             command: "sf hardis:org:refresh:after-refresh",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/org/refresh/after-refresh/",
@@ -607,8 +585,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
           {
             id: "vscode-sfdx-hardis.showOrgMonitoring",
             label: t("orgMonitoringWorkbench"),
-            tooltip:
-              "Open the comprehensive Org Monitoring workbench with all monitoring tools and diagnostics in one place",
+            tooltip: t("orgMonitoringWorkbenchTooltip"),
             command: "vscode-sfdx-hardis.showOrgMonitoring",
             requiresProject: false,
             helpUrl:
@@ -617,8 +594,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
           {
             id: "hardis:org:monitor:backup",
             label: t("metadatasBackup"),
-            tooltip:
-              "Retrieves all relevant Metadata of an org according to backup configuration",
+            tooltip: t("metadatasBackupTooltip"),
             command: "sf hardis:org:monitor:backup",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/",
@@ -626,8 +602,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
           {
             id: "hardis:org:diagnose:audittrail",
             label: t("suspiciousAuditTrailActivities"),
-            tooltip:
-              "Detect setup actions in major orgs that are identified as Suspicious",
+            tooltip: t("suspiciousAuditTrailTooltip"),
             command: "sf hardis:org:diagnose:audittrail",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/org/diagnose/audittrail/",
@@ -636,8 +611,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             id: "org:test:apex",
             label: t("runApexTests"),
             command: "sf hardis:org:test:apex",
-            tooltip:
-              "Runs all apex tests on the selected org. Will trigger error if minimum apex code coverage is not reached",
+            tooltip: t("runApexTestsTooltip"),
             requiresProject: true,
             helpUrl: "https://sfdx-hardis.cloudity.com/hardis/org/test/apex/",
           },
@@ -645,8 +619,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             id: "hardis:org:monitor:limits",
             label: t("checkOrgLimits"),
             command: "sf hardis:org:monitor:limits",
-            tooltip:
-              "Checks if limits are reached or soon reached in the default Salesforce org",
+            tooltip: t("checkOrgLimitsTooltip"),
             requiresProject: true,
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/org/monitor/limits/",
@@ -655,8 +628,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             id: "hardis:org:diagnose:releaseupdates",
             label: t("checkReleaseUpdates"),
             command: "sf hardis:org:diagnose:releaseupdates",
-            tooltip:
-              "Checks if some Release Updates must be verified in the org",
+            tooltip: t("checkReleaseUpdatesTooltip"),
             requiresProject: true,
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/org/diagnose/releaseupdates/",
@@ -664,8 +636,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
           {
             id: "hardis:org:diagnose:unsecure-connected-apps",
             label: t("unsecuredConnectedApps"),
-            tooltip:
-              "List all Connected Apps that are unsecured (not installed or not Admin user pre-approved)",
+            tooltip: t("unsecuredConnectedAppsTooltip"),
             command: "sf hardis:org:diagnose:unsecure-connected-apps",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unsecure-connected-apps/",
@@ -673,8 +644,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
           {
             id: "hardis:org:monitor:health-check",
             label: t("securityHealthCheck"),
-            tooltip:
-              "Extract score and indicators of org Security health check",
+            tooltip: t("securityHealthCheckTooltip"),
             command: "sf hardis:org:monitor:health-check",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/org/monitor/health-check/",
@@ -682,7 +652,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
           {
             id: "org:diagnose:legacyapi",
             label: t("legacyApiVersionsUsage"),
-            tooltip: "Detects if deprected APIs are your in a production org",
+            tooltip: t("detectLegacyApiTooltip"),
             command: "sf hardis:org:diagnose:legacyapi",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/org/diagnose/legacyapi/",
@@ -690,8 +660,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
           {
             id: "hardis:org:diagnose:unusedusers",
             label: t("unusedUsers"),
-            tooltip:
-              "Identify active users who haven't logged in recently to the org",
+            tooltip: t("unusedUsersTooltip"),
             command: "sf hardis:org:diagnose:unusedusers",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/salesforce-monitoring-inactive-users/",
@@ -699,8 +668,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
           {
             id: "hardis:org:diagnose:unusedlicenses",
             label: t("unusedPsLicensesBeta"),
-            tooltip:
-              "Detects if there are unused permission set licenses in the org, and offers to delete them",
+            tooltip: t("unusedPsLicensesTooltip"),
             command: "sf hardis:org:diagnose:unusedlicenses",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unusedlicenses/",
@@ -708,8 +676,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
           {
             id: "hardis:org:diagnose:unused-apex-classes",
             label: t("unusedApexClasses"),
-            tooltip:
-              "List all async Apex classes (Batch,Queueable,Schedulable) that has not been called for more than 365 days, and could probably be deleted",
+            tooltip: t("unusedApexClassesTooltip"),
             command: "sf hardis:org:diagnose:unused-apex-classes",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unused-apex-classes/",
@@ -717,8 +684,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
           {
             id: "hardis:org:diagnose:unused-connected-apps",
             label: t("unusedConnectedApps"),
-            tooltip:
-              "List all Connected Apps that have not been used for more than 90 days, and could probably be deleted",
+            tooltip: t("unusedConnectedAppsTooltip"),
             command: "sf hardis:org:diagnose:unused-connected-apps",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/org/diagnose/unused-connected-apps/",
@@ -726,16 +692,14 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
           {
             id: "hardis:lint:access",
             label: t("metadataWithoutAccess"),
-            tooltip:
-              "Detects if custom fields or apex classes are existing in source but not authorized on any Profile or Permission Set",
+            tooltip: t("metadataWithoutAccessTooltip"),
             command: "sf hardis:lint:access",
             helpUrl: "https://sfdx-hardis.cloudity.com/hardis/lint/access/",
           },
           {
             id: "hardis:lint:unusedmetadatas",
             label: t("unusedMetadatas"),
-            tooltip:
-              "Check if elements (custom labels and custom permissions) are not used in the project",
+            tooltip: t("unusedMetadatasTooltip"),
             command: "sf hardis:lint:unusedmetadatas",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/lint/unusedmetadatas/",
@@ -743,8 +707,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
           {
             id: "hardis:lint:metadatastatus",
             label: t("inactiveMetadatas"),
-            tooltip:
-              "Check if flows or validation rules are inactive, so should be deleted",
+            tooltip: t("inactiveMetadatasTooltip"),
             command: "sf hardis:lint:metadatastatus",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/lint/metadatastatus/",
@@ -760,8 +723,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
           {
             id: "hardis:org:diagnose:storage-stats",
             label: t("dataStorageStatistics"),
-            tooltip:
-              "Provides detailed statistics on data storage usage in the org",
+            tooltip: t("dataStorageStatisticsTooltip"),
             command: "sf hardis:org:diagnose:storage-stats",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/org/diagnose/storage-stats/",
@@ -775,8 +737,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
           {
             id: "project:audit:duplicatefiles",
             label: t("detectDuplicateSfdxFiles"),
-            tooltip:
-              "Detects if duplicate files are within in your SFDX project",
+            tooltip: t("detectDuplicateSfdxFilesTooltip"),
             command: "sf hardis:project:audit:duplicatefiles",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/audit/duplicatefiles/",
@@ -784,8 +745,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
           {
             id: "project:metadata:findduplicates",
             label: t("detectDuplicateValuesInMetadataFiles"),
-            tooltip:
-              "Detects if duplicate values for given keys are within in your SFDX metadata files",
+            tooltip: t("detectDuplicateValuesTooltip"),
             command:
               "sf hardis:project:metadata:findduplicates -f force-app/**/*.xml",
             helpUrl:
@@ -794,8 +754,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
           {
             id: "project:audit:apiversion",
             label: t("extractApiVersionsOfSources"),
-            tooltip:
-              "Browse all project files and summarize API versions of elements",
+            tooltip: t("extractApiVersionsTooltip"),
             command: "sf hardis:project:audit:apiversion",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/audit/apiversion/",
@@ -819,8 +778,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
           {
             id: "hardis:misc:custom-label-translations",
             label: t("extractCustomLabelTranslations"),
-            tooltip:
-              "Extract selected custom labels, or of a given Lightning Web Component (LWC), from all language translation files",
+            tooltip: t("extractCustomLabelTranslationsTooltip"),
             command: "sf hardis:misc:custom-label-translations",
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/misc/custom-label-translations/",
@@ -828,8 +786,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
           {
             id: "hardis:doc:object-field-usage",
             label: t("objectFieldUsage"),
-            tooltip:
-              "Analyze object fields usage and produce a documentation report for cleanup decisions",
+            tooltip: t("objectFieldUsageTooltip"),
             command: "sf hardis:doc:object-field-usage",
             requiresProject: true,
             helpUrl:
@@ -844,31 +801,26 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
           {
             id: "configure:auth:deployment",
             label: t("configureOrgCiAuth"),
-            tooltip:
-              "Assisted configuration to connect a protected branch and its related release org during CI",
+            tooltip: t("configureOrgCiAuthTooltip"),
             command: "sf hardis:project:configure:auth",
           },
           {
             id: "configure:auth:devhub",
             label: t("configureDevHubCiAuth"),
-
-            tooltip:
-              "Assisted configuration to connect to a Dev Hub org during CI",
+            tooltip: t("configureDevHubCiAuthTooltip"),
             command: "sf hardis:project:configure:auth --devhub",
             requiresProject: true,
           },
           {
             id: "org:configure:monitoring",
             label: t("configureOrgMonitoring"),
-            tooltip:
-              "To run only on a repo dedicated to monitoring (start from a blank repo)",
+            tooltip: t("configureOrgMonitoringTooltip"),
             command: "sf hardis:org:configure:monitoring",
           },
           {
             id: "scratch:pool:create",
             label: t("configureScratchOrgsPool"),
-            tooltip:
-              "Define a scratch org pool to have scratch orgs ready to be used for development or CI",
+            tooltip: t("configureScratchOrgsPoolTooltip"),
             command: "sf hardis:scratch:pool:create",
           },
           {
@@ -914,8 +866,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             id: "vscode-sfdx-hardis.showDocumentationWorkbench",
             label: t("documentationWorkbench"),
             command: "vscode-sfdx-hardis.showDocumentationWorkbench",
-            tooltip:
-              "Open the Documentation Workbench to generate, deploy, and manage project documentation",
+            tooltip: t("documentationWorkbenchTooltip"),
             requiresProject: true,
             helpUrl:
               "https://sfdx-hardis.cloudity.com/salesforce-project-documentation/",
@@ -924,8 +875,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             id: "hardis:doc:project2markdown",
             label: t("projectDocumentation"),
             command: "sf hardis:doc:project2markdown",
-            tooltip:
-              "Generates markdown pages with SF Project content: List of metadatas, installed packages...",
+            tooltip: t("projectDocumentationTooltip"),
             requiresProject: true,
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/",
@@ -934,8 +884,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             id: "hardis:doc:project2markdown-pdf",
             label: t("projectDocumentationPdf"),
             command: "sf hardis:doc:project2markdown --pdf",
-            tooltip:
-              "Generates markdown pages with SF Project content: List of metadatas, installed packages... + PDF files",
+            tooltip: t("projectDocumentationPdfTooltip"),
             requiresProject: true,
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/",
@@ -944,8 +893,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             id: "hardis:doc:project2markdown-history",
             label: t("projectDocumentationWithHistory"),
             command: "sf hardis:doc:project2markdown --with-history",
-            tooltip:
-              "Generates markdown pages with SF Project content: List of metadatas, installed packages..., with Flow Diff History",
+            tooltip: t("projectDocumentationWithHistoryTooltip"),
             requiresProject: true,
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/doc/project2markdown/",
@@ -954,8 +902,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             id: "hardis-run-doc",
             label: t("runLocalHtmlDocPages"),
             command: "vscode-sfdx-hardis.runLocalHtmlDocPages",
-            tooltip:
-              "Run Documentation local web server, then open http://127.0.0.1:8000/ . You need Python on your computer",
+            tooltip: t("runLocalHtmlDocTooltip"),
             requiresProject: true,
             helpUrl:
               "https://sfdx-hardis.cloudity.com/salesforce-project-documentation/",
@@ -964,8 +911,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             id: "hardis-upload-doc",
             label: t("uploadHtmlDocToSalesforce"),
             command: "sf hardis:doc:mkdocs-to-salesforce",
-            tooltip:
-              "Generates HTML Doc and Uploads it to Salesforce as a static resource with a VfPage & a CustomTab. You need Python on your computer",
+            tooltip: t("uploadHtmlDocToSalesforceTooltip"),
             requiresProject: true,
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/doc/mkdocs-to-salesforce/",
@@ -992,8 +938,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             id: "hardis:project:generate:flow-git-diff",
             label: t("singleFlowVisualGitDiff"),
             command: "sf hardis:project:generate:flow-git-diff",
-            tooltip:
-              "Generates Visual Documentation of the differences between versions of a Flow",
+            tooltip: t("singleFlowVisualGitDiffTooltip"),
             requiresProject: true,
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/project/generate/flow-git-diff/",
@@ -1002,8 +947,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             id: "hardis:doc:override-prompts",
             label: t("overridePromptTemplates"),
             command: "sf hardis:doc:override-prompts",
-            tooltip:
-              "Override and customize documentation prompt templates for your project",
+            tooltip: t("overridePromptTemplatesTooltip"),
             requiresProject: true,
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/doc/override-prompts/",
@@ -1012,8 +956,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             id: "hardis:doc:override-prompts-overwrite",
             label: t("overridePromptTemplatesOverwrite"),
             command: "sf hardis:doc:override-prompts --overwrite",
-            tooltip:
-              "Override and customize documentation prompt templates for your project (Overwrites local files)",
+            tooltip: t("overridePromptTemplatesOverwriteTooltip"),
             requiresProject: true,
             helpUrl:
               "https://sfdx-hardis.cloudity.com/hardis/doc/override-prompts/",
@@ -1045,15 +988,13 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
           {
             id: "org:retrieve:sources:dx",
             label: t("retrieveAllDxSourcesFromOrg"),
-            tooltip:
-              "Retrieve locally all the metadatas of a remote salesforce org, in DX project format",
+            tooltip: t("retrieveAllDxSourcesTooltip"),
             command: "sf hardis:org:retrieve:sources:dx",
           },
           {
             id: "org:retrieve:sources:metadata",
             label: t("retrieveAllMetadataSourcesFromOrg"),
-            tooltip:
-              "Retrieve locally all the metadatas of a remote salesforce org, in metadata format",
+            tooltip: t("retrieveAllMetadataSourcesTooltip"),
             command: "sf hardis:org:retrieve:sources:metadata",
           },
           {
