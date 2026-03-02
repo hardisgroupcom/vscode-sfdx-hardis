@@ -42,6 +42,15 @@ export const sectionDefs = [
     ],
   },
   {
+    label: "languageSection",
+    value: "language",
+    iconName: "utility:translate",
+    description: "Language and localization settings.",
+    keys: [
+      "vsCodeSfdxHardis.lang",
+    ],
+  },
+  {
     label: "MCP",
     value: "mcp",
     iconName: "utility:lightning_extension",

@@ -242,7 +242,8 @@ export function activate(context: vscode.ExtensionContext) {
     // Change theme
     if (
       event.affectsConfiguration("vsCodeSfdxHardis.theme.menuIconType") ||
-      event.affectsConfiguration("vsCodeSfdxHardis.theme.emojisInSections")
+      event.affectsConfiguration("vsCodeSfdxHardis.theme.emojisInSections") ||
+      event.affectsConfiguration("vsCodeSfdxHardis.lang") 
     ) {
       vscode.commands.executeCommand(
         "vscode-sfdx-hardis.refreshCommandsView",
@@ -260,14 +261,15 @@ export function activate(context: vscode.ExtensionContext) {
     
     // Change UI theme: refresh all opened panels
     if (
-      event.affectsConfiguration("vsCodeSfdxHardis.theme.colorTheme")
+      event.affectsConfiguration("vsCodeSfdxHardis.theme.colorTheme") ||
+      event.affectsConfiguration("vsCodeSfdxHardis.lang") 
     ) {
       // Reload fresh configuration data for extension config panel
       
       const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis.theme");
       const colorThemeConfig = config.get("colorTheme", "auto");
       const { colorTheme, colorContrast } = LwcPanelManager.resolveTheme(colorThemeConfig);
-      
+      reinitI18n();
       getExtensionConfigSections(context.extensionUri).then((_) => {
         LwcPanelManager.getInstance(context).refreshAllPanels({
           colorTheme,
