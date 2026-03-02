@@ -5,6 +5,7 @@ import { SfdxHardisConfigHelper } from "../utils/pipeline/sfdxHardisConfigHelper
 import { listMajorOrgs } from "../utils/orgConfigUtils";
 import { LwcPanelManager } from "../lwc-panel-manager";
 import { listProjectApexTestClasses } from "../utils/prePostCommandsUtils";
+import { t } from "../i18n/i18n";
 
 export function registerShowPipelineConfig(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
@@ -55,7 +56,7 @@ export function registerShowPipelineConfig(commands: Commands) {
         },
       );
       panel.updateTitle(
-        branchName ? `Settings - ${branchName}` : "Global Pipeline Settings",
+        branchName ? t("pipelineSettingsBranch", { branchName }) : t("globalPipelineSettings"),
       );
 
       // Register message handlers
@@ -96,8 +97,8 @@ export function registerShowPipelineConfig(commands: Commands) {
             // Update panel title and send new data to LWC
             panel.updateTitle(
               newBranchName
-                ? `Settings - ${newBranchName}`
-                : "Global Pipeline Settings",
+                ? t("pipelineSettingsBranch", { branchName: newBranchName })
+                : t("globalPipelineSettings"),
             );
             panel.sendInitializationData(newConfigEditorInput);
           } catch (error: any) {

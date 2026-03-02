@@ -527,7 +527,7 @@ When adding new user-facing strings:
 - Labels, tooltips, error messages, warning messages, section titles, descriptions shown to users, any variable that looks like it will be shown to the user, even if it's not a full sentence (e.g., button labels, section titles, status messages)
 - User targeted properties "message", "description"...
 - 3rd argument of calls to method execCommandWithProgress()
-- all arguments of methods showErrorMessage, showInformationMessage, showWarning
+- arguments of methods showErrorMessage, showInformationMessage, showWarning, updateTitle
 
 **Do NOT translate:**
 - Technical identifiers: command IDs, icon IDs, file paths, CSS classes

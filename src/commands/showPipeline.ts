@@ -61,7 +61,7 @@ export function registerShowPipeline(commands: Commands) {
         },
       });
 
-      panel.updateTitle("DevOps Pipeline");
+      panel.updateTitle(t("devOpsPipeline"));
 
       function showCommitReminder(prNumber: number, msg: string) {
         if (prNumber === -1) {

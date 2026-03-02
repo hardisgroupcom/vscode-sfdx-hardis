@@ -262,7 +262,7 @@ export function registerShowMetadataRetriever(commands: Commands) {
         },
       });
 
-      panel.updateTitle("Metadata Retriever");
+      panel.updateTitle(t("metadataRetriever"));
       // Register message handlers
       panel.onMessage(async (type: string, data: any) => {
         if (type === "listOrgs") {

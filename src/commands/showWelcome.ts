@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { Commands } from "../commands";
 import { LwcPanelManager } from "../lwc-panel-manager";
+import { t } from "../i18n/i18n";
 
 export function registerShowWelcome(command: Commands) {
   const disposable = vscode.commands.registerCommand(
@@ -20,7 +21,7 @@ export function registerShowWelcome(command: Commands) {
         colorTheme,
         colorContrast
       });
-      panel.updateTitle("SFDX Hardis Welcome");
+      panel.updateTitle(t("welcomeTitle"));
 
       // Handle messages from the Welcome panel
       panel.onMessage(async (type: string, _data: any) => {

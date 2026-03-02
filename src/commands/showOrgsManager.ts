@@ -4,6 +4,7 @@ import { Commands } from "../commands";
 import { execSfdxJson } from "../utils";
 import { Logger } from "../logger";
 import { listAllOrgs } from "../utils/orgUtils";
+import { t } from "../i18n/i18n";
 
 let loadOrgsInProgressPromise: Thenable<any> | null = null;
 let loadOrgsQueue: Array<{
@@ -29,7 +30,7 @@ export function registerShowOrgsManager(commandThis: Commands) {
         const panel = lwcManager.getOrCreatePanel("s-org-manager", {
           orgs: orgs,
         });
-        panel.updateTitle("Orgs Manager");
+        panel.updateTitle(t("orgsManager"));
 
         // Track the last requested 'all' flag so it persists between operations
         let currentAllFlag = false;
