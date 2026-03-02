@@ -154,6 +154,7 @@ export default class Welcome extends I18nMixin(ColorThemeMixin(LightningElement)
     const lang = event.currentTarget.dataset.lang;
     this.langSetting = lang;
     this.langDropdownOpen = false;
+    this._syncOutsideClickListener();
 
     window.sendMessageToVSCode({
       type: "updateVsCodeSfdxHardisConfiguration",
@@ -270,6 +271,7 @@ export default class Welcome extends I18nMixin(ColorThemeMixin(LightningElement)
     const colorThemeConfig = event.currentTarget.dataset.theme;
     this.colorThemeConfig = colorThemeConfig;
     this.themeDropdownOpen = false;
+    this._syncOutsideClickListener();
     this.setColorThemeVariants(colorThemeConfig);
 
     // Send message to VS Code to update the setting
