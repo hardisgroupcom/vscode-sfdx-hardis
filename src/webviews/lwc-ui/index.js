@@ -31,6 +31,16 @@ function routeMessageToComponent(message) {
     }
   }
 
+  if (message.type === "updateTranslations") {
+    if (message.data?.translations) {
+      window.__lwcTranslations = message.data.translations;
+      window.__lwcLocale = message.data.locale || "en";
+      if (typeof component.initTranslations === "function") {
+        component.initTranslations(message.data);
+      }
+    }
+  }
+
   if (typeof component.handleMessage === "function") {
     component.handleMessage(message.type, message.data);
   }

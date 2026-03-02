@@ -85,36 +85,35 @@
     --slds-c-toggle-label-text-align: right;
 }
 
-/* Language selector */
+/* Icon selector (shared by theme and language selectors) */
 .hero-settings-row {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 1rem;
 }
 
-.lang-selector {
+.icon-selector {
     position: relative;
 }
 
-.lang-flag-button {
+.icon-selector-button {
     background: none;
-    border: 1px solid var(--slds-g-color-neutral-base-80);
-    border-radius: 6px;
-    padding: 0.3rem 0.45rem;
+    border: none;
+    padding: 0;
     cursor: pointer;
     line-height: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    opacity: 0.85;
+    transition: opacity 0.2s ease;
 }
 
-.lang-flag-button:hover {
-    border-color: var(--slds-g-color-info-base-60);
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12);
+.icon-selector-button:hover {
+    opacity: 1;
 }
 
-.lang-dropdown {
+.icon-selector-dropdown {
     position: absolute;
     top: 100%;
     right: 0;
@@ -128,7 +127,7 @@
     overflow: hidden;
 }
 
-.lang-option {
+.icon-selector-option {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -139,18 +138,18 @@
     color: var(--slds-g-color-neutral-base-10);
 }
 
-.lang-option:hover {
+.icon-selector-option:hover {
     background: var(--slds-g-color-neutral-base-95, #f3f3f3);
 }
 
-.lang-flag-img {
-    width: 20px;
-    height: 20px;
+.icon-selector-img {
+    width: 28px;
+    height: 28px;
     object-fit: contain;
-    vertical-align: middle;
+    display: block;
 }
 
-.lang-option-label {
+.icon-selector-option-label {
     white-space: nowrap;
 }
 
@@ -165,22 +164,7 @@
     cursor: pointer;
 }
 
-.hero-bottom-right {
-    position: fixed;
-    right: 0.75rem;
-    bottom: 0.75rem;
-    z-index: 9999;
-    text-align: right;
-    transition: opacity 0.3s ease, visibility 0.3s ease;
-}
-.hero-bottom-right.hidden {
-    opacity: 0;
-    visibility: hidden;
 
-}
-.theme-button {
-    --slds-c-button-line-height: 1.5em;
-}
 
 .hero-title {
     font-size: 1.75rem;

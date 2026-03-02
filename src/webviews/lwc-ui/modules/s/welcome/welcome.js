@@ -13,6 +13,7 @@ export default class Welcome extends I18nMixin(ColorThemeMixin(LightningElement)
   @track themeVariants = { light: "neutral", dark: "neutral", auto: "brand" };
   @track langSetting = "auto";
   @track langDropdownOpen = false;
+  @track themeDropdownOpen = false;
   @track flagImages = {};
  
   @track setupHidden = false;
@@ -22,11 +23,21 @@ export default class Welcome extends I18nMixin(ColorThemeMixin(LightningElement)
     super.connectedCallback();
     // Bind handler once so we can remove it later
     this._boundHandleScroll = this.handleScroll.bind(this);
+    this._boundHandleOutsideClick = this.handleOutsideClick.bind(this);
     window.addEventListener("scroll", this._boundHandleScroll);
   }
 
   disconnectedCallback() {
     window.removeEventListener("scroll", this._boundHandleScroll);
+    document.removeEventListener("click", this._boundHandleOutsideClick);
+  }
+
+  handleOutsideClick(event) {
+    if (!this.template.contains(event.target)) {
+      this.langDropdownOpen = false;
+      this.themeDropdownOpen = false;
+      document.removeEventListener("click", this._boundHandleOutsideClick);
+    }
   }
 
   handleScroll() {
@@ -34,7 +45,7 @@ export default class Welcome extends I18nMixin(ColorThemeMixin(LightningElement)
     const shouldHide = window.scrollY > this.scrollThreshold;
     this.setupHidden = shouldHide;
 
-    const heroElements = this.template.querySelectorAll(".hero-settings, .hero-top-left, .hero-bottom-right");
+    const heroElements = this.template.querySelectorAll(".hero-settings, .hero-top-left");
     heroElements.forEach((element) => {
       element.classList.toggle("hidden", shouldHide);
     });
@@ -102,6 +113,41 @@ export default class Welcome extends I18nMixin(ColorThemeMixin(LightningElement)
 
   toggleLangDropdown() {
     this.langDropdownOpen = !this.langDropdownOpen;
+    this.themeDropdownOpen = false;
+    this._syncOutsideClickListener();
+  }
+
+  toggleThemeDropdown() {
+    this.themeDropdownOpen = !this.themeDropdownOpen;
+    this.langDropdownOpen = false;
+    this._syncOutsideClickListener();
+  }
+
+  _syncOutsideClickListener() {
+    if (this.langDropdownOpen || this.themeDropdownOpen) {
+      // Use setTimeout to avoid the current click event immediately closing the dropdown
+      setTimeout(() => document.addEventListener("click", this._boundHandleOutsideClick), 0);
+    } else {
+      document.removeEventListener("click", this._boundHandleOutsideClick);
+    }
+  }
+
+  get currentThemeIconSrc() {
+    const map = { auto: "themeAuto", light: "themeLight", dark: "themeDark" };
+    const key = map[this.colorThemeConfig] || "themeAuto";
+    return this.flagImages[key] || "";
+  }
+
+  get themeAutoSrc() {
+    return this.flagImages.themeAuto || "";
+  }
+
+  get themeLightSrc() {
+    return this.flagImages.themeLight || "";
+  }
+
+  get themeDarkSrc() {
+    return this.flagImages.themeDark || "";
   }
 
   handleLangChange(event) {
@@ -221,8 +267,9 @@ export default class Welcome extends I18nMixin(ColorThemeMixin(LightningElement)
 
   // Settings handler
   handleThemeChange(event) {
-    const button = event.target;
-    let colorThemeConfig = button.name;
+    const colorThemeConfig = event.currentTarget.dataset.theme;
+    this.colorThemeConfig = colorThemeConfig;
+    this.themeDropdownOpen = false;
     this.setColorThemeVariants(colorThemeConfig);
 
     // Send message to VS Code to update the setting

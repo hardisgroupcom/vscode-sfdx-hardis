@@ -3,6 +3,8 @@
 // @ts-nocheck
 // eslint-env es6
 
+import { api } from "lwc";
+
 /**
  * Mixin for i18n (internationalization) in LWC components.
  *
@@ -78,6 +80,7 @@ export const I18nMixin = (BaseClass) =>
      * Initialize translations from data. Called automatically by connectedCallback.
      * Can also be called manually if translations need to be refreshed.
      */
+    @api
     initTranslations(data) {
       if (data && data.translations) {
         // Create a new Proxy wrapping the translations to trigger reactivity

@@ -17,7 +17,7 @@ import { CacheManager } from "./utils/cache-manager";
 import { runSalesforceCliMcpServer } from "./utils/mcpUtils";
 import { SecretsManager } from "./utils/secretsManager";
 import { getExtensionConfigSections } from "./utils/extensionConfigUtils";
-import { initI18n, reinitI18n } from "./i18n/i18n";
+import { getAllTranslations, getCurrentLocale, initI18n, reinitI18n } from "./i18n/i18n";
 
 let refreshInterval: any = null;
 let reporter;
@@ -242,8 +242,7 @@ export function activate(context: vscode.ExtensionContext) {
     // Change theme
     if (
       event.affectsConfiguration("vsCodeSfdxHardis.theme.menuIconType") ||
-      event.affectsConfiguration("vsCodeSfdxHardis.theme.emojisInSections") ||
-      event.affectsConfiguration("vsCodeSfdxHardis.lang") 
+      event.affectsConfiguration("vsCodeSfdxHardis.theme.emojisInSections")
     ) {
       vscode.commands.executeCommand(
         "vscode-sfdx-hardis.refreshCommandsView",
@@ -262,19 +261,21 @@ export function activate(context: vscode.ExtensionContext) {
     // Change UI theme: refresh all opened panels
     if (
       event.affectsConfiguration("vsCodeSfdxHardis.theme.colorTheme") ||
-      event.affectsConfiguration("vsCodeSfdxHardis.lang") 
+      event.affectsConfiguration("vsCodeSfdxHardis.lang")
     ) {
       // Reload fresh configuration data for extension config panel
       
       const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis.theme");
       const colorThemeConfig = config.get("colorTheme", "auto");
       const { colorTheme, colorContrast } = LwcPanelManager.resolveTheme(colorThemeConfig);
-      reinitI18n();
+      const refreshParams: any = { colorTheme, colorContrast };
+      if (event.affectsConfiguration("vsCodeSfdxHardis.lang")) {
+        reinitI18n();
+        refreshParams.translations = getAllTranslations();
+        refreshParams.locale = getCurrentLocale();
+      }
       getExtensionConfigSections(context.extensionUri).then((_) => {
-        LwcPanelManager.getInstance(context).refreshAllPanels({
-          colorTheme,
-          colorContrast 
-        });
+        LwcPanelManager.getInstance(context).refreshAllPanels(refreshParams);
       }).catch((err) => {
         Logger.log("Error refreshing panels with new theme: " + err.message);
       });

@@ -33,6 +33,9 @@ export function registerShowWelcome(command: Commands) {
             flagEn: panel.asWebviewUri(["icons", "flag-us.svg"]),
             flagFr: panel.asWebviewUri(["icons", "flag-fr.svg"]),
             flagJa: panel.asWebviewUri(["icons", "flag-ja.svg"]),
+            themeAuto: panel.asWebviewUri(["icons", "theme-auto.svg"]),
+            themeLight: panel.asWebviewUri(["icons", "theme-light.svg"]),
+            themeDark: panel.asWebviewUri(["icons", "theme-dark.svg"]),
           },
         },
       });

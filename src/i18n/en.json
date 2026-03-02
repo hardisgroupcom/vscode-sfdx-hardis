@@ -840,6 +840,7 @@
   "langLabel": "Language",
   "langSelectTooltip": "Change interface language",
   "langVsCodeAuto": "Auto (VS Code)",
+  "themeSelectTooltip": "Change color theme",
   "lastUpdatedByLabel": "Last Updated By",
   "lastUpdatedByPlaceholder": "e.g., John Doe",
   "lastUpdatedDateColumn": "Last Updated Date",

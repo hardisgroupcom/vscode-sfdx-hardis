@@ -6,7 +6,7 @@ import {
   isWebVsCode,
 } from "../utils";
 import { Logger } from "../logger";
-import { getAllTranslations, getCurrentLocale, t } from "../i18n/i18n";
+import { getAllTranslations, getCurrentLocale, reinitI18n, t } from "../i18n/i18n";
 
 type MessageListener = (messageType: string, data: any) => void;
 
@@ -660,13 +660,22 @@ export class LwcUiPanel {
    * Refresh the webview HTML (useful when configuration changes, like theme)
    */
   public refresh(data: any): void {
+    let shouldUpdate = true;
+    if (data?.translations) {
+      this.sendMessage({
+        type: "updateTranslations",
+        data
+      });
+      shouldUpdate = false;
+    }
     if (data?.colorTheme) {
       this.sendMessage({
         type: "updateTheme",
         data
       });
+      shouldUpdate = false;
     }
-    else {
+    if (shouldUpdate) {
       this.update();
     }
   }
