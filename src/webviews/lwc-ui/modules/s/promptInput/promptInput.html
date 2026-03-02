@@ -22,7 +22,7 @@
                     <template if:true={error}>
                         <div class="slds-m-bottom_medium">
                             <div class="slds-notify slds-notify_alert slds-theme_error" role="alert">
-                                <span class="slds-assistive-text">Error</span>
+                                <span class="slds-assistive-text">{i18n.errorLabel}</span>
                                 <span>{error}</span>
                             </div>
                         </div>
@@ -33,7 +33,7 @@
                         <div class="slds-m-bottom_medium">
                             <lightning-input
                                 type="text"
-                                label="Your Input"
+                                label={i18n.yourInput}
                                 placeholder={promptPlaceholder}
                                 value={inputValue}
                                 onchange={handleInputChange}
@@ -48,7 +48,7 @@
                         <div class="slds-m-bottom_medium">
                             <lightning-input
                                 type="number"
-                                label="Your Input"
+                                label={i18n.yourInput}
                                 placeholder={promptPlaceholder}
                                 value={inputValue}
                                 step={numberStep}
@@ -115,7 +115,7 @@
                                                 <lightning-button-icon
                                                     class="combobox-filter-toggle"
                                                     icon-name="utility:filterList"
-                                                    alternative-text="Show filter"
+                                                alternative-text={i18n.showFilter}
                                                     onclick={handleToggleComboboxFilter}
                                                     variant="bare"
                                                     size="medium">
@@ -125,7 +125,7 @@
                                         <template if:true={comboboxFilterVisible}>
                                             <lightning-input
                                                 type="search"
-                                                placeholder="Filter options..."
+                                                placeholder={i18n.filterOptions}
                                                 value={comboboxFilter}
                                                 onchange={handleComboboxFilterChange}
                                                 oninput={handleComboboxFilterChange}
@@ -136,7 +136,7 @@
                                                 <lightning-button-icon
                                                     class="combobox-filter-toggle slds-m-left_x-small"
                                                     icon-name="utility:close"
-                                                    alternative-text="Hide filter"
+                                                alternative-text={i18n.hideFilter}
                                                     onclick={handleToggleComboboxFilter}
                                                     variant="bare"
                                                     size="medium">
@@ -177,7 +177,7 @@
                                     <div class="slds-col slds-size_2-of-6">
                                         <lightning-input
                                             type="search"
-                                            placeholder="Type to filter..."
+                                            placeholder={i18n.typeToFilter}
                                             value={multiselectFilter}
                                             onchange={handleMultiselectFilterChange}
                                             class="slds-m-bottom_none"
@@ -202,7 +202,7 @@
                                         <div class="slds-button-group" role="group">
                                             <lightning-button
                                                 variant="neutral"
-                                                label="Select All"
+                                                label={i18n.selectAll}
                                                 size="small"
                                                 icon-name="utility:check"
                                                 disabled={allItemsSelected}
@@ -210,7 +210,7 @@
                                             </lightning-button>
                                             <lightning-button
                                                 variant="neutral"
-                                                label="Unselect All"
+                                                label={i18n.unselectAll}
                                                 size="small"
                                                 icon-name="utility:clear"
                                                 disabled={noItemsSelected}
@@ -247,7 +247,7 @@
                         <div class="slds-border_top slds-p-top_medium slds-grid slds-grid_align-spread slds-grid_vertical-align-center">
                             <div class="slds-col">
                                 <div class="slds-text-body_small slds-text-color_weak">
-                                    Press Enter to validate, Esc to cancel
+                                    {i18n.pressEnterToValidate}
                                 </div>
                             </div>
                             <div class="slds-col slds-no-flex">
@@ -255,7 +255,7 @@
                                     <lightning-button
                                         data-id="cancelBtn"
                                         variant="neutral"
-                                        label="Cancel"
+                                        label={i18n.cancel}
                                         tabindex="-1"
                                         icon-name="utility:close"
                                         onclick={handleCancel}
@@ -263,7 +263,7 @@
                                     </lightning-button>
                                     <lightning-button
                                         variant="brand"
-                                        label="Validate"
+                                        label={i18n.validate}
                                         tabindex="0"
                                         icon-name="utility:check"
                                         onclick={handleSubmit}>
@@ -278,14 +278,14 @@
                         <div class="slds-border_top slds-p-top_medium slds-grid slds-grid_align-spread slds-grid_vertical-align-center">
                             <div class="slds-col">
                                 <div class="slds-text-body_small slds-text-color_weak">
-                                    Click an option to select, or press Esc to cancel
+                                    {i18n.clickOptionToSelect}
                                 </div>
                             </div>
                             <div class="slds-col slds-no-flex">
                                 <lightning-button
                                     data-id="cancelBtn"
                                     variant="neutral"
-                                    label="Cancel"
+                                    label={i18n.cancel}
                                     icon-name="utility:close"
                                     onclick={handleCancel}>
                                 </lightning-button>

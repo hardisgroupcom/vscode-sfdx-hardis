@@ -1,8 +1,19 @@
 import { LightningElement, api } from "lwc";
+import { I18nMixin } from "s/i18nMixin";
 
-export default class ApexTestsSelect extends LightningElement {
+export default class ApexTestsSelect extends I18nMixin(LightningElement) {
   @api availableClasses = [];
   @api value = [];
+
+  @api
+  set translations(val) {
+    if (val) {
+      this.initTranslations({ translations: val });
+    }
+  }
+  get translations() {
+    return undefined;
+  }
 
   get normalizedValue() {
     return Array.isArray(this.value) ? this.value.filter(Boolean) : [];

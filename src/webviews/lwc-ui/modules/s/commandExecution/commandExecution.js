@@ -4,8 +4,9 @@
 // eslint-env es6
 import { LightningElement, track, api } from "lwc";
 import PromptInput from "s/promptInput";
+import { I18nMixin } from "s/i18nMixin";
 
-export default class CommandExecution extends LightningElement {
+export default class CommandExecution extends I18nMixin(LightningElement) {
   // Track user-toggled expanded state for sections in simple mode
   userSectionExpandState = {}; // { [sectionId]: boolean }
   // Table logs storage (sectionId -> table data)
@@ -104,6 +105,7 @@ export default class CommandExecution extends LightningElement {
 
   @api
   initialize(initData) {
+    this.initTranslations(initData);
     this.initializeCommand(initData);
   }
 
@@ -1133,6 +1135,14 @@ ${resultMessage}`;
 
     const endTime = this.endTime || new Date();
     return this.calculateDuration(this.startTime, endTime);
+  }
+
+  get commandDurationLabel() {
+    const duration = this.commandDuration;
+    if (!duration) {
+      return "";
+    }
+    return this.t("durationLabel", { duration });
   }
 
   get statusIcon() {

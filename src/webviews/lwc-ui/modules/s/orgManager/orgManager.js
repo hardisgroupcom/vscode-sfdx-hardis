@@ -1,6 +1,7 @@
 import { LightningElement, api, track } from "lwc";
+import { I18nMixin } from "s/i18nMixin";
 
-export default class OrgManager extends LightningElement {
+export default class OrgManager extends I18nMixin(LightningElement) {
   @track orgs = [];
   @track selectedRowKeys = [];
   @track viewAll = false;
@@ -10,7 +11,7 @@ export default class OrgManager extends LightningElement {
 
   columns = [
     {
-      label: "Instance URL",
+      label: this.t("instanceUrlLabel"),
       fieldName: "instanceUrl",
       type: "url",
       typeAttributes: {
@@ -20,26 +21,26 @@ export default class OrgManager extends LightningElement {
       cellAttributes: { class: { fieldName: "rowClass" } },
     },
     {
-      label: "Type",
+      label: this.t("typeLabel"),
       fieldName: "orgType",
       type: "text",
       initialWidth: 100,
       cellAttributes: { class: { fieldName: "rowClass" } },
     },
     {
-      label: "Username",
+      label: this.t("usernameLabel"),
       fieldName: "username",
       type: "text",
       cellAttributes: { class: { fieldName: "rowClass" } },
     },
     {
-      label: "API Version",
+      label: this.t("apiVersionLabel"),
       fieldName: "apiVersion",
       type: "text",
       cellAttributes: { class: { fieldName: "rowClass" } },
     },
     {
-      label: "Alias",
+      label: this.t("aliasLabel"),
       fieldName: "alias",
       type: "text",
       editable: true,
@@ -47,21 +48,21 @@ export default class OrgManager extends LightningElement {
       cellAttributes: { class: { fieldName: "rowClass" } },
     },
     {
-      label: "Connected",
+      label: this.t("connectedLabel"),
       fieldName: "connectedLabel",
       type: "text",
       initialWidth: 140,
       cellAttributes: { class: { fieldName: "rowClass" } },
     },
     {
-      label: "Role",
+      label: this.t("roleLabel"),
       fieldName: "defaultLabel",
       type: "text",
       initialWidth: 100,
       cellAttributes: { class: { fieldName: "rowClass" } },
     },
     {
-      label: "Actions",
+      label: this.t("actionsLabel"),
       type: "action",
       fieldName: "rowActions",
       typeAttributes: {
@@ -85,6 +86,7 @@ export default class OrgManager extends LightningElement {
 
   @api
   initialize(data) {
+    this.initTranslations(data);
     this.orgs = (data && data.orgs) || [];
     // Normalize rows: compute connected label/variant and ensure username exists as key
     this.orgs = this.orgs.map((o) => ({
@@ -101,8 +103,8 @@ export default class OrgManager extends LightningElement {
         .toString()
         .toLowerCase()
         .match(/connected|authorized/)
-        ? "Connected"
-        : "Disconnected",
+        ? this.t("connectedLabel")
+        : this.t("disconnectedStatus"),
       // Compute row actions for the Actions column: Open (connected), Reconnect (disconnected), Remove (always)
       rowActions: (() => {
         const isConnected = (o.connectedStatus || "")
@@ -111,21 +113,21 @@ export default class OrgManager extends LightningElement {
           .match(/connected|authorized/);
         const actions = [];
         if (isConnected) {
-          actions.push({ label: "Open", name: "open" });
+          actions.push({ label: this.t("openLabel"), name: "open" });
           if (!o.isDefaultUsername) {
-            actions.push({ label: "Set as Default Org", name: "setDefault" });
+            actions.push({ label: this.t("setAsDefaultOrg"), name: "setDefault" });
           }
           if (o.isDevHub && !o.isDefaultDevHubUsername) {
             actions.push({
-              label: "Set as Default Dev Hub",
+              label: this.t("setAsDefaultDevHub"),
               name: "setDefaultDevHub",
             });
           }
         } else {
-          actions.push({ label: "Reconnect", name: "reconnect" });
+          actions.push({ label: this.t("reconnectLabel"), name: "reconnect" });
         }
         actions.push({
-          label: "Remove",
+          label: this.t("removeLabel"),
           name: "remove",
           variant: "destructive",
         });
@@ -137,9 +139,9 @@ export default class OrgManager extends LightningElement {
           ? "org-default-row"
           : "",
       defaultLabel: o.isDefaultUsername
-        ? "Default Org"
+        ? this.t("defaultOrgLabel")
         : o.isDefaultDevHubUsername
-          ? "Dev Hub"
+          ? this.t("devHub")
           : "",
     }));
     // If a default org or a default dev hub exists, move them to the top of the list
@@ -424,17 +426,17 @@ export default class OrgManager extends LightningElement {
 
     // Check length (1-64 characters)
     if (alias.length < 1 || alias.length > 64) {
-      return "Alias must be 1-64 characters long";
+      return this.t("aliasLengthError");
     }
 
     // Check if it starts with a letter or underscore
     if (!/^[a-zA-Z_]/.test(alias)) {
-      return "Alias must start with a letter or underscore";
+      return this.t("aliasStartError");
     }
 
     // Check if it contains only valid characters (letters, numbers, underscores, hyphens)
     if (!/^[a-zA-Z0-9_-]+$/.test(alias)) {
-      return "Alias can only contain letters, numbers, underscores, and hyphens";
+      return this.t("aliasCharError");
     }
 
     return null; // No validation errors

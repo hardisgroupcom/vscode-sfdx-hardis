@@ -4,8 +4,9 @@
 // eslint-env es6
 import { LightningElement, api, track } from "lwc";
 import { ColorThemeMixin } from "s/colorThemeMixin";
+import { I18nMixin } from "s/i18nMixin";
 
-export default class Welcome extends ColorThemeMixin(LightningElement) {
+export default class Welcome extends I18nMixin(ColorThemeMixin(LightningElement)) {
   @track isLoading = false;
   @track showWelcomeAtStartup = true;
   @track colorThemeConfig = "auto";
@@ -39,6 +40,7 @@ export default class Welcome extends ColorThemeMixin(LightningElement) {
   initialize(data) {
     console.log("Welcome component initialized:", data);
     this.isLoading = false;
+    this.initTranslations(data);
 
     // Initialize the setting value
     if (data && data.showWelcomeAtStartup !== undefined) {

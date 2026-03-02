@@ -6,6 +6,7 @@ import {
   isWebVsCode,
 } from "../utils";
 import { Logger } from "../logger";
+import { getAllTranslations, getCurrentLocale, t } from "../i18n/i18n";
 
 type MessageListener = (messageType: string, data: any) => void;
 
@@ -130,18 +131,18 @@ export class LwcUiPanel {
     const lwcDefinitions: {
       [key: string]: string;
     } = {
-      "s-prompt-input": "Prompt Input",
-      "s-command-execution": "Command Execution",
-      "s-pipeline": "DevOps Pipeline",
-      "s-pipeline-config": "Pipeline Settings",
-      "s-extension-config": "Extension Settings",
-      "s-data-workbench": "Data Import/Export Workbench",
-      "s-files-workbench": "Files Import/Export Workbench",
-      "s-documentation-workbench": "Documentation Workbench",
-      "s-documentation-config": "Documentation Settings",
-      "s-setup": "Install Dependencies",
+      "s-prompt-input": t("promptInput"),
+      "s-command-execution": t("commandExecution"),
+      "s-pipeline": t("devOpsPipeline"),
+      "s-pipeline-config": t("pipelineConfig"),
+      "s-extension-config": t("extensionConfig"),
+      "s-data-workbench": t("dataImportExportWorkbench"),
+      "s-files-workbench": t("filesImportExportWorkbench"),
+      "s-documentation-workbench": t("documentationWorkbench"),
+      "s-documentation-config": t("documentationConfig"),
+      "s-setup": t("installDependencies"),
     };
-    const panelTitle = lwcDefinitions[this.lwcId] || "SFDX Hardis";
+    const panelTitle = lwcDefinitions[this.lwcId] || t("panelTitleDefault");
     this.panel.title = panelTitle;
   }
 
@@ -195,6 +196,10 @@ export class LwcUiPanel {
     if (vsCodeSfdxHardisConfiguration) {
       data.vsCodeSfdxHardisConfiguration = vsCodeSfdxHardisConfiguration;
     }
+
+    // Include translations for LWC components
+    data.translations = getAllTranslations();
+    data.locale = getCurrentLocale();
 
     // Always add colorTheme to initialization data for consistent theme support
     const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis.theme");
@@ -297,7 +302,7 @@ export class LwcUiPanel {
     // Avoid accidental massive clipboard payloads
     const clipped = text.length > 10000 ? text.slice(0, 10000) : text;
     await vscode.env.clipboard.writeText(clipped);
-    vscode.window.showInformationMessage("Copied to clipboard.");
+    vscode.window.showInformationMessage(t("copiedToClipboard"));
 
     // Optional ack (allows webview toast in the future)
     this.sendMessage({

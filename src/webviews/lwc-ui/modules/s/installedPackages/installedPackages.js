@@ -1,6 +1,7 @@
 import { LightningElement, api, track } from "lwc";
+import { I18nMixin } from "s/i18nMixin";
 
-export default class InstalledPackages extends LightningElement {
+export default class InstalledPackages extends I18nMixin(LightningElement) {
   @api packages = [];
   @track draftValues = [];
   internalCommands = [];
@@ -9,26 +10,26 @@ export default class InstalledPackages extends LightningElement {
   get columns() {
     return [
       {
-        label: "Name",
+        label: this.t("nameColumn"),
         fieldName: "SubscriberPackageName",
         type: "text",
         sortable: false,
       },
       {
-        label: "Namespace",
+        label: this.t("namespaceColumn"),
         fieldName: "SubscriberPackageNamespace",
         type: "text",
         sortable: false,
       },
       {
-        label: "Version",
+        label: this.t("versionColumn"),
         fieldName: "SubscriberPackageVersionNumber",
         editable:
           this.packagesBeforeRetrieve !== null && this.draftValues.length > 0,
         type: "text",
       },
       {
-        label: "Deployments",
+        label: this.t("deploymentsColumn"),
         fieldName: "installDuringDeployments",
         type: "boolean",
         editable: true,
@@ -36,7 +37,7 @@ export default class InstalledPackages extends LightningElement {
         cellAttributes: { alignment: "center" },
       },
       {
-        label: "Scratch Orgs",
+        label: this.t("scratchOrgsColumn"),
         fieldName: "installOnScratchOrgs",
         type: "boolean",
         editable: true,
@@ -48,6 +49,7 @@ export default class InstalledPackages extends LightningElement {
 
   @api
   initialize(data) {
+    this.initTranslations(data);
     this.packages = data.packages || [];
     // Sort packages by SubscriberPackageName
     this.packages.sort((a, b) => {
@@ -56,6 +58,14 @@ export default class InstalledPackages extends LightningElement {
       return 0;
     });
     this.draftValues = [];
+  }
+
+  get packagesDeploymentsInfoHtml() {
+    return this.t("packagesDeploymentsInfo");
+  }
+
+  get packagesScratchOrgInfoHtml() {
+    return this.t("packagesScratchOrgInfo");
   }
 
   @api
@@ -136,7 +146,7 @@ export default class InstalledPackages extends LightningElement {
     const internalCommand = {
       command: `sf package installed list --json`,
       commandId: Math.random(),
-      progressMessage: `Retrieving Installed Packages from org...`,
+      progressMessage: this.t("retrievingInstalledPackages"),
       callback: (data) => {
         // After opening the org, refresh the list to update connected status
         this.updateDraftFromPackagesResult(data);

@@ -7,16 +7,16 @@
                         <lightning-icon icon-name="utility:settings" size="small" variant="inverse"></lightning-icon>
                     </div>
                     <div class="header-text">
-                        <h1 class="header-title single-line">SFDX Hardis Settings</h1>
+                        <h1 class="header-title single-line">{i18n.sfdxHardisSettings}</h1>
                     </div>
                     <div class="header-actions">
-                        <lightning-button variant="neutral" label="Refresh" onclick={handleRefresh} class="slds-m-top_medium"></lightning-button>
+                        <lightning-button variant="neutral" label={i18n.refreshLabel} onclick={handleRefresh} class="slds-m-top_medium"></lightning-button>
                     </div>
                 </div>
             </div>
             
             <template if:true={loading}>
-                <div class="slds-text-body_regular">Loading extension settings...</div>
+                    <div class="slds-text-body_regular">{i18n.loadingExtensionSettings}</div>
             </template>
             <template if:true={error}>
                 <div class="slds-text-color_error">{error}</div>
@@ -25,7 +25,7 @@
             <div class="slds-p-horizontal_small">
                 <template if:false={loading}>
                     <template if:true={sections}>
-                        <lightning-card hide-header="true" label="Extension Settings">
+                        <lightning-card hide-header="true" label={i18n.extensionConfig}>
                             <lightning-tabset active-tab-value={activeTabValue}>
                                 <template for:each={sections} for:item="section" for:index="index">
                                     <lightning-tab key={section.value} value={section.value} label={section.label} icon-name={section.iconName}>
@@ -105,7 +105,7 @@
                                                                         value={entry.valueArray}
                                                                         onchange={handleTextareaChange}
                                                                         variant="label-hidden"
-                                                                        placeholder="Enter one item per line"
+                                                                        placeholder={i18n.enterOneItemPerLine}
                                                                     ></lightning-textarea>
                                                                 </div>
                                                             </template>

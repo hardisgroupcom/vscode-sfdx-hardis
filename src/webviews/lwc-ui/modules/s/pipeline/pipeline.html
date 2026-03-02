@@ -1,7 +1,7 @@
 <template>
     <div class="slds-scope blue-back" style="padding: 0.5rem;">
             <!-- Status icon styles moved to pipeline.css (LWC requires CSS in the component bundle) -->
-    <lightning-card title="🚀 SFDX-Hardis DevOps Pipeline">
+    <lightning-card title={i18n.devOpsPipelineTitle}>
         <div slot="actions" class="slds-float_right">
             <div class="actions-row">
                 <div style="display:flex;align-items:center;gap:0.5rem;">
@@ -22,7 +22,7 @@
                         <div class="toggle-wrapper">
                             <lightning-input
                                 type="toggle"
-                                label="Show feature branches"
+                                label={i18n.showFeatureBranches}
                                 checked={displayFeatureBranches}
                                 onchange={handleToggleFeatureBranches}
                             ></lightning-input>
@@ -31,52 +31,52 @@
 
                     <lightning-button-group>
                         <lightning-button-menu
-                            alternative-text="Pipeline Settings"
+                            alternative-text={i18n.pipelineConfig}
                             icon-name="utility:settings"
                             variant="border-filled"
                             menu-alignment="right"
                         >
                             <lightning-menu-item
                                 value="pipelineSettings"
-                                label="Pipeline Settings"
+                                label={i18n.pipelineConfig}
                                 icon-name="utility:settings"
                                 onclick={handleShowPipelineConfig}
                             ></lightning-menu-item>
                             <lightning-menu-item
                                 value="addOrg"
-                                label="Add/Configure Org"
+                                label={i18n.addConfigureOrg}
                                 icon-name="utility:key"
                                 onclick={configureAuth}
                             ></lightning-menu-item>
                         </lightning-button-menu>
                         <lightning-button-menu
-                            alternative-text="Deployment Packages"
+                            alternative-text={i18n.deploymentPackages}
                             icon-name="utility:package_org"
                             variant="border-filled"
                             menu-alignment="right"
                         >
                             <lightning-menu-item
                                 value="packageXml"
-                                label="Package XML"
+                                label={i18n.packageXml}
                                 icon-name="utility:upload"
                                 onclick={handleShowPackageXml}
                             ></lightning-menu-item>
                             <lightning-menu-item
                                 value="noOverwrite"
-                                label="No Overwrite"
+                                label={i18n.noOverwrite}
                                 icon-name="utility:ban"
                                 onclick={handleShowNoOverwrite}
                             ></lightning-menu-item>
                             <lightning-menu-item
                                 value="destructive"
-                                label="Destructive Changes"
+                                label={i18n.destructiveChanges}
                                 icon-name="utility:delete"
                                 onclick={handleShowDestructiveChanges}
                             ></lightning-menu-item>
                         </lightning-button-menu>
                         <lightning-button
                             icon-name="utility:refresh"
-                            title="Refresh pipeline data"
+                            title={i18n.refreshPipelineData}
                             onclick={handleRefresh}
                         ></lightning-button>
                     </lightning-button-group>
@@ -103,7 +103,7 @@
                         </template>
                         <template if:true={hasWarnings}>
                             <div class="slds-box slds-theme_warning slds-m-top_small" style="font-size:13px;">
-                                <div class="slds-text-title_caps slds-m-bottom_x-small">Warnings</div>
+                                <div class="slds-text-title_caps slds-m-bottom_x-small">{i18n.warnings}</div>
                                 <ul class="slds-list_dotted">
                                     <template for:each={warnings} for:item="warning">
                                         <li key={warning}>{warning}</li>
@@ -115,9 +115,9 @@
                 </template>
                 <template if:false={pipelineData.orgs.length}>
                     <div class="slds-align_absolute-center" style="flex-direction:column;display:flex;align-items:center;padding:2rem;">
-                        <div class="slds-text-heading_medium slds-m-bottom_medium">No pipeline configured</div>
-                        <div class="slds-m-bottom_medium">To get started, configure your sfdx-hardis DevOps pipeline.</div>
-                        <a class="slds-button slds-button_brand slds-m-bottom_medium" href="https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/" target="_blank">Configure DevOps Pipeline</a>
+                        <div class="slds-text-heading_medium slds-m-bottom_medium">{i18n.noPipelineConfigured}</div>
+                        <div class="slds-m-bottom_medium">{i18n.noPipelineConfiguredDescription}</div>
+                        <a class="slds-button slds-button_brand slds-m-bottom_medium" href="https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/" target="_blank">{i18n.configureDevOpsPipeline}</a>
                         <a href="https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/" target="_blank" style="display:block;max-width:600px;width:100%;margin:1.5rem 0;">
                             <img src="https://sfdx-hardis.cloudity.com/assets/images/devops-comparison.png" alt="DevOps Comparison" style="max-width:600px;width:100%;box-shadow:0 2px 8px #0001;border-radius:8px;" />
                         </a>
@@ -127,7 +127,7 @@
             </template>
         </template>
         <template if:false={pipelineData}>
-            <p>Loading pipeline data...</p>
+            <p>{i18n.loadingPipelineData}</p>
         </template>
         <template if:true={error}>
             <p class="slds-text-color_error">Error loading pipeline: {error}</p>
@@ -141,43 +141,43 @@
                 <div class="pipeline-card-spacing">
                     <lightning-card hide-header="true">
                     <lightning-tabset class="pipeline-tabs">
-                        <lightning-tab label="Project Contribution Workflow" value="workflow">
+                        <lightning-tab label={i18n.projectContributionWorkflow} value="workflow">
                             <div class="commands-grid">
                                 <div class="command-card" onclick={handleNewUserStory}>
                                     <div class="command-header">
                                         <div class="command-icon-container new-story">
                                             <lightning-icon icon-name="utility:add" size="small" variant="inverse"></lightning-icon>
                                         </div>
-                                        <h3 class="command-title">New User Story</h3>
+                                        <h3 class="command-title">{i18n.newUserStory}</h3>
                                     </div>
-                                    <p class="command-description">Start a new development or configuration user story</p>
+                                    <p class="command-description">{i18n.newUserStoryDescription}</p>
                                 </div>
                                 <div class="command-card" onclick={handleOpenMetadataRetriever}>
                                     <div class="command-header">
                                         <div class="command-icon-container pull-action">
                                             <lightning-icon icon-name="utility:download" size="small" variant="inverse"></lightning-icon>
                                         </div>
-                                        <h3 class="command-title">Commit changes</h3>
+                                        <h3 class="command-title">{i18n.commitChanges}</h3>
                                     </div>
-                                    <p class="command-description">Open Metadata Retriever to download metadata changes from your org and commit them to the repository</p>
+                                    <p class="command-description">{i18n.commitChangesDescription}</p>
                                 </div>
                                 <div class="command-card" onclick={handleShowInstalledPackages}>
                                     <div class="command-header">
                                         <div class="command-icon-container package-action">
                                             <lightning-icon icon-name="utility:package" size="small" variant="inverse"></lightning-icon>
                                         </div>
-                                        <h3 class="command-title">Manage Packages</h3>
+                                        <h3 class="command-title">{i18n.managePackages}</h3>
                                     </div>
-                                    <p class="command-description">View and manage installed packages for this project</p>
+                                    <p class="command-description">{i18n.managePackagesDescription}</p>
                                 </div>
                                 <div class="command-card" onclick={handleSaveUserStory}>
                                     <div class="command-header">
                                         <div class="command-icon-container save-action">
                                             <lightning-icon icon-name="utility:upload" size="small" variant="inverse"></lightning-icon>
                                         </div>
-                                        <h3 class="command-title">Save / Publish</h3>
+                                        <h3 class="command-title">{i18n.savePublish}</h3>
                                     </div>
-                                    <p class="command-description">Save your work and publish changes to the remote repository</p>
+                                    <p class="command-description">{i18n.savePublishDescription}</p>
                                 </div>
                                 <div class={currentPrCardClasses} onclick={handleOpenCurrentPR}>
                                     <div class="command-header">
@@ -218,7 +218,7 @@
                                             icon-name={connectedIconName}
                                             variant={connectedVariant}
                                             label={connectedLabel}
-                                            title="Connect to a Git provider"
+                                            title={i18n.connectToGitProvider}
                                             onclick={handleGitConnect}
                                         ></lightning-button>
                                     </div>
@@ -237,9 +237,9 @@
         <section role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="modal-heading-01" class="slds-modal slds-fade-in-open">
             <div class="slds-modal__container">
                 <header class="slds-modal__header">
-                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick={handleClosePRModal}>
-                        <lightning-icon icon-name="utility:close" size="small" alternative-text="Close"></lightning-icon>
-                        <span class="slds-assistive-text">Close</span>
+                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title={i18n.close} onclick={handleClosePRModal}>
+                        <lightning-icon icon-name="utility:close" size="small" alternative-text={i18n.close}></lightning-icon>
+                        <span class="slds-assistive-text">{i18n.close}</span>
                     </button>
                     <h2 id="modal-heading-01" class="slds-modal__title slds-hyphenate">
                         <template if:true={isSinglePRMode}>
@@ -284,7 +284,7 @@
                                 <div class="slds-m-bottom_small">
                                     <lightning-button
                                         variant="brand"
-                                        label="Add New Action"
+                                        label={i18n.addNewAction}
                                         icon-name="utility:add"
                                         onclick={handleAddNewAction}
                                     ></lightning-button>
@@ -317,7 +317,7 @@
                                                 </div>
                                                 <lightning-button
                                                     variant="neutral"
-                                                    label="Edit"
+                                                    label={i18n.edit}
                                                     onclick={handleEditApexTests}
                                                 ></lightning-button>
                                             </div>
@@ -338,23 +338,24 @@
 
                                         <template if:true={isApexTestsEditMode}>
                                             <div class="slds-m-bottom_small slds-text-body_small">
-                                                Select Apex test classes to run.
+                                                {i18n.selectApexTestClasses}
                                             </div>
                                             <s-apex-tests-select
                                                 available-classes={availableApexTestClasses}
                                                 value={deploymentApexTestClasses}
+                                                translations={translations}
                                                 onchange={handleApexTestsSelectChange}
                                             ></s-apex-tests-select>
                                             <div class="slds-m-top_small">
                                                 <lightning-button
                                                     variant="brand"
-                                                    label="Save"
+                                                    label={i18n.save}
                                                     onclick={handleSaveApexTests}
                                                 ></lightning-button>
                                                 <lightning-button
                                                     class="slds-m-left_small"
                                                     variant="neutral"
-                                                    label="Cancel"
+                                                    label={i18n.cancel}
                                                     onclick={handleCancelApexTestsEdit}
                                                 ></lightning-button>
                                             </div>
@@ -393,7 +394,7 @@
                         </template>
                     </div>
                     <div>
-                        <lightning-button variant="neutral" label="Close" onclick={handleClosePRModal}></lightning-button>
+                        <lightning-button variant="neutral" label={i18n.close} onclick={handleClosePRModal}></lightning-button>
                     </div>
                 </footer>
             </div>
@@ -408,6 +409,7 @@
             is-edit-mode={isDeploymentActionEditMode}
             apex-scripts={projectApexScripts}
             sfdmu-workspaces={projectSfdmuWorkspaces}
+            parent-translations={translations}
             onclose={handleCloseDeploymentActionModal}
             onedit={handleEditDeploymentAction}
             onsave={handleSaveDeploymentAction}

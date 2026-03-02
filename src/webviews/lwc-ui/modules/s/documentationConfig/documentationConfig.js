@@ -1,5 +1,6 @@
 import { LightningElement, api, track } from "lwc";
 import { ColorThemeMixin } from "s/colorThemeMixin";
+import { I18nMixin } from "s/i18nMixin";
 
 /**
  * Documentation Configuration LWC Component
@@ -8,7 +9,7 @@ import { ColorThemeMixin } from "s/colorThemeMixin";
  * - Prompt template override
  * - AI provider & doc deployment settings
  */
-export default class DocumentationConfig extends ColorThemeMixin(LightningElement) {
+export default class DocumentationConfig extends I18nMixin(ColorThemeMixin(LightningElement)) {
   // Config
   @track configLoading = true;
   @track configSections = [];
@@ -30,12 +31,17 @@ export default class DocumentationConfig extends ColorThemeMixin(LightningElemen
 
   @api
   initialize(data) {
+    this.initTranslations(data);
     if (data) {
       this._applyPromptTemplatesInfo(data);
       // Build config UI
       this._buildConfigUI(data.config || {}, data.schema || {});
       this.configLoading = false;
     }
+  }
+
+  get aiDocConfigSectionDescHtml() {
+    return this.t("aiDocConfigSectionDesc");
   }
 
   @api
@@ -93,10 +99,10 @@ export default class DocumentationConfig extends ColorThemeMixin(LightningElemen
   _extractLlmProviderOptions() {
     // Provider options are fixed based on provider type, not schema
     this.providerOptions = [
-      { label: "-- None --", value: "" },
-      { label: "Langchain LLMs", value: "langchain" },
-      { label: "Agentforce", value: "agentforce" },
-      { label: "OpenAI Direct", value: "openai" },
+      { label: this.t("noneOption"), value: "" },
+      { label: this.t("langchainLlms"), value: "langchain" },
+      { label: this.t("agentforceOption"), value: "agentforce" },
+      { label: this.t("openaiDirect"), value: "openai" },
     ];
   }
 
@@ -156,7 +162,7 @@ export default class DocumentationConfig extends ColorThemeMixin(LightningElemen
     const providerFields = [
       {
         key: "providerSelection",
-        title: "Provider",
+        title: this.t("providerLabel"),
         description: "",
         value: this.providerSelection,
         isBoolean: false,
@@ -205,8 +211,8 @@ export default class DocumentationConfig extends ColorThemeMixin(LightningElemen
 
     sections.push(
       this._buildSectionFromFields(
-        "AI Provider & Settings",
-        "Select the AI provider, prompts language, and configure provider-specific settings.",
+        this.t("aiProviderSettingsSection"),
+        this.t("aiProviderSettingsDesc"),
         [...providerFields, ...providerSpecificFields],
         true,
         false,
@@ -216,8 +222,8 @@ export default class DocumentationConfig extends ColorThemeMixin(LightningElemen
 
     sections.push(
       this._buildSection(
-        "Org Monitoring & Documentation Deployment",
-        "Configure automatic deployment of generated HTML documentation during sfdx-hardis Org Monitoring metadata backup command.",
+        this.t("orgMonitoringDeploySection"),
+        this.t("orgMonitoringDeployDesc"),
         ["docDeployToCloudflare", "docDeployToOrg"],
         true,
         true, // Show inline descriptions instead of help icons
@@ -294,7 +300,7 @@ export default class DocumentationConfig extends ColorThemeMixin(LightningElemen
         value: v,
       }));
       // prepend empty option
-      options = [{ label: "-- None --", value: "" }, ...options];
+      options = [{ label: this.t("noneOption"), value: "" }, ...options];
     }
 
     // Format the display value

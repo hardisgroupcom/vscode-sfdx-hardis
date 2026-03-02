@@ -3,8 +3,9 @@
 // @ts-nocheck
 // eslint-env es6
 import { LightningElement, api, track } from "lwc";
+import { I18nMixin } from "s/i18nMixin";
 
-export default class Pipeline extends LightningElement {
+export default class Pipeline extends I18nMixin(LightningElement) {
   @track prButtonInfo;
   enableDeploymentApexTestClasses = false;
   @track gitAuthenticated = false;
@@ -424,6 +425,7 @@ export default class Pipeline extends LightningElement {
 
   @api
   initialize(data) {
+    this.initTranslations(data);
     this.loading = this._isAutoRefresh ? false : false;
     this._isAutoRefresh = false;
     this.pipelineData = data.pipelineData;

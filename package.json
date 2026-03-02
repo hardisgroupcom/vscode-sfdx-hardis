@@ -189,6 +189,21 @@
           "default": true,
           "description": "Automatically show the Welcome panel when opening VS Code SFDX Hardis for the first time in a session"
         },
+        "vsCodeSfdxHardis.lang": {
+          "type": "string",
+          "default": "auto",
+          "enum": [
+            "auto",
+            "en",
+            "fr"
+          ],
+          "enumDescriptions": [
+            "Automatic (use VS Code display language)",
+            "English",
+            "Français"
+          ],
+          "description": "Language for SFDX Hardis extension interface. 'auto' uses the VS Code display language."
+        },
         "vsCodeSfdxHardis.autocloseCommands": {
           "type": "array",
           "default": [],
@@ -656,6 +671,7 @@
     "fs-extra": "^11.0.0",
     "get-port": "^7.1.0",
     "git-url-parse": "^16.1.0",
+    "i18next": "^25.8.13",
     "jira.js": "^5.2.2",
     "js-yaml": "^4.1.0",
     "lightning-base-components": "1.28.12-alpha",

@@ -30,8 +30,8 @@
               <lightning-button-icon
                 icon-name="utility:log"
                 variant="bare"
-                alternative-text="Open command log file"
-                title="Open command log file in new tab"
+                alternative-text={i18n.openCommandLogFile}
+                title={i18n.openCommandLogFile}
                 onclick={handleOpenCommandLogFile}
                 class="slds-m-left_xx-small"
               ></lightning-button-icon>
@@ -39,7 +39,7 @@
           </h2>
           <template if:true={commandDuration}>
             <p class="slds-text-body_small slds-text-color_weak">
-              Duration: {commandDuration}
+              {commandDurationLabel}
             </p>
           </template>
         </div>
@@ -48,30 +48,30 @@
             <!-- Auto-close toggle -->
             <lightning-input
               type="toggle"
-              label="Auto-close"
+              label={i18n.autoCloseLabel}
               checked={isInAutocloseList}
               onchange={handleToggleAutoclose}
-              title="Automatically close this command's panel when it completes successfully"
+              title={i18n.autoCloseTooltip}
               style="margin-top:0.125rem;"
             ></lightning-input>
             <!-- Toggle for Simple/Advanced -->
             <lightning-input
               type="toggle"
-              label="Advanced details"
+              label={i18n.advancedDetails}
               checked={isAdvancedMode}
               onchange={handleToggleDetailsMode}
               class="details-toggle"
-              title="Toggle between simple and advanced command details view"
+              title={i18n.advancedDetailsTooltip}
               style="margin-top:0.125rem;"
             ></lightning-input>
             <!-- Documentation button -->
             <template if:true={hasDocumentation}>
               <lightning-button
                 variant="neutral"
-                label="Documentation"
+                label={i18n.documentation}
                 icon-name="utility:info"
                 onclick={handleOpenDocumentation}
-                title="Open command documentation in browser">
+                title={i18n.openCommandDocumentation}>
               </lightning-button>
             </template>
           </div>
@@ -302,7 +302,7 @@
                               <template lwc:if={section.tableShowMoreButton}>
                                 <div class="slds-m-top_x-small slds-align_absolute-center">
                                   <lightning-button
-                                    label="See more"
+                                    label={i18n.seeMore}
                                     variant="neutral"
                                     data-section-id={section.id}
                                     onclick={handleSeeMoreTable}
@@ -386,7 +386,7 @@
           <template if:false={logSectionsForDisplay.length}>
             <div class="slds-text-align_center slds-p-around_medium">
               <p class="slds-text-body_regular slds-text-color_weak">
-                No logs available yet...
+                {i18n.noLogsAvailableYet}
               </p>
             </div>
           </template>

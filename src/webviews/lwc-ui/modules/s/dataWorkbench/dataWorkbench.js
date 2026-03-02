@@ -1,5 +1,6 @@
 import { LightningElement, api, track } from "lwc";
 import { ColorThemeMixin } from "s/colorThemeMixin";
+import { I18nMixin } from "s/i18nMixin";
 
 // Lightweight SOQL object name extraction. Full parsing/validation lives in
 // showDataWorkbench.ts to keep @jetstreamapp/soql-parser-js out of the webview bundle.
@@ -61,7 +62,7 @@ function createDefaultObject() {
   };
 }
 
-export default class DataWorkbench extends ColorThemeMixin(LightningElement) {
+export default class DataWorkbench extends I18nMixin(ColorThemeMixin(LightningElement)) {
   workspaces = [];
   selectedWorkspace = null;
   isLoading = false;
@@ -85,7 +86,7 @@ export default class DataWorkbench extends ColorThemeMixin(LightningElement) {
 
   exportedFilesColumns = [
     {
-      label: "File",
+      label: this.t("dwbColumnFile"),
       fieldName: "relativePath",
       type: "button",
       typeAttributes: {
@@ -95,18 +96,18 @@ export default class DataWorkbench extends ColorThemeMixin(LightningElement) {
       },
     },
     {
-      label: "Created Date",
+      label: this.t("dwbColumnCreatedDate"),
       fieldName: "createdLabel",
       type: "text",
     },
     {
-      label: "Size",
+      label: this.t("dwbColumnSize"),
       fieldName: "sizeLabel",
       type: "text",
       cellAttributes: { alignment: "right" },
     },
     {
-      label: "Lines",
+      label: this.t("dwbColumnLines"),
       fieldName: "lineCount",
       type: "number",
       cellAttributes: { alignment: "right" },
@@ -115,7 +116,7 @@ export default class DataWorkbench extends ColorThemeMixin(LightningElement) {
 
   logFilesColumns = [
     {
-      label: "File",
+      label: this.t("dwbColumnFile"),
       fieldName: "name",
       type: "button",
       typeAttributes: {
@@ -125,23 +126,23 @@ export default class DataWorkbench extends ColorThemeMixin(LightningElement) {
       },
     },
     {
-      label: "Log Type",
+      label: this.t("dwbColumnLogType"),
       fieldName: "logType",
       type: "text",
     },
     {
-      label: "Created Date",
+      label: this.t("dwbColumnCreatedDate"),
       fieldName: "createdLabel",
       type: "text",
     },
     {
-      label: "Size",
+      label: this.t("dwbColumnSize"),
       fieldName: "sizeLabel",
       type: "text",
       cellAttributes: { alignment: "right" },
     },
     {
-      label: "Lines",
+      label: this.t("dwbColumnLines"),
       fieldName: "lineCount",
       type: "number",
       cellAttributes: { alignment: "right" },
@@ -244,6 +245,7 @@ export default class DataWorkbench extends ColorThemeMixin(LightningElement) {
 
   @api
   initialize(data) {
+    this.initTranslations(data);
     if (data && data.workspaces) {
       this.workspaces = this.normalizeWorkspaces(data.workspaces);
     }
@@ -313,6 +315,7 @@ export default class DataWorkbench extends ColorThemeMixin(LightningElement) {
         iconName: "standard:dataset",
         hasDescription: !!workspace.description,
         objectsCount: workspace.objectsCount || 0,
+        objectsCountLabel: this.t("dwbObjectsCount", { count: workspace.objectsCount || 0 }),
         operationsSummary: (workspace.objects || [])
           .map((obj) => obj.operation || "Upsert")
           .join(", "),
@@ -338,8 +341,8 @@ export default class DataWorkbench extends ColorThemeMixin(LightningElement) {
 
   get propertiesModalTitle() {
     return this.editingWorkspace
-      ? "Edit Workspace Properties"
-      : "Create New Workspace";
+      ? this.t("dwbEditWorkspaceProperties")
+      : this.t("dwbCreateNewWorkspace");
   }
 
   get canSaveProperties() {
@@ -358,13 +361,13 @@ export default class DataWorkbench extends ColorThemeMixin(LightningElement) {
   }
 
   get savePropertiesButtonLabel() {
-    return this.editingWorkspace ? "Update Properties" : "Create Workspace";
+    return this.editingWorkspace ? this.t("dwbUpdateProperties") : this.t("dwbCreateWorkspace");
   }
 
   // --- Object modal computed ---
 
   get objectModalTitle() {
-    return this.editingObjectIndex >= 0 ? "Edit Object" : "Add Object";
+    return this.editingObjectIndex >= 0 ? this.t("dwbEditObjectTitle") : this.t("dwbAddObjectTitle");
   }
 
   get canSaveObject() {
@@ -381,7 +384,7 @@ export default class DataWorkbench extends ColorThemeMixin(LightningElement) {
   }
 
   get saveObjectButtonLabel() {
-    return this.editingObjectIndex >= 0 ? "Update Object" : "Add Object";
+    return this.editingObjectIndex >= 0 ? this.t("dwbUpdateObject") : this.t("dwbAddObject");
   }
 
   get objectHasSoqlError() {
@@ -444,6 +447,7 @@ export default class DataWorkbench extends ColorThemeMixin(LightningElement) {
       hasMockFields:
         (this.normalizeMockFields(obj.mockFields) || []).length > 0,
       mockFieldsCount: (this.normalizeMockFields(obj.mockFields) || []).length,
+      mockFieldsCountLabel: this.t("dwbObjBadgeMockFieldsCount", { count: (this.normalizeMockFields(obj.mockFields) || []).length }),
       isExcluded: coerceBoolean(obj.excluded),
       hasHardDelete: coerceBoolean(obj.hardDelete),
       hasDeleteByHierarchy: coerceBoolean(obj.deleteByHierarchy),
@@ -478,28 +482,28 @@ export default class DataWorkbench extends ColorThemeMixin(LightningElement) {
 
   get mockPatternOptions() {
     return [
-      { label: "Address - Country", value: "country" },
-      { label: "Address - City", value: "city" },
-      { label: "Address - Street", value: "street" },
-      { label: "Address - Address", value: "address" },
-      { label: "Address - ZIP Code", value: "zip" },
-      { label: "Personal - Name", value: "name" },
-      { label: "Personal - Full Name", value: "full_name" },
-      { label: "Personal - Username", value: "username" },
-      { label: "Personal - First Name", value: "first_name" },
-      { label: "Personal - Last Name", value: "last_name" },
-      { label: "Personal - Email", value: "email" },
-      { label: "Text - Sentence", value: "sentence" },
-      { label: "Text - Title", value: "title" },
-      { label: "Text - Text", value: "text" },
-      { label: "Text - Word", value: "word" },
-      { label: "Internet - IP Address", value: "ip" },
-      { label: "Internet - Domain Name", value: "domain" },
-      { label: "Internet - URL", value: "url" },
-      { label: "Numbers/Date - Random Number", value: "integer" },
-      { label: "Numbers/Date - Date", value: "date" },
-      { label: "Numbers/Date - Time", value: "time" },
-      { label: "Numbers/Date - Year", value: "year" },
+      { label: this.t("dwbMockCountry"), value: "country" },
+      { label: this.t("dwbMockCity"), value: "city" },
+      { label: this.t("dwbMockStreet"), value: "street" },
+      { label: this.t("dwbMockAddress"), value: "address" },
+      { label: this.t("dwbMockZip"), value: "zip" },
+      { label: this.t("dwbMockName"), value: "name" },
+      { label: this.t("dwbMockFullName"), value: "full_name" },
+      { label: this.t("dwbMockUsername"), value: "username" },
+      { label: this.t("dwbMockFirstName"), value: "first_name" },
+      { label: this.t("dwbMockLastName"), value: "last_name" },
+      { label: this.t("dwbMockEmail"), value: "email" },
+      { label: this.t("dwbMockSentence"), value: "sentence" },
+      { label: this.t("dwbMockTitle"), value: "title" },
+      { label: this.t("dwbMockText"), value: "text" },
+      { label: this.t("dwbMockWord"), value: "word" },
+      { label: this.t("dwbMockIp"), value: "ip" },
+      { label: this.t("dwbMockDomain"), value: "domain" },
+      { label: this.t("dwbMockUrl"), value: "url" },
+      { label: this.t("dwbMockInteger"), value: "integer" },
+      { label: this.t("dwbMockDate"), value: "date" },
+      { label: this.t("dwbMockTime"), value: "time" },
+      { label: this.t("dwbMockYear"), value: "year" },
     ];
   }
 
@@ -1070,14 +1074,14 @@ export default class DataWorkbench extends ColorThemeMixin(LightningElement) {
 
   get scriptSettingsSummary() {
     if (!this.selectedWorkspace || !this.selectedWorkspace.scriptSettings) {
-      return "No global settings configured.";
+      return this.t("dwbNoGlobalSettings");
     }
     const settings = this.selectedWorkspace.scriptSettings;
     const keys = Object.keys(settings).filter(
       (k) => k !== "$schema" && k !== "objectSets",
     );
     if (keys.length === 0) {
-      return "No global settings configured.";
+      return this.t("dwbNoGlobalSettings");
     }
     return `${keys.length} global setting(s) configured.`;
   }
@@ -1404,5 +1408,10 @@ export default class DataWorkbench extends ColorThemeMixin(LightningElement) {
     const field = event.currentTarget.dataset.field;
     const value = event.detail?.value ?? event.target.value;
     this.editingObject = { ...this.editingObject, [field]: value };
+  }
+
+  get objectsCountLabel() {
+    const count = this.selectedWorkspace?.objects?.length || 0;
+    return this.t("dwbObjectsTitle", { count });
   }
 }

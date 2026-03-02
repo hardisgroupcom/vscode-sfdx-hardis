@@ -1,7 +1,8 @@
 import { LightningElement, api, track } from "lwc";
 import { ColorThemeMixin } from "s/colorThemeMixin";
+import { I18nMixin } from "s/i18nMixin";
 
-export default class FilesWorkbench extends ColorThemeMixin(LightningElement) {
+export default class FilesWorkbench extends I18nMixin(ColorThemeMixin(LightningElement)) {
   workspaces = [];
   selectedWorkspace = null;
   isLoading = false;
@@ -100,6 +101,7 @@ export default class FilesWorkbench extends ColorThemeMixin(LightningElement) {
 
   @api
   initialize(data) {
+    this.initTranslations(data);
     if (data && data.workspaces) {
       this.workspaces = data.workspaces;
     }
@@ -143,8 +145,8 @@ export default class FilesWorkbench extends ColorThemeMixin(LightningElement) {
         ...workspace,
         iconName: "standard:file",
         hasDescription: !!workspace.description,
-        overwriteParentRecords: workspace.overwriteParentRecords ? "Yes" : "No",
-        overwriteFiles: workspace.overwriteFiles ? "Yes" : "No",
+        overwriteParentRecords: workspace.overwriteParentRecords ? this.t("yesLabel") : this.t("noLabel"),
+        overwriteFiles: workspace.overwriteFiles ? this.t("yesLabel") : this.t("noLabel"),
         exportedFilesCount: workspace.exportedFilesCount || null,
         cssClass: this.getWorkspaceCssClass(workspace),
       }))
@@ -173,8 +175,8 @@ export default class FilesWorkbench extends ColorThemeMixin(LightningElement) {
 
   get modalTitle() {
     return this.isEditMode
-      ? "Edit Files Import/Export Workspace"
-      : "Create New Files Import/Export Workspace";
+      ? this.t("editFilesWorkspace")
+      : this.t("createFilesWorkspace");
   }
 
   get canSaveWorkspace() {
@@ -190,7 +192,11 @@ export default class FilesWorkbench extends ColorThemeMixin(LightningElement) {
   }
 
   get saveButtonLabel() {
-    return this.isEditMode ? "Update Workspace" : "Create Workspace";
+    return this.isEditMode ? this.t("updateWorkspaceLabel") : this.t("createWorkspaceLabel");
+  }
+
+  get exportedFilesCountLabel() {
+    return this.t("exportedFilesCount", { count: this.selectedWorkspace?.exportedFilesCount || 0 });
   }
 
   // Event Handlers
@@ -428,25 +434,19 @@ export default class FilesWorkbench extends ColorThemeMixin(LightningElement) {
 
   get fileNameFormatOptions() {
     return [
-      { label: 'Title (e.g., "Document Title")', value: "title" },
-      {
-        label: 'Title + ID (e.g., "Document Title_006xxx")',
-        value: "title_id",
-      },
-      {
-        label: 'ID + Title (e.g., "006xxx_Document Title")',
-        value: "id_title",
-      },
-      { label: 'ID only (e.g., "006xxx")', value: "id" },
+      { label: this.t("fileNameFormatTitle"), value: "title" },
+      { label: this.t("fileNameFormatTitleId"), value: "title_id" },
+      { label: this.t("fileNameFormatIdTitle"), value: "id_title" },
+      { label: this.t("fileNameFormatId"), value: "id" },
     ];
   }
 
   get fileTypesOptions() {
     return [
-      { label: "All file types", value: "all" },
-      { label: "PDF files only", value: "PDF" },
-      { label: "Image files only", value: "PNG,JPG,JPEG,GIF" },
-      { label: "Document files only", value: "PDF,DOC,DOCX,XLS,XLSX,PPT,PPTX" },
+      { label: this.t("allFileTypes"), value: "all" },
+      { label: this.t("pdfFilesOnly"), value: "PDF" },
+      { label: this.t("imageFilesOnly"), value: "PNG,JPG,JPEG,GIF" },
+      { label: this.t("documentFilesOnly"), value: "PDF,DOC,DOCX,XLS,XLSX,PPT,PPTX" },
     ];
   }
 }

@@ -16,6 +16,7 @@ import {
 import { Logger } from "./logger";
 import which from "which";
 import { ThemeUtils } from "./themeUtils";
+import { t } from "./i18n/i18n";
 import { SetupHelper } from "./utils/setupUtils";
 import { isMergeDriverEnabled } from "./utils/gitMergeDriverUtils";
 
@@ -130,7 +131,7 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
         )}`),
           vscode.window
             .showWarningMessage(
-              `🦙 You need Node.js installed on your computer. Please download and install it (version ${NODE_JS_MINIMUM_VERSION}), then restart VsCode.`,
+              t("nodeNotInstalled", { version: NODE_JS_MINIMUM_VERSION }),
               "Download and install Node.js LTS",
             )
             .then((selection) => {
@@ -152,7 +153,10 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
         )}`),
           vscode.window
             .showWarningMessage(
-              `🦙 You have a too old version (${nodeVersionMatch[1]}) of Node.js installed on your computer. Please download and install it (version ${NODE_JS_MINIMUM_VERSION}), then restart VsCode.`,
+              t("nodeVersionTooOld", {
+                currentVersion: nodeVersionMatch[1],
+                recommendedVersion: NODE_JS_MINIMUM_VERSION,
+              }),
               "Download and install Node.js LTS",
             )
             .then((selection) => {
@@ -206,7 +210,7 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
         )}`),
           vscode.window
             .showWarningMessage(
-              "🦙 You need Git installed on your computer. Please download and install it (select GIT BASH in options), then restart VsCode",
+              t("gitNotInstalled"),
               "Download and install Git",
             )
             .then((selection) => {

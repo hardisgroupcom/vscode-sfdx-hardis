@@ -4,6 +4,7 @@
 // eslint-env es6
 import { LightningElement, api, track } from "lwc";
 import { ColorThemeMixin } from "s/colorThemeMixin";
+import { I18nMixin } from "s/i18nMixin";
 
 // Configuration - Base URL for metadata type documentation
 // Modify this URL to change where metadata type links point to
@@ -16,7 +17,7 @@ const createEmptyPackageData = () => ({
   types: [],
 });
 
-export default class PackageXml extends ColorThemeMixin(LightningElement) {
+export default class PackageXml extends I18nMixin(ColorThemeMixin(LightningElement)) {
   @track packageData = createEmptyPackageData();
   @track isLoading = true;
   @track hasError = false;
@@ -41,6 +42,7 @@ export default class PackageXml extends ColorThemeMixin(LightningElement) {
   @api
   initialize(data) {
     console.log("Package XML component initialized:", data);
+    this.initTranslations(data);
     this.isLoading = false;
 
     this.packageConfig = data?.config || {};
@@ -78,7 +80,7 @@ export default class PackageXml extends ColorThemeMixin(LightningElement) {
     }
 
     this.hasError = true;
-    this.errorMessage = "No package data provided";
+    this.errorMessage = this.t("noPackageDataProvided");
     this.packageData = createEmptyPackageData();
     this.isMutating = false;
     this.shouldRestoreViewPosition = false;
@@ -157,13 +159,14 @@ export default class PackageXml extends ColorThemeMixin(LightningElement) {
         return {
           name: memberName,
           showDocLink: showDocLink,
-          docTooltip: showDocLink ? `View ${memberName} documentation` : "",
+          docTooltip: showDocLink ? this.t("viewMemberDocumentation", { memberName }) : "",
         };
       });
       const iconInfo = this.getMetadataTypeIcon(type.name);
       return {
         ...type,
-        memberCount: hasWildcard ? "All" : members.length,
+        memberCount: hasWildcard ? this.t("memberCountAll") : members.length,
+        memberCountLabel: hasWildcard ? this.t("memberCountAll") : this.t("membersLabel", { count: members.length }),
         hasWildcard: hasWildcard,
         members: members,
         isExpanded: this.expandedTypes.has(type.name),
@@ -291,132 +294,116 @@ export default class PackageXml extends ColorThemeMixin(LightningElement) {
   get packageTypeConfig() {
     const configs = {
       skip: {
-        title: "Skip Items Package",
-        description: "Items ignored during metadata backup",
+        title: this.t("pkgSkipTitle"),
+        description: this.t("pkgSkipDescription"),
         icon: "utility:ban",
         infoIcon: "🚫",
         typesIcon: "📋",
-        typesTitle: "Skipped Metadata Types",
-        typesDescription:
-          "Metadata types and components ignored during backup operations",
-        wildcardMessage: "All members of this type are skipped (*)",
-        emptyTitle: "No Skip Items Configured",
-        emptyDescription:
-          "This package file doesn't contain any metadata types to skip.",
-        refreshTooltip: "Reload skip items package configuration",
-        editTooltip: "Open the skip items package file for editing",
+        typesTitle: this.t("pkgSkipTypesTitle"),
+        typesDescription: this.t("pkgSkipTypesDescription"),
+        wildcardMessage: this.t("pkgSkipWildcard"),
+        emptyTitle: this.t("pkgSkipEmptyTitle"),
+        emptyDescription: this.t("pkgSkipEmptyDescription"),
+        refreshTooltip: this.t("pkgSkipRefreshTooltip"),
+        editTooltip: this.t("pkgSkipEditTooltip"),
       },
       backup: {
-        title: "Backup Items Package",
-        description: "Items included in metadata backup",
+        title: this.t("pkgBackupTitle"),
+        description: this.t("pkgBackupDescription"),
         icon: "utility:save",
         infoIcon: "💾",
         typesIcon: "📦",
-        typesTitle: "Backup Metadata Types",
-        typesDescription:
-          "Metadata types and components included in backup operations",
-        wildcardMessage: "All members of this type are backed up (*)",
-        emptyTitle: "No Backup Items Configured",
-        emptyDescription:
-          "This package file doesn't contain any metadata types for backup.",
-        refreshTooltip: "Reload backup items package configuration",
-        editTooltip: "Open the backup items package file for editing",
+        typesTitle: this.t("pkgBackupTypesTitle"),
+        typesDescription: this.t("pkgBackupTypesDescription"),
+        wildcardMessage: this.t("pkgBackupWildcard"),
+        emptyTitle: this.t("pkgBackupEmptyTitle"),
+        emptyDescription: this.t("pkgBackupEmptyDescription"),
+        refreshTooltip: this.t("pkgBackupRefreshTooltip"),
+        editTooltip: this.t("pkgBackupEditTooltip"),
       },
       "all-org": {
-        title: "All Org Items Package",
-        description: "All items in the org including non-backed up items",
+        title: this.t("pkgAllOrgTitle"),
+        description: this.t("pkgAllOrgDescription"),
         icon: "utility:package",
         infoIcon: "📊",
         typesIcon: "🏢",
-        typesTitle: "All Org Metadata Types",
-        typesDescription:
-          "Complete inventory of all metadata types and components in the org",
-        wildcardMessage: "All members of this type are in the org (*)",
-        emptyTitle: "No Org Items Found",
-        emptyDescription:
-          "This package file doesn't contain any metadata types from the org.",
-        refreshTooltip: "Reload all org items package",
-        editTooltip: "Open the all org items package file for editing",
+        typesTitle: this.t("pkgAllOrgTypesTitle"),
+        typesDescription: this.t("pkgAllOrgTypesDescription"),
+        wildcardMessage: this.t("pkgAllOrgWildcard"),
+        emptyTitle: this.t("pkgAllOrgEmptyTitle"),
+        emptyDescription: this.t("pkgAllOrgEmptyDescription"),
+        refreshTooltip: this.t("pkgAllOrgRefreshTooltip"),
+        editTooltip: this.t("pkgAllOrgEditTooltip"),
       },
       deploy: {
-        title: "Deployment Package",
-        description: "Package contents for deployment",
-        icon: "utility:upload", // use commonly available upload icon instead of deployment
+        title: this.t("pkgDeployTitle"),
+        description: this.t("pkgDeployDescription"),
+        icon: "utility:upload",
         infoIcon: "🚀",
         typesIcon: "📤",
-        typesTitle: "Deployment Contents",
-        typesDescription:
-          "Metadata types and components included in this deployment",
-        wildcardMessage: "All members of this type are included (*)",
-        emptyTitle: "No Deployment Contents",
-        emptyDescription:
-          "This deployment package doesn't contain any metadata types.",
-        refreshTooltip: "Reload deployment package",
-        editTooltip: "Open the deployment package file for editing",
+        typesTitle: this.t("pkgDeployTypesTitle"),
+        typesDescription: this.t("pkgDeployTypesDescription"),
+        wildcardMessage: this.t("pkgDeployWildcard"),
+        emptyTitle: this.t("pkgDeployEmptyTitle"),
+        emptyDescription: this.t("pkgDeployEmptyDescription"),
+        refreshTooltip: this.t("pkgDeployRefreshTooltip"),
+        editTooltip: this.t("pkgDeployEditTooltip"),
       },
       retrieve: {
-        title: "Retrieve Package",
-        description: "Package definition for metadata retrieval",
+        title: this.t("pkgRetrieveTitle"),
+        description: this.t("pkgRetrieveDescription"),
         icon: "utility:file",
         infoIcon: "📥",
         typesIcon: "📦",
-        typesTitle: "Retrieval Contents",
-        typesDescription:
-          "Metadata types and components to retrieve from the org",
-        wildcardMessage: "All members of this type will be retrieved (*)",
-        emptyTitle: "No Retrieval Contents",
-        emptyDescription:
-          "This retrieval package doesn't contain any metadata types.",
-        refreshTooltip: "Reload retrieval package",
-        editTooltip: "Open the retrieval package file for editing",
+        typesTitle: this.t("pkgRetrieveTypesTitle"),
+        typesDescription: this.t("pkgRetrieveTypesDescription"),
+        wildcardMessage: this.t("pkgRetrieveWildcard"),
+        emptyTitle: this.t("pkgRetrieveEmptyTitle"),
+        emptyDescription: this.t("pkgRetrieveEmptyDescription"),
+        refreshTooltip: this.t("pkgRetrieveRefreshTooltip"),
+        editTooltip: this.t("pkgRetrieveEditTooltip"),
       },
       destructive: {
-        title: "Destructive Changes",
-        description: "Components marked for deletion",
+        title: this.t("pkgDestructiveTitle"),
+        description: this.t("pkgDestructiveDescription"),
         icon: "utility:delete",
         infoIcon: "🗑️",
         typesIcon: "❌",
-        typesTitle: "Destructive Changes",
-        typesDescription: "Metadata types and components to be deleted",
-        wildcardMessage: "All members of this type will be deleted (*)",
-        emptyTitle: "No Destructive Changes",
-        emptyDescription:
-          "This destructive changes package doesn't contain any components to delete.",
-        refreshTooltip: "Reload destructive changes",
-        editTooltip: "Open the destructive changes file for editing",
+        typesTitle: this.t("pkgDestructiveTypesTitle"),
+        typesDescription: this.t("pkgDestructiveTypesDescription"),
+        wildcardMessage: this.t("pkgDestructiveWildcard"),
+        emptyTitle: this.t("pkgDestructiveEmptyTitle"),
+        emptyDescription: this.t("pkgDestructiveEmptyDescription"),
+        refreshTooltip: this.t("pkgDestructiveRefreshTooltip"),
+        editTooltip: this.t("pkgDestructiveEditTooltip"),
       },
       "no-overwrite": {
-        title: "No Overwrite Package",
-        description:
-          "Metadata that will never be overwritten during deployment",
+        title: this.t("pkgNoOverwriteTitle"),
+        description: this.t("pkgNoOverwriteDescription"),
         icon: "utility:ban",
         infoIcon: "🔒",
         typesIcon: "🛡️",
-        typesTitle: "Protected Metadata",
-        typesDescription:
-          "Metadata types and components protected from overwrite during deployment",
-        wildcardMessage:
-          "All members of this type are protected from overwrite (*)",
-        emptyTitle: "No Protected Metadata",
-        emptyDescription:
-          "This no-overwrite package doesn't contain any protected metadata types.",
-        refreshTooltip: "Reload no-overwrite package configuration",
-        editTooltip: "Open the no-overwrite package file for editing",
+        typesTitle: this.t("pkgNoOverwriteTypesTitle"),
+        typesDescription: this.t("pkgNoOverwriteTypesDescription"),
+        wildcardMessage: this.t("pkgNoOverwriteWildcard"),
+        emptyTitle: this.t("pkgNoOverwriteEmptyTitle"),
+        emptyDescription: this.t("pkgNoOverwriteEmptyDescription"),
+        refreshTooltip: this.t("pkgNoOverwriteRefreshTooltip"),
+        editTooltip: this.t("pkgNoOverwriteEditTooltip"),
       },
       manifest: {
-        title: "Package Manifest",
-        description: "Complete package definition",
+        title: this.t("pkgManifestTitle"),
+        description: this.t("pkgManifestDescription"),
         icon: "utility:file",
         infoIcon: "📄",
         typesIcon: "📋",
-        typesTitle: "Package Contents",
-        typesDescription: "All metadata types and components in this package",
-        wildcardMessage: "All members of this type are included (*)",
-        emptyTitle: "Empty Package",
-        emptyDescription:
-          "This package manifest doesn't contain any metadata types.",
-        refreshTooltip: "Reload package manifest",
-        editTooltip: "Open the package manifest file for editing",
+        typesTitle: this.t("pkgManifestTypesTitle"),
+        typesDescription: this.t("pkgManifestTypesDescription"),
+        wildcardMessage: this.t("pkgManifestWildcard"),
+        emptyTitle: this.t("pkgManifestEmptyTitle"),
+        emptyDescription: this.t("pkgManifestEmptyDescription"),
+        refreshTooltip: this.t("pkgManifestRefreshTooltip"),
+        editTooltip: this.t("pkgManifestEditTooltip"),
       },
     };
 
@@ -430,7 +417,7 @@ export default class PackageXml extends ColorThemeMixin(LightningElement) {
   get packageDescription() {
     const baseDesc = this.packageTypeConfig.description;
     return this.packageFilePath
-      ? `${baseDesc} from ${this.packageFilePath}`
+      ? this.t("pkgDescriptionWithPath", { description: baseDesc, filePath: this.packageFilePath })
       : baseDesc;
   }
 
@@ -474,6 +461,14 @@ export default class PackageXml extends ColorThemeMixin(LightningElement) {
     return this.packageTypeConfig.editTooltip;
   }
 
+  get addMemberToTypeLabel() {
+    return this.t("addMemberToType", { typeName: this.pendingTypeNameForMember });
+  }
+
+  get noMatchingResultsDescLabel() {
+    return this.t("noMatchingResultsDesc", { filterText: this.filterText });
+  }
+
   // Computed properties
   get hasPackageData() {
     return !this.isLoading && !this.hasError && this.packageData;
@@ -514,15 +509,17 @@ export default class PackageXml extends ColorThemeMixin(LightningElement) {
 
         // Include type if type name matches OR if any members match
         if (typeNameMatches || filteredMembers.length > 0) {
+          const count = typeNameMatches
+            ? type.hasWildcard
+              ? this.t("memberCountAll")
+              : type.members?.length || 0
+            : filteredMembers.length;
           return {
             ...type,
             members: typeNameMatches ? type.members : filteredMembers,
-            memberCount: typeNameMatches
-              ? type.hasWildcard
-                ? "All"
-                : type.members?.length || 0
-              : filteredMembers.length,
-            urlTooltip: `View ${type.name} documentation`,
+            memberCount: count,
+            memberCountLabel: typeof count === "number" ? this.t("membersLabel", { count }) : count,
+            urlTooltip: this.t("viewTypeDocumentation", { typeName: type.name }),
           };
         }
 

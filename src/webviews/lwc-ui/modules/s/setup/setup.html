@@ -6,13 +6,13 @@
                     <lightning-icon icon-name="utility:setup" size="medium" variant="inverse"></lightning-icon>
                 </div>
                 <div class="header-text">
-                    <h1 class="header-title">SFDX Hardis Setup</h1>
-                    <p class="header-subtitle">Check and install extension dependencies</p>
+                    <h1 class="header-title">{i18n.sfdxHardisSetup}</h1>
+                    <p class="header-subtitle">{i18n.checkAndInstallDependencies}</p>
                 </div>
                 <div class="header-actions">
                     <lightning-input
                         type="toggle"
-                        label="Auto-update dependencies"
+                        label={i18n.autoUpdateDependencies}
                         name="autoUpdateDependencies"
                         checked={_autoUpdateDependencies}
                         onchange={handleAutoUpdateChange}
@@ -40,7 +40,7 @@
                         </template>
                         </div>
                         <div class="status-content">
-                            <h3 class="status-title">Dependencies status summary</h3>
+                            <h3 class="status-title">{i18n.dependenciesStatusSummary}</h3>
                             <p class="status-description">{summaryMessage}</p>
                         </div>
                         <div class="status-actions">
@@ -94,7 +94,7 @@
                                 </template>
                                 <!-- show prereq hint only after we know the check completed and prerequisites are actually missing -->
                                 <template if:true={chk.missingPrerequisitesText}>
-                                    <p class="prereq-hint slds-text-color_error slds-m-top_xx-small">Requires:<br/>{chk.missingPrerequisitesText}</p>
+                                    <p class="prereq-hint slds-text-color_error slds-m-top_xx-small">{i18n.requiresLabel}<br/>{chk.missingPrerequisitesText}</p>
                                 </template>
                             </div>
                         </div>

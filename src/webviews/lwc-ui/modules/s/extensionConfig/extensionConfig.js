@@ -1,7 +1,8 @@
 import { LightningElement, track, api } from "lwc";
 import { ColorThemeMixin } from "s/colorThemeMixin";
+import { I18nMixin } from "s/i18nMixin";
 
-export default class ExtensionConfig extends ColorThemeMixin(LightningElement) {
+export default class ExtensionConfig extends I18nMixin(ColorThemeMixin(LightningElement)) {
   @track sections = [];
   @track loading = true;
   @track error = null;
@@ -9,6 +10,7 @@ export default class ExtensionConfig extends ColorThemeMixin(LightningElement) {
 
   @api
   initialize(data) {
+    this.initTranslations(data);
     this.loading = false;
     this.error = null;
     this.activeTabValue = data.activeTabValue || null;

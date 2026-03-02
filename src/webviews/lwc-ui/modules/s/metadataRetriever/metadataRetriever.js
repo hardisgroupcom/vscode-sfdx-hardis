@@ -1,4 +1,5 @@
 import { LightningElement, api, track } from "lwc";
+import { I18nMixin } from "s/i18nMixin";
 
 /**
  * LWC to retrieve and search metadata from a Salesforce org
@@ -10,7 +11,7 @@ import { LightningElement, api, track } from "lwc";
 const METADATA_DOC_BASE_URL =
   "https://sf-explorer.github.io/sf-doc-to-json/#/cloud/all/object/";
 
-export default class MetadataRetriever extends LightningElement {
+export default class MetadataRetriever extends I18nMixin(LightningElement) {
   @api orgs = [];
   @api metadataTypes = [];
   @track selectedOrg = null;
@@ -62,7 +63,7 @@ export default class MetadataRetriever extends LightningElement {
     if (this.isRecentChangesMode) {
       // Emoji column for change operation (created/modified/deleted)
       cols.push({
-        label: "Operation",
+        label: this.t("operationColumn"),
         fieldName: "ChangeIcon",
         type: "text",
         cellAttributes: {
@@ -74,7 +75,7 @@ export default class MetadataRetriever extends LightningElement {
 
     // Metadata Type
     cols.push({
-      label: "Metadata Type",
+      label: this.t("metadataTypeLabel"),
       fieldName: "MemberTypeUrl",
       type: "url",
       sortable: true,
@@ -89,7 +90,7 @@ export default class MetadataRetriever extends LightningElement {
 
     // Metadata Name
     cols.push({
-      label: "Metadata Name",
+      label: this.t("metadataNameLabel"),
       fieldName: "MemberName",
       type: "button",
       sortable: true,
@@ -108,7 +109,7 @@ export default class MetadataRetriever extends LightningElement {
 
     // Last Updated By
     cols.push({
-      label: "Last Updated By",
+      label: this.t("lastUpdatedByLabel"),
       fieldName: "LastModifiedByName",
       type: "text",
       sortable: true,
@@ -118,7 +119,7 @@ export default class MetadataRetriever extends LightningElement {
 
     // Last Updated Date
     cols.push({
-      label: "Last Updated Date",
+      label: this.t("lastUpdatedDateColumn"),
       fieldName: "LastModifiedDate",
       type: "date",
       sortable: true,
@@ -135,7 +136,7 @@ export default class MetadataRetriever extends LightningElement {
     // Local file existence column (centered) - only when the user enabled the toggle
     if (this.checkLocalFiles) {
       cols.push({
-        label: "Local",
+        label: this.t("localColumn"),
         fieldName: "LocalFileIcon",
         type: "text",
         cellAttributes: {
@@ -151,9 +152,9 @@ export default class MetadataRetriever extends LightningElement {
       type: "button-icon",
       typeAttributes: {
         iconName: "utility:download",
-        title: "Download",
+        title: this.t("downloadLabel"),
         variant: "bare",
-        alternativeText: "Download",
+        alternativeText: this.t("downloadLabel"),
         name: "download",
       },
       initialWidth: 30,
@@ -191,7 +192,7 @@ export default class MetadataRetriever extends LightningElement {
     }));
 
     if (this.isLoadingOrgs) {
-      sortedOrgsValues.push({ label: "Loading...", value: "" });
+      sortedOrgsValues.push({ label: this.t("loadingLabel"), value: "" });
     }
 
     return sortedOrgsValues;
@@ -200,7 +201,7 @@ export default class MetadataRetriever extends LightningElement {
   get metadataTypeOptions() {
     // In All Metadata mode, don't include "All" option
     const options =
-      this.queryMode === "allMetadata" ? [] : [{ label: "All", value: "All" }];
+      this.queryMode === "allMetadata" ? [] : [{ label: this.t("allLabel"), value: "All" }];
     if (this.metadataTypes && Array.isArray(this.metadataTypes)) {
       return options.concat(this.metadataTypes);
     }
@@ -209,8 +210,8 @@ export default class MetadataRetriever extends LightningElement {
 
   get queryModeOptions() {
     return [
-      { label: "Recent Changes", value: "recentChanges" },
-      { label: "All Metadata", value: "allMetadata" },
+      { label: this.t("recentChangesLabel"), value: "recentChanges" },
+      { label: this.t("allMetadataLabel"), value: "allMetadata" },
     ];
   }
 
@@ -230,7 +231,7 @@ export default class MetadataRetriever extends LightningElement {
   get checkLocalTooltip() {
     return this.checkLocalAvailable
       ? ""
-      : "No sfdx-project.json found in workspace root - local file checks disabled";
+      : this.t("noProjectJsonFound");
   }
 
   get hasResults() {
@@ -292,8 +293,16 @@ export default class MetadataRetriever extends LightningElement {
   get retrieveSelectedLabel() {
     const count = this.selectedRows ? this.selectedRows.length : 0;
     return count > 0
-      ? `Retrieve ${count} Selected Metadata`
-      : "Retrieve Selected Metadata";
+      ? this.t("retrieveSelectedItems", { count: count })
+      : this.t("retrieveSelectedSingle");
+  }
+
+  get noSearchPerformedDescHtml() {
+    return this.t("noSearchPerformedDesc");
+  }
+
+  get resultsFoundLabel() {
+    return this.t("resultsFound", { count: this.filteredMetadata.length });
   }
 
   connectedCallback() {
@@ -335,6 +344,12 @@ export default class MetadataRetriever extends LightningElement {
 
   @api
   initialize(data) {
+    this.initTranslations(data);
+    // Update packageOptions labels with translations
+    this.packageOptions = [
+      { label: this.t("allLabel"), value: "All" },
+      { label: this.t("localLabel"), value: "Local" },
+    ];
     if (data) {
       if (data.orgs && Array.isArray(data.orgs)) {
         this.orgs = data.orgs;

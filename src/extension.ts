@@ -17,6 +17,7 @@ import { CacheManager } from "./utils/cache-manager";
 import { runSalesforceCliMcpServer } from "./utils/mcpUtils";
 import { SecretsManager } from "./utils/secretsManager";
 import { getExtensionConfigSections } from "./utils/extensionConfigUtils";
+import { initI18n, reinitI18n } from "./i18n/i18n";
 
 let refreshInterval: any = null;
 let reporter;
@@ -28,6 +29,9 @@ export function activate(context: vscode.ExtensionContext) {
   CacheManager.init(context.globalState);
   CacheManager.clearExpired();
   SecretsManager.init(context);
+
+  // Initialize i18n system early
+  initI18n();
 
   new Logger(vscode.window);
   console.time("Hardis_Activate");
@@ -217,6 +221,14 @@ export function activate(context: vscode.ExtensionContext) {
         )
       ) {
         startMcpServerIfConfigured();
+      }
+      // Re-initialize i18n when language setting changes
+      if (event.affectsConfiguration("vsCodeSfdxHardis.lang")) {
+        reinitI18n();
+        // Refresh tree views to show translated labels
+        vscode.commands.executeCommand("vscode-sfdx-hardis.refreshCommandsView", true);
+        vscode.commands.executeCommand("vscode-sfdx-hardis.refreshStatusView", true);
+        vscode.commands.executeCommand("vscode-sfdx-hardis.refreshPluginsView", true);
       }
       // Send message to opened LWC panels to update their configuration
       const vsCodeSfdxHardisConfiguration =

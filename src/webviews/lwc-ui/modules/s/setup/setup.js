@@ -1,6 +1,7 @@
 import { LightningElement, api, track } from "lwc";
+import { I18nMixin } from "s/i18nMixin";
 
-export default class Setup extends LightningElement {
+export default class Setup extends I18nMixin(LightningElement) {
   @track checks = [];
   @track summaryMessage = "";
   @track summaryClass = "";
@@ -19,6 +20,7 @@ export default class Setup extends LightningElement {
   handleMessage(type, data) {
     console.log("Setup component received message:", type, data);
     if (type === "initialize") {
+      this.initTranslations(data);
       // Render the static list first (no checking yet) so the UI paints quickly
       this._autoUpdateDependencies =
         data && data.autoUpdateDependencies === true;
@@ -241,23 +243,23 @@ export default class Setup extends LightningElement {
 
     // If we haven't received any check result yet, consider the summary as checking so we don't show "You are all set"
     if (!anyHasChecked) {
-      this.summaryMessage = "Check in progress";
+      this.summaryMessage = this.t("checkInProgress");
       this.summaryClass = "info";
       this._summaryChecking = true;
       this._summaryIconName = "utility:sync";
       this._summaryIconContainer = "status-icon-container neutral";
     } else {
       if (anyChecking) {
-        this.summaryMessage = "Check in progress";
+        this.summaryMessage = this.t("checkInProgress");
         this.summaryClass = "info";
       } else if (anyMissing) {
-        this.summaryMessage = "Missing dependencies: Please install them";
+        this.summaryMessage = this.t("missingDependencies");
         this.summaryClass = "warning";
       } else if (anyOutdated) {
-        this.summaryMessage = "Outdated dependencies: Please upgrade them";
+        this.summaryMessage = this.t("outdatedDependencies");
         this.summaryClass = "warning";
       } else {
-        this.summaryMessage = "You are all set 🤓";
+        this.summaryMessage = this.t("youAreAllSet");
         this.summaryClass = "success";
       }
 
@@ -339,26 +341,26 @@ export default class Setup extends LightningElement {
       let buttonDisabled = false;
 
       if (c.checking || c.installing) {
-        buttonLabel = c.checking ? "Checking..." : "Installing...";
+        buttonLabel = c.checking ? this.t("checking") : this.t("installingLabel");
         buttonVariant = "neutral";
         ((buttonAction = ""), (buttonDisabled = true));
       } else if (status === "outdated") {
-        buttonLabel = "Upgrade";
+        buttonLabel = this.t("upgradeLabel");
         buttonVariant = "brand";
         buttonAction = "install";
         if (c.id === "node") {
           buttonAction = "instructions";
         }
       } else if (status === "ok") {
-        buttonLabel = "Re-check";
+        buttonLabel = this.t("recheck");
         buttonVariant = "neutral";
         buttonAction = "recheck";
       } else if (status === "missing") {
-        buttonLabel = c.installable ? "Install" : "Install Instructions";
+        buttonLabel = c.installable ? this.t("installLabel") : this.t("installInstructions");
         buttonVariant = "brand";
         buttonAction = c.installable ? "install" : "instructions";
       } else if (status === "error") {
-        buttonLabel = "Fix Instructions";
+        buttonLabel = this.t("fixInstructions");
         buttonVariant = "brand";
         buttonAction = "instructions";
       }
@@ -410,7 +412,7 @@ export default class Setup extends LightningElement {
 
   // Computed label for the Run button (avoid inline expressions in template)
   get runButtonLabel() {
-    return this.installQueueRunning ? "Running..." : "Run pending installs";
+    return this.installQueueRunning ? this.t("running") : this.t("runPendingInstalls");
   }
 
   // Computed disabled state for the Run button

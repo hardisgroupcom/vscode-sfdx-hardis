@@ -1,5 +1,6 @@
 import { LightningElement, api, track } from "lwc";
 import { ColorThemeMixin } from "s/colorThemeMixin";
+import { I18nMixin } from "s/i18nMixin";
 
 /**
  * Documentation Workbench LWC Component
@@ -12,7 +13,7 @@ import { ColorThemeMixin } from "s/colorThemeMixin";
  *  - Run locally (MkDocs)
  *  - Open configuration panel for advanced options
  */
-export default class DocumentationWorkbench extends ColorThemeMixin(LightningElement) {
+export default class DocumentationWorkbench extends I18nMixin(ColorThemeMixin(LightningElement)) {
   // Generation options (state tracked here, synced with config panel)
   @track generatePdf = false;
   @track generateExcel = false;
@@ -28,6 +29,7 @@ export default class DocumentationWorkbench extends ColorThemeMixin(LightningEle
 
   @api
   initialize(data) {
+    this.initTranslations(data);
     if (data) {
       // Initialize generation options if provided
       if (data.generatePdf !== undefined) {
@@ -108,6 +110,10 @@ export default class DocumentationWorkbench extends ColorThemeMixin(LightningEle
     } else if (name === "generateLwcDoc") {
       this.generateLwcDoc = checked;
     }
+  }
+
+  get deployToSalesforceDescHtml() {
+    return this.t("deployToSalesforceDesc");
   }
 
   handleGenerate() {

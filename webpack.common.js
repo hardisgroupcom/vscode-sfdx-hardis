@@ -215,6 +215,14 @@ const lwcWebviewConfig = {
           ),
           noErrorOnMissing: true,
         },
+        {
+          from: path.resolve(__dirname, "src/i18n"),
+          to: path.resolve(__dirname, "out/i18n"),
+          globOptions: {
+            ignore: ["**/*.ts"],
+          },
+          noErrorOnMissing: true,
+        },
       ],
     }),
   ],

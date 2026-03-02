@@ -1,4 +1,5 @@
 import { LightningElement, api, track } from "lwc";
+import { I18nMixin } from "s/i18nMixin";
 
 /**
  * LWC to display and edit .sfdx-hardis.yml configuration (global or branch-scoped)
@@ -11,7 +12,7 @@ import { LightningElement, api, track } from "lwc";
  *   mode: 'view' | 'edit'
  *   availableBranches: array of available branch names for selection
  */
-export default class PipelineConfig extends LightningElement {
+export default class PipelineConfig extends I18nMixin(LightningElement) {
   @api config = {};
   @api branchConfig = null;
   @api globalConfig = null;
@@ -48,13 +49,13 @@ export default class PipelineConfig extends LightningElement {
   }
 
   get configScopeOptions() {
-    const options = [{ label: "Global Settings", value: "global" }];
+    const options = [{ label: this.t("globalSettings"), value: "global" }];
 
     // Add branch options
     if (this.availableBranches && Array.isArray(this.availableBranches)) {
       this.availableBranches.forEach((branch) => {
         options.push({
-          label: `Branch: ${branch}`,
+          label: this.t("branchLabel", { branch }),
           value: `branch:${branch}`,
         });
       });
@@ -358,6 +359,7 @@ export default class PipelineConfig extends LightningElement {
 
   @api
   initialize(data) {
+    this.initTranslations(data);
     if (data && data.config && data.configSchema) {
       this.initData = Object.assign({}, data);
       this.config = this.initData.config;
@@ -832,17 +834,17 @@ export default class PipelineConfig extends LightningElement {
         typeAttributes: {
           rowActions: [
             {
-              label: "Move Up",
+              label: this.t("moveUp"),
               name: "move_up",
               iconName: "utility:chevronup",
             },
             {
-              label: "Move Down",
+              label: this.t("moveDown"),
               name: "move_down",
               iconName: "utility:chevrondown",
             },
-            { label: "Edit", name: "edit", iconName: "utility:edit" },
-            { label: "Delete", name: "delete", iconName: "utility:delete" },
+            { label: this.t("edit"), name: "edit", iconName: "utility:edit" },
+            { label: this.t("deleteLabel"), name: "delete", iconName: "utility:delete" },
           ],
         },
         initialWidth: 120,

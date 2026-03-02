@@ -3,8 +3,9 @@
 // @ts-nocheck
 // eslint-env es6
 import { LightningElement, api, track } from "lwc";
+import { I18nMixin } from "s/i18nMixin";
 
-export default class OrgMonitoring extends LightningElement {
+export default class OrgMonitoring extends I18nMixin(LightningElement) {
   @track isInstalled = false;
   @track isLoading = true;
   @track isCiCdRepo = false;
@@ -13,6 +14,7 @@ export default class OrgMonitoring extends LightningElement {
 
   @api
   initialize(data) {
+    this.initTranslations(data);
     console.log("Org Monitoring component initialized:", data);
     this.isInstalled = data?.isInstalled || false;
     this.isCiCdRepo = data?.isCiCdRepo || false;

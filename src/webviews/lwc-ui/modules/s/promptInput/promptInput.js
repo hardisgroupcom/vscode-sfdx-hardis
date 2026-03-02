@@ -3,8 +3,9 @@
 // @ts-nocheck
 // eslint-env es6
 import { LightningElement, api, track } from "lwc";
+import { I18nMixin } from "s/i18nMixin";
 
-export default class PromptInput extends LightningElement {
+export default class PromptInput extends I18nMixin(LightningElement) {
   // Track the index of the currently focused button for select-with-buttons
   focusedButtonIndex = 0;
   @api promptData = null;
@@ -143,6 +144,7 @@ export default class PromptInput extends LightningElement {
 
   @api
   initialize(initData) {
+    this.initTranslations(initData);
     // Handle initialization from VS Code
     if (initData && initData.prompt) {
       this.showPrompt({ prompts: [initData.prompt] });
