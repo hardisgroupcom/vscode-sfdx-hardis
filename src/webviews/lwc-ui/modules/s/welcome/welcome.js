@@ -11,6 +11,9 @@ export default class Welcome extends I18nMixin(ColorThemeMixin(LightningElement)
   @track showWelcomeAtStartup = true;
   @track colorThemeConfig = "auto";
   @track themeVariants = { light: "neutral", dark: "neutral", auto: "brand" };
+  @track langSetting = "auto";
+  @track langDropdownOpen = false;
+  @track flagImages = {};
  
   @track setupHidden = false;
   scrollThreshold = 100; // Hide toggle after scrolling 100px
@@ -49,6 +52,9 @@ export default class Welcome extends I18nMixin(ColorThemeMixin(LightningElement)
     if (data && data.colorThemeConfig) {
       this.setColorThemeVariants(data.colorThemeConfig);
     }
+    if (data && data.langSetting) {
+      this.langSetting = data.langSetting;
+    }
   }
   
   setColorThemeVariants(colorThemeConfig) {
@@ -60,7 +66,9 @@ export default class Welcome extends I18nMixin(ColorThemeMixin(LightningElement)
   @api
   handleMessage(type, data) {
     console.log("Welcome component received message:", type, data);
-    // Handle specific message types if needed
+    if (type === "imageResources" && data?.images) {
+      this.flagImages = data.images;
+    }
   }
 
   @api
@@ -68,6 +76,46 @@ export default class Welcome extends I18nMixin(ColorThemeMixin(LightningElement)
     // Delegate to the ColorThemeMixin's implementation
     if (super.handleColorThemeMessage)
       super.handleColorThemeMessage(type, data);
+  }
+
+  get currentLangFlagSrc() {
+    const map = { auto: "flagGlobe", en: "flagEn", fr: "flagFr", ja: "flagJa" };
+    const key = map[this.langSetting] || "flagGlobe";
+    return this.flagImages[key] || "";
+  }
+
+  get flagGlobeSrc() {
+    return this.flagImages.flagGlobe || "";
+  }
+
+  get flagEnSrc() {
+    return this.flagImages.flagEn || "";
+  }
+
+  get flagFrSrc() {
+    return this.flagImages.flagFr || "";
+  }
+
+  get flagJaSrc() {
+    return this.flagImages.flagJa || "";
+  }
+
+  toggleLangDropdown() {
+    this.langDropdownOpen = !this.langDropdownOpen;
+  }
+
+  handleLangChange(event) {
+    const lang = event.currentTarget.dataset.lang;
+    this.langSetting = lang;
+    this.langDropdownOpen = false;
+
+    window.sendMessageToVSCode({
+      type: "updateVsCodeSfdxHardisConfiguration",
+      data: {
+        configKey: "vsCodeSfdxHardis.lang",
+        value: lang,
+      },
+    });
   }
 
   // Navigation methods for major features

@@ -14,14 +14,28 @@ export function registerShowWelcome(command: Commands) {
       const showWelcomeAtStartup = config.get("showWelcomeAtStartup", true);
 
       const colorThemeConfig = config.get("theme.colorTheme", "auto");
+      const langSetting = config.get<string>("lang", "auto");
       const { colorTheme, colorContrast } = LwcPanelManager.resolveTheme(colorThemeConfig);
       const panel = lwcManager.getOrCreatePanel("s-welcome", {
         showWelcomeAtStartup: showWelcomeAtStartup,
+        langSetting: langSetting,
         colorThemeConfig,
         colorTheme,
         colorContrast
       });
       panel.updateTitle(t("welcomeTitle"));
+
+      panel.sendMessage({
+        type: "imageResources",
+        data: {
+          images: {
+            flagGlobe: panel.asWebviewUri(["icons", "flag-globe.svg"]),
+            flagEn: panel.asWebviewUri(["icons", "flag-us.svg"]),
+            flagFr: panel.asWebviewUri(["icons", "flag-fr.svg"]),
+            flagJa: panel.asWebviewUri(["icons", "flag-ja.svg"]),
+          },
+        },
+      });
 
       // Handle messages from the Welcome panel
       panel.onMessage(async (type: string, _data: any) => {

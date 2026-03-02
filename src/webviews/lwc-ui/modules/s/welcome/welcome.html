@@ -23,14 +23,41 @@
                     ></lightning-button>
                 </div>
                 <div class="hero-settings">
-                    <lightning-input
-                        type="toggle"
-                        label={i18n.showAtStartup}
-                        name="showWelcomeAtStartup"
-                        checked={showWelcomeAtStartup}
-                        onchange={handleWelcomeSettingChange}
-                        class="welcome-toggle"
-                    ></lightning-input>
+                    <div class="hero-settings-row">
+                        <div class="lang-selector" title={i18n.langSelectTooltip}>
+                            <button class="lang-flag-button" onclick={toggleLangDropdown}>
+                                <img class="lang-flag-img" src={currentLangFlagSrc} alt="">
+                            </button>
+                            <template lwc:if={langDropdownOpen}>
+                                <div class="lang-dropdown">
+                                    <div class="lang-option" data-lang="auto" onclick={handleLangChange}>
+                                        <img class="lang-flag-img" src={flagGlobeSrc} alt="">
+                                        <span class="lang-option-label">{i18n.langVsCodeAuto}</span>
+                                    </div>
+                                    <div class="lang-option" data-lang="en" onclick={handleLangChange}>
+                                        <img class="lang-flag-img" src={flagEnSrc} alt="">
+                                        <span class="lang-option-label">{i18n.langEnglish}</span>
+                                    </div>
+                                    <div class="lang-option" data-lang="fr" onclick={handleLangChange}>
+                                        <img class="lang-flag-img" src={flagFrSrc} alt="">
+                                        <span class="lang-option-label">{i18n.langFrench}</span>
+                                    </div>
+                                    <div class="lang-option" data-lang="ja" onclick={handleLangChange}>
+                                        <img class="lang-flag-img" src={flagJaSrc} alt="">
+                                        <span class="lang-option-label">{i18n.langJapanese}</span>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                        <lightning-input
+                            type="toggle"
+                            label={i18n.showAtStartup}
+                            name="showWelcomeAtStartup"
+                            checked={showWelcomeAtStartup}
+                            onchange={handleWelcomeSettingChange}
+                            class="welcome-toggle"
+                        ></lightning-input>
+                    </div>
                 </div>
                 <div class="hero-bottom-right">
                     <lightning-button-group>
