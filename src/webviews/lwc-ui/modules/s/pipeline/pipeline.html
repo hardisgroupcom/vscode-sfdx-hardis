@@ -89,7 +89,7 @@
                     <div class="pipeline-container">
                         <template if:true={loading}>
                             <div class="slds-align_absolute-center slds-m-vertical_small">
-                                <s-spinner alternative-text="Loading pipeline data..." size="medium" variant="brand"></s-spinner>
+                                <s-spinner alternative-text={i18n.loadingPipelineData} size="medium" variant="brand"></s-spinner>
                             </div>
                         </template>
                         <div style="position: relative;">
@@ -121,7 +121,7 @@
                         <a href="https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/" target="_blank" style="display:block;max-width:600px;width:100%;margin:1.5rem 0;">
                             <img src="https://sfdx-hardis.cloudity.com/assets/images/devops-comparison.png" alt="DevOps Comparison" style="max-width:600px;width:100%;box-shadow:0 2px 8px #0001;border-radius:8px;" />
                         </a>
-                        <div class="slds-m-bottom_medium slds-text-body_regular" style="max-width:600px;text-align:center;">See how sfdx-hardis can help you automate and secure your Salesforce deployments, and compare with other DevOps solutions.</div>
+                        <div class="slds-m-bottom_medium slds-text-body_regular" style="max-width:600px;text-align:center;">{i18n.pipelineDevOpsComparison}</div>
                     </div>
                 </template>
             </template>
@@ -130,7 +130,7 @@
             <p>{i18n.loadingPipelineData}</p>
         </template>
         <template if:true={error}>
-            <p class="slds-text-color_error">Error loading pipeline: {error}</p>
+            <p class="slds-text-color_error">{errorLoadingPipelineMsg}</p>
         </template>
     </lightning-card>
 
@@ -275,7 +275,7 @@
                             </template>
                             <template if:false={modalTickets.length}>
                                 <div class="slds-align_absolute-center slds-p-around_medium">
-                                    <p class="slds-text-color_weak">No tickets found in the pull requests for this branch.</p>
+                                    <p class="slds-text-color_weak">{i18n.noTicketsFoundInPrs}</p>
                                 </div>
                             </template>
                         </lightning-tab>
@@ -302,7 +302,7 @@
                             </template>
                             <template if:false={modalActions.length}>
                                 <div class="slds-align_absolute-center slds-p-around_medium">
-                                    <p class="slds-text-color_weak">No deployment actions found in the pull requests for this branch.</p>
+                                    <p class="slds-text-color_weak">{i18n.noActionsFoundInPrs}</p>
                                 </div>
                             </template>
                         </lightning-tab>
@@ -313,7 +313,7 @@
                                         <template if:true={isApexTestsViewMode}>
                                             <div class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center slds-m-bottom_small">
                                                 <div class="slds-text-body_small">
-                                                    Apex test classes configured for this {prLabel}.
+                                                    {apexTestsConfiguredForPrMsg}
                                                 </div>
                                                 <lightning-button
                                                     variant="neutral"
@@ -332,7 +332,7 @@
                                                 ></lightning-datatable>
                                             </template>
                                             <template if:false={hasSelectedApexTests}>
-                                                <div class="slds-text-color_weak">No Apex test classes configured.</div>
+                                                <div class="slds-text-color_weak">{i18n.noApexClassesConfigured}</div>
                                             </template>
                                         </template>
 
@@ -363,7 +363,7 @@
                                     </template>
                                     <template if:false={canEditApexTestsInModal}>
                                         <div class="slds-text-body_regular slds-m-bottom_small">
-                                            Read-only in branch mode. Open a single {prLabel} to edit.
+                                            {readOnlyBranchModeMsg}
                                         </div>
                                         <template if:true={hasApexTestsByLineRows}>
                                             <lightning-datatable
@@ -375,7 +375,7 @@
                                             ></lightning-datatable>
                                         </template>
                                         <template if:false={hasApexTestsByLineRows}>
-                                            <div class="slds-text-color_weak">No Apex tests configured in this branch.</div>
+                                            <div class="slds-text-color_weak">{i18n.noApexTestsInBranch}</div>
                                         </template>
                                     </template>
                                 </lightning-tab>

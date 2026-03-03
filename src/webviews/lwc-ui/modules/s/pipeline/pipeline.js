@@ -303,6 +303,18 @@ export default class Pipeline extends I18nMixin(LightningElement) {
     return this.apexTestsMode === "view";
   }
 
+  get errorLoadingPipelineMsg() {
+    return this.t("errorLoadingPipeline", { error: this.error });
+  }
+
+  get apexTestsConfiguredForPrMsg() {
+    return this.t("apexTestsConfiguredForPr", { prLabel: this.prLabel });
+  }
+
+  get readOnlyBranchModeMsg() {
+    return this.t("readOnlyBranchModeApexTests", { prLabel: this.prLabel });
+  }
+
   get hasSelectedApexTests() {
     return (
       Array.isArray(this.deploymentApexTestClasses) &&
