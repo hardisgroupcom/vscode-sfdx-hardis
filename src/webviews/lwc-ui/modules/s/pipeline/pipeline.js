@@ -88,7 +88,8 @@ export default class Pipeline extends I18nMixin(LightningElement) {
   ];
 
   // Columns for modal PR display (without jobs status, with merge date)
-  modalPrColumns = [
+  get modalPrColumns() {
+    return [
     {
       key: "number",
       label: "#",
@@ -99,7 +100,7 @@ export default class Pipeline extends I18nMixin(LightningElement) {
     },
     {
       key: "title",
-      label: "Title",
+      label: this.i18n.titleLabel,
       fieldName: "webUrl",
       type: "url",
       typeAttributes: { label: { fieldName: "title" }, target: "_blank" },
@@ -108,14 +109,14 @@ export default class Pipeline extends I18nMixin(LightningElement) {
     },
     {
       key: "author",
-      label: "Author",
+      label: this.i18n.authorLabel,
       fieldName: "authorLabel",
       type: "text",
       wrapText: true,
     },
     {
       key: "mergeDate",
-      label: "Merged",
+      label: this.i18n.mergedLabel,
       fieldName: "mergeDateFormatted",
       type: "text",
       wrapText: true,
@@ -123,7 +124,7 @@ export default class Pipeline extends I18nMixin(LightningElement) {
     },
     {
       key: "source",
-      label: "Source",
+      label: this.i18n.sourceLabel,
       fieldName: "sourceBranch",
       type: "text",
       wrapText: true,
@@ -131,12 +132,13 @@ export default class Pipeline extends I18nMixin(LightningElement) {
     },
     {
       key: "target",
-      label: "Target",
+      label: this.i18n.targetLabel,
       fieldName: "targetBranch",
       type: "text",
       wrapText: true,
     },
   ];
+}
 
   modalTicketColumns = [];
 
@@ -145,7 +147,7 @@ export default class Pipeline extends I18nMixin(LightningElement) {
     const columns = [
       {
         key: "label",
-        label: "Label",
+        label: this.i18n.actionLabelField,
         fieldName: "label",
         type: "button",
         typeAttributes: {
@@ -157,7 +159,7 @@ export default class Pipeline extends I18nMixin(LightningElement) {
       },
       {
         key: "type",
-        label: "Type",
+        label: this.i18n.typeLabel,
         fieldName: "type",
         type: "text",
         wrapText: true,
@@ -165,7 +167,7 @@ export default class Pipeline extends I18nMixin(LightningElement) {
       },
       {
         key: "when",
-        label: "When",
+        label: this.i18n.actionWhenField,
         fieldName: "when",
         type: "text",
         wrapText: true,
@@ -177,7 +179,7 @@ export default class Pipeline extends I18nMixin(LightningElement) {
     if (this.modalMode !== "singlePR") {
       columns.push({
         key: "pullRequest",
-        label: this.prButtonInfo?.pullRequestLabel || "Pull Request",
+        label: this.prButtonInfo?.pullRequestLabel || this.i18n.pullRequestLabel,
         fieldName: "prWebUrl",
         type: "url",
         typeAttributes: { label: { fieldName: "prLabel" }, target: "_blank" },
@@ -206,21 +208,21 @@ export default class Pipeline extends I18nMixin(LightningElement) {
       columns.push(
         {
           key: "subject",
-          label: "Subject",
+          label: this.i18n.subjectLabel,
           fieldName: "subject",
           type: "text",
           wrapText: true,
         },
         {
           key: "status",
-          label: "Status",
+          label: this.i18n.statusLabel,
           fieldName: "statusLabel",
           type: "text",
           wrapText: true,
         },
         {
           key: "author",
-          label: "Author",
+          label: this.i18n.authorLabel,
           fieldName: "authorLabel",
           type: "text",
           wrapText: true,
@@ -232,7 +234,7 @@ export default class Pipeline extends I18nMixin(LightningElement) {
     if (this.modalMode !== "singlePR") {
       columns.push({
         key: "pullRequest",
-        label: this.prButtonInfo?.pullRequestLabel || "Pull Request",
+        label: this.prButtonInfo?.pullRequestLabel || this.i18n.pullRequestLabel,
         fieldName: "prWebUrl",
         type: "url",
         typeAttributes: { label: { fieldName: "prLabel" }, target: "_blank" },
@@ -270,14 +272,14 @@ export default class Pipeline extends I18nMixin(LightningElement) {
     return [
       {
         key: "apexTestClass",
-        label: "Apex Test Class",
+        label: this.i18n.apexTestClassLabel,
         fieldName: "apexTestClass",
         type: "text",
         wrapText: true,
       },
       {
         key: "pullRequest",
-        label: this.prButtonInfo?.pullRequestLabel || "Pull Request",
+        label: this.prButtonInfo?.pullRequestLabel || this.i18n.pullRequestLabel,
         fieldName: "prWebUrl",
         type: "url",
         typeAttributes: { label: { fieldName: "prLabel" }, target: "_blank" },
@@ -346,14 +348,14 @@ export default class Pipeline extends I18nMixin(LightningElement) {
     return [
       {
         key: "apexTestClass",
-        label: "Apex Test Class",
+        label: this.i18n.apexTestClassLabel,
         fieldName: "apexTestClass",
         type: "text",
         wrapText: true,
       },
       {
         key: "pullRequest",
-        label: this.prButtonInfo?.pullRequestLabel || "Pull Request",
+        label: this.prButtonInfo?.pullRequestLabel || this.i18n.pullRequestLabel,
         fieldName: "prWebUrl",
         type: "url",
         typeAttributes: { label: { fieldName: "prLabel" }, target: "_blank" },
@@ -465,8 +467,8 @@ export default class Pipeline extends I18nMixin(LightningElement) {
     this.lastDiagram = "";
     this.gitAuthenticated = data?.gitAuthenticated ?? false;
     this.connectedLabel = this.gitAuthenticated
-      ? `Connected to ${this.repoPlatformLabel}`
-      : `Connect to ${this.repoPlatformLabel}`;
+      ? this.t("connectedTo", { platform: this.repoPlatformLabel })
+      : this.t("connectTo", { platform: this.repoPlatformLabel });
     this.connectedIconName = this.gitAuthenticated
       ? "utility:check"
       : "utility:link";
@@ -475,8 +477,8 @@ export default class Pipeline extends I18nMixin(LightningElement) {
     this.ticketAuthenticated = data?.ticketAuthenticated ?? false;
     this.ticketProviderName = data?.ticketProviderName || "Ticketing";
     this.ticketConnectedLabel = this.ticketAuthenticated
-      ? `Connected to ${this.ticketProviderName}`
-      : `Connect to ${this.ticketProviderName}`;
+      ? this.t("connectedTo", { platform: this.ticketProviderName })
+      : this.t("connectTo", { platform: this.ticketProviderName });
     this.ticketConnectedIconName = this.ticketAuthenticated
       ? "utility:check"
       : "utility:link";
@@ -509,7 +511,7 @@ export default class Pipeline extends I18nMixin(LightningElement) {
   }
 
   get prLabel() {
-    return this.prButtonInfo?.pullRequestLabel || "Pull Request";
+    return this.prButtonInfo?.pullRequestLabel || this.i18n.pullRequestLabel;
   }
 
   get showApexTestsTab() {
@@ -536,7 +538,7 @@ export default class Pipeline extends I18nMixin(LightningElement) {
       }
       count = uniq.size;
     }
-    return `Apex Tests (${count}) (beta)`;
+    return this.t("apexTestsTab", { count });
   }
 
   get canEditApexTestsInModal() {
@@ -650,6 +652,9 @@ export default class Pipeline extends I18nMixin(LightningElement) {
 
   connectedCallback() {
     super.connectedCallback();
+    this.connectedLabel = this.i18n.connectToGit;
+    this.ticketConnectedLabel = this.i18n.connectToTicketing;
+    this._translatePrColumnLabels();
     this._boundAdjust = this.adjustPrColumns.bind(this);
     this._boundVisibilityChange = this._handleVisibilityChange.bind(this);
     if (typeof window !== "undefined" && window.addEventListener) {
@@ -660,6 +665,21 @@ export default class Pipeline extends I18nMixin(LightningElement) {
       );
     }
     this._isVisible = !document.hidden;
+  }
+
+  _translatePrColumnLabels() {
+    const labelMap = {
+      title: this.i18n.titleLabel,
+      author: this.i18n.authorLabel,
+      source: this.i18n.sourceLabel,
+      target: this.i18n.targetLabel,
+    };
+    this.prColumns = this.prColumns.map((col) => {
+      if (col.key && labelMap[col.key]) {
+        return Object.assign({}, col, { label: labelMap[col.key] });
+      }
+      return col;
+    });
   }
 
   disconnectedCallback() {
@@ -853,25 +873,30 @@ export default class Pipeline extends I18nMixin(LightningElement) {
 
   get openPrTabLabel() {
     const count = this.openPullRequests ? this.openPullRequests.length : 0;
-    const prLabel = this.prButtonInfo?.pullRequestLabel
+    const prLabelPlural = this.prButtonInfo?.pullRequestLabel
       ? this.prButtonInfo.pullRequestLabel + "s"
-      : "Pull Requests";
-    return count > 0 ? `Open ${prLabel} (${count})` : `Open ${prLabel}`;
+      : this.i18n.pullRequests;
+    return count > 0
+      ? this.t("openPrTabLabelWithCount", { prLabel: prLabelPlural, count })
+      : this.t("openPrTabLabel", { prLabel: prLabelPlural });
   }
 
   get currentPRCardTitle() {
-    const prLabel = this.prButtonInfo?.pullRequestLabel || "Pull Request";
-    return `My ${prLabel}`;
+    const prLabel = this.prButtonInfo?.pullRequestLabel || this.i18n.pullRequestLabel;
+    return this.t("myPrCardTitle", { prLabel });
   }
 
   get currentPRDescription() {
     if (!this.currentBranchPullRequest) {
-      return "You need to connect to your Git Server to see pull request details and manage pre-post deployment actions.";
+      return this.i18n.connectGitToSeePrDetails;
     }
     if (this.currentBranchPullRequest.number === -1) {
-      return `${this.prButtonInfo.pullRequestLabel} not created yet. Click to manage pre-post deployment actions.`;
+      return this.t("prNotCreatedYet", { prLabel: this.prButtonInfo.pullRequestLabel });
     }
-    return `#${this.currentBranchPullRequest.number} - ${this.currentBranchPullRequest.title || ""}. Click to see related tickets and manage pre-post deployment actions.`;
+    return this.t("prClickToManageActions", {
+      num: this.currentBranchPullRequest.number,
+      title: this.currentBranchPullRequest.title || "",
+    });
   }
 
   openPrPage() {
@@ -1319,7 +1344,7 @@ export default class Pipeline extends I18nMixin(LightningElement) {
 
   _updatePanelTitle() {
     const prCount = this.openPullRequests ? this.openPullRequests.length : 0;
-    const baseTitle = "DevOps Pipeline";
+    const baseTitle = this.i18n.devOpsPipeline;
     const title = prCount > 0 ? `${baseTitle} (${prCount})` : baseTitle;
 
     window.sendMessageToVSCode({
@@ -1568,10 +1593,10 @@ export default class Pipeline extends I18nMixin(LightningElement) {
     const when = action.when;
     const whenLabel =
       when === "pre-deploy"
-        ? "Pre-Deploy"
+        ? this.i18n.preDeploy
         : when === "post-deploy"
-          ? "Post-Deploy"
-          : "Unknown";
+          ? this.i18n.postDeploy
+          : this.i18n.unknownLabel;
 
     // Update the modalActions list immediately with the new values
     const actionIndex = this.modalActions.findIndex(
@@ -1585,9 +1610,10 @@ export default class Pipeline extends I18nMixin(LightningElement) {
       // Update existing action
       const updatedRow = {
         ...this.modalActions[actionIndex],
-        label: action.label || "Unnamed Action",
+        label: action.label || this.i18n.unnamedAction,
         type: action.type || "command",
         when: whenLabel,
+        whenCode: when,
         _fullAction: {
           ...action,
           pullRequest: {
@@ -1611,9 +1637,10 @@ export default class Pipeline extends I18nMixin(LightningElement) {
       // Add new action to the list
       const newRow = {
         id: `${prNumber}-${action.type || "action"}-${this.modalActions.length}`,
-        label: action.label || "Unnamed Action",
+        label: action.label || this.i18n.unnamedAction,
         type: action.type || "command",
         when: whenLabel,
+        whenCode: when,
         prLabel: `#${prNumber} - ${action.pullRequest?.title || ""}`,
         prWebUrl: action.pullRequest?.webUrl || "",
         prNumber: prNumber,
@@ -1743,29 +1770,29 @@ export default class Pipeline extends I18nMixin(LightningElement) {
     if (this.modalMode === "singlePR" && this.modalPullRequests.length === 1) {
       const pr = this.modalPullRequests[0];
       if (pr.number === -1) {
-        return pr.title || "Pull Request";
+        return pr.title || this.i18n.pullRequestLabel;
       }
-      return `#${pr.number} - ${pr.title || "Pull Request"}`;
+      return `#${pr.number} - ${pr.title || this.i18n.pullRequestLabel}`;
     }
-    const prLabel = this.prButtonInfo?.pullRequestLabel || "Pull Request";
+    const prLabel = this.prButtonInfo?.pullRequestLabel || this.i18n.pullRequestLabel;
     const count = this.modalPullRequests.length;
-    return `${prLabel}s in ${this.modalBranchName} (${count})`;
+    return this.t("prModalTitle", { prLabel, branch: this.modalBranchName, count });
   }
 
   get modalPrsTabLabel() {
-    const prLabel = this.prButtonInfo?.pullRequestLabel || "Pull Request";
+    const prLabel = this.prButtonInfo?.pullRequestLabel || this.i18n.pullRequestLabel;
     const count = this.modalPullRequests.length;
-    return `${prLabel}s (${count})`;
+    return this.t("prModalPrsTab", { prLabel, count });
   }
 
   get modalTicketsTabLabel() {
     const count = this.modalTickets.length;
-    return `Tickets (${count})`;
+    return this.t("ticketsTab", { count });
   }
 
   get modalActionsTabLabel() {
     const count = this.modalActions.length;
-    return `Deployment Actions (${count}) (beta)`;
+    return this.t("deploymentActionsTab", { count });
   }
 
   get showPRTab() {
@@ -1787,10 +1814,10 @@ export default class Pipeline extends I18nMixin(LightningElement) {
   get singlePRViewButtonLabel() {
     if (this.modalPullRequests.length === 1) {
       const pr = this.modalPullRequests[0];
-      const gitProvider = this.repoPlatformLabel || "Git";
-      return `View #${pr.number} - ${pr.title || ""} on ${gitProvider}`;
+      const platform = this.repoPlatformLabel || "Git";
+      return this.t("viewPrOnPlatform", { num: pr.number, title: pr.title || "", platform });
     }
-    return "View Pull Request";
+    return this.i18n.viewPullRequest;
   }
 
   handleOpenSinglePRUrl(event) {
@@ -1835,10 +1862,10 @@ export default class Pipeline extends I18nMixin(LightningElement) {
   _sortActions(actionRows) {
     // Sort by when (Pre-Deploy first, then Post-Deploy), then by PR number
     return actionRows.sort((a, b) => {
-      // First sort by when label
-      const whenOrder = { "Pre-Deploy": 0, "Post-Deploy": 1, Unknown: 2 };
-      const whenA = whenOrder[a.when] ?? 2;
-      const whenB = whenOrder[b.when] ?? 2;
+      // First sort by when code
+      const whenOrder = { "pre-deploy": 0, "post-deploy": 1, "unknown": 2 };
+      const whenA = whenOrder[a.whenCode ?? a.when] ?? 2;
+      const whenB = whenOrder[b.whenCode ?? b.when] ?? 2;
 
       if (whenA !== whenB) {
         return whenA - whenB;
@@ -1865,10 +1892,10 @@ export default class Pipeline extends I18nMixin(LightningElement) {
             const when = action.when;
             const whenLabel =
               when === "pre-deploy"
-                ? "Pre-Deploy"
+                ? this.i18n.preDeploy
                 : when === "post-deploy"
-                  ? "Post-Deploy"
-                  : "Unknown";
+                  ? this.i18n.postDeploy
+                  : this.i18n.unknownLabel;
 
             // Store full action object for modal
             const fullAction = {
@@ -1882,9 +1909,10 @@ export default class Pipeline extends I18nMixin(LightningElement) {
 
             actionRows.push({
               id: `${pr.number}-${action.type || "action"}-${actionRows.length}`,
-              label: action.label || "Unnamed Action",
+              label: action.label || this.i18n.unnamedAction,
               type: action.type || "command",
               when: whenLabel,
+              whenCode: when,
               prLabel: `#${pr.number} - ${pr.title || ""}`,
               prWebUrl: pr.webUrl || "",
               prNumber: pr.number || 0,

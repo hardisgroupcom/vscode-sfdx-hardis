@@ -30,7 +30,7 @@ export function registerShowWelcome(command: Commands) {
         data: {
           images: {
             flagGlobe: panel.asWebviewUri(["icons", "flag-globe.svg"]),
-            flagEn: panel.asWebviewUri(["icons", "flag-us.svg"]),
+            flagEn: panel.asWebviewUri(["icons", "flag-uk.svg"]),
             flagFr: panel.asWebviewUri(["icons", "flag-fr.svg"]),
             flagJa: panel.asWebviewUri(["icons", "flag-ja.svg"]),
             themeAuto: panel.asWebviewUri(["icons", "theme-auto.svg"]),
