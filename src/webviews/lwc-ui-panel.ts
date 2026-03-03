@@ -6,7 +6,7 @@ import {
   isWebVsCode,
 } from "../utils";
 import { Logger } from "../logger";
-import { getAllTranslations, getCurrentLocale, reinitI18n, t } from "../i18n/i18n";
+import { getAllTranslations, getCurrentLocale, t } from "../i18n/i18n";
 
 type MessageListener = (messageType: string, data: any) => void;
 

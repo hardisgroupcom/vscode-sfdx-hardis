@@ -10,7 +10,6 @@ import type {
 } from "./types";
 import { getReportDirectory, getWorkspaceRoot } from "../../utils";
 import { Logger } from "../../logger";
-import { t } from "../../i18n/i18n";
 import { SecretsManager } from "../secretsManager";
 import { TicketProvider } from "../ticketProviders/ticketProvider";
 import { Ticket } from "../ticketProviders/types";
