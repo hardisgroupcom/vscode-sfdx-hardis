@@ -88,9 +88,6 @@ const lwcWebviewConfig = {
     // which are not valid modules for the web target and cause parse errors.
     extensions: [".js"],
     modules: ["node_modules"],
-    fallback: {
-      process: require.resolve("process/browser"),
-    },
   },
   module: {
     rules: [
@@ -131,7 +128,7 @@ const lwcWebviewConfig = {
   },
   plugins: [
     new webpack.ProvidePlugin({
-      process: "process/browser",
+      process: "process/browser.js",
     }),
     new LwcWebpackPlugin({
       modules: [
