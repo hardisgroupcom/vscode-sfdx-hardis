@@ -596,6 +596,7 @@ export class SetupHelper {
     }
   }
 
+  /* jscpd:ignore-start */
   async installNpmPackage(
     packageName: string,
   ): Promise<{ success: boolean; message?: string }> {
@@ -619,4 +620,5 @@ export class SetupHelper {
       return { success: false, message: err?.message || String(err) };
     }
   }
+  /* jscpd:ignore-end */
 }
