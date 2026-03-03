@@ -8,7 +8,8 @@
     "report",
     "megalinter-reports",
     "**/metadataList.ts",
-    "**/i18n/*.json"
+    "**/i18n/*.json",
+    "**/copilot-instructions.md"
   ],
   "language": "en",
   "version": "0.1",
@@ -286,7 +287,11 @@
     "prepatch",
     "preprod",
     "prerun",
+    "reinit",
+    "unthemed",
     "prodtool",
+    "Llms",
+    "xhigh",
     "LANGCHAIN",
     "Langchain",
     "Ollama",
