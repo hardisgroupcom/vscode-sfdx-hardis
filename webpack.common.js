@@ -130,6 +130,14 @@ const lwcWebviewConfig = {
     new webpack.ProvidePlugin({
       process: "process/browser.js",
     }),
+    // Replace the gate stub that ships with lightning-base-components so that
+    // all feature flags default to false (the intended off-platform fallback).
+    // The original stub returns true for every gate, which enables features
+    // like attachInternals that are incompatible with synthetic shadow.
+    new webpack.NormalModuleReplacementPlugin(
+      /lightning-base-components[/\\]external[/\\]gateStub\.js$/,
+      path.resolve(__dirname, "src/webviews/lwc-ui/stubs/gateStub.js"),
+    ),
     new LwcWebpackPlugin({
       modules: [
         {
