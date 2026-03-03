@@ -16,6 +16,23 @@ export const RECOMMENDED_SFDX_CLI_VERSION = null; //"7.111.6";
 export const NODE_JS_MINIMUM_VERSION = 24.0;
 export const RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION: string = "6.7.1";
 
+// Returns true if the extension is running as a pre-release version (preview: true in package.json)
+export function isExtensionPreRelease(): boolean {
+  const ext = vscode.extensions.getExtension("NicolasVuillamy.vscode-sfdx-hardis");
+  return ext?.packageJSON?.preview === true;
+}
+
+// Returns the npm install tag to use for sfdx-hardis plugin
+export function getSfdxHardisInstallTag(): string {
+  if (isExtensionPreRelease()) {
+    return "alpha";
+  }
+  if (RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION === "beta") {
+    return "beta";
+  }
+  return "latest";
+}
+
 // Interface for execCommand and execSfdxJson options
 export interface ExecCommandOptions {
   fail?: boolean;

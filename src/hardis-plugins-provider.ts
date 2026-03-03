@@ -2,8 +2,10 @@ import * as vscode from "vscode";
 import {
   execCommand,
   getNpmLatestVersion,
+  getSfdxHardisInstallTag,
   getWorkspaceRoot,
   isCachePreloaded,
+  isExtensionPreRelease,
   isProjectSfdxConfigLoaded,
   loadExternalSfdxHardisConfiguration,
   loadProjectSfdxHardisConfig,
@@ -407,25 +409,28 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
         if (match && match[1]) {
           installedVersion = match[1];
         }
+        const sfdxHardisInstallTag = getSfdxHardisInstallTag();
         if (
           installedVersion &&
-          ((RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION !== "beta" &&
-            this.compareVersions(
-              installedVersion,
-              RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION,
-            ) < 0) ||
+          ((isExtensionPreRelease() &&
+            !installedVersion.includes("alpha")) ||
+            (RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION !== "beta" &&
+              !isExtensionPreRelease() &&
+              this.compareVersions(
+                installedVersion,
+                RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION,
+              ) < 0) ||
             (RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION === "beta" &&
               !installedVersion.includes("(beta)")))
         ) {
-          const versionToInstall =
-            RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION === "beta"
-              ? "beta"
-              : "latest";
+          const versionToInstall = sfdxHardisInstallTag;
           const upgradeNowLabel = t("upgradeNow");
           const errorMessageForUSer =
-            RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION === "beta"
-              ? t("sfdxHardisPreReleaseBetaMessage")
-              : t("sfdxHardisPluginOutdated", { version: installedVersion, versionToInstall });
+            isExtensionPreRelease()
+              ? t("sfdxHardisPreReleaseAlphaMessage")
+              : RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION === "beta"
+                ? t("sfdxHardisPreReleaseBetaMessage")
+                : t("sfdxHardisPluginOutdated", { version: installedVersion, versionToInstall });
           vscode.window
             .showErrorMessage(errorMessageForUSer, upgradeNowLabel)
             .then((selection) => {
@@ -485,7 +490,8 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
               : isPluginMissing
                 ? pluginItem.label
                 : pluginItem.label + upgradeAvailableText;
-        pluginItem.command = `echo y|sf plugins:install ${plugin.name} && sf hardis:work:ws --event refreshPlugins`;
+        const installTag = plugin.name === "sfdx-hardis" ? getSfdxHardisInstallTag() : "latest";
+        pluginItem.command = `echo y|sf plugins:install ${plugin.name}@${installTag} && sf hardis:work:ws --event refreshPlugins`;
         pluginItem.tooltip = t("clickToUpgradeSfdxPluginTo", { plugin: plugin.name, version: latestPluginVersion });
         if (!pluginItem.label.includes("(localdev)")) {
           pluginItem.status = isPluginMissing
@@ -575,14 +581,21 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
     sfdxCliOutdated: boolean,
     mergeDriverWasEnabled: boolean,
   ): string {
+    const hardisTag = getSfdxHardisInstallTag();
     let command = outdated
-      .map((plugin) => `echo y|sf plugins:install ${plugin.name}`)
+      .map((plugin) => {
+        const tag = plugin.name === "sfdx-hardis" ? hardisTag : "latest";
+        return `echo y|sf plugins:install ${plugin.name}@${tag}`;
+      })
       .join(" && ");
     if (legacySfdx) {
       command =
         "npm uninstall sfdx-cli --global && npm install @salesforce/cli --global && " +
         plugins
-          .map((plugin: any) => `echo y|sf plugins:install ${plugin.name}`)
+          .map((plugin: any) => {
+            const tag = plugin.name === "sfdx-hardis" ? hardisTag : "latest";
+            return `echo y|sf plugins:install ${plugin.name}@${tag}`;
+          })
           .join(" && ");
     } else if (sfdxCliOutdated === true) {
       command = "npm install @salesforce/cli -g && " + command;

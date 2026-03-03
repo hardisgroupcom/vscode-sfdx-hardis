@@ -1370,6 +1370,7 @@
   "sfdxHardisCommand": "SFDX Hardis Command",
   "sfdxHardisMainConfigFile": "sfdx-hardis main configuration file",
   "sfdxHardisPluginOutdated": "Your sfdx-hardis plugin version ({{version}}) is outdated. Please upgrade to latest version to benefit from new features.\nRun: sf plugins:install sfdx-hardis@{{versionToInstall}}",
+  "sfdxHardisPreReleaseAlphaMessage": "You are using VsCode sfdx-hardis pre-release version. Please install alpha version of sfdx-hardis plugin to benefit from new features.\nRun: sf plugins:install sfdx-hardis@alpha",
   "sfdxHardisPreReleaseBetaMessage": "You are using VsCode sfdx-hardis pre-release version. Please install beta version of sfdx-hardis plugin to benefit from new features.\nRun: sf plugins:install sfdx-hardis@beta",
   "sfdxHardisSettings": "SFDX Hardis Settings",
   "sfdxHardisSetup": "SFDX Hardis Setup",

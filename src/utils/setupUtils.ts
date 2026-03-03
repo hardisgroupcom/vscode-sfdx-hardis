@@ -3,7 +3,9 @@ import {
   execCommand,
   execCommandWithProgress,
   getNpmLatestVersion,
+  getSfdxHardisInstallTag,
   getWorkspaceRoot,
+  isExtensionPreRelease,
   NODE_JS_MINIMUM_VERSION,
   RECOMMENDED_SFDX_CLI_VERSION,
   RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION,
@@ -434,12 +436,28 @@ export class SetupHelper {
       // Special treatment for sfdx-hardis minimal version requirement
       if (pluginName === "sfdx-hardis" && installedVersion) {
         const minimal = RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION || null;
+        const sfdxHardisTag = getSfdxHardisInstallTag();
+        // When running a pre-release extension, require alpha version
+        if (isExtensionPreRelease() && !installedVersion.includes("alpha")) {
+          return {
+            id: `sfplugin:${pluginName}`,
+            label: pluginName,
+            installed: true,
+            version: installedVersion,
+            recommended: "alpha",
+            status: "error",
+            helpUrl: `https://github.com/hardisgroupcom/sfdx-hardis`,
+            message: t("sfdxHardisPreReleaseAlphaMessage"),
+            installCommand: `sf plugins install ${pluginName}@alpha`,
+            upgradeAvailable: true,
+          };
+        }
         if (
           minimal &&
           minimal !== "beta" &&
+          !isExtensionPreRelease() &&
           this.compareVersions(installedVersion, minimal) < 0
         ) {
-          const versionToInstall = minimal === "beta" ? "beta" : "latest";
           return {
             id: `sfplugin:${pluginName}`,
             label: pluginName,
@@ -449,7 +467,7 @@ export class SetupHelper {
             status: "error",
             helpUrl: `https://github.com/hardisgroupcom/sfdx-hardis`,
             message: t("depSfdxHardisOldMessage", { version: installedVersion, minimal }),
-            installCommand: `sf plugins install ${pluginName}@${versionToInstall}`,
+            installCommand: `sf plugins install ${pluginName}@${sfdxHardisTag}`,
             upgradeAvailable: true,
           };
         }
@@ -575,8 +593,9 @@ export class SetupHelper {
           );
         }
       }
+      const installTag = pluginName === "sfdx-hardis" ? getSfdxHardisInstallTag() : "latest";
       await execCommandWithProgress(
-        `echo y | sf plugins install ${pluginName}@latest`,
+        `echo y | sf plugins install ${pluginName}@${installTag}`,
         { fail: true, output: true },
         t("runningInstallCommandFor", { plugin: pluginName }),
       );
