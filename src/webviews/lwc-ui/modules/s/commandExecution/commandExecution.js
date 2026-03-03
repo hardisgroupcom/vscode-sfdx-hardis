@@ -393,7 +393,7 @@ export default class CommandExecution extends I18nMixin(LightningElement) {
 
       // Lightweight UI feedback
       const previousTitle = copyLink.getAttribute("title") || "";
-      copyLink.setAttribute("title", "Copied!");
+      copyLink.setAttribute("title", this.i18n.copiedLabel);
       setTimeout(() => {
         try {
           copyLink.setAttribute("title", previousTitle);
@@ -500,7 +500,7 @@ export default class CommandExecution extends I18nMixin(LightningElement) {
     // Add initial "Started" action log
     this.addLogLine({
       logType: "action",
-      message: `Started ${context.command || "SFDX Hardis Command"}`,
+      message: this.t("commandStarted", { command: context.command || this.i18n.sfdxHardisCommand }),
       timestamp: this.startTime,
     });
   }
@@ -745,7 +745,7 @@ export default class CommandExecution extends I18nMixin(LightningElement) {
       this.startNewSection({
         id: this.generateId(),
         logType: "action",
-        message: "Logs",
+        message: this.i18n.logsSection,
         timestamp: new Date(),
       });
     }
@@ -1097,9 +1097,9 @@ ${resultMessage}`;
     const logType = success ? "success" : "error";
 
     // Create completion message based on status
-    let completionMessage = `Command ${success ? "completed successfully" : "failed"}`;
+    let completionMessage = success ? this.i18n.commandCompletedSuccessfully : this.i18n.commandFailed;
     if (status) {
-      completionMessage = `Command ${status}`;
+      completionMessage = this.t("commandStatus", { status });
     }
     completionMessage += ` (${duration})`;
     if (data.error) {
@@ -1118,16 +1118,17 @@ ${resultMessage}`;
   }
 
   get commandTitle() {
-    if (!this.commandContext) return "Command Execution";
+    if (!this.commandContext) {
+      return this.i18n.commandExecution;
+    }
 
-    const command = this.commandContext.command || "Unknown command";
-    const status = this.isCompleted
-      ? this.hasError
-        ? "Failed"
-        : "Completed"
-      : "Running";
-
-    return `${command} - ${status}`;
+    const command = this.commandContext.command || this.i18n.unknownCommand;
+    if (this.isCompleted) {
+      return this.hasError
+        ? this.t("commandTitleError", { commandName: command })
+        : this.t("commandTitleCompleted", { commandName: command });
+    }
+    return this.t("commandTitleRunning", { commandName: command });
   }
 
   get commandDuration() {
@@ -1269,12 +1270,12 @@ ${resultMessage}`;
         progressPercentage = Math.round(
           (section.currentStep / section.totalSteps) * 100,
         );
-        progressStepText = `${section.currentStep} of ${section.totalSteps} steps`;
+        progressStepText = this.t("progressStepsOf", { current: section.currentStep, total: section.totalSteps });
         if (section.isActive) {
           progressTimeEstimation = section.estimatedRemainingTime || "";
         } else {
           const elapsed = this.calculateSectionDuration(section);
-          progressTimeEstimation = elapsed ? `Elapsed: ${elapsed}` : "";
+          progressTimeEstimation = elapsed ? this.t("progressElapsed", { elapsed }) : "";
         }
 
         // Add shine animation for active progress with known steps
@@ -1290,15 +1291,15 @@ ${resultMessage}`;
             : 15; // Show some initial progress
         progressStepText =
           section.currentStep > 0
-            ? `${section.currentStep} steps completed`
-            : "Starting...";
+            ? this.t("progressStepsCompleted", { current: section.currentStep })
+            : this.i18n.progressStarting;
         isIndeterminate = true;
         if (section.isActive) {
           progressAnimationClass = "animated-progress-bar is-indeterminate";
         }
         if (!section.isActive) {
           const elapsed = this.calculateSectionDuration(section);
-          progressTimeEstimation = elapsed ? `Elapsed: ${elapsed}` : "";
+          progressTimeEstimation = elapsed ? this.t("progressElapsed", { elapsed }) : "";
         }
       }
 
@@ -1373,10 +1374,10 @@ ${resultMessage}`;
     const { hasActionCommands, hasActionUrls, hasReports, hasDocUrls } =
       this.reportFileTypesPresent;
     const parts = [];
-    if (hasActionCommands || hasActionUrls) parts.push("Actions");
-    if (hasReports) parts.push("Reports");
-    if (hasDocUrls) parts.push("Docs");
-    return parts.length > 0 ? parts.join(", ") : "Report Files";
+    if (hasActionCommands || hasActionUrls) parts.push(this.i18n.reportFilesActions);
+    if (hasReports) parts.push(this.i18n.reportFilesReports);
+    if (hasDocUrls) parts.push(this.i18n.reportFilesDocs);
+    return parts.length > 0 ? parts.join(", ") : this.i18n.reportFilesTitle;
   }
 
   get sortedReportFiles() {
@@ -1594,14 +1595,14 @@ ${resultMessage}`;
   }
 
   makeJsonHumanReadable(obj) {
-    if (obj === null) return "No value";
-    if (obj === undefined) return "Not defined";
-    if (typeof obj === "boolean") return obj ? "Yes" : "No";
+    if (obj === null) return this.i18n.noValue;
+    if (obj === undefined) return this.i18n.notDefined;
+    if (typeof obj === "boolean") return obj ? this.i18n.yesLabel : this.i18n.noLabel;
     if (typeof obj === "string") return this.linkifyUrls(obj);
     if (typeof obj === "number") return obj.toString();
 
     if (Array.isArray(obj)) {
-      if (obj.length === 0) return "No items";
+      if (obj.length === 0) return this.i18n.noItems;
       if (obj.length === 1) return this.makeJsonHumanReadable(obj[0]);
 
       // For arrays, create a readable list with HTML line breaks
