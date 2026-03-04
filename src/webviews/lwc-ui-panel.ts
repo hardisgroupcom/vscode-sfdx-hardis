@@ -343,7 +343,7 @@ export class LwcUiPanel {
     } catch (error) {
       Logger.log("Error running VS Code command:\n" + JSON.stringify(error));
       vscode.window.showErrorMessage(
-        `Failed to run VS Code command: ${data.command}`,
+        t("failedToRunVsCodeCommand", { command: data.command }),
       );
     }
   }
@@ -375,7 +375,7 @@ export class LwcUiPanel {
       command.includes("||")
     ) {
       vscode.window.showErrorMessage(
-        "Only 'sfdx' or 'sf' commands can be run as internal commands.",
+        t("onlySfCommandsAllowed"),
       );
       return;
     }
@@ -524,7 +524,7 @@ export class LwcUiPanel {
       }
     } catch (error) {
       Logger.log("Error opening file:\n" + JSON.stringify(error));
-      vscode.window.showErrorMessage(`Failed to open file: ${error}`);
+      vscode.window.showErrorMessage(t("failedToOpenFile", { error }));
     }
   }
 
@@ -538,14 +538,14 @@ export class LwcUiPanel {
       const folderUri = vscode.Uri.file(resolvedPath);
       const stat = await vscode.workspace.fs.stat(folderUri);
       if (!(stat.type & vscode.FileType.Directory)) {
-        vscode.window.showErrorMessage(`Path is not a folder: ${resolvedPath}`);
+        vscode.window.showErrorMessage(t("pathIsNotAFolder", { path: resolvedPath }));
         return;
       }
       await vscode.commands.executeCommand("revealInExplorer", folderUri);
       Logger.log(`Revealed folder in explorer: ${resolvedPath}`);
     } catch (error) {
       Logger.log("Error revealing folder:\n" + JSON.stringify(error));
-      vscode.window.showErrorMessage(`Failed to open folder: ${error}`);
+      vscode.window.showErrorMessage(t("failedToOpenFolder", { error }));
     }
   }
 
@@ -559,7 +559,7 @@ export class LwcUiPanel {
       await vscode.env.openExternal(uri);
     } catch (error) {
       Logger.log("Error opening external URL:\n" + JSON.stringify(error));
-      vscode.window.showErrorMessage(`Failed to open URL: ${url}`);
+      vscode.window.showErrorMessage(t("failedToOpenUrl", { url }));
     }
   }
 
@@ -607,12 +607,12 @@ export class LwcUiPanel {
 
       // Show appropriate success message
       if (data.addElements || data.removeElements) {
-        let message = `VsCode configuration '${data.configKey}' updated`;
+        let message = t("configKeyUpdated", { configKey: data.configKey });
         if (data.addElements && data.addElements.length > 0) {
-          message += ` (added: ${data.addElements.join(", ")})`;
+          message += t("configKeyUpdatedAdded", { elements: data.addElements.join(", ") });
         }
         if (data.removeElements && data.removeElements.length > 0) {
-          message += ` (removed: ${data.removeElements.join(", ")})`;
+          message += t("configKeyUpdatedRemoved", { elements: data.removeElements.join(", ") });
         }
         vscode.window.withProgress(
           { location: vscode.ProgressLocation.Notification, title: message, cancellable: false },
@@ -622,7 +622,7 @@ export class LwcUiPanel {
         vscode.window.withProgress(
           {
             location: vscode.ProgressLocation.Notification,
-            title: `VsCode configuration '${data.configKey}' updated with value: ${data.value}`,
+            title: t("configKeyUpdatedWithValue", { configKey: data.configKey, value: data.value }),
             cancellable: false,
           },
           () => new Promise<void>((resolve) => setTimeout(resolve, 3000)),
@@ -633,7 +633,7 @@ export class LwcUiPanel {
         "Error updating VS Code configuration:\n" + JSON.stringify(error),
       );
       vscode.window.showErrorMessage(
-        `Failed to update configuration: ${data.configKey}`,
+        t("failedToUpdateConfigKey", { configKey: data.configKey }),
       );
     }
   }
