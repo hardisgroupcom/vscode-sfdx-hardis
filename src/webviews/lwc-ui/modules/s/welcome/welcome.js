@@ -61,6 +61,7 @@ export default class Welcome extends I18nMixin(ColorThemeMixin(LightningElement)
       this.showWelcomeAtStartup = data.showWelcomeAtStartup;
     }
     if (data && data.colorThemeConfig) {
+      this.colorThemeConfig = data.colorThemeConfig;
       this.setColorThemeVariants(data.colorThemeConfig);
     }
     if (data && data.langSetting) {
