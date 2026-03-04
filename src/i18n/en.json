@@ -780,6 +780,7 @@
   "findClasses": "Find Classes",
   "findMetadata": "Find Metadata",
   "findUsers": "Find Users",
+  "friends": "friends",
   "fixInstructions": "Fix Instructions",
   "flowsAndProcessBuilders": "Flows & Process Builders",
   "flowsDocHelp": "Generate Flows, Process Builders and Workflows documentation.",
