@@ -427,16 +427,17 @@ export default class PromptInput extends I18nMixin(LightningElement) {
 
   get comboboxPlaceholder() {
     const placeholder = this.promptPlaceholder;
-    const base = placeholder || "Choose an option";
+    const base = placeholder || this.i18n.chooseAnOption;
     const count = (this.filteredComboboxOptions || []).length;
-    return `${base} (${count} choice${count === 1 ? "" : "s"})`;
+    const choiceWord = count === 1 ? this.i18n.choiceSingular : this.i18n.choicesPlural;
+    return `${base} (${count} ${choiceWord})`;
   }
 
   // Dynamic label for combobox including visible choices count
   get comboboxLabel() {
-    const base = "Select an option";
     const count = (this.filteredComboboxOptions || []).length;
-    return `${base} (${count} choice${count === 1 ? "" : "s"})`;
+    const choiceWord = count === 1 ? this.i18n.choiceSingular : this.i18n.choicesPlural;
+    return `${this.i18n.selectAnOption} (${count} ${choiceWord})`;
   }
 
   // Whether to show the right-side filter input for combobox
