@@ -4,7 +4,7 @@
 
 - UI refactoring
   - Themes: Light mode & Dark mode
-  - Many UX improvements
+  - Many UI/UX improvements
 - Translation of UI & messages
   - English
   - French

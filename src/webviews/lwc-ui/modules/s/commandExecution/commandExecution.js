@@ -557,8 +557,15 @@ export default class CommandExecution extends I18nMixin(LightningElement) {
       (logLine.message && logLine.message.includes("Running:"))
     ) {
       logLine.isSubCommand = true;
+      // Strip "Running:" prefix so it is never displayed
+      if (logLine.message && logLine.message.startsWith("Running:")) {
+        logLine.message = logLine.message.replace(/^Running:\s*/i, "").trim();
+      }
+      // Use explicit isRunning flag if provided, otherwise fall back to logData message check
       logLine.isRunning =
-        logLine.message && logLine.message.includes("Running:");
+        logData.isRunning !== undefined
+          ? logData.isRunning
+          : !!(logData.message && logData.message.startsWith("Running:"));
 
       // If this is a completion message, mark as not running and complete other instances
       if (
@@ -909,9 +916,10 @@ ${resultMessage}`;
     // Add log line for sub-command start (this will be replaced when sub-command ends)
     this.addLogLine({
       logType: "log",
-      message: `Running: ${subCommand.command}`,
+      message: subCommand.command,
       timestamp: subCommand.startTime,
       isSubCommand: true,
+      isRunning: true,
       subCommandId: subCommand.id,
     });
   }
@@ -984,14 +992,7 @@ ${resultMessage}`;
         };
 
         // Detect running state for updated sub-command
-        const isRunning =
-          newLogData.message &&
-          newLogData.message.includes("Running:") &&
-          !(
-            newLogData.message.includes("completed") ||
-            newLogData.message.includes("finished") ||
-            newLogData.message.includes("done")
-          );
+        const isRunning = newLogData.isRunning === true;
 
         const updatedLog = {
           ...baseLog,
@@ -1000,7 +1001,7 @@ ${resultMessage}`;
           timestamp: newLogData.timestamp,
           iconName: iconInfo.iconName,
           iconVariant: iconInfo.variant,
-          useSpinner: this.shouldUseSpinner(baseLog),
+          useSpinner: this.shouldUseSpinner({ ...baseLog, isRunning: isRunning }),
           formattedTimestamp: this.formatTimestamp(newLogData.timestamp),
           cssClass: this.getLogTypeClass(newLogData.logType),
           isSubCommand: true,
@@ -1717,8 +1718,8 @@ ${resultMessage}`;
   }
 
   shouldUseSpinner(log) {
-    // Use spinner for running sub-commands (those that contain "Running:")
-    if (log.isSubCommand && log.message && log.message.includes("Running:")) {
+    // Use spinner for running sub-commands
+    if (log.isSubCommand && log.isRunning) {
       return true;
     }
     // Use spinner ONLY for the latest question that is waiting for an answer
