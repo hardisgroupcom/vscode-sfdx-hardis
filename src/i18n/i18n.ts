@@ -88,6 +88,7 @@ export function initI18n(): void {
     interpolation: {
       escapeValue: false,
     },
+    showSupportNotice: false,
   });
   initialized = true;
 }
