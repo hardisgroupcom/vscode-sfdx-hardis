@@ -424,11 +424,12 @@ if (!command.startsWith("sf hardis") || command.includes("&&")) {
 ## Internationalization (i18n)
 
 ### Overview
-The extension uses [i18next](https://www.i18next.com/) for internationalization. All user-facing strings must be translated. Currently supported locales: **English (en)** and **French (fr)**.
+The extension uses [i18next](https://www.i18next.com/) for internationalization. All user-facing strings must be translated. Currently supported locales: **English (en)**, **French (fr)**, and **Spanish (es)**.
 
 ### Translation Files
 - `src/i18n/en.json` — English translations (source of truth)
 - `src/i18n/fr.json` — French translations
+- `src/i18n/es.json` — Spanish translations
 - `src/i18n/i18n.ts` — Backend i18n utility module
 
 **Key naming conventions:**
@@ -518,7 +519,7 @@ Then bind the getter result in the template:
 ### Adding New Translatable Strings
 
 When adding new user-facing strings:
-1. Add the key to **both** `src/i18n/en.json` and `src/i18n/fr.json` (keep alphabetical order)
+1. Add the key to **all three** `src/i18n/en.json`, `src/i18n/fr.json`, and `src/i18n/es.json` (keep alphabetical order)
 2. Use `t("keyName")` in TypeScript or `this.t("keyName")` in LWC
 3. For dynamic values, use interpolation: `t("key", { varName: value })`
 
@@ -539,6 +540,12 @@ When adding new user-facing strings:
 - Use official Salesforce French terminology (e.g., "Métadonnées", "Déploiement", "Org Salesforce")
 - Keep English technical terms untranslated: merge, commit, branch, scratch org, package.xml, DevHub
 - Use formal French ("vous" not "tu")
+
+### Spanish Translation Guidelines
+- Use official Salesforce Spanish terminology (e.g., "Metadatos", "Implementación", "Org de Salesforce")
+- Keep English technical terms untranslated: merge, commit, branch, scratch org, package.xml, DevHub
+- Use formal Spanish ("usted" register where applicable)
+- Use Latin American neutral Spanish where regional variants differ
 
 ## Common Workflows
 

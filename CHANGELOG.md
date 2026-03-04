@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- UI refactoring
+  - Themes: Light mode & Dark mode
+  - Many UX improvements
+- Translation of UI & messages
+  - English
+  - French
+  - Spanish
+
 ## [6.29.1] 2025-02-24
 
 - Custom colors: Fixed a bug where the incorrect color logic for set for Sandbox- and Scratch orgs. Also moved back the dev color to where it was in 6.28.0.

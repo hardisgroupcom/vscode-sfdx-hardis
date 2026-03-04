@@ -196,12 +196,14 @@
           "enum": [
             "auto",
             "en",
+            "es",
             "fr",
             "ja"
           ],
           "enumDescriptions": [
             "Automatic (use VS Code display language)",
             "English",
+            "Español",
             "Français",
             "日本語"
           ],

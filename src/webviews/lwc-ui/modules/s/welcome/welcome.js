@@ -91,7 +91,7 @@ export default class Welcome extends I18nMixin(ColorThemeMixin(LightningElement)
   }
 
   get currentLangFlagSrc() {
-    const map = { auto: "flagGlobe", en: "flagEn", fr: "flagFr", ja: "flagJa" };
+    const map = { auto: "flagGlobe", en: "flagEn", es: "flagEs", fr: "flagFr", ja: "flagJa" };
     const key = map[this.langSetting] || "flagGlobe";
     return this.flagImages[key] || "";
   }
@@ -102,6 +102,10 @@ export default class Welcome extends I18nMixin(ColorThemeMixin(LightningElement)
 
   get flagEnSrc() {
     return this.flagImages.flagEn || "";
+  }
+
+  get flagEsSrc() {
+    return this.flagImages.flagEs || "";
   }
 
   get flagFrSrc() {

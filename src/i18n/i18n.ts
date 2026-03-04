@@ -75,7 +75,7 @@ export function initI18n(): void {
     return;
   }
   const locale = detectLocale();
-  const supportedLocales = ["en", "fr"];
+  const supportedLocales = ["en", "fr", "es"];
   const lng = supportedLocales.includes(locale) ? locale : "en";
 
   i18next.init({
@@ -83,6 +83,7 @@ export function initI18n(): void {
     fallbackLng: "en",
     resources: {
       en: { translation: loadTranslations("en") },
+      es: { translation: loadTranslations("es") },
       fr: { translation: loadTranslations("fr") },
     },
     interpolation: {

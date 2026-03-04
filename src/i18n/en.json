@@ -889,6 +889,7 @@
   "langEnglish": "English",
   "langFrench": "Français",
   "langJapanese": "日本語",
+  "langSpanish": "Español",
   "langLabel": "Language",
   "langSelectTooltip": "Change interface language",
   "langVsCodeAuto": "Auto (VS Code)",
