@@ -1315,8 +1315,10 @@ ${resultMessage}`;
         duration: this.calculateSectionDuration(section),
         toggleIcon,
         sectionStatusIcon:
-          section.isQuestion && !this.isWaitingForAnswer
-            ? { iconName: "utility:question", variant: "warning" }
+          section.isQuestion && section.isActive
+            ? { iconName: "utility:questions_and_answers", variant: "warning" }
+            : section.isQuestion 
+            ? { iconName: "utility:questions_and_answers", variant: "success" }
             : isProgress && section.isActive
               ? { iconName: "utility:progress", variant: "brand" }
               : section.hasError
@@ -1691,10 +1693,10 @@ ${resultMessage}`;
 
   getLogTypeIcon(logType, isQuestion = false, isAnswer = false) {
     if (isQuestion) {
-      return { iconName: "utility:question", variant: "warning" };
+      return { iconName: "utility:questions_and_answers", variant: "warning" };
     }
     if (isAnswer) {
-      return { iconName: "utility:reply", variant: "brand" };
+      return { iconName: "utility:answer", variant: "brand" };
     }
 
     switch (logType) {

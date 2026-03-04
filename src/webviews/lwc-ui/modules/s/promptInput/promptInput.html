@@ -1,13 +1,24 @@
 <template>
     <template if:true={isVisible}>
-        <div class="slds-scope slds-theme_default slds-p-around_medium" onkeydown={handleKeyDown}>
+        <div class="slds-scope slds-p-around_medium" onkeydown={handleKeyDown}>
             <div class={cardClass}>
                 <div class={cardBodyClass}>
                     <!-- Prompt Message -->
                     <div class="slds-m-bottom_medium slds-p-bottom_small slds-border_bottom">
                         <div class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center">
                             <div class="slds-col">
-                                <span class="slds-text-heading_small slds-text-color_default prompt-message-content"></span>
+                                <div class="slds-media slds-media_center">
+                                    <div class="slds-media__figure">
+                                        <lightning-icon 
+                                            icon-name="utility:questions_and_answers"
+                                            variant="warning"
+                                            size="x-small">
+                                        </lightning-icon>
+                                    </div>
+                                    <div class="slds-media__body">
+                                        <span class="slds-text-heading_small slds-text-color_default prompt-message-content"></span>
+                                    </div>
+                                </div>
                             </div>
                             <!-- Help text icon for description -->
                             <template if:true={promptDescription}>

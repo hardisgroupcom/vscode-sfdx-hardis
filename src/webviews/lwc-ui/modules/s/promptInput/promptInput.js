@@ -477,6 +477,10 @@ export default class PromptInput extends I18nMixin(LightningElement) {
     // Strip ANSI color codes and escape sequences
     let cleanText = this.stripAnsiCodes(text);
 
+    if (cleanText.includes("🦙")) {
+      cleanText = cleanText.replace(/^🦙\s*/, "");
+    }
+
     // Create a temporary element to decode HTML entities
     const textarea = document.createElement("textarea");
     textarea.innerHTML = cleanText;
