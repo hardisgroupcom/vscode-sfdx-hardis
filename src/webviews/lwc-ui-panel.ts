@@ -614,10 +614,18 @@ export class LwcUiPanel {
         if (data.removeElements && data.removeElements.length > 0) {
           message += ` (removed: ${data.removeElements.join(", ")})`;
         }
-        vscode.window.showInformationMessage(message);
+        vscode.window.withProgress(
+          { location: vscode.ProgressLocation.Notification, title: message, cancellable: false },
+          () => new Promise<void>((resolve) => setTimeout(resolve, 3000)),
+        );
       } else {
-        vscode.window.showInformationMessage(
-          `VsCode configuration '${data.configKey}' updated with value: ${data.value}`,
+        vscode.window.withProgress(
+          {
+            location: vscode.ProgressLocation.Notification,
+            title: `VsCode configuration '${data.configKey}' updated with value: ${data.value}`,
+            cancellable: false,
+          },
+          () => new Promise<void>((resolve) => setTimeout(resolve, 3000)),
         );
       }
     } catch (error) {
