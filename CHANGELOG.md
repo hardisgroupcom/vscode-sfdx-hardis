@@ -10,7 +10,7 @@
 
 - Custom Color Improvements
   - Support for selecting which settings.json file to update the colors to (Workspace or User).
-  - Added org URL Wildcard Support for colors. Example 'https://yourcompany--*.sandbox.my.salesforce.com'
+  - Added org URL Wildcard Support for colors. Example '<https://yourcompany--*.sandbox.my.salesforce.com>'
   - URL validation added, witch warns the user if a URL in .hardis-config.yml is invalid.
   - Simplified Sandbox and Scratch org colors by checking if URL includes .sandbox. or .scratch.
   - Colors will no longer fail when the org alias include a whitespace.
