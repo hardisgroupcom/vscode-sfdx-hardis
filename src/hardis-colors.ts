@@ -32,7 +32,7 @@ export class HardisColors {
   invalidCustomOrgColorWarningShown: boolean = false;
 
   // Initialize file watchers only if we are in a sfdx project
-  constructor() { }
+  constructor() {}
 
   async init() {
     this.initializing = true;
@@ -228,11 +228,11 @@ export class HardisColors {
       // Build regex: split on '*', escape each part, join with '.*'
       const regex = new RegExp(
         "^" +
-        normalize(pattern)
-          .split("*")
-          .map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
-          .join(".*") +
-        "$",
+          normalize(pattern)
+            .split("*")
+            .map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+            .join(".*") +
+          "$",
         "i",
       );
       if (regex.test(normalizedDomain)) {
