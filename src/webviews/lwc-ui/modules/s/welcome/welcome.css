@@ -88,12 +88,13 @@
 /* Icon selector (shared by theme and language selectors) */
 .hero-settings-row {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 1rem;
 }
 
 .icon-selector {
     position: relative;
+    padding-top: 0.25rem;
 }
 
 .icon-selector-button {

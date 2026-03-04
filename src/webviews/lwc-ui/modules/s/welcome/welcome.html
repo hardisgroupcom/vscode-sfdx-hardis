@@ -24,27 +24,14 @@
                 </div>
                 <div class="hero-settings">
                     <div class="hero-settings-row">
-                        <div class="icon-selector" title={i18n.themeSelectTooltip}>
-                            <button class="icon-selector-button" onclick={toggleThemeDropdown}>
-                                <img class="icon-selector-img" src={currentThemeIconSrc} alt="">
-                            </button>
-                            <template lwc:if={themeDropdownOpen}>
-                                <div class="icon-selector-dropdown">
-                                    <div class="icon-selector-option" data-theme="auto" onclick={handleThemeChange}>
-                                        <img class="icon-selector-img" src={themeAutoSrc} alt="">
-                                        <span class="icon-selector-option-label">{i18n.autoTheme}</span>
-                                    </div>
-                                    <div class="icon-selector-option" data-theme="light" onclick={handleThemeChange}>
-                                        <img class="icon-selector-img" src={themeLightSrc} alt="">
-                                        <span class="icon-selector-option-label">{i18n.lightTheme}</span>
-                                    </div>
-                                    <div class="icon-selector-option" data-theme="dark" onclick={handleThemeChange}>
-                                        <img class="icon-selector-img" src={themeDarkSrc} alt="">
-                                        <span class="icon-selector-option-label">{i18n.darkTheme}</span>
-                                    </div>
-                                </div>
-                            </template>
-                        </div>
+                        <lightning-input
+                            type="toggle"
+                            label={i18n.showAtStartup}
+                            name="showWelcomeAtStartup"
+                            checked={showWelcomeAtStartup}
+                            onchange={handleWelcomeSettingChange}
+                            class="welcome-toggle"
+                        ></lightning-input>
                         <div class="icon-selector" title={i18n.langSelectTooltip}>
                             <button class="icon-selector-button" onclick={toggleLangDropdown}>
                                 <img class="icon-selector-img" src={currentLangFlagSrc} alt="">
@@ -70,14 +57,27 @@
                                 </div>
                             </template>
                         </div>
-                        <lightning-input
-                            type="toggle"
-                            label={i18n.showAtStartup}
-                            name="showWelcomeAtStartup"
-                            checked={showWelcomeAtStartup}
-                            onchange={handleWelcomeSettingChange}
-                            class="welcome-toggle"
-                        ></lightning-input>
+                        <div class="icon-selector" title={i18n.themeSelectTooltip}>
+                            <button class="icon-selector-button" onclick={toggleThemeDropdown}>
+                                <img class="icon-selector-img" src={currentThemeIconSrc} alt="">
+                            </button>
+                            <template lwc:if={themeDropdownOpen}>
+                                <div class="icon-selector-dropdown">
+                                    <div class="icon-selector-option" data-theme="auto" onclick={handleThemeChange}>
+                                        <img class="icon-selector-img" src={themeAutoSrc} alt="">
+                                        <span class="icon-selector-option-label">{i18n.autoTheme}</span>
+                                    </div>
+                                    <div class="icon-selector-option" data-theme="light" onclick={handleThemeChange}>
+                                        <img class="icon-selector-img" src={themeLightSrc} alt="">
+                                        <span class="icon-selector-option-label">{i18n.lightTheme}</span>
+                                    </div>
+                                    <div class="icon-selector-option" data-theme="dark" onclick={handleThemeChange}>
+                                        <img class="icon-selector-img" src={themeDarkSrc} alt="">
+                                        <span class="icon-selector-option-label">{i18n.darkTheme}</span>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
                     </div>
                 </div>
 
