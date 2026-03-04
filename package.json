@@ -144,7 +144,7 @@
         },
         "vsCodeSfdxHardis.theme.colorTheme": {
           "type": "string",
-          "default": "auto",
+          "default": "light",
           "enum": [
             "auto",
             "light",
@@ -192,7 +192,7 @@
         },
         "vsCodeSfdxHardis.lang": {
           "type": "string",
-          "default": "auto",
+          "default": "en",
           "enum": [
             "auto",
             "en",
