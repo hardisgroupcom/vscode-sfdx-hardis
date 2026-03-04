@@ -737,6 +737,8 @@
   "failedToRetrieveMetadataType": "Failed to retrieve {{singleName}}: {{errorMsg}}",
   "failedToRetrieveNFiles": "Failed to retrieve {{count}} file(s)",
   "failedToStartCommand": "Failed to start command: {{msg}}",
+  "initializingCommand": "Initializing command {{command}}",
+  "debugMode": "(debug mode)",
   "failedToUpdateWorkspace": "Failed to update workspace: {{message}}",
   "fileLocationLabel": "File Location:",
   "fileNameFormatField": "File Name Format:",

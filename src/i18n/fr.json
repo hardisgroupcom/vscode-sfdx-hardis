@@ -737,6 +737,8 @@
   "failedToRetrieveMetadataType": "Échec de la récupération de {{singleName}} : {{errorMsg}}",
   "failedToRetrieveNFiles": "Échec de la récupération de {{count}} fichier(s)",
   "failedToStartCommand": "Impossible de démarrer la commande : {{msg}}",
+  "initializingCommand": "Initialisation de la commande {{command}}",
+  "debugMode": "(mode debug)",
   "failedToUpdateWorkspace": "Échec de la mise à jour de le projet : {{message}}",
   "fileLocationLabel": "Emplacement du fichier :",
   "fileNameFormatField": "Format du nom de fichier :",

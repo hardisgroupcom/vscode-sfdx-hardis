@@ -243,19 +243,18 @@ export class CommandRunner {
     let progressClosed = false;
     let killed = false;
     // Start the progress notification
-    let displayPopupMessage = `Initializing command ${preprocessedCommand}`;
-    const wsIndex = displayPopupMessage.indexOf("--websocket");
+    let displayCommandForPopup = preprocessedCommand;
+    const wsIndex = displayCommandForPopup.indexOf("--websocket");
     if (wsIndex !== -1) {
-      displayPopupMessage = displayPopupMessage.substring(0, wsIndex).trim();
+      displayCommandForPopup = displayCommandForPopup.substring(0, wsIndex).trim();
     }
-    const skipAuthIndex = displayPopupMessage.indexOf("--skipauth");
+    const skipAuthIndex = displayCommandForPopup.indexOf("--skipauth");
     if (skipAuthIndex !== -1) {
-      displayPopupMessage = displayPopupMessage
-        .substring(0, skipAuthIndex)
-        .trim();
+      displayCommandForPopup = displayCommandForPopup.substring(0, skipAuthIndex).trim();
     }
+    let displayPopupMessage = t("initializingCommand", { command: displayCommandForPopup });
     if (this.debugNodeJs) {
-      displayPopupMessage += " (debug mode)";
+      displayPopupMessage += " " + t("debugMode");
     }
     vscode.window.withProgress(
       {
