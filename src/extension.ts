@@ -192,7 +192,7 @@ export function activate(context: vscode.ExtensionContext) {
         .catch((e) =>
           Logger.log(
             "Error starting Salesforce CLI MCP server on activation: " +
-            e.message,
+              e.message,
           ),
         );
     }
