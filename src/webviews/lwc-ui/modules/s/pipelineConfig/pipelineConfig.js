@@ -348,6 +348,7 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
         }
         return {
           label: section.label,
+          iconName: section.iconName || "utility:settings",
           description: section.description,
           entries,
         };

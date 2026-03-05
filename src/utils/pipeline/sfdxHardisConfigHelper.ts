@@ -29,7 +29,12 @@ export interface SfdxHardisConfigEditorInput {
   isBranch: boolean;
   branchName: string;
   configSchema: SfdxHardisConfigSchema;
-  sections: Array<{ label: string; description: string; keys: string[] }>;
+  sections: Array<{
+    label: string;
+    description: string;
+    keys: string[];
+    iconName?: string;
+  }>;
   availableBranches?: string[];
   availableApexTestClasses?: string[];
 }
@@ -96,11 +101,13 @@ export class SfdxHardisConfigHelper {
     {
       label: "salesforceOrg",
       description: "",
+      iconName: "utility:user",
       keys: ["instanceUrl", "targetUsername"],
     },
     {
       label: "deployment",
       description: "",
+      iconName: "utility:upload",
       keys: [
         "useDeltaDeployment",
         "useDeltaDeploymentWithDependencies",
@@ -115,11 +122,13 @@ export class SfdxHardisConfigHelper {
     {
       label: "prePostDeployCommands",
       description: "",
+      iconName: "utility:task",
       keys: ["commandsPreDeploy", "commandsPostDeploy"],
     },
     {
       label: "userStories",
       description: "",
+      iconName: "utility:trail",
       keys: [
         "developmentBranch",
         "availableTargetBranches",
@@ -133,6 +142,7 @@ export class SfdxHardisConfigHelper {
     {
       label: "salesforceProject",
       description: "",
+      iconName: "utility:package",
       keys: [
         "autoCleanTypes",
         "autoRetrieveWhenPull",
@@ -142,6 +152,7 @@ export class SfdxHardisConfigHelper {
     {
       label: "ticketing",
       description: "",
+      iconName: "utility:link",
       keys: [
         "ticketingProvider",
         "jiraHost",
@@ -153,6 +164,7 @@ export class SfdxHardisConfigHelper {
     {
       label: "devHub",
       description: "",
+      iconName: "utility:connected_apps",
       keys: [
         "devHubAlias",
         "devHubInstanceUrl",
@@ -165,6 +177,7 @@ export class SfdxHardisConfigHelper {
       label: "dangerZone",
       description:
         "Use these settings with caution, be sure to understand their impact as they drift from DevOps best practices.",
+      iconName: "utility:warning",
       keys: [
         "enableDeltaDeploymentBetweenMajorBranches",
         "enableDeploymentApexTestClasses",
@@ -178,6 +191,7 @@ export class SfdxHardisConfigHelper {
     {
       label: "other",
       description: "",
+      iconName: "utility:settings",
       keys: ["extends"],
     },
   ];

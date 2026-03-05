@@ -599,7 +599,7 @@
   <!-- Object Editor Modal (Add / Edit Single Object) -->
   <template if:true={showObjectModal}>
     <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
-      <div class="slds-modal__container">
+      <div class="slds-modal__container tabbed-modal-container">
         <header class="slds-modal__header">
           <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title={i18n.closeLabel} onclick={handleCancelObject}>
             <lightning-icon icon-name="utility:close" alternative-text={i18n.closeLabel} size="small"></lightning-icon>
@@ -607,9 +607,9 @@
           </button>
           <h2 class="slds-modal__title slds-hyphenate">{objectModalTitle}</h2>
         </header>
-        <div class="slds-modal__content slds-p-around_medium" id="modal-content-object">
+        <div class="slds-modal__content slds-p-around_medium tabbed-modal-content" id="modal-content-object">
           <lightning-tabset>
-            <lightning-tab label={i18n.dwbTabGeneral}>
+            <lightning-tab label={i18n.dwbTabGeneral} icon-name="utility:info" icon-assistive-text={i18n.dwbTabGeneral}>
               <div class="slds-p-around_small">
           <div class={objectSoqlFormElementClass}>
             <label class="slds-form-element__label">
@@ -789,7 +789,63 @@
           </div>
               </div>
             </lightning-tab>
-            <lightning-tab label={i18n.dwbTabDeleteOptions}>
+            <lightning-tab label={i18n.dwbTabQueryFilter} icon-name="utility:filterList" icon-assistive-text={i18n.dwbTabQueryFilter}>
+              <div class="slds-p-around_small">
+              <div class="slds-form-element slds-m-bottom_small">
+                <div class="slds-grid slds-grid_vertical-align-center">
+                  <div class="slds-no-flex">
+                    <lightning-input type="toggle" variant="label-hidden" name="master" aria-label={i18n.dwbMasterToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.master} data-field="master" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
+                  </div>
+                  <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
+                    <span class="slds-text-body_regular">{i18n.dwbMasterToggle}</span>
+                    <span class="slds-no-flex slds-m-left_xx-small"><s-multiline-helptext content={i18n.dwbMasterHelp}></s-multiline-helptext></span>
+                  </div>
+                </div>
+              </div>
+              <div class="slds-form-element slds-m-bottom_small">
+                <div class="slds-grid slds-grid_vertical-align-center">
+                  <div class="slds-no-flex">
+                    <lightning-input type="toggle" variant="label-hidden" name="query-all-target" aria-label={i18n.dwbQueryAllTargetToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.queryAllTarget} data-field="queryAllTarget" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
+                  </div>
+                  <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
+                    <span class="slds-text-body_regular">{i18n.dwbQueryAllTargetToggle}</span>
+                    <span class="slds-no-flex slds-m-left_xx-small"><s-multiline-helptext content={i18n.dwbQueryAllTargetHelp}></s-multiline-helptext></span>
+                  </div>
+                </div>
+              </div>
+              <div class="slds-form-element slds-m-bottom_small">
+                <div class="slds-grid slds-grid_vertical-align-center">
+                  <div class="slds-no-flex">
+                    <lightning-input type="toggle" variant="label-hidden" name="use-source-csv" aria-label={i18n.dwbUseCsvSourceToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.useSourceCSVFile} data-field="useSourceCSVFile" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
+                  </div>
+                  <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
+                    <span class="slds-text-body_regular">{i18n.dwbUseCsvSourceToggle}</span>
+                    <span class="slds-no-flex slds-m-left_xx-small"><s-multiline-helptext content={i18n.dwbUseCsvSourceHelp}></s-multiline-helptext></span>
+                  </div>
+                </div>
+              </div>
+              <div class="slds-form-element slds-m-bottom_small">
+                <label class="slds-form-element__label">
+                  {i18n.dwbSourceRecordsFilter}
+                  <s-multiline-helptext content={i18n.dwbSourceRecordsFilterHelp}></s-multiline-helptext>
+                </label>
+                <div class="slds-form-element__control">
+                  <lightning-input variant="label-hidden" type="text" name="source-records-filter" placeholder="Name LIKE 'ACC_%'" data-field="sourceRecordsFilter" value={editingObject.sourceRecordsFilter} onchange={handleObjFieldChange}></lightning-input>
+                </div>
+              </div>
+              <div class="slds-form-element slds-m-bottom_small">
+                <label class="slds-form-element__label">
+                  {i18n.dwbTargetRecordsFilter}
+                  <s-multiline-helptext content={i18n.dwbTargetRecordsFilterHelp}></s-multiline-helptext>
+                </label>
+                <div class="slds-form-element__control">
+                  <lightning-input variant="label-hidden" type="text" name="target-records-filter" placeholder="CreatedDate > LAST_N_DAYS:30" data-field="targetRecordsFilter" value={editingObject.targetRecordsFilter} onchange={handleObjFieldChange}></lightning-input>
+                </div>
+              </div>
+              </div>
+            </lightning-tab>
+
+            <lightning-tab label={i18n.dwbTabDeleteOptions} icon-name="utility:delete" icon-assistive-text={i18n.dwbTabDeleteOptions}>
               <div class="slds-p-around_small">
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
@@ -836,52 +892,7 @@
               </div>
             </lightning-tab>
 
-            <lightning-tab label={i18n.dwbTabQueryFilter}>
-              <div class="slds-p-around_small">
-              <div class="slds-form-element slds-m-bottom_small">
-                <div class="slds-grid slds-grid_vertical-align-center">
-                  <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="query-all-target" aria-label={i18n.dwbQueryAllTargetToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.queryAllTarget} data-field="queryAllTarget" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
-                  </div>
-                  <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
-                    <span class="slds-text-body_regular">{i18n.dwbQueryAllTargetToggle}</span>
-                    <span class="slds-no-flex slds-m-left_xx-small"><s-multiline-helptext content={i18n.dwbQueryAllTargetHelp}></s-multiline-helptext></span>
-                  </div>
-                </div>
-              </div>
-              <div class="slds-form-element slds-m-bottom_small">
-                <div class="slds-grid slds-grid_vertical-align-center">
-                  <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="use-source-csv" aria-label={i18n.dwbUseCsvSourceToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.useSourceCSVFile} data-field="useSourceCSVFile" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
-                  </div>
-                  <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
-                    <span class="slds-text-body_regular">{i18n.dwbUseCsvSourceToggle}</span>
-                    <span class="slds-no-flex slds-m-left_xx-small"><s-multiline-helptext content={i18n.dwbUseCsvSourceHelp}></s-multiline-helptext></span>
-                  </div>
-                </div>
-              </div>
-              <div class="slds-form-element slds-m-bottom_small">
-                <label class="slds-form-element__label">
-                  {i18n.dwbSourceRecordsFilter}
-                  <s-multiline-helptext content={i18n.dwbSourceRecordsFilterHelp}></s-multiline-helptext>
-                </label>
-                <div class="slds-form-element__control">
-                  <lightning-input variant="label-hidden" type="text" name="source-records-filter" placeholder="Name LIKE 'ACC_%'" data-field="sourceRecordsFilter" value={editingObject.sourceRecordsFilter} onchange={handleObjFieldChange}></lightning-input>
-                </div>
-              </div>
-              <div class="slds-form-element slds-m-bottom_small">
-                <label class="slds-form-element__label">
-                  {i18n.dwbTargetRecordsFilter}
-                  <s-multiline-helptext content={i18n.dwbTargetRecordsFilterHelp}></s-multiline-helptext>
-                </label>
-                <div class="slds-form-element__control">
-                  <lightning-input variant="label-hidden" type="text" name="target-records-filter" placeholder="CreatedDate > LAST_N_DAYS:30" data-field="targetRecordsFilter" value={editingObject.targetRecordsFilter} onchange={handleObjFieldChange}></lightning-input>
-                </div>
-              </div>
-              </div>
-            </lightning-tab>
-
-            <lightning-tab label={i18n.dwbTabProcessing}>
+            <lightning-tab label={i18n.dwbTabProcessing} icon-name="utility:settings" icon-assistive-text={i18n.dwbTabProcessing}>
               <div class="slds-p-around_small">
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
@@ -891,17 +902,6 @@
                   <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbExcludeToggle}</span>
                     <span class="slds-no-flex slds-m-left_xx-small"><s-multiline-helptext content={i18n.dwbExcludeHelp}></s-multiline-helptext></span>
-                  </div>
-                </div>
-              </div>
-              <div class="slds-form-element slds-m-bottom_small">
-                <div class="slds-grid slds-grid_vertical-align-center">
-                  <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="master" aria-label={i18n.dwbMasterToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.master} data-field="master" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
-                  </div>
-                  <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
-                    <span class="slds-text-body_regular">{i18n.dwbMasterToggle}</span>
-                    <span class="slds-no-flex slds-m-left_xx-small"><s-multiline-helptext content={i18n.dwbMasterHelp}></s-multiline-helptext></span>
                   </div>
                 </div>
               </div>
@@ -930,7 +930,7 @@
               </div>
             </lightning-tab>
 
-            <lightning-tab label={i18n.dwbTabApiPerformance}>
+            <lightning-tab label={i18n.dwbTabApiPerformance} icon-name="utility:chart" icon-assistive-text={i18n.dwbTabApiPerformance}>
               <div class="slds-p-around_small">
               <div class="slds-grid slds-gutters">
                 <div class="slds-col slds-size_1-of-2">
@@ -1017,7 +1017,7 @@
               </div>
             </lightning-tab>
 
-            <lightning-tab label={i18n.dwbTabFieldOptions}>
+            <lightning-tab label={i18n.dwbTabFieldOptions} icon-name="utility:edit" icon-assistive-text={i18n.dwbTabFieldOptions}>
               <div class="slds-p-around_small">
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
@@ -1062,7 +1062,7 @@
               </div>
             </lightning-tab>
 
-            <lightning-tab label={i18n.dwbTabMockData}>
+            <lightning-tab label={i18n.dwbTabMockData} icon-name="utility:text_template" icon-assistive-text={i18n.dwbTabMockData}>
               <div class="slds-p-around_small">
           <div class="slds-form-element slds-m-bottom_medium">
             <div class="slds-grid slds-grid_vertical-align-center">
@@ -1178,16 +1178,16 @@
   <!-- === Global Settings Modal === -->
   <template if:true={showGlobalSettingsModal}>
     <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open slds-modal_large" aria-modal="true" aria-labelledby="global-settings-heading">
-      <div class="slds-modal__container">
+      <div class="slds-modal__container tabbed-modal-container">
         <header class="slds-modal__header">
           <lightning-button-icon icon-name="utility:close" alternative-text={i18n.dwbClose} class="slds-modal__close" onclick={handleCancelGlobalSettings}></lightning-button-icon>
           <h2 id="global-settings-heading" class="slds-modal__title slds-hyphenate">{i18n.dwbGlobalSettingsTitle}</h2>
           <p class="slds-text-body_small slds-text-color_weak slds-m-top_xx-small">{i18n.dwbGlobalSettingsDesc}</p>
         </header>
-        <div class="slds-modal__content slds-p-around_medium" style="overflow-y: auto; max-height: 70vh;">
+        <div class="slds-modal__content slds-p-around_medium tabbed-modal-content">
 
           <lightning-tabset>
-            <lightning-tab label={i18n.dwbTabGeneral}>
+            <lightning-tab label={i18n.dwbTabGeneral} icon-name="utility:info" icon-assistive-text={i18n.dwbTabGeneral}>
               <div class="slds-p-around_small">
               <div class="slds-grid slds-gutters slds-m-bottom_small">
                 <div class="slds-col slds-size_1-of-2">
@@ -1250,7 +1250,7 @@
               </div>
             </lightning-tab>
 
-            <lightning-tab label={i18n.dwbTabApiConfig}>
+            <lightning-tab label={i18n.dwbTabApiConfig} icon-name="utility:settings" icon-assistive-text={i18n.dwbTabApiConfig}>
               <div class="slds-p-around_small">
               <div class="slds-grid slds-gutters slds-m-bottom_small">
                 <div class="slds-col slds-size_1-of-2">
@@ -1338,7 +1338,7 @@
               </div>
             </lightning-tab>
 
-            <lightning-tab label={i18n.dwbTabParallelism}>
+            <lightning-tab label={i18n.dwbTabParallelism} icon-name="utility:refresh" icon-assistive-text={i18n.dwbTabParallelism}>
               <div class="slds-p-around_small">
               <div class="slds-grid slds-gutters slds-m-bottom_small">
                 <div class="slds-col slds-size_1-of-3">
@@ -1402,7 +1402,7 @@
               </div>
             </lightning-tab>
 
-            <lightning-tab label={i18n.dwbTabCsvOptions}>
+            <lightning-tab label={i18n.dwbTabCsvOptions} icon-name="utility:file" icon-assistive-text={i18n.dwbTabCsvOptions}>
               <div class="slds-p-around_small">
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
@@ -1541,7 +1541,7 @@
               </div>
             </lightning-tab>
 
-            <lightning-tab label={i18n.dwbTabCaching}>
+            <lightning-tab label={i18n.dwbTabCaching} icon-name="utility:sync" icon-assistive-text={i18n.dwbTabCaching}>
               <div class="slds-p-around_small">
               <div class="slds-grid slds-gutters slds-m-bottom_small">
                 <div class="slds-col slds-size_1-of-2">
@@ -1570,7 +1570,7 @@
               </div>
             </lightning-tab>
 
-            <lightning-tab label={i18n.dwbTabPromptsOther}>
+            <lightning-tab label={i18n.dwbTabPromptsOther} icon-name="utility:question_mark" icon-assistive-text={i18n.dwbTabPromptsOther}>
               <div class="slds-p-around_small">
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">

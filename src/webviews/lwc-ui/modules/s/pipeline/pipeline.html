@@ -141,7 +141,7 @@
                 <div class="pipeline-card-spacing">
                     <lightning-card hide-header="true">
                     <lightning-tabset class="pipeline-tabs">
-                        <lightning-tab label={i18n.projectContributionWorkflow} value="workflow">
+                        <lightning-tab label={i18n.projectContributionWorkflow} value="workflow" icon-name="utility:trail" icon-assistive-text={i18n.projectContributionWorkflow}>
                             <div class="commands-grid">
                                 <div class="command-card" onclick={handleNewUserStory}>
                                     <div class="command-header">
@@ -190,7 +190,7 @@
                                 </div>
                             </div>
                         </lightning-tab>
-                        <lightning-tab label={openPrTabLabel} value="prs">
+                        <lightning-tab label={openPrTabLabel} value="prs" icon-name="utility:topic2" icon-assistive-text={openPrTabLabel}>
                                 <template if:true={gitAuthenticated}>
                                     <lightning-datatable
                                         key-field="id"
@@ -253,7 +253,7 @@
                 <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
                     <lightning-tabset>
                         <template if:true={showPRTab}>
-                            <lightning-tab label={modalPrsTabLabel} value="prs">
+                            <lightning-tab label={modalPrsTabLabel} value="prs" icon-name="utility:topic2" icon-assistive-text={modalPrsTabLabel}>
                             <lightning-datatable
                                 key-field="id"
                                 data={modalPullRequests}
@@ -263,7 +263,7 @@
                             ></lightning-datatable>
                         </lightning-tab>
                         </template>
-                        <lightning-tab label={modalTicketsTabLabel} value="tickets">
+                        <lightning-tab label={modalTicketsTabLabel} value="tickets" icon-name="utility:link" icon-assistive-text={modalTicketsTabLabel}>
                             <template if:true={modalTickets.length}>
                                 <lightning-datatable
                                     key-field="id"
@@ -279,7 +279,7 @@
                                 </div>
                             </template>
                         </lightning-tab>
-                        <lightning-tab label={modalActionsTabLabel} value="actions">
+                        <lightning-tab label={modalActionsTabLabel} value="actions" icon-name="utility:task" icon-assistive-text={modalActionsTabLabel}>
                             <template if:true={showAddActionButton}>
                                 <div class="slds-m-bottom_small">
                                     <lightning-button
@@ -308,7 +308,7 @@
                         </lightning-tab>
                             <!-- Apex Tests Tab (only when enabled in .sfdx-hardis.yml) -->
                             <template if:true={showApexTestsTab}>
-                                <lightning-tab label={modalApexTestsTabLabel} value="apexTests">
+                                <lightning-tab label={modalApexTestsTabLabel} value="apexTests" icon-name="utility:bug" icon-assistive-text={modalApexTestsTabLabel}>
                                     <template if:true={canEditApexTestsInModal}>
                                         <template if:true={isApexTestsViewMode}>
                                             <div class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center slds-m-bottom_small">

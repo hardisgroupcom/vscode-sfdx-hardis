@@ -80,6 +80,24 @@ div.slds-scope[data-theme="dark"] {
 .slds-scope[data-theme] .slds-backdrop {
   background: light-dark(rgba(0, 0, 0, 0.5), rgba(20, 20, 20, 0.75));
 }
+
+/* Shared modal sizing for tabbed workbench modals (Pipeline-like dimensions) */
+.slds-scope .slds-modal__container.tabbed-modal-container {
+  width: 95% !important;
+  max-width: 95vw !important;
+  max-height: 95vh !important;
+  height: 95vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.slds-scope .slds-modal__content.tabbed-modal-content {
+  max-height: calc(95vh - 180px) !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  flex: 1 1 auto !important;
+  position: relative !important;
+}
 /* Header Section */
 .header-section {
     margin-bottom: 2rem;

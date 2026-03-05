@@ -52,6 +52,7 @@ function createDefaultObject() {
     query: "SELECT Id, Name FROM Account",
     operation: "Upsert",
     externalId: "",
+    master: true,
     deleteOldData: false,
     useQueryAll: false,
     allOrNone: true,
@@ -289,6 +290,7 @@ export default class DataWorkbench extends SharedMixin(LightningElement) {
       objects: (ws.objects || []).map((obj) => ({
         ...obj,
         objectName: obj.objectName || inferObjectNameFromQuery(obj.query),
+        master: coerceBoolean(obj.master, true),
         deleteOldData: coerceBoolean(obj.deleteOldData),
         useQueryAll: coerceBoolean(obj.useQueryAll),
         allOrNone: coerceBoolean(obj.allOrNone, true),
@@ -668,6 +670,7 @@ export default class DataWorkbench extends SharedMixin(LightningElement) {
       query: obj.query || "",
       operation: obj.operation || "Upsert",
       externalId: obj.externalId || "",
+      master: coerceBoolean(obj.master, true),
       deleteOldData: coerceBoolean(obj.deleteOldData),
       useQueryAll: coerceBoolean(obj.useQueryAll),
       allOrNone: coerceBoolean(obj.allOrNone, true),

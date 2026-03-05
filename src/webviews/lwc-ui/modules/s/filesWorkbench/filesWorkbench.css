@@ -284,6 +284,7 @@ button[disabled="true"] {
 .slds-modal__content::-webkit-scrollbar-thumb:hover {
 }
 
+
 /* Configuration summary styling */
 .slds-list_horizontal dt {
   margin-right: 0.5rem;

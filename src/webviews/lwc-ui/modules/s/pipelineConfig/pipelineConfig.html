@@ -39,7 +39,7 @@
         <lightning-card hide-header="true" label={i18n.pipelineConfig}>
           <lightning-tabset data-id="config-tabset" active-tab-value={activeTabValue}>
             <template for:each={configSections} for:item="section" for:index="index">
-              <lightning-tab key={section.label} label={section.label} value={section.label}>
+              <lightning-tab key={section.label} label={section.label} value={section.label} icon-name={section.iconName} icon-assistive-text={section.label}>
                 <div class="slds-p-around_medium">
                   <template if:true={section.description}>
                     <div class="slds-text-body_regular slds-text-color_weak slds-m-bottom_medium">
