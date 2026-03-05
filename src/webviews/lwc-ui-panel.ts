@@ -9,6 +9,7 @@ import { Logger } from "../logger";
 import { getAllTranslations, getCurrentLocale, t } from "../i18n/i18n";
 
 type MessageListener = (messageType: string, data: any) => void;
+type ImagePathMap = Record<string, string[]>;
 
 export class LwcUiPanel {
   private readonly panel: vscode.WebviewPanel;
@@ -107,7 +108,13 @@ export class LwcUiPanel {
       "cloudity-logo.svg",
     );
 
-    const lwcUiPanel = new LwcUiPanel(panel, extensionUri, lwcId, data);
+    const resolvedData = LwcUiPanel.resolveImagePathsInData(
+      panel.webview,
+      extensionUri,
+      data,
+    );
+
+    const lwcUiPanel = new LwcUiPanel(panel, extensionUri, lwcId, resolvedData);
     lwcUiPanel.setPanelTitleFromLwcId();
     return lwcUiPanel;
   }
@@ -204,29 +211,34 @@ export class LwcUiPanel {
    * @param data The data to send to the webview for initialization
    */
   public sendInitializationData(data: any): void {
-    this.initializationData = data;
+    const resolvedData = LwcUiPanel.resolveImagePathsInData(
+      this.panel.webview,
+      this.extensionUri,
+      data,
+    );
+    this.initializationData = resolvedData;
     const vsCodeSfdxHardisConfiguration =
       vscode.workspace.getConfiguration("vsCodeSfdxHardis");
     if (vsCodeSfdxHardisConfiguration) {
-      data.vsCodeSfdxHardisConfiguration = vsCodeSfdxHardisConfiguration;
+      resolvedData.vsCodeSfdxHardisConfiguration = vsCodeSfdxHardisConfiguration;
     }
 
     // Include translations for LWC components (only if not already set by display())
-    if (!data.translations) {
-      data.translations = getAllTranslations();
-      data.locale = getCurrentLocale();
+    if (!resolvedData.translations) {
+      resolvedData.translations = getAllTranslations();
+      resolvedData.locale = getCurrentLocale();
     }
 
     // Always add colorTheme to initialization data for consistent theme support
     const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis.theme");
     const colorThemeConfig = config.get("colorTheme", "auto");
     const { colorTheme, colorContrast } = LwcUiPanel.resolveTheme(colorThemeConfig);
-    data.colorTheme = colorTheme;
-    data.colorContrast = colorContrast;
+    resolvedData.colorTheme = colorTheme;
+    resolvedData.colorContrast = colorContrast;
 
     this.panel.webview.postMessage({
       type: "initialize",
-      data: data,
+      data: resolvedData,
     });
   }
 
@@ -818,5 +830,43 @@ export class LwcUiPanel {
         <script src="${scriptUri}"></script>
       </body>
       </html>`;
+  }
+
+  private static resolveImagePathsInData(
+    webview: vscode.Webview,
+    extensionUri: vscode.Uri,
+    data: any,
+  ): any {
+    if (!data) {
+      return data;
+    }
+
+    const imagePaths = data.imagePaths as ImagePathMap | undefined;
+    if (!imagePaths || typeof imagePaths !== "object") {
+      return data;
+    }
+
+    const resolvedImages: Record<string, string> = {};
+    for (const [key, pathParts] of Object.entries(imagePaths)) {
+      if (!Array.isArray(pathParts) || pathParts.length === 0) {
+        continue;
+      }
+      const resourceUri = vscode.Uri.joinPath(
+        extensionUri,
+        "out",
+        "resources",
+        "webviews",
+        ...pathParts,
+      );
+      resolvedImages[key] = webview.asWebviewUri(resourceUri).toString();
+    }
+
+    data.images = {
+      ...(data.images || {}),
+      ...resolvedImages,
+    };
+
+    delete data.imagePaths;
+    return data;
   }
 }

@@ -249,18 +249,11 @@ export function registerShowMetadataRetriever(commands: Commands) {
           packageDirectories: packageDirs,
           localPackageOptions,
           defaultLocalPackage,
-        },
-      );
-
-      const logoUri = panel.asWebviewUri(["logo-m.png"]);
-      panel.sendMessage({
-        type: "imageResources",
-        data: {
-          images: {
-            featureLogo: logoUri,
+          imagePaths: {
+            featureLogo: ["logo-m.png"],
           },
         },
-      });
+      );
 
       panel.updateTitle(t("metadataRetriever"));
       // Register message handlers

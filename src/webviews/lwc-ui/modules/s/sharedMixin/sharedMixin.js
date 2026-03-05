@@ -27,6 +27,7 @@ export const SharedMixin = (BaseClass) =>
     );
 
     translations = {};
+    images = {};
     _locale = "en";
     _colorTheme;
     _colorContrast;
@@ -37,6 +38,9 @@ export const SharedMixin = (BaseClass) =>
           translations: window.__lwcTranslations,
           locale: window.__lwcLocale || "en",
         });
+      }
+      if (typeof window !== "undefined" && window.__lwcImages) {
+        this.initializeImages(window.__lwcImages);
       }
       if (super.connectedCallback) {
         super.connectedCallback();
@@ -77,6 +81,23 @@ export const SharedMixin = (BaseClass) =>
 
     get locale() {
       return this._locale;
+    }
+
+    @api
+    initializeImages(images) {
+      if (images && typeof images === "object") {
+        this.images = { ...images };
+      }
+    }
+
+    getImageUrl(key, fallbackKey = "") {
+      if (key && this.images && this.images[key]) {
+        return this.images[key];
+      }
+      if (fallbackKey && this.images && this.images[fallbackKey]) {
+        return this.images[fallbackKey];
+      }
+      return "";
     }
 
     get colorTheme() {

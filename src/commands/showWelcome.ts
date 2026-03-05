@@ -21,25 +21,19 @@ export function registerShowWelcome(command: Commands) {
         langSetting: langSetting,
         colorThemeConfig,
         colorTheme,
-        colorContrast
-      });
-      panel.updateTitle(t("welcomeTitle"));
-
-      panel.sendMessage({
-        type: "imageResources",
-        data: {
-          images: {
-            flagGlobe: panel.asWebviewUri(["icons", "flag-globe.svg"]),
-            flagEn: panel.asWebviewUri(["icons", "flag-uk.svg"]),
-            flagFr: panel.asWebviewUri(["icons", "flag-fr.svg"]),
-            flagEs: panel.asWebviewUri(["icons", "flag-es.svg"]),
-            flagJa: panel.asWebviewUri(["icons", "flag-ja.svg"]),
-            themeAuto: panel.asWebviewUri(["icons", "theme-auto.svg"]),
-            themeLight: panel.asWebviewUri(["icons", "theme-light.svg"]),
-            themeDark: panel.asWebviewUri(["icons", "theme-dark.svg"]),
-          },
+        colorContrast,
+        imagePaths: {
+          flagGlobe: ["icons", "flag-globe.svg"],
+          flagEn: ["icons", "flag-uk.svg"],
+          flagFr: ["icons", "flag-fr.svg"],
+          flagEs: ["icons", "flag-es.svg"],
+          flagJa: ["icons", "flag-ja.svg"],
+          themeAuto: ["icons", "theme-auto.svg"],
+          themeLight: ["icons", "theme-light.svg"],
+          themeDark: ["icons", "theme-dark.svg"],
         },
       });
+      panel.updateTitle(t("welcomeTitle"));
 
       // Handle messages from the Welcome panel
       panel.onMessage(async (type: string, _data: any) => {

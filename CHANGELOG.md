@@ -5,6 +5,7 @@
 - UI refactoring
   - Themes: Light mode & Dark mode
   - Many UI/UX improvements
+  - Unify the way to load images in WebView panels
 - Translation of UI & messages
   - English
   - French

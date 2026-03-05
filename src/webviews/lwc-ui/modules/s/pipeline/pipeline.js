@@ -26,7 +26,6 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   _refreshTimer = null;
   _isVisible = true;
   _isAutoRefresh = false;
-  @track images = {};
   prColumns = [
     {
       key: "number",
@@ -394,20 +393,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       (this.prButtonInfo && this.prButtonInfo.icon) ||
       this.repoPlatformLabel ||
       "";
-    if (key && this.images && this.images[key.toLowerCase()]) {
-      return this.images[key.toLowerCase()];
-    }
-    // fallback to a neutral link icon if none available
-    return this.images["git"];
+    return this.getImageUrl((key || "").toLowerCase(), "git");
   }
 
   get ticketProviderIconUrl() {
     const key = (this.ticketProviderName || "").toLowerCase();
-    if (key && this.images && this.images[key]) {
-      return this.images[key];
-    }
-    // default ticket icon (jira) if available
-    return this.images["ticket"];
+    return this.getImageUrl(key, "ticket");
   }
 
   // CSS classes to toggle colored vs greyed appearance
@@ -1118,9 +1109,6 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       case "refreshPipeline":
         this.refreshPipeline();
         break;
-      case "imageResources":
-        this.handleImageResources(data);
-        break;
       case "openPullRequestsUpdated":
         // allow dynamic updates from extension host
         this.openPullRequests = this._mapPrsWithIcons(data || []);
@@ -1132,21 +1120,6 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         break;
       default:
         console.log("Unknown message type:", messageType, data);
-    }
-  }
-
-  handleImageResources(data) {
-    if (data && data?.images) {
-      // Normalize keys to lowercase for easy lookup (e.g., GitHub -> github)
-      const normalized = {};
-      for (const [key, url] of Object.entries(data.images)) {
-        if (!key) {
-          continue;
-        }
-        normalized[key.toLowerCase()] = url;
-      }
-      // merge into existing images map
-      this.images = Object.assign({}, this.images || {}, normalized);
     }
   }
 

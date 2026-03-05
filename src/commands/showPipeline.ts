@@ -41,25 +41,19 @@ export function registerShowPipeline(commands: Commands) {
         {
           ...pipelineProperties,
           firstDisplay: true,
-        },
-      );
-
-      panel.sendMessage({
-        type: "imageResources",
-        data: {
-          images: {
-            git: panel.asWebviewUri(["icons", "git.svg"]),
-            ticket: panel.asWebviewUri(["icons", "ticket.svg"]),
-            github: panel.asWebviewUri(["icons", "github.svg"]),
-            gitlab: panel.asWebviewUri(["icons", "gitlab.svg"]),
-            bitbucket: panel.asWebviewUri(["icons", "bitbucket.svg"]),
-            azure: panel.asWebviewUri(["icons", "azure.svg"]),
-            gitea: panel.asWebviewUri(["icons", "gitea.svg"]),
-            jira: panel.asWebviewUri(["icons", "jira.svg"]),
-            azureboards: panel.asWebviewUri(["icons", "azureboards.svg"]),
+          imagePaths: {
+            git: ["icons", "git.svg"],
+            ticket: ["icons", "ticket.svg"],
+            github: ["icons", "github.svg"],
+            gitlab: ["icons", "gitlab.svg"],
+            bitbucket: ["icons", "bitbucket.svg"],
+            azure: ["icons", "azure.svg"],
+            gitea: ["icons", "gitea.svg"],
+            jira: ["icons", "jira.svg"],
+            azureboards: ["icons", "azureboards.svg"],
           },
         },
-      });
+      );
 
       panel.updateTitle(t("devOpsPipeline"));
 

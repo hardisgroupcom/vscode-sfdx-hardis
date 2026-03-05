@@ -13,7 +13,6 @@ export default class Welcome extends SharedMixin(LightningElement) {
   @track langSetting = "auto";
   @track langDropdownOpen = false;
   @track themeDropdownOpen = false;
-  @track flagImages = {};
  
   @track setupHidden = false;
   scrollThreshold = 100; // Hide toggle after scrolling 100px
@@ -77,9 +76,6 @@ export default class Welcome extends SharedMixin(LightningElement) {
   @api
   handleMessage(type, data) {
     console.log("Welcome component received message:", type, data);
-    if (type === "imageResources" && data?.images) {
-      this.flagImages = data.images;
-    }
   }
 
   @api
@@ -92,27 +88,27 @@ export default class Welcome extends SharedMixin(LightningElement) {
   get currentLangFlagSrc() {
     const map = { auto: "flagGlobe", en: "flagEn", es: "flagEs", fr: "flagFr", ja: "flagJa" };
     const key = map[this.langSetting] || "flagGlobe";
-    return this.flagImages[key] || "";
+    return this.getImageUrl(key, "flagGlobe");
   }
 
   get flagGlobeSrc() {
-    return this.flagImages.flagGlobe || "";
+    return this.getImageUrl("flagGlobe");
   }
 
   get flagEnSrc() {
-    return this.flagImages.flagEn || "";
+    return this.getImageUrl("flagEn");
   }
 
   get flagEsSrc() {
-    return this.flagImages.flagEs || "";
+    return this.getImageUrl("flagEs");
   }
 
   get flagFrSrc() {
-    return this.flagImages.flagFr || "";
+    return this.getImageUrl("flagFr");
   }
 
   get flagJaSrc() {
-    return this.flagImages.flagJa || "";
+    return this.getImageUrl("flagJa");
   }
 
   toggleLangDropdown() {
@@ -139,19 +135,19 @@ export default class Welcome extends SharedMixin(LightningElement) {
   get currentThemeIconSrc() {
     const map = { auto: "themeAuto", light: "themeLight", dark: "themeDark" };
     const key = map[this.colorThemeConfig] || "themeAuto";
-    return this.flagImages[key] || "";
+    return this.getImageUrl(key, "themeAuto");
   }
 
   get themeAutoSrc() {
-    return this.flagImages.themeAuto || "";
+    return this.getImageUrl("themeAuto");
   }
 
   get themeLightSrc() {
-    return this.flagImages.themeLight || "";
+    return this.getImageUrl("themeLight");
   }
 
   get themeDarkSrc() {
-    return this.flagImages.themeDark || "";
+    return this.getImageUrl("themeDark");
   }
 
   handleLangChange(event) {

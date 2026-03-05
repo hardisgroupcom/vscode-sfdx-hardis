@@ -14,6 +14,12 @@ function routeMessageToComponent(message) {
   }
 
   if (message.type === "initialize") {
+    if (message.data?.images) {
+      window.__lwcImages = message.data.images;
+      if (typeof component.initializeImages === "function") {
+        component.initializeImages(message.data.images);
+      }
+    }
     if (typeof component.initialize === "function") {
       component.initialize(message.data);
     } else if (typeof component.showPrompt === "function") {
@@ -148,6 +154,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (initData?.translations) {
         window.__lwcTranslations = initData.translations;
         window.__lwcLocale = initData.locale || "en";
+      }
+      if (initData?.images) {
+        window.__lwcImages = initData.images;
       }
 
       // Dynamically import the LWC class using the static import map

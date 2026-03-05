@@ -41,7 +41,10 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
   @track showFeature = false;
   @track featureId = null;
   @track featureText;
-  @track imgFeatureLogo = "";
+
+  get imgFeatureLogo() {
+    return this.getImageUrl("featureLogo");
+  }
 
   // Local package selector (sfdx-project.json packageDirectories)
   @track localPackageOptions = [];
@@ -862,8 +865,6 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
   handleMessage(type, data) {
     if (type === "initialize") {
       this.initialize(data);
-    } else if (type === "imageResources") {
-      this.handleImageResources(data);
     } else if (type === "listOrgsResults") {
       this.handleOrgResults(data);
     } else if (type === "listPackagesResults") {
@@ -884,12 +885,6 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
   handleRetrieveState(data) {
     if (data && typeof data.isRetrieving === "boolean") {
       this.isRetrieving = data.isRetrieving;
-    }
-  }
-
-  handleImageResources(data) {
-    if (data && data?.images?.featureLogo) {
-      this.imgFeatureLogo = data.images.featureLogo;
     }
   }
 
