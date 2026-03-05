@@ -1,6 +1,5 @@
 import { LightningElement, api, track } from "lwc";
-import { ColorThemeMixin } from "s/colorThemeMixin";
-import { I18nMixin } from "s/i18nMixin";
+import { SharedMixin } from "s/sharedMixin";
 
 // Lightweight SOQL object name extraction. Full parsing/validation lives in
 // showDataWorkbench.ts to keep @jetstreamapp/soql-parser-js out of the webview bundle.
@@ -62,7 +61,7 @@ function createDefaultObject() {
   };
 }
 
-export default class DataWorkbench extends I18nMixin(ColorThemeMixin(LightningElement)) {
+export default class DataWorkbench extends SharedMixin(LightningElement) {
   workspaces = [];
   selectedWorkspace = null;
   isLoading = false;
@@ -243,7 +242,7 @@ export default class DataWorkbench extends I18nMixin(ColorThemeMixin(LightningEl
 
   @api
   handleColorThemeMessage(type, data) {
-    // Delegate to the ColorThemeMixin's implementation
+    // Delegate to the SharedMixin's implementation
     if (super.handleColorThemeMessage)
       super.handleColorThemeMessage(type, data);
   }

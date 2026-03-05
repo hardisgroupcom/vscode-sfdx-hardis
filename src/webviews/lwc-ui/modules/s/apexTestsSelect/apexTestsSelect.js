@@ -1,13 +1,13 @@
 import { LightningElement, api } from "lwc";
-import { I18nMixin } from "s/i18nMixin";
+import { SharedMixin } from "s/sharedMixin";
 
-export default class ApexTestsSelect extends I18nMixin(LightningElement) {
+export default class ApexTestsSelect extends SharedMixin(LightningElement) {
   @api availableClasses = [];
   @api value = [];
 
   @api
   set translations(_val) {
-    // translations are auto-initialized from window.__lwcTranslations via I18nMixin.connectedCallback
+    // translations are auto-initialized from window.__lwcTranslations via SharedMixin.connectedCallback
   }
   get translations() {
     return undefined;

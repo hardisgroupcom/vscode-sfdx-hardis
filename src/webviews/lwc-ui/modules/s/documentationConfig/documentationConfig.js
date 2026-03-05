@@ -1,6 +1,5 @@
 import { LightningElement, api, track } from "lwc";
-import { ColorThemeMixin } from "s/colorThemeMixin";
-import { I18nMixin } from "s/i18nMixin";
+import { SharedMixin } from "s/sharedMixin";
 
 /**
  * Documentation Configuration LWC Component
@@ -9,7 +8,7 @@ import { I18nMixin } from "s/i18nMixin";
  * - Prompt template override
  * - AI provider & doc deployment settings
  */
-export default class DocumentationConfig extends I18nMixin(ColorThemeMixin(LightningElement)) {
+export default class DocumentationConfig extends SharedMixin(LightningElement) {
   // Config
   @track configLoading = true;
   @track configSections = [];
@@ -57,7 +56,7 @@ export default class DocumentationConfig extends I18nMixin(ColorThemeMixin(Light
 
   @api
   handleColorThemeMessage(type, data) {
-    // Delegate to the ColorThemeMixin's implementation
+    // Delegate to the SharedMixin's implementation
     if (super.handleColorThemeMessage)
       super.handleColorThemeMessage(type, data);
   }

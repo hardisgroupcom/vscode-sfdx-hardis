@@ -1,7 +1,7 @@
 import { LightningElement, api, track } from "lwc";
-import { I18nMixin } from "s/i18nMixin";
+import { SharedMixin } from "s/sharedMixin";
 
-export default class InstalledPackages extends I18nMixin(LightningElement) {
+export default class InstalledPackages extends SharedMixin(LightningElement) {
   @api packages = [];
   @track draftValues = [];
   internalCommands = [];

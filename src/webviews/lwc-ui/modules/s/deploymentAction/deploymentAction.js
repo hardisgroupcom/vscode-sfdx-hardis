@@ -3,9 +3,9 @@
 // @ts-nocheck
 // eslint-env es6
 import { LightningElement, api, track } from "lwc";
-import { I18nMixin } from "s/i18nMixin";
+import { SharedMixin } from "s/sharedMixin";
 
-export default class DeploymentAction extends I18nMixin(LightningElement) {
+export default class DeploymentAction extends SharedMixin(LightningElement) {
   @api action = null;
   @api isEditMode = false;
   @api apexScripts = [];

@@ -3,10 +3,10 @@
 // @ts-nocheck
 // eslint-env es6
 import { LightningElement, track, api } from "lwc";
+import { SharedMixin } from "s/sharedMixin";
 import PromptInput from "s/promptInput";
-import { I18nMixin } from "s/i18nMixin";
 
-export default class CommandExecution extends I18nMixin(LightningElement) {
+export default class CommandExecution extends SharedMixin(LightningElement) {
   // Track user-toggled expanded state for sections in simple mode
   userSectionExpandState = {}; // { [sectionId]: boolean }
   // Table logs storage (sectionId -> table data)

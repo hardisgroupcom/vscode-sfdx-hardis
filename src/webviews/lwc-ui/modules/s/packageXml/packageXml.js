@@ -3,8 +3,7 @@
 // @ts-nocheck
 // eslint-env es6
 import { LightningElement, api, track } from "lwc";
-import { ColorThemeMixin } from "s/colorThemeMixin";
-import { I18nMixin } from "s/i18nMixin";
+import { SharedMixin } from "s/sharedMixin";
 
 // Configuration - Base URL for metadata type documentation
 // Modify this URL to change where metadata type links point to
@@ -17,7 +16,7 @@ const createEmptyPackageData = () => ({
   types: [],
 });
 
-export default class PackageXml extends I18nMixin(ColorThemeMixin(LightningElement)) {
+export default class PackageXml extends SharedMixin(LightningElement) {
   @track packageData = createEmptyPackageData();
   @track isLoading = true;
   @track hasError = false;
@@ -95,7 +94,7 @@ export default class PackageXml extends I18nMixin(ColorThemeMixin(LightningEleme
 
   @api
   handleColorThemeMessage(type, data) {
-    // Delegate to the ColorThemeMixin's implementation
+    // Delegate to the SharedMixin's implementation
     if (super.handleColorThemeMessage)
       super.handleColorThemeMessage(type, data);
   }

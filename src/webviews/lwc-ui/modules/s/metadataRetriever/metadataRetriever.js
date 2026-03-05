@@ -1,5 +1,5 @@
 import { LightningElement, api, track } from "lwc";
-import { I18nMixin } from "s/i18nMixin";
+import { SharedMixin } from "s/sharedMixin";
 
 /**
  * LWC to retrieve and search metadata from a Salesforce org
@@ -11,7 +11,7 @@ import { I18nMixin } from "s/i18nMixin";
 const METADATA_DOC_BASE_URL =
   "https://sf-explorer.github.io/sf-doc-to-json/#/cloud/all/object/";
 
-export default class MetadataRetriever extends I18nMixin(LightningElement) {
+export default class MetadataRetriever extends SharedMixin(LightningElement) {
   @api orgs = [];
   @api metadataTypes = [];
   @track selectedOrg = null;

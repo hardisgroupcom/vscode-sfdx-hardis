@@ -1,5 +1,5 @@
 import { LightningElement, api, track } from "lwc";
-import { I18nMixin } from "s/i18nMixin";
+import { SharedMixin } from "s/sharedMixin";
 
 /**
  * LWC to display and edit .sfdx-hardis.yml configuration (global or branch-scoped)
@@ -12,7 +12,7 @@ import { I18nMixin } from "s/i18nMixin";
  *   mode: 'view' | 'edit'
  *   availableBranches: array of available branch names for selection
  */
-export default class PipelineConfig extends I18nMixin(LightningElement) {
+export default class PipelineConfig extends SharedMixin(LightningElement) {
   @api config = {};
   @api branchConfig = null;
   @api globalConfig = null;

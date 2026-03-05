@@ -1,7 +1,7 @@
 import { LightningElement, api, track } from "lwc";
-import { I18nMixin } from "s/i18nMixin";
+import { SharedMixin } from "s/sharedMixin";
 
-export default class OrgManager extends I18nMixin(LightningElement) {
+export default class OrgManager extends SharedMixin(LightningElement) {
   @track orgs = [];
   @track columns = [];
   @track selectedRowKeys = [];

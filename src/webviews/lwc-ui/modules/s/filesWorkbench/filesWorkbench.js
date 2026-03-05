@@ -1,8 +1,7 @@
 import { LightningElement, api, track } from "lwc";
-import { ColorThemeMixin } from "s/colorThemeMixin";
-import { I18nMixin } from "s/i18nMixin";
+import { SharedMixin } from "s/sharedMixin";
 
-export default class FilesWorkbench extends I18nMixin(ColorThemeMixin(LightningElement)) {
+export default class FilesWorkbench extends SharedMixin(LightningElement) {
   workspaces = [];
   selectedWorkspace = null;
   isLoading = false;
@@ -95,7 +94,7 @@ export default class FilesWorkbench extends I18nMixin(ColorThemeMixin(LightningE
 
   @api
   handleColorThemeMessage(type, data) {
-    // Delegate to the ColorThemeMixin's implementation
+    // Delegate to the SharedMixin's implementation
     if (super.handleColorThemeMessage)
       super.handleColorThemeMessage(type, data);
   }

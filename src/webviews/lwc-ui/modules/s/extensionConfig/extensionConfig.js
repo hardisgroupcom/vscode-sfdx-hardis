@@ -1,8 +1,7 @@
 import { LightningElement, track, api } from "lwc";
-import { ColorThemeMixin } from "s/colorThemeMixin";
-import { I18nMixin } from "s/i18nMixin";
+import { SharedMixin } from "s/sharedMixin";
 
-export default class ExtensionConfig extends I18nMixin(ColorThemeMixin(LightningElement)) {
+export default class ExtensionConfig extends SharedMixin(LightningElement) {
   @track sections = [];
   @track loading = true;
   @track error = null;
@@ -122,7 +121,7 @@ export default class ExtensionConfig extends I18nMixin(ColorThemeMixin(Lightning
 
   @api
   handleColorThemeMessage(type, data) {
-    // Delegate to the ColorThemeMixin's implementation
+    // Delegate to the SharedMixin's implementation
     if (super.handleColorThemeMessage)
       super.handleColorThemeMessage(type, data);
   }

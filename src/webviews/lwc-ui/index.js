@@ -143,7 +143,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.error(`❌ No LWC class found for ID: ${lwcId}`);
         return;
       }
-      // Expose translations globally BEFORE createElement so I18nMixin.connectedCallback
+      // Expose translations globally BEFORE createElement so SharedMixin.connectedCallback
       // can read them on first mount — zero-delay translation on first render.
       if (initData?.translations) {
         window.__lwcTranslations = initData.translations;

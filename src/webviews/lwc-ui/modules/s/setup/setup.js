@@ -1,7 +1,7 @@
 import { LightningElement, api, track } from "lwc";
-import { I18nMixin } from "s/i18nMixin";
+import { SharedMixin } from "s/sharedMixin";
 
-export default class Setup extends I18nMixin(LightningElement) {
+export default class Setup extends SharedMixin(LightningElement) {
   @track checks = [];
   @track summaryMessage = "";
   @track summaryClass = "";

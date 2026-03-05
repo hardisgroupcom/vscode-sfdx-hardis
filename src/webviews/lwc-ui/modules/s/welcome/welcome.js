@@ -3,10 +3,9 @@
 // @ts-nocheck
 // eslint-env es6
 import { LightningElement, api, track } from "lwc";
-import { ColorThemeMixin } from "s/colorThemeMixin";
-import { I18nMixin } from "s/i18nMixin";
+import { SharedMixin } from "s/sharedMixin";
 
-export default class Welcome extends I18nMixin(ColorThemeMixin(LightningElement)) {
+export default class Welcome extends SharedMixin(LightningElement) {
   @track isLoading = false;
   @track showWelcomeAtStartup = true;
   @track colorThemeConfig = "auto";
@@ -85,7 +84,7 @@ export default class Welcome extends I18nMixin(ColorThemeMixin(LightningElement)
 
   @api
   handleColorThemeMessage(type, data) {
-    // Delegate to the ColorThemeMixin's implementation
+    // Delegate to the SharedMixin's implementation
     if (super.handleColorThemeMessage)
       super.handleColorThemeMessage(type, data);
   }

@@ -1,6 +1,5 @@
 import { LightningElement, api, track } from "lwc";
-import { ColorThemeMixin } from "s/colorThemeMixin";
-import { I18nMixin } from "s/i18nMixin";
+import { SharedMixin } from "s/sharedMixin";
 
 /**
  * Documentation Workbench LWC Component
@@ -13,7 +12,7 @@ import { I18nMixin } from "s/i18nMixin";
  *  - Run locally (MkDocs)
  *  - Open configuration panel for advanced options
  */
-export default class DocumentationWorkbench extends I18nMixin(ColorThemeMixin(LightningElement)) {
+export default class DocumentationWorkbench extends SharedMixin(LightningElement) {
   // Generation options (state tracked here, synced with config panel)
   @track generatePdf = false;
   @track generateExcel = false;
@@ -76,7 +75,7 @@ export default class DocumentationWorkbench extends I18nMixin(ColorThemeMixin(Li
 
   @api
   handleColorThemeMessage(type, data) {
-    // Delegate to the ColorThemeMixin's implementation
+    // Delegate to the SharedMixin's implementation
     if (super.handleColorThemeMessage)
       super.handleColorThemeMessage(type, data);
   }
