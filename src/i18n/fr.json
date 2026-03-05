@@ -1499,7 +1499,7 @@
   "vsCodeNotInitialized": "VsCode SFDX-Hardis n'est pas encore initialisé, veuillez patienter quelques secondes avant de relancer cette commande.\nSi le problème persiste, modifiez le paramètre VsCode vsCodeSfdxHardis.userInputCommandLineIfLWC sur 'terminal'",
   "warnings": "Avertissements",
   "websocketServerUnableToStart": "Le serveur WebSocket local n'a pas pu démarrer.\nLes demandes utilisateur seront dans le terminal.",
-  "welcome": "Bienvenue",
+  "welcome": "Page d'accueil",
   "welcomeSubtitle": "Votre boîte à outils Salesforce complète, par",
   "welcomeTitle": "Bienvenue dans VS Code SFDX Hardis",
   "withEmojis": "Avec des emojis",
