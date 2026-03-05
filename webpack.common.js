@@ -88,9 +88,6 @@ const lwcWebviewConfig = {
     // which are not valid modules for the web target and cause parse errors.
     extensions: [".js"],
     modules: ["node_modules"],
-    fallback: {
-      process: require.resolve("process/browser"),
-    },
   },
   module: {
     rules: [
@@ -131,8 +128,16 @@ const lwcWebviewConfig = {
   },
   plugins: [
     new webpack.ProvidePlugin({
-      process: "process/browser",
+      process: "process/browser.js",
     }),
+    // Replace the gate stub that ships with lightning-base-components so that
+    // all feature flags default to false (the intended off-platform fallback).
+    // The original stub returns true for every gate, which enables features
+    // like attachInternals that are incompatible with synthetic shadow.
+    new webpack.NormalModuleReplacementPlugin(
+      /lightning-base-components[/\\]external[/\\]gateStub\.js$/,
+      path.resolve(__dirname, "src/webviews/lwc-ui/stubs/gateStub.js"),
+    ),
     new LwcWebpackPlugin({
       modules: [
         {
@@ -148,6 +153,30 @@ const lwcWebviewConfig = {
     }),
     new CopyWebpackPlugin({
       patterns: [
+        {
+          from: path.resolve(
+            __dirname,
+            "resources/global-theme-variables.css",
+          ),
+          to: path.resolve(
+            __dirname,
+            "out/assets/styles/global-theme-variables.css",
+          ),
+          toType: "file",
+          noErrorOnMissing: true,
+        },
+        {
+          from: path.resolve(
+            __dirname,
+            "resources/global-theme.css",
+          ),
+          to: path.resolve(
+            __dirname,
+            "out/assets/styles/global-theme.css",
+          ),
+          toType: "file",
+          noErrorOnMissing: true,
+        },
         {
           from: path.resolve(
             __dirname,
@@ -189,6 +218,14 @@ const lwcWebviewConfig = {
             __dirname,
             "out/resources/sfdx-hardis.jsonschema.json",
           ),
+          noErrorOnMissing: true,
+        },
+        {
+          from: path.resolve(__dirname, "src/i18n"),
+          to: path.resolve(__dirname, "out/i18n"),
+          globOptions: {
+            ignore: ["**/*.ts"],
+          },
           noErrorOnMissing: true,
         },
       ],

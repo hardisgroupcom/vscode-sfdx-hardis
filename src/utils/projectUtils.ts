@@ -3,6 +3,7 @@ import * as path from "path";
 import fg from "fast-glob";
 import { getWorkspaceRoot, listSfdxProjectPackageDirectories } from "../utils";
 import { listMetadataTypes } from "./metadataList";
+import { t } from "../i18n/i18n";
 
 export async function openMetadataFile(
   metadataType: string,
@@ -10,7 +11,7 @@ export async function openMetadataFile(
 ): Promise<void> {
   try {
     if (!metadataType || !metadataName) {
-      vscode.window.showErrorMessage("Missing metadata type or name");
+      vscode.window.showErrorMessage(t("missingMetadataTypeOrName"));
       return;
     }
     const filePath = await getMetadataFilePath(metadataType, metadataName);

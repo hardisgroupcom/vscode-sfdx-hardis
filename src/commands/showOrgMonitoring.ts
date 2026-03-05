@@ -7,6 +7,7 @@ import yaml from "js-yaml";
 import { Logger } from "../logger";
 import { Commands } from "../commands";
 import { showPackageXmlPanel } from "./packageXml";
+import { t } from "../i18n/i18n";
 
 export function registerShowOrgMonitoring(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
@@ -54,7 +55,7 @@ export function registerShowOrgMonitoring(commands: Commands) {
         monitoringRepository: monitoringRepository,
         instanceUrl: instanceUrl,
       });
-      panel.updateTitle("Org Monitoring Workbench");
+      panel.updateTitle(t("orgMonitoringWorkbench"));
 
       // Handle messages from the Org Monitoring panel
       panel.onMessage(async (type: string, data: any) => {

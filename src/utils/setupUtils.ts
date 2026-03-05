@@ -3,13 +3,16 @@ import {
   execCommand,
   execCommandWithProgress,
   getNpmLatestVersion,
+  getSfdxHardisInstallTag,
   getWorkspaceRoot,
+  isExtensionPreRelease,
   NODE_JS_MINIMUM_VERSION,
   RECOMMENDED_SFDX_CLI_VERSION,
   RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION,
 } from "../utils";
 import which from "which";
 import { isMergeDriverEnabled } from "./gitMergeDriverUtils";
+import { t } from "../i18n/i18n";
 
 export type DependencyInfo = {
   explanation: string;
@@ -90,8 +93,7 @@ export class SetupHelper {
     const dependencies: Record<string, DependencyInfo> = {
       node: {
         label: "Node.js",
-        explanation:
-          "Node.js is required to run Salesforce CLI and its plugins.",
+        explanation: t("depNodeExplanation"),
         installable: false,
         iconName: "utility:platform",
         prerequisites: [],
@@ -101,8 +103,7 @@ export class SetupHelper {
       },
       git: {
         label: "Git",
-        explanation:
-          "Git is the VCS (Version Control System) used to handle your Salesforce project sources. It also provides Git Bash for Windows.",
+        explanation: t("depGitExplanation"),
         installable: false,
         iconName: "utility:git_branch",
         prerequisites: [],
@@ -112,8 +113,7 @@ export class SetupHelper {
       },
       sf: {
         label: "Salesforce CLI (sf)",
-        explanation:
-          "The modern Salesforce CLI (sf) is required to run Salesforce commands used by the extension.",
+        explanation: t("depSfCliExplanation"),
         installable: true,
         iconName: "utility:terminal",
         prerequisites: ["node"],
@@ -124,8 +124,7 @@ export class SetupHelper {
       },
       "sfplugin:sfdx-hardis": {
         label: "sfdx-hardis",
-        explanation:
-          "sfdx-hardis is the main plugin this extension integrates with. Keep it up to date for features and bugfixes.",
+        explanation: t("depSfdxHardisExplanation"),
         installable: true,
         iconName: "utility:package",
         prerequisites: ["sf"],
@@ -135,8 +134,7 @@ export class SetupHelper {
       },
       "sfplugin:@salesforce/plugin-packaging": {
         label: "@salesforce/plugin-packaging",
-        explanation:
-          "@salesforce/plugin-packaging provides packaging commands used for package creation and versioning.",
+        explanation: t("depSfPackagingExplanation"),
         installable: true,
         iconName: "utility:package",
         prerequisites: ["sf"],
@@ -152,8 +150,7 @@ export class SetupHelper {
       },
       "sfplugin:sfdmu": {
         label: "SFDMU",
-        explanation:
-          "SFDMU (Salesforce Data Move Utility) is used for data import/export workflows integrated in the extension.",
+        explanation: t("depSfdmuExplanation"),
         installable: true,
         iconName: "utility:data_collection",
         prerequisites: ["sf"],
@@ -163,8 +160,7 @@ export class SetupHelper {
       },
       "sfplugin:sfdx-git-delta": {
         label: "sfdx-git-delta",
-        explanation:
-          "sfdx-git-delta helps to generate package.xml/diff based on your git changes.",
+        explanation: t("depGitDeltaExplanation"),
         installable: true,
         iconName: "utility:git_branch",
         prerequisites: ["sf"],
@@ -174,8 +170,7 @@ export class SetupHelper {
       },
       "sfplugin:sf-git-merge-driver": {
         label: "sf-git-merge-driver",
-        explanation:
-          "sf-git-merge-driver is a Git merge driver for Salesforce metadata files to reduce merge conflicts.",
+        explanation: t("depGitMergeDriverExplanation"),
         installable: true,
         iconName: "utility:git_branch",
         prerequisites: ["sf"],
@@ -219,9 +214,9 @@ export class SetupHelper {
             recommended: String(NODE_JS_MINIMUM_VERSION),
             status: "outdated",
             helpUrl: "https://nodejs.org/",
-            message: `Installed NodeJS major version ${major} is older than the recommended one ${minMajor}.\nIt is recommended to install NodeJS ${minMajor}, then restart VsCode.`,
+            message: t("depNodeOutdatedMessage", { major: String(major), minMajor: String(minMajor) }),
             installCommand: "https://nodejs.org/",
-            messageLinkLabel: `Download & install NodeJS (use ${platformLabel})`,
+            messageLinkLabel: t("depNodeInstallLink", { platformLabel }),
             upgradeAvailable: true,
           };
         }
@@ -236,9 +231,9 @@ export class SetupHelper {
         helpUrl: "https://nodejs.org/",
         message: ok
           ? undefined
-          : `Node.js is not installed or not found in PATH (required minimum version: ${NODE_JS_MINIMUM_VERSION})`,
+          : t("depNodeMissingMessage", { version: String(NODE_JS_MINIMUM_VERSION) }),
         messageLinkLabel:
-          "Download and install Node.js (use Windows Installer)",
+          t("depNodeDownloadLink"),
       };
     } catch {
       return {
@@ -249,9 +244,9 @@ export class SetupHelper {
         recommended: null,
         status: "error",
         helpUrl: "https://nodejs.org/",
-        message: `Node.js is not installed or not found in PATH (required minimum version: ${NODE_JS_MINIMUM_VERSION})`,
+        message: t("depNodeMissingMessage", { version: String(NODE_JS_MINIMUM_VERSION) }),
         messageLinkLabel:
-          "Download and install Node.js (use Windows Installer)",
+          t("depNodeDownloadLink"),
       };
     }
   }
@@ -275,8 +270,8 @@ export class SetupHelper {
         recommended: null,
         status: ok ? "ok" : "missing",
         helpUrl: "https://git-scm.com/",
-        message: ok ? undefined : "Git is not installed or not found in PATH",
-        messageLinkLabel: "Download and install Git (with Git Bash)",
+        message: ok ? undefined : t("depGitMissingMessage"),
+        messageLinkLabel: t("depGitDownloadLink"),
       };
     } catch {
       return {
@@ -287,8 +282,8 @@ export class SetupHelper {
         recommended: null,
         status: "error",
         helpUrl: "https://git-scm.com/",
-        message: "Git is not installed or not found in PATH",
-        messageLinkLabel: "Download and install Git (with Git Bash)",
+        message: t("depGitMissingMessage"),
+        messageLinkLabel: t("depGitDownloadLink"),
       };
     }
   }
@@ -328,8 +323,8 @@ export class SetupHelper {
           recommended,
           status: "error",
           message:
-            "Legacy sfdx-cli detected. Please uninstall it using `npm uninstall sfdx-cli -g` then upgrade to @salesforce/cli.",
-          messageLinkLabel: "Uninstall sfdx-cli then install sf",
+            t("depSfCliLegacyMessage"),
+          messageLinkLabel: t("depSfCliLegacyLink"),
           installCommand:
             "npm uninstall sfdx-cli --global && npm install @salesforce/cli --global",
           upgradeAvailable: true,
@@ -362,7 +357,7 @@ export class SetupHelper {
           version,
           recommended,
           status: "error",
-          message: `Non-npm installation detected at ${sfdxPath} (bad installation using Salesforce website executable installer).\nPlease uninstall Salesforce CLI in "Windows -> Uninstall program" (or the equivalent on Mac), then re-install using sfdx-hardis Wizard (NPM-based).`,
+          message: t("depSfCliNonNpmMessage", { path: sfdxPath }),
           installCommand: `npm install @salesforce/cli@${recommended || "latest"} -g`,
           upgradeAvailable: false,
         };
@@ -379,7 +374,7 @@ export class SetupHelper {
           status: "outdated",
           helpUrl:
             "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_unified.htm",
-          message: `Your sf CLI version ${version} differs from recommended ${recommended}`,
+          message: t("depSfCliOutdatedMessage", { version: version ?? "", recommended: recommended ?? "" }),
           installCommand: `npm install @salesforce/cli@${recommended} -g`,
           upgradeAvailable: true,
         };
@@ -441,12 +436,28 @@ export class SetupHelper {
       // Special treatment for sfdx-hardis minimal version requirement
       if (pluginName === "sfdx-hardis" && installedVersion) {
         const minimal = RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION || null;
+        const sfdxHardisTag = getSfdxHardisInstallTag();
+        // When running a pre-release extension, require alpha version
+        if (isExtensionPreRelease() && !installedVersion.includes("alpha")) {
+          return {
+            id: `sfplugin:${pluginName}`,
+            label: pluginName,
+            installed: true,
+            version: installedVersion,
+            recommended: "alpha",
+            status: "error",
+            helpUrl: `https://github.com/hardisgroupcom/sfdx-hardis`,
+            message: t("sfdxHardisPreReleaseAlphaMessage"),
+            installCommand: `sf plugins install ${pluginName}@alpha`,
+            upgradeAvailable: true,
+          };
+        }
         if (
           minimal &&
           minimal !== "beta" &&
+          !isExtensionPreRelease() &&
           this.compareVersions(installedVersion, minimal) < 0
         ) {
-          const versionToInstall = minimal === "beta" ? "beta" : "latest";
           return {
             id: `sfplugin:${pluginName}`,
             label: pluginName,
@@ -455,8 +466,8 @@ export class SetupHelper {
             recommended: minimal,
             status: "error",
             helpUrl: `https://github.com/hardisgroupcom/sfdx-hardis`,
-            message: `Your sfdx-hardis plugin version (${installedVersion}) is older than the recommended ${minimal}`,
-            installCommand: `sf plugins install ${pluginName}@${versionToInstall}`,
+            message: t("depSfdxHardisOldMessage", { version: installedVersion, minimal }),
+            installCommand: `sf plugins install ${pluginName}@${sfdxHardisTag}`,
             upgradeAvailable: true,
           };
         }
@@ -476,7 +487,7 @@ export class SetupHelper {
           recommended: latestPluginVersion,
           status: "outdated",
           helpUrl: `https://www.npmjs.com/package/${pluginName}`,
-          message: `A newer version (${latestPluginVersion}) of ${pluginName} is available`,
+          message: t("depSfPluginOutdatedMessage", { latest: latestPluginVersion ?? "", plugin: pluginName }),
           installCommand: `sf plugins install ${pluginName}`,
           upgradeAvailable: true,
         };
@@ -534,7 +545,7 @@ export class SetupHelper {
     if (this.hasUpdatesInProgress()) {
       return {
         success: false,
-        message: "An installation is already in progress",
+        message: t("installInProgress"),
       };
     }
     this.setUpdateInProgress(true, "sf");
@@ -546,7 +557,7 @@ export class SetupHelper {
             : "") +
           " -g",
         { fail: true, output: true },
-        "Installing Salesforce CLI...",
+        t("installingSalesforceCli"),
       );
       this.setUpdateInProgress(false, "sf");
       vscode.commands.executeCommand("vscode-sfdx-hardis.refreshPluginsView");
@@ -563,7 +574,7 @@ export class SetupHelper {
     if (this.hasUpdatesInProgress()) {
       return {
         success: false,
-        message: `An installation is already in progress`,
+        message: t("installInProgress"),
       };
     }
     this.setUpdateInProgress(true, pluginName);
@@ -578,20 +589,21 @@ export class SetupHelper {
           await execCommandWithProgress(
             "sf git merge driver disable",
             { fail: false, output: true },
-            "Disabling Salesforce Git Merge Driver before upgrade...",
+            t("gitMergeDriverDisablingBeforeUpgrade"),
           );
         }
       }
+      const installTag = pluginName === "sfdx-hardis" ? getSfdxHardisInstallTag() : "latest";
       await execCommandWithProgress(
-        `echo y | sf plugins install ${pluginName}@latest`,
+        `echo y | sf plugins install ${pluginName}@${installTag}`,
         { fail: true, output: true },
-        `Running install command for ${pluginName}...`,
+        t("runningInstallCommandFor", { plugin: pluginName }),
       );
       if (mergeDriverWasEnabled) {
         await execCommandWithProgress(
           "sf git merge driver enable",
           { fail: false, output: true },
-          "Re-enabling Salesforce Git Merge Driver after upgrade...",
+          t("gitMergeDriverReenablingAfterUpgrade"),
         );
       }
       this.setUpdateInProgress(false, pluginName);
@@ -603,13 +615,14 @@ export class SetupHelper {
     }
   }
 
+  /* jscpd:ignore-start */
   async installNpmPackage(
     packageName: string,
   ): Promise<{ success: boolean; message?: string }> {
     if (this.hasUpdatesInProgress()) {
       return {
         success: false,
-        message: `An installation is already in progress`,
+        message: t("installInProgress"),
       };
     }
     this.setUpdateInProgress(true, packageName);
@@ -626,4 +639,5 @@ export class SetupHelper {
       return { success: false, message: err?.message || String(err) };
     }
   }
+  /* jscpd:ignore-end */
 }

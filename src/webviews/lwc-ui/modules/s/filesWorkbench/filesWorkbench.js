@@ -1,6 +1,7 @@
 import { LightningElement, api, track } from "lwc";
+import { SharedMixin } from "s/sharedMixin";
 
-export default class FilesWorkbench extends LightningElement {
+export default class FilesWorkbench extends SharedMixin(LightningElement) {
   workspaces = [];
   selectedWorkspace = null;
   isLoading = false;
@@ -25,6 +26,7 @@ export default class FilesWorkbench extends LightningElement {
   };
 
   connectedCallback() {
+    super.connectedCallback();
     this.loadWorkspaces();
     // initialize responsive state and listen to window resize to toggle
     // action controls so only one set is rendered at any time.
@@ -91,6 +93,13 @@ export default class FilesWorkbench extends LightningElement {
   }
 
   @api
+  handleColorThemeMessage(type, data) {
+    // Delegate to the SharedMixin's implementation
+    if (super.handleColorThemeMessage)
+      super.handleColorThemeMessage(type, data);
+  }
+
+  @api
   initialize(data) {
     if (data && data.workspaces) {
       this.workspaces = data.workspaces;
@@ -135,8 +144,8 @@ export default class FilesWorkbench extends LightningElement {
         ...workspace,
         iconName: "standard:file",
         hasDescription: !!workspace.description,
-        overwriteParentRecords: workspace.overwriteParentRecords ? "Yes" : "No",
-        overwriteFiles: workspace.overwriteFiles ? "Yes" : "No",
+        overwriteParentRecords: workspace.overwriteParentRecords ? this.t("yesLabel") : this.t("noLabel"),
+        overwriteFiles: workspace.overwriteFiles ? this.t("yesLabel") : this.t("noLabel"),
         exportedFilesCount: workspace.exportedFilesCount || null,
         cssClass: this.getWorkspaceCssClass(workspace),
       }))
@@ -165,8 +174,8 @@ export default class FilesWorkbench extends LightningElement {
 
   get modalTitle() {
     return this.isEditMode
-      ? "Edit Files Import/Export Workspace"
-      : "Create New Files Import/Export Workspace";
+      ? this.t("editFilesWorkspace")
+      : this.t("createFilesWorkspace");
   }
 
   get canSaveWorkspace() {
@@ -182,7 +191,27 @@ export default class FilesWorkbench extends LightningElement {
   }
 
   get saveButtonLabel() {
-    return this.isEditMode ? "Update Workspace" : "Create Workspace";
+    return this.isEditMode ? this.t("updateWorkspaceLabel") : this.t("createWorkspaceLabel");
+  }
+
+  get exportedFilesCountLabel() {
+    return this.t("exportedFilesCount", { count: this.selectedWorkspace?.exportedFilesCount || 0 });
+  }
+
+  get selectedWorkspaceHasDescription() {
+    return !!this.selectedWorkspace?.description;
+  }
+
+  get selectedOverwriteParentRecordsLabel() {
+    return this.selectedWorkspace?.overwriteParentRecords
+      ? this.t("yesLabel")
+      : this.t("noLabel");
+  }
+
+  get selectedOverwriteFilesLabel() {
+    return this.selectedWorkspace?.overwriteFiles
+      ? this.t("yesLabel")
+      : this.t("noLabel");
   }
 
   // Event Handlers
@@ -420,25 +449,19 @@ export default class FilesWorkbench extends LightningElement {
 
   get fileNameFormatOptions() {
     return [
-      { label: 'Title (e.g., "Document Title")', value: "title" },
-      {
-        label: 'Title + ID (e.g., "Document Title_006xxx")',
-        value: "title_id",
-      },
-      {
-        label: 'ID + Title (e.g., "006xxx_Document Title")',
-        value: "id_title",
-      },
-      { label: 'ID only (e.g., "006xxx")', value: "id" },
+      { label: this.t("fileNameFormatTitle"), value: "title" },
+      { label: this.t("fileNameFormatTitleId"), value: "title_id" },
+      { label: this.t("fileNameFormatIdTitle"), value: "id_title" },
+      { label: this.t("fileNameFormatId"), value: "id" },
     ];
   }
 
   get fileTypesOptions() {
     return [
-      { label: "All file types", value: "all" },
-      { label: "PDF files only", value: "PDF" },
-      { label: "Image files only", value: "PNG,JPG,JPEG,GIF" },
-      { label: "Document files only", value: "PDF,DOC,DOCX,XLS,XLSX,PPT,PPTX" },
+      { label: this.t("allFileTypes"), value: "all" },
+      { label: this.t("pdfFilesOnly"), value: "PDF" },
+      { label: this.t("imageFilesOnly"), value: "PNG,JPG,JPEG,GIF" },
+      { label: this.t("documentFilesOnly"), value: "PDF,DOC,DOCX,XLS,XLSX,PPT,PPTX" },
     ];
   }
 }

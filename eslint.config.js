@@ -52,6 +52,7 @@ export default [
         {
           selector: "variable",
           format: ["camelCase", "UPPER_CASE"],
+          leadingUnderscore: "allow",
         },
         {
           selector: "parameter",
@@ -147,6 +148,7 @@ export default [
         {
           selector: "variable",
           format: ["camelCase", "UPPER_CASE"],
+          leadingUnderscore: "allow",
         },
         {
           selector: "parameter",
@@ -227,6 +229,7 @@ export default [
       "webpack.config.js",
       // Ignore LWC JS files handled by LWC compiler
       "src/webviews/lwc-ui/index.js",
+      "src/webviews/lwc-ui/stubs/**",
       "src/webviews/lwc-ui/modules/s/**",
     ],
   },

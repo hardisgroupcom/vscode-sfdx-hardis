@@ -1,10 +1,12 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import * as fs from "fs-extra";
+import { t } from "../i18n/i18n";
 
 export const sectionDefs = [
   {
-    label: "User Input",
+    label: "userInputSection",
+    value: "user-input",
     iconName: "utility:user",
     description: "How user input is handled in the extension.",
     keys: [
@@ -15,11 +17,13 @@ export const sectionDefs = [
     ],
   },
   {
-    label: "Theme",
+    label: "themeSection",
+    value: "theme",
     iconName: "utility:brush",
     description: "UI and theming options.",
     keys: [
       "vsCodeSfdxHardis.showWelcomeAtStartup",
+      "vsCodeSfdxHardis.theme.colorTheme",
       "vsCodeSfdxHardis.theme.menuIconType",
       "vsCodeSfdxHardis.theme.emojisInSections",
       "vsCodeSfdxHardis.disableVsCodeColors",
@@ -27,8 +31,9 @@ export const sectionDefs = [
     ],
   },
   {
-    label: "Performance",
-    iconName: "utility:performance",
+    label: "performanceSection",
+    value: "performance",
+    iconName: "utility:indicator_performance_period",
     description: "Performance and optimization settings.",
     keys: [
       "vsCodeSfdxHardis.autoUpdateDependencies",
@@ -37,13 +42,23 @@ export const sectionDefs = [
     ],
   },
   {
+    label: "languageSection",
+    value: "language",
+    iconName: "utility:translate",
+    description: "Language and localization settings.",
+    keys: [
+      "vsCodeSfdxHardis.lang",
+    ],
+  },
+  {
     label: "MCP",
-    iconName: "utility:server",
+    value: "mcp",
+    iconName: "utility:lightning_extension",
     description: "MCP Server settings.",
     keys: ["vsCodeSfdxHardis.mcp.autoStartSalesforceCliMcp"],
   },
   {
-    label: "Debug",
+    label: "debugSection",
     iconName: "utility:bug",
     description: "Debugging options for the extension.",
     keys: [
@@ -52,7 +67,8 @@ export const sectionDefs = [
     ],
   },
   {
-    label: "Other",
+    label: "other",
+    value: "other",
     iconName: "utility:settings",
     description: "Other settings related to the extension.",
     keys: [
@@ -80,7 +96,8 @@ export async function getExtensionConfigSections(
 
   // Build sections with merged config info
   const sections = sectionDefs.map((section) => ({
-    label: section.label,
+    label: t(section.label),
+    value: section.value,
     iconName: section.iconName,
     description: section.description,
     entries: section.keys.map((key) => {

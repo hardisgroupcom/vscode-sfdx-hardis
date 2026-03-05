@@ -3,6 +3,7 @@ import { prettifyFieldName } from "../stringUtils";
 import { isMajorBranch, isPreprod, isProduction } from "../orgConfigUtils";
 import { PullRequest, JobStatus } from "../gitProviders/types";
 import { GitProvider } from "../gitProviders/gitProvider";
+import { t } from "../../i18n/i18n";
 
 export class BranchStrategyMermaidBuilder {
   private isAuthenticated: boolean = false;
@@ -141,12 +142,12 @@ export class BranchStrategyMermaidBuilder {
             mergeTarget,
           );
           if (createPrUrl) {
-            linkLabel = `<a href='${createPrUrl}' target='_blank' style='color:#0176D3;font-weight:bold;text-decoration:underline;'>Create PR</a>`;
+            linkLabel = `<a href='${createPrUrl}' target='_blank' style='color:#0176D3;font-weight:bold;text-decoration:underline;'>${t('createPr')}</a>`;
           } else {
-            linkLabel = "No PR";
+            linkLabel = t('noPr');
           }
         } else {
-          linkLabel = this.isAuthenticated ? "No PR" : "Merge";
+          linkLabel = this.isAuthenticated ? t('noPr') : t('mergeLabel');
         }
 
         this.gitLinks.push({
@@ -223,8 +224,8 @@ export class BranchStrategyMermaidBuilder {
           pullRequest.number || pullRequest.id
             ? `#${pullRequest.number || pullRequest.id} ${this.getPrStatusEmoji(pullRequest.jobsStatus)}`
             : this.isAuthenticated
-              ? "No PR"
-              : "Merge";
+              ? t('noPr')
+              : t('mergeLabel');
         this.gitLinks.push({
           source: nodeName,
           target: this.sanitizeNodeName(pullRequest.targetBranch) + "Branch",
@@ -377,8 +378,9 @@ export class BranchStrategyMermaidBuilder {
     this.mermaidLines.push("");
 
     // Git branches
+    const gitBranchesLabel = t("gitBranches");
     this.mermaidLines.push(
-      this.indent("subgraph GitBranches [Git Branches]", 1),
+      this.indent(`subgraph GitBranches [${gitBranchesLabel}]`, 1),
     );
     this.mermaidLines.push(this.indent("direction TB", 2));
     for (const gitBranch of this.gitBranches) {
@@ -397,8 +399,9 @@ export class BranchStrategyMermaidBuilder {
       ["salesforceProd", "salesforceMajor"].includes(salesforceOrg.class),
     );
     if (majorOrgs.length > 0) {
+      const salesforceOrgsLabel = t("salesforceOrgs");
       this.mermaidLines.push(
-        this.indent("subgraph SalesforceOrgs [Salesforce Orgs]", 1),
+        this.indent(`subgraph SalesforceOrgs [${salesforceOrgsLabel}]`, 1),
       );
       this.mermaidLines.push(this.indent("direction TB", 2));
       for (const salesforceOrg of majorOrgs) {
@@ -568,7 +571,7 @@ export class BranchStrategyMermaidBuilder {
         if (link.jobUrl) {
           // Extract just the emoji from the label (e.g., "Deploy ✅" -> "✅")
           const emoji = label.replace(/^Deploy\s+/, "");
-          label = `<a href='${link.jobUrl}' target='_blank' style='color:#0176D3;font-weight:bold;text-decoration:underline;'>Deploy ${emoji}</a>`;
+          label = `<a href='${link.jobUrl}' target='_blank' style='color:#0176D3;font-weight:bold;text-decoration:underline;'>${t('deployment')} ${emoji}</a>`;
         }
         this.mermaidLines.push(
           this.indent(`${link.source} -.->|"${label}"| ${link.target}`, 1),

@@ -1,4 +1,5 @@
 import { LightningElement, api, track } from "lwc";
+import { SharedMixin } from "s/sharedMixin";
 
 /**
  * Documentation Configuration LWC Component
@@ -7,7 +8,7 @@ import { LightningElement, api, track } from "lwc";
  * - Prompt template override
  * - AI provider & doc deployment settings
  */
-export default class DocumentationConfig extends LightningElement {
+export default class DocumentationConfig extends SharedMixin(LightningElement) {
   // Config
   @track configLoading = true;
   @track configSections = [];
@@ -23,6 +24,7 @@ export default class DocumentationConfig extends LightningElement {
   _schema = {};
 
   connectedCallback() {
+    super.connectedCallback();
     // Request config data from extension
     window.sendMessageToVSCode({ type: "requestDocConfig" });
   }
@@ -37,6 +39,10 @@ export default class DocumentationConfig extends LightningElement {
     }
   }
 
+  get aiDocConfigSectionDescHtml() {
+    return this.t("aiDocConfigSectionDesc");
+  }
+
   @api
   handleMessage(type, data) {
     if (type === "initialize") {
@@ -46,6 +52,13 @@ export default class DocumentationConfig extends LightningElement {
       this._buildConfigUI(data?.config || {}, data?.schema || {});
       this.configLoading = false;
     }
+  }
+
+  @api
+  handleColorThemeMessage(type, data) {
+    // Delegate to the SharedMixin's implementation
+    if (super.handleColorThemeMessage)
+      super.handleColorThemeMessage(type, data);
   }
 
   // ─── Config UI builder ───────────────────────────────────────────────
@@ -85,10 +98,10 @@ export default class DocumentationConfig extends LightningElement {
   _extractLlmProviderOptions() {
     // Provider options are fixed based on provider type, not schema
     this.providerOptions = [
-      { label: "-- None --", value: "" },
-      { label: "Langchain LLMs", value: "langchain" },
-      { label: "Agentforce", value: "agentforce" },
-      { label: "OpenAI Direct", value: "openai" },
+      { label: this.t("noneOption"), value: "" },
+      { label: this.t("langchainLlms"), value: "langchain" },
+      { label: this.t("agentforceOption"), value: "agentforce" },
+      { label: this.t("openaiDirect"), value: "openai" },
     ];
   }
 
@@ -148,7 +161,7 @@ export default class DocumentationConfig extends LightningElement {
     const providerFields = [
       {
         key: "providerSelection",
-        title: "Provider",
+        title: this.t("providerLabel"),
         description: "",
         value: this.providerSelection,
         isBoolean: false,
@@ -197,8 +210,8 @@ export default class DocumentationConfig extends LightningElement {
 
     sections.push(
       this._buildSectionFromFields(
-        "AI Provider & Settings",
-        "Select the AI provider, prompts language, and configure provider-specific settings.",
+        this.t("aiProviderSettingsSection"),
+        this.t("aiProviderSettingsDesc"),
         [...providerFields, ...providerSpecificFields],
         true,
         false,
@@ -208,8 +221,8 @@ export default class DocumentationConfig extends LightningElement {
 
     sections.push(
       this._buildSection(
-        "Org Monitoring & Documentation Deployment",
-        "Configure automatic deployment of generated HTML documentation during sfdx-hardis Org Monitoring metadata backup command.",
+        this.t("orgMonitoringDeploySection"),
+        this.t("orgMonitoringDeployDesc"),
         ["docDeployToCloudflare", "docDeployToOrg"],
         true,
         true, // Show inline descriptions instead of help icons
@@ -286,7 +299,7 @@ export default class DocumentationConfig extends LightningElement {
         value: v,
       }));
       // prepend empty option
-      options = [{ label: "-- None --", value: "" }, ...options];
+      options = [{ label: this.t("noneOption"), value: "" }, ...options];
     }
 
     // Format the display value

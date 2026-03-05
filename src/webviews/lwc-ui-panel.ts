@@ -6,8 +6,10 @@ import {
   isWebVsCode,
 } from "../utils";
 import { Logger } from "../logger";
+import { getAllTranslations, getCurrentLocale, t } from "../i18n/i18n";
 
 type MessageListener = (messageType: string, data: any) => void;
+type ImagePathMap = Record<string, string[]>;
 
 export class LwcUiPanel {
   private readonly panel: vscode.WebviewPanel;
@@ -62,6 +64,12 @@ export class LwcUiPanel {
     lwcId: string,
     initData?: any,
   ): LwcUiPanel {
+    // Embed translations early so they are available in the initial HTML (data-init-data)
+    // and the LWC bootstrapper never sees raw key names on first render.
+    const data = initData || {};
+    data.translations = getAllTranslations();
+    data.locale = getCurrentLocale();
+
     const column = vscode.window.activeTextEditor
       ? vscode.window.activeTextEditor.viewColumn
       : undefined;
@@ -100,7 +108,13 @@ export class LwcUiPanel {
       "cloudity-logo.svg",
     );
 
-    const lwcUiPanel = new LwcUiPanel(panel, extensionUri, lwcId, initData);
+    const resolvedData = LwcUiPanel.resolveImagePathsInData(
+      panel.webview,
+      extensionUri,
+      data,
+    );
+
+    const lwcUiPanel = new LwcUiPanel(panel, extensionUri, lwcId, resolvedData);
     lwcUiPanel.setPanelTitleFromLwcId();
     return lwcUiPanel;
   }
@@ -130,18 +144,26 @@ export class LwcUiPanel {
     const lwcDefinitions: {
       [key: string]: string;
     } = {
-      "s-prompt-input": "Prompt Input",
-      "s-command-execution": "Command Execution",
-      "s-pipeline": "DevOps Pipeline",
-      "s-pipeline-config": "Pipeline Settings",
-      "s-extension-config": "Extension Settings",
-      "s-data-workbench": "Data Import/Export Workbench",
-      "s-files-workbench": "Files Import/Export Workbench",
-      "s-documentation-workbench": "Documentation Workbench",
-      "s-documentation-config": "Documentation Settings",
-      "s-setup": "Install Dependencies",
+      "s-apex-tests-select": t("apexTests"),
+      "s-command-execution": t("commandExecution"),
+      "s-data-workbench": t("dataImportExportWorkbench"),
+      "s-deployment-action": t("deploymentActionDetails"),
+      "s-documentation-config": t("documentationConfig"),
+      "s-documentation-workbench": t("documentationWorkbench"),
+      "s-extension-config": t("extensionConfig"),
+      "s-files-workbench": t("filesImportExportWorkbench"),
+      "s-installed-packages": t("installedPackagesManager"),
+      "s-metadata-retriever": t("metadataRetriever"),
+      "s-org-manager": t("orgsManager"),
+      "s-org-monitoring": t("orgMonitoringWorkbench"),
+      "s-package-xml": t("packageXml"),
+      "s-pipeline": t("devOpsPipeline"),
+      "s-pipeline-config": t("pipelineConfig"),
+      "s-prompt-input": t("promptInput"),
+      "s-setup": t("installDependencies"),
+      "s-welcome": t("welcomeTitle"),
     };
-    const panelTitle = lwcDefinitions[this.lwcId] || "SFDX Hardis";
+    const panelTitle = lwcDefinitions[this.lwcId] || t("panelTitleDefault");
     this.panel.title = panelTitle;
   }
 
@@ -189,15 +211,34 @@ export class LwcUiPanel {
    * @param data The data to send to the webview for initialization
    */
   public sendInitializationData(data: any): void {
-    this.initializationData = data;
+    const resolvedData = LwcUiPanel.resolveImagePathsInData(
+      this.panel.webview,
+      this.extensionUri,
+      data,
+    );
+    this.initializationData = resolvedData;
     const vsCodeSfdxHardisConfiguration =
       vscode.workspace.getConfiguration("vsCodeSfdxHardis");
     if (vsCodeSfdxHardisConfiguration) {
-      data.vsCodeSfdxHardisConfiguration = vsCodeSfdxHardisConfiguration;
+      resolvedData.vsCodeSfdxHardisConfiguration = vsCodeSfdxHardisConfiguration;
     }
+
+    // Include translations for LWC components (only if not already set by display())
+    if (!resolvedData.translations) {
+      resolvedData.translations = getAllTranslations();
+      resolvedData.locale = getCurrentLocale();
+    }
+
+    // Always add colorTheme to initialization data for consistent theme support
+    const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis.theme");
+    const colorThemeConfig = config.get("colorTheme", "auto");
+    const { colorTheme, colorContrast } = LwcUiPanel.resolveTheme(colorThemeConfig);
+    resolvedData.colorTheme = colorTheme;
+    resolvedData.colorContrast = colorContrast;
+
     this.panel.webview.postMessage({
       type: "initialize",
-      data: data,
+      data: resolvedData,
     });
   }
 
@@ -289,7 +330,7 @@ export class LwcUiPanel {
     // Avoid accidental massive clipboard payloads
     const clipped = text.length > 10000 ? text.slice(0, 10000) : text;
     await vscode.env.clipboard.writeText(clipped);
-    vscode.window.showInformationMessage("Copied to clipboard.");
+    vscode.window.showInformationMessage(t("copiedToClipboard"));
 
     // Optional ack (allows webview toast in the future)
     this.sendMessage({
@@ -306,7 +347,7 @@ export class LwcUiPanel {
     command: string;
   }): Promise<void> {
     if (!data || !data.command || typeof data.command !== "string") {
-      vscode.window.showErrorMessage("No VS Code command specified to run.");
+      vscode.window.showErrorMessage(t("noVsCodeCommandSpecified"));
       return;
     }
     try {
@@ -314,7 +355,7 @@ export class LwcUiPanel {
     } catch (error) {
       Logger.log("Error running VS Code command:\n" + JSON.stringify(error));
       vscode.window.showErrorMessage(
-        `Failed to run VS Code command: ${data.command}`,
+        t("failedToRunVsCodeCommand", { command: data.command }),
       );
     }
   }
@@ -336,7 +377,7 @@ export class LwcUiPanel {
     progressMessage: string;
   }): Promise<void> {
     if (!data || !data.command || typeof data.command !== "string") {
-      vscode.window.showErrorMessage("No internal command specified to run.");
+      vscode.window.showErrorMessage(t("noInternalCommandSpecified"));
       return;
     }
     const command = data.command;
@@ -346,7 +387,7 @@ export class LwcUiPanel {
       command.includes("||")
     ) {
       vscode.window.showErrorMessage(
-        "Only 'sfdx' or 'sf' commands can be run as internal commands.",
+        t("onlySfCommandsAllowed"),
       );
       return;
     }
@@ -495,7 +536,7 @@ export class LwcUiPanel {
       }
     } catch (error) {
       Logger.log("Error opening file:\n" + JSON.stringify(error));
-      vscode.window.showErrorMessage(`Failed to open file: ${error}`);
+      vscode.window.showErrorMessage(t("failedToOpenFile", { error }));
     }
   }
 
@@ -509,14 +550,14 @@ export class LwcUiPanel {
       const folderUri = vscode.Uri.file(resolvedPath);
       const stat = await vscode.workspace.fs.stat(folderUri);
       if (!(stat.type & vscode.FileType.Directory)) {
-        vscode.window.showErrorMessage(`Path is not a folder: ${resolvedPath}`);
+        vscode.window.showErrorMessage(t("pathIsNotAFolder", { path: resolvedPath }));
         return;
       }
       await vscode.commands.executeCommand("revealInExplorer", folderUri);
       Logger.log(`Revealed folder in explorer: ${resolvedPath}`);
     } catch (error) {
       Logger.log("Error revealing folder:\n" + JSON.stringify(error));
-      vscode.window.showErrorMessage(`Failed to open folder: ${error}`);
+      vscode.window.showErrorMessage(t("failedToOpenFolder", { error }));
     }
   }
 
@@ -530,7 +571,7 @@ export class LwcUiPanel {
       await vscode.env.openExternal(uri);
     } catch (error) {
       Logger.log("Error opening external URL:\n" + JSON.stringify(error));
-      vscode.window.showErrorMessage(`Failed to open URL: ${url}`);
+      vscode.window.showErrorMessage(t("failedToOpenUrl", { url }));
     }
   }
 
@@ -578,17 +619,25 @@ export class LwcUiPanel {
 
       // Show appropriate success message
       if (data.addElements || data.removeElements) {
-        let message = `VsCode configuration '${data.configKey}' updated`;
+        let message = t("configKeyUpdated", { configKey: data.configKey });
         if (data.addElements && data.addElements.length > 0) {
-          message += ` (added: ${data.addElements.join(", ")})`;
+          message += t("configKeyUpdatedAdded", { elements: data.addElements.join(", ") });
         }
         if (data.removeElements && data.removeElements.length > 0) {
-          message += ` (removed: ${data.removeElements.join(", ")})`;
+          message += t("configKeyUpdatedRemoved", { elements: data.removeElements.join(", ") });
         }
-        vscode.window.showInformationMessage(message);
+        vscode.window.withProgress(
+          { location: vscode.ProgressLocation.Notification, title: message, cancellable: false },
+          () => new Promise<void>((resolve) => setTimeout(resolve, 3000)),
+        );
       } else {
-        vscode.window.showInformationMessage(
-          `VsCode configuration '${data.configKey}' updated with value: ${data.value}`,
+        vscode.window.withProgress(
+          {
+            location: vscode.ProgressLocation.Notification,
+            title: t("configKeyUpdatedWithValue", { configKey: data.configKey, value: data.value }),
+            cancellable: false,
+          },
+          () => new Promise<void>((resolve) => setTimeout(resolve, 3000)),
         );
       }
     } catch (error) {
@@ -596,7 +645,7 @@ export class LwcUiPanel {
         "Error updating VS Code configuration:\n" + JSON.stringify(error),
       );
       vscode.window.showErrorMessage(
-        `Failed to update configuration: ${data.configKey}`,
+        t("failedToUpdateConfigKey", { configKey: data.configKey }),
       );
     }
   }
@@ -627,6 +676,68 @@ export class LwcUiPanel {
     this.panel.webview.html = this.getHtmlForWebview(webview);
   }
 
+  /**
+   * Refresh the webview HTML (useful when configuration changes, like theme)
+   */
+  public refresh(data: any): void {
+    let shouldUpdate = true;
+    if (data?.translations) {
+      this.sendMessage({
+        type: "updateTranslations",
+        data
+      });
+      shouldUpdate = false;
+    }
+    if (data?.colorTheme) {
+      this.sendMessage({
+        type: "updateTheme",
+        data
+      });
+      shouldUpdate = false;
+    }
+    if (shouldUpdate) {
+      this.update();
+    }
+  }
+
+  /**
+   * Resolve the theme to use based on the input and VS Code's active theme
+   * @param theme The input theme, can be "auto", "dark", "light", "vscode"
+   * @returns An object with colorTheme and colorContrast properties
+   */
+  public static resolveTheme(theme: string): any {
+    const resultTheme = {
+      colorTheme: "light",
+      colorContrast: ""
+    }
+    if (!theme || theme === "auto") {
+      const vsCodeTheme = vscode.window.activeColorTheme.kind;
+      switch (vsCodeTheme) {
+        case vscode.ColorThemeKind.HighContrast:
+          resultTheme.colorTheme = "dark";
+          resultTheme.colorContrast = "high";
+          break;
+        case vscode.ColorThemeKind.Dark:
+          resultTheme.colorTheme = "dark";
+          break;
+        case vscode.ColorThemeKind.HighContrastLight:
+          resultTheme.colorTheme = "light";
+          resultTheme.colorContrast = "high";
+          break;
+        case vscode.ColorThemeKind.Light:
+        default:
+          resultTheme.colorTheme = "light";
+          break;
+      }
+    } else {
+      const themeParts = theme.split("-", 2);
+      resultTheme.colorTheme = themeParts[0];
+      resultTheme.colorContrast = themeParts.length > 1 ? themeParts[1] : "";
+    }
+
+    return resultTheme;
+  }
+
   private getHtmlForWebview(webview: vscode.Webview) {
     // Get the local path to main script run in the webview, then convert it to a uri we can use in the webview.
     const scriptUri = webview.asWebviewUri(
@@ -649,12 +760,35 @@ export class LwcUiPanel {
       vscode.Uri.joinPath(this.extensionUri, "out", "assets", "icons"),
     );
 
+    // Global theme stylesheet (built/copied to out/assets/styles/global-theme.css by the build)
+    const globalThemeVarsCssUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.extensionUri, "out", "assets", "styles", "global-theme-variables.css"),
+    );
+    const globalThemeCssUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.extensionUri, "out", "assets", "styles", "global-theme.css"),
+    );
+
+    // Determine theme based on configuration
+    const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis.theme");
+    const colorThemeConfig = config.get("colorTheme", "auto");
+    const { colorTheme, colorContrast } = LwcUiPanel.resolveTheme(colorThemeConfig);
+    const initData = this.initializationData || {};
+    initData.colorTheme = colorTheme;
+    initData.colorContrast = colorContrast;
+
     // Safely serialize initialization data
-    const initDataJson = this.initializationData
-      ? JSON.stringify(this.initializationData)
+    const initDataJson = JSON.stringify(initData)
           .replace(/'/g, "&#39;")
-          .replace(/"/g, "&quot;")
-      : "{}";
+          .replace(/"/g, "&quot;");
+
+    const mermaidTheme = {
+      clusterBkg: "#EAF5FC",
+      edgeLabelBackground: "rgba(232,232,232, 0.8)"
+    }
+    if (colorTheme === "dark") {
+      mermaidTheme.clusterBkg = "#333";
+      mermaidTheme.edgeLabelBackground = "rgba(77, 77, 77, 0.5)";
+    }
 
     return `<!DOCTYPE html>
       <html lang="en">
@@ -668,10 +802,14 @@ export class LwcUiPanel {
         <title>SFDX Hardis LWC UI</title>
         <style>
           body { margin: 0; padding: 0; }
-          #app { width: 100%; height: 100vh; }
+          #app { width: 100%; min-height: 100vh; height: auto; }
         </style>
+
+        <!-- Global theme stylesheet: always included, handles both light and dark themes. -->
+        <link rel="stylesheet" href="${globalThemeVarsCssUri}">
+        <link rel="stylesheet" href="${globalThemeCssUri}">
       </head>
-      <body class="slds-scope slds-theme_default">
+      <body class="slds-scope blue-back" data-theme="${colorTheme}" data-contrast="${colorContrast}">
         <div id="app" data-lwc-id="${this.lwcId}" data-init-data="${initDataJson}"></div>
         
         <script>
@@ -684,12 +822,51 @@ export class LwcUiPanel {
               startOnLoad: false,
               securityLevel: 'loose',
               themeVariables: {
-                clusterBkg: "#EAF5FC"
+                clusterBkg: "${mermaidTheme.clusterBkg}",
+                edgeLabelBackground: "${mermaidTheme.edgeLabelBackground}"
               }
             });
         </script>
         <script src="${scriptUri}"></script>
       </body>
       </html>`;
+  }
+
+  private static resolveImagePathsInData(
+    webview: vscode.Webview,
+    extensionUri: vscode.Uri,
+    data: any,
+  ): any {
+    if (!data) {
+      return data;
+    }
+
+    const imagePaths = data.imagePaths as ImagePathMap | undefined;
+    if (!imagePaths || typeof imagePaths !== "object") {
+      return data;
+    }
+
+    const resolvedImages: Record<string, string> = {};
+    for (const [key, pathParts] of Object.entries(imagePaths)) {
+      if (!Array.isArray(pathParts) || pathParts.length === 0) {
+        continue;
+      }
+      const resourceUri = vscode.Uri.joinPath(
+        extensionUri,
+        "out",
+        "resources",
+        "webviews",
+        ...pathParts,
+      );
+      resolvedImages[key] = webview.asWebviewUri(resourceUri).toString();
+    }
+
+    data.images = {
+      ...(data.images || {}),
+      ...resolvedImages,
+    };
+
+    delete data.imagePaths;
+    return data;
   }
 }

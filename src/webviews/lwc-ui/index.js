@@ -14,10 +14,36 @@ function routeMessageToComponent(message) {
   }
 
   if (message.type === "initialize") {
+    if (message.data?.images) {
+      window.__lwcImages = message.data.images;
+      if (typeof component.initializeImages === "function") {
+        component.initializeImages(message.data.images);
+      }
+    }
     if (typeof component.initialize === "function") {
       component.initialize(message.data);
     } else if (typeof component.showPrompt === "function") {
       component.showPrompt(message.data);
+    }
+  }
+
+  if (message.type === "updateTheme") {
+    if (message.data?.colorTheme && document?.body) {
+      document.body.setAttribute("data-theme", message.data?.colorTheme);
+      document.body.setAttribute("data-contrast", message.data?.colorContrast);
+      if (typeof component.handleColorThemeMessage === "function") {
+        component.handleColorThemeMessage(message.type, message.data);
+      }
+    }
+  }
+
+  if (message.type === "updateTranslations") {
+    if (message.data?.translations) {
+      window.__lwcTranslations = message.data.translations;
+      window.__lwcLocale = message.data.locale || "en";
+      if (typeof component.initTranslations === "function") {
+        component.initTranslations(message.data);
+      }
     }
   }
 
@@ -123,6 +149,16 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.error(`❌ No LWC class found for ID: ${lwcId}`);
         return;
       }
+      // Expose translations globally BEFORE createElement so SharedMixin.connectedCallback
+      // can read them on first mount — zero-delay translation on first render.
+      if (initData?.translations) {
+        window.__lwcTranslations = initData.translations;
+        window.__lwcLocale = initData.locale || "en";
+      }
+      if (initData?.images) {
+        window.__lwcImages = initData.images;
+      }
+
       // Dynamically import the LWC class using the static import map
       const lwcClass = (await lwcImportFn()).default;
 
@@ -137,6 +173,11 @@ document.addEventListener("DOMContentLoaded", async () => {
       console.log("✅ LWC component mounted successfully!");
 
       flushPendingMessages();
+
+      // Avoid flash of unthemed content by applying theme early
+      if (initData?.colorTheme && element.handleColorThemeMessage) {
+        element.handleColorThemeMessage("updateTheme", { colorTheme: initData.colorTheme, colorContrast: initData.colorContrast } );
+      }
 
       // Wait a bit for the component to fully initialize
       setTimeout(() => {
