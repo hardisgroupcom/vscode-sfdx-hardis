@@ -44,6 +44,13 @@
   scrollbar-width: thin;
 }
 
+.workspace-list-container lightning-card,
+.workspace-detail-container lightning-card {
+  --slds-c-card-radius-border: 0.75rem;
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
 .workspace-list::-webkit-scrollbar {
   width: 8px;
 }

@@ -125,6 +125,83 @@
   align-self: center;
 }
 
+/* Detail section styling aligned with Data Workbench */
+.detail-section {
+  border: 1px solid var(--slds-g-color-border-base-1, #e5e5e5);
+  border-radius: 0.25rem;
+  background: var(--slds-g-color-neutral-base-100, #fff);
+  margin-bottom: 0.75rem;
+  overflow: hidden;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  background: var(--slds-g-color-neutral-base-95, #f3f3f3);
+  border-bottom: 1px solid var(--slds-g-color-border-base-1, #e5e5e5);
+  min-height: 2.25rem;
+}
+
+.section-header-left {
+  display: flex;
+  align-items: center;
+}
+
+.section-header-left h3 {
+  margin: 0;
+  letter-spacing: 0.05em;
+  font-size: 0.7rem;
+}
+
+.section-header-right {
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.properties-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  padding: 0.5rem 0.75rem;
+}
+
+.property-item {
+  display: flex;
+  flex-direction: column;
+  padding: 0.35rem 0;
+}
+
+.property-item_full {
+  grid-column: 1 / -1;
+}
+
+.property-label {
+  font-size: 0.7rem;
+  color: var(--slds-g-color-neutral-base-30, #706e6b);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 0.125rem;
+}
+
+.property-value {
+  font-size: 0.8125rem;
+  color: var(--slds-g-color-text-default, #181818);
+  word-break: break-word;
+}
+
+.object-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.object-badge {
+  font-size: 0.65rem !important;
+}
+
 /* Ensure toggle labels and help text are properly aligned */
 fieldset .slds-form-element .slds-grid {
   min-height: 2.5rem;
@@ -334,6 +411,13 @@ lightning-button-menu .slds-dropdown {
   height: 100%;
   display: flex;
   flex-direction: column;
+}
+
+.workspace-list-container lightning-card,
+.workspace-detail-container lightning-card {
+  --slds-c-card-radius-border: 0.75rem;
+  border-radius: 0.75rem;
+  overflow: hidden;
 }
 
 .workspace-list-container .slds-card__body {

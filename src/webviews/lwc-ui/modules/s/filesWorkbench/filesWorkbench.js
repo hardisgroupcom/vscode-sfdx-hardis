@@ -198,6 +198,22 @@ export default class FilesWorkbench extends SharedMixin(LightningElement) {
     return this.t("exportedFilesCount", { count: this.selectedWorkspace?.exportedFilesCount || 0 });
   }
 
+  get selectedWorkspaceHasDescription() {
+    return !!this.selectedWorkspace?.description;
+  }
+
+  get selectedOverwriteParentRecordsLabel() {
+    return this.selectedWorkspace?.overwriteParentRecords
+      ? this.t("yesLabel")
+      : this.t("noLabel");
+  }
+
+  get selectedOverwriteFilesLabel() {
+    return this.selectedWorkspace?.overwriteFiles
+      ? this.t("yesLabel")
+      : this.t("noLabel");
+  }
+
   // Event Handlers
   handleWorkspaceSelect(event) {
     const workspacePath = event.currentTarget.dataset.path;

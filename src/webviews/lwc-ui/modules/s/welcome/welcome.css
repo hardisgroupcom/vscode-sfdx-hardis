@@ -150,6 +150,13 @@
     display: block;
 }
 
+.icon-selector-flag {
+    object-fit: cover;
+    border-radius: 50%;
+    border: 1px solid var(--slds-g-color-border-base-4, #c9c9c9);
+    box-sizing: border-box;
+}
+
 .icon-selector-option-label {
     white-space: nowrap;
 }

@@ -34,28 +34,28 @@
                         ></lightning-input>
                         <div class="icon-selector" title={i18n.langSelectTooltip}>
                             <button class="icon-selector-button" onclick={toggleLangDropdown}>
-                                <img class="icon-selector-img" src={currentLangFlagSrc} alt="">
+                                <img class="icon-selector-img icon-selector-flag" src={currentLangFlagSrc} alt="">
                             </button>
                             <template lwc:if={langDropdownOpen}>
                                 <div class="icon-selector-dropdown">
                                     <div class="icon-selector-option" data-lang="auto" onclick={handleLangChange}>
-                                        <img class="icon-selector-img" src={flagGlobeSrc} alt="">
+                                        <img class="icon-selector-img icon-selector-flag" src={flagGlobeSrc} alt="">
                                         <span class="icon-selector-option-label">{i18n.langVsCodeAuto}</span>
                                     </div>
                                     <div class="icon-selector-option" data-lang="en" onclick={handleLangChange}>
-                                        <img class="icon-selector-img" src={flagEnSrc} alt="">
+                                        <img class="icon-selector-img icon-selector-flag" src={flagEnSrc} alt="">
                                         <span class="icon-selector-option-label">{i18n.langEnglish}</span>
                                     </div>
                                     <div class="icon-selector-option" data-lang="es" onclick={handleLangChange}>
-                                        <img class="icon-selector-img" src={flagEsSrc} alt="">
+                                        <img class="icon-selector-img icon-selector-flag" src={flagEsSrc} alt="">
                                         <span class="icon-selector-option-label">{i18n.langSpanish}</span>
                                     </div>
                                     <div class="icon-selector-option" data-lang="fr" onclick={handleLangChange}>
-                                        <img class="icon-selector-img" src={flagFrSrc} alt="">
+                                        <img class="icon-selector-img icon-selector-flag" src={flagFrSrc} alt="">
                                         <span class="icon-selector-option-label">{i18n.langFrench}</span>
                                     </div>
                                     <div class="icon-selector-option" data-lang="ja" onclick={handleLangChange}>
-                                        <img class="icon-selector-img" src={flagJaSrc} alt="">
+                                        <img class="icon-selector-img icon-selector-flag" src={flagJaSrc} alt="">
                                         <span class="icon-selector-option-label">{i18n.langJapanese}</span>
                                     </div>
                                 </div>
