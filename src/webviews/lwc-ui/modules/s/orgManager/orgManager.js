@@ -236,7 +236,7 @@ export default class OrgManager extends SharedMixin(LightningElement) {
             if (!isNaN(exp) && exp < now) expired = true;
           }
         } catch (e) {
-          // ignore date parse errors
+          // ignore date parse errors ^^
         }
         const isProduction =
           (o.orgType || "").toString().toLowerCase() === "production";
