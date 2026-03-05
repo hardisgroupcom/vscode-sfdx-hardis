@@ -114,7 +114,10 @@ export default class OrgManager extends SharedMixin(LightningElement) {
         if (isConnected) {
           actions.push({ label: this.t("openLabel"), name: "open" });
           if (!o.isDefaultUsername) {
-            actions.push({ label: this.t("setAsDefaultOrg"), name: "setDefault" });
+            actions.push({
+              label: this.t("setAsDefaultOrg"),
+              name: "setDefault",
+            });
           }
           if (o.isDevHub && !o.isDefaultDevHubUsername) {
             actions.push({

@@ -12,7 +12,9 @@ import { SharedMixin } from "s/sharedMixin";
  *  - Run locally (MkDocs)
  *  - Open configuration panel for advanced options
  */
-export default class DocumentationWorkbench extends SharedMixin(LightningElement) {
+export default class DocumentationWorkbench extends SharedMixin(
+  LightningElement,
+) {
   // Generation options (state tracked here, synced with config panel)
   @track generatePdf = false;
   @track generateExcel = false;

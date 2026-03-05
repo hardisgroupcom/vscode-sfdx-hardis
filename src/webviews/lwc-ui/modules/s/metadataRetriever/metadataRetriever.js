@@ -204,7 +204,9 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
   get metadataTypeOptions() {
     // In All Metadata mode, don't include "All" option
     const options =
-      this.queryMode === "allMetadata" ? [] : [{ label: this.t("allLabel"), value: "All" }];
+      this.queryMode === "allMetadata"
+        ? []
+        : [{ label: this.t("allLabel"), value: "All" }];
     if (this.metadataTypes && Array.isArray(this.metadataTypes)) {
       return options.concat(this.metadataTypes);
     }
@@ -232,9 +234,7 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
   }
 
   get checkLocalTooltip() {
-    return this.checkLocalAvailable
-      ? ""
-      : this.t("noProjectJsonFound");
+    return this.checkLocalAvailable ? "" : this.t("noProjectJsonFound");
   }
 
   get hasResults() {

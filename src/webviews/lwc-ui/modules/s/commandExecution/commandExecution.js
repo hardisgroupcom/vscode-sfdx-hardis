@@ -500,7 +500,9 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
     // Add initial "Started" action log
     this.addLogLine({
       logType: "action",
-      message: this.t("commandStarted", { command: context.command || this.i18n.sfdxHardisCommand }),
+      message: this.t("commandStarted", {
+        command: context.command || this.i18n.sfdxHardisCommand,
+      }),
       timestamp: this.startTime,
     });
   }
@@ -1001,7 +1003,10 @@ ${resultMessage}`;
           timestamp: newLogData.timestamp,
           iconName: iconInfo.iconName,
           iconVariant: iconInfo.variant,
-          useSpinner: this.shouldUseSpinner({ ...baseLog, isRunning: isRunning }),
+          useSpinner: this.shouldUseSpinner({
+            ...baseLog,
+            isRunning: isRunning,
+          }),
           formattedTimestamp: this.formatTimestamp(newLogData.timestamp),
           cssClass: this.getLogTypeClass(newLogData.logType),
           isSubCommand: true,
@@ -1098,7 +1103,9 @@ ${resultMessage}`;
     const logType = success ? "success" : "error";
 
     // Create completion message based on status
-    let completionMessage = success ? this.i18n.commandCompletedSuccessfully : this.i18n.commandFailed;
+    let completionMessage = success
+      ? this.i18n.commandCompletedSuccessfully
+      : this.i18n.commandFailed;
     if (status) {
       completionMessage = this.t("commandStatus", { status });
     }
@@ -1271,12 +1278,17 @@ ${resultMessage}`;
         progressPercentage = Math.round(
           (section.currentStep / section.totalSteps) * 100,
         );
-        progressStepText = this.t("progressStepsOf", { current: section.currentStep, total: section.totalSteps });
+        progressStepText = this.t("progressStepsOf", {
+          current: section.currentStep,
+          total: section.totalSteps,
+        });
         if (section.isActive) {
           progressTimeEstimation = section.estimatedRemainingTime || "";
         } else {
           const elapsed = this.calculateSectionDuration(section);
-          progressTimeEstimation = elapsed ? this.t("progressElapsed", { elapsed }) : "";
+          progressTimeEstimation = elapsed
+            ? this.t("progressElapsed", { elapsed })
+            : "";
         }
 
         // Add shine animation for active progress with known steps
@@ -1300,7 +1312,9 @@ ${resultMessage}`;
         }
         if (!section.isActive) {
           const elapsed = this.calculateSectionDuration(section);
-          progressTimeEstimation = elapsed ? this.t("progressElapsed", { elapsed }) : "";
+          progressTimeEstimation = elapsed
+            ? this.t("progressElapsed", { elapsed })
+            : "";
         }
       }
 
@@ -1318,15 +1332,18 @@ ${resultMessage}`;
         sectionStatusIcon:
           section.isQuestion && section.isActive
             ? { iconName: "utility:questions_and_answers", variant: "warning" }
-            : section.isQuestion 
-            ? { iconName: "utility:questions_and_answers", variant: "success" }
-            : isProgress && section.isActive
-              ? { iconName: "utility:progress", variant: "brand" }
-              : section.hasError
-                ? { iconName: "utility:error", variant: "error" }
-                : section.isActive
-                  ? null
-                  : { iconName: "utility:success", variant: "success" },
+            : section.isQuestion
+              ? {
+                  iconName: "utility:questions_and_answers",
+                  variant: "success",
+                }
+              : isProgress && section.isActive
+                ? { iconName: "utility:progress", variant: "brand" }
+                : section.hasError
+                  ? { iconName: "utility:error", variant: "error" }
+                  : section.isActive
+                    ? null
+                    : { iconName: "utility:success", variant: "success" },
         sectionUseSpinner:
           section.isActive ||
           (section.isQuestion &&
@@ -1377,7 +1394,8 @@ ${resultMessage}`;
     const { hasActionCommands, hasActionUrls, hasReports, hasDocUrls } =
       this.reportFileTypesPresent;
     const parts = [];
-    if (hasActionCommands || hasActionUrls) parts.push(this.i18n.reportFilesActions);
+    if (hasActionCommands || hasActionUrls)
+      parts.push(this.i18n.reportFilesActions);
     if (hasReports) parts.push(this.i18n.reportFilesReports);
     if (hasDocUrls) parts.push(this.i18n.reportFilesDocs);
     return parts.length > 0 ? parts.join(", ") : this.i18n.reportFilesTitle;
@@ -1600,7 +1618,8 @@ ${resultMessage}`;
   makeJsonHumanReadable(obj) {
     if (obj === null) return this.i18n.noValue;
     if (obj === undefined) return this.i18n.notDefined;
-    if (typeof obj === "boolean") return obj ? this.i18n.yesLabel : this.i18n.noLabel;
+    if (typeof obj === "boolean")
+      return obj ? this.i18n.yesLabel : this.i18n.noLabel;
     if (typeof obj === "string") return this.linkifyUrls(obj);
     if (typeof obj === "number") return obj.toString();
 

@@ -46,9 +46,7 @@ export const sectionDefs = [
     value: "language",
     iconName: "utility:translate",
     description: "Language and localization settings.",
-    keys: [
-      "vsCodeSfdxHardis.lang",
-    ],
+    keys: ["vsCodeSfdxHardis.lang"],
   },
   {
     label: "MCP",

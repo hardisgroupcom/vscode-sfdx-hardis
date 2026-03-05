@@ -144,8 +144,12 @@ export default class FilesWorkbench extends SharedMixin(LightningElement) {
         ...workspace,
         iconName: "standard:file",
         hasDescription: !!workspace.description,
-        overwriteParentRecords: workspace.overwriteParentRecords ? this.t("yesLabel") : this.t("noLabel"),
-        overwriteFiles: workspace.overwriteFiles ? this.t("yesLabel") : this.t("noLabel"),
+        overwriteParentRecords: workspace.overwriteParentRecords
+          ? this.t("yesLabel")
+          : this.t("noLabel"),
+        overwriteFiles: workspace.overwriteFiles
+          ? this.t("yesLabel")
+          : this.t("noLabel"),
         exportedFilesCount: workspace.exportedFilesCount || null,
         cssClass: this.getWorkspaceCssClass(workspace),
       }))
@@ -191,11 +195,15 @@ export default class FilesWorkbench extends SharedMixin(LightningElement) {
   }
 
   get saveButtonLabel() {
-    return this.isEditMode ? this.t("updateWorkspaceLabel") : this.t("createWorkspaceLabel");
+    return this.isEditMode
+      ? this.t("updateWorkspaceLabel")
+      : this.t("createWorkspaceLabel");
   }
 
   get exportedFilesCountLabel() {
-    return this.t("exportedFilesCount", { count: this.selectedWorkspace?.exportedFilesCount || 0 });
+    return this.t("exportedFilesCount", {
+      count: this.selectedWorkspace?.exportedFilesCount || 0,
+    });
   }
 
   get selectedWorkspaceHasDescription() {
@@ -461,7 +469,10 @@ export default class FilesWorkbench extends SharedMixin(LightningElement) {
       { label: this.t("allFileTypes"), value: "all" },
       { label: this.t("pdfFilesOnly"), value: "PDF" },
       { label: this.t("imageFilesOnly"), value: "PNG,JPG,JPEG,GIF" },
-      { label: this.t("documentFilesOnly"), value: "PDF,DOC,DOCX,XLS,XLSX,PPT,PPTX" },
+      {
+        label: this.t("documentFilesOnly"),
+        value: "PDF,DOC,DOCX,XLS,XLSX,PPT,PPTX",
+      },
     ];
   }
 }

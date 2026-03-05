@@ -844,7 +844,11 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
               iconName: "utility:chevrondown",
             },
             { label: this.t("edit"), name: "edit", iconName: "utility:edit" },
-            { label: this.t("deleteLabel"), name: "delete", iconName: "utility:delete" },
+            {
+              label: this.t("deleteLabel"),
+              name: "delete",
+              iconName: "utility:delete",
+            },
           ],
         },
         initialWidth: 120,

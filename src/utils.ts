@@ -18,7 +18,9 @@ export const RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION: string = "6.7.1";
 
 // Returns true if the extension is running as a pre-release version (preview: true in package.json)
 export function isExtensionPreRelease(): boolean {
-  const ext = vscode.extensions.getExtension("NicolasVuillamy.vscode-sfdx-hardis");
+  const ext = vscode.extensions.getExtension(
+    "NicolasVuillamy.vscode-sfdx-hardis",
+  );
   return ext?.packageJSON?.preview === true;
 }
 

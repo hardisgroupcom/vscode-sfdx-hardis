@@ -89,55 +89,55 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   // Columns for modal PR display (without jobs status, with merge date)
   get modalPrColumns() {
     return [
-    {
-      key: "number",
-      label: "#",
-      fieldName: "number",
-      type: "text",
-      initialWidth: 40,
-      wrapText: true,
-    },
-    {
-      key: "title",
-      label: this.i18n.titleLabel,
-      fieldName: "webUrl",
-      type: "url",
-      typeAttributes: { label: { fieldName: "title" }, target: "_blank" },
-      initialWidth: 300,
-      wrapText: true,
-    },
-    {
-      key: "author",
-      label: this.i18n.authorLabel,
-      fieldName: "authorLabel",
-      type: "text",
-      wrapText: true,
-    },
-    {
-      key: "mergeDate",
-      label: this.i18n.mergedLabel,
-      fieldName: "mergeDateFormatted",
-      type: "text",
-      wrapText: true,
-      initialWidth: 100,
-    },
-    {
-      key: "source",
-      label: this.i18n.sourceLabel,
-      fieldName: "sourceBranch",
-      type: "text",
-      wrapText: true,
-      initialWidth: 200,
-    },
-    {
-      key: "target",
-      label: this.i18n.targetLabel,
-      fieldName: "targetBranch",
-      type: "text",
-      wrapText: true,
-    },
-  ];
-}
+      {
+        key: "number",
+        label: "#",
+        fieldName: "number",
+        type: "text",
+        initialWidth: 40,
+        wrapText: true,
+      },
+      {
+        key: "title",
+        label: this.i18n.titleLabel,
+        fieldName: "webUrl",
+        type: "url",
+        typeAttributes: { label: { fieldName: "title" }, target: "_blank" },
+        initialWidth: 300,
+        wrapText: true,
+      },
+      {
+        key: "author",
+        label: this.i18n.authorLabel,
+        fieldName: "authorLabel",
+        type: "text",
+        wrapText: true,
+      },
+      {
+        key: "mergeDate",
+        label: this.i18n.mergedLabel,
+        fieldName: "mergeDateFormatted",
+        type: "text",
+        wrapText: true,
+        initialWidth: 100,
+      },
+      {
+        key: "source",
+        label: this.i18n.sourceLabel,
+        fieldName: "sourceBranch",
+        type: "text",
+        wrapText: true,
+        initialWidth: 200,
+      },
+      {
+        key: "target",
+        label: this.i18n.targetLabel,
+        fieldName: "targetBranch",
+        type: "text",
+        wrapText: true,
+      },
+    ];
+  }
 
   modalTicketColumns = [];
 
@@ -178,7 +178,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     if (this.modalMode !== "singlePR") {
       columns.push({
         key: "pullRequest",
-        label: this.prButtonInfo?.pullRequestLabel || this.i18n.pullRequestLabel,
+        label:
+          this.prButtonInfo?.pullRequestLabel || this.i18n.pullRequestLabel,
         fieldName: "prWebUrl",
         type: "url",
         typeAttributes: { label: { fieldName: "prLabel" }, target: "_blank" },
@@ -233,7 +234,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     if (this.modalMode !== "singlePR") {
       columns.push({
         key: "pullRequest",
-        label: this.prButtonInfo?.pullRequestLabel || this.i18n.pullRequestLabel,
+        label:
+          this.prButtonInfo?.pullRequestLabel || this.i18n.pullRequestLabel,
         fieldName: "prWebUrl",
         type: "url",
         typeAttributes: { label: { fieldName: "prLabel" }, target: "_blank" },
@@ -278,7 +280,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       },
       {
         key: "pullRequest",
-        label: this.prButtonInfo?.pullRequestLabel || this.i18n.pullRequestLabel,
+        label:
+          this.prButtonInfo?.pullRequestLabel || this.i18n.pullRequestLabel,
         fieldName: "prWebUrl",
         type: "url",
         typeAttributes: { label: { fieldName: "prLabel" }, target: "_blank" },
@@ -366,7 +369,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       },
       {
         key: "pullRequest",
-        label: this.prButtonInfo?.pullRequestLabel || this.i18n.pullRequestLabel,
+        label:
+          this.prButtonInfo?.pullRequestLabel || this.i18n.pullRequestLabel,
         fieldName: "prWebUrl",
         type: "url",
         typeAttributes: { label: { fieldName: "prLabel" }, target: "_blank" },
@@ -885,7 +889,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   }
 
   get currentPRCardTitle() {
-    const prLabel = this.prButtonInfo?.pullRequestLabel || this.i18n.pullRequestLabel;
+    const prLabel =
+      this.prButtonInfo?.pullRequestLabel || this.i18n.pullRequestLabel;
     return this.t("myPrCardTitle", { prLabel });
   }
 
@@ -894,7 +899,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       return this.i18n.connectGitToSeePrDetails;
     }
     if (this.currentBranchPullRequest.number === -1) {
-      return this.t("prNotCreatedYet", { prLabel: this.prButtonInfo.pullRequestLabel });
+      return this.t("prNotCreatedYet", {
+        prLabel: this.prButtonInfo.pullRequestLabel,
+      });
     }
     return this.t("prClickToManageActions", {
       num: this.currentBranchPullRequest.number,
@@ -1759,13 +1766,19 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       }
       return `#${pr.number} - ${pr.title || this.i18n.pullRequestLabel}`;
     }
-    const prLabel = this.prButtonInfo?.pullRequestLabel || this.i18n.pullRequestLabel;
+    const prLabel =
+      this.prButtonInfo?.pullRequestLabel || this.i18n.pullRequestLabel;
     const count = this.modalPullRequests.length;
-    return this.t("prModalTitle", { prLabel, branch: this.modalBranchName, count });
+    return this.t("prModalTitle", {
+      prLabel,
+      branch: this.modalBranchName,
+      count,
+    });
   }
 
   get modalPrsTabLabel() {
-    const prLabel = this.prButtonInfo?.pullRequestLabel || this.i18n.pullRequestLabel;
+    const prLabel =
+      this.prButtonInfo?.pullRequestLabel || this.i18n.pullRequestLabel;
     const count = this.modalPullRequests.length;
     return this.t("prModalPrsTab", { prLabel, count });
   }
@@ -1800,7 +1813,11 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     if (this.modalPullRequests.length === 1) {
       const pr = this.modalPullRequests[0];
       const platform = this.repoPlatformLabel || "Git";
-      return this.t("viewPrOnPlatform", { num: pr.number, title: pr.title || "", platform });
+      return this.t("viewPrOnPlatform", {
+        num: pr.number,
+        title: pr.title || "",
+        platform,
+      });
     }
     return this.i18n.viewPullRequest;
   }
@@ -1848,7 +1865,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     // Sort by when (Pre-Deploy first, then Post-Deploy), then by PR number
     return actionRows.sort((a, b) => {
       // First sort by when code
-      const whenOrder = { "pre-deploy": 0, "post-deploy": 1, "unknown": 2 };
+      const whenOrder = { "pre-deploy": 0, "post-deploy": 1, unknown: 2 };
       const whenA = whenOrder[a.whenCode ?? a.when] ?? 2;
       const whenB = whenOrder[b.whenCode ?? b.when] ?? 2;
 

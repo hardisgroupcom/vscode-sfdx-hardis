@@ -121,7 +121,11 @@ export function registerShowPipeline(commands: Commands) {
           const msg =
             data.prNumber === -1
               ? t("deploymentActionSavedDraft", { prLabel })
-              : t("deploymentActionSaved", { prLabel, prNumber: data.prNumber, updatedFile });
+              : t("deploymentActionSaved", {
+                  prLabel,
+                  prNumber: data.prNumber,
+                  updatedFile,
+                });
           showCommitReminder(data.prNumber, msg);
         }
         // Save Deployment Apex Test Classes
@@ -141,7 +145,11 @@ export function registerShowPipeline(commands: Commands) {
           const msg =
             data.prNumber === -1
               ? t("apexTestsSavedDraft", { prLabel })
-              : t("apexTestsSaved", { prLabel, prNumber: data.prNumber, updatedFile });
+              : t("apexTestsSaved", {
+                  prLabel,
+                  prNumber: data.prNumber,
+                  updatedFile,
+                });
           showCommitReminder(data.prNumber, msg);
         }
         // Get PR info for modal
@@ -247,7 +255,9 @@ export function registerShowPipeline(commands: Commands) {
                   return;
                 } catch (fallbackError: any) {
                   vscode.window.showErrorMessage(
-                    t("failedToOpenOrgCliAndUrl", { error: fallbackError?.message || fallbackError }),
+                    t("failedToOpenOrgCliAndUrl", {
+                      error: fallbackError?.message || fallbackError,
+                    }),
                   );
                   return;
                 }
@@ -265,18 +275,14 @@ export function registerShowPipeline(commands: Commands) {
               );
             }
           } else {
-            vscode.window.showWarningMessage(
-              t("unableToOpenOrg"),
-            );
+            vscode.window.showWarningMessage(t("unableToOpenOrg"));
           }
         }
         // Authenticate or re-authenticate to Git provider
         else if (type === "connectToGit") {
           const gitProvider = await GitProvider.getInstance();
           if (!gitProvider) {
-            vscode.window.showErrorMessage(
-              t("noGitProviderDetected"),
-            );
+            vscode.window.showErrorMessage(t("noGitProviderDetected"));
             return;
           }
           Logger.log(
@@ -288,10 +294,7 @@ export function registerShowPipeline(commands: Commands) {
           } catch (e) {
             const viewLogsLabel = t("viewLogs");
             vscode.window
-              .showErrorMessage(
-                t("gitProviderAuthError"),
-                viewLogsLabel,
-              )
+              .showErrorMessage(t("gitProviderAuthError"), viewLogsLabel)
               .then((action) => {
                 if (action === viewLogsLabel) {
                   Logger.showOutputChannel();
@@ -315,10 +318,7 @@ export function registerShowPipeline(commands: Commands) {
           } else if (authRes === false) {
             const viewLogsLabel = t("viewLogs");
             vscode.window
-              .showErrorMessage(
-                t("failedConnectGitProvider"),
-                viewLogsLabel,
-              )
+              .showErrorMessage(t("failedConnectGitProvider"), viewLogsLabel)
               .then((action) => {
                 if (action === viewLogsLabel) {
                   Logger.showOutputChannel();
@@ -352,7 +352,9 @@ export function registerShowPipeline(commands: Commands) {
             const viewLogsLabel = t("viewLogs");
             vscode.window
               .showErrorMessage(
-                t("failedConnectToProvider", { providerName: ticketProvider.providerName }),
+                t("failedConnectToProvider", {
+                  providerName: ticketProvider.providerName,
+                }),
                 viewLogsLabel,
               )
               .then((action) => {
@@ -363,7 +365,9 @@ export function registerShowPipeline(commands: Commands) {
             return;
           }
           vscode.window.showInformationMessage(
-            t("successfullyConnectedToProvider", { providerName: ticketProvider.providerName }),
+            t("successfullyConnectedToProvider", {
+              providerName: ticketProvider.providerName,
+            }),
           );
           pipelineProperties = await loadAllPipelineInfo({
             browseGitProvider: true,
@@ -547,11 +551,16 @@ export function registerShowPipeline(commands: Commands) {
                   `.sfdx-hardis.${prNumber}.yml`,
                 );
                 await fs.rename(prActionsFileDraft, prActionsFileNewName);
-                const commitAndPushLabel = t("commitAndPushFile", { fileName: `.sfdx-hardis.${prNumber}.yml` });
+                const commitAndPushLabel = t("commitAndPushFile", {
+                  fileName: `.sfdx-hardis.${prNumber}.yml`,
+                });
                 const openGitLabel = t("openGit");
                 vscode.window
                   .showInformationMessage(
-                    t("draftActionsFileAssociated", { prLabel: prButtonInfo.pullRequestLabel || "Pull Request", prNumber: currentBranchPullRequest.number }),
+                    t("draftActionsFileAssociated", {
+                      prLabel: prButtonInfo.pullRequestLabel || "Pull Request",
+                      prNumber: currentBranchPullRequest.number,
+                    }),
                     commitAndPushLabel,
                     openGitLabel,
                   )
@@ -581,7 +590,9 @@ export function registerShowPipeline(commands: Commands) {
                 authorLabel: "",
                 jobsStatus: "unknown",
                 number: -1,
-                title: t("prLabelNotCreatedYet", { prLabel: prButtonInfo.pullRequestLabel }),
+                title: t("prLabelNotCreatedYet", {
+                  prLabel: prButtonInfo.pullRequestLabel,
+                }),
               };
               const prList =
                 await gitProvider.completePullRequestsWithPrePostCommands([

@@ -25,13 +25,11 @@ export function registerOpenKeyFile(commands: Commands) {
         },
         {
           file: "manifest/package-no-overwrite.xml",
-          label:
-            t("metadataDeployedOnlyIfNotExisting"),
+          label: t("metadataDeployedOnlyIfNotExisting"),
         },
         {
           file: "manifest/packageDeployOnce.xml",
-          label:
-            t("metadataDeployedOnlyIfNotExisting"),
+          label: t("metadataDeployedOnlyIfNotExisting"),
         },
         {
           file: "config/project-scratch-def.json",

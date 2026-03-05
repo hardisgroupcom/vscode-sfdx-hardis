@@ -157,14 +157,18 @@ export default class PackageXml extends SharedMixin(LightningElement) {
         return {
           name: memberName,
           showDocLink: showDocLink,
-          docTooltip: showDocLink ? this.t("viewMemberDocumentation", { memberName }) : "",
+          docTooltip: showDocLink
+            ? this.t("viewMemberDocumentation", { memberName })
+            : "",
         };
       });
       const iconInfo = this.getMetadataTypeIcon(type.name);
       return {
         ...type,
         memberCount: hasWildcard ? this.t("memberCountAll") : members.length,
-        memberCountLabel: hasWildcard ? this.t("memberCountAll") : this.t("membersLabel", { count: members.length }),
+        memberCountLabel: hasWildcard
+          ? this.t("memberCountAll")
+          : this.t("membersLabel", { count: members.length }),
         hasWildcard: hasWildcard,
         members: members,
         isExpanded: this.expandedTypes.has(type.name),
@@ -415,7 +419,10 @@ export default class PackageXml extends SharedMixin(LightningElement) {
   get packageDescription() {
     const baseDesc = this.packageTypeConfig.description;
     return this.packageFilePath
-      ? this.t("pkgDescriptionWithPath", { description: baseDesc, filePath: this.packageFilePath })
+      ? this.t("pkgDescriptionWithPath", {
+          description: baseDesc,
+          filePath: this.packageFilePath,
+        })
       : baseDesc;
   }
 
@@ -460,7 +467,9 @@ export default class PackageXml extends SharedMixin(LightningElement) {
   }
 
   get addMemberToTypeLabel() {
-    return this.t("addMemberToType", { typeName: this.pendingTypeNameForMember });
+    return this.t("addMemberToType", {
+      typeName: this.pendingTypeNameForMember,
+    });
   }
 
   get noMatchingResultsDescLabel() {
@@ -516,8 +525,13 @@ export default class PackageXml extends SharedMixin(LightningElement) {
             ...type,
             members: typeNameMatches ? type.members : filteredMembers,
             memberCount: count,
-            memberCountLabel: typeof count === "number" ? this.t("membersLabel", { count }) : count,
-            urlTooltip: this.t("viewTypeDocumentation", { typeName: type.name }),
+            memberCountLabel:
+              typeof count === "number"
+                ? this.t("membersLabel", { count })
+                : count,
+            urlTooltip: this.t("viewTypeDocumentation", {
+              typeName: type.name,
+            }),
           };
         }
 

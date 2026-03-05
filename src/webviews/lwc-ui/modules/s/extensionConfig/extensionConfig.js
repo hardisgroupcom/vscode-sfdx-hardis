@@ -113,8 +113,7 @@ export default class ExtensionConfig extends SharedMixin(LightningElement) {
   handleMessage(type, data) {
     if (type === "updateSuccess") {
       this.error = null;
-    } 
-    else if (type === "updateError") {
+    } else if (type === "updateError") {
       this.error = data;
     }
   }

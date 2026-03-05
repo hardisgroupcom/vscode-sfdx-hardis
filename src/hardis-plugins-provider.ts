@@ -213,10 +213,7 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
           "https://git-scm.com/downloads",
         )}`),
           vscode.window
-            .showWarningMessage(
-              t("gitNotInstalled"),
-              downloadGitLabel,
-            )
+            .showWarningMessage(t("gitNotInstalled"), downloadGitLabel)
             .then((selection) => {
               if (selection === downloadGitLabel) {
                 vscode.env.openExternal(
@@ -362,7 +359,8 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
         sfdxPath !== "missing"
       ) {
         sfdxCliItem.label =
-          sfdxCliItem.label + t("sfCliWronglyInstalledSuffix", { path: sfdxPath });
+          sfdxCliItem.label +
+          t("sfCliWronglyInstalledSuffix", { path: sfdxPath });
         sfdxCliItem.command = `echo "You need to install Salesforce CLI using Node.JS. First, you need to uninstall Salesforce DX / Salesforce CI using Windows -> Programs -> Uninstall (or equivalent on MAC)"`;
         sfdxCliItem.tooltip = t("sfCliUninstallFirstTooltip");
         sfdxCliItem.status = "dependency-error";
@@ -375,7 +373,9 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
             ? sfdxCliItem.label
             : sfdxCliItem.label + upgradeAvailableText;
         sfdxCliItem.command = `npm install @salesforce/cli@${recommendedSfdxCliVersion} -g`;
-        sfdxCliItem.tooltip = t("clickToUpgradeSfCliTo", { version: recommendedSfdxCliVersion });
+        sfdxCliItem.tooltip = t("clickToUpgradeSfCliTo", {
+          version: recommendedSfdxCliVersion,
+        });
         sfdxCliItem.status = "dependency-warning";
       }
     }
@@ -412,8 +412,7 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
         const sfdxHardisInstallTag = getSfdxHardisInstallTag();
         if (
           installedVersion &&
-          ((isExtensionPreRelease() &&
-            !installedVersion.includes("alpha")) ||
+          ((isExtensionPreRelease() && !installedVersion.includes("alpha")) ||
             (RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION !== "beta" &&
               !isExtensionPreRelease() &&
               this.compareVersions(
@@ -425,12 +424,14 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
         ) {
           const versionToInstall = sfdxHardisInstallTag;
           const upgradeNowLabel = t("upgradeNow");
-          const errorMessageForUSer =
-            isExtensionPreRelease()
-              ? t("sfdxHardisPreReleaseAlphaMessage")
-              : RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION === "beta"
-                ? t("sfdxHardisPreReleaseBetaMessage")
-                : t("sfdxHardisPluginOutdated", { version: installedVersion, versionToInstall });
+          const errorMessageForUSer = isExtensionPreRelease()
+            ? t("sfdxHardisPreReleaseAlphaMessage")
+            : RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION === "beta"
+              ? t("sfdxHardisPreReleaseBetaMessage")
+              : t("sfdxHardisPluginOutdated", {
+                  version: installedVersion,
+                  versionToInstall,
+                });
           vscode.window
             .showErrorMessage(errorMessageForUSer, upgradeNowLabel)
             .then((selection) => {
@@ -490,9 +491,13 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
               : isPluginMissing
                 ? pluginItem.label
                 : pluginItem.label + upgradeAvailableText;
-        const installTag = plugin.name === "sfdx-hardis" ? getSfdxHardisInstallTag() : "latest";
+        const installTag =
+          plugin.name === "sfdx-hardis" ? getSfdxHardisInstallTag() : "latest";
         pluginItem.command = `echo y|sf plugins:install ${plugin.name}@${installTag} && sf hardis:work:ws --event refreshPlugins`;
-        pluginItem.tooltip = t("clickToUpgradeSfdxPluginTo", { plugin: plugin.name, version: latestPluginVersion });
+        pluginItem.tooltip = t("clickToUpgradeSfdxPluginTo", {
+          plugin: plugin.name,
+          version: latestPluginVersion,
+        });
         if (!pluginItem.label.includes("(localdev)")) {
           pluginItem.status = isPluginMissing
             ? "dependency-missing"
@@ -506,7 +511,9 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
       }
       if (pluginItem.label.includes("(localdev)")) {
         pluginItem.status = "dependency-local";
-        pluginItem.tooltip = t("usingLocallyDevelopedPlugin", { plugin: plugin.name });
+        pluginItem.tooltip = t("usingLocallyDevelopedPlugin", {
+          plugin: plugin.name,
+        });
       }
       items.push(pluginItem);
     });
@@ -553,10 +560,7 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
       } else if (!setupHelper.hasUpdatesInProgress()) {
         const upgradePluginsLabel = t("upgradePlugins");
         vscode.window
-          .showWarningMessage(
-            t("somePluginsNotUpToDate"),
-            upgradePluginsLabel,
-          )
+          .showWarningMessage(t("somePluginsNotUpToDate"), upgradePluginsLabel)
           .then((selection) => {
             if (selection === upgradePluginsLabel) {
               if (config.get("userInput") === "ui-lwc") {
@@ -674,9 +678,13 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
         );
       }
       if (!extInstance) {
-        const installExtensionLabel = t("installVsCodeExtension", { name: extension.label });
+        const installExtensionLabel = t("installVsCodeExtension", {
+          name: extension.label,
+        });
         extensionItem.command = `code --install-extension ${extension.id}`;
-        extensionItem.tooltip = t("clickToInstallVsCodeExtension", { name: extension.label });
+        extensionItem.tooltip = t("clickToInstallVsCodeExtension", {
+          name: extension.label,
+        });
         extensionItem.status = "dependency-warning";
         vscode.window
           .showWarningMessage(

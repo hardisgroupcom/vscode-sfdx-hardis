@@ -379,7 +379,10 @@ export class SfdxHardisConfigHelper {
       isBranch,
       branchName: branchName || "",
       configSchema,
-      sections: SfdxHardisConfigHelper.SECTIONS.map((s) => ({ ...s, label: t(s.label) })),
+      sections: SfdxHardisConfigHelper.SECTIONS.map((s) => ({
+        ...s,
+        label: t(s.label),
+      })),
     };
   }
 

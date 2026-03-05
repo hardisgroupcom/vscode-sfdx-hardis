@@ -341,7 +341,9 @@ export default class Setup extends SharedMixin(LightningElement) {
       let buttonDisabled = false;
 
       if (c.checking || c.installing) {
-        buttonLabel = c.checking ? this.t("checking") : this.t("installingLabel");
+        buttonLabel = c.checking
+          ? this.t("checking")
+          : this.t("installingLabel");
         buttonVariant = "neutral";
         ((buttonAction = ""), (buttonDisabled = true));
       } else if (status === "outdated") {
@@ -356,7 +358,9 @@ export default class Setup extends SharedMixin(LightningElement) {
         buttonVariant = "neutral";
         buttonAction = "recheck";
       } else if (status === "missing") {
-        buttonLabel = c.installable ? this.t("installLabel") : this.t("installInstructions");
+        buttonLabel = c.installable
+          ? this.t("installLabel")
+          : this.t("installInstructions");
         buttonVariant = "brand";
         buttonAction = c.installable ? "install" : "instructions";
       } else if (status === "error") {
@@ -412,7 +416,9 @@ export default class Setup extends SharedMixin(LightningElement) {
 
   // Computed label for the Run button (avoid inline expressions in template)
   get runButtonLabel() {
-    return this.installQueueRunning ? this.t("running") : this.t("runPendingInstalls");
+    return this.installQueueRunning
+      ? this.t("running")
+      : this.t("runPendingInstalls");
   }
 
   // Computed disabled state for the Run button

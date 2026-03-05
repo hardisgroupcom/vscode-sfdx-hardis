@@ -142,12 +142,12 @@ export class BranchStrategyMermaidBuilder {
             mergeTarget,
           );
           if (createPrUrl) {
-            linkLabel = `<a href='${createPrUrl}' target='_blank' style='color:#0176D3;font-weight:bold;text-decoration:underline;'>${t('createPr')}</a>`;
+            linkLabel = `<a href='${createPrUrl}' target='_blank' style='color:#0176D3;font-weight:bold;text-decoration:underline;'>${t("createPr")}</a>`;
           } else {
-            linkLabel = t('noPr');
+            linkLabel = t("noPr");
           }
         } else {
-          linkLabel = this.isAuthenticated ? t('noPr') : t('mergeLabel');
+          linkLabel = this.isAuthenticated ? t("noPr") : t("mergeLabel");
         }
 
         this.gitLinks.push({
@@ -224,8 +224,8 @@ export class BranchStrategyMermaidBuilder {
           pullRequest.number || pullRequest.id
             ? `#${pullRequest.number || pullRequest.id} ${this.getPrStatusEmoji(pullRequest.jobsStatus)}`
             : this.isAuthenticated
-              ? t('noPr')
-              : t('mergeLabel');
+              ? t("noPr")
+              : t("mergeLabel");
         this.gitLinks.push({
           source: nodeName,
           target: this.sanitizeNodeName(pullRequest.targetBranch) + "Branch",
@@ -571,7 +571,7 @@ export class BranchStrategyMermaidBuilder {
         if (link.jobUrl) {
           // Extract just the emoji from the label (e.g., "Deploy ✅" -> "✅")
           const emoji = label.replace(/^Deploy\s+/, "");
-          label = `<a href='${link.jobUrl}' target='_blank' style='color:#0176D3;font-weight:bold;text-decoration:underline;'>${t('deployment')} ${emoji}</a>`;
+          label = `<a href='${link.jobUrl}' target='_blank' style='color:#0176D3;font-weight:bold;text-decoration:underline;'>${t("deployment")} ${emoji}</a>`;
         }
         this.mermaidLines.push(
           this.indent(`${link.source} -.->|"${label}"| ${link.target}`, 1),

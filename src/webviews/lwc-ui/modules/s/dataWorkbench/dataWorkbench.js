@@ -320,7 +320,9 @@ export default class DataWorkbench extends SharedMixin(LightningElement) {
         iconName: "standard:dataset",
         hasDescription: !!workspace.description,
         objectsCount: workspace.objectsCount || 0,
-        objectsCountLabel: this.t("dwbObjectsCount", { count: workspace.objectsCount || 0 }),
+        objectsCountLabel: this.t("dwbObjectsCount", {
+          count: workspace.objectsCount || 0,
+        }),
         operationsSummary: (workspace.objects || [])
           .map((obj) => obj.operation || "Upsert")
           .join(", "),
@@ -366,13 +368,17 @@ export default class DataWorkbench extends SharedMixin(LightningElement) {
   }
 
   get savePropertiesButtonLabel() {
-    return this.editingWorkspace ? this.t("dwbUpdateProperties") : this.t("dwbCreateWorkspace");
+    return this.editingWorkspace
+      ? this.t("dwbUpdateProperties")
+      : this.t("dwbCreateWorkspace");
   }
 
   // --- Object modal computed ---
 
   get objectModalTitle() {
-    return this.editingObjectIndex >= 0 ? this.t("dwbEditObjectTitle") : this.t("dwbAddObjectTitle");
+    return this.editingObjectIndex >= 0
+      ? this.t("dwbEditObjectTitle")
+      : this.t("dwbAddObjectTitle");
   }
 
   get canSaveObject() {
@@ -389,7 +395,9 @@ export default class DataWorkbench extends SharedMixin(LightningElement) {
   }
 
   get saveObjectButtonLabel() {
-    return this.editingObjectIndex >= 0 ? this.t("dwbUpdateObject") : this.t("dwbAddObject");
+    return this.editingObjectIndex >= 0
+      ? this.t("dwbUpdateObject")
+      : this.t("dwbAddObject");
   }
 
   get objectHasSoqlError() {
@@ -452,7 +460,9 @@ export default class DataWorkbench extends SharedMixin(LightningElement) {
       hasMockFields:
         (this.normalizeMockFields(obj.mockFields) || []).length > 0,
       mockFieldsCount: (this.normalizeMockFields(obj.mockFields) || []).length,
-      mockFieldsCountLabel: this.t("dwbObjBadgeMockFieldsCount", { count: (this.normalizeMockFields(obj.mockFields) || []).length }),
+      mockFieldsCountLabel: this.t("dwbObjBadgeMockFieldsCount", {
+        count: (this.normalizeMockFields(obj.mockFields) || []).length,
+      }),
       isExcluded: coerceBoolean(obj.excluded),
       hasHardDelete: coerceBoolean(obj.hardDelete),
       hasDeleteByHierarchy: coerceBoolean(obj.deleteByHierarchy),

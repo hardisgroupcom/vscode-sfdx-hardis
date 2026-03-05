@@ -154,10 +154,7 @@ const lwcWebviewConfig = {
     new CopyWebpackPlugin({
       patterns: [
         {
-          from: path.resolve(
-            __dirname,
-            "resources/global-theme-variables.css",
-          ),
+          from: path.resolve(__dirname, "resources/global-theme-variables.css"),
           to: path.resolve(
             __dirname,
             "out/assets/styles/global-theme-variables.css",
@@ -166,14 +163,8 @@ const lwcWebviewConfig = {
           noErrorOnMissing: true,
         },
         {
-          from: path.resolve(
-            __dirname,
-            "resources/global-theme.css",
-          ),
-          to: path.resolve(
-            __dirname,
-            "out/assets/styles/global-theme.css",
-          ),
+          from: path.resolve(__dirname, "resources/global-theme.css"),
+          to: path.resolve(__dirname, "out/assets/styles/global-theme.css"),
           toType: "file",
           noErrorOnMissing: true,
         },

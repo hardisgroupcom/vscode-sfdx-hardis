@@ -23,7 +23,7 @@ export const SharedMixin = (BaseClass) =>
           }
           return prop in target ? target[prop] : String(prop);
         },
-      }
+      },
     );
 
     translations = {};
@@ -72,7 +72,7 @@ export const SharedMixin = (BaseClass) =>
         for (const [varName, varValue] of Object.entries(vars)) {
           value = value.replace(
             new RegExp("\\{\\{" + varName + "\\}\\}", "g"),
-            String(varValue)
+            String(varValue),
           );
         }
       }

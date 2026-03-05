@@ -246,13 +246,19 @@ export class CommandRunner {
     let displayCommandForPopup = preprocessedCommand;
     const wsIndex = displayCommandForPopup.indexOf("--websocket");
     if (wsIndex !== -1) {
-      displayCommandForPopup = displayCommandForPopup.substring(0, wsIndex).trim();
+      displayCommandForPopup = displayCommandForPopup
+        .substring(0, wsIndex)
+        .trim();
     }
     const skipAuthIndex = displayCommandForPopup.indexOf("--skipauth");
     if (skipAuthIndex !== -1) {
-      displayCommandForPopup = displayCommandForPopup.substring(0, skipAuthIndex).trim();
+      displayCommandForPopup = displayCommandForPopup
+        .substring(0, skipAuthIndex)
+        .trim();
     }
-    let displayPopupMessage = t("initializingCommand", { command: displayCommandForPopup });
+    let displayPopupMessage = t("initializingCommand", {
+      command: displayCommandForPopup,
+    });
     if (this.debugNodeJs) {
       displayPopupMessage += " " + t("debugMode");
     }
@@ -500,7 +506,11 @@ export class CommandRunner {
       cmd = `NODE_TLS_REJECT_UNAUTHORIZED=0 ${cmd}`;
     }
     const langSetting = config.get<string>("lang", "auto");
-    if (langSetting && langSetting !== "auto" && cmd.trimStart().startsWith("sf hardis")) {
+    if (
+      langSetting &&
+      langSetting !== "auto" &&
+      cmd.trimStart().startsWith("sf hardis")
+    ) {
       cmd = `SFDX_HARDIS_LANG=${langSetting} ${cmd}`;
     }
     if (terminal?.name?.includes("powershell")) {

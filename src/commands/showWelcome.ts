@@ -15,7 +15,8 @@ export function registerShowWelcome(command: Commands) {
 
       const colorThemeConfig = config.get("theme.colorTheme", "auto");
       const langSetting = config.get<string>("lang", "auto");
-      const { colorTheme, colorContrast } = LwcPanelManager.resolveTheme(colorThemeConfig);
+      const { colorTheme, colorContrast } =
+        LwcPanelManager.resolveTheme(colorThemeConfig);
       const panel = lwcManager.getOrCreatePanel("s-welcome", {
         showWelcomeAtStartup: showWelcomeAtStartup,
         langSetting: langSetting,

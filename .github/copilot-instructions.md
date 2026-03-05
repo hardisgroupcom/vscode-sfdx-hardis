@@ -524,7 +524,7 @@ When adding new user-facing strings:
 3. For dynamic values, use interpolation: `t("key", { varName: value })`
 
 ### What to Translate vs. Not Translate
-**Translate:** 
+**Translate:**
 - Labels, tooltips, error messages, warning messages, section titles, descriptions shown to users, any variable that looks like it will be shown to the user, even if it's not a full sentence (e.g., button labels, section titles, status messages)
 - User targeted properties "message", "description"...
 - 3rd argument of calls to method execCommandWithProgress()

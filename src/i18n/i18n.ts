@@ -28,8 +28,7 @@ function loadTranslations(locale: string): Record<string, string> {
     if (fs.existsSync(srcLocaleFile)) {
       return JSON.parse(fs.readFileSync(srcLocaleFile, "utf-8"));
     }
-  }
-  catch {
+  } catch {
     // Ignore errors and fall back to empty translations
   }
   return {};

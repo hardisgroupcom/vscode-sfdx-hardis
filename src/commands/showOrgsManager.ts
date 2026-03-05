@@ -22,10 +22,7 @@ export function registerShowOrgsManager(commandThis: Commands) {
       let orgs: any = [];
       // Load orgs using orgUtils
       try {
-        orgs = await loadOrgsWithProgress(
-          false,
-          t("loadingSalesforceOrgs"),
-        );
+        orgs = await loadOrgsWithProgress(false, t("loadingSalesforceOrgs"));
 
         const panel = lwcManager.getOrCreatePanel("s-org-manager", {
           orgs: orgs,
@@ -90,9 +87,7 @@ export function registerShowOrgsManager(commandThis: Commands) {
             }
 
             if (usernames.length === 0) {
-              vscode.window.showInformationMessage(
-                t("noRecommendedOrgsFound"),
-              );
+              vscode.window.showInformationMessage(t("noRecommendedOrgsFound"));
               return;
             }
 
@@ -112,7 +107,9 @@ export function registerShowOrgsManager(commandThis: Commands) {
                 t("forgettingNOrgs", { count: usernames.length }),
               );
               vscode.window.showInformationMessage(
-                t("forgotNRecommendedOrgs", { count: result.successUsernames.length }),
+                t("forgotNRecommendedOrgs", {
+                  count: result.successUsernames.length,
+                }),
               );
               /* jscpd:ignore-start */
               setTimeout(async () => {
@@ -125,7 +122,9 @@ export function registerShowOrgsManager(commandThis: Commands) {
               }, 1000);
             } catch (error: any) {
               vscode.window.showErrorMessage(
-                t("errorRemovingRecommendedOrgs", { error: error?.message || error }),
+                t("errorRemovingRecommendedOrgs", {
+                  error: error?.message || error,
+                }),
               );
             }
             /* jscpd:ignore-end */
@@ -134,9 +133,7 @@ export function registerShowOrgsManager(commandThis: Commands) {
               const { aliasChanges } = data;
 
               if (!aliasChanges || aliasChanges.length === 0) {
-                vscode.window.showInformationMessage(
-                  t("noAliasChangesToSave"),
-                );
+                vscode.window.showInformationMessage(t("noAliasChangesToSave"));
                 return;
               }
 
@@ -177,7 +174,9 @@ export function registerShowOrgsManager(commandThis: Commands) {
               );
 
               vscode.window.showInformationMessage(
-                t("successfullyUpdatedNAliases", { count: aliasChanges.length }),
+                t("successfullyUpdatedNAliases", {
+                  count: aliasChanges.length,
+                }),
               );
 
               /* jscpd:ignore start */
@@ -236,7 +235,11 @@ async function forgetOrgsWithProgress(usernames: string[], title: string) {
         const u = usernames[i];
         const increment = Math.round(100 / total);
         progress.report({
-          message: t("forgettingOrgProgress", { username: u, current: i + 1, total }),
+          message: t("forgettingOrgProgress", {
+            username: u,
+            current: i + 1,
+            total,
+          }),
           increment,
         });
         try {

@@ -167,11 +167,10 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
         items.push({
           id: "org-info-instance-url" + (options.devHub ? "-devhub" : ""),
           label: `${orgInfo.instanceUrl.replace("https://", "")}`,
-          tooltip:
-            t("clickToOpenOrgUrl", {
-              orgType: options.devHub ? "Dev Hub" : "default",
-              url: orgInfo.instanceUrl,
-            }),
+          tooltip: t("clickToOpenOrgUrl", {
+            orgType: options.devHub ? "Dev Hub" : "default",
+            url: orgInfo.instanceUrl,
+          }),
           command:
             "sf org open" +
             (options.devHub ? ` --target-org ${devHubUsername}` : ""),
@@ -182,8 +181,7 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
         items.push({
           id: "org-info-username" + (options.devHub ? "-devhub" : ""),
           label: `${orgInfo.username}`,
-          tooltip:
-            t("usernameTooltip", { username: orgInfo.username }),
+          tooltip: t("usernameTooltip", { username: orgInfo.username }),
           command:
             "sf org open" +
             (options.devHub ? ` --target-org ${devHubUsername}` : "") +
@@ -218,24 +216,32 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
         const today = moment();
         const daysBeforeExpiration = expiration.diff(today, "days");
         orgDetailItem.label += ` ${t("orgExpiresLabel", { expirationDate: orgInfo.expirationDate })}`;
-        orgDetailItem.tooltip += t("orgExpiresInNDays", { days: daysBeforeExpiration });
+        orgDetailItem.tooltip += t("orgExpiresInNDays", {
+          days: daysBeforeExpiration,
+        });
         if (daysBeforeExpiration < 0) {
           orgDetailItem.iconId = "org:expired";
-          orgDetailItem.tooltip = t("orgExpired", { expirationDate: orgInfo.expirationDate });
+          orgDetailItem.tooltip = t("orgExpired", {
+            expirationDate: orgInfo.expirationDate,
+          });
           vscode.window.showErrorMessage(
             `🦙 ${orgDetailItem.tooltip}`,
             "Close",
           );
         } else if (daysBeforeExpiration < 3) {
           orgDetailItem.iconId = "org:expired:soon";
-          orgDetailItem.tooltip = t("orgExpiringDangerously", { days: daysBeforeExpiration });
+          orgDetailItem.tooltip = t("orgExpiringDangerously", {
+            days: daysBeforeExpiration,
+          });
           vscode.window.showErrorMessage(
             `🦙 ${orgDetailItem.tooltip}`,
             "Close",
           );
         } else if (daysBeforeExpiration < 7) {
           orgDetailItem.iconId = "org:expired:soon";
-          orgDetailItem.tooltip = t("orgExpiringSoon", { days: daysBeforeExpiration });
+          orgDetailItem.tooltip = t("orgExpiringSoon", {
+            days: daysBeforeExpiration,
+          });
           vscode.window.showWarningMessage(
             `🦙 ${orgDetailItem.tooltip}`,
             "Close",
@@ -275,7 +281,9 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
       }
       items.push({
         id: "select-another-org" + (options.devHub ? "-devhub" : ""),
-        label: options.devHub ? t("selectAnotherDevHubOrg") : t("selectAnotherOrg"),
+        label: options.devHub
+          ? t("selectAnotherDevHubOrg")
+          : t("selectAnotherOrg"),
         tooltip: t("clickToSelectOrg"),
         command: "sf hardis:org:select" + (options.devHub ? " --devhub" : ""),
         iconId: "org:connect",
@@ -428,8 +436,14 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
             ) {
               // Display message if a merge might be required
               gitIconId = "git:branch:warning";
-              gitLabel = t("branchNotUpToDate", { branch: currentBranch, parent: parentGitBranch });
-              gitTooltip = t("branchMergeNeededTooltip", { branch: currentBranch, parent: parentGitBranch });
+              gitLabel = t("branchNotUpToDate", {
+                branch: currentBranch,
+                parent: parentGitBranch,
+              });
+              gitTooltip = t("branchMergeNeededTooltip", {
+                branch: currentBranch,
+                parent: parentGitBranch,
+              });
               gitCommand = `vscode-sfdx-hardis.openExternal https://sfdx-hardis.cloudity.com/salesforce-ci-cd-merge-parent-branch/`;
             }
           } catch {
@@ -461,8 +475,7 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
               label: t("openMergeRequest"),
               iconId: "git:pull-request",
               tooltip:
-                t("clickToOpenMergeRequest") + "\n" +
-                mergeRequests[0].url,
+                t("clickToOpenMergeRequest") + "\n" + mergeRequests[0].url,
               command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
                 mergeRequests[0].url,
               )}`,
@@ -476,7 +489,8 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
               label: t("createMergeRequest"),
               icon: "merge.svg",
               tooltip:
-                t("clickToCreateMergeRequest") + "\n" +
+                t("clickToCreateMergeRequest") +
+                "\n" +
                 mergeRequests[0].urlCreate,
               command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
                 mergeRequests[0].urlCreate,

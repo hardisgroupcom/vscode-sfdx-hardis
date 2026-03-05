@@ -37,7 +37,10 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     this.contextOptions = [
       { label: this.t("checkAndProcessDeployment"), value: "all" },
       { label: this.t("checkDeploymentOnly"), value: "check-deployment-only" },
-      { label: this.t("processDeploymentOnly"), value: "process-deployment-only" },
+      {
+        label: this.t("processDeploymentOnly"),
+        value: "process-deployment-only",
+      },
     ];
   }
 

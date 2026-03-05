@@ -17,7 +17,12 @@ import { CacheManager } from "./utils/cache-manager";
 import { runSalesforceCliMcpServer } from "./utils/mcpUtils";
 import { SecretsManager } from "./utils/secretsManager";
 import { getExtensionConfigSections } from "./utils/extensionConfigUtils";
-import { getAllTranslations, getCurrentLocale, initI18n, reinitI18n } from "./i18n/i18n";
+import {
+  getAllTranslations,
+  getCurrentLocale,
+  initI18n,
+  reinitI18n,
+} from "./i18n/i18n";
 
 let refreshInterval: any = null;
 let reporter;
@@ -226,9 +231,18 @@ export function activate(context: vscode.ExtensionContext) {
       if (event.affectsConfiguration("vsCodeSfdxHardis.lang")) {
         reinitI18n();
         // Refresh tree views to show translated labels
-        vscode.commands.executeCommand("vscode-sfdx-hardis.refreshCommandsView", true);
-        vscode.commands.executeCommand("vscode-sfdx-hardis.refreshStatusView", true);
-        vscode.commands.executeCommand("vscode-sfdx-hardis.refreshPluginsView", true);
+        vscode.commands.executeCommand(
+          "vscode-sfdx-hardis.refreshCommandsView",
+          true,
+        );
+        vscode.commands.executeCommand(
+          "vscode-sfdx-hardis.refreshStatusView",
+          true,
+        );
+        vscode.commands.executeCommand(
+          "vscode-sfdx-hardis.refreshPluginsView",
+          true,
+        );
       }
       // Send message to opened LWC panels to update their configuration
       const vsCodeSfdxHardisConfiguration =
@@ -257,28 +271,33 @@ export function activate(context: vscode.ExtensionContext) {
         true,
       );
     }
-    
+
     // Change UI theme: refresh all opened panels
     if (
       event.affectsConfiguration("vsCodeSfdxHardis.theme.colorTheme") ||
       event.affectsConfiguration("vsCodeSfdxHardis.lang")
     ) {
       // Reload fresh configuration data for extension config panel
-      
-      const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis.theme");
+
+      const config = vscode.workspace.getConfiguration(
+        "vsCodeSfdxHardis.theme",
+      );
       const colorThemeConfig = config.get("colorTheme", "auto");
-      const { colorTheme, colorContrast } = LwcPanelManager.resolveTheme(colorThemeConfig);
+      const { colorTheme, colorContrast } =
+        LwcPanelManager.resolveTheme(colorThemeConfig);
       const refreshParams: any = { colorTheme, colorContrast };
       if (event.affectsConfiguration("vsCodeSfdxHardis.lang")) {
         reinitI18n();
         refreshParams.translations = getAllTranslations();
         refreshParams.locale = getCurrentLocale();
       }
-      getExtensionConfigSections(context.extensionUri).then((_) => {
-        LwcPanelManager.getInstance(context).refreshAllPanels(refreshParams);
-      }).catch((err) => {
-        Logger.log("Error refreshing panels with new theme: " + err.message);
-      });
+      getExtensionConfigSections(context.extensionUri)
+        .then((_) => {
+          LwcPanelManager.getInstance(context).refreshAllPanels(refreshParams);
+        })
+        .catch((err) => {
+          Logger.log("Error refreshing panels with new theme: " + err.message);
+        });
     }
   });
 
@@ -289,12 +308,13 @@ export function activate(context: vscode.ExtensionContext) {
 
     if (!colorThemeConfig || colorThemeConfig === "auto") {
       const lwcManager = LwcPanelManager.getInstance(context);
-      const { colorTheme, colorContrast } = LwcPanelManager.resolveTheme(colorThemeConfig);
-      
+      const { colorTheme, colorContrast } =
+        LwcPanelManager.resolveTheme(colorThemeConfig);
+
       // Send theme update to all active panels
       lwcManager.sendMessageToAllPanels({
         type: "updateTheme",
-        data: { colorTheme, colorContrast }
+        data: { colorTheme, colorContrast },
       });
     }
   });

@@ -429,14 +429,16 @@ export default class PromptInput extends SharedMixin(LightningElement) {
     const placeholder = this.promptPlaceholder;
     const base = placeholder || this.i18n.chooseAnOption;
     const count = (this.filteredComboboxOptions || []).length;
-    const choiceWord = count === 1 ? this.i18n.choiceSingular : this.i18n.choicesPlural;
+    const choiceWord =
+      count === 1 ? this.i18n.choiceSingular : this.i18n.choicesPlural;
     return `${base} (${count} ${choiceWord})`;
   }
 
   // Dynamic label for combobox including visible choices count
   get comboboxLabel() {
     const count = (this.filteredComboboxOptions || []).length;
-    const choiceWord = count === 1 ? this.i18n.choiceSingular : this.i18n.choicesPlural;
+    const choiceWord =
+      count === 1 ? this.i18n.choiceSingular : this.i18n.choicesPlural;
     return `${this.i18n.selectAnOption} (${count} ${choiceWord})`;
   }
 

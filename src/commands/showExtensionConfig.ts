@@ -15,17 +15,21 @@ export function registerShowExtensionConfig(commands: Commands) {
       const panel = lwcManager.getOrCreatePanel("s-extension-config", {
         sections: sections,
       });
-      
+
       // Open the LWC panel
       panel.onMessage(async (type: string, _data: any) => {
         if (type === "refresh") {
           // Re-load settings with fresh values
-          const refreshedSections = await getExtensionConfigSections(commands.extensionUri);
-          panel.sendMessage({ type: "initialize", data: { sections: refreshedSections } });
+          const refreshedSections = await getExtensionConfigSections(
+            commands.extensionUri,
+          );
+          panel.sendMessage({
+            type: "initialize",
+            data: { sections: refreshedSections },
+          });
         }
       });
     },
   );
   commands.disposables.push(disposable);
 }
-

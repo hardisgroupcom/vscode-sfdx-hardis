@@ -56,7 +56,9 @@ export function registerShowPipelineConfig(commands: Commands) {
         },
       );
       panel.updateTitle(
-        branchName ? t("pipelineSettingsBranch", { branchName }) : t("globalPipelineSettings"),
+        branchName
+          ? t("pipelineSettingsBranch", { branchName })
+          : t("globalPipelineSettings"),
       );
 
       // Register message handlers

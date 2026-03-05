@@ -248,7 +248,6 @@ export class LwcPanelManager {
     LwcPanelManager.instance = null;
   }
 
-  
   /**
    * Resolve the theme to use based on the input and VS Code's active theme
    * @returns An object with colorTheme and colorContrast properties

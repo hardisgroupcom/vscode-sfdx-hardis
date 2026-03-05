@@ -220,7 +220,8 @@ export class LwcUiPanel {
     const vsCodeSfdxHardisConfiguration =
       vscode.workspace.getConfiguration("vsCodeSfdxHardis");
     if (vsCodeSfdxHardisConfiguration) {
-      resolvedData.vsCodeSfdxHardisConfiguration = vsCodeSfdxHardisConfiguration;
+      resolvedData.vsCodeSfdxHardisConfiguration =
+        vsCodeSfdxHardisConfiguration;
     }
 
     // Include translations for LWC components (only if not already set by display())
@@ -232,7 +233,8 @@ export class LwcUiPanel {
     // Always add colorTheme to initialization data for consistent theme support
     const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis.theme");
     const colorThemeConfig = config.get("colorTheme", "auto");
-    const { colorTheme, colorContrast } = LwcUiPanel.resolveTheme(colorThemeConfig);
+    const { colorTheme, colorContrast } =
+      LwcUiPanel.resolveTheme(colorThemeConfig);
     resolvedData.colorTheme = colorTheme;
     resolvedData.colorContrast = colorContrast;
 
@@ -386,9 +388,7 @@ export class LwcUiPanel {
       command.includes("&&") ||
       command.includes("||")
     ) {
-      vscode.window.showErrorMessage(
-        t("onlySfCommandsAllowed"),
-      );
+      vscode.window.showErrorMessage(t("onlySfCommandsAllowed"));
       return;
     }
     let result: any = null;
@@ -550,7 +550,9 @@ export class LwcUiPanel {
       const folderUri = vscode.Uri.file(resolvedPath);
       const stat = await vscode.workspace.fs.stat(folderUri);
       if (!(stat.type & vscode.FileType.Directory)) {
-        vscode.window.showErrorMessage(t("pathIsNotAFolder", { path: resolvedPath }));
+        vscode.window.showErrorMessage(
+          t("pathIsNotAFolder", { path: resolvedPath }),
+        );
         return;
       }
       await vscode.commands.executeCommand("revealInExplorer", folderUri);
@@ -621,20 +623,31 @@ export class LwcUiPanel {
       if (data.addElements || data.removeElements) {
         let message = t("configKeyUpdated", { configKey: data.configKey });
         if (data.addElements && data.addElements.length > 0) {
-          message += t("configKeyUpdatedAdded", { elements: data.addElements.join(", ") });
+          message += t("configKeyUpdatedAdded", {
+            elements: data.addElements.join(", "),
+          });
         }
         if (data.removeElements && data.removeElements.length > 0) {
-          message += t("configKeyUpdatedRemoved", { elements: data.removeElements.join(", ") });
+          message += t("configKeyUpdatedRemoved", {
+            elements: data.removeElements.join(", "),
+          });
         }
         vscode.window.withProgress(
-          { location: vscode.ProgressLocation.Notification, title: message, cancellable: false },
+          {
+            location: vscode.ProgressLocation.Notification,
+            title: message,
+            cancellable: false,
+          },
           () => new Promise<void>((resolve) => setTimeout(resolve, 3000)),
         );
       } else {
         vscode.window.withProgress(
           {
             location: vscode.ProgressLocation.Notification,
-            title: t("configKeyUpdatedWithValue", { configKey: data.configKey, value: data.value }),
+            title: t("configKeyUpdatedWithValue", {
+              configKey: data.configKey,
+              value: data.value,
+            }),
             cancellable: false,
           },
           () => new Promise<void>((resolve) => setTimeout(resolve, 3000)),
@@ -684,14 +697,14 @@ export class LwcUiPanel {
     if (data?.translations) {
       this.sendMessage({
         type: "updateTranslations",
-        data
+        data,
       });
       shouldUpdate = false;
     }
     if (data?.colorTheme) {
       this.sendMessage({
         type: "updateTheme",
-        data
+        data,
       });
       shouldUpdate = false;
     }
@@ -708,8 +721,8 @@ export class LwcUiPanel {
   public static resolveTheme(theme: string): any {
     const resultTheme = {
       colorTheme: "light",
-      colorContrast: ""
-    }
+      colorContrast: "",
+    };
     if (!theme || theme === "auto") {
       const vsCodeTheme = vscode.window.activeColorTheme.kind;
       switch (vsCodeTheme) {
@@ -762,29 +775,42 @@ export class LwcUiPanel {
 
     // Global theme stylesheet (built/copied to out/assets/styles/global-theme.css by the build)
     const globalThemeVarsCssUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this.extensionUri, "out", "assets", "styles", "global-theme-variables.css"),
+      vscode.Uri.joinPath(
+        this.extensionUri,
+        "out",
+        "assets",
+        "styles",
+        "global-theme-variables.css",
+      ),
     );
     const globalThemeCssUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this.extensionUri, "out", "assets", "styles", "global-theme.css"),
+      vscode.Uri.joinPath(
+        this.extensionUri,
+        "out",
+        "assets",
+        "styles",
+        "global-theme.css",
+      ),
     );
 
     // Determine theme based on configuration
     const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis.theme");
     const colorThemeConfig = config.get("colorTheme", "auto");
-    const { colorTheme, colorContrast } = LwcUiPanel.resolveTheme(colorThemeConfig);
+    const { colorTheme, colorContrast } =
+      LwcUiPanel.resolveTheme(colorThemeConfig);
     const initData = this.initializationData || {};
     initData.colorTheme = colorTheme;
     initData.colorContrast = colorContrast;
 
     // Safely serialize initialization data
     const initDataJson = JSON.stringify(initData)
-          .replace(/'/g, "&#39;")
-          .replace(/"/g, "&quot;");
+      .replace(/'/g, "&#39;")
+      .replace(/"/g, "&quot;");
 
     const mermaidTheme = {
       clusterBkg: "#EAF5FC",
-      edgeLabelBackground: "rgba(232,232,232, 0.8)"
-    }
+      edgeLabelBackground: "rgba(232,232,232, 0.8)",
+    };
     if (colorTheme === "dark") {
       mermaidTheme.clusterBkg = "#333";
       mermaidTheme.edgeLabelBackground = "rgba(77, 77, 77, 0.5)";

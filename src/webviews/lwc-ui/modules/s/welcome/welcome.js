@@ -13,10 +13,10 @@ export default class Welcome extends SharedMixin(LightningElement) {
   @track langSetting = "auto";
   @track langDropdownOpen = false;
   @track themeDropdownOpen = false;
- 
+
   @track setupHidden = false;
   scrollThreshold = 100; // Hide toggle after scrolling 100px
-  
+
   connectedCallback() {
     super.connectedCallback();
     // Bind handler once so we can remove it later
@@ -43,7 +43,9 @@ export default class Welcome extends SharedMixin(LightningElement) {
     const shouldHide = window.scrollY > this.scrollThreshold;
     this.setupHidden = shouldHide;
 
-    const heroElements = this.template.querySelectorAll(".hero-settings, .hero-top-left");
+    const heroElements = this.template.querySelectorAll(
+      ".hero-settings, .hero-top-left",
+    );
     heroElements.forEach((element) => {
       element.classList.toggle("hidden", shouldHide);
     });
@@ -66,11 +68,12 @@ export default class Welcome extends SharedMixin(LightningElement) {
       this.langSetting = data.langSetting;
     }
   }
-  
+
   setColorThemeVariants(colorThemeConfig) {
-    this.themeVariants.light = (colorThemeConfig === "light") ? "brand" : "neutral";
-    this.themeVariants.dark = (colorThemeConfig === "dark") ? "brand" : "neutral";
-    this.themeVariants.auto = (colorThemeConfig === "auto") ? "brand" : "neutral";
+    this.themeVariants.light =
+      colorThemeConfig === "light" ? "brand" : "neutral";
+    this.themeVariants.dark = colorThemeConfig === "dark" ? "brand" : "neutral";
+    this.themeVariants.auto = colorThemeConfig === "auto" ? "brand" : "neutral";
   }
 
   @api
@@ -86,7 +89,13 @@ export default class Welcome extends SharedMixin(LightningElement) {
   }
 
   get currentLangFlagSrc() {
-    const map = { auto: "flagGlobe", en: "flagEn", es: "flagEs", fr: "flagFr", ja: "flagJa" };
+    const map = {
+      auto: "flagGlobe",
+      en: "flagEn",
+      es: "flagEs",
+      fr: "flagFr",
+      ja: "flagJa",
+    };
     const key = map[this.langSetting] || "flagGlobe";
     return this.getImageUrl(key, "flagGlobe");
   }
@@ -126,7 +135,10 @@ export default class Welcome extends SharedMixin(LightningElement) {
   _syncOutsideClickListener() {
     if (this.langDropdownOpen || this.themeDropdownOpen) {
       // Use setTimeout to avoid the current click event immediately closing the dropdown
-      setTimeout(() => document.addEventListener("click", this._boundHandleOutsideClick), 0);
+      setTimeout(
+        () => document.addEventListener("click", this._boundHandleOutsideClick),
+        0,
+      );
     } else {
       document.removeEventListener("click", this._boundHandleOutsideClick);
     }

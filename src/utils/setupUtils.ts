@@ -214,7 +214,10 @@ export class SetupHelper {
             recommended: String(NODE_JS_MINIMUM_VERSION),
             status: "outdated",
             helpUrl: "https://nodejs.org/",
-            message: t("depNodeOutdatedMessage", { major: String(major), minMajor: String(minMajor) }),
+            message: t("depNodeOutdatedMessage", {
+              major: String(major),
+              minMajor: String(minMajor),
+            }),
             installCommand: "https://nodejs.org/",
             messageLinkLabel: t("depNodeInstallLink", { platformLabel }),
             upgradeAvailable: true,
@@ -231,9 +234,10 @@ export class SetupHelper {
         helpUrl: "https://nodejs.org/",
         message: ok
           ? undefined
-          : t("depNodeMissingMessage", { version: String(NODE_JS_MINIMUM_VERSION) }),
-        messageLinkLabel:
-          t("depNodeDownloadLink"),
+          : t("depNodeMissingMessage", {
+              version: String(NODE_JS_MINIMUM_VERSION),
+            }),
+        messageLinkLabel: t("depNodeDownloadLink"),
       };
     } catch {
       return {
@@ -244,9 +248,10 @@ export class SetupHelper {
         recommended: null,
         status: "error",
         helpUrl: "https://nodejs.org/",
-        message: t("depNodeMissingMessage", { version: String(NODE_JS_MINIMUM_VERSION) }),
-        messageLinkLabel:
-          t("depNodeDownloadLink"),
+        message: t("depNodeMissingMessage", {
+          version: String(NODE_JS_MINIMUM_VERSION),
+        }),
+        messageLinkLabel: t("depNodeDownloadLink"),
       };
     }
   }
@@ -322,8 +327,7 @@ export class SetupHelper {
           version: legacyMatch[1],
           recommended,
           status: "error",
-          message:
-            t("depSfCliLegacyMessage"),
+          message: t("depSfCliLegacyMessage"),
           messageLinkLabel: t("depSfCliLegacyLink"),
           installCommand:
             "npm uninstall sfdx-cli --global && npm install @salesforce/cli --global",
@@ -374,7 +378,10 @@ export class SetupHelper {
           status: "outdated",
           helpUrl:
             "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_unified.htm",
-          message: t("depSfCliOutdatedMessage", { version: version ?? "", recommended: recommended ?? "" }),
+          message: t("depSfCliOutdatedMessage", {
+            version: version ?? "",
+            recommended: recommended ?? "",
+          }),
           installCommand: `npm install @salesforce/cli@${recommended} -g`,
           upgradeAvailable: true,
         };
@@ -466,7 +473,10 @@ export class SetupHelper {
             recommended: minimal,
             status: "error",
             helpUrl: `https://github.com/hardisgroupcom/sfdx-hardis`,
-            message: t("depSfdxHardisOldMessage", { version: installedVersion, minimal }),
+            message: t("depSfdxHardisOldMessage", {
+              version: installedVersion,
+              minimal,
+            }),
             installCommand: `sf plugins install ${pluginName}@${sfdxHardisTag}`,
             upgradeAvailable: true,
           };
@@ -487,7 +497,10 @@ export class SetupHelper {
           recommended: latestPluginVersion,
           status: "outdated",
           helpUrl: `https://www.npmjs.com/package/${pluginName}`,
-          message: t("depSfPluginOutdatedMessage", { latest: latestPluginVersion ?? "", plugin: pluginName }),
+          message: t("depSfPluginOutdatedMessage", {
+            latest: latestPluginVersion ?? "",
+            plugin: pluginName,
+          }),
           installCommand: `sf plugins install ${pluginName}`,
           upgradeAvailable: true,
         };
@@ -593,7 +606,8 @@ export class SetupHelper {
           );
         }
       }
-      const installTag = pluginName === "sfdx-hardis" ? getSfdxHardisInstallTag() : "latest";
+      const installTag =
+        pluginName === "sfdx-hardis" ? getSfdxHardisInstallTag() : "latest";
       await execCommandWithProgress(
         `echo y | sf plugins install ${pluginName}@${installTag}`,
         { fail: true, output: true },
