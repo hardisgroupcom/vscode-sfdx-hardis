@@ -211,7 +211,8 @@ export default class OrgManager extends SharedMixin(LightningElement) {
     return this.recommendedUsernames.length > 0;
   }
 
-  // Return an array of usernames considered "recommended" for removal: disconnected, deleted or expired
+  // Return an array of usernames considered "recommended" for removal:
+  // disconnected, deleted, expired, or production orgs
   get recommendedUsernames() {
     const now = Date.now();
     return (this.orgs || [])
@@ -237,7 +238,9 @@ export default class OrgManager extends SharedMixin(LightningElement) {
         } catch (e) {
           // ignore date parse errors
         }
-        return !connected || deleted || expired;
+        const isProduction =
+          (o.orgType || "").toString().toLowerCase() === "production";
+        return !connected || deleted || expired || isProduction;
       })
       .map((o) => o.username)
       .filter(Boolean);

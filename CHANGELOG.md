@@ -10,6 +10,8 @@
   - English
   - French
   - Spanish
+- Fixes
+  - Orgs Manager: Invite to disconnect from production orgs
 
 ## [6.29.1] 2025-02-24
 
