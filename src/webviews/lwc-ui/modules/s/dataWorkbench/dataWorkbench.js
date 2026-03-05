@@ -462,6 +462,7 @@ export default class DataWorkbench extends SharedMixin(LightningElement) {
       hasUseFieldMapping: coerceBoolean(obj.useFieldMapping),
       hasUseValuesMapping: coerceBoolean(obj.useValuesMapping),
       hasUseSourceCSVFile: coerceBoolean(obj.useSourceCSVFile),
+      hasMasterFilter: coerceBoolean(obj.master, true) === false,
       hasBulkApiV1BatchSize: !!obj.bulkApiV1BatchSize,
       hasRestApiBatchSize: !!obj.restApiBatchSize,
     }));

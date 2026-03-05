@@ -601,6 +601,8 @@
   "dwbObjBadgeFieldMappingLabel": "Field Mapping",
   "dwbObjBadgeHardDelete": "Records are permanently deleted, bypassing recycle bin",
   "dwbObjBadgeHardDeleteLabel": "Hard Delete",
+  "dwbObjBadgeMasterFiltered": "Records are filtered using results from master queries",
+  "dwbObjBadgeMasterFilteredLabel": "Filtered using master",
   "dwbObjBadgeMockData": "Selected fields values will be replaced by random values during upload or download",
   "dwbObjBadgeMockDataLabel": "Mock Data",
   "dwbObjBadgeMockFieldsCount": "{{count}} mock field(s)",

@@ -601,6 +601,8 @@
   "dwbObjBadgeFieldMappingLabel": "Mapeo de campos",
   "dwbObjBadgeHardDelete": "Los registros se eliminan permanentemente, sin pasar por la papelera de reciclaje",
   "dwbObjBadgeHardDeleteLabel": "Eliminación definitiva",
+  "dwbObjBadgeMasterFiltered": "Los registros se filtran usando resultados de consultas master",
+  "dwbObjBadgeMasterFilteredLabel": "Filtrado con master",
   "dwbObjBadgeMockData": "Los valores de los campos seleccionados serán reemplazados por valores aleatorios durante la carga o descarga",
   "dwbObjBadgeMockDataLabel": "Datos mock",
   "dwbObjBadgeMockFieldsCount": "{{count}} campo(s) mock",

@@ -402,6 +402,9 @@
                               <template if:true={obj.hasUseSourceCSVFile}>
                                 <span class="slds-badge object-badge" title={i18n.dwbObjBadgeCsvSource}>{i18n.dwbObjBadgeCsvSourceLabel}</span>
                               </template>
+                              <template if:true={obj.hasMasterFilter}>
+                                <span class="slds-badge object-badge" title={i18n.dwbObjBadgeMasterFiltered}>{i18n.dwbObjBadgeMasterFilteredLabel}</span>
+                              </template>
                               <template if:true={obj.updateWithMockData}>
                                 <span class="slds-badge slds-badge_success object-badge" title={i18n.dwbObjBadgeMockData}>{i18n.dwbObjBadgeMockDataLabel}</span>
                               </template>

@@ -6,10 +6,13 @@
   - Themes: Light mode & Dark mode
   - Many UI/UX improvements
   - Unify the way to load images in WebView panels
+  - Add SLDS icons to all lightning tabs
 - Translation of UI & messages
   - English
   - French
   - Spanish
+- Enhancements
+  - Data Workbench: Make more explicit the use of filtering using master queries results (new badge)
 - Fixes
   - Orgs Manager: Invite to disconnect from production orgs
 

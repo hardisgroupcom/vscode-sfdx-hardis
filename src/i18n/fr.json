@@ -601,6 +601,8 @@
   "dwbObjBadgeFieldMappingLabel": "Mapping champs",
   "dwbObjBadgeHardDelete": "Les records sont supprimés définitivement, contournant la corbeille",
   "dwbObjBadgeHardDeleteLabel": "Suppression définitive",
+  "dwbObjBadgeMasterFiltered": "Les records sont filtrés à partir des résultats des requêtes maîtres",
+  "dwbObjBadgeMasterFilteredLabel": "Filtré avec master",
   "dwbObjBadgeMockData": "Les valeurs des champs sélectionnés seront remplacées par des valeurs aléatoires lors du chargement ou téléchargement",
   "dwbObjBadgeMockDataLabel": "Données factices",
   "dwbObjBadgeMockFieldsCount": "{{count}} champ(s) factice(s)",
