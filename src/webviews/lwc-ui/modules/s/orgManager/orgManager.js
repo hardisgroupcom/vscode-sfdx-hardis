@@ -116,29 +116,33 @@ export default class OrgManager extends SharedMixin(LightningElement) {
           (o.orgType || "").toString().toLowerCase() === "sandbox";
         const actions = [];
         if (isConnected) {
-          actions.push({ label: this.t("openLabel"), name: "open" });
+          actions.push({ label: this.t("openLabel"), name: "open", iconName: "utility:new_window" });
           if (!o.isDefaultUsername) {
             actions.push({
               label: this.t("setAsDefaultOrg"),
               name: "setDefault",
+              iconName: "utility:check",
             });
           }
           if (o.isDevHub && !o.isDefaultDevHubUsername) {
             actions.push({
               label: this.t("setAsDefaultDevHub"),
               name: "setDefaultDevHub",
+              iconName: "utility:check",
             });
           }
           // Org operations for non-scratch orgs
           if (!isScratch) {
-            actions.push({ label: this.t("freezeUsers"), name: "freezeUsers" });
+            actions.push({ label: this.t("freezeUsers"), name: "freezeUsers", iconName: "utility:lock" });
             actions.push({
               label: this.t("unfreezeUsers"),
               name: "unfreezeUsers",
+              iconName: "utility:unlock",
             });
             actions.push({
               label: this.t("purgeObsoleteFlowsVersions"),
               name: "purgeFlows",
+              iconName: "utility:recycle_bin_full",
             });
           }
           // Scratch org operations
@@ -146,6 +150,7 @@ export default class OrgManager extends SharedMixin(LightningElement) {
             actions.push({
               label: this.t("deleteScratchOrgs"),
               name: "deleteScratchOrg",
+              iconName: "utility:delete",
             });
           }
           // Sandbox-specific operations
@@ -153,23 +158,27 @@ export default class OrgManager extends SharedMixin(LightningElement) {
             actions.push({
               label: this.t("activateInvalidUserEmailsInSandbox"),
               name: "activateInvalidEmails",
+              iconName: "utility:email",
             });
             actions.push({
               label: this.t("sandboxRefreshBefore"),
               name: "sandboxRefreshBefore",
+              iconName: "utility:refresh",
             });
             actions.push({
               label: this.t("sandboxRefreshAfter"),
               name: "sandboxRefreshAfter",
+              iconName: "utility:refresh",
             });
           }
         } else {
-          actions.push({ label: this.t("reconnectLabel"), name: "reconnect" });
+          actions.push({ label: this.t("reconnectLabel"), name: "reconnect", iconName: "utility:link" });
         }
         actions.push({
           label: this.t("removeLabel"),
           name: "remove",
           variant: "destructive",
+          iconName: "utility:delete",
         });
         return actions;
       })(),
