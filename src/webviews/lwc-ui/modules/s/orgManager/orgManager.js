@@ -110,8 +110,10 @@ export default class OrgManager extends SharedMixin(LightningElement) {
           .toString()
           .toLowerCase()
           .match(/connected|authorized/);
-        const isScratch = (o.orgType || "").toString().toLowerCase() === "scratch";
-        const isSandbox = (o.orgType || "").toString().toLowerCase() === "sandbox";
+        const isScratch =
+          (o.orgType || "").toString().toLowerCase() === "scratch";
+        const isSandbox =
+          (o.orgType || "").toString().toLowerCase() === "sandbox";
         const actions = [];
         if (isConnected) {
           actions.push({ label: this.t("openLabel"), name: "open" });
@@ -130,18 +132,36 @@ export default class OrgManager extends SharedMixin(LightningElement) {
           // Org operations for non-scratch orgs
           if (!isScratch) {
             actions.push({ label: this.t("freezeUsers"), name: "freezeUsers" });
-            actions.push({ label: this.t("unfreezeUsers"), name: "unfreezeUsers" });
-            actions.push({ label: this.t("purgeObsoleteFlowsVersions"), name: "purgeFlows" });
+            actions.push({
+              label: this.t("unfreezeUsers"),
+              name: "unfreezeUsers",
+            });
+            actions.push({
+              label: this.t("purgeObsoleteFlowsVersions"),
+              name: "purgeFlows",
+            });
           }
           // Scratch org operations
           if (isScratch) {
-            actions.push({ label: this.t("deleteScratchOrgs"), name: "deleteScratchOrg" });
+            actions.push({
+              label: this.t("deleteScratchOrgs"),
+              name: "deleteScratchOrg",
+            });
           }
           // Sandbox-specific operations
           if (isSandbox) {
-            actions.push({ label: this.t("activateInvalidUserEmailsInSandbox"), name: "activateInvalidEmails" });
-            actions.push({ label: this.t("sandboxRefreshBefore"), name: "sandboxRefreshBefore" });
-            actions.push({ label: this.t("sandboxRefreshAfter"), name: "sandboxRefreshAfter" });
+            actions.push({
+              label: this.t("activateInvalidUserEmailsInSandbox"),
+              name: "activateInvalidEmails",
+            });
+            actions.push({
+              label: this.t("sandboxRefreshBefore"),
+              name: "sandboxRefreshBefore",
+            });
+            actions.push({
+              label: this.t("sandboxRefreshAfter"),
+              name: "sandboxRefreshAfter",
+            });
           }
         } else {
           actions.push({ label: this.t("reconnectLabel"), name: "reconnect" });
@@ -341,37 +361,51 @@ export default class OrgManager extends SharedMixin(LightningElement) {
     } else if (actionName === "freezeUsers") {
       window.sendMessageToVSCode({
         type: "runCommand",
-        data: { command: `sf hardis:org:user:freeze --target-org ${row.username}` },
+        data: {
+          command: `sf hardis:org:user:freeze --target-org ${row.username}`,
+        },
       });
     } else if (actionName === "unfreezeUsers") {
       window.sendMessageToVSCode({
         type: "runCommand",
-        data: { command: `sf hardis:org:user:unfreeze --target-org ${row.username}` },
+        data: {
+          command: `sf hardis:org:user:unfreeze --target-org ${row.username}`,
+        },
       });
     } else if (actionName === "purgeFlows") {
       window.sendMessageToVSCode({
         type: "runCommand",
-        data: { command: `sf hardis:org:purge:flow --target-org ${row.username}` },
+        data: {
+          command: `sf hardis:org:purge:flow --target-org ${row.username}`,
+        },
       });
     } else if (actionName === "deleteScratchOrg") {
       window.sendMessageToVSCode({
         type: "runCommand",
-        data: { command: `sf hardis:scratch:delete --target-org ${row.username}` },
+        data: {
+          command: `sf hardis:scratch:delete --target-org ${row.username}`,
+        },
       });
     } else if (actionName === "activateInvalidEmails") {
       window.sendMessageToVSCode({
         type: "runCommand",
-        data: { command: `sf hardis:org:user:activateinvalid --target-org ${row.username}` },
+        data: {
+          command: `sf hardis:org:user:activateinvalid --target-org ${row.username}`,
+        },
       });
     } else if (actionName === "sandboxRefreshBefore") {
       window.sendMessageToVSCode({
         type: "runCommand",
-        data: { command: `sf hardis:org:refresh:before-refresh --target-org ${row.username}` },
+        data: {
+          command: `sf hardis:org:refresh:before-refresh --target-org ${row.username}`,
+        },
       });
     } else if (actionName === "sandboxRefreshAfter") {
       window.sendMessageToVSCode({
         type: "runCommand",
-        data: { command: `sf hardis:org:refresh:after-refresh --target-org ${row.username}` },
+        data: {
+          command: `sf hardis:org:refresh:after-refresh --target-org ${row.username}`,
+        },
       });
     } else if (actionName === "reconnect") {
       window.sendMessageToVSCode({
