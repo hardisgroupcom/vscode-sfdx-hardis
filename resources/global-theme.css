@@ -75,10 +75,14 @@ div.slds-scope[data-theme="dark"] {
 
 
 /* Modal backdrop overlay */
-.slds-scope[data-theme] .slds-spinner_container,
 .slds-scope[data-theme] .slds-fade-in-open,
 .slds-scope[data-theme] .slds-backdrop {
   background: light-dark(rgba(0, 0, 0, 0.5), rgba(20, 20, 20, 0.75));
+}
+
+/* Spinner container — subtle overlay in light mode to indicate non-interactivity */
+.slds-scope[data-theme] .slds-spinner_container {
+  background: light-dark(rgba(255, 255, 255, 0.4), rgba(20, 20, 20, 0.75));
 }
 
 /* Shared modal sizing for tabbed workbench modals (Pipeline-like dimensions) */
