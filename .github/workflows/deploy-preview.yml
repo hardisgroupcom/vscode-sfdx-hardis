@@ -10,8 +10,7 @@
 name: "Build & Deploy - PREVIEW"
 on:
   push:
-    # Want to run the automation when a release is created
-    branches: ["preview-release"]
+    branches: ["alpha"]
 
 permissions: read-all
 

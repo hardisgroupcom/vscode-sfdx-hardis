@@ -1,4 +1,5 @@
 import { LightningElement, api, track } from "lwc";
+import { SharedMixin } from "s/sharedMixin";
 
 /**
  * Documentation Workbench LWC Component
@@ -11,7 +12,9 @@ import { LightningElement, api, track } from "lwc";
  *  - Run locally (MkDocs)
  *  - Open configuration panel for advanced options
  */
-export default class DocumentationWorkbench extends LightningElement {
+export default class DocumentationWorkbench extends SharedMixin(
+  LightningElement,
+) {
   // Generation options (state tracked here, synced with config panel)
   @track generatePdf = false;
   @track generateExcel = false;
@@ -24,6 +27,7 @@ export default class DocumentationWorkbench extends LightningElement {
   @track generateObjectsDoc = true;
   @track generateAutomationsDoc = true;
   @track generateLwcDoc = true;
+  @track docLanguage = ""; // empty = use VS Code language setting
 
   @api
   initialize(data) {
@@ -62,6 +66,9 @@ export default class DocumentationWorkbench extends LightningElement {
       if (data.generateLwcDoc !== undefined) {
         this.generateLwcDoc = data.generateLwcDoc;
       }
+      if (data.docLanguage !== undefined) {
+        this.docLanguage = data.docLanguage;
+      }
     }
   }
 
@@ -70,6 +77,13 @@ export default class DocumentationWorkbench extends LightningElement {
     if (type === "initialize") {
       this.initialize(data);
     }
+  }
+
+  @api
+  handleColorThemeMessage(type, data) {
+    // Delegate to the SharedMixin's implementation
+    if (super.handleColorThemeMessage)
+      super.handleColorThemeMessage(type, data);
   }
 
   // ─── Event handlers ──────────────────────────────────────────────────
@@ -100,6 +114,24 @@ export default class DocumentationWorkbench extends LightningElement {
     } else if (name === "generateLwcDoc") {
       this.generateLwcDoc = checked;
     }
+  }
+
+  get languageOptions() {
+    return [
+      { label: this.t("langVsCodeAuto"), value: "" },
+      { label: this.t("langEnglish"), value: "en" },
+      { label: this.t("langFrench"), value: "fr" },
+      { label: this.t("langSpanish"), value: "es" },
+      { label: this.t("langJapanese"), value: "ja" },
+    ];
+  }
+
+  handleLanguageChange(event) {
+    this.docLanguage = event.detail.value;
+  }
+
+  get deployToSalesforceDescHtml() {
+    return this.t("deployToSalesforceDesc");
   }
 
   handleGenerate() {
@@ -139,7 +171,12 @@ export default class DocumentationWorkbench extends LightningElement {
     }
     window.sendMessageToVSCode({
       type: "runCommand",
-      data: { command: command },
+      data: {
+        command: command,
+        envVars: this.docLanguage
+          ? { PROMPTS_LANGUAGE: this.docLanguage, SFDX_HARDIS_LANG: this.docLanguage }
+          : undefined,
+      },
     });
   }
 

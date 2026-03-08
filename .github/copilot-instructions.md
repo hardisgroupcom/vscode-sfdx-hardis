@@ -421,6 +421,132 @@ if (!command.startsWith("sf hardis") || command.includes("&&")) {
 }
 ```
 
+## Internationalization (i18n)
+
+### Overview
+The extension uses [i18next](https://www.i18next.com/) for internationalization. All user-facing strings must be translated. Currently supported locales: **English (en)**, **French (fr)**, and **Spanish (es)**.
+
+### Translation Files
+- `src/i18n/en.json` — English translations (source of truth)
+- `src/i18n/fr.json` — French translations
+- `src/i18n/es.json` — Spanish translations
+- `src/i18n/i18n.ts` — Backend i18n utility module
+
+**Key naming conventions:**
+- Flat JSON structure (no nesting)
+- camelCase keys, alphabetically sorted
+- Interpolation variables use `{{varName}}` syntax
+- Keys should be descriptive: `clickToOpenSetup`, `orgExpiresInNDays`, `loadingGitInfo`
+
+### Backend Usage (TypeScript)
+
+Import and call `t()` for any user-facing string:
+```typescript
+import { t } from "./i18n/i18n";
+
+// Simple translation
+label: t("currentOrg"),
+
+// With interpolation
+label: t("branchLabel", { branch: currentBranch }),
+tooltip: t("orgExpiresInNDays", { days: daysBeforeExpiration }),
+```
+
+Available exports from `src/i18n/i18n.ts`:
+- `t(key, vars?)` — Translate a key with optional interpolation variables
+- `initI18n()` — Initialize i18n (called once at extension activation)
+- `reinitI18n()` — Re-initialize after locale change
+- `getAllTranslations()` — Get all translations for the current locale (used for LWC)
+- `getCurrentLocale()` — Get the current locale string
+
+### LWC Usage (Frontend)
+
+Translations are injected by `lwc-ui-panel.ts` into `data-init-data` via `getAllTranslations()` / `getCurrentLocale()`. The bootstrapper (`index.js`) sets `window.__lwcTranslations` and `window.__lwcLocale` **before** mounting the component, so translations are available on the very first render with no flash.
+
+LWC components use the `I18nMixin`, which auto-initialises from `window.__lwcTranslations` in `connectedCallback`:
+```javascript
+import { I18nMixin } from "s/i18nMixin";
+
+export default class MyComponent extends I18nMixin(LightningElement) {
+  // connectedCallback auto-inits translations from window.__lwcTranslations.
+  // If you define your own connectedCallback, you MUST call super.connectedCallback():
+  connectedCallback() {
+    super.connectedCallback();
+    // ... your init logic
+  }
+}
+```
+
+**In HTML templates**, use `{i18n.keyName}` directly — no getters needed for static labels:
+```html
+<span>{i18n.welcomeTitle}</span>
+<lightning-button label={i18n.saveLabel}></lightning-button>
+```
+
+**In JavaScript**, use `this.t(key, vars)` only when you need interpolation or must compute the string dynamically:
+```javascript
+get formattedDuration() {
+  return this.t("durationLabel", { duration: this.elapsed });
+}
+
+get expiryText() {
+  return this.t("orgExpiresInNDays", { days: this.daysLeft });
+}
+```
+
+Then bind the getter result in the template:
+```html
+<span>{formattedDuration}</span>
+```
+
+**Rule of thumb:**
+- Static label → `{i18n.keyName}` in template (no getter)
+- Dynamic / interpolated → `this.t("key", { var: value })` in a getter, bind the getter in template
+
+**`I18nMixin` API:**
+- `this.i18n` — Reactive Proxy over all translations; missing keys fall back to the key name itself
+- `this.t(key, vars?)` — Translate with optional `{{varName}}` interpolation
+- `this.translations` — Raw translations object (useful to pass to child components)
+- `this._locale` — Current locale string
+- `this.initTranslations(data)` — Manually re-initialise translations if needed
+
+### Locale Detection Priority
+1. VS Code setting `vsCodeSfdxHardis.lang` (if not `"auto"`)
+2. Environment variable `SFDX_HARDIS_LANG`
+3. `vscode.env.language`
+4. Fallback: `"en"`
+
+### Adding New Translatable Strings
+
+When adding new user-facing strings:
+1. Add the key to **all three** `src/i18n/en.json`, `src/i18n/fr.json`, and `src/i18n/es.json` (keep alphabetical order)
+2. Use `t("keyName")` in TypeScript or `this.t("keyName")` in LWC
+3. For dynamic values, use interpolation: `t("key", { varName: value })`
+
+### What to Translate vs. Not Translate
+**Translate:**
+- Labels, tooltips, error messages, warning messages, section titles, descriptions shown to users, any variable that looks like it will be shown to the user, even if it's not a full sentence (e.g., button labels, section titles, status messages)
+- User targeted properties "message", "description"...
+- 3rd argument of calls to method execCommandWithProgress()
+- arguments of methods showErrorMessage, showInformationMessage, showWarning, updateTitle
+
+**Do NOT translate:**
+- Technical identifiers: command IDs, icon IDs, file paths, CSS classes
+- Technical terms kept as-is: merge request, commit, branch, sandbox, scratch org, package.xml, Apex, SOQL, LWC, DevHub, CLI flags, environment variable names
+- `[markers]` in brackets
+- Brand names: Salesforce, GitHub, GitLab, SFDMU, MegaLinter, SFDX-Hardis, Cloudity, etc.
+
+### French Translation Guidelines
+- Use official Salesforce French terminology (e.g., "Métadonnées", "Déploiement", "Org Salesforce")
+- Keep English technical terms untranslated: merge, commit, branch, scratch org, package.xml, DevHub
+- Use formal French ("vous" not "tu")
+
+### Spanish Translation Guidelines
+- Use official Salesforce Spanish terminology (e.g., "Metadatos", "Implementación", "Org de Salesforce")
+- Keep English technical terms untranslated: merge, commit, branch, scratch org, package.xml, DevHub
+- Use formal Spanish ("usted" register where applicable)
+- Use Latin American neutral Spanish where regional variants differ
+
 ## Common Workflows
 
 ### Adding New Commands

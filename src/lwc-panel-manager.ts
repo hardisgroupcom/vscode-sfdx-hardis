@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { LwcUiPanel } from "./webviews/lwc-ui-panel";
 import { Logger } from "./logger";
+import { getAllTranslations, getCurrentLocale } from "./i18n/i18n";
 
 /**
  * Manager for LWC UI panels
@@ -227,10 +228,31 @@ export class LwcPanelManager {
   }
 
   /**
+   * Refresh all active panels (useful when configuration changes, like theme)
+   */
+  public refreshAllPanels(data: any): void {
+    data.translations = getAllTranslations();
+    data.locale = getCurrentLocale();
+    this.activePanels.forEach((panel, _) => {
+      if (!panel.isDisposed()) {
+        panel.refresh(data || {});
+      }
+    });
+  }
+
+  /**
    * Clean up the manager instance
    */
   public dispose(): void {
     this.disposeAllPanels();
     LwcPanelManager.instance = null;
+  }
+
+  /**
+   * Resolve the theme to use based on the input and VS Code's active theme
+   * @returns An object with colorTheme and colorContrast properties
+   */
+  public static resolveTheme(colorTheme: string): any {
+    return LwcUiPanel.resolveTheme(colorTheme);
   }
 }

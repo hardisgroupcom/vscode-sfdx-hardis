@@ -30,6 +30,7 @@ import { registerShowMetadataRetriever } from "./commands/showMetadataRetriever"
 import { registerShowPackageXml } from "./commands/packageXml";
 import { registerGitMergeDriverToggle } from "./commands/gitMergeDriver";
 import { registerShowDocumentationWorkbench } from "./commands/showDocumentationWorkbench";
+import { t } from "./i18n/i18n";
 
 export class Commands {
   public readonly extensionUri: vscode.Uri;
@@ -100,9 +101,9 @@ export class Commands {
     // Execute SFDX Hardis command
     const disposable = vscode.commands.registerCommand(
       "vscode-sfdx-hardis.execute-command",
-      (sfdxHardisCommand: string) => {
+      (sfdxHardisCommand: string, envVars?: Record<string, string>) => {
         // Use CommandRunner for all terminal and LWC panel logic
-        this.commandRunner.executeCommand(sfdxHardisCommand);
+        this.commandRunner.executeCommand(sfdxHardisCommand, envVars);
       },
     );
     this.disposables.push(disposable);
@@ -259,8 +260,8 @@ export class Commands {
       "vscode-sfdx-hardis.openValidationLink",
       async () => {
         const inputBoxOptions: vscode.InputBoxOptions = {
-          prompt: "Please paste your Salesforce validation link here",
-          placeHolder: "Enter Outlook encoded link here",
+          prompt: t("pasteSalesforceValidationLink"),
+          placeHolder: t("enterOutlookEncodedLink"),
           ignoreFocusOut: true,
         };
         const encodedUrl = await vscode.window.showInputBox(inputBoxOptions);
