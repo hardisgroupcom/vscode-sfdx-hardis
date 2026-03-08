@@ -3,6 +3,7 @@ import { Commands } from "../commands";
 import { getWorkspaceRoot } from "../utils";
 import { SfdxHardisConfigHelper } from "../utils/pipeline/sfdxHardisConfigHelper";
 import { LwcPanelManager } from "../lwc-panel-manager";
+import { t } from "../i18n/i18n";
 
 export function registerShowInstalledPackages(commands: Commands) {
   const workspaceRoot = getWorkspaceRoot();
@@ -33,7 +34,7 @@ export function registerShowInstalledPackages(commands: Commands) {
         "s-installed-packages",
         { packages },
       );
-      panel.updateTitle("Installed Packages");
+      panel.updateTitle(t("installedPackagesLabel"));
       // Listen for save events from LWC
       // Register message handler to save configuration
       panel.onMessage(async (type, data) => {

@@ -1,4 +1,5 @@
 import { LightningElement, api, track } from "lwc";
+import { SharedMixin } from "s/sharedMixin";
 
 /**
  * Documentation Workbench LWC Component
@@ -11,7 +12,9 @@ import { LightningElement, api, track } from "lwc";
  *  - Run locally (MkDocs)
  *  - Open configuration panel for advanced options
  */
-export default class DocumentationWorkbench extends LightningElement {
+export default class DocumentationWorkbench extends SharedMixin(
+  LightningElement,
+) {
   // Generation options (state tracked here, synced with config panel)
   @track generatePdf = false;
   @track generateExcel = false;
@@ -72,6 +75,13 @@ export default class DocumentationWorkbench extends LightningElement {
     }
   }
 
+  @api
+  handleColorThemeMessage(type, data) {
+    // Delegate to the SharedMixin's implementation
+    if (super.handleColorThemeMessage)
+      super.handleColorThemeMessage(type, data);
+  }
+
   // ─── Event handlers ──────────────────────────────────────────────────
 
   handleOptionChange(event) {
@@ -100,6 +110,10 @@ export default class DocumentationWorkbench extends LightningElement {
     } else if (name === "generateLwcDoc") {
       this.generateLwcDoc = checked;
     }
+  }
+
+  get deployToSalesforceDescHtml() {
+    return this.t("deployToSalesforceDesc");
   }
 
   handleGenerate() {

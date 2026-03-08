@@ -11,15 +11,15 @@
         <header class="slds-modal__header">
           <button
             class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
-            title="Close"
+            title={i18n.closeLabel}
             onclick={handleClose}
           >
             <lightning-icon
               icon-name="utility:close"
               size="small"
-              alternative-text="Close"
+              alternative-text={i18n.closeLabel}
             ></lightning-icon>
-            <span class="slds-assistive-text">Close</span>
+            <span class="slds-assistive-text">{i18n.closeLabel}</span>
           </button>
           <h2
             id="deployment-action-modal-heading"
@@ -34,10 +34,10 @@
               <div class="slds-form-element">
                 <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
                   <span>
-                    <abbr class="slds-required" title="required">*</abbr>
-                    Label
+                    <abbr class="slds-required" title={i18n.requiredField}>*</abbr>
+                    {i18n.actionLabelField}
                   </span>
-                  <s-multiline-helptext content="Label of the action (what does it do ?)" class="slds-icon-text-info"></s-multiline-helptext>
+                  <s-multiline-helptext content={i18n.actionLabelHelp} class="slds-icon-text-info"></s-multiline-helptext>
                 </label>
                 <lightning-input
                   value={displayedAction.label}
@@ -54,10 +54,10 @@
               <div class="slds-form-element">
                 <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
                   <span>
-                    <abbr class="slds-required" title="required">*</abbr>
-                    Type
+                    <abbr class="slds-required" title={i18n.requiredField}>*</abbr>
+                    {i18n.actionTypeField}
                   </span>
-                  <s-multiline-helptext content="Type of the action" class="slds-icon-text-info"></s-multiline-helptext>
+                  <s-multiline-helptext content={i18n.actionTypeHelp} class="slds-icon-text-info"></s-multiline-helptext>
                 </label>
                 <lightning-combobox
                   value={displayedAction.type}
@@ -74,10 +74,10 @@
               <div class="slds-form-element">
                 <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
                   <span>
-                    <abbr class="slds-required" title="required">*</abbr>
-                    When
+                    <abbr class="slds-required" title={i18n.requiredField}>*</abbr>
+                    {i18n.actionWhenField}
                   </span>
-                  <s-multiline-helptext content="Pre-Deploy or Post-Deploy" class="slds-icon-text-info"></s-multiline-helptext>
+                  <s-multiline-helptext content={i18n.actionWhenHelp} class="slds-icon-text-info"></s-multiline-helptext>
                 </label>
                 <lightning-combobox
                   value={displayedAction.when}
@@ -94,8 +94,8 @@
             <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
               <div class="slds-form-element">
                 <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
-                  <span>Execution Contexts</span>
-                  <s-multiline-helptext content="Contexts when the action must be run" class="slds-icon-text-info"></s-multiline-helptext>
+                  <span>{i18n.executionContextsLabel}</span>
+                  <s-multiline-helptext content={i18n.executionContextsHelp} class="slds-icon-text-info"></s-multiline-helptext>
                 </label>
                 <lightning-combobox
                   value={displayedAction.context}
@@ -114,10 +114,10 @@
                 <div class="slds-form-element">
                   <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
                     <span>
-                      <abbr class="slds-required" title="required">*</abbr>
-                      Command
+                      <abbr class="slds-required" title={i18n.requiredField}>*</abbr>
+                      {i18n.commandField}
                     </span>
-                    <s-multiline-helptext content="Command line to run" class="slds-icon-text-info"></s-multiline-helptext>
+                    <s-multiline-helptext content={i18n.commandFieldHelp} class="slds-icon-text-info"></s-multiline-helptext>
                   </label>
                   <lightning-input
                     value={displayedAction.command}
@@ -135,8 +135,8 @@
               <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
                 <div class="slds-form-element">
                   <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
-                    <span>Apex Script</span>
-                    <s-multiline-helptext content="Apex script path to run for 'apex' actions" class="slds-icon-text-info"></s-multiline-helptext>
+                    <span>{i18n.apexScriptLabel}</span>
+                    <s-multiline-helptext content={i18n.apexScriptHelp} class="slds-icon-text-info"></s-multiline-helptext>
                   </label>
                   <div style="display:flex;align-items:center;gap:0.5rem;">
                     <div style="flex:1;">
@@ -147,14 +147,14 @@
                         onchange={handleFieldChange}
                         disabled={isViewMode}
                         variant="label-hidden"
-                        placeholder="Select an Apex script"
+                        placeholder={i18n.selectAnApexScript}
                       ></lightning-combobox>
                     </div>
                     <template if:true={hasApexScriptSelected}>
                       <lightning-button-icon
                         icon-name="utility:new_window"
-                        alternative-text="Open Apex Script"
-                        title="Open Apex Script in VS Code"
+                        alternative-text={i18n.openApexScript}
+                        title={i18n.openApexScriptInVsCode}
                         onclick={handleOpenApexScript}
                       ></lightning-button-icon>
                     </template>
@@ -167,8 +167,8 @@
               <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
                 <div class="slds-form-element">
                   <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
-                    <span>SFDMU Project Path</span>
-                    <s-multiline-helptext content="Path to SFDMU project for 'data' actions" class="slds-icon-text-info"></s-multiline-helptext>
+                    <span>{i18n.sfdmuProjectPath}</span>
+                    <s-multiline-helptext content={i18n.sfdmuProjectHelp} class="slds-icon-text-info"></s-multiline-helptext>
                   </label>
                   <div style="display:flex;align-items:center;gap:0.5rem;">
                     <div style="flex:1;">
@@ -179,14 +179,14 @@
                         onchange={handleFieldChange}
                         disabled={isViewMode}
                         variant="label-hidden"
-                        placeholder="Select a data workspace"
+                        placeholder={i18n.selectADataWorkspace}
                       ></lightning-combobox>
                     </div>
                     <template if:true={hasSfdmuProjectSelected}>
                       <lightning-button-icon
                         icon-name="utility:new_window"
-                        alternative-text="Open export.json"
-                        title="Open export.json in VS Code"
+                        alternative-text={i18n.openExportJson}
+                        title={i18n.openExportJsonInVsCode}
                         onclick={handleOpenSfdmuExport}
                       ></lightning-button-icon>
                     </template>
@@ -199,8 +199,8 @@
               <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
                 <div class="slds-form-element">
                   <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
-                    <span>Community Name</span>
-                    <s-multiline-helptext content="Community name for 'publish-community' actions" class="slds-icon-text-info"></s-multiline-helptext>
+                    <span>{i18n.communityNameLabel}</span>
+                    <s-multiline-helptext content={i18n.communityNameHelp} class="slds-icon-text-info"></s-multiline-helptext>
                   </label>
                   <lightning-input
                     value={displayedAction.parameters.communityName}
@@ -217,8 +217,8 @@
               <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
                 <div class="slds-form-element">
                   <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
-                    <span>Instructions</span>
-                    <s-multiline-helptext content="Human-readable instructions for 'manual' actions" class="slds-icon-text-info"></s-multiline-helptext>
+                    <span>{i18n.instructionsLabel}</span>
+                    <s-multiline-helptext content={i18n.instructionsHelp} class="slds-icon-text-info"></s-multiline-helptext>
                   </label>
                   <lightning-textarea
                     value={displayedAction.parameters.instructions}
@@ -237,12 +237,12 @@
               <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
                 <div class="slds-form-element">
                   <div style="display:flex;align-items:center;gap:0.25rem;margin-bottom:0.25rem;">
-                    <span class="slds-form-element__label">Skip If Deployment Error</span>
-                    <s-multiline-helptext content="Do not run the action if there is a deployment error" class="slds-icon-text-info"></s-multiline-helptext>
+                    <span class="slds-form-element__label">{i18n.skipIfDeploymentError}</span>
+                    <s-multiline-helptext content={i18n.skipIfDeploymentErrorHelp} class="slds-icon-text-info"></s-multiline-helptext>
                   </div>
                   <lightning-input
                     type="toggle"
-                    label="Skip If Deployment Error"
+                    label={i18n.skipIfDeploymentError}
                     checked={displayedAction.skipIfError}
                     data-field="skipIfError"
                     onchange={handleCheckboxChange}
@@ -257,12 +257,12 @@
               <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
                 <div class="slds-form-element">
                   <div style="display:flex;align-items:center;gap:0.25rem;margin-bottom:0.25rem;">
-                    <span class="slds-form-element__label">Allow Failure</span>
-                    <s-multiline-helptext content="Allow action to fail without marking the deployment as failed" class="slds-icon-text-info"></s-multiline-helptext>
+                    <span class="slds-form-element__label">{i18n.allowFailureLabel}</span>
+                    <s-multiline-helptext content={i18n.allowFailureHelp} class="slds-icon-text-info"></s-multiline-helptext>
                   </div>
                   <lightning-input
                     type="toggle"
-                    label="Allow Action Failure"
+                    label={i18n.allowActionFailureToggle}
                     checked={displayedAction.allowFailure}
                     data-field="allowFailure"
                     onchange={handleCheckboxChange}
@@ -276,12 +276,12 @@
             <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
               <div class="slds-form-element">
                 <div style="display:flex;align-items:center;gap:0.25rem;margin-bottom:0.25rem;">
-                  <span class="slds-form-element__label">Run Only Once By Org</span>
-                  <s-multiline-helptext content="Run this action only once per target org (useful for idempotent post-deploy tasks)" class="slds-icon-text-info"></s-multiline-helptext>
+                  <span class="slds-form-element__label">{i18n.runOnlyOnceByOrg}</span>
+                  <s-multiline-helptext content={i18n.runOnlyOnceByOrgHelp} class="slds-icon-text-info"></s-multiline-helptext>
                 </div>
                 <lightning-input
                   type="toggle"
-                  label="Run Only Once By Org"
+                  label={i18n.runOnlyOnceByOrg}
                   checked={displayedAction.runOnlyOnceByOrg}
                   data-field="runOnlyOnceByOrg"
                   onchange={handleCheckboxChange}
@@ -296,8 +296,8 @@
               <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
                 <div class="slds-form-element">
                   <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
-                    <span>Execute with custom username</span>
-                    <s-multiline-helptext content="Optional custom username to use to run the action. If you input user@company.com, user@company.com.uat and user.company.com.preprod will be found in related orgs." class="slds-icon-text-info"></s-multiline-helptext>
+                    <span>{i18n.executeWithCustomUsername}</span>
+                    <s-multiline-helptext content={i18n.executeWithCustomUsernameHelp} class="slds-icon-text-info"></s-multiline-helptext>
                   </label>
                   <lightning-input
                     value={displayedAction.customUsername}
@@ -315,24 +315,24 @@
           <template if:false={isEditMode}>
             <lightning-button
               variant="brand"
-              label="Edit"
+              label={i18n.editLabel}
               onclick={handleEdit}
             ></lightning-button>
             <lightning-button
               variant="neutral"
-              label="Close"
+              label={i18n.closeLabel}
               onclick={handleClose}
             ></lightning-button>
           </template>
           <template if:true={isEditMode}>
             <lightning-button
               variant="neutral"
-              label="Cancel"
+              label={i18n.cancelLabel}
               onclick={handleCancel}
             ></lightning-button>
             <lightning-button
               variant="brand"
-              label="Save"
+              label={i18n.saveLabel}
               onclick={handleSave}
             ></lightning-button>
           </template>

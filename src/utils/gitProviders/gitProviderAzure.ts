@@ -10,6 +10,7 @@ import {
 import { Logger } from "../../logger";
 import { SecretsManager } from "../secretsManager";
 import { BuildApi } from "azure-devops-node-api/BuildApi";
+import { t } from "../../i18n/i18n";
 
 /**
  * Azure DevOps Git Provider
@@ -43,7 +44,7 @@ export class GitProviderAzure extends GitProvider {
   describeGitProvider(): ProviderDescription {
     return {
       providerLabel: "Azure DevOps",
-      pullRequestLabel: "Pull Request",
+      pullRequestLabel: t("pullRequestLabel"),
       pullRequestsWebUrl: this.repoInfo?.webUrl
         ? `${this.repoInfo.webUrl}/pullrequests`
         : "",
@@ -78,11 +79,11 @@ export class GitProviderAzure extends GitProvider {
   async authenticate(): Promise<boolean | null> {
     const choice = await vscode.window.showQuickPick(
       [
-        { label: "Use Microsoft Account (OAuth)", value: "oauth" },
-        { label: "Use Personal Access Token (PAT)", value: "pat" },
+        { label: t("azureDevOpsAuthOAuth"), value: "oauth" },
+        { label: t("azureDevOpsAuthPAT"), value: "pat" },
       ],
       {
-        placeHolder: "How would you like to authenticate to Azure DevOps?",
+        placeHolder: t("azureDevOpsAuthMethod"),
         ignoreFocusOut: true,
       },
     );
@@ -105,11 +106,10 @@ export class GitProviderAzure extends GitProvider {
       : "https://dev.azure.com/_usersSettings/tokens";
 
     const token = await vscode.window.showInputBox({
-      prompt:
-        "Enter your Azure DevOps Personal Access Token with Code (Read & Write) scope",
+      prompt: t("azureDevOpsEnterPAT"),
       ignoreFocusOut: true,
       password: true,
-      placeHolder: `Create a PAT at: ${patUrl}`,
+      placeHolder: t("azureDevOpsCreatePATAt", { patUrl }),
     });
 
     if (!token) {

@@ -1,5 +1,5 @@
 <template>
-    <div class="slds-scope slds-theme_default blue-back">
+    <div class="slds-scope blue-back" data-theme={colorTheme} data-contrast={colorContrast}>
         <div class="welcome-container">
             <!-- Compact Hero Header Section -->
             <div class="hero-section compact">
@@ -7,31 +7,84 @@
                     <div class="hero-header">
                         <span class="hero-icon">🚀</span>
                         <div class="hero-text">
-                            <h1 class="hero-title">Welcome to VS Code SFDX Hardis</h1>
-                            <p class="hero-subtitle">Your comprehensive Salesforce toolkit, by <a href="https://www.cloudity.com/?ref=sfdxhardis" target="_blank">Cloudity</a> and <a href="https://sfdx-hardis.cloudity.com/contributors/" target="_blank">friends</a></p>
+                            <h1 class="hero-title">{i18n.welcomeTitle}</h1>
+                            <p class="hero-subtitle">{i18n.welcomeSubtitle} <a href="https://www.cloudity.com/?ref=sfdxhardis" target="_blank">Cloudity</a> &amp; <a href="https://sfdx-hardis.cloudity.com/contributors/" target="_blank">{i18n.friends}</a></p>
                         </div>
                     </div>
                 </div>
                 <div class="hero-top-left">
                     <lightning-button
                         variant="neutral"
-                        label="Install dependencies"
+                        label={i18n.installDependencies}
                         icon-name="utility:settings"
                         onclick={navigateToSetup}
                         class="setup-button"
-                        title="Open Setup"
+                        title={i18n.openSetup}
                     ></lightning-button>
                 </div>
                 <div class="hero-settings">
-                    <lightning-input
-                        type="toggle"
-                        label="Show at startup"
-                        name="showWelcomeAtStartup"
-                        checked={showWelcomeAtStartup}
-                        onchange={handleWelcomeSettingChange}
-                        class="welcome-toggle"
-                    ></lightning-input>
+                    <div class="hero-settings-row">
+                        <lightning-input
+                            type="toggle"
+                            label={i18n.showAtStartup}
+                            name="showWelcomeAtStartup"
+                            checked={showWelcomeAtStartup}
+                            onchange={handleWelcomeSettingChange}
+                            class="welcome-toggle"
+                        ></lightning-input>
+                        <div class="icon-selector" title={i18n.langSelectTooltip}>
+                            <button class="icon-selector-button" onclick={toggleLangDropdown}>
+                                <img class="icon-selector-img icon-selector-flag" src={currentLangFlagSrc} alt="">
+                            </button>
+                            <template lwc:if={langDropdownOpen}>
+                                <div class="icon-selector-dropdown">
+                                    <div class="icon-selector-option" data-lang="auto" onclick={handleLangChange}>
+                                        <img class="icon-selector-img icon-selector-flag" src={flagGlobeSrc} alt="">
+                                        <span class="icon-selector-option-label">{i18n.langVsCodeAuto}</span>
+                                    </div>
+                                    <div class="icon-selector-option" data-lang="en" onclick={handleLangChange}>
+                                        <img class="icon-selector-img icon-selector-flag" src={flagEnSrc} alt="">
+                                        <span class="icon-selector-option-label">{i18n.langEnglish}</span>
+                                    </div>
+                                    <div class="icon-selector-option" data-lang="es" onclick={handleLangChange}>
+                                        <img class="icon-selector-img icon-selector-flag" src={flagEsSrc} alt="">
+                                        <span class="icon-selector-option-label">{i18n.langSpanish}</span>
+                                    </div>
+                                    <div class="icon-selector-option" data-lang="fr" onclick={handleLangChange}>
+                                        <img class="icon-selector-img icon-selector-flag" src={flagFrSrc} alt="">
+                                        <span class="icon-selector-option-label">{i18n.langFrench}</span>
+                                    </div>
+                                    <div class="icon-selector-option" data-lang="ja" onclick={handleLangChange}>
+                                        <img class="icon-selector-img icon-selector-flag" src={flagJaSrc} alt="">
+                                        <span class="icon-selector-option-label">{i18n.langJapanese}</span>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                        <div class="icon-selector" title={i18n.themeSelectTooltip}>
+                            <button class="icon-selector-button" onclick={toggleThemeDropdown}>
+                                <img class="icon-selector-img" src={currentThemeIconSrc} alt="">
+                            </button>
+                            <template lwc:if={themeDropdownOpen}>
+                                <div class="icon-selector-dropdown">
+                                    <div class="icon-selector-option" data-theme="auto" onclick={handleThemeChange}>
+                                        <img class="icon-selector-img" src={themeAutoSrc} alt="">
+                                        <span class="icon-selector-option-label">{i18n.autoTheme}</span>
+                                    </div>
+                                    <div class="icon-selector-option" data-theme="light" onclick={handleThemeChange}>
+                                        <img class="icon-selector-img" src={themeLightSrc} alt="">
+                                        <span class="icon-selector-option-label">{i18n.lightTheme}</span>
+                                    </div>
+                                    <div class="icon-selector-option" data-theme="dark" onclick={handleThemeChange}>
+                                        <img class="icon-selector-img" src={themeDarkSrc} alt="">
+                                        <span class="icon-selector-option-label">{i18n.darkTheme}</span>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
                 </div>
+
             </div>
 
             <!-- Main Content Section -->
@@ -40,13 +93,13 @@
                     <!-- Org Manager Card -->
                     <div class="feature-card" onclick={navigateToOrgsManager}>
                         <div class="feature-card-header">
-                            <div class="feature-icon-container org-manager">
+                            <div class="feature-icon-container blue">
                                 <lightning-icon icon-name="utility:connected_apps" size="medium" variant="inverse"></lightning-icon>
                             </div>
-                            <h3 class="feature-title">Orgs Manager</h3>
+                            <h3 class="feature-title">{i18n.orgsManager}</h3>
                         </div>
                         <p class="feature-description">
-                            Manage all your Salesforce orgs, connect to new ones, and switch between environments seamlessly.
+                            {i18n.orgsManagerDescription}
                         </p>
                         <div class="feature-arrow">→</div>
                     </div>
@@ -54,13 +107,13 @@
                     <!-- DevOps Pipeline Card -->
                     <div class="feature-card" onclick={navigateToPipeline}>
                         <div class="feature-card-header">
-                            <div class="feature-icon-container devops-pipeline">
+                            <div class="feature-icon-container teal">
                                 <lightning-icon icon-name="utility:flow" size="medium" variant="inverse"></lightning-icon>
                             </div>
-                            <h3 class="feature-title">DevOps Pipeline</h3>
+                            <h3 class="feature-title">{i18n.devOpsPipeline}</h3>
                         </div>
                         <p class="feature-description">
-                            Visualize and manage your CI/CD pipeline with automated deployments and environment management.
+                            {i18n.devOpsPipelineDescription}
                         </p>
                         <div class="feature-arrow">→</div>
                     </div>
@@ -68,13 +121,13 @@
                     <!-- Metadata Retriever Card -->
                     <div class="feature-card" onclick={navigateToMetadataRetriever}>
                         <div class="feature-card-header">
-                            <div class="feature-icon-container metadata-retriever">
+                            <div class="feature-icon-container blue">
                                 <lightning-icon icon-name="utility:download" size="medium" variant="inverse"></lightning-icon>
                             </div>
-                            <h3 class="feature-title">Metadata Retriever</h3>
+                            <h3 class="feature-title">{i18n.metadataRetriever}</h3>
                         </div>
                         <p class="feature-description">
-                            Search and retrieve metadata from your Salesforce org with advanced filtering and bulk operations.
+                            {i18n.metadataRetrieverDescription}
                         </p>
                         <div class="feature-arrow">→</div>
                     </div>
@@ -82,13 +135,13 @@
                     <!-- Org Monitoring Card -->
                     <div class="feature-card" onclick={navigateToOrgMonitoring}>
                         <div class="feature-card-header">
-                            <div class="feature-icon-container org-monitoring">
+                            <div class="feature-icon-container teal">
                                 <lightning-icon icon-name="utility:graph" size="medium" variant="inverse"></lightning-icon>
                             </div>
-                            <h3 class="feature-title">Org Monitoring</h3>
+                            <h3 class="feature-title">{i18n.orgMonitoring}</h3>
                         </div>
                         <p class="feature-description">
-                            Monitor your Salesforce org health, security, and performance with comprehensive diagnostic tools.
+                            {i18n.orgMonitoringDescription}
                         </p>
                         <div class="feature-arrow">→</div>
                     </div>
@@ -96,13 +149,13 @@
                     <!-- Data Workbench (SFDMU) Card -->
                     <div class="feature-card" onclick={navigateToDataWorkbench}>
                         <div class="feature-card-header">
-                            <div class="feature-icon-container data-workbench">
+                            <div class="feature-icon-container purple">
                                 <lightning-icon icon-name="utility:database" size="medium" variant="inverse"></lightning-icon>
                             </div>
-                            <h3 class="feature-title">Data Workbench</h3>
+                            <h3 class="feature-title">{i18n.dataWorkbench}</h3>
                         </div>
                         <p class="feature-description">
-                            Import, export, and manipulate Salesforce data with SFDMU integration and advanced data management tools.
+                            {i18n.dataWorkbenchDescription}
                         </p>
                         <div class="feature-arrow">→</div>
                     </div>
@@ -110,13 +163,13 @@
                     <!-- Files Workbench Card -->
                     <div class="feature-card" onclick={navigateToFilesWorkbench}>
                         <div class="feature-card-header">
-                            <div class="feature-icon-container files-workbench">
+                            <div class="feature-icon-container orange">
                                 <lightning-icon icon-name="utility:file" size="medium" variant="inverse"></lightning-icon>
                             </div>
-                            <h3 class="feature-title">Files Workbench</h3>
+                            <h3 class="feature-title">{i18n.filesWorkbench}</h3>
                         </div>
                         <p class="feature-description">
-                            Export and manage files from Salesforce records, configure automated file processing workflows.
+                            {i18n.filesWorkbenchDescription}
                         </p>
                         <div class="feature-arrow">→</div>
                     </div>
@@ -124,13 +177,13 @@
                     <!-- Documentation Workbench Card -->
                     <div class="feature-card" onclick={navigateToDocumentationWorkbench}>
                         <div class="feature-card-header">
-                            <div class="feature-icon-container documentation">
+                            <div class="feature-icon-container yellow">
                                 <lightning-icon icon-name="utility:knowledge_base" size="medium" variant="inverse"></lightning-icon>
                             </div>
-                            <h3 class="feature-title">Documentation Workbench</h3>
+                            <h3 class="feature-title">{i18n.documentationWorkbench}</h3>
                         </div>
                         <p class="feature-description">
-                            Generate, deploy, and manage project documentation from one place.
+                            {i18n.documentationWorkbenchDescription}
                         </p>
                         <div class="feature-arrow">→</div>
                     </div>
@@ -138,13 +191,13 @@
                     <!-- Run Anonymous Apex Card -->
                     <div class="feature-card" onclick={navigateToRunAnonymousApex}>
                         <div class="feature-card-header">
-                            <div class="feature-icon-container run-anonymous">
+                            <div class="feature-icon-container blue">
                                 <lightning-icon icon-name="utility:apex" size="medium" variant="inverse"></lightning-icon>
                             </div>
-                            <h3 class="feature-title">Run Anonymous Apex</h3>
+                            <h3 class="feature-title">{i18n.runAnonymousApex}</h3>
                         </div>
                         <p class="feature-description">
-                            Execute anonymous Apex code directly in your Salesforce org for testing and debugging, like in Developer Console
+                            {i18n.runAnonymousApexDescription}
                         </p>
                         <div class="feature-arrow">→</div>
                     </div>
@@ -152,13 +205,13 @@
                     <!-- Extension Settings Card -->
                     <div class="feature-card" onclick={navigateToExtensionConfig}>
                         <div class="feature-card-header">
-                            <div class="feature-icon-container settings">
+                            <div class="feature-icon-container gray">
                                 <lightning-icon icon-name="utility:settings" size="medium" variant="inverse"></lightning-icon>
                             </div>
-                            <h3 class="feature-title">Extension Settings</h3>
+                            <h3 class="feature-title">{i18n.extensionSettings}</h3>
                         </div>
                         <p class="feature-description">
-                            Configure extension preferences
+                            {i18n.extensionConfigDescription}
                         </p>
                         <div class="feature-arrow">→</div>
                     </div>
@@ -169,30 +222,30 @@
             <div class="getting-started-section">
                 <div class="getting-started-content">
                     <div class="getting-started-header">
-                        <div class="getting-started-icon-container">
+                        <div class="getting-started-icon-container icon-container blue">
                             <lightning-icon icon-name="utility:education" size="medium" variant="inverse" class="getting-started-icon"></lightning-icon>
                         </div>
                         <div class="getting-started-text-header">
-                            <h3 class="getting-started-title">Getting Started</h3>
-                            <p class="getting-started-subtitle">Quick start guide for new users</p>
+                            <h3 class="getting-started-title">{i18n.gettingStarted}</h3>
+                            <p class="getting-started-subtitle">{i18n.gettingStartedSubtitle}</p>
                         </div>
                     </div>
                     <div class="getting-started-description">
                         <p class="getting-started-text">
-                            New to SFDX Hardis? Start by connecting to a Salesforce org, then explore our comprehensive documentation to understand your Salesforce environment and streamline your development workflow.
+                            {i18n.gettingStartedDescription}
                         </p>
                     </div>
                     <div class="getting-started-actions">
                         <lightning-button 
                             variant="brand" 
-                            label="Select an Org" 
+                            label={i18n.selectAnOrg}
                             icon-name="utility:connected_apps"
                             onclick={handleConnectToOrg}
                             class="slds-m-right_small"
                         ></lightning-button>
                         <lightning-button 
                             variant="outline-brand" 
-                            label="View Documentation" 
+                            label={i18n.viewDocumentation}
                             icon-name="utility:knowledge_base"
                             onclick={openDocumentation}
                         ></lightning-button>
@@ -204,41 +257,41 @@
             <div class="open-source-section">
                 <div class="open-source-content">
                     <div class="open-source-header">
-                        <div class="open-source-icon-container">
+                        <div class="open-source-icon-container icon-container teal">
                             <lightning-icon icon-name="utility:heart" size="medium" variant="inverse" class="open-source-icon"></lightning-icon>
                         </div>
                         <div class="open-source-text-header">
-                            <h3 class="open-source-title">Open Source & Free</h3>
-                            <p class="open-source-subtitle">Community-driven Salesforce tooling</p>
+                            <h3 class="open-source-title">{i18n.openSourceAndFree}</h3>
+                            <p class="open-source-subtitle">{i18n.openSourceSubtitle}</p>
                         </div>
                     </div>
                     <div class="open-source-description">
                         <div class="open-source-highlight">
                             <lightning-icon icon-name="utility:check" size="small" class="check-icon"></lightning-icon>
-                            <span class="highlight-text">100% Open Source</span>
+                            <span class="highlight-text">{i18n.openSourceFull}</span>
                         </div>
                         <div class="open-source-highlight">
                             <lightning-icon icon-name="utility:check" size="small" class="check-icon"></lightning-icon>
-                            <span class="highlight-text">Completely Free</span>
+                            <span class="highlight-text">{i18n.completelyFree}</span>
                         </div>
                         <div class="open-source-highlight">
                             <lightning-icon icon-name="utility:check" size="small" class="check-icon"></lightning-icon>
-                            <span class="highlight-text">Commercial Use Allowed</span>
+                            <span class="highlight-text">{i18n.commercialUseAllowed}</span>
                         </div>
                     </div>
                     <div class="services-info">
                         <div class="services-card">
                             <div class="services-card-header">
                                 <lightning-icon icon-name="utility:groups" size="small" class="services-icon"></lightning-icon>
-                                <h4 class="services-card-title">Need Expert Guidance?</h4>
+                                <h4 class="services-card-title">{i18n.needExpertGuidance}</h4>
                             </div>
                             <p class="services-card-text">
-                                <a href="https://www.cloudity.com/?ref=sfdxhardis" target="_blank" class="cloudity-link"><strong>Cloudity</strong></a> offers professional consulting services to help you maximize SFDX Hardis value and optimize your Salesforce development strategy.
+                                <a href="https://www.cloudity.com/?ref=sfdxhardis" target="_blank" class="cloudity-link"><strong>Cloudity</strong></a> {i18n.cloudityServicesDescription}
                             </p>
                             <div class="services-card-actions">
                                 <lightning-button 
                                     variant="brand" 
-                                    label="Contact Us" 
+                                    label={i18n.contactUs}
                                     icon-name="utility:world"
                                     onclick={openCloudityServices}
                                 ></lightning-button>

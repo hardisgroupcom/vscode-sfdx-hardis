@@ -3,9 +3,9 @@
 // @ts-nocheck
 // eslint-env es6
 import { LightningElement, api, track } from "lwc";
-import "s/forceLightTheme"; // Ensure light theme is applied
+import { SharedMixin } from "s/sharedMixin";
 
-export default class PromptInput extends LightningElement {
+export default class PromptInput extends SharedMixin(LightningElement) {
   // Track the index of the currently focused button for select-with-buttons
   focusedButtonIndex = 0;
   @api promptData = null;
@@ -113,6 +113,7 @@ export default class PromptInput extends LightningElement {
   }
 
   connectedCallback() {
+    super.connectedCallback();
     // Listen for prompt events from parent
     this.addEventListener("promptrequest", this.handlePromptRequest.bind(this));
 
@@ -426,16 +427,19 @@ export default class PromptInput extends LightningElement {
 
   get comboboxPlaceholder() {
     const placeholder = this.promptPlaceholder;
-    const base = placeholder || "Choose an option";
+    const base = placeholder || this.i18n.chooseAnOption;
     const count = (this.filteredComboboxOptions || []).length;
-    return `${base} (${count} choice${count === 1 ? "" : "s"})`;
+    const choiceWord =
+      count === 1 ? this.i18n.choiceSingular : this.i18n.choicesPlural;
+    return `${base} (${count} ${choiceWord})`;
   }
 
   // Dynamic label for combobox including visible choices count
   get comboboxLabel() {
-    const base = "Select an option";
     const count = (this.filteredComboboxOptions || []).length;
-    return `${base} (${count} choice${count === 1 ? "" : "s"})`;
+    const choiceWord =
+      count === 1 ? this.i18n.choiceSingular : this.i18n.choicesPlural;
+    return `${this.i18n.selectAnOption} (${count} ${choiceWord})`;
   }
 
   // Whether to show the right-side filter input for combobox
@@ -474,6 +478,10 @@ export default class PromptInput extends LightningElement {
 
     // Strip ANSI color codes and escape sequences
     let cleanText = this.stripAnsiCodes(text);
+
+    if (cleanText.includes("🦙")) {
+      cleanText = cleanText.replace(/^🦙\s*/, "");
+    }
 
     // Create a temporary element to decode HTML entities
     const textarea = document.createElement("textarea");
