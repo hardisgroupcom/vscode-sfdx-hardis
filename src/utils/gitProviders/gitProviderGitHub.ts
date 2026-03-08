@@ -4,6 +4,7 @@ import { Octokit } from "@octokit/rest";
 import type { Endpoints } from "@octokit/types";
 import { ProviderDescription, PullRequest, Job, JobStatus } from "./types";
 import { Logger } from "../../logger";
+import { t } from "../../i18n/i18n";
 
 export class GitProviderGitHub extends GitProvider {
   gitHubClient: InstanceType<typeof Octokit> | null = null;
@@ -27,7 +28,7 @@ export class GitProviderGitHub extends GitProvider {
   describeGitProvider(): ProviderDescription {
     return {
       providerLabel: "GitHub",
-      pullRequestLabel: "Pull Request",
+      pullRequestLabel: t("pullRequestLabel"),
       pullRequestsWebUrl: this.repoInfo?.webUrl
         ? `${this.repoInfo.webUrl}/pulls`
         : "",

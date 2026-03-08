@@ -4,6 +4,7 @@ import { WebSocketServer } from "ws";
 import * as vscode from "vscode";
 import { getWorkspaceRoot, stripAnsi } from "./utils";
 import { Logger } from "./logger";
+import { t } from "./i18n/i18n";
 import { LwcPanelManager } from "./lwc-panel-manager";
 import { HardisStatusProvider } from "./hardis-status-provider";
 import { refreshDataWorkbenchPanel } from "./commands/showDataWorkbench";
@@ -122,7 +123,7 @@ export class LocalWebSocketServer {
 
       // Set the panel title to include command info
       const commandName = data.context.command || "SFDX Hardis Command";
-      panel.updateTitle(`${commandName} - Running`);
+      panel.updateTitle(t("commandTitleRunning", { commandName }));
 
       // Initialize the command in the panel, including commandDocUrl if available
       const initData: any = {
@@ -160,17 +161,16 @@ export class LocalWebSocketServer {
         }
         clientData.panel.sendMessage(message);
 
-        const titleLabel =
-          data?.status === "aborted"
-            ? "Aborted"
-            : data?.status === "error"
-              ? "Error"
-              : "Completed";
-
         // Update panel title to show completion
         const commandName = clientData.context.command || "SFDX Hardis Command";
+        const completionTitle =
+          data?.status === "aborted"
+            ? t("commandTitleAborted", { commandName })
+            : data?.status === "error"
+              ? t("commandTitleError", { commandName })
+              : t("commandTitleCompleted", { commandName });
 
-        clientData.panel.updateTitle(`${commandName} - ${titleLabel}`);
+        clientData.panel.updateTitle(completionTitle);
 
         // Auto-close panel if command is in autoclose list and completed successfully
         if (success) {

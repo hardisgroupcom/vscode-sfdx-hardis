@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+- UI refactoring
+  - Themes: Light mode & Dark mode
+  - Many UI/UX improvements
+  - Unify the way to load images in WebView panels
+  - Add SLDS icons to all lightning tabs
+- Translation of UI & messages
+  - English
+  - French
+  - Spanish
+  - Doc Workbench: Add language selector
+- Enhancements
+  - Data Workbench: Make more explicit the use of filtering using master queries results (new badge)
+  - Org Manager: Add more contextual actions: Freeze / Unfreeze users, Before / After refresh sandbox...
+- Fixes
+  - Orgs Manager: Invite to disconnect from production orgs
+
 ## [6.29.1] 2025-02-24
 
 - Custom colors: Fixed a bug where the incorrect color logic for set for Sandbox- and Scratch orgs. Also moved back the dev color to where it was in 6.28.0.

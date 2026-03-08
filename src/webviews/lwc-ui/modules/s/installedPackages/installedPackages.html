@@ -1,21 +1,21 @@
 <template>
-    <div class="slds-scope slds-theme_default slds-p-around_medium blue-back">
-    <lightning-card title="Installed Packages on SFDX-Hardis DevOps Pipeline">
+    <div class="slds-scope slds-p-around_medium blue-back">
+    <lightning-card title={i18n.installedPackagesTitle}>
         <div slot="actions" class="slds-float_right">
             <lightning-button-group>
-                <lightning-button icon-name="utility:download" label="Retrieve from org" variant="brand" title="Retrieve package config from org" onclick={handleRetrieveFromOrg}></lightning-button>
+                <lightning-button icon-name="utility:download" label={i18n.retrieveFromOrg} variant="brand" title={i18n.retrieveFromOrgTooltip} onclick={handleRetrieveFromOrg}></lightning-button>
                 <span class="slds-m-left_x-small"></span>
-                <lightning-button icon-name="utility:add" label="Install new package" variant="brand" title="Install a new package" onclick={handleInstallNewPackage}></lightning-button>
+                <lightning-button icon-name="utility:add" label={i18n.installNewPackage} variant="brand" title={i18n.installNewPackageTooltip} onclick={handleInstallNewPackage}></lightning-button>
                 <span class="slds-m-left_x-small"></span>
-                <lightning-button icon-name="utility:refresh" label="Refresh" title="Refresh Installed packages configuration" onclick={handleRefresh}></lightning-button>
+                <lightning-button icon-name="utility:refresh" label={i18n.refreshLabel} title={i18n.refreshInstalledPackagesTooltip} onclick={handleRefresh}></lightning-button>
             </lightning-button-group>
         </div>
         <div class="slds-m-around_medium">
             <div class="slds-notify slds-notify_alert slds-theme_info slds-theme_alert-texture slds-m-bottom_small" role="alert">
                 <lightning-icon icon-name="utility:info" alternative-text="Info" size="small" class="slds-m-right_small"></lightning-icon>
                 <span>
-                    <p>Packages flagged <b>Deployments</b> will be installed during sfdx-hardis deployment workflows.</p>
-                    <p>Packages flagged <b>Scratch Org</b> will be installed when creating Scratch Orgs for development or validation purposes.</p>
+                    <p lwc:inner-html={packagesDeploymentsInfoHtml}></p>
+                    <p lwc:inner-html={packagesScratchOrgInfoHtml}></p>
                 </span>
             </div>
             <lightning-datatable

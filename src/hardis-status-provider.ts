@@ -18,6 +18,7 @@ import simpleGit from "simple-git";
 import { ThemeUtils } from "./themeUtils";
 import { getConfig } from "./utils/pipeline/sfdxHardisConfig";
 import { LwcPanelManager } from "./lwc-panel-manager";
+import { t } from "./i18n/i18n";
 
 export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeItem> {
   public themeUtils: ThemeUtils;
@@ -32,7 +33,7 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
   getChildren(element?: StatusTreeItem): Thenable<StatusTreeItem[]> {
     if (!this.workspaceRoot) {
       vscode.window.showInformationMessage(
-        "🦙 No info available until you open a Salesforce project",
+        t("noInfoAvailableUntilProjectOpen"),
       );
       return Promise.resolve([]);
     }
@@ -105,15 +106,15 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
         options.devHub
           ? {
               id: "org-info-devhub-loading",
-              label: `DevHub info is loading...`,
-              tooltip: "Click to select and authenticate to a DevHub org",
+              label: t("loadingDevHubInfo"),
+              tooltip: t("clickToSelectAndAuthenticateDevHub"),
               command: "sf hardis:org:select --devhub",
               iconId: "loading",
             }
           : {
               id: "org-info-loading",
-              label: `Default org info is loading...`,
-              tooltip: "Click to select a default org",
+              label: t("loadingDefaultOrgInfo"),
+              tooltip: t("clickToSelectDefaultOrg"),
               command: "sf hardis:org:select",
               iconId: "loading",
             },
@@ -141,8 +142,8 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
       } else {
         items.push({
           id: "org-not-connected-devhub",
-          label: `Select a DevHub org`,
-          tooltip: "Click to select and authenticate to a DevHub org",
+          label: t("selectADevHubOrg"),
+          tooltip: t("clickToSelectAndAuthenticateDevHub"),
           command: "sf hardis:org:select --devhub",
           iconId: "org:connect:devhub",
         });
@@ -166,11 +167,10 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
         items.push({
           id: "org-info-instance-url" + (options.devHub ? "-devhub" : ""),
           label: `${orgInfo.instanceUrl.replace("https://", "")}`,
-          tooltip:
-            "Click to open your " +
-            (options.devHub ? "Dev Hub" : "default") +
-            " org: " +
-            orgInfo.instanceUrl,
+          tooltip: t("clickToOpenOrgUrl", {
+            orgType: options.devHub ? "Dev Hub" : "default",
+            url: orgInfo.instanceUrl,
+          }),
           command:
             "sf org open" +
             (options.devHub ? ` --target-org ${devHubUsername}` : ""),
@@ -181,10 +181,7 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
         items.push({
           id: "org-info-username" + (options.devHub ? "-devhub" : ""),
           label: `${orgInfo.username}`,
-          tooltip:
-            "Username on your remote Salesforce org: " +
-            orgInfo.username +
-            "\nClick to Open User Settings in Salesforce",
+          tooltip: t("usernameTooltip", { username: orgInfo.username }),
           command:
             "sf org open" +
             (options.devHub ? ` --target-org ${devHubUsername}` : "") +
@@ -196,7 +193,7 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
         id: "org-info-expiration-date" + (options.devHub ? "-devhub" : ""),
         label: "",
         iconId: "org:setup",
-        tooltip: "Click to open Setup in Salesforce",
+        tooltip: t("clickToOpenSetup"),
         command:
           "sf org open" +
           (options.devHub ? ` --target-org ${devHubUsername}` : "") +
@@ -208,33 +205,43 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
         const sfdxProjectJson = getSfdxProjectJson();
         if (sfdxProjectJson?.sourceApiVersion !== orgInfo.apiVersion) {
           orgDetailItem.label += " ⚠️";
-          orgDetailItem.tooltip = `You org is with api version ${orgInfo.apiVersion} whereas your sfdx project is using api version ${sfdxProjectJson?.sourceApiVersion}.
-Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if your production org is still using a previous version, you won't be able to deploy in it !)`;
+          orgDetailItem.tooltip = t("apiVersionMismatchTooltip", {
+            orgVersion: orgInfo.apiVersion,
+            projectVersion: sfdxProjectJson?.sourceApiVersion,
+          });
         }
       }
       if (orgInfo.expirationDate) {
         const expiration = moment(orgInfo.expirationDate);
         const today = moment();
         const daysBeforeExpiration = expiration.diff(today, "days");
-        orgDetailItem.label += ` (exp: ${orgInfo.expirationDate})`;
-        orgDetailItem.tooltip += `You org will expire in ${daysBeforeExpiration} days`;
+        orgDetailItem.label += ` ${t("orgExpiresLabel", { expirationDate: orgInfo.expirationDate })}`;
+        orgDetailItem.tooltip += t("orgExpiresInNDays", {
+          days: daysBeforeExpiration,
+        });
         if (daysBeforeExpiration < 0) {
           orgDetailItem.iconId = "org:expired";
-          orgDetailItem.tooltip = `You org expired on ${orgInfo.expirationDate}. You need to create a new one.`;
+          orgDetailItem.tooltip = t("orgExpired", {
+            expirationDate: orgInfo.expirationDate,
+          });
           vscode.window.showErrorMessage(
             `🦙 ${orgDetailItem.tooltip}`,
             "Close",
           );
         } else if (daysBeforeExpiration < 3) {
           orgDetailItem.iconId = "org:expired:soon";
-          orgDetailItem.tooltip = `You scratch org will expire in ${daysBeforeExpiration} days !!! Save your scratch org content and create a new one or your work will be lost !!!`;
+          orgDetailItem.tooltip = t("orgExpiringDangerously", {
+            days: daysBeforeExpiration,
+          });
           vscode.window.showErrorMessage(
             `🦙 ${orgDetailItem.tooltip}`,
             "Close",
           );
         } else if (daysBeforeExpiration < 7) {
           orgDetailItem.iconId = "org:expired:soon";
-          orgDetailItem.tooltip = `Your scratch org will expire in ${daysBeforeExpiration} days. You should soon create a new scratch org to avoid loosing your work`;
+          orgDetailItem.tooltip = t("orgExpiringSoon", {
+            days: daysBeforeExpiration,
+          });
           vscode.window.showWarningMessage(
             `🦙 ${orgDetailItem.tooltip}`,
             "Close",
@@ -261,8 +268,11 @@ Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if you
           ) {
             items.push({
               id: "scratch-org-pool-view",
-              label: `Pool: ${poolViewRes.result.availableScratchOrgs} available (max ${poolViewRes.result.maxScratchOrgs})`,
-              tooltip: "View content of scratch org pool",
+              label: t("poolAvailable", {
+                available: poolViewRes.result.availableScratchOrgs,
+                max: poolViewRes.result.maxScratchOrgs,
+              }),
+              tooltip: t("poolTooltip"),
               command: "sf hardis:scratch:pool:view",
               iconId: "org:pool",
             });
@@ -271,16 +281,18 @@ Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if you
       }
       items.push({
         id: "select-another-org" + (options.devHub ? "-devhub" : ""),
-        label: `Select another ` + (options.devHub ? "DevHub Org" : "Org"),
-        tooltip: "Click to select an org",
+        label: options.devHub
+          ? t("selectAnotherDevHubOrg")
+          : t("selectAnotherOrg"),
+        tooltip: t("clickToSelectOrg"),
         command: "sf hardis:org:select" + (options.devHub ? " --devhub" : ""),
         iconId: "org:connect",
       });
     } else {
       items.push({
         id: "org-not-connected" + (options.devHub ? "-devhub" : ""),
-        label: `Select an org`,
-        tooltip: "Click to select and authenticate to an org",
+        label: t("selectAnOrg"),
+        tooltip: t("clickToSelectAndAuthenticateOrg"),
         command: "sf hardis:org:select" + (options.devHub ? " --devhub" : ""),
         iconId: "org:connect",
       });
@@ -321,7 +333,7 @@ Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if you
       const gitWaitingItems: any = [];
       gitWaitingItems.push({
         id: "git-info-loading",
-        label: `Loading git info...`,
+        label: t("loadingGitInfo"),
         iconId: "loading",
       });
       return gitWaitingItems;
@@ -339,10 +351,10 @@ Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if you
     if (!isRepo) {
       items.push({
         id: "git-clone-repo",
-        label: "Clone a repository❓",
+        label: t("cloneARepository"),
         command: "vscode:git.clone",
         iconId: "git:clone",
-        tooltip: "Clone a repository using VS Code's Git clone command",
+        tooltip: t("cloneRepositoryTooltip"),
       });
       return items;
     }
@@ -374,16 +386,15 @@ Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if you
               httpGitUrl,
             )}`,
             iconId: "git:repo",
-            tooltip: "Click to open git repo in browser - " + httpGitUrl,
+            tooltip: t("clickToOpenGitRepoWithUrl", { url: httpGitUrl }),
           });
         } else {
           items.push({
             id: "git-info-repo",
-            label: `Git not ready: click to refresh`,
+            label: t("gitNotReadyClickToRefresh"),
             command: `vscode-sfdx-hardis.refreshStatusView`,
             iconId: "git:repo",
-            tooltip:
-              "Git was not ready when SFDX Hardis has been run, please click to refresh",
+            tooltip: t("clickToRefreshGit"),
           });
         }
       }
@@ -391,8 +402,8 @@ Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if you
       const currentBranch = await git.revparse(["--abbrev-ref", "HEAD"]);
       if (currentBranch) {
         let gitIconId = "git:branch";
-        let gitLabel = `Branch: ${currentBranch}`;
-        let gitTooltip = "This is the git branch you are currently working on";
+        let gitLabel = t("branchLabel", { branch: currentBranch });
+        let gitTooltip = t("isCurrentGitBranch");
         let gitCommand = "";
         const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
         if (
@@ -425,11 +436,14 @@ Maybe update sourceApiVersion in your sfdx-project.json ? (but be careful if you
             ) {
               // Display message if a merge might be required
               gitIconId = "git:branch:warning";
-              gitLabel = `Branch: ${currentBranch} (not up to date with origin/${parentGitBranch})`;
-              gitTooltip = `EXPERIMENTAL: There have been new commit(s) into parent branch origin/${parentGitBranch} since you created ${currentBranch}.
-You might need to merge origin/${parentGitBranch} into your current local branch ${currentBranch}.
-After merging, refresh VsCode SFDX-Hardis status panel to discard this warning
-Note: Disable disableGitMergeRequiredCheck in settings to skip this check.`;
+              gitLabel = t("branchNotUpToDate", {
+                branch: currentBranch,
+                parent: parentGitBranch,
+              });
+              gitTooltip = t("branchMergeNeededTooltip", {
+                branch: currentBranch,
+                parent: parentGitBranch,
+              });
               gitCommand = `vscode-sfdx-hardis.openExternal https://sfdx-hardis.cloudity.com/salesforce-ci-cd-merge-parent-branch/`;
             }
           } catch {
@@ -458,11 +472,10 @@ Note: Disable disableGitMergeRequiredCheck in settings to skip this check.`;
           if (mergeRequests[0] && mergeRequests[0].url) {
             items.push({
               id: "git-merge-request-url",
-              label: "Merge Request: Open",
+              label: t("openMergeRequest"),
               iconId: "git:pull-request",
               tooltip:
-                "Click to open merge request in browser\n" +
-                mergeRequests[0].url,
+                t("clickToOpenMergeRequest") + "\n" + mergeRequests[0].url,
               command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
                 mergeRequests[0].url,
               )}`,
@@ -473,10 +486,11 @@ Note: Disable disableGitMergeRequiredCheck in settings to skip this check.`;
           else if (mergeRequests[0] && mergeRequests[0].urlCreate) {
             items.push({
               id: "git-merge-request-create-url",
-              label: "Merge Request: Create",
+              label: t("createMergeRequest"),
               icon: "merge.svg",
               tooltip:
-                "Click to create merge request in browser\n" +
+                t("clickToCreateMergeRequest") +
+                "\n" +
                 mergeRequests[0].urlCreate,
               command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
                 mergeRequests[0].urlCreate,
@@ -544,17 +558,17 @@ Note: Disable disableGitMergeRequiredCheck in settings to skip this check.`;
     const topics = [
       {
         id: "status-org",
-        label: "Current Org",
+        label: t("currentOrg"),
         defaultExpand: true,
       },
       {
         id: "status-git",
-        label: "Git Status",
+        label: t("gitStatus"),
         defaultExpand: true,
       },
       {
         id: "status-org-devhub",
-        label: "Current Dev Hub org",
+        label: t("currentDevHubOrg"),
         defaultExpand: true,
       },
     ];

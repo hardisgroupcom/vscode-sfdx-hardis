@@ -1,75 +1,14 @@
 import { LightningElement, api, track } from "lwc";
+import { SharedMixin } from "s/sharedMixin";
 
-export default class OrgManager extends LightningElement {
+export default class OrgManager extends SharedMixin(LightningElement) {
   @track orgs = [];
+  @track columns = [];
   @track selectedRowKeys = [];
   @track viewAll = false;
   @track draftValues = [];
   @track validationErrors = [];
   internalCommands = [];
-
-  columns = [
-    {
-      label: "Instance URL",
-      fieldName: "instanceUrl",
-      type: "url",
-      typeAttributes: {
-        label: { fieldName: "instanceLabel" },
-        target: "_blank",
-      },
-      cellAttributes: { class: { fieldName: "rowClass" } },
-    },
-    {
-      label: "Type",
-      fieldName: "orgType",
-      type: "text",
-      initialWidth: 100,
-      cellAttributes: { class: { fieldName: "rowClass" } },
-    },
-    {
-      label: "Username",
-      fieldName: "username",
-      type: "text",
-      cellAttributes: { class: { fieldName: "rowClass" } },
-    },
-    {
-      label: "API Version",
-      fieldName: "apiVersion",
-      type: "text",
-      cellAttributes: { class: { fieldName: "rowClass" } },
-    },
-    {
-      label: "Alias",
-      fieldName: "alias",
-      type: "text",
-      editable: true,
-      initialWidth: 120,
-      cellAttributes: { class: { fieldName: "rowClass" } },
-    },
-    {
-      label: "Connected",
-      fieldName: "connectedLabel",
-      type: "text",
-      initialWidth: 140,
-      cellAttributes: { class: { fieldName: "rowClass" } },
-    },
-    {
-      label: "Role",
-      fieldName: "defaultLabel",
-      type: "text",
-      initialWidth: 100,
-      cellAttributes: { class: { fieldName: "rowClass" } },
-    },
-    {
-      label: "Actions",
-      type: "action",
-      fieldName: "rowActions",
-      typeAttributes: {
-        rowActions: { fieldName: "rowActions" },
-      },
-      cellAttributes: { class: { fieldName: "rowClass" } },
-    },
-  ];
 
   get hasSelection() {
     return this.selectedRowKeys && this.selectedRowKeys.length > 0;
@@ -85,6 +24,68 @@ export default class OrgManager extends LightningElement {
 
   @api
   initialize(data) {
+    this.columns = [
+      {
+        label: this.t("instanceUrlLabel"),
+        fieldName: "instanceUrl",
+        type: "url",
+        typeAttributes: {
+          label: { fieldName: "instanceLabel" },
+          target: "_blank",
+        },
+        cellAttributes: { class: { fieldName: "rowClass" } },
+      },
+      {
+        label: this.t("typeLabel"),
+        fieldName: "orgType",
+        type: "text",
+        initialWidth: 100,
+        cellAttributes: { class: { fieldName: "rowClass" } },
+      },
+      {
+        label: this.t("usernameLabel"),
+        fieldName: "username",
+        type: "text",
+        cellAttributes: { class: { fieldName: "rowClass" } },
+      },
+      {
+        label: this.t("apiVersionLabel"),
+        fieldName: "apiVersion",
+        type: "text",
+        cellAttributes: { class: { fieldName: "rowClass" } },
+      },
+      {
+        label: this.t("aliasLabel"),
+        fieldName: "alias",
+        type: "text",
+        editable: true,
+        initialWidth: 120,
+        cellAttributes: { class: { fieldName: "rowClass" } },
+      },
+      {
+        label: this.t("connectedLabel"),
+        fieldName: "connectedLabel",
+        type: "text",
+        initialWidth: 140,
+        cellAttributes: { class: { fieldName: "rowClass" } },
+      },
+      {
+        label: this.t("roleLabel"),
+        fieldName: "defaultLabel",
+        type: "text",
+        initialWidth: 100,
+        cellAttributes: { class: { fieldName: "rowClass" } },
+      },
+      {
+        label: this.t("actionsLabel"),
+        type: "action",
+        fieldName: "rowActions",
+        typeAttributes: {
+          rowActions: { fieldName: "rowActions" },
+        },
+        cellAttributes: { class: { fieldName: "rowClass" } },
+      },
+    ];
     this.orgs = (data && data.orgs) || [];
     // Normalize rows: compute connected label/variant and ensure username exists as key
     this.orgs = this.orgs.map((o) => ({
@@ -101,33 +102,83 @@ export default class OrgManager extends LightningElement {
         .toString()
         .toLowerCase()
         .match(/connected|authorized/)
-        ? "Connected"
-        : "Disconnected",
+        ? this.t("connectedLabel")
+        : this.t("disconnectedStatus"),
       // Compute row actions for the Actions column: Open (connected), Reconnect (disconnected), Remove (always)
       rowActions: (() => {
         const isConnected = (o.connectedStatus || "")
           .toString()
           .toLowerCase()
           .match(/connected|authorized/);
+        const isScratch =
+          (o.orgType || "").toString().toLowerCase() === "scratch";
+        const isSandbox =
+          (o.orgType || "").toString().toLowerCase() === "sandbox";
         const actions = [];
         if (isConnected) {
-          actions.push({ label: "Open", name: "open" });
+          actions.push({ label: this.t("openLabel"), name: "open", iconName: "utility:new_window" });
           if (!o.isDefaultUsername) {
-            actions.push({ label: "Set as Default Org", name: "setDefault" });
+            actions.push({
+              label: this.t("setAsDefaultOrg"),
+              name: "setDefault",
+              iconName: "utility:check",
+            });
           }
           if (o.isDevHub && !o.isDefaultDevHubUsername) {
             actions.push({
-              label: "Set as Default Dev Hub",
+              label: this.t("setAsDefaultDevHub"),
               name: "setDefaultDevHub",
+              iconName: "utility:check",
+            });
+          }
+          // Org operations for non-scratch orgs
+          if (!isScratch) {
+            actions.push({ label: this.t("freezeUsers"), name: "freezeUsers", iconName: "utility:lock" });
+            actions.push({
+              label: this.t("unfreezeUsers"),
+              name: "unfreezeUsers",
+              iconName: "utility:unlock",
+            });
+            actions.push({
+              label: this.t("purgeObsoleteFlowsVersions"),
+              name: "purgeFlows",
+              iconName: "utility:recycle_bin_full",
+            });
+          }
+          // Scratch org operations
+          if (isScratch) {
+            actions.push({
+              label: this.t("deleteScratchOrgs"),
+              name: "deleteScratchOrg",
+              iconName: "utility:delete",
+            });
+          }
+          // Sandbox-specific operations
+          if (isSandbox) {
+            actions.push({
+              label: this.t("activateInvalidUserEmailsInSandbox"),
+              name: "activateInvalidEmails",
+              iconName: "utility:email",
+            });
+            actions.push({
+              label: this.t("sandboxRefreshBefore"),
+              name: "sandboxRefreshBefore",
+              iconName: "utility:refresh",
+            });
+            actions.push({
+              label: this.t("sandboxRefreshAfter"),
+              name: "sandboxRefreshAfter",
+              iconName: "utility:refresh",
             });
           }
         } else {
-          actions.push({ label: "Reconnect", name: "reconnect" });
+          actions.push({ label: this.t("reconnectLabel"), name: "reconnect", iconName: "utility:link" });
         }
         actions.push({
-          label: "Remove",
+          label: this.t("removeLabel"),
           name: "remove",
           variant: "destructive",
+          iconName: "utility:delete",
         });
         return actions;
       })(),
@@ -137,9 +188,9 @@ export default class OrgManager extends LightningElement {
           ? "org-default-row"
           : "",
       defaultLabel: o.isDefaultUsername
-        ? "Default Org"
+        ? this.t("defaultOrgLabel")
         : o.isDefaultDevHubUsername
-          ? "Dev Hub"
+          ? this.t("devHub")
           : "",
     }));
     // If a default org or a default dev hub exists, move them to the top of the list
@@ -210,7 +261,8 @@ export default class OrgManager extends LightningElement {
     return this.recommendedUsernames.length > 0;
   }
 
-  // Return an array of usernames considered "recommended" for removal: disconnected, deleted or expired
+  // Return an array of usernames considered "recommended" for removal:
+  // disconnected, deleted, expired, or production orgs
   get recommendedUsernames() {
     const now = Date.now();
     return (this.orgs || [])
@@ -234,9 +286,11 @@ export default class OrgManager extends LightningElement {
             if (!isNaN(exp) && exp < now) expired = true;
           }
         } catch (e) {
-          // ignore date parse errors
+          // ignore date parse errors ^^
         }
-        return !connected || deleted || expired;
+        const isProduction =
+          (o.orgType || "").toString().toLowerCase() === "production";
+        return !connected || deleted || expired || isProduction;
       })
       .map((o) => o.username)
       .filter(Boolean);
@@ -313,6 +367,55 @@ export default class OrgManager extends LightningElement {
         },
       };
       this.requestRunInternalCommand(internalCommand);
+    } else if (actionName === "freezeUsers") {
+      window.sendMessageToVSCode({
+        type: "runCommand",
+        data: {
+          command: `sf hardis:org:user:freeze --target-org ${row.username}`,
+        },
+      });
+    } else if (actionName === "unfreezeUsers") {
+      window.sendMessageToVSCode({
+        type: "runCommand",
+        data: {
+          command: `sf hardis:org:user:unfreeze --target-org ${row.username}`,
+        },
+      });
+    } else if (actionName === "purgeFlows") {
+      window.sendMessageToVSCode({
+        type: "runCommand",
+        data: {
+          command: `sf hardis:org:purge:flow --target-org ${row.username}`,
+        },
+      });
+    } else if (actionName === "deleteScratchOrg") {
+      window.sendMessageToVSCode({
+        type: "runCommand",
+        data: {
+          command: `sf hardis:scratch:delete --target-org ${row.username}`,
+        },
+      });
+    } else if (actionName === "activateInvalidEmails") {
+      window.sendMessageToVSCode({
+        type: "runCommand",
+        data: {
+          command: `sf hardis:org:user:activateinvalid --target-org ${row.username}`,
+        },
+      });
+    } else if (actionName === "sandboxRefreshBefore") {
+      window.sendMessageToVSCode({
+        type: "runCommand",
+        data: {
+          command: `sf hardis:org:refresh:before-refresh --target-org ${row.username}`,
+        },
+      });
+    } else if (actionName === "sandboxRefreshAfter") {
+      window.sendMessageToVSCode({
+        type: "runCommand",
+        data: {
+          command: `sf hardis:org:refresh:after-refresh --target-org ${row.username}`,
+        },
+      });
     } else if (actionName === "reconnect") {
       window.sendMessageToVSCode({
         type: "connectOrg",
@@ -424,17 +527,17 @@ export default class OrgManager extends LightningElement {
 
     // Check length (1-64 characters)
     if (alias.length < 1 || alias.length > 64) {
-      return "Alias must be 1-64 characters long";
+      return this.t("aliasLengthError");
     }
 
     // Check if it starts with a letter or underscore
     if (!/^[a-zA-Z_]/.test(alias)) {
-      return "Alias must start with a letter or underscore";
+      return this.t("aliasStartError");
     }
 
     // Check if it contains only valid characters (letters, numbers, underscores, hyphens)
     if (!/^[a-zA-Z0-9_-]+$/.test(alias)) {
-      return "Alias can only contain letters, numbers, underscores, and hyphens";
+      return this.t("aliasCharError");
     }
 
     return null; // No validation errors

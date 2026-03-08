@@ -201,7 +201,7 @@ export class GitProvider {
     );
     return {
       providerLabel: "",
-      pullRequestLabel: ",",
+      pullRequestLabel: "",
       pullRequestsWebUrl: "",
     };
   }

@@ -1,15 +1,18 @@
 import { LightningElement, track, api } from "lwc";
-import "s/forceLightTheme"; // Ensure light theme is applied
+import { SharedMixin } from "s/sharedMixin";
 
-export default class ExtensionConfig extends LightningElement {
+export default class ExtensionConfig extends SharedMixin(LightningElement) {
   @track sections = [];
   @track loading = true;
   @track error = null;
+  @track activeTabValue = null;
 
   @api
   initialize(data) {
     this.loading = false;
     this.error = null;
+    this.activeTabValue = data.activeTabValue || null;
+
     // Precompute all values for Lightning base components
     this.sections = (data.sections || []).map((section) => ({
       ...section,
@@ -113,5 +116,12 @@ export default class ExtensionConfig extends LightningElement {
     } else if (type === "updateError") {
       this.error = data;
     }
+  }
+
+  @api
+  handleColorThemeMessage(type, data) {
+    // Delegate to the SharedMixin's implementation
+    if (super.handleColorThemeMessage)
+      super.handleColorThemeMessage(type, data);
   }
 }

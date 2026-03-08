@@ -13,6 +13,7 @@ import {
 } from "../utils";
 import { Logger } from "../logger";
 import { listMetadataTypes } from "../utils/metadataList";
+import { t } from "../i18n/i18n";
 import { openMetadataFile } from "../utils/projectUtils";
 import fg from "fast-glob";
 import * as path from "path";
@@ -248,20 +249,13 @@ export function registerShowMetadataRetriever(commands: Commands) {
           packageDirectories: packageDirs,
           localPackageOptions,
           defaultLocalPackage,
+          imagePaths: {
+            featureLogo: ["logo-m.png"],
+          },
         },
       );
 
-      const logoUri = panel.asWebviewUri(["logo-m.png"]);
-      panel.sendMessage({
-        type: "imageResources",
-        data: {
-          images: {
-            featureLogo: logoUri,
-          },
-        },
-      });
-
-      panel.updateTitle("Metadata Retriever");
+      panel.updateTitle(t("metadataRetriever"));
       // Register message handlers
       panel.onMessage(async (type: string, data: any) => {
         if (type === "listOrgs") {
@@ -892,8 +886,8 @@ async function handleListPackages(panel: LwcUiPanel, username: string | null) {
         type: "listPackagesResults",
         data: {
           packages: [
-            { label: "All", value: "All" },
-            { label: "Local", value: "Local" },
+            { label: t("allLabel"), value: "All" },
+            { label: t("localLabel"), value: "Local" },
           ],
         },
       });
@@ -910,8 +904,8 @@ async function handleListPackages(panel: LwcUiPanel, username: string | null) {
 
       const pkgOptions: Array<any> = [];
       // Keep All and Local at the top
-      pkgOptions.push({ label: "All", value: "All" });
-      pkgOptions.push({ label: "Local", value: "Local" });
+      pkgOptions.push({ label: t("allLabel"), value: "All" });
+      pkgOptions.push({ label: t("localLabel"), value: "Local" });
 
       if (
         result &&
@@ -975,8 +969,8 @@ async function handleListPackages(panel: LwcUiPanel, username: string | null) {
         type: "listPackagesResults",
         data: {
           packages: [
-            { label: "All", value: "All" },
-            { label: "Local", value: "Local" },
+            { label: t("allLabel"), value: "All" },
+            { label: t("localLabel"), value: "Local" },
           ],
         },
       });
@@ -988,8 +982,8 @@ async function handleListPackages(panel: LwcUiPanel, username: string | null) {
       type: "listPackagesResults",
       data: {
         packages: [
-          { label: "All", value: "All" },
-          { label: "Local", value: "Local" },
+          { label: t("allLabel"), value: "All" },
+          { label: t("localLabel"), value: "Local" },
         ],
       },
     });
@@ -1496,7 +1490,7 @@ async function handleRetrieveSelectedMetadata(panel: any, data: any) {
     // Build metadata retrieve command
     const workspaceFolders = vscode.workspace.workspaceFolders;
     if (!workspaceFolders || workspaceFolders.length === 0) {
-      vscode.window.showErrorMessage("No workspace folder open");
+      vscode.window.showErrorMessage(t("noWorkspaceFolderOpen"));
       return;
     }
 
@@ -1548,7 +1542,7 @@ async function handleRetrieveMetadata(panel: any, data: any) {
     // Build metadata retrieve command
     const workspaceFolders = vscode.workspace.workspaceFolders;
     if (!workspaceFolders || workspaceFolders.length === 0) {
-      vscode.window.showErrorMessage("No workspace folder open");
+      vscode.window.showErrorMessage(t("noWorkspaceFolderOpen"));
       return;
     }
 

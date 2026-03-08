@@ -2,7 +2,8 @@
   "name": "vscode-sfdx-hardis",
   "displayName": "SFDX Hardis by Cloudity",
   "description": "Handle Salesforce DX and Git without knowing Salesforce DX or Git !",
-  "version": "6.29.1",
+  "version": "6.30.6",
+  "preview": true,
   "icon": "resources/sfdx-hardis-logo-square.png",
   "publisher": "NicolasVuillamy",
   "author": {
@@ -141,6 +142,21 @@
           "default": false,
           "description": "Display emojis in menu section titles"
         },
+        "vsCodeSfdxHardis.theme.colorTheme": {
+          "type": "string",
+          "default": "light",
+          "enum": [
+            "auto",
+            "light",
+            "dark"
+          ],
+          "enumDescriptions": [
+            "🔄 Automatic (Light/Dark theme)",
+            "☀️ Light theme",
+            "🌑 Dark theme"
+          ],
+          "description": "Display theme for SFDX-Hardis webview panels (Pipeline, Configuration, etc.)"
+        },
         "vsCodeSfdxHardis.theme.menuIconType": {
           "type": "string",
           "default": "vscode",
@@ -149,8 +165,8 @@
             "vscode"
           ],
           "enumDescriptions": [
-            "Colored SVG Icons",
-            "Standard Visual Studio Code Icons"
+            "✅ Colored SVG Icons",
+            "✓ Standard Visual Studio Code Icons"
           ],
           "description": "Theme of SFDX-Hardis menu icons"
         },
@@ -173,6 +189,25 @@
           "type": "boolean",
           "default": true,
           "description": "Automatically show the Welcome panel when opening VS Code SFDX Hardis for the first time in a session"
+        },
+        "vsCodeSfdxHardis.lang": {
+          "type": "string",
+          "default": "en",
+          "enum": [
+            "auto",
+            "en",
+            "es",
+            "fr",
+            "ja"
+          ],
+          "enumDescriptions": [
+            "Automatic (use VS Code display language)",
+            "English",
+            "Español",
+            "Français",
+            "日本語"
+          ],
+          "description": "Language for SFDX Hardis extension interface. 'auto' uses the VS Code display language."
         },
         "vsCodeSfdxHardis.autocloseCommands": {
           "type": "array",
@@ -574,13 +609,14 @@
   },
   "scripts": {
     "vscode:prepublish": "yarn run package",
+    "clean:out": "node -e \"require('fs').rmSync('out', { recursive: true, force: true })\"",
     "sync:schema": "node scripts/sync-schema.js",
     "compile": "tsc -p ./",
     "prebuild": "yarn run sync:schema",
-    "build": "webpack --config webpack.prod.js",
+    "build": "yarn run clean:out && webpack --config webpack.prod.js",
     "watch": "webpack --config webpack.dev.js --watch",
     "dev": "webpack --config webpack.dev.js",
-    "package": "webpack --config webpack.prod.js",
+    "package": "yarn run clean:out && webpack --config webpack.prod.js",
     "pretest": "yarn run compile && yarn run lint",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
@@ -591,11 +627,11 @@
     "@babel/core": "^7.28.0",
     "@babel/preset-env": "^7.28.0",
     "@eslint/js": "^9.29.0",
-    "@lwc/babel-plugin-component": "^8.20.2",
-    "@lwc/engine-dom": "^8.20.2",
-    "@lwc/module-resolver": "^8.20.2",
-    "@lwc/synthetic-shadow": "^8.20.2",
-    "@salesforce-ux/design-system": "^2.27.2",
+    "@lwc/babel-plugin-component": "^8.25.1",
+    "@lwc/engine-dom": "^8.25.1",
+    "@lwc/module-resolver": "^8.25.1",
+    "@lwc/synthetic-shadow": "^8.25.1",
+    "@salesforce-ux/design-system": "2.29.0",
     "@types/fs-extra": "^11.0.4",
     "@types/git-url-parse": "^9.0.1",
     "@types/glob": "^8.0.0",
@@ -616,7 +652,7 @@
     "eslint": "^9.0.0",
     "glob": "^11.0.0",
     "lru-cache": "^7.18.3",
-    "lwc": "^8.20.2",
+    "lwc": "^8.25.1",
     "lwc-webpack-plugin": "^3.1.0",
     "mocha": "^10.0.0",
     "style-loader": "^4.0.0",
@@ -641,9 +677,10 @@
     "fs-extra": "^11.0.0",
     "get-port": "^7.1.0",
     "git-url-parse": "^16.1.0",
+    "i18next": "^25.8.13",
     "jira.js": "^5.2.2",
     "js-yaml": "^4.1.0",
-    "lightning-base-components": "^1.27.2-alpha",
+    "lightning-base-components": "1.28.15-alpha",
     "lodash-es": "4.17.23",
     "mermaid": "^11.10.0",
     "moment": "^2.29.1",

@@ -187,7 +187,6 @@
 }
 
 .blue-back {
-	background: #EDF4FF;
 	min-height: 100vh;
 }
 
@@ -196,9 +195,6 @@
 }
 
 .log-container {
-  background-color: #f4f6f9;
-  border: 1px solid #d8dde6;
-  border-radius: 0.25rem;
   padding: 0.5rem;
   font-size: 0.875rem;
   line-height: 1.4;
@@ -221,8 +217,6 @@
 }
 
 .log-section {
-  background-color: #ffffff;
-  border: 1px solid #d8dde6;
   border-radius: 0.25rem;
 }
 
@@ -230,10 +224,6 @@
   cursor: pointer;
   border-radius: 0.25rem;
   transition: background-color 0.2s ease;
-}
-
-.section-header:hover {
-  background-color: #f8f9fa;
 }
 
 .section-title {
@@ -265,51 +255,10 @@
   border-left: 3px solid transparent;
 }
 
-/* Log type styling */
-.section-logs > div[data-log-type="error"],
-.log-lines > div[data-log-type="error"] {
-  background-color: #fef5f5;
-  border-left-color: #e53e3e;
-  color: #742a2a;
-}
-
-.section-logs > div[data-log-type="warning"],
-.log-lines > div[data-log-type="warning"] {
-  background-color: #fffbf0;
-  border-left-color: #dd6b20;
-  color: #744210;
-}
-
-.section-logs > div[data-log-type="success"],
-.log-lines > div[data-log-type="success"] {
-  background-color: #f0fff4;
-  border-left-color: #38a169;
-  color: #22543d;
-}
-
-.section-logs > div[data-log-type="action"],
-.log-lines > div[data-log-type="action"] {
-  background-color: #ebf8ff;
-  border-left-color: #3182ce;
-  color: #2c5282;
-}
-
-.section-logs > div[data-log-type="log"],
-.log-lines > div[data-log-type="log"] {
-  background-color: #f7fafc;
-  border-left-color: #a0aec0;
-  color: #4a5568;
-}
-
-.section-logs > div[data-log-type="query"],
-.log-lines > div[data-log-type="query"] {
-  background-color: #e6f7ff;
-  border-left-color: #1890ff;
-  color: #0050b3;
-}
+/* Log type styling - managed in global-theme.css */
 
 /* Sub-command styling */
-.section-logs > div[data-is-subcommand="true"][data-is-running="true"],
+/* .section-logs > div[data-is-subcommand="true"][data-is-running="true"],
 .log-lines > div[data-is-subcommand="true"][data-is-running="true"] {
   background-color: #fff7e6;
   border-left-color: #ff8c00;
@@ -335,7 +284,7 @@
   50% {
     background-color: #ffedd5;
   }
-}
+} */
 
 .log-message {
   word-break: break-word;
@@ -374,79 +323,7 @@
   margin-top: 0.125rem;
 }
 
-/* Scrollbar styling */
-.log-container::-webkit-scrollbar {
-  width: 8px;
-}
-
-.log-container::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 4px;
-}
-
-.log-container::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 4px;
-}
-
-.log-container::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
-}
-
-/* Answer formatting styles */
-.answer-formatted {
-  background-color: #f8f9fa;
-  border: 1px solid #e9ecef;
-  border-radius: 0.25rem;
-  padding: 0.5rem;
-  margin: 0;
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-  font-size: 0.8rem;
-  line-height: 1.3;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  overflow-x: auto;
-}
-
-/* Download panel styles */
-.download-panel {
-  background-color: #f8f9fa;
-  border-top: 2px solid #e9ecef;
-  margin-top: 0.5rem;
-  border-radius: 0 0 0.25rem 0.25rem;
-  position: sticky;
-  bottom: 0;
-  z-index: 10;
-}
-
-.download-panel h3 {
-  margin: 0;
-  display: flex;
-  align-items: center;
-}
-
-.download-panel .slds-button-group {
-  gap: 0.25rem;
-}
-
-/* Progress section styles */
-.progress-section {
-  border-left: 4px solid #0176d3;
-  background: linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%);
-}
-
-.progress-section .section-header {
-  background-color: rgba(1, 118, 211, 0.05);
-}
-
-.progress-section .section-header:hover {
-  background-color: rgba(1, 118, 211, 0.1);
-}
-
-.progress-section .section-logs > div {
-  background-color: rgba(255, 255, 255, 0.8);
-  border-left: 2px solid #0176d3;
-}
+/* Progress section styles - managed in global-theme.css */
 
 /* Animated progress bar styles */
 .animated-progress-bar {

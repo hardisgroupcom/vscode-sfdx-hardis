@@ -1,5 +1,5 @@
 <template>
-    <div class="slds-scope slds-theme_default blue-back">
+    <div class="slds-scope blue-back" data-theme={colorTheme} data-contrast={colorContrast}>
         <div class="package-container">
             <!-- Header Section -->
             <div class="header-section">
@@ -13,14 +13,14 @@
                         <div class="header-actions">
                                 <lightning-input
                                     type="toggle"
-                                    label="Edit mode"
+                                    label={i18n.editModeLabel}
                                     checked={editMode}
                                     onchange={toggleEditMode}
                                     class="edit-toggle"
                                 ></lightning-input>
                             <lightning-button 
                                 variant="outline-brand" 
-                                label="Refresh" 
+                                label={i18n.refreshLabel}
                                 title={refreshTooltip}
                                 onclick={refreshPackageConfig}
                                 icon-name="utility:refresh"
@@ -28,7 +28,7 @@
                             ></lightning-button>
                             <lightning-button 
                                 variant="brand" 
-                                label="Edit File" 
+                                label={i18n.editFileLabel}
                                 title={editTooltip}
                                 onclick={editPackageFile}
                                 icon-name="utility:edit"
@@ -39,24 +39,24 @@
                     <div class="header-stats">
                         <div class="info-grid">
                             <div class="info-item">
-                                <span class="info-label">API Version:</span>
+                                <span class="info-label">{i18n.apiVersionLabel}</span>
                                 <span class="info-value">{packageData.apiVersion}</span>
                             </div>
                             <div class="info-item">
-                                <span class="info-label">Total Types:</span>
+                                <span class="info-label">{i18n.totalTypesLabel}</span>
                                 <span class="info-value">{totalTypes}</span>
                             </div>
                             <div class="info-item">
-                                <span class="info-label">Total Members:</span>
+                                <span class="info-label">{i18n.totalMembersLabel}</span>
                                 <span class="info-value">{totalMembers}</span>
                             </div>
                             <div class="info-item">
-                                <span class="info-label">File Location:</span>
+                                <span class="info-label">{i18n.fileLocationLabel}</span>
                                 <span class="info-value">{packageFilePath}</span>
                             </div>
                             <template if:true={packageData.namespace}>
                                 <div class="info-item">
-                                    <span class="info-label">Namespace:</span>
+                                    <span class="info-label">{i18n.namespaceLabel}</span>
                                     <span class="info-value">{packageData.namespace}</span>
                                 </div>
                             </template>
@@ -68,14 +68,14 @@
             <template if:true={isLoading}>
                 <!-- Loading State -->
                 <div class="loading-section">
-                    <lightning-spinner alternative-text="Loading package configuration..." size="medium"></lightning-spinner>
-                    <p class="loading-text">Loading package configuration...</p>
+                    <lightning-spinner alternative-text={i18n.loadingPackageConfig} size="medium"></lightning-spinner>
+                    <p class="loading-text">{i18n.loadingPackageConfig}</p>
                 </div>
             </template>
 
             <template if:true={isMutating}>
                 <div class="mutating-overlay">
-                    <lightning-spinner alternative-text="Updating package..." size="small"></lightning-spinner>
+                    <lightning-spinner alternative-text={i18n.updatingPackage} size="small"></lightning-spinner>
                 </div>
             </template>
 
@@ -83,11 +83,11 @@
                         <template if:true={showAddTypeModal}>
                             <div class="modal-backdrop" onclick={closeModals}></div>
                             <div class="modal-dialog">
-                                <div class="modal-header">Add Metadata Type</div>
+                                <div class="modal-header">{i18n.addMetadataType}</div>
                                 <div class="modal-body">
                                     <lightning-input
                                         type="text"
-                                        label="Metadata Type API Name"
+                                        label={i18n.metadataTypeApiName}
                                         value={newEntryName}
                                         data-modal-input="new-entry"
                                         onchange={handleModalInputChange}
@@ -95,8 +95,8 @@
                                     ></lightning-input>
                                 </div>
                                 <div class="modal-footer">
-                                    <lightning-button variant="neutral" label="Cancel" onclick={closeModals}></lightning-button>
-                                    <lightning-button variant="brand" label="Add" onclick={confirmAddType} class="modal-primary"></lightning-button>
+                                    <lightning-button variant="neutral" label={i18n.cancelLabel} onclick={closeModals}></lightning-button>
+                                    <lightning-button variant="brand" label={i18n.addLabel} onclick={confirmAddType} class="modal-primary"></lightning-button>
                                 </div>
                             </div>
                         </template>
@@ -105,11 +105,11 @@
                         <template if:true={showAddMemberModal}>
                             <div class="modal-backdrop" onclick={closeModals}></div>
                             <div class="modal-dialog">
-                                <div class="modal-header">Add Member to {pendingTypeNameForMember}</div>
+                                <div class="modal-header">{addMemberToTypeLabel}</div>
                                 <div class="modal-body">
                                     <lightning-input
                                         type="text"
-                                        label="Member Name"
+                                        label={i18n.memberNameLabel}
                                         value={newEntryName}
                                         data-modal-input="new-entry"
                                         onchange={handleModalInputChange}
@@ -117,8 +117,8 @@
                                     ></lightning-input>
                                 </div>
                                 <div class="modal-footer">
-                                    <lightning-button variant="neutral" label="Cancel" onclick={closeModals}></lightning-button>
-                                    <lightning-button variant="brand" label="Add" onclick={confirmAddMember} class="modal-primary"></lightning-button>
+                                    <lightning-button variant="neutral" label={i18n.cancelLabel} onclick={closeModals}></lightning-button>
+                                    <lightning-button variant="brand" label={i18n.addLabel} onclick={confirmAddMember} class="modal-primary"></lightning-button>
                                 </div>
                             </div>
                         </template>
@@ -132,11 +132,11 @@
                             <lightning-icon icon-name="utility:error" size="small" variant="inverse"></lightning-icon>
                         </div>
                         <div class="error-content">
-                            <h3 class="error-title">Unable to Load Package Configuration</h3>
+                            <h3 class="error-title">{i18n.unableToLoadPackageConfig}</h3>
                             <p class="error-description">{errorMessage}</p>
                             <lightning-button 
                                 variant="brand" 
-                                label="Try Again" 
+                                label={i18n.tryAgainLabel} 
                                 onclick={refreshPackageConfig}
                                 class="error-button"
                             ></lightning-button>
@@ -153,7 +153,7 @@
                             <div class="filter-container">
                                 <lightning-input
                                     type="search"
-                                    placeholder="Filter by type or member name..."
+                                    placeholder={i18n.filterByTypeOrMember}
                                     value={filterText}
                                     onchange={handleFilterChange}
                                     class="filter-input"
@@ -163,8 +163,8 @@
                                 <div class="section-actions">
                                     <lightning-button
                                         variant="brand"
-                                        label="Add Type"
-                                        title="Add a new metadata type"
+                                        label={i18n.addTypeLabel}
+                                        title={i18n.addNewMetadataType}
                                         onclick={addMetadataType}
                                         icon-name="utility:add"
                                         class="header-button"
@@ -184,14 +184,14 @@
                                                 <lightning-icon icon-name={metadataType.iconName} size="small" class="type-icon"></lightning-icon>
                                                 <div class="type-details">
                                                     <h3 class="type-name"><span class="metadata-type-text">{metadataType.name}</span></h3>
-                                                    <p class="type-count">{metadataType.memberCount} members</p>
+                                                    <p class="type-count">{metadataType.memberCountLabel}</p>
                                                 </div>
                                             
                                             <div class="type-doc-button slds-align-top">
                                                 <lightning-icon
                                                     icon-name="utility:info"
                                                     size="x-small"
-                                                    alternative-text="View documentation"
+                                                    alternative-text={i18n.viewDocumentation}
                                                     title={metadataType.urlTooltip}
                                                     onclick={openMetadataDocumentation}
                                                     data-type-name={metadataType.name}
@@ -203,8 +203,8 @@
                                                 <div class="type-actions-right">
                                                     <lightning-button
                                                         variant="neutral"
-                                                        label="Add Member"
-                                                        title="Add a metadata element"
+                                                        label={i18n.addMemberLabel}
+                                                        title={i18n.addMetadataElement}
                                                         onclick={addMetadataMember}
                                                         data-type-name={metadataType.name}
                                                         icon-name="utility:add"
@@ -212,8 +212,8 @@
                                                     ></lightning-button>
                                                     <lightning-button
                                                         variant="destructive"
-                                                        label="Delete"
-                                                        title="Remove metadata type"
+                                                        label={i18n.deleteLabel}
+                                                        title={i18n.removeMetadataTypeLabel}
                                                         onclick={removeMetadataType}
                                                         data-type-name={metadataType.name}
                                                         class="type-delete-button"
@@ -251,7 +251,7 @@
                                                                     <lightning-icon
                                                                         icon-name="utility:info"
                                                                         size="x-small"
-                                                                        alternative-text="View documentation"
+                                                                        alternative-text={i18n.viewDocumentation}
                                                                         title={member.docTooltip}
                                                                         onclick={openStandardObjectDocumentation}
                                                                         data-member-name={member.name}
@@ -264,8 +264,8 @@
                                                                     <lightning-button-icon
                                                                         icon-name="utility:delete"
                                                                         variant="bare"
-                                                                        alternative-text="Remove metadata member"
-                                                                        title="Remove metadata member"
+                                                                        alternative-text={i18n.removeMetadataMember}
+                                                                        title={i18n.removeMetadataMember}
                                                                         onclick={removeMetadataMember}
                                                                         data-type-name={metadataType.name}
                                                                         data-member-name={member.name}
@@ -288,8 +288,8 @@
                         <div class="empty-state">
                             <template if:true={filterText}>
                                 <lightning-icon icon-name="utility:search" size="large" class="empty-icon"></lightning-icon>
-                                <h3 class="empty-title">No matching results</h3>
-                                <p class="empty-description">No metadata types or members match your filter "{filterText}"</p>
+                                <h3 class="empty-title">{i18n.noMatchingResults}</h3>
+                                <p class="empty-description">{noMatchingResultsDescLabel}</p>
                             </template>
                             <template if:false={filterText}>
                                 <lightning-icon icon-name={packageIconName} size="large" class="empty-icon"></lightning-icon>
