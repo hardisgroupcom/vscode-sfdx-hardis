@@ -92,6 +92,21 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="option-row">
+                                <div class="option-item">
+                                    <div class="option-input">
+                                        <lightning-combobox
+                                            label={i18n.docLanguageLabel}
+                                            name="docLanguage"
+                                            value={docLanguage}
+                                            options={languageOptions}
+                                            onchange={handleLanguageChange}
+                                            class="option-checkbox"
+                                        ></lightning-combobox>
+                                        <s-multiline-helptext content={i18n.docLanguageHelp}></s-multiline-helptext>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div class="options-column include-column">
                             <h3 class="subsection-title">{i18n.includeSection}</h3>

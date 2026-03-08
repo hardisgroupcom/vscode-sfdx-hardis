@@ -316,6 +316,8 @@
   "documentationWorkbenchSubtitle": "Generate, deploy and manage your Salesforce project documentation",
   "documentationWorkbenchTitle": "Documentation Workbench",
   "documentationWorkbenchTooltip": "Open the Documentation Workbench to generate, deploy, and manage project documentation",
+  "docLanguageHelp": "Override the language used for AI-generated documentation. Applies PROMPTS_LANGUAGE and SFDX_HARDIS_LANG env vars. Defaults to VS Code language setting.",
+  "docLanguageLabel": "Documentation language",
   "documentFilesOnly": "Document files only",
   "done": "Done",
   "downloadAndInstallGit": "Download and install Git",

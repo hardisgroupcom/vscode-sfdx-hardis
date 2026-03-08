@@ -45,16 +45,16 @@ export class CommandRunner {
     return this.terminalStack[this.terminalStack.length - 1];
   }
 
-  executeCommand(sfdxHardisCommand: string) {
+  executeCommand(sfdxHardisCommand: string, extraEnv?: Record<string, string>) {
     const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
     this.debugNodeJs = config.get("debugSfdxHardisCommands") ?? false;
     if (
       config.get("userInputCommandLineIfLWC") === "terminal" ||
       !sfdxHardisCommand.startsWith("sf hardis")
     ) {
-      this.executeCommandTerminal(sfdxHardisCommand);
+      this.executeCommandTerminal(sfdxHardisCommand, extraEnv);
     } else {
-      this.executeCommandBackground(sfdxHardisCommand);
+      this.executeCommandBackground(sfdxHardisCommand, extraEnv);
     }
   }
 
@@ -171,7 +171,7 @@ export class CommandRunner {
       });
   }
 
-  executeCommandBackground(sfdxHardisCommand: string) {
+  executeCommandBackground(sfdxHardisCommand: string, extraEnv?: Record<string, string>) {
     // Preprocess, validate, and send telemetry, and register as active
     let preprocessedCommand: string | null = null;
     preprocessedCommand = this.preprocessAndValidateCommand(
@@ -192,7 +192,7 @@ export class CommandRunner {
     };
     const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
     const langSetting = config.get<string>("lang", "auto");
-    if (langSetting && langSetting !== "auto") {
+    if (langSetting && langSetting !== "auto" && !extraEnv?.SFDX_HARDIS_LANG) {
       spawnOptions.env.SFDX_HARDIS_LANG = langSetting;
     }
     if (config.get("disableTlsRejectUnauthorized") === true) {
@@ -201,11 +201,15 @@ export class CommandRunner {
         NODE_TLS_REJECT_UNAUTHORIZED: "0",
       };
     }
-    if (this.debugNodeJs) {
+    if (this.debugNodeJs && !extraEnv?.NODE_OPTIONS) {
       spawnOptions.env = {
         ...spawnOptions.env,
         NODE_OPTIONS: "--inspect-brk",
       };
+    }
+    // Merge any caller-supplied extra env vars (e.g. PROMPTS_LANGUAGE from doc workbench)
+    if (extraEnv && typeof extraEnv === "object") {
+      spawnOptions.env = { ...spawnOptions.env, ...extraEnv };
     }
     const gitBashPath = getGitBashPath();
     if (process.platform === "win32" && gitBashPath) {
@@ -381,7 +385,7 @@ export class CommandRunner {
   /**
    * Main entry point for executing a command in a terminal, handling terminal stack and LWC panel logic.
    */
-  executeCommandTerminal(sfdxHardisCommand: string) {
+  executeCommandTerminal(sfdxHardisCommand: string, extraEnv?: Record<string, string>) {
     // Filter killed terminals
     this.terminalStack = this.terminalStack.filter(
       (terminal: vscode.Terminal) =>
@@ -466,17 +470,17 @@ export class CommandRunner {
           vscode.window.terminals[vscode.window.terminals.length - 1];
         this.terminalStack.push(newTerminal);
         this.commandsInstance.terminalStack = this.terminalStack;
-        this.runCommandInTerminal(sfdxHardisCommand);
+        this.runCommandInTerminal(sfdxHardisCommand, extraEnv);
       });
     } else {
-      this.runCommandInTerminal(sfdxHardisCommand);
+      this.runCommandInTerminal(sfdxHardisCommand, extraEnv);
     }
   }
 
   /**
    * Runs a command in the latest terminal, handling all SFDX/Hardis specifics.
    */
-  runCommandInTerminal(command: string) {
+  runCommandInTerminal(command: string, extraEnv?: Record<string, string>) {
     const terminal = this.getLatestTerminal();
     if (!terminal) {
       vscode.window.showErrorMessage(
@@ -498,7 +502,7 @@ export class CommandRunner {
     if (!cmd) {
       return;
     }
-    if (this.debugNodeJs) {
+    if (this.debugNodeJs && !extraEnv?.NODE_OPTIONS) {
       cmd = `NODE_OPTIONS=--inspect-brk ${cmd}`;
     }
     const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
@@ -509,9 +513,18 @@ export class CommandRunner {
     if (
       langSetting &&
       langSetting !== "auto" &&
+      !extraEnv?.SFDX_HARDIS_LANG &&
       cmd.trimStart().startsWith("sf hardis")
     ) {
       cmd = `SFDX_HARDIS_LANG=${langSetting} ${cmd}`;
+    }
+    if (extraEnv && typeof extraEnv === "object") {
+      const envPrefix = Object.entries(extraEnv)
+        .map(([k, v]) => `${k}=${v}`)
+        .join(" ");
+      if (envPrefix) {
+        cmd = `${envPrefix} ${cmd}`;
+      }
     }
     if (terminal?.name?.includes("powershell")) {
       cmd = cmd.replace(/ && /g, " ; ").replace(/echo y/g, "Write-Output 'y'");

@@ -27,6 +27,7 @@ export default class DocumentationWorkbench extends SharedMixin(
   @track generateObjectsDoc = true;
   @track generateAutomationsDoc = true;
   @track generateLwcDoc = true;
+  @track docLanguage = ""; // empty = use VS Code language setting
 
   @api
   initialize(data) {
@@ -64,6 +65,9 @@ export default class DocumentationWorkbench extends SharedMixin(
       }
       if (data.generateLwcDoc !== undefined) {
         this.generateLwcDoc = data.generateLwcDoc;
+      }
+      if (data.docLanguage !== undefined) {
+        this.docLanguage = data.docLanguage;
       }
     }
   }
@@ -112,6 +116,20 @@ export default class DocumentationWorkbench extends SharedMixin(
     }
   }
 
+  get languageOptions() {
+    return [
+      { label: this.t("langVsCodeAuto"), value: "" },
+      { label: this.t("langEnglish"), value: "en" },
+      { label: this.t("langFrench"), value: "fr" },
+      { label: this.t("langSpanish"), value: "es" },
+      { label: this.t("langJapanese"), value: "ja" },
+    ];
+  }
+
+  handleLanguageChange(event) {
+    this.docLanguage = event.detail.value;
+  }
+
   get deployToSalesforceDescHtml() {
     return this.t("deployToSalesforceDesc");
   }
@@ -153,7 +171,12 @@ export default class DocumentationWorkbench extends SharedMixin(
     }
     window.sendMessageToVSCode({
       type: "runCommand",
-      data: { command: command },
+      data: {
+        command: command,
+        envVars: this.docLanguage
+          ? { PROMPTS_LANGUAGE: this.docLanguage, SFDX_HARDIS_LANG: this.docLanguage }
+          : undefined,
+      },
     });
   }
 
