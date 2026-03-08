@@ -171,7 +171,10 @@ export class CommandRunner {
       });
   }
 
-  executeCommandBackground(sfdxHardisCommand: string, extraEnv?: Record<string, string>) {
+  executeCommandBackground(
+    sfdxHardisCommand: string,
+    extraEnv?: Record<string, string>,
+  ) {
     // Preprocess, validate, and send telemetry, and register as active
     let preprocessedCommand: string | null = null;
     preprocessedCommand = this.preprocessAndValidateCommand(
@@ -385,7 +388,10 @@ export class CommandRunner {
   /**
    * Main entry point for executing a command in a terminal, handling terminal stack and LWC panel logic.
    */
-  executeCommandTerminal(sfdxHardisCommand: string, extraEnv?: Record<string, string>) {
+  executeCommandTerminal(
+    sfdxHardisCommand: string,
+    extraEnv?: Record<string, string>,
+  ) {
     // Filter killed terminals
     this.terminalStack = this.terminalStack.filter(
       (terminal: vscode.Terminal) =>

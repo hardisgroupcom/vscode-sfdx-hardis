@@ -174,7 +174,10 @@ export default class DocumentationWorkbench extends SharedMixin(
       data: {
         command: command,
         envVars: this.docLanguage
-          ? { PROMPTS_LANGUAGE: this.docLanguage, SFDX_HARDIS_LANG: this.docLanguage }
+          ? {
+              PROMPTS_LANGUAGE: this.docLanguage,
+              SFDX_HARDIS_LANG: this.docLanguage,
+            }
           : undefined,
       },
     });

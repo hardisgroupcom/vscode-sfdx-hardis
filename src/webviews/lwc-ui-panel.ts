@@ -366,7 +366,10 @@ export class LwcUiPanel {
    * Handle command execution request from webview
    * @param data Object with a 'command' property (string)
    */
-  private async handleRunCommand(data: { command: string; envVars?: Record<string, string> }): Promise<void> {
+  private async handleRunCommand(data: {
+    command: string;
+    envVars?: Record<string, string>;
+  }): Promise<void> {
     vscode.commands.executeCommand(
       "vscode-sfdx-hardis.execute-command",
       data.command,
