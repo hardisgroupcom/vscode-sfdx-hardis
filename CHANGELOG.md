@@ -13,6 +13,7 @@
   - Spanish
 - Enhancements
   - Data Workbench: Make more explicit the use of filtering using master queries results (new badge)
+  - Org Manager: Add more contextual actions: Freeze / Unfreeze users, Before / After refresh sandbox...
 - Fixes
   - Orgs Manager: Invite to disconnect from production orgs
 
