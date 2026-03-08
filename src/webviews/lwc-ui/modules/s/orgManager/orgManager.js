@@ -116,7 +116,11 @@ export default class OrgManager extends SharedMixin(LightningElement) {
           (o.orgType || "").toString().toLowerCase() === "sandbox";
         const actions = [];
         if (isConnected) {
-          actions.push({ label: this.t("openLabel"), name: "open", iconName: "utility:new_window" });
+          actions.push({
+            label: this.t("openLabel"),
+            name: "open",
+            iconName: "utility:new_window",
+          });
           if (!o.isDefaultUsername) {
             actions.push({
               label: this.t("setAsDefaultOrg"),
@@ -133,7 +137,11 @@ export default class OrgManager extends SharedMixin(LightningElement) {
           }
           // Org operations for non-scratch orgs
           if (!isScratch) {
-            actions.push({ label: this.t("freezeUsers"), name: "freezeUsers", iconName: "utility:lock" });
+            actions.push({
+              label: this.t("freezeUsers"),
+              name: "freezeUsers",
+              iconName: "utility:lock",
+            });
             actions.push({
               label: this.t("unfreezeUsers"),
               name: "unfreezeUsers",
@@ -172,7 +180,11 @@ export default class OrgManager extends SharedMixin(LightningElement) {
             });
           }
         } else {
-          actions.push({ label: this.t("reconnectLabel"), name: "reconnect", iconName: "utility:link" });
+          actions.push({
+            label: this.t("reconnectLabel"),
+            name: "reconnect",
+            iconName: "utility:link",
+          });
         }
         actions.push({
           label: this.t("removeLabel"),
