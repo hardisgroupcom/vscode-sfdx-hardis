@@ -594,7 +594,7 @@ export class BranchStrategyMermaidBuilder {
     // Enhanced SLDS: backgrounds for orgs/branches/subgraphs, bolder borders, rounded corners, SLDS font, and improved contrast
     // Only use properties supported by Mermaid classDef/style syntax
     const isDark = this.colorTheme === "dark";
-    
+
     const classesAndStyles = isDark
       ? `
   classDef salesforceDev fill:#2e2e2e,stroke:#1b96ff,stroke-width:2.5px,color:#d8e6fe,font-weight:500,border-radius:16px;
@@ -628,7 +628,7 @@ export class BranchStrategyMermaidBuilder {
     // gitMerge (major branch arrows) are always plain and thicker (3px)
     // Animated variants: Set base stroke in red that CSS will animate
     const isDark = this.colorTheme === "dark";
-    
+
     return isDark
       ? {
           gitMerge: "stroke:#1b96ff,stroke-width:3px,color:#d8e6fe,opacity:1;",
@@ -638,10 +638,12 @@ export class BranchStrategyMermaidBuilder {
             "stroke:#757575,stroke-width:1.5px,stroke-dasharray:5 5,color:#939393,opacity:1;",
           gitFeatureMergeWithPRAnimated:
             "stroke:#ff6b6b,stroke-width:2.5px,stroke-dasharray:5 5,color:#feded8,font-weight:bold,opacity:1;",
-          sfDeploy: "stroke:#06a59a,stroke-width:1.5px,color:#939393,opacity:1;",
+          sfDeploy:
+            "stroke:#06a59a,stroke-width:1.5px,color:#939393,opacity:1;",
           sfDeployAnimated:
             "stroke:#ff6b6b,stroke-width:2px,color:#feded8,font-weight:bold,opacity:1;",
-          sfPushPull: "stroke:#1b96ff,stroke-width:1.5px,color:#939393,opacity:1;",
+          sfPushPull:
+            "stroke:#1b96ff,stroke-width:1.5px,color:#939393,opacity:1;",
         }
       : {
           gitMerge: "stroke:#0176D3,stroke-width:3px,color:#032D60,opacity:1;",
@@ -651,10 +653,12 @@ export class BranchStrategyMermaidBuilder {
             "stroke:#B0B7BD,stroke-width:1.5px,stroke-dasharray:5 5,color:#B0B7BD,opacity:1;",
           gitFeatureMergeWithPRAnimated:
             "stroke:#e74c3c,stroke-width:2.5px,stroke-dasharray:5 5,color:#032D60,font-weight:bold,opacity:1;",
-          sfDeploy: "stroke:#04844B,stroke-width:1.5px,color:#B0B7BD,opacity:1;",
+          sfDeploy:
+            "stroke:#04844B,stroke-width:1.5px,color:#B0B7BD,opacity:1;",
           sfDeployAnimated:
             "stroke:#e74c3c,stroke-width:2px,color:#032D60,font-weight:bold,opacity:1;",
-          sfPushPull: "stroke:#0176D3,stroke-width:1.5px,color:#B0B7BD,opacity:1;",
+          sfPushPull:
+            "stroke:#0176D3,stroke-width:1.5px,color:#B0B7BD,opacity:1;",
         };
   }
 
