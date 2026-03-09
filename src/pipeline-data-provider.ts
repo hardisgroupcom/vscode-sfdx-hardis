@@ -40,6 +40,7 @@ export class PipelineDataProvider {
     options: {
       browseGitProvider?: boolean;
       openPullRequests?: PullRequest[];
+      colorTheme?: string;
     } = {},
   ): Promise<PipelineData> {
     try {
@@ -54,6 +55,7 @@ export class PipelineDataProvider {
         isAuthenticated,
         options.openPullRequests || [],
         gitProvider,
+        options.colorTheme || "light",
       );
       const mermaidDiagram = mermaidBuilder.build({
         format: "string",

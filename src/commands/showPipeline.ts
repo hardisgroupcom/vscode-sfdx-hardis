@@ -3,6 +3,7 @@ import { PipelineDataProvider } from "../pipeline-data-provider";
 import { Logger } from "../logger";
 import { GitProvider } from "../utils/gitProviders/gitProvider";
 import { LwcPanelManager } from "../lwc-panel-manager";
+import { LwcUiPanel } from "../webviews/lwc-ui-panel";
 import { Commands } from "../commands";
 import { showPackageXmlPanel } from "./packageXml";
 import { PullRequest } from "../utils/gitProviders/types";
@@ -509,6 +510,12 @@ export function registerShowPipeline(commands: Commands) {
       let gitAuthenticated = false;
       let currentBranchPullRequest: PullRequest | null = null;
 
+      // Determine theme for Mermaid diagram colors
+      const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+      const colorThemeConfig = config.get("theme.colorTheme", "light");
+      const themeConfig = LwcUiPanel.resolveTheme(colorThemeConfig);
+      const colorTheme = themeConfig.colorTheme;
+
       const prButtonInfo: any = {};
       let repoPlatformLabel = "";
       if (gitProvider?.repoInfo) {
@@ -609,11 +616,11 @@ export function registerShowPipeline(commands: Commands) {
         {
           openPullRequests: openPullRequests,
           browseGitProvider: browseGitProvider,
+          colorTheme: colorTheme,
         },
       );
 
       // Read displayFeatureBranches configuration
-      const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
       const displayFeatureBranches =
         config.get<boolean>("pipelineDisplayFeatureBranches") ?? false;
 

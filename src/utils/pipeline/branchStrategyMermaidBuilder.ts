@@ -18,17 +18,20 @@ export class BranchStrategyMermaidBuilder {
   private sbDevLinks: any[] = [];
   private retrofitLinks: any[] = [];
   private mermaidLines: string[] = [];
+  private colorTheme: string = "light";
 
   constructor(
     branchesAndOrgs: any[],
     isAuthenticated: boolean,
     openPullRequests: PullRequest[] = [],
     gitProvider: GitProvider | null = null,
+    colorTheme: string = "light",
   ) {
     this.branchesAndOrgs = branchesAndOrgs;
     this.openPullRequests = openPullRequests;
     this.isAuthenticated = isAuthenticated;
     this.gitProvider = gitProvider;
+    this.colorTheme = colorTheme;
   }
 
   /**
@@ -470,15 +473,17 @@ export class BranchStrategyMermaidBuilder {
     }
 
     // Add dynamic SalesforceDevOrgs styles if used
+    const isDark = this.colorTheme === "dark";
     for (const salesforceDevOrgsGroup of this.salesforceDevOrgsGroup) {
       if (
         this.mermaidLines.some((l) =>
           l.includes(`subgraph SalesforceDevOrgs${salesforceDevOrgsGroup} `),
         )
       ) {
-        this.mermaidLines.push(
-          `style SalesforceDevOrgs${salesforceDevOrgsGroup} fill:#EBF6FF,color:#000000,stroke:#0077B5,stroke-width:1px;`,
-        );
+        const devOrgStyle = isDark
+          ? `style SalesforceDevOrgs${salesforceDevOrgsGroup} fill:#1a1a1a,color:#d8e6fe,stroke:#0176d3,stroke-width:1px;`
+          : `style SalesforceDevOrgs${salesforceDevOrgsGroup} fill:#EBF6FF,color:#000000,stroke:#0077B5,stroke-width:1px;`;
+        this.mermaidLines.push(devOrgStyle);
         usedStyles.add(`SalesforceDevOrgs${salesforceDevOrgsGroup}`);
       }
     }
@@ -588,7 +593,21 @@ export class BranchStrategyMermaidBuilder {
   listClassesAndStyles(): string[] {
     // Enhanced SLDS: backgrounds for orgs/branches/subgraphs, bolder borders, rounded corners, SLDS font, and improved contrast
     // Only use properties supported by Mermaid classDef/style syntax
-    const classesAndStyles = `
+    const isDark = this.colorTheme === "dark";
+    
+    const classesAndStyles = isDark
+      ? `
+  classDef salesforceDev fill:#2e2e2e,stroke:#1b96ff,stroke-width:2.5px,color:#d8e6fe,font-weight:500,border-radius:16px;
+  classDef salesforceMajor fill:#4f2100,stroke:#fcc003,stroke-width:2.5px,color:#f9e3b6,font-weight:900,border-radius:16px;
+  classDef salesforceProd fill:#023434,stroke:#04e1cb,stroke-width:2.5px,color:#acf3e4,font-weight:700,border-radius:16px;
+  classDef gitMajor fill:#032d60,stroke:#78b0fd,stroke-width:3px,color:#d8e6fe,font-weight:900,border-radius:16px;
+  classDef gitMain fill:#014486,stroke:#aacbff,stroke-width:3px,color:#d8e6fe,font-weight:900,border-radius:16px;
+  classDef gitFeature fill:#181818,stroke:#444,stroke-width:1.5px,color:#e5e5e5,font-weight:500,border-radius:16px;
+  style GitBranches fill:#181818,color:#d8e6fe,stroke:#0176d3,stroke-width:2px;
+  style SalesforceOrgs fill:#181818,color:#acf3e4,stroke:#06a59a,stroke-width:2px;
+  style SalesforceDevOrgs fill:#181818,color:#d8e6fe,stroke:#0176d3,stroke-width:2px;
+  `
+      : `
   classDef salesforceDev fill:#F4F6F9,stroke:#0176D3,stroke-width:2.5px,color:#032D60,font-weight:500,border-radius:16px;
   classDef salesforceMajor fill:#FFF6E3,stroke:#FFB75D,stroke-width:2.5px,color:#032D60,font-weight:900,border-radius:16px;
   classDef salesforceProd fill:#E3FCEF,stroke:#04844B,stroke-width:2.5px,color:#032D60,font-weight:700,border-radius:16px;
@@ -608,19 +627,35 @@ export class BranchStrategyMermaidBuilder {
     // gitFeatureMerge uses dashed line and lighter color to distinguish from major branch merges
     // gitMerge (major branch arrows) are always plain and thicker (3px)
     // Animated variants: Set base stroke in red that CSS will animate
-    return {
-      gitMerge: "stroke:#0176D3,stroke-width:3px,color:#032D60,opacity:1;",
-      gitMergeWithPRAnimated:
-        "stroke:#e74c3c,stroke-width:3px,color:#032D60,font-weight:bold,opacity:1;",
-      gitFeatureMerge:
-        "stroke:#B0B7BD,stroke-width:1.5px,stroke-dasharray:5 5,color:#B0B7BD,opacity:1;",
-      gitFeatureMergeWithPRAnimated:
-        "stroke:#e74c3c,stroke-width:2.5px,stroke-dasharray:5 5,color:#032D60,font-weight:bold,opacity:1;",
-      sfDeploy: "stroke:#04844B,stroke-width:1.5px,color:#B0B7BD,opacity:1;",
-      sfDeployAnimated:
-        "stroke:#e74c3c,stroke-width:2px,color:#032D60,font-weight:bold,opacity:1;",
-      sfPushPull: "stroke:#0176D3,stroke-width:1.5px,color:#B0B7BD,opacity:1;",
-    };
+    const isDark = this.colorTheme === "dark";
+    
+    return isDark
+      ? {
+          gitMerge: "stroke:#1b96ff,stroke-width:3px,color:#d8e6fe,opacity:1;",
+          gitMergeWithPRAnimated:
+            "stroke:#ff6b6b,stroke-width:3px,color:#feded8,font-weight:bold,opacity:1;",
+          gitFeatureMerge:
+            "stroke:#757575,stroke-width:1.5px,stroke-dasharray:5 5,color:#939393,opacity:1;",
+          gitFeatureMergeWithPRAnimated:
+            "stroke:#ff6b6b,stroke-width:2.5px,stroke-dasharray:5 5,color:#feded8,font-weight:bold,opacity:1;",
+          sfDeploy: "stroke:#06a59a,stroke-width:1.5px,color:#939393,opacity:1;",
+          sfDeployAnimated:
+            "stroke:#ff6b6b,stroke-width:2px,color:#feded8,font-weight:bold,opacity:1;",
+          sfPushPull: "stroke:#1b96ff,stroke-width:1.5px,color:#939393,opacity:1;",
+        }
+      : {
+          gitMerge: "stroke:#0176D3,stroke-width:3px,color:#032D60,opacity:1;",
+          gitMergeWithPRAnimated:
+            "stroke:#e74c3c,stroke-width:3px,color:#032D60,font-weight:bold,opacity:1;",
+          gitFeatureMerge:
+            "stroke:#B0B7BD,stroke-width:1.5px,stroke-dasharray:5 5,color:#B0B7BD,opacity:1;",
+          gitFeatureMergeWithPRAnimated:
+            "stroke:#e74c3c,stroke-width:2.5px,stroke-dasharray:5 5,color:#032D60,font-weight:bold,opacity:1;",
+          sfDeploy: "stroke:#04844B,stroke-width:1.5px,color:#B0B7BD,opacity:1;",
+          sfDeployAnimated:
+            "stroke:#e74c3c,stroke-width:2px,color:#032D60,font-weight:bold,opacity:1;",
+          sfPushPull: "stroke:#0176D3,stroke-width:1.5px,color:#B0B7BD,opacity:1;",
+        };
   }
 
   private indent(str: string, number: number): string {
