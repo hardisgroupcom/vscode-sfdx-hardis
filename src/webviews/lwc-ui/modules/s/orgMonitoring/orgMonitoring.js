@@ -148,6 +148,15 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
     });
   }
 
+  runApexAndFlowErrors() {
+    window.sendMessageToVSCode({
+      type: "runCommand",
+      data: {
+        command: "sf hardis:org:monitor:errors",
+      },
+    });
+  }
+
   runAuditTrail() {
     window.sendMessageToVSCode({
       type: "runCommand",

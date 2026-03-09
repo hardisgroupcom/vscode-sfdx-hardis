@@ -275,6 +275,10 @@ export class ThemeUtils {
         hardis: "refresh.svg",
       },
       "hardis:org:monitor:backup": { vscode: "save-all", hardis: "backup.svg" },
+      "hardis:org:monitor:errors": {
+        vscode: "error",
+        hardis: "monitoring.svg",
+      },
       "hardis:org:diagnose:audittrail": {
         vscode: "eye-watch",
         hardis: "monitoring.svg",

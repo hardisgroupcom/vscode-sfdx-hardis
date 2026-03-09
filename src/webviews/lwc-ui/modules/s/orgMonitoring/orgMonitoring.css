@@ -304,6 +304,11 @@
     box-shadow: 0 2px 8px rgba(21, 137, 238, 0.3);
 }
 
+.command-icon-container.alerts {
+    background: linear-gradient(135deg, #ea001e 0%, #c23934 100%);
+    box-shadow: 0 2px 8px rgba(234, 0, 30, 0.3);
+}
+
 .command-icon-container.audit {
     background: linear-gradient(135deg, #9f4fea 0%, #7b2cbf 100%);
     box-shadow: 0 2px 8px rgba(159, 79, 234, 0.3);

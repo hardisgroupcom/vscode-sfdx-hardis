@@ -202,6 +202,23 @@
                         ></lightning-button>
                     </div>
 
+                    <!-- Apex and Flow Errors -->
+                    <div class="command-card">
+                        <div class="command-header">
+                            <div class="command-icon-container alerts">
+                                <lightning-icon icon-name="utility:error" size="small" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="command-title">{i18n.apexAndFlowErrors}</h3>
+                        </div>
+                        <p class="command-description">{i18n.apexAndFlowErrorsDescription}</p>
+                        <lightning-button
+                            variant="outline-brand"
+                            label={i18n.monitorErrors}
+                            onclick={runApexAndFlowErrors}
+                            class="command-button"
+                        ></lightning-button>
+                    </div>
+
                     <!-- Audit Trail -->
                     <div class="command-card">
                         <div class="command-header">

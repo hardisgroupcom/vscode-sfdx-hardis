@@ -600,6 +600,14 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
               "https://sfdx-hardis.cloudity.com/hardis/org/monitor/backup/",
           },
           {
+            id: "hardis:org:monitor:errors",
+            label: t("apexAndFlowErrors"),
+            tooltip: t("apexAndFlowErrorsDescription"),
+            command: "sf hardis:org:monitor:errors",
+            helpUrl:
+              "https://sfdx-hardis.cloudity.com/hardis/org/monitor/errors/",
+          },
+          {
             id: "hardis:org:diagnose:audittrail",
             label: t("suspiciousAuditTrailActivities"),
             tooltip: t("suspiciousAuditTrailTooltip"),
