@@ -3,10 +3,10 @@
 // @ts-nocheck
 // eslint-env es6
 import { LightningElement, track, api } from "lwc";
+import { SharedMixin } from "s/sharedMixin";
 import PromptInput from "s/promptInput";
-import "s/forceLightTheme"; // Ensure light theme is applied
 
-export default class CommandExecution extends LightningElement {
+export default class CommandExecution extends SharedMixin(LightningElement) {
   // Track user-toggled expanded state for sections in simple mode
   userSectionExpandState = {}; // { [sectionId]: boolean }
   // Table logs storage (sectionId -> table data)
@@ -43,6 +43,7 @@ export default class CommandExecution extends LightningElement {
   }
 
   connectedCallback() {
+    super.connectedCallback();
     // Make component available globally for VS Code message handling
     if (typeof window !== "undefined") {
       window.commandExecutionComponent = this;
@@ -392,7 +393,7 @@ export default class CommandExecution extends LightningElement {
 
       // Lightweight UI feedback
       const previousTitle = copyLink.getAttribute("title") || "";
-      copyLink.setAttribute("title", "Copied!");
+      copyLink.setAttribute("title", this.i18n.copiedLabel);
       setTimeout(() => {
         try {
           copyLink.setAttribute("title", previousTitle);
@@ -499,7 +500,9 @@ export default class CommandExecution extends LightningElement {
     // Add initial "Started" action log
     this.addLogLine({
       logType: "action",
-      message: `Started ${context.command || "SFDX Hardis Command"}`,
+      message: this.t("commandStarted", {
+        command: context.command || this.i18n.sfdxHardisCommand,
+      }),
       timestamp: this.startTime,
     });
   }
@@ -556,8 +559,15 @@ export default class CommandExecution extends LightningElement {
       (logLine.message && logLine.message.includes("Running:"))
     ) {
       logLine.isSubCommand = true;
+      // Strip "Running:" prefix so it is never displayed
+      if (logLine.message && logLine.message.startsWith("Running:")) {
+        logLine.message = logLine.message.replace(/^Running:\s*/i, "").trim();
+      }
+      // Use explicit isRunning flag if provided, otherwise fall back to logData message check
       logLine.isRunning =
-        logLine.message && logLine.message.includes("Running:");
+        logData.isRunning !== undefined
+          ? logData.isRunning
+          : !!(logData.message && logData.message.startsWith("Running:"));
 
       // If this is a completion message, mark as not running and complete other instances
       if (
@@ -744,7 +754,7 @@ export default class CommandExecution extends LightningElement {
       this.startNewSection({
         id: this.generateId(),
         logType: "action",
-        message: "Logs",
+        message: this.i18n.logsSection,
         timestamp: new Date(),
       });
     }
@@ -908,9 +918,10 @@ ${resultMessage}`;
     // Add log line for sub-command start (this will be replaced when sub-command ends)
     this.addLogLine({
       logType: "log",
-      message: `Running: ${subCommand.command}`,
+      message: subCommand.command,
       timestamp: subCommand.startTime,
       isSubCommand: true,
+      isRunning: true,
       subCommandId: subCommand.id,
     });
   }
@@ -983,14 +994,7 @@ ${resultMessage}`;
         };
 
         // Detect running state for updated sub-command
-        const isRunning =
-          newLogData.message &&
-          newLogData.message.includes("Running:") &&
-          !(
-            newLogData.message.includes("completed") ||
-            newLogData.message.includes("finished") ||
-            newLogData.message.includes("done")
-          );
+        const isRunning = newLogData.isRunning === true;
 
         const updatedLog = {
           ...baseLog,
@@ -999,7 +1003,10 @@ ${resultMessage}`;
           timestamp: newLogData.timestamp,
           iconName: iconInfo.iconName,
           iconVariant: iconInfo.variant,
-          useSpinner: this.shouldUseSpinner(baseLog),
+          useSpinner: this.shouldUseSpinner({
+            ...baseLog,
+            isRunning: isRunning,
+          }),
           formattedTimestamp: this.formatTimestamp(newLogData.timestamp),
           cssClass: this.getLogTypeClass(newLogData.logType),
           isSubCommand: true,
@@ -1096,9 +1103,11 @@ ${resultMessage}`;
     const logType = success ? "success" : "error";
 
     // Create completion message based on status
-    let completionMessage = `Command ${success ? "completed successfully" : "failed"}`;
+    let completionMessage = success
+      ? this.i18n.commandCompletedSuccessfully
+      : this.i18n.commandFailed;
     if (status) {
-      completionMessage = `Command ${status}`;
+      completionMessage = this.t("commandStatus", { status });
     }
     completionMessage += ` (${duration})`;
     if (data.error) {
@@ -1117,16 +1126,17 @@ ${resultMessage}`;
   }
 
   get commandTitle() {
-    if (!this.commandContext) return "Command Execution";
+    if (!this.commandContext) {
+      return this.i18n.commandExecution;
+    }
 
-    const command = this.commandContext.command || "Unknown command";
-    const status = this.isCompleted
-      ? this.hasError
-        ? "Failed"
-        : "Completed"
-      : "Running";
-
-    return `${command} - ${status}`;
+    const command = this.commandContext.command || this.i18n.unknownCommand;
+    if (this.isCompleted) {
+      return this.hasError
+        ? this.t("commandTitleError", { commandName: command })
+        : this.t("commandTitleCompleted", { commandName: command });
+    }
+    return this.t("commandTitleRunning", { commandName: command });
   }
 
   get commandDuration() {
@@ -1134,6 +1144,14 @@ ${resultMessage}`;
 
     const endTime = this.endTime || new Date();
     return this.calculateDuration(this.startTime, endTime);
+  }
+
+  get commandDurationLabel() {
+    const duration = this.commandDuration;
+    if (!duration) {
+      return "";
+    }
+    return this.t("durationLabel", { duration });
   }
 
   get statusIcon() {
@@ -1260,12 +1278,17 @@ ${resultMessage}`;
         progressPercentage = Math.round(
           (section.currentStep / section.totalSteps) * 100,
         );
-        progressStepText = `${section.currentStep} of ${section.totalSteps} steps`;
+        progressStepText = this.t("progressStepsOf", {
+          current: section.currentStep,
+          total: section.totalSteps,
+        });
         if (section.isActive) {
           progressTimeEstimation = section.estimatedRemainingTime || "";
         } else {
           const elapsed = this.calculateSectionDuration(section);
-          progressTimeEstimation = elapsed ? `Elapsed: ${elapsed}` : "";
+          progressTimeEstimation = elapsed
+            ? this.t("progressElapsed", { elapsed })
+            : "";
         }
 
         // Add shine animation for active progress with known steps
@@ -1281,15 +1304,17 @@ ${resultMessage}`;
             : 15; // Show some initial progress
         progressStepText =
           section.currentStep > 0
-            ? `${section.currentStep} steps completed`
-            : "Starting...";
+            ? this.t("progressStepsCompleted", { current: section.currentStep })
+            : this.i18n.progressStarting;
         isIndeterminate = true;
         if (section.isActive) {
           progressAnimationClass = "animated-progress-bar is-indeterminate";
         }
         if (!section.isActive) {
           const elapsed = this.calculateSectionDuration(section);
-          progressTimeEstimation = elapsed ? `Elapsed: ${elapsed}` : "";
+          progressTimeEstimation = elapsed
+            ? this.t("progressElapsed", { elapsed })
+            : "";
         }
       }
 
@@ -1305,15 +1330,20 @@ ${resultMessage}`;
         duration: this.calculateSectionDuration(section),
         toggleIcon,
         sectionStatusIcon:
-          section.isQuestion && !this.isWaitingForAnswer
-            ? { iconName: "utility:question", variant: "warning" }
-            : isProgress && section.isActive
-              ? { iconName: "utility:progress", variant: "brand" }
-              : section.hasError
-                ? { iconName: "utility:error", variant: "error" }
-                : section.isActive
-                  ? null
-                  : { iconName: "utility:success", variant: "success" },
+          section.isQuestion && section.isActive
+            ? { iconName: "utility:questions_and_answers", variant: "warning" }
+            : section.isQuestion
+              ? {
+                  iconName: "utility:questions_and_answers",
+                  variant: "success",
+                }
+              : isProgress && section.isActive
+                ? { iconName: "utility:progress", variant: "brand" }
+                : section.hasError
+                  ? { iconName: "utility:error", variant: "error" }
+                  : section.isActive
+                    ? null
+                    : { iconName: "utility:success", variant: "success" },
         sectionUseSpinner:
           section.isActive ||
           (section.isQuestion &&
@@ -1364,10 +1394,11 @@ ${resultMessage}`;
     const { hasActionCommands, hasActionUrls, hasReports, hasDocUrls } =
       this.reportFileTypesPresent;
     const parts = [];
-    if (hasActionCommands || hasActionUrls) parts.push("Actions");
-    if (hasReports) parts.push("Reports");
-    if (hasDocUrls) parts.push("Docs");
-    return parts.length > 0 ? parts.join(", ") : "Report Files";
+    if (hasActionCommands || hasActionUrls)
+      parts.push(this.i18n.reportFilesActions);
+    if (hasReports) parts.push(this.i18n.reportFilesReports);
+    if (hasDocUrls) parts.push(this.i18n.reportFilesDocs);
+    return parts.length > 0 ? parts.join(", ") : this.i18n.reportFilesTitle;
   }
 
   get sortedReportFiles() {
@@ -1585,14 +1616,15 @@ ${resultMessage}`;
   }
 
   makeJsonHumanReadable(obj) {
-    if (obj === null) return "No value";
-    if (obj === undefined) return "Not defined";
-    if (typeof obj === "boolean") return obj ? "Yes" : "No";
+    if (obj === null) return this.i18n.noValue;
+    if (obj === undefined) return this.i18n.notDefined;
+    if (typeof obj === "boolean")
+      return obj ? this.i18n.yesLabel : this.i18n.noLabel;
     if (typeof obj === "string") return this.linkifyUrls(obj);
     if (typeof obj === "number") return obj.toString();
 
     if (Array.isArray(obj)) {
-      if (obj.length === 0) return "No items";
+      if (obj.length === 0) return this.i18n.noItems;
       if (obj.length === 1) return this.makeJsonHumanReadable(obj[0]);
 
       // For arrays, create a readable list with HTML line breaks
@@ -1681,10 +1713,10 @@ ${resultMessage}`;
 
   getLogTypeIcon(logType, isQuestion = false, isAnswer = false) {
     if (isQuestion) {
-      return { iconName: "utility:question", variant: "warning" };
+      return { iconName: "utility:questions_and_answers", variant: "warning" };
     }
     if (isAnswer) {
-      return { iconName: "utility:reply", variant: "brand" };
+      return { iconName: "utility:answer", variant: "brand" };
     }
 
     switch (logType) {
@@ -1705,8 +1737,8 @@ ${resultMessage}`;
   }
 
   shouldUseSpinner(log) {
-    // Use spinner for running sub-commands (those that contain "Running:")
-    if (log.isSubCommand && log.message && log.message.includes("Running:")) {
+    // Use spinner for running sub-commands
+    if (log.isSubCommand && log.isRunning) {
       return true;
     }
     // Use spinner ONLY for the latest question that is waiting for an answer

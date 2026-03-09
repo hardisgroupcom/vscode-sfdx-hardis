@@ -6,6 +6,7 @@ import { getWorkspaceRoot } from "../utils";
 import { LwcUiPanel } from "../webviews/lwc-ui-panel";
 import { openMetadataFile } from "../utils/projectUtils";
 import { Commands } from "../commands";
+import { t } from "../i18n/i18n";
 
 export function registerShowPackageXml(commandThis: Commands) {
   const disposable = vscode.commands.registerCommand(
@@ -116,7 +117,7 @@ export async function showPackageXmlPanel(
     const panel = lwcManager.getOrCreatePanel("s-package-xml", {
       error: error.message,
     });
-    panel.updateTitle("Package Configuration - Error");
+    panel.updateTitle(t("packageConfigurationError"));
   }
 }
 

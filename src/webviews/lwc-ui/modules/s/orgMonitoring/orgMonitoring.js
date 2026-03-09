@@ -3,9 +3,9 @@
 // @ts-nocheck
 // eslint-env es6
 import { LightningElement, api, track } from "lwc";
-import "s/forceLightTheme"; // Ensure light theme is applied
+import { SharedMixin } from "s/sharedMixin";
 
-export default class OrgMonitoring extends LightningElement {
+export default class OrgMonitoring extends SharedMixin(LightningElement) {
   @track isInstalled = false;
   @track isLoading = true;
   @track isCiCdRepo = false;
@@ -144,6 +144,15 @@ export default class OrgMonitoring extends LightningElement {
       type: "runCommand",
       data: {
         command: "sf hardis:org:monitor:backup",
+      },
+    });
+  }
+
+  runApexAndFlowErrors() {
+    window.sendMessageToVSCode({
+      type: "runCommand",
+      data: {
+        command: "sf hardis:org:monitor:errors",
       },
     });
   }

@@ -4,6 +4,7 @@ import { ProviderDescription } from "./types";
 import { GitProviderGitHub } from "./gitProviderGitHub";
 import { SecretsManager } from "../secretsManager";
 import { Logger } from "../../logger";
+import { t } from "../../i18n/i18n";
 
 export class GitProviderGitea extends GitProviderGitHub {
   secretTokenIdentifier: string = "";
@@ -42,7 +43,7 @@ export class GitProviderGitea extends GitProviderGitHub {
   describeGitProvider(): ProviderDescription {
     return {
       providerLabel: "Gitea",
-      pullRequestLabel: "Pull Request",
+      pullRequestLabel: t("pullRequestLabel"),
       pullRequestsWebUrl: this.repoInfo?.webUrl
         ? `${this.repoInfo.webUrl}/pulls`
         : "",
@@ -51,7 +52,7 @@ export class GitProviderGitea extends GitProviderGitHub {
 
   async authenticate(): Promise<boolean | null> {
     const token = await vscode.window.showInputBox({
-      prompt: "Enter your Gitea PAT (Personal Access Token)",
+      prompt: t("giteaEnterPAT"),
       ignoreFocusOut: true,
       password: true,
     });

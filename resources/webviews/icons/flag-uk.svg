@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36">
+  <!-- Navy background -->
+  <rect width="36" height="36" rx="4" fill="#012169"/>
+  <!-- St Andrew's cross (white diagonals) -->
+  <path d="M0,0 L36,36 M36,0 L0,36" stroke="#FFF" stroke-width="8"/>
+  <!-- St Patrick's cross (red diagonals, offset) -->
+  <path d="M0,0 L36,36" stroke="#C8102E" stroke-width="4" stroke-dasharray="0 18 5 90"/>
+  <path d="M36,0 L0,36" stroke="#C8102E" stroke-width="4" stroke-dasharray="0 18 5 90"/>
+  <!-- St George's cross (white outline) -->
+  <rect x="14" y="0" width="8" height="36" fill="#FFF"/>
+  <rect x="0" y="14" width="36" height="8" fill="#FFF"/>
+  <!-- St George's cross (red fill) -->
+  <rect x="15.5" y="0" width="5" height="36" fill="#C8102E"/>
+  <rect x="0" y="15.5" width="36" height="5" fill="#C8102E"/>
+</svg>

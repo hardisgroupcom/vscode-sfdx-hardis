@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { execCommandWithProgress, getWorkspaceRoot } from "../utils";
 import { isMergeDriverEnabled } from "../utils/gitMergeDriverUtils";
+import { t } from "../i18n/i18n";
 import type { Commands } from "../commands";
 
 export function registerGitMergeDriverToggle(commands: Commands) {
@@ -44,8 +45,8 @@ export function registerGitMergeDriverToggle(commands: Commands) {
         : "sf git merge driver enable";
 
       const progressMessage = enabled
-        ? "Disabling Salesforce Git Merge Driver..."
-        : "Enabling Salesforce Git Merge Driver...";
+        ? t("gitMergeDriverDisabling")
+        : t("gitMergeDriverEnabling");
       const result = await execCommandWithProgress(
         command,
         {

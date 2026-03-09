@@ -1,8 +1,17 @@
 import { LightningElement, api } from "lwc";
+import { SharedMixin } from "s/sharedMixin";
 
-export default class ApexTestsSelect extends LightningElement {
+export default class ApexTestsSelect extends SharedMixin(LightningElement) {
   @api availableClasses = [];
   @api value = [];
+
+  @api
+  set translations(_val) {
+    // translations are auto-initialized from window.__lwcTranslations via SharedMixin.connectedCallback
+  }
+  get translations() {
+    return undefined;
+  }
 
   get normalizedValue() {
     return Array.isArray(this.value) ? this.value.filter(Boolean) : [];

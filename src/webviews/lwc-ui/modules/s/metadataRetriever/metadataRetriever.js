@@ -1,5 +1,5 @@
 import { LightningElement, api, track } from "lwc";
-import "s/forceLightTheme"; // Ensure light theme is applied
+import { SharedMixin } from "s/sharedMixin";
 
 /**
  * LWC to retrieve and search metadata from a Salesforce org
@@ -11,7 +11,7 @@ import "s/forceLightTheme"; // Ensure light theme is applied
 const METADATA_DOC_BASE_URL =
   "https://sf-explorer.github.io/sf-doc-to-json/#/cloud/all/object/";
 
-export default class MetadataRetriever extends LightningElement {
+export default class MetadataRetriever extends SharedMixin(LightningElement) {
   @api orgs = [];
   @api metadataTypes = [];
   @track selectedOrg = null;
@@ -41,7 +41,10 @@ export default class MetadataRetriever extends LightningElement {
   @track showFeature = false;
   @track featureId = null;
   @track featureText;
-  @track imgFeatureLogo = "";
+
+  get imgFeatureLogo() {
+    return this.getImageUrl("featureLogo");
+  }
 
   // Local package selector (sfdx-project.json packageDirectories)
   @track localPackageOptions = [];
@@ -63,7 +66,7 @@ export default class MetadataRetriever extends LightningElement {
     if (this.isRecentChangesMode) {
       // Emoji column for change operation (created/modified/deleted)
       cols.push({
-        label: "Operation",
+        label: this.t("operationColumn"),
         fieldName: "ChangeIcon",
         type: "text",
         cellAttributes: {
@@ -75,7 +78,7 @@ export default class MetadataRetriever extends LightningElement {
 
     // Metadata Type
     cols.push({
-      label: "Metadata Type",
+      label: this.t("metadataTypeLabel"),
       fieldName: "MemberTypeUrl",
       type: "url",
       sortable: true,
@@ -90,7 +93,7 @@ export default class MetadataRetriever extends LightningElement {
 
     // Metadata Name
     cols.push({
-      label: "Metadata Name",
+      label: this.t("metadataNameLabel"),
       fieldName: "MemberName",
       type: "button",
       sortable: true,
@@ -109,7 +112,7 @@ export default class MetadataRetriever extends LightningElement {
 
     // Last Updated By
     cols.push({
-      label: "Last Updated By",
+      label: this.t("lastUpdatedByLabel"),
       fieldName: "LastModifiedByName",
       type: "text",
       sortable: true,
@@ -119,7 +122,7 @@ export default class MetadataRetriever extends LightningElement {
 
     // Last Updated Date
     cols.push({
-      label: "Last Updated Date",
+      label: this.t("lastUpdatedDateColumn"),
       fieldName: "LastModifiedDate",
       type: "date",
       sortable: true,
@@ -136,7 +139,7 @@ export default class MetadataRetriever extends LightningElement {
     // Local file existence column (centered) - only when the user enabled the toggle
     if (this.checkLocalFiles) {
       cols.push({
-        label: "Local",
+        label: this.t("localColumn"),
         fieldName: "LocalFileIcon",
         type: "text",
         cellAttributes: {
@@ -152,9 +155,9 @@ export default class MetadataRetriever extends LightningElement {
       type: "button-icon",
       typeAttributes: {
         iconName: "utility:download",
-        title: "Download",
+        title: this.t("downloadLabel"),
         variant: "bare",
-        alternativeText: "Download",
+        alternativeText: this.t("downloadLabel"),
         name: "download",
       },
       initialWidth: 30,
@@ -192,7 +195,7 @@ export default class MetadataRetriever extends LightningElement {
     }));
 
     if (this.isLoadingOrgs) {
-      sortedOrgsValues.push({ label: "Loading...", value: "" });
+      sortedOrgsValues.push({ label: this.t("loadingLabel"), value: "" });
     }
 
     return sortedOrgsValues;
@@ -201,7 +204,9 @@ export default class MetadataRetriever extends LightningElement {
   get metadataTypeOptions() {
     // In All Metadata mode, don't include "All" option
     const options =
-      this.queryMode === "allMetadata" ? [] : [{ label: "All", value: "All" }];
+      this.queryMode === "allMetadata"
+        ? []
+        : [{ label: this.t("allLabel"), value: "All" }];
     if (this.metadataTypes && Array.isArray(this.metadataTypes)) {
       return options.concat(this.metadataTypes);
     }
@@ -210,8 +215,8 @@ export default class MetadataRetriever extends LightningElement {
 
   get queryModeOptions() {
     return [
-      { label: "Recent Changes", value: "recentChanges" },
-      { label: "All Metadata", value: "allMetadata" },
+      { label: this.t("recentChangesLabel"), value: "recentChanges" },
+      { label: this.t("allMetadataLabel"), value: "allMetadata" },
     ];
   }
 
@@ -229,9 +234,7 @@ export default class MetadataRetriever extends LightningElement {
   }
 
   get checkLocalTooltip() {
-    return this.checkLocalAvailable
-      ? ""
-      : "No sfdx-project.json found in workspace root - local file checks disabled";
+    return this.checkLocalAvailable ? "" : this.t("noProjectJsonFound");
   }
 
   get hasResults() {
@@ -293,11 +296,20 @@ export default class MetadataRetriever extends LightningElement {
   get retrieveSelectedLabel() {
     const count = this.selectedRows ? this.selectedRows.length : 0;
     return count > 0
-      ? `Retrieve ${count} Selected Metadata`
-      : "Retrieve Selected Metadata";
+      ? this.t("retrieveSelectedItems", { count: count })
+      : this.t("retrieveSelectedSingle");
+  }
+
+  get noSearchPerformedDescHtml() {
+    return this.t("noSearchPerformedDesc");
+  }
+
+  get resultsFoundLabel() {
+    return this.t("resultsFound", { count: this.filteredMetadata.length });
   }
 
   connectedCallback() {
+    super.connectedCallback();
     // Notify VS Code that the component is initialized
     this.isLoadingOrgs = true;
     window.sendMessageToVSCode({ type: "listOrgs" });
@@ -336,6 +348,11 @@ export default class MetadataRetriever extends LightningElement {
 
   @api
   initialize(data) {
+    // Update packageOptions labels with translations
+    this.packageOptions = [
+      { label: this.t("allLabel"), value: "All" },
+      { label: this.t("localLabel"), value: "Local" },
+    ];
     if (data) {
       if (data.orgs && Array.isArray(data.orgs)) {
         this.orgs = data.orgs;
@@ -523,9 +540,9 @@ export default class MetadataRetriever extends LightningElement {
         // Calculate number of days before November 29, 2025
         const days =
           Math.ceil(
-            (new Date("2026-02-13") - new Date()) / (1000 * 60 * 60 * 24),
+            (new Date("2026-03-19") - new Date()) / (1000 * 60 * 60 * 24),
           ) - 1;
-        this.featureText = `See you in ${days} days 🥰`;
+        this.featureText = `Can't wait to see you in ${days} days 🥰`;
         this.showFeature = true;
         // Add keydown listener to close on ESC
         this._boundFeatureKeydown = (e) => {
@@ -848,8 +865,6 @@ export default class MetadataRetriever extends LightningElement {
   handleMessage(type, data) {
     if (type === "initialize") {
       this.initialize(data);
-    } else if (type === "imageResources") {
-      this.handleImageResources(data);
     } else if (type === "listOrgsResults") {
       this.handleOrgResults(data);
     } else if (type === "listPackagesResults") {
@@ -870,12 +885,6 @@ export default class MetadataRetriever extends LightningElement {
   handleRetrieveState(data) {
     if (data && typeof data.isRetrieving === "boolean") {
       this.isRetrieving = data.isRetrieving;
-    }
-  }
-
-  handleImageResources(data) {
-    if (data && data?.images?.featureLogo) {
-      this.imgFeatureLogo = data.images.featureLogo;
     }
   }
 

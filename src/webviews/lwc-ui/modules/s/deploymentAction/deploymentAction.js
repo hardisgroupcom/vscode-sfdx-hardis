@@ -3,14 +3,46 @@
 // @ts-nocheck
 // eslint-env es6
 import { LightningElement, api, track } from "lwc";
-import "s/forceLightTheme"; // Ensure light theme is applied
+import { SharedMixin } from "s/sharedMixin";
 
-export default class DeploymentAction extends LightningElement {
+export default class DeploymentAction extends SharedMixin(LightningElement) {
   @api action = null;
   @api isEditMode = false;
   @api apexScripts = [];
   @api sfdmuWorkspaces = [];
   @track editedAction = {};
+
+  @api
+  set parentTranslations(val) {
+    if (val) {
+      this._initOptions();
+    }
+  }
+  get parentTranslations() {
+    return this.translations;
+  }
+
+  _initOptions() {
+    this.typeOptions = [
+      { label: this.t("commandType"), value: "command" },
+      { label: this.t("dataType"), value: "data" },
+      { label: this.t("apexType"), value: "apex" },
+      { label: this.t("publishCommunityType"), value: "publish-community" },
+      { label: this.t("manualType"), value: "manual" },
+    ];
+    this.whenOptions = [
+      { label: this.t("beforeDeployment"), value: "pre-deploy" },
+      { label: this.t("afterDeployment"), value: "post-deploy" },
+    ];
+    this.contextOptions = [
+      { label: this.t("checkAndProcessDeployment"), value: "all" },
+      { label: this.t("checkDeploymentOnly"), value: "check-deployment-only" },
+      {
+        label: this.t("processDeploymentOnly"),
+        value: "process-deployment-only",
+      },
+    ];
+  }
 
   // Available action types
   typeOptions = [
@@ -31,7 +63,7 @@ export default class DeploymentAction extends LightningElement {
     if (selectedValue && !options.find((opt) => opt.value === selectedValue)) {
       return [
         {
-          label: `${selectedValue} (not visible from this git branch)`,
+          label: this.t("notVisibleFromBranch", { value: selectedValue }),
           value: selectedValue,
         },
         ...options,
@@ -51,7 +83,7 @@ export default class DeploymentAction extends LightningElement {
     if (selectedValue && !options.find((opt) => opt.value === selectedValue)) {
       return [
         {
-          label: `${selectedValue} (not visible from this git branch)`,
+          label: this.t("notVisibleFromBranch", { value: selectedValue }),
           value: selectedValue,
         },
         ...options,
@@ -75,6 +107,9 @@ export default class DeploymentAction extends LightningElement {
   ];
 
   connectedCallback() {
+    super.connectedCallback();
+    // Options arrays depend on translations — init them after auto-translation load.
+    this._initOptions();
     if (this.isEditMode && this.action) {
       this.editedAction = JSON.parse(JSON.stringify(this.action));
       // Ensure parameters object exists
@@ -99,9 +134,9 @@ export default class DeploymentAction extends LightningElement {
 
   get modalTitle() {
     if (this.isEditMode) {
-      return `Edit Deployment Action`;
+      return this.t("editDeploymentAction");
     }
-    return `Deployment Action Details`;
+    return this.t("deploymentActionDetails");
   }
 
   get isViewMode() {

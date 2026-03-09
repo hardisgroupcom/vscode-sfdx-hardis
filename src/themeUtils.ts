@@ -1,17 +1,20 @@
 import path from "path";
 import * as vscode from "vscode";
+import { t } from "./i18n/i18n";
 
 export class ThemeUtils {
   public emojisInSections: boolean;
   public menuIconType: "vscode" | "hardis";
+  public colorTheme: "auto" | "light" | "dark" | "vscode";
   public allTopicEmojis: any;
   public allCommandIcons: any;
 
   constructor() {
-    const { emojisInSections, menuIconType } =
+    const { emojisInSections, menuIconType, colorTheme } =
       ThemeUtils.getThemeConfiguration();
     this.emojisInSections = emojisInSections;
     this.menuIconType = menuIconType;
+    this.colorTheme = colorTheme;
     this.allTopicEmojis = this.getAllTopicEmojis();
     this.allCommandIcons = this.getAllCommandIcons();
   }
@@ -38,11 +41,13 @@ export class ThemeUtils {
   public static getThemeConfiguration(): {
     emojisInSections: boolean;
     menuIconType: "vscode" | "hardis";
+    colorTheme: "auto" | "light" | "dark" | "vscode";
   } {
     const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis.theme");
     return {
       emojisInSections: config.get("emojisInSections", false),
       menuIconType: config.get("menuIconType", "vscode"),
+      colorTheme: config.get("colorTheme", "auto"),
     };
   }
 
@@ -73,9 +78,10 @@ export class ThemeUtils {
       });
     });
     const quickpick2 = vscode.window.createQuickPick<vscode.QuickPickItem>();
+    const withEmojisLabel = t("withEmojis");
     const emojisChoices: vscode.QuickPickItem[] = [
-      { label: "With Emojis", detail: "Display section titles with emojis" },
-      { label: "Without Emojis", detail: "Hide emojis in section title" },
+      { label: withEmojisLabel, detail: "Display section titles with emojis" },
+      { label: t("withoutEmojis"), detail: "Hide emojis in section title" },
     ];
     const emojisInSections = await new Promise<any>((resolve) => {
       quickpick2.ignoreFocusOut = true;
@@ -111,11 +117,11 @@ export class ThemeUtils {
     }
     if (
       config.get("emojisInSections") !==
-      (emojisInSections === "With Emojis" ? true : false)
+      (emojisInSections === withEmojisLabel ? true : false)
     ) {
       await config.update(
         "emojisInSections",
-        emojisInSections === "With Emojis" ? true : false,
+        emojisInSections === withEmojisLabel ? true : false,
         vscode.ConfigurationTarget.Global,
       );
     }
@@ -269,6 +275,10 @@ export class ThemeUtils {
         hardis: "refresh.svg",
       },
       "hardis:org:monitor:backup": { vscode: "save-all", hardis: "backup.svg" },
+      "hardis:org:monitor:errors": {
+        vscode: "error",
+        hardis: "monitoring.svg",
+      },
       "hardis:org:diagnose:audittrail": {
         vscode: "eye-watch",
         hardis: "monitoring.svg",
