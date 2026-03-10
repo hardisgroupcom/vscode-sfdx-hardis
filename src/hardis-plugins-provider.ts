@@ -9,9 +9,6 @@ import {
   isProjectSfdxConfigLoaded,
   loadExternalSfdxHardisConfiguration,
   loadProjectSfdxHardisConfig,
-  NODE_JS_MINIMUM_VERSION,
-  RECOMMENDED_SFDX_CLI_VERSION,
-  RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION,
   resetCache,
   execCommandWithProgress,
 } from "./utils";
@@ -21,6 +18,7 @@ import { ThemeUtils } from "./themeUtils";
 import { t } from "./i18n/i18n";
 import { SetupHelper } from "./utils/setupUtils";
 import { isMergeDriverEnabled } from "./utils/gitMergeDriverUtils";
+import { NODE_JS_MINIMUM_VERSION, RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION, RECOMMENDED_SFDX_CLI_VERSION } from "./constants";
 
 let nodeInstallOk = false;
 let gitInstallOk = false;

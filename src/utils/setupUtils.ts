@@ -6,13 +6,11 @@ import {
   getSfdxHardisInstallTag,
   getWorkspaceRoot,
   isExtensionPreRelease,
-  NODE_JS_MINIMUM_VERSION,
-  RECOMMENDED_SFDX_CLI_VERSION,
-  RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION,
 } from "../utils";
 import which from "which";
 import { isMergeDriverEnabled } from "./gitMergeDriverUtils";
 import { t } from "../i18n/i18n";
+import { NODE_JS_MINIMUM_VERSION, RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION, RECOMMENDED_SFDX_CLI_VERSION } from "../constants";
 
 export type DependencyInfo = {
   explanation: string;

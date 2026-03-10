@@ -11,10 +11,7 @@ import * as yaml from "js-yaml";
 import { Logger } from "./logger";
 import { CacheManager, CacheSection } from "./utils/cache-manager";
 import { getConfig } from "./utils/pipeline/sfdxHardisConfig";
-
-export const RECOMMENDED_SFDX_CLI_VERSION = null; //"7.111.6";
-export const NODE_JS_MINIMUM_VERSION = 24.0;
-export const RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION: string = "6.7.1";
+import { RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION } from "./constants";
 
 // Returns true if the extension is running as a pre-release version (preview: true in package.json)
 export function isExtensionPreRelease(): boolean {
