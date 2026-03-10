@@ -120,13 +120,15 @@ export default class Welcome extends SharedMixin(LightningElement) {
     return this.getImageUrl("flagJa");
   }
 
-  toggleLangDropdown() {
+  toggleLangDropdown(event) {
+    event.stopPropagation();
     this.langDropdownOpen = !this.langDropdownOpen;
     this.themeDropdownOpen = false;
     this._syncOutsideClickListener();
   }
 
-  toggleThemeDropdown() {
+  toggleThemeDropdown(event) {
+    event.stopPropagation();
     this.themeDropdownOpen = !this.themeDropdownOpen;
     this.langDropdownOpen = false;
     this._syncOutsideClickListener();
