@@ -19,6 +19,7 @@ import { ThemeUtils } from "./themeUtils";
 import { getConfig } from "./utils/pipeline/sfdxHardisConfig";
 import { LwcPanelManager } from "./lwc-panel-manager";
 import { t } from "./i18n/i18n";
+import { DOCSITE_URL } from "./constants";
 
 export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeItem> {
   public themeUtils: ThemeUtils;
@@ -444,7 +445,7 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
                 branch: currentBranch,
                 parent: parentGitBranch,
               });
-              gitCommand = `vscode-sfdx-hardis.openExternal https://sfdx-hardis.cloudity.com/salesforce-ci-cd-merge-parent-branch/`;
+              gitCommand = `vscode-sfdx-hardis.openExternal ${DOCSITE_URL}/salesforce-ci-cd-merge-parent-branch/`;
             }
           } catch {
             Logger.log(

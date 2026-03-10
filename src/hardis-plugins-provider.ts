@@ -18,7 +18,7 @@ import { ThemeUtils } from "./themeUtils";
 import { t } from "./i18n/i18n";
 import { SetupHelper } from "./utils/setupUtils";
 import { isMergeDriverEnabled } from "./utils/gitMergeDriverUtils";
-import { NODE_JS_MINIMUM_VERSION, RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION, RECOMMENDED_SFDX_CLI_VERSION } from "./constants";
+import { NODE_JS_MINIMUM_VERSION, RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION, RECOMMENDED_SFDX_CLI_VERSION, DOCSITE_URL } from "./constants";
 
 let nodeInstallOk = false;
 let gitInstallOk = false;
@@ -241,7 +241,7 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
       },
       {
         name: "sfdx-hardis",
-        helpUrl: "https://sfdx-hardis.cloudity.com/",
+        helpUrl: DOCSITE_URL,
       },
       { name: "sfdmu", helpUrl: "https://help.sfdmu.com/" },
       {

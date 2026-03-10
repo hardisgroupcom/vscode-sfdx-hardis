@@ -5,3 +5,4 @@ export const BANNER_IMAGE_URL = "https://raw.githubusercontent.com/hardisgroupco
 export const DOCSITE_URL = "https://sfdx-hardis.cloudity.com";
 export const WEBSITE_URL = "https://www.cloudity.com?ref=sfdxhardis";
 export const WEBSITE_CONTACT_URL = "https://cloudity.com/contact-us/?ref=sfdxhardis";
+export const WEBSITE_CONTACT_FORM_URL = "https://cloudity.com/contact-us/";

@@ -28,6 +28,7 @@ export default class DocumentationWorkbench extends SharedMixin(
   @track generateAutomationsDoc = true;
   @track generateLwcDoc = true;
   @track docLanguage = ""; // empty = use VS Code language setting
+  @track helpUrl = "";
 
   @api
   initialize(data) {
@@ -68,6 +69,9 @@ export default class DocumentationWorkbench extends SharedMixin(
       }
       if (data.docLanguage !== undefined) {
         this.docLanguage = data.docLanguage;
+      }
+      if (data.helpUrl !== undefined) {
+        this.helpUrl = data.helpUrl;
       }
     }
   }
@@ -226,7 +230,7 @@ export default class DocumentationWorkbench extends SharedMixin(
   handleOpenHelp() {
     window.sendMessageToVSCode({
       type: "openExternal",
-      data: "https://sfdx-hardis.cloudity.com/salesforce-project-documentation/",
+      data: this.helpUrl,
     });
   }
 }

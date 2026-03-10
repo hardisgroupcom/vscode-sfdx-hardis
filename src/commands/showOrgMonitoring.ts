@@ -8,6 +8,7 @@ import { Logger } from "../logger";
 import { Commands } from "../commands";
 import { showPackageXmlPanel } from "./packageXml";
 import { t } from "../i18n/i18n";
+import { DOCSITE_URL } from "../constants";
 
 export function registerShowOrgMonitoring(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
@@ -54,6 +55,8 @@ export function registerShowOrgMonitoring(commands: Commands) {
         isCiCdRepo: isCiCdRepo,
         monitoringRepository: monitoringRepository,
         instanceUrl: instanceUrl,
+        monitoringHomeUrl: DOCSITE_URL + "/salesforce-monitoring-home/",
+        monitoringConfigUrl: DOCSITE_URL + "/salesforce-monitoring-config-home/",
       });
       panel.updateTitle(t("orgMonitoringWorkbench"));
 

@@ -15,6 +15,9 @@ export default class Welcome extends SharedMixin(LightningElement) {
   @track themeDropdownOpen = false;
   @track bannerImageUrl = "";
   @track websiteUrl = "";
+  @track docsiteUrl = "";
+  @track contributersUrl = "";
+  @track contactFormUrl = "";
 
   @track setupHidden = false;
   scrollThreshold = 100; // Hide toggle after scrolling 100px
@@ -74,6 +77,15 @@ export default class Welcome extends SharedMixin(LightningElement) {
     }
     if (data && data.websiteUrl) {
       this.websiteUrl = data.websiteUrl;
+    }
+    if (data && data.docsiteUrl) {
+      this.docsiteUrl = data.docsiteUrl;
+    }
+    if (data && data.contributersUrl) {
+      this.contributersUrl = data.contributersUrl;
+    }
+    if (data && data.contactFormUrl) {
+      this.contactFormUrl = data.contactFormUrl;
     }
   }
 
@@ -262,14 +274,14 @@ export default class Welcome extends SharedMixin(LightningElement) {
   openDocumentation() {
     window.sendMessageToVSCode({
       type: "openExternal",
-      data: "https://sfdx-hardis.cloudity.com/",
+      data: this.docsiteUrl,
     });
   }
 
   openCloudityServices() {
     window.sendMessageToVSCode({
       type: "openExternal",
-      data: "https://cloudity.com/?ref=sfdxhardis#form",
+      data: this.contactFormUrl,
     });
   }
 

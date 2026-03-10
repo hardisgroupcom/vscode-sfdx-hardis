@@ -11,6 +11,8 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
   @track isCiCdRepo = false;
   @track monitoringRepository = null;
   @track instanceUrl = null;
+  @track monitoringHomeUrl = "";
+  @track monitoringConfigUrl = "";
 
   @api
   initialize(data) {
@@ -19,6 +21,8 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
     this.isCiCdRepo = data?.isCiCdRepo || false;
     this.monitoringRepository = data?.monitoringRepository || null;
     this.instanceUrl = data?.instanceUrl || null;
+    this.monitoringHomeUrl = data?.monitoringHomeUrl || "";
+    this.monitoringConfigUrl = data?.monitoringConfigUrl || "";
     this.isLoading = false;
   }
 
@@ -134,7 +138,7 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
   learnMore() {
     window.sendMessageToVSCode({
       type: "openExternal",
-      data: "https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/",
+      data: this.monitoringHomeUrl,
     });
   }
 
@@ -288,14 +292,14 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
   openMonitoringDocs() {
     window.sendMessageToVSCode({
       type: "openExternal",
-      data: "https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/",
+      data: this.monitoringHomeUrl,
     });
   }
 
   openSetupGuide() {
     window.sendMessageToVSCode({
       type: "openExternal",
-      data: "https://sfdx-hardis.cloudity.com/salesforce-monitoring-config-home/",
+      data: this.monitoringConfigUrl,
     });
   }
 }
