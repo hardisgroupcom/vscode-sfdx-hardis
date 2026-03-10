@@ -148,6 +148,18 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   get computedModalActionsColumns() {
     const columns = [
       {
+        key: "type",
+        label: this.i18n.typeLabel,
+        fieldName: "type",
+        type: "text",
+        cellAttributes: {
+          iconName: { fieldName: "typeIconName" },
+          iconPosition: "left",
+        },
+        wrapText: true,
+        initialWidth: 150,
+      },
+      {
         key: "label",
         label: this.i18n.actionLabelField,
         fieldName: "label",
@@ -158,14 +170,6 @@ export default class Pipeline extends SharedMixin(LightningElement) {
           variant: "base",
         },
         wrapText: true,
-      },
-      {
-        key: "type",
-        label: this.i18n.typeLabel,
-        fieldName: "type",
-        type: "text",
-        wrapText: true,
-        initialWidth: 150,
       },
       {
         key: "when",
@@ -1614,12 +1618,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     }
 
     const when = action.when;
-    const whenLabel =
-      when === "pre-deploy"
-        ? this.i18n.preDeploy
-        : when === "post-deploy"
-          ? this.i18n.postDeploy
-          : this.i18n.unknownLabel;
+    const whenLabel = this._getActionWhenLabel(when);
+    const typeCode = action.type || "command";
+    const typeLabel = this._getActionTypeLabel(typeCode);
+    const typeIconName = this._getActionTypeIconName(typeCode);
 
     // Update the modalActions list immediately with the new values
     const actionIndex = this.modalActions.findIndex(
@@ -1634,9 +1636,11 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       const updatedRow = {
         ...this.modalActions[actionIndex],
         label: action.label || this.i18n.unnamedAction,
-        type: action.type || "command",
+        type: typeLabel,
+        typeIconName: typeIconName,
         when: whenLabel,
         whenCode: when,
+        typeCode: typeCode,
         _fullAction: {
           ...action,
           pullRequest: {
@@ -1661,9 +1665,11 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       const newRow = {
         id: `${prNumber}-${action.type || "action"}-${this.modalActions.length}`,
         label: action.label || this.i18n.unnamedAction,
-        type: action.type || "command",
+        type: typeLabel,
+        typeIconName: typeIconName,
         when: whenLabel,
         whenCode: when,
+        typeCode: typeCode,
         prLabel: `#${prNumber} - ${action.pullRequest?.title || ""}`,
         prWebUrl: action.pullRequest?.webUrl || "",
         prNumber: prNumber,
@@ -1923,12 +1929,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         for (const action of pr.deploymentActions) {
           if (action) {
             const when = action.when;
-            const whenLabel =
-              when === "pre-deploy"
-                ? this.i18n.preDeploy
-                : when === "post-deploy"
-                  ? this.i18n.postDeploy
-                  : this.i18n.unknownLabel;
+            const whenLabel = this._getActionWhenLabel(when);
+            const typeCode = action.type || "command";
+            const typeLabel = this._getActionTypeLabel(typeCode);
+            const typeIconName = this._getActionTypeIconName(typeCode);
 
             // Store full action object for modal
             const fullAction = {
@@ -1943,7 +1947,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
             actionRows.push({
               id: `${pr.number}-${action.type || "action"}-${actionRows.length}`,
               label: action.label || this.i18n.unnamedAction,
-              type: action.type || "command",
+              type: typeLabel,
+              typeIconName: typeIconName,
+              typeCode: typeCode,
               when: whenLabel,
               whenCode: when,
               prLabel: `#${pr.number} - ${pr.title || ""}`,
@@ -1958,5 +1964,39 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
     // Use the shared sorting method
     return this._sortActions(actionRows);
+  }
+
+  _getActionWhenLabel(whenCode) {
+    if (whenCode === "pre-deploy") {
+      return this.i18n.preDeploy;
+    }
+    if (whenCode === "post-deploy") {
+      return this.i18n.postDeploy;
+    }
+    return this.i18n.unknownLabel;
+  }
+
+  _getActionTypeLabel(typeCode) {
+    const typeLabelByCode = {
+      command: this.i18n.commandType,
+      data: this.i18n.dataType,
+      apex: this.i18n.apexType,
+      "schedule-batch": this.i18n.scheduleBatchType,
+      "publish-community": this.i18n.publishCommunityType,
+      manual: this.i18n.manualType,
+    };
+    return typeLabelByCode[typeCode] || this.i18n.unknownLabel;
+  }
+
+  _getActionTypeIconName(typeCode) {
+    const typeIconByCode = {
+      command: "utility:apex",
+      data: "utility:database",
+      apex: "utility:apex_alt",
+      "schedule-batch": "utility:event",
+      "publish-community": "utility:global",
+      manual: "utility:task",
+    };
+    return typeIconByCode[typeCode] || "utility:question";
   }
 }
