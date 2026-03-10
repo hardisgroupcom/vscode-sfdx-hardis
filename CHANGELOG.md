@@ -15,7 +15,9 @@
 - Enhancements
   - Data Workbench: Make more explicit the use of filtering using master queries results (new badge)
   - Org Manager: Add more contextual actions: Freeze / Unfreeze users, Before / After refresh sandbox...
-  - Pipeline: Allow to configure new action type "Schedule batch", which allows to schedule an Apex class implementing Schedulable in the target org, with a specified cron expression.
+  - Pipeline:
+    - Allow to configure new action type "Schedule batch", which allows to schedule an Apex class implementing Schedulable in the target org, with a specified cron expression.
+    - Improve performances of Pipeline view loading
 - Fixes
   - Orgs Manager: Invite to disconnect from production orgs
 
