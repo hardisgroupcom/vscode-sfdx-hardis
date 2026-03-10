@@ -18,6 +18,7 @@ import {
 import { getCurrentGitBranch } from "../utils/pipeline/sfdxHardisConfig";
 import {
   execCommandWithProgress,
+  execSfdxJson,
   getWorkspaceRoot,
   readSfdxHardisConfig,
 } from "../utils";
@@ -25,6 +26,63 @@ import { t } from "../i18n/i18n";
 import path from "path";
 import fs from "fs-extra";
 import { listAllOrgs } from "../utils/orgUtils";
+
+const SCHEDULABLE_CLASSES_CACHE_TTL_MS = 15 * 60 * 1000;
+const schedulableClassesByOrgCache = new Map<
+  string,
+  { expiresAt: number; values: string[] }
+>();
+
+async function getDefaultOrgUsername(): Promise<string> {
+  try {
+    const orgDisplay = await execSfdxJson("sf org display --json", {
+      fail: false,
+      output: false,
+    });
+    return (
+      orgDisplay?.result?.username || orgDisplay?.result?.alias || "default"
+    );
+  } catch {
+    return "default";
+  }
+}
+
+async function listSchedulableClassesFromDefaultOrg(): Promise<string[]> {
+  const orgKey = await getDefaultOrgUsername();
+  const now = Date.now();
+  const cached = schedulableClassesByOrgCache.get(orgKey);
+  if (cached && cached.expiresAt > now) {
+    return cached.values;
+  }
+
+  const query =
+    "SELECT Name, Body FROM ApexClass WHERE ManageableState = 'unmanaged' ORDER BY Name";
+  const command = `sf data query --query "${query}" --use-tooling-api --json`;
+  const result = await execSfdxJson(command, {
+    fail: false,
+    output: false,
+  });
+
+  const records = Array.isArray(result?.result?.records)
+    ? result.result.records
+    : [];
+  const values = records
+    .filter((record: any) => String(record?.Body || "").toLowerCase().includes("schedulable"))
+    .map((record: any) => String(record?.Name || "").trim())
+    .filter((v: string) => v.length > 0);
+
+  const uniqueSorted: string[] = [...new Set<string>(values)].sort(
+    (a: string, b: string) => a.localeCompare(b),
+  );
+  // Only cache if classes were found
+  if (uniqueSorted.length > 0) {
+    schedulableClassesByOrgCache.set(orgKey, {
+      expiresAt: now + SCHEDULABLE_CLASSES_CACHE_TTL_MS,
+      values: uniqueSorted,
+    });
+  }
+  return uniqueSorted;
+}
 
 export function registerShowPipeline(commands: Commands) {
   let loadInProgress: Promise<PipelineInfo> | null = null;
@@ -152,6 +210,31 @@ export function registerShowPipeline(commands: Commands) {
                   updatedFile,
                 });
           showCommitReminder(data.prNumber, msg);
+        }
+        // Lazy-load Schedulable classes for schedule-batch deployment actions
+        else if (type === "loadSchedulableClasses") {
+          const requestId = data?.requestId || null;
+          try {
+            const values = await listSchedulableClassesFromDefaultOrg();
+            panel.sendMessage({
+              type: "returnSchedulableClasses",
+              data: {
+                requestId,
+                values,
+              },
+            });
+          } catch (error: any) {
+            Logger.log(
+              `Error loading schedulable classes with Tooling API: ${error?.message || error}`,
+            );
+            panel.sendMessage({
+              type: "returnSchedulableClasses",
+              data: {
+                requestId,
+                values: [],
+              },
+            });
+          }
         }
         // Get PR info for modal
         else if (type === "getPrInfoForModal") {

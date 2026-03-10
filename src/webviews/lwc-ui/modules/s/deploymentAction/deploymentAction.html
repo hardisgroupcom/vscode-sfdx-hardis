@@ -213,6 +213,74 @@
               </div>
             </template>
 
+            <template if:true={showScheduleBatchClassNameField}>
+              <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                <div class="slds-form-element">
+                  <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                    <span>
+                      <abbr class="slds-required" title={i18n.requiredField}>*</abbr>
+                      {i18n.scheduleBatchClassNameLabel}
+                    </span>
+                    <s-multiline-helptext content={i18n.scheduleBatchClassNameHelp} class="slds-icon-text-info"></s-multiline-helptext>
+                  </label>
+                  <lightning-combobox
+                    value={displayedAction.parameters.className}
+                    options={schedulableClassOptions}
+                    data-field="parameters.className"
+                    onchange={handleFieldChange}
+                    required={isEditMode}
+                    disabled={isSchedulableClassComboboxDisabled}
+                    variant="label-hidden"
+                    placeholder={i18n.scheduleBatchSelectClassPlaceholder}
+                  ></lightning-combobox>
+                </div>
+              </div>
+            </template>
+
+            <template if:true={showScheduleBatchCronExpressionField}>
+              <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                <div class="slds-form-element">
+                  <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                    <span>
+                      <abbr class="slds-required" title={i18n.requiredField}>*</abbr>
+                      {i18n.scheduleBatchCronExpressionLabel}
+                    </span>
+                    <s-multiline-helptext content={i18n.scheduleBatchCronExpressionHelp} class="slds-icon-text-info"></s-multiline-helptext>
+                  </label>
+                  <lightning-input
+                    value={displayedAction.parameters.cronExpression}
+                    data-field="parameters.cronExpression"
+                    onchange={handleFieldChange}
+                    required={isEditMode}
+                    disabled={isViewMode}
+                    variant="label-hidden"
+                  ></lightning-input>
+                  <div class="slds-form-element__help">
+                    {i18n.scheduleBatchCronExpressionExample}
+                    - <a href="https://crontab.guru/" target="_blank">{i18n.buildCronExpressionLink}</a>
+                  </div>
+                </div>
+              </div>
+            </template>
+
+            <template if:true={showScheduleBatchJobNameField}>
+              <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                <div class="slds-form-element">
+                  <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                    <span>{i18n.scheduleBatchJobNameLabel}</span>
+                    <s-multiline-helptext content={i18n.scheduleBatchJobNameHelp} class="slds-icon-text-info"></s-multiline-helptext>
+                  </label>
+                  <lightning-input
+                    value={displayedAction.parameters.jobName}
+                    data-field="parameters.jobName"
+                    onchange={handleFieldChange}
+                    disabled={isViewMode}
+                    variant="label-hidden"
+                  ></lightning-input>
+                </div>
+              </div>
+            </template>
+
             <template if:true={showInstructionsField}>
               <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
                 <div class="slds-form-element">

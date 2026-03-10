@@ -23,6 +23,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   @track loading = false;
   @track projectApexScripts = [];
   @track projectSfdmuWorkspaces = [];
+  @track projectSchedulableClasses = [];
+  @track schedulableClassesLoading = false;
+  @track schedulableClassesRequestId = null;
   _refreshTimer = null;
   _isVisible = true;
   _isAutoRefresh = false;
@@ -503,6 +506,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     // Store project resources
     this.projectApexScripts = data.projectApexScripts || [];
     this.projectSfdmuWorkspaces = data.projectSfdmuWorkspaces || [];
+    this.projectSchedulableClasses = data.projectSchedulableClasses || [];
     // adjust columns to fit the available width immediately
     setTimeout(() => this.adjustPrColumns(), 50);
     // Render the Mermaid diagram after a brief delay to ensure DOM is ready
@@ -1125,9 +1129,36 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       case "returnGetPrInfoForModal":
         this.handleReturnGetPrInfoForModal(data);
         break;
+      case "returnSchedulableClasses":
+        this.handleReturnSchedulableClasses(data);
+        break;
       default:
         console.log("Unknown message type:", messageType, data);
     }
+  }
+
+  handleLoadSchedulableClasses() {
+    this.schedulableClassesLoading = true;
+    const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    this.schedulableClassesRequestId = requestId;
+    window.sendMessageToVSCode({
+      type: "loadSchedulableClasses",
+      data: { requestId },
+    });
+  }
+
+  handleReturnSchedulableClasses(data) {
+    if (
+      this.schedulableClassesRequestId &&
+      data?.requestId &&
+      data.requestId !== this.schedulableClassesRequestId
+    ) {
+      return;
+    }
+    this.projectSchedulableClasses = Array.isArray(data?.values)
+      ? data.values
+      : [];
+    this.schedulableClassesLoading = false;
   }
 
   handleShowInstalledPackages() {

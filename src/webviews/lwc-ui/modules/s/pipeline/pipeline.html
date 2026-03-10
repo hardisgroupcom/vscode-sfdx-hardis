@@ -409,9 +409,12 @@
             is-edit-mode={isDeploymentActionEditMode}
             apex-scripts={projectApexScripts}
             sfdmu-workspaces={projectSfdmuWorkspaces}
+            schedulable-classes={projectSchedulableClasses}
+            schedulable-classes-loading={schedulableClassesLoading}
             parent-translations={translations}
             onclose={handleCloseDeploymentActionModal}
             onedit={handleEditDeploymentAction}
+            onloadschedulableclasses={handleLoadSchedulableClasses}
             onsave={handleSaveDeploymentAction}
         ></s-deployment-action>
     </template>

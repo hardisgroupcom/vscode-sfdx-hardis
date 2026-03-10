@@ -7,10 +7,38 @@ import { SharedMixin } from "s/sharedMixin";
 
 export default class DeploymentAction extends SharedMixin(LightningElement) {
   @api action = null;
-  @api isEditMode = false;
+  _isEditMode = false;
+
+  @api
+  set isEditMode(val) {
+    const wasViewMode = !this._isEditMode;
+    this._isEditMode = val;
+    if (val && wasViewMode) {
+      // Switched into edit mode — trigger schedulable class loading if needed
+      this._requestSchedulableClassesIfNeeded(this.displayedAction?.type);
+    }
+  }
+  get isEditMode() {
+    return this._isEditMode;
+  }
+
   @api apexScripts = [];
   @api sfdmuWorkspaces = [];
+  _storedSchedulableClasses = null;
+
+  @api
+  set schedulableClasses(val) {
+    if (Array.isArray(val) && val.length > 0) {
+      this._storedSchedulableClasses = val;
+    }
+  }
+  get schedulableClasses() {
+    return this._storedSchedulableClasses || [];
+  }
+
+  @api schedulableClassesLoading = false;
   @track editedAction = {};
+  _schedulableClassesRequested = false;
 
   @api
   set parentTranslations(val) {
@@ -27,6 +55,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       { label: this.t("commandType"), value: "command" },
       { label: this.t("dataType"), value: "data" },
       { label: this.t("apexType"), value: "apex" },
+      { label: this.t("scheduleBatchType"), value: "schedule-batch" },
       { label: this.t("publishCommunityType"), value: "publish-community" },
       { label: this.t("manualType"), value: "manual" },
     ];
@@ -49,6 +78,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     { label: "Command", value: "command" },
     { label: "Data", value: "data" },
     { label: "Apex", value: "apex" },
+    { label: "Schedule Batch", value: "schedule-batch" },
     { label: "Publish Community", value: "publish-community" },
     { label: "Manual", value: "manual" },
   ];
@@ -93,6 +123,32 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     return options;
   }
 
+  get schedulableClassOptions() {
+    const selectedClassName = this.displayedAction?.parameters?.className;
+    if (this.isViewMode) {
+      return selectedClassName ? [{ label: selectedClassName, value: selectedClassName }] : [];
+    }
+    if (this.schedulableClassesLoading) {
+      const loadingOption = { label: this.t("loadingSchedulableClasses"), value: "" };
+      return selectedClassName
+        ? [{ label: selectedClassName, value: selectedClassName }, loadingOption]
+        : [loadingOption];
+    }
+    const classes = Array.isArray(this.schedulableClasses) ? this.schedulableClasses : [];
+    if (this._schedulableClassesRequested && classes.length === 0) {
+      return [{ label: this.t("noSchedulableClassFound"), value: "" }];
+    }
+    // If a value is selected but not in the available options, add it with a special label
+    if (selectedClassName && !classes.find((item) => item === selectedClassName)) {
+      return [{ label: this.t("notVisibleFromOrg", { value: selectedClassName }), value: selectedClassName }, ...classes.map((item) => ({ label: item, value: item }))];
+    }
+    return classes.map((item) => ({ label: item, value: item }));
+  }
+
+  get isSchedulableClassComboboxDisabled() {
+    return this.isViewMode;
+  }
+
   // When options
   whenOptions = [
     { label: "Before Deployment", value: "pre-deploy" },
@@ -130,6 +186,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
         this.action.type = "command";
       }
     }
+    this._requestSchedulableClassesIfNeeded(this.displayedAction?.type);
   }
 
   get modalTitle() {
@@ -180,6 +237,21 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     return type === "manual";
   }
 
+  get showScheduleBatchClassNameField() {
+    const type = this.displayedAction?.type;
+    return type === "schedule-batch";
+  }
+
+  get showScheduleBatchCronExpressionField() {
+    const type = this.displayedAction?.type;
+    return type === "schedule-batch";
+  }
+
+  get showScheduleBatchJobNameField() {
+    const type = this.displayedAction?.type;
+    return type === "schedule-batch";
+  }
+
   get showCommandField() {
     const type = this.displayedAction?.type;
     return type === "command";
@@ -208,6 +280,14 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     return !!this.displayedAction?.parameters?.sfdmuProject;
   }
 
+  get hasScheduleBatchClassNameSelected() {
+    return !!this.displayedAction?.parameters?.className;
+  }
+
+  get hasScheduleBatchCronExpressionSelected() {
+    return !!this.displayedAction?.parameters?.cronExpression;
+  }
+
   // Get parameter values
   get apexScript() {
     return this.action?.parameters?.apexScript || "";
@@ -223,6 +303,18 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
 
   get instructions() {
     return this.action?.parameters?.instructions || "";
+  }
+
+  get scheduleBatchClassName() {
+    return this.action?.parameters?.className || "";
+  }
+
+  get scheduleBatchCronExpression() {
+    return this.action?.parameters?.cronExpression || "";
+  }
+
+  get scheduleBatchJobName() {
+    return this.action?.parameters?.jobName || "";
   }
 
   get command() {
@@ -268,6 +360,11 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     const field = event.target.dataset.field;
     const value = event.target.value;
 
+    // Ignore empty-value sentinel options (loading / no results placeholders)
+    if (value === "") {
+      return;
+    }
+
     if (field.startsWith("parameters.")) {
       const paramName = field.substring(11);
       if (!this.editedAction.parameters) {
@@ -288,10 +385,28 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   handleTypeChange(event) {
     const newType = event.detail.value;
     this.editedAction.type = newType;
+    this._requestSchedulableClassesIfNeeded(newType);
     // Force re-render to show/hide fields by reassigning the tracked property
     this.editedAction = { ...this.editedAction };
     // Trigger reactivity by reassigning to force getter recalculation
     this.isEditMode = this.isEditMode;
+  }
+
+  _requestSchedulableClassesIfNeeded(type) {
+    if (type !== "schedule-batch") {
+      return;
+    }
+    if (this.isViewMode) {
+      return;
+    }
+    if (this._schedulableClassesRequested) {
+      return;
+    }
+    if (Array.isArray(this.schedulableClasses) && this.schedulableClasses.length) {
+      return;
+    }
+    this._schedulableClassesRequested = true;
+    this.dispatchEvent(new CustomEvent("loadschedulableclasses"));
   }
 
   handleSave() {
