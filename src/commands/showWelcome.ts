@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { Commands } from "../commands";
 import { LwcPanelManager } from "../lwc-panel-manager";
 import { t } from "../i18n/i18n";
+import { BANNER_IMAGE_URL, WEBSITE_URL } from "../constants";
 
 export function registerShowWelcome(command: Commands) {
   const disposable = vscode.commands.registerCommand(
@@ -23,6 +24,8 @@ export function registerShowWelcome(command: Commands) {
         colorThemeConfig,
         colorTheme,
         colorContrast,
+        bannerImageUrl: BANNER_IMAGE_URL,
+        websiteUrl: WEBSITE_URL,
         imagePaths: {
           flagGlobe: ["icons", "flag-globe.svg"],
           flagEn: ["icons", "flag-uk.svg"],

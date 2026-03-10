@@ -11,6 +11,11 @@
                             <p class="hero-subtitle">{i18n.welcomeSubtitle} <a href="https://www.cloudity.com/?ref=sfdxhardis" target="_blank">Cloudity</a> &amp; <a href="https://sfdx-hardis.cloudity.com/contributors/" target="_blank">{i18n.friends}</a></p>
                         </div>
                     </div>
+                    <template lwc:if={bannerImageUrl}>
+                        <div class="hero-banner" onclick={handleBannerClick}>
+                            <img class="hero-banner-image" src={bannerImageUrl} alt="Banner">
+                        </div>
+                    </template>
                 </div>
                 <div class="hero-top-left">
                     <lightning-button

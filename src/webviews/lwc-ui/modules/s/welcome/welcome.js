@@ -13,6 +13,8 @@ export default class Welcome extends SharedMixin(LightningElement) {
   @track langSetting = "auto";
   @track langDropdownOpen = false;
   @track themeDropdownOpen = false;
+  @track bannerImageUrl = "";
+  @track websiteUrl = "";
 
   @track setupHidden = false;
   scrollThreshold = 100; // Hide toggle after scrolling 100px
@@ -66,6 +68,12 @@ export default class Welcome extends SharedMixin(LightningElement) {
     }
     if (data && data.langSetting) {
       this.langSetting = data.langSetting;
+    }
+    if (data && data.bannerImageUrl) {
+      this.bannerImageUrl = data.bannerImageUrl;
+    }
+    if (data && data.websiteUrl) {
+      this.websiteUrl = data.websiteUrl;
     }
   }
 
@@ -296,5 +304,15 @@ export default class Welcome extends SharedMixin(LightningElement) {
         value: colorThemeConfig,
       },
     });
+  }
+
+  // Banner click handler
+  handleBannerClick() {
+    if (this.websiteUrl) {
+      window.sendMessageToVSCode({
+        type: "openExternal",
+        data: this.websiteUrl,
+      });
+    }
   }
 }
