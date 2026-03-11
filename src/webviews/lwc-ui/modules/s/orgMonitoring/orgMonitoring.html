@@ -372,6 +372,23 @@
                         ></lightning-button>
                     </div>
 
+                    <!-- Underused Permission Sets -->
+                    <div class="command-card">
+                        <div class="command-header">
+                            <div class="command-icon-container licenses">
+                                <lightning-icon icon-name="utility:lock" size="small" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="command-title">{i18n.underusedPermissionSets}</h3>
+                        </div>
+                        <p class="command-description">{i18n.underusedPermissionSetsDescription}</p>
+                        <lightning-button
+                            variant="outline-brand"
+                            label={i18n.findPermissionSets}
+                            onclick={findUnderusedPermissionSets}
+                            class="command-button"
+                        ></lightning-button>
+                    </div>
+
                     <!-- Unused Apex Classes -->
                     <div class="command-card">
                         <div class="command-header">

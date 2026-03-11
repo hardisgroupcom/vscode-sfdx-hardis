@@ -242,6 +242,15 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
     });
   }
 
+  findUnderusedPermissionSets() {
+    window.sendMessageToVSCode({
+      type: "runCommand",
+      data: {
+        command: "sf hardis:org:diagnose:underusedpermsets",
+      },
+    });
+  }
+
   // Advanced Diagnostics Methods
   findUnusedApexClasses() {
     window.sendMessageToVSCode({

@@ -699,6 +699,14 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
               DOCSITE_URL + "/hardis/org/diagnose/unused-connected-apps/",
           },
           {
+            id: "hardis:org:diagnose:underusedpermsets",
+            label: t("underusedPermissionSets"),
+            tooltip: t("underusedPermissionSetsTooltip"),
+            command: "sf hardis:org:diagnose:underusedpermsets",
+            helpUrl:
+              DOCSITE_URL + "/hardis/org/diagnose/underusedpermsets/",
+          },
+          {
             id: "hardis:lint:access",
             label: t("metadataWithoutAccess"),
             tooltip: t("metadataWithoutAccessTooltip"),

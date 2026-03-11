@@ -15,10 +15,14 @@
   - Doc Workbench: Add language selector
 - Enhancements
   - Data Workbench: Make more explicit the use of filtering using master queries results (new badge)
-  - Org Manager: Add more contextual actions: Freeze / Unfreeze users, Before / After refresh sandbox...
+  - Org Manager
+    - Add more contextual actions: Freeze / Unfreeze users, Before / After refresh sandbox...
   - Pipeline:
     - Allow to configure new action type "Schedule batch", which allows to schedule an Apex class implementing Schedulable in the target org, with a specified cron expression.
     - Improve performances of Pipeline view loading
+  - Org Monitoring
+    - Add command to detect underused permission sets (with few or no active assignments)
+    - Add command to extract Apex & Flow errors
 - Fixes
   - Orgs Manager: Invite to disconnect from production orgs
   - Fix helptext position

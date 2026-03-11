@@ -345,6 +345,10 @@ export class ThemeUtils {
         vscode: "cloud",
         hardis: "dollar.svg",
       },
+      "hardis:org:diagnose:underusedpermsets": {
+        vscode: "key",
+        hardis: "password.svg",
+      },
       "hardis:org:diagnose:releaseupdates": {
         vscode: "eye-watch",
         hardis: "monitoring.svg",
