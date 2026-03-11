@@ -424,12 +424,13 @@ if (!command.startsWith("sf hardis") || command.includes("&&")) {
 ## Internationalization (i18n)
 
 ### Overview
-The extension uses [i18next](https://www.i18next.com/) for internationalization. All user-facing strings must be translated. Currently supported locales: **English (en)**, **French (fr)**, and **Spanish (es)**.
+The extension uses [i18next](https://www.i18next.com/) for internationalization. All user-facing strings must be translated. Currently supported locales: **English (en)**, **French (fr)**, **Spanish (es)**, and **Japanese (ja)**.
 
 ### Translation Files
 - `src/i18n/en.json` — English translations (source of truth)
 - `src/i18n/fr.json` — French translations
 - `src/i18n/es.json` — Spanish translations
+- `src/i18n/ja.json` — Japanese translations
 - `src/i18n/i18n.ts` — Backend i18n utility module
 
 **Key naming conventions:**
@@ -519,7 +520,7 @@ Then bind the getter result in the template:
 ### Adding New Translatable Strings
 
 When adding new user-facing strings:
-1. Add the key to **all three** `src/i18n/en.json`, `src/i18n/fr.json`, and `src/i18n/es.json` (keep alphabetical order)
+1. Add the key to **all four** `src/i18n/en.json`, `src/i18n/fr.json`, `src/i18n/es.json`, and `src/i18n/ja.json` (keep alphabetical order)
 2. Use `t("keyName")` in TypeScript or `this.t("keyName")` in LWC
 3. For dynamic values, use interpolation: `t("key", { varName: value })`
 
@@ -546,6 +547,12 @@ When adding new user-facing strings:
 - Keep English technical terms untranslated: merge, commit, branch, scratch org, package.xml, DevHub
 - Use formal Spanish ("usted" register where applicable)
 - Use Latin American neutral Spanish where regional variants differ
+
+### Japanese Translation Guidelines
+- Reuse the terminology from the upstream `sfdx-hardis` Japanese translations whenever equivalent strings already exist.
+- Keep technical terms untranslated when that is already the established project style: merge request, commit, branch, sandbox, scratch org, package.xml, Apex, SOQL, LWC, DevHub, CLI flags, environment variable names.
+- Preserve placeholders, HTML tags, markdown, emoji, and line breaks exactly.
+- Prefer natural Japanese UI wording over literal word-for-word translation, while staying concise and action-oriented.
 
 ## Common Workflows
 

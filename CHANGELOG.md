@@ -11,6 +11,7 @@
   - English
   - French
   - Spanish
+  - Japanese
   - Doc Workbench: Add language selector
 - Enhancements
   - Data Workbench: Make more explicit the use of filtering using master queries results (new badge)
