@@ -21,6 +21,7 @@
     - Improve performances of Pipeline view loading
 - Fixes
   - Orgs Manager: Invite to disconnect from production orgs
+  - Fix helptext position
 
 ## [6.29.1] 2025-02-24
 
