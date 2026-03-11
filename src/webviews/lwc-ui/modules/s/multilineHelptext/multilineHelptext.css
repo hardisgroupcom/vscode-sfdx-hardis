@@ -65,7 +65,28 @@
     color: #bde8ff;
 }
 
-/* Horizontal positioning - right side (default) */
+/* Horizontal positioning */
+.multiline-helptext-popover.position-right {
+    left: calc(100% + 0.5rem);
+}
+
+.multiline-helptext-popover.position-left {
+    right: calc(100% + 0.5rem);
+    left: auto;
+}
+
+/* Vertical positioning */
+.multiline-helptext-popover.position-bottom {
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.multiline-helptext-popover.position-top {
+    bottom: 50%;
+    top: auto;
+    transform: translateY(50%);
+}
+
 .multiline-helptext-popover .slds-popover__body {
     padding: 0;
 }
