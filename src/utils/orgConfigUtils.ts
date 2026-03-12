@@ -102,6 +102,17 @@ async function processOrgSfdxHardisConfigFile(
     return null;
   }
   const branchName = m[1];
+
+  // The canonical uat branch is named exactly "uat" or "recette"
+  const isCanonicalUatBranch = branchName.toLowerCase() === "uat" || branchName.toLowerCase() === "recette";
+  // If a canonical "uat" or "recette" branch exists, other non-uatRun branches are demoted to "other"
+  const hasCanonicalUatBranch = configFiles.some((f) => {
+    const regex = /\.sfdx-hardis\.(.*)\.yml/gi;
+    const match = regex.exec(f);
+    const b = match ? match[1] : null;
+    return b !== null && b !== branchName && (b.toLowerCase() === "uat" || b.toLowerCase() === "recette");
+  });
+
   let orgType: MajorOrg["orgType"] = "other";
   let level = 40;
   if (isProduction(branchName)) {
@@ -116,7 +127,7 @@ async function processOrgSfdxHardisConfigFile(
     orgType = "uatrun";
     level = 80;
   }
-  else if (isUat(branchName)) {
+  else if (isUat(branchName) && (isCanonicalUatBranch || !hasCanonicalUatBranch)) {
     orgType = "uat";
     level = 70;
   }
