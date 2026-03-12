@@ -31,9 +31,10 @@ export function registerShowWelcome(command: Commands) {
         contactFormUrl: WEBSITE_CONTACT_FORM_URL,
         imagePaths: {
           flagGlobe: ["icons", "flag-globe.svg"],
+          flagDe: ["icons", "flag-de.svg"],
           flagEn: ["icons", "flag-uk.svg"],
-          flagFr: ["icons", "flag-fr.svg"],
           flagEs: ["icons", "flag-es.svg"],
+          flagFr: ["icons", "flag-fr.svg"],
           flagJa: ["icons", "flag-ja.svg"],
           themeAuto: ["icons", "theme-auto.svg"],
           themeLight: ["icons", "theme-light.svg"],

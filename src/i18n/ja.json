@@ -895,6 +895,7 @@
   "jiraCreatePatAt": "PAT をこちらで作成してください: {{url}}",
   "langEnglish": "English",
   "langFrench": "Français",
+  "langGerman": "Deutsch",
   "langJapanese": "日本語",
   "langLabel": "言語",
   "langSelectTooltip": "インターフェース言語を変更",

@@ -126,6 +126,7 @@ export default class DocumentationWorkbench extends SharedMixin(
       { label: this.t("langEnglish"), value: "en" },
       { label: this.t("langFrench"), value: "fr" },
       { label: this.t("langSpanish"), value: "es" },
+      { label: this.t("langGerman"), value: "de" },
       { label: this.t("langJapanese"), value: "ja" },
     ];
   }

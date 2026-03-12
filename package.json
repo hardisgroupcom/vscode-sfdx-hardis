@@ -195,6 +195,7 @@
           "default": "en",
           "enum": [
             "auto",
+            "de",
             "en",
             "es",
             "fr",
@@ -202,6 +203,7 @@
           ],
           "enumDescriptions": [
             "Automatic (use VS Code display language)",
+            "Deutsch",
             "English",
             "Español",
             "Français",

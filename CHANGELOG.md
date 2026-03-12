@@ -11,6 +11,7 @@
   - English
   - French
   - Spanish
+  - German
   - Japanese
   - Doc Workbench: Add language selector
 - Enhancements

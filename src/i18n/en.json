@@ -895,6 +895,7 @@
   "jiraCreatePatAt": "Create a PAT at: {{url}}",
   "langEnglish": "English",
   "langFrench": "Français",
+  "langGerman": "Deutsch",
   "langJapanese": "日本語",
   "langLabel": "Language",
   "langSelectTooltip": "Change interface language",
