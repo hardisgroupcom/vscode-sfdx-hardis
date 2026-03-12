@@ -286,8 +286,8 @@ export class HardisColors {
       if (PRODUCTION_EDITIONS.includes(org.OrganizationType)) {
         // We are in production !!
         vscode.window.showWarningMessage(
-          "🦙 Your default org is a PRODUCTION org, be careful what you do 😲",
-          "Close",
+          t("productionOrgWarning"),
+          t("close"),
         );
         return forcedColor || this.describeOrgColors()["production"]; // red !
       }
