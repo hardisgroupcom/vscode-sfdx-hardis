@@ -538,6 +538,9 @@ When adding new user-facing strings:
 - `[markers]` in brackets
 - Brand names: Salesforce, GitHub, GitLab, SFDMU, MegaLinter, SFDX-Hardis, Cloudity, etc.
 
+### General Translation Guidelines
+- When you are asked for a new translation, look at other translations in the same language (i18n json file) to use the same terminology and style for consistency.
+
 ### French Translation Guidelines
 - Use official Salesforce French terminology (e.g., "Métadonnées", "Déploiement", "Org Salesforce")
 - Keep English technical terms untranslated: merge, commit, branch, scratch org, package.xml, DevHub
