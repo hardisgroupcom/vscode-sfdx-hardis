@@ -195,11 +195,11 @@ export class HardisDebugger {
         // Missing apex sources
         vscode.window
           .showWarningMessage(
-            "🦙 No local apex sources found. Click to retrieve them",
-            "Retrieve Apex sources from org",
+            t("noLocalApexSources"),
+            t("retrieveApexSourcesFromOrg"),
           )
           .then((selection) => {
-            if (selection === "Retrieve Apex sources from org") {
+            if (selection === t("retrieveApexSourcesFromOrg")) {
               vscode.commands.executeCommand(
                 "vscode-sfdx-hardis.execute-command",
                 "sf hardis:org:retrieve:sources:dx -k ApexClass,ApexTrigger,ApexPage",
@@ -209,10 +209,8 @@ export class HardisDebugger {
       } else {
         // Salesforce extension command not found
         vscode.window.showWarningMessage(
-          `🦙 Salesforce Extension pack command error. If it is installed, just wait for it to be initialized 🤗\nDetail: ${
-            e.message || JSON.stringify(e)
-          }`,
-          "Close",
+          t("salesforceExtensionPackError", { detail: e.message || JSON.stringify(e) }),
+          t("close"),
         );
       }
       return null;

@@ -498,8 +498,8 @@ export class CommandRunner {
 
     if (this.terminalIsRunning) {
       vscode.window.showErrorMessage(
-        "🦙 Wait for the current command to be completed before running a new one 😇",
-        "Close",
+        t("waitForCurrentCommand"),
+        t("close"),
       );
       return;
     }

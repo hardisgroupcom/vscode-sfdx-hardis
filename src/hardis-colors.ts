@@ -115,8 +115,8 @@ export class HardisColors {
           await this.applyColor(color);
         } else {
           vscode.window.showWarningMessage(
-            "🦙 You need first to select a default org to define a color for it 😊",
-            "Close",
+            t("needToSelectDefaultOrg"),
+            t("close"),
           );
         }
       },
@@ -216,8 +216,8 @@ export class HardisColors {
       if (this.invalidCustomOrgColorWarningShown === false) {
         this.invalidCustomOrgColorWarningShown = true;
         vscode.window.showWarningMessage(
-          "🦙 One or more custom org color URLs are invalid. Please check your configuration.",
-          "Close",
+          t("invalidOrgColorUrls"),
+          t("close"),
         );
       }
     }
@@ -264,8 +264,8 @@ export class HardisColors {
       );
       if (isMajorOrg) {
         vscode.window.showWarningMessage(
-          `🦙 Your default org is a MAJOR org linked to git branch ${this.majorOrgBranch}, be careful because the CI/CD Server is supposed to deploy in this org, not you 😘`,
-          "Close",
+          t("majorOrgWarning", { branch: this.majorOrgBranch }),
+          t("close"),
         );
         return forcedColor || this.describeOrgColors()["major"]; // orange !
       }

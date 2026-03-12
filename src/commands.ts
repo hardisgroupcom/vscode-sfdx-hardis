@@ -275,8 +275,8 @@ export class Commands {
           );
         } else {
           vscode.window.showErrorMessage(
-            "🦙 This URL is not a valid Outlook validation link",
-            "Close",
+            t("invalidOutlookValidationLink"),
+            t("close"),
           );
         }
       },

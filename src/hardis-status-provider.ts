@@ -227,7 +227,7 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
           });
           vscode.window.showErrorMessage(
             `🦙 ${orgDetailItem.tooltip}`,
-            "Close",
+            t("close"),
           );
         } else if (daysBeforeExpiration < 3) {
           orgDetailItem.iconId = "org:expired:soon";
@@ -236,7 +236,7 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
           });
           vscode.window.showErrorMessage(
             `🦙 ${orgDetailItem.tooltip}`,
-            "Close",
+            t("close"),
           );
         } else if (daysBeforeExpiration < 7) {
           orgDetailItem.iconId = "org:expired:soon";
@@ -245,7 +245,7 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
           });
           vscode.window.showWarningMessage(
             `🦙 ${orgDetailItem.tooltip}`,
-            "Close",
+            t("close"),
           );
         }
       }
