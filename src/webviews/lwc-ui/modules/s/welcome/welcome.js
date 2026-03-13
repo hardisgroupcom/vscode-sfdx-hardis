@@ -116,6 +116,7 @@ export default class Welcome extends SharedMixin(LightningElement) {
       es: "flagEs",
       de: "flagDe",
       ja: "flagJa",
+      pl: "flagPl",
     };
     const key = map[this.langSetting] || "flagGlobe";
     return this.getImageUrl(key, "flagGlobe");
@@ -143,6 +144,10 @@ export default class Welcome extends SharedMixin(LightningElement) {
 
   get flagJaSrc() {
     return this.getImageUrl("flagJa");
+  }
+
+  get flagPlSrc() {
+    return this.getImageUrl("flagPl");
   }
 
   toggleLangDropdown(event) {
