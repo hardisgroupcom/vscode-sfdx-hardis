@@ -197,6 +197,22 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       });
     }
 
+    if (this.modalMode === "singlePR") {
+      columns.push({
+        key: "delete",
+        label: this.i18n.deleteLabel,
+        type: "button-icon",
+        initialWidth: 70,
+        typeAttributes: {
+          name: "delete_action",
+          iconName: "utility:delete",
+          title: this.i18n.deleteLabel,
+          alternativeText: this.i18n.deleteLabel,
+          variant: "bare",
+        },
+      });
+    }
+
     return columns;
   }
 
@@ -1627,6 +1643,41 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       this.isDeploymentActionEditMode = false;
       this.showDeploymentActionModal = true;
     }
+
+    if (action.name === "delete_action") {
+      this.handleDeleteDeploymentAction(row);
+    }
+  }
+
+  handleDeleteDeploymentAction(row) {
+    const fullAction = row?._fullAction;
+    const prNumber = fullAction?.pullRequest?.number ?? row?.prNumber;
+    const commandId = fullAction?.id;
+    const when = fullAction?.when ?? row?.whenCode;
+
+    if (!prNumber || !commandId || !when) {
+      console.error("Cannot delete deployment action: missing prNumber, commandId, or when");
+      return;
+    }
+
+    this.modalActions = this.modalActions.filter((actionRow) => {
+      return !(actionRow?._fullAction?.id === commandId && actionRow?.prNumber === prNumber);
+    });
+
+    if (this.currentDeploymentAction?.id === commandId) {
+      this.showDeploymentActionModal = false;
+      this.currentDeploymentAction = null;
+      this.isDeploymentActionEditMode = false;
+    }
+
+    window.sendMessageToVSCode({
+      type: "deleteDeploymentAction",
+      data: {
+        prNumber,
+        commandId,
+        when,
+      },
+    });
   }
 
   handleCloseDeploymentActionModal() {

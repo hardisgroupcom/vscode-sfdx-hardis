@@ -9,6 +9,7 @@ import { showPackageXmlPanel } from "./packageXml";
 import { PullRequest } from "../utils/gitProviders/types";
 import { TicketProvider } from "../utils/ticketProviders/ticketProvider";
 import {
+  deletePrePostCommand,
   listProjectApexScripts,
   listProjectDataWorkspaces,
   listProjectApexTestClasses,
@@ -224,6 +225,20 @@ export function registerShowPipeline(commands: Commands) {
                   updatedFile,
                 });
           showCommitReminder(data.prNumber, msg);
+        }
+        // Delete Deployment Action
+        else if (type === "deleteDeploymentAction") {
+          const updatedFile = await deletePrePostCommand(
+            data.prNumber,
+            data.commandId,
+            data.when,
+          );
+          Logger.log(
+            `Deleted deployment action ${data.commandId} for PR #${data.prNumber}`,
+          );
+          if (updatedFile) {
+            Logger.log(`Updated file after deletion: ${updatedFile}`);
+          }
         }
         // Save Deployment Apex Test Classes
         else if (type === "saveDeploymentApexTestClasses") {
