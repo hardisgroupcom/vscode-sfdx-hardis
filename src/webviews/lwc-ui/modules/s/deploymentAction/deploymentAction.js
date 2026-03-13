@@ -74,19 +74,50 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       { label: this.t("publishCommunityType"), value: "publish-community" },
       { label: this.t("manualType"), value: "manual" },
     ];
-    this.whenOptions = this._getWhenOptions();
-    this.contextOptions = this._getContextOptions();
+    this._updateWhenAndContextOptions(this.displayedAction?.type || "command");
   }
 
-  _getWhenOptions() {
-    return [
+  _getTypeConstraints(type) {
+    const constraintsByType = {
+      command: {
+        when: ["pre-deploy", "post-deploy"],
+        context: ["all", "check-deployment-only", "process-deployment-only"],
+      },
+      data: {
+        when: ["pre-deploy", "post-deploy"],
+        context: ["all", "check-deployment-only", "process-deployment-only"],
+      },
+      apex: {
+        when: ["pre-deploy", "post-deploy"],
+        context: ["all", "check-deployment-only", "process-deployment-only"],
+      },
+      "schedule-batch": {
+        when: ["post-deploy"],
+        context: ["process-deployment-only"],
+      },
+      "publish-community": {
+        when: ["post-deploy"],
+        context: ["process-deployment-only"],
+      },
+      manual: {
+        when: ["pre-deploy", "post-deploy"],
+        context: ["all", "check-deployment-only", "process-deployment-only"],
+      },
+    };
+    return constraintsByType[type] || constraintsByType.command;
+  }
+
+  _getWhenOptions(type = "command") {
+    const options = [
       { label: this.t("beforeDeployment"), value: "pre-deploy" },
       { label: this.t("afterDeployment"), value: "post-deploy" },
     ];
+    const allowed = this._getTypeConstraints(type).when;
+    return options.filter((option) => allowed.includes(option.value));
   }
 
-  _getContextOptions() {
-    return [
+  _getContextOptions(type = "command") {
+    const options = [
       { label: this.t("checkAndProcessDeployment"), value: "all" },
       { label: this.t("checkDeploymentOnly"), value: "check-deployment-only" },
       {
@@ -94,6 +125,59 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
         value: "process-deployment-only",
       },
     ];
+    const allowed = this._getTypeConstraints(type).context;
+    return options.filter((option) => allowed.includes(option.value));
+  }
+
+  _updateWhenAndContextOptions(type = "command") {
+    this.whenOptions = this._getWhenOptions(type);
+    this.contextOptions = this._getContextOptions(type);
+
+    const allowedWhen = this.whenOptions.map((option) => option.value);
+    const allowedContext = this.contextOptions.map((option) => option.value);
+
+    if (this.isEditMode) {
+      const nextAction = { ...this.editedAction };
+
+      if (allowedWhen.length > 0) {
+        if (allowedWhen.length === 1) {
+          nextAction.when = allowedWhen[0];
+        } else if (!allowedWhen.includes(nextAction.when)) {
+          nextAction.when = allowedWhen[0];
+        }
+      }
+
+      if (allowedContext.length > 0) {
+        if (allowedContext.length === 1) {
+          nextAction.context = allowedContext[0];
+        } else if (!allowedContext.includes(nextAction.context)) {
+          nextAction.context = allowedContext[0];
+        }
+      }
+
+      this.editedAction = nextAction;
+      return;
+    }
+
+    if (!this.action) {
+      return;
+    }
+
+    if (allowedWhen.length > 0) {
+      if (allowedWhen.length === 1) {
+        this.action.when = allowedWhen[0];
+      } else if (!allowedWhen.includes(this.action.when)) {
+        this.action.when = allowedWhen[0];
+      }
+    }
+
+    if (allowedContext.length > 0) {
+      if (allowedContext.length === 1) {
+        this.action.context = allowedContext[0];
+      } else if (!allowedContext.includes(this.action.context)) {
+        this.action.context = allowedContext[0];
+      }
+    }
   }
 
   // Available action types
@@ -194,10 +278,10 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   }
 
   // When options
-  whenOptions = this._getWhenOptions();
+  whenOptions = this._getWhenOptions("command");
 
   // Context options
-  contextOptions = this._getContextOptions();
+  contextOptions = this._getContextOptions("command");
 
   connectedCallback() {
     super.connectedCallback();
@@ -225,6 +309,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     }
     this._requestSchedulableClassesIfNeeded(this.displayedAction?.type);
     this._requestCommunitiesIfNeeded(this.displayedAction?.type);
+    this._updateWhenAndContextOptions(this.displayedAction?.type || "command");
   }
 
   get modalTitle() {
@@ -433,6 +518,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     const newType = event.detail.value;
     this.editedAction.type = newType;
     this.validationError = "";
+    this._updateWhenAndContextOptions(newType);
     this._requestSchedulableClassesIfNeeded(newType);
     this._requestCommunitiesIfNeeded(newType);
     // Force re-render to show/hide fields by reassigning the tracked property
