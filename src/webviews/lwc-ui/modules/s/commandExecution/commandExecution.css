@@ -144,7 +144,6 @@
 }
 
 .report-format-dropdown .slds-dropdown__list {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   border: 1px solid #d8dde6;
   border-radius: 0.25rem;
   background-color: white;
@@ -152,7 +151,6 @@
 
 .report-format-dropdown .slds-dropdown__item a {
   padding: 0.5rem 0.75rem;
-  color: #444;
   text-decoration: none;
   display: block;
   font-size: 0.875rem;
@@ -168,13 +166,6 @@
   background-color: #e6f3ff;
   color: #0176d3;
   outline: none;
-}
-/* Force datatable row text to be dark for readability */
-::slotted(.slds-table tbody tr),
-.slds-table tbody tr,
-.slds-table tbody td,
-.slds-table td {
-  color: #222 !important;
 }
 
 .command-execution {
@@ -231,10 +222,6 @@
   font-size: 0.875rem;
 }
 
-.section-logs {
-  border-top: 1px solid #e5e9ef;
-}
-
 .section-logs > div {
   padding: 0.125rem 0.25rem;
   border-radius: 0.125rem;
@@ -256,35 +243,6 @@
 }
 
 /* Log type styling - managed in global-theme.css */
-
-/* Sub-command styling */
-/* .section-logs > div[data-is-subcommand="true"][data-is-running="true"],
-.log-lines > div[data-is-subcommand="true"][data-is-running="true"] {
-  background-color: #fff7e6;
-  border-left-color: #ff8c00;
-  border-left-width: 4px;
-  font-weight: 600;
-  animation: pulse-subcommand 2s infinite;
-  box-shadow: 0 2px 4px rgba(255, 140, 0, 0.2);
-}
-
-.section-logs > div[data-is-subcommand="true"][data-is-running="false"],
-.log-lines > div[data-is-subcommand="true"][data-is-running="false"] {
-  background-color: #f0f9ff;
-  border-left-color: #0ea5e9;
-  border-left-width: 3px;
-  font-weight: 500;
-  border-radius: 0.25rem;
-}
-
-@keyframes pulse-subcommand {
-  0%, 100% {
-    background-color: #fff7e6;
-  }
-  50% {
-    background-color: #ffedd5;
-  }
-} */
 
 .log-message {
   word-break: break-word;
