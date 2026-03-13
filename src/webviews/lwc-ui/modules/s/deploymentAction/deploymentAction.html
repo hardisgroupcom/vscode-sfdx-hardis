@@ -29,6 +29,12 @@
           </h2>
         </header>
         <div class="slds-modal__content slds-p-around_medium">
+          <template if:true={hasValidationError}>
+            <div class="slds-notify slds-notify_alert slds-theme_error slds-m-bottom_medium" role="alert">
+              <span class="slds-assistive-text">{i18n.errorLabel}</span>
+              <span>{validationError}</span>
+            </div>
+          </template>
           <div class="slds-grid slds-wrap slds-gutters">
             <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
               <div class="slds-form-element">
@@ -62,6 +68,7 @@
                 <lightning-combobox
                   value={displayedAction.type}
                   options={typeOptions}
+                  data-field="type"
                   onchange={handleTypeChange}
                   required={isEditMode}
                   disabled={isViewMode}
@@ -94,7 +101,10 @@
             <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
               <div class="slds-form-element">
                 <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
-                  <span>{i18n.executionContextsLabel}</span>
+                  <span>
+                    <abbr class="slds-required" title={i18n.requiredField}>*</abbr>
+                    {i18n.executionContextsLabel}
+                  </span>
                   <s-multiline-helptext content={i18n.executionContextsHelp} class="slds-icon-text-info"></s-multiline-helptext>
                 </label>
                 <lightning-combobox
@@ -102,6 +112,7 @@
                   options={contextOptions}
                   data-field="context"
                   onchange={handleFieldChange}
+                  required={isEditMode}
                   disabled={isViewMode}
                   variant="label-hidden"
                 ></lightning-combobox>

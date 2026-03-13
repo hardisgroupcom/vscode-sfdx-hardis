@@ -279,6 +279,7 @@
   "deployToSalesforceDesc": "HTML ドキュメントをビルドして Static Resource としてアップロードし、VisualForce ページとカスタムタブを作成します。<strong>注意:</strong> 小規模プロジェクトでのみ動作します（Static Resource は最大 5MB）。",
   "deployment": "デプロイ",
   "deploymentActionDetails": "デプロイアクションの詳細",
+  "deploymentActionMissingRequiredFields": "保存する前に必須項目をすべて入力してください。",
   "deploymentActionSaved": "{{prLabel}} #{{prNumber}} のデプロイアクションを保存しました。{{updatedFile}} を commit して push するのを忘れないでください",
   "deploymentActionSavedDraft": "将来の {{prLabel}} 用のドラフトファイルにデプロイアクションを保存しました。作成されると {{prLabel}} に関連付けられます。",
   "deploymentActionsTab": "デプロイアクション（{{count}}）（ベータ）",

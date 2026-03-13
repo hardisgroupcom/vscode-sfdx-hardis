@@ -38,6 +38,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
 
   @api schedulableClassesLoading = false;
   @track editedAction = {};
+  @track validationError = "";
   _schedulableClassesRequested = false;
 
   @api
@@ -204,6 +205,10 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     return this.isEditMode ? this.editedAction : this.action;
   }
 
+  get hasValidationError() {
+    return !!this.validationError;
+  }
+
   get actionType() {
     return this.action?.type || "command";
   }
@@ -361,7 +366,10 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     const value = event.target.value;
 
     // Ignore empty-value sentinel options (loading / no results placeholders)
-    if (value === "") {
+    const isCombobox =
+      event.target.tagName &&
+      event.target.tagName.toLowerCase() === "lightning-combobox";
+    if (value === "" && isCombobox) {
       return;
     }
 
@@ -374,17 +382,20 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     } else {
       this.editedAction[field] = value;
     }
+    this.validationError = "";
   }
 
   handleCheckboxChange(event) {
     const field = event.target.dataset.field;
     const checked = event.target.checked;
     this.editedAction[field] = checked;
+    this.validationError = "";
   }
 
   handleTypeChange(event) {
     const newType = event.detail.value;
     this.editedAction.type = newType;
+    this.validationError = "";
     this._requestSchedulableClassesIfNeeded(newType);
     // Force re-render to show/hide fields by reassigning the tracked property
     this.editedAction = { ...this.editedAction };
@@ -410,12 +421,72 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   }
 
   handleSave() {
+    const isValid = this._validateRequiredFields();
+    if (!isValid) {
+      this.validationError = this.t("deploymentActionMissingRequiredFields");
+      return;
+    }
+
+    this.validationError = "";
     // Dispatch save event to parent with edited action
     this.dispatchEvent(
       new CustomEvent("save", {
         detail: this.editedAction,
       }),
     );
+  }
+
+  _validateRequiredFields() {
+    const requiredFieldPaths = this._getRequiredFieldPaths();
+    const missingFieldPaths = requiredFieldPaths.filter((fieldPath) => {
+      const value = this._getFieldValueByPath(fieldPath);
+      return typeof value !== "string" ? value === undefined || value === null : value.trim() === "";
+    });
+
+    requiredFieldPaths.forEach((fieldPath) => {
+      const element = this.template.querySelector(`[data-field="${fieldPath}"]`);
+      if (!element || typeof element.setCustomValidity !== "function") {
+        return;
+      }
+      if (missingFieldPaths.includes(fieldPath)) {
+        element.setCustomValidity(this.t("requiredField"));
+      } else {
+        element.setCustomValidity("");
+      }
+      if (typeof element.reportValidity === "function") {
+        element.reportValidity();
+      }
+    });
+
+    return missingFieldPaths.length === 0;
+  }
+
+  _getRequiredFieldPaths() {
+    const requiredFields = ["label", "type", "when", "context"];
+    const currentType = this.editedAction?.type || "command";
+
+    if (currentType === "command") {
+      requiredFields.push("command");
+    } else if (currentType === "schedule-batch") {
+      requiredFields.push("parameters.className", "parameters.cronExpression");
+    }
+
+    return requiredFields;
+  }
+
+  _getFieldValueByPath(path) {
+    if (!path) {
+      return undefined;
+    }
+    const segments = path.split(".");
+    let current = this.editedAction;
+    for (const segment of segments) {
+      if (current == null) {
+        return undefined;
+      }
+      current = current[segment];
+    }
+    return current;
   }
 
   handleOpenApexScript() {

@@ -279,6 +279,7 @@
   "deployToSalesforceDesc": "Zbuduj dokumentację HTML i wgraj jako Static Resource z VisualForce Page i Custom Tab. <strong>Uwaga:</strong> Działa tylko w małych projektach (max 5MB dla static resources).",
   "deployment": "Wdrożenie",
   "deploymentActionDetails": "Szczegóły akcji wdrożenia",
+  "deploymentActionMissingRequiredFields": "Przed zapisaniem uzupełnij wszystkie pola wymagane.",
   "deploymentActionSaved": "Akcja wdrożenia zapisana dla {{prLabel}} #{{prNumber}}. Pamiętaj, żeby zcommitować i pushować {{updatedFile}}",
   "deploymentActionSavedDraft": "Akcja wdrożenia zapisana w pliku roboczym dla przyszłego {{prLabel}}. Zostanie powiązana z {{prLabel}} po jego utworzeniu.",
   "deploymentActionsTab": "Akcje wdrożenia ({{count}}) (beta)",

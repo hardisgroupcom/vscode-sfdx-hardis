@@ -279,6 +279,7 @@
   "deployToSalesforceDesc": "Build HTML docs and upload as a Static Resource with a VisualForce Page and Custom Tab. <strong>Note:</strong> Only works with small projects (5MB max for static resources).",
   "deployment": "Deployment",
   "deploymentActionDetails": "Deployment Action Details",
+  "deploymentActionMissingRequiredFields": "Please fill in all required fields before saving.",
   "deploymentActionSaved": "Deployment action saved for {{prLabel}} #{{prNumber}}. Don't forget to commit and push {{updatedFile}}",
   "deploymentActionSavedDraft": "Deployment action saved in draft file for the future {{prLabel}}. It will be linked to the {{prLabel}} once created.",
   "deploymentActionsTab": "Deployment Actions ({{count}}) (beta)",

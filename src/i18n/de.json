@@ -279,6 +279,7 @@
   "deployToSalesforceDesc": "HTML-Dokumentation erstellen und als Static Resource mit einer VisualForce Page und einem Custom Tab hochladen. <strong>Hinweis:</strong> Funktioniert nur bei kleinen Projekten (max. 5 MB für Static Resources).",
   "deployment": "Bereitstellung",
   "deploymentActionDetails": "Details der Bereitstellungsaktion",
+  "deploymentActionMissingRequiredFields": "Bitte füllen Sie vor dem Speichern alle Pflichtfelder aus.",
   "deploymentActionSaved": "Bereitstellungsaktion für {{prLabel}} #{{prNumber}} gespeichert. Vergessen Sie nicht, {{updatedFile}} zu committen und zu pushen",
   "deploymentActionSavedDraft": "Bereitstellungsaktion im Entwurf für den zukünftigen {{prLabel}} gespeichert. Sie wird mit dem {{prLabel}} verknüpft, sobald dieser erstellt wird.",
   "deploymentActionsTab": "Bereitstellungsaktionen ({{count}}) (Beta)",

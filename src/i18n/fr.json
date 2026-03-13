@@ -279,6 +279,7 @@
   "deployToSalesforceDesc": "Construire les docs HTML et les télécharger en tant que Ressource Statique avec une Page VisualForce et un Onglet Personnalisé. <strong>Note :</strong> Fonctionne uniquement avec les petits projets (5 Mo max pour les ressources statiques).",
   "deployment": "Déploiement",
   "deploymentActionDetails": "Détails de l'action de déploiement",
+  "deploymentActionMissingRequiredFields": "Veuillez renseigner tous les champs obligatoires avant d'enregistrer.",
   "deploymentActionSaved": "Action de déploiement enregistrée pour {{prLabel}} #{{prNumber}}. N'oubliez pas de committer et pousser {{updatedFile}}",
   "deploymentActionSavedDraft": "Action de déploiement enregistrée dans le fichier brouillon pour la future {{prLabel}}. Elle sera liée à la {{prLabel}} une fois créée.",
   "deploymentActionsTab": "Actions de déploiement ({{count}}) (beta)",

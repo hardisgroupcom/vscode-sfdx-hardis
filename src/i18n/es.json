@@ -279,6 +279,7 @@
   "deployToSalesforceDesc": "Construir la documentación HTML y cargarla como un recurso estático con una página VisualForce y una pestaña personalizada. <strong>Nota:</strong> Solo funciona con proyectos pequeños (máx. 5 MB para recursos estáticos).",
   "deployment": "Despliegue",
   "deploymentActionDetails": "Detalles de la acción de despliegue",
+  "deploymentActionMissingRequiredFields": "Complete todos los campos obligatorios antes de guardar.",
   "deploymentActionSaved": "Acción de despliegue guardada para {{prLabel}} #{{prNumber}}. No olvide hacer commit y push de {{updatedFile}}",
   "deploymentActionSavedDraft": "Acción de despliegue guardada en el archivo borrador para la futura {{prLabel}}. Se vinculará a la {{prLabel}} una vez creada.",
   "deploymentActionsTab": "Acciones de despliegue ({{count}}) (beta)",
