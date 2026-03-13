@@ -60,11 +60,19 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       { label: this.t("publishCommunityType"), value: "publish-community" },
       { label: this.t("manualType"), value: "manual" },
     ];
-    this.whenOptions = [
+    this.whenOptions = this._getWhenOptions();
+    this.contextOptions = this._getContextOptions();
+  }
+
+  _getWhenOptions() {
+    return [
       { label: this.t("beforeDeployment"), value: "pre-deploy" },
       { label: this.t("afterDeployment"), value: "post-deploy" },
     ];
-    this.contextOptions = [
+  }
+
+  _getContextOptions() {
+    return [
       { label: this.t("checkAndProcessDeployment"), value: "all" },
       { label: this.t("checkDeploymentOnly"), value: "check-deployment-only" },
       {
@@ -76,12 +84,12 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
 
   // Available action types
   typeOptions = [
-    { label: "Command", value: "command" },
-    { label: "Data", value: "data" },
-    { label: "Apex", value: "apex" },
-    { label: "Schedule Batch", value: "schedule-batch" },
-    { label: "Publish Community", value: "publish-community" },
-    { label: "Manual", value: "manual" },
+    { label: this.t("commandType"), value: "command" },
+    { label: this.t("dataType"), value: "data" },
+    { label: this.t("apexType"), value: "apex" },
+    { label: this.t("scheduleBatchType"), value: "schedule-batch" },
+    { label: this.t("publishCommunityType"), value: "publish-community" },
+    { label: this.t("manualType"), value: "manual" },
   ];
 
   // apexScripts already come as {label, value} objects from backend
@@ -151,17 +159,10 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   }
 
   // When options
-  whenOptions = [
-    { label: "Before Deployment", value: "pre-deploy" },
-    { label: "After Deployment", value: "post-deploy" },
-  ];
+  whenOptions = this._getWhenOptions();
 
   // Context options
-  contextOptions = [
-    { label: "Check & Process Deployment", value: "all" },
-    { label: "Check Deployment Only", value: "check-deployment-only" },
-    { label: "Process Deployment Only", value: "process-deployment-only" },
-  ];
+  contextOptions = this._getContextOptions();
 
   connectedCallback() {
     super.connectedCallback();
