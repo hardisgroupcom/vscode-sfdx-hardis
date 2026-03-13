@@ -16,6 +16,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     if (val && wasViewMode) {
       // Switched into edit mode — trigger schedulable class loading if needed
       this._requestSchedulableClassesIfNeeded(this.displayedAction?.type);
+      this._requestCommunitiesIfNeeded(this.displayedAction?.type);
     }
   }
   get isEditMode() {
@@ -25,6 +26,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   @api apexScripts = [];
   @api sfdmuWorkspaces = [];
   _storedSchedulableClasses = null;
+  _storedCommunities = null;
 
   @api
   set schedulableClasses(val) {
@@ -36,10 +38,22 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     return this._storedSchedulableClasses || [];
   }
 
+  @api
+  set communities(val) {
+    if (Array.isArray(val) && val.length > 0) {
+      this._storedCommunities = val;
+    }
+  }
+  get communities() {
+    return this._storedCommunities || [];
+  }
+
   @api schedulableClassesLoading = false;
+  @api communitiesLoading = false;
   @track editedAction = {};
   @track validationError = "";
   _schedulableClassesRequested = false;
+  _communitiesRequested = false;
 
   @api
   set parentTranslations(val) {
@@ -154,6 +168,27 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     return classes.map((item) => ({ label: item, value: item }));
   }
 
+  get communityOptions() {
+    const selectedCommunity = this.displayedAction?.parameters?.communityName;
+    if (this.isViewMode) {
+      return selectedCommunity ? [{ label: selectedCommunity, value: selectedCommunity }] : [];
+    }
+    if (this.communitiesLoading) {
+      const loadingOption = { label: this.t("loadingCommunities"), value: "" };
+      return selectedCommunity
+        ? [{ label: selectedCommunity, value: selectedCommunity }, loadingOption]
+        : [loadingOption];
+    }
+    const communities = Array.isArray(this.communities) ? this.communities : [];
+    if (this._communitiesRequested && communities.length === 0) {
+      return [{ label: this.t("noCommunityFound"), value: "" }];
+    }
+    if (selectedCommunity && !communities.find((item) => item === selectedCommunity)) {
+      return [{ label: this.t("notVisibleFromOrg", { value: selectedCommunity }), value: selectedCommunity }, ...communities.map((item) => ({ label: item, value: item }))];
+    }
+    return communities.map((item) => ({ label: item, value: item }));
+  }
+
   get isSchedulableClassComboboxDisabled() {
     return this.isViewMode;
   }
@@ -189,6 +224,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       }
     }
     this._requestSchedulableClassesIfNeeded(this.displayedAction?.type);
+    this._requestCommunitiesIfNeeded(this.displayedAction?.type);
   }
 
   get modalTitle() {
@@ -398,6 +434,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     this.editedAction.type = newType;
     this.validationError = "";
     this._requestSchedulableClassesIfNeeded(newType);
+    this._requestCommunitiesIfNeeded(newType);
     // Force re-render to show/hide fields by reassigning the tracked property
     this.editedAction = { ...this.editedAction };
     // Trigger reactivity by reassigning to force getter recalculation
@@ -419,6 +456,23 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     }
     this._schedulableClassesRequested = true;
     this.dispatchEvent(new CustomEvent("loadschedulableclasses"));
+  }
+
+  _requestCommunitiesIfNeeded(type) {
+    if (type !== "publish-community") {
+      return;
+    }
+    if (this.isViewMode) {
+      return;
+    }
+    if (this._communitiesRequested) {
+      return;
+    }
+    if (Array.isArray(this.communities) && this.communities.length) {
+      return;
+    }
+    this._communitiesRequested = true;
+    this.dispatchEvent(new CustomEvent("loadcommunities"));
   }
 
   handleSave() {
@@ -468,6 +522,14 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
 
     if (currentType === "command") {
       requiredFields.push("command");
+    } else if (currentType === "apex") {
+      requiredFields.push("parameters.apexScript");
+    } else if (currentType === "data") {
+      requiredFields.push("parameters.sfdmuProject");
+    } else if (currentType === "publish-community") {
+      requiredFields.push("parameters.communityName");
+    } else if (currentType === "manual") {
+      requiredFields.push("parameters.instructions");
     } else if (currentType === "schedule-batch") {
       requiredFields.push("parameters.className", "parameters.cronExpression");
     }

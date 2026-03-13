@@ -32,6 +32,10 @@ const schedulableClassesByOrgCache = new Map<
   string,
   { expiresAt: number; values: string[] }
 >();
+const communitiesByOrgCache = new Map<
+  string,
+  { expiresAt: number; values: string[] }
+>();
 
 async function getDefaultOrgUsername(): Promise<string> {
   try {
@@ -77,6 +81,40 @@ async function listSchedulableClassesFromDefaultOrg(): Promise<string[]> {
   // Only cache if classes were found
   if (uniqueSorted.length > 0) {
     schedulableClassesByOrgCache.set(orgKey, {
+      expiresAt: now + SCHEDULABLE_CLASSES_CACHE_TTL_MS,
+      values: uniqueSorted,
+    });
+  }
+  return uniqueSorted;
+}
+
+async function listCommunitiesFromDefaultOrg(): Promise<string[]> {
+  const orgKey = await getDefaultOrgUsername();
+  const now = Date.now();
+  const cached = communitiesByOrgCache.get(orgKey);
+  if (cached && cached.expiresAt > now) {
+    return cached.values;
+  }
+
+  const query = "SELECT Name FROM Network ORDER BY Name";
+  const command = `sf data query --query "${query}" --json`;
+  const result = await execSfdxJson(command, {
+    fail: false,
+    output: false,
+  });
+
+  const records = Array.isArray(result?.result?.records)
+    ? result.result.records
+    : [];
+  const values = records
+    .map((record: any) => String(record?.Name || "").trim())
+    .filter((v: string) => v.length > 0);
+
+  const uniqueSorted: string[] = [...new Set<string>(values)].sort(
+    (a: string, b: string) => a.localeCompare(b),
+  );
+  if (uniqueSorted.length > 0) {
+    communitiesByOrgCache.set(orgKey, {
       expiresAt: now + SCHEDULABLE_CLASSES_CACHE_TTL_MS,
       values: uniqueSorted,
     });
@@ -229,6 +267,31 @@ export function registerShowPipeline(commands: Commands) {
             );
             panel.sendMessage({
               type: "returnSchedulableClasses",
+              data: {
+                requestId,
+                values: [],
+              },
+            });
+          }
+        }
+        // Lazy-load communities for publish-community deployment actions
+        else if (type === "loadCommunities") {
+          const requestId = data?.requestId || null;
+          try {
+            const values = await listCommunitiesFromDefaultOrg();
+            panel.sendMessage({
+              type: "returnCommunities",
+              data: {
+                requestId,
+                values,
+              },
+            });
+          } catch (error: any) {
+            Logger.log(
+              `Error loading communities: ${error?.message || error}`,
+            );
+            panel.sendMessage({
+              type: "returnCommunities",
               data: {
                 requestId,
                 values: [],
@@ -745,6 +808,7 @@ export function registerShowPipeline(commands: Commands) {
         displayFeatureBranches: displayFeatureBranches,
         projectApexScripts: projectApexScripts,
         projectSfdmuWorkspaces: projectDataWorkspaces,
+        projectCommunities: [],
         enableDeploymentApexTestClasses: enableDeploymentApexTestClasses,
         availableApexTestClasses: availableApexTestClasses,
       };
@@ -784,6 +848,7 @@ type PipelineInfo = {
   displayFeatureBranches: boolean;
   projectApexScripts: any[];
   projectSfdmuWorkspaces: any[];
+  projectCommunities: any[];
   enableDeploymentApexTestClasses: boolean;
   availableApexTestClasses: string[];
 };

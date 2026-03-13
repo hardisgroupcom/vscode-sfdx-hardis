@@ -146,7 +146,10 @@
               <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
                 <div class="slds-form-element">
                   <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
-                    <span>{i18n.apexScriptLabel}</span>
+                    <span>
+                      <abbr class="slds-required" title={i18n.requiredField}>*</abbr>
+                      {i18n.apexScriptLabel}
+                    </span>
                     <s-multiline-helptext content={i18n.apexScriptHelp} class="slds-icon-text-info"></s-multiline-helptext>
                   </label>
                   <div style="display:flex;align-items:center;gap:0.5rem;">
@@ -156,6 +159,7 @@
                         options={apexScriptOptions}
                         data-field="parameters.apexScript"
                         onchange={handleFieldChange}
+                        required={isEditMode}
                         disabled={isViewMode}
                         variant="label-hidden"
                         placeholder={i18n.selectAnApexScript}
@@ -178,7 +182,10 @@
               <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
                 <div class="slds-form-element">
                   <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
-                    <span>{i18n.sfdmuProjectPath}</span>
+                    <span>
+                      <abbr class="slds-required" title={i18n.requiredField}>*</abbr>
+                      {i18n.sfdmuProjectPath}
+                    </span>
                     <s-multiline-helptext content={i18n.sfdmuProjectHelp} class="slds-icon-text-info"></s-multiline-helptext>
                   </label>
                   <div style="display:flex;align-items:center;gap:0.5rem;">
@@ -188,6 +195,7 @@
                         options={sfdmuWorkspaceOptions}
                         data-field="parameters.sfdmuProject"
                         onchange={handleFieldChange}
+                        required={isEditMode}
                         disabled={isViewMode}
                         variant="label-hidden"
                         placeholder={i18n.selectADataWorkspace}
@@ -210,16 +218,22 @@
               <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
                 <div class="slds-form-element">
                   <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
-                    <span>{i18n.communityNameLabel}</span>
+                    <span>
+                      <abbr class="slds-required" title={i18n.requiredField}>*</abbr>
+                      {i18n.communityNameLabel}
+                    </span>
                     <s-multiline-helptext content={i18n.communityNameHelp} class="slds-icon-text-info"></s-multiline-helptext>
                   </label>
-                  <lightning-input
+                  <lightning-combobox
                     value={displayedAction.parameters.communityName}
+                    options={communityOptions}
                     data-field="parameters.communityName"
                     onchange={handleFieldChange}
+                    required={isEditMode}
                     disabled={isViewMode}
                     variant="label-hidden"
-                  ></lightning-input>
+                    placeholder={i18n.selectACommunity}
+                  ></lightning-combobox>
                 </div>
               </div>
             </template>
@@ -296,13 +310,17 @@
               <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
                 <div class="slds-form-element">
                   <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
-                    <span>{i18n.instructionsLabel}</span>
+                    <span>
+                      <abbr class="slds-required" title={i18n.requiredField}>*</abbr>
+                      {i18n.instructionsLabel}
+                    </span>
                     <s-multiline-helptext content={i18n.instructionsHelp} class="slds-icon-text-info"></s-multiline-helptext>
                   </label>
                   <lightning-textarea
                     value={displayedAction.parameters.instructions}
                     data-field="parameters.instructions"
                     onchange={handleFieldChange}
+                    required={isEditMode}
                     disabled={isViewMode}
                     variant="label-hidden"
                     style="--slds-c-textarea-sizing-min-height: 200px;">

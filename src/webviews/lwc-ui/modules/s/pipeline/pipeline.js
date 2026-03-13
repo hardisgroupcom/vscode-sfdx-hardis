@@ -26,6 +26,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   @track projectSchedulableClasses = [];
   @track schedulableClassesLoading = false;
   @track schedulableClassesRequestId = null;
+  @track projectCommunities = [];
+  @track communitiesLoading = false;
+  @track communitiesRequestId = null;
   _refreshTimer = null;
   _isVisible = true;
   _isAutoRefresh = false;
@@ -511,6 +514,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this.projectApexScripts = data.projectApexScripts || [];
     this.projectSfdmuWorkspaces = data.projectSfdmuWorkspaces || [];
     this.projectSchedulableClasses = data.projectSchedulableClasses || [];
+    this.projectCommunities = data.projectCommunities || [];
     // adjust columns to fit the available width immediately
     setTimeout(() => this.adjustPrColumns(), 50);
     // Render the Mermaid diagram after a brief delay to ensure DOM is ready
@@ -1136,6 +1140,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       case "returnSchedulableClasses":
         this.handleReturnSchedulableClasses(data);
         break;
+      case "returnCommunities":
+        this.handleReturnCommunities(data);
+        break;
       default:
         console.log("Unknown message type:", messageType, data);
     }
@@ -1163,6 +1170,30 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       ? data.values
       : [];
     this.schedulableClassesLoading = false;
+  }
+
+  handleLoadCommunities() {
+    this.communitiesLoading = true;
+    const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    this.communitiesRequestId = requestId;
+    window.sendMessageToVSCode({
+      type: "loadCommunities",
+      data: { requestId },
+    });
+  }
+
+  handleReturnCommunities(data) {
+    if (
+      this.communitiesRequestId &&
+      data?.requestId &&
+      data.requestId !== this.communitiesRequestId
+    ) {
+      return;
+    }
+    this.projectCommunities = Array.isArray(data?.values)
+      ? data.values
+      : [];
+    this.communitiesLoading = false;
   }
 
   handleShowInstalledPackages() {
