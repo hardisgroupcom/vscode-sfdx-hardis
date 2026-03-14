@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [7.0.0] 2026-03-14
+
 - UI refactoring
   - Themes: Light mode & Dark mode
   - Many UI/UX improvements
@@ -28,11 +30,11 @@
   - Orgs Manager: Invite to disconnect from production orgs
   - Fix helptext position
 
-## [6.29.1] 2025-02-24
+## [6.29.1] 2026-02-24
 
 - Custom colors: Fixed a bug where the incorrect color logic for set for Sandbox- and Scratch orgs. Also moved back the dev color to where it was in 6.28.0.
 
-## [6.29.0] 2025-02-24
+## [6.29.0] 2026-02-24
 
 - Custom Color Improvements
   - Support for selecting which settings.json file to update the colors to (Workspace or User).
@@ -48,21 +50,21 @@
   - Add column "Created date" in Exported files and logs tables
   - Handle refresh event after import, export or delete operations
 
-## [6.28.0] 2025-02-22
+## [6.28.0] 2026-02-22
 
 - Data Workbench: Allow to configure all settings related to SFDMU export.json file
 
-## [6.27.2] 2025-02-20
+## [6.27.2] 202--02-20
 
 - Improve Data Workbench to individually edit objects in modal, not all objects at once
 - Improve tooltips
 
-## [6.27.1] 2025-02-19
+## [6.27.1] 2026-02-19
 
 - Improves duplicate command prevention
 - Add support of Mock data in Data Workbench
 
-## [6.27.0] 2025-02-10
+## [6.27.0] 2026-02-10
 
 - New Documentation Workbench LWC to gather in one place all documentation related commands, and allow to easily run them and configure related settings. Commands include:
   - Generate documentation, with options
@@ -75,32 +77,32 @@
   - Override prompt templates
 - Command runner: Display total elapsed time on progress components when completed.
 
-## [6.26.2] 2025-02-04
+## [6.26.2] 2026-02-04
 
 - Improve release workflows
 
-## [6.26.1] 2025-02-04
+## [6.26.1] 2026-02-04
 
 - Upgrade npm dependencies
 
-## [6.26.0] 2025-02-01
+## [6.26.0] 2026-02-01
 
 - Add new monitoring command **Health Check** to audit security policies of an org
 
-## [6.25.5] 2025-01-29
+## [6.25.5] 2026-01-29
 
 - January egg
 
-## [6.25.3] 2025-01-27
+## [6.25.3] 2026-01-27
 
 - Suggest to clone a repository if not in a git repo (status panel)
 
-## [6.25.2] 2025-01-26
+## [6.25.2] 2026-01-26
 
 - Deactivate and re-active sf-git-merge-driver during plugin upgrade.
 - Pipeline view: Use `sf org open` command to open orgs when clicking in the diagram, to benefit from existing user authentication.
 
-## [6.25.1] 2025-01-21
+## [6.25.1] 2026-01-21
 
 - Refactor command groups for improved navigation in context menus
 - Add focus management for modal input fields in package XML component
@@ -110,17 +112,17 @@
   - Display monitored org url
   - Rearrange buttons for better UX
 
-## [6.25.0] 2025-01-18
+## [6.25.0] 2026-01-18
 
 - Allow Package XML Viewer to also edit package
 - Add synchronization of JSON Schema in build script
 - Display package and flow contextual menu commands only on relevant files
 
-## [6.24.1] 2025-01-16
+## [6.24.1] 2026-01-16
 
 - Add **skipCodeCoverage** in pipeline configuration (branch scoped)
 
-## [6.24.0] 2025-01-13
+## [6.24.0] 2026-01-13
 
 - Adds copy-to-clipboard functionality to logs to enhance UX when configuring new org authentication
 - Update messages to replace text emojis by real emojis 😁
