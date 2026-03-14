@@ -3,9 +3,9 @@
 // @ts-nocheck
 // eslint-env es6
 import { LightningElement, api, track } from "lwc";
-import "s/forceLightTheme"; // Ensure light theme is applied
+import { SharedMixin } from "s/sharedMixin";
 
-export default class Pipeline extends LightningElement {
+export default class Pipeline extends SharedMixin(LightningElement) {
   @track prButtonInfo;
   enableDeploymentApexTestClasses = false;
   @track gitAuthenticated = false;
@@ -23,10 +23,15 @@ export default class Pipeline extends LightningElement {
   @track loading = false;
   @track projectApexScripts = [];
   @track projectSfdmuWorkspaces = [];
+  @track projectSchedulableClasses = [];
+  @track schedulableClassesLoading = false;
+  @track schedulableClassesRequestId = null;
+  @track projectCommunities = [];
+  @track communitiesLoading = false;
+  @track communitiesRequestId = null;
   _refreshTimer = null;
   _isVisible = true;
   _isAutoRefresh = false;
-  @track images = {};
   prColumns = [
     {
       key: "number",
@@ -88,55 +93,57 @@ export default class Pipeline extends LightningElement {
   ];
 
   // Columns for modal PR display (without jobs status, with merge date)
-  modalPrColumns = [
-    {
-      key: "number",
-      label: "#",
-      fieldName: "number",
-      type: "text",
-      initialWidth: 40,
-      wrapText: true,
-    },
-    {
-      key: "title",
-      label: "Title",
-      fieldName: "webUrl",
-      type: "url",
-      typeAttributes: { label: { fieldName: "title" }, target: "_blank" },
-      initialWidth: 300,
-      wrapText: true,
-    },
-    {
-      key: "author",
-      label: "Author",
-      fieldName: "authorLabel",
-      type: "text",
-      wrapText: true,
-    },
-    {
-      key: "mergeDate",
-      label: "Merged",
-      fieldName: "mergeDateFormatted",
-      type: "text",
-      wrapText: true,
-      initialWidth: 100,
-    },
-    {
-      key: "source",
-      label: "Source",
-      fieldName: "sourceBranch",
-      type: "text",
-      wrapText: true,
-      initialWidth: 200,
-    },
-    {
-      key: "target",
-      label: "Target",
-      fieldName: "targetBranch",
-      type: "text",
-      wrapText: true,
-    },
-  ];
+  get modalPrColumns() {
+    return [
+      {
+        key: "number",
+        label: "#",
+        fieldName: "number",
+        type: "text",
+        initialWidth: 40,
+        wrapText: true,
+      },
+      {
+        key: "title",
+        label: this.i18n.titleLabel,
+        fieldName: "webUrl",
+        type: "url",
+        typeAttributes: { label: { fieldName: "title" }, target: "_blank" },
+        initialWidth: 300,
+        wrapText: true,
+      },
+      {
+        key: "author",
+        label: this.i18n.authorLabel,
+        fieldName: "authorLabel",
+        type: "text",
+        wrapText: true,
+      },
+      {
+        key: "mergeDate",
+        label: this.i18n.mergedLabel,
+        fieldName: "mergeDateFormatted",
+        type: "text",
+        wrapText: true,
+        initialWidth: 100,
+      },
+      {
+        key: "source",
+        label: this.i18n.sourceLabel,
+        fieldName: "sourceBranch",
+        type: "text",
+        wrapText: true,
+        initialWidth: 200,
+      },
+      {
+        key: "target",
+        label: this.i18n.targetLabel,
+        fieldName: "targetBranch",
+        type: "text",
+        wrapText: true,
+      },
+    ];
+  }
 
   modalTicketColumns = [];
 
@@ -144,8 +151,20 @@ export default class Pipeline extends LightningElement {
   get computedModalActionsColumns() {
     const columns = [
       {
+        key: "type",
+        label: this.i18n.typeLabel,
+        fieldName: "type",
+        type: "text",
+        cellAttributes: {
+          iconName: { fieldName: "typeIconName" },
+          iconPosition: "left",
+        },
+        wrapText: true,
+        initialWidth: 150,
+      },
+      {
         key: "label",
-        label: "Label",
+        label: this.i18n.actionLabelField,
         fieldName: "label",
         type: "button",
         typeAttributes: {
@@ -156,16 +175,8 @@ export default class Pipeline extends LightningElement {
         wrapText: true,
       },
       {
-        key: "type",
-        label: "Type",
-        fieldName: "type",
-        type: "text",
-        wrapText: true,
-        initialWidth: 150,
-      },
-      {
         key: "when",
-        label: "When",
+        label: this.i18n.actionWhenField,
         fieldName: "when",
         type: "text",
         wrapText: true,
@@ -177,11 +188,28 @@ export default class Pipeline extends LightningElement {
     if (this.modalMode !== "singlePR") {
       columns.push({
         key: "pullRequest",
-        label: this.prButtonInfo?.pullRequestLabel || "Pull Request",
+        label:
+          this.prButtonInfo?.pullRequestLabel || this.i18n.pullRequestLabel,
         fieldName: "prWebUrl",
         type: "url",
         typeAttributes: { label: { fieldName: "prLabel" }, target: "_blank" },
         wrapText: true,
+      });
+    }
+
+    if (this.modalMode === "singlePR") {
+      columns.push({
+        key: "delete",
+        label: this.i18n.deleteLabel,
+        type: "button-icon",
+        initialWidth: 70,
+        typeAttributes: {
+          name: "delete_action",
+          iconName: "utility:delete",
+          title: this.i18n.deleteLabel,
+          alternativeText: this.i18n.deleteLabel,
+          variant: "bare",
+        },
       });
     }
 
@@ -206,21 +234,21 @@ export default class Pipeline extends LightningElement {
       columns.push(
         {
           key: "subject",
-          label: "Subject",
+          label: this.i18n.subjectLabel,
           fieldName: "subject",
           type: "text",
           wrapText: true,
         },
         {
           key: "status",
-          label: "Status",
+          label: this.i18n.statusLabel,
           fieldName: "statusLabel",
           type: "text",
           wrapText: true,
         },
         {
           key: "author",
-          label: "Author",
+          label: this.i18n.authorLabel,
           fieldName: "authorLabel",
           type: "text",
           wrapText: true,
@@ -232,7 +260,8 @@ export default class Pipeline extends LightningElement {
     if (this.modalMode !== "singlePR") {
       columns.push({
         key: "pullRequest",
-        label: this.prButtonInfo?.pullRequestLabel || "Pull Request",
+        label:
+          this.prButtonInfo?.pullRequestLabel || this.i18n.pullRequestLabel,
         fieldName: "prWebUrl",
         type: "url",
         typeAttributes: { label: { fieldName: "prLabel" }, target: "_blank" },
@@ -270,14 +299,15 @@ export default class Pipeline extends LightningElement {
     return [
       {
         key: "apexTestClass",
-        label: "Apex Test Class",
+        label: this.i18n.apexTestClassLabel,
         fieldName: "apexTestClass",
         type: "text",
         wrapText: true,
       },
       {
         key: "pullRequest",
-        label: this.prButtonInfo?.pullRequestLabel || "Pull Request",
+        label:
+          this.prButtonInfo?.pullRequestLabel || this.i18n.pullRequestLabel,
         fieldName: "prWebUrl",
         type: "url",
         typeAttributes: { label: { fieldName: "prLabel" }, target: "_blank" },
@@ -299,6 +329,18 @@ export default class Pipeline extends LightningElement {
 
   get isApexTestsViewMode() {
     return this.apexTestsMode === "view";
+  }
+
+  get errorLoadingPipelineMsg() {
+    return this.t("errorLoadingPipeline", { error: this.error });
+  }
+
+  get apexTestsConfiguredForPrMsg() {
+    return this.t("apexTestsConfiguredForPr", { prLabel: this.prLabel });
+  }
+
+  get readOnlyBranchModeMsg() {
+    return this.t("readOnlyBranchModeApexTests", { prLabel: this.prLabel });
   }
 
   get hasSelectedApexTests() {
@@ -346,14 +388,15 @@ export default class Pipeline extends LightningElement {
     return [
       {
         key: "apexTestClass",
-        label: "Apex Test Class",
+        label: this.i18n.apexTestClassLabel,
         fieldName: "apexTestClass",
         type: "text",
         wrapText: true,
       },
       {
         key: "pullRequest",
-        label: this.prButtonInfo?.pullRequestLabel || "Pull Request",
+        label:
+          this.prButtonInfo?.pullRequestLabel || this.i18n.pullRequestLabel,
         fieldName: "prWebUrl",
         type: "url",
         typeAttributes: { label: { fieldName: "prLabel" }, target: "_blank" },
@@ -380,20 +423,12 @@ export default class Pipeline extends LightningElement {
       (this.prButtonInfo && this.prButtonInfo.icon) ||
       this.repoPlatformLabel ||
       "";
-    if (key && this.images && this.images[key.toLowerCase()]) {
-      return this.images[key.toLowerCase()];
-    }
-    // fallback to a neutral link icon if none available
-    return this.images["git"];
+    return this.getImageUrl((key || "").toLowerCase(), "git");
   }
 
   get ticketProviderIconUrl() {
     const key = (this.ticketProviderName || "").toLowerCase();
-    if (key && this.images && this.images[key]) {
-      return this.images[key];
-    }
-    // default ticket icon (jira) if available
-    return this.images["ticket"];
+    return this.getImageUrl(key, "ticket");
   }
 
   // CSS classes to toggle colored vs greyed appearance
@@ -465,8 +500,8 @@ export default class Pipeline extends LightningElement {
     this.lastDiagram = "";
     this.gitAuthenticated = data?.gitAuthenticated ?? false;
     this.connectedLabel = this.gitAuthenticated
-      ? `Connected to ${this.repoPlatformLabel}`
-      : `Connect to ${this.repoPlatformLabel}`;
+      ? this.t("connectedTo", { platform: this.repoPlatformLabel })
+      : this.t("connectTo", { platform: this.repoPlatformLabel });
     this.connectedIconName = this.gitAuthenticated
       ? "utility:check"
       : "utility:link";
@@ -475,8 +510,8 @@ export default class Pipeline extends LightningElement {
     this.ticketAuthenticated = data?.ticketAuthenticated ?? false;
     this.ticketProviderName = data?.ticketProviderName || "Ticketing";
     this.ticketConnectedLabel = this.ticketAuthenticated
-      ? `Connected to ${this.ticketProviderName}`
-      : `Connect to ${this.ticketProviderName}`;
+      ? this.t("connectedTo", { platform: this.ticketProviderName })
+      : this.t("connectTo", { platform: this.ticketProviderName });
     this.ticketConnectedIconName = this.ticketAuthenticated
       ? "utility:check"
       : "utility:link";
@@ -494,6 +529,8 @@ export default class Pipeline extends LightningElement {
     // Store project resources
     this.projectApexScripts = data.projectApexScripts || [];
     this.projectSfdmuWorkspaces = data.projectSfdmuWorkspaces || [];
+    this.projectSchedulableClasses = data.projectSchedulableClasses || [];
+    this.projectCommunities = data.projectCommunities || [];
     // adjust columns to fit the available width immediately
     setTimeout(() => this.adjustPrColumns(), 50);
     // Render the Mermaid diagram after a brief delay to ensure DOM is ready
@@ -509,7 +546,7 @@ export default class Pipeline extends LightningElement {
   }
 
   get prLabel() {
-    return this.prButtonInfo?.pullRequestLabel || "Pull Request";
+    return this.prButtonInfo?.pullRequestLabel || this.i18n.pullRequestLabel;
   }
 
   get showApexTestsTab() {
@@ -536,7 +573,7 @@ export default class Pipeline extends LightningElement {
       }
       count = uniq.size;
     }
-    return `Apex Tests (${count}) (beta)`;
+    return this.t("apexTestsTab", { count });
   }
 
   get canEditApexTestsInModal() {
@@ -649,6 +686,10 @@ export default class Pipeline extends LightningElement {
   }
 
   connectedCallback() {
+    super.connectedCallback();
+    this.connectedLabel = this.i18n.connectToGit;
+    this.ticketConnectedLabel = this.i18n.connectToTicketing;
+    this._translatePrColumnLabels();
     this._boundAdjust = this.adjustPrColumns.bind(this);
     this._boundVisibilityChange = this._handleVisibilityChange.bind(this);
     if (typeof window !== "undefined" && window.addEventListener) {
@@ -659,6 +700,21 @@ export default class Pipeline extends LightningElement {
       );
     }
     this._isVisible = !document.hidden;
+  }
+
+  _translatePrColumnLabels() {
+    const labelMap = {
+      title: this.i18n.titleLabel,
+      author: this.i18n.authorLabel,
+      source: this.i18n.sourceLabel,
+      target: this.i18n.targetLabel,
+    };
+    this.prColumns = this.prColumns.map((col) => {
+      if (col.key && labelMap[col.key]) {
+        return Object.assign({}, col, { label: labelMap[col.key] });
+      }
+      return col;
+    });
   }
 
   disconnectedCallback() {
@@ -852,25 +908,33 @@ export default class Pipeline extends LightningElement {
 
   get openPrTabLabel() {
     const count = this.openPullRequests ? this.openPullRequests.length : 0;
-    const prLabel = this.prButtonInfo?.pullRequestLabel
+    const prLabelPlural = this.prButtonInfo?.pullRequestLabel
       ? this.prButtonInfo.pullRequestLabel + "s"
-      : "Pull Requests";
-    return count > 0 ? `Open ${prLabel} (${count})` : `Open ${prLabel}`;
+      : this.i18n.pullRequests;
+    return count > 0
+      ? this.t("openPrTabLabelWithCount", { prLabel: prLabelPlural, count })
+      : this.t("openPrTabLabel", { prLabel: prLabelPlural });
   }
 
   get currentPRCardTitle() {
-    const prLabel = this.prButtonInfo?.pullRequestLabel || "Pull Request";
-    return `My ${prLabel}`;
+    const prLabel =
+      this.prButtonInfo?.pullRequestLabel || this.i18n.pullRequestLabel;
+    return this.t("myPrCardTitle", { prLabel });
   }
 
   get currentPRDescription() {
     if (!this.currentBranchPullRequest) {
-      return "You need to connect to your Git Server to see pull request details and manage pre-post deployment actions.";
+      return this.i18n.connectGitToSeePrDetails;
     }
     if (this.currentBranchPullRequest.number === -1) {
-      return `${this.prButtonInfo.pullRequestLabel} not created yet. Click to manage pre-post deployment actions.`;
+      return this.t("prNotCreatedYet", {
+        prLabel: this.prButtonInfo.pullRequestLabel,
+      });
     }
-    return `#${this.currentBranchPullRequest.number} - ${this.currentBranchPullRequest.title || ""}. Click to see related tickets and manage pre-post deployment actions.`;
+    return this.t("prClickToManageActions", {
+      num: this.currentBranchPullRequest.number,
+      title: this.currentBranchPullRequest.title || "",
+    });
   }
 
   openPrPage() {
@@ -1080,9 +1144,6 @@ export default class Pipeline extends LightningElement {
       case "refreshPipeline":
         this.refreshPipeline();
         break;
-      case "imageResources":
-        this.handleImageResources(data);
-        break;
       case "openPullRequestsUpdated":
         // allow dynamic updates from extension host
         this.openPullRequests = this._mapPrsWithIcons(data || []);
@@ -1092,24 +1153,63 @@ export default class Pipeline extends LightningElement {
       case "returnGetPrInfoForModal":
         this.handleReturnGetPrInfoForModal(data);
         break;
+      case "returnSchedulableClasses":
+        this.handleReturnSchedulableClasses(data);
+        break;
+      case "returnCommunities":
+        this.handleReturnCommunities(data);
+        break;
       default:
         console.log("Unknown message type:", messageType, data);
     }
   }
 
-  handleImageResources(data) {
-    if (data && data?.images) {
-      // Normalize keys to lowercase for easy lookup (e.g., GitHub -> github)
-      const normalized = {};
-      for (const [key, url] of Object.entries(data.images)) {
-        if (!key) {
-          continue;
-        }
-        normalized[key.toLowerCase()] = url;
-      }
-      // merge into existing images map
-      this.images = Object.assign({}, this.images || {}, normalized);
+  handleLoadSchedulableClasses() {
+    this.schedulableClassesLoading = true;
+    const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    this.schedulableClassesRequestId = requestId;
+    window.sendMessageToVSCode({
+      type: "loadSchedulableClasses",
+      data: { requestId },
+    });
+  }
+
+  handleReturnSchedulableClasses(data) {
+    if (
+      this.schedulableClassesRequestId &&
+      data?.requestId &&
+      data.requestId !== this.schedulableClassesRequestId
+    ) {
+      return;
     }
+    this.projectSchedulableClasses = Array.isArray(data?.values)
+      ? data.values
+      : [];
+    this.schedulableClassesLoading = false;
+  }
+
+  handleLoadCommunities() {
+    this.communitiesLoading = true;
+    const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    this.communitiesRequestId = requestId;
+    window.sendMessageToVSCode({
+      type: "loadCommunities",
+      data: { requestId },
+    });
+  }
+
+  handleReturnCommunities(data) {
+    if (
+      this.communitiesRequestId &&
+      data?.requestId &&
+      data.requestId !== this.communitiesRequestId
+    ) {
+      return;
+    }
+    this.projectCommunities = Array.isArray(data?.values)
+      ? data.values
+      : [];
+    this.communitiesLoading = false;
   }
 
   handleShowInstalledPackages() {
@@ -1318,7 +1418,7 @@ export default class Pipeline extends LightningElement {
 
   _updatePanelTitle() {
     const prCount = this.openPullRequests ? this.openPullRequests.length : 0;
-    const baseTitle = "DevOps Pipeline";
+    const baseTitle = this.i18n.devOpsPipeline;
     const title = prCount > 0 ? `${baseTitle} (${prCount})` : baseTitle;
 
     window.sendMessageToVSCode({
@@ -1543,6 +1643,41 @@ export default class Pipeline extends LightningElement {
       this.isDeploymentActionEditMode = false;
       this.showDeploymentActionModal = true;
     }
+
+    if (action.name === "delete_action") {
+      this.handleDeleteDeploymentAction(row);
+    }
+  }
+
+  handleDeleteDeploymentAction(row) {
+    const fullAction = row?._fullAction;
+    const prNumber = fullAction?.pullRequest?.number ?? row?.prNumber;
+    const commandId = fullAction?.id;
+    const when = fullAction?.when ?? row?.whenCode;
+
+    if (!prNumber || !commandId || !when) {
+      console.error("Cannot delete deployment action: missing prNumber, commandId, or when");
+      return;
+    }
+
+    this.modalActions = this.modalActions.filter((actionRow) => {
+      return !(actionRow?._fullAction?.id === commandId && actionRow?.prNumber === prNumber);
+    });
+
+    if (this.currentDeploymentAction?.id === commandId) {
+      this.showDeploymentActionModal = false;
+      this.currentDeploymentAction = null;
+      this.isDeploymentActionEditMode = false;
+    }
+
+    window.sendMessageToVSCode({
+      type: "deleteDeploymentAction",
+      data: {
+        prNumber,
+        commandId,
+        when,
+      },
+    });
   }
 
   handleCloseDeploymentActionModal() {
@@ -1565,12 +1700,10 @@ export default class Pipeline extends LightningElement {
     }
 
     const when = action.when;
-    const whenLabel =
-      when === "pre-deploy"
-        ? "Pre-Deploy"
-        : when === "post-deploy"
-          ? "Post-Deploy"
-          : "Unknown";
+    const whenLabel = this._getActionWhenLabel(when);
+    const typeCode = action.type || "command";
+    const typeLabel = this._getActionTypeLabel(typeCode);
+    const typeIconName = this._getActionTypeIconName(typeCode);
 
     // Update the modalActions list immediately with the new values
     const actionIndex = this.modalActions.findIndex(
@@ -1584,9 +1717,12 @@ export default class Pipeline extends LightningElement {
       // Update existing action
       const updatedRow = {
         ...this.modalActions[actionIndex],
-        label: action.label || "Unnamed Action",
-        type: action.type || "command",
+        label: action.label || this.i18n.unnamedAction,
+        type: typeLabel,
+        typeIconName: typeIconName,
         when: whenLabel,
+        whenCode: when,
+        typeCode: typeCode,
         _fullAction: {
           ...action,
           pullRequest: {
@@ -1610,9 +1746,12 @@ export default class Pipeline extends LightningElement {
       // Add new action to the list
       const newRow = {
         id: `${prNumber}-${action.type || "action"}-${this.modalActions.length}`,
-        label: action.label || "Unnamed Action",
-        type: action.type || "command",
+        label: action.label || this.i18n.unnamedAction,
+        type: typeLabel,
+        typeIconName: typeIconName,
         when: whenLabel,
+        whenCode: when,
+        typeCode: typeCode,
         prLabel: `#${prNumber} - ${action.pullRequest?.title || ""}`,
         prWebUrl: action.pullRequest?.webUrl || "",
         prNumber: prNumber,
@@ -1742,29 +1881,35 @@ export default class Pipeline extends LightningElement {
     if (this.modalMode === "singlePR" && this.modalPullRequests.length === 1) {
       const pr = this.modalPullRequests[0];
       if (pr.number === -1) {
-        return pr.title || "Pull Request";
+        return pr.title || this.i18n.pullRequestLabel;
       }
-      return `#${pr.number} - ${pr.title || "Pull Request"}`;
+      return `#${pr.number} - ${pr.title || this.i18n.pullRequestLabel}`;
     }
-    const prLabel = this.prButtonInfo?.pullRequestLabel || "Pull Request";
+    const prLabel =
+      this.prButtonInfo?.pullRequestLabel || this.i18n.pullRequestLabel;
     const count = this.modalPullRequests.length;
-    return `${prLabel}s in ${this.modalBranchName} (${count})`;
+    return this.t("prModalTitle", {
+      prLabel,
+      branch: this.modalBranchName,
+      count,
+    });
   }
 
   get modalPrsTabLabel() {
-    const prLabel = this.prButtonInfo?.pullRequestLabel || "Pull Request";
+    const prLabel =
+      this.prButtonInfo?.pullRequestLabel || this.i18n.pullRequestLabel;
     const count = this.modalPullRequests.length;
-    return `${prLabel}s (${count})`;
+    return this.t("prModalPrsTab", { prLabel, count });
   }
 
   get modalTicketsTabLabel() {
     const count = this.modalTickets.length;
-    return `Tickets (${count})`;
+    return this.t("ticketsTab", { count });
   }
 
   get modalActionsTabLabel() {
     const count = this.modalActions.length;
-    return `Deployment Actions (${count}) (beta)`;
+    return this.t("deploymentActionsTab", { count });
   }
 
   get showPRTab() {
@@ -1786,10 +1931,14 @@ export default class Pipeline extends LightningElement {
   get singlePRViewButtonLabel() {
     if (this.modalPullRequests.length === 1) {
       const pr = this.modalPullRequests[0];
-      const gitProvider = this.repoPlatformLabel || "Git";
-      return `View #${pr.number} - ${pr.title || ""} on ${gitProvider}`;
+      const platform = this.repoPlatformLabel || "Git";
+      return this.t("viewPrOnPlatform", {
+        num: pr.number,
+        title: pr.title || "",
+        platform,
+      });
     }
-    return "View Pull Request";
+    return this.i18n.viewPullRequest;
   }
 
   handleOpenSinglePRUrl(event) {
@@ -1834,10 +1983,10 @@ export default class Pipeline extends LightningElement {
   _sortActions(actionRows) {
     // Sort by when (Pre-Deploy first, then Post-Deploy), then by PR number
     return actionRows.sort((a, b) => {
-      // First sort by when label
-      const whenOrder = { "Pre-Deploy": 0, "Post-Deploy": 1, Unknown: 2 };
-      const whenA = whenOrder[a.when] ?? 2;
-      const whenB = whenOrder[b.when] ?? 2;
+      // First sort by when code
+      const whenOrder = { "pre-deploy": 0, "post-deploy": 1, unknown: 2 };
+      const whenA = whenOrder[a.whenCode ?? a.when] ?? 2;
+      const whenB = whenOrder[b.whenCode ?? b.when] ?? 2;
 
       if (whenA !== whenB) {
         return whenA - whenB;
@@ -1862,12 +2011,10 @@ export default class Pipeline extends LightningElement {
         for (const action of pr.deploymentActions) {
           if (action) {
             const when = action.when;
-            const whenLabel =
-              when === "pre-deploy"
-                ? "Pre-Deploy"
-                : when === "post-deploy"
-                  ? "Post-Deploy"
-                  : "Unknown";
+            const whenLabel = this._getActionWhenLabel(when);
+            const typeCode = action.type || "command";
+            const typeLabel = this._getActionTypeLabel(typeCode);
+            const typeIconName = this._getActionTypeIconName(typeCode);
 
             // Store full action object for modal
             const fullAction = {
@@ -1881,9 +2028,12 @@ export default class Pipeline extends LightningElement {
 
             actionRows.push({
               id: `${pr.number}-${action.type || "action"}-${actionRows.length}`,
-              label: action.label || "Unnamed Action",
-              type: action.type || "command",
+              label: action.label || this.i18n.unnamedAction,
+              type: typeLabel,
+              typeIconName: typeIconName,
+              typeCode: typeCode,
               when: whenLabel,
+              whenCode: when,
               prLabel: `#${pr.number} - ${pr.title || ""}`,
               prWebUrl: pr.webUrl || "",
               prNumber: pr.number || 0,
@@ -1896,5 +2046,39 @@ export default class Pipeline extends LightningElement {
 
     // Use the shared sorting method
     return this._sortActions(actionRows);
+  }
+
+  _getActionWhenLabel(whenCode) {
+    if (whenCode === "pre-deploy") {
+      return this.i18n.preDeploy;
+    }
+    if (whenCode === "post-deploy") {
+      return this.i18n.postDeploy;
+    }
+    return this.i18n.unknownLabel;
+  }
+
+  _getActionTypeLabel(typeCode) {
+    const typeLabelByCode = {
+      command: this.i18n.commandType,
+      data: this.i18n.dataType,
+      apex: this.i18n.apexType,
+      "schedule-batch": this.i18n.scheduleBatchType,
+      "publish-community": this.i18n.publishCommunityType,
+      manual: this.i18n.manualType,
+    };
+    return typeLabelByCode[typeCode] || this.i18n.unknownLabel;
+  }
+
+  _getActionTypeIconName(typeCode) {
+    const typeIconByCode = {
+      command: "utility:apex",
+      data: "utility:database",
+      apex: "utility:apex_alt",
+      "schedule-batch": "utility:event",
+      "publish-community": "utility:global",
+      manual: "utility:task",
+    };
+    return typeIconByCode[typeCode] || "utility:question";
   }
 }

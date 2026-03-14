@@ -4,6 +4,7 @@ import { Commands } from "../commands";
 import { execSfdxJson } from "../utils";
 import { Logger } from "../logger";
 import { listAllOrgs } from "../utils/orgUtils";
+import { t } from "../i18n/i18n";
 
 let loadOrgsInProgressPromise: Thenable<any> | null = null;
 let loadOrgsQueue: Array<{
@@ -21,15 +22,12 @@ export function registerShowOrgsManager(commandThis: Commands) {
       let orgs: any = [];
       // Load orgs using orgUtils
       try {
-        orgs = await loadOrgsWithProgress(
-          false,
-          "Loading Salesforce orgs...\n(it can be long, make some cleaning to make it faster 🙃)",
-        );
+        orgs = await loadOrgsWithProgress(false, t("loadingSalesforceOrgs"));
 
         const panel = lwcManager.getOrCreatePanel("s-org-manager", {
           orgs: orgs,
         });
-        panel.updateTitle("Orgs Manager");
+        panel.updateTitle(t("orgsManager"));
 
         // Track the last requested 'all' flag so it persists between operations
         let currentAllFlag = false;
@@ -50,14 +48,14 @@ export function registerShowOrgsManager(commandThis: Commands) {
               const usernames = data?.usernames || [];
               if (usernames.length === 0) {
                 vscode.window.showInformationMessage(
-                  "No orgs selected to forget.",
+                  t("noOrgsSelectedToForget"),
                 );
                 return;
               }
 
               const result = await forgetOrgsWithProgress(
                 usernames,
-                `Forgetting ${usernames.length} org(s)...`,
+                t("forgettingNOrgs", { count: usernames.length }),
               );
 
               // send back result and refresh list
@@ -69,12 +67,12 @@ export function registerShowOrgsManager(commandThis: Commands) {
                 );
                 panel.sendInitializationData({ orgs: [...orgs] });
                 vscode.window.showInformationMessage(
-                  `Forgot ${result.successUsernames.length} org(s).`,
+                  t("forgotNOrgs", { count: result.successUsernames.length }),
                 );
               }, 1000);
             } catch (error: any) {
               vscode.window.showErrorMessage(
-                `Error forgetting orgs: ${error?.message || error}`,
+                t("errorForgettingOrgs", { error: error?.message || error }),
               );
             }
           } else if (type === "removeRecommended") {
@@ -89,29 +87,29 @@ export function registerShowOrgsManager(commandThis: Commands) {
             }
 
             if (usernames.length === 0) {
-              vscode.window.showInformationMessage(
-                "No recommended orgs found to remove.",
-              );
+              vscode.window.showInformationMessage(t("noRecommendedOrgsFound"));
               return;
             }
 
             try {
               const confirm = await vscode.window.showWarningMessage(
-                `This will forget ${usernames.length} orgs (disconnected, deleted or expired). Are you sure?`,
+                t("confirmForgetNOrgs", { count: usernames.length }),
                 {},
-                "Yes",
-                "No",
+                t("yesLabel"),
+                t("noLabel"),
               );
-              if (confirm !== "Yes") {
+              if (confirm !== t("yesLabel")) {
                 return;
               }
 
               const result = await forgetOrgsWithProgress(
                 usernames,
-                `Forgetting ${usernames.length} recommended org(s)...`,
+                t("forgettingNOrgs", { count: usernames.length }),
               );
               vscode.window.showInformationMessage(
-                `Forgot ${result.successUsernames.length} recommended org(s).`,
+                t("forgotNRecommendedOrgs", {
+                  count: result.successUsernames.length,
+                }),
               );
               /* jscpd:ignore-start */
               setTimeout(async () => {
@@ -124,7 +122,9 @@ export function registerShowOrgsManager(commandThis: Commands) {
               }, 1000);
             } catch (error: any) {
               vscode.window.showErrorMessage(
-                `Error removing recommended orgs: ${error?.message || error}`,
+                t("errorRemovingRecommendedOrgs", {
+                  error: error?.message || error,
+                }),
               );
             }
             /* jscpd:ignore-end */
@@ -133,9 +133,7 @@ export function registerShowOrgsManager(commandThis: Commands) {
               const { aliasChanges } = data;
 
               if (!aliasChanges || aliasChanges.length === 0) {
-                vscode.window.showInformationMessage(
-                  "No alias changes to save.",
-                );
+                vscode.window.showInformationMessage(t("noAliasChangesToSave"));
                 return;
               }
 
@@ -143,7 +141,7 @@ export function registerShowOrgsManager(commandThis: Commands) {
               await vscode.window.withProgress(
                 {
                   location: vscode.ProgressLocation.Notification,
-                  title: `Setting ${aliasChanges.length} alias(es)...`,
+                  title: t("settingNAliases", { count: aliasChanges.length }),
                   cancellable: false,
                 },
                 async () => {
@@ -176,7 +174,9 @@ export function registerShowOrgsManager(commandThis: Commands) {
               );
 
               vscode.window.showInformationMessage(
-                `Successfully updated ${aliasChanges.length} alias(es)`,
+                t("successfullyUpdatedNAliases", {
+                  count: aliasChanges.length,
+                }),
               );
 
               /* jscpd:ignore start */
@@ -191,7 +191,7 @@ export function registerShowOrgsManager(commandThis: Commands) {
               }, 1000);
             } catch (error: any) {
               vscode.window.showErrorMessage(
-                `Error setting aliases: ${error?.message || error}`,
+                t("errorSettingAliases", { error: error?.message || error }),
               );
               /* jscpd:ignore end */
             }
@@ -200,7 +200,7 @@ export function registerShowOrgsManager(commandThis: Commands) {
       } catch (error: any) {
         Logger.log("Error opening orgs manager:\n" + JSON.stringify(error));
         vscode.window.showErrorMessage(
-          "Failed to open Org Manager: " + (error?.message || error),
+          t("failedToOpenOrgManager", { error: error?.message || error }),
         );
       }
     },
@@ -235,7 +235,11 @@ async function forgetOrgsWithProgress(usernames: string[], title: string) {
         const u = usernames[i];
         const increment = Math.round(100 / total);
         progress.report({
-          message: `Forgetting ${u} (${i + 1}/${total})`,
+          message: t("forgettingOrgProgress", {
+            username: u,
+            current: i + 1,
+            total,
+          }),
           increment,
         });
         try {
@@ -293,8 +297,8 @@ async function processLoadOrgsQueue(): Promise<void> {
   const title =
     latestRequest.title ||
     (latestRequest.all
-      ? "Loading all Salesforce orgs..."
-      : "Loading Salesforce orgs...");
+      ? t("loadingAllSalesforceOrgs")
+      : t("loadingSalesforceOrgsShort"));
 
   // Create the progress notification with the latest request's parameters
   loadOrgsInProgressPromise = vscode.window.withProgress(

@@ -23,3 +23,9 @@ docs/**
 **/*.png
 **/*.gif
 node_modules
+megalinter-reports/**
+hardis-report/**
+webpack.common.js
+webpack.dev.js
+webpack.prod.js
+scripts/**

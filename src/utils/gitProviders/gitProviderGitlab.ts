@@ -8,6 +8,7 @@ import type {
 import { ProviderDescription, PullRequest, Job, JobStatus } from "./types";
 import { SecretsManager } from "../secretsManager";
 import { Logger } from "../../logger";
+import { t } from "../../i18n/i18n";
 
 export class GitProviderGitlab extends GitProvider {
   gitlabClient: InstanceType<typeof Gitlab> | null = null;
@@ -17,7 +18,7 @@ export class GitProviderGitlab extends GitProvider {
 
   async authenticate(): Promise<boolean | null> {
     const token = await vscode.window.showInputBox({
-      prompt: "Enter your Gitlab PAT (Personal Access Token)",
+      prompt: t("gitlabEnterPAT"),
       ignoreFocusOut: true,
       password: true,
     });
@@ -61,7 +62,7 @@ export class GitProviderGitlab extends GitProvider {
   describeGitProvider(): ProviderDescription {
     return {
       providerLabel: "GitLab",
-      pullRequestLabel: "Merge Request",
+      pullRequestLabel: t("mergeRequestLabel"),
       pullRequestsWebUrl: this.repoInfo?.webUrl
         ? `${this.repoInfo.webUrl}/-/merge_requests`
         : "",

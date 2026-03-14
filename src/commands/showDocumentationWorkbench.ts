@@ -10,6 +10,7 @@ import {
   writeSfdxHardisConfig,
 } from "../utils";
 import { Logger } from "../logger";
+import { DOCSITE_URL } from "../constants";
 
 /**
  * AI & documentation-related fields from the sfdx-hardis JSON schema
@@ -114,6 +115,7 @@ function buildDocConfigPayload(config: any, schema: Record<string, any>) {
     config: config || {},
     schema: schema,
     ...getPromptTemplatesInfo(),
+    helpUrl: DOCSITE_URL + "/salesforce-project-documentation/",
   };
 }
 

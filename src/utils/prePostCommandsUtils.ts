@@ -8,7 +8,13 @@ import { PullRequest } from "./gitProviders/types";
 export interface PrePostCommand {
   id: string;
   label: string;
-  type: "command" | "data" | "apex" | "publish-community" | "manual";
+  type:
+    | "command"
+    | "data"
+    | "apex"
+    | "publish-community"
+    | "manual"
+    | "schedule-batch";
   when: "pre-deploy" | "post-deploy";
   // Known parameters used by action implementations. Additional keys allowed.
   parameters?: {
@@ -16,6 +22,9 @@ export interface PrePostCommand {
     sfdmuProject?: string; // for 'data' actions
     communityName?: string; // for 'publish-community' actions
     instructions?: string; // for 'manual' actions
+    className?: string; // for 'schedule-batch' actions
+    cronExpression?: string; // for 'schedule-batch' actions
+    jobName?: string; // optional for 'schedule-batch' actions
     [key: string]: any;
   };
   command: string;

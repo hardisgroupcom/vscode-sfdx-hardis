@@ -1,14 +1,14 @@
 <template>
   <div class="slds-p-around_x-small blue-back">
-    <lightning-card title="Sfdx-Hardis Metadata Retriever" icon-name="custom:custom63">
+    <lightning-card title={i18n.metadataRetrieverTitle} icon-name="custom:custom63">
       <!-- Selected Org and Query Mode in Card Header -->
       <div slot="actions" class="slds-grid slds-grid_align-end slds-gutters_small slds-grid_vertical-align-start">
         <div class="slds-col slds-no-flex slds-align-top">
-          <fieldset class="slds-form-element" role="group" aria-label="Selected Org">
+          <fieldset class="slds-form-element" role="group" aria-label={i18n.selectedOrgLabel}>
             <legend class="slds-form-element__legend slds-form-element__label" part=""></legend>
             <div class="slds-form-element__control">
               <lightning-combobox
-                label="Selected Org"
+                label={i18n.selectedOrgLabel}
                 value={selectedOrg}
                 options={orgOptions}
                 onchange={handleOrgChange}
@@ -34,11 +34,11 @@
           <!-- Metadata Type Filter -->
           <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-large-size_1-of-6">
             <lightning-combobox
-              label="Metadata Type"
+              label={i18n.metadataTypeLabel}
               value={metadataType}
               options={metadataTypeOptions}
               onchange={handleMetadataTypeChange}
-              placeholder="Select metadata type"
+              placeholder={i18n.selectMetadataType}
               required={isAllMetadataMode}
             ></lightning-combobox>
           </div>
@@ -46,20 +46,20 @@
           <!-- Metadata Name Filter -->
           <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-large-size_1-of-6">
             <lightning-input
-              label="Metadata Name"
+              label={i18n.metadataNameLabel}
               value={metadataName}
               onchange={handleMetadataNameChange}
-              placeholder="e.g., MyClass, Account"
+              placeholder={i18n.metadataNamePlaceholder}
             ></lightning-input>
           </div>
 
           <!-- Last Updated By Filter -->
           <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-large-size_1-of-6">
             <lightning-input
-              label="Last Updated By"
+              label={i18n.lastUpdatedByLabel}
               value={lastUpdatedBy}
               onchange={handleLastUpdatedByChange}
-              placeholder="e.g., John Doe"
+              placeholder={i18n.lastUpdatedByPlaceholder}
             ></lightning-input>
           </div>
 
@@ -67,7 +67,7 @@
           <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-large-size_1-of-6">
             <lightning-input
               type="date"
-              label="Updated From"
+              label={i18n.updatedFromLabel}
               value={dateFrom}
               onchange={handleDateFromChange}
             ></lightning-input>
@@ -77,7 +77,7 @@
           <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-large-size_1-of-6">
             <lightning-input
               type="date"
-              label="Updated To"
+              label={i18n.updatedToLabel}
               value={dateTo}
               onchange={handleDateToChange}
             ></lightning-input>
@@ -86,11 +86,11 @@
           <!-- Package Filter -->
           <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-large-size_1-of-6">
             <lightning-combobox
-              label="Package"
+              label={i18n.packageLabel}
               value={packageFilter}
               options={packageOptions}
               onchange={handlePackageChange}
-              placeholder="Select package"
+              placeholder={i18n.selectPackage}
             ></lightning-combobox>
           </div>
 
@@ -101,7 +101,7 @@
           <div class="slds-col">
             <lightning-button
               variant="brand"
-              label="Search Metadata"
+              label={i18n.searchMetadata}
               icon-name="utility:search"
               onclick={handleSearch}
               disabled={cannotSearch}
@@ -110,7 +110,7 @@
             ></lightning-button>
             <lightning-button
               variant="neutral"
-              label="Clear Filters"
+              label={i18n.clearFilters}
               icon-name="utility:clear"
               onclick={handleClearFilters}
               size="small"
@@ -118,7 +118,7 @@
             ></lightning-button>
             <lightning-button
               variant="neutral"
-              label="Retrieve History"
+              label={i18n.retrieveHistory}
               icon-name="utility:real_time"
               onclick={handleViewHistory}
               size="small"
@@ -126,11 +126,11 @@
           </div>
           <div class="slds-col slds-no-flex slds-form-element slds-form-element_compact">
             <div class="slds-form-element__control slds-grid slds-grid_vertical-align-center" style="align-items:center;">
-              <div class="slds-m-right_x-small slds-text-body_regular slds-align-middle">Check local files</div>
+              <div class="slds-m-right_x-small slds-text-body_regular slds-align-middle">{i18n.checkLocalFiles}</div>
               <lightning-input
                 type="toggle"
-                label="Check local files"
-                aria-label="Check local files"
+                label={i18n.checkLocalFiles}
+                aria-label={i18n.checkLocalFiles}
                 checked={checkLocalFiles}
                 onchange={handleCheckLocalChange}
                 variant="label-hidden"
@@ -145,7 +145,7 @@
       <!-- Loading Spinner -->
       <template if:true={isLoading}>
         <div class="slds-p-around_small slds-text-align_center">
-          <lightning-spinner alternative-text="Loading metadata..." size="medium"></lightning-spinner>
+          <lightning-spinner alternative-text={i18n.loadingMetadata} size="medium"></lightning-spinner>
         </div>
       </template>
 
@@ -163,8 +163,8 @@
       <!-- Initial Prompt (before any search) -->
       <template if:false={hasSearched}>
         <div class="slds-p-around_small slds-text-align_center slds-text-color_weak">
-          <h3 class="slds-text-heading_medium">No search performed yet</h3>
-          <p>Click the <strong>Search</strong> button to query metadata for the selected org.</p>
+          <h3 class="slds-text-heading_medium">{i18n.noSearchPerformed}</h3>
+          <p lwc:inner-html={noSearchPerformedDescHtml}></p>
         </div>
       </template>
 
@@ -176,14 +176,14 @@
           <div class="slds-grid slds-grid_vertical-align-center slds-m-bottom_small">
             <div class="slds-col slds-no-flex">
               <span class="slds-text-title_caps slds-text-color_weak">
-                {filteredMetadata.length} result(s) found
+                {resultsFoundLabel}
               </span>
             </div>
             <div class="slds-col slds-grow slds-p-left_small slds-p-right_small">
               <lightning-input
                 value={searchTerm}
                 onchange={handleSearchChange}
-                placeholder="Search in results..."
+                placeholder={i18n.searchInResults}
                 variant="label-hidden"
                 icon-name="utility:clear"
               ></lightning-input>
@@ -192,14 +192,14 @@
                 <template if:true={showLocalPackageSelector}>
                     <div class="slds-col slds-no-flex">
                       <lightning-combobox
-                        label="Local package"
+                        label={i18n.localPackageLabel}
                         value={selectedLocalPackage}
                         options={localPackageOptions}
                         onchange={handleLocalPackageChange}
                         disabled={localPackageDisabled}
                         variant="label-hidden"
-                        placeholder="Local package"
-                        title="Local package"
+                        placeholder={i18n.localPackageLabel}
+                        title={i18n.localPackageLabel}
                       ></lightning-combobox>
                     </div>
                 </template>
@@ -243,9 +243,9 @@
       <!-- Hidden feature modal (obfuscated identifiers) -->
       <template if:true={showFeature}>
         <section role="dialog" tabindex="-1" data-feature data-feature-id={featureId} aria-modal="true">
-          <div data-feature-backdrop onclick={hideFeature}></div>
+          <div data-feature-backdrop class="slds-backdrop" onclick={hideFeature}></div>
           <div data-feature-content>
-            <button data-feature-close onclick={hideFeature} title="Close">×</button>
+            <button data-feature-close onclick={hideFeature} title={i18n.closeLabel}>×</button>
             <div data-feature-body>
               <img src={imgFeatureLogo} alt="" />
               <h2>I am also very impatient to meet you again ❤️</h2>
@@ -260,8 +260,8 @@
         <div class="slds-p-around_small slds-text-align_center">
           <div class="slds-illustration slds-illustration_small">
             <div class="slds-text-color_weak">
-              <h3 class="slds-text-heading_medium">No metadata found</h3>
-              <p class="slds-text-body_regular">Try adjusting your search criteria</p>
+              <h3 class="slds-text-heading_medium">{i18n.noMetadataFound}</h3>
+              <p class="slds-text-body_regular">{i18n.tryAdjustingCriteria}</p>
             </div>
           </div>
         </div>

@@ -4,6 +4,7 @@ import { listMajorOrgs, MajorOrg } from "./utils/orgConfigUtils";
 import { getConfig } from "./utils/pipeline/sfdxHardisConfig";
 import { PullRequest } from "./utils/gitProviders/types";
 import { GitProvider } from "./utils/gitProviders/gitProvider";
+import { t } from "./i18n/i18n";
 
 export interface OrgNode {
   name: string;
@@ -39,6 +40,7 @@ export class PipelineDataProvider {
     options: {
       browseGitProvider?: boolean;
       openPullRequests?: PullRequest[];
+      colorTheme?: string;
     } = {},
   ): Promise<PipelineData> {
     try {
@@ -53,6 +55,7 @@ export class PipelineDataProvider {
         isAuthenticated,
         options.openPullRequests || [],
         gitProvider,
+        options.colorTheme || "light",
       );
       const mermaidDiagram = mermaidBuilder.build({
         format: "string",
@@ -82,7 +85,7 @@ export class PipelineDataProvider {
             source: org.branchName,
             target,
             type: "gitMerge",
-            label: "Merge",
+            label: t("mergeLabel"),
           });
         }
       }

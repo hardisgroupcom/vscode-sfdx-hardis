@@ -1,21 +1,21 @@
 <template>
-    <div class="slds-scope slds-theme_default blue-back">
+    <div class="slds-scope blue-back">
         <div class="monitoring-container">
             <!-- Header Section -->
             <div class="header-section">
                 <div class="header-content">
-                    <div class="header-icon-container">
+                    <div class="header-icon-container teal">
                         <lightning-icon icon-name="utility:graph" size="medium" variant="inverse"></lightning-icon>
                     </div>
                     <div class="header-text">
-                        <h1 class="header-title">Org Monitoring Workbench</h1>
-                        <p class="header-subtitle">Monitor your Salesforce org health, security, and performance</p>
+                        <h1 class="header-title">{i18n.orgMonitoringWorkbench}</h1>
+                        <p class="header-subtitle">{i18n.monitorOrgDescription}</p>
                     </div>
                     <div class="header-actions">
                         <lightning-button 
                             variant="neutral" 
-                            label="Refresh" 
-                            title="Check installation status again"
+                            label={i18n.refreshLabel} 
+                            title={i18n.checkInstallationStatusAgain}
                             onclick={checkInstallationStatus}
                             icon-name="utility:refresh"
                             class="status-button"
@@ -35,22 +35,22 @@
                         <div class="status-content">
                             <div class="status-header">
                                 <div class="status-heading">
-                                    <h3 class="status-title">Org Monitoring is Installed</h3>
-                                    <p class="status-description">Your org monitoring configuration is active and ready to use.</p>
+                                    <h3 class="status-title">{i18n.orgMonitoringIsInstalled}</h3>
+                                    <p class="status-description">{i18n.orgMonitoringConfigActive}</p>
                                 </div>
                                 <div class="status-actions auth-actions">
                                     <lightning-button 
                                         variant="brand"
-                                        label="Reconfigure authentication" 
-                                        title="Reconfigure authentication to the monitored org"
+                                        label={i18n.reconfigureAuthentication} 
+                                        title={i18n.reconfigureAuthTooltip}
                                         onclick={reconfigureMonitoringAuth}
                                         icon-name="utility:redo"
                                         class="status-button"
                                     ></lightning-button>
                                     <lightning-button 
                                         variant="neutral" 
-                                        label="Monitor another org" 
-                                        title="Configure monitoring for a different org"
+                                        label={i18n.monitorAnotherOrg} 
+                                        title={i18n.monitorAnotherOrgTooltip}
                                         onclick={configureAnotherOrg}
                                         icon-name="utility:adduser"
                                         class="status-button"
@@ -59,7 +59,7 @@
                             </div>
                             <template if:true={instanceUrl}>
                                 <div class="instance-url-row">
-                                    <span class="instance-url-label">Monitored org:</span>
+                                    <span class="instance-url-label">{i18n.monitoredOrgLabel}</span>
                                     <lightning-button 
                                         variant="base"
                                         label={instanceUrl}
@@ -73,24 +73,24 @@
                             <div class="status-actions package-actions">
                                 <lightning-button 
                                     variant="brand" 
-                                    label="Skip Items Package" 
-                                    title="View manifest/package-skip-items.xml - Items ignored during backup"
+                                    label={i18n.skipItemsPackage} 
+                                    title={i18n.skipItemsPackageTooltip}
                                     onclick={viewSkipItemsPackage}
                                     icon-name="utility:ban"
                                     class="status-button"
                                 ></lightning-button>
                                 <lightning-button 
                                     variant="outline-brand" 
-                                    label="Backup Items Package" 
-                                    title="View manifest/package-backup-items.xml - Items included in backup"
+                                    label={i18n.backupItemsPackage} 
+                                    title={i18n.backupItemsPackageTooltip}
                                     onclick={viewBackupItemsPackage}
                                     icon-name="utility:save"
                                     class="status-button"
                                 ></lightning-button>
                                 <lightning-button 
                                     variant="outline-brand" 
-                                    label="All Org Items Package" 
-                                    title="View package-all-org-items.xml - All items in the org"
+                                    label={i18n.allOrgItemsPackage} 
+                                    title={i18n.allOrgItemsPackageTooltip}
                                     onclick={viewAllOrgItemsPackage}
                                     icon-name="utility:package"
                                     class="status-button"
@@ -109,24 +109,24 @@
                                     <lightning-icon icon-name="utility:info" size="small" variant="inverse"></lightning-icon>
                                 </div>
                                 <div class="status-content">
-                                    <h3 class="status-title">Org Monitoring Not Present (CI/CD Repo)</h3>
+                                    <h3 class="status-title">{i18n.orgMonitoringNotPresentCiCd}</h3>
                                     <p class="status-description">
-                                        This workspace appears to be a CI/CD / DevOps repository (manifest/package.xml found). It's normal for org monitoring not to be installed here.
+                                        {i18n.orgMonitoringNotPresentCiCdDescription}
                                     </p>
                                     <template if:true={monitoringRepository}>
                                         <div class="status-actions">
                                             <lightning-button 
                                                 variant="brand" 
-                                                label="Open Monitoring Repository" 
-                                                title="Open the repository that hosts monitoring configuration"
+                                                label={i18n.openMonitoringRepository} 
+                                                title={i18n.openMonitoringRepositoryTooltip}
                                                 onclick={openMonitoringRepository}
                                                 icon-name="utility:new_window"
                                                 class="status-button"
                                             ></lightning-button>
                                             <lightning-button 
                                                 variant="neutral" 
-                                                label="Learn More" 
-                                                title="Learn about org monitoring capabilities"
+                                                label={i18n.learnMore} 
+                                                title={i18n.learnMoreTooltip}
                                                 onclick={learnMore}
                                                 icon-name="utility:info"
                                                 class="status-button"
@@ -137,8 +137,8 @@
                                         <div class="status-actions">
                                             <lightning-button 
                                                 variant="neutral" 
-                                                label="Learn More" 
-                                                title="Learn about org monitoring capabilities"
+                                                label={i18n.learnMore} 
+                                                title={i18n.learnMoreTooltip}
                                                 onclick={learnMore}
                                                 icon-name="utility:info"
                                                 class="status-button"
@@ -154,23 +154,23 @@
                                     <lightning-icon icon-name="utility:warning" size="small" variant="inverse"></lightning-icon>
                                 </div>
                                 <div class="status-content">
-                                    <h3 class="status-title">Org Monitoring Not Installed</h3>
+                                    <h3 class="status-title">{i18n.orgMonitoringNotInstalled}</h3>
                                     <p class="status-description">
-                                        Install org monitoring to start tracking your Salesforce org's health, security, and performance.
+                                        {i18n.orgMonitoringNotInstalledDescription}
                                     </p>
                                     <div class="status-actions">
                                         <lightning-button 
                                             variant="brand" 
-                                            label="Install Org Monitoring" 
-                                            title="Configure and install org monitoring for this project"
+                                            label={i18n.installOrgMonitoring} 
+                                            title={i18n.installOrgMonitoringTooltip}
                                             onclick={installOrgMonitoring}
                                             icon-name="utility:download"
                                             class="status-button primary"
                                         ></lightning-button>
                                         <lightning-button 
                                             variant="neutral" 
-                                            label="Learn More" 
-                                            title="Learn about org monitoring capabilities"
+                                            label={i18n.learnMore} 
+                                            title={i18n.learnMoreTooltip}
                                             onclick={learnMore}
                                             icon-name="utility:info"
                                             class="status-button"
@@ -191,13 +191,30 @@
                             <div class="command-icon-container backup">
                                 <lightning-icon icon-name="utility:save" size="small" variant="inverse"></lightning-icon>
                             </div>
-                            <h3 class="command-title">Metadata Backup</h3>
+                            <h3 class="command-title">{i18n.metadataBackup}</h3>
                         </div>
-                        <p class="command-description">Backup all relevant metadata according to your backup configuration</p>
+                        <p class="command-description">{i18n.metadataBackupDescription}</p>
                         <lightning-button 
                             variant="outline-brand" 
-                            label="Run Backup" 
+                            label={i18n.runBackup} 
                             onclick={runMetadataBackup}
+                            class="command-button"
+                        ></lightning-button>
+                    </div>
+
+                    <!-- Apex and Flow Errors -->
+                    <div class="command-card">
+                        <div class="command-header">
+                            <div class="command-icon-container alerts">
+                                <lightning-icon icon-name="utility:error" size="small" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="command-title">{i18n.apexAndFlowErrors}</h3>
+                        </div>
+                        <p class="command-description">{i18n.apexAndFlowErrorsDescription}</p>
+                        <lightning-button
+                            variant="outline-brand"
+                            label={i18n.monitorErrors}
+                            onclick={runApexAndFlowErrors}
                             class="command-button"
                         ></lightning-button>
                     </div>
@@ -208,12 +225,12 @@
                             <div class="command-icon-container audit">
                                 <lightning-icon icon-name="utility:trail" size="small" variant="inverse"></lightning-icon>
                             </div>
-                            <h3 class="command-title">Audit Trail Analysis</h3>
+                            <h3 class="command-title">{i18n.auditTrailAnalysis}</h3>
                         </div>
-                        <p class="command-description">Detect suspicious setup activities in your org's audit trail</p>
+                        <p class="command-description">{i18n.auditTrailAnalysisDescription}</p>
                         <lightning-button 
                             variant="outline-brand" 
-                            label="Analyze Audit Trail" 
+                            label={i18n.analyzeAuditTrail} 
                             onclick={runAuditTrail}
                             class="command-button"
                         ></lightning-button>
@@ -225,12 +242,12 @@
                             <div class="command-icon-container tests">
                                 <lightning-icon icon-name="utility:apex" size="small" variant="inverse"></lightning-icon>
                             </div>
-                            <h3 class="command-title">Apex Tests</h3>
+                            <h3 class="command-title">{i18n.apexTests}</h3>
                         </div>
-                        <p class="command-description">Run all Apex tests and check code coverage requirements</p>
+                        <p class="command-description">{i18n.apexTestsDescription}</p>
                         <lightning-button 
                             variant="outline-brand" 
-                            label="Run Tests" 
+                            label={i18n.runTests} 
                             onclick={runApexTests}
                             class="command-button"
                         ></lightning-button>
@@ -242,12 +259,12 @@
                             <div class="command-icon-container limits">
                                 <lightning-icon icon-name="utility:graph" size="small" variant="inverse"></lightning-icon>
                             </div>
-                            <h3 class="command-title">Org Limits Check</h3>
+                            <h3 class="command-title">{i18n.orgLimitsCheck}</h3>
                         </div>
-                        <p class="command-description">Monitor org limits and get alerts when limits are approached</p>
+                        <p class="command-description">{i18n.orgLimitsCheckDescription}</p>
                         <lightning-button 
                             variant="outline-brand" 
-                            label="Check Limits" 
+                            label={i18n.checkLimits} 
                             onclick={checkOrgLimits}
                             class="command-button"
                         ></lightning-button>
@@ -259,12 +276,12 @@
                             <div class="command-icon-container health">
                                 <lightning-icon icon-name="utility:check" size="small" variant="inverse"></lightning-icon>
                             </div>
-                            <h3 class="command-title">Security Health Check</h3>
+                            <h3 class="command-title">{i18n.securityHealthCheck}</h3>
                         </div>
-                        <p class="command-description">Extract score and indicators of org Security health check</p>
+                        <p class="command-description">{i18n.securityHealthCheckDescription}</p>
                         <lightning-button 
                             variant="outline-brand" 
-                            label="Run Health Check" 
+                            label={i18n.runHealthCheck} 
                             onclick={runHealthCheck}
                             class="command-button"
                         ></lightning-button>
@@ -276,12 +293,12 @@
                             <div class="command-icon-container updates">
                                 <lightning-icon icon-name="utility:new" size="small" variant="inverse"></lightning-icon>
                             </div>
-                            <h3 class="command-title">Release Updates</h3>
+                            <h3 class="command-title">{i18n.releaseUpdates}</h3>
                         </div>
-                        <p class="command-description">Check for Salesforce release updates that need verification</p>
+                        <p class="command-description">{i18n.releaseUpdatesDescription}</p>
                         <lightning-button 
                             variant="outline-brand" 
-                            label="Check Updates" 
+                            label={i18n.checkUpdates} 
                             onclick={checkReleaseUpdates}
                             class="command-button"
                         ></lightning-button>
@@ -293,12 +310,12 @@
                             <div class="command-icon-container security">
                                 <lightning-icon icon-name="utility:shield" size="small" variant="inverse"></lightning-icon>
                             </div>
-                            <h3 class="command-title">Connected Apps Security</h3>
+                            <h3 class="command-title">{i18n.connectedAppsSecurity}</h3>
                         </div>
-                        <p class="command-description">Identify unsecured connected apps in your org</p>
+                        <p class="command-description">{i18n.connectedAppsSecurityDescription}</p>
                         <lightning-button 
                             variant="outline-brand" 
-                            label="Check Security" 
+                            label={i18n.checkSecurity} 
                             onclick={checkConnectedAppsSecurity}
                             class="command-button"
                         ></lightning-button>
@@ -310,12 +327,12 @@
                             <div class="command-icon-container legacy">
                                 <lightning-icon icon-name="utility:deprecate" size="small" variant="inverse"></lightning-icon>
                             </div>
-                            <h3 class="command-title">Legacy API Usage</h3>
+                            <h3 class="command-title">{i18n.legacyApiUsage}</h3>
                         </div>
-                        <p class="command-description">Detect usage of deprecated API versions in your org</p>
+                        <p class="command-description">{i18n.legacyApiUsageDescription}</p>
                         <lightning-button 
                             variant="outline-brand" 
-                            label="Check APIs" 
+                            label={i18n.checkApis} 
                             onclick={checkLegacyApi}
                             class="command-button"
                         ></lightning-button>
@@ -327,12 +344,12 @@
                             <div class="command-icon-container users">
                                 <lightning-icon icon-name="utility:user" size="small" variant="inverse"></lightning-icon>
                             </div>
-                            <h3 class="command-title">Unused Users</h3>
+                            <h3 class="command-title">{i18n.unusedUsers}</h3>
                         </div>
-                        <p class="command-description">Find active users who haven't logged in recently</p>
+                        <p class="command-description">{i18n.unusedUsersDescription}</p>
                         <lightning-button 
                             variant="outline-brand" 
-                            label="Find Users" 
+                            label={i18n.findUsers}
                             onclick={findUnusedUsers}
                             class="command-button"
                         ></lightning-button>
@@ -344,13 +361,30 @@
                             <div class="command-icon-container licenses">
                                 <lightning-icon icon-name="utility:key" size="small" variant="inverse"></lightning-icon>
                             </div>
-                            <h3 class="command-title">Unused Licenses</h3>
+                            <h3 class="command-title">{i18n.unusedLicenses}</h3>
                         </div>
-                        <p class="command-description">Detect unused permission set licenses that can be reclaimed</p>
+                        <p class="command-description">{i18n.unusedLicensesDescription}</p>
                         <lightning-button 
                             variant="outline-brand" 
-                            label="Check Licenses" 
+                            label={i18n.checkLicenses}
                             onclick={checkUnusedLicenses}
+                            class="command-button"
+                        ></lightning-button>
+                    </div>
+
+                    <!-- Underused Permission Sets -->
+                    <div class="command-card">
+                        <div class="command-header">
+                            <div class="command-icon-container licenses">
+                                <lightning-icon icon-name="utility:lock" size="small" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="command-title">{i18n.underusedPermissionSets}</h3>
+                        </div>
+                        <p class="command-description">{i18n.underusedPermissionSetsDescription}</p>
+                        <lightning-button
+                            variant="outline-brand"
+                            label={i18n.findPermissionSets}
+                            onclick={findUnderusedPermissionSets}
                             class="command-button"
                         ></lightning-button>
                     </div>
@@ -361,12 +395,12 @@
                             <div class="command-icon-container apex">
                                 <lightning-icon icon-name="utility:apex" size="small" variant="inverse"></lightning-icon>
                             </div>
-                            <h3 class="command-title">Unused Apex Classes</h3>
+                            <h3 class="command-title">{i18n.unusedApexClasses}</h3>
                         </div>
-                        <p class="command-description">Find Apex classes that haven't been used recently</p>
+                        <p class="command-description">{i18n.unusedApexClassesDescription}</p>
                         <lightning-button 
                             variant="outline-brand" 
-                            label="Find Classes" 
+                            label={i18n.findClasses} 
                             onclick={findUnusedApexClasses}
                             class="command-button"
                         ></lightning-button>
@@ -378,12 +412,12 @@
                             <div class="command-icon-container connected-apps">
                                 <lightning-icon icon-name="utility:connected_apps" size="small" variant="inverse"></lightning-icon>
                             </div>
-                            <h3 class="command-title">Unused Connected Apps</h3>
+                            <h3 class="command-title">{i18n.unusedConnectedApps}</h3>
                         </div>
-                        <p class="command-description">Find connected apps that haven't been used recently</p>
+                        <p class="command-description">{i18n.unusedConnectedAppsDescription}</p>
                         <lightning-button 
                             variant="outline-brand" 
-                            label="Find Apps" 
+                            label={i18n.findApps} 
                             onclick={findUnusedConnectedApps}
                             class="command-button"
                         ></lightning-button>
@@ -395,12 +429,12 @@
                             <div class="command-icon-container metadata-access">
                                 <lightning-icon icon-name="utility:lock" size="small" variant="inverse"></lightning-icon>
                             </div>
-                            <h3 class="command-title">Metadata Access Check</h3>
+                            <h3 class="command-title">{i18n.metadataAccessCheck}</h3>
                         </div>
-                        <p class="command-description">Check for metadata without proper access permissions</p>
+                        <p class="command-description">{i18n.metadataAccessCheckDescription}</p>
                         <lightning-button 
                             variant="outline-brand" 
-                            label="Check Access" 
+                            label={i18n.checkAccess}
                             onclick={checkMetadataAccess}
                             class="command-button"
                         ></lightning-button>
@@ -412,12 +446,12 @@
                             <div class="command-icon-container metadata-access">
                                 <lightning-icon icon-name="utility:table" size="small" variant="inverse"></lightning-icon>
                             </div>
-                            <h3 class="command-title">Object Field Usage</h3>
+                            <h3 class="command-title">{i18n.objectFieldUsage}</h3>
                         </div>
-                        <p class="command-description">Analyze object fields usage and produce a cleanup report</p>
+                        <p class="command-description">{i18n.objectFieldUsageDescription}</p>
                         <lightning-button 
                             variant="outline-brand" 
-                            label="Analyze Fields" 
+                            label={i18n.analyzeFields}
                             onclick={runObjectFieldUsage}
                             class="command-button"
                         ></lightning-button>
@@ -429,12 +463,12 @@
                             <div class="command-icon-container unused-metadata">
                                 <lightning-icon icon-name="utility:custom_apps" size="small" variant="inverse"></lightning-icon>
                             </div>
-                            <h3 class="command-title">Unused Metadata</h3>
+                            <h3 class="command-title">{i18n.unusedMetadatas}</h3>
                         </div>
-                        <p class="command-description">Find unused custom labels and permissions</p>
+                        <p class="command-description">{i18n.unusedMetadatasDescription}</p>
                         <lightning-button 
                             variant="outline-brand" 
-                            label="Find Metadata" 
+                            label={i18n.findMetadata} 
                             onclick={findUnusedMetadata}
                             class="command-button"
                         ></lightning-button>
@@ -447,22 +481,22 @@
                 <div class="docs-content">
                     <div class="docs-header">
                         <span class="docs-icon">📚</span>
-                        <h3 class="docs-title">Learn More</h3>
+                        <h3 class="docs-title">{i18n.learnMore}</h3>
                     </div>
                     <p class="docs-text">
-                        Get comprehensive documentation about org monitoring capabilities and best practices.
+                        {i18n.learnMoreDocDescription}
                     </p>
                     <div class="docs-actions">
                         <lightning-button 
                             variant="neutral" 
-                            label="Monitoring Documentation" 
+                            label={i18n.monitoringDocumentation} 
                             icon-name="utility:new_window"
                             onclick={openMonitoringDocs}
                             class="docs-button"
                         ></lightning-button>
                         <lightning-button 
                             variant="neutral" 
-                            label="Setup Guide" 
+                            label={i18n.setupGuide} 
                             icon-name="utility:setup"
                             onclick={openSetupGuide}
                             class="docs-button"

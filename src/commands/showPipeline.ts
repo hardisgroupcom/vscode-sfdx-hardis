@@ -3,11 +3,13 @@ import { PipelineDataProvider } from "../pipeline-data-provider";
 import { Logger } from "../logger";
 import { GitProvider } from "../utils/gitProviders/gitProvider";
 import { LwcPanelManager } from "../lwc-panel-manager";
+import { LwcUiPanel } from "../webviews/lwc-ui-panel";
 import { Commands } from "../commands";
 import { showPackageXmlPanel } from "./packageXml";
 import { PullRequest } from "../utils/gitProviders/types";
 import { TicketProvider } from "../utils/ticketProviders/ticketProvider";
 import {
+  deletePrePostCommand,
   listProjectApexScripts,
   listProjectDataWorkspaces,
   listProjectApexTestClasses,
@@ -17,12 +19,99 @@ import {
 import { getCurrentGitBranch } from "../utils/pipeline/sfdxHardisConfig";
 import {
   execCommandWithProgress,
+  execSfdxJson,
   getWorkspaceRoot,
   readSfdxHardisConfig,
 } from "../utils";
+import { t } from "../i18n/i18n";
 import path from "path";
 import fs from "fs-extra";
 import { listAllOrgs } from "../utils/orgUtils";
+
+const SCHEDULABLE_CLASSES_CACHE_TTL_MS = 15 * 60 * 1000;
+const schedulableClassesByOrgCache = new Map<
+  string,
+  { expiresAt: number; values: string[] }
+>();
+const communitiesByOrgCache = new Map<
+  string,
+  { expiresAt: number; values: string[] }
+>();
+
+async function getDefaultOrgUsername(): Promise<string> {
+  try {
+    const orgDisplay = await execSfdxJson("sf org display --json", {
+      fail: false,
+      output: false,
+    });
+    return (
+      orgDisplay?.result?.username || orgDisplay?.result?.alias || "default"
+    );
+  } catch {
+    return "default";
+  }
+}
+
+async function fetchAndCacheOrgNames(
+  cache: Map<string, { expiresAt: number; values: string[] }>,
+  orgKey: string,
+  now: number,
+  command: string,
+  filter?: (record: any) => boolean,
+): Promise<string[]> {
+  const result = await execSfdxJson(command, {
+    fail: false,
+    output: false,
+  });
+  const records = Array.isArray(result?.result?.records)
+    ? result.result.records
+    : [];
+  const filtered = filter ? records.filter(filter) : records;
+  const values = filtered
+    .map((record: any) => String(record?.Name || "").trim())
+    .filter((v: string) => v.length > 0);
+  const uniqueSorted: string[] = [...new Set<string>(values)].sort(
+    (a: string, b: string) => a.localeCompare(b),
+  );
+  if (uniqueSorted.length > 0) {
+    cache.set(orgKey, {
+      expiresAt: now + SCHEDULABLE_CLASSES_CACHE_TTL_MS,
+      values: uniqueSorted,
+    });
+  }
+  return uniqueSorted;
+}
+
+async function listSchedulableClassesFromDefaultOrg(): Promise<string[]> {
+  const orgKey = await getDefaultOrgUsername();
+  const now = Date.now();
+  const cached = schedulableClassesByOrgCache.get(orgKey);
+  if (cached && cached.expiresAt > now) {
+    return cached.values;
+  }
+  const query =
+    "SELECT Name, Body FROM ApexClass WHERE ManageableState = 'unmanaged' ORDER BY Name";
+  const command = `sf data query --query "${query}" --use-tooling-api --json`;
+  return fetchAndCacheOrgNames(
+    schedulableClassesByOrgCache,
+    orgKey,
+    now,
+    command,
+    (record: any) => String(record?.Body || "").toLowerCase().includes("schedulable"),
+  );
+}
+
+async function listCommunitiesFromDefaultOrg(): Promise<string[]> {
+  const orgKey = await getDefaultOrgUsername();
+  const now = Date.now();
+  const cached = communitiesByOrgCache.get(orgKey);
+  if (cached && cached.expiresAt > now) {
+    return cached.values;
+  }
+  const query = "SELECT Name FROM Network ORDER BY Name";
+  const command = `sf data query --query "${query}" --json`;
+  return fetchAndCacheOrgNames(communitiesByOrgCache, orgKey, now, command);
+}
 
 export function registerShowPipeline(commands: Commands) {
   let loadInProgress: Promise<PipelineInfo> | null = null;
@@ -40,36 +129,31 @@ export function registerShowPipeline(commands: Commands) {
         {
           ...pipelineProperties,
           firstDisplay: true,
+          imagePaths: {
+            git: ["icons", "git.svg"],
+            ticket: ["icons", "ticket.svg"],
+            github: ["icons", "github.svg"],
+            gitlab: ["icons", "gitlab.svg"],
+            bitbucket: ["icons", "bitbucket.svg"],
+            azure: ["icons", "azure.svg"],
+            gitea: ["icons", "gitea.svg"],
+            jira: ["icons", "jira.svg"],
+            azureboards: ["icons", "azureboards.svg"],
+          },
         },
       );
 
-      panel.sendMessage({
-        type: "imageResources",
-        data: {
-          images: {
-            git: panel.asWebviewUri(["icons", "git.svg"]),
-            ticket: panel.asWebviewUri(["icons", "ticket.svg"]),
-            github: panel.asWebviewUri(["icons", "github.svg"]),
-            gitlab: panel.asWebviewUri(["icons", "gitlab.svg"]),
-            bitbucket: panel.asWebviewUri(["icons", "bitbucket.svg"]),
-            azure: panel.asWebviewUri(["icons", "azure.svg"]),
-            gitea: panel.asWebviewUri(["icons", "gitea.svg"]),
-            jira: panel.asWebviewUri(["icons", "jira.svg"]),
-            azureboards: panel.asWebviewUri(["icons", "azureboards.svg"]),
-          },
-        },
-      });
-
-      panel.updateTitle("DevOps Pipeline");
+      panel.updateTitle(t("devOpsPipeline"));
 
       function showCommitReminder(prNumber: number, msg: string) {
         if (prNumber === -1) {
           vscode.window.showInformationMessage(msg);
         } else {
+          const openGitLabel = t("openGit");
           vscode.window
-            .showInformationMessage(msg, "Open Git")
+            .showInformationMessage(msg, openGitLabel)
             .then((action) => {
-              if (action === "Open Git") {
+              if (action === openGitLabel) {
                 vscode.commands.executeCommand("workbench.view.scm");
               }
             });
@@ -124,9 +208,27 @@ export function registerShowPipeline(commands: Commands) {
             "Pull Request";
           const msg =
             data.prNumber === -1
-              ? `Deployment action saved in draft file for the future ${prLabel}.\nIt will be linked to the ${prLabel} once created.`
-              : `Deployment action saved for ${prLabel} #${data.prNumber}.\nDon't forget to commit and push ${updatedFile}`;
+              ? t("deploymentActionSavedDraft", { prLabel })
+              : t("deploymentActionSaved", {
+                  prLabel,
+                  prNumber: data.prNumber,
+                  updatedFile,
+                });
           showCommitReminder(data.prNumber, msg);
+        }
+        // Delete Deployment Action
+        else if (type === "deleteDeploymentAction") {
+          const updatedFile = await deletePrePostCommand(
+            data.prNumber,
+            data.commandId,
+            data.when,
+          );
+          Logger.log(
+            `Deleted deployment action ${data.commandId} for PR #${data.prNumber}`,
+          );
+          if (updatedFile) {
+            Logger.log(`Updated file after deletion: ${updatedFile}`);
+          }
         }
         // Save Deployment Apex Test Classes
         else if (type === "saveDeploymentApexTestClasses") {
@@ -144,9 +246,63 @@ export function registerShowPipeline(commands: Commands) {
             "Pull Request";
           const msg =
             data.prNumber === -1
-              ? `Apex tests configuration saved in draft file for the future ${prLabel}.\nIt will be linked to the ${prLabel} once created.`
-              : `Apex tests configuration saved for ${prLabel} #${data.prNumber}.\nDon't forget to commit and push ${updatedFile}`;
+              ? t("apexTestsSavedDraft", { prLabel })
+              : t("apexTestsSaved", {
+                  prLabel,
+                  prNumber: data.prNumber,
+                  updatedFile,
+                });
           showCommitReminder(data.prNumber, msg);
+        }
+        // Lazy-load Schedulable classes for schedule-batch deployment actions
+        else if (type === "loadSchedulableClasses") {
+          const requestId = data?.requestId || null;
+          try {
+            const values = await listSchedulableClassesFromDefaultOrg();
+            panel.sendMessage({
+              type: "returnSchedulableClasses",
+              data: {
+                requestId,
+                values,
+              },
+            });
+          } catch (error: any) {
+            Logger.log(
+              `Error loading schedulable classes with Tooling API: ${error?.message || error}`,
+            );
+            panel.sendMessage({
+              type: "returnSchedulableClasses",
+              data: {
+                requestId,
+                values: [],
+              },
+            });
+          }
+        }
+        // Lazy-load communities for publish-community deployment actions
+        else if (type === "loadCommunities") {
+          const requestId = data?.requestId || null;
+          try {
+            const values = await listCommunitiesFromDefaultOrg();
+            panel.sendMessage({
+              type: "returnCommunities",
+              data: {
+                requestId,
+                values,
+              },
+            });
+          } catch (error: any) {
+            Logger.log(
+              `Error loading communities: ${error?.message || error}`,
+            );
+            panel.sendMessage({
+              type: "returnCommunities",
+              data: {
+                requestId,
+                values: [],
+              },
+            });
+          }
         }
         // Get PR info for modal
         else if (type === "getPrInfoForModal") {
@@ -176,7 +332,7 @@ export function registerShowPipeline(commands: Commands) {
               "Pull Request";
             Logger.log(`Error getting ${prLabel} info for modal: ${String(e)}`);
             vscode.window.showErrorMessage(
-              `Error getting ${prLabel} info. Please check the logs for details.`,
+              t("errorGettingPrInfo", { prLabel }),
             );
           }
         }
@@ -204,7 +360,7 @@ export function registerShowPipeline(commands: Commands) {
               const orgs = await vscode.window.withProgress(
                 {
                   location: vscode.ProgressLocation.Notification,
-                  title: "Searching orgs for a matching instance URL...",
+                  title: t("searchingOrgsForInstanceUrl"),
                   cancellable: false,
                 },
                 async () => {
@@ -234,10 +390,10 @@ export function registerShowPipeline(commands: Commands) {
 
           if (command) {
             const progressLabel = targetOrgUsername
-              ? `Opening org ${targetOrgUsername}`
+              ? t("openingOrgNamed", { name: targetOrgUsername })
               : alias
-                ? `Opening org ${alias}`
-                : "Opening org";
+                ? t("openingOrgNamed", { name: alias })
+                : t("openingOrg");
             try {
               await execCommandWithProgress(
                 command,
@@ -251,13 +407,15 @@ export function registerShowPipeline(commands: Commands) {
                   return;
                 } catch (fallbackError: any) {
                   vscode.window.showErrorMessage(
-                    `Failed to open org via CLI and URL: ${fallbackError?.message || fallbackError}`,
+                    t("failedToOpenOrgCliAndUrl", {
+                      error: fallbackError?.message || fallbackError,
+                    }),
                   );
                   return;
                 }
               }
               vscode.window.showErrorMessage(
-                `Failed to open org: ${error?.message || error}`,
+                t("failedToOpenOrg", { error: error?.message || error }),
               );
             }
           } else if (instanceUrl) {
@@ -265,22 +423,18 @@ export function registerShowPipeline(commands: Commands) {
               await vscode.env.openExternal(vscode.Uri.parse(instanceUrl));
             } catch (error: any) {
               vscode.window.showErrorMessage(
-                `Failed to open org URL: ${error?.message || error}`,
+                t("failedToOpenOrgUrl", { error: error?.message || error }),
               );
             }
           } else {
-            vscode.window.showWarningMessage(
-              "Unable to open org: no target-org or instance URL provided.",
-            );
+            vscode.window.showWarningMessage(t("unableToOpenOrg"));
           }
         }
         // Authenticate or re-authenticate to Git provider
         else if (type === "connectToGit") {
           const gitProvider = await GitProvider.getInstance();
           if (!gitProvider) {
-            vscode.window.showErrorMessage(
-              "No supported Git provider detected in the current repository.",
-            );
+            vscode.window.showErrorMessage(t("noGitProviderDetected"));
             return;
           }
           Logger.log(
@@ -290,13 +444,11 @@ export function registerShowPipeline(commands: Commands) {
           try {
             authRes = await gitProvider.authenticate();
           } catch (e) {
+            const viewLogsLabel = t("viewLogs");
             vscode.window
-              .showErrorMessage(
-                "Error during Git provider authentication. Please check the logs for details.",
-                "View logs",
-              )
+              .showErrorMessage(t("gitProviderAuthError"), viewLogsLabel)
               .then((action) => {
-                if (action === "View logs") {
+                if (action === viewLogsLabel) {
                   Logger.showOutputChannel();
                 }
               });
@@ -307,7 +459,7 @@ export function registerShowPipeline(commands: Commands) {
           }
           if (authRes === true) {
             vscode.window.showInformationMessage(
-              "Successfully connected to Git provider.",
+              t("successfullyConnectedToGitProvider"),
             );
             pipelineProperties = await loadAllPipelineInfo({
               browseGitProvider: true,
@@ -316,13 +468,11 @@ export function registerShowPipeline(commands: Commands) {
             });
             panel.sendInitializationData(pipelineProperties);
           } else if (authRes === false) {
+            const viewLogsLabel = t("viewLogs");
             vscode.window
-              .showErrorMessage(
-                "Failed to connect to Git provider. Please check the logs for details.",
-                "View logs",
-              )
+              .showErrorMessage(t("failedConnectGitProvider"), viewLogsLabel)
               .then((action) => {
-                if (action === "View logs") {
+                if (action === viewLogsLabel) {
                   Logger.showOutputChannel();
                 }
               });
@@ -333,13 +483,14 @@ export function registerShowPipeline(commands: Commands) {
             authenticate: true,
           });
           if (!ticketProvider) {
+            const pipelineSettingsLabel = t("pipelineConfig");
             vscode.window
               .showErrorMessage(
-                "No supported Ticketing provider detected in the current project. You can define one in Pipeline Settings",
-                "Pipeline Settings",
+                t("noTicketingProviderDetected"),
+                pipelineSettingsLabel,
               )
               .then((action) => {
-                if (action === "Pipeline Settings") {
+                if (action === pipelineSettingsLabel) {
                   vscode.commands.executeCommand(
                     "vscode-sfdx-hardis.showPipelineConfig",
                     null,
@@ -350,20 +501,25 @@ export function registerShowPipeline(commands: Commands) {
             return;
           }
           if (!ticketProvider.isAuthenticated) {
+            const viewLogsLabel = t("viewLogs");
             vscode.window
               .showErrorMessage(
-                `Failed to connect to ${ticketProvider.providerName}. Please check the logs for details.`,
-                "View logs",
+                t("failedConnectToProvider", {
+                  providerName: ticketProvider.providerName,
+                }),
+                viewLogsLabel,
               )
               .then((action) => {
-                if (action === "View logs") {
+                if (action === viewLogsLabel) {
                   Logger.showOutputChannel();
                 }
               });
             return;
           }
           vscode.window.showInformationMessage(
-            `Successfully connected to ${ticketProvider.providerName}.`,
+            t("successfullyConnectedToProvider", {
+              providerName: ticketProvider.providerName,
+            }),
           );
           pipelineProperties = await loadAllPipelineInfo({
             browseGitProvider: true,
@@ -375,28 +531,30 @@ export function registerShowPipeline(commands: Commands) {
         // Prompt user for Git provider action when already connected
         else if (type === "promptGitProviderAction") {
           const providerName = data?.providerName || "Git";
-          const actions = ["Open Remote Repository", "Disconnect"];
+          const openRemoteLabel = t("openRemoteRepository");
+          const disconnectLabel = t("disconnect");
           const choice = await vscode.window.showInformationMessage(
-            `You are connected to ${providerName}. What would you like to do?`,
+            t("connectedToProviderAction", { providerName }),
             { modal: true },
-            ...actions,
+            openRemoteLabel,
+            disconnectLabel,
           );
-          if (choice === "Open Remote Repository") {
+          if (choice === openRemoteLabel) {
             const gitProvider = await GitProvider.getInstance();
             const repoUrl = gitProvider?.repoInfo?.webUrl || "";
             if (!repoUrl) {
               vscode.window.showWarningMessage(
-                `No web URL found for the remote repository on ${providerName}.`,
+                t("noWebUrlForRepo", { providerName }),
               );
               return;
             }
             vscode.env.openExternal(vscode.Uri.parse(repoUrl));
-          } else if (choice === "Disconnect") {
+          } else if (choice === disconnectLabel) {
             const gitProvider = await GitProvider.getInstance();
             if (gitProvider) {
               await gitProvider.disconnect();
               vscode.window.showInformationMessage(
-                `Disconnected from ${providerName}.`,
+                t("disconnectedFrom", { providerName }),
               );
               // Refresh pipeline with unauthenticated state
               pipelineProperties = await loadAllPipelineInfo({
@@ -411,33 +569,34 @@ export function registerShowPipeline(commands: Commands) {
         // Prompt user for Ticketing provider action when already connected
         else if (type === "promptTicketProviderAction") {
           const providerName = data?.providerName || "Ticketing";
-
+          const openProviderLabel = t("openProviderButton", { providerName });
+          const disconnectLabel = t("disconnect");
           const choice = await vscode.window.showInformationMessage(
-            `You are connected to ${providerName}. What would you like to do?`,
+            t("connectedToProviderAction", { providerName }),
             { modal: true },
-            `Open ${providerName}`,
-            "Disconnect",
+            openProviderLabel,
+            disconnectLabel,
           );
-          if (choice === `Open ${providerName}`) {
+          if (choice === openProviderLabel) {
             const ticketProvider = await TicketProvider.getInstance({
               reset: false,
               authenticate: false,
             });
             if (!ticketProvider) {
               vscode.window.showWarningMessage(
-                `Unable to find active ticketing provider connection.`,
+                t("unableToFindTicketingConnection"),
               );
               return;
             }
             const ticketingUrl = await ticketProvider.getTicketingWebUrl();
             if (!ticketingUrl) {
               vscode.window.showWarningMessage(
-                `No web URL found for the ticketing provider ${providerName}.`,
+                t("noWebUrlForTicketing", { providerName }),
               );
               return;
             }
             vscode.env.openExternal(vscode.Uri.parse(ticketingUrl));
-          } else if (choice === "Disconnect") {
+          } else if (choice === disconnectLabel) {
             const ticketProvider = await TicketProvider.getInstance({
               reset: false,
               authenticate: false,
@@ -446,11 +605,11 @@ export function registerShowPipeline(commands: Commands) {
             if (ticketProvider) {
               await ticketProvider.disconnect();
               vscode.window.showInformationMessage(
-                `Disconnected from ${providerName}.`,
+                t("disconnectedFrom", { providerName }),
               );
             } else {
               vscode.window.showWarningMessage(
-                `Unable to find active ticketing provider connection.`,
+                t("unableToFindTicketingConnection"),
               );
             }
 
@@ -502,6 +661,12 @@ export function registerShowPipeline(commands: Commands) {
       let gitAuthenticated = false;
       let currentBranchPullRequest: PullRequest | null = null;
 
+      // Determine theme for Mermaid diagram colors
+      const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+      const colorThemeConfig = config.get("theme.colorTheme", "light");
+      const themeConfig = LwcUiPanel.resolveTheme(colorThemeConfig);
+      const colorTheme = themeConfig.colorTheme;
+
       const prButtonInfo: any = {};
       let repoPlatformLabel = "";
       if (gitProvider?.repoInfo) {
@@ -513,7 +678,7 @@ export function registerShowPipeline(commands: Commands) {
         repoPlatformLabel = desc.providerLabel;
       } else {
         prButtonInfo.url = "";
-        prButtonInfo.label = "View Pull Requests";
+        prButtonInfo.label = t("viewPullRequests");
         prButtonInfo.icon = "";
       }
 
@@ -544,16 +709,23 @@ export function registerShowPipeline(commands: Commands) {
                   `.sfdx-hardis.${prNumber}.yml`,
                 );
                 await fs.rename(prActionsFileDraft, prActionsFileNewName);
+                const commitAndPushLabel = t("commitAndPushFile", {
+                  fileName: `.sfdx-hardis.${prNumber}.yml`,
+                });
+                const openGitLabel = t("openGit");
                 vscode.window
                   .showInformationMessage(
-                    `Draft deployment actions file has been found and associated to ${prButtonInfo.pullRequestLabel || "Pull Request"} #${currentBranchPullRequest.number}. Don't forget to commit & push 😇`,
-                    `Commit & Push .sfdx-hardis.${prNumber}.yml`,
-                    "Open Git",
+                    t("draftActionsFileAssociated", {
+                      prLabel: prButtonInfo.pullRequestLabel || "Pull Request",
+                      prNumber: currentBranchPullRequest.number,
+                    }),
+                    commitAndPushLabel,
+                    openGitLabel,
                   )
                   .then((action) => {
                     if (
-                      action === `Commit & Push .sfdx-hardis.${prNumber}.yml` ||
-                      action === "Open Git"
+                      action === commitAndPushLabel ||
+                      action === openGitLabel
                     ) {
                       vscode.commands.executeCommand("workbench.view.scm");
                     }
@@ -576,7 +748,9 @@ export function registerShowPipeline(commands: Commands) {
                 authorLabel: "",
                 jobsStatus: "unknown",
                 number: -1,
-                title: `${prButtonInfo.pullRequestLabel} not created yet`,
+                title: t("prLabelNotCreatedYet", {
+                  prLabel: prButtonInfo.pullRequestLabel,
+                }),
               };
               const prList =
                 await gitProvider.completePullRequestsWithPrePostCommands([
@@ -593,11 +767,11 @@ export function registerShowPipeline(commands: Commands) {
         {
           openPullRequests: openPullRequests,
           browseGitProvider: browseGitProvider,
+          colorTheme: colorTheme,
         },
       );
 
       // Read displayFeatureBranches configuration
-      const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
       const displayFeatureBranches =
         config.get<boolean>("pipelineDisplayFeatureBranches") ?? false;
 
@@ -639,6 +813,7 @@ export function registerShowPipeline(commands: Commands) {
         displayFeatureBranches: displayFeatureBranches,
         projectApexScripts: projectApexScripts,
         projectSfdmuWorkspaces: projectDataWorkspaces,
+        projectCommunities: [],
         enableDeploymentApexTestClasses: enableDeploymentApexTestClasses,
         availableApexTestClasses: availableApexTestClasses,
       };
@@ -648,7 +823,7 @@ export function registerShowPipeline(commands: Commands) {
       return await vscode.window.withProgress(
         {
           location: vscode.ProgressLocation.Notification,
-          title: "Loading pipeline information...",
+          title: t("loadingPipelineInformation"),
           cancellable: false,
         },
         loadData,
@@ -678,6 +853,7 @@ type PipelineInfo = {
   displayFeatureBranches: boolean;
   projectApexScripts: any[];
   projectSfdmuWorkspaces: any[];
+  projectCommunities: any[];
   enableDeploymentApexTestClasses: boolean;
   availableApexTestClasses: string[];
 };

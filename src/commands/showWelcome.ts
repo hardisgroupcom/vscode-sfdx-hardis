@@ -1,6 +1,8 @@
 import * as vscode from "vscode";
 import { Commands } from "../commands";
 import { LwcPanelManager } from "../lwc-panel-manager";
+import { t } from "../i18n/i18n";
+import { BANNER_IMAGE_URL, WEBSITE_URL, DOCSITE_URL, WEBSITE_CONTACT_FORM_URL } from "../constants";
 
 export function registerShowWelcome(command: Commands) {
   const disposable = vscode.commands.registerCommand(
@@ -12,10 +14,35 @@ export function registerShowWelcome(command: Commands) {
       const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
       const showWelcomeAtStartup = config.get("showWelcomeAtStartup", true);
 
+      const colorThemeConfig = config.get("theme.colorTheme", "auto");
+      const langSetting = config.get<string>("lang", "auto");
+      const { colorTheme, colorContrast } =
+        LwcPanelManager.resolveTheme(colorThemeConfig);
       const panel = lwcManager.getOrCreatePanel("s-welcome", {
         showWelcomeAtStartup: showWelcomeAtStartup,
+        langSetting: langSetting,
+        colorThemeConfig,
+        colorTheme,
+        colorContrast,
+        bannerImageUrl: BANNER_IMAGE_URL !== false ? BANNER_IMAGE_URL : undefined,
+        websiteUrl: WEBSITE_URL,
+        docsiteUrl: DOCSITE_URL,
+        contributersUrl: DOCSITE_URL + "/contributors/",
+        contactFormUrl: WEBSITE_CONTACT_FORM_URL,
+        imagePaths: {
+          flagGlobe: ["icons", "flag-globe.svg"],
+          flagDe: ["icons", "flag-de.svg"],
+          flagEn: ["icons", "flag-uk.svg"],
+          flagEs: ["icons", "flag-es.svg"],
+          flagFr: ["icons", "flag-fr.svg"],
+          flagJa: ["icons", "flag-ja.svg"],
+          flagPl: ["icons", "flag-pl.svg"],
+          themeAuto: ["icons", "theme-auto.svg"],
+          themeLight: ["icons", "theme-light.svg"],
+          themeDark: ["icons", "theme-dark.svg"],
+        },
       });
-      panel.updateTitle("SFDX Hardis Welcome");
+      panel.updateTitle(t("welcomeTitle"));
 
       // Handle messages from the Welcome panel
       panel.onMessage(async (type: string, _data: any) => {

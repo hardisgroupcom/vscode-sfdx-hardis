@@ -5,6 +5,7 @@ import type { Schema } from "bitbucket";
 import { ProviderDescription, PullRequest, Job, JobStatus } from "./types";
 import { SecretsManager } from "../secretsManager";
 import { Logger } from "../../logger";
+import { t } from "../../i18n/i18n";
 
 export class GitProviderBitbucket extends GitProvider {
   bitbucketClient: InstanceType<typeof Bitbucket> | null = null;
@@ -15,7 +16,7 @@ export class GitProviderBitbucket extends GitProvider {
   describeGitProvider(): ProviderDescription {
     return {
       providerLabel: "Bitbucket",
-      pullRequestLabel: "Pull Request",
+      pullRequestLabel: t("pullRequestLabel"),
       pullRequestsWebUrl: this.repoInfo?.webUrl
         ? `${this.repoInfo.webUrl}/pull-requests`
         : "",
@@ -53,7 +54,7 @@ export class GitProviderBitbucket extends GitProvider {
 
   async authenticate(): Promise<boolean | null> {
     const token = await vscode.window.showInputBox({
-      prompt: "Enter your Bitbucket Token",
+      prompt: t("bitbucketEnterToken"),
       ignoreFocusOut: true,
       password: true,
     });

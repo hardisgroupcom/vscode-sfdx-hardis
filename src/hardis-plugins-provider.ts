@@ -2,22 +2,23 @@ import * as vscode from "vscode";
 import {
   execCommand,
   getNpmLatestVersion,
+  getSfdxHardisInstallTag,
   getWorkspaceRoot,
   isCachePreloaded,
+  isExtensionPreRelease,
   isProjectSfdxConfigLoaded,
   loadExternalSfdxHardisConfiguration,
   loadProjectSfdxHardisConfig,
-  NODE_JS_MINIMUM_VERSION,
-  RECOMMENDED_SFDX_CLI_VERSION,
-  RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION,
   resetCache,
   execCommandWithProgress,
 } from "./utils";
 import { Logger } from "./logger";
 import which from "which";
 import { ThemeUtils } from "./themeUtils";
+import { t } from "./i18n/i18n";
 import { SetupHelper } from "./utils/setupUtils";
 import { isMergeDriverEnabled } from "./utils/gitMergeDriverUtils";
+import { NODE_JS_MINIMUM_VERSION, RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION, RECOMMENDED_SFDX_CLI_VERSION, DOCSITE_URL } from "./constants";
 
 let nodeInstallOk = false;
 let gitInstallOk = false;
@@ -94,12 +95,14 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
 
   private async getCoreItems(): Promise<any[]> {
     const items: any = [];
+    const downloadNodeLtsLabel = t("downloadAndInstallNodeJsLts");
+    const downloadGitLabel = t("downloadAndInstallGit");
     const nodeItem = isCachePreloaded()
       ? {
           id: `plugin-info-node`,
           label: "Node.js",
           command: `echo "Nothing to do here 😁"`,
-          tooltip: `Node.js is installed`,
+          tooltip: t("nodeJsInstalled"),
           status: "dependency-ok",
           helpUrl: "https://nodejs.org/en/",
         }
@@ -124,17 +127,17 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
       const nodeVersionMatch = /v([0-9]+)\.(.*)/gm.exec(nodeVersionStdOut);
       if (!nodeVersionMatch) {
         nodeItem.status = "dependency-missing";
-        nodeItem.tooltip = "Node.js is missing";
+        nodeItem.tooltip = t("nodeJsMissing");
         ((nodeItem.command = `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
           "https://nodejs.org/en/",
         )}`),
           vscode.window
             .showWarningMessage(
-              `🦙 You need Node.js installed on your computer. Please download and install it (version ${NODE_JS_MINIMUM_VERSION}), then restart VsCode.`,
-              "Download and install Node.js LTS",
+              t("nodeNotInstalled", { version: NODE_JS_MINIMUM_VERSION }),
+              downloadNodeLtsLabel,
             )
             .then((selection) => {
-              if (selection === "Download and install Node.js LTS") {
+              if (selection === downloadNodeLtsLabel) {
                 vscode.env.openExternal(
                   vscode.Uri.parse("https://nodejs.org/en/"),
                 );
@@ -146,17 +149,20 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
       ) {
         nodeItem.label += " v" + nodeVersionMatch[1];
         nodeItem.status = "dependency-warning";
-        nodeItem.tooltip = "Node.js is outdated";
+        nodeItem.tooltip = t("nodeJsOutdated");
         ((nodeItem.command = `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
           "https://nodejs.org/en/",
         )}`),
           vscode.window
             .showWarningMessage(
-              `🦙 You have a too old version (${nodeVersionMatch[1]}) of Node.js installed on your computer. Please download and install it (version ${NODE_JS_MINIMUM_VERSION}), then restart VsCode.`,
-              "Download and install Node.js LTS",
+              t("nodeVersionTooOld", {
+                currentVersion: nodeVersionMatch[1],
+                recommendedVersion: NODE_JS_MINIMUM_VERSION,
+              }),
+              downloadNodeLtsLabel,
             )
             .then((selection) => {
-              if (selection === "Download and install Node.js LTS") {
+              if (selection === downloadNodeLtsLabel) {
                 vscode.env.openExternal(
                   vscode.Uri.parse("https://nodejs.org/en/"),
                 );
@@ -176,7 +182,7 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
           id: `plugin-info-git`,
           label: "Git",
           command: `echo "Nothing to do here 😁"`,
-          tooltip: `Git is installed`,
+          tooltip: t("gitInstalled"),
           status: "dependency-ok",
           helpUrl: "https://git-scm.com/",
         }
@@ -200,17 +206,14 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
       );
       if (!gitVersionMatch) {
         gitItem.status = "dependency-missing";
-        gitItem.tooltip = "Git is missing";
+        gitItem.tooltip = t("gitMissing");
         ((gitItem.command = `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
           "https://git-scm.com/downloads",
         )}`),
           vscode.window
-            .showWarningMessage(
-              "🦙 You need Git installed on your computer. Please download and install it (select GIT BASH in options), then restart VsCode",
-              "Download and install Git",
-            )
+            .showWarningMessage(t("gitNotInstalled"), downloadGitLabel)
             .then((selection) => {
-              if (selection === "Download and install Git") {
+              if (selection === downloadGitLabel) {
                 vscode.env.openExternal(
                   vscode.Uri.parse("https://git-scm.com/downloads"),
                 );
@@ -238,7 +241,7 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
       },
       {
         name: "sfdx-hardis",
-        helpUrl: "https://sfdx-hardis.cloudity.com/",
+        helpUrl: DOCSITE_URL,
       },
       { name: "sfdmu", helpUrl: "https://help.sfdmu.com/" },
       {
@@ -322,12 +325,13 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
       id: `sfdx-cli-info`,
       label: `@salesforce/cli v${sfdxCliVersion}`,
       command: `echo "Nothing to do here 😁"`,
-      tooltip: `Recommended version of @salesforce/cli is installed`,
+      tooltip: t("sfCliRecommendedInstalled"),
       status: "dependency-ok",
       helpUrl:
         "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_unified.htm",
     };
     let sfdxCliOutdated = false;
+    const upgradeAvailableText = t("upgradeAvailableSuffix");
     if (sfdxCliVersion !== recommendedSfdxCliVersion) {
       // Check if sfdx is installed using npm and not the windows installer
       let sfdxPath = "";
@@ -338,9 +342,9 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
         sfdxPath = "missing";
       }
       if (legacySfdx) {
-        sfdxCliItem.label = "Upgrade to @salesforce/cli";
+        sfdxCliItem.label = t("upgradeToSalesforceCli");
         sfdxCliItem.command = `npm uninstall sfdx-cli --global && npm install @salesforce/cli --global`;
-        sfdxCliItem.tooltip = `sfdx is deprecated: Install the latest Salesforce CLI, please click to make the upgrade`;
+        sfdxCliItem.tooltip = t("sfdxDeprecatedTooltip");
         sfdxCliItem.status = "dependency-error";
       } else if (
         !sfdxPath.includes("npm") &&
@@ -353,9 +357,10 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
         sfdxPath !== "missing"
       ) {
         sfdxCliItem.label =
-          sfdxCliItem.label + " (WRONGLY INSTALLED in " + sfdxPath + ")";
+          sfdxCliItem.label +
+          t("sfCliWronglyInstalledSuffix", { path: sfdxPath });
         sfdxCliItem.command = `echo "You need to install Salesforce CLI using Node.JS. First, you need to uninstall Salesforce DX / Salesforce CI using Windows -> Programs -> Uninstall (or equivalent on MAC)"`;
-        sfdxCliItem.tooltip = `First, you need to uninstall Salesforce DX / Salesforce CLI from Windows -> Programs -> Uninstall program (or equivalent on MAC)`;
+        sfdxCliItem.tooltip = t("sfCliUninstallFirstTooltip");
         sfdxCliItem.status = "dependency-error";
       } else {
         // sfdx-cli is just outdated
@@ -364,9 +369,11 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
           sfdxCliItem.label.includes("missing") &&
           !sfdxCliItem.label.includes("(link)")
             ? sfdxCliItem.label
-            : sfdxCliItem.label + " (upgrade available)";
+            : sfdxCliItem.label + upgradeAvailableText;
         sfdxCliItem.command = `npm install @salesforce/cli@${recommendedSfdxCliVersion} -g`;
-        sfdxCliItem.tooltip = `Click to upgrade @salesforce/cli to ${recommendedSfdxCliVersion}`;
+        sfdxCliItem.tooltip = t("clickToUpgradeSfCliTo", {
+          version: recommendedSfdxCliVersion,
+        });
         sfdxCliItem.status = "dependency-warning";
       }
     }
@@ -400,28 +407,33 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
         if (match && match[1]) {
           installedVersion = match[1];
         }
+        const sfdxHardisInstallTag = getSfdxHardisInstallTag();
         if (
           installedVersion &&
-          ((RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION !== "beta" &&
-            this.compareVersions(
-              installedVersion,
-              RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION,
-            ) < 0) ||
+          ((isExtensionPreRelease() && !installedVersion.includes("alpha")) ||
+            (RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION !== "beta" &&
+              !isExtensionPreRelease() &&
+              this.compareVersions(
+                installedVersion,
+                RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION,
+              ) < 0) ||
             (RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION === "beta" &&
               !installedVersion.includes("(beta)")))
         ) {
-          const versionToInstall =
-            RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION === "beta"
-              ? "beta"
-              : "latest";
-          const errorMessageForUSer =
-            RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION === "beta"
-              ? `You are using VsCode sfdx-hardis pre-release version. Please install beta version of sfdx-hardis plugin to benefit from new features.\nRun: sf plugins:install sfdx-hardis@beta`
-              : `Your sfdx-hardis plugin version (${installedVersion}) is outdated. Please upgrade to latest version to benefit from new features.\nRun: sf plugins:install sfdx-hardis@${versionToInstall}`;
+          const versionToInstall = sfdxHardisInstallTag;
+          const upgradeNowLabel = t("upgradeNow");
+          const errorMessageForUSer = isExtensionPreRelease()
+            ? t("sfdxHardisPreReleaseAlphaMessage")
+            : RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION === "beta"
+              ? t("sfdxHardisPreReleaseBetaMessage")
+              : t("sfdxHardisPluginOutdated", {
+                  version: installedVersion,
+                  versionToInstall,
+                });
           vscode.window
-            .showErrorMessage(errorMessageForUSer, "Upgrade now")
+            .showErrorMessage(errorMessageForUSer, upgradeNowLabel)
             .then((selection) => {
-              if (selection === "Upgrade now") {
+              if (selection === upgradeNowLabel) {
                 vscode.commands.executeCommand(
                   "vscode-sfdx-hardis.execute-command",
                   `echo y|sf plugins:install sfdx-hardis@${versionToInstall} && sf hardis:work:ws --event refreshPlugins`,
@@ -442,6 +454,7 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
       }
       let pluginLabel = plugin.name;
       let isPluginMissing = false;
+      const previewLabel = t("pluginPreviewLabel");
       const regexVersion = new RegExp(
         `${plugin.altName || plugin.name} (.*)`,
         "gm",
@@ -450,14 +463,14 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
       if (versionMatches.length > 0) {
         pluginLabel += ` v${versionMatches[0][1]}`;
       } else {
-        pluginLabel += " (missing)";
+        pluginLabel += t("pluginMissingSuffix");
         isPluginMissing = true;
       }
       const pluginItem = {
         id: `plugin-info-${plugin.name}`,
         label: pluginLabel,
         command: `echo "Nothing to do here 😁"`,
-        tooltip: `Latest version of SFDX plugin ${plugin.name} is installed`,
+        tooltip: t("sfdxPluginLatestInstalled", { plugin: plugin.name }),
         status: "dependency-ok",
         helpUrl: plugin.helpUrl,
       };
@@ -470,28 +483,35 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
         pluginItem.label =
           pluginItem.label.includes("(beta)") ||
           pluginItem.label.includes("(alpha)")
-            ? pluginItem.label + " (PREVIEW)"
+            ? pluginItem.label + " " + previewLabel
             : pluginItem.label.includes("(link)")
               ? pluginItem.label.replace("(link)", "(localdev)")
-              : pluginItem.label.includes("missing")
+              : isPluginMissing
                 ? pluginItem.label
-                : pluginItem.label + " (upgrade available)";
-        pluginItem.command = `echo y|sf plugins:install ${plugin.name} && sf hardis:work:ws --event refreshPlugins`;
-        pluginItem.tooltip = `Click to upgrade SFDX plugin ${plugin.name} to ${latestPluginVersion}`;
+                : pluginItem.label + upgradeAvailableText;
+        const installTag =
+          plugin.name === "sfdx-hardis" ? getSfdxHardisInstallTag() : "latest";
+        pluginItem.command = `echo y|sf plugins:install ${plugin.name}@${installTag} && sf hardis:work:ws --event refreshPlugins`;
+        pluginItem.tooltip = t("clickToUpgradeSfdxPluginTo", {
+          plugin: plugin.name,
+          version: latestPluginVersion,
+        });
         if (!pluginItem.label.includes("(localdev)")) {
           pluginItem.status = isPluginMissing
             ? "dependency-missing"
-            : pluginItem.label.includes("(PREVIEW)")
+            : pluginItem.label.includes(previewLabel)
               ? "dependency-preview"
               : "dependency-warning";
-          if (!pluginItem.label.includes("(PREVIEW)")) {
+          if (!pluginItem.label.includes(previewLabel)) {
             outdated.push(plugin);
           }
         }
       }
       if (pluginItem.label.includes("(localdev)")) {
         pluginItem.status = "dependency-local";
-        pluginItem.tooltip = `You are using locally developed version of ${plugin.name}`;
+        pluginItem.tooltip = t("usingLocallyDevelopedPlugin", {
+          plugin: plugin.name,
+        });
       }
       items.push(pluginItem);
     });
@@ -521,7 +541,7 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
         execCommandWithProgress(
           command,
           { fail: false, output: true },
-          `Automatically upgrading dependencies with command: ${command}`,
+          t("autoUpgradingDependencies", { command }),
         )
           .then(() => {
             setupHelper.setUpdateInProgress(false, command);
@@ -536,13 +556,11 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
             );
           });
       } else if (!setupHelper.hasUpdatesInProgress()) {
+        const upgradePluginsLabel = t("upgradePlugins");
         vscode.window
-          .showWarningMessage(
-            "🦙 Some plugins are not up to date, please click to upgrade, then wait for the process to be completed before performing actions",
-            "Upgrade plugins",
-          )
+          .showWarningMessage(t("somePluginsNotUpToDate"), upgradePluginsLabel)
           .then((selection) => {
-            if (selection === "Upgrade plugins") {
+            if (selection === upgradePluginsLabel) {
               if (config.get("userInput") === "ui-lwc") {
                 vscode.commands.executeCommand("vscode-sfdx-hardis.showSetup");
                 return;
@@ -565,14 +583,21 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
     sfdxCliOutdated: boolean,
     mergeDriverWasEnabled: boolean,
   ): string {
+    const hardisTag = getSfdxHardisInstallTag();
     let command = outdated
-      .map((plugin) => `echo y|sf plugins:install ${plugin.name}`)
+      .map((plugin) => {
+        const tag = plugin.name === "sfdx-hardis" ? hardisTag : "latest";
+        return `echo y|sf plugins:install ${plugin.name}@${tag}`;
+      })
       .join(" && ");
     if (legacySfdx) {
       command =
         "npm uninstall sfdx-cli --global && npm install @salesforce/cli --global && " +
         plugins
-          .map((plugin: any) => `echo y|sf plugins:install ${plugin.name}`)
+          .map((plugin: any) => {
+            const tag = plugin.name === "sfdx-hardis" ? hardisTag : "latest";
+            return `echo y|sf plugins:install ${plugin.name}@${tag}`;
+          })
           .join(" && ");
     } else if (sfdxCliOutdated === true) {
       command = "npm install @salesforce/cli -g && " + command;
@@ -641,7 +666,7 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
         id: extension.id,
         label: extension.label,
         command: `echo "Nothing to do here 😁"`,
-        tooltip: `${extension.label} is installed`,
+        tooltip: t("dependencyInstalled", { name: extension.label }),
         status: "dependency-ok",
       };
       let extInstance = vscode.extensions.getExtension(extension.id);
@@ -651,16 +676,21 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
         );
       }
       if (!extInstance) {
+        const installExtensionLabel = t("installVsCodeExtension", {
+          name: extension.label,
+        });
         extensionItem.command = `code --install-extension ${extension.id}`;
-        extensionItem.tooltip = `Click to install VsCode Extension ${extension.label}`;
+        extensionItem.tooltip = t("clickToInstallVsCodeExtension", {
+          name: extension.label,
+        });
         extensionItem.status = "dependency-warning";
         vscode.window
           .showWarningMessage(
-            `🦙 VsCode extension ${extension.label} is missing, click to install it`,
-            `Install ${extension.label}`,
+            t("vsCodeExtensionMissingWarning", { name: extension.label }),
+            installExtensionLabel,
           )
           .then((selection) => {
-            if (selection === `Install ${extension.label}`) {
+            if (selection === installExtensionLabel) {
               vscode.commands.executeCommand(
                 "vscode-sfdx-hardis.execute-command",
                 extensionItem.command,
@@ -733,21 +763,21 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
     const topics = [
       {
         id: "status-plugins-sfdx",
-        label: "SF CLI & Plugins",
+        label: "sfCliAndPlugins",
         defaultExpand: true,
       },
       {
         id: "status-plugins-core",
-        label: "Core",
+        label: "coreLabel",
         defaultExpand: true,
       },
       {
         id: "status-vscode-extensions",
-        label: "VsCode Extensions",
+        label: "vsCodeExtensionsLabel",
         defaultExpand: true,
       },
     ].map((topic) => {
-      topic.label = this.themeUtils.buildSectionLabel(topic.id, topic.label);
+      topic.label = this.themeUtils.buildSectionLabel(topic.id, t(topic.label));
       return topic;
     });
     return topics;

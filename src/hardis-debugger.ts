@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { hasSfdxProjectJson } from "./utils";
 import { Logger } from "./logger";
+import { t } from "./i18n/i18n";
 
 export class HardisDebugger {
   isDebugLogsActive = false;
@@ -137,13 +138,14 @@ export class HardisDebugger {
     await this.manageDebugLogsActivation();
 
     const quickpick = vscode.window.createQuickPick<vscode.QuickPickItem>();
+    const allLogsLabel = t("allLogsLabel");
     const value = await new Promise<any>((resolve) => {
       quickpick.ignoreFocusOut = true;
       quickpick.title = "Please select the type of logs you want to display";
       quickpick.canSelectMany = false;
       quickpick.items = [
-        { label: "Only logs from System.debug()" },
-        { label: "All logs" },
+        { label: t("onlyLogsFromSystemDebug") },
+        { label: allLogsLabel },
       ];
       // Show quickpick item
       quickpick.show();
@@ -151,7 +153,7 @@ export class HardisDebugger {
       quickpick.onDidAccept(() => {
         if (quickpick.selectedItems.length > 0) {
           const value =
-            quickpick.selectedItems[0].label === "All logs"
+            quickpick.selectedItems[0].label === allLogsLabel
               ? "all"
               : "USER_DEBUG";
           resolve(value);
@@ -193,11 +195,11 @@ export class HardisDebugger {
         // Missing apex sources
         vscode.window
           .showWarningMessage(
-            "🦙 No local apex sources found. Click to retrieve them",
-            "Retrieve Apex sources from org",
+            t("noLocalApexSources"),
+            t("retrieveApexSourcesFromOrg"),
           )
           .then((selection) => {
-            if (selection === "Retrieve Apex sources from org") {
+            if (selection === t("retrieveApexSourcesFromOrg")) {
               vscode.commands.executeCommand(
                 "vscode-sfdx-hardis.execute-command",
                 "sf hardis:org:retrieve:sources:dx -k ApexClass,ApexTrigger,ApexPage",
@@ -207,10 +209,8 @@ export class HardisDebugger {
       } else {
         // Salesforce extension command not found
         vscode.window.showWarningMessage(
-          `🦙 Salesforce Extension pack command error. If it is installed, just wait for it to be initialized 🤗\nDetail: ${
-            e.message || JSON.stringify(e)
-          }`,
-          "Close",
+          t("salesforceExtensionPackError", { detail: e.message || JSON.stringify(e) }),
+          t("close"),
         );
       }
       return null;

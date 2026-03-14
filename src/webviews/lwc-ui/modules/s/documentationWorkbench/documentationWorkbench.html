@@ -1,19 +1,19 @@
 <template>
-    <div class="slds-scope slds-theme_default blue-back">
+    <div class="slds-scope slds-theme_default blue-back" data-theme={colorTheme} data-contrast={colorContrast}>
         <div class="doc-container">
             <!-- Header -->
             <div class="header-content">
-                <div class="header-icon-container">
+                <div class="header-icon-container teal">
                     <lightning-icon icon-name="utility:archive" size="medium" variant="inverse"></lightning-icon>
                 </div>
                 <div class="header-text">
-                    <h1 class="header-title">Documentation Workbench</h1>
-                    <p class="header-subtitle">Generate, deploy and manage your Salesforce project documentation</p>
+                    <h1 class="header-title">{i18n.documentationWorkbenchTitle}</h1>
+                    <p class="header-subtitle">{i18n.documentationWorkbenchSubtitle}</p>
                 </div>
                 <div class="header-actions">
                     <lightning-button
                         variant="neutral"
-                        label="Online Help"
+                        label={i18n.onlineHelp}
                         icon-name="utility:new_window"
                         onclick={handleOpenHelp}
                     ></lightning-button>
@@ -24,26 +24,26 @@
             <div class="section">
                 <h2 class="section-title">
                     <lightning-icon icon-name="utility:archive" size="x-small" class="section-icon"></lightning-icon>
-                    Generate Documentation
+                    {i18n.generateDocumentationSection}
                 </h2>
-                <p class="section-description">Generate Markdown documentation for your Salesforce project. Includes Flows, Apex, Objects, Permissions, and more.</p>
+                <p class="section-description">{i18n.generateDocumentationSectionDesc}</p>
 
-                <div class="generate-options-card">
+                <div class="generate-options-card panel-surface">
                     <div class="options-grid">
                         <div class="options-column general-column">
-                            <h3 class="subsection-title">Formats & History</h3>
-                            <p class="subsection-help">Control the output format and change tracking.</p>
+                            <h3 class="subsection-title">{i18n.formatsAndHistory}</h3>
+                            <p class="subsection-help">{i18n.formatsAndHistoryHelp}</p>
                             <div class="option-row">
                                 <div class="option-item">
                                     <div class="option-input">
                                         <lightning-input
                                             type="checkbox"
-                                            label="Generate Markdown"
+                                            label={i18n.generateMarkdown}
                                             checked
                                             disabled
                                             class="option-checkbox"
                                         ></lightning-input>
-                                        <s-multiline-helptext content="Always generated (project docs in Markdown format)."></s-multiline-helptext>
+                                        <s-multiline-helptext content={i18n.generateMarkdownHelp}></s-multiline-helptext>
                                     </div>
                                 </div>
                             </div>
@@ -52,13 +52,13 @@
                                     <div class="option-input">
                                         <lightning-input
                                             type="checkbox"
-                                            label="With Flow History"
+                                            label={i18n.withFlowHistory}
                                             name="withHistory"
                                             checked={withHistory}
                                             onchange={handleOptionChange}
                                             class="option-checkbox"
                                         ></lightning-input>
-                                        <s-multiline-helptext content="Include visual diff history for Flows (requires git depth)."></s-multiline-helptext>
+                                        <s-multiline-helptext content={i18n.withFlowHistoryHelp}></s-multiline-helptext>
                                     </div>
                                 </div>
                             </div>
@@ -67,13 +67,13 @@
                                     <div class="option-input">
                                         <lightning-input
                                             type="checkbox"
-                                            label="Generate PDF"
+                                            label={i18n.generatePdf}
                                             name="generatePdf"
                                             checked={generatePdf}
                                             onchange={handleOptionChange}
                                             class="option-checkbox"
                                         ></lightning-input>
-                                        <s-multiline-helptext content="Also generate PDF files alongside Markdown."></s-multiline-helptext>
+                                        <s-multiline-helptext content={i18n.generatePdfHelp}></s-multiline-helptext>
                                     </div>
                                 </div>
                             </div>
@@ -82,33 +82,48 @@
                                     <div class="option-input">
                                         <lightning-input
                                             type="checkbox"
-                                            label="Generate Excel"
+                                            label={i18n.generateExcel}
                                             name="generateExcel"
                                             checked={generateExcel}
                                             onchange={handleOptionChange}
                                             class="option-checkbox"
                                         ></lightning-input>
-                                        <s-multiline-helptext content="Also generate summary in Excel alongside Markdown."></s-multiline-helptext>
+                                        <s-multiline-helptext content={i18n.generateExcelHelp}></s-multiline-helptext>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="option-row">
+                                <div class="option-item">
+                                    <div class="option-input">
+                                        <lightning-combobox
+                                            label={i18n.docLanguageLabel}
+                                            name="docLanguage"
+                                            value={docLanguage}
+                                            options={languageOptions}
+                                            onchange={handleLanguageChange}
+                                            class="option-checkbox"
+                                        ></lightning-combobox>
+                                        <s-multiline-helptext content={i18n.docLanguageHelp}></s-multiline-helptext>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <div class="options-column include-column">
-                            <h3 class="subsection-title">Include</h3>
-                            <p class="subsection-help">Select which documentation parts to generate.</p>
+                            <h3 class="subsection-title">{i18n.includeSection}</h3>
+                            <p class="subsection-help">{i18n.includeSectionHelp}</p>
                             <div class="include-grid">
                                 <div class="option-row">
                                     <div class="option-item">
                                         <div class="option-input">
                                             <lightning-input
                                                 type="checkbox"
-                                                label="Objects"
+                                                label={i18n.objectsLabel}
                                                 name="generateObjectsDoc"
                                                 checked={generateObjectsDoc}
                                                 onchange={handleOptionChange}
                                                 class="option-checkbox"
                                             ></lightning-input>
-                                            <s-multiline-helptext content="Generate Objects documentation."></s-multiline-helptext>
+                                            <s-multiline-helptext content={i18n.objectsDocHelp}></s-multiline-helptext>
                                         </div>
                                     </div>
                                 </div>
@@ -117,13 +132,13 @@
                                         <div class="option-input">
                                             <lightning-input
                                                 type="checkbox"
-                                                label="Flows & Process Builders"
+                                                label={i18n.flowsAndProcessBuilders}
                                                 name="generateFlowDoc"
                                                 checked={generateFlowDoc}
                                                 onchange={handleOptionChange}
                                                 class="option-checkbox"
                                             ></lightning-input>
-                                            <s-multiline-helptext content="Generate Flows, Process Builders and Workflows documentation."></s-multiline-helptext>
+                                            <s-multiline-helptext content={i18n.flowsDocHelp}></s-multiline-helptext>
                                         </div>
                                     </div>
                                 </div>
@@ -132,13 +147,13 @@
                                         <div class="option-input">
                                             <lightning-input
                                                 type="checkbox"
-                                                label="Profiles & Permissions"
+                                                label={i18n.profilesAndPermissions}
                                                 name="generateProfilesDoc"
                                                 checked={generateProfilesDoc}
                                                 onchange={handleOptionChange}
                                                 class="option-checkbox"
                                             ></lightning-input>
-                                            <s-multiline-helptext content="Generate Profiles, Permission Sets, Permission Set Groups and Roles documentation."></s-multiline-helptext>
+                                            <s-multiline-helptext content={i18n.profilesDocHelp}></s-multiline-helptext>
                                         </div>
                                     </div>
                                 </div>
@@ -147,13 +162,13 @@
                                         <div class="option-input">
                                             <lightning-input
                                                 type="checkbox"
-                                                label="Automations"
+                                                label={i18n.automationsLabel}
                                                 name="generateAutomationsDoc"
                                                 checked={generateAutomationsDoc}
                                                 onchange={handleOptionChange}
                                                 class="option-checkbox"
                                             ></lightning-input>
-                                            <s-multiline-helptext content="Generate Automations documentation (Approval Processes, Assignment Rules, AutoResponse Rules, Escalation Rules)."></s-multiline-helptext>
+                                            <s-multiline-helptext content={i18n.automationsDocHelp}></s-multiline-helptext>
                                         </div>
                                     </div>
                                 </div>
@@ -162,13 +177,13 @@
                                         <div class="option-input">
                                             <lightning-input
                                                 type="checkbox"
-                                                label="Lightning Pages"
+                                                label={i18n.lightningPages}
                                                 name="generatePagesDoc"
                                                 checked={generatePagesDoc}
                                                 onchange={handleOptionChange}
                                                 class="option-checkbox"
                                             ></lightning-input>
-                                            <s-multiline-helptext content="Generate Lightning Pages documentation."></s-multiline-helptext>
+                                            <s-multiline-helptext content={i18n.pagesDocHelp}></s-multiline-helptext>
                                         </div>
                                     </div>
                                 </div>
@@ -177,13 +192,13 @@
                                         <div class="option-input">
                                             <lightning-input
                                                 type="checkbox"
-                                                label="Apex"
+                                                label={i18n.apexLabel}
                                                 name="generateApexDoc"
                                                 checked={generateApexDoc}
                                                 onchange={handleOptionChange}
                                                 class="option-checkbox"
                                             ></lightning-input>
-                                            <s-multiline-helptext content="Generate Apex documentation."></s-multiline-helptext>
+                                            <s-multiline-helptext content={i18n.apexDocHelp}></s-multiline-helptext>
                                         </div>
                                     </div>
                                 </div>
@@ -192,13 +207,13 @@
                                         <div class="option-input">
                                             <lightning-input
                                                 type="checkbox"
-                                                label="Lightning Web Components"
+                                                label={i18n.lightningWebComponents}
                                                 name="generateLwcDoc"
                                                 checked={generateLwcDoc}
                                                 onchange={handleOptionChange}
                                                 class="option-checkbox"
                                             ></lightning-input>
-                                            <s-multiline-helptext content="Generate Lightning Web Components documentation."></s-multiline-helptext>
+                                            <s-multiline-helptext content={i18n.lwcDocHelp}></s-multiline-helptext>
                                         </div>
                                     </div>
                                 </div>
@@ -207,13 +222,13 @@
                                         <div class="option-input">
                                             <lightning-input
                                                 type="checkbox"
-                                                label="Installed Packages"
+                                                label={i18n.installedPackagesLabel}
                                                 name="generatePackagesDoc"
                                                 checked={generatePackagesDoc}
                                                 onchange={handleOptionChange}
                                                 class="option-checkbox"
                                             ></lightning-input>
-                                            <s-multiline-helptext content="Generate Installed Packages documentation."></s-multiline-helptext>
+                                            <s-multiline-helptext content={i18n.packagesDocHelp}></s-multiline-helptext>
                                         </div>
                                     </div>
                                 </div>
@@ -223,18 +238,18 @@
                     <div class="generate-actions">
                         <lightning-button
                             variant="brand"
-                            label="Generate Documentation"
+                            label={i18n.generateDocumentation}
                             icon-name="utility:archive"
                             onclick={handleGenerate}
                         ></lightning-button>
                         <lightning-button
                             variant="neutral"
-                            label="More Options"
+                            label={i18n.moreOptions}
                             icon-name="utility:settings"
                             onclick={handleMoreOptions}
                         ></lightning-button>
                     </div>
-                    <p class="options-note">Use "More Options" to configure AI providers and prompt templates.</p>
+                    <p class="options-note">{i18n.moreOptionsNote}</p>
                 </div>
             </div>
 
@@ -242,9 +257,9 @@
             <div class="section">
                 <h2 class="section-title">
                     <lightning-icon icon-name="utility:upload" size="x-small" class="section-icon"></lightning-icon>
-                    Deploy Documentation
+                    {i18n.deployDocumentationSection}
                 </h2>
-                <p class="section-description">Deploy your generated documentation to Cloudflare Pages or as a Salesforce Static Resource.</p>
+                <p class="section-description">{i18n.deployDocumentationSectionDesc}</p>
 
                 <div class="commands-grid">
                     <div class="command-card">
@@ -252,11 +267,11 @@
                             <lightning-icon icon-name="utility:world" size="small" variant="inverse"></lightning-icon>
                         </div>
                         <div class="command-content">
-                            <h3 class="command-title">Deploy to Cloudflare Pages</h3>
-                            <p class="command-description">Build HTML docs and publish them to Cloudflare Pages for public or internal access.</p>
+                            <h3 class="command-title">{i18n.deployToCloudflare}</h3>
+                            <p class="command-description">{i18n.deployToCloudflareDesc}</p>
                         </div>
                         <div class="command-actions">
-                            <lightning-button variant="brand" label="Deploy" onclick={handleDeployCloudflare}></lightning-button>
+                            <lightning-button variant="brand" label={i18n.deployLabel} onclick={handleDeployCloudflare}></lightning-button>
                         </div>
                     </div>
 
@@ -265,11 +280,11 @@
                             <lightning-icon icon-name="utility:salesforce1" size="small" variant="inverse"></lightning-icon>
                         </div>
                         <div class="command-content">
-                            <h3 class="command-title">Deploy to Salesforce</h3>
-                            <p class="command-description">Build HTML docs and upload as a Static Resource with a VisualForce Page and Custom Tab. <strong>Note:</strong> Only works with small projects (5MB max for static resources).</p>
+                            <h3 class="command-title">{i18n.deployToSalesforce}</h3>
+                            <p class="command-description" lwc:inner-html={deployToSalesforceDescHtml}></p>
                         </div>
                         <div class="command-actions">
-                            <lightning-button variant="brand" label="Deploy" onclick={handleDeployToOrg}></lightning-button>
+                            <lightning-button variant="brand" label={i18n.deployLabel} onclick={handleDeployToOrg}></lightning-button>
                         </div>
                     </div>
                 </div>
@@ -279,9 +294,9 @@
             <div class="section">
                 <h2 class="section-title">
                     <lightning-icon icon-name="utility:desktop" size="x-small" class="section-icon"></lightning-icon>
-                    Run Locally
+                    {i18n.runLocallySection}
                 </h2>
-                <p class="section-description">Start a local MkDocs server to preview the documentation in your browser (requires Python).</p>
+                <p class="section-description">{i18n.runLocallySectionDesc}</p>
 
                 <div class="commands-grid single-column">
                     <div class="command-card">
@@ -289,11 +304,11 @@
                             <lightning-icon icon-name="utility:play" size="small" variant="inverse"></lightning-icon>
                         </div>
                         <div class="command-content">
-                            <h3 class="command-title">Run Local HTML Doc Pages</h3>
-                            <p class="command-description">Starts a local web server at http://127.0.0.1:8000/ to preview your documentation. Python must be installed.</p>
+                            <h3 class="command-title">{i18n.runLocalHtmlDocPages}</h3>
+                            <p class="command-description">{i18n.runLocalHtmlDocPagesDesc}</p>
                         </div>
                         <div class="command-actions">
-                            <lightning-button variant="brand" label="Run Locally" onclick={handleRunLocally}></lightning-button>
+                            <lightning-button variant="brand" label={i18n.runLocallyButton} onclick={handleRunLocally}></lightning-button>
                         </div>
                     </div>
                 </div>
