@@ -209,7 +209,9 @@ export class HardisDebugger {
       } else {
         // Salesforce extension command not found
         vscode.window.showWarningMessage(
-          t("salesforceExtensionPackError", { detail: e.message || JSON.stringify(e) }),
+          t("salesforceExtensionPackError", {
+            detail: e.message || JSON.stringify(e),
+          }),
           t("close"),
         );
       }

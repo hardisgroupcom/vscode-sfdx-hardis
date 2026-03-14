@@ -97,7 +97,10 @@ async function listSchedulableClassesFromDefaultOrg(): Promise<string[]> {
     orgKey,
     now,
     command,
-    (record: any) => String(record?.Body || "").toLowerCase().includes("schedulable"),
+    (record: any) =>
+      String(record?.Body || "")
+        .toLowerCase()
+        .includes("schedulable"),
   );
 }
 
@@ -292,9 +295,7 @@ export function registerShowPipeline(commands: Commands) {
               },
             });
           } catch (error: any) {
-            Logger.log(
-              `Error loading communities: ${error?.message || error}`,
-            );
+            Logger.log(`Error loading communities: ${error?.message || error}`);
             panel.sendMessage({
               type: "returnCommunities",
               data: {

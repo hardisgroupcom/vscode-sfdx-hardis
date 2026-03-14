@@ -230,21 +230,40 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   get schedulableClassOptions() {
     const selectedClassName = this.displayedAction?.parameters?.className;
     if (this.isViewMode) {
-      return selectedClassName ? [{ label: selectedClassName, value: selectedClassName }] : [];
+      return selectedClassName
+        ? [{ label: selectedClassName, value: selectedClassName }]
+        : [];
     }
     if (this.schedulableClassesLoading) {
-      const loadingOption = { label: this.t("loadingSchedulableClasses"), value: "" };
+      const loadingOption = {
+        label: this.t("loadingSchedulableClasses"),
+        value: "",
+      };
       return selectedClassName
-        ? [{ label: selectedClassName, value: selectedClassName }, loadingOption]
+        ? [
+            { label: selectedClassName, value: selectedClassName },
+            loadingOption,
+          ]
         : [loadingOption];
     }
-    const classes = Array.isArray(this.schedulableClasses) ? this.schedulableClasses : [];
+    const classes = Array.isArray(this.schedulableClasses)
+      ? this.schedulableClasses
+      : [];
     if (this._schedulableClassesRequested && classes.length === 0) {
       return [{ label: this.t("noSchedulableClassFound"), value: "" }];
     }
     // If a value is selected but not in the available options, add it with a special label
-    if (selectedClassName && !classes.find((item) => item === selectedClassName)) {
-      return [{ label: this.t("notVisibleFromOrg", { value: selectedClassName }), value: selectedClassName }, ...classes.map((item) => ({ label: item, value: item }))];
+    if (
+      selectedClassName &&
+      !classes.find((item) => item === selectedClassName)
+    ) {
+      return [
+        {
+          label: this.t("notVisibleFromOrg", { value: selectedClassName }),
+          value: selectedClassName,
+        },
+        ...classes.map((item) => ({ label: item, value: item })),
+      ];
     }
     return classes.map((item) => ({ label: item, value: item }));
   }
@@ -252,20 +271,34 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   get communityOptions() {
     const selectedCommunity = this.displayedAction?.parameters?.communityName;
     if (this.isViewMode) {
-      return selectedCommunity ? [{ label: selectedCommunity, value: selectedCommunity }] : [];
+      return selectedCommunity
+        ? [{ label: selectedCommunity, value: selectedCommunity }]
+        : [];
     }
     if (this.communitiesLoading) {
       const loadingOption = { label: this.t("loadingCommunities"), value: "" };
       return selectedCommunity
-        ? [{ label: selectedCommunity, value: selectedCommunity }, loadingOption]
+        ? [
+            { label: selectedCommunity, value: selectedCommunity },
+            loadingOption,
+          ]
         : [loadingOption];
     }
     const communities = Array.isArray(this.communities) ? this.communities : [];
     if (this._communitiesRequested && communities.length === 0) {
       return [{ label: this.t("noCommunityFound"), value: "" }];
     }
-    if (selectedCommunity && !communities.find((item) => item === selectedCommunity)) {
-      return [{ label: this.t("notVisibleFromOrg", { value: selectedCommunity }), value: selectedCommunity }, ...communities.map((item) => ({ label: item, value: item }))];
+    if (
+      selectedCommunity &&
+      !communities.find((item) => item === selectedCommunity)
+    ) {
+      return [
+        {
+          label: this.t("notVisibleFromOrg", { value: selectedCommunity }),
+          value: selectedCommunity,
+        },
+        ...communities.map((item) => ({ label: item, value: item })),
+      ];
     }
     return communities.map((item) => ({ label: item, value: item }));
   }
@@ -534,7 +567,10 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     if (this._schedulableClassesRequested) {
       return;
     }
-    if (Array.isArray(this.schedulableClasses) && this.schedulableClasses.length) {
+    if (
+      Array.isArray(this.schedulableClasses) &&
+      this.schedulableClasses.length
+    ) {
       return;
     }
     this._schedulableClassesRequested = true;
@@ -578,11 +614,15 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     const requiredFieldPaths = this._getRequiredFieldPaths();
     const missingFieldPaths = requiredFieldPaths.filter((fieldPath) => {
       const value = this._getFieldValueByPath(fieldPath);
-      return typeof value !== "string" ? value === undefined || value === null : value.trim() === "";
+      return typeof value !== "string"
+        ? value === undefined || value === null
+        : value.trim() === "";
     });
 
     requiredFieldPaths.forEach((fieldPath) => {
-      const element = this.template.querySelector(`[data-field="${fieldPath}"]`);
+      const element = this.template.querySelector(
+        `[data-field="${fieldPath}"]`,
+      );
       if (!element || typeof element.setCustomValidity !== "function") {
         return;
       }

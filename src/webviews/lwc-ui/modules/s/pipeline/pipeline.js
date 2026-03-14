@@ -1206,9 +1206,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     ) {
       return;
     }
-    this.projectCommunities = Array.isArray(data?.values)
-      ? data.values
-      : [];
+    this.projectCommunities = Array.isArray(data?.values) ? data.values : [];
     this.communitiesLoading = false;
   }
 
@@ -1656,12 +1654,17 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     const when = fullAction?.when ?? row?.whenCode;
 
     if (!prNumber || !commandId || !when) {
-      console.error("Cannot delete deployment action: missing prNumber, commandId, or when");
+      console.error(
+        "Cannot delete deployment action: missing prNumber, commandId, or when",
+      );
       return;
     }
 
     this.modalActions = this.modalActions.filter((actionRow) => {
-      return !(actionRow?._fullAction?.id === commandId && actionRow?.prNumber === prNumber);
+      return !(
+        actionRow?._fullAction?.id === commandId &&
+        actionRow?.prNumber === prNumber
+      );
     });
 
     if (this.currentDeploymentAction?.id === commandId) {

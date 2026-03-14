@@ -8,7 +8,11 @@ import {
 } from "./utils";
 import { ThemeUtils } from "./themeUtils";
 import { t } from "./i18n/i18n";
-import { DOCSITE_URL, WEBSITE_URL, WEBSITE_CONTACT_FORM_URL } from "./constants";
+import {
+  DOCSITE_URL,
+  WEBSITE_URL,
+  WEBSITE_CONTACT_FORM_URL,
+} from "./constants";
 
 export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTreeItem> {
   private allTopicsAndCommands: any = null;
@@ -210,8 +214,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             command: "sf hardis:work:resetselection",
             tooltip: t("resetSelectedListTooltip"),
             requiresProject: true,
-            helpUrl:
-              DOCSITE_URL + "/hardis/work/resetselection/",
+            helpUrl: DOCSITE_URL + "/hardis/work/resetselection/",
           },
         ],
       },
@@ -232,8 +235,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             tooltip: t("cleanProjectTooltip"),
             command: "sf hardis:project:clean:references",
             requiresProject: true,
-            helpUrl:
-              DOCSITE_URL + "/hardis/project/clean/references/",
+            helpUrl: DOCSITE_URL + "/hardis/project/clean/references/",
           },
           {
             id: "scratch:push-from-git-to-org",
@@ -328,8 +330,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             label: t("retrieveAllCrmAnalyticsSources"),
             tooltip: t("retrieveAnalyticsSourcesTooltip"),
             command: "sf hardis:org:retrieve:sources:analytics",
-            helpUrl:
-              DOCSITE_URL + "/hardis/org/retrieve/sources/analytics/",
+            helpUrl: DOCSITE_URL + "/hardis/org/retrieve/sources/analytics/",
           },
           {
             id: "force:source:tracking:reset",
@@ -368,8 +369,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             command: "sf hardis:project:generate:bypass",
             requiresProject: true,
             tooltip: t("generateBypassTooltip"),
-            helpUrl:
-              DOCSITE_URL + "/hardis/project/generate/bypass/",
+            helpUrl: DOCSITE_URL + "/hardis/project/generate/bypass/",
           },
           {
             id: "hardis:project:metadata:activate-decomposed",
@@ -419,16 +419,14 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             label: t("createDataImportExportConfiguration"),
             tooltip: t("initSfdmuProjectTooltip"),
             command: "sf hardis:org:configure:data",
-            helpUrl:
-              DOCSITE_URL + "/hardis/org/configure/data/",
+            helpUrl: DOCSITE_URL + "/hardis/org/configure/data/",
           },
           {
             id: "org:multi-org-query",
             label: t("multiOrgSoqlQueryReport"),
             tooltip: t("multiOrgQueryTooltip"),
             command: "sf hardis:org:multi-org-query",
-            helpUrl:
-              DOCSITE_URL + "/hardis/org/multi-org-query/",
+            helpUrl: DOCSITE_URL + "/hardis/org/multi-org-query/",
           },
         ],
       },
@@ -448,24 +446,21 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             label: t("exportFilesFromOrg"),
             tooltip: t("exportFilesTooltip"),
             command: "sf hardis:org:files:export",
-            helpUrl:
-              DOCSITE_URL + "/hardis/org/files/export/",
+            helpUrl: DOCSITE_URL + "/hardis/org/files/export/",
           },
           {
             id: "org:files:import",
             label: t("importFilesIntoOrg"),
             tooltip: t("importFilesTooltip"),
             command: "sf hardis:org:files:import",
-            helpUrl:
-              DOCSITE_URL + "/hardis/org/files/import/",
+            helpUrl: DOCSITE_URL + "/hardis/org/files/import/",
           },
           {
             id: "org:files:configure",
             label: t("createFilesExportConfiguration"),
             tooltip: t("initFileExportProjectTooltip"),
             command: "sf hardis:org:configure:files",
-            helpUrl:
-              DOCSITE_URL + "/hardis/org/configure/files/",
+            helpUrl: DOCSITE_URL + "/hardis/org/configure/files/",
           },
         ],
       },
@@ -536,8 +531,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             label: t("unfreezeUsers"),
             tooltip: t("unfreezeUsersTooltip"),
             command: "sf hardis:org:user:unfreeze",
-            helpUrl:
-              DOCSITE_URL + "/hardis/org/user/unfreeze/",
+            helpUrl: DOCSITE_URL + "/hardis/org/user/unfreeze/",
           },
           {
             id: "org:purge:flow",
@@ -558,24 +552,21 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             label: t("activateInvalidUserEmailsInSandbox"),
             tooltip: t("removeInvalidEmailsTooltip"),
             command: "sf hardis:org:user:activateinvalid",
-            helpUrl:
-              DOCSITE_URL + "/hardis/org/user/activateinvalid/",
+            helpUrl: DOCSITE_URL + "/hardis/org/user/activateinvalid/",
           },
           {
             id: "hardis:org:refresh:before-refresh",
             label: t("sandboxRefreshBefore"),
             tooltip: t("sandboxRefreshBeforeTooltip"),
             command: "sf hardis:org:refresh:before-refresh",
-            helpUrl:
-              DOCSITE_URL + "/hardis/org/refresh/before-refresh/",
+            helpUrl: DOCSITE_URL + "/hardis/org/refresh/before-refresh/",
           },
           {
             id: "hardis:org:refresh:after-refresh",
             label: t("sandboxRefreshAfter"),
             tooltip: t("sandboxRefreshAfterTooltip"),
             command: "sf hardis:org:refresh:after-refresh",
-            helpUrl:
-              DOCSITE_URL + "/hardis/org/refresh/after-refresh/",
+            helpUrl: DOCSITE_URL + "/hardis/org/refresh/after-refresh/",
           },
         ],
       },
@@ -589,32 +580,28 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             tooltip: t("orgMonitoringWorkbenchTooltip"),
             command: "vscode-sfdx-hardis.showOrgMonitoring",
             requiresProject: false,
-            helpUrl:
-              DOCSITE_URL + "/salesforce-monitoring-home/",
+            helpUrl: DOCSITE_URL + "/salesforce-monitoring-home/",
           },
           {
             id: "hardis:org:monitor:backup",
             label: t("metadatasBackup"),
             tooltip: t("metadatasBackupTooltip"),
             command: "sf hardis:org:monitor:backup",
-            helpUrl:
-              DOCSITE_URL + "/hardis/org/monitor/backup/",
+            helpUrl: DOCSITE_URL + "/hardis/org/monitor/backup/",
           },
           {
             id: "hardis:org:monitor:errors",
             label: t("apexAndFlowErrors"),
             tooltip: t("apexAndFlowErrorsDescription"),
             command: "sf hardis:org:monitor:errors",
-            helpUrl:
-              DOCSITE_URL + "/hardis/org/monitor/errors/",
+            helpUrl: DOCSITE_URL + "/hardis/org/monitor/errors/",
           },
           {
             id: "hardis:org:diagnose:audittrail",
             label: t("suspiciousAuditTrailActivities"),
             tooltip: t("suspiciousAuditTrailTooltip"),
             command: "sf hardis:org:diagnose:audittrail",
-            helpUrl:
-              DOCSITE_URL + "/hardis/org/diagnose/audittrail/",
+            helpUrl: DOCSITE_URL + "/hardis/org/diagnose/audittrail/",
           },
           {
             id: "org:test:apex",
@@ -630,8 +617,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             command: "sf hardis:org:monitor:limits",
             tooltip: t("checkOrgLimitsTooltip"),
             requiresProject: true,
-            helpUrl:
-              DOCSITE_URL + "/hardis/org/monitor/limits/",
+            helpUrl: DOCSITE_URL + "/hardis/org/monitor/limits/",
           },
           {
             id: "hardis:org:diagnose:releaseupdates",
@@ -639,8 +625,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             command: "sf hardis:org:diagnose:releaseupdates",
             tooltip: t("checkReleaseUpdatesTooltip"),
             requiresProject: true,
-            helpUrl:
-              DOCSITE_URL + "/hardis/org/diagnose/releaseupdates/",
+            helpUrl: DOCSITE_URL + "/hardis/org/diagnose/releaseupdates/",
           },
           {
             id: "hardis:org:diagnose:unsecure-connected-apps",
@@ -655,40 +640,35 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             label: t("securityHealthCheck"),
             tooltip: t("securityHealthCheckTooltip"),
             command: "sf hardis:org:monitor:health-check",
-            helpUrl:
-              DOCSITE_URL + "/hardis/org/monitor/health-check/",
+            helpUrl: DOCSITE_URL + "/hardis/org/monitor/health-check/",
           },
           {
             id: "org:diagnose:legacyapi",
             label: t("legacyApiVersionsUsage"),
             tooltip: t("detectLegacyApiTooltip"),
             command: "sf hardis:org:diagnose:legacyapi",
-            helpUrl:
-              DOCSITE_URL + "/hardis/org/diagnose/legacyapi/",
+            helpUrl: DOCSITE_URL + "/hardis/org/diagnose/legacyapi/",
           },
           {
             id: "hardis:org:diagnose:unusedusers",
             label: t("unusedUsers"),
             tooltip: t("unusedUsersTooltip"),
             command: "sf hardis:org:diagnose:unusedusers",
-            helpUrl:
-              DOCSITE_URL + "/salesforce-monitoring-inactive-users/",
+            helpUrl: DOCSITE_URL + "/salesforce-monitoring-inactive-users/",
           },
           {
             id: "hardis:org:diagnose:unusedlicenses",
             label: t("unusedPsLicensesBeta"),
             tooltip: t("unusedPsLicensesTooltip"),
             command: "sf hardis:org:diagnose:unusedlicenses",
-            helpUrl:
-              DOCSITE_URL + "/hardis/org/diagnose/unusedlicenses/",
+            helpUrl: DOCSITE_URL + "/hardis/org/diagnose/unusedlicenses/",
           },
           {
             id: "hardis:org:diagnose:unused-apex-classes",
             label: t("unusedApexClasses"),
             tooltip: t("unusedApexClassesTooltip"),
             command: "sf hardis:org:diagnose:unused-apex-classes",
-            helpUrl:
-              DOCSITE_URL + "/hardis/org/diagnose/unused-apex-classes/",
+            helpUrl: DOCSITE_URL + "/hardis/org/diagnose/unused-apex-classes/",
           },
           {
             id: "hardis:org:diagnose:unused-connected-apps",
@@ -703,8 +683,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             label: t("underusedPermissionSets"),
             tooltip: t("underusedPermissionSetsTooltip"),
             command: "sf hardis:org:diagnose:underusedpermsets",
-            helpUrl:
-              DOCSITE_URL + "/hardis/org/diagnose/underusedpermsets/",
+            helpUrl: DOCSITE_URL + "/hardis/org/diagnose/underusedpermsets/",
           },
           {
             id: "hardis:lint:access",
@@ -718,32 +697,28 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             label: t("unusedMetadatas"),
             tooltip: t("unusedMetadatasTooltip"),
             command: "sf hardis:lint:unusedmetadatas",
-            helpUrl:
-              DOCSITE_URL + "/hardis/lint/unusedmetadatas/",
+            helpUrl: DOCSITE_URL + "/hardis/lint/unusedmetadatas/",
           },
           {
             id: "hardis:lint:metadatastatus",
             label: t("inactiveMetadatas"),
             tooltip: t("inactiveMetadatasTooltip"),
             command: "sf hardis:lint:metadatastatus",
-            helpUrl:
-              DOCSITE_URL + "/hardis/lint/metadatastatus/",
+            helpUrl: DOCSITE_URL + "/hardis/lint/metadatastatus/",
           },
           {
             id: "hardis:lint:missingattributes",
             label: t("missingDescriptions"),
             tooltip: t("missingDescriptionsTooltip"),
             command: "sf hardis:lint:missingattributes",
-            helpUrl:
-              DOCSITE_URL + "/hardis/lint/missingattributes/",
+            helpUrl: DOCSITE_URL + "/hardis/lint/missingattributes/",
           },
           {
             id: "hardis:org:diagnose:storage-stats",
             label: t("dataStorageStatistics"),
             tooltip: t("dataStorageStatisticsTooltip"),
             command: "sf hardis:org:diagnose:storage-stats",
-            helpUrl:
-              DOCSITE_URL + "/hardis/org/diagnose/storage-stats/",
+            helpUrl: DOCSITE_URL + "/hardis/org/diagnose/storage-stats/",
           },
         ],
       },
@@ -756,8 +731,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             label: t("detectDuplicateSfdxFiles"),
             tooltip: t("detectDuplicateSfdxFilesTooltip"),
             command: "sf hardis:project:audit:duplicatefiles",
-            helpUrl:
-              DOCSITE_URL + "/hardis/audit/duplicatefiles/",
+            helpUrl: DOCSITE_URL + "/hardis/audit/duplicatefiles/",
           },
           {
             id: "project:metadata:findduplicates",
@@ -765,40 +739,35 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             tooltip: t("detectDuplicateValuesTooltip"),
             command:
               "sf hardis:project:metadata:findduplicates -f force-app/**/*.xml",
-            helpUrl:
-              DOCSITE_URL + "/hardis/project/metadata/duplicatefiles/",
+            helpUrl: DOCSITE_URL + "/hardis/project/metadata/duplicatefiles/",
           },
           {
             id: "project:audit:apiversion",
             label: t("extractApiVersionsOfSources"),
             tooltip: t("extractApiVersionsTooltip"),
             command: "sf hardis:project:audit:apiversion",
-            helpUrl:
-              DOCSITE_URL + "/hardis/audit/apiversion/",
+            helpUrl: DOCSITE_URL + "/hardis/audit/apiversion/",
           },
           {
             id: "project:audit:callincallout",
             label: t("listCallInAndCallOuts"),
             tooltip: t("listCallInAndCallOutsTooltip"),
             command: "sf hardis:project:audit:callincallout",
-            helpUrl:
-              DOCSITE_URL + "/hardis/audit/callincallout/",
+            helpUrl: DOCSITE_URL + "/hardis/audit/callincallout/",
           },
           {
             id: "project:audit:remotesites",
             label: t("listRemoteSites"),
             tooltip: t("listRemoteSitesTooltip"),
             command: "sf hardis:project:audit:remotesites",
-            helpUrl:
-              DOCSITE_URL + "/hardis/audit/remotesites/",
+            helpUrl: DOCSITE_URL + "/hardis/audit/remotesites/",
           },
           {
             id: "hardis:misc:custom-label-translations",
             label: t("extractCustomLabelTranslations"),
             tooltip: t("extractCustomLabelTranslationsTooltip"),
             command: "sf hardis:misc:custom-label-translations",
-            helpUrl:
-              DOCSITE_URL + "/hardis/misc/custom-label-translations/",
+            helpUrl: DOCSITE_URL + "/hardis/misc/custom-label-translations/",
           },
           {
             id: "hardis:doc:object-field-usage",
@@ -806,8 +775,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             tooltip: t("objectFieldUsageTooltip"),
             command: "sf hardis:doc:object-field-usage",
             requiresProject: true,
-            helpUrl:
-              DOCSITE_URL + "/hardis/doc/object/field/usage/",
+            helpUrl: DOCSITE_URL + "/hardis/doc/object/field/usage/",
           },
         ],
       },
@@ -885,8 +853,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             command: "vscode-sfdx-hardis.showDocumentationWorkbench",
             tooltip: t("documentationWorkbenchTooltip"),
             requiresProject: true,
-            helpUrl:
-              DOCSITE_URL + "/salesforce-project-documentation/",
+            helpUrl: DOCSITE_URL + "/salesforce-project-documentation/",
           },
           {
             id: "hardis:doc:project2markdown",
@@ -894,8 +861,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             command: "sf hardis:doc:project2markdown",
             tooltip: t("projectDocumentationTooltip"),
             requiresProject: true,
-            helpUrl:
-              DOCSITE_URL + "/hardis/doc/project2markdown/",
+            helpUrl: DOCSITE_URL + "/hardis/doc/project2markdown/",
           },
           {
             id: "hardis:doc:project2markdown-pdf",
@@ -903,8 +869,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             command: "sf hardis:doc:project2markdown --pdf",
             tooltip: t("projectDocumentationPdfTooltip"),
             requiresProject: true,
-            helpUrl:
-              DOCSITE_URL + "/hardis/doc/project2markdown/",
+            helpUrl: DOCSITE_URL + "/hardis/doc/project2markdown/",
           },
           {
             id: "hardis:doc:project2markdown-history",
@@ -912,8 +877,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             command: "sf hardis:doc:project2markdown --with-history",
             tooltip: t("projectDocumentationWithHistoryTooltip"),
             requiresProject: true,
-            helpUrl:
-              DOCSITE_URL + "/hardis/doc/project2markdown/",
+            helpUrl: DOCSITE_URL + "/hardis/doc/project2markdown/",
           },
           {
             id: "hardis-run-doc",
@@ -921,8 +885,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             command: "vscode-sfdx-hardis.runLocalHtmlDocPages",
             tooltip: t("runLocalHtmlDocTooltip"),
             requiresProject: true,
-            helpUrl:
-              DOCSITE_URL + "/salesforce-project-documentation/",
+            helpUrl: DOCSITE_URL + "/salesforce-project-documentation/",
           },
           {
             id: "hardis-upload-doc",
@@ -930,8 +893,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             command: "sf hardis:doc:mkdocs-to-salesforce",
             tooltip: t("uploadHtmlDocToSalesforceTooltip"),
             requiresProject: true,
-            helpUrl:
-              DOCSITE_URL + "/hardis/doc/mkdocs-to-salesforce/",
+            helpUrl: DOCSITE_URL + "/hardis/doc/mkdocs-to-salesforce/",
           },
           {
             id: "hardis:doc:flow2markdown",
@@ -939,8 +901,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             command: "sf hardis:doc:flow2markdown",
             tooltip: t("flowsDocumentationTooltip"),
             requiresProject: true,
-            helpUrl:
-              DOCSITE_URL + "/hardis/doc/flow2markdown/",
+            helpUrl: DOCSITE_URL + "/hardis/doc/flow2markdown/",
           },
           {
             id: "hardis:doc:flow2markdown-pdf",
@@ -948,8 +909,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             command: "sf hardis:doc:flow2markdown --pdf",
             tooltip: t("flowsDocumentationPdfTooltip"),
             requiresProject: true,
-            helpUrl:
-              DOCSITE_URL + "/hardis/doc/flow2markdown/",
+            helpUrl: DOCSITE_URL + "/hardis/doc/flow2markdown/",
           },
           {
             id: "hardis:project:generate:flow-git-diff",
@@ -957,8 +917,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             command: "sf hardis:project:generate:flow-git-diff",
             tooltip: t("singleFlowVisualGitDiffTooltip"),
             requiresProject: true,
-            helpUrl:
-              DOCSITE_URL + "/hardis/project/generate/flow-git-diff/",
+            helpUrl: DOCSITE_URL + "/hardis/project/generate/flow-git-diff/",
           },
           {
             id: "hardis:doc:override-prompts",
@@ -966,8 +925,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             command: "sf hardis:doc:override-prompts",
             tooltip: t("overridePromptTemplatesTooltip"),
             requiresProject: true,
-            helpUrl:
-              DOCSITE_URL + "/hardis/doc/override-prompts/",
+            helpUrl: DOCSITE_URL + "/hardis/doc/override-prompts/",
           },
           {
             id: "hardis:doc:override-prompts-overwrite",
@@ -975,8 +933,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             command: "sf hardis:doc:override-prompts --overwrite",
             tooltip: t("overridePromptTemplatesOverwriteTooltip"),
             requiresProject: true,
-            helpUrl:
-              DOCSITE_URL + "/hardis/doc/override-prompts/",
+            helpUrl: DOCSITE_URL + "/hardis/doc/override-prompts/",
           },
         ],
       },

@@ -27,16 +27,24 @@ export async function listMajorOrgs(
   const branchConfigPattern = "**/config/branches/.sfdx-hardis.*.yml";
   const configFiles = await glob(branchConfigPattern, { cwd: workspaceRoot });
   const majorOrgs: MajorOrg[] = [];
-  const gitProvider = options.browseGitProvider ? await GitProvider.getInstance(): null;
+  const gitProvider = options.browseGitProvider
+    ? await GitProvider.getInstance()
+    : null;
 
   // Process all config files in parallel
   const configFileResults = await Promise.allSettled(
     configFiles.map((configFile) =>
-      processOrgSfdxHardisConfigFile(configFile, configFiles, workspaceRoot, gitProvider, options),
+      processOrgSfdxHardisConfigFile(
+        configFile,
+        configFiles,
+        workspaceRoot,
+        gitProvider,
+        options,
+      ),
     ),
   );
   for (const result of configFileResults) {
-    if (result.status === 'fulfilled' && result.value !== null) {
+    if (result.status === "fulfilled" && result.value !== null) {
       majorOrgs.push(result.value);
     }
   }
@@ -104,13 +112,19 @@ async function processOrgSfdxHardisConfigFile(
   const branchName = m[1];
 
   // The canonical uat branch is named exactly "uat" or "recette"
-  const isCanonicalUatBranch = branchName.toLowerCase() === "uat" || branchName.toLowerCase() === "recette";
+  const isCanonicalUatBranch =
+    branchName.toLowerCase() === "uat" ||
+    branchName.toLowerCase() === "recette";
   // If a canonical "uat" or "recette" branch exists, other non-uatRun branches are demoted to "other"
   const hasCanonicalUatBranch = configFiles.some((f) => {
     const regex = /\.sfdx-hardis\.(.*)\.yml/gi;
     const match = regex.exec(f);
     const b = match ? match[1] : null;
-    return b !== null && b !== branchName && (b.toLowerCase() === "uat" || b.toLowerCase() === "recette");
+    return (
+      b !== null &&
+      b !== branchName &&
+      (b.toLowerCase() === "uat" || b.toLowerCase() === "recette")
+    );
   });
 
   let orgType: MajorOrg["orgType"] = "other";
@@ -118,20 +132,19 @@ async function processOrgSfdxHardisConfigFile(
   if (isProduction(branchName)) {
     orgType = "prod";
     level = 100;
-  }
-  else if (isPreprod(branchName)) {
+  } else if (isPreprod(branchName)) {
     orgType = "preprod";
     level = 90;
-  }
-  else if (isUatRun(branchName)) {
+  } else if (isUatRun(branchName)) {
     orgType = "uatrun";
     level = 80;
-  }
-  else if (isUat(branchName) && (isCanonicalUatBranch || !hasCanonicalUatBranch)) {
+  } else if (
+    isUat(branchName) &&
+    (isCanonicalUatBranch || !hasCanonicalUatBranch)
+  ) {
     orgType = "uat";
     level = 70;
-  }
-  else if (isIntegration(branchName)) {
+  } else if (isIntegration(branchName)) {
     orgType = "integration";
     level = 50;
   }

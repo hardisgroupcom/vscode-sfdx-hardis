@@ -215,10 +215,7 @@ export class HardisColors {
     if (hasInvalidPattern) {
       if (this.invalidCustomOrgColorWarningShown === false) {
         this.invalidCustomOrgColorWarningShown = true;
-        vscode.window.showWarningMessage(
-          t("invalidOrgColorUrls"),
-          t("close"),
-        );
+        vscode.window.showWarningMessage(t("invalidOrgColorUrls"), t("close"));
       }
     }
     if (fullURLMatchColor) {
@@ -285,10 +282,7 @@ export class HardisColors {
       const org = orgRes.result.records[0];
       if (PRODUCTION_EDITIONS.includes(org.OrganizationType)) {
         // We are in production !!
-        vscode.window.showWarningMessage(
-          t("productionOrgWarning"),
-          t("close"),
-        );
+        vscode.window.showWarningMessage(t("productionOrgWarning"), t("close"));
         return forcedColor || this.describeOrgColors()["production"]; // red !
       }
       return forcedColor || this.describeOrgColors()["dev"]; // blue

@@ -497,10 +497,7 @@ export class CommandRunner {
     terminal.show(false);
 
     if (this.terminalIsRunning) {
-      vscode.window.showErrorMessage(
-        t("waitForCurrentCommand"),
-        t("close"),
-      );
+      vscode.window.showErrorMessage(t("waitForCurrentCommand"), t("close"));
       return;
     }
     // terminalIsRunning = true; //Comment until we find a way to detect that a command is running or not

@@ -56,7 +56,8 @@ export function registerShowOrgMonitoring(commands: Commands) {
         monitoringRepository: monitoringRepository,
         instanceUrl: instanceUrl,
         monitoringHomeUrl: DOCSITE_URL + "/salesforce-monitoring-home/",
-        monitoringConfigUrl: DOCSITE_URL + "/salesforce-monitoring-config-home/",
+        monitoringConfigUrl:
+          DOCSITE_URL + "/salesforce-monitoring-config-home/",
       });
       panel.updateTitle(t("orgMonitoringWorkbench"));
 
