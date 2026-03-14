@@ -11,6 +11,7 @@ import {
   writeSfdxHardisConfig,
 } from "./utils";
 import { HardisStatusProvider } from "./hardis-status-provider";
+import { t } from "./i18n/i18n";
 
 const PRODUCTION_EDITIONS = [
   "Team Edition",
@@ -114,8 +115,8 @@ export class HardisColors {
           await this.applyColor(color);
         } else {
           vscode.window.showWarningMessage(
-            "🦙 You need first to select a default org to define a color for it 😊",
-            "Close",
+            t("needToSelectDefaultOrg"),
+            t("close"),
           );
         }
       },
@@ -127,8 +128,8 @@ export class HardisColors {
   // Will be replaced by color picker once available in VsCode API: https://github.com/microsoft/vscode/pull/178242
   async promptColor(org: string) {
     const inputBoxOptions: vscode.InputBoxOptions = {
-      prompt: `Please enter a color code for ${org} (type "color picker" in google to get one)`,
-      placeHolder: "Example: #0335fc",
+      prompt: t("enterColorPrompt", { org }),
+      placeHolder: t("enterColorPlaceholder"),
       ignoreFocusOut: true,
       validateInput: (text) => {
         return /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(text)
@@ -214,10 +215,7 @@ export class HardisColors {
     if (hasInvalidPattern) {
       if (this.invalidCustomOrgColorWarningShown === false) {
         this.invalidCustomOrgColorWarningShown = true;
-        vscode.window.showWarningMessage(
-          "🦙 One or more custom org color URLs are invalid. Please check your configuration.",
-          "Close",
-        );
+        vscode.window.showWarningMessage(t("invalidOrgColorUrls"), t("close"));
       }
     }
     if (fullURLMatchColor) {
@@ -263,8 +261,8 @@ export class HardisColors {
       );
       if (isMajorOrg) {
         vscode.window.showWarningMessage(
-          `🦙 Your default org is a MAJOR org linked to git branch ${this.majorOrgBranch}, be careful because the CI/CD Server is supposed to deploy in this org, not you 😘`,
-          "Close",
+          t("majorOrgWarning", { branch: this.majorOrgBranch }),
+          t("close"),
         );
         return forcedColor || this.describeOrgColors()["major"]; // orange !
       }
@@ -284,10 +282,7 @@ export class HardisColors {
       const org = orgRes.result.records[0];
       if (PRODUCTION_EDITIONS.includes(org.OrganizationType)) {
         // We are in production !!
-        vscode.window.showWarningMessage(
-          "🦙 Your default org is a PRODUCTION org, be careful what you do 😲",
-          "Close",
-        );
+        vscode.window.showWarningMessage(t("productionOrgWarning"), t("close"));
         return forcedColor || this.describeOrgColors()["production"]; // red !
       }
       return forcedColor || this.describeOrgColors()["dev"]; // blue

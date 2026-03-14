@@ -5,6 +5,7 @@ import { Logger } from "../../logger";
 import { getConfig } from "../pipeline/sfdxHardisConfig";
 import { SecretsManager } from "../secretsManager";
 import { Version3Client } from "jira.js";
+import { t } from "../../i18n/i18n";
 
 export class JiraProvider extends TicketProvider {
   static readonly providerName: TicketProviderName = "JIRA";
@@ -116,14 +117,14 @@ export class JiraProvider extends TicketProvider {
     // Prompt user for authentication method
     const choice = await vscode.window.showQuickPick(
       [
-        { label: "Use Email + API Token", value: "basic" },
+        { label: t("useEmailAndApiToken"), value: "basic" },
         {
-          label: "Use Personal Access Token (PAT)",
+          label: t("usePersonalAccessToken"),
           value: "pat",
         },
       ],
       {
-        placeHolder: "How would you like to authenticate to JIRA?",
+        placeHolder: t("jiraAuthMethodPlaceholder"),
         ignoreFocusOut: true,
       },
     );
@@ -142,10 +143,10 @@ export class JiraProvider extends TicketProvider {
     const patUrl = `${this.jiraHost}/secure/ViewProfile.jspa?selectedTab=com.atlassian.pats.pats-plugin:jira-user-personal-access-tokens`;
 
     const token = await vscode.window.showInputBox({
-      prompt: "Enter your JIRA Personal Access Token",
+      prompt: t("enterJiraPat"),
       ignoreFocusOut: true,
       password: true,
-      placeHolder: `Create a PAT at: ${patUrl}`,
+      placeHolder: t("jiraCreatePatAt", { url: patUrl }),
     });
 
     if (!token) {
@@ -158,9 +159,9 @@ export class JiraProvider extends TicketProvider {
 
   private async authenticateWithBasicAuth(): Promise<boolean | null> {
     const email = await vscode.window.showInputBox({
-      prompt: "Enter your JIRA email address",
+      prompt: t("enterJiraEmail"),
       ignoreFocusOut: true,
-      placeHolder: "user@company.com",
+      placeHolder: t("emailPlaceholder"),
     });
 
     if (!email) {
@@ -169,10 +170,10 @@ export class JiraProvider extends TicketProvider {
 
     const tokenUrl = `${this.jiraHost}/secure/ViewProfile.jspa?selectedTab=com.atlassian.jira.jira-profile-plugin:apitokens-applink-apitokens`;
     const token = await vscode.window.showInputBox({
-      prompt: "Enter your JIRA API Token",
+      prompt: t("enterJiraApiToken"),
       ignoreFocusOut: true,
       password: true,
-      placeHolder: `Create an API token at: ${tokenUrl}`,
+      placeHolder: t("jiraCreateApiTokenAt", { url: tokenUrl }),
     });
 
     if (!token) {

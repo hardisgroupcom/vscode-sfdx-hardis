@@ -1,8 +1,6 @@
 /* SFDX Hardis Config Editor LWC styles */
-@import 's/forceLightTheme';
 
 .blue-back {
-	background: #EDF4FF;
 	min-height: 100vh;
 }
 
@@ -40,4 +38,32 @@ lightning-datatable {
 	display: flex;
 	justify-content: center;
 	margin-top: 0.5rem;
+}
+
+/* Light theme (explicit) */
+.slds-scope[data-theme] .slds-badge {
+	background: rgba(0, 0, 0, 0.04);
+	color: #181818;
+}
+
+.slds-scope[data-theme] .slds-text-title_bold {
+	color: #181818;
+}
+
+.slds-scope[data-theme] lightning-datatable {
+	color: #181818;
+}
+
+/* Dark theme overrides (component-scoped) */
+.blue-back[data-theme="dark"] .slds-badge {
+	background: rgba(255,255,255,0.04);
+	color: #cfe6ff;
+}
+
+.blue-back[data-theme="dark"] .slds-text-title_bold {
+	color: #e6eef9;
+}
+
+.blue-back[data-theme="dark"] lightning-datatable {
+	color: #dbefff;
 }

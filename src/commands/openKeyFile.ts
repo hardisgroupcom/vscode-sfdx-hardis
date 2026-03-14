@@ -3,6 +3,7 @@ import * as fs from "fs-extra";
 import path from "path";
 import { getWorkspaceRoot } from "../utils";
 import { Commands } from "../commands";
+import { t } from "../i18n/i18n";
 
 export function registerOpenKeyFile(commands: Commands) {
   // Open key file command
@@ -12,34 +13,32 @@ export function registerOpenKeyFile(commands: Commands) {
       const keyFileList = [
         {
           file: "config/.sfdx-hardis.yml",
-          label: "sfdx-hardis main configuration file",
+          label: t("sfdxHardisMainConfigFile"),
         },
         {
           file: "manifest/package.xml",
-          label: "List of all deployed metadatas",
+          label: t("listOfAllDeployedMetadatas"),
         },
         {
           file: "manifest/destructiveChanges.xml",
-          label: "List of all deleted metadatas",
+          label: t("listOfAllDeletedMetadatas"),
         },
         {
           file: "manifest/package-no-overwrite.xml",
-          label:
-            "List of metadatas that will be deployed only if they are not already existing in the target org",
+          label: t("metadataDeployedOnlyIfNotExisting"),
         },
         {
           file: "manifest/packageDeployOnce.xml",
-          label:
-            "List of metadatas that will be deployed only if they are not already existing in the target org",
+          label: t("metadataDeployedOnlyIfNotExisting"),
         },
         {
           file: "config/project-scratch-def.json",
-          label: "Scratch org creation definition file",
+          label: t("scratchOrgCreationDefinitionFile"),
         },
-        { file: "sfdx-project.json", label: "Sfdx Project config file" },
-        { file: ".forceignore", label: "Files ignored by SFDX" },
-        { file: ".gitignore", label: "Files ignored by Git" },
-        { file: ".mega-linter.yml", label: "Mega-Linter configuration" },
+        { file: "sfdx-project.json", label: t("sfdxProjectConfigFile") },
+        { file: ".forceignore", label: t("filesIgnoredBySfdx") },
+        { file: ".gitignore", label: t("filesIgnoredByGit") },
+        { file: ".mega-linter.yml", label: t("megaLinterConfiguration") },
       ];
       const quickpick = vscode.window.createQuickPick<vscode.QuickPickItem>();
       const currentWorkspaceFolderUri = getWorkspaceRoot();

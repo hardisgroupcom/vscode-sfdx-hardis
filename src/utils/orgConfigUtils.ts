@@ -27,88 +27,26 @@ export async function listMajorOrgs(
   const branchConfigPattern = "**/config/branches/.sfdx-hardis.*.yml";
   const configFiles = await glob(branchConfigPattern, { cwd: workspaceRoot });
   const majorOrgs: MajorOrg[] = [];
+  const gitProvider = options.browseGitProvider
+    ? await GitProvider.getInstance()
+    : null;
 
-  for (const configFile of configFiles) {
-    const props = (yaml.load(fs.readFileSync(configFile, "utf-8")) ||
-      {}) as any;
-    const branchNameRegex = /\.sfdx-hardis\.(.*)\.yml/gi;
-    const m = branchNameRegex.exec(configFile);
-    if (!m) {
-      continue;
+  // Process all config files in parallel
+  const configFileResults = await Promise.allSettled(
+    configFiles.map((configFile) =>
+      processOrgSfdxHardisConfigFile(
+        configFile,
+        configFiles,
+        workspaceRoot,
+        gitProvider,
+        options,
+      ),
+    ),
+  );
+  for (const result of configFileResults) {
+    if (result.status === "fulfilled" && result.value !== null) {
+      majorOrgs.push(result.value);
     }
-    const branchName = m[1];
-    let orgType: MajorOrg["orgType"] = "other";
-    let level = 40;
-    if (isProduction(branchName)) {
-      orgType = "prod";
-      level = 100;
-    } else if (isPreprod(branchName)) {
-      orgType = "preprod";
-      level = 90;
-    } else if (isUatRun(branchName)) {
-      orgType = "uatrun";
-      level = 80;
-    } else if (isUat(branchName)) {
-      orgType = "uat";
-      level = 70;
-    } else if (isIntegration(branchName)) {
-      orgType = "integration";
-      level = 50;
-    }
-    const mergeTargets = Array.isArray(props.mergeTargets)
-      ? props.mergeTargets
-      : guessMatchingMergeTargets(
-          branchName,
-          orgType,
-          configFiles.map((f) => f.replace(/^.*\.sfdx-hardis\.|\.yml$/g, "")),
-        );
-
-    const warnings: string[] = [];
-    if (
-      !(Array.isArray(props.mergeTargets) && props.mergeTargets.length > 0) &&
-      orgType !== "prod" &&
-      !branchName.includes("training")
-    ) {
-      const exampleMergeTarget =
-        mergeTargets.length > 0 ? mergeTargets[0] : "preprod";
-      warnings.push(
-        `No merge target defined for branch ${branchName}. Consider adding one in Pipeline Settings -> select ${branchName} and set merge target in 'Deployment' tab. (Ex: ${exampleMergeTarget})`,
-      );
-    }
-
-    // Check if there is an encrypted certificate key file for the branch
-    const certKeyFile = `config/branches/.jwt/${branchName}.key`;
-    if (!fs.existsSync(path.join(workspaceRoot, certKeyFile))) {
-      warnings.push(
-        `No encrypted certificate key file found for branch '${branchName}' (expected: ${certKeyFile}). You should configure the org authentication again (use "Add new org")`,
-      );
-    }
-
-    let jobs: Job[] = [];
-    let jobsStatus: JobStatus = "unknown";
-    if (options.browseGitProvider) {
-      const gitProvider = await GitProvider.getInstance();
-      if (gitProvider?.isActive) {
-        const jobsRes =
-          await gitProvider.getJobsForBranchLatestCommit(branchName);
-        if (jobsRes) {
-          jobsStatus = jobsRes.jobsStatus;
-          jobs = jobsRes.jobs || [];
-        }
-      }
-    }
-
-    majorOrgs.push({
-      branchName,
-      orgType,
-      alias: props.alias,
-      mergeTargets,
-      level,
-      instanceUrl: props.instanceUrl,
-      warnings: warnings,
-      jobs: jobs,
-      jobsStatus: jobsStatus,
-    });
   }
 
   // Sort by level (desc), then branchName (asc)
@@ -156,6 +94,110 @@ export async function listMajorOrgs(
   }
 
   return majorOrgsSorted;
+}
+
+async function processOrgSfdxHardisConfigFile(
+  configFile: string,
+  configFiles: string[],
+  workspaceRoot: string,
+  gitProvider: GitProvider | null,
+  options: { browseGitProvider: boolean },
+): Promise<MajorOrg | null> {
+  const props = (yaml.load(fs.readFileSync(configFile, "utf-8")) || {}) as any;
+  const branchNameRegex = /\.sfdx-hardis\.(.*)\.yml/gi;
+  const m = branchNameRegex.exec(configFile);
+  if (!m) {
+    return null;
+  }
+  const branchName = m[1];
+
+  // The canonical uat branch is named exactly "uat" or "recette"
+  const isCanonicalUatBranch =
+    branchName.toLowerCase() === "uat" ||
+    branchName.toLowerCase() === "recette";
+  // If a canonical "uat" or "recette" branch exists, other non-uatRun branches are demoted to "other"
+  const hasCanonicalUatBranch = configFiles.some((f) => {
+    const regex = /\.sfdx-hardis\.(.*)\.yml/gi;
+    const match = regex.exec(f);
+    const b = match ? match[1] : null;
+    return (
+      b !== null &&
+      b !== branchName &&
+      (b.toLowerCase() === "uat" || b.toLowerCase() === "recette")
+    );
+  });
+
+  let orgType: MajorOrg["orgType"] = "other";
+  let level = 40;
+  if (isProduction(branchName)) {
+    orgType = "prod";
+    level = 100;
+  } else if (isPreprod(branchName)) {
+    orgType = "preprod";
+    level = 90;
+  } else if (isUatRun(branchName)) {
+    orgType = "uatrun";
+    level = 80;
+  } else if (
+    isUat(branchName) &&
+    (isCanonicalUatBranch || !hasCanonicalUatBranch)
+  ) {
+    orgType = "uat";
+    level = 70;
+  } else if (isIntegration(branchName)) {
+    orgType = "integration";
+    level = 50;
+  }
+  const mergeTargets = Array.isArray(props.mergeTargets)
+    ? props.mergeTargets
+    : guessMatchingMergeTargets(
+        branchName,
+        orgType,
+        configFiles.map((f) => f.replace(/^.*\.sfdx-hardis\.|\.yml$/g, "")),
+      );
+
+  const warnings: string[] = [];
+  if (
+    !(Array.isArray(props.mergeTargets) && props.mergeTargets.length > 0) &&
+    orgType !== "prod" &&
+    !branchName.includes("training")
+  ) {
+    const exampleMergeTarget =
+      mergeTargets.length > 0 ? mergeTargets[0] : "preprod";
+    warnings.push(
+      `No merge target defined for branch ${branchName}. Consider adding one in Pipeline Settings -> select ${branchName} and set merge target in 'Deployment' tab. (Ex: ${exampleMergeTarget})`,
+    );
+  }
+
+  // Check if there is an encrypted certificate key file for the branch
+  const certKeyFile = `config/branches/.jwt/${branchName}.key`;
+  if (!fs.existsSync(path.join(workspaceRoot, certKeyFile))) {
+    warnings.push(
+      `No encrypted certificate key file found for branch '${branchName}' (expected: ${certKeyFile}). You should configure the org authentication again (use "Add new org")`,
+    );
+  }
+
+  let jobs: Job[] = [];
+  let jobsStatus: JobStatus = "unknown";
+  if (options.browseGitProvider && gitProvider?.isActive) {
+    const jobsRes = await gitProvider.getJobsForBranchLatestCommit(branchName);
+    if (jobsRes) {
+      jobsStatus = jobsRes.jobsStatus;
+      jobs = jobsRes.jobs || [];
+    }
+  }
+
+  return {
+    branchName,
+    orgType,
+    alias: props.alias,
+    mergeTargets,
+    level,
+    instanceUrl: props.instanceUrl,
+    warnings: warnings,
+    jobs: jobs,
+    jobsStatus: jobsStatus,
+  };
 }
 
 function recursiveGetChildBranches(

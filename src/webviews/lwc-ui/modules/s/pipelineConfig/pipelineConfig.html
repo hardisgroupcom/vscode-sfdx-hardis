@@ -4,20 +4,20 @@
       <div class="slds-grid slds-grid_align-spread slds-m-bottom_medium">
         <div class="slds-col slds-size_4-of-12 slds-align-left">
           <template if:true={isBranch}>
-            <span class="slds-text-heading_medium slds-text-title_bold">Pipeline Settings for major git branch <b>{branchName}</b></span>
+            <span class="slds-text-heading_medium slds-text-title_bold">{i18n.pipelineSettingsForBranch} <b>{branchName}</b></span>
           </template>
           <template if:false={isBranch}>
-            <span class="slds-text-heading_medium slds-text-title_bold">Global Pipeline Settings</span>
+            <span class="slds-text-heading_medium slds-text-title_bold">{i18n.globalPipelineSettings}</span>
           </template>
         </div>
         <div class="slds-col slds-size_4-of-12 slds-align-middle">
           <div class="slds-form-element">
             <lightning-combobox
               name="configScope"
-              label="Configuration Scope"
+              label={i18n.configurationScope}
               variant="label-hidden"
               value={selectedConfigScope}
-              placeholder="Select configuration scope"
+              placeholder={i18n.selectConfigurationScope}
               options={configScopeOptions}
               onchange={handleConfigScopeChange}
               disabled={isEditMode}
@@ -26,20 +26,20 @@
         </div>
         <div class="slds-col slds-size_4-of-12 slds-no-flex slds-align-middle" data-key="top-btn-group" style="text-align:right;">
           <template if:true={isEditMode}>
-            <lightning-button variant="brand" label="Save" onclick={handleSave} class="slds-m-right_small" data-button="top"></lightning-button>
-            <lightning-button variant="neutral" label="Cancel" onclick={handleCancel} data-button="top"></lightning-button>
+            <lightning-button variant="brand" label={i18n.save} onclick={handleSave} class="slds-m-right_small" data-button="top"></lightning-button>
+            <lightning-button variant="neutral" label={i18n.cancel} onclick={handleCancel} data-button="top"></lightning-button>
           </template>
           <template if:false={isEditMode}>
-            <lightning-button variant="brand" label="Edit" onclick={handleEdit} data-button="top"></lightning-button>
+            <lightning-button variant="brand" label={i18n.edit} onclick={handleEdit} data-button="top"></lightning-button>
           </template>
         </div>
       </div>
     <div class="slds-p-horizontal_small">
       <template if:true={configSections}>
-        <lightning-card hide-header="true" label="Pipeline Settings">
+        <lightning-card hide-header="true" label={i18n.pipelineConfig}>
           <lightning-tabset data-id="config-tabset" active-tab-value={activeTabValue}>
             <template for:each={configSections} for:item="section" for:index="index">
-              <lightning-tab key={section.label} label={section.label} value={section.label}>
+              <lightning-tab key={section.label} label={section.label} value={section.label} icon-name={section.iconName} icon-assistive-text={section.label}>
                 <div class="slds-p-around_medium">
                   <template if:true={section.description}>
                     <div class="slds-text-body_regular slds-text-color_weak slds-m-bottom_medium">
@@ -81,7 +81,7 @@
                                 value={entry.valueEdit}
                                 options={entry.optionsLwc}
                                 onchange={handleInputChange}
-                                label="Select values"
+                                label={i18n.selectValues}
                               ></lightning-dual-listbox>
                             </div>
                           </template>
@@ -96,11 +96,11 @@
                               <template if:true={isApexTestsFieldViewMode}>
                                 <div class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center slds-m-bottom_x-small">
                                   <div class="slds-text-body_small slds-text-color_weak">
-                                    Selected: {entry.valueEdit.length}
+                                    {i18n.selectedLabel} {entry.valueEdit.length}
                                   </div>
                                   <lightning-button
                                     variant="neutral"
-                                    label="Edit"
+                                    label={i18n.edit}
                                     onclick={handleEditApexTestsField}
                                     size="small"
                                   ></lightning-button>
@@ -113,7 +113,7 @@
                                   </ul>
                                 </template>
                                 <template if:false={entry.hasApexTestsSelected}>
-                                  <span class="slds-text-color_weak">None</span>
+                                  <span class="slds-text-color_weak">{i18n.noneLabel}</span>
                                 </template>
                               </template>
 
@@ -122,19 +122,20 @@
                                   data-key={entry.key}
                                   value={entry.valueEdit}
                                   available-classes={availableApexTestClasses}
+                                  translations={translations}
                                   onchange={handleApexTestsSelectChange}
                                 ></s-apex-tests-select>
                                 <div class="slds-m-top_small">
                                   <lightning-button
                                     variant="neutral"
-                                    label="Done"
+                                    label={i18n.done}
                                     onclick={handleDoneApexTestsField}
                                     size="small"
                                   ></lightning-button>
                                   <lightning-button
                                     class="slds-m-left_small"
                                     variant="neutral"
-                                    label="Cancel"
+                                    label={i18n.cancel}
                                     onclick={handleCancelApexTestsField}
                                     size="small"
                                   ></lightning-button>
@@ -158,7 +159,7 @@
                                   rows="2"
                                   variant="label-hidden"
                                 ></lightning-textarea>
-                                <div class="slds-text-body_small slds-text-color_weak">One value per line</div>
+                                <div class="slds-text-body_small slds-text-color_weak">{i18n.oneValuePerLine}</div>
                               </div>
                             </template>
                           </template>
@@ -190,7 +191,7 @@
                                 <div class="add-button-container">
                                   <lightning-button
                                     variant="brand"
-                                    label="Add New"
+                                    label={i18n.addNew}
                                     icon-name="utility:add"
                                     data-key={entry.key}
                                     onclick={handleAddArrayObjectItem}
@@ -203,16 +204,16 @@
                                 <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
                                   <div class="slds-modal__container">
                                     <header class="slds-modal__header">
-                                      <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" data-key={entry.key} onclick={handleCancelArrayObjectForm}>
-                                        <lightning-icon icon-name="utility:close" alternative-text="close" size="small"></lightning-icon>
-                                        <span class="slds-assistive-text">Close</span>
+                                      <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title={i18n.close} data-key={entry.key} onclick={handleCancelArrayObjectForm}>
+                                        <lightning-icon icon-name="utility:close" alternative-text={i18n.close} size="small"></lightning-icon>
+                                        <span class="slds-assistive-text">{i18n.close}</span>
                                       </button>
                                       <h2 class="slds-modal__title slds-hyphenate">
                                         <template if:true={entry.arrayObjectEditIndex}>
-                                          Edit Item
+                                          {i18n.editItem}
                                         </template>
                                         <template if:false={entry.arrayObjectEditIndex}>
-                                          Add New Item
+                                          {i18n.addNewItem}
                                         </template>
                                       </h2>
                                     </header>
@@ -289,13 +290,13 @@
                                     <footer class="slds-modal__footer">
                                       <lightning-button
                                         variant="neutral"
-                                        label="Cancel"
+                                        label={i18n.cancel}
                                         data-key={entry.key}
                                         onclick={handleCancelArrayObjectForm}
                                       ></lightning-button>
                                       <lightning-button
                                         variant="brand"
-                                        label="Save"
+                                        label={i18n.save}
                                         data-key={entry.key}
                                         onclick={handleSaveArrayObjectItem}
                                       ></lightning-button>
@@ -360,7 +361,7 @@
                             </div>
                           </template>
                           <template if:true={entry.inherited}>
-                            <div class="slds-text-color_weak slds-text-body_small">Global: {entry.globalValue}</div>
+                            <div class="slds-text-color_weak slds-text-body_small">{i18n.globalValueLabel} {entry.globalValue}</div>
                           </template>
                         </template>
                         <template if:false={isEditMode}>
@@ -398,7 +399,7 @@
                                   </ul>
                                 </template>
                                 <template if:false={entry.hasArrayEnumValues}>
-                                  <span class="slds-text-color_weak">None</span>
+                                  <span class="slds-text-color_weak">{i18n.noneLabel}</span>
                                 </template>
                               </template>
                               <template if:true={entry.isArrayText}>
@@ -410,7 +411,7 @@
                                   </ul>
                                 </template>
                                 <template if:false={entry.hasArrayTextValues}>
-                                  <span class="slds-text-color_weak">None</span>
+                                  <span class="slds-text-color_weak">{i18n.noneLabel}</span>
                                 </template>
                               </template>
                               <template if:true={entry.isArrayObject}>
@@ -425,7 +426,7 @@
                                   ></lightning-datatable>
                                 </template>
                                 <template if:false={entry.hasArrayObjectValues}>
-                                  <span class="slds-text-color_weak">None</span>
+                                  <span class="slds-text-color_weak">{i18n.noneLabel}</span>
                                 </template>
                               </template>
                               <template if:true={entry.isEnum}>
@@ -433,7 +434,7 @@
                                   <span class="slds-text-color_weak">{entry.valueDisplay}</span>
                                 </template>
                                 <template if:false={entry.value}>
-                                  <span class="slds-text-color_weak">None</span>
+                                  <span class="slds-text-color_weak">{i18n.noneLabel}</span>
                                 </template>
                               </template>
                               <template if:true={entry.isText}>
@@ -441,7 +442,7 @@
                                   <span class="slds-text-color_weak">{entry.value}</span>
                                 </template>
                                 <template if:false={entry.hasValue}>
-                                  <span class="slds-text-color_weak">None</span>
+                                  <span class="slds-text-color_weak">{i18n.noneLabel}</span>
                                 </template>
                               </template>
                               <template if:true={entry.isNumber}>
@@ -449,13 +450,13 @@
                                   <span class="slds-text-color_weak">{entry.value}</span>
                                 </template>
                                 <template if:false={entry.hasValue}>
-                                  <span class="slds-text-color_weak">None</span>
+                                  <span class="slds-text-color_weak">{i18n.noneLabel}</span>
                                 </template>
                               </template>
                             </div>
                           </template>
                           <template if:true={entry.inherited}>
-                            <span class="slds-badge slds-theme_info slds-m-left_x-small" title="Inherited from global config">inherited</span>
+                            <span class="slds-badge slds-theme_info slds-m-left_x-small" title={i18n.inheritedFromGlobalConfig}>{i18n.inherited}</span>
                           </template>
                         </template>
                       </div>
@@ -464,7 +465,7 @@
                           <template if:true={entry.hasDocUrl}>
                             <lightning-button
                               variant="neutral"
-                              label="Documentation"
+                              label={i18n.documentationLabel}
                               icon-name="utility:link"
                               icon-position="left"
                               onclick={handleOpenDocUrl}

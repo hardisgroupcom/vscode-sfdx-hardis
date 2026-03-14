@@ -337,7 +337,11 @@ function listExportedFiles(workspacePath: string): ExportedFile[] {
 
     try {
       const stats = fs.statSync(entryPath);
-      const lineCount = countFileLines(entryPath);
+      const rawLineCount = countFileLines(entryPath);
+      const lineCount =
+        extension === ".csv" && rawLineCount > 0
+          ? rawLineCount - 1
+          : rawLineCount;
       if (entry.name === "MissingParentRecordsReport.csv" && lineCount === 0) {
         continue;
       }

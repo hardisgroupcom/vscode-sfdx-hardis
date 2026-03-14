@@ -3,14 +3,16 @@
 // @ts-nocheck
 // eslint-env es6
 import { LightningElement, api, track } from "lwc";
-import "s/forceLightTheme"; // Ensure light theme is applied
+import { SharedMixin } from "s/sharedMixin";
 
-export default class OrgMonitoring extends LightningElement {
+export default class OrgMonitoring extends SharedMixin(LightningElement) {
   @track isInstalled = false;
   @track isLoading = true;
   @track isCiCdRepo = false;
   @track monitoringRepository = null;
   @track instanceUrl = null;
+  @track monitoringHomeUrl = "";
+  @track monitoringConfigUrl = "";
 
   @api
   initialize(data) {
@@ -19,6 +21,8 @@ export default class OrgMonitoring extends LightningElement {
     this.isCiCdRepo = data?.isCiCdRepo || false;
     this.monitoringRepository = data?.monitoringRepository || null;
     this.instanceUrl = data?.instanceUrl || null;
+    this.monitoringHomeUrl = data?.monitoringHomeUrl || "";
+    this.monitoringConfigUrl = data?.monitoringConfigUrl || "";
     this.isLoading = false;
   }
 
@@ -134,7 +138,7 @@ export default class OrgMonitoring extends LightningElement {
   learnMore() {
     window.sendMessageToVSCode({
       type: "openExternal",
-      data: "https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/",
+      data: this.monitoringHomeUrl,
     });
   }
 
@@ -144,6 +148,15 @@ export default class OrgMonitoring extends LightningElement {
       type: "runCommand",
       data: {
         command: "sf hardis:org:monitor:backup",
+      },
+    });
+  }
+
+  runApexAndFlowErrors() {
+    window.sendMessageToVSCode({
+      type: "runCommand",
+      data: {
+        command: "sf hardis:org:monitor:errors",
       },
     });
   }
@@ -229,6 +242,15 @@ export default class OrgMonitoring extends LightningElement {
     });
   }
 
+  findUnderusedPermissionSets() {
+    window.sendMessageToVSCode({
+      type: "runCommand",
+      data: {
+        command: "sf hardis:org:diagnose:underusedpermsets",
+      },
+    });
+  }
+
   // Advanced Diagnostics Methods
   findUnusedApexClasses() {
     window.sendMessageToVSCode({
@@ -279,14 +301,14 @@ export default class OrgMonitoring extends LightningElement {
   openMonitoringDocs() {
     window.sendMessageToVSCode({
       type: "openExternal",
-      data: "https://sfdx-hardis.cloudity.com/salesforce-monitoring-home/",
+      data: this.monitoringHomeUrl,
     });
   }
 
   openSetupGuide() {
     window.sendMessageToVSCode({
       type: "openExternal",
-      data: "https://sfdx-hardis.cloudity.com/salesforce-monitoring-config-home/",
+      data: this.monitoringConfigUrl,
     });
   }
 }
