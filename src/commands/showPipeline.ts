@@ -52,6 +52,36 @@ async function getDefaultOrgUsername(): Promise<string> {
   }
 }
 
+async function fetchAndCacheOrgNames(
+  cache: Map<string, { expiresAt: number; values: string[] }>,
+  orgKey: string,
+  now: number,
+  command: string,
+  filter?: (record: any) => boolean,
+): Promise<string[]> {
+  const result = await execSfdxJson(command, {
+    fail: false,
+    output: false,
+  });
+  const records = Array.isArray(result?.result?.records)
+    ? result.result.records
+    : [];
+  const filtered = filter ? records.filter(filter) : records;
+  const values = filtered
+    .map((record: any) => String(record?.Name || "").trim())
+    .filter((v: string) => v.length > 0);
+  const uniqueSorted: string[] = [...new Set<string>(values)].sort(
+    (a: string, b: string) => a.localeCompare(b),
+  );
+  if (uniqueSorted.length > 0) {
+    cache.set(orgKey, {
+      expiresAt: now + SCHEDULABLE_CLASSES_CACHE_TTL_MS,
+      values: uniqueSorted,
+    });
+  }
+  return uniqueSorted;
+}
+
 async function listSchedulableClassesFromDefaultOrg(): Promise<string[]> {
   const orgKey = await getDefaultOrgUsername();
   const now = Date.now();
@@ -59,34 +89,16 @@ async function listSchedulableClassesFromDefaultOrg(): Promise<string[]> {
   if (cached && cached.expiresAt > now) {
     return cached.values;
   }
-
   const query =
     "SELECT Name, Body FROM ApexClass WHERE ManageableState = 'unmanaged' ORDER BY Name";
   const command = `sf data query --query "${query}" --use-tooling-api --json`;
-  const result = await execSfdxJson(command, {
-    fail: false,
-    output: false,
-  });
-
-  const records = Array.isArray(result?.result?.records)
-    ? result.result.records
-    : [];
-  const values = records
-    .filter((record: any) => String(record?.Body || "").toLowerCase().includes("schedulable"))
-    .map((record: any) => String(record?.Name || "").trim())
-    .filter((v: string) => v.length > 0);
-
-  const uniqueSorted: string[] = [...new Set<string>(values)].sort(
-    (a: string, b: string) => a.localeCompare(b),
+  return fetchAndCacheOrgNames(
+    schedulableClassesByOrgCache,
+    orgKey,
+    now,
+    command,
+    (record: any) => String(record?.Body || "").toLowerCase().includes("schedulable"),
   );
-  // Only cache if classes were found
-  if (uniqueSorted.length > 0) {
-    schedulableClassesByOrgCache.set(orgKey, {
-      expiresAt: now + SCHEDULABLE_CLASSES_CACHE_TTL_MS,
-      values: uniqueSorted,
-    });
-  }
-  return uniqueSorted;
 }
 
 async function listCommunitiesFromDefaultOrg(): Promise<string[]> {
@@ -96,31 +108,9 @@ async function listCommunitiesFromDefaultOrg(): Promise<string[]> {
   if (cached && cached.expiresAt > now) {
     return cached.values;
   }
-
   const query = "SELECT Name FROM Network ORDER BY Name";
   const command = `sf data query --query "${query}" --json`;
-  const result = await execSfdxJson(command, {
-    fail: false,
-    output: false,
-  });
-
-  const records = Array.isArray(result?.result?.records)
-    ? result.result.records
-    : [];
-  const values = records
-    .map((record: any) => String(record?.Name || "").trim())
-    .filter((v: string) => v.length > 0);
-
-  const uniqueSorted: string[] = [...new Set<string>(values)].sort(
-    (a: string, b: string) => a.localeCompare(b),
-  );
-  if (uniqueSorted.length > 0) {
-    communitiesByOrgCache.set(orgKey, {
-      expiresAt: now + SCHEDULABLE_CLASSES_CACHE_TTL_MS,
-      values: uniqueSorted,
-    });
-  }
-  return uniqueSorted;
+  return fetchAndCacheOrgNames(communitiesByOrgCache, orgKey, now, command);
 }
 
 export function registerShowPipeline(commands: Commands) {

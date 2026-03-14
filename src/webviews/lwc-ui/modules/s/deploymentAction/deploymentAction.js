@@ -65,8 +65,8 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     return this.translations;
   }
 
-  _initOptions() {
-    this.typeOptions = [
+  _buildTypeOptions() {
+    return [
       { label: this.t("commandType"), value: "command" },
       { label: this.t("dataType"), value: "data" },
       { label: this.t("apexType"), value: "apex" },
@@ -74,6 +74,10 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       { label: this.t("publishCommunityType"), value: "publish-community" },
       { label: this.t("manualType"), value: "manual" },
     ];
+  }
+
+  _initOptions() {
+    this.typeOptions = this._buildTypeOptions();
     this._updateWhenAndContextOptions(this.displayedAction?.type || "command");
   }
 
@@ -181,14 +185,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   }
 
   // Available action types
-  typeOptions = [
-    { label: this.t("commandType"), value: "command" },
-    { label: this.t("dataType"), value: "data" },
-    { label: this.t("apexType"), value: "apex" },
-    { label: this.t("scheduleBatchType"), value: "schedule-batch" },
-    { label: this.t("publishCommunityType"), value: "publish-community" },
-    { label: this.t("manualType"), value: "manual" },
-  ];
+  typeOptions = this._buildTypeOptions();
 
   // apexScripts already come as {label, value} objects from backend
   /* jscpd:ignore-start */
