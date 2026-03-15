@@ -110,13 +110,14 @@ export default class Welcome extends SharedMixin(LightningElement) {
 
   get currentLangFlagSrc() {
     const map = {
-      auto: "flagGlobe",
-      en: "flagEn",
-      fr: "flagFr",
-      es: "flagEs",
-      de: "flagDe",
-      ja: "flagJa",
-      pl: "flagPl",
+      "auto": "flagGlobe",
+      "en": "flagEn",
+      "fr": "flagFr",
+      "es": "flagEs",
+      "de": "flagDe",
+      "ja": "flagJa",
+      "pl": "flagPl",
+      "pt-BR": "flagPtBR",
     };
     const key = map[this.langSetting] || "flagGlobe";
     return this.getImageUrl(key, "flagGlobe");
@@ -148,6 +149,10 @@ export default class Welcome extends SharedMixin(LightningElement) {
 
   get flagPlSrc() {
     return this.getImageUrl("flagPl");
+  }
+
+  get flagPtBRSrc() {
+    return this.getImageUrl("flagPtBR");
   }
 
   toggleLangDropdown(event) {

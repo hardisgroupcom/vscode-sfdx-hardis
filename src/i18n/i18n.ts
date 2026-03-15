@@ -47,19 +47,19 @@ function detectLocale(): string {
   const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
   const settingLang = config.get<string>("lang");
   if (settingLang && settingLang !== "auto") {
-    return settingLang.substring(0, 2).toLowerCase();
+    return settingLang.substring(0, 5).toLowerCase();
   }
 
   // 2. Environment variable
   const envLang = process.env.SFDX_HARDIS_LANG;
   if (envLang) {
-    return envLang.substring(0, 2).toLowerCase();
+    return envLang.substring(0, 5).toLowerCase();
   }
 
   // 3. VS Code display language
   const vsCodeLang = vscode.env.language;
   if (vsCodeLang) {
-    return vsCodeLang.substring(0, 2).toLowerCase();
+    return vsCodeLang.substring(0, 5).toLowerCase();
   }
 
   // 4. Default
@@ -74,19 +74,20 @@ export function initI18n(): void {
     return;
   }
   const locale = detectLocale();
-  const supportedLocales = ["en", "fr", "es", "de", "ja", "pl"];
+  const supportedLocales = ["en", "fr", "es", "de", "ja", "pl", "pt-br"];
   const lng = supportedLocales.includes(locale) ? locale : "en";
 
   i18next.init({
     lng,
     fallbackLng: "en",
     resources: {
-      de: { translation: loadTranslations("de") },
-      en: { translation: loadTranslations("en") },
-      es: { translation: loadTranslations("es") },
-      fr: { translation: loadTranslations("fr") },
-      ja: { translation: loadTranslations("ja") },
-      pl: { translation: loadTranslations("pl") },
+      "de": { translation: loadTranslations("de") },
+      "en": { translation: loadTranslations("en") },
+      "es": { translation: loadTranslations("es") },
+      "fr": { translation: loadTranslations("fr") },
+      "ja": { translation: loadTranslations("ja") },
+      "pl": { translation: loadTranslations("pl") },
+      "pt-BR": { translation: loadTranslations("pt-BR") },
     },
     interpolation: {
       escapeValue: false,
