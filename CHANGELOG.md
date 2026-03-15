@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## [7.1.0] 2026-03-16
+
+- Add brazilian portuguese translation
+- Improve translations loading performances
+
 ## [7.0.1] 2026-03-15
 
 - Command Executor
