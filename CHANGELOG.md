@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Command Executor
+  - Button & dropdown to open a package.xml file with Package XML Viewer or as raw xml
+- Package XML Viewer
+  - Add a button "Expand all" to expand all nodes in the package.xml tree view
+
 ## [7.0.0] 2026-03-14
 
 - UI refactoring
