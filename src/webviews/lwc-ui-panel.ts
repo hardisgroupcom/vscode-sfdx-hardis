@@ -290,6 +290,9 @@ export class LwcUiPanel {
         case "openFile":
           await this.handleFileOpen(data.filePath);
           break;
+        case "openPackageXmlViewer":
+          await this.handleOpenPackageXmlViewer(data);
+          break;
         case "openFolder":
           await this.handleFolderOpen(data.folderPath);
           break;
@@ -470,6 +473,24 @@ export class LwcUiPanel {
    * Handle file open request from webview
    * @param filePath Path to the file to open
    */
+  /**
+   * Handle PackageXML viewer open request from webview
+   * @param data Object with a 'filePath' property
+   */
+  private async handleOpenPackageXmlViewer(data: {
+    filePath: string;
+  }): Promise<void> {
+    if (!data || !data.filePath) {
+      return;
+    }
+    const resolvedPath = this.resolveWorkspacePath(data.filePath);
+    const fileUri = vscode.Uri.file(resolvedPath);
+    await vscode.commands.executeCommand(
+      "vscode-sfdx-hardis.showPackageXml",
+      fileUri,
+    );
+  }
+
   private async handleFileOpen(filePathInit: string): Promise<void> {
     try {
       let filePath = filePathInit;

@@ -2,6 +2,8 @@ import * as http from "http";
 import getPort, { portNumbers } from "get-port";
 import { WebSocketServer } from "ws";
 import * as vscode from "vscode";
+import * as fs from "fs-extra";
+import * as path from "path";
 import { getWorkspaceRoot, stripAnsi } from "./utils";
 import { Logger } from "./logger";
 import { t } from "./i18n/i18n";
@@ -302,12 +304,29 @@ export class LocalWebSocketServer {
       }
       const clientData = this.clients[data.context?.id];
       if (clientData?.panel) {
+        let isPackageXml = false;
+        if (data.file && data.file.toLowerCase().endsWith(".xml")) {
+          try {
+            const resolvedFile = path.isAbsolute(data.file)
+              ? data.file
+              : path.join(getWorkspaceRoot(), data.file);
+            const content = await fs.readFile(resolvedFile, {
+              encoding: "utf8",
+            });
+            isPackageXml = content.includes(
+              '<Package xmlns="http://soap.sforce.com/2006/04/metadata">',
+            );
+          } catch (e) {
+            // ignore read errors
+          }
+        }
         clientData.panel.sendMessage({
           type: "reportFile",
           data: {
             file: data.file,
             title: data.title,
             type: data.type, // Forward the type property for LWC simplification
+            isPackageXml,
           },
         });
       }

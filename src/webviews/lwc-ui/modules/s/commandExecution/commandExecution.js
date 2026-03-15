@@ -521,6 +521,7 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
         type: type,
         url: type === "actionUrl" ? data.file : null,
         vscodeCommand: type === "actionCommand" ? data.file : null,
+        isPackageXml: data.isPackageXml === true,
       };
       this.reportFiles = [...this.reportFiles, reportFile];
       this.scrollToBottom();
@@ -1496,6 +1497,33 @@ ${resultMessage}`;
 
     // Map to add button/icon props as before
     const decorate = (f) => {
+      // Handle package.xml files with a dedicated two-option dropdown
+      if (f.isPackageXml) {
+        const stableId = `packagexml_${(f.id || f.file || "").replace(/[^a-zA-Z0-9]/g, "")}`;
+        return {
+          ...f,
+          id: stableId,
+          buttonVariant: "success",
+          iconName: "utility:page",
+          iconVariant: "inverse",
+          isDropdown: true,
+          dropdownOptions: [
+            {
+              label: this.i18n.openWithPackageXmlViewer,
+              type: f.type,
+              file: f.file,
+              format: "packagexmlViewer",
+            },
+            {
+              label: this.i18n.openWithVsCode,
+              type: f.type,
+              file: f.file,
+              format: "packagexmlVsCode",
+            },
+          ],
+        };
+      }
+
       const baseProps = {
         ...f,
         buttonVariant:
@@ -2061,8 +2089,16 @@ ${resultMessage}`;
     }
 
     if (targetOption) {
-      // Trigger the same file opening logic as dropdown selection
-      this.handleReportFileAction(targetOption.file, targetOption.label);
+      // Open with PackageXML viewer
+      if (targetOption.format === "packagexmlViewer") {
+        window.sendMessageToVSCode({
+          type: "openPackageXmlViewer",
+          data: { filePath: targetOption.file },
+        });
+      } else {
+        // Trigger the same file opening logic as dropdown selection
+        this.handleReportFileAction(targetOption.file, targetOption.label);
+      }
     }
   }
 
@@ -2073,9 +2109,26 @@ ${resultMessage}`;
 
     const filePath = event.currentTarget.dataset.filePath;
     const reportId = event.currentTarget.dataset.reportId;
+    const format = event.currentTarget.dataset.format;
 
     // Close the dropdown
     this.closeAllDropdowns();
+
+    // Route directly by format for packageXml options (both share the same file path)
+    if (format === "packagexmlViewer") {
+      window.sendMessageToVSCode({
+        type: "openPackageXmlViewer",
+        data: { filePath },
+      });
+      return;
+    }
+    if (format === "packagexmlVsCode") {
+      window.sendMessageToVSCode({
+        type: "openFile",
+        data: { filePath },
+      });
+      return;
+    }
 
     // Find the parent report file group from the memoized/stable sortedReportFiles
     const parentReportFile = this.sortedReportFiles.find(

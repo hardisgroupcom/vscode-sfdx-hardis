@@ -5,6 +5,33 @@
     min-height: 150px;
 }
 
+.pipeline-card-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.cloudity-title-logo-button {
+    padding: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    opacity: 0.9;
+}
+
+.cloudity-title-logo-button:hover {
+    opacity: 1;
+}
+
+.cloudity-title-logo {
+    height: 1.25rem;
+    width: auto;
+    flex-shrink: 0;
+    vertical-align: middle;
+}
+
 .pipeline-loading-overlay {
     position: absolute;
     top: 0;
