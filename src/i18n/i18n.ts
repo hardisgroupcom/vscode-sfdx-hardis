@@ -71,9 +71,12 @@ function detectLocale(): string {
  * e.g: en, es, pt-BR...
  */
 function prepareLocaleString(locale: string): string {
-  return locale.substring(0, 5).replace(/^([a-zA-Z]{2})(-?)([a-zA-Z]{0,2})$/, (_, p1, p2, p3) => 
-    p1.toLowerCase() + p2 + p3.toUpperCase()
-  );
+  return locale
+    .substring(0, 5)
+    .replace(
+      /^([a-zA-Z]{2})(-?)([a-zA-Z]{0,2})$/,
+      (_, p1, p2, p3) => p1.toLowerCase() + p2 + p3.toUpperCase(),
+    );
 }
 
 /**
@@ -89,7 +92,7 @@ export function initI18n(): void {
 
   // Only load the selected locale + English as fallback to save memory
   const resources: Record<string, { translation: Record<string, string> }> = {
-    "en": { translation: loadTranslations("en") },
+    en: { translation: loadTranslations("en") },
   };
   if (lng !== "en") {
     resources[lng] = { translation: loadTranslations(lng) };
