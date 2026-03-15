@@ -310,8 +310,12 @@ export class LocalWebSocketServer {
             const resolvedFile = path.isAbsolute(data.file)
               ? data.file
               : path.join(getWorkspaceRoot(), data.file);
-            const content = await fs.readFile(resolvedFile, { encoding: "utf8" });
-            isPackageXml = content.includes('<Package xmlns="http://soap.sforce.com/2006/04/metadata">');
+            const content = await fs.readFile(resolvedFile, {
+              encoding: "utf8",
+            });
+            isPackageXml = content.includes(
+              '<Package xmlns="http://soap.sforce.com/2006/04/metadata">',
+            );
           } catch (e) {
             // ignore read errors
           }

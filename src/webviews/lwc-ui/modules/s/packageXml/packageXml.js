@@ -828,7 +828,9 @@ export default class PackageXml extends SharedMixin(LightningElement) {
   }
 
   get expandCollapseLabel() {
-    return this.allExpanded ? this.i18n.collapseAllLabel : this.i18n.expandAllLabel;
+    return this.allExpanded
+      ? this.i18n.collapseAllLabel
+      : this.i18n.expandAllLabel;
   }
 
   get expandCollapseIcon() {
@@ -847,8 +849,7 @@ export default class PackageXml extends SharedMixin(LightningElement) {
       this.packageData.types.forEach((type) => {
         this.expandedTypes.add(type.name);
       });
-    }
-    else {
+    } else {
       this.expandedTypes.clear();
     }
 
@@ -857,7 +858,9 @@ export default class PackageXml extends SharedMixin(LightningElement) {
       types: this.packageData.types.map((type) => ({
         ...type,
         isExpanded: newExpanded,
-        expandIcon: newExpanded ? "utility:chevrondown" : "utility:chevronright",
+        expandIcon: newExpanded
+          ? "utility:chevrondown"
+          : "utility:chevronright",
       })),
     };
   }
