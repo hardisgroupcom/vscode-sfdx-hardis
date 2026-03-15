@@ -2,6 +2,19 @@
 	margin: 1rem;
 }
 
+.org-manager-card-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.org-manager-title-icon {
+    flex-shrink: 0;
+    background-color: #0176d3;
+    border-radius: 4px;
+    padding: 2px;
+}
+
 
 
 .org-default-row {

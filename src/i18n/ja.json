@@ -301,7 +301,7 @@
   "devHub": "Dev Hub",
   "devOpsPipeline": "DevOps パイプライン",
   "devOpsPipelineDescription": "自動デプロイと環境管理を備えた CI/CD パイプラインを可視化して管理します。",
-  "devOpsPipelineTitle": "🚀 SFDX-Hardis DevOps パイプライン",
+  "devOpsPipelineTitle": "SFDX-Hardis DevOps パイプライン",
   "devOpsPipelineTooltip": "DevOps パイプラインパネルを開いて、CI/CD パイプラインを可視化・管理します。",
   "disconnect": "切断",
   "disconnectedFrom": "{{providerName}} から切断しました。",

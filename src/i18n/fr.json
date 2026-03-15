@@ -301,7 +301,7 @@
   "devHub": "Dev Hub",
   "devOpsPipeline": "Pipeline DevOps",
   "devOpsPipelineDescription": "Visualisez et gérez votre pipeline CI/CD avec des déploiements automatisés et la gestion des environnements.",
-  "devOpsPipelineTitle": "🚀 Pipeline DevOps SFDX-Hardis",
+  "devOpsPipelineTitle": "Pipeline DevOps SFDX-Hardis",
   "devOpsPipelineTooltip": "Ouvrir le panneau Pipeline DevOps pour visualiser et gérer votre pipeline CI/CD.",
   "disconnect": "Se déconnecter",
   "disconnectedFrom": "Déconnecté de {{providerName}}.",
