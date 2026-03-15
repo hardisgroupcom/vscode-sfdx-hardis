@@ -1,6 +1,10 @@
 <template>
     <div class="slds-scope slds-theme_default slds-p-around_medium blue-back">
-    <lightning-card title={i18n.salesforceOrgsManager}>
+    <lightning-card>
+        <span slot="title" class="org-manager-card-title">
+            <lightning-icon icon-name="utility:connected_apps" size="medium" variant="inverse" class="org-manager-title-icon"></lightning-icon>
+            {i18n.salesforceOrgsManager}
+        </span>
         <div slot="actions" class="slds-float_right">
             <lightning-button-group>
                 <lightning-input type="toggle" label={i18n.viewAllOrgs} title={i18n.viewAllOrgs} checked={viewAll} onchange={handleViewAllToggle}></lightning-input>

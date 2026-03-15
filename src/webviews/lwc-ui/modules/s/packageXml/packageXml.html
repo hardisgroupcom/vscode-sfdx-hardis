@@ -159,8 +159,16 @@
                                     class="filter-input"
                                 ></lightning-input>
                             </div>
-                            <template if:true={editMode}>
-                                <div class="section-actions">
+                            <div class="section-actions">
+                                <lightning-button
+                                    variant="neutral"
+                                    label={expandCollapseLabel}
+                                    title={expandCollapseLabel}
+                                    onclick={toggleExpandAll}
+                                    icon-name={expandCollapseIcon}
+                                    class="header-button"
+                                ></lightning-button>
+                                <template if:true={editMode}>
                                     <lightning-button
                                         variant="brand"
                                         label={i18n.addTypeLabel}
@@ -169,8 +177,8 @@
                                         icon-name="utility:add"
                                         class="header-button"
                                     ></lightning-button>
-                                </div>
-                            </template>
+                                </template>
+                            </div>
                         </div>
                     </div>
 

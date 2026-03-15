@@ -31,6 +31,7 @@ export default class PackageXml extends SharedMixin(LightningElement) {
   @track showAddMemberModal = false;
   @track newEntryName = "";
   @track pendingTypeNameForMember = "";
+  @track allExpanded = false;
 
   modalNeedsFocus = false;
 
@@ -824,6 +825,41 @@ export default class PackageXml extends SharedMixin(LightningElement) {
     this.newEntryName = "";
     this.pendingTypeNameForMember = "";
     this.modalNeedsFocus = false;
+  }
+
+  get expandCollapseLabel() {
+    return this.allExpanded ? this.i18n.collapseAllLabel : this.i18n.expandAllLabel;
+  }
+
+  get expandCollapseIcon() {
+    return this.allExpanded ? "utility:collapse_all" : "utility:expand_all";
+  }
+
+  toggleExpandAll() {
+    const newExpanded = !this.allExpanded;
+    this.allExpanded = newExpanded;
+
+    if (!this.packageData?.types) {
+      return;
+    }
+
+    if (newExpanded) {
+      this.packageData.types.forEach((type) => {
+        this.expandedTypes.add(type.name);
+      });
+    }
+    else {
+      this.expandedTypes.clear();
+    }
+
+    this.packageData = {
+      ...this.packageData,
+      types: this.packageData.types.map((type) => ({
+        ...type,
+        isExpanded: newExpanded,
+        expandIcon: newExpanded ? "utility:chevrondown" : "utility:chevronright",
+      })),
+    };
   }
 
   renderedCallback() {
