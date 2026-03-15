@@ -47,23 +47,33 @@ function detectLocale(): string {
   const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
   const settingLang = config.get<string>("lang");
   if (settingLang && settingLang !== "auto") {
-    return settingLang.substring(0, 5).toLowerCase();
+    return prepareLocaleString(settingLang);
   }
 
   // 2. Environment variable
   const envLang = process.env.SFDX_HARDIS_LANG;
   if (envLang) {
-    return envLang.substring(0, 5).toLowerCase();
+    return prepareLocaleString(envLang);
   }
 
   // 3. VS Code display language
   const vsCodeLang = vscode.env.language;
   if (vsCodeLang) {
-    return vsCodeLang.substring(0, 5).toLowerCase();
+    return prepareLocaleString(vsCodeLang);
   }
 
   // 4. Default
   return "en";
+}
+
+/**
+ * Prepare the locale string keeping the i18next pattern
+ * e.g: en, es, pt-BR...
+ */
+function prepareLocaleString(locale: string): string {
+  return locale.substring(0, 5).replace(/^([a-zA-Z]{2})(-?)([a-zA-Z]{0,2})$/, (_, p1, p2, p3) => 
+    p1.toLowerCase() + p2 + p3.toUpperCase()
+  );
 }
 
 /**
@@ -74,7 +84,7 @@ export function initI18n(): void {
     return;
   }
   const locale = detectLocale();
-  const supportedLocales = ["en", "fr", "es", "de", "ja", "pl", "pt-br"];
+  const supportedLocales = ["en", "fr", "es", "de", "ja", "pl", "pt-BR"];
   const lng = supportedLocales.includes(locale) ? locale : "en";
 
   i18next.init({
