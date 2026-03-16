@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add italian translation
+
 ## [7.1.0] 2026-03-16
 
 - Add brazilian portuguese translation
