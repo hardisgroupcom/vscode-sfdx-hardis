@@ -185,8 +185,14 @@ export async function getCurrentGitBranch(options: any = { formatted: false }) {
   if (!isGitRepo()) {
     return null;
   }
-  const gitBranch =
-    process.env.CI_COMMIT_REF_NAME || (await simpleGit().branchLocal()).current;
+  let gitBranch: string | null = process.env.CI_COMMIT_REF_NAME || null;
+  if (!gitBranch) {
+    try {
+      gitBranch = (await simpleGit().branchLocal()).current;
+    } catch {
+      return null;
+    }
+  }
   if (options.formatted === true) {
     return gitBranch.replace("/", "__");
   }
