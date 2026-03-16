@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Handle cases when the open folder is not a git repo
+
 ## [7.1.0] 2026-03-16
 
 - Add brazilian portuguese translation

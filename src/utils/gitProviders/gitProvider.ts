@@ -77,7 +77,13 @@ export class GitProvider {
 
   static async detectRepoInfo(): Promise<RepoInfo | null> {
     const git = simpleGit(getWorkspaceRoot());
-    const remotes = await git.getRemotes(true);
+    let remotes: any[] = [];
+    try {
+      remotes = await git.getRemotes(true);
+    } catch {
+      // Not a git repository or git not available
+      return null;
+    }
     const gitRemotesOrigins = remotes.filter(
       (remote) => remote.name === "origin",
     );

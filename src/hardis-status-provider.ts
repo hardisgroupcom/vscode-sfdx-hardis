@@ -347,7 +347,12 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
   private async loadGitMenus() {
     const items: any = [];
     const git = simpleGit(this.workspaceRoot);
-    const isRepo = git && (await git.checkIsRepo()) === true;
+    let isRepo = false;
+    try {
+      isRepo = git && (await git.checkIsRepo()) === true;
+    } catch {
+      // Not a git repository or git not available
+    }
 
     if (!isRepo) {
       items.push({
@@ -400,7 +405,12 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
         }
       }
       // Display branch & merge request info
-      const currentBranch = await git.revparse(["--abbrev-ref", "HEAD"]);
+      let currentBranch: string | null = null;
+      try {
+        currentBranch = await git.revparse(["--abbrev-ref", "HEAD"]);
+      } catch {
+        // Unable to determine current branch
+      }
       if (currentBranch) {
         let gitIconId = "git:branch";
         let gitLabel = t("branchLabel", { branch: currentBranch });
