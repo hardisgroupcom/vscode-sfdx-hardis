@@ -278,6 +278,30 @@
             <h2 id="modal-heading-01" class="slds-modal__title slds-hyphenate">{modalTitle}</h2>
           </header>
           <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+            <!-- Template selector — only shown when creating a new workspace -->
+            <template if:false={isEditMode}>
+              <div class="slds-form-element slds-m-bottom_medium">
+                <label class="slds-form-element__label" for="workspace-template">
+                  {i18n.workspaceTemplateLabel}
+                  <s-multiline-helptext content={i18n.workspaceTemplateHelp}></s-multiline-helptext>
+                </label>
+                <div class="slds-form-element__control slds-grid slds-grid_vertical-align-center">
+                  <lightning-combobox
+                    variant="label-hidden"
+                    name="workspace-template"
+                    value={selectedTemplateUrl}
+                    options={templateOptions}
+                    disabled={isLoadingTemplates}
+                    onchange={handleTemplateChange}
+                    class="slds-grow"
+                  ></lightning-combobox>
+                  <template if:true={isLoadingTemplates}>
+                    <lightning-spinner alternative-text={i18n.workspaceTemplateLoading} size="small" class="slds-m-left_small"></lightning-spinner>
+                  </template>
+                </div>
+              </div>
+            </template>
+
             <!-- Basic Information -->
             <div class="slds-form-element slds-m-bottom_medium">
               <label class="slds-form-element__label" for="workspace-name">
