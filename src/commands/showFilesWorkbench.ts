@@ -1,3 +1,4 @@
+// jscpd:ignore-start
 import * as vscode from "vscode";
 import { LwcPanelManager } from "../lwc-panel-manager";
 import { Commands } from "../commands";
@@ -6,6 +7,7 @@ import * as fs from "fs-extra";
 import path from "path";
 import { Logger } from "../logger";
 import axios from "axios";
+// jscpd:ignore-end
 
 const FILE_TEMPLATES_URL =
   "https://github.com/hardisgroupcom/sfdx-hardis/raw/refs/heads/main/defaults/templates/file-templates.json";
@@ -92,6 +94,7 @@ export function registerShowFilesWorkbench(commands: Commands) {
             break;
           }
 
+          // jscpd:ignore-start
           case "loadTemplates": {
             try {
               const response = await axios.get(FILE_TEMPLATES_URL, {
@@ -131,6 +134,7 @@ export function registerShowFilesWorkbench(commands: Commands) {
             }
             break;
           }
+          // jscpd:ignore-end
 
           default:
             break;

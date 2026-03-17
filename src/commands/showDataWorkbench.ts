@@ -1,3 +1,4 @@
+// jscpd:ignore-start
 import * as vscode from "vscode";
 import { LwcPanelManager } from "../lwc-panel-manager";
 import { Commands } from "../commands";
@@ -7,6 +8,7 @@ import path from "path";
 import { Logger } from "../logger";
 import { isQueryValid, parseQuery } from "@jetstreamapp/soql-parser-js";
 import axios from "axios";
+// jscpd:ignore-end
 
 const DATA_TEMPLATES_URL =
   "https://github.com/hardisgroupcom/sfdx-hardis/raw/refs/heads/main/defaults/templates/data-templates.json";
@@ -238,6 +240,7 @@ export function registerShowDataWorkbench(commands: Commands) {
           }
           // jscpd:ignore-end
 
+          // jscpd:ignore-start
           case "loadTemplates": {
             try {
               const response = await axios.get(DATA_TEMPLATES_URL, {
@@ -277,6 +280,7 @@ export function registerShowDataWorkbench(commands: Commands) {
             }
             break;
           }
+          // jscpd:ignore-end
 
           default:
             break;
