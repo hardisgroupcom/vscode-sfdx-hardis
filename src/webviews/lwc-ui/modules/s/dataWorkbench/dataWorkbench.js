@@ -256,13 +256,23 @@ export default class DataWorkbench extends SharedMixin(LightningElement) {
               ...this.workspaceProperties,
               name: this._pendingTemplateName || this.workspaceProperties.name,
               label: tpl.sfdxHardisLabel,
-              description: tpl.sfdxHardisDescription || this.workspaceProperties.description,
+              description:
+                tpl.sfdxHardisDescription ||
+                this.workspaceProperties.description,
             };
           }
           // Store objects and script settings to be used when workspace is created
-          this._pendingTemplateObjects = Array.isArray(tpl.objects) ? tpl.objects : null;
-          const { objects: _o, sfdxHardisLabel: _l, sfdxHardisDescription: _d, ...scriptSettings } = tpl;
-          this._pendingTemplateScriptSettings = Object.keys(scriptSettings).length > 0 ? scriptSettings : null;
+          this._pendingTemplateObjects = Array.isArray(tpl.objects)
+            ? tpl.objects
+            : null;
+          const {
+            objects: _o,
+            sfdxHardisLabel: _l,
+            sfdxHardisDescription: _d,
+            ...scriptSettings
+          } = tpl;
+          this._pendingTemplateScriptSettings =
+            Object.keys(scriptSettings).length > 0 ? scriptSettings : null;
         }
         this.isLoadingTemplates = false;
         break;

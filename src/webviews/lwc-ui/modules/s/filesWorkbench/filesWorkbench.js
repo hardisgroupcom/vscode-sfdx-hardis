@@ -103,14 +103,28 @@ export default class FilesWorkbench extends SharedMixin(LightningElement) {
             ...this.newWorkspace,
             name: this._pendingTemplateName || this.newWorkspace.name,
             label: tpl.sfdxHardisLabel || this.newWorkspace.label,
-            description: tpl.sfdxHardisDescription || this.newWorkspace.description,
+            description:
+              tpl.sfdxHardisDescription || this.newWorkspace.description,
             soqlQuery: tpl.soqlQuery || this.newWorkspace.soqlQuery,
             fileTypes: tpl.fileTypes || this.newWorkspace.fileTypes,
-            fileSizeMin: tpl.fileSizeMin != null ? tpl.fileSizeMin : this.newWorkspace.fileSizeMin,
-            outputFolderNameField: tpl.outputFolderNameField || this.newWorkspace.outputFolderNameField,
-            outputFileNameFormat: tpl.outputFileNameFormat || this.newWorkspace.outputFileNameFormat,
-            overwriteParentRecords: tpl.overwriteParentRecords != null ? tpl.overwriteParentRecords : this.newWorkspace.overwriteParentRecords,
-            overwriteFiles: tpl.overwriteFiles != null ? tpl.overwriteFiles : this.newWorkspace.overwriteFiles,
+            fileSizeMin:
+              tpl.fileSizeMin != null
+                ? tpl.fileSizeMin
+                : this.newWorkspace.fileSizeMin,
+            outputFolderNameField:
+              tpl.outputFolderNameField ||
+              this.newWorkspace.outputFolderNameField,
+            outputFileNameFormat:
+              tpl.outputFileNameFormat ||
+              this.newWorkspace.outputFileNameFormat,
+            overwriteParentRecords:
+              tpl.overwriteParentRecords != null
+                ? tpl.overwriteParentRecords
+                : this.newWorkspace.overwriteParentRecords,
+            overwriteFiles:
+              tpl.overwriteFiles != null
+                ? tpl.overwriteFiles
+                : this.newWorkspace.overwriteFiles,
           };
         }
         this.isLoadingTemplates = false;
