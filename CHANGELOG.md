@@ -3,8 +3,8 @@
 ## Unreleased
 
 - Handle cases when the open folder is not a git repo
-
 - Add italian translation
+- Add dutch translation
 
 ## [7.1.0] 2026-03-16
 
