@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Handle cases when the open folder is not a git repo
+- Files Workbench and Data Workbench: Allow to select a template when creating a new file export or sfdmu project.
 - Add italian translation
 - Add dutch translation
 

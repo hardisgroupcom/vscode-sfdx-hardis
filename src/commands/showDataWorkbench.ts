@@ -1,3 +1,4 @@
+// jscpd:ignore-start
 import * as vscode from "vscode";
 import { LwcPanelManager } from "../lwc-panel-manager";
 import { Commands } from "../commands";
@@ -6,6 +7,11 @@ import * as fs from "fs-extra";
 import path from "path";
 import { Logger } from "../logger";
 import { isQueryValid, parseQuery } from "@jetstreamapp/soql-parser-js";
+import axios from "axios";
+// jscpd:ignore-end
+
+const DATA_TEMPLATES_URL =
+  "https://github.com/hardisgroupcom/sfdx-hardis/raw/refs/heads/main/defaults/templates/data-templates.json";
 
 class SoqlValidationError extends Error {
   soqlErrors: string[];
@@ -233,6 +239,49 @@ export function registerShowDataWorkbench(commands: Commands) {
             break;
           }
           // jscpd:ignore-end
+
+          // jscpd:ignore-start
+          case "loadTemplates": {
+            try {
+              const response = await axios.get(DATA_TEMPLATES_URL, {
+                timeout: 8000,
+              });
+              const templates = response.data?.templates || [];
+              panel.sendMessage({
+                type: "templatesLoaded",
+                data: { templates },
+              });
+            } catch (e: any) {
+              Logger.log(`Failed to load data templates: ${e?.message || e}`);
+              panel.sendMessage({
+                type: "templatesLoaded",
+                data: { templates: [] },
+              });
+            }
+            break;
+          }
+
+          case "loadTemplate": {
+            try {
+              const response = await axios.get(data.url, { timeout: 8000 });
+              panel.sendMessage({
+                type: "templateLoaded",
+                data: { template: response.data },
+              });
+            } catch (e: any) {
+              Logger.log(`Failed to load data template: ${e?.message || e}`);
+              vscode.window.showErrorMessage(
+                `Failed to load template: ${e?.message || e}`,
+              );
+              panel.sendMessage({
+                type: "templateLoaded",
+                data: { template: null },
+              });
+            }
+            break;
+          }
+          // jscpd:ignore-end
+
           default:
             break;
         }
