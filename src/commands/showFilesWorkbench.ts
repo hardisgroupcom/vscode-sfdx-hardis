@@ -5,6 +5,10 @@ import { getWorkspaceRoot, openFolderInExplorer } from "../utils";
 import * as fs from "fs-extra";
 import path from "path";
 import { Logger } from "../logger";
+import axios from "axios";
+
+const FILE_TEMPLATES_URL =
+  "https://github.com/hardisgroupcom/sfdx-hardis/raw/refs/heads/main/defaults/templates/file-templates.json";
 
 export function registerShowFilesWorkbench(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
@@ -84,6 +88,46 @@ export function registerShowFilesWorkbench(commands: Commands) {
               vscode.window.showErrorMessage(
                 `Failed to open folder: ${e?.message || e}`,
               );
+            }
+            break;
+          }
+
+          case "loadTemplates": {
+            try {
+              const response = await axios.get(FILE_TEMPLATES_URL, {
+                timeout: 8000,
+              });
+              const templates = response.data?.templates || [];
+              panel.sendMessage({
+                type: "templatesLoaded",
+                data: { templates },
+              });
+            } catch (e: any) {
+              Logger.log(`Failed to load file templates: ${e?.message || e}`);
+              panel.sendMessage({
+                type: "templatesLoaded",
+                data: { templates: [] },
+              });
+            }
+            break;
+          }
+
+          case "loadTemplate": {
+            try {
+              const response = await axios.get(data.url, { timeout: 8000 });
+              panel.sendMessage({
+                type: "templateLoaded",
+                data: { template: response.data },
+              });
+            } catch (e: any) {
+              Logger.log(`Failed to load file template: ${e?.message || e}`);
+              vscode.window.showErrorMessage(
+                `Failed to load template: ${e?.message || e}`,
+              );
+              panel.sendMessage({
+                type: "templateLoaded",
+                data: { template: null },
+              });
             }
             break;
           }

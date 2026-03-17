@@ -8,6 +8,11 @@ export default class FilesWorkbench extends SharedMixin(LightningElement) {
   showCreateWorkspace = false;
   editingWorkspace = null;
   pendingSelectedWorkspacePath = null;
+  // Template support
+  availableTemplates = [];
+  isLoadingTemplates = false;
+  selectedTemplateUrl = "blank";
+  _pendingTemplateName = "";
   // Controls whether the horizontal (large) action buttons are shown.
   // This mirrors the CSS breakpoint at 1024px but is handled here to
   // ensure only one of the action controls is rendered in the DOM.
@@ -87,6 +92,30 @@ export default class FilesWorkbench extends SharedMixin(LightningElement) {
         this.editingWorkspace = null;
         this.selectedWorkspace = null; // Clear selection when workspace is deleted
         break;
+      case "templatesLoaded":
+        this.availableTemplates = data?.templates || [];
+        this.isLoadingTemplates = false;
+        break;
+      case "templateLoaded": {
+        const tpl = data?.template;
+        if (tpl) {
+          this.newWorkspace = {
+            ...this.newWorkspace,
+            name: this._pendingTemplateName || this.newWorkspace.name,
+            label: tpl.sfdxHardisLabel || this.newWorkspace.label,
+            description: tpl.sfdxHardisDescription || this.newWorkspace.description,
+            soqlQuery: tpl.soqlQuery || this.newWorkspace.soqlQuery,
+            fileTypes: tpl.fileTypes || this.newWorkspace.fileTypes,
+            fileSizeMin: tpl.fileSizeMin != null ? tpl.fileSizeMin : this.newWorkspace.fileSizeMin,
+            outputFolderNameField: tpl.outputFolderNameField || this.newWorkspace.outputFolderNameField,
+            outputFileNameFormat: tpl.outputFileNameFormat || this.newWorkspace.outputFileNameFormat,
+            overwriteParentRecords: tpl.overwriteParentRecords != null ? tpl.overwriteParentRecords : this.newWorkspace.overwriteParentRecords,
+            overwriteFiles: tpl.overwriteFiles != null ? tpl.overwriteFiles : this.newWorkspace.overwriteFiles,
+          };
+        }
+        this.isLoadingTemplates = false;
+        break;
+      }
       default:
         break;
     }
@@ -233,6 +262,12 @@ export default class FilesWorkbench extends SharedMixin(LightningElement) {
     this.showCreateWorkspace = true;
     this.editingWorkspace = null;
     this.resetNewWorkspace();
+    // Load templates lazily when creating a new workspace
+    this.availableTemplates = [];
+    this.selectedTemplateUrl = "blank";
+    this._pendingTemplateName = "";
+    this.isLoadingTemplates = true;
+    window.sendMessageToVSCode({ type: "loadTemplates", data: {} });
   }
 
   handleEditWorkspace(event) {
@@ -322,6 +357,19 @@ export default class FilesWorkbench extends SharedMixin(LightningElement) {
     this.showCreateWorkspace = false;
     this.editingWorkspace = null;
     this.resetNewWorkspace();
+  }
+
+  handleTemplateChange(event) {
+    const url = event.detail?.value ?? event.target.value;
+    this.selectedTemplateUrl = url;
+    if (url && url !== "blank") {
+      const fileName = url.split("/").pop() || "";
+      this._pendingTemplateName = fileName.replace(/\.json$/i, "");
+      this.isLoadingTemplates = true;
+      window.sendMessageToVSCode({ type: "loadTemplate", data: { url } });
+    } else {
+      this._pendingTemplateName = "";
+    }
   }
 
   handleSave() {
@@ -474,5 +522,14 @@ export default class FilesWorkbench extends SharedMixin(LightningElement) {
         value: "PDF,DOC,DOCX,XLS,XLSX,PPT,PPTX",
       },
     ];
+  }
+
+  get templateOptions() {
+    const blank = { label: this.t("workspaceTemplateBlank"), value: "blank" };
+    const fromRemote = this.availableTemplates.map((tpl) => ({
+      label: tpl.sfdxHardisLabel || tpl.name,
+      value: tpl.url,
+    }));
+    return [blank, ...fromRemote];
   }
 }

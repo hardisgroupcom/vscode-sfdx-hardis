@@ -69,6 +69,14 @@ export default class DataWorkbench extends SharedMixin(LightningElement) {
   pendingSelectedWorkspacePath = null;
   showLargeActions = true;
 
+  // Template support (create mode only)
+  availableTemplates = [];
+  isLoadingTemplates = false;
+  selectedTemplateUrl = "blank";
+  _pendingTemplateName = "";
+  _pendingTemplateObjects = null;
+  _pendingTemplateScriptSettings = null;
+
   // Properties modal state (create / edit workspace properties)
   showPropertiesModal = false;
   editingWorkspace = null; // null = create mode, non-null = edit mode
@@ -236,6 +244,29 @@ export default class DataWorkbench extends SharedMixin(LightningElement) {
         this.selectedWorkspace = null;
         this.isLoading = false;
         break;
+      case "templatesLoaded":
+        this.availableTemplates = data?.templates || [];
+        this.isLoadingTemplates = false;
+        break;
+      case "templateLoaded": {
+        const tpl = data?.template;
+        if (tpl) {
+          if (tpl.sfdxHardisLabel) {
+            this.workspaceProperties = {
+              ...this.workspaceProperties,
+              name: this._pendingTemplateName || this.workspaceProperties.name,
+              label: tpl.sfdxHardisLabel,
+              description: tpl.sfdxHardisDescription || this.workspaceProperties.description,
+            };
+          }
+          // Store objects and script settings to be used when workspace is created
+          this._pendingTemplateObjects = Array.isArray(tpl.objects) ? tpl.objects : null;
+          const { objects: _o, sfdxHardisLabel: _l, sfdxHardisDescription: _d, ...scriptSettings } = tpl;
+          this._pendingTemplateScriptSettings = Object.keys(scriptSettings).length > 0 ? scriptSettings : null;
+        }
+        this.isLoadingTemplates = false;
+        break;
+      }
       default:
         break;
     }
@@ -578,7 +609,15 @@ export default class DataWorkbench extends SharedMixin(LightningElement) {
   handleCreateWorkspace() {
     this.editingWorkspace = null;
     this.workspaceProperties = { name: "", label: "", description: "" };
+    this._pendingTemplateObjects = null;
+    this._pendingTemplateScriptSettings = null;
+    this.availableTemplates = [];
+    this.selectedTemplateUrl = "blank";
+    this._pendingTemplateName = "";
     this.showPropertiesModal = true;
+    // Load templates lazily when creating a new workspace
+    this.isLoadingTemplates = true;
+    window.sendMessageToVSCode({ type: "loadTemplates", data: {} });
   }
 
   // --- Edit properties ---
@@ -623,6 +662,33 @@ export default class DataWorkbench extends SharedMixin(LightningElement) {
   handleCancelProperties() {
     this.showPropertiesModal = false;
     this.editingWorkspace = null;
+    this._pendingTemplateObjects = null;
+    this._pendingTemplateScriptSettings = null;
+    this._pendingTemplateName = "";
+  }
+
+  handleTemplateChange(event) {
+    const url = event.detail?.value ?? event.target.value;
+    this.selectedTemplateUrl = url;
+    if (url && url !== "blank") {
+      const fileName = url.split("/").pop() || "";
+      this._pendingTemplateName = fileName.replace(/\.json$/i, "");
+      this.isLoadingTemplates = true;
+      window.sendMessageToVSCode({ type: "loadTemplate", data: { url } });
+    } else {
+      this._pendingTemplateName = "";
+      this._pendingTemplateObjects = null;
+      this._pendingTemplateScriptSettings = null;
+    }
+  }
+
+  get templateOptions() {
+    const blank = { label: this.t("workspaceTemplateBlank"), value: "blank" };
+    const fromRemote = this.availableTemplates.map((tpl) => ({
+      label: tpl.sfdxHardisLabel || tpl.name,
+      value: tpl.url,
+    }));
+    return [blank, ...fromRemote];
   }
 
   handleSaveProperties() {
@@ -645,7 +711,8 @@ export default class DataWorkbench extends SharedMixin(LightningElement) {
         name: this.workspaceProperties.name,
         label: this.workspaceProperties.label,
         description: this.workspaceProperties.description,
-        objects: [],
+        objects: this._pendingTemplateObjects || [],
+        scriptSettings: this._pendingTemplateScriptSettings || {},
       };
       window.sendMessageToVSCode({
         type: "createWorkspace",
