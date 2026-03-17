@@ -897,6 +897,7 @@
   "jiraCreateApiTokenAt": "Crea un token API su: {{url}}",
   "jiraCreatePatAt": "Crea un PAT su: {{url}}",
   "langchainLlms": "Langchain LLMs",
+  "langDutch": "Olandese",
   "langEnglish": "English",
   "langFrench": "Français",
   "langGerman": "Deutsch",

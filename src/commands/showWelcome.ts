@@ -42,6 +42,7 @@ export function registerShowWelcome(command: Commands) {
           flagEs: ["icons", "flag-es.svg"],
           flagFr: ["icons", "flag-fr.svg"],
           flagJa: ["icons", "flag-ja.svg"],
+          flagNl: ["icons", "flag-nl.svg"],
           flagPl: ["icons", "flag-pl.svg"],
           flagPtBR: ["icons", "flag-br.svg"],
           flagIt: ["icons", "flag-it.svg"],

@@ -424,13 +424,15 @@ if (!command.startsWith("sf hardis") || command.includes("&&")) {
 ## Internationalization (i18n)
 
 ### Overview
-The extension uses [i18next](https://www.i18next.com/) for internationalization. All user-facing strings must be translated. Currently supported locales: **English (en)**, **French (fr)**, **Spanish (es)**, **German (de)**, and **Japanese (ja)**.
+The extension uses [i18next](https://www.i18next.com/) for internationalization. All user-facing strings must be translated. Currently supported locales: **English (en)**, **French (fr)**, **Spanish (es)**, **German (de)**, **Dutch (nl)**, **Italian (it)**, and **Japanese (ja)**.
 
 ### Translation Files
 - `src/i18n/en.json` — English translations (source of truth)
 - `src/i18n/fr.json` — French translations
 - `src/i18n/es.json` — Spanish translations
 - `src/i18n/de.json` — German translations
+- `src/i18n/it.json` — Italian translations
+- `src/i18n/nl.json` — Dutch translations
 - `src/i18n/ja.json` — Japanese translations
 - `src/i18n/i18n.ts` — Backend i18n utility module
 
@@ -521,7 +523,7 @@ Then bind the getter result in the template:
 ### Adding New Translatable Strings
 
 When adding new user-facing strings:
-1. Add the key to **all five** `src/i18n/en.json`, `src/i18n/de.json`, `src/i18n/es.json`, `src/i18n/fr.json`, and `src/i18n/ja.json` (keep alphabetical order)
+1. Add the key to **all** `src/i18n/en.json`, `src/i18n/de.json`, `src/i18n/es.json`, `src/i18n/fr.json`, `src/i18n/it.json`, `src/i18n/nl.json`, and `src/i18n/ja.json` (keep alphabetical order)
 2. Use `t("keyName")` in TypeScript or `this.t("keyName")` in LWC
 3. For dynamic values, use interpolation: `t("key", { varName: value })`
 
@@ -558,6 +560,21 @@ When adding new user-facing strings:
 - Use standard German software/IT terminology (e.g. "Datensatz" for record, "Org" stays as "Org", "Workspace" stays as "Workspace").
 - Keep all {{varName}} interpolation placeholders and <br/> tags exactly as-is.
 - Keep brand names untranslated: Salesforce, SFDMU, Git, GitHub, GitLab, JIRA, VS Code.
+
+### Dutch Translation Guidelines
+- Use formal Dutch ("u" not "je/jij") for all UI text.
+- Keep English technical terms untranslated: merge, commit, branch, scratch org, package.xml, DevHub, SOQL, DML, CSV, REST, Bulk API, upsert, mock data.
+- Use standard Dutch software/IT terminology (e.g. "implementatie" for deployment, "configuratie" for configuration, "instellingen" for settings, "werkruimte" for workspace).
+- Keep all {{varName}} interpolation placeholders and <br/> tags exactly as-is.
+- Keep brand names untranslated: Salesforce, SFDMU, Git, GitHub, GitLab, JIRA, VS Code, Cloudity, Apex, LWC.
+
+### Italian Translation Guidelines
+- Use informal Italian ("tu" register) for UI text, matching the standard style used in Italian software products.
+- Keep English technical terms untranslated: merge, commit, branch, scratch org, package.xml, DevHub, SOQL, DML, CSV, REST, Bulk API, upsert, mock data.
+- Use standard Italian software/IT terminology (e.g. "distribuzione" or "distribuzione" for deployment, "configurazione" for configuration, "impostazioni" for settings).
+- Keep all {{varName}} interpolation placeholders and <br/> tags exactly as-is.
+- Keep brand names untranslated: Salesforce, SFDMU, Git, GitHub, GitLab, JIRA, VS Code, Cloudity, Apex, LWC.
+- "org" stays as "org"; "workspace" stays as "workspace" or "area di lavoro".
 
 ### Japanese Translation Guidelines
 - Reuse the terminology from the upstream `sfdx-hardis` Japanese translations whenever equivalent strings already exist.

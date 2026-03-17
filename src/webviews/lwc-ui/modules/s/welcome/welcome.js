@@ -116,6 +116,7 @@ export default class Welcome extends SharedMixin(LightningElement) {
       es: "flagEs",
       de: "flagDe",
       ja: "flagJa",
+      nl: "flagNl",
       pl: "flagPl",
       "pt-BR": "flagPtBR",
       it: "flagIt",
@@ -146,6 +147,10 @@ export default class Welcome extends SharedMixin(LightningElement) {
 
   get flagJaSrc() {
     return this.getImageUrl("flagJa");
+  }
+
+  get flagNlSrc() {
+    return this.getImageUrl("flagNl");
   }
 
   get flagPlSrc() {

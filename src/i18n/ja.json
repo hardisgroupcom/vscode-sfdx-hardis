@@ -896,6 +896,7 @@
   "jiraAuthMethodPlaceholder": "JIRA への認証方法を選択してください",
   "jiraCreateApiTokenAt": "API token をこちらで作成してください: {{url}}",
   "jiraCreatePatAt": "PAT をこちらで作成してください: {{url}}",
+  "langDutch": "オランダ語",
   "langEnglish": "English",
   "langFrench": "Français",
   "langGerman": "Deutsch",

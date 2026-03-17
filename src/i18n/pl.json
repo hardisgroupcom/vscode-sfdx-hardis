@@ -894,6 +894,7 @@
   "jiraAuthMethodPlaceholder": "Jak chcesz się uwierzytelnić w JIRA?",
   "jiraCreateApiTokenAt": "Utwórz token API pod adresem: {{url}}",
   "jiraCreatePatAt": "Utwórz PAT pod adresem: {{url}}",
+  "langDutch": "Niderlandzki",
   "langEnglish": "English",
   "langFrench": "Français",
   "langGerman": "Deutsch",
