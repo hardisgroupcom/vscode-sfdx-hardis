@@ -224,6 +224,15 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
     });
   }
 
+  checkApexApiVersion() {
+    window.sendMessageToVSCode({
+      type: "runCommand",
+      data: {
+        command: "sf hardis:org:diagnose:apex-api-version",
+      },
+    });
+  }
+
   findUnusedUsers() {
     window.sendMessageToVSCode({
       type: "runCommand",
@@ -247,6 +256,15 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
       type: "runCommand",
       data: {
         command: "sf hardis:org:diagnose:underusedpermsets",
+      },
+    });
+  }
+
+  findMinimalPermSets() {
+    window.sendMessageToVSCode({
+      type: "runCommand",
+      data: {
+        command: "sf hardis:org:diagnose:minimalpermsets",
       },
     });
   }
