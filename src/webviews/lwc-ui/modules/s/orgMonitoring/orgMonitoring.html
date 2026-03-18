@@ -338,6 +338,23 @@
                         ></lightning-button>
                     </div>
 
+                    <!-- Apex API Version Check -->
+                    <div class="command-card">
+                        <div class="command-header">
+                            <div class="command-icon-container legacy">
+                                <lightning-icon icon-name="utility:apex" size="small" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="command-title">{i18n.apexApiVersionCheck}</h3>
+                        </div>
+                        <p class="command-description">{i18n.apexApiVersionCheckDescription}</p>
+                        <lightning-button 
+                            variant="outline-brand" 
+                            label={i18n.checkApexApiVersion} 
+                            onclick={checkApexApiVersion}
+                            class="command-button"
+                        ></lightning-button>
+                    </div>
+
                     <!-- Unused Users -->
                     <div class="command-card">
                         <div class="command-header">
@@ -385,6 +402,23 @@
                             variant="outline-brand"
                             label={i18n.findPermissionSets}
                             onclick={findUnderusedPermissionSets}
+                            class="command-button"
+                        ></lightning-button>
+                    </div>
+
+                    <!-- Minimal Permission Sets -->
+                    <div class="command-card">
+                        <div class="command-header">
+                            <div class="command-icon-container licenses">
+                                <lightning-icon icon-name="utility:shield" size="small" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="command-title">{i18n.minimalPermSets}</h3>
+                        </div>
+                        <p class="command-description">{i18n.minimalPermSetsDescription}</p>
+                        <lightning-button
+                            variant="outline-brand"
+                            label={i18n.findMinimalPermSets}
+                            onclick={findMinimalPermSets}
                             class="command-button"
                         ></lightning-button>
                     </div>

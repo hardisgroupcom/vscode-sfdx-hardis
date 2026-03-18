@@ -2,10 +2,18 @@
 
 ## Unreleased
 
-- Handle cases when the open folder is not a git repo
-- Files Workbench and Data Workbench: Allow to select a template when creating a new file export or sfdmu project.
 - Add italian translation
 - Add dutch translation
+
+## [7.2.0] 2026-03-18
+
+- Handle cases when the open folder is not a git repo
+- Files Workbench and Data Workbench: Allow to select a template when creating a new file export or sfdmu project.
+- Org Monitoring
+  - Add command `hardis:org:diagnose:apex-api-version` to identify custom Apex classes and triggers running on older API versions
+  - Add command `hardis:org:diagnose:minimalpermsets` to identify custom permission sets with very few or no permissions
+- Documentation Workbench
+  - Add command `hardis:doc:mkdocs-to-confluence` to publish documentation to a Confluence space
 
 ## [7.1.0] 2026-03-16
 

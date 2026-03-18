@@ -276,6 +276,19 @@
                     </div>
 
                     <div class="command-card">
+                        <div class="command-icon-container confluence">
+                            <lightning-icon icon-name="utility:connected_apps" size="small" variant="inverse"></lightning-icon>
+                        </div>
+                        <div class="command-content">
+                            <h3 class="command-title">{i18n.deployToConfluence}</h3>
+                            <p class="command-description">{i18n.deployToConfluenceDesc}</p>
+                        </div>
+                        <div class="command-actions">
+                            <lightning-button variant="brand" label={i18n.deployLabel} onclick={handleDeployToConfluence}></lightning-button>
+                        </div>
+                    </div>
+
+                    <div class="command-card">
                         <div class="command-icon-container salesforce">
                             <lightning-icon icon-name="utility:salesforce1" size="small" variant="inverse"></lightning-icon>
                         </div>
