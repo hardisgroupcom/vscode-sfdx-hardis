@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [7.2.0] 2026-03-18
+
 - Handle cases when the open folder is not a git repo
 - Files Workbench and Data Workbench: Allow to select a template when creating a new file export or sfdmu project.
 - Org Monitoring
