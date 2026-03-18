@@ -650,6 +650,13 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             helpUrl: DOCSITE_URL + "/hardis/org/diagnose/legacyapi/",
           },
           {
+            id: "hardis:org:diagnose:apex-api-version",
+            label: t("apexApiVersionCheck"),
+            tooltip: t("apexApiVersionCheckTooltip"),
+            command: "sf hardis:org:diagnose:apex-api-version",
+            helpUrl: DOCSITE_URL + "/hardis/org/diagnose/apex-api-version/",
+          },
+          {
             id: "hardis:org:diagnose:unusedusers",
             label: t("unusedUsers"),
             tooltip: t("unusedUsersTooltip"),
@@ -684,6 +691,13 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             tooltip: t("underusedPermissionSetsTooltip"),
             command: "sf hardis:org:diagnose:underusedpermsets",
             helpUrl: DOCSITE_URL + "/hardis/org/diagnose/underusedpermsets/",
+          },
+          {
+            id: "hardis:org:diagnose:minimalpermsets",
+            label: t("minimalPermSets"),
+            tooltip: t("minimalPermSetsTooltip"),
+            command: "sf hardis:org:diagnose:minimalpermsets",
+            helpUrl: DOCSITE_URL + "/hardis/org/diagnose/minimalpermsets/",
           },
           {
             id: "hardis:lint:access",
@@ -894,6 +908,14 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             tooltip: t("uploadHtmlDocToSalesforceTooltip"),
             requiresProject: true,
             helpUrl: DOCSITE_URL + "/hardis/doc/mkdocs-to-salesforce/",
+          },
+          {
+            id: "hardis-upload-doc-confluence",
+            label: t("uploadHtmlDocToConfluence"),
+            command: "sf hardis:doc:mkdocs-to-confluence",
+            tooltip: t("uploadHtmlDocToConfluenceTooltip"),
+            requiresProject: true,
+            helpUrl: DOCSITE_URL + "/salesforce-project-doc-confluence/",
           },
           {
             id: "hardis:doc:flow2markdown",

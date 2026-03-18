@@ -196,6 +196,13 @@ export default class DocumentationWorkbench extends SharedMixin(
     });
   }
 
+  handleDeployToConfluence() {
+    window.sendMessageToVSCode({
+      type: "runCommand",
+      data: { command: "sf hardis:doc:mkdocs-to-confluence" },
+    });
+  }
+
   handleDeployToOrg() {
     window.sendMessageToVSCode({
       type: "runCommand",

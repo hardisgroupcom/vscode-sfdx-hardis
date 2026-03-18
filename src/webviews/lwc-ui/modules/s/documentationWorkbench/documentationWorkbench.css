@@ -197,6 +197,11 @@
     box-shadow: 0 2px 6px rgba(246, 130, 31, 0.3);
 }
 
+.command-icon-container.confluence {
+    background: linear-gradient(135deg, #0052cc 0%, #003884 100%);
+    box-shadow: 0 2px 6px rgba(0, 82, 204, 0.3);
+}
+
 .command-icon-container.salesforce {
     background: linear-gradient(135deg, #1589ee 0%, #005fb2 100%);
     box-shadow: 0 2px 6px rgba(21, 137, 238, 0.3);
