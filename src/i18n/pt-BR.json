@@ -1524,7 +1524,7 @@
   "uploadHtmlDocToConfluence": "Publicar no Confluence",
   "uploadHtmlDocToConfluenceTooltip": "Gera Documentação HTML e a publica em um espaço do Confluence. É necessário um token de API do Confluence configurado",
   "deployToConfluence": "Publicar no Confluence",
-  "deployToConfluenceDesc": "Gera documentação HTML e a publica em um espaço do Confluence. É necessário um token de API do Confluence configurado.",,
+  "deployToConfluenceDesc": "Gera documentação HTML e a publica em um espaço do Confluence. É necessário um token de API do Confluence configurado.",
   "useEmailAndApiToken": "Usar E-mail + Token de API",
   "usePersonalAccessToken": "Usar Token de Acesso Pessoal (PAT)",
   "userInputSection": "Entrada do Usuário",
