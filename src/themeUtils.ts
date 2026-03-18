@@ -448,6 +448,14 @@ export class ThemeUtils {
         vscode: "server-process",
         hardis: "salesforce.svg",
       },
+      "vscode-sfdx-hardis.showSoqlBuilder": {
+        vscode: "search",
+        hardis: "data.svg",
+      },
+      "vscode-sfdx-hardis.showSandboxRefresh": {
+        vscode: "refresh",
+        hardis: "refresh.svg",
+      },
       loading: { vscode: "loading~spin", hardis: "refresh.svg" },
     };
   }

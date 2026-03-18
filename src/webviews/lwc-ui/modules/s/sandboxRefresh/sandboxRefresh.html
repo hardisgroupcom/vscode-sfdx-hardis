@@ -1,0 +1,229 @@
+<template>
+    <div class="slds-scope blue-back">
+        <div class="wizard-container">
+            <!-- Header -->
+            <div class="header-section">
+                <div class="header-content">
+                    <div class="header-icon-container teal">
+                        <lightning-icon icon-name="utility:refresh" size="medium" variant="inverse"></lightning-icon>
+                    </div>
+                    <div class="header-text">
+                        <h1 class="header-title">{i18n.sandboxRefreshWizardTitle}</h1>
+                        <p class="header-subtitle">{i18n.sandboxRefreshWizardDescription}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress bar -->
+            <div class="progress-section">
+                <div class="progress-steps">
+                    <template for:each={progressSteps} for:item="step">
+                        <div key={step.id} class="progress-step">
+                            <div class={step.statusClass}>
+                                <span class="step-number">{step.numberOrCheck}</span>
+                            </div>
+                            <span class="step-label">{step.label}</span>
+                        </div>
+                    </template>
+                </div>
+                <div class="progress-bar-track">
+                    <div class="progress-bar-fill"></div>
+                </div>
+            </div>
+
+            <!-- Step content -->
+            <div class="step-content">
+
+                <!-- ========== STEP 1: BEFORE REFRESH ========== -->
+                <template if:true={isStep1}>
+                    <lightning-card title={i18n.sandboxRefreshStep1Title} icon-name="utility:save">
+                        <div class="slds-card__body slds-card__body_inner">
+                            <p class="step-description">{i18n.sandboxRefreshStep1Description}</p>
+
+                            <div class="action-grid">
+                                <!-- Pre-refresh command -->
+                                <div class="action-card recommended">
+                                    <div class="action-card-header">
+                                        <lightning-icon icon-name="utility:apex" size="small"></lightning-icon>
+                                        <span class="action-title">{i18n.sandboxRefreshRunPreRefresh}</span>
+                                        <span class="badge-recommended">{i18n.sandboxRefreshRecommended}</span>
+                                    </div>
+                                    <p class="action-description">{i18n.sandboxRefreshPreRefreshDesc}</p>
+                                    <lightning-button
+                                        variant="brand"
+                                        label={i18n.sandboxRefreshRunPreRefresh}
+                                        icon-name="utility:play"
+                                        onclick={handleRunPreRefresh}
+                                    ></lightning-button>
+                                </div>
+
+                                <!-- Freeze users -->
+                                <div class="action-card optional">
+                                    <div class="action-card-header">
+                                        <lightning-icon icon-name="utility:pinned" size="small"></lightning-icon>
+                                        <span class="action-title">{i18n.freezeUsers}</span>
+                                        <span class="badge-optional">{i18n.sandboxRefreshOptional}</span>
+                                    </div>
+                                    <p class="action-description">{i18n.sandboxRefreshFreezeUsersDesc}</p>
+                                    <lightning-button
+                                        variant="neutral"
+                                        label={i18n.freezeUsers}
+                                        icon-name="utility:pinned"
+                                        onclick={handleFreezeUsers}
+                                    ></lightning-button>
+                                </div>
+                            </div>
+                        </div>
+                    </lightning-card>
+                </template>
+
+                <!-- ========== STEP 2: TRIGGER REFRESH ========== -->
+                <template if:true={isStep2}>
+                    <lightning-card title={i18n.sandboxRefreshStep2Title} icon-name="utility:refresh">
+                        <div class="slds-card__body slds-card__body_inner">
+                            <p class="step-description">{i18n.sandboxRefreshStep2Description}</p>
+
+                            <div class="instructions-list">
+                                <div class="instruction-item">
+                                    <div class="instruction-number">1</div>
+                                    <div class="instruction-body">
+                                        <p class="instruction-text">{i18n.sandboxRefreshInstruction1}</p>
+                                    </div>
+                                </div>
+                                <div class="instruction-item">
+                                    <div class="instruction-number">2</div>
+                                    <div class="instruction-body">
+                                        <p class="instruction-text">{i18n.sandboxRefreshInstruction2}</p>
+                                    </div>
+                                </div>
+                                <div class="instruction-item">
+                                    <div class="instruction-number">3</div>
+                                    <div class="instruction-body">
+                                        <p class="instruction-text">{i18n.sandboxRefreshInstruction3}</p>
+                                    </div>
+                                </div>
+                                <div class="instruction-item">
+                                    <div class="instruction-number">4</div>
+                                    <div class="instruction-body">
+                                        <p class="instruction-text">{i18n.sandboxRefreshInstruction4}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="slds-m-top_medium">
+                                <lightning-button
+                                    variant="brand"
+                                    label={i18n.sandboxRefreshOpenSandboxSetup}
+                                    icon-name="utility:new_window"
+                                    icon-position="right"
+                                    onclick={handleOpenSalesforceOrgSandboxSetup}
+                                ></lightning-button>
+                            </div>
+
+                            <div class="waiting-banner slds-m-top_medium">
+                                <lightning-icon icon-name="utility:info" size="small" class="slds-m-right_x-small"></lightning-icon>
+                                <span>{i18n.sandboxRefreshWaitingNote}</span>
+                            </div>
+                        </div>
+                    </lightning-card>
+                </template>
+
+                <!-- ========== STEP 3: AFTER REFRESH ========== -->
+                <template if:true={isStep3}>
+                    <lightning-card title={i18n.sandboxRefreshStep3Title} icon-name="utility:check">
+                        <div class="slds-card__body slds-card__body_inner">
+                            <p class="step-description">{i18n.sandboxRefreshStep3Description}</p>
+
+                            <div class="action-grid">
+                                <!-- Post-refresh command -->
+                                <div class="action-card recommended">
+                                    <div class="action-card-header">
+                                        <lightning-icon icon-name="utility:apex" size="small"></lightning-icon>
+                                        <span class="action-title">{i18n.sandboxRefreshRunPostRefresh}</span>
+                                        <span class="badge-recommended">{i18n.sandboxRefreshRecommended}</span>
+                                    </div>
+                                    <p class="action-description">{i18n.sandboxRefreshPostRefreshDesc}</p>
+                                    <lightning-button
+                                        variant="brand"
+                                        label={i18n.sandboxRefreshRunPostRefresh}
+                                        icon-name="utility:play"
+                                        onclick={handleRunPostRefresh}
+                                    ></lightning-button>
+                                </div>
+
+                                <!-- Activate emails -->
+                                <div class="action-card optional">
+                                    <div class="action-card-header">
+                                        <lightning-icon icon-name="utility:email" size="small"></lightning-icon>
+                                        <span class="action-title">{i18n.activateInvalidUserEmailsInSandbox}</span>
+                                        <span class="badge-recommended">{i18n.sandboxRefreshRecommended}</span>
+                                    </div>
+                                    <p class="action-description">{i18n.sandboxRefreshActivateEmailsDesc}</p>
+                                    <lightning-button
+                                        variant="neutral"
+                                        label={i18n.activateInvalidUserEmailsInSandbox}
+                                        icon-name="utility:email"
+                                        onclick={handleActivateEmails}
+                                    ></lightning-button>
+                                </div>
+
+                                <!-- Unfreeze users -->
+                                <div class="action-card optional">
+                                    <div class="action-card-header">
+                                        <lightning-icon icon-name="utility:rocket" size="small"></lightning-icon>
+                                        <span class="action-title">{i18n.unfreezeUsers}</span>
+                                        <span class="badge-optional">{i18n.sandboxRefreshOptional}</span>
+                                    </div>
+                                    <p class="action-description">{i18n.sandboxRefreshUnfreezeUsersDesc}</p>
+                                    <lightning-button
+                                        variant="neutral"
+                                        label={i18n.unfreezeUsers}
+                                        icon-name="utility:rocket"
+                                        onclick={handleUnfreezeUsers}
+                                    ></lightning-button>
+                                </div>
+                            </div>
+
+                            <!-- Finished banner -->
+                            <div class="success-banner slds-m-top_medium">
+                                <lightning-icon icon-name="utility:success" size="small" variant="success" class="slds-m-right_x-small"></lightning-icon>
+                                <span>{i18n.sandboxRefreshCompleted}</span>
+                            </div>
+
+                            <div class="slds-m-top_medium">
+                                <lightning-button
+                                    variant="neutral"
+                                    label={i18n.sandboxRefreshRestartWizard}
+                                    icon-name="utility:refresh"
+                                    onclick={handleRestart}
+                                ></lightning-button>
+                            </div>
+                        </div>
+                    </lightning-card>
+                </template>
+            </div>
+
+            <!-- Navigation -->
+            <div class="wizard-navigation">
+                <template if:false={isFirstStep}>
+                    <lightning-button
+                        label={i18n.backLabel}
+                        icon-name="utility:chevronleft"
+                        onclick={handleBack}
+                        variant="neutral"
+                    ></lightning-button>
+                </template>
+                <div class="nav-spacer"></div>
+                <template if:false={isLastStep}>
+                    <lightning-button
+                        label={i18n.nextLabel}
+                        icon-name="utility:chevronright"
+                        icon-position="right"
+                        onclick={handleNext}
+                        variant="brand"
+                    ></lightning-button>
+                </template>
+            </div>
+        </div>
+    </div>
+</template>

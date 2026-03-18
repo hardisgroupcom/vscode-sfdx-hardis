@@ -30,6 +30,8 @@ import { registerShowMetadataRetriever } from "./commands/showMetadataRetriever"
 import { registerShowPackageXml } from "./commands/packageXml";
 import { registerGitMergeDriverToggle } from "./commands/gitMergeDriver";
 import { registerShowDocumentationWorkbench } from "./commands/showDocumentationWorkbench";
+import { registerShowSoqlBuilder } from "./commands/showSoqlBuilder";
+import { registerShowSandboxRefresh } from "./commands/showSandboxRefresh";
 import { t } from "./i18n/i18n";
 
 export class Commands {
@@ -95,6 +97,8 @@ export class Commands {
     registerShowMetadataRetriever(this);
     registerShowPackageXml(this);
     registerShowDocumentationWorkbench(this);
+    registerShowSoqlBuilder(this);
+    registerShowSandboxRefresh(this);
   }
 
   registerExecuteCommand() {

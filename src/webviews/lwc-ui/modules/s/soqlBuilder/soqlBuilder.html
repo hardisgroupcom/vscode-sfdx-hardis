@@ -1,0 +1,292 @@
+<template>
+    <div class="slds-scope blue-back">
+        <div class="soql-container">
+            <!-- Header -->
+            <div class="header-section">
+                <div class="header-content">
+                    <div class="header-icon-container violet">
+                        <lightning-icon icon-name="utility:search" size="medium" variant="inverse"></lightning-icon>
+                    </div>
+                    <div class="header-text">
+                        <h1 class="header-title">{i18n.soqlBuilderTitle}</h1>
+                        <p class="header-subtitle">{i18n.soqlBuilderDescription}</p>
+                    </div>
+                    <div class="header-actions">
+                        <lightning-button
+                            variant="neutral"
+                            label={i18n.refreshLabel}
+                            icon-name="utility:refresh"
+                            onclick={handleRefreshObjects}
+                        ></lightning-button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading spinner for objects -->
+            <template if:true={isLoadingObjects}>
+                <div class="loading-section">
+                    <lightning-spinner alternative-text={i18n.soqlBuilderLoadingObjects} size="medium"></lightning-spinner>
+                    <p class="loading-label">{i18n.soqlBuilderLoadingObjects}</p>
+                </div>
+            </template>
+
+            <!-- Error banner -->
+            <template if:true={hasError}>
+                <div class="slds-notify slds-notify_alert slds-theme_error error-banner" role="alert">
+                    <lightning-icon icon-name="utility:error" size="x-small" variant="inverse" class="slds-m-right_x-small"></lightning-icon>
+                    {errorMessage}
+                </div>
+            </template>
+
+            <!-- Main builder content -->
+            <template if:false={isLoadingObjects}>
+                <div class="builder-grid">
+                    <!-- LEFT column: Object + Field selection -->
+                    <div class="builder-col builder-col-left">
+
+                        <!-- Object Selector -->
+                        <lightning-card title={i18n.soqlBuilderSelectObject} icon-name="utility:sobject">
+                            <div class="slds-card__body slds-card__body_inner">
+                                <lightning-combobox
+                                    label={i18n.soqlBuilderObjectLabel}
+                                    value={selectedObject}
+                                    placeholder={i18n.soqlBuilderObjectPlaceholder}
+                                    options={objects}
+                                    onchange={handleObjectChange}
+                                ></lightning-combobox>
+                            </div>
+                        </lightning-card>
+
+                        <!-- Field Selector -->
+                        <template if:true={hasObjectSelected}>
+                            <lightning-card title={i18n.soqlBuilderSelectFields} icon-name="utility:field">
+                                <div slot="actions">
+                                    <lightning-button-group>
+                                        <lightning-button
+                                            label={i18n.soqlBuilderSelectAll}
+                                            onclick={handleSelectAllFields}
+                                            variant="neutral"
+                                            size="small"
+                                        ></lightning-button>
+                                        <lightning-button
+                                            label={i18n.soqlBuilderClearFields}
+                                            onclick={handleClearFields}
+                                            variant="neutral"
+                                            size="small"
+                                        ></lightning-button>
+                                    </lightning-button-group>
+                                </div>
+                                <div class="slds-card__body slds-card__body_inner">
+                                    <template if:true={isLoadingFields}>
+                                        <lightning-spinner alternative-text={i18n.soqlBuilderLoadingFields} size="small"></lightning-spinner>
+                                    </template>
+                                    <template if:false={isLoadingFields}>
+                                        <div class="field-list">
+                                            <template for:each={fieldsWithSelection} for:item="field">
+                                                <div key={field.value} class="field-item">
+                                                    <lightning-input
+                                                        type="checkbox"
+                                                        label={field.label}
+                                                        checked={field.isSelected}
+                                                        data-field={field.value}
+                                                        onchange={handleFieldToggle}
+                                                    ></lightning-input>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
+                            </lightning-card>
+                        </template>
+                    </div>
+
+                    <!-- RIGHT column: Conditions + Options + Query -->
+                    <div class="builder-col builder-col-right">
+
+                        <!-- WHERE conditions -->
+                        <template if:true={hasObjectSelected}>
+                            <lightning-card title={i18n.soqlBuilderWhereClause} icon-name="utility:filter">
+                                <div slot="actions">
+                                    <lightning-button
+                                        label={i18n.soqlBuilderAddCondition}
+                                        icon-name="utility:add"
+                                        onclick={handleAddCondition}
+                                        variant="neutral"
+                                        size="small"
+                                    ></lightning-button>
+                                </div>
+                                <div class="slds-card__body slds-card__body_inner">
+                                    <template if:false={whereConditions.length}>
+                                        <p class="empty-hint">{i18n.soqlBuilderNoConditions}</p>
+                                    </template>
+                                    <template for:each={whereConditions} for:item="cond">
+                                        <div key={cond.id} class="condition-row slds-grid slds-wrap slds-gutters_x-small">
+                                            <template if:true={cond.id}>
+                                                <!-- AND/OR join (skip for first condition) -->
+                                                <div class="slds-col slds-size_1-of-6">
+                                                    <lightning-combobox
+                                                        label={i18n.soqlBuilderJoin}
+                                                        value={cond.join}
+                                                        options={joinOptions}
+                                                        data-condition-id={cond.id}
+                                                        onchange={handleConditionJoinChange}
+                                                        variant="label-hidden"
+                                                    ></lightning-combobox>
+                                                </div>
+                                            </template>
+                                            <div class="slds-col slds-size_3-of-12">
+                                                <lightning-combobox
+                                                    label={i18n.soqlBuilderConditionField}
+                                                    value={cond.field}
+                                                    placeholder={i18n.soqlBuilderSelectFieldPlaceholder}
+                                                    options={fields}
+                                                    data-condition-id={cond.id}
+                                                    onchange={handleConditionFieldChange}
+                                                    variant="label-hidden"
+                                                ></lightning-combobox>
+                                            </div>
+                                            <div class="slds-col slds-size_2-of-12">
+                                                <lightning-combobox
+                                                    label={i18n.soqlBuilderOperator}
+                                                    value={cond.operator}
+                                                    options={operatorOptions}
+                                                    data-condition-id={cond.id}
+                                                    onchange={handleConditionOperatorChange}
+                                                    variant="label-hidden"
+                                                ></lightning-combobox>
+                                            </div>
+                                            <div class="slds-col slds-size_4-of-12">
+                                                <lightning-input
+                                                    label={i18n.soqlBuilderValue}
+                                                    value={cond.value}
+                                                    data-condition-id={cond.id}
+                                                    onchange={handleConditionValueChange}
+                                                    variant="label-hidden"
+                                                ></lightning-input>
+                                            </div>
+                                            <div class="slds-col slds-size_1-of-12 col-remove">
+                                                <lightning-button-icon
+                                                    icon-name="utility:delete"
+                                                    variant="bare"
+                                                    alternative-text={i18n.soqlBuilderRemoveCondition}
+                                                    data-condition-id={cond.id}
+                                                    onclick={handleRemoveCondition}
+                                                ></lightning-button-icon>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </lightning-card>
+
+                            <!-- ORDER BY + LIMIT -->
+                            <lightning-card title={i18n.soqlBuilderOrderAndLimit} icon-name="utility:sort">
+                                <div class="slds-card__body slds-card__body_inner">
+                                    <div class="slds-grid slds-gutters_small">
+                                        <div class="slds-col slds-size_4-of-12">
+                                            <lightning-combobox
+                                                label={i18n.soqlBuilderOrderBy}
+                                                value={orderByField}
+                                                placeholder={i18n.soqlBuilderOrderByPlaceholder}
+                                                options={orderByOptions}
+                                                onchange={handleOrderByChange}
+                                            ></lightning-combobox>
+                                        </div>
+                                        <div class="slds-col slds-size_2-of-12">
+                                            <lightning-combobox
+                                                label={i18n.soqlBuilderDirection}
+                                                value={orderByDirection}
+                                                options={orderByDirectionOptions}
+                                                onchange={handleOrderByDirectionChange}
+                                            ></lightning-combobox>
+                                        </div>
+                                        <div class="slds-col slds-size_2-of-12">
+                                            <lightning-input
+                                                label={i18n.soqlBuilderLimit}
+                                                type="number"
+                                                value={limitValue}
+                                                min="1"
+                                                max="50000"
+                                                onchange={handleLimitChange}
+                                            ></lightning-input>
+                                        </div>
+                                    </div>
+                                </div>
+                            </lightning-card>
+                        </template>
+
+                        <!-- Generated Query -->
+                        <template if:true={hasQueryGenerated}>
+                            <lightning-card title={i18n.soqlBuilderGeneratedQuery} icon-name="utility:code">
+                                <div slot="actions">
+                                    <lightning-button-group>
+                                        <lightning-button
+                                            label={i18n.soqlBuilderCopyQuery}
+                                            icon-name="utility:copy"
+                                            onclick={handleCopyQuery}
+                                            variant="neutral"
+                                        ></lightning-button>
+                                        <lightning-button
+                                            label={i18n.soqlBuilderRunQuery}
+                                            icon-name="utility:play"
+                                            onclick={handleRunQuery}
+                                            variant="brand"
+                                            disabled={isRunningQuery}
+                                        ></lightning-button>
+                                    </lightning-button-group>
+                                </div>
+                                <div class="slds-card__body slds-card__body_inner">
+                                    <template if:true={isRunningQuery}>
+                                        <lightning-spinner alternative-text={i18n.soqlBuilderRunningQuery} size="small"></lightning-spinner>
+                                    </template>
+                                    <pre class="query-preview">{generatedQuery}</pre>
+                                </div>
+                            </lightning-card>
+                        </template>
+
+                        <!-- Results -->
+                        <template if:true={hasResults}>
+                            <lightning-card icon-name="utility:table">
+                                <span slot="title">{resultCountLabel}</span>
+                                <div class="slds-card__body">
+                                    <div class="results-table-wrapper">
+                                        <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_col-bordered slds-table_striped results-table">
+                                            <thead>
+                                                <tr class="slds-line-height_reset">
+                                                    <template for:each={queryColumns} for:item="col">
+                                                        <th key={col} scope="col">
+                                                            <div class="slds-truncate" title={col}>{col}</div>
+                                                        </th>
+                                                    </template>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <template for:each={resultRows} for:item="row">
+                                                    <tr key={row._rowId}>
+                                                        <template for:each={row.cells} for:item="cell">
+                                                            <td key={cell.col} data-label={cell.col}>
+                                                                <div class="slds-truncate" title={cell.value}>{cell.value}</div>
+                                                            </td>
+                                                        </template>
+                                                    </tr>
+                                                </template>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </lightning-card>
+                        </template>
+
+                        <!-- No results message -->
+                        <template if:true={hasResults}>
+                            <template if:false={queryResultRecords.length}>
+                                <div class="slds-align_absolute-center slds-p-around_medium">
+                                    <p>{i18n.soqlBuilderNoResults}</p>
+                                </div>
+                            </template>
+                        </template>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+</template>

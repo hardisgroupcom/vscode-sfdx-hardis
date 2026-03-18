@@ -428,6 +428,13 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             command: "sf hardis:org:multi-org-query",
             helpUrl: DOCSITE_URL + "/hardis/org/multi-org-query/",
           },
+          {
+            id: "vscode-sfdx-hardis.showSoqlBuilder",
+            label: t("soqlBuilderTitle"),
+            tooltip: t("soqlBuilderTooltip"),
+            command: "vscode-sfdx-hardis.showSoqlBuilder",
+            requiresProject: false,
+          },
         ],
       },
       {
@@ -567,6 +574,13 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             tooltip: t("sandboxRefreshAfterTooltip"),
             command: "sf hardis:org:refresh:after-refresh",
             helpUrl: DOCSITE_URL + "/hardis/org/refresh/after-refresh/",
+          },
+          {
+            id: "vscode-sfdx-hardis.showSandboxRefresh",
+            label: t("sandboxRefreshWizardTitle"),
+            tooltip: t("sandboxRefreshWizardTooltip"),
+            command: "vscode-sfdx-hardis.showSandboxRefresh",
+            requiresProject: false,
           },
         ],
       },

@@ -161,6 +161,8 @@ export class LwcUiPanel {
       "s-pipeline-config": t("pipelineConfig"),
       "s-prompt-input": t("promptInput"),
       "s-setup": t("installDependencies"),
+      "s-soql-builder": t("soqlBuilderTitle"),
+      "s-sandbox-refresh": t("sandboxRefreshWizardTitle"),
       "s-welcome": t("welcomeTitle"),
     };
     const panelTitle = lwcDefinitions[this.lwcId] || t("panelTitleDefault");

@@ -79,6 +79,8 @@ const lwcModules = {
   "s-documentation-workbench": () => import("s/documentationWorkbench"),
   "s-documentation-config": () => import("s/documentationConfig"),
   "s-setup": () => import("s/setup"),
+  "s-soql-builder": () => import("s/soqlBuilder"),
+  "s-sandbox-refresh": () => import("s/sandboxRefresh"),
   "s-spinner": () => import("s/spinner"),
   "s-apex-tests-select": () => import("s/apexTestsSelect"),
 };
