@@ -562,7 +562,7 @@ When adding new user-facing strings:
 - Keep brand names untranslated: Salesforce, SFDMU, Git, GitHub, GitLab, JIRA, VS Code.
 
 ### Dutch Translation Guidelines
-- Use formal Dutch ("u" not "je/jij") for all UI text.
+- Use informal Dutch ("je/jij" not "u/uw") for all UI text.
 - Keep English technical terms untranslated: merge, commit, branch, scratch org, package.xml, DevHub, SOQL, DML, CSV, REST, Bulk API, upsert, mock data.
 - Use standard Dutch software/IT terminology (e.g. "implementatie" for deployment, "configuratie" for configuration, "instellingen" for settings, "werkruimte" for workspace).
 - Keep all {{varName}} interpolation placeholders and <br/> tags exactly as-is.
