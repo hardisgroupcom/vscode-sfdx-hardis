@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [7.3.0] 2026-03-23
+
 - Add italian translation
 - Add dutch translation
 
