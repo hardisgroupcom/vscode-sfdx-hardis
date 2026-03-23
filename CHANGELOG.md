@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add italian translation
+- Add dutch translation
+
 ## [7.2.0] 2026-03-18
 
 - Handle cases when the open folder is not a git repo

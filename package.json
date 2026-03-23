@@ -2,8 +2,8 @@
   "name": "vscode-sfdx-hardis",
   "displayName": "SFDX Hardis by Cloudity",
   "description": "Handle Salesforce DX and Git without knowing Salesforce DX or Git !",
-  "version": "7.2.0",
-  "preview": false,
+  "version": "7.2.1",
+  "preview": true,
   "icon": "resources/sfdx-hardis-logo-square.png",
   "publisher": "NicolasVuillamy",
   "author": {
@@ -199,6 +199,8 @@
             "en",
             "es",
             "fr",
+            "it",
+            "nl",
             "pl",
             "ja",
             "pt-BR"
@@ -209,6 +211,8 @@
             "English",
             "Español",
             "Français",
+            "Italiano",
+            "Nederlands",
             "Polski",
             "日本語",
             "Português (BR)"

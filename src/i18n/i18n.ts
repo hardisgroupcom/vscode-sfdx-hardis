@@ -87,7 +87,7 @@ export function initI18n(): void {
     return;
   }
   const locale = detectLocale();
-  const supportedLocales = ["en", "fr", "es", "de", "ja", "pl", "pt-BR"];
+  const supportedLocales = ["en", "fr", "es", "de", "ja", "nl", "pl", "pt-BR", "it"];
   const lng = supportedLocales.includes(locale) ? locale : "en";
 
   // Only load the selected locale + English as fallback to save memory
