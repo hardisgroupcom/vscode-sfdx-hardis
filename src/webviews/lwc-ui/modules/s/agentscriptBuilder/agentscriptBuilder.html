@@ -118,22 +118,6 @@
                     </header>
 
                     <div class="slds-modal__content slds-p-around_medium">
-                        <!-- Form / Text mode tabs -->
-                        <div class="slds-tabs_default slds-m-bottom_small">
-                            <ul class="slds-tabs_default__nav" role="tablist">
-                                <li class="slds-tabs_default__item" role="presentation">
-                                    <a class={topicFormTabClass} onclick={handleSwitchToFormMode} role="tab" tabindex="0">
-                                        {i18n.topicFormMode}
-                                    </a>
-                                </li>
-                                <li class="slds-tabs_default__item" role="presentation">
-                                    <a class={topicTextTabClass} onclick={handleSwitchToTextMode} role="tab" tabindex="0">
-                                        {i18n.topicTextMode}
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
-
                         <!-- Form Mode -->
                         <template if:true={isTopicFormMode}>
                             <div class="slds-grid slds-gutters slds-wrap">
@@ -179,7 +163,7 @@
                                             <lightning-textarea
                                                 value={topicFormDescription}
                                                 onchange={handleTopicFormDescriptionChange}
-                                                rows="3"
+                                                rows="5"
                                                 placeholder="Handles requests from users who want to..."
                                             ></lightning-textarea>
                                         </div>
@@ -216,7 +200,7 @@
                                             <lightning-textarea
                                                 value={topicFormActionsRaw}
                                                 onchange={handleTopicFormActionsChange}
-                                                rows="8"
+                                                rows="10"
                                                 class="script-textarea"
                                                 placeholder="            go_to_next: @utils.transition to @topic.next_topic"
                                             ></lightning-textarea>
@@ -242,7 +226,20 @@
                     </div>
 
                     <footer class="slds-modal__footer" style="display: flex; justify-content: space-between; align-items: center;">
-                        <div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div class="slds-button-group" role="group">
+                                <lightning-button
+                                    variant={topicFormButtonVariant}
+                                    label={i18n.topicFormMode}
+                                    onclick={handleSwitchToFormMode}
+                                    class="slds-m-right_xx-small"
+                                ></lightning-button>
+                                <lightning-button
+                                    variant={topicTextButtonVariant}
+                                    label={i18n.topicYamlMode}
+                                    onclick={handleSwitchToTextMode}
+                                ></lightning-button>
+                            </div>
                             <template if:true={isExistingTopic}>
                                 <lightning-button
                                     variant="destructive"
@@ -297,22 +294,6 @@
                     </header>
 
                     <div class="slds-modal__content slds-p-around_medium">
-                        <!-- Form / Text mode tabs -->
-                        <div class="slds-tabs_default slds-m-bottom_small">
-                            <ul class="slds-tabs_default__nav" role="tablist">
-                                <li class="slds-tabs_default__item" role="presentation">
-                                    <a class={configFormTabClass} onclick={handleConfigSwitchToFormMode} role="tab" tabindex="0">
-                                        {i18n.topicFormMode}
-                                    </a>
-                                </li>
-                                <li class="slds-tabs_default__item" role="presentation">
-                                    <a class={configTextTabClass} onclick={handleConfigSwitchToTextMode} role="tab" tabindex="0">
-                                        {i18n.topicTextMode}
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
-
                         <lightning-tabset>
                             <lightning-tab label={i18n.agentScriptConfigBlock} value="config" icon-name="utility:settings">
                                 <!-- Form Mode -->
@@ -326,13 +307,13 @@
                                                     <s-multiline-helptext content={i18n.configDeveloperNameHint}></s-multiline-helptext>
                                                 </label>
                                                 <div class="slds-form-element__control">
-                                                    <input
-                                                        type="text"
-                                                        class="slds-input"
+                                                    <lightning-input
+                                                        variant="label-hidden"
+                                                        label=""
                                                         value={configFormDeveloperName}
                                                         onchange={handleConfigFormDeveloperNameChange}
                                                         placeholder="my_agent"
-                                                    />
+                                                    ></lightning-input>
                                                 </div>
                                             </div>
                                         </div>
@@ -344,13 +325,13 @@
                                                     <s-multiline-helptext content={i18n.configAgentLabelHint}></s-multiline-helptext>
                                                 </label>
                                                 <div class="slds-form-element__control">
-                                                    <input
-                                                        type="text"
-                                                        class="slds-input"
+                                                    <lightning-input
+                                                        variant="label-hidden"
+                                                        label=""
                                                         value={configFormAgentLabel}
                                                         onchange={handleConfigFormAgentLabelChange}
                                                         placeholder="My Agent"
-                                                    />
+                                                    ></lightning-input>
                                                 </div>
                                             </div>
                                         </div>
@@ -362,13 +343,13 @@
                                                     <s-multiline-helptext content={i18n.configDefaultAgentUserHint}></s-multiline-helptext>
                                                 </label>
                                                 <div class="slds-form-element__control">
-                                                    <input
-                                                        type="text"
-                                                        class="slds-input"
+                                                    <lightning-input
+                                                        variant="label-hidden"
+                                                        label=""
                                                         value={configFormDefaultAgentUser}
                                                         onchange={handleConfigFormDefaultAgentUserChange}
                                                         placeholder="agent@example.com"
-                                                    />
+                                                    ></lightning-input>
                                                 </div>
                                             </div>
                                         </div>
@@ -380,13 +361,67 @@
                                                     <s-multiline-helptext content={i18n.configAgentTypeHint}></s-multiline-helptext>
                                                 </label>
                                                 <div class="slds-form-element__control">
-                                                    <input
-                                                        type="text"
-                                                        class="slds-input"
+                                                    <lightning-combobox
+                                                        variant="label-hidden"
+                                                        label=""
                                                         value={configFormAgentType}
+                                                        options={agentTypeOptions}
                                                         onchange={handleConfigFormAgentTypeChange}
-                                                        placeholder="Copilot"
-                                                    />
+                                                    ></lightning-combobox>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- Company -->
+                                        <div class="slds-col slds-size_1-of-2 slds-m-bottom_small">
+                                            <div class="slds-form-element">
+                                                <label class="slds-form-element__label">
+                                                    {i18n.configCompany}
+                                                    <s-multiline-helptext content={i18n.configCompanyHint}></s-multiline-helptext>
+                                                </label>
+                                                <div class="slds-form-element__control">
+                                                    <lightning-input
+                                                        variant="label-hidden"
+                                                        label=""
+                                                        value={configFormCompany}
+                                                        onchange={handleConfigFormCompanyChange}
+                                                        placeholder="Acme Corp"
+                                                    ></lightning-input>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- User Locale -->
+                                        <div class="slds-col slds-size_1-of-2 slds-m-bottom_small">
+                                            <div class="slds-form-element">
+                                                <label class="slds-form-element__label">
+                                                    {i18n.configUserLocale}
+                                                    <s-multiline-helptext content={i18n.configUserLocaleHint}></s-multiline-helptext>
+                                                </label>
+                                                <div class="slds-form-element__control">
+                                                    <lightning-input
+                                                        variant="label-hidden"
+                                                        label=""
+                                                        value={configFormUserLocale}
+                                                        onchange={handleConfigFormUserLocaleChange}
+                                                        placeholder="en_US"
+                                                    ></lightning-input>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- Enable Enhanced Event Logs -->
+                                        <div class="slds-col slds-size_1-of-2 slds-m-bottom_small">
+                                            <div class="slds-form-element">
+                                                <label class="slds-form-element__label">
+                                                    {i18n.configEnhancedLogs}
+                                                    <s-multiline-helptext content={i18n.configEnhancedLogsHint}></s-multiline-helptext>
+                                                </label>
+                                                <div class="slds-form-element__control">
+                                                    <lightning-combobox
+                                                        variant="label-hidden"
+                                                        label=""
+                                                        value={configFormEnhancedLogs}
+                                                        options={enableEnhancedLogsOptions}
+                                                        onchange={handleConfigFormEnhancedLogsChange}
+                                                    ></lightning-combobox>
                                                 </div>
                                             </div>
                                         </div>
@@ -401,7 +436,7 @@
                                                     <lightning-textarea
                                                         value={configFormDescription}
                                                         onchange={handleConfigFormDescriptionChange}
-                                                        rows="3"
+                                                        rows="5"
                                                         placeholder="A helpful AI agent for..."
                                                     ></lightning-textarea>
                                                 </div>
@@ -418,7 +453,7 @@
                                                     <lightning-textarea
                                                         value={configFormAgentRole}
                                                         onchange={handleConfigFormAgentRoleChange}
-                                                        rows="3"
+                                                        rows="5"
                                                         placeholder="Act as a helpful customer service agent..."
                                                     ></lightning-textarea>
                                                 </div>
@@ -434,12 +469,12 @@
                                     <lightning-textarea
                                         value={configModalRaw}
                                         onchange={handleConfigRawChange}
-                                        rows="10"
+                                        rows="20"
                                         class="script-textarea"
                                     ></lightning-textarea>
                                 </template>
                             </lightning-tab>
-                            <lightning-tab label={i18n.agentScriptSystemBlock} value="system" icon-name="utility:bot">
+                            <lightning-tab label={i18n.agentScriptSystemBlock} value="system" icon-name="utility:einstein">
                                 <!-- Form Mode -->
                                 <template if:true={isConfigFormMode}>
                                     <div class="slds-grid slds-gutters slds-wrap">
@@ -454,7 +489,7 @@
                                                     <lightning-textarea
                                                         value={configFormSystemInstructions}
                                                         onchange={handleConfigFormSystemInstructionsChange}
-                                                        rows="8"
+                                                        rows="10"
                                                         class="script-textarea"
                                                         placeholder="| You are a helpful assistant."
                                                     ></lightning-textarea>
@@ -462,38 +497,36 @@
                                             </div>
                                         </div>
                                         <!-- Welcome Message -->
-                                        <div class="slds-col slds-size_1-of-2 slds-m-bottom_small">
+                                        <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
                                             <div class="slds-form-element">
                                                 <label class="slds-form-element__label">
                                                     {i18n.systemWelcomeMessage}
                                                     <s-multiline-helptext content={i18n.systemWelcomeHint}></s-multiline-helptext>
                                                 </label>
                                                 <div class="slds-form-element__control">
-                                                    <input
-                                                        type="text"
-                                                        class="slds-input"
+                                                    <lightning-textarea
                                                         value={configFormSystemWelcome}
                                                         onchange={handleConfigFormSystemWelcomeChange}
+                                                        rows="5"
                                                         placeholder="Hello! How can I help you today?"
-                                                    />
+                                                    ></lightning-textarea>
                                                 </div>
                                             </div>
                                         </div>
                                         <!-- Error Message -->
-                                        <div class="slds-col slds-size_1-of-2 slds-m-bottom_small">
+                                        <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
                                             <div class="slds-form-element">
                                                 <label class="slds-form-element__label">
                                                     {i18n.systemErrorMessage}
                                                     <s-multiline-helptext content={i18n.systemErrorHint}></s-multiline-helptext>
                                                 </label>
                                                 <div class="slds-form-element__control">
-                                                    <input
-                                                        type="text"
-                                                        class="slds-input"
+                                                    <lightning-textarea
                                                         value={configFormSystemError}
                                                         onchange={handleConfigFormSystemErrorChange}
+                                                        rows="3"
                                                         placeholder="Sorry, something went wrong."
-                                                    />
+                                                    ></lightning-textarea>
                                                 </div>
                                             </div>
                                         </div>
@@ -507,43 +540,192 @@
                                     <lightning-textarea
                                         value={systemModalRaw}
                                         onchange={handleSystemRawChange}
-                                        rows="10"
+                                        rows="20"
                                         class="script-textarea"
                                     ></lightning-textarea>
                                 </template>
                             </lightning-tab>
                             <lightning-tab label={i18n.agentScriptVariablesBlock} value="variables" icon-name="utility:variable">
+                                <!-- Form Mode -->
                                 <template if:true={isConfigFormMode}>
-                                    <p class="slds-text-body_small slds-text-color_weak slds-m-bottom_x-small">
-                                        {i18n.variablesRawNote}
+                                    <p class="slds-text-body_small slds-text-color_weak slds-m-bottom_small">
+                                        {i18n.agentScriptVariablesBlockHint}
                                     </p>
+
+                                    <!-- Variable list -->
+                                    <template if:true={hasVariables}>
+                                        <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-m-bottom_small" role="grid">
+                                            <thead>
+                                                <tr class="slds-line-height_reset">
+                                                    <th scope="col"><div class="slds-truncate">{i18n.variableName}</div></th>
+                                                    <th scope="col"><div class="slds-truncate">{i18n.variableMutability}</div></th>
+                                                    <th scope="col"><div class="slds-truncate">{i18n.variableType}</div></th>
+                                                    <th scope="col"><div class="slds-truncate">{i18n.variableDefault}</div></th>
+                                                    <th scope="col"><div class="slds-truncate">{i18n.variableSource}</div></th>
+                                                    <th scope="col" style="width: 80px;"></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <template for:each={variablesFormListWithState} for:item="v">
+                                                    <template key={v.id} if:false={v.isEditing}>
+                                                        <tr key={v.id} class="slds-hint-parent">
+                                                            <td><div class="slds-truncate">{v.name}</div></td>
+                                                            <td><div class="slds-truncate">{v.mutability}</div></td>
+                                                            <td><div class="slds-truncate">{v.type}</div></td>
+                                                            <td><div class="slds-truncate">{v.defaultValue}</div></td>
+                                                            <td><div class="slds-truncate">{v.source}</div></td>
+                                                            <td>
+                                                                <lightning-button-icon
+                                                                    icon-name="utility:edit"
+                                                                    variant="bare"
+                                                                    size="small"
+                                                                    alternative-text={i18n.edit}
+                                                                    data-var-id={v.id}
+                                                                    onclick={handleEditVariable}
+                                                                    class="slds-m-right_x-small"
+                                                                ></lightning-button-icon>
+                                                                <lightning-button-icon
+                                                                    icon-name="utility:delete"
+                                                                    variant="bare"
+                                                                    size="small"
+                                                                    alternative-text={i18n.deleteLabel}
+                                                                    data-var-id={v.id}
+                                                                    onclick={handleDeleteVariable}
+                                                                ></lightning-button-icon>
+                                                            </td>
+                                                        </tr>
+                                                    </template>
+                                                    <template key={v.id} if:true={v.isEditing}>
+                                                        <tr key={v.id} class="slds-hint-parent var-edit-row">
+                                                            <td>
+                                                                <lightning-input
+                                                                    variant="label-hidden"
+                                                                    label=""
+                                                                    value={v.name}
+                                                                    placeholder="var_name"
+                                                                    data-var-id={v.id}
+                                                                    data-field="name"
+                                                                    onchange={handleVarFieldChange}
+                                                                ></lightning-input>
+                                                            </td>
+                                                            <td>
+                                                                <lightning-combobox
+                                                                    variant="label-hidden"
+                                                                    label=""
+                                                                    value={v.mutability}
+                                                                    options={v.mutabilityOptions}
+                                                                    data-var-id={v.id}
+                                                                    data-field="mutability"
+                                                                    onchange={handleVarFieldChange}
+                                                                ></lightning-combobox>
+                                                            </td>
+                                                            <td>
+                                                                <lightning-combobox
+                                                                    variant="label-hidden"
+                                                                    label=""
+                                                                    value={v.type}
+                                                                    options={v.typeOptions}
+                                                                    data-var-id={v.id}
+                                                                    data-field="type"
+                                                                    onchange={handleVarFieldChange}
+                                                                ></lightning-combobox>
+                                                            </td>
+                                                            <td>
+                                                                <lightning-input
+                                                                    variant="label-hidden"
+                                                                    label=""
+                                                                    value={v.defaultValue}
+                                                                    placeholder="default value"
+                                                                    data-var-id={v.id}
+                                                                    data-field="defaultValue"
+                                                                    onchange={handleVarFieldChange}
+                                                                ></lightning-input>
+                                                            </td>
+                                                            <td>
+                                                                <lightning-input
+                                                                    variant="label-hidden"
+                                                                    label=""
+                                                                    value={v.source}
+                                                                    placeholder="@MessagingSession.Id"
+                                                                    data-var-id={v.id}
+                                                                    data-field="source"
+                                                                    onchange={handleVarFieldChange}
+                                                                ></lightning-input>
+                                                            </td>
+                                                            <td>
+                                                                <lightning-button-icon
+                                                                    icon-name="utility:check"
+                                                                    variant="bare"
+                                                                    size="small"
+                                                                    alternative-text={i18n.done}
+                                                                    data-var-id={v.id}
+                                                                    onclick={handleVarEditDone}
+                                                                ></lightning-button-icon>
+                                                            </td>
+                                                        </tr>
+                                                    </template>
+                                                </template>
+                                            </tbody>
+                                        </table>
+                                    </template>
+
+                                    <lightning-button
+                                        variant="neutral"
+                                        label={i18n.addVariable}
+                                        icon-name="utility:add"
+                                        onclick={handleAddVariable}
+                                    ></lightning-button>
+                                    <template if:true={varEditError}>
+                                        <p class="slds-text-color_error slds-m-top_x-small">{varEditError}</p>
+                                    </template>
                                 </template>
-                                <p class="slds-text-body_small slds-text-color_weak slds-m-bottom_small">
-                                    {i18n.agentScriptVariablesBlockHint}
-                                </p>
-                                <lightning-textarea
-                                    value={variablesModalRaw}
-                                    onchange={handleVariablesRawChange}
-                                    rows="12"
-                                    class="script-textarea"
-                                ></lightning-textarea>
+
+                                <!-- Text Mode -->
+                                <template if:true={isConfigTextMode}>
+                                    <p class="slds-text-body_small slds-text-color_weak slds-m-bottom_small">
+                                        {i18n.agentScriptVariablesBlockHint}
+                                    </p>
+                                    <lightning-textarea
+                                        value={variablesModalRaw}
+                                        onchange={handleVariablesRawChange}
+                                        rows="20"
+                                        class="script-textarea"
+                                    ></lightning-textarea>
+                                </template>
                             </lightning-tab>
                         </lightning-tabset>
                     </div>
 
-                    <footer class="slds-modal__footer">
-                        <lightning-button
-                            variant="neutral"
-                            label={i18n.cancel}
-                            onclick={handleCloseConfigModal}
-                            class="slds-m-right_x-small"
-                        ></lightning-button>
-                        <lightning-button
-                            variant="brand"
-                            label={i18n.save}
-                            icon-name="utility:save"
-                            onclick={handleSaveConfig}
-                        ></lightning-button>
+                    <footer class="slds-modal__footer" style="display: flex; justify-content: space-between; align-items: center;">
+                        <div style="display: flex; align-items: center;">
+                            <div class="slds-button-group" role="group">
+                                <lightning-button
+                                    variant={configFormButtonVariant}
+                                    label={i18n.topicFormMode}
+                                    onclick={handleConfigSwitchToFormMode}
+                                    class="slds-m-right_xx-small"
+                                ></lightning-button>
+                                <lightning-button
+                                    variant={configTextButtonVariant}
+                                    label={i18n.topicYamlMode}
+                                    onclick={handleConfigSwitchToTextMode}
+                                ></lightning-button>
+                            </div>
+                        </div>
+                        <div>
+                            <lightning-button
+                                variant="neutral"
+                                label={i18n.cancel}
+                                onclick={handleCloseConfigModal}
+                                class="slds-m-right_x-small"
+                            ></lightning-button>
+                            <lightning-button
+                                variant="brand"
+                                label={i18n.save}
+                                icon-name="utility:save"
+                                onclick={handleSaveConfig}
+                            ></lightning-button>
+                        </div>
                     </footer>
                 </div>
             </section>

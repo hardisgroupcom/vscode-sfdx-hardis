@@ -39,12 +39,19 @@ export default class AgentscriptBuilder extends SharedMixin(LightningElement) {
   @track configFormAgentLabel = "";
   @track configFormDefaultAgentUser = "";
   @track configFormDescription = "";
-  @track configFormAgentType = "";
+  @track configFormAgentType = "AgentforceServiceAgent";
   @track configFormAgentRole = "";
+  @track configFormCompany = "";
+  @track configFormUserLocale = "";
+  @track configFormEnhancedLogs = "False";
   // System form fields
   @track configFormSystemInstructions = "";
   @track configFormSystemWelcome = "";
   @track configFormSystemError = "";
+  // Variables form fields: array of { id, name, mutability, type, source }
+  @track variablesFormList = [];
+  @track _editingVarId = null; // id of variable being edited inline
+  @track varEditError = "";
 
   // Parsed data cache
   _parsedScript = null;
@@ -578,11 +585,12 @@ export default class AgentscriptBuilder extends SharedMixin(LightningElement) {
     this.configModalMode = "form";
     this._populateConfigFormFromRaw(this.configModalRaw);
     this._populateSystemFormFromRaw(this.systemModalRaw);
+    this._populateVariablesFormFromRaw(this.variablesModalRaw);
     this.showConfigModal = true;
   }
 
   _parseConfigBlockForForm(raw) {
-    const result = { developerName: "", agentLabel: "", defaultAgentUser: "", description: "", agentType: "", agentRole: "" };
+    const result = { developerName: "", agentLabel: "", defaultAgentUser: "", description: "", agentType: "", agentRole: "", company: "", userLocale: "", enhancedLogs: "" };
     if (!raw) {
       return result;
     }
@@ -611,6 +619,15 @@ export default class AgentscriptBuilder extends SharedMixin(LightningElement) {
       else if (key === "role") {
         result.agentRole = val;
       }
+      else if (key === "company") {
+        result.company = val;
+      }
+      else if (key === "user_locale") {
+        result.userLocale = val;
+      }
+      else if (key === "enable_enhanced_event_logs") {
+        result.enhancedLogs = val;
+      }
     }
     return result;
   }
@@ -629,6 +646,15 @@ export default class AgentscriptBuilder extends SharedMixin(LightningElement) {
     if (this.configFormAgentType) {
       lines.push(`    agent_type: ${this.configFormAgentType}`);
     }
+    if (this.configFormCompany) {
+      lines.push(`    company: "${this.configFormCompany}"`);
+    }
+    if (this.configFormUserLocale) {
+      lines.push(`    user_locale: "${this.configFormUserLocale}"`);
+    }
+    if (this.configFormEnhancedLogs && this.configFormEnhancedLogs !== "False") {
+      lines.push(`    enable_enhanced_event_logs: ${this.configFormEnhancedLogs}`);
+    }
     if (this.configFormDescription) {
       lines.push(`    description: "${this.configFormDescription}"`);
     }
@@ -644,8 +670,11 @@ export default class AgentscriptBuilder extends SharedMixin(LightningElement) {
     this.configFormAgentLabel = parsed.agentLabel;
     this.configFormDefaultAgentUser = parsed.defaultAgentUser;
     this.configFormDescription = parsed.description;
-    this.configFormAgentType = parsed.agentType;
+    this.configFormAgentType = parsed.agentType || "AgentforceServiceAgent";
     this.configFormAgentRole = parsed.agentRole;
+    this.configFormCompany = parsed.company;
+    this.configFormUserLocale = parsed.userLocale;
+    this.configFormEnhancedLogs = parsed.enhancedLogs || "False";
   }
 
   _parseSystemBlockForForm(raw) {
@@ -740,6 +769,140 @@ export default class AgentscriptBuilder extends SharedMixin(LightningElement) {
     this.configFormSystemError = parsed.error;
   }
 
+  _parseVariablesBlockForForm(raw) {
+    const result = [];
+    if (!raw) {
+      return result;
+    }
+    const lines = raw.split("\n");
+    let currentVar = null;
+    for (const line of lines) {
+      if (line.trim() === "" || line.trim().startsWith("#") || line.trim() === "variables:") {
+        continue;
+      }
+      // name: mutable|linked type [= value]
+      const kwMatch = line.match(/^ {4}([\w]+):\s+(mutable|linked)\s+([\w\[\]]+)(?:\s*=\s*(.+))?$/);
+      if (kwMatch) {
+        if (currentVar) {
+          result.push(currentVar);
+        }
+        currentVar = {
+          id: kwMatch[1] + "_" + result.length,
+          name: kwMatch[1],
+          mutability: kwMatch[2],
+          type: kwMatch[3],
+          source: "",
+          defaultValue: kwMatch[4] ? kwMatch[4].trim().replace(/^["']|["']$/g, "") : "",
+        };
+        continue;
+      }
+      // name: type [= value] (immutable — no mutability keyword)
+      const immutableMatch = line.match(/^ {4}([\w]+):\s+([\w\[\]]+)(?:\s*=\s*(.+))?$/);
+      if (immutableMatch) {
+        if (currentVar) {
+          result.push(currentVar);
+        }
+        currentVar = {
+          id: immutableMatch[1] + "_" + result.length,
+          name: immutableMatch[1],
+          mutability: "immutable",
+          type: immutableMatch[2],
+          source: "",
+          defaultValue: immutableMatch[3] ? immutableMatch[3].trim().replace(/^["']|["']$/g, "") : "",
+        };
+        continue;
+      }
+      // source sub-key: "        source: ..."
+      const sourceMatch = line.match(/^ {8}source:\s+(.*)/);
+      if (sourceMatch && currentVar) {
+        currentVar.source = sourceMatch[1].trim();
+      }
+    }
+    if (currentVar) {
+      result.push(currentVar);
+    }
+    return result;
+  }
+
+  _buildVariablesRawFromForm() {
+    const lines = ["variables:"];
+    for (const v of this.variablesFormList) {
+      if (!v.name) {
+        continue;
+      }
+      const defaultStr = v.defaultValue ? ` = ${v.defaultValue}` : "";
+      if (v.mutability === "immutable") {
+        lines.push(`    ${v.name}: ${v.type || "string"}${defaultStr}`);
+      }
+      else {
+        lines.push(`    ${v.name}: ${v.mutability || "mutable"} ${v.type || "string"}${defaultStr}`);
+      }
+      if (v.source && v.mutability === "linked") {
+        lines.push(`        source: ${v.source}`);
+      }
+    }
+    return lines.join("\n") + "\n";
+  }
+
+  _populateVariablesFormFromRaw(raw) {
+    this.variablesFormList = this._parseVariablesBlockForForm(raw);
+  }
+
+  handleAddVariable() {
+    this.varEditError = "";
+    const newVar = {
+      id: "new_" + Date.now(),
+      name: "",
+      mutability: "mutable",
+      type: "string",
+      source: "",
+      defaultValue: "",
+    };
+    this.variablesFormList = [...this.variablesFormList, newVar];
+    this._editingVarId = newVar.id;
+  }
+
+  handleEditVariable(event) {
+    this.varEditError = "";
+    this._editingVarId = event.currentTarget.dataset.varId;
+    this.variablesFormList = [...this.variablesFormList];
+  }
+
+  handleDeleteVariable(event) {
+    const id = event.currentTarget.dataset.varId;
+    this.variablesFormList = this.variablesFormList.filter((v) => v.id !== id);
+    if (this._editingVarId === id) {
+      this._editingVarId = null;
+    }
+  }
+
+  handleVarFieldChange(event) {
+    const id = event.currentTarget.dataset.varId;
+    const field = event.currentTarget.dataset.field;
+    const value = event.detail?.value ?? event.target.value;
+    this.variablesFormList = this.variablesFormList.map((v) => {
+      if (v.id === id) {
+        return { ...v, [field]: value };
+      }
+      return v;
+    });
+  }
+
+  handleVarEditDone(event) {
+    const id = event.currentTarget.dataset.varId;
+    if (this._editingVarId !== id) {
+      return;
+    }
+    const variable = this.variablesFormList.find((v) => v.id === id);
+    if (!variable || !variable.name || !variable.mutability || !variable.type) {
+      this.varEditError = this.t("deploymentActionMissingRequiredFields");
+      return;
+    }
+    this.varEditError = "";
+    this._editingVarId = null;
+    this.variablesFormList = [...this.variablesFormList];
+  }
+
   handleConfigRawChange(event) {
     this.configModalRaw = event.target.value;
   }
@@ -755,13 +918,24 @@ export default class AgentscriptBuilder extends SharedMixin(LightningElement) {
   handleConfigSwitchToFormMode() {
     this._populateConfigFormFromRaw(this.configModalRaw);
     this._populateSystemFormFromRaw(this.systemModalRaw);
+    this._populateVariablesFormFromRaw(this.variablesModalRaw);
     this.configModalMode = "form";
   }
 
   handleConfigSwitchToTextMode() {
     this.configModalRaw = this._buildConfigRawFromForm();
     this.systemModalRaw = this._buildSystemRawFromForm();
+    this.variablesModalRaw = this._buildVariablesRawFromForm();
     this.configModalMode = "text";
+  }
+
+  handleConfigModeToggle(event) {
+    if (event.target.checked) {
+      this.handleConfigSwitchToTextMode();
+    }
+    else {
+      this.handleConfigSwitchToFormMode();
+    }
   }
 
   handleConfigFormDeveloperNameChange(event) {
@@ -781,11 +955,23 @@ export default class AgentscriptBuilder extends SharedMixin(LightningElement) {
   }
 
   handleConfigFormAgentTypeChange(event) {
-    this.configFormAgentType = event.target.value;
+    this.configFormAgentType = event.detail?.value ?? event.target.value;
   }
 
   handleConfigFormAgentRoleChange(event) {
     this.configFormAgentRole = event.target.value;
+  }
+
+  handleConfigFormCompanyChange(event) {
+    this.configFormCompany = event.target.value;
+  }
+
+  handleConfigFormUserLocaleChange(event) {
+    this.configFormUserLocale = event.target.value;
+  }
+
+  handleConfigFormEnhancedLogsChange(event) {
+    this.configFormEnhancedLogs = event.detail?.value ?? event.target.value;
   }
 
   handleConfigFormSystemInstructionsChange(event) {
@@ -809,6 +995,7 @@ export default class AgentscriptBuilder extends SharedMixin(LightningElement) {
     if (this.configModalMode === "form") {
       this.configModalRaw = this._buildConfigRawFromForm();
       this.systemModalRaw = this._buildSystemRawFromForm();
+      this.variablesModalRaw = this._buildVariablesRawFromForm();
     }
 
     const parsed =
@@ -951,6 +1138,14 @@ export default class AgentscriptBuilder extends SharedMixin(LightningElement) {
     return this.topicModalMode === "text";
   }
 
+  get topicFormButtonVariant() {
+    return this.topicModalMode === "form" ? "brand" : "neutral";
+  }
+
+  get topicTextButtonVariant() {
+    return this.topicModalMode === "text" ? "brand" : "neutral";
+  }
+
   get topicFormTabClass() {
     return this.topicModalMode === "form"
       ? "slds-tabs_default__link slds-is-active"
@@ -963,6 +1158,20 @@ export default class AgentscriptBuilder extends SharedMixin(LightningElement) {
       : "slds-tabs_default__link";
   }
 
+  get agentTypeOptions() {
+    return [
+      { label: "AgentforceServiceAgent", value: "AgentforceServiceAgent" },
+      { label: "AgentforceEmployeeAgent", value: "AgentforceEmployeeAgent" },
+    ];
+  }
+
+  get enableEnhancedLogsOptions() {
+    return [
+      { label: "False", value: "False" },
+      { label: "True", value: "True" },
+    ];
+  }
+
   get isConfigFormMode() {
     return this.configModalMode === "form";
   }
@@ -971,16 +1180,51 @@ export default class AgentscriptBuilder extends SharedMixin(LightningElement) {
     return this.configModalMode === "text";
   }
 
-  get configFormTabClass() {
-    return this.configModalMode === "form"
-      ? "slds-tabs_default__link slds-is-active"
-      : "slds-tabs_default__link";
+  get configFormButtonVariant() {
+    return this.configModalMode === "form" ? "brand" : "neutral";
   }
 
-  get configTextTabClass() {
-    return this.configModalMode === "text"
-      ? "slds-tabs_default__link slds-is-active"
-      : "slds-tabs_default__link";
+  get configTextButtonVariant() {
+    return this.configModalMode === "text" ? "brand" : "neutral";
+  }
+
+  get variablesFormListWithState() {
+    const allTypes = [
+      { label: "string", value: "string" },
+      { label: "number", value: "number" },
+      { label: "boolean", value: "boolean" },
+      { label: "object", value: "object" },
+      { label: "date", value: "date" },
+      { label: "id", value: "id" },
+      { label: "list[string]", value: "list[string]" },
+      { label: "list[number]", value: "list[number]" },
+      { label: "list[boolean]", value: "list[boolean]" },
+      { label: "list[date]", value: "list[date]" },
+      { label: "list[id]", value: "list[id]" },
+    ];
+    const linkedTypes = [
+      { label: "string", value: "string" },
+      { label: "number", value: "number" },
+      { label: "boolean", value: "boolean" },
+      { label: "date", value: "date" },
+      { label: "id", value: "id" },
+    ];
+    const mutabilityOpts = [
+      { label: "mutable", value: "mutable" },
+      { label: "linked", value: "linked" },
+      { label: "immutable", value: "immutable" },
+    ];
+    return this.variablesFormList.map((v) => ({
+      ...v,
+      isEditing: v.id === this._editingVarId,
+      isLinked: v.mutability === "linked",
+      typeOptions: v.mutability === "linked" ? linkedTypes : allTypes,
+      mutabilityOptions: mutabilityOpts,
+    }));
+  }
+
+  get hasVariables() {
+    return this.variablesFormList.length > 0;
   }
 
   get topicModalTitle() {
