@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Reorganize Org Monitoring view & add missing commands
+- Sync metadata types list from sfdx-hardis cli plugin repo, to be always up to date
 
 ## [7.3.0] 2026-03-23
 
