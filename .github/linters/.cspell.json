@@ -299,6 +299,8 @@
     "licensetypes",
     "returnactiveusers",
     "instanceupgrade",
+    "subflow",
+    "subflows",
     "Deutsch",
     "Polski",
     "contributers",

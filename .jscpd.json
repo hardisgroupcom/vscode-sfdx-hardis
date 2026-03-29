@@ -21,6 +21,7 @@
     "**/pipelineConfig.js",
     "**/sfdxHardisConfig.ts",
     "**/packageXml.ts",
-    "**/src/utils/gitProviders/**"
+    "**/src/utils/gitProviders/**",
+    "**/scripts/**"
   ]
 }
