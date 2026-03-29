@@ -183,9 +183,14 @@
             </div>
 
             <!-- Monitoring Commands Section -->
+            <!-- Section: Org Activity (daily) -->
             <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title"><span class="section-icon">🔄</span>{i18n.sectionOrgActivity}</h2>
+                    <p class="section-subtitle">{i18n.sectionOrgActivityDescription}</p>
+                </div>
                 <div class="commands-grid">
-                    <!-- Backup and Monitoring -->
+                    <!-- Metadata Backup -->
                     <div class="command-card">
                         <div class="command-header">
                             <div class="command-icon-container backup">
@@ -194,10 +199,27 @@
                             <h3 class="command-title">{i18n.metadataBackup}</h3>
                         </div>
                         <p class="command-description">{i18n.metadataBackupDescription}</p>
-                        <lightning-button 
-                            variant="outline-brand" 
-                            label={i18n.runBackup} 
+                        <lightning-button
+                            variant="outline-brand"
+                            label={i18n.runBackup}
                             onclick={runMetadataBackup}
+                            class="command-button"
+                        ></lightning-button>
+                    </div>
+
+                    <!-- Audit Trail -->
+                    <div class="command-card">
+                        <div class="command-header">
+                            <div class="command-icon-container audit">
+                                <lightning-icon icon-name="utility:trail" size="small" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="command-title">{i18n.auditTrailAnalysis}</h3>
+                        </div>
+                        <p class="command-description">{i18n.auditTrailAnalysisDescription}</p>
+                        <lightning-button
+                            variant="outline-brand"
+                            label={i18n.analyzeAuditTrail}
+                            onclick={runAuditTrail}
                             class="command-button"
                         ></lightning-button>
                     </div>
@@ -219,23 +241,143 @@
                         ></lightning-button>
                     </div>
 
-                    <!-- Audit Trail -->
+                    <!-- Legacy API Usage -->
                     <div class="command-card">
                         <div class="command-header">
-                            <div class="command-icon-container audit">
-                                <lightning-icon icon-name="utility:trail" size="small" variant="inverse"></lightning-icon>
+                            <div class="command-icon-container legacy">
+                                <lightning-icon icon-name="utility:deprecate" size="small" variant="inverse"></lightning-icon>
                             </div>
-                            <h3 class="command-title">{i18n.auditTrailAnalysis}</h3>
+                            <h3 class="command-title">{i18n.legacyApiUsage}</h3>
                         </div>
-                        <p class="command-description">{i18n.auditTrailAnalysisDescription}</p>
-                        <lightning-button 
-                            variant="outline-brand" 
-                            label={i18n.analyzeAuditTrail} 
-                            onclick={runAuditTrail}
+                        <p class="command-description">{i18n.legacyApiUsageDescription}</p>
+                        <lightning-button
+                            variant="outline-brand"
+                            label={i18n.checkApis}
+                            onclick={checkLegacyApi}
                             class="command-button"
                         ></lightning-button>
                     </div>
 
+                    <!-- Deployments Analysis -->
+                    <div class="command-card">
+                        <div class="command-header">
+                            <div class="command-icon-container audit">
+                                <lightning-icon icon-name="utility:upload" size="small" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="command-title">{i18n.deploymentsAnalysis}</h3>
+                        </div>
+                        <p class="command-description">{i18n.deploymentsAnalysisDescription}</p>
+                        <lightning-button
+                            variant="outline-brand"
+                            label={i18n.analyzeDeployments}
+                            onclick={runDeploymentsAnalysis}
+                            class="command-button"
+                        ></lightning-button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section: User Activity (weekly) -->
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title"><span class="section-icon">👤</span>{i18n.sectionUserActivity}</h2>
+                    <p class="section-subtitle">{i18n.sectionUserActivityDescription}</p>
+                </div>
+                <div class="commands-grid">
+                    <!-- Unused Users (all, 6 months) -->
+                    <div class="command-card">
+                        <div class="command-header">
+                            <div class="command-icon-container users">
+                                <lightning-icon icon-name="utility:user" size="small" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="command-title">{i18n.unusedUsers}</h3>
+                        </div>
+                        <p class="command-description">{i18n.unusedUsersDescription}</p>
+                        <lightning-button
+                            variant="outline-brand"
+                            label={i18n.findUsers}
+                            onclick={findUnusedUsers}
+                            class="command-button"
+                        ></lightning-button>
+                    </div>
+
+                    <!-- Inactive CRM Users (6 months) -->
+                    <div class="command-card">
+                        <div class="command-header">
+                            <div class="command-icon-container users">
+                                <lightning-icon icon-name="utility:user" size="small" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="command-title">{i18n.unusedUsersCrm6Months}</h3>
+                        </div>
+                        <p class="command-description">{i18n.unusedUsersCrm6MonthsDescription}</p>
+                        <lightning-button
+                            variant="outline-brand"
+                            label={i18n.findInactiveCrmUsers}
+                            onclick={findUnusedUsersCrm6Months}
+                            class="command-button"
+                        ></lightning-button>
+                    </div>
+
+                    <!-- Inactive Portal Users (6 months) -->
+                    <div class="command-card">
+                        <div class="command-header">
+                            <div class="command-icon-container users">
+                                <lightning-icon icon-name="utility:user" size="small" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="command-title">{i18n.unusedUsersExperience6Months}</h3>
+                        </div>
+                        <p class="command-description">{i18n.unusedUsersExperience6MonthsDescription}</p>
+                        <lightning-button
+                            variant="outline-brand"
+                            label={i18n.findInactivePortalUsers}
+                            onclick={findUnusedUsersExperience6Months}
+                            class="command-button"
+                        ></lightning-button>
+                    </div>
+
+                    <!-- Weekly Active CRM Users -->
+                    <div class="command-card">
+                        <div class="command-header">
+                            <div class="command-icon-container tests">
+                                <lightning-icon icon-name="utility:user" size="small" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="command-title">{i18n.activeUsersCrmWeekly}</h3>
+                        </div>
+                        <p class="command-description">{i18n.activeUsersCrmWeeklyDescription}</p>
+                        <lightning-button
+                            variant="outline-brand"
+                            label={i18n.findActiveUsersCrm}
+                            onclick={findActiveUsersCrmWeekly}
+                            class="command-button"
+                        ></lightning-button>
+                    </div>
+
+                    <!-- Monthly Active Portal Users -->
+                    <div class="command-card">
+                        <div class="command-header">
+                            <div class="command-icon-container tests">
+                                <lightning-icon icon-name="utility:user" size="small" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="command-title">{i18n.activeUsersExperienceMonthly}</h3>
+                        </div>
+                        <p class="command-description">{i18n.activeUsersExperienceMonthlyDescription}</p>
+                        <lightning-button
+                            variant="outline-brand"
+                            label={i18n.findActivePortalUsers}
+                            onclick={findActiveUsersExperienceMonthly}
+                            class="command-button"
+                        ></lightning-button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section: Apex Tests & Security (weekly) -->
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title"><span class="section-icon">🔒</span>{i18n.sectionApexTestsSecurity}</h2>
+                    <p class="section-subtitle">{i18n.sectionApexTestsSecurityDescription}</p>
+                </div>
+                <div class="commands-grid">
                     <!-- Apex Tests -->
                     <div class="command-card">
                         <div class="command-header">
@@ -245,32 +387,15 @@
                             <h3 class="command-title">{i18n.apexTests}</h3>
                         </div>
                         <p class="command-description">{i18n.apexTestsDescription}</p>
-                        <lightning-button 
-                            variant="outline-brand" 
-                            label={i18n.runTests} 
+                        <lightning-button
+                            variant="outline-brand"
+                            label={i18n.runTests}
                             onclick={runApexTests}
                             class="command-button"
                         ></lightning-button>
                     </div>
 
-                    <!-- Org Limits -->
-                    <div class="command-card">
-                        <div class="command-header">
-                            <div class="command-icon-container limits">
-                                <lightning-icon icon-name="utility:graph" size="small" variant="inverse"></lightning-icon>
-                            </div>
-                            <h3 class="command-title">{i18n.orgLimitsCheck}</h3>
-                        </div>
-                        <p class="command-description">{i18n.orgLimitsCheckDescription}</p>
-                        <lightning-button 
-                            variant="outline-brand" 
-                            label={i18n.checkLimits} 
-                            onclick={checkOrgLimits}
-                            class="command-button"
-                        ></lightning-button>
-                    </div>
-
-                    <!-- Health Check -->
+                    <!-- Security Health Check -->
                     <div class="command-card">
                         <div class="command-header">
                             <div class="command-icon-container health">
@@ -279,27 +404,10 @@
                             <h3 class="command-title">{i18n.securityHealthCheck}</h3>
                         </div>
                         <p class="command-description">{i18n.securityHealthCheckDescription}</p>
-                        <lightning-button 
-                            variant="outline-brand" 
-                            label={i18n.runHealthCheck} 
+                        <lightning-button
+                            variant="outline-brand"
+                            label={i18n.runHealthCheck}
                             onclick={runHealthCheck}
-                            class="command-button"
-                        ></lightning-button>
-                    </div>
-
-                    <!-- Release Updates -->
-                    <div class="command-card">
-                        <div class="command-header">
-                            <div class="command-icon-container updates">
-                                <lightning-icon icon-name="utility:new" size="small" variant="inverse"></lightning-icon>
-                            </div>
-                            <h3 class="command-title">{i18n.releaseUpdates}</h3>
-                        </div>
-                        <p class="command-description">{i18n.releaseUpdatesDescription}</p>
-                        <lightning-button 
-                            variant="outline-brand" 
-                            label={i18n.checkUpdates} 
-                            onclick={checkReleaseUpdates}
                             class="command-button"
                         ></lightning-button>
                     </div>
@@ -313,27 +421,181 @@
                             <h3 class="command-title">{i18n.connectedAppsSecurity}</h3>
                         </div>
                         <p class="command-description">{i18n.connectedAppsSecurityDescription}</p>
-                        <lightning-button 
-                            variant="outline-brand" 
-                            label={i18n.checkSecurity} 
+                        <lightning-button
+                            variant="outline-brand"
+                            label={i18n.checkSecurity}
                             onclick={checkConnectedAppsSecurity}
                             class="command-button"
                         ></lightning-button>
                     </div>
+                </div>
+            </div>
 
-                    <!-- Legacy API Usage -->
+            <!-- Section: Org Info (weekly) -->
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title"><span class="section-icon">ℹ️</span>{i18n.sectionOrgInfo}</h2>
+                    <p class="section-subtitle">{i18n.sectionOrgInfoDescription}</p>
+                </div>
+                <div class="commands-grid">
+                    <!-- Release Updates -->
+                    <div class="command-card">
+                        <div class="command-header">
+                            <div class="command-icon-container updates">
+                                <lightning-icon icon-name="utility:new" size="small" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="command-title">{i18n.releaseUpdates}</h3>
+                        </div>
+                        <p class="command-description">{i18n.releaseUpdatesDescription}</p>
+                        <lightning-button
+                            variant="outline-brand"
+                            label={i18n.checkUpdates}
+                            onclick={checkReleaseUpdates}
+                            class="command-button"
+                        ></lightning-button>
+                    </div>
+
+                    <!-- Org Info & Instance Upgrade -->
+                    <div class="command-card">
+                        <div class="command-header">
+                            <div class="command-icon-container health">
+                                <lightning-icon icon-name="utility:info" size="small" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="command-title">{i18n.orgInfoInstance}</h3>
+                        </div>
+                        <p class="command-description">{i18n.orgInfoInstanceDescription}</p>
+                        <lightning-button
+                            variant="outline-brand"
+                            label={i18n.checkOrgInstanceInfo}
+                            onclick={checkOrgInstanceInfo}
+                            class="command-button"
+                        ></lightning-button>
+                    </div>
+
+                    <!-- Org Limits Check -->
+                    <div class="command-card">
+                        <div class="command-header">
+                            <div class="command-icon-container limits">
+                                <lightning-icon icon-name="utility:graph" size="small" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="command-title">{i18n.orgLimitsCheck}</h3>
+                        </div>
+                        <p class="command-description">{i18n.orgLimitsCheckDescription}</p>
+                        <lightning-button
+                            variant="outline-brand"
+                            label={i18n.checkLimits}
+                            onclick={checkOrgLimits}
+                            class="command-button"
+                        ></lightning-button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section: Technical Debt (weekly) -->
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title"><span class="section-icon">🏚️</span>{i18n.sectionTechnicalDebt}</h2>
+                    <p class="section-subtitle">{i18n.sectionTechnicalDebtDescription}</p>
+                </div>
+                <div class="commands-grid">
+                    <!-- Metadata Status -->
                     <div class="command-card">
                         <div class="command-header">
                             <div class="command-icon-container legacy">
-                                <lightning-icon icon-name="utility:deprecate" size="small" variant="inverse"></lightning-icon>
+                                <lightning-icon icon-name="utility:flow" size="small" variant="inverse"></lightning-icon>
                             </div>
-                            <h3 class="command-title">{i18n.legacyApiUsage}</h3>
+                            <h3 class="command-title">{i18n.metadataStatus}</h3>
                         </div>
-                        <p class="command-description">{i18n.legacyApiUsageDescription}</p>
-                        <lightning-button 
-                            variant="outline-brand" 
-                            label={i18n.checkApis} 
-                            onclick={checkLegacyApi}
+                        <p class="command-description">{i18n.metadataStatusDescription}</p>
+                        <lightning-button
+                            variant="outline-brand"
+                            label={i18n.checkMetadataStatus}
+                            onclick={checkMetadataStatus}
+                            class="command-button"
+                        ></lightning-button>
+                    </div>
+
+                    <!-- Missing Attributes -->
+                    <div class="command-card">
+                        <div class="command-header">
+                            <div class="command-icon-container metadata-access">
+                                <lightning-icon icon-name="utility:description" size="small" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="command-title">{i18n.missingAttributes}</h3>
+                        </div>
+                        <p class="command-description">{i18n.missingAttributesDescription}</p>
+                        <lightning-button
+                            variant="outline-brand"
+                            label={i18n.checkMissingAttributes}
+                            onclick={checkMissingAttributes}
+                            class="command-button"
+                        ></lightning-button>
+                    </div>
+
+                    <!-- Unused Metadatas -->
+                    <div class="command-card">
+                        <div class="command-header">
+                            <div class="command-icon-container unused-metadata">
+                                <lightning-icon icon-name="utility:custom_apps" size="small" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="command-title">{i18n.unusedMetadatas}</h3>
+                        </div>
+                        <p class="command-description">{i18n.unusedMetadatasDescription}</p>
+                        <lightning-button
+                            variant="outline-brand"
+                            label={i18n.findMetadata}
+                            onclick={findUnusedMetadata}
+                            class="command-button"
+                        ></lightning-button>
+                    </div>
+
+                    <!-- Unused Apex Classes -->
+                    <div class="command-card">
+                        <div class="command-header">
+                            <div class="command-icon-container apex">
+                                <lightning-icon icon-name="utility:apex" size="small" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="command-title">{i18n.unusedApexClasses}</h3>
+                        </div>
+                        <p class="command-description">{i18n.unusedApexClassesDescription}</p>
+                        <lightning-button
+                            variant="outline-brand"
+                            label={i18n.findClasses}
+                            onclick={findUnusedApexClasses}
+                            class="command-button"
+                        ></lightning-button>
+                    </div>
+
+                    <!-- Unused Connected Apps -->
+                    <div class="command-card">
+                        <div class="command-header">
+                            <div class="command-icon-container connected-apps">
+                                <lightning-icon icon-name="utility:connected_apps" size="small" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="command-title">{i18n.unusedConnectedApps}</h3>
+                        </div>
+                        <p class="command-description">{i18n.unusedConnectedAppsDescription}</p>
+                        <lightning-button
+                            variant="outline-brand"
+                            label={i18n.findApps}
+                            onclick={findUnusedConnectedApps}
+                            class="command-button"
+                        ></lightning-button>
+                    </div>
+
+                    <!-- Metadata Access Check -->
+                    <div class="command-card">
+                        <div class="command-header">
+                            <div class="command-icon-container metadata-access">
+                                <lightning-icon icon-name="utility:lock" size="small" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="command-title">{i18n.metadataAccessCheck}</h3>
+                        </div>
+                        <p class="command-description">{i18n.metadataAccessCheckDescription}</p>
+                        <lightning-button
+                            variant="outline-brand"
+                            label={i18n.checkAccess}
+                            onclick={checkMetadataAccess}
                             class="command-button"
                         ></lightning-button>
                     </div>
@@ -347,27 +609,53 @@
                             <h3 class="command-title">{i18n.apexApiVersionCheck}</h3>
                         </div>
                         <p class="command-description">{i18n.apexApiVersionCheckDescription}</p>
-                        <lightning-button 
-                            variant="outline-brand" 
-                            label={i18n.checkApexApiVersion} 
+                        <lightning-button
+                            variant="outline-brand"
+                            label={i18n.checkApexApiVersion}
                             onclick={checkApexApiVersion}
                             class="command-button"
                         ></lightning-button>
                     </div>
 
-                    <!-- Unused Users -->
+                    <!-- Object Field Usage -->
                     <div class="command-card">
                         <div class="command-header">
-                            <div class="command-icon-container users">
-                                <lightning-icon icon-name="utility:user" size="small" variant="inverse"></lightning-icon>
+                            <div class="command-icon-container metadata-access">
+                                <lightning-icon icon-name="utility:table" size="small" variant="inverse"></lightning-icon>
                             </div>
-                            <h3 class="command-title">{i18n.unusedUsers}</h3>
+                            <h3 class="command-title">{i18n.objectFieldUsage}</h3>
                         </div>
-                        <p class="command-description">{i18n.unusedUsersDescription}</p>
-                        <lightning-button 
-                            variant="outline-brand" 
-                            label={i18n.findUsers}
-                            onclick={findUnusedUsers}
+                        <p class="command-description">{i18n.objectFieldUsageDescription}</p>
+                        <lightning-button
+                            variant="outline-brand"
+                            label={i18n.analyzeFields}
+                            onclick={runObjectFieldUsage}
+                            class="command-button"
+                        ></lightning-button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section: Licenses & Packages (weekly) -->
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title"><span class="section-icon">📦</span>{i18n.sectionLicensesPackages}</h2>
+                    <p class="section-subtitle">{i18n.sectionLicensesPackagesDescription}</p>
+                </div>
+                <div class="commands-grid">
+                    <!-- Licenses Info -->
+                    <div class="command-card">
+                        <div class="command-header">
+                            <div class="command-icon-container licenses">
+                                <lightning-icon icon-name="utility:package" size="small" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="command-title">{i18n.licensesInfo}</h3>
+                        </div>
+                        <p class="command-description">{i18n.licensesInfoDescription}</p>
+                        <lightning-button
+                            variant="outline-brand"
+                            label={i18n.getLicensesInfo}
+                            onclick={getLicensesInfo}
                             class="command-button"
                         ></lightning-button>
                     </div>
@@ -381,8 +669,8 @@
                             <h3 class="command-title">{i18n.unusedLicenses}</h3>
                         </div>
                         <p class="command-description">{i18n.unusedLicensesDescription}</p>
-                        <lightning-button 
-                            variant="outline-brand" 
+                        <lightning-button
+                            variant="outline-brand"
                             label={i18n.checkLicenses}
                             onclick={checkUnusedLicenses}
                             class="command-button"
@@ -419,91 +707,6 @@
                             variant="outline-brand"
                             label={i18n.findMinimalPermSets}
                             onclick={findMinimalPermSets}
-                            class="command-button"
-                        ></lightning-button>
-                    </div>
-
-                    <!-- Unused Apex Classes -->
-                    <div class="command-card">
-                        <div class="command-header">
-                            <div class="command-icon-container apex">
-                                <lightning-icon icon-name="utility:apex" size="small" variant="inverse"></lightning-icon>
-                            </div>
-                            <h3 class="command-title">{i18n.unusedApexClasses}</h3>
-                        </div>
-                        <p class="command-description">{i18n.unusedApexClassesDescription}</p>
-                        <lightning-button 
-                            variant="outline-brand" 
-                            label={i18n.findClasses} 
-                            onclick={findUnusedApexClasses}
-                            class="command-button"
-                        ></lightning-button>
-                    </div>
-
-                    <!-- Unused Connected Apps -->
-                    <div class="command-card">
-                        <div class="command-header">
-                            <div class="command-icon-container connected-apps">
-                                <lightning-icon icon-name="utility:connected_apps" size="small" variant="inverse"></lightning-icon>
-                            </div>
-                            <h3 class="command-title">{i18n.unusedConnectedApps}</h3>
-                        </div>
-                        <p class="command-description">{i18n.unusedConnectedAppsDescription}</p>
-                        <lightning-button 
-                            variant="outline-brand" 
-                            label={i18n.findApps} 
-                            onclick={findUnusedConnectedApps}
-                            class="command-button"
-                        ></lightning-button>
-                    </div>
-
-                    <!-- Metadata Access Check -->
-                    <div class="command-card">
-                        <div class="command-header">
-                            <div class="command-icon-container metadata-access">
-                                <lightning-icon icon-name="utility:lock" size="small" variant="inverse"></lightning-icon>
-                            </div>
-                            <h3 class="command-title">{i18n.metadataAccessCheck}</h3>
-                        </div>
-                        <p class="command-description">{i18n.metadataAccessCheckDescription}</p>
-                        <lightning-button 
-                            variant="outline-brand" 
-                            label={i18n.checkAccess}
-                            onclick={checkMetadataAccess}
-                            class="command-button"
-                        ></lightning-button>
-                    </div>
-
-                    <!-- Object Field Usage -->
-                    <div class="command-card">
-                        <div class="command-header">
-                            <div class="command-icon-container metadata-access">
-                                <lightning-icon icon-name="utility:table" size="small" variant="inverse"></lightning-icon>
-                            </div>
-                            <h3 class="command-title">{i18n.objectFieldUsage}</h3>
-                        </div>
-                        <p class="command-description">{i18n.objectFieldUsageDescription}</p>
-                        <lightning-button 
-                            variant="outline-brand" 
-                            label={i18n.analyzeFields}
-                            onclick={runObjectFieldUsage}
-                            class="command-button"
-                        ></lightning-button>
-                    </div>
-
-                    <!-- Unused Metadata -->
-                    <div class="command-card">
-                        <div class="command-header">
-                            <div class="command-icon-container unused-metadata">
-                                <lightning-icon icon-name="utility:custom_apps" size="small" variant="inverse"></lightning-icon>
-                            </div>
-                            <h3 class="command-title">{i18n.unusedMetadatas}</h3>
-                        </div>
-                        <p class="command-description">{i18n.unusedMetadatasDescription}</p>
-                        <lightning-button 
-                            variant="outline-brand" 
-                            label={i18n.findMetadata} 
-                            onclick={findUnusedMetadata}
                             class="command-button"
                         ></lightning-button>
                     </div>
