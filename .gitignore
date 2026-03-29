@@ -8,3 +8,4 @@ report/
 yarn-error.log
 
 megalinter-reports/
+.sfdx/

@@ -237,7 +237,43 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
     window.sendMessageToVSCode({
       type: "runCommand",
       data: {
-        command: "sf hardis:org:diagnose:unusedusers",
+        command: "sf hardis:org:diagnose:unusedusers --licensetypes all --days 180",
+      },
+    });
+  }
+
+  findUnusedUsersCrm6Months() {
+    window.sendMessageToVSCode({
+      type: "runCommand",
+      data: {
+        command: "sf hardis:org:diagnose:unusedusers --licensetypes all-crm --days 180",
+      },
+    });
+  }
+
+  findUnusedUsersExperience6Months() {
+    window.sendMessageToVSCode({
+      type: "runCommand",
+      data: {
+        command: "sf hardis:org:diagnose:unusedusers --licensetypes experience --days 180",
+      },
+    });
+  }
+
+  findActiveUsersCrmWeekly() {
+    window.sendMessageToVSCode({
+      type: "runCommand",
+      data: {
+        command: "sf hardis:org:diagnose:unusedusers --returnactiveusers --licensetypes all-crm --days 7",
+      },
+    });
+  }
+
+  findActiveUsersExperienceMonthly() {
+    window.sendMessageToVSCode({
+      type: "runCommand",
+      data: {
+        command: "sf hardis:org:diagnose:unusedusers --returnactiveusers --licensetypes experience --days 30",
       },
     });
   }
@@ -265,6 +301,51 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
       type: "runCommand",
       data: {
         command: "sf hardis:org:diagnose:minimalpermsets",
+      },
+    });
+  }
+
+  runDeploymentsAnalysis() {
+    window.sendMessageToVSCode({
+      type: "runCommand",
+      data: {
+        command: "sf hardis:org:diagnose:deployments --period weekly",
+      },
+    });
+  }
+
+  getLicensesInfo() {
+    window.sendMessageToVSCode({
+      type: "runCommand",
+      data: {
+        command: "sf hardis:org:diagnose:licenses",
+      },
+    });
+  }
+
+  checkOrgInstanceInfo() {
+    window.sendMessageToVSCode({
+      type: "runCommand",
+      data: {
+        command: "sf hardis:org:diagnose:instanceupgrade",
+      },
+    });
+  }
+
+  checkMetadataStatus() {
+    window.sendMessageToVSCode({
+      type: "runCommand",
+      data: {
+        command: "sf hardis:lint:metadatastatus",
+      },
+    });
+  }
+
+  checkMissingAttributes() {
+    window.sendMessageToVSCode({
+      type: "runCommand",
+      data: {
+        command: "sf hardis:lint:missingattributes",
       },
     });
   }
