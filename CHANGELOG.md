@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Reorganize Org Monitoring view & add missing commands
+
 ## [7.3.0] 2026-03-23
 
 - Add italian translation
