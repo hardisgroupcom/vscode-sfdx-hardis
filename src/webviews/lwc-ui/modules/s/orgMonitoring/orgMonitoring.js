@@ -237,7 +237,8 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
     window.sendMessageToVSCode({
       type: "runCommand",
       data: {
-        command: "sf hardis:org:diagnose:unusedusers --licensetypes all --days 180",
+        command:
+          "sf hardis:org:diagnose:unusedusers --licensetypes all --days 180",
       },
     });
   }
@@ -246,7 +247,8 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
     window.sendMessageToVSCode({
       type: "runCommand",
       data: {
-        command: "sf hardis:org:diagnose:unusedusers --licensetypes all-crm --days 180",
+        command:
+          "sf hardis:org:diagnose:unusedusers --licensetypes all-crm --days 180",
       },
     });
   }
@@ -255,7 +257,8 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
     window.sendMessageToVSCode({
       type: "runCommand",
       data: {
-        command: "sf hardis:org:diagnose:unusedusers --licensetypes experience --days 180",
+        command:
+          "sf hardis:org:diagnose:unusedusers --licensetypes experience --days 180",
       },
     });
   }
@@ -264,7 +267,8 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
     window.sendMessageToVSCode({
       type: "runCommand",
       data: {
-        command: "sf hardis:org:diagnose:unusedusers --returnactiveusers --licensetypes all-crm --days 7",
+        command:
+          "sf hardis:org:diagnose:unusedusers --returnactiveusers --licensetypes all-crm --days 7",
       },
     });
   }
@@ -273,7 +277,8 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
     window.sendMessageToVSCode({
       type: "runCommand",
       data: {
-        command: "sf hardis:org:diagnose:unusedusers --returnactiveusers --licensetypes experience --days 30",
+        command:
+          "sf hardis:org:diagnose:unusedusers --returnactiveusers --licensetypes experience --days 30",
       },
     });
   }
