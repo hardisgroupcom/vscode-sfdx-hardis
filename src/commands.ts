@@ -30,6 +30,7 @@ import { registerShowMetadataRetriever } from "./commands/showMetadataRetriever"
 import { registerShowPackageXml } from "./commands/packageXml";
 import { registerGitMergeDriverToggle } from "./commands/gitMergeDriver";
 import { registerShowDocumentationWorkbench } from "./commands/showDocumentationWorkbench";
+import { registerShowAgentscriptBuilder } from "./commands/showAgentscriptBuilder";
 import { t } from "./i18n/i18n";
 
 export class Commands {
@@ -95,6 +96,7 @@ export class Commands {
     registerShowMetadataRetriever(this);
     registerShowPackageXml(this);
     registerShowDocumentationWorkbench(this);
+    registerShowAgentscriptBuilder(this);
   }
 
   registerExecuteCommand() {

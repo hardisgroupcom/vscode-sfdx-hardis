@@ -1,0 +1,63 @@
+.agentscript-builder {
+    min-height: 400px;
+}
+
+/* ─── Diagram ─────────────────────────────────────────── */
+.diagram-container {
+    overflow: auto;
+    min-height: 300px;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+    overflow: auto;
+    padding: 1rem;
+    background: var(--slds-g-color-neutral-base-100, #f3f2f2);
+    border-radius: 0.5rem;
+    min-height: 300px;
+}
+
+.mermaid svg {
+    max-width: 100%;
+    height: auto;
+    cursor: default;
+}
+
+.mermaid g.node {
+    cursor: pointer !important;
+}
+
+.mermaid g.node:hover rect,
+.mermaid g.node:hover circle,
+.mermaid g.node:hover polygon {
+    filter: brightness(1.15);
+}
+
+/* ─── Source textarea ─────────────────────────────────── */
+.script-textarea {
+    width: 100%;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 0.8125rem;
+}
+
+/* ─── No-script placeholder ───────────────────────────── */
+.no-script-placeholder {
+    min-height: 320px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ─── Tab links visual feedback ──────────────────────── */
+.slds-tabs_default__link {
+    cursor: pointer;
+}
+
+/* ─── Form field label + helptext icon inline ─────────── */
+.slds-form-element__label {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}

@@ -1,0 +1,553 @@
+<template>
+    <div class="slds-scope agentscript-builder">
+        <lightning-card>
+            <span slot="title">
+                <lightning-icon icon-name="utility:agent_home" size="small" class="slds-m-right_x-small"></lightning-icon>
+                {agentTitle}
+            </span>
+            <div slot="actions">
+                <lightning-button-group>
+                    <lightning-button
+                        variant="neutral"
+                        label={i18n.editAgentConfig}
+                        icon-name="utility:settings"
+                        onclick={handleOpenConfigModal}
+                    ></lightning-button>
+                    <lightning-button
+                        variant="brand"
+                        label={i18n.addNewTopic}
+                        icon-name="utility:add"
+                        onclick={handleAddNewTopic}
+                    ></lightning-button>
+                    <lightning-button
+                        variant="neutral"
+                        label={i18n.agentScriptHelp}
+                        icon-name="utility:help"
+                        onclick={handleOpenDocs}
+                    ></lightning-button>
+                </lightning-button-group>
+            </div>
+
+            <div class="slds-card__body slds-card__body_inner">
+                <!-- View Tabs -->
+                <div class="slds-tabs_default">
+                    <ul class="slds-tabs_default__nav" role="tablist">
+                        <li class="slds-tabs_default__item" role="presentation">
+                            <a class={diagramTabClass} onclick={handleSwitchToDiagram} role="tab" tabindex="0">
+                                {i18n.agentScriptDiagram}
+                            </a>
+                        </li>
+                        <li class="slds-tabs_default__item" role="presentation">
+                            <a class={sourceTabClass} onclick={handleSwitchToSource} role="tab" tabindex="0">
+                                {i18n.agentScriptSource}
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Diagram View -->
+                <template if:true={isDiagramView}>
+                    <template if:true={hasScript}>
+                        <div class="diagram-container slds-m-top_small">
+                            <template if:true={error}>
+                                <div class="slds-notify slds-notify_alert slds-alert_error slds-m-bottom_small" role="alert">
+                                    <span>{error}</span>
+                                </div>
+                            </template>
+                            <div class="mermaid"></div>
+                            <p class="slds-text-color_weak slds-text-body_small slds-m-top_x-small">
+                                {i18n.clickNodeToEdit}
+                            </p>
+                        </div>
+                    </template>
+                    <template if:false={hasScript}>
+                        <div class="no-script-placeholder slds-p-around_large slds-text-align_center">
+                            <lightning-icon icon-name="utility:agent_home" size="large"></lightning-icon>
+                            <p class="slds-m-top_medium slds-text-color_weak">{i18n.noScriptLoaded}</p>
+                        </div>
+                    </template>
+                </template>
+
+                <!-- Source View -->
+                <template if:true={isSourceView}>
+                    <div class="source-container slds-m-top_small">
+                        <lightning-textarea
+                            value={scriptContent}
+                            onchange={handleScriptContentChange}
+                            rows="30"
+                            class="script-textarea"
+                        ></lightning-textarea>
+                        <div class="slds-m-top_small">
+                            <lightning-button
+                                variant="brand"
+                                label={i18n.agentScriptRefresh}
+                                icon-name="utility:refresh"
+                                onclick={handleApplyRawScript}
+                            ></lightning-button>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </lightning-card>
+
+        <!-- Topic Edit/Create Modal -->
+        <template if:true={showTopicModal}>
+            <section
+                role="dialog"
+                tabindex="-1"
+                aria-modal="true"
+                aria-labelledby="topic-modal-heading"
+                class="slds-modal slds-fade-in-open slds-modal_large"
+            >
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                        <button
+                            class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+                            title={i18n.cancel}
+                            onclick={handleCloseTopic}
+                        >
+                            <lightning-icon icon-name="utility:close" size="small" alternative-text={i18n.cancel}></lightning-icon>
+                            <span class="slds-assistive-text">{i18n.cancel}</span>
+                        </button>
+                        <h2 id="topic-modal-heading" class="slds-modal__title slds-hyphenate">
+                            {topicModalTitle}
+                        </h2>
+                        <p class="slds-m-top_x-small slds-text-body_small" style="color: rgba(255,255,255,0.8);">
+                            {topicModalName}
+                        </p>
+                    </header>
+
+                    <div class="slds-modal__content slds-p-around_medium">
+                        <!-- Form / Text mode tabs -->
+                        <div class="slds-tabs_default slds-m-bottom_small">
+                            <ul class="slds-tabs_default__nav" role="tablist">
+                                <li class="slds-tabs_default__item" role="presentation">
+                                    <a class={topicFormTabClass} onclick={handleSwitchToFormMode} role="tab" tabindex="0">
+                                        {i18n.topicFormMode}
+                                    </a>
+                                </li>
+                                <li class="slds-tabs_default__item" role="presentation">
+                                    <a class={topicTextTabClass} onclick={handleSwitchToTextMode} role="tab" tabindex="0">
+                                        {i18n.topicTextMode}
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- Form Mode -->
+                        <template if:true={isTopicFormMode}>
+                            <div class="slds-grid slds-gutters slds-wrap">
+                                <!-- Topic Name -->
+                                <div class="slds-col slds-size_1-of-2 slds-m-bottom_small">
+                                    <div class="slds-form-element">
+                                        <label class="slds-form-element__label">
+                                            <abbr class="slds-required" title="required">*</abbr>
+                                            {i18n.topicName}
+                                            <s-multiline-helptext content={i18n.topicFormNameHint}></s-multiline-helptext>
+                                        </label>
+                                        <div class="slds-form-element__control">
+                                            <input
+                                                type="text"
+                                                class="slds-input"
+                                                value={topicModalName}
+                                                disabled
+                                            />
+                                        </div>
+                                        <p class="slds-form-element__help slds-text-color_weak">{i18n.topicIsStartAgent}</p>
+                                    </div>
+                                </div>
+
+                                <!-- Label -->
+                                <div class="slds-col slds-size_1-of-2 slds-m-bottom_small">
+                                    <lightning-input
+                                        label={i18n.topicLabelField}
+                                        value={topicFormLabel}
+                                        onchange={handleTopicFormLabelChange}
+                                        field-level-help={i18n.topicFormLabelHint}
+                                        placeholder="Order Management"
+                                    ></lightning-input>
+                                </div>
+
+                                <!-- Description -->
+                                <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                                    <div class="slds-form-element">
+                                        <label class="slds-form-element__label">
+                                            {i18n.descriptionFieldLabel}
+                                            <s-multiline-helptext content={i18n.topicFormDescriptionHint}></s-multiline-helptext>
+                                        </label>
+                                        <div class="slds-form-element__control">
+                                            <lightning-textarea
+                                                value={topicFormDescription}
+                                                onchange={handleTopicFormDescriptionChange}
+                                                rows="3"
+                                                placeholder="Handles requests from users who want to..."
+                                            ></lightning-textarea>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Instructions -->
+                                <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                                    <div class="slds-form-element">
+                                        <label class="slds-form-element__label">
+                                            {i18n.topicInstructions}
+                                            <s-multiline-helptext content={i18n.topicFormInstructionsHint}></s-multiline-helptext>
+                                        </label>
+                                        <div class="slds-form-element__control">
+                                            <lightning-textarea
+                                                value={topicFormInstructions}
+                                                onchange={handleTopicFormInstructionsChange}
+                                                rows="10"
+                                                class="script-textarea"
+                                                placeholder="| Greet the user and help them."
+                                            ></lightning-textarea>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Reasoning Actions -->
+                                <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                                    <div class="slds-form-element">
+                                        <label class="slds-form-element__label">
+                                            {i18n.topicReasoningActions}
+                                            <s-multiline-helptext content={i18n.topicFormActionsHint}></s-multiline-helptext>
+                                        </label>
+                                        <div class="slds-form-element__control">
+                                            <lightning-textarea
+                                                value={topicFormActionsRaw}
+                                                onchange={handleTopicFormActionsChange}
+                                                rows="8"
+                                                class="script-textarea"
+                                                placeholder="            go_to_next: @utils.transition to @topic.next_topic"
+                                            ></lightning-textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- Text Mode -->
+                        <template if:true={isTopicTextMode}>
+                            <p class="slds-text-body_small slds-text-color_weak slds-m-bottom_small">
+                                {i18n.agentScriptTopicEditHint}
+                            </p>
+                            <lightning-textarea
+                                label={i18n.rawContent}
+                                value={topicModalRawText}
+                                onchange={handleTopicRawTextChange}
+                                rows="32"
+                                class="script-textarea"
+                            ></lightning-textarea>
+                        </template>
+                    </div>
+
+                    <footer class="slds-modal__footer" style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <template if:true={isExistingTopic}>
+                                <lightning-button
+                                    variant="destructive"
+                                    label={i18n.deleteTopic}
+                                    icon-name="utility:delete"
+                                    onclick={handleDeleteTopic}
+                                ></lightning-button>
+                            </template>
+                        </div>
+                        <div>
+                            <lightning-button
+                                variant="neutral"
+                                label={i18n.cancel}
+                                onclick={handleCloseTopic}
+                                class="slds-m-right_x-small"
+                            ></lightning-button>
+                            <lightning-button
+                                variant="brand"
+                                label={i18n.save}
+                                icon-name="utility:save"
+                                onclick={handleSaveTopic}
+                            ></lightning-button>
+                        </div>
+                    </footer>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </template>
+
+        <!-- Config/System/Variables Modal -->
+        <template if:true={showConfigModal}>
+            <section
+                role="dialog"
+                tabindex="-1"
+                aria-modal="true"
+                aria-labelledby="config-modal-heading"
+                class="slds-modal slds-fade-in-open slds-modal_large"
+            >
+                <div class="slds-modal__container">
+                    <header class="slds-modal__header">
+                        <button
+                            class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse"
+                            title={i18n.cancel}
+                            onclick={handleCloseConfigModal}
+                        >
+                            <lightning-icon icon-name="utility:close" size="small" alternative-text={i18n.cancel}></lightning-icon>
+                            <span class="slds-assistive-text">{i18n.cancel}</span>
+                        </button>
+                        <h2 id="config-modal-heading" class="slds-modal__title slds-hyphenate">
+                            {i18n.editAgentConfig}
+                        </h2>
+                    </header>
+
+                    <div class="slds-modal__content slds-p-around_medium">
+                        <!-- Form / Text mode tabs -->
+                        <div class="slds-tabs_default slds-m-bottom_small">
+                            <ul class="slds-tabs_default__nav" role="tablist">
+                                <li class="slds-tabs_default__item" role="presentation">
+                                    <a class={configFormTabClass} onclick={handleConfigSwitchToFormMode} role="tab" tabindex="0">
+                                        {i18n.topicFormMode}
+                                    </a>
+                                </li>
+                                <li class="slds-tabs_default__item" role="presentation">
+                                    <a class={configTextTabClass} onclick={handleConfigSwitchToTextMode} role="tab" tabindex="0">
+                                        {i18n.topicTextMode}
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <lightning-tabset>
+                            <lightning-tab label={i18n.agentScriptConfigBlock} value="config" icon-name="utility:settings">
+                                <!-- Form Mode -->
+                                <template if:true={isConfigFormMode}>
+                                    <div class="slds-grid slds-gutters slds-wrap">
+                                        <!-- Developer Name -->
+                                        <div class="slds-col slds-size_1-of-2 slds-m-bottom_small">
+                                            <div class="slds-form-element">
+                                                <label class="slds-form-element__label">
+                                                    {i18n.configDeveloperName}
+                                                    <s-multiline-helptext content={i18n.configDeveloperNameHint}></s-multiline-helptext>
+                                                </label>
+                                                <div class="slds-form-element__control">
+                                                    <input
+                                                        type="text"
+                                                        class="slds-input"
+                                                        value={configFormDeveloperName}
+                                                        onchange={handleConfigFormDeveloperNameChange}
+                                                        placeholder="my_agent"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- Agent Label -->
+                                        <div class="slds-col slds-size_1-of-2 slds-m-bottom_small">
+                                            <div class="slds-form-element">
+                                                <label class="slds-form-element__label">
+                                                    {i18n.configAgentLabel}
+                                                    <s-multiline-helptext content={i18n.configAgentLabelHint}></s-multiline-helptext>
+                                                </label>
+                                                <div class="slds-form-element__control">
+                                                    <input
+                                                        type="text"
+                                                        class="slds-input"
+                                                        value={configFormAgentLabel}
+                                                        onchange={handleConfigFormAgentLabelChange}
+                                                        placeholder="My Agent"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- Default Agent User -->
+                                        <div class="slds-col slds-size_1-of-2 slds-m-bottom_small">
+                                            <div class="slds-form-element">
+                                                <label class="slds-form-element__label">
+                                                    {i18n.configDefaultAgentUser}
+                                                    <s-multiline-helptext content={i18n.configDefaultAgentUserHint}></s-multiline-helptext>
+                                                </label>
+                                                <div class="slds-form-element__control">
+                                                    <input
+                                                        type="text"
+                                                        class="slds-input"
+                                                        value={configFormDefaultAgentUser}
+                                                        onchange={handleConfigFormDefaultAgentUserChange}
+                                                        placeholder="agent@example.com"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- Agent Type -->
+                                        <div class="slds-col slds-size_1-of-2 slds-m-bottom_small">
+                                            <div class="slds-form-element">
+                                                <label class="slds-form-element__label">
+                                                    {i18n.configAgentType}
+                                                    <s-multiline-helptext content={i18n.configAgentTypeHint}></s-multiline-helptext>
+                                                </label>
+                                                <div class="slds-form-element__control">
+                                                    <input
+                                                        type="text"
+                                                        class="slds-input"
+                                                        value={configFormAgentType}
+                                                        onchange={handleConfigFormAgentTypeChange}
+                                                        placeholder="Copilot"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- Description -->
+                                        <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                                            <div class="slds-form-element">
+                                                <label class="slds-form-element__label">
+                                                    {i18n.descriptionFieldLabel}
+                                                    <s-multiline-helptext content={i18n.configDescriptionHint}></s-multiline-helptext>
+                                                </label>
+                                                <div class="slds-form-element__control">
+                                                    <lightning-textarea
+                                                        value={configFormDescription}
+                                                        onchange={handleConfigFormDescriptionChange}
+                                                        rows="3"
+                                                        placeholder="A helpful AI agent for..."
+                                                    ></lightning-textarea>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- Role -->
+                                        <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                                            <div class="slds-form-element">
+                                                <label class="slds-form-element__label">
+                                                    {i18n.configAgentRole}
+                                                    <s-multiline-helptext content={i18n.configAgentRoleHint}></s-multiline-helptext>
+                                                </label>
+                                                <div class="slds-form-element__control">
+                                                    <lightning-textarea
+                                                        value={configFormAgentRole}
+                                                        onchange={handleConfigFormAgentRoleChange}
+                                                        rows="3"
+                                                        placeholder="Act as a helpful customer service agent..."
+                                                    ></lightning-textarea>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                                <!-- Text Mode -->
+                                <template if:true={isConfigTextMode}>
+                                    <p class="slds-text-body_small slds-text-color_weak slds-m-bottom_small">
+                                        {i18n.agentScriptConfigBlockHint}
+                                    </p>
+                                    <lightning-textarea
+                                        value={configModalRaw}
+                                        onchange={handleConfigRawChange}
+                                        rows="10"
+                                        class="script-textarea"
+                                    ></lightning-textarea>
+                                </template>
+                            </lightning-tab>
+                            <lightning-tab label={i18n.agentScriptSystemBlock} value="system" icon-name="utility:bot">
+                                <!-- Form Mode -->
+                                <template if:true={isConfigFormMode}>
+                                    <div class="slds-grid slds-gutters slds-wrap">
+                                        <!-- Instructions -->
+                                        <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                                            <div class="slds-form-element">
+                                                <label class="slds-form-element__label">
+                                                    {i18n.systemInstructions}
+                                                    <s-multiline-helptext content={i18n.systemInstructionsHint}></s-multiline-helptext>
+                                                </label>
+                                                <div class="slds-form-element__control">
+                                                    <lightning-textarea
+                                                        value={configFormSystemInstructions}
+                                                        onchange={handleConfigFormSystemInstructionsChange}
+                                                        rows="8"
+                                                        class="script-textarea"
+                                                        placeholder="| You are a helpful assistant."
+                                                    ></lightning-textarea>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- Welcome Message -->
+                                        <div class="slds-col slds-size_1-of-2 slds-m-bottom_small">
+                                            <div class="slds-form-element">
+                                                <label class="slds-form-element__label">
+                                                    {i18n.systemWelcomeMessage}
+                                                    <s-multiline-helptext content={i18n.systemWelcomeHint}></s-multiline-helptext>
+                                                </label>
+                                                <div class="slds-form-element__control">
+                                                    <input
+                                                        type="text"
+                                                        class="slds-input"
+                                                        value={configFormSystemWelcome}
+                                                        onchange={handleConfigFormSystemWelcomeChange}
+                                                        placeholder="Hello! How can I help you today?"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- Error Message -->
+                                        <div class="slds-col slds-size_1-of-2 slds-m-bottom_small">
+                                            <div class="slds-form-element">
+                                                <label class="slds-form-element__label">
+                                                    {i18n.systemErrorMessage}
+                                                    <s-multiline-helptext content={i18n.systemErrorHint}></s-multiline-helptext>
+                                                </label>
+                                                <div class="slds-form-element__control">
+                                                    <input
+                                                        type="text"
+                                                        class="slds-input"
+                                                        value={configFormSystemError}
+                                                        onchange={handleConfigFormSystemErrorChange}
+                                                        placeholder="Sorry, something went wrong."
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                                <!-- Text Mode -->
+                                <template if:true={isConfigTextMode}>
+                                    <p class="slds-text-body_small slds-text-color_weak slds-m-bottom_small">
+                                        {i18n.agentScriptSystemBlockHint}
+                                    </p>
+                                    <lightning-textarea
+                                        value={systemModalRaw}
+                                        onchange={handleSystemRawChange}
+                                        rows="10"
+                                        class="script-textarea"
+                                    ></lightning-textarea>
+                                </template>
+                            </lightning-tab>
+                            <lightning-tab label={i18n.agentScriptVariablesBlock} value="variables" icon-name="utility:variable">
+                                <template if:true={isConfigFormMode}>
+                                    <p class="slds-text-body_small slds-text-color_weak slds-m-bottom_x-small">
+                                        {i18n.variablesRawNote}
+                                    </p>
+                                </template>
+                                <p class="slds-text-body_small slds-text-color_weak slds-m-bottom_small">
+                                    {i18n.agentScriptVariablesBlockHint}
+                                </p>
+                                <lightning-textarea
+                                    value={variablesModalRaw}
+                                    onchange={handleVariablesRawChange}
+                                    rows="12"
+                                    class="script-textarea"
+                                ></lightning-textarea>
+                            </lightning-tab>
+                        </lightning-tabset>
+                    </div>
+
+                    <footer class="slds-modal__footer">
+                        <lightning-button
+                            variant="neutral"
+                            label={i18n.cancel}
+                            onclick={handleCloseConfigModal}
+                            class="slds-m-right_x-small"
+                        ></lightning-button>
+                        <lightning-button
+                            variant="brand"
+                            label={i18n.save}
+                            icon-name="utility:save"
+                            onclick={handleSaveConfig}
+                        ></lightning-button>
+                    </footer>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </template>
+    </div>
+</template>

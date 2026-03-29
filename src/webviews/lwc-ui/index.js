@@ -81,6 +81,7 @@ const lwcModules = {
   "s-setup": () => import("s/setup"),
   "s-spinner": () => import("s/spinner"),
   "s-apex-tests-select": () => import("s/apexTestsSelect"),
+  "s-agentscript-builder": () => import("s/agentscriptBuilder"),
 };
 
 // Communication bridge between VS Code webview and LWC components
