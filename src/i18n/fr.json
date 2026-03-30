@@ -1310,7 +1310,7 @@
   "providerLabel": "Fournisseur",
   "publishCommunityType": "Publier la communauté",
   "pullFromSfOrgToLocalFiles": "Récupérer de l'org SF vers les fichiers locaux",
-  "pullFromSfOrgToLocalFilesTooltip": "Une fois votre configuration effectuée dans le Setup de votre org, cliquez ici pour télécharger vos mises à jour.\\nVous pouvez ensuite valider les mises à jour que vous souhaitez publier (utilisez l'extension Git de VsCode)\\nVous pouvez ensuite exécuter la commande \"Enregistrer / Publier la User Story\"\\nNote : si vous ne voyez pas toutes vos mises à jour, vous pouvez les récupérer manuellement avec l'extension VsCode \"Org Browser\" (logo Salesforce)",
+  "pullFromSfOrgToLocalFilesTooltip": "Une fois votre configuration effectuée dans le Setup de votre org, cliquez ici pour télécharger vos mises à jour.\nVous pouvez ensuite valider les mises à jour que vous souhaitez publier (utilisez l'extension Git de VsCode)\nVous pouvez ensuite exécuter la commande \"Enregistrer / Publier la User Story\"\nNote : si vous ne voyez pas toutes vos mises à jour, vous pouvez les récupérer manuellement avec l'extension VsCode \"Org Browser\" (logo Salesforce)",
   "pullRequestLabel": "Pull Request",
   "pullRequests": "Pull Requests",
   "purgeApexLogs": "Purger les journaux Apex",

@@ -1308,7 +1308,7 @@
   "providerLabel": "Provedor",
   "publishCommunityType": "Publicar Comunidade",
   "pullFromSfOrgToLocalFiles": "Obter da Org SF para arquivos locais",
-  "pullFromSfOrgToLocalFilesTooltip": "Depois de fazer sua configuração no Setup da org, clique aqui para baixar suas atualizações.\\nEm seguida, você pode fazer commit das atualizações que deseja publicar (use a extensão Git do VsCode)\\nDepois você pode executar o comando \"Salvar / Publicar História de Usuário\"\\nNota: se você não vir todas as suas atualizações, pode recuperá-las manualmente usando a Extensão VsCode \"Org Browser\"(logo do Salesforce)",
+  "pullFromSfOrgToLocalFilesTooltip": "Depois de fazer sua configuração no Setup da org, clique aqui para baixar suas atualizações.\nEm seguida, você pode fazer commit das atualizações que deseja publicar (use a extensão Git do VsCode)\nDepois você pode executar o comando \"Salvar / Publicar História de Usuário\"\nNota: se você não vir todas as suas atualizações, pode recuperá-las manualmente usando a Extensão VsCode \"Org Browser\"(logo do Salesforce)",
   "pullRequestLabel": "Pull Request",
   "pullRequests": "Pull Requests",
   "purgeApexLogs": "Limpar Logs Apex",

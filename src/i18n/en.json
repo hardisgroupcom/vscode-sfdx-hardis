@@ -1310,7 +1310,7 @@
   "providerLabel": "Provider",
   "publishCommunityType": "Publish Community",
   "pullFromSfOrgToLocalFiles": "Pull from SF Org to local files",
-  "pullFromSfOrgToLocalFilesTooltip": "Once you have made your configuration in your org Setup, click here to download your updates.\\nThen, you can commit the updates you want to publish (use VsCode Git extension)\\nThen you can run command \"Save / Publish User Story\"\\nNote: if you don't see all your updates, you can manually retrieve it using VsCode Extension \"Org Browser\"(Salesforce logo)",
+  "pullFromSfOrgToLocalFilesTooltip": "Once you have made your configuration in your org Setup, click here to download your updates.\nThen, you can commit the updates you want to publish (use VsCode Git extension)\nThen you can run command \"Save / Publish User Story\"\nNote: if you don't see all your updates, you can manually retrieve it using VsCode Extension \"Org Browser\"(Salesforce logo)",
   "pullRequestLabel": "Pull Request",
   "pullRequests": "Pull Requests",
   "purgeApexLogs": "Purge Apex Logs",

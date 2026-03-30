@@ -1313,7 +1313,7 @@
   "providerLabel": "Provider",
   "publishCommunityType": "Community publiceren",
   "pullFromSfOrgToLocalFiles": "Pull van SF org naar lokale bestanden",
-  "pullFromSfOrgToLocalFilesTooltip": "Nadat je je configuratie hebt aangebracht in je org Setup, klik je hier om je updates te downloaden.\\nVervolgens kun je de updates commiten die je wilt publiceren (gebruik de VsCode Git-extensie)\\nDaarna kun je de opdracht \"Save / Publish User Story\" uitvoeren\\nOpmerking: als je niet alle updates ziet, kun je ze handmatig ophalen met de VsCode-extensie \"Org Browser\" (Salesforce-logo)",
+  "pullFromSfOrgToLocalFilesTooltip": "Nadat je je configuratie hebt aangebracht in je org Setup, klik je hier om je updates te downloaden.\nVervolgens kun je de updates commiten die je wilt publiceren (gebruik de VsCode Git-extensie)\nDaarna kun je de opdracht \"Save / Publish User Story\" uitvoeren\nOpmerking: als je niet alle updates ziet, kun je ze handmatig ophalen met de VsCode-extensie \"Org Browser\" (Salesforce-logo)",
   "pullRequestLabel": "Pull Request",
   "pullRequests": "Pull Requests",
   "purgeApexLogs": "Apex Logs verwijderen",

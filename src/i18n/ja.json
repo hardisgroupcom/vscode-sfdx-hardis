@@ -1310,7 +1310,7 @@
   "providerLabel": "プロバイダー",
   "publishCommunityType": "コミュニティを公開",
   "pullFromSfOrgToLocalFiles": "Salesforce 組織からローカルファイルへ pull",
-  "pullFromSfOrgToLocalFilesTooltip": "組織の Setup で設定を行った後、ここをクリックして更新内容をダウンロードします。\\nその後、公開したい更新を commit できます (VsCode Git 拡張機能を使用)\\nその後、\"Save / Publish User Story\" コマンドを実行できます\\n注: すべての更新が表示されない場合は、VsCode 拡張機能 \"Org Browser\" (Salesforce ロゴ) を使って手動で取得できます",
+  "pullFromSfOrgToLocalFilesTooltip": "組織の Setup で設定を行った後、ここをクリックして更新内容をダウンロードします。\nその後、公開したい更新を commit できます (VsCode Git 拡張機能を使用)\nその後、\"Save / Publish User Story\" コマンドを実行できます\n注: すべての更新が表示されない場合は、VsCode 拡張機能 \"Org Browser\" (Salesforce ロゴ) を使って手動で取得できます",
   "pullRequestLabel": "Pull Request",
   "pullRequests": "Pull Requests",
   "purgeApexLogs": "Apex ログを削除",
