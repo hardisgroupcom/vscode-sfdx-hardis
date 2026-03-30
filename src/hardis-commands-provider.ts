@@ -568,6 +568,22 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             command: "sf hardis:org:refresh:after-refresh",
             helpUrl: DOCSITE_URL + "/hardis/org/refresh/after-refresh/",
           },
+          {
+            id: "hardis:project:clean:profiles-extract",
+            label: t("extractProfilesPersonas"),
+            tooltip: t("extractProfilesPersonasTooltip"),
+            command: "sf hardis:project:clean:profiles-extract",
+            requiresProject: true,
+            helpUrl: DOCSITE_URL + "/hardis/project/clean/profiles-extract/",
+          },
+          {
+            id: "hardis:org:purge:profile",
+            label: t("purgeProfilePermissions"),
+            tooltip: t("purgeProfilePermissionsTooltip"),
+            command: "sf hardis:org:purge:profile",
+            requiresProject: true,
+            helpUrl: DOCSITE_URL + "/hardis/org/purge/profile/",
+          },
         ],
       },
       {

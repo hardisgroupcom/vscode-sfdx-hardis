@@ -274,6 +274,14 @@ export class ThemeUtils {
         vscode: "refresh",
         hardis: "refresh.svg",
       },
+      "hardis:project:clean:profiles-extract": {
+        vscode: "person",
+        hardis: "extract.svg",
+      },
+      "hardis:org:purge:profile": {
+        vscode: "trash",
+        hardis: "clean.svg",
+      },
       "hardis:org:monitor:backup": { vscode: "save-all", hardis: "backup.svg" },
       "hardis:org:monitor:errors": {
         vscode: "error",
