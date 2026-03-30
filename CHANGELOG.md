@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add commands in menu **Org Operations**
+  - `hardis:project:clean:profiles-extract`: Exports profiles and personas to structured CSV/XLSX files.
+  - `hardis:org:purge:profile`: Removes permission set attributes from profile metadata to facilitate the transition to Permission Set-based security.
+
 ## [7.4.0] 2026-03-29
 
 - Reorganize Org Monitoring view & add missing commands
