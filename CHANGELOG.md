@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## [7.4.2] 2026-03-31
+
+- Pin axios version to stay safe regarding its hack (we already were, it's a preventive action !)
+
 ## [7.4.1] 2026-03-30
 
 - Add commands in menu **Org Operations**
