@@ -812,7 +812,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             label: "Formula Evaluator",
             tooltip: "Evaluates a Salesforce formula against one or more records and returns the result for each.",
             command: "sf hardis:misc:formula-evaluate",
-            helpUrl: DOCSITE_URL + "/",
+            helpUrl: DOCSITE_URL + "/hardis/misc/formula-evaluate/",
           },
         ],
       },
