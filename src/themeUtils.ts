@@ -390,6 +390,7 @@ export class ThemeUtils {
         hardis: "extract.svg",
       },
       "hardis:doc:object-field-usage": { vscode: "table", hardis: "doc.svg" },
+      "hardis:misc:formula-evaluate": { vscode: "gear", hardis: "default.svg" },
       "hardis:project:metadata:activate-decomposed": {
         vscode: "symbol-misc",
         hardis: "configure.svg",
