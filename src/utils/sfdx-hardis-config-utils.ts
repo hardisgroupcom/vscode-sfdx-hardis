@@ -4,6 +4,7 @@ import * as yaml from "js-yaml";
 import * as fs from "fs-extra";
 import * as path from "path";
 import axios from "axios";
+import { t } from "../i18n/i18n";
 
 /** A single command entry inside a custom menu */
 export interface CustomCommand {
@@ -19,6 +20,10 @@ export interface CustomCommand {
   tooltip?: string;
   /** URL to open as help documentation */
   helpUrl?: string;
+  /** VS Code ThemeIcon id for the command tree item (e.g. "run"). Defaults to "run". */
+  vscodeIcon?: string;
+  /** SLDS/Lightning icon name for the welcome LWC (e.g. "utility:apex"). Defaults to "utility:apex". */
+  sldsIcon?: string;
 }
 
 /** A menu group that groups related custom commands */
@@ -29,6 +34,12 @@ export interface CustomCommandMenu {
   label: string;
   /** Commands listed under this menu */
   commands?: CustomCommand[];
+  /** VS Code ThemeIcon id for the section tree item (e.g. "symbol-misc"). Defaults to "symbol-misc". */
+  vscodeIcon?: string;
+  /** SLDS/Lightning icon name for the welcome LWC card (e.g. "utility:apps"). Defaults to "utility:apps". */
+  sldsIcon?: string;
+  /** Optional description shown under the menu label in the welcome panel */
+  description?: string;
 }
 
 /** Insertion position for a custom command source's menus in the commands tree */
@@ -205,11 +216,17 @@ export async function listCustomCommands(): Promise<CustomCommandsGroup[]> {
 }
 
 function applyDefaultCommandIcons(customCommands: CustomCommandMenu[]): CustomCommandMenu[] {
+  const customLabel = t("customMenuLabel");
   return customCommands.map((menu) => ({
     ...menu,
+    label: `${menu.label} ${customLabel}`,
+    vscodeIcon: menu.vscodeIcon ?? "symbol-misc",
+    sldsIcon: menu.sldsIcon ?? "utility:apps",
     commands: (menu.commands || []).map((cmd) => ({
       ...cmd,
       icon: cmd.icon ?? "cloudity-logo.svg",
+      vscodeIcon: cmd.vscodeIcon ?? "run",
+      sldsIcon: cmd.sldsIcon ?? "utility:apex",
     })),
   }));
 }

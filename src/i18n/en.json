@@ -237,6 +237,7 @@
   "currentDevHubOrg": "Current Dev Hub org",
   "currentOrg": "Current Org",
   "customMenusSection": "Custom Menus",
+  "customMenuLabel": "(custom)",
   "dangerZone": "Danger Zone",
   "darkTheme": "Dark",
   "dataImportExport": "Data Import/Export",

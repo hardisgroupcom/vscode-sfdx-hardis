@@ -66,6 +66,9 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
       if (item.helpUrl) {
         options.helpUrl = item.helpUrl;
       }
+      if (item.vscodeIcon) {
+        options.vscodeIcon = item.vscodeIcon;
+      }
       items.push(
         new CommandTreeItem(
           item.label,
@@ -108,6 +111,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
         tooltip: "",
         requiresProject: false,
         helpUrl: "",
+        vscodeIcon: "",
       };
       if (item.description) {
         options.description = item.description;
@@ -120,6 +124,9 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
       }
       if (item.requiresProject) {
         options.helpUrl = item.helpUrl;
+      }
+      if (item.vscodeIcon) {
+        options.vscodeIcon = item.vscodeIcon;
       }
       const expanded = item.defaultExpand
         ? vscode.TreeItemCollapsibleState.Expanded
@@ -1149,6 +1156,7 @@ class CommandTreeItem extends vscode.TreeItem {
       tooltip: "",
       requiresProject: false,
       helpUrl: "",
+      vscodeIcon: "",
     },
   ) {
     super(label, collapsibleState);
@@ -1181,6 +1189,13 @@ class CommandTreeItem extends vscode.TreeItem {
         this.hardisCommand = hardisCommand;
       }
       this.iconPath = this.themeUtils.getCommandIconPath(this.id);
+      // Override with explicit vscodeIcon when provided (e.g. custom commands)
+      if (options.vscodeIcon) {
+        this.iconPath = new vscode.ThemeIcon(options.vscodeIcon);
+      }
+    } else if (options.vscodeIcon) {
+      // Section item with an explicit icon (e.g. custom menu groups)
+      this.iconPath = new vscode.ThemeIcon(options.vscodeIcon);
     }
     // Manage unavailable command
     if (options.requiresProject === true && !hasSfdxProjectJson()) {
