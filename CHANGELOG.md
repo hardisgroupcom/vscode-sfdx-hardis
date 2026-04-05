@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [7.5.0] 2026-05-04
+
 - Support custom menus and commands from sfdx-hardis plugins
 - Custom commands from `.sfdx-hardis.yml` and remote config are now displayed in the **Welcome page** as navigable menu cards
   - First render is fast: custom menus load in the background and are pushed to the panel once config is ready
