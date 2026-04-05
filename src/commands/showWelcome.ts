@@ -8,7 +8,13 @@ import {
   DOCSITE_URL,
   WEBSITE_CONTACT_FORM_URL,
 } from "../constants";
-import { listCustomCommands, isAllConfigLoaded, isPluginCommandsLoaded, listPluginCustomCommands, CustomCommandMenu } from "../utils/sfdx-hardis-config-utils";
+import {
+  listCustomCommands,
+  isAllConfigLoaded,
+  isPluginCommandsLoaded,
+  listPluginCustomCommands,
+  CustomCommandMenu,
+} from "../utils/sfdx-hardis-config-utils";
 
 export function registerShowWelcome(command: Commands) {
   const disposable = vscode.commands.registerCommand(
@@ -90,15 +96,17 @@ export function registerShowWelcome(command: Commands) {
             const configMenus = isAllConfigLoaded()
               ? (await listCustomCommands()).flatMap((g) => g.menus)
               : [];
-            const allMenus = [...configMenus, ...pluginGroups.flatMap((g) => g.menus)];
+            const allMenus = [
+              ...configMenus,
+              ...pluginGroups.flatMap((g) => g.menus),
+            ];
             panel.sendMessage({
               type: "updateCustomMenus",
               data: allMenus,
             });
           }
         })();
-      }
-      else {
+      } else {
         // Plugin commands already loaded: add them to initial custom menus if not already included
         const pluginGroups = await listPluginCustomCommands();
         if (pluginGroups.length > 0) {

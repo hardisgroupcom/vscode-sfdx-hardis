@@ -9,7 +9,11 @@ import {
 } from "./utils";
 import { HardisStatusProvider } from "./hardis-status-provider";
 import { t } from "./i18n/i18n";
-import { loadFromLocalConfigFile, readSfdxHardisConfig, writeSfdxHardisConfig } from "./utils/sfdx-hardis-config-utils";
+import {
+  loadFromLocalConfigFile,
+  readSfdxHardisConfig,
+  writeSfdxHardisConfig,
+} from "./utils/sfdx-hardis-config-utils";
 
 const PRODUCTION_EDITIONS = [
   "Team Edition",

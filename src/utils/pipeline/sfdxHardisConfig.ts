@@ -69,9 +69,13 @@ export const getConfig = async (
       }
       const workspaceRoot = getWorkspaceRoot();
       const userConfigFilesWithWorkspaceRoot = userConfigFiles.map((file) => {
-        return path.isAbsolute(file) ? file : path.join(workspaceRoot || "", file);
+        return path.isAbsolute(file)
+          ? file
+          : path.join(workspaceRoot || "", file);
       });
-      let userConfig = await loadFromConfigFile(userConfigFilesWithWorkspaceRoot);
+      let userConfig = await loadFromConfigFile(
+        userConfigFilesWithWorkspaceRoot,
+      );
       userConfig = Object.assign(branchConfig, userConfig);
       return userConfig;
     } finally {

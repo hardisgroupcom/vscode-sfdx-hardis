@@ -228,7 +228,9 @@ export async function listCustomCommands(): Promise<CustomCommandsGroup[]> {
   return result;
 }
 
-function applyDefaultCommandIcons(customCommands: CustomCommandMenu[]): CustomCommandMenu[] {
+function applyDefaultCommandIcons(
+  customCommands: CustomCommandMenu[],
+): CustomCommandMenu[] {
   const customLabel = t("customMenuLabel");
   return customCommands.map((menu) => ({
     ...menu,
@@ -303,14 +305,19 @@ async function listNonCorePluginNames(): Promise<string[]> {
  * Queries a single plugin for custom menus/commands via `sf PLUGIN:hardis-commands --json`.
  * Returns a CustomCommandsGroup if the plugin provides menus, otherwise null.
  */
-async function fetchPluginHardisCommands(pluginName: string): Promise<CustomCommandsGroup | null> {
+async function fetchPluginHardisCommands(
+  pluginName: string,
+): Promise<CustomCommandsGroup | null> {
   try {
-    const result = await execSfdxJson(`sf ${pluginName}:hardis-commands --json`, {
-      fail: false,
-      output: false,
-      cacheSection: "app",
-      cacheExpiration: 1000 * 60 * 60 * 24, // 1 day
-    });
+    const result = await execSfdxJson(
+      `sf ${pluginName}:hardis-commands --json`,
+      {
+        fail: false,
+        output: false,
+        cacheSection: "app",
+        cacheExpiration: 1000 * 60 * 60 * 24, // 1 day
+      },
+    );
     const data = result?.result ?? result;
     const menus: CustomCommandMenu[] = data?.customCommands ?? [];
     if (menus.length === 0) {
@@ -320,9 +327,10 @@ async function fetchPluginHardisCommands(pluginName: string): Promise<CustomComm
       menus: applyDefaultCommandIcons(menus),
       position: "last",
     };
-  }
-  catch (e: any) {
-    Logger.log(`[sfdx-hardis] Plugin ${pluginName} does not provide hardis-commands: ${e.message || e}`);
+  } catch (e: any) {
+    Logger.log(
+      `[sfdx-hardis] Plugin ${pluginName} does not provide hardis-commands: ${e.message || e}`,
+    );
     return null;
   }
 }
@@ -332,7 +340,9 @@ async function fetchPluginHardisCommands(pluginName: string): Promise<CustomComm
  * Queries all non-core plugins in parallel.
  * Results are cached in memory so subsequent calls return instantly.
  */
-export async function listPluginCustomCommands(): Promise<CustomCommandsGroup[]> {
+export async function listPluginCustomCommands(): Promise<
+  CustomCommandsGroup[]
+> {
   if (pluginCommandsLoaded) {
     return CACHED_PLUGIN_COMMANDS;
   }
@@ -354,8 +364,7 @@ export async function listPluginCustomCommands(): Promise<CustomCommandsGroup[]>
       CACHED_PLUGIN_COMMANDS = groups;
       pluginCommandsLoaded = true;
       return groups;
-    }
-    finally {
+    } finally {
       IN_FLIGHT_PLUGIN_COMMANDS = null;
     }
   })();

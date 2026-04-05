@@ -1,8 +1,5 @@
 import * as vscode from "vscode";
-import {
-  hasSfdxProjectJson,
-  resetCache,
-} from "./utils";
+import { hasSfdxProjectJson, resetCache } from "./utils";
 import { ThemeUtils } from "./utils/themeUtils";
 import { t } from "./i18n/i18n";
 import {
@@ -10,7 +7,14 @@ import {
   WEBSITE_URL,
   WEBSITE_CONTACT_FORM_URL,
 } from "./constants";
-import { listCustomCommands, isAllConfigLoaded, isPluginCommandsLoaded, listPluginCustomCommands, CustomCommandMenu, CustomCommandsPosition } from "./utils/sfdx-hardis-config-utils";
+import {
+  listCustomCommands,
+  isAllConfigLoaded,
+  isPluginCommandsLoaded,
+  listPluginCustomCommands,
+  CustomCommandMenu,
+  CustomCommandsPosition,
+} from "./utils/sfdx-hardis-config-utils";
 
 export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTreeItem> {
   private allTopicsAndCommands: any = null;
@@ -1106,14 +1110,20 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
       void (async () => {
         const groups = await listCustomCommands(); // awaits both configs, populates caches
         if (groups.length > 0) {
-          vscode.commands.executeCommand("vscode-sfdx-hardis.refreshCommandsView", true);
+          vscode.commands.executeCommand(
+            "vscode-sfdx-hardis.refreshCommandsView",
+            true,
+          );
         }
       })();
-    }
-    else {
+    } else {
       const customCommandsGroups = await listCustomCommands();
       for (const group of customCommandsGroups) {
-        hardisCommands = this.addCommands(group.menus, group.position, hardisCommands);
+        hardisCommands = this.addCommands(
+          group.menus,
+          group.position,
+          hardisCommands,
+        );
       }
     }
 
@@ -1122,14 +1132,20 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
       void (async () => {
         const pluginGroups = await listPluginCustomCommands();
         if (pluginGroups.length > 0) {
-          vscode.commands.executeCommand("vscode-sfdx-hardis.refreshCommandsView", true);
+          vscode.commands.executeCommand(
+            "vscode-sfdx-hardis.refreshCommandsView",
+            true,
+          );
         }
       })();
-    }
-    else {
+    } else {
       const pluginGroups = await listPluginCustomCommands();
       for (const group of pluginGroups) {
-        hardisCommands = this.addCommands(group.menus, group.position, hardisCommands);
+        hardisCommands = this.addCommands(
+          group.menus,
+          group.position,
+          hardisCommands,
+        );
       }
     }
 

@@ -21,7 +21,10 @@ import {
   RECOMMENDED_SFDX_CLI_VERSION,
   DOCSITE_URL,
 } from "./constants";
-import { isAllConfigLoaded, listCustomPlugins } from "./utils/sfdx-hardis-config-utils";
+import {
+  isAllConfigLoaded,
+  listCustomPlugins,
+} from "./utils/sfdx-hardis-config-utils";
 
 let nodeInstallOk = false;
 let gitInstallOk = false;
@@ -642,7 +645,10 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
       // Config not ready yet: return without custom plugins and refresh once config is loaded
       void (async () => {
         await listCustomPlugins(); // awaits both configs, populates caches
-        vscode.commands.executeCommand("vscode-sfdx-hardis.refreshPluginsView", true);
+        vscode.commands.executeCommand(
+          "vscode-sfdx-hardis.refreshPluginsView",
+          true,
+        );
       })();
       return;
     }

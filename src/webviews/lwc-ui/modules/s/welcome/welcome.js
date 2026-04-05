@@ -126,9 +126,7 @@ export default class Welcome extends SharedMixin(LightningElement) {
   }
 
   get activeCustomMenuCommands() {
-    return this.activeCustomMenu
-      ? this.activeCustomMenu.commands || []
-      : [];
+    return this.activeCustomMenu ? this.activeCustomMenu.commands || [] : [];
   }
 
   navigateToCustomMenu(event) {
