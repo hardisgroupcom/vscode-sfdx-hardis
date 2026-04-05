@@ -22,20 +22,21 @@ import * as child from "child_process";
 import { getWorkspaceRoot } from "../../utils";
 import { Logger } from "../../logger";
 
-const moduleName = "sfdx-hardis";
-const projectConfigFiles = [
+const MODULE_NAME = "sfdx-hardis";
+const PROJECT_CONFIG_FILES = [
   "package.json",
-  `.${moduleName}.yaml`,
-  `.${moduleName}.yml`,
-  `config/.${moduleName}.yaml`,
-  `config/.${moduleName}.yml`,
+  `.${MODULE_NAME}.yaml`,
+  `.${MODULE_NAME}.yml`,
+  `config/.${MODULE_NAME}.yaml`,
+  `config/.${MODULE_NAME}.yml`,
 ];
 const username = os.userInfo().username;
 const userConfigFiles = [
-  `config/user/.${moduleName}.${username}.yaml`,
-  `config/user/.${moduleName}.${username}.yml`,
+  `config/user/.${MODULE_NAME}.${username}.yaml`,
+  `config/user/.${MODULE_NAME}.${username}.yml`,
 ];
 const REMOTE_CONFIGS: any = {};
+const IN_FLIGHT_CONFIGS: Map<string, Promise<any>> = new Map();
 
 async function getBranchConfigFiles() {
   if (!isGitRepo()) {
@@ -43,8 +44,8 @@ async function getBranchConfigFiles() {
   }
   const gitBranchFormatted = await getCurrentGitBranch({ formatted: true });
   const branchConfigFiles = [
-    `config/branches/.${moduleName}.${gitBranchFormatted}.yaml`,
-    `config/branches/.${moduleName}.${gitBranchFormatted}.yml`,
+    `config/branches/.${MODULE_NAME}.${gitBranchFormatted}.yaml`,
+    `config/branches/.${MODULE_NAME}.${gitBranchFormatted}.yml`,
   ];
   return branchConfigFiles;
 }
@@ -52,22 +53,33 @@ async function getBranchConfigFiles() {
 export const getConfig = async (
   layer: "project" | "branch" | "user" = "user",
 ): Promise<any> => {
-  const defaultConfig = await loadFromConfigFile(projectConfigFiles);
-  if (layer === "project") {
-    return defaultConfig;
+  if (IN_FLIGHT_CONFIGS.has(layer)) {
+    return IN_FLIGHT_CONFIGS.get(layer)!;
   }
-  let branchConfig = await loadFromConfigFile(await getBranchConfigFiles());
-  branchConfig = Object.assign(defaultConfig, branchConfig);
-  if (layer === "branch") {
-    return branchConfig;
-  }
-  const workspaceRoot = getWorkspaceRoot();
-  const userConfigFilesWithWorkspaceRoot = userConfigFiles.map((file) => {
-    return path.isAbsolute(file) ? file : path.join(workspaceRoot || "", file);
-  });
-  let userConfig = await loadFromConfigFile(userConfigFilesWithWorkspaceRoot);
-  userConfig = Object.assign(branchConfig, userConfig);
-  return userConfig;
+  const promise = (async () => {
+    try {
+      const defaultConfig = await loadFromConfigFile(PROJECT_CONFIG_FILES);
+      if (layer === "project") {
+        return defaultConfig;
+      }
+      let branchConfig = await loadFromConfigFile(await getBranchConfigFiles());
+      branchConfig = Object.assign(defaultConfig, branchConfig);
+      if (layer === "branch") {
+        return branchConfig;
+      }
+      const workspaceRoot = getWorkspaceRoot();
+      const userConfigFilesWithWorkspaceRoot = userConfigFiles.map((file) => {
+        return path.isAbsolute(file) ? file : path.join(workspaceRoot || "", file);
+      });
+      let userConfig = await loadFromConfigFile(userConfigFilesWithWorkspaceRoot);
+      userConfig = Object.assign(branchConfig, userConfig);
+      return userConfig;
+    } finally {
+      IN_FLIGHT_CONFIGS.delete(layer);
+    }
+  })();
+  IN_FLIGHT_CONFIGS.set(layer, promise);
+  return promise;
 };
 
 // Set data in configuration file
@@ -94,7 +106,7 @@ export const setConfig = async (
   });
   const configSearchPlaces =
     layer === "project"
-      ? projectConfigFiles
+      ? PROJECT_CONFIG_FILES
       : layer === "user"
         ? userConfigFilesWithWorkspaceRoot
         : layer === "branch"
@@ -105,9 +117,10 @@ export const setConfig = async (
 
 // Load configuration from file
 async function loadFromConfigFile(searchPlaces: string[]): Promise<any> {
-  const configExplorer = await cosmiconfig(moduleName, {
+  const workspaceRoot = getWorkspaceRoot();
+  const configExplorer = await cosmiconfig(MODULE_NAME, {
     searchPlaces,
-  }).search();
+  }).search(workspaceRoot);
   let config = configExplorer !== null ? configExplorer.config : {};
   if (config.extends) {
     const remoteConfig = await loadFromRemoteConfigFile(config.extends);
@@ -142,8 +155,9 @@ export async function setInConfigFile(
 ) {
   let explorer;
   if (configFile === "") {
-    explorer = cosmiconfig(moduleName, { searchPlaces });
-    const configExplorer = await explorer.search();
+    explorer = cosmiconfig(MODULE_NAME, { searchPlaces });
+    const workspaceRoot = getWorkspaceRoot();
+    const configExplorer = await explorer.search(workspaceRoot);
     configFile =
       configExplorer !== null
         ? configExplorer.filepath

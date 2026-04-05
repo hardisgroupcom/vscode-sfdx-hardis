@@ -6,7 +6,6 @@ import { HardisPluginsProvider } from "./hardis-plugins-provider";
 import { LocalWebSocketServer } from "./hardis-websocket-server";
 import { openFolderInExplorer } from "./utils";
 import TelemetryReporter from "@vscode/extension-telemetry";
-import { ThemeUtils } from "./themeUtils";
 import { CommandRunner } from "./command-runner";
 import { runSalesforceCliMcpServer } from "./utils/mcpUtils";
 import { registerShowWelcome } from "./commands/showWelcome";
@@ -31,6 +30,7 @@ import { registerShowPackageXml } from "./commands/packageXml";
 import { registerGitMergeDriverToggle } from "./commands/gitMergeDriver";
 import { registerShowDocumentationWorkbench } from "./commands/showDocumentationWorkbench";
 import { t } from "./i18n/i18n";
+import { ThemeUtils } from "./utils/themeUtils";
 
 export class Commands {
   public readonly extensionUri: vscode.Uri;

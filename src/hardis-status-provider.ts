@@ -8,18 +8,18 @@ import {
   getSfdxProjectJson,
   isCachePreloaded,
   isGitMenusItemsLoaded,
-  loadProjectSfdxHardisConfig,
   resetCache,
   setGitMenusItems,
   setOrgCache,
 } from "./utils";
 import { Logger } from "./logger";
 import simpleGit from "simple-git";
-import { ThemeUtils } from "./themeUtils";
 import { getConfig } from "./utils/pipeline/sfdxHardisConfig";
 import { LwcPanelManager } from "./lwc-panel-manager";
 import { t } from "./i18n/i18n";
 import { DOCSITE_URL } from "./constants";
+import { ThemeUtils } from "./utils/themeUtils";
+import { loadProjectSfdxHardisConfig } from "./utils/sfdx-hardis-config-utils";
 
 export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeItem> {
   public themeUtils: ThemeUtils;

@@ -113,6 +113,7 @@
             </div>
 
             <!-- Main Content Section -->
+            <template lwc:if={isHomeView}>
             <div class="section">
                 <div class="unified-grid">
                     <!-- Org Manager Card -->
@@ -240,6 +241,24 @@
                         </p>
                         <div class="feature-arrow">→</div>
                     </div>
+
+                    <!-- Custom Menus Cards -->
+                    <template lwc:if={hasCustomMenus}>
+                        <template for:each={customMenus} for:item="menu">
+                            <div key={menu.id} class="feature-card custom-menu-card" data-menu-id={menu.id} onclick={navigateToCustomMenu}>
+                                <div class="feature-card-header">
+                                    <div class="feature-icon-container purple">
+                                        <lightning-icon icon-name={menu.sldsIcon} size="medium" variant="inverse"></lightning-icon>
+                                    </div>
+                                    <h3 class="feature-title">{menu.label}</h3>
+                                </div>
+                                <p class="feature-description">
+                                    {menu.description}
+                                </p>
+                                <div class="feature-arrow">→</div>
+                            </div>
+                        </template>
+                    </template>
                 </div>
             </div>
 
@@ -325,6 +344,39 @@
                     </div>
                 </div>
             </div>
+            </template>
+
+            <!-- Custom Menu Commands View -->
+            <template lwc:if={isCustomMenuView}>
+                <div class="section">
+                    <div class="custom-menu-view-header">
+                        <lightning-button
+                            variant="neutral"
+                            label={i18n.backToHome}
+                            icon-name="utility:back"
+                            onclick={backToHome}
+                            class="back-home-button"
+                        ></lightning-button>
+                        <h2 class="custom-menu-view-title">{activeCustomMenuLabel}</h2>
+                    </div>
+                    <div class="unified-grid">
+                        <template for:each={activeCustomMenuCommands} for:item="cmd">
+                            <div key={cmd.id} class="feature-card" data-command={cmd.command} onclick={executeCustomCommand}>
+                                <div class="feature-card-header">
+                                    <div class="feature-icon-container teal">
+                                        <lightning-icon icon-name={cmd.sldsIcon} size="medium" variant="inverse"></lightning-icon>
+                                    </div>
+                                    <h3 class="feature-title">{cmd.label}</h3>
+                                </div>
+                                <p class="feature-description">
+                                    {cmd.tooltip}
+                                </p>
+                                <div class="feature-arrow">→</div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </template>
         </div>
     </div>
 </template>

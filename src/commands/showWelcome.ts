@@ -8,6 +8,7 @@ import {
   DOCSITE_URL,
   WEBSITE_CONTACT_FORM_URL,
 } from "../constants";
+import { listCustomCommands, isAllConfigLoaded, isPluginCommandsLoaded, listPluginCustomCommands, CustomCommandMenu } from "../utils/sfdx-hardis-config-utils";
 
 export function registerShowWelcome(command: Commands) {
   const disposable = vscode.commands.registerCommand(
@@ -23,12 +24,20 @@ export function registerShowWelcome(command: Commands) {
       const langSetting = config.get<string>("lang", "auto");
       const { colorTheme, colorContrast } =
         LwcPanelManager.resolveTheme(colorThemeConfig);
+      let customMenus: CustomCommandMenu[] = [];
+      let customMenusLoaded = false;
+      if (isAllConfigLoaded()) {
+        customMenus = (await listCustomCommands()).flatMap((g) => g.menus);
+        customMenusLoaded = true;
+      }
+
       const panel = lwcManager.getOrCreatePanel("s-welcome", {
         showWelcomeAtStartup: showWelcomeAtStartup,
         langSetting: langSetting,
         colorThemeConfig,
         colorTheme,
         colorContrast,
+        customMenus: customMenus,
         bannerImageUrl:
           BANNER_IMAGE_URL !== false ? BANNER_IMAGE_URL : undefined,
         websiteUrl: WEBSITE_URL,
@@ -52,6 +61,57 @@ export function registerShowWelcome(command: Commands) {
         },
       });
       panel.updateTitle(t("welcomeTitle"));
+
+      // If config was not ready yet, load it in the background and push custom menus once available
+      if (customMenusLoaded === false) {
+        void (async () => {
+          const groups = await listCustomCommands(); // awaits both configs
+          const allMenus = groups.flatMap((g) => g.menus);
+          // Also append plugin-provided menus if already available
+          if (isPluginCommandsLoaded()) {
+            const pluginGroups = await listPluginCustomCommands();
+            allMenus.push(...pluginGroups.flatMap((g) => g.menus));
+          }
+          if (allMenus.length > 0 && !panel.isDisposed()) {
+            panel.sendMessage({
+              type: "updateCustomMenus",
+              data: allMenus,
+            });
+          }
+        })();
+      }
+
+      // Load plugin-provided custom commands independently (may take longer)
+      if (!isPluginCommandsLoaded()) {
+        void (async () => {
+          const pluginGroups = await listPluginCustomCommands();
+          if (pluginGroups.length > 0 && !panel.isDisposed()) {
+            // Merge with current config-based menus
+            const configMenus = isAllConfigLoaded()
+              ? (await listCustomCommands()).flatMap((g) => g.menus)
+              : [];
+            const allMenus = [...configMenus, ...pluginGroups.flatMap((g) => g.menus)];
+            panel.sendMessage({
+              type: "updateCustomMenus",
+              data: allMenus,
+            });
+          }
+        })();
+      }
+      else {
+        // Plugin commands already loaded: add them to initial custom menus if not already included
+        const pluginGroups = await listPluginCustomCommands();
+        if (pluginGroups.length > 0) {
+          const pluginMenus = pluginGroups.flatMap((g) => g.menus);
+          customMenus = [...customMenus, ...pluginMenus];
+          if (!panel.isDisposed()) {
+            panel.sendMessage({
+              type: "updateCustomMenus",
+              data: customMenus,
+            });
+          }
+        }
+      }
 
       // Handle messages from the Welcome panel
       panel.onMessage(async (type: string, _data: any) => {

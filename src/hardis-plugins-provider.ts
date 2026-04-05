@@ -6,15 +6,12 @@ import {
   getWorkspaceRoot,
   isCachePreloaded,
   isExtensionPreRelease,
-  isProjectSfdxConfigLoaded,
-  loadExternalSfdxHardisConfiguration,
-  loadProjectSfdxHardisConfig,
   resetCache,
   execCommandWithProgress,
 } from "./utils";
 import { Logger } from "./logger";
 import which from "which";
-import { ThemeUtils } from "./themeUtils";
+import { ThemeUtils } from "./utils/themeUtils";
 import { t } from "./i18n/i18n";
 import { SetupHelper } from "./utils/setupUtils";
 import { isMergeDriverEnabled } from "./utils/gitMergeDriverUtils";
@@ -24,6 +21,7 @@ import {
   RECOMMENDED_SFDX_CLI_VERSION,
   DOCSITE_URL,
 } from "./constants";
+import { isAllConfigLoaded, listCustomPlugins } from "./utils/sfdx-hardis-config-utils";
 
 let nodeInstallOk = false;
 let gitInstallOk = false;
@@ -640,21 +638,16 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
       | { name: string; helpUrl: string; altName?: undefined }
     )[],
   ) {
-    // Handle faster display by getting config in background then refresh the commands panel
-    if (!isProjectSfdxConfigLoaded()) {
-      loadProjectSfdxHardisConfig().then(() =>
-        vscode.commands.executeCommand(
-          "vscode-sfdx-hardis.refreshCommandsView",
-          true,
-        ),
-      );
+    if (!isAllConfigLoaded()) {
+      // Config not ready yet: return without custom plugins and refresh once config is loaded
+      void (async () => {
+        await listCustomPlugins(); // awaits both configs, populates caches
+        vscode.commands.executeCommand("vscode-sfdx-hardis.refreshPluginsView", true);
+      })();
+      return;
     }
-    // Config is already loaded here
-    const projectConfig = await loadProjectSfdxHardisConfig();
-    plugins.push(...(projectConfig.customPlugins || []));
-    // Complete with remote config plugins
-    const remoteConfig = await loadExternalSfdxHardisConfiguration();
-    plugins.push(...(remoteConfig.customPlugins || []));
+    const customPlugins = await listCustomPlugins();
+    plugins.push(...(customPlugins as any[]));
   }
 
   // Check for required VsCode extensions

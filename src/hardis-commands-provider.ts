@@ -1,18 +1,16 @@
 import * as vscode from "vscode";
 import {
   hasSfdxProjectJson,
-  isProjectSfdxConfigLoaded,
-  loadExternalSfdxHardisConfiguration,
-  loadProjectSfdxHardisConfig,
   resetCache,
 } from "./utils";
-import { ThemeUtils } from "./themeUtils";
+import { ThemeUtils } from "./utils/themeUtils";
 import { t } from "./i18n/i18n";
 import {
   DOCSITE_URL,
   WEBSITE_URL,
   WEBSITE_CONTACT_FORM_URL,
 } from "./constants";
+import { listCustomCommands, isAllConfigLoaded, isPluginCommandsLoaded, listPluginCustomCommands, CustomCommandMenu, CustomCommandsPosition } from "./utils/sfdx-hardis-config-utils";
 
 export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTreeItem> {
   private allTopicsAndCommands: any = null;
@@ -68,6 +66,9 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
       if (item.helpUrl) {
         options.helpUrl = item.helpUrl;
       }
+      if (item.vscodeIcon) {
+        options.vscodeIcon = item.vscodeIcon;
+      }
       items.push(
         new CommandTreeItem(
           item.label,
@@ -110,6 +111,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
         tooltip: "",
         requiresProject: false,
         helpUrl: "",
+        vscodeIcon: "",
       };
       if (item.description) {
         options.description = item.description;
@@ -122,6 +124,9 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
       }
       if (item.requiresProject) {
         options.helpUrl = item.helpUrl;
+      }
+      if (item.vscodeIcon) {
+        options.vscodeIcon = item.vscodeIcon;
       }
       const expanded = item.defaultExpand
         ? vscode.TreeItemCollapsibleState.Expanded
@@ -1095,52 +1100,51 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
 
   // Add custom commands defined within .sfdx-hardis.yml
   private async completeWithCustomCommands(hardisCommands: Array<any>) {
-    // Handle faster display by getting config in background then refresh the commands panel
-    if (!isProjectSfdxConfigLoaded()) {
-      loadProjectSfdxHardisConfig().then(() =>
-        vscode.commands.executeCommand(
-          "vscode-sfdx-hardis.refreshCommandsView",
-          true,
-        ),
-      );
-      return hardisCommands;
+    // Config-based custom commands (fast path)
+    if (!isAllConfigLoaded()) {
+      // Config not ready yet: return commands as-is and refresh the tree once config is loaded
+      void (async () => {
+        const groups = await listCustomCommands(); // awaits both configs, populates caches
+        if (groups.length > 0) {
+          vscode.commands.executeCommand("vscode-sfdx-hardis.refreshCommandsView", true);
+        }
+      })();
     }
-    // Here config will already be loaded in cache
-    const projectConfig = await loadProjectSfdxHardisConfig();
-    // Commands defined in local .sfdx-hardis.yml
-    if (projectConfig.customCommands) {
-      const customCommandsPosition =
-        projectConfig.customCommandsPosition || "last";
-      hardisCommands = this.addCommands(
-        projectConfig.customCommands,
-        customCommandsPosition,
-        hardisCommands,
-      );
+    else {
+      const customCommandsGroups = await listCustomCommands();
+      for (const group of customCommandsGroups) {
+        hardisCommands = this.addCommands(group.menus, group.position, hardisCommands);
+      }
     }
-    // Commands defined in remote config file .sfdx-hardis.yml
-    const remoteConfig = await loadExternalSfdxHardisConfiguration();
-    if (remoteConfig.customCommands) {
-      // add in commands
-      const customCommandsPosition =
-        remoteConfig.customCommandsPosition || "last";
-      hardisCommands = this.addCommands(
-        remoteConfig.customCommands,
-        customCommandsPosition,
-        hardisCommands,
-      );
+
+    // Plugin-provided custom commands (loaded independently to avoid blocking)
+    if (!isPluginCommandsLoaded()) {
+      void (async () => {
+        const pluginGroups = await listPluginCustomCommands();
+        if (pluginGroups.length > 0) {
+          vscode.commands.executeCommand("vscode-sfdx-hardis.refreshCommandsView", true);
+        }
+      })();
     }
+    else {
+      const pluginGroups = await listPluginCustomCommands();
+      for (const group of pluginGroups) {
+        hardisCommands = this.addCommands(group.menus, group.position, hardisCommands);
+      }
+    }
+
     return hardisCommands;
   }
 
   private addCommands(
-    customCommands: Array<any>,
-    customCommandsPosition: string,
+    customCommands: CustomCommandMenu[],
+    customCommandsPosition: CustomCommandsPosition,
     hardisCommands: Array<any>,
   ) {
     // Add default icon to commands if not set
     customCommands = customCommands.map((customCommandMenu) => {
-      customCommandMenu.commands = customCommandMenu.commands.map(
-        (customCommand: any) => {
+      customCommandMenu.commands = (customCommandMenu.commands || []).map(
+        (customCommand) => {
           customCommand.icon = customCommand.icon ?? "cloudity-logo.svg";
           return customCommand;
         },
@@ -1173,6 +1177,7 @@ class CommandTreeItem extends vscode.TreeItem {
       tooltip: "",
       requiresProject: false,
       helpUrl: "",
+      vscodeIcon: "",
     },
   ) {
     super(label, collapsibleState);
@@ -1205,6 +1210,13 @@ class CommandTreeItem extends vscode.TreeItem {
         this.hardisCommand = hardisCommand;
       }
       this.iconPath = this.themeUtils.getCommandIconPath(this.id);
+      // Override with explicit vscodeIcon when provided (e.g. custom commands)
+      if (options.vscodeIcon) {
+        this.iconPath = new vscode.ThemeIcon(options.vscodeIcon);
+      }
+    } else if (options.vscodeIcon) {
+      // Section item with an explicit icon (e.g. custom menu groups)
+      this.iconPath = new vscode.ThemeIcon(options.vscodeIcon);
     }
     // Manage unavailable command
     if (options.requiresProject === true && !hasSfdxProjectJson()) {
