@@ -231,6 +231,31 @@ function applyDefaultCommandIcons(customCommands: CustomCommandMenu[]): CustomCo
   }));
 }
 
+/** A custom plugin entry shown in the Dependencies panel */
+export interface CustomPlugin {
+  /** npm package name of the plugin */
+  name: string;
+  /** Alternate name used when matching installed plugin output */
+  altName?: string;
+  /** URL to the plugin documentation or repository */
+  helpUrl?: string;
+}
+
+/**
+ * Returns all custom plugins from both project config and extension settings config.
+ */
+export async function listCustomPlugins(): Promise<CustomPlugin[]> {
+  const result: CustomPlugin[] = [];
+
+  const projectConfig = await loadProjectSfdxHardisConfig();
+  result.push(...(projectConfig.customPlugins || []));
+
+  const settingsConfig = await loadExtensionSettingsSfdxHardisConfiguration();
+  result.push(...(settingsConfig.customPlugins || []));
+
+  return result;
+}
+
 // Read filesystem config file
 export async function loadFromLocalConfigFile(file: string): Promise<any> {
   try {
