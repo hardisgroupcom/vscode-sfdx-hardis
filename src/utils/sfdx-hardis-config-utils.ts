@@ -318,7 +318,7 @@ async function fetchPluginHardisCommands(pluginName: string): Promise<CustomComm
     }
     return {
       menus: applyDefaultCommandIcons(menus),
-      position: (data?.customCommandsPosition as CustomCommandsPosition) || "last",
+      position: "last",
     };
   }
   catch (e: any) {
