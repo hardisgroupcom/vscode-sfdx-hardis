@@ -8,6 +8,7 @@ import {
   DOCSITE_URL,
   WEBSITE_CONTACT_FORM_URL,
 } from "../constants";
+import { listCustomCommands, isAllConfigLoaded, CustomCommandMenu } from "../utils/sfdx-hardis-config-utils";
 
 export function registerShowWelcome(command: Commands) {
   const disposable = vscode.commands.registerCommand(
@@ -23,12 +24,20 @@ export function registerShowWelcome(command: Commands) {
       const langSetting = config.get<string>("lang", "auto");
       const { colorTheme, colorContrast } =
         LwcPanelManager.resolveTheme(colorThemeConfig);
+      let customMenus: CustomCommandMenu[] = [];
+      let customMenusLoaded = false;
+      if (isAllConfigLoaded()) {
+        customMenus = (await listCustomCommands()).flatMap((g) => g.menus);
+        customMenusLoaded = true;
+      }
+
       const panel = lwcManager.getOrCreatePanel("s-welcome", {
         showWelcomeAtStartup: showWelcomeAtStartup,
         langSetting: langSetting,
         colorThemeConfig,
         colorTheme,
         colorContrast,
+        customMenus: customMenus,
         bannerImageUrl:
           BANNER_IMAGE_URL !== false ? BANNER_IMAGE_URL : undefined,
         websiteUrl: WEBSITE_URL,
@@ -52,6 +61,19 @@ export function registerShowWelcome(command: Commands) {
         },
       });
       panel.updateTitle(t("welcomeTitle"));
+
+      // If config was not ready yet, load it in the background and push custom menus once available
+      if (customMenusLoaded === false) {
+        void (async () => {
+          const groups = await listCustomCommands(); // awaits both configs
+          if (groups.length > 0 && !panel.isDisposed()) {
+            panel.sendMessage({
+              type: "updateCustomMenus",
+              data: groups.flatMap((g) => g.menus),
+            });
+          }
+        })();
+      }
 
       // Handle messages from the Welcome panel
       panel.onMessage(async (type: string, _data: any) => {

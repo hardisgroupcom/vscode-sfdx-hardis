@@ -6,15 +6,12 @@ import {
   getWorkspaceRoot,
   isCachePreloaded,
   isExtensionPreRelease,
-  isProjectSfdxConfigLoaded,
-  loadExternalSfdxHardisConfiguration,
-  loadProjectSfdxHardisConfig,
   resetCache,
   execCommandWithProgress,
 } from "./utils";
 import { Logger } from "./logger";
 import which from "which";
-import { ThemeUtils } from "./themeUtils";
+import { ThemeUtils } from "./utils/themeUtils";
 import { t } from "./i18n/i18n";
 import { SetupHelper } from "./utils/setupUtils";
 import { isMergeDriverEnabled } from "./utils/gitMergeDriverUtils";
@@ -24,6 +21,7 @@ import {
   RECOMMENDED_SFDX_CLI_VERSION,
   DOCSITE_URL,
 } from "./constants";
+import { loadExtensionSettingsSfdxHardisConfiguration, loadProjectSfdxHardisConfig } from "./utils/sfdx-hardis-config-utils";
 
 let nodeInstallOk = false;
 let gitInstallOk = false;
@@ -641,19 +639,11 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
     )[],
   ) {
     // Handle faster display by getting config in background then refresh the commands panel
-    if (!isProjectSfdxConfigLoaded()) {
-      loadProjectSfdxHardisConfig().then(() =>
-        vscode.commands.executeCommand(
-          "vscode-sfdx-hardis.refreshCommandsView",
-          true,
-        ),
-      );
-    }
     // Config is already loaded here
     const projectConfig = await loadProjectSfdxHardisConfig();
     plugins.push(...(projectConfig.customPlugins || []));
     // Complete with remote config plugins
-    const remoteConfig = await loadExternalSfdxHardisConfiguration();
+    const remoteConfig = await loadExtensionSettingsSfdxHardisConfiguration();
     plugins.push(...(remoteConfig.customPlugins || []));
   }
 
