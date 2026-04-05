@@ -5,6 +5,8 @@ import * as fs from "fs-extra";
 import * as path from "path";
 import axios from "axios";
 import { t } from "../i18n/i18n";
+import { execSfdxJson } from "../utils";
+import { Logger } from "../logger";
 
 /** A single command entry inside a custom menu */
 export interface CustomCommand {
@@ -57,10 +59,18 @@ let IN_FLIGHT_PROJECT_CONFIG: Promise<any> | null = null;
 let IN_FLIGHT_EXTENSION_CONFIG: Promise<any> | null = null;
 let projectConfigLoaded = false;
 let settingsConfigLoaded = false;
+let pluginCommandsLoaded = false;
+let IN_FLIGHT_PLUGIN_COMMANDS: Promise<CustomCommandsGroup[]> | null = null;
+let CACHED_PLUGIN_COMMANDS: CustomCommandsGroup[] = [];
 
 /** Returns true once both project config and extension settings config data are ready */
 export function isAllConfigLoaded(): boolean {
   return projectConfigLoaded && settingsConfigLoaded;
+}
+
+/** Returns true once plugin custom commands have been discovered */
+export function isPluginCommandsLoaded(): boolean {
+  return pluginCommandsLoaded;
 }
 
 export async function resetSfdxHardisConfigCache() {
@@ -70,6 +80,9 @@ export async function resetSfdxHardisConfigCache() {
   IN_FLIGHT_EXTENSION_CONFIG = null;
   projectConfigLoaded = false;
   settingsConfigLoaded = false;
+  pluginCommandsLoaded = false;
+  IN_FLIGHT_PLUGIN_COMMANDS = null;
+  CACHED_PLUGIN_COMMANDS = [];
 }
 
 export async function loadProjectSfdxHardisConfig() {
@@ -254,6 +267,99 @@ export async function listCustomPlugins(): Promise<CustomPlugin[]> {
   result.push(...(settingsConfig.customPlugins || []));
 
   return result;
+}
+
+/** Plugins that should never be queried for hardis-commands */
+const CORE_PLUGIN_PREFIXES = ["@salesforce/", "@oclif/"];
+
+/**
+ * Returns the list of non-core installed plugin names (type === "user" or "link").
+ * Uses the "app" cache section with a 1-day TTL.
+ */
+async function listNonCorePluginNames(): Promise<string[]> {
+  const result = await execSfdxJson("sf plugins --json", {
+    fail: false,
+    output: false,
+    cacheSection: "app",
+    cacheExpiration: 1000 * 60 * 60 * 24, // 1 day
+  });
+  const plugins: any[] = result?.result ?? result ?? [];
+  if (!Array.isArray(plugins)) {
+    return [];
+  }
+  return plugins
+    .filter((p: any) => {
+      const pType = p.type || "";
+      if (pType !== "user" && pType !== "link") {
+        return false;
+      }
+      const name = p.alias || p.name || "";
+      return !CORE_PLUGIN_PREFIXES.some((prefix) => name.startsWith(prefix));
+    })
+    .map((p: any) => p.alias || p.name);
+}
+
+/**
+ * Queries a single plugin for custom menus/commands via `sf PLUGIN:hardis-commands --json`.
+ * Returns a CustomCommandsGroup if the plugin provides menus, otherwise null.
+ */
+async function fetchPluginHardisCommands(pluginName: string): Promise<CustomCommandsGroup | null> {
+  try {
+    const result = await execSfdxJson(`sf ${pluginName}:hardis-commands --json`, {
+      fail: false,
+      output: false,
+      cacheSection: "app",
+      cacheExpiration: 1000 * 60 * 60 * 24, // 1 day
+    });
+    const data = result?.result ?? result;
+    const menus: CustomCommandMenu[] = data?.customCommands ?? [];
+    if (menus.length === 0) {
+      return null;
+    }
+    return {
+      menus: applyDefaultCommandIcons(menus),
+      position: (data?.customCommandsPosition as CustomCommandsPosition) || "last",
+    };
+  }
+  catch (e: any) {
+    Logger.log(`[sfdx-hardis] Plugin ${pluginName} does not provide hardis-commands: ${e.message || e}`);
+    return null;
+  }
+}
+
+/**
+ * Discovers custom menus and commands exposed by installed SF plugins.
+ * Queries all non-core plugins in parallel.
+ * Results are cached in memory so subsequent calls return instantly.
+ */
+export async function listPluginCustomCommands(): Promise<CustomCommandsGroup[]> {
+  if (pluginCommandsLoaded) {
+    return CACHED_PLUGIN_COMMANDS;
+  }
+  if (IN_FLIGHT_PLUGIN_COMMANDS) {
+    return IN_FLIGHT_PLUGIN_COMMANDS;
+  }
+  IN_FLIGHT_PLUGIN_COMMANDS = (async () => {
+    try {
+      const pluginNames = await listNonCorePluginNames();
+      const results = await Promise.allSettled(
+        pluginNames.map((name) => fetchPluginHardisCommands(name)),
+      );
+      const groups: CustomCommandsGroup[] = [];
+      for (const result of results) {
+        if (result.status === "fulfilled" && result.value) {
+          groups.push(result.value);
+        }
+      }
+      CACHED_PLUGIN_COMMANDS = groups;
+      pluginCommandsLoaded = true;
+      return groups;
+    }
+    finally {
+      IN_FLIGHT_PLUGIN_COMMANDS = null;
+    }
+  })();
+  return IN_FLIGHT_PLUGIN_COMMANDS;
 }
 
 // Read filesystem config file

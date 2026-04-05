@@ -10,7 +10,7 @@ import {
   WEBSITE_URL,
   WEBSITE_CONTACT_FORM_URL,
 } from "./constants";
-import { listCustomCommands, isAllConfigLoaded, CustomCommandMenu, CustomCommandsPosition } from "./utils/sfdx-hardis-config-utils";
+import { listCustomCommands, isAllConfigLoaded, isPluginCommandsLoaded, listPluginCustomCommands, CustomCommandMenu, CustomCommandsPosition } from "./utils/sfdx-hardis-config-utils";
 
 export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTreeItem> {
   private allTopicsAndCommands: any = null;
@@ -1100,18 +1100,39 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
 
   // Add custom commands defined within .sfdx-hardis.yml
   private async completeWithCustomCommands(hardisCommands: Array<any>) {
+    // Config-based custom commands (fast path)
     if (!isAllConfigLoaded()) {
       // Config not ready yet: return commands as-is and refresh the tree once config is loaded
       void (async () => {
-        await listCustomCommands(); // awaits both configs, populates caches
-        vscode.commands.executeCommand("vscode-sfdx-hardis.refreshCommandsView", true);
+        const groups = await listCustomCommands(); // awaits both configs, populates caches
+        if (groups.length > 0) {
+          vscode.commands.executeCommand("vscode-sfdx-hardis.refreshCommandsView", true);
+        }
       })();
-      return hardisCommands;
     }
-    const customCommandsGroups = await listCustomCommands();
-    for (const group of customCommandsGroups) {
-      hardisCommands = this.addCommands(group.menus, group.position, hardisCommands);
+    else {
+      const customCommandsGroups = await listCustomCommands();
+      for (const group of customCommandsGroups) {
+        hardisCommands = this.addCommands(group.menus, group.position, hardisCommands);
+      }
     }
+
+    // Plugin-provided custom commands (loaded independently to avoid blocking)
+    if (!isPluginCommandsLoaded()) {
+      void (async () => {
+        const pluginGroups = await listPluginCustomCommands();
+        if (pluginGroups.length > 0) {
+          vscode.commands.executeCommand("vscode-sfdx-hardis.refreshCommandsView", true);
+        }
+      })();
+    }
+    else {
+      const pluginGroups = await listPluginCustomCommands();
+      for (const group of pluginGroups) {
+        hardisCommands = this.addCommands(group.menus, group.position, hardisCommands);
+      }
+    }
+
     return hardisCommands;
   }
 
