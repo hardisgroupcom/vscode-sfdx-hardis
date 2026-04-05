@@ -7,11 +7,11 @@ import simpleGit from "simple-git";
 
 import { Worker } from "worker_threads";
 import * as vscode from "vscode";
-import * as yaml from "js-yaml";
 import { Logger } from "./logger";
 import { CacheManager, CacheSection } from "./utils/cache-manager";
 import { getConfig } from "./utils/pipeline/sfdxHardisConfig";
 import { RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION } from "./constants";
+import { resetSfdxHardisConfigCache } from "./utils/sfdx-hardis-config-utils";
 
 // Returns true if the extension is running as a pre-release version (preview: true in package.json)
 export function isExtensionPreRelease(): boolean {
@@ -47,8 +47,6 @@ let MULTITHREAD_ACTIVE: boolean | null = null;
 let CACHE_IS_PRELOADED: boolean = false;
 let COMMANDS_RESULTS: Record<string, any> = {};
 let GIT_MENUS: any[] | null = null;
-let PROJECT_CONFIG: any = null;
-let REMOTE_CONFIGS: Record<string, any> = {};
 
 export function isMultithreadActive() {
   if (MULTITHREAD_ACTIVE !== null) {
@@ -202,8 +200,8 @@ export async function resetCache() {
   await CacheManager.delete("project");
   COMMANDS_RESULTS = {};
   GIT_MENUS = null;
-  PROJECT_CONFIG = null;
-  REMOTE_CONFIGS = {};
+  cachedWorkspaceRoot = null;
+  resetSfdxHardisConfigCache();
   Logger.log("[vscode-sfdx-hardis] Reset cache");
 }
 
@@ -418,7 +416,11 @@ export async function execSfdxJson(
   return await execCommand(command, options);
 }
 
+let cachedWorkspaceRoot: string | null = null;
 export function getWorkspaceRoot() {
+  if (cachedWorkspaceRoot !== null) {
+    return cachedWorkspaceRoot;
+  }
   let currentWorkspaceFolderUri = ".";
   if ((vscode.workspace.workspaceFolders?.length || 0) > 0) {
     currentWorkspaceFolderUri = (vscode.workspace.workspaceFolders || [])[0].uri
@@ -430,7 +432,8 @@ export function getWorkspaceRoot() {
   ) {
     currentWorkspaceFolderUri = currentWorkspaceFolderUri.substr(1);
   }
-  return currentWorkspaceFolderUri;
+  cachedWorkspaceRoot = currentWorkspaceFolderUri;
+  return cachedWorkspaceRoot;
 }
 
 let sfdxProjectJsonFound: boolean | null = null;
@@ -575,115 +578,6 @@ export function getGitMenusItems(): any[] | null {
 
 export function setGitMenusItems(menuItems: any): void {
   GIT_MENUS = menuItems;
-}
-
-export function isProjectSfdxConfigLoaded() {
-  if (PROJECT_CONFIG) {
-    return true;
-  }
-  return false;
-}
-
-export async function loadProjectSfdxHardisConfig() {
-  if (PROJECT_CONFIG) {
-    return PROJECT_CONFIG;
-  }
-  PROJECT_CONFIG = await getConfig("project");
-  return PROJECT_CONFIG;
-}
-
-export async function loadExternalSfdxHardisConfiguration() {
-  const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
-  if (config.get("customCommandsConfiguration")) {
-    // load config
-    const customCommandsConfiguration: string =
-      config.get("customCommandsConfiguration") || "";
-    const remoteConfig = customCommandsConfiguration.startsWith("http")
-      ? await loadFromRemoteConfigFile(customCommandsConfiguration)
-      : loadFromLocalConfigFile(customCommandsConfiguration);
-    return remoteConfig;
-  }
-  return {};
-}
-
-// Fetch remote config file
-/* jscpd:ignore-start */
-async function loadFromRemoteConfigFile(url: string) {
-  if (REMOTE_CONFIGS[url]) {
-    return REMOTE_CONFIGS[url];
-  }
-  const remoteConfigResp = await axios.get(url);
-  if (remoteConfigResp.status !== 200) {
-    throw new Error(
-      "[sfdx-hardis] Unable to read remote configuration file at " +
-        url +
-        "\n" +
-        JSON.stringify(remoteConfigResp),
-    );
-  }
-  const remoteConfig = yaml.load(remoteConfigResp.data);
-  REMOTE_CONFIGS[url] = remoteConfig;
-  return remoteConfig;
-}
-/* jscpd:ignore-end */
-
-/**
- * Helper function to get the config file paths for .sfdx-hardis.yml
- * Returns both root and config directory paths
- */
-function getSfdxHardisConfigPaths(): {
-  rootConfigFile: string;
-  configConfigFile: string;
-} | null {
-  if (!vscode.workspace.workspaceFolders) {
-    return null;
-  }
-  const workspaceRoot = vscode.workspace.workspaceFolders[0].uri.fsPath;
-  const rootConfigFile = path.join(workspaceRoot, `.sfdx-hardis.yml`);
-  const configConfigFile = path.join(workspaceRoot, `config/.sfdx-hardis.yml`);
-  return { rootConfigFile, configConfigFile };
-}
-
-export async function readSfdxHardisConfig(): Promise<any> {
-  const configPaths = getSfdxHardisConfigPaths();
-  if (configPaths) {
-    const { rootConfigFile, configConfigFile } = configPaths;
-    if (fs.existsSync(rootConfigFile)) {
-      return await loadFromLocalConfigFile(rootConfigFile);
-    }
-    if (fs.existsSync(configConfigFile)) {
-      return await loadFromLocalConfigFile(configConfigFile);
-    }
-  }
-  return {};
-}
-
-export async function writeSfdxHardisConfig(
-  key: string,
-  value: any,
-): Promise<any> {
-  const configPaths = getSfdxHardisConfigPaths();
-  if (configPaths) {
-    const { rootConfigFile, configConfigFile } = configPaths;
-    const configFile = fs.existsSync(rootConfigFile)
-      ? rootConfigFile
-      : configConfigFile;
-    await fs.ensureDir(path.dirname(configFile));
-    const config = await readSfdxHardisConfig();
-    config[key] = value;
-    await fs.writeFile(configFile, yaml.dump(config));
-  }
-  return {};
-}
-
-// Read filesystem config file
-export async function loadFromLocalConfigFile(file: string): Promise<any> {
-  try {
-    const localConfig = yaml.load(fs.readFileSync(file).toString());
-    return localConfig;
-  } catch {
-    return {};
-  }
 }
 
 export async function getGitParentBranch() {

@@ -4,13 +4,13 @@ import * as path from "path";
 import axios from "axios";
 import { LwcPanelManager } from "../lwc-panel-manager";
 import { Commands } from "../commands";
-import {
-  getWorkspaceRoot,
-  readSfdxHardisConfig,
-  writeSfdxHardisConfig,
-} from "../utils";
+import { getWorkspaceRoot } from "../utils";
 import { Logger } from "../logger";
 import { DOCSITE_URL } from "../constants";
+import {
+  readSfdxHardisConfig,
+  writeSfdxHardisConfig,
+} from "../utils/sfdx-hardis-config-utils";
 
 /**
  * AI & documentation-related fields from the sfdx-hardis JSON schema

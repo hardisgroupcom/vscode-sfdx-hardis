@@ -1,11 +1,12 @@
 import * as vscode from "vscode";
 import { Commands } from "../commands";
-import { getWorkspaceRoot, readSfdxHardisConfig } from "../utils";
+import { getWorkspaceRoot } from "../utils";
 import { SfdxHardisConfigHelper } from "../utils/pipeline/sfdxHardisConfigHelper";
 import { listMajorOrgs } from "../utils/orgConfigUtils";
 import { LwcPanelManager } from "../lwc-panel-manager";
 import { listProjectApexTestClasses } from "../utils/prePostCommandsUtils";
 import { t } from "../i18n/i18n";
+import { readSfdxHardisConfig } from "../utils/sfdx-hardis-config-utils";
 
 export function registerShowPipelineConfig(commands: Commands) {
   const disposable = vscode.commands.registerCommand(

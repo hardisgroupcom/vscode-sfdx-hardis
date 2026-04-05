@@ -18,6 +18,8 @@ export default class Welcome extends SharedMixin(LightningElement) {
   @track docsiteUrl = "";
   @track contributersUrl = "";
   @track contactFormUrl = "";
+  @track customMenus = [];
+  @track activeCustomMenu = null;
 
   @track setupHidden = false;
   scrollThreshold = 100; // Hide toggle after scrolling 100px
@@ -87,6 +89,9 @@ export default class Welcome extends SharedMixin(LightningElement) {
     if (data && data.contactFormUrl) {
       this.contactFormUrl = data.contactFormUrl;
     }
+    if (data && data.customMenus) {
+      this.customMenus = data.customMenus;
+    }
   }
 
   setColorThemeVariants(colorThemeConfig) {
@@ -99,6 +104,62 @@ export default class Welcome extends SharedMixin(LightningElement) {
   @api
   handleMessage(type, data) {
     console.log("Welcome component received message:", type, data);
+    if (type === "updateCustomMenus") {
+      this.customMenus = data || [];
+    }
+  }
+
+  get hasCustomMenus() {
+    return this.customMenus && this.customMenus.length > 0;
+  }
+
+  get isHomeView() {
+    return !this.activeCustomMenu;
+  }
+
+  get isCustomMenuView() {
+    return !!this.activeCustomMenu;
+  }
+
+  get activeCustomMenuLabel() {
+    return this.activeCustomMenu ? this.activeCustomMenu.label : "";
+  }
+
+  get activeCustomMenuCommands() {
+    return this.activeCustomMenu ? this.activeCustomMenu.commands || [] : [];
+  }
+
+  navigateToCustomMenu(event) {
+    const menuId = event.currentTarget.dataset.menuId;
+    const menu = this.customMenus.find((m) => m.id === menuId);
+    if (menu) {
+      this.activeCustomMenu = menu;
+    }
+  }
+
+  backToHome() {
+    this.activeCustomMenu = null;
+  }
+
+  executeCustomCommand(event) {
+    const command = event.currentTarget.dataset.command;
+    if (!command) {
+      return;
+    }
+    if (
+      command.startsWith("vscode-sfdx-hardis") ||
+      command.startsWith("workbench")
+    ) {
+      window.sendMessageToVSCode({
+        type: "runVsCodeCommand",
+        data: { command: command.split(" ")[0] },
+      });
+    } else {
+      window.sendMessageToVSCode({
+        type: "runCommand",
+        data: { command: command },
+      });
+    }
   }
 
   @api

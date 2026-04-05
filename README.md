@@ -237,28 +237,37 @@ You can **define your own custom commands** that will appear at the beginning or
   - Locally in you project, in `config/.sfdx-hardis.yml` file
   - In a `.sfdx-hardis.yml` file, in VsCode setting `custom commands` _(ex: `C:\myfolder\.sfdx-hardis.yml`)_
   - In a remote  `.sfdx-hardis.yml` file, in VsCode setting `custom commands` _(ex: `http://my.server.com/.sfdx-hardis.yml`)_
-- Icons can be any of the [SVG files in this folder](https://github.com/hardisgroupcom/vscode-sfdx-hardis/tree/main/resources)
+- **Menu properties:** `id`, `label`, `description` (Welcome panel card text), `vscodeIcon` (VS Code ThemeIcon id, default `symbol-misc`), `sldsIcon` (SLDS icon name for Welcome panel, default `utility:apps`)
+- **Command properties:** `id`, `label`, `command`, `tooltip`, `helpUrl`, `icon` (SVG filename, default `cloudity-logo.svg`), `vscodeIcon` (VS Code ThemeIcon id, default `run`), `sldsIcon` (SLDS icon name for Welcome panel, default `utility:apex`)
+- SVG `icon` values can be any of the [SVG files in this folder](https://github.com/hardisgroupcom/vscode-sfdx-hardis/tree/main/resources)
+- `vscodeIcon` values can be any [VS Code ThemeIcon id](https://code.visualstudio.com/api/references/icons-in-labels#icon-listing) (e.g. `run`, `file`, `symbol-misc`)
+- `sldsIcon` values can be any [SLDS icon](https://www.lightningdesignsystem.com/icons/) in `category:name` format (e.g. `utility:apps`, `utility:apex`, `standard:apex`)
 - Once updated, please refresh the VsCode Sfdx Hardis Commands panel to see the changes.
 
 Example in `config/.sfdx-hardis.yml`:
 
 ```yaml
-customCommandsPosition: first  # can be first or last
+customCommandsPosition: first  # can be first or last (default: last)
 customCommands:
   - id: custom-menu
     label: Custom commands
+    description: Optional description shown on the Welcome panel card  # optional
+    vscodeIcon: symbol-misc   # VS Code ThemeIcon id for the commands panel. Default: symbol-misc
+    sldsIcon: utility:apps    # SLDS/Lightning icon name for the Welcome panel card. Default: utility:apps
     commands:
       - id: generate-manifest-xml
         label: Generate manifest
-        icon: file.svg
+        icon: file.svg        # SVG icon filename from resources/. Default: cloudity-logo.svg
+        vscodeIcon: file      # VS Code ThemeIcon id for the commands panel. Default: run
+        sldsIcon: utility:file  # SLDS/Lightning icon name for the Welcome panel. Default: utility:apex
         tooltip: Generates a manifest package.xml using local sfdx source files
-        command: sfdx force:source:manifest:create --sourcepath force-app --manifestname myNewManifest
+        command: sf project generate manifest --source-dir force-app --name myNewManifest
         helpUrl: https://megalinter.github.io/
       - id: list-all-orgs
         label: List all orgs
         icon: salesforce.svg
         tooltip: List all orgs that has already been authenticated using sfdx
-        command: sfdx force:org:list --all
+        command: sf org list --all
   - id: custom-menu-2
     label: Another custom menu
     commands:

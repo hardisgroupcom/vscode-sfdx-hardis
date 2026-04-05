@@ -1,6 +1,6 @@
 import path from "path";
 import * as vscode from "vscode";
-import { t } from "./i18n/i18n";
+import { t } from "../i18n/i18n";
 
 export class ThemeUtils {
   public emojisInSections: boolean;

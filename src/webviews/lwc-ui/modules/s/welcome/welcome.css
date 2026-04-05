@@ -901,3 +901,19 @@
 .blue-back[data-theme="dark"] .getting-started-subtitle {
     color: #7fb6ff;
 }
+
+/* Custom Menus - back button header */
+.custom-menu-view-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+}
+
+.custom-menu-view-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0;
+}

@@ -21,12 +21,12 @@ import {
   execCommandWithProgress,
   execSfdxJson,
   getWorkspaceRoot,
-  readSfdxHardisConfig,
 } from "../utils";
 import { t } from "../i18n/i18n";
 import path from "path";
 import fs from "fs-extra";
 import { listAllOrgs } from "../utils/orgUtils";
+import { readSfdxHardisConfig } from "../utils/sfdx-hardis-config-utils";
 
 const SCHEDULABLE_CLASSES_CACHE_TTL_MS = 15 * 60 * 1000;
 const schedulableClassesByOrgCache = new Map<

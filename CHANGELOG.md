@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Support custom menus and commands from sfdx-hardis plugins
+- Custom commands from `.sfdx-hardis.yml` and remote config are now displayed in the **Welcome page** as navigable menu cards
+  - First render is fast: custom menus load in the background and are pushed to the panel once config is ready
+  - Commands tree also refreshes automatically once config is loaded, so the first display is never blocked
+- Fix issue that did not displayed custom commands in menu without refreshing it
+- Improve performances by caching workspace root and sfdx-hardis config file content
+
 ## [7.4.2] 2026-03-31
 
 - Pin axios version to stay safe regarding its hack (we already were, it's a preventive action !)
