@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Plugins architecture enhancements
+  - Assign specific style to custom commands and plugins commands
+  - Improve loading performances
+- New command **Reset sfdx-hardis cache** (available in help menu) to clear all cache and reload everything (after a plugin installation for example)
+
 ## [7.5.0] 2026-05-04
 
 - Support custom menus and commands from sfdx-hardis plugins

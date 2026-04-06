@@ -429,6 +429,11 @@
         "command": "vscode-sfdx-hardis.runLocalHtmlDocPages",
         "title": "SFDX Hardis: Run Local HTML Doc Pages",
         "icon": "$(globe)"
+      },
+      {
+        "command": "vscode-sfdx-hardis.resetCache",
+        "title": "SFDX Hardis: Reset SFDX-Hardis cache",
+        "icon": "$(refresh)"
       }
     ],
     "viewsContainers": {

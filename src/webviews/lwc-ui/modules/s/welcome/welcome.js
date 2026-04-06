@@ -90,8 +90,41 @@ export default class Welcome extends SharedMixin(LightningElement) {
       this.contactFormUrl = data.contactFormUrl;
     }
     if (data && data.customMenus) {
-      this.customMenus = data.customMenus;
+      this.customMenus = this.normalizeMenus(data.customMenus);
     }
+  }
+
+  normalizeMenus(menus) {
+    return (menus || []).map((menu) => this.normalizeMenu(menu));
+  }
+
+  normalizeMenu(menu) {
+    const sourceType = menu?.sourceType || "custom";
+    const iconClass =
+      menu?.welcomeIconClass ||
+      (sourceType === "plugin"
+        ? "feature-icon-container orange"
+        : "feature-icon-container purple");
+    return {
+      ...menu,
+      sourceType,
+      welcomeIconClass: iconClass,
+      commands: (menu?.commands || []).map((cmd) => this.normalizeCommand(cmd, sourceType)),
+    };
+  }
+
+  normalizeCommand(command, parentSourceType) {
+    const sourceType = command?.sourceType || parentSourceType || "custom";
+    const iconClass =
+      command?.welcomeIconClass ||
+      (sourceType === "plugin"
+        ? "feature-icon-container orange"
+        : "feature-icon-container purple");
+    return {
+      ...command,
+      sourceType,
+      welcomeIconClass: iconClass,
+    };
   }
 
   setColorThemeVariants(colorThemeConfig) {
@@ -105,7 +138,7 @@ export default class Welcome extends SharedMixin(LightningElement) {
   handleMessage(type, data) {
     console.log("Welcome component received message:", type, data);
     if (type === "updateCustomMenus") {
-      this.customMenus = data || [];
+      this.customMenus = this.normalizeMenus(data || []);
     }
   }
 
