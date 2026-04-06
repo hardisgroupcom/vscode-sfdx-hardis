@@ -303,7 +303,6 @@ export async function execCommand(
       commandResult =
         COMMANDS_RESULTS[command].result ??
         (await COMMANDS_RESULTS[command].promise);
-      delete COMMANDS_RESULTS[command];
     } else {
       // no cache
       Logger.log("[vscode-sfdx-hardis][command] " + command);
