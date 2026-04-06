@@ -1349,6 +1349,7 @@
   "requiresLabel": "Wymaga:",
   "resetSelectedListOfItemsToMerge": "Zresetuj wybraną listę elementów do scalenia",
   "resetSfdxHardisCache": "Zresetuj pamięć podręczną SFDX-Hardis",
+  "resettingCacheAndRefreshingUIs": "Resetowanie pamięci podręcznej i odświeżanie interfejsów...",
   "resetSelectedListTooltip": "Wypchnąłeś już commit, ale wybrałeś aktualizacje, których nie chcesz wdrożyć?\nW takim przypadku kliknij tutaj i będziesz mógł ponownie wybrać, co chcesz zacommitować.\nPo utworzeniu nowych commitów kliknij \"Zapisz / Opublikuj User Story\"",
   "resultsFound": "Znaleziono {{count}} wynik(ów)",
   "retrieveAllCrmAnalyticsSources": "Pobierz wszystkie źródła CRM Analytics",

@@ -1353,6 +1353,7 @@
   "requiresLabel": "必要:",
   "resetSelectedListOfItemsToMerge": "マージする項目の選択リストをリセット",
   "resetSfdxHardisCache": "SFDX-Hardis のキャッシュをリセット",
+  "resettingCacheAndRefreshingUIs": "キャッシュをリセットして UI を更新しています...",
   "resetSelectedListTooltip": "すでに commit は push 済みだが、デプロイしたくない更新を選択してしまいましたか？\nその場合はここをクリックすると、commit したい内容をもう一度選択できます。\n新しい commit を作成したら、\"Save / Publish User Story\" をクリックしてください",
   "resultsFound": "{{count}} 件の結果が見つかりました",
   "retrieveAllCrmAnalyticsSources": "すべての CRM Analytics ソースを取得",

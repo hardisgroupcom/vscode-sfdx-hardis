@@ -1351,6 +1351,7 @@
   "requiresLabel": "Requer:",
   "resetSelectedListOfItemsToMerge": "Redefinir lista selecionada de itens para mesclar",
   "resetSfdxHardisCache": "Redefinir o cache do SFDX-Hardis",
+  "resettingCacheAndRefreshingUIs": "Redefinindo cache e atualizando interfaces...",
   "resetSelectedListTooltip": "Você já fez push de um commit mas selecionou atualizações que não quer fazer deploy?\nNesse caso, clique aqui e você poderá selecionar novamente o que quer fazer commit.\nDepois de criar novos commits, clique em \"Salvar / Publicar História de Usuário\"",
   "resultsFound": "{{count}} resultado(s) encontrado(s)",
   "retrieveAllCrmAnalyticsSources": "Baixar todas as fontes CRM Analytics",

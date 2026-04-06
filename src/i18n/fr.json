@@ -1353,6 +1353,7 @@
   "requiresLabel": "Nécessite :",
   "resetSelectedListOfItemsToMerge": "Réinitialiser la liste sélectionnée d'éléments à fusionner",
   "resetSfdxHardisCache": "Réinitialiser le cache de SFDX-Hardis",
+  "resettingCacheAndRefreshingUIs": "Réinitialisation du cache et rafraîchissement des interfaces...",
   "resetSelectedListTooltip": "Vous avez déjà poussé un commit mais vous avez sélectionné des modifications que vous ne voulez pas déployer ?\nDans ce cas, cliquez ici et vous pourrez sélectionner à nouveau ce que vous voulez commiter.\nAprès avoir créé de nouveaux commits, cliquez sur « Sauvegarder / Publier la User Story »",
   "resultsFound": "{{count}} résultat(s) trouvé(s)",
   "retrieveAllCrmAnalyticsSources": "Récupérer toutes les sources CRM Analytics",

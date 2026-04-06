@@ -163,8 +163,17 @@ export class Commands {
     const disposable = vscode.commands.registerCommand(
       "vscode-sfdx-hardis.resetCache",
       async () => {
-        await resetCache();
-        await refreshAllRefreshableUis(true);
+        await vscode.window.withProgress(
+          {
+            location: vscode.ProgressLocation.Notification,
+            title: t("resettingCacheAndRefreshingUIs"),
+            cancellable: false,
+          },
+          async () => {
+            await resetCache();
+            await refreshAllRefreshableUis(true);
+          },
+        );
       },
     );
     this.disposables.push(disposable);

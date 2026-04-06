@@ -1356,6 +1356,7 @@
   "requiresLabel": "Vereist:",
   "resetSelectedListOfItemsToMerge": "Geselecteerde lijst van samen te voegen items resetten",
   "resetSfdxHardisCache": "SFDX-Hardis-cache resetten",
+  "resettingCacheAndRefreshingUIs": "Cache resetten en interfaces vernieuwen...",
   "resetSelectedListTooltip": "Je hebt al een commit gepusht maar hebt updates geselecteerd die je niet wilt implementeren?\nKlik in dat geval hier om opnieuw te selecteren wat je wilt commiten.\nNadat je nieuwe commits hebt aangemaakt, klik je op \"Save / Publish User Story\"",
   "resultsFound": "{{count}} resultaat/resultaten gevonden",
   "retrieveAllCrmAnalyticsSources": "Alle CRM-analysebronnen ophalen",
