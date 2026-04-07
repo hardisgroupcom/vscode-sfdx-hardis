@@ -77,6 +77,7 @@ let settingsConfigLoaded = false;
 let pluginCommandsLoaded = false;
 let IN_FLIGHT_PLUGIN_COMMANDS: Promise<CustomCommandsGroup[]> | null = null;
 let CACHED_PLUGIN_COMMANDS: CustomCommandsGroup[] = [];
+let CUSTOM_AND_PLUGINS_COMMANDS: Set<string> = new Set();
 
 /** Returns true once both project config and extension settings config data are ready */
 export function isAllConfigLoaded(): boolean {
@@ -97,6 +98,7 @@ export function isAllCustomCommandsLoaded(): boolean {
  * Loads both config-based and plugin-based custom command groups in parallel.
  * Returns the combined list of all groups once both sources are ready.
  * Safe to call multiple times — individual loaders handle in-flight deduplication.
+ * Also caches allowed background command prefixes for validation.
  */
 export async function loadAllCustomCommandGroups(): Promise<
   CustomCommandsGroup[]
@@ -105,7 +107,29 @@ export async function loadAllCustomCommandGroups(): Promise<
     listCustomCommands(),
     listPluginCustomCommands(),
   ]);
-  return [...configGroups, ...pluginGroups];
+  const allGroups = [...configGroups, ...pluginGroups];
+  
+  // Cache allowed background commands
+  CUSTOM_AND_PLUGINS_COMMANDS = new Set();
+  for (const group of allGroups) {
+    for (const menu of group.menus || []) {
+      for (const cmd of menu.commands || []) {
+        const command = (cmd.command || "").trim();
+        CUSTOM_AND_PLUGINS_COMMANDS.add(command);
+      }
+    }
+  }
+  
+  return allGroups;
+}
+
+/**
+ * Returns true if the given command is in the allowed background commands list.
+ */
+export function isCommandAllowedByCustomOrPluginRegistry(
+  command: string,
+): boolean {
+  return CUSTOM_AND_PLUGINS_COMMANDS.has(command.trim());
 }
 
 export async function resetSfdxHardisConfigCache() {
@@ -118,6 +142,7 @@ export async function resetSfdxHardisConfigCache() {
   pluginCommandsLoaded = false;
   IN_FLIGHT_PLUGIN_COMMANDS = null;
   CACHED_PLUGIN_COMMANDS = [];
+  CUSTOM_AND_PLUGINS_COMMANDS = new Set();
 }
 
 export async function loadProjectSfdxHardisConfig() {

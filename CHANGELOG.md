@@ -5,6 +5,7 @@
 - Plugins architecture enhancements
   - Assign specific style to custom commands and plugins commands
   - Improve loading performances
+- Security: Support authorization and background execution for custom/plugin commands
 - New command **Reset sfdx-hardis cache** (available in help menu) to clear all cache and reload everything (after a plugin installation for example)
 
 ## [7.5.0] 2026-05-04
