@@ -339,7 +339,9 @@ export class SetupHelper {
       const latest: string | null =
         latestResult.status === "fulfilled" ? latestResult.value : null;
       const sfdxPath: string =
-        sfdxPathResult.status === "fulfilled" ? sfdxPathResult.value : "missing";
+        sfdxPathResult.status === "fulfilled"
+          ? sfdxPathResult.value
+          : "missing";
       const recommended = RECOMMENDED_SFDX_CLI_VERSION || latest || null;
 
       // Handle legacy sfdx-cli detection

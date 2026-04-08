@@ -533,7 +533,9 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
     // Await parallel promises to be completed
     await Promise.allSettled(pluginPromises);
     // Ensure community/custom plugins are always displayed at the end
-    items.sort((a: any, b: any) => (a.isCommunity ? 1 : 0) - (b.isCommunity ? 1 : 0));
+    items.sort(
+      (a: any, b: any) => (a.isCommunity ? 1 : 0) - (b.isCommunity ? 1 : 0),
+    );
     // Propose user to upgrade if necessary
     let mergeDriverWasEnabled = false;
     if (outdated.some((plugin) => plugin.name === "sf-git-merge-driver")) {
