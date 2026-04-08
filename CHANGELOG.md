@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [7.6.0] 2026-04-09
+
 - Pipeline View: add Zoom In / Zoom Out buttons and mouse wheel zoom support
 - Plugins architecture enhancements
   - Assign specific style to custom commands and plugins commands
@@ -12,7 +14,7 @@
 - Improve performances while listing plugins & checking versions dependencies
 
 
-## [7.5.0] 2026-05-04
+## [7.5.0] 2026-04-05
 
 - Support custom menus and commands from sfdx-hardis plugins
 - Custom commands from `.sfdx-hardis.yml` and remote config are now displayed in the **Welcome page** as navigable menu cards
