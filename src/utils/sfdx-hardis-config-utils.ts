@@ -108,7 +108,7 @@ export async function loadAllCustomCommandGroups(): Promise<
     listPluginCustomCommands(),
   ]);
   const allGroups = [...configGroups, ...pluginGroups];
-  
+
   // Cache allowed background commands
   CUSTOM_AND_PLUGINS_COMMANDS = new Set();
   for (const group of allGroups) {
@@ -119,7 +119,7 @@ export async function loadAllCustomCommandGroups(): Promise<
       }
     }
   }
-  
+
   return allGroups;
 }
 
@@ -347,7 +347,13 @@ export async function listCustomPlugins(): Promise<CustomPlugin[]> {
 
 /** Plugins that should never be queried for hardis-commands */
 const CORE_PLUGIN_PREFIXES = ["@salesforce/", "@oclif/"];
-const KNOWN_PLUGINS = ["sfdx-hardis", "sfdx-git-delta", "sf-git-merge-driver", "sfdmu", "sfpowerkit"];
+const KNOWN_PLUGINS = [
+  "sfdx-hardis",
+  "sfdx-git-delta",
+  "sf-git-merge-driver",
+  "sfdmu",
+  "sfpowerkit",
+];
 
 /**
  * Returns the list of non-core installed plugin names (type === "user" or "link").
@@ -371,7 +377,10 @@ async function listNonCorePluginNames(): Promise<string[]> {
         return false;
       }
       const name = p.alias || p.name || "";
-      return !CORE_PLUGIN_PREFIXES.some((prefix) => name.startsWith(prefix)) && !KNOWN_PLUGINS.includes(name);
+      return (
+        !CORE_PLUGIN_PREFIXES.some((prefix) => name.startsWith(prefix)) &&
+        !KNOWN_PLUGINS.includes(name)
+      );
     })
     .map((p: any) => p.alias || p.name);
 }

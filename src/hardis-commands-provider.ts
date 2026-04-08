@@ -1126,8 +1126,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
           );
         }
       })();
-    }
-    else {
+    } else {
       const allGroups = await loadAllCustomCommandGroups();
       for (const group of allGroups) {
         hardisCommands = this.addCommands(

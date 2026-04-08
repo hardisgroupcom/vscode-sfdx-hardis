@@ -1,6 +1,8 @@
 import * as vscode from "vscode";
 
-export async function refreshAllRefreshableUis(keepCache: boolean = true): Promise<void> {
+export async function refreshAllRefreshableUis(
+  keepCache: boolean = true,
+): Promise<void> {
   await Promise.allSettled([
     vscode.commands.executeCommand(
       "vscode-sfdx-hardis.refreshCommandsView",

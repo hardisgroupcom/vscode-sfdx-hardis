@@ -46,9 +46,7 @@ export class CommandRunner {
     return this.terminalStack[this.terminalStack.length - 1];
   }
 
-  private isCommandAllowedInBackground(
-    command: string,
-  ): boolean {
+  private isCommandAllowedInBackground(command: string): boolean {
     const trimmedCommand = command.trimStart();
     if (trimmedCommand.startsWith("sf hardis")) {
       return true;
@@ -59,10 +57,7 @@ export class CommandRunner {
     return false;
   }
 
-  executeCommand(
-    sfdxHardisCommand: string,
-    extraEnv?: Record<string, string>,
-  ) {
+  executeCommand(sfdxHardisCommand: string, extraEnv?: Record<string, string>) {
     const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
     this.debugNodeJs = config.get("debugSfdxHardisCommands") ?? false;
     const trimmedCommand = sfdxHardisCommand.trimStart();
@@ -70,12 +65,11 @@ export class CommandRunner {
       config.get("userInputCommandLineIfLWC") === "background";
     const isHardisCommand = trimmedCommand.startsWith("sf hardis");
     const isCustomOrPluginCommand =
-      !isHardisCommand && isCommandAllowedByCustomOrPluginRegistry(trimmedCommand);
+      !isHardisCommand &&
+      isCommandAllowedByCustomOrPluginRegistry(trimmedCommand);
 
     if (!isHardisCommand && !isCustomOrPluginCommand) {
-      vscode.window.showErrorMessage(
-        t("commandNotAllowedOnlyRegistered"),
-      );
+      vscode.window.showErrorMessage(t("commandNotAllowedOnlyRegistered"));
       return;
     }
 
@@ -139,9 +133,7 @@ export class CommandRunner {
     // For sf hardis commands: check background mode allowlist
     if (!this.isCommandAllowedInBackground(sfdxHardisCommand)) {
       // This should not happen for sf hardis commands, but handle gracefully
-      vscode.window.showErrorMessage(
-        t("hardisCommandNotAllowedInBackground"),
-      );
+      vscode.window.showErrorMessage(t("hardisCommandNotAllowedInBackground"));
       return;
     }
 
@@ -185,10 +177,7 @@ export class CommandRunner {
       }
     }
 
-    if (
-      type === "background" &&
-      !this.isCommandAllowedInBackground(command)
-    ) {
+    if (type === "background" && !this.isCommandAllowedInBackground(command)) {
       vscode.window.showErrorMessage(
         t("blockedBackgroundModeOnlyHardisOrRegisteredCustom"),
       );
@@ -224,9 +213,7 @@ export class CommandRunner {
         webSocketAlive = true;
       }
       if (type === "background" && !webSocketAlive) {
-        vscode.window.showErrorMessage(
-          t("vscodeSfdxHardisNotInitializedYet"),
-        );
+        vscode.window.showErrorMessage(t("vscodeSfdxHardisNotInitializedYet"));
         return null;
       }
     }
@@ -276,10 +263,7 @@ export class CommandRunner {
   showDuplicateCommandWarning() {
     const buttonMsg = t("runDuplicateCommandAnyway");
     vscode.window
-      .showErrorMessage(
-        t("duplicateCommandWarning"),
-        buttonMsg,
-      )
+      .showErrorMessage(t("duplicateCommandWarning"), buttonMsg)
       .then((selection) => {
         if (selection === buttonMsg) {
           this.allowNextDuplicateCommand = true;
@@ -605,9 +589,7 @@ export class CommandRunner {
   runCommandInTerminal(command: string, extraEnv?: Record<string, string>) {
     const terminal = this.getLatestTerminal();
     if (!terminal) {
-      vscode.window.showErrorMessage(
-        t("noTerminalAvailableToRunCommand"),
-      );
+      vscode.window.showErrorMessage(t("noTerminalAvailableToRunCommand"));
       return;
     }
     terminal.show(false);

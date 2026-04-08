@@ -16,7 +16,7 @@ import { registerShowPipelineConfig } from "./commands/showPipelineConfig";
 import { registerShowInstalledPackages } from "./commands/showInstalledPackages";
 import { registerShowOrgMonitoring } from "./commands/showOrgMonitoring";
 import { registerShowFilesWorkbench } from "./commands/showFilesWorkbench";
-import { registerShowDataWorkbench} from "./commands/showDataWorkbench";
+import { registerShowDataWorkbench } from "./commands/showDataWorkbench";
 import { registerOpenKeyFile } from "./commands/openKeyFile";
 import { registerRunLocalHtmlDocPages } from "./commands/runLocalHtmlDoc";
 import { registerShowExtensionConfig } from "./commands/showExtensionConfig";

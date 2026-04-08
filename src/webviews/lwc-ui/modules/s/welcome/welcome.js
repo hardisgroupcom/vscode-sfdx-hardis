@@ -109,7 +109,9 @@ export default class Welcome extends SharedMixin(LightningElement) {
       ...menu,
       sourceType,
       welcomeIconClass: iconClass,
-      commands: (menu?.commands || []).map((cmd) => this.normalizeCommand(cmd, sourceType)),
+      commands: (menu?.commands || []).map((cmd) =>
+        this.normalizeCommand(cmd, sourceType),
+      ),
     };
   }
 
