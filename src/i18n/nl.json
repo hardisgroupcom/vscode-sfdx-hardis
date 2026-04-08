@@ -1584,6 +1584,7 @@
   "unusedUsersExperience6Months": "Inactieve Portal-gebruikers (6 maanden)",
   "unusedUsersExperience6MonthsDescription": "Experience/Portal-gebruikers detecteren die de afgelopen 6 maanden niet zijn ingelogd",
   "unusedUsersTooltip": "Zoek actieve gebruikers die recentelijk niet bij de org zijn ingelogd",
+  "unzoomDiagram": "Diagram uitzoomen",
   "updatedFromLabel": "Bijgewerkt van",
   "updatedNAliases": "Succesvol {{count}} alias(sen) bijgewerkt",
   "updatedToLabel": "Bijgewerkt tot",
@@ -1646,5 +1647,6 @@
   "workspaceUpdatedSuccessfully": "Data workspace \"{{name}}\" succesvol bijgewerkt!",
   "yesLabel": "Ja",
   "youAreAllSet": "Je bent helemaal klaar 🤓",
-  "yourInput": "Je invoer"
+  "yourInput": "Je invoer",
+  "zoomDiagram": "Diagram inzoomen"
 }

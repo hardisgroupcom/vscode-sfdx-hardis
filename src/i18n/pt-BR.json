@@ -1582,6 +1582,7 @@
   "unusedUsersExperience6Months": "Usuários Portal inativos (6 meses)",
   "unusedUsersExperience6MonthsDescription": "Detectar usuários Experience/Portal que não fizeram login nos últimos 6 meses",
   "unusedUsersTooltip": "Identificar usuários ativos que não fizeram login na org recentemente",
+  "unzoomDiagram": "Reduzir zoom do diagrama",
   "updatedFromLabel": "Atualizado De",
   "updatedNAliases": "{{count}} alias(es) atualizado(s) com sucesso",
   "updatedToLabel": "Atualizado Para",
@@ -1644,5 +1645,6 @@
   "workspaceUpdatedSuccessfully": "Espaço de trabalho de dados \"{{name}}\" atualizado com sucesso!",
   "yesLabel": "Sim",
   "youAreAllSet": "Tudo pronto 🤓",
-  "yourInput": "Sua Entrada"
+  "yourInput": "Sua Entrada",
+  "zoomDiagram": "Ampliar diagrama"
 }

@@ -1571,6 +1571,7 @@
   "unusedUsersExperience6Months": "Utenti Portal inattivi (6 mesi)",
   "unusedUsersExperience6MonthsDescription": "Rileva gli utenti Experience/Portal che non hanno effettuato l'accesso negli ultimi 6 mesi",
   "unusedUsersTooltip": "Identifica gli utenti attivi che non hanno effettuato l'accesso all'org di recente",
+  "unzoomDiagram": "Riduci zoom del diagramma",
   "updatedFromLabel": "Aggiornato da",
   "updatedNAliases": "Aggiornati con successo {{count}} alias",
   "updatedToLabel": "Aggiornato a",
@@ -1627,5 +1628,6 @@
   "workspaceUpdatedSuccessfully": "Workspace dati \"{{name}}\" aggiornato con successo!",
   "yesLabel": "Sì",
   "youAreAllSet": "Sei a posto 🤓",
-  "yourInput": "Il tuo input"
+  "yourInput": "Il tuo input",
+  "zoomDiagram": "Ingrandisci diagramma"
 }

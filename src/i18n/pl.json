@@ -1580,6 +1580,7 @@
   "unusedUsersExperience6Months": "Nieaktywni użytkownicy portalu (6 miesięcy)",
   "unusedUsersExperience6MonthsDescription": "Wykryj użytkowników Experience/Portal, którzy nie logowali się przez 6 miesięcy",
   "unusedUsersTooltip": "Identyfikuje aktywnych użytkowników, którzy nie logowali się ostatnio do org",
+  "unzoomDiagram": "Pomniejsz diagram",
   "updatedFromLabel": "Zaktualizowano z",
   "updatedNAliases": "Pomyślnie zaktualizowano {{count}} alias(y)",
   "updatedToLabel": "Zaktualizowano do",
@@ -1642,5 +1643,6 @@
   "workspaceUpdatedSuccessfully": "Workspace danych \"{{name}}\" zaktualizowany pomyślnie!",
   "yesLabel": "Tak",
   "youAreAllSet": "Wszystko gotowe 🤓",
-  "yourInput": "Twoje dane"
+  "yourInput": "Twoje dane",
+  "zoomDiagram": "Powiększ diagram"
 }

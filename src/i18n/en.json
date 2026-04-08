@@ -1584,6 +1584,7 @@
   "unusedUsersExperience6Months": "Inactive Portal Users (6 months)",
   "unusedUsersExperience6MonthsDescription": "Detect Experience/Portal users who have not logged in for 6 months",
   "unusedUsersTooltip": "Identify active users who haven't logged in recently to the org",
+  "unzoomDiagram": "Unzoom diagram",
   "updatedFromLabel": "Updated From",
   "updatedNAliases": "Successfully updated {{count}} alias(es)",
   "updatedToLabel": "Updated To",
@@ -1646,5 +1647,6 @@
   "workspaceUpdatedSuccessfully": "Data workspace \"{{name}}\" updated successfully!",
   "yesLabel": "Yes",
   "youAreAllSet": "You are all set 🤓",
-  "yourInput": "Your Input"
+  "yourInput": "Your Input",
+  "zoomDiagram": "Zoom diagram"
 }

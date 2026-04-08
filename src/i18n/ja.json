@@ -1584,6 +1584,7 @@
   "unusedUsersExperience6Months": "非アクティブなポータルユーザー（6か月）",
   "unusedUsersExperience6MonthsDescription": "6か月間ログインしていない Experience/Portal ユーザーを検出",
   "unusedUsersTooltip": "最近組織にログインしていない有効ユーザーを特定します",
+  "unzoomDiagram": "図の拡大を戻す",
   "updatedFromLabel": "更新元",
   "updatedNAliases": "エイリアス {{count}} 件を正常に更新しました",
   "updatedToLabel": "更新先",
@@ -1646,5 +1647,6 @@
   "workspaceUpdatedSuccessfully": "データワークスペース \"{{name}}\" が正常に更新されました！",
   "yesLabel": "はい",
   "youAreAllSet": "これで準備完了です 🤓",
-  "yourInput": "入力内容"
+  "yourInput": "入力内容",
+  "zoomDiagram": "図を拡大"
 }
