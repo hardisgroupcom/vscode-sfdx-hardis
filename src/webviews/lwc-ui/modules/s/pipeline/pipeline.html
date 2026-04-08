@@ -105,7 +105,28 @@
                             <template if:true={loading}>
                                 <div class="pipeline-loading-overlay"></div>
                             </template>
-                            <div class="mermaid"></div>
+                            <div class="pipeline-diagram-controls">
+                                <lightning-button-group>
+                                    <lightning-button-icon
+                                        icon-name="utility:zoomin"
+                                        variant="border-filled"
+                                        alternative-text={i18n.zoomDiagram}
+                                        title={i18n.zoomDiagram}
+                                        onclick={handleMermaidZoomIn}
+                                    ></lightning-button-icon>
+                                    <lightning-button-icon
+                                        icon-name="utility:zoomout"
+                                        variant="border-filled"
+                                        alternative-text={i18n.unzoomDiagram}
+                                        title={i18n.unzoomDiagram}
+                                        onclick={handleMermaidZoomOut}
+                                        disabled={isMermaidUnzoomed}
+                                    ></lightning-button-icon>
+                                </lightning-button-group>
+                            </div>
+                            <div class={mermaidViewportClass} onmousedown={handleMermaidMouseDown} onwheel={handleMermaidWheel}>
+                                <div class="mermaid"></div>
+                            </div>
                         </div>
                         <template if:true={error}>
                             <pre class="mermaid-debug" style="color:#888;font-size:10px;max-height:100px;overflow:auto;"></pre>

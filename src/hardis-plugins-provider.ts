@@ -24,6 +24,7 @@ import {
 import {
   isAllConfigLoaded,
   listCustomPlugins,
+  listPluginsProvidingHardisCommands,
 } from "./utils/sfdx-hardis-config-utils";
 
 let nodeInstallOk = false;
@@ -289,15 +290,35 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
     await this.loadAdditionalPlugins(plugins);
 
     const outdated: any[] = [];
+    // Run the three independent slow operations in parallel (all cached 1 day after first call)
+    const [sfVersionResult, latestSfdxCliVersionResult, sfPluginsResult] =
+      await Promise.allSettled([
+        execCommand("sf --version", {
+          output: true,
+          fail: false,
+          cacheSection: "app",
+          cacheExpiration: 1000 * 60 * 60 * 24, // 1 day
+        }),
+        getNpmLatestVersion("@salesforce/cli"),
+        execCommand("sf plugins", {
+          output: true,
+          fail: false,
+          cacheSection: "app",
+          cacheExpiration: 1000 * 60 * 60 * 24, // 1 day
+        }),
+      ]);
+
+    if (latestSfdxCliVersionResult.status === "rejected") {
+      Logger.log(`Error while fetching latest version for @salesforce/cli`);
+      return [];
+    }
+    const latestSfdxCliVersion = latestSfdxCliVersionResult.value;
+
     // check sfdx-cli version
-    const sfdxCliVersionStdOut: string = (
-      await execCommand("sf --version", {
-        output: true,
-        fail: false,
-        cacheSection: "app",
-        cacheExpiration: 1000 * 60 * 60 * 24, // 1 day
-      })
-    ).stdout;
+    const sfdxCliVersionStdOut: string =
+      sfVersionResult.status === "fulfilled"
+        ? sfVersionResult.value.stdout
+        : "";
     let sfdxCliVersionMatch = /sfdx-cli\/([^\s]+)/gm.exec(sfdxCliVersionStdOut);
     let sfdxCliVersion = "(missing)";
     let legacySfdx = false;
@@ -311,15 +332,6 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
       if (sfdxCliVersionMatch) {
         sfdxCliVersion = sfdxCliVersionMatch[1];
       }
-    }
-
-    let latestSfdxCliVersion;
-    try {
-      latestSfdxCliVersion = await getNpmLatestVersion("@salesforce/cli");
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (e) {
-      Logger.log(`Error while fetching latest version for @salesforce/cli`);
-      return [];
     }
 
     const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
@@ -385,15 +397,10 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
     }
     items.push(sfdxCliItem);
     // get currently installed plugins
-    let sfdxPlugins =
-      (
-        await execCommand("sf plugins", {
-          output: true,
-          fail: false,
-          cacheSection: "app",
-          cacheExpiration: 1000 * 60 * 60 * 24, // 1 day
-        })
-      ).stdout || "";
+    let sfdxPlugins: string =
+      sfPluginsResult.status === "fulfilled"
+        ? sfPluginsResult.value.stdout || ""
+        : "";
     // Remove everything after "Uninstalled JIT", including it
     const uninstalledJitIndex = sfdxPlugins.indexOf("Uninstalled JIT");
     if (uninstalledJitIndex > -1) {
@@ -458,7 +465,9 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
         Logger.log(`Error while fetching latest version for ${plugin.name}`);
         return;
       }
-      let pluginLabel = plugin.name;
+      let pluginLabel = (plugin as any).isCommunity
+        ? `${plugin.name} ${t("communityPluginLabel")}`
+        : plugin.name;
       let isPluginMissing = false;
       const previewLabel = t("pluginPreviewLabel");
       const regexVersion = new RegExp(
@@ -523,6 +532,10 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
     });
     // Await parallel promises to be completed
     await Promise.allSettled(pluginPromises);
+    // Ensure community/custom plugins are always displayed at the end
+    items.sort(
+      (a: any, b: any) => (a.isCommunity ? 1 : 0) - (b.isCommunity ? 1 : 0),
+    );
     // Propose user to upgrade if necessary
     let mergeDriverWasEnabled = false;
     if (outdated.some((plugin) => plugin.name === "sf-git-merge-driver")) {
@@ -652,8 +665,18 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
       })();
       return;
     }
-    const customPlugins = await listCustomPlugins();
-    plugins.push(...(customPlugins as any[]));
+    const [customPlugins, hardisCommandsPlugins] = await Promise.all([
+      listCustomPlugins(),
+      listPluginsProvidingHardisCommands(),
+    ]);
+    const pluginsToAdd = [...customPlugins, ...hardisCommandsPlugins];
+    const existingNames = new Set(plugins.map((plugin) => plugin.name));
+    for (const plugin of pluginsToAdd) {
+      if (!existingNames.has(plugin.name)) {
+        plugins.push({ ...(plugin as any), isCommunity: true });
+        existingNames.add(plugin.name);
+      }
+    }
   }
 
   // Check for required VsCode extensions

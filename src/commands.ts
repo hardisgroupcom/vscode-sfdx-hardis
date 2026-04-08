@@ -4,7 +4,7 @@ import { HardisCommandsProvider } from "./hardis-commands-provider";
 import { HardisStatusProvider } from "./hardis-status-provider";
 import { HardisPluginsProvider } from "./hardis-plugins-provider";
 import { LocalWebSocketServer } from "./hardis-websocket-server";
-import { openFolderInExplorer } from "./utils";
+import { openFolderInExplorer, resetCache } from "./utils";
 import TelemetryReporter from "@vscode/extension-telemetry";
 import { CommandRunner } from "./command-runner";
 import { runSalesforceCliMcpServer } from "./utils/mcpUtils";
@@ -30,6 +30,7 @@ import { registerShowPackageXml } from "./commands/packageXml";
 import { registerGitMergeDriverToggle } from "./commands/gitMergeDriver";
 import { registerShowDocumentationWorkbench } from "./commands/showDocumentationWorkbench";
 import { t } from "./i18n/i18n";
+import { refreshAllRefreshableUis } from "./utils/uiUtils";
 import { ThemeUtils } from "./utils/themeUtils";
 
 export class Commands {
@@ -63,6 +64,7 @@ export class Commands {
     this.registerOpenValidationLink();
     this.registerOpenReportsFolder();
     this.registerNewTerminalCommand();
+    this.registerResetCache();
     this.registerRefreshCommandsView();
     this.registerRefreshStatusView();
     this.registerRefreshPluginsView();
@@ -152,6 +154,26 @@ export class Commands {
             type: "refresh",
           });
         }
+      },
+    );
+    this.disposables.push(disposable);
+  }
+
+  registerResetCache() {
+    const disposable = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.resetCache",
+      async () => {
+        await vscode.window.withProgress(
+          {
+            location: vscode.ProgressLocation.Notification,
+            title: t("resettingCacheAndRefreshingUIs"),
+            cancellable: false,
+          },
+          async () => {
+            await resetCache();
+            await refreshAllRefreshableUis(true);
+          },
+        );
       },
     );
     this.disposables.push(disposable);

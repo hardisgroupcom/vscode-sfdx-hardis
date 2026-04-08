@@ -42,6 +42,41 @@
     pointer-events: none;
 }
 
+.pipeline-diagram-controls {
+    position: absolute;
+    bottom: 0.5rem;
+    left: 0.5rem;
+    z-index: 20;
+}
+
+.mermaid-viewport {
+    border-radius: 6px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-viewport-zoomed {
+    display: block;
+    overflow: auto;
+    cursor: grab;
+}
+
+.mermaid-viewport-zoomed.is-panning {
+    cursor: grabbing;
+    user-select: none;
+}
+
+.mermaid {
+    display: inline-block;
+    margin: 0 auto;
+}
+
+.mermaid svg {
+    display: block;
+}
+
 .blue-back {
     font-family: "Salesforce Sans", -apple-system, BlinkMacSystemFont, sans-serif;
 }
