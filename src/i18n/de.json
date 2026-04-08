@@ -187,6 +187,8 @@
   "commitChangesDescription": "Metadaten-Retriever öffnen, um Metadatenänderungen aus Ihrer Org herunterzuladen und in das Repository zu committen",
   "communityNameHelp": "Community-Name für 'publish-community'-Aktionen",
   "communityNameLabel": "Community-Name",
+  "communityPluginLabel": "(Community)",
+  "communityPluginTrustExplanation": "Dies ist ein Community-Plugin. Wenn Sie es verwenden, bedeutet das, dass Sie dem Autor vertrauen.",
   "completelyFree": "Vollständig kostenlos",
   "configKeyUpdated": "VsCode-Konfiguration '{{configKey}}' aktualisiert",
   "configKeyUpdatedAdded": " (hinzugefügt: {{elements}})",

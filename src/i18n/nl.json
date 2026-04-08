@@ -187,6 +187,8 @@
   "commitChangesDescription": "Open de Metadata Ophaler om metadata-wijzigingen van je org te downloaden en te committen naar de repository",
   "communityNameHelp": "Community-naam voor 'publish-community'-acties",
   "communityNameLabel": "Community-naam",
+  "communityPluginLabel": "(community)",
+  "communityPluginTrustExplanation": "Dit is een community-plugin. Als je die gebruikt, betekent dat dat je de auteur vertrouwt.",
   "completelyFree": "Volledig gratis",
   "configKeyUpdated": "VsCode-configuratie '{{configKey}}' bijgewerkt",
   "configKeyUpdatedAdded": " (toegevoegd: {{elements}})",

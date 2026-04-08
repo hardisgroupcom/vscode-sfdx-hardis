@@ -77,6 +77,7 @@ let settingsConfigLoaded = false;
 let pluginCommandsLoaded = false;
 let IN_FLIGHT_PLUGIN_COMMANDS: Promise<CustomCommandsGroup[]> | null = null;
 let CACHED_PLUGIN_COMMANDS: CustomCommandsGroup[] = [];
+let CACHED_PLUGIN_COMMAND_PROVIDER_NAMES: string[] = [];
 let CUSTOM_AND_PLUGINS_COMMANDS: Set<string> = new Set();
 
 /** Returns true once both project config and extension settings config data are ready */
@@ -142,6 +143,7 @@ export async function resetSfdxHardisConfigCache() {
   pluginCommandsLoaded = false;
   IN_FLIGHT_PLUGIN_COMMANDS = null;
   CACHED_PLUGIN_COMMANDS = [];
+  CACHED_PLUGIN_COMMAND_PROVIDER_NAMES = [];
   CUSTOM_AND_PLUGINS_COMMANDS = new Set();
 }
 
@@ -391,7 +393,7 @@ async function listNonCorePluginNames(): Promise<string[]> {
  */
 async function fetchPluginHardisCommands(
   pluginName: string,
-): Promise<CustomCommandsGroup | null> {
+): Promise<{ pluginName: string; group: CustomCommandsGroup } | null> {
   try {
     const result = await execSfdxJson(
       `sf ${pluginName}:hardis-commands --json`,
@@ -408,8 +410,11 @@ async function fetchPluginHardisCommands(
       return null;
     }
     return {
-      menus: applyDefaultCommandIcons(menus, "plugin"),
-      position: "last",
+      pluginName,
+      group: {
+        menus: applyDefaultCommandIcons(menus, "plugin"),
+        position: "last",
+      },
     };
   } catch (e: any) {
     Logger.log(
@@ -440,12 +445,15 @@ export async function listPluginCustomCommands(): Promise<
         pluginNames.map((name) => fetchPluginHardisCommands(name)),
       );
       const groups: CustomCommandsGroup[] = [];
+      const providerNames: string[] = [];
       for (const result of results) {
         if (result.status === "fulfilled" && result.value) {
-          groups.push(result.value);
+          groups.push(result.value.group);
+          providerNames.push(result.value.pluginName);
         }
       }
       CACHED_PLUGIN_COMMANDS = groups;
+      CACHED_PLUGIN_COMMAND_PROVIDER_NAMES = providerNames;
       pluginCommandsLoaded = true;
       return groups;
     } finally {
@@ -453,6 +461,19 @@ export async function listPluginCustomCommands(): Promise<
     }
   })();
   return IN_FLIGHT_PLUGIN_COMMANDS;
+}
+
+/**
+ * Returns plugins exposing `hardis-commands`, usable as dependency checks.
+ */
+export async function listPluginsProvidingHardisCommands(): Promise<
+  CustomPlugin[]
+> {
+  await listPluginCustomCommands();
+  return CACHED_PLUGIN_COMMAND_PROVIDER_NAMES.map((pluginName) => ({
+    name: pluginName,
+    helpUrl: `https://www.npmjs.com/package/${pluginName}`,
+  }));
 }
 
 // Read filesystem config file

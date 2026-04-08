@@ -186,6 +186,8 @@
   "commitChangesDescription": "Otwórz Metadata Retriever, aby pobrać zmiany metadata z org i commitować je do repozytorium",
   "communityNameHelp": "Nazwa community dla akcji 'publish-community'",
   "communityNameLabel": "Nazwa Community",
+  "communityPluginLabel": "(społeczność)",
+  "communityPluginTrustExplanation": "To jest plugin społecznościowy. Jeśli go używasz, oznacza to, że ufasz jego autorowi.",
   "completelyFree": "Całkowicie darmowe",
   "configKeyUpdated": "Konfiguracja VsCode '{{configKey}}' zaktualizowana",
   "configKeyUpdatedAdded": " (dodano: {{elements}})",

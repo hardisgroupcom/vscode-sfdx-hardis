@@ -187,6 +187,8 @@
   "commitChangesDescription": "Metadata Retriever を開いて組織からメタデータ変更をダウンロードし、リポジトリに commit します",
   "communityNameHelp": "'publish-community' アクション用のコミュニティ名",
   "communityNameLabel": "コミュニティ名",
+  "communityPluginLabel": "（コミュニティ）",
+  "communityPluginTrustExplanation": "これはコミュニティ製プラグインです。利用する場合は、その作者を信頼していることを意味します。",
   "completelyFree": "完全無料",
   "configKeyUpdated": "VsCode 設定 '{{configKey}}' を更新しました",
   "configKeyUpdatedAdded": "（追加: {{elements}}）",

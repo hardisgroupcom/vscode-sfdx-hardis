@@ -187,6 +187,8 @@
   "commitChangesDescription": "Ouvrir le Metadata Retriever pour télécharger les modifications de métadonnées de votre org et les commiter dans le dépôt",
   "communityNameHelp": "Nom de la communauté pour les actions 'publish-community'",
   "communityNameLabel": "Nom de la communauté",
+  "communityPluginLabel": "(communauté)",
+  "communityPluginTrustExplanation": "Ceci est un plugin de la communauté. Si vous l'utilisez, cela signifie que vous faites confiance à son auteur.",
   "completelyFree": "Entièrement gratuit",
   "configKeyUpdated": "Configuration VsCode '{{configKey}}' mise à jour",
   "configKeyUpdatedAdded": " (ajouté : {{elements}})",

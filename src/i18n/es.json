@@ -187,6 +187,8 @@
   "commitChangesDescription": "Abrir el Metadata Retriever para descargar cambios de metadatos de su org, comprobar las diferencias y hacer commit de esos cambios en el repositorio",
   "communityNameHelp": "Nombre de la comunidad para las acciones 'publish-community'",
   "communityNameLabel": "Nombre de la comunidad",
+  "communityPluginLabel": "(comunidad)",
+  "communityPluginTrustExplanation": "Este es un plugin de la comunidad. Si lo utiliza, significa que confía en su autor.",
   "completelyFree": "Completamente gratuito",
   "configKeyUpdated": "Configuración de VSCode '{{configKey}}' actualizada",
   "configKeyUpdatedAdded": " (añadido: {{elements}})",

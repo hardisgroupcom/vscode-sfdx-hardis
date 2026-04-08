@@ -187,6 +187,8 @@
   "commitChangesDescription": "Abrir o Buscador de Metadados para baixar alterações de metadados da sua org e fazer commit no repositório",
   "communityNameHelp": "Nome da comunidade para ações do tipo 'publish-community'",
   "communityNameLabel": "Nome da Comunidade",
+  "communityPluginLabel": "(comunidade)",
+  "communityPluginTrustExplanation": "Este é um plugin da comunidade. Se você o utiliza, isso significa que confia no autor.",
   "completelyFree": "Completamente Gratuito",
   "configKeyUpdated": "Configuração do VsCode '{{configKey}}' atualizada",
   "configKeyUpdatedAdded": " (adicionado: {{elements}})",
