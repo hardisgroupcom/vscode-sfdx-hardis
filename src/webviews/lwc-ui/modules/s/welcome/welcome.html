@@ -247,7 +247,7 @@
                         <template for:each={customMenus} for:item="menu">
                             <div key={menu.id} class="feature-card custom-menu-card" data-menu-id={menu.id} onclick={navigateToCustomMenu}>
                                 <div class="feature-card-header">
-                                    <div class="feature-icon-container purple">
+                                    <div class={menu.welcomeIconClass}>
                                         <lightning-icon icon-name={menu.sldsIcon} size="medium" variant="inverse"></lightning-icon>
                                     </div>
                                     <h3 class="feature-title">{menu.label}</h3>
@@ -363,7 +363,7 @@
                         <template for:each={activeCustomMenuCommands} for:item="cmd">
                             <div key={cmd.id} class="feature-card" data-command={cmd.command} onclick={executeCustomCommand}>
                                 <div class="feature-card-header">
-                                    <div class="feature-icon-container teal">
+                                    <div class={cmd.welcomeIconClass}>
                                         <lightning-icon icon-name={cmd.sldsIcon} size="medium" variant="inverse"></lightning-icon>
                                     </div>
                                     <h3 class="feature-title">{cmd.label}</h3>

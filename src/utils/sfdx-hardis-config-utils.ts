@@ -24,8 +24,14 @@ export interface CustomCommand {
   helpUrl?: string;
   /** VS Code ThemeIcon id for the command tree item (e.g. "run"). Defaults to "run". */
   vscodeIcon?: string;
+  /** VS Code ThemeColor token id applied to the command icon (e.g. "charts.blue"). */
+  vscodeIconColor?: string;
   /** SLDS/Lightning icon name for the welcome LWC (e.g. "utility:apex"). Defaults to "utility:apex". */
   sldsIcon?: string;
+  /** Source of this command, used to style and label it in UI. */
+  sourceType?: CustomCommandsSource;
+  /** CSS classes for the icon container in the welcome panel. */
+  welcomeIconClass?: string;
 }
 
 /** A menu group that groups related custom commands */
@@ -38,11 +44,20 @@ export interface CustomCommandMenu {
   commands?: CustomCommand[];
   /** VS Code ThemeIcon id for the section tree item (e.g. "symbol-misc"). Defaults to "symbol-misc". */
   vscodeIcon?: string;
+  /** VS Code ThemeColor token id applied to the section icon (e.g. "charts.blue"). */
+  vscodeIconColor?: string;
   /** SLDS/Lightning icon name for the welcome LWC card (e.g. "utility:apps"). Defaults to "utility:apps". */
   sldsIcon?: string;
   /** Optional description shown under the menu label in the welcome panel */
   description?: string;
+  /** Source of this menu, used to style and label it in UI. */
+  sourceType?: CustomCommandsSource;
+  /** CSS classes for the icon container in the welcome panel. */
+  welcomeIconClass?: string;
 }
+
+/** Source type for menus and commands contributed to the custom commands UI */
+export type CustomCommandsSource = "custom" | "plugin";
 
 /** Insertion position for a custom command source's menus in the commands tree */
 export type CustomCommandsPosition = "first" | "last";
@@ -62,6 +77,7 @@ let settingsConfigLoaded = false;
 let pluginCommandsLoaded = false;
 let IN_FLIGHT_PLUGIN_COMMANDS: Promise<CustomCommandsGroup[]> | null = null;
 let CACHED_PLUGIN_COMMANDS: CustomCommandsGroup[] = [];
+let CUSTOM_AND_PLUGINS_COMMANDS: Set<string> = new Set();
 
 /** Returns true once both project config and extension settings config data are ready */
 export function isAllConfigLoaded(): boolean {
@@ -71,6 +87,49 @@ export function isAllConfigLoaded(): boolean {
 /** Returns true once plugin custom commands have been discovered */
 export function isPluginCommandsLoaded(): boolean {
   return pluginCommandsLoaded;
+}
+
+/** Returns true once both config-based and plugin-based custom commands are ready */
+export function isAllCustomCommandsLoaded(): boolean {
+  return isAllConfigLoaded() && pluginCommandsLoaded;
+}
+
+/**
+ * Loads both config-based and plugin-based custom command groups in parallel.
+ * Returns the combined list of all groups once both sources are ready.
+ * Safe to call multiple times — individual loaders handle in-flight deduplication.
+ * Also caches allowed background command prefixes for validation.
+ */
+export async function loadAllCustomCommandGroups(): Promise<
+  CustomCommandsGroup[]
+> {
+  const [configGroups, pluginGroups] = await Promise.all([
+    listCustomCommands(),
+    listPluginCustomCommands(),
+  ]);
+  const allGroups = [...configGroups, ...pluginGroups];
+  
+  // Cache allowed background commands
+  CUSTOM_AND_PLUGINS_COMMANDS = new Set();
+  for (const group of allGroups) {
+    for (const menu of group.menus || []) {
+      for (const cmd of menu.commands || []) {
+        const command = (cmd.command || "").trim();
+        CUSTOM_AND_PLUGINS_COMMANDS.add(command);
+      }
+    }
+  }
+  
+  return allGroups;
+}
+
+/**
+ * Returns true if the given command is in the allowed background commands list.
+ */
+export function isCommandAllowedByCustomOrPluginRegistry(
+  command: string,
+): boolean {
+  return CUSTOM_AND_PLUGINS_COMMANDS.has(command.trim());
 }
 
 export async function resetSfdxHardisConfigCache() {
@@ -83,6 +142,7 @@ export async function resetSfdxHardisConfigCache() {
   pluginCommandsLoaded = false;
   IN_FLIGHT_PLUGIN_COMMANDS = null;
   CACHED_PLUGIN_COMMANDS = [];
+  CUSTOM_AND_PLUGINS_COMMANDS = new Set();
 }
 
 export async function loadProjectSfdxHardisConfig() {
@@ -212,7 +272,7 @@ export async function listCustomCommands(): Promise<CustomCommandsGroup[]> {
   const projectConfig = await loadProjectSfdxHardisConfig();
   if (projectConfig.customCommands) {
     result.push({
-      menus: applyDefaultCommandIcons(projectConfig.customCommands),
+      menus: applyDefaultCommandIcons(projectConfig.customCommands, "custom"),
       position: projectConfig.customCommandsPosition || "last",
     });
   }
@@ -220,7 +280,7 @@ export async function listCustomCommands(): Promise<CustomCommandsGroup[]> {
   const settingsConfig = await loadExtensionSettingsSfdxHardisConfiguration();
   if (settingsConfig.customCommands) {
     result.push({
-      menus: applyDefaultCommandIcons(settingsConfig.customCommands),
+      menus: applyDefaultCommandIcons(settingsConfig.customCommands, "custom"),
       position: settingsConfig.customCommandsPosition || "last",
     });
   }
@@ -230,18 +290,32 @@ export async function listCustomCommands(): Promise<CustomCommandsGroup[]> {
 
 function applyDefaultCommandIcons(
   customCommands: CustomCommandMenu[],
+  sourceType: CustomCommandsSource,
 ): CustomCommandMenu[] {
-  const customLabel = t("customMenuLabel");
+  const sourceLabel =
+    sourceType === "plugin" ? t("pluginMenuLabel") : t("customMenuLabel");
+  const iconClass =
+    sourceType === "plugin"
+      ? "feature-icon-container orange"
+      : "feature-icon-container purple";
+  const iconColor = sourceType === "plugin" ? "charts.orange" : "charts.blue";
   return customCommands.map((menu) => ({
     ...menu,
-    label: `${menu.label} ${customLabel}`,
+    label: `${menu.label} ${sourceLabel}`,
     vscodeIcon: menu.vscodeIcon ?? "symbol-misc",
+    vscodeIconColor: menu.vscodeIconColor ?? iconColor,
     sldsIcon: menu.sldsIcon ?? "utility:apps",
+    sourceType,
+    welcomeIconClass: menu.welcomeIconClass ?? iconClass,
     commands: (menu.commands || []).map((cmd) => ({
       ...cmd,
+      label: `${cmd.label} ${sourceLabel}`,
       icon: cmd.icon ?? "cloudity-logo.svg",
       vscodeIcon: cmd.vscodeIcon ?? "run",
+      vscodeIconColor: cmd.vscodeIconColor ?? iconColor,
       sldsIcon: cmd.sldsIcon ?? "utility:apex",
+      sourceType,
+      welcomeIconClass: cmd.welcomeIconClass ?? iconClass,
     })),
   }));
 }
@@ -273,6 +347,7 @@ export async function listCustomPlugins(): Promise<CustomPlugin[]> {
 
 /** Plugins that should never be queried for hardis-commands */
 const CORE_PLUGIN_PREFIXES = ["@salesforce/", "@oclif/"];
+const KNOWN_PLUGINS = ["sfdx-hardis", "sfdx-git-delta", "sf-git-merge-driver", "sfdmu", "sfpowerkit"];
 
 /**
  * Returns the list of non-core installed plugin names (type === "user" or "link").
@@ -296,7 +371,7 @@ async function listNonCorePluginNames(): Promise<string[]> {
         return false;
       }
       const name = p.alias || p.name || "";
-      return !CORE_PLUGIN_PREFIXES.some((prefix) => name.startsWith(prefix));
+      return !CORE_PLUGIN_PREFIXES.some((prefix) => name.startsWith(prefix)) && !KNOWN_PLUGINS.includes(name);
     })
     .map((p: any) => p.alias || p.name);
 }
@@ -324,7 +399,7 @@ async function fetchPluginHardisCommands(
       return null;
     }
     return {
-      menus: applyDefaultCommandIcons(menus),
+      menus: applyDefaultCommandIcons(menus, "plugin"),
       position: "last",
     };
   } catch (e: any) {

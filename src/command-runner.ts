@@ -2,6 +2,7 @@ import treeKill from "tree-kill";
 import * as vscode from "vscode";
 import { LwcPanelManager } from "./lwc-panel-manager";
 import { t } from "./i18n/i18n";
+import { isCommandAllowedByCustomOrPluginRegistry } from "./utils/sfdx-hardis-config-utils";
 import { spawn } from "child_process";
 import {
   containsCertificateIssue,
@@ -45,16 +46,117 @@ export class CommandRunner {
     return this.terminalStack[this.terminalStack.length - 1];
   }
 
-  executeCommand(sfdxHardisCommand: string, extraEnv?: Record<string, string>) {
+  private isCommandAllowedInBackground(
+    command: string,
+  ): boolean {
+    const trimmedCommand = command.trimStart();
+    if (trimmedCommand.startsWith("sf hardis")) {
+      return true;
+    }
+    if (trimmedCommand.startsWith("sf ")) {
+      return isCommandAllowedByCustomOrPluginRegistry(trimmedCommand);
+    }
+    return false;
+  }
+
+  executeCommand(
+    sfdxHardisCommand: string,
+    extraEnv?: Record<string, string>,
+  ) {
     const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
     this.debugNodeJs = config.get("debugSfdxHardisCommands") ?? false;
-    if (
-      config.get("userInputCommandLineIfLWC") === "terminal" ||
-      !sfdxHardisCommand.startsWith("sf hardis")
-    ) {
+    const trimmedCommand = sfdxHardisCommand.trimStart();
+    const isBackgroundMode =
+      config.get("userInputCommandLineIfLWC") === "background";
+    const isHardisCommand = trimmedCommand.startsWith("sf hardis");
+    const isCustomOrPluginCommand =
+      !isHardisCommand && isCommandAllowedByCustomOrPluginRegistry(trimmedCommand);
+
+    if (!isHardisCommand && !isCustomOrPluginCommand) {
+      vscode.window.showErrorMessage(
+        t("commandNotAllowedOnlyRegistered"),
+      );
+      return;
+    }
+
+    // For custom/plugin commands: check autorunCommands and offer "Always authorize" option
+    if (isCustomOrPluginCommand) {
+      const autorunCommands = config.get<string[]>("autorunCommands", []);
+      const isAutorun = autorunCommands.some((cmd) =>
+        trimmedCommand.startsWith(cmd.trim()),
+      );
+
+      if (isAutorun) {
+        // Skip prompt and run according to active mode
+        this.executeCommandUsingCurrentMode(
+          isBackgroundMode,
+          sfdxHardisCommand,
+          extraEnv,
+        );
+        return;
+      }
+
+      // Not in autorun list — ask for confirmation with "Always authorize" option
+      vscode.window
+        .showWarningMessage(
+          t("customOrPluginCommandAuthorizationPrompt", {
+            command: trimmedCommand,
+          }),
+          t("allowOnce"),
+          t("alwaysAllow"),
+          t("cancel"),
+        )
+        .then(async (selection) => {
+          if (selection === t("allowOnce")) {
+            this.executeCommandUsingCurrentMode(
+              isBackgroundMode,
+              sfdxHardisCommand,
+              extraEnv,
+            );
+          } else if (selection === t("alwaysAllow")) {
+            // Add command to autorunCommands
+            const updated = [...autorunCommands, trimmedCommand];
+            await config.update(
+              "autorunCommands",
+              updated,
+              vscode.ConfigurationTarget.Global,
+            );
+            this.executeCommandUsingCurrentMode(
+              isBackgroundMode,
+              sfdxHardisCommand,
+              extraEnv,
+            );
+          }
+        });
+      return;
+    }
+
+    if (!isBackgroundMode) {
       this.executeCommandTerminal(sfdxHardisCommand, extraEnv);
+      return;
+    }
+
+    // For sf hardis commands: check background mode allowlist
+    if (!this.isCommandAllowedInBackground(sfdxHardisCommand)) {
+      // This should not happen for sf hardis commands, but handle gracefully
+      vscode.window.showErrorMessage(
+        t("hardisCommandNotAllowedInBackground"),
+      );
+      return;
+    }
+
+    this.executeCommandBackground(sfdxHardisCommand, extraEnv);
+  }
+
+  private executeCommandUsingCurrentMode(
+    isBackgroundMode: boolean,
+    command: string,
+    extraEnv?: Record<string, string>,
+  ) {
+    if (isBackgroundMode && this.isCommandAllowedInBackground(command)) {
+      this.executeCommandBackground(command, extraEnv);
     } else {
-      this.executeCommandBackground(sfdxHardisCommand, extraEnv);
+      this.executeCommandTerminal(command, extraEnv);
     }
   }
 
@@ -67,16 +169,30 @@ export class CommandRunner {
     process?: any,
   ): string | null {
     // Block dangerous or invalid commands
-    if (!command.startsWith("sf hardis") || command.includes("&&")) {
+    if (
+      !command.trimStart().startsWith("sf ") ||
+      command.includes("&&") ||
+      command.includes("||")
+    ) {
       if (type === "background") {
         if (this.commandsInstance?.logger) {
           this.commandsInstance.logger.log("Invalid command blocked");
         }
         vscode.window.showErrorMessage(
-          `Blocked: Only 'sf hardis' commands without '&&' are allowed.\n${command}`,
+          t("blockedOnlySfCommandsNoLogicalOperators", { command }),
         );
         return null;
       }
+    }
+
+    if (
+      type === "background" &&
+      !this.isCommandAllowedInBackground(command)
+    ) {
+      vscode.window.showErrorMessage(
+        t("blockedBackgroundModeOnlyHardisOrRegisteredCustom"),
+      );
+      return null;
     }
     let cmd = command;
     // Add --skipauth argument when necessary
@@ -109,7 +225,7 @@ export class CommandRunner {
       }
       if (type === "background" && !webSocketAlive) {
         vscode.window.showErrorMessage(
-          "VsCode SFDX-Hardis is not initialized yet, please wait a few seconds before running this command again.\nIn the problem persists, update VsCode setting vsCodeSfdxHardis.userInputCommandLineIfLWC to 'terminal'",
+          t("vscodeSfdxHardisNotInitializedYet"),
         );
         return null;
       }
@@ -158,10 +274,10 @@ export class CommandRunner {
   }
 
   showDuplicateCommandWarning() {
-    const buttonMsg = "No you're wrong, let me run it again!";
+    const buttonMsg = t("runDuplicateCommandAnyway");
     vscode.window
       .showErrorMessage(
-        "No need to click multiple times on a menu, just be patient 🤗",
+        t("duplicateCommandWarning"),
         buttonMsg,
       )
       .then((selection) => {
@@ -445,21 +561,21 @@ export class CommandRunner {
             );
             vscode.window
               .showWarningMessage(
-                "🦙 It is recommended to use Git Bash as default terminal shell (do it in the opened dialog at the top of the screen)",
-                "Download Git Bash",
-                "Ignore",
-                "Don't ask again",
+                t("gitBashRecommendedAsDefaultTerminal"),
+                t("downloadGitBash"),
+                t("ignore"),
+                t("dontAskAgain"),
               )
               .then(async (selection) => {
-                if (selection === "Download Git Bash") {
+                if (selection === t("downloadGitBash")) {
                   vscode.env.openExternal(
                     vscode.Uri.parse("https://git-scm.com/downloads"),
                   );
-                } else if (selection === "Don't ask again") {
+                } else if (selection === t("dontAskAgain")) {
                   await config.update("disableGitBashCheck", true);
                 } else {
                   vscode.window.showInformationMessage(
-                    "🦙 If you do not want to see this message anymore, set VsCode setting vsCodeSfdxHardis.disableGitBashCheck to true, or click on Don't ask again",
+                    t("disableGitBashCheckHint"),
                   );
                 }
               });
@@ -490,7 +606,7 @@ export class CommandRunner {
     const terminal = this.getLatestTerminal();
     if (!terminal) {
       vscode.window.showErrorMessage(
-        "No terminal available to run the command.",
+        t("noTerminalAvailableToRunCommand"),
       );
       return;
     }
