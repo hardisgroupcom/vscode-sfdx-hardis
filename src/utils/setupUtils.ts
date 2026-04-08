@@ -15,6 +15,7 @@ import {
   RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION,
   RECOMMENDED_SFDX_CLI_VERSION,
 } from "../constants";
+import { listPluginsProvidingHardisCommands } from "./sfdx-hardis-config-utils";
 
 export type DependencyInfo = {
   explanation: string;
@@ -91,7 +92,7 @@ export class SetupHelper {
     return 0;
   }
 
-  listDependencies(): Record<string, DependencyInfo> {
+  async listDependencies(): Promise<Record<string, DependencyInfo>> {
     const dependencies: Record<string, DependencyInfo> = {
       node: {
         label: "Node.js",
@@ -182,6 +183,26 @@ export class SetupHelper {
         installMethod: this.installSfPlugin.bind(this, "sf-git-merge-driver"),
       },
     };
+    const hardisCommandsPlugins = await listPluginsProvidingHardisCommands();
+    // Pre-warm npm version cache for community plugins in parallel so checkSfPlugin hits cache
+    for (const plugin of hardisCommandsPlugins) {
+      getNpmLatestVersion(plugin.name).catch(() => {});
+    }
+    for (const plugin of hardisCommandsPlugins) {
+      const dependencyId = `sfplugin:${plugin.name}`;
+      if (!dependencies[dependencyId]) {
+        dependencies[dependencyId] = {
+          label: `${plugin.name} ${t("communityPluginLabel")}`,
+          explanation: t("communityPluginTrustExplanation"),
+          installable: true,
+          iconName: "utility:package",
+          prerequisites: ["sf"],
+          helpUrl: plugin.helpUrl,
+          checkMethod: this.checkSfPlugin.bind(this, plugin.name),
+          installMethod: this.installSfPlugin.bind(this, plugin.name),
+        };
+      }
+    }
     return dependencies;
   }
 
@@ -310,13 +331,17 @@ export class SetupHelper {
       const version = match ? match[1] || match[2] : null;
       const ok = version !== null;
 
-      // Determine recommended version (either configured or latest on npm)
-      let latest: string | null = null;
-      try {
-        latest = await getNpmLatestVersion("@salesforce/cli");
-      } catch {
-        latest = null;
-      }
+      // Run npm version lookup and path detection in parallel (both independent of each other)
+      const [latestResult, sfdxPathResult] = await Promise.allSettled([
+        getNpmLatestVersion("@salesforce/cli"),
+        which("sf"),
+      ]);
+      const latest: string | null =
+        latestResult.status === "fulfilled" ? latestResult.value : null;
+      const sfdxPath: string =
+        sfdxPathResult.status === "fulfilled"
+          ? sfdxPathResult.value
+          : "missing";
       const recommended = RECOMMENDED_SFDX_CLI_VERSION || latest || null;
 
       // Handle legacy sfdx-cli detection
@@ -335,14 +360,6 @@ export class SetupHelper {
             "npm uninstall sfdx-cli --global && npm install @salesforce/cli --global",
           upgradeAvailable: true,
         };
-      }
-
-      let sfdxPath = "";
-      try {
-        sfdxPath = await which("sf");
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      } catch (_e) {
-        sfdxPath = "missing";
       }
 
       if (

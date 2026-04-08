@@ -226,6 +226,14 @@
             "type": "string"
           },
           "description": "List of commands that will auto-close their execution panel on successful completion. Commands should be in the format 'sf hardis:category:action'"
+        },
+        "vsCodeSfdxHardis.autorunCommands": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "description": "List of commands that will run in terminal without prompting when not allowed in background mode. Commands should be in the format 'sf ...'"
         }
       }
     },
@@ -429,6 +437,11 @@
         "command": "vscode-sfdx-hardis.runLocalHtmlDocPages",
         "title": "SFDX Hardis: Run Local HTML Doc Pages",
         "icon": "$(globe)"
+      },
+      {
+        "command": "vscode-sfdx-hardis.resetCache",
+        "title": "SFDX Hardis: Reset SFDX-Hardis cache",
+        "icon": "$(refresh)"
       }
     ],
     "viewsContainers": {

@@ -13,8 +13,11 @@ export function registerShowSetup(commands: Commands) {
         viewColumn: vscode.ViewColumn.One,
       });
       const helper = SetupHelper.getInstance();
-      const dependencies = helper.listDependencies();
+      // Start loading dependencies immediately without blocking panel registration.
+      // The webview takes ~100ms to mount; by then the promise is already running.
+      const dependenciesPromise = helper.listDependencies();
       panel.onMessage(async (type: string, data: any) => {
+        const dependencies = await dependenciesPromise;
         // Return initial list
         if (type === "requestSetupInit") {
           const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");

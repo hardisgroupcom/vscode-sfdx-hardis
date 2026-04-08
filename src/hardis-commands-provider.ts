@@ -8,10 +8,8 @@ import {
   WEBSITE_CONTACT_FORM_URL,
 } from "./constants";
 import {
-  listCustomCommands,
-  isAllConfigLoaded,
-  isPluginCommandsLoaded,
-  listPluginCustomCommands,
+  loadAllCustomCommandGroups,
+  isAllCustomCommandsLoaded,
   CustomCommandMenu,
   CustomCommandsPosition,
 } from "./utils/sfdx-hardis-config-utils";
@@ -73,6 +71,9 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
       if (item.vscodeIcon) {
         options.vscodeIcon = item.vscodeIcon;
       }
+      if (item.vscodeIconColor) {
+        options.vscodeIconColor = item.vscodeIconColor;
+      }
       items.push(
         new CommandTreeItem(
           item.label,
@@ -116,6 +117,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
         requiresProject: false,
         helpUrl: "",
         vscodeIcon: "",
+        vscodeIconColor: "",
       };
       if (item.description) {
         options.description = item.description;
@@ -131,6 +133,9 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
       }
       if (item.vscodeIcon) {
         options.vscodeIcon = item.vscodeIcon;
+      }
+      if (item.vscodeIconColor) {
+        options.vscodeIconColor = item.vscodeIconColor;
       }
       const expanded = item.defaultExpand
         ? vscode.TreeItemCollapsibleState.Expanded
@@ -1094,6 +1099,11 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
               WEBSITE_URL,
             )}`,
           },
+          {
+            id: "vscode-sfdx-hardis.resetCache",
+            label: t("resetSfdxHardisCache"),
+            command: "vscode-sfdx-hardis.resetCache",
+          },
         ],
       },
     ];
@@ -1102,13 +1112,13 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
     return hardisCommands;
   }
 
-  // Add custom commands defined within .sfdx-hardis.yml
+  // Add custom commands defined within .sfdx-hardis.yml and plugin-provided commands
   private async completeWithCustomCommands(hardisCommands: Array<any>) {
-    // Config-based custom commands (fast path)
-    if (!isAllConfigLoaded()) {
-      // Config not ready yet: return commands as-is and refresh the tree once config is loaded
+    if (!isAllCustomCommandsLoaded()) {
+      // Config or plugins not ready yet: load both in parallel in the background,
+      // then trigger a single tree refresh once everything is available.
       void (async () => {
-        const groups = await listCustomCommands(); // awaits both configs, populates caches
+        const groups = await loadAllCustomCommandGroups(); // awaits both configs, populates caches
         if (groups.length > 0) {
           vscode.commands.executeCommand(
             "vscode-sfdx-hardis.refreshCommandsView",
@@ -1117,30 +1127,8 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
         }
       })();
     } else {
-      const customCommandsGroups = await listCustomCommands();
-      for (const group of customCommandsGroups) {
-        hardisCommands = this.addCommands(
-          group.menus,
-          group.position,
-          hardisCommands,
-        );
-      }
-    }
-
-    // Plugin-provided custom commands (loaded independently to avoid blocking)
-    if (!isPluginCommandsLoaded()) {
-      void (async () => {
-        const pluginGroups = await listPluginCustomCommands();
-        if (pluginGroups.length > 0) {
-          vscode.commands.executeCommand(
-            "vscode-sfdx-hardis.refreshCommandsView",
-            true,
-          );
-        }
-      })();
-    } else {
-      const pluginGroups = await listPluginCustomCommands();
-      for (const group of pluginGroups) {
+      const allGroups = await loadAllCustomCommandGroups();
+      for (const group of allGroups) {
         hardisCommands = this.addCommands(
           group.menus,
           group.position,
@@ -1194,6 +1182,7 @@ class CommandTreeItem extends vscode.TreeItem {
       requiresProject: false,
       helpUrl: "",
       vscodeIcon: "",
+      vscodeIconColor: "",
     },
   ) {
     super(label, collapsibleState);
@@ -1228,11 +1217,21 @@ class CommandTreeItem extends vscode.TreeItem {
       this.iconPath = this.themeUtils.getCommandIconPath(this.id);
       // Override with explicit vscodeIcon when provided (e.g. custom commands)
       if (options.vscodeIcon) {
-        this.iconPath = new vscode.ThemeIcon(options.vscodeIcon);
+        this.iconPath = new vscode.ThemeIcon(
+          options.vscodeIcon,
+          options.vscodeIconColor
+            ? new vscode.ThemeColor(options.vscodeIconColor)
+            : undefined,
+        );
       }
     } else if (options.vscodeIcon) {
       // Section item with an explicit icon (e.g. custom menu groups)
-      this.iconPath = new vscode.ThemeIcon(options.vscodeIcon);
+      this.iconPath = new vscode.ThemeIcon(
+        options.vscodeIcon,
+        options.vscodeIconColor
+          ? new vscode.ThemeColor(options.vscodeIconColor)
+          : undefined,
+      );
     }
     // Manage unavailable command
     if (options.requiresProject === true && !hasSfdxProjectJson()) {

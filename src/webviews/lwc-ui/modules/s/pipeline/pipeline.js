@@ -20,6 +20,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   @track currentBranchPullRequest = null;
   @track openPullRequests = [];
   @track displayFeatureBranches = false;
+  @track mermaidZoomLevel = 1;
   @track loading = false;
   @track projectApexScripts = [];
   @track projectSfdmuWorkspaces = [];
@@ -32,6 +33,16 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   _refreshTimer = null;
   _isVisible = true;
   _isAutoRefresh = false;
+  _mermaidZoomStep = 0.1;
+  _mermaidMinZoomLevel = 1;
+  _isMermaidPanning = false;
+  _panStartX = 0;
+  _panStartY = 0;
+  _panScrollLeft = 0;
+  _panScrollTop = 0;
+  _suppressNextMermaidClick = false;
+  _mermaidViewportBottomGap = 24;
+  _mermaidViewportMinHeight = 220;
   prColumns = [
     {
       key: "number",
@@ -448,6 +459,20 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     return `command-card${this.hasCurrentBranchPullRequest ? "" : " disabled"}`;
   }
 
+  get mermaidViewportClass() {
+    return this.isMermaidZoomed
+      ? "mermaid-viewport mermaid-viewport-zoomed"
+      : "mermaid-viewport";
+  }
+
+  get isMermaidZoomed() {
+    return this.mermaidZoomLevel > this._mermaidMinZoomLevel;
+  }
+
+  get isMermaidUnzoomed() {
+    return this.mermaidZoomLevel <= this._mermaidMinZoomLevel;
+  }
+
   handleShowPipelineConfig() {
     window.sendMessageToVSCode({
       type: "runVsCodeCommand",
@@ -690,14 +715,18 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this.connectedLabel = this.i18n.connectToGit;
     this.ticketConnectedLabel = this.i18n.connectToTicketing;
     this._translatePrColumnLabels();
-    this._boundAdjust = this.adjustPrColumns.bind(this);
+    this._boundAdjust = this._handleWindowResize.bind(this);
     this._boundVisibilityChange = this._handleVisibilityChange.bind(this);
+    this._boundMermaidMouseMove = this._handleMermaidMouseMove.bind(this);
+    this._boundMermaidMouseUp = this._handleMermaidMouseUp.bind(this);
     if (typeof window !== "undefined" && window.addEventListener) {
       window.addEventListener("resize", this._boundAdjust);
       document.addEventListener(
         "visibilitychange",
         this._boundVisibilityChange,
       );
+      window.addEventListener("mousemove", this._boundMermaidMouseMove);
+      window.addEventListener("mouseup", this._boundMermaidMouseUp);
     }
     this._isVisible = !document.hidden;
   }
@@ -735,8 +764,221 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         this._boundVisibilityChange,
       );
     }
+    if (
+      typeof window !== "undefined" &&
+      window.removeEventListener &&
+      this._boundMermaidMouseMove
+    ) {
+      window.removeEventListener("mousemove", this._boundMermaidMouseMove);
+    }
+    if (
+      typeof window !== "undefined" &&
+      window.removeEventListener &&
+      this._boundMermaidMouseUp
+    ) {
+      window.removeEventListener("mouseup", this._boundMermaidMouseUp);
+    }
     // Clean up auto-refresh timer
     this._stopAutoRefresh();
+  }
+
+  _handleWindowResize() {
+    this.adjustPrColumns();
+    const mermaidSvg = this.template.querySelector(".mermaid svg");
+    this._applyMermaidZoom(mermaidSvg);
+  }
+
+  handleMermaidZoomIn() {
+    this._setMermaidZoom(this.mermaidZoomLevel + this._mermaidZoomStep);
+  }
+
+  handleMermaidZoomOut() {
+    if (this.isMermaidUnzoomed) {
+      return;
+    }
+    this._setMermaidZoom(this.mermaidZoomLevel - this._mermaidZoomStep);
+  }
+
+  handleMermaidWheel(event) {
+    if (!event || event.ctrlKey !== true) {
+      return;
+    }
+
+    const viewport = this.template.querySelector(".mermaid-viewport");
+    if (!viewport) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const rect = viewport.getBoundingClientRect();
+    const focusPoint = {
+      x:
+        (viewport.scrollLeft + (event.clientX - rect.left)) /
+        Math.max(viewport.scrollWidth, 1),
+      y:
+        (viewport.scrollTop + (event.clientY - rect.top)) /
+        Math.max(viewport.scrollHeight, 1),
+    };
+    const zoomDelta =
+      event.deltaY < 0 ? this._mermaidZoomStep : -this._mermaidZoomStep;
+    this._setMermaidZoom(this.mermaidZoomLevel + zoomDelta, focusPoint);
+  }
+
+  _setMermaidZoom(nextZoomLevel, focusPoint) {
+    const viewport = this.template.querySelector(".mermaid-viewport");
+    const previousCenterX =
+      focusPoint?.x != null
+        ? focusPoint.x
+        : viewport
+          ? (viewport.scrollLeft + viewport.clientWidth / 2) /
+            Math.max(viewport.scrollWidth, 1)
+          : 0;
+    const previousCenterY =
+      focusPoint?.y != null
+        ? focusPoint.y
+        : viewport
+          ? (viewport.scrollTop + viewport.clientHeight / 2) /
+            Math.max(viewport.scrollHeight, 1)
+          : 0;
+
+    const normalizedZoomLevel = Math.max(
+      this._mermaidMinZoomLevel,
+      Number(nextZoomLevel.toFixed(1)),
+    );
+    this.mermaidZoomLevel = normalizedZoomLevel;
+    this._handleMermaidMouseUp();
+
+    requestAnimationFrame(() => {
+      const mermaidSvg = this.template.querySelector(".mermaid svg");
+      this._applyMermaidZoom(mermaidSvg);
+      const refreshedViewport =
+        this.template.querySelector(".mermaid-viewport");
+      if (!refreshedViewport) {
+        return;
+      }
+      if (this.isMermaidZoomed) {
+        refreshedViewport.scrollLeft = Math.max(
+          0,
+          previousCenterX * refreshedViewport.scrollWidth -
+            refreshedViewport.clientWidth / 2,
+        );
+        refreshedViewport.scrollTop = Math.max(
+          0,
+          previousCenterY * refreshedViewport.scrollHeight -
+            refreshedViewport.clientHeight / 2,
+        );
+      } else {
+        refreshedViewport.scrollLeft = 0;
+        refreshedViewport.scrollTop = 0;
+      }
+    });
+  }
+
+  handleMermaidMouseDown(event) {
+    if (!this.isMermaidZoomed || event.button !== 0) {
+      return;
+    }
+    const viewport = this.template.querySelector(".mermaid-viewport");
+    if (!viewport) {
+      return;
+    }
+    this._isMermaidPanning = true;
+    this._suppressNextMermaidClick = false;
+    this._panStartX = event.clientX;
+    this._panStartY = event.clientY;
+    this._panScrollLeft = viewport.scrollLeft;
+    this._panScrollTop = viewport.scrollTop;
+    viewport.classList.add("is-panning");
+    event.preventDefault();
+  }
+
+  _handleMermaidMouseMove(event) {
+    if (!this._isMermaidPanning || !this.isMermaidZoomed) {
+      return;
+    }
+    const viewport = this.template.querySelector(".mermaid-viewport");
+    if (!viewport) {
+      return;
+    }
+    const deltaX = event.clientX - this._panStartX;
+    const deltaY = event.clientY - this._panStartY;
+    if (Math.abs(deltaX) > 2 || Math.abs(deltaY) > 2) {
+      this._suppressNextMermaidClick = true;
+    }
+    viewport.scrollLeft = this._panScrollLeft - deltaX;
+    viewport.scrollTop = this._panScrollTop - deltaY;
+  }
+
+  _handleMermaidMouseUp() {
+    if (!this._isMermaidPanning) {
+      return;
+    }
+    this._isMermaidPanning = false;
+    const viewport = this.template.querySelector(".mermaid-viewport");
+    if (viewport) {
+      viewport.classList.remove("is-panning");
+    }
+  }
+
+  _applyMermaidZoom(mermaidSvg) {
+    if (!mermaidSvg) {
+      return;
+    }
+
+    const viewport = this.template.querySelector(".mermaid-viewport");
+    if (!viewport) {
+      return;
+    }
+
+    const availableHeight = this._getAvailableMermaidViewportHeight(viewport);
+
+    const viewBox = mermaidSvg.viewBox && mermaidSvg.viewBox.baseVal;
+    const baseWidth =
+      (viewBox && viewBox.width) ||
+      (typeof mermaidSvg.getBBox === "function"
+        ? mermaidSvg.getBBox().width
+        : 0) ||
+      mermaidSvg.clientWidth ||
+      1;
+    const baseHeight =
+      (viewBox && viewBox.height) ||
+      (typeof mermaidSvg.getBBox === "function"
+        ? mermaidSvg.getBBox().height
+        : 0) ||
+      mermaidSvg.clientHeight ||
+      1;
+
+    const availableWidth = Math.max(viewport.clientWidth, 1);
+    const fitScale = Math.min(
+      availableWidth / Math.max(baseWidth, 1),
+      availableHeight / Math.max(baseHeight, 1),
+    );
+    const scale = fitScale * (this.mermaidZoomLevel || 1);
+    const renderedHeight = Math.ceil(baseHeight * scale);
+
+    mermaidSvg.style.maxWidth = "none";
+    mermaidSvg.style.width = `${Math.ceil(baseWidth * scale)}px`;
+    mermaidSvg.style.height = `${Math.ceil(baseHeight * scale)}px`;
+    mermaidSvg.style.display = "block";
+
+    if (this.isMermaidZoomed) {
+      viewport.style.height = `${Math.floor(availableHeight)}px`;
+    } else {
+      viewport.style.height = `${Math.min(Math.floor(availableHeight), renderedHeight)}px`;
+    }
+  }
+
+  _getAvailableMermaidViewportHeight(viewport) {
+    if (!viewport || typeof window === "undefined") {
+      return this._mermaidViewportMinHeight;
+    }
+    const viewportTop = viewport.getBoundingClientRect().top;
+    return Math.max(
+      this._mermaidViewportMinHeight,
+      window.innerHeight - viewportTop - this._mermaidViewportBottomGap,
+    );
   }
 
   adjustPrColumns() {
@@ -1044,8 +1286,15 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         // Catch clicks on Nodes
         const mermaidSvg = this.template.querySelector(".mermaid svg");
         if (mermaidSvg) {
+          this._applyMermaidZoom(mermaidSvg);
           this._decorateMermaidNodes(mermaidSvg);
           mermaidSvg.addEventListener("click", (event) => {
+            if (this._suppressNextMermaidClick) {
+              this._suppressNextMermaidClick = false;
+              event.preventDefault();
+              event.stopPropagation();
+              return;
+            }
             const target = event.target;
             const mermaidNode = target.closest("g.node");
             if (!mermaidNode) {
