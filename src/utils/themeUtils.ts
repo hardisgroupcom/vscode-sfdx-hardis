@@ -446,6 +446,10 @@ export class ThemeUtils {
       "help:org-monitoring": { vscode: "eye-watch", hardis: "monitoring.svg" },
       question: { vscode: "question", hardis: "help.svg" },
       hardis: { vscode: "info", hardis: "help.svg" },
+      "vscode-sfdx-hardis.resetCache": {
+        vscode: "refresh",
+        hardis: "refresh.svg",
+      },
       "dependency-ok": { vscode: "check", hardis: "ok.svg" },
       "dependency-missing": { vscode: "error", hardis: "missing.svg" },
       "dependency-warning": { vscode: "warning", hardis: "warning.svg" },
