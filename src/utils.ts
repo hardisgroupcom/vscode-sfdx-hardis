@@ -90,9 +90,13 @@ export async function execShell(cmd: string, execOptions: any) {
         }
       });
       sharedWorker.on("exit", () => {
+        rejectPendingSharedWorkerCallbacks(
+          new Error("Shared worker exited unexpectedly"),
+        );
         sharedWorker = null;
       });
-      sharedWorker.on("error", () => {
+      sharedWorker.on("error", (error) => {
+        rejectPendingSharedWorkerCallbacks(error);
         sharedWorker = null;
       });
     }
@@ -114,6 +118,18 @@ export async function execShell(cmd: string, execOptions: any) {
         }
         return resolve({ stdout: stdout, stderr: stderr });
       });
+    });
+  }
+}
+
+function rejectPendingSharedWorkerCallbacks(reason: unknown) {
+  const callbacks = Array.from(sharedWorkerCallbacks.values());
+  sharedWorkerCallbacks.clear();
+  for (const cb of callbacks) {
+    cb.reject({
+      error: reason,
+      stdout: "",
+      stderr: "Worker thread exited unexpectedly",
     });
   }
 }
