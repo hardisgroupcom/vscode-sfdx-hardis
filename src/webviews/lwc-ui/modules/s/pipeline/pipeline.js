@@ -821,24 +821,27 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         (viewport.scrollTop + (event.clientY - rect.top)) /
         Math.max(viewport.scrollHeight, 1),
     };
-    const zoomDelta = event.deltaY < 0 ? this._mermaidZoomStep : -this._mermaidZoomStep;
+    const zoomDelta =
+      event.deltaY < 0 ? this._mermaidZoomStep : -this._mermaidZoomStep;
     this._setMermaidZoom(this.mermaidZoomLevel + zoomDelta, focusPoint);
   }
 
   _setMermaidZoom(nextZoomLevel, focusPoint) {
     const viewport = this.template.querySelector(".mermaid-viewport");
-    const previousCenterX = focusPoint?.x != null
-      ? focusPoint.x
-      : viewport
-        ? (viewport.scrollLeft + viewport.clientWidth / 2) /
-          Math.max(viewport.scrollWidth, 1)
-        : 0;
-    const previousCenterY = focusPoint?.y != null
-      ? focusPoint.y
-      : viewport
-        ? (viewport.scrollTop + viewport.clientHeight / 2) /
-          Math.max(viewport.scrollHeight, 1)
-        : 0;
+    const previousCenterX =
+      focusPoint?.x != null
+        ? focusPoint.x
+        : viewport
+          ? (viewport.scrollLeft + viewport.clientWidth / 2) /
+            Math.max(viewport.scrollWidth, 1)
+          : 0;
+    const previousCenterY =
+      focusPoint?.y != null
+        ? focusPoint.y
+        : viewport
+          ? (viewport.scrollTop + viewport.clientHeight / 2) /
+            Math.max(viewport.scrollHeight, 1)
+          : 0;
 
     const normalizedZoomLevel = Math.max(
       this._mermaidMinZoomLevel,
@@ -850,7 +853,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     requestAnimationFrame(() => {
       const mermaidSvg = this.template.querySelector(".mermaid svg");
       this._applyMermaidZoom(mermaidSvg);
-      const refreshedViewport = this.template.querySelector(".mermaid-viewport");
+      const refreshedViewport =
+        this.template.querySelector(".mermaid-viewport");
       if (!refreshedViewport) {
         return;
       }
