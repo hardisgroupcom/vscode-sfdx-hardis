@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## [7.6.1] 2026-04-10
+
+- Fix: allow SF standard commands to be run by the extension
+
 ## [7.6.0] 2026-04-09
 
 - Pipeline View: add Zoom In / Zoom Out buttons and mouse wheel zoom support
