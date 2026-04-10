@@ -76,11 +76,17 @@ export class CommandRunner {
 
   private isCommandAllowedInBackground(command: string): boolean {
     const trimmedCommand = command.trimStart();
-    if (trimmedCommand.startsWith("sf hardis") || trimmedCommand.startsWith("npm install @salesforce/")) {
+    if (
+      trimmedCommand.startsWith("sf hardis") ||
+      trimmedCommand.startsWith("npm install @salesforce/")
+    ) {
       return true;
     }
     if (trimmedCommand.startsWith("sf ")) {
-      return this.isSfStandardCommand(trimmedCommand) || isCommandAllowedByCustomOrPluginRegistry(trimmedCommand);
+      return (
+        this.isSfStandardCommand(trimmedCommand) ||
+        isCommandAllowedByCustomOrPluginRegistry(trimmedCommand)
+      );
     }
     return false;
   }
@@ -96,7 +102,9 @@ export class CommandRunner {
     const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
     this.debugNodeJs = config.get("debugSfdxHardisCommands") ?? false;
     const trimmedCommand = sfdxHardisCommand.trimStart();
-    const isNpmInstallSf = trimmedCommand.startsWith("npm install @salesforce/");
+    const isNpmInstallSf = trimmedCommand.startsWith(
+      "npm install @salesforce/",
+    );
     const isBackgroundMode =
       config.get("userInputCommandLineIfLWC") === "background";
     const isHardisCommand = trimmedCommand.startsWith("sf hardis");
@@ -104,7 +112,12 @@ export class CommandRunner {
       !isHardisCommand &&
       isCommandAllowedByCustomOrPluginRegistry(trimmedCommand);
 
-    if (!this.isSfStandardCommand(trimmedCommand) && !isHardisCommand && !isCustomOrPluginCommand && !isNpmInstallSf) {
+    if (
+      !this.isSfStandardCommand(trimmedCommand) &&
+      !isHardisCommand &&
+      !isCustomOrPluginCommand &&
+      !isNpmInstallSf
+    ) {
       vscode.window.showErrorMessage(t("commandNotAllowedOnlyRegistered"));
       return;
     }
@@ -198,7 +211,10 @@ export class CommandRunner {
   ): string | null {
     // Block dangerous or invalid commands
     if (
-      !(command.trimStart().startsWith("sf ") || command.trimStart().startsWith("npm install @salesforce/")) ||
+      !(
+        command.trimStart().startsWith("sf ") ||
+        command.trimStart().startsWith("npm install @salesforce/")
+      ) ||
       command.includes("&&") ||
       command.includes("||")
     ) {
