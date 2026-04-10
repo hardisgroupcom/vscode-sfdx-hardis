@@ -692,7 +692,7 @@
     "@jetstreamapp/soql-parser-js": "^6.3.1",
     "@octokit/rest": "^22.0.0",
     "@vscode/extension-telemetry": "^0.8.0",
-    "axios": "1.13.5",
+    "axios": "1.15.0",
     "azure-devops-node-api": "^15.1.1",
     "bitbucket": "^2.12.0",
     "chalk": "^5.0.0",
@@ -718,7 +718,7 @@
     "ws": "^8.18.0"
   },
   "resolutions": {
-    "axios": "1.13.5",
+    "axios": "1.15.0",
     "qs": "6.14.2",
     "lodash-es": "4.18.1",
     "picomatch": "4.0.4"

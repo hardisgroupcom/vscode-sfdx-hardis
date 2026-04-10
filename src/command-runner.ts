@@ -12,6 +12,34 @@ import {
 } from "./utils";
 import { Logger } from "./logger";
 
+const SF_STANDARD_COMMANDS = [
+  "sf agent",
+  "sf alias",
+  "sf apex",
+  "sf api",
+  "sf cmdt",
+  "sf code-analyzer",
+  "sf community",
+  "sf config",
+  "sf data",
+  "sf dev",
+  "sf doctor",
+  "sf flow",
+  "sf force",
+  "sf info",
+  "sf lightning",
+  "sf logic",
+  "sf org",
+  "sf package1",
+  "sf package",
+  "sf plugins",
+  "sf project",
+  "sf schema",
+  "sf sobject",
+  "sf template",
+  "sf ui-bundle",
+];
+
 /**
  * CommandRunner handles all logic related to terminal management and command execution.
  * It is designed to be used by the Commands class.
@@ -48,19 +76,35 @@ export class CommandRunner {
 
   private isCommandAllowedInBackground(command: string): boolean {
     const trimmedCommand = command.trimStart();
-    if (trimmedCommand.startsWith("sf hardis")) {
+    if (
+      trimmedCommand.startsWith("sf hardis") ||
+      trimmedCommand.startsWith("npm install @salesforce/")
+    ) {
       return true;
     }
     if (trimmedCommand.startsWith("sf ")) {
-      return isCommandAllowedByCustomOrPluginRegistry(trimmedCommand);
+      return (
+        this.isSfStandardCommand(trimmedCommand) ||
+        isCommandAllowedByCustomOrPluginRegistry(trimmedCommand)
+      );
     }
     return false;
+  }
+
+  private isSfStandardCommand(command: string): boolean {
+    const trimmedCommand = command.trimStart();
+    return SF_STANDARD_COMMANDS.some((prefix) =>
+      trimmedCommand.startsWith(prefix),
+    );
   }
 
   executeCommand(sfdxHardisCommand: string, extraEnv?: Record<string, string>) {
     const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
     this.debugNodeJs = config.get("debugSfdxHardisCommands") ?? false;
     const trimmedCommand = sfdxHardisCommand.trimStart();
+    const isNpmInstallSf = trimmedCommand.startsWith(
+      "npm install @salesforce/",
+    );
     const isBackgroundMode =
       config.get("userInputCommandLineIfLWC") === "background";
     const isHardisCommand = trimmedCommand.startsWith("sf hardis");
@@ -68,7 +112,12 @@ export class CommandRunner {
       !isHardisCommand &&
       isCommandAllowedByCustomOrPluginRegistry(trimmedCommand);
 
-    if (!isHardisCommand && !isCustomOrPluginCommand) {
+    if (
+      !this.isSfStandardCommand(trimmedCommand) &&
+      !isHardisCommand &&
+      !isCustomOrPluginCommand &&
+      !isNpmInstallSf
+    ) {
       vscode.window.showErrorMessage(t("commandNotAllowedOnlyRegistered"));
       return;
     }
@@ -162,7 +211,10 @@ export class CommandRunner {
   ): string | null {
     // Block dangerous or invalid commands
     if (
-      !command.trimStart().startsWith("sf ") ||
+      !(
+        command.trimStart().startsWith("sf ") ||
+        command.trimStart().startsWith("npm install @salesforce/")
+      ) ||
       command.includes("&&") ||
       command.includes("||")
     ) {
