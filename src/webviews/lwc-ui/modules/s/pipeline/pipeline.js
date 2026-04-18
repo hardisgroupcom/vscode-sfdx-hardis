@@ -18,6 +18,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   @track ticketConnectedIconName = "utility:link";
   @track ticketProviderName = "";
   @track currentBranchPullRequest = null;
+  @track autoFixPullRequest = null;
   @track openPullRequests = [];
   @track displayFeatureBranches = false;
   @track mermaidZoomLevel = 1;
@@ -455,6 +456,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     return !!this.currentBranchPullRequest;
   }
 
+  get hasAutoFixPullRequest() {
+    return !!this.autoFixPullRequest;
+  }
+
   get currentPrCardClasses() {
     return `command-card${this.hasCurrentBranchPullRequest ? "" : " disabled"}`;
   }
@@ -551,6 +556,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       : [];
     // Store current branch PR
     this.currentBranchPullRequest = data.currentBranchPullRequest || null;
+    this.autoFixPullRequest = data.autoFixPullRequest || null;
     // Store project resources
     this.projectApexScripts = data.projectApexScripts || [];
     this.projectSfdmuWorkspaces = data.projectSfdmuWorkspaces || [];
@@ -566,7 +572,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     // Start auto-refresh timer
     this._startAutoRefresh();
     if (data.firstDisplay) {
-      this.refreshPipeline();
+      this.refreshPipeline(false);
     }
   }
 
@@ -1176,6 +1182,20 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     return this.t("prClickToManageActions", {
       num: this.currentBranchPullRequest.number,
       title: this.currentBranchPullRequest.title || "",
+    });
+  }
+
+  get autoFixPRCardTitle() {
+    return this.i18n.myPrAutofixCardTitle;
+  }
+
+  get autoFixPRDescription() {
+    if (!this.autoFixPullRequest) {
+      return "";
+    }
+    return this.t("myPrAutofixCardDescription", {
+      num: this.autoFixPullRequest.number || "",
+      prLabel: this.prLabel,
     });
   }
 
@@ -1836,6 +1856,16 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       // Open modal in singlePR mode with current branch PR
       this.showSinglePRModal(this.currentBranchPullRequest);
     }
+  }
+
+  handleOpenAutoFixPR() {
+    if (!this.autoFixPullRequest?.webUrl) {
+      return;
+    }
+    window.sendMessageToVSCode({
+      type: "openExternal",
+      data: { url: this.autoFixPullRequest.webUrl },
+    });
   }
 
   showSinglePRModal(pr) {

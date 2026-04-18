@@ -25,10 +25,15 @@ import {
 import { t } from "../i18n/i18n";
 import path from "path";
 import fs from "fs-extra";
+import simpleGit from "simple-git";
 import { listAllOrgs } from "../utils/orgUtils";
 import { readSfdxHardisConfig } from "../utils/sfdx-hardis-config-utils";
 
 const SCHEDULABLE_CLASSES_CACHE_TTL_MS = 15 * 60 * 1000;
+const GIT_PULL_REFUSAL_COOLDOWN_MS = 60 * 60 * 1000;
+const promptedRemoteUpdatesByBranch = new Map<string, string>();
+const declinedRemotePullPromptUntilByBranch = new Map<string, number>();
+const notifiedAutoFixBranchHeadByPullRequest = new Map<string, string>();
 const schedulableClassesByOrgCache = new Map<
   string,
   { expiresAt: number; values: string[] }
@@ -114,6 +119,154 @@ async function listCommunitiesFromDefaultOrg(): Promise<string[]> {
   const query = "SELECT Name FROM Network ORDER BY Name";
   const command = `sf data query --query "${query}" --json`;
   return fetchAndCacheOrgNames(communitiesByOrgCache, orgKey, now, command);
+}
+
+async function getOriginBranchUpdateStatus(branchName: string): Promise<{
+  remoteHeadSha: string | null;
+  hasNewRemoteCommit: boolean;
+}> {
+  const git = simpleGit(getWorkspaceRoot());
+  try {
+    await git.raw(["fetch", "origin", branchName]);
+    const remoteHeadSha = (await git.revparse([`origin/${branchName}`])).trim();
+    const revListOutput = await git.raw([
+      "rev-list",
+      "--left-right",
+      "--count",
+      `HEAD...origin/${branchName}`,
+    ]);
+    const counts = revListOutput.trim().split(/\s+/);
+    const behindCount = Number.parseInt(counts[1] || "0", 10);
+    return {
+      remoteHeadSha,
+      hasNewRemoteCommit: Number.isFinite(behindCount) && behindCount > 0,
+    };
+  } catch (error: any) {
+    Logger.log(
+      `Unable to check origin/${branchName} update status: ${error?.message || error}`,
+    );
+    return {
+      remoteHeadSha: null,
+      hasNewRemoteCommit: false,
+    };
+  }
+}
+
+async function remoteBranchExists(branchName: string): Promise<boolean> {
+  const git = simpleGit(getWorkspaceRoot());
+  try {
+    const result = await git.raw(["ls-remote", "--heads", "origin", branchName]);
+    return result.trim().length > 0;
+  } catch (error: any) {
+    Logger.log(
+      `Unable to check remote branch origin/${branchName}: ${error?.message || error}`,
+    );
+    return false;
+  }
+}
+
+async function getOriginBranchHeadSha(
+  branchName: string,
+): Promise<string | null> {
+  const git = simpleGit(getWorkspaceRoot());
+  try {
+    await git.raw(["fetch", "origin", branchName]);
+    return (await git.revparse([`origin/${branchName}`])).trim();
+  } catch (error: any) {
+    Logger.log(
+      `Unable to resolve origin/${branchName} head SHA: ${error?.message || error}`,
+    );
+    return null;
+  }
+}
+
+function getPullRequestSessionKey(pullRequest: PullRequest): string {
+  return String(
+    pullRequest.id ||
+      pullRequest.number ||
+      pullRequest.webUrl ||
+      pullRequest.sourceBranch ||
+      "unknown-autofix-pr",
+  );
+}
+
+async function maybeNotifyAutoFixPullRequest(
+  autoFixPullRequest: PullRequest,
+  autoFixBranchName: string,
+  pullRequestLabel: string,
+): Promise<void> {
+  const autoFixBranchHeadSha = await getOriginBranchHeadSha(autoFixBranchName);
+  if (!autoFixBranchHeadSha) {
+    return;
+  }
+
+  const pullRequestSessionKey = getPullRequestSessionKey(autoFixPullRequest);
+  const previousNotifiedSha =
+    notifiedAutoFixBranchHeadByPullRequest.get(pullRequestSessionKey);
+  if (previousNotifiedSha === autoFixBranchHeadSha) {
+    return;
+  }
+  notifiedAutoFixBranchHeadByPullRequest.set(
+    pullRequestSessionKey,
+    autoFixBranchHeadSha,
+  );
+
+  const openLabel = t("openLabel");
+  const action = await vscode.window.showInformationMessage(
+    t("autoFixPullRequestDetectedPrompt", {
+      prLabel: pullRequestLabel,
+      prNumber: autoFixPullRequest.number || "",
+    }),
+    openLabel,
+  );
+
+  if (action === openLabel && autoFixPullRequest.webUrl) {
+    await vscode.env.openExternal(vscode.Uri.parse(autoFixPullRequest.webUrl));
+  }
+}
+
+async function promptToPullOriginBranchUpdate(
+  branchName: string,
+  pullRequestLabel: string,
+  remoteHeadSha: string,
+): Promise<void> {
+  const now = Date.now();
+  const declineCooldownUntil =
+    declinedRemotePullPromptUntilByBranch.get(branchName) || 0;
+  if (declineCooldownUntil > now) {
+    return;
+  }
+  declinedRemotePullPromptUntilByBranch.delete(branchName);
+
+  if (promptedRemoteUpdatesByBranch.get(branchName) === remoteHeadSha) {
+    return;
+  }
+  promptedRemoteUpdatesByBranch.set(branchName, remoteHeadSha);
+  const pullLatestBranchChangesLabel = t("pullLatestBranchChanges");
+  const action = await vscode.window.showInformationMessage(
+    t("remoteBranchUpdatedPrompt", {
+      branch: branchName,
+      prLabel: pullRequestLabel,
+    }),
+    pullLatestBranchChangesLabel,
+  );
+  if (action !== pullLatestBranchChangesLabel) {
+    declinedRemotePullPromptUntilByBranch.set(
+      branchName,
+      Date.now() + GIT_PULL_REFUSAL_COOLDOWN_MS,
+    );
+    // Allow a new prompt after the cooldown even if remote HEAD did not change.
+    promptedRemoteUpdatesByBranch.delete(branchName);
+    return;
+  }
+  try {
+    await vscode.commands.executeCommand("git.pull");
+  } catch (error: any) {
+    promptedRemoteUpdatesByBranch.delete(branchName);
+    Logger.log(
+      `Unable to run VS Code Git pull for branch ${branchName}: ${error?.message || error}`,
+    );
+  }
 }
 
 export function registerShowPipeline(commands: Commands) {
@@ -661,6 +814,7 @@ export function registerShowPipeline(commands: Commands) {
       let openPullRequests: PullRequest[] = [];
       let gitAuthenticated = false;
       let currentBranchPullRequest: PullRequest | null = null;
+      let autoFixPullRequest: PullRequest | null = null;
 
       // Determine theme for Mermaid diagram colors
       const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
@@ -759,6 +913,52 @@ export function registerShowPipeline(commands: Commands) {
                 ]);
               currentBranchPullRequest = prList[0];
             }
+
+            if (
+              currentBranchPullRequest &&
+              currentBranchPullRequest.number !== -1
+            ) {
+              const autoFixBranchName = `auto-fix/${currentGitBranch}`;
+              const [originBranchStatus, autoFixBranchOnOrigin] =
+                await Promise.all([
+                  getOriginBranchUpdateStatus(currentGitBranch),
+                  remoteBranchExists(autoFixBranchName),
+                ]);
+
+              if (
+                originBranchStatus.hasNewRemoteCommit &&
+                originBranchStatus.remoteHeadSha
+              ) {
+                void promptToPullOriginBranchUpdate(
+                  currentGitBranch,
+                  prButtonInfo.pullRequestLabel || t("pullRequestLabel"),
+                  originBranchStatus.remoteHeadSha,
+                );
+              } else {
+                promptedRemoteUpdatesByBranch.delete(currentGitBranch);
+              }
+
+              if (autoFixBranchOnOrigin) {
+                autoFixPullRequest =
+                  openPullRequests.find(
+                    (pullRequest) =>
+                      pullRequest.sourceBranch === autoFixBranchName,
+                  ) ||
+                  (await gitProvider.getActivePullRequestFromBranch(
+                    autoFixBranchName,
+                  ));
+
+                if (autoFixPullRequest) {
+                  void maybeNotifyAutoFixPullRequest(
+                    autoFixPullRequest,
+                    autoFixBranchName,
+                    prButtonInfo.pullRequestLabel || t("pullRequestLabel"),
+                  );
+                }
+              }
+            } else {
+              promptedRemoteUpdatesByBranch.delete(currentGitBranch);
+            }
           }
         }
       }
@@ -808,6 +1008,7 @@ export function registerShowPipeline(commands: Commands) {
         ticketAuthenticated: ticketAuthenticated,
         ticketProviderName: ticketProviderName,
         currentBranchPullRequest: currentBranchPullRequest,
+        autoFixPullRequest: autoFixPullRequest,
         openPullRequests: openPullRequests,
         repoPlatformLabel: repoPlatformLabel,
         repoInfo: gitProvider?.repoInfo || null,
@@ -848,6 +1049,7 @@ type PipelineInfo = {
   ticketProviderName?: string;
   prButtonInfo: any;
   currentBranchPullRequest?: PullRequest | null;
+  autoFixPullRequest?: PullRequest | null;
   openPullRequests: PullRequest[];
   repoPlatformLabel: string;
   repoInfo?: any;
