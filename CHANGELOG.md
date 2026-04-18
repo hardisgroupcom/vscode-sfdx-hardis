@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Pipeline View: Enhanced AI integration features
+  - Detect upstream branch commits and prompt to pull latest changes
+  - Display autofix PR quick-action card when agent-generated fix PRs are detected
+  - Show VS Code notification when new autofix PRs are created (with session-level deduping to avoid repeated notifications)
+
 ## [7.6.1] 2026-04-10
 
 - Fix: allow SF standard commands to be run by the extension

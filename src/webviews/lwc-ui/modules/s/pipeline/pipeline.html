@@ -218,6 +218,17 @@
                                     </div>
                                     <p class="command-description">{currentPRDescription}</p>
                                 </div>
+                                <template if:true={hasAutoFixPullRequest}>
+                                    <div class="command-card" onclick={handleOpenAutoFixPR}>
+                                        <div class="command-header">
+                                            <div class="command-icon-container" style="background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);">
+                                                <lightning-icon icon-name="utility:task" size="small" variant="inverse"></lightning-icon>
+                                            </div>
+                                            <h3 class="command-title">{autoFixPRCardTitle}</h3>
+                                        </div>
+                                        <p class="command-description">{autoFixPRDescription}</p>
+                                    </div>
+                                </template>
                             </div>
                         </lightning-tab>
                         <lightning-tab label={openPrTabLabel} value="prs" icon-name="utility:topic2" icon-assistive-text={openPrTabLabel}>
