@@ -155,7 +155,12 @@ async function getOriginBranchUpdateStatus(branchName: string): Promise<{
 async function remoteBranchExists(branchName: string): Promise<boolean> {
   const git = simpleGit(getWorkspaceRoot());
   try {
-    const result = await git.raw(["ls-remote", "--heads", "origin", branchName]);
+    const result = await git.raw([
+      "ls-remote",
+      "--heads",
+      "origin",
+      branchName,
+    ]);
     return result.trim().length > 0;
   } catch (error: any) {
     Logger.log(
@@ -201,8 +206,9 @@ async function maybeNotifyAutoFixPullRequest(
   }
 
   const pullRequestSessionKey = getPullRequestSessionKey(autoFixPullRequest);
-  const previousNotifiedSha =
-    notifiedAutoFixBranchHeadByPullRequest.get(pullRequestSessionKey);
+  const previousNotifiedSha = notifiedAutoFixBranchHeadByPullRequest.get(
+    pullRequestSessionKey,
+  );
   if (previousNotifiedSha === autoFixBranchHeadSha) {
     return;
   }
