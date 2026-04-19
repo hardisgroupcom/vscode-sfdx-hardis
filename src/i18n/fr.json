@@ -30,6 +30,7 @@
   "advancedDetails": "Détails avancés",
   "advancedDetailsTooltip": "Basculer entre la vue simple et avancée des détails de commande",
   "afterDeployment": "Après le déploiement des métadonnées",
+  "agent": "Agent",
   "agentforceOption": "Agentforce",
   "aiDocConfigSection": "Configuration IA & Documentation",
   "aiDocConfigSectionDesc": "Configurer les fournisseurs d'IA et les paramètres de déploiement de la documentation. Ces valeurs sont sauvegardées dans le fichier <strong>.sfdx-hardis.yml</strong> de votre projet.",

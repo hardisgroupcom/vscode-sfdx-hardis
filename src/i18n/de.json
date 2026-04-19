@@ -30,6 +30,7 @@
   "advancedDetails": "Erweiterte Details",
   "advancedDetailsTooltip": "Zwischen einfacher und erweiterter Befehlsdetailansicht wechseln",
   "afterDeployment": "Nach der Metadaten-Bereitstellung",
+  "agent": "Agent",
   "agentforceOption": "Agentforce",
   "aiDocConfigSection": "KI & Dokumentationskonfiguration",
   "aiDocConfigSectionDesc": "KI-Anbieter und Dokumentationsbereitstellungseinstellungen konfigurieren. Diese Werte werden in der <strong>.sfdx-hardis.yml</strong>-Datei Ihres Projekts gespeichert.",

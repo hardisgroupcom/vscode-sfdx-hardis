@@ -2,10 +2,13 @@
 
 ## Unreleased
 
+## [7.7.0] 2026-04-19
+
 - Pipeline View: Enhanced AI integration features
   - Detect upstream branch commits and prompt to pull latest changes
   - Display autofix PR quick-action card when agent-generated fix PRs are detected
   - Show VS Code notification when new autofix PRs are created (with session-level deduping to avoid repeated notifications)
+- Pipeline settings: Add parameters to configure Deployment Agent
 
 ## [7.6.1] 2026-04-10
 
