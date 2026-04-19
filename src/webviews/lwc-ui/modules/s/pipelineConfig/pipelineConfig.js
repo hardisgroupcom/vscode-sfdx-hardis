@@ -150,10 +150,7 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
             isText = true;
           } else if (schema.type === "boolean") {
             isBoolean = true;
-          } else if (
-            schema.type === "number" ||
-            schema.type === "integer"
-          ) {
+          } else if (schema.type === "number" || schema.type === "integer") {
             isNumber = true;
           }
           let valueEdit = this.editedConfig
