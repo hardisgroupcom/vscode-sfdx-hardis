@@ -150,7 +150,10 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
             isText = true;
           } else if (schema.type === "boolean") {
             isBoolean = true;
-          } else if (schema.type === "number") {
+          } else if (
+            schema.type === "number" ||
+            schema.type === "integer"
+          ) {
             isNumber = true;
           }
           let valueEdit = this.editedConfig
@@ -535,7 +538,7 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
         }
       }
       this.editedConfig[key] = value;
-    } else if (schema.type === "number") {
+    } else if (schema.type === "number" || schema.type === "integer") {
       // Number input
       if (typeof value === "string") {
         value = value.trim() === "" ? null : Number(value);
@@ -813,7 +816,10 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
       // Determine column type based on schema
       if (fieldSchema.type === "boolean") {
         columnType = "boolean";
-      } else if (fieldSchema.type === "number") {
+      } else if (
+        fieldSchema.type === "number" ||
+        fieldSchema.type === "integer"
+      ) {
         columnType = "number";
       } else if (fieldSchema.type === "url") {
         columnType = "url";

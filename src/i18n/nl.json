@@ -30,6 +30,7 @@
   "advancedDetails": "Geavanceerde details",
   "advancedDetailsTooltip": "Schakel tussen eenvoudige en geavanceerde weergave van opdrachtdetails",
   "afterDeployment": "Na metadata-implementatie",
+  "agent": "Agent",
   "agentforceOption": "Agentforce",
   "aiDocConfigSection": "AI & Documentatieconfiguratie",
   "aiDocConfigSectionDesc": "Configureer AI-providers en instellingen voor documentatie-implementatie. Deze waarden worden opgeslagen in het <strong>.sfdx-hardis.yml</strong>-bestand van je project.",
