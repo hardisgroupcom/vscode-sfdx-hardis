@@ -89,6 +89,10 @@ export class SfdxHardisConfigHelper {
     { name: "jiraTicketRegex", scopes: ["global"] },
     { name: "genericTicketingProviderRegex", scopes: ["global"] },
     { name: "genericTicketingProviderUrlBuilder", scopes: ["global"] },
+    { name: "codingAgentAutoFix", scopes: ["global", "branch"] },
+    { name: "codingAgent", scopes: ["global", "branch"] },
+    { name: "codingAgentModel", scopes: ["global", "branch"] },
+    { name: "codingAgentMaxTurns", scopes: ["global", "branch"] },
     { name: "enableDeltaDeploymentBetweenMajorBranches", scopes: ["global"] },
     { name: "enableDeploymentApexTestClasses", scopes: ["global"] },
     { name: "deploymentApexTestClasses", scopes: ["global", "branch"] },
@@ -159,6 +163,17 @@ export class SfdxHardisConfigHelper {
         "jiraTicketRegex",
         "genericTicketingProviderRegex",
         "genericTicketingProviderUrlBuilder",
+      ],
+    },
+    {
+      label: "agent",
+      description: "",
+      iconName: "utility:task",
+      keys: [
+        "codingAgentAutoFix",
+        "codingAgent",
+        "codingAgentModel",
+        "codingAgentMaxTurns",
       ],
     },
     {
@@ -509,7 +524,10 @@ export class SfdxHardisConfigHelper {
         }
       }
       // Handle number fields
-      else if (schemaEntry.type === "number" && typeof value === "string") {
+      else if (
+        (schemaEntry.type === "number" || schemaEntry.type === "integer") &&
+        typeof value === "string"
+      ) {
         const num = parseFloat(value);
         converted[key] = isNaN(num) ? null : num;
       }

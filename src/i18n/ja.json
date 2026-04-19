@@ -30,6 +30,7 @@
   "advancedDetails": "詳細設定",
   "advancedDetailsTooltip": "シンプル表示と詳細なコマンド詳細表示を切り替えます",
   "afterDeployment": "メタデータデプロイ後",
+  "agent": "エージェント",
   "agentforceOption": "Agentforce",
   "aiDocConfigSection": "AI とドキュメントの設定",
   "aiDocConfigSectionDesc": "AI プロバイダーとドキュメントのデプロイ設定を構成します。これらの値はプロジェクトの <strong>.sfdx-hardis.yml</strong> ファイルに保存されます。",
