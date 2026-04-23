@@ -446,7 +446,10 @@ export class SfdxHardisConfigHelper {
             await fs.readFile(rootConfigPath, "utf8"),
           ) as SfdxHardisConfig) || {}
         : {};
-      const globalConfig: SfdxHardisConfig = { ...baseGlobalConfig, ...rootConfig };
+      const globalConfig: SfdxHardisConfig = {
+        ...baseGlobalConfig,
+        ...rootConfig,
+      };
       const branchOnly: SfdxHardisConfig = {};
       const branchAllowedKeys = SfdxHardisConfigHelper.allConfigFields
         .filter((f) => f.schema.branchAllowed)
@@ -490,7 +493,11 @@ export class SfdxHardisConfigHelper {
             await fs.readFile(effectiveGlobalPath, "utf8"),
           ) as SfdxHardisConfig) || {};
         Object.assign(existingGlobalConfig, globalOnly);
-        await fs.writeFile(effectiveGlobalPath, yaml.dump(existingGlobalConfig), "utf8");
+        await fs.writeFile(
+          effectiveGlobalPath,
+          yaml.dump(existingGlobalConfig),
+          "utf8",
+        );
       } else {
         // If no existing global config, just write the new one
         await fs.writeFile(effectiveGlobalPath, yaml.dump(globalOnly), "utf8");
@@ -523,9 +530,12 @@ export class SfdxHardisConfigHelper {
     }
     // Merge config/.sfdx-hardis.yml into root .sfdx-hardis.yml (root takes priority)
     const rootConfig: SfdxHardisConfig =
-      (yaml.load(await fs.readFile(rootConfigPath, "utf8")) as SfdxHardisConfig) || {};
+      (yaml.load(
+        await fs.readFile(rootConfigPath, "utf8"),
+      ) as SfdxHardisConfig) || {};
     const configFileConfig: SfdxHardisConfig =
-      (yaml.load(await fs.readFile(globalPath, "utf8")) as SfdxHardisConfig) || {};
+      (yaml.load(await fs.readFile(globalPath, "utf8")) as SfdxHardisConfig) ||
+      {};
     const merged: SfdxHardisConfig = { ...configFileConfig, ...rootConfig };
     await fs.writeFile(rootConfigPath, yaml.dump(merged), "utf8");
     await fs.remove(globalPath);
