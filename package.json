@@ -718,6 +718,7 @@
   },
   "resolutions": {
     "@vscode/vsce/glob/minimatch/brace-expansion": "5.0.5",
+    "uuid": "^14.0.0",
     "@vscode/vsce/minimatch/brace-expansion": "1.1.13",
     "axios": "1.15.0",
     "qs": "6.14.2",
