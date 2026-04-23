@@ -3,6 +3,7 @@ import * as path from "path";
 import yaml from "js-yaml";
 import axios from "axios";
 import { t } from "../../i18n/i18n";
+import * as vscode from "vscode";
 
 export interface SfdxHardisConfig {
   [key: string]: any;
@@ -316,6 +317,8 @@ export class SfdxHardisConfigHelper {
     branchName: string | null,
   ): Promise<SfdxHardisConfigEditorInput> {
     await SfdxHardisConfigHelper.loadSchema();
+    await this.checkDuplicateConfigFiles();
+    const rootConfigPath = path.join(this.workspaceRoot, ".sfdx-hardis.yml");
     const globalPath = path.join(this.workspaceRoot, "config/.sfdx-hardis.yml");
     const branchPath = branchName
       ? path.join(
@@ -323,15 +326,25 @@ export class SfdxHardisConfigHelper {
           `config/branches/.sfdx-hardis.${branchName}.yml`,
         )
       : null;
+    let baseGlobalConfig: SfdxHardisConfig = {};
+    let rootConfig: SfdxHardisConfig = {};
     let globalConfig: SfdxHardisConfig = {};
     let branchConfig: SfdxHardisConfig = {};
     let config: SfdxHardisConfig = {};
     if (await fs.pathExists(globalPath)) {
-      globalConfig =
+      baseGlobalConfig =
         (yaml.load(
           await fs.readFile(globalPath, "utf8"),
         ) as SfdxHardisConfig) || {};
     }
+    // Root .sfdx-hardis.yml has priority over config/.sfdx-hardis.yml (except config/user)
+    if (await fs.pathExists(rootConfigPath)) {
+      rootConfig =
+        (yaml.load(
+          await fs.readFile(rootConfigPath, "utf8"),
+        ) as SfdxHardisConfig) || {};
+    }
+    globalConfig = { ...baseGlobalConfig, ...rootConfig };
     if (branchPath && (await fs.pathExists(branchPath))) {
       branchConfig =
         (yaml.load(
@@ -409,20 +422,34 @@ export class SfdxHardisConfigHelper {
   ): Promise<void> {
     // Convert string booleans to actual booleans based on schema
     await SfdxHardisConfigHelper.loadSchema();
+    await this.checkDuplicateConfigFiles();
     const configWithProperTypes = this.convertConfigTypes(data.config);
 
+    const rootConfigPath = path.join(this.workspaceRoot, ".sfdx-hardis.yml");
     const globalPath = path.join(this.workspaceRoot, "config/.sfdx-hardis.yml");
+    // If root .sfdx-hardis.yml exists it has priority; write global config there
+    const rootConfigExists = await fs.pathExists(rootConfigPath);
+    const effectiveGlobalPath = rootConfigExists ? rootConfigPath : globalPath;
     if (data.isBranch && data.branchName) {
       const branchPath = path.join(
         this.workspaceRoot,
         `config/branches/.sfdx-hardis.${data.branchName}.yml`,
       );
-      // Save only branch-allowed keys (diff from global)
-      const globalConfig: SfdxHardisConfig = (await fs.pathExists(globalPath))
+      // Save only branch-allowed keys (diff from merged global config)
+      let baseGlobalConfig: SfdxHardisConfig = (await fs.pathExists(globalPath))
         ? (yaml.load(
             await fs.readFile(globalPath, "utf8"),
           ) as SfdxHardisConfig) || {}
         : {};
+      let rootConfig: SfdxHardisConfig = rootConfigExists
+        ? (yaml.load(
+            await fs.readFile(rootConfigPath, "utf8"),
+          ) as SfdxHardisConfig) || {}
+        : {};
+      const globalConfig: SfdxHardisConfig = {
+        ...baseGlobalConfig,
+        ...rootConfig,
+      };
       const branchOnly: SfdxHardisConfig = {};
       const branchAllowedKeys = SfdxHardisConfigHelper.allConfigFields
         .filter((f) => f.schema.branchAllowed)
@@ -458,25 +485,65 @@ export class SfdxHardisConfigHelper {
           globalOnly[key] = configWithProperTypes[key];
         }
       }
-      await fs.ensureDir(path.dirname(globalPath));
-      // Merge with existing global config
-      if (await fs.pathExists(globalPath)) {
+      await fs.ensureDir(path.dirname(effectiveGlobalPath));
+      // Merge with existing global config (root file if present, otherwise config/)
+      if (await fs.pathExists(effectiveGlobalPath)) {
         const existingGlobalConfig: SfdxHardisConfig =
           (yaml.load(
-            await fs.readFile(globalPath, "utf8"),
+            await fs.readFile(effectiveGlobalPath, "utf8"),
           ) as SfdxHardisConfig) || {};
         Object.assign(existingGlobalConfig, globalOnly);
-        await fs.writeFile(globalPath, yaml.dump(existingGlobalConfig), "utf8");
+        await fs.writeFile(
+          effectiveGlobalPath,
+          yaml.dump(existingGlobalConfig),
+          "utf8",
+        );
       } else {
         // If no existing global config, just write the new one
-        await fs.writeFile(globalPath, yaml.dump(globalOnly), "utf8");
+        await fs.writeFile(effectiveGlobalPath, yaml.dump(globalOnly), "utf8");
       }
     }
   }
 
+  /**
+   * Checks if both .sfdx-hardis.yml (root) and config/.sfdx-hardis.yml exist.
+   * If so, prompts the user to merge config/ into root and delete config/.sfdx-hardis.yml.
+   */
+  async checkDuplicateConfigFiles(): Promise<void> {
+    const rootConfigPath = path.join(this.workspaceRoot, ".sfdx-hardis.yml");
+    const globalPath = path.join(this.workspaceRoot, "config/.sfdx-hardis.yml");
+    const rootExists = await fs.pathExists(rootConfigPath);
+    const configExists = await fs.pathExists(globalPath);
+    if (!rootExists || !configExists) {
+      return;
+    }
+    const mergeLabel = t("duplicateConfigFilesMergeAndDelete");
+    const skipLabel = t("duplicateConfigFilesSkip");
+    const selection = await vscode.window.showWarningMessage(
+      t("duplicateConfigFilesDetected"),
+      { modal: true },
+      mergeLabel,
+      skipLabel,
+    );
+    if (selection !== mergeLabel) {
+      return;
+    }
+    // Merge config/.sfdx-hardis.yml into root .sfdx-hardis.yml (root takes priority)
+    const rootConfig: SfdxHardisConfig =
+      (yaml.load(
+        await fs.readFile(rootConfigPath, "utf8"),
+      ) as SfdxHardisConfig) || {};
+    const configFileConfig: SfdxHardisConfig =
+      (yaml.load(await fs.readFile(globalPath, "utf8")) as SfdxHardisConfig) ||
+      {};
+    const merged: SfdxHardisConfig = { ...configFileConfig, ...rootConfig };
+    await fs.writeFile(rootConfigPath, yaml.dump(merged), "utf8");
+    await fs.remove(globalPath);
+    vscode.window.showInformationMessage(t("duplicateConfigFilesMergeSuccess"));
+  }
+
   private convertConfigTypes(config: SfdxHardisConfig): SfdxHardisConfig {
     const converted: SfdxHardisConfig = { ...config };
-
     // Convert types based on already-loaded schema in allConfigFields
     for (const [key, value] of Object.entries(converted)) {
       const field = SfdxHardisConfigHelper.allConfigFields.find(
