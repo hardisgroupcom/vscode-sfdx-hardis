@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Config editor
+  - if both `.sfdx-hardis.yml` (root) and `config/.sfdx-hardis.yml` exist, show a modal warning offering to merge `config/.sfdx-hardis.yml` into the root file and delete it
+  - root `.sfdx-hardis.yml` now takes priority over `config/.sfdx-hardis.yml` when reading and saving configuration (except `config/user`)
+
 ## [7.7.0] 2026-04-19
 
 - Pipeline View: Enhanced AI integration features
