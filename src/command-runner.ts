@@ -2,7 +2,11 @@ import treeKill from "tree-kill";
 import * as vscode from "vscode";
 import { LwcPanelManager } from "./lwc-panel-manager";
 import { t } from "./i18n/i18n";
-import { isCommandAllowedByCustomOrPluginRegistry } from "./utils/sfdx-hardis-config-utils";
+import {
+  isAllCustomCommandsLoaded,
+  isCommandAllowedByCustomOrPluginRegistry,
+  loadAllCustomCommandGroups,
+} from "./utils/sfdx-hardis-config-utils";
 import { spawn } from "child_process";
 import {
   containsCertificateIssue,
@@ -51,6 +55,7 @@ export class CommandRunner {
   private outputChannel?: vscode.OutputChannel;
   private allowNextDuplicateCommand = false;
   private debugNodeJs = false;
+  private customCommandsLoadingPromise?: Thenable<void>;
   /**
    * Map of active commands: key is command string, value is { type: 'background'|'terminal', process?: ChildProcess, sentToTerminal?: boolean }
    */
@@ -98,7 +103,52 @@ export class CommandRunner {
     );
   }
 
+  private async ensureCustomCommandsLoadedWithMessage(): Promise<void> {
+    if (isAllCustomCommandsLoaded()) {
+      return;
+    }
+
+    if (!this.customCommandsLoadingPromise) {
+      this.customCommandsLoadingPromise = vscode.window
+        .withProgress(
+          {
+            location: vscode.ProgressLocation.Notification,
+            title: `${t("loadingLabel")} ${t("customMenusSection")}`,
+            cancellable: false,
+          },
+          async () => {
+            await loadAllCustomCommandGroups();
+          },
+        )
+        .then(
+          () => {
+            this.customCommandsLoadingPromise = undefined;
+          },
+          (error) => {
+            this.customCommandsLoadingPromise = undefined;
+            throw error;
+          },
+        );
+    }
+
+    await this.customCommandsLoadingPromise;
+  }
+
   executeCommand(sfdxHardisCommand: string, extraEnv?: Record<string, string>) {
+    // If custom commands haven't been loaded yet (e.g. after a cache reset or on first start),
+    // wait for them to be available before checking the registry, then retry.
+    if (!isAllCustomCommandsLoaded()) {
+      void this.ensureCustomCommandsLoadedWithMessage()
+        .then(() => {
+          this.executeCommand(sfdxHardisCommand, extraEnv);
+        })
+        .catch((error) => {
+          Logger.log(
+            `Error loading custom command groups before command execution: ${String(error)}`,
+          );
+        });
+      return;
+    }
     const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
     this.debugNodeJs = config.get("debugSfdxHardisCommands") ?? false;
     const trimmedCommand = sfdxHardisCommand.trimStart();
@@ -112,7 +162,13 @@ export class CommandRunner {
       !isHardisCommand &&
       isCommandAllowedByCustomOrPluginRegistry(trimmedCommand);
 
+    // In background mode, enforce a strict allowlist: only known-safe command families
+    // may run silently.  In terminal mode the user sees everything in the integrated
+    // terminal and can cancel at any time, so we only block in the background case.
+    // (WebSocket-originated commands are already gated by the WebSocket server's own
+    //  filter before they even reach this point.)
     if (
+      isBackgroundMode &&
       !this.isSfStandardCommand(trimmedCommand) &&
       !isHardisCommand &&
       !isCustomOrPluginCommand &&
