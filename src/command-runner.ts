@@ -168,8 +168,14 @@ export class CommandRunner {
           this.executeCommand(sfdxHardisCommand, extraEnv);
         })
         .catch((error) => {
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+
           Logger.log(
-            `Error loading custom command groups before command execution: ${String(error)}`,
+            `Error loading custom command groups before command execution: ${errorMessage}`,
+          );
+          void vscode.window.showErrorMessage(
+            t("errorMessage", { message: errorMessage }),
           );
         });
       return;
