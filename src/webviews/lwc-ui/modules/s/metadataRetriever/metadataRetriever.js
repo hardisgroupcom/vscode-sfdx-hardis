@@ -982,7 +982,7 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
     if (data && data.records && Array.isArray(data.records)) {
       // Transform records - handle both SourceMember (nested) and Metadata API (flat) formats
       this.metadata = data.records.map((record) => {
-        // Use Operation from backend (created/modified/deleted) — guaranteed to be set
+        // Use Operation from backend (created/modified/deleted) - guaranteed to be set
         const opVal = (record.Operation || "").toString().toLowerCase();
         // Map operation to colored emoji: created -> green, modified -> yellow, deleted -> red
         let icon = "🟡"; // default = modified

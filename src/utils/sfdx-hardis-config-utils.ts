@@ -62,7 +62,7 @@ export type CustomCommandsSource = "custom" | "plugin";
 /** Insertion position for a custom command source's menus in the commands tree */
 export type CustomCommandsPosition = "first" | "last";
 
-/** Result item returned by listCustomCommands() — one per config source */
+/** Result item returned by listCustomCommands() - one per config source */
 export interface CustomCommandsGroup {
   menus: CustomCommandMenu[];
   position: CustomCommandsPosition;
@@ -98,7 +98,7 @@ export function isAllCustomCommandsLoaded(): boolean {
 /**
  * Loads both config-based and plugin-based custom command groups in parallel.
  * Returns the combined list of all groups once both sources are ready.
- * Safe to call multiple times — individual loaders handle in-flight deduplication.
+ * Safe to call multiple times - individual loaders handle in-flight deduplication.
  * Also caches allowed background command prefixes for validation.
  */
 export async function loadAllCustomCommandGroups(): Promise<

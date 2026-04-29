@@ -135,8 +135,33 @@ export class CommandRunner {
   }
 
   executeCommand(sfdxHardisCommand: string, extraEnv?: Record<string, string>) {
-    // If custom commands haven't been loaded yet (e.g. after a cache reset or on first start),
-    // wait for them to be available before checking the registry, then retry.
+    const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+    this.debugNodeJs = config.get("debugSfdxHardisCommands") ?? false;
+    const trimmedCommand = sfdxHardisCommand.trimStart();
+    const isBackgroundMode =
+      config.get("userInputCommandLineIfLWC") === "background";
+    const isHardisCommand = trimmedCommand.startsWith("sf hardis");
+    const isSfStandard = this.isSfStandardCommand(trimmedCommand);
+    const isNpmInstallSf = trimmedCommand.startsWith("npm install @salesforce/");
+
+    // ── Fast path ────────────────────────────────────────────────────────────
+    // sf hardis:*, SF-standard commands (sf org, sf apex, …) and
+    // npm install @salesforce/* are unconditionally trusted and never need the
+    // custom/plugin registry.  Skip the potentially-expensive registry load
+    // (plugin probes + progress notification) for these everyday commands.
+    if (isHardisCommand || isSfStandard || isNpmInstallSf) {
+      if (isBackgroundMode) {
+        this.executeCommandBackground(sfdxHardisCommand, extraEnv);
+      } else {
+        this.executeCommandTerminal(sfdxHardisCommand, extraEnv);
+      }
+      return;
+    }
+
+    // ── Registry path ────────────────────────────────────────────────────────
+    // Everything else (custom/plugin commands, internal extension commands like
+    // plugin installs, mkdocs, VS Code extension installs, …) may need a
+    // registry lookup.  Load it lazily only when we actually reach this branch.
     if (!isAllCustomCommandsLoaded()) {
       void this.ensureCustomCommandsLoadedWithMessage()
         .then(() => {
@@ -149,31 +174,14 @@ export class CommandRunner {
         });
       return;
     }
-    const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
-    this.debugNodeJs = config.get("debugSfdxHardisCommands") ?? false;
-    const trimmedCommand = sfdxHardisCommand.trimStart();
-    const isNpmInstallSf = trimmedCommand.startsWith(
-      "npm install @salesforce/",
-    );
-    const isBackgroundMode =
-      config.get("userInputCommandLineIfLWC") === "background";
-    const isHardisCommand = trimmedCommand.startsWith("sf hardis");
+
     const isCustomOrPluginCommand =
-      !isHardisCommand &&
       isCommandAllowedByCustomOrPluginRegistry(trimmedCommand);
 
-    // In background mode, enforce a strict allowlist: only known-safe command families
-    // may run silently.  In terminal mode the user sees everything in the integrated
-    // terminal and can cancel at any time, so we only block in the background case.
-    // (WebSocket-originated commands are already gated by the WebSocket server's own
-    //  filter before they even reach this point.)
-    if (
-      isBackgroundMode &&
-      !this.isSfStandardCommand(trimmedCommand) &&
-      !isHardisCommand &&
-      !isCustomOrPluginCommand &&
-      !isNpmInstallSf
-    ) {
+    // In background mode only registered custom/plugin commands may run silently.
+    // (WebSocket commands are already filtered to sf hardis:* by the WebSocket
+    //  server's own guard - they never reach this branch.)
+    if (isBackgroundMode && !isCustomOrPluginCommand) {
       vscode.window.showErrorMessage(t("commandNotAllowedOnlyRegistered"));
       return;
     }
@@ -195,7 +203,7 @@ export class CommandRunner {
         return;
       }
 
-      // Not in autorun list — ask for confirmation with "Always authorize" option
+      // Not in autorun list - ask for confirmation with "Always authorize" option
       vscode.window
         .showWarningMessage(
           t("customOrPluginCommandAuthorizationPrompt", {
@@ -230,19 +238,11 @@ export class CommandRunner {
       return;
     }
 
-    if (!isBackgroundMode) {
-      this.executeCommandTerminal(sfdxHardisCommand, extraEnv);
-      return;
-    }
-
-    // For sf hardis commands: check background mode allowlist
-    if (!this.isCommandAllowedInBackground(sfdxHardisCommand)) {
-      // This should not happen for sf hardis commands, but handle gracefully
-      vscode.window.showErrorMessage(t("hardisCommandNotAllowedInBackground"));
-      return;
-    }
-
-    this.executeCommandBackground(sfdxHardisCommand, extraEnv);
+    // Non-registered commands in terminal mode (e.g. internal extension commands
+    // like plugin installs, python/mkdocs, VS Code extension installs) run
+    // directly in the visible integrated terminal - the user can see and cancel.
+    // (Background mode + not registered was already blocked above.)
+    this.executeCommandTerminal(sfdxHardisCommand, extraEnv);
   }
 
   private executeCommandUsingCurrentMode(
