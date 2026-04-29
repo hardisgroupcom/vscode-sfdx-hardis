@@ -369,8 +369,9 @@ export class LocalWebSocketServer {
     // Request to refresh commands box
     else if (data.event === "runSfdxHardisCommand") {
       const sfdxHardisCommand = data?.sfdxHardisCommand || "";
-      // Security: only allow "sf hardis:*" / "sfdx hardis:*" commands and
-      // reject any shell metacharacter that could chain or redirect execution:
+      // Security: only allow "sf hardis:*" commands (legacy "sfdx hardis" is
+      // rejected because CommandRunner treats only "sf hardis" as trusted).
+      // Also reject any shell metacharacter that could chain or redirect execution:
       //   ;   - command separator
       //   &   - covers && and background execution (&)
       //   |   - covers pipes (|) and OR operator (||)
@@ -380,12 +381,11 @@ export class LocalWebSocketServer {
       //   < > - input / output redirection
       const SHELL_INJECTION_RE = /[;&|`\n\r<>]|\$\(/;
       if (
-        (!sfdxHardisCommand.startsWith("sfdx hardis") &&
-          !sfdxHardisCommand.startsWith("sf hardis")) ||
+        !sfdxHardisCommand.startsWith("sf hardis") ||
         SHELL_INJECTION_RE.test(sfdxHardisCommand)
       ) {
         Logger.log(
-          `WebSocket command rejected - must be a hardis command with no shell operators: ${sfdxHardisCommand}`,
+          `WebSocket command rejected - must be a "sf hardis" command with no shell operators`,
         );
         return;
       }
