@@ -176,9 +176,21 @@ export class CommandRunner {
           Logger.log(
             `Error loading custom command groups before command execution: ${errorMessage}`,
           );
-          void vscode.window.showErrorMessage(
-            t("errorMessage", { message: errorMessage }),
-          );
+
+          if (isBackgroundMode) {
+            // In background mode we cannot safely proceed without knowing
+            // whether the command is a registered custom/plugin command.
+            void vscode.window.showErrorMessage(
+              t("errorMessage", { message: errorMessage }),
+            );
+          } else {
+            // In terminal mode we can fall back gracefully: run the command
+            // in the visible integrated terminal so the user is not blocked.
+            void vscode.window.showWarningMessage(
+              t("errorMessage", { message: errorMessage }),
+            );
+            this.executeCommandTerminal(sfdxHardisCommand, extraEnv);
+          }
         });
       return;
     }
