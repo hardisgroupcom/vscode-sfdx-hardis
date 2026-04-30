@@ -655,9 +655,28 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
     )[],
   ) {
     if (!isAllConfigLoaded()) {
-      // Config not ready yet: return without custom plugins and refresh once config is loaded
+      // Config not ready yet: return without custom plugins and refresh once config is loaded.
+      // A 60 s timeout ensures the refresh fires even if config loading stalls, preventing
+      // the plugins panel from spinning forever.
       void (async () => {
-        await listCustomPlugins(); // awaits both configs, populates caches
+        const TIMEOUT_MS = 60_000;
+        try {
+          await Promise.race([
+            listCustomPlugins(),
+            new Promise<never>((_, reject) =>
+              setTimeout(
+                () =>
+                  reject(new Error("listCustomPlugins timed out after 60 s")),
+                TIMEOUT_MS,
+              ),
+            ),
+          ]);
+        } catch (e) {
+          Logger.log(
+            "[vscode-sfdx-hardis] loadAdditionalPlugins: config load timed out or failed – " +
+              (e instanceof Error ? e.message : String(e)),
+          );
+        }
         vscode.commands.executeCommand(
           "vscode-sfdx-hardis.refreshPluginsView",
           true,

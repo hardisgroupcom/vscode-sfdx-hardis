@@ -427,14 +427,14 @@ if (!command.startsWith("sf hardis") || command.includes("&&")) {
 The extension uses [i18next](https://www.i18next.com/) for internationalization. All user-facing strings must be translated. Currently supported locales: **English (en)**, **French (fr)**, **Spanish (es)**, **German (de)**, **Dutch (nl)**, **Italian (it)**, and **Japanese (ja)**.
 
 ### Translation Files
-- `src/i18n/en.json` — English translations (source of truth)
-- `src/i18n/fr.json` — French translations
-- `src/i18n/es.json` — Spanish translations
-- `src/i18n/de.json` — German translations
-- `src/i18n/it.json` — Italian translations
-- `src/i18n/nl.json` — Dutch translations
-- `src/i18n/ja.json` — Japanese translations
-- `src/i18n/i18n.ts` — Backend i18n utility module
+- `src/i18n/en.json` - English translations (source of truth)
+- `src/i18n/fr.json` - French translations
+- `src/i18n/es.json` - Spanish translations
+- `src/i18n/de.json` - German translations
+- `src/i18n/it.json` - Italian translations
+- `src/i18n/nl.json` - Dutch translations
+- `src/i18n/ja.json` - Japanese translations
+- `src/i18n/i18n.ts` - Backend i18n utility module
 
 **Key naming conventions:**
 - Flat JSON structure (no nesting)
@@ -457,11 +457,11 @@ tooltip: t("orgExpiresInNDays", { days: daysBeforeExpiration }),
 ```
 
 Available exports from `src/i18n/i18n.ts`:
-- `t(key, vars?)` — Translate a key with optional interpolation variables
-- `initI18n()` — Initialize i18n (called once at extension activation)
-- `reinitI18n()` — Re-initialize after locale change
-- `getAllTranslations()` — Get all translations for the current locale (used for LWC)
-- `getCurrentLocale()` — Get the current locale string
+- `t(key, vars?)` - Translate a key with optional interpolation variables
+- `initI18n()` - Initialize i18n (called once at extension activation)
+- `reinitI18n()` - Re-initialize after locale change
+- `getAllTranslations()` - Get all translations for the current locale (used for LWC)
+- `getCurrentLocale()` - Get the current locale string
 
 ### LWC Usage (Frontend)
 
@@ -481,7 +481,7 @@ export default class MyComponent extends I18nMixin(LightningElement) {
 }
 ```
 
-**In HTML templates**, use `{i18n.keyName}` directly — no getters needed for static labels:
+**In HTML templates**, use `{i18n.keyName}` directly - no getters needed for static labels:
 ```html
 <span>{i18n.welcomeTitle}</span>
 <lightning-button label={i18n.saveLabel}></lightning-button>
@@ -508,11 +508,11 @@ Then bind the getter result in the template:
 - Dynamic / interpolated → `this.t("key", { var: value })` in a getter, bind the getter in template
 
 **`I18nMixin` API:**
-- `this.i18n` — Reactive Proxy over all translations; missing keys fall back to the key name itself
-- `this.t(key, vars?)` — Translate with optional `{{varName}}` interpolation
-- `this.translations` — Raw translations object (useful to pass to child components)
-- `this._locale` — Current locale string
-- `this.initTranslations(data)` — Manually re-initialise translations if needed
+- `this.i18n` - Reactive Proxy over all translations; missing keys fall back to the key name itself
+- `this.t(key, vars?)` - Translate with optional `{{varName}}` interpolation
+- `this.translations` - Raw translations object (useful to pass to child components)
+- `this._locale` - Current locale string
+- `this.initTranslations(data)` - Manually re-initialise translations if needed
 
 ### Locale Detection Priority
 1. VS Code setting `vsCodeSfdxHardis.lang` (if not `"auto"`)

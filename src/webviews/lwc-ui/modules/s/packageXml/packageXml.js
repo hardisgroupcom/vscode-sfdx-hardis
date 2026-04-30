@@ -189,7 +189,7 @@ export default class PackageXml extends SharedMixin(LightningElement) {
 
   // Get appropriate icon for metadata type
   getMetadataTypeIcon(typeName) {
-    // Use utility icons where possible — utility icons are broadly supported in LWC.
+    // Use utility icons where possible - utility icons are broadly supported in LWC.
     const iconMap = {
       ApexClass: { icon: "utility:apex", memberIcon: "utility:apex" },
       ApexTrigger: { icon: "utility:apex", memberIcon: "utility:apex" },

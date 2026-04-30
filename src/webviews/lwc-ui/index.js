@@ -150,7 +150,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
       }
       // Expose translations globally BEFORE createElement so SharedMixin.connectedCallback
-      // can read them on first mount — zero-delay translation on first render.
+      // can read them on first mount - zero-delay translation on first render.
       if (initData?.translations) {
         window.__lwcTranslations = initData.translations;
         window.__lwcLocale = initData.locale || "en";

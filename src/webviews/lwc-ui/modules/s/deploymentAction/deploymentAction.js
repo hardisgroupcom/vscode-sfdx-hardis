@@ -14,7 +14,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     const wasViewMode = !this._isEditMode;
     this._isEditMode = val;
     if (val && wasViewMode) {
-      // Switched into edit mode — trigger schedulable class loading if needed
+      // Switched into edit mode - trigger schedulable class loading if needed
       this._requestSchedulableClassesIfNeeded(this.displayedAction?.type);
       this._requestCommunitiesIfNeeded(this.displayedAction?.type);
     }
@@ -315,7 +315,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
 
   connectedCallback() {
     super.connectedCallback();
-    // Options arrays depend on translations — init them after auto-translation load.
+    // Options arrays depend on translations - init them after auto-translation load.
     this._initOptions();
     if (this.isEditMode && this.action) {
       this.editedAction = JSON.parse(JSON.stringify(this.action));
