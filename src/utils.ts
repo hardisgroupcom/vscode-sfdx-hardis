@@ -202,7 +202,9 @@ export function preLoadCache() {
   // Safety net: if any preload promise hangs (slow CLI, unreachable npm registry…),
   // force-unblock the plugins panel after 90 s so spinners never run forever.
   const preloadTimeoutId = setTimeout(() => {
-    Logger.log("[vscode-sfdx-hardis] Cache preload timed out after 90 s – forcing refresh");
+    Logger.log(
+      "[vscode-sfdx-hardis] Cache preload timed out after 90 s – forcing refresh",
+    );
     markCachePreloaded();
   }, 90000);
 

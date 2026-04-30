@@ -665,7 +665,8 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
             listCustomPlugins(),
             new Promise<never>((_, reject) =>
               setTimeout(
-                () => reject(new Error("listCustomPlugins timed out after 60 s")),
+                () =>
+                  reject(new Error("listCustomPlugins timed out after 60 s")),
                 TIMEOUT_MS,
               ),
             ),
