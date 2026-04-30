@@ -5,6 +5,11 @@
 - Config editor
   - if both `.sfdx-hardis.yml` (root) and `config/.sfdx-hardis.yml` exist, show a modal warning offering to merge `config/.sfdx-hardis.yml` into the root file and delete it
   - root `.sfdx-hardis.yml` now takes priority over `config/.sfdx-hardis.yml` when reading and saving configuration (except `config/user`)
+- fix: enhance command execution flow by ensuring custom commands are loaded before execution
+- Security: Harden WebSocket command validation
+  - Only `sf hardis:*` commands are accepted (legacy `sfdx hardis` prefix is rejected)
+  - Block shell metacharacters (`;`, `&`, `|`, `` ` ``, `$(`, newlines, `<`, `>`) to prevent shell injection
+- fix: `isAllCustomCommandsLoaded()` now waits for the command registry to be fully populated before returning `true`, preventing race conditions during startup
 
 ## [7.7.0] 2026-04-19
 

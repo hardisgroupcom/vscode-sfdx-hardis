@@ -369,12 +369,24 @@ export class LocalWebSocketServer {
     // Request to refresh commands box
     else if (data.event === "runSfdxHardisCommand") {
       const sfdxHardisCommand = data?.sfdxHardisCommand || "";
+      // Security: only allow "sf hardis:*" commands (legacy "sfdx hardis" is
+      // rejected because CommandRunner treats only "sf hardis" as trusted).
+      // Also reject any shell metacharacter that could chain or redirect execution:
+      //   ;   - command separator
+      //   &   - covers && and background execution (&)
+      //   |   - covers pipes (|) and OR operator (||)
+      //   `   - backtick command substitution
+      //   $(  - $(...) command substitution
+      //   \n / \r - newline injection
+      //   < > - input / output redirection
+      const SHELL_INJECTION_RE = /[;&|`\n\r<>]|\$\(/;
       if (
-        (!sfdxHardisCommand.startsWith("sfdx hardis") &&
-          !sfdxHardisCommand.startsWith("sf hardis")) ||
-        sfdxHardisCommand.includes("&&")
+        !sfdxHardisCommand.startsWith("sf hardis") ||
+        SHELL_INJECTION_RE.test(sfdxHardisCommand)
       ) {
-        Logger.log("You can only run sfdx hardis commands from WebSocket");
+        Logger.log(
+          `WebSocket command rejected - must be a "sf hardis" command with no shell operators`,
+        );
         return;
       }
       vscode.commands.executeCommand(

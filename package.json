@@ -726,6 +726,7 @@
     "mocha/diff": "8.0.3",
     "mocha/serialize-javascript": "7.0.5",
     "picomatch": "4.0.4",
-    "webpack/terser-webpack-plugin/serialize-javascript": "7.0.5"
+    "webpack/terser-webpack-plugin/serialize-javascript": "7.0.5",
+    "postcss": "8.5.10"
   }
 }
