@@ -80,7 +80,7 @@ div.slds-scope[data-theme="dark"] {
   background: light-dark(rgba(0, 0, 0, 0.5), rgba(20, 20, 20, 0.75));
 }
 
-/* Spinner container — subtle overlay in light mode to indicate non-interactivity */
+/* Spinner container - subtle overlay in light mode to indicate non-interactivity */
 .slds-scope[data-theme] .slds-spinner_container {
   background: light-dark(rgba(255, 255, 255, 0.4), rgba(20, 20, 20, 0.75));
 }

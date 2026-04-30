@@ -62,7 +62,7 @@ export type CustomCommandsSource = "custom" | "plugin";
 /** Insertion position for a custom command source's menus in the commands tree */
 export type CustomCommandsPosition = "first" | "last";
 
-/** Result item returned by listCustomCommands() — one per config source */
+/** Result item returned by listCustomCommands() - one per config source */
 export interface CustomCommandsGroup {
   menus: CustomCommandMenu[];
   position: CustomCommandsPosition;
@@ -75,6 +75,7 @@ let IN_FLIGHT_EXTENSION_CONFIG: Promise<any> | null = null;
 let projectConfigLoaded = false;
 let settingsConfigLoaded = false;
 let pluginCommandsLoaded = false;
+let registryInitialized = false;
 let IN_FLIGHT_PLUGIN_COMMANDS: Promise<CustomCommandsGroup[]> | null = null;
 let CACHED_PLUGIN_COMMANDS: CustomCommandsGroup[] = [];
 let CACHED_PLUGIN_COMMAND_PROVIDER_NAMES: string[] = [];
@@ -90,15 +91,15 @@ export function isPluginCommandsLoaded(): boolean {
   return pluginCommandsLoaded;
 }
 
-/** Returns true once both config-based and plugin-based custom commands are ready */
+/** Returns true once both config-based and plugin-based custom commands are ready AND the registry has been populated */
 export function isAllCustomCommandsLoaded(): boolean {
-  return isAllConfigLoaded() && pluginCommandsLoaded;
+  return isAllConfigLoaded() && pluginCommandsLoaded && registryInitialized;
 }
 
 /**
  * Loads both config-based and plugin-based custom command groups in parallel.
  * Returns the combined list of all groups once both sources are ready.
- * Safe to call multiple times — individual loaders handle in-flight deduplication.
+ * Safe to call multiple times - individual loaders handle in-flight deduplication.
  * Also caches allowed background command prefixes for validation.
  */
 export async function loadAllCustomCommandGroups(): Promise<
@@ -120,6 +121,7 @@ export async function loadAllCustomCommandGroups(): Promise<
       }
     }
   }
+  registryInitialized = true;
 
   return allGroups;
 }
@@ -141,6 +143,7 @@ export async function resetSfdxHardisConfigCache() {
   projectConfigLoaded = false;
   settingsConfigLoaded = false;
   pluginCommandsLoaded = false;
+  registryInitialized = false;
   IN_FLIGHT_PLUGIN_COMMANDS = null;
   CACHED_PLUGIN_COMMANDS = [];
   CACHED_PLUGIN_COMMAND_PROVIDER_NAMES = [];
