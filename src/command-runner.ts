@@ -142,7 +142,9 @@ export class CommandRunner {
       config.get("userInputCommandLineIfLWC") === "background";
     const isHardisCommand = trimmedCommand.startsWith("sf hardis");
     const isSfStandard = this.isSfStandardCommand(trimmedCommand);
-    const isNpmInstallSf = trimmedCommand.startsWith("npm install @salesforce/");
+    const isNpmInstallSf = trimmedCommand.startsWith(
+      "npm install @salesforce/",
+    );
 
     // ── Fast path ────────────────────────────────────────────────────────────
     // sf hardis:*, SF-standard commands (sf org, sf apex, …) and
