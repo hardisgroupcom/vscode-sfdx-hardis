@@ -183,7 +183,10 @@ export function preLoadCache() {
   for (const npmPackage of npmPackages) {
     preLoadPromises.push(getNpmLatestVersion(npmPackage));
   }
-  Promise.allSettled(preLoadPromises).then(() => {
+  const markCachePreloaded = () => {
+    if (CACHE_IS_PRELOADED) {
+      return;
+    }
     console.timeEnd("sfdxHardisPreload");
     CACHE_IS_PRELOADED = true;
     vscode.commands.executeCommand(
@@ -194,6 +197,18 @@ export function preLoadCache() {
       "vscode-sfdx-hardis.refreshPluginsView",
       true,
     );
+  };
+
+  // Safety net: if any preload promise hangs (slow CLI, unreachable npm registry…),
+  // force-unblock the plugins panel after 90 s so spinners never run forever.
+  const preloadTimeoutId = setTimeout(() => {
+    Logger.log("[vscode-sfdx-hardis] Cache preload timed out after 90 s – forcing refresh");
+    markCachePreloaded();
+  }, 90000);
+
+  Promise.allSettled(preLoadPromises).then(() => {
+    clearTimeout(preloadTimeoutId);
+    markCachePreloaded();
   });
 }
 
@@ -205,6 +220,7 @@ export async function getNpmLatestVersion(
   }
   const versionRes = await axios.get(
     "https://registry.npmjs.org/" + packageName + "/latest",
+    { timeout: 15000 },
   );
   const version = versionRes.data.version;
   CacheManager.set("app", packageName, version, 1000 * 60 * 60 * 24); // 1 day
