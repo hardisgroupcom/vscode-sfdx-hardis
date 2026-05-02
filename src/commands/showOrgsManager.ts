@@ -39,9 +39,13 @@ export function registerShowOrgsManager(commandThis: Commands) {
             orgs = await loadOrgsWithProgress(allFlag);
             panel.sendInitializationData({ orgs: [...orgs] });
           } else if (type === "connectOrg") {
-            // run hardis:org:select
+            // run hardis:org:select to reconnect a disconnected org
             const username = data.username;
-            const command = `sf hardis:org:select --username "${username || ""}"`;
+            const instanceUrl = data.instanceUrl;
+            let command = `sf hardis:org:select --username "${username || ""}" --reconnect --no-set-default`;
+            if (instanceUrl) {
+              command += ` --instance-url "${instanceUrl}"`;
+            }
             commandThis.commandRunner.executeCommand(command);
           } else if (type === "forgetOrgs") {
             try {

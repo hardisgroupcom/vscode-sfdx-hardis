@@ -386,7 +386,7 @@ export default class Welcome extends SharedMixin(LightningElement) {
     window.sendMessageToVSCode({
       type: "runCommand",
       data: {
-        command: "sf hardis:org:select",
+        command: "sf hardis:org:select --set-default",
       },
     });
   }

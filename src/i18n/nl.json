@@ -1173,6 +1173,7 @@
   "openWithPackageXmlViewer": "Openen met PackageXML-viewer",
   "openWithVsCode": "Openen met VS Code",
   "operationColumn": "Bewerking",
+  "orgDisconnectedTooltip": "⚠️ Deze org is verbroken. Klik om opnieuw verbinding te maken.",
   "orgExpired": "🦙 Je org is verlopen op {{expirationDate}}. Je moet een nieuwe aanmaken.",
   "orgExpiresInNDays": "Je org verloopt over {{days}} dagen",
   "orgExpiresLabel": "(verloopt: {{expirationDate}})",

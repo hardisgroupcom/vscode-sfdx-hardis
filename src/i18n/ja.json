@@ -1173,6 +1173,7 @@
   "openWithPackageXmlViewer": "PackageXML ビューアーで開く",
   "openWithVsCode": "VS Code で開く",
   "operationColumn": "操作",
+  "orgDisconnectedTooltip": "⚠️ この組織は切断されています。クリックして再接続します。",
   "orgExpired": "🦙 組織は {{expirationDate}} に期限切れになりました。新しい組織を作成する必要があります。",
   "orgExpiresInNDays": "組織は {{days}} 日後に期限切れになります",
   "orgExpiresLabel": "(期限: {{expirationDate}})",
