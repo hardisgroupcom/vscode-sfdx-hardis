@@ -526,13 +526,11 @@ export class BranchStrategyMermaidBuilder {
       );
     }
 
-    // Add click callbacks for branches with pull requests (must be at the end)
+    // Add click callbacks for all branches (must be at the end)
     for (const gitBranch of this.gitBranches) {
-      if (gitBranch.hasPullRequests) {
-        this.mermaidLines.push(
-          `click ${gitBranch.nodeName} call handleMermaidClick() "Show ${gitBranch.name} PRs"`,
-        );
-      }
+      this.mermaidLines.push(
+        `click ${gitBranch.nodeName} call handleMermaidClick() "Show ${gitBranch.name}"`,
+      );
     }
   }
 

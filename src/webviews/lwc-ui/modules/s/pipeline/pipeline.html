@@ -57,6 +57,12 @@
                                 icon-name="utility:key"
                                 onclick={configureAuth}
                             ></lightning-menu-item>
+                            <lightning-menu-item
+                                value="doraReport"
+                                label={i18n.generateDoraReport}
+                                icon-name="utility:chart"
+                                onclick={handleGenerateDoraReport}
+                            ></lightning-menu-item>
                         </lightning-button-menu>
                         <lightning-button-menu
                             alternative-text={i18n.deploymentPackages}
@@ -426,11 +432,30 @@
                 <footer class="slds-modal__footer" style="display: flex; justify-content: space-between;">
                     <div>
                         <template if:true={isSinglePRMode}>
-                            <lightning-button 
-                                variant="brand" 
-                                label={singlePRViewButtonLabel} 
+                            <lightning-button
+                                variant="brand"
+                                label={singlePRViewButtonLabel}
                                 icon-name="utility:new_window"
                                 onclick={handleOpenSinglePRUrl}
+                            ></lightning-button>
+                        </template>
+                        <template if:false={isSinglePRMode}>
+                            <template if:true={hasBranchPullRequests}>
+                                <lightning-button
+                                    variant="success"
+                                    label={i18n.previewReleaseNotes}
+                                    icon-name="utility:preview"
+                                    icon-position="left"
+                                    onclick={handlePreviewReleaseNotes}
+                                ></lightning-button>
+                            </template>
+                            <lightning-button
+                                class="slds-m-left_small"
+                                variant="success"
+                                label={i18n.generateReleaseNotes}
+                                icon-name="utility:document_preview"
+                                icon-position="left"
+                                onclick={handleGenerateReleaseNotes}
                             ></lightning-button>
                         </template>
                     </div>
