@@ -19,14 +19,14 @@ Write or update documentation for the vscode-sfdx-hardis extension.
 
 ## What to document and where
 
-| Type | Location |
-|------|----------|
-| Extension features, user-facing docs | `README.md` |
-| Claude Code instructions | `CLAUDE.md` |
-| Claude Code skills | `.claude/skills/*/SKILL.md` |
-| i18n strings (user-visible text) | `src/i18n/*.json` (all 9 locales) |
-| Command tooltips | `hardis-commands-provider.ts` via `t("tooltipKey")` |
-| Command help links | `helpUrl` property pointing to `https://sfdx-hardis.cloudity.com/` |
+| Type                                 | Location                                                           |
+|--------------------------------------|--------------------------------------------------------------------|
+| Extension features, user-facing docs | `README.md`                                                        |
+| Claude Code instructions             | `CLAUDE.md`                                                        |
+| Claude Code skills                   | `.claude/skills/*/SKILL.md`                                        |
+| i18n strings (user-visible text)     | `src/i18n/*.json` (all 9 locales)                                  |
+| Command tooltips                     | `hardis-commands-provider.ts` via `t("tooltipKey")`                |
+| Command help links                   | `helpUrl` property pointing to `https://sfdx-hardis.cloudity.com/` |
 
 ## Rules
 

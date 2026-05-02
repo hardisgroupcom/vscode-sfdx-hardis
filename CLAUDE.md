@@ -8,7 +8,7 @@ VS Code extension for **SFDX Hardis** (by Cloudity) - provides an intuitive UI f
 
 - Publisher: `NicolasVuillamy` | License: AGPL-3.0
 - CLI dependency: `sfdx-hardis` plugin for Salesforce CLI (`sf`, never legacy `sfdx`)
-- Documentation: https://sfdx-hardis.cloudity.com/
+- Documentation: <https://sfdx-hardis.cloudity.com/>
 
 ## Build & Development Commands
 
@@ -42,20 +42,20 @@ Defined in `webpack.common.js`, with `webpack.dev.js` and `webpack.prod.js` over
 
 ### Core Components
 
-| Component | File | Role |
-|-----------|------|------|
-| Entry point | `src/extension.ts` | Activation, init telemetry/providers/WebSocket |
-| Command registry | `src/commands.ts` | Registers all VS Code commands |
-| Command runner | `src/command-runner.ts` | Terminal management, background/foreground execution |
-| Commands tree | `src/hardis-commands-provider.ts` | TreeDataProvider for command menu (200+ commands) |
-| Status tree | `src/hardis-status-provider.ts` | Org info, git status, expiration |
-| Plugins tree | `src/hardis-plugins-provider.ts` | Dependency tracking and updates |
-| WebSocket server | `src/hardis-websocket-server.ts` | Real-time CLI communication (ports 2702-2784) |
-| LWC Panel manager | `src/lwc-panel-manager.ts` | Manages webview panel lifecycle |
-| LWC Panel base | `src/webviews/lwc-ui-panel.ts` | Creates webview panels, message bridge |
-| Colors | `src/hardis-colors.ts` | Org-based VS Code theme coloring |
-| Logger | `src/logger.ts` | Output channel logging |
-| Constants | `src/constants.ts` | Version requirements, URLs |
+| Component         | File                              | Role                                                 |
+|-------------------|-----------------------------------|------------------------------------------------------|
+| Entry point       | `src/extension.ts`                | Activation, init telemetry/providers/WebSocket       |
+| Command registry  | `src/commands.ts`                 | Registers all VS Code commands                       |
+| Command runner    | `src/command-runner.ts`           | Terminal management, background/foreground execution |
+| Commands tree     | `src/hardis-commands-provider.ts` | TreeDataProvider for command menu (200+ commands)    |
+| Status tree       | `src/hardis-status-provider.ts`   | Org info, git status, expiration                     |
+| Plugins tree      | `src/hardis-plugins-provider.ts`  | Dependency tracking and updates                      |
+| WebSocket server  | `src/hardis-websocket-server.ts`  | Real-time CLI communication (ports 2702-2784)        |
+| LWC Panel manager | `src/lwc-panel-manager.ts`        | Manages webview panel lifecycle                      |
+| LWC Panel base    | `src/webviews/lwc-ui-panel.ts`    | Creates webview panels, message bridge               |
+| Colors            | `src/hardis-colors.ts`            | Org-based VS Code theme coloring                     |
+| Logger            | `src/logger.ts`                   | Output channel logging                               |
+| Constants         | `src/constants.ts`                | Version requirements, URLs                           |
 
 ### Utility Modules (`src/utils/`)
 - `cache-manager.ts` - Global state caching with expiration
