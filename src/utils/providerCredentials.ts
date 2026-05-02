@@ -92,7 +92,10 @@ export async function collectProviderCredentialEnvVars(): Promise<
       reset: false,
       authenticate: false,
     });
-    if (ticketProvider?.isAuthenticated && ticketProvider.providerName === "JIRA") {
+    if (
+      ticketProvider?.isAuthenticated &&
+      ticketProvider.providerName === "JIRA"
+    ) {
       const config = await getConfig("project");
       let jiraHost = (config.jiraHost || "").trim();
       if (
