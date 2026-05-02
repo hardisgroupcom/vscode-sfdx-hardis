@@ -109,14 +109,14 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
               id: "org-info-devhub-loading",
               label: t("loadingDevHubInfo"),
               tooltip: t("clickToSelectAndAuthenticateDevHub"),
-              command: "sf hardis:org:select --devhub",
+              command: "sf hardis:org:select --devhub --set-default",
               iconId: "loading",
             }
           : {
               id: "org-info-loading",
               label: t("loadingDefaultOrgInfo"),
               tooltip: t("clickToSelectDefaultOrg"),
-              command: "sf hardis:org:select",
+              command: "sf hardis:org:select --set-default",
               iconId: "loading",
             },
       );
@@ -164,29 +164,45 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
     if (orgInfoResult.result || orgInfoResult.id) {
       const orgInfo = orgInfoResult.result || orgInfoResult;
       setOrgCache(orgInfo);
+      const isDisconnected =
+        orgInfo.connectedStatus &&
+        !orgInfo.connectedStatus
+          .toString()
+          .toLowerCase()
+          .match(/connected|authorized/);
+      const reconnectCommand =
+        "sf hardis:org:select --reconnect --set-default" +
+        (options.devHub ? " --devhub" : "") +
+        (orgInfo.username ? ` --username ${orgInfo.username}` : "") +
+        (orgInfo.instanceUrl ? ` --instance-url ${orgInfo.instanceUrl}` : "");
       if (orgInfo.instanceUrl) {
         items.push({
           id: "org-info-instance-url" + (options.devHub ? "-devhub" : ""),
-          label: `${orgInfo.instanceUrl.replace("https://", "")}`,
-          tooltip: t("clickToOpenOrgUrl", {
-            orgType: options.devHub ? "Dev Hub" : "default",
-            url: orgInfo.instanceUrl,
-          }),
-          command:
-            "sf org open" +
-            (options.devHub ? ` --target-org ${devHubUsername}` : ""),
+          label: `${isDisconnected ? "⛓️‍💥 " : ""}${orgInfo.instanceUrl.replace("https://", "")}`,
+          tooltip: isDisconnected
+            ? t("orgDisconnectedTooltip")
+            : t("clickToOpenOrgUrl", {
+                orgType: options.devHub ? "Dev Hub" : "default",
+                url: orgInfo.instanceUrl,
+              }),
+          command: isDisconnected
+            ? reconnectCommand
+            : "sf org open" + (options.devHub ? ` --target-org ${devHubUsername}` : ""),
           iconId: "org",
         });
       }
       if (orgInfo.username) {
         items.push({
           id: "org-info-username" + (options.devHub ? "-devhub" : ""),
-          label: `${orgInfo.username}`,
-          tooltip: t("usernameTooltip", { username: orgInfo.username }),
-          command:
-            "sf org open" +
-            (options.devHub ? ` --target-org ${devHubUsername}` : "") +
-            " --path lightning/settings/personal/PersonalInformation/home",
+          label: `${isDisconnected ? "⛓️‍💥 " : ""}${orgInfo.username}`,
+          tooltip: isDisconnected
+            ? t("orgDisconnectedTooltip")
+            : t("usernameTooltip", { username: orgInfo.username }),
+          command: isDisconnected
+            ? reconnectCommand
+            : "sf org open" +
+              (options.devHub ? ` --target-org ${devHubUsername}` : "") +
+              " --path lightning/settings/personal/PersonalInformation/home",
           iconId: "org:user",
         });
       }
@@ -286,7 +302,7 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
           ? t("selectAnotherDevHubOrg")
           : t("selectAnotherOrg"),
         tooltip: t("clickToSelectOrg"),
-        command: "sf hardis:org:select" + (options.devHub ? " --devhub" : ""),
+        command: "sf hardis:org:select  --set-default" + (options.devHub ? " --devhub" : ""),
         iconId: "org:connect",
       });
     } else {
@@ -294,7 +310,7 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
         id: "org-not-connected" + (options.devHub ? "-devhub" : ""),
         label: t("selectAnOrg"),
         tooltip: t("clickToSelectAndAuthenticateOrg"),
-        command: "sf hardis:org:select" + (options.devHub ? " --devhub" : ""),
+        command: "sf hardis:org:select  --set-default" + (options.devHub ? " --devhub" : ""),
         iconId: "org:connect",
       });
     }

@@ -1173,6 +1173,7 @@
   "openWithPackageXmlViewer": "Abrir con el visor de PackageXML",
   "openWithVsCode": "Abrir con VS Code",
   "operationColumn": "Operación",
+  "orgDisconnectedTooltip": "⚠️ Esta org está desconectada. Haga clic para reconectarse.",
   "orgExpired": "🦙 Su org expiró el {{expirationDate}}. Necesita crear una nueva.",
   "orgExpiresInNDays": "Su org expirará en {{days}} días",
   "orgExpiresLabel": "(exp: {{expirationDate}})",

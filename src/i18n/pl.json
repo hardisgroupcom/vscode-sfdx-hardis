@@ -1165,6 +1165,7 @@
   "openSourceFull": "100% Open Source",
   "openSourceSubtitle": "Narzędzia Salesforce tworzone przez społeczność",
   "operationColumn": "Operacja",
+  "orgDisconnectedTooltip": "⚠️ Ta org jest rozłączona. Kliknij, aby ponownie połączyć.",
   "orgExpired": "🦙 Twoja org wygasła {{expirationDate}}. Musisz utworzyć nową.",
   "orgExpiresInNDays": "Twoja org wygaśnie za {{days}} dni",
   "orgExpiresLabel": "(wyg: {{expirationDate}})",
