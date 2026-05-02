@@ -247,7 +247,7 @@ export default class OrgManager extends SharedMixin(LightningElement) {
   handleConnect() {
     window.sendMessageToVSCode({
       type: "runCommand",
-      data: { command: "sf hardis:org:select --prompt-default" },
+      data: { command: "sf hardis:org:select" },
     });
   }
 

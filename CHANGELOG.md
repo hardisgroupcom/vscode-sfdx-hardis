@@ -6,6 +6,7 @@
   - Menu option to generate DORA metrics report
   - Buttons to generate release-notes (before or after PR merge)
 - Send Git Provider & Ticketing provider auth info when running sf hardis commands (ex: Generate release notes)
+- Optimize user login and reconnect experiences
 
 ## [7.7.1] 2026-04-30
 
