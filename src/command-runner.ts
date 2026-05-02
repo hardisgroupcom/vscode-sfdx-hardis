@@ -15,6 +15,10 @@ import {
   stripAnsi,
 } from "./utils";
 import { Logger } from "./logger";
+import {
+  collectProviderCredentialEnvVars,
+  SECRET_ENV_KEYS,
+} from "./utils/providerCredentials";
 
 const SF_STANDARD_COMMANDS = [
   "sf agent",
@@ -134,7 +138,10 @@ export class CommandRunner {
     await this.customCommandsLoadingPromise;
   }
 
-  executeCommand(sfdxHardisCommand: string, extraEnv?: Record<string, string>) {
+  async executeCommand(
+    sfdxHardisCommand: string,
+    extraEnv?: Record<string, string>,
+  ) {
     const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
     this.debugNodeJs = config.get("debugSfdxHardisCommands") ?? false;
     const trimmedCommand = sfdxHardisCommand.trimStart();
@@ -145,6 +152,20 @@ export class CommandRunner {
     const isNpmInstallSf = trimmedCommand.startsWith(
       "npm install @salesforce/",
     );
+
+    // Auto-inject provider credentials for sf hardis commands so the CLI
+    // can authenticate with the same git/ticketing providers as the extension.
+    if (isHardisCommand) {
+      try {
+        const credentialEnv = await collectProviderCredentialEnvVars();
+        if (Object.keys(credentialEnv).length > 0) {
+          // Caller-supplied values take precedence over auto-collected ones
+          extraEnv = { ...credentialEnv, ...extraEnv };
+        }
+      } catch {
+        // Silently continue without credentials
+      }
+    }
 
     // ── Fast path ────────────────────────────────────────────────────────────
     // sf hardis:*, SF-standard commands (sf org, sf apex, …) and
@@ -748,7 +769,17 @@ export class CommandRunner {
       cmd = `SFDX_HARDIS_LANG=${langSetting} ${cmd}`;
     }
     if (extraEnv && typeof extraEnv === "object") {
+      // Filter out secret env vars — they must never appear in the terminal
+      const secretKeys = Object.keys(extraEnv).filter((k) =>
+        SECRET_ENV_KEYS.has(k),
+      );
+      if (secretKeys.length > 0) {
+        Logger.log(
+          `Terminal mode: stripped secret env vars from command: ${secretKeys.join(", ")}`,
+        );
+      }
       const envPrefix = Object.entries(extraEnv)
+        .filter(([k]) => !SECRET_ENV_KEYS.has(k))
         .map(([k, v]) => `${k}=${v}`)
         .join(" ");
       if (envPrefix) {
