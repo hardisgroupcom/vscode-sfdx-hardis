@@ -1585,6 +1585,33 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     });
   }
 
+  handleGenerateDoraReport() {
+    window.sendMessageToVSCode({
+      type: "runCommand",
+      data: {
+        command: "sf hardis:doc:dora-report",
+      },
+    });
+  }
+
+  handlePreviewReleaseNotes() {
+    window.sendMessageToVSCode({
+      type: "runCommand",
+      data: {
+        command: `sf hardis:doc:release-notes --mode prepare --source-branch ${this.modalBranchName}`,
+      },
+    });
+  }
+
+  handleGenerateReleaseNotes() {
+    window.sendMessageToVSCode({
+      type: "runCommand",
+      data: {
+        command: `sf hardis:doc:release-notes --mode post --target-branch ${this.modalBranchName}`,
+      },
+    });
+  }
+
   handleGitConnect() {
     if (this.gitAuthenticated) {
       // Already connected - prompt user for action
@@ -1703,71 +1730,59 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
   handleShowBranchPRs(branchName) {
     console.log("Showing PRs for branch:", branchName);
-    const prs = this.branchPullRequestsMap.get(branchName);
-    if (prs && prs.length > 0) {
-      this.modalBranchName = branchName;
-      this.modalPullRequests = this._mapPrsWithIcons(prs);
+    const prs = this.branchPullRequestsMap.get(branchName) || [];
+    this.modalBranchName = branchName;
+    this.modalPullRequests = this._mapPrsWithIcons(prs);
+    // Aggregate all tickets from all PRs
+    this.modalTickets = this._aggregateTicketsFromPRs(prs);
 
-      // Aggregate all tickets from all PRs
-      this.modalTickets = this._aggregateTicketsFromPRs(prs);
+    // Aggregate all deployment actions from all PRs
+    this.modalActions = this._aggregateActionsFromPRs(prs);
 
-      // Aggregate all deployment actions from all PRs
-      this.modalActions = this._aggregateActionsFromPRs(prs);
+    // Per-line breakdown for Apex tests (read-only in branch mode)
+    const rows = [];
+    for (const pr of prs) {
+      const classes =
+        pr &&
+        pr.deploymentApexTestClasses &&
+        Array.isArray(pr.deploymentApexTestClasses)
+          ? pr.deploymentApexTestClasses
+          : [];
 
-      // Per-line breakdown for Apex tests (read-only in branch mode)
-      const rows = [];
-      for (const pr of prs) {
-        const classes =
-          pr &&
-          pr.deploymentApexTestClasses &&
-          Array.isArray(pr.deploymentApexTestClasses)
-            ? pr.deploymentApexTestClasses
-            : [];
+      const normalized = this.normalizeApexTestClasses(classes);
 
-        const normalized = this.normalizeApexTestClasses(classes);
+      for (const apexTestClass of normalized) {
+        rows.push({
+          id: `apexTests-${pr.number || pr.id || "pr"}-${apexTestClass}`,
+          prLabel: `#${pr.number || ""} - ${pr.title || ""}`,
+          prWebUrl: pr.webUrl || "",
+          apexTestClass: apexTestClass,
+        });
+      }
+    }
 
-        for (const apexTestClass of normalized) {
-          rows.push({
-            id: `apexTests-${pr.number || pr.id || "pr"}-${apexTestClass}`,
-            prLabel: `#${pr.number || ""} - ${pr.title || ""}`,
-            prWebUrl: pr.webUrl || "",
-            apexTestClass: apexTestClass,
-          });
-        }
+    // stable order by class then PR number
+    rows.sort((a, b) => {
+      const classCmp = (a.apexTestClass || "").localeCompare(
+        b.apexTestClass || "",
+      );
+      if (classCmp !== 0) {
+        return classCmp;
       }
 
-      // stable order by class then PR number
-      rows.sort((a, b) => {
-        const classCmp = (a.apexTestClass || "").localeCompare(
-          b.apexTestClass || "",
-        );
-        if (classCmp !== 0) {
-          return classCmp;
-        }
+      const aNum = parseInt((a.prLabel || "").replace(/^#(\d+).*/, "$1"));
+      const bNum = parseInt((b.prLabel || "").replace(/^#(\d+).*/, "$1"));
+      if (!isNaN(aNum) && !isNaN(bNum)) {
+        return aNum - bNum;
+      }
+      return (a.prLabel || "").localeCompare(b.prLabel || "");
+    });
 
-        const aNum = parseInt((a.prLabel || "").replace(/^#(\d+).*/, "$1"));
-        const bNum = parseInt((b.prLabel || "").replace(/^#(\d+).*/, "$1"));
-        if (!isNaN(aNum) && !isNaN(bNum)) {
-          return aNum - bNum;
-        }
-        return (a.prLabel || "").localeCompare(b.prLabel || "");
-      });
-
-      this.apexTestsByLineRows = rows;
-      this.deploymentApexTestClasses = [];
-      this._deploymentApexTestClassesOriginal = [];
-      this.apexTestsMode = "view";
-
-      this.showPRModal = true;
-      console.log("Modal data:", {
-        branchName,
-        prCount: prs.length,
-        ticketCount: this.modalTickets.length,
-        actionCount: this.modalActions.length,
-      });
-    } else {
-      console.warn("No PRs found for branch:", branchName);
-    }
+    this.apexTestsByLineRows = rows;
+    this.deploymentApexTestClasses = [];
+    this._deploymentApexTestClassesOriginal = [];
+    this.apexTestsMode = "view";
+    this.showPRModal = true;
   }
 
   handleOpenOrgNode(nodeIdentifier) {
@@ -2203,6 +2218,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
   get showPRTab() {
     return this.modalMode !== "singlePR";
+  }
+
+  get hasBranchPullRequests() {
+    return this.modalPullRequests && this.modalPullRequests.length > 0;
   }
 
   get isSinglePRMode() {
