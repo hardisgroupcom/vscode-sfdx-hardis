@@ -12,19 +12,23 @@ on:
   push:
     branches: ["alpha"]
 
-permissions: read-all
+permissions:
+  contents: read
 
 jobs:
   deploy:
     name: Deploy on VsCode MarketPlace
     runs-on: ubuntu-latest
-    permissions: read-all
+    permissions:
+      contents: read
     environment:
       name: release
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          persist-credentials: false
       - run: yarn
-      - uses: lannonbr/vsce-action@master
+      - uses: lannonbr/vsce-action@510e61c5e9e6f33c0418ec5ff5fd36b1ced61e85 # master
         with:
           args: "publish --pre-release -p $VSCE_TOKEN --allow-package-secrets github"
         env:

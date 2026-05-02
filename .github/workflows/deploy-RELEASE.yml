@@ -13,23 +13,27 @@ on:
     # Want to run the automation when a release is created
     types: ["created"]
 
-permissions: read-all
+permissions:
+  contents: read
 
 jobs:
   deploy:
     name: Deploy on VsCode MarketPlace
     runs-on: ubuntu-latest
-    permissions: read-all
+    permissions:
+      contents: read
     environment:
       name: release
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
       - run: yarn --frozen-lockfile
       - name: Publish to Visual Studio Marketplace
-        uses: HaaLeo/publish-vscode-extension@v2
+        uses: HaaLeo/publish-vscode-extension@ca5561daa085dee804bf9f37fe0165785a9b14db # v2
         with:
           pat: ${{ secrets.VSCE_TOKEN }}
           registryUrl: https://marketplace.visualstudio.com
@@ -38,17 +42,20 @@ jobs:
   deploy_ovsx:
     name: Deploy on Open VSX
     runs-on: ubuntu-latest
-    permissions: read-all
+    permissions:
+      contents: read
     environment:
       name: release
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
       - run: yarn --frozen-lockfile
       - name: Publish to Open VSX Registry
-        uses: HaaLeo/publish-vscode-extension@v2
+        uses: HaaLeo/publish-vscode-extension@ca5561daa085dee804bf9f37fe0165785a9b14db # v2
         with:
           pat: ${{ secrets.OPENVSX_TOKEN }}
           registryUrl: https://open-vsx.org
