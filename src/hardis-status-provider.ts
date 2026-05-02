@@ -187,7 +187,8 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
               }),
           command: isDisconnected
             ? reconnectCommand
-            : "sf org open" + (options.devHub ? ` --target-org ${devHubUsername}` : ""),
+            : "sf org open" +
+              (options.devHub ? ` --target-org ${devHubUsername}` : ""),
           iconId: "org",
         });
       }
@@ -302,7 +303,9 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
           ? t("selectAnotherDevHubOrg")
           : t("selectAnotherOrg"),
         tooltip: t("clickToSelectOrg"),
-        command: "sf hardis:org:select  --set-default" + (options.devHub ? " --devhub" : ""),
+        command:
+          "sf hardis:org:select  --set-default" +
+          (options.devHub ? " --devhub" : ""),
         iconId: "org:connect",
       });
     } else {
@@ -310,7 +313,9 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
         id: "org-not-connected" + (options.devHub ? "-devhub" : ""),
         label: t("selectAnOrg"),
         tooltip: t("clickToSelectAndAuthenticateOrg"),
-        command: "sf hardis:org:select  --set-default" + (options.devHub ? " --devhub" : ""),
+        command:
+          "sf hardis:org:select  --set-default" +
+          (options.devHub ? " --devhub" : ""),
         iconId: "org:connect",
       });
     }
