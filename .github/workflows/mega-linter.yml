@@ -40,7 +40,8 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
-          persist-credentials: false
+          # persist-credentials: false # Comment this line and uncomment the next one if you use APPLY_FIXES
+          persist-credentials: true # zizmor: ignore[artipacked]
 
       # Mega-Linter
       - name: Mega-Linter
