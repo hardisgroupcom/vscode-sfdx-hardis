@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [7.8.0] 2026-05-04
+
 - DevOps Pipeline
   - Menu option to generate DORA metrics report
   - Buttons to generate release-notes (before or after PR merge)
