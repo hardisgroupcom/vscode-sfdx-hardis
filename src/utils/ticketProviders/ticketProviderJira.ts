@@ -144,8 +144,7 @@ export class JiraProvider extends TicketProvider {
 
     if (choice.value === "pat") {
       return await this.authenticateWithPAT();
-    }
-    else {
+    } else {
       return await this.authenticateWithBasicAuth();
     }
   }
@@ -215,11 +214,16 @@ export class JiraProvider extends TicketProvider {
   }
 
   private isJiraCloud(): boolean {
-    return this.jiraHost.includes("atlassian.net") || this.jiraHost.includes(".jira.com");
+    return (
+      this.jiraHost.includes("atlassian.net") ||
+      this.jiraHost.includes(".jira.com")
+    );
   }
 
   private createJiraClient(
-    authConfig: { oauth2: { accessToken: string } } | { basic: { email: string; apiToken: string } },
+    authConfig:
+      | { oauth2: { accessToken: string } }
+      | { basic: { email: string; apiToken: string } },
   ): Version2Client | Version3Client {
     const host = this.jiraHost.replace(/\/$/, "");
     if (this.isJiraCloud()) {
@@ -283,12 +287,13 @@ export class JiraProvider extends TicketProvider {
   async checkActiveUser(mode: "PersonalAccessToken" | "EmailAndToken") {
     // Cast needed: Version2Client and Version3Client share the same method signature,
     // but TypeScript cannot resolve the union of their overloaded signatures.
-    const user = await (this.jiraClient as Version2Client).myself.getCurrentUser();
+    const user = await (
+      this.jiraClient as Version2Client
+    ).myself.getCurrentUser();
     if (user.active) {
       this.isAuthenticated = true;
       Logger.log("JIRA authentication successful with mode: " + mode);
-    }
-    else {
+    } else {
       Logger.log(
         `JIRA authentication failed with mode ${mode}: Active user check failed. ${user ? JSON.stringify(user) : user}`,
       );
@@ -302,7 +307,9 @@ export class JiraProvider extends TicketProvider {
     const regexes: RegExp[] = [];
 
     // Add URL-based regex to extract JIRA tickets from full URLs
-    regexes.push(/(https:\/\/.*(?:jira|atlassian\.net|\.jira\.com).*\/[A-Z0-9]+-\d+\b)/gi);
+    regexes.push(
+      /(https:\/\/.*(?:jira|atlassian\.net|\.jira\.com).*\/[A-Z0-9]+-\d+\b)/gi,
+    );
 
     // Add identifier-based regex (customizable via .sfdx-hardis.yml)
     if (customRegex) {
@@ -361,8 +368,7 @@ export class JiraProvider extends TicketProvider {
         if (typeof description === "string") {
           // Jira Server (API v2): description is a plain string
           ticket.body = description;
-        }
-        else if (description?.content && Array.isArray(description.content)) {
+        } else if (description?.content && Array.isArray(description.content)) {
           // Jira Cloud (API v3): description is ADF format
           const extractText = (node: any): string => {
             if (node.type === "text") {
