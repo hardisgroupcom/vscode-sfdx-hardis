@@ -279,7 +279,9 @@ export class GitProviderGitHub extends GitProvider {
 
   // Fetch latest workflow run jobs for a pull request using the source branch.
   // Primary: GitHub Actions workflow runs. Fallback: commit statuses (Jenkins, CircleCI, etc.)
-  protected async fetchLatestJobsForPullRequest(pr: PullRequest): Promise<Job[]> {
+  protected async fetchLatestJobsForPullRequest(
+    pr: PullRequest,
+  ): Promise<Job[]> {
     if (!this.gitHubClient || !this.repoInfo) {
       return [];
     }
@@ -404,7 +406,10 @@ export class GitProviderGitHub extends GitProvider {
         const statusJobs = this.mapCommitStatusesToJobs(
           statusesResp.data || [],
         );
-        return { jobs: statusJobs, jobsStatus: this.computeJobsStatus(statusJobs) };
+        return {
+          jobs: statusJobs,
+          jobsStatus: this.computeJobsStatus(statusJobs),
+        };
       }
 
       // If there are multiple attempts for the same run, pick the latest attempt for each name

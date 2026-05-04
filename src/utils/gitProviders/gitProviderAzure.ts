@@ -502,7 +502,9 @@ export class GitProviderAzure extends GitProvider {
       });
 
       if (matchingBuilds.length === 0) {
-        Logger.log(`No builds found for PR #${pr.number}, checking PR statuses`);
+        Logger.log(
+          `No builds found for PR #${pr.number}, checking PR statuses`,
+        );
 
         // Fallback: PR statuses (Jenkins, external CI)
         if (pr.number) {
@@ -710,9 +712,14 @@ export class GitProviderAzure extends GitProvider {
             updatedAt: s.creationDate?.toISOString() || undefined,
             raw: s,
           }));
-          return { jobs: statusJobs, jobsStatus: this.computeJobsStatus(statusJobs) };
+          return {
+            jobs: statusJobs,
+            jobsStatus: this.computeJobsStatus(statusJobs),
+          };
         } catch (e) {
-          Logger.log(`Error fetching commit statuses for branch ${branchName}: ${String(e)}`);
+          Logger.log(
+            `Error fetching commit statuses for branch ${branchName}: ${String(e)}`,
+          );
           return { jobs: [], jobsStatus: "unknown" };
         }
       }

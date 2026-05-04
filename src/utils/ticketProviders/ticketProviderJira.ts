@@ -155,8 +155,12 @@ export class JiraProvider extends TicketProvider {
     }
 
     await SecretsManager.setSecret(this.hostKey + "_JIRA_PAT", token);
-    await SecretsManager.deleteSecret(this.hostKey + "_JIRA_EMAIL").catch(() => {});
-    await SecretsManager.deleteSecret(this.hostKey + "_JIRA_TOKEN").catch(() => {});
+    await SecretsManager.deleteSecret(this.hostKey + "_JIRA_EMAIL").catch(
+      () => {},
+    );
+    await SecretsManager.deleteSecret(this.hostKey + "_JIRA_TOKEN").catch(
+      () => {},
+    );
     return await this.initializeClient(token, "", "");
   }
 
@@ -185,7 +189,9 @@ export class JiraProvider extends TicketProvider {
 
     await SecretsManager.setSecret(this.hostKey + "_JIRA_EMAIL", email);
     await SecretsManager.setSecret(this.hostKey + "_JIRA_TOKEN", token);
-    await SecretsManager.deleteSecret(this.hostKey + "_JIRA_PAT").catch(() => {});
+    await SecretsManager.deleteSecret(this.hostKey + "_JIRA_PAT").catch(
+      () => {},
+    );
     return await this.initializeClient("", email, token);
   }
 

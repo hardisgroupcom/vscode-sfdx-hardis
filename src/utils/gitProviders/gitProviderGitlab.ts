@@ -148,7 +148,8 @@ export class GitProviderGitlab extends GitProvider {
           providerName: "GitLab",
           guidance: t("gitlabAuthInfo"),
           createTokenUrl: `https://${this.repoInfo.host}/-/user_settings/personal_access_tokens?name=sfdx-hardis&scopes=api,read_user`,
-          docUrl: "https://docs.gitlab.com/user/profile/personal_access_tokens/",
+          docUrl:
+            "https://docs.gitlab.com/user/profile/personal_access_tokens/",
         });
       }
     }
@@ -461,14 +462,20 @@ export class GitProviderGitlab extends GitProvider {
         if (sha) {
           try {
             // @ts-ignore - Commits.allStatuses is part of gitbeaker but may be missing from some type versions
-            const statuses: any[] = (await this.gitlabClient!.Commits.allStatuses(projectId, String(sha))) || [];
+            const statuses: any[] =
+              (await this.gitlabClient!.Commits.allStatuses(
+                projectId,
+                String(sha),
+              )) || [];
             await this.logApiCall("Commits.allStatuses", {
               caller: "fetchLatestJobsForPullRequest",
               sha,
             });
             return this.mapGitLabCommitStatusesToJobs(statuses);
           } catch (e) {
-            Logger.log(`Error fetching commit statuses for MR !${mrIid}: ${String(e)}`);
+            Logger.log(
+              `Error fetching commit statuses for MR !${mrIid}: ${String(e)}`,
+            );
           }
         }
         return [];
@@ -547,15 +554,24 @@ export class GitProviderGitlab extends GitProvider {
             return { jobs: [], jobsStatus: "unknown" };
           }
           // @ts-ignore - Commits.allStatuses is part of gitbeaker but may be missing from some type versions
-          const statuses: any[] = (await this.gitlabClient!.Commits.allStatuses(projectId, String(latestCommitSha))) || [];
+          const statuses: any[] =
+            (await this.gitlabClient!.Commits.allStatuses(
+              projectId,
+              String(latestCommitSha),
+            )) || [];
           await this.logApiCall("Commits.allStatuses", {
             caller: "getJobsForBranchLatestCommit",
             sha: latestCommitSha,
           });
           const statusJobs = this.mapGitLabCommitStatusesToJobs(statuses);
-          return { jobs: statusJobs, jobsStatus: this.computeJobsStatus(statusJobs) };
+          return {
+            jobs: statusJobs,
+            jobsStatus: this.computeJobsStatus(statusJobs),
+          };
         } catch (e) {
-          Logger.log(`Error fetching commit statuses for branch ${branchName}: ${String(e)}`);
+          Logger.log(
+            `Error fetching commit statuses for branch ${branchName}: ${String(e)}`,
+          );
           return { jobs: [], jobsStatus: "unknown" };
         }
       }

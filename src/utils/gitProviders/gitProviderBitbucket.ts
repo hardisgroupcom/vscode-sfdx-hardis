@@ -75,8 +75,7 @@ export class GitProviderBitbucket extends GitProvider {
 
     if (choice.value === "token") {
       return await this.authenticateWithToken(repoAccessTokenUrl);
-    }
-    else {
+    } else {
       return await this.authenticateWithEmailAndToken(ATLASSIAN_API_TOKEN_URL);
     }
   }
@@ -93,13 +92,10 @@ export class GitProviderBitbucket extends GitProvider {
     if (!token) {
       return null;
     }
-    await SecretsManager.setSecret(
-      this.hostKey + "_BITBUCKET_TOKEN",
-      token,
+    await SecretsManager.setSecret(this.hostKey + "_BITBUCKET_TOKEN", token);
+    await SecretsManager.deleteSecret(this.hostKey + "_BITBUCKET_EMAIL").catch(
+      () => {},
     );
-    await SecretsManager.deleteSecret(
-      this.hostKey + "_BITBUCKET_EMAIL",
-    ).catch(() => {});
     await this.initializeClient("", token);
     return this.isActive;
   }
@@ -124,14 +120,8 @@ export class GitProviderBitbucket extends GitProvider {
     if (!token) {
       return null;
     }
-    await SecretsManager.setSecret(
-      this.hostKey + "_BITBUCKET_EMAIL",
-      email,
-    );
-    await SecretsManager.setSecret(
-      this.hostKey + "_BITBUCKET_TOKEN",
-      token,
-    );
+    await SecretsManager.setSecret(this.hostKey + "_BITBUCKET_EMAIL", email);
+    await SecretsManager.setSecret(this.hostKey + "_BITBUCKET_TOKEN", token);
     await this.initializeClient(email, token);
     return this.isActive;
   }
@@ -139,12 +129,9 @@ export class GitProviderBitbucket extends GitProvider {
   async initialize() {
     this.secretTokenIdentifier = this.hostKey + "_BITBUCKET_TOKEN";
     const token =
-      (await SecretsManager.getSecret(this.hostKey + "_BITBUCKET_TOKEN")) ||
-      "";
+      (await SecretsManager.getSecret(this.hostKey + "_BITBUCKET_TOKEN")) || "";
     const email =
-      (await SecretsManager.getSecret(
-        this.hostKey + "_BITBUCKET_EMAIL",
-      )) || "";
+      (await SecretsManager.getSecret(this.hostKey + "_BITBUCKET_EMAIL")) || "";
 
     if (token && this.repoInfo?.host && this.repoInfo.remoteUrl) {
       await this.initializeClient(email, token);
@@ -159,8 +146,7 @@ export class GitProviderBitbucket extends GitProvider {
           password: token,
         },
       } as any);
-    }
-    else {
+    } else {
       this.bitbucketClient = new Bitbucket({
         auth: {
           token: token,
@@ -188,11 +174,8 @@ export class GitProviderBitbucket extends GitProvider {
         } as any);
         await this.logApiCall("repositories.get", { caller: "initialize" });
         this.isActive = true;
-      }
-      catch (err) {
-        Logger.log(
-          `Bitbucket repository access check failed: ${String(err)}`,
-        );
+      } catch (err) {
+        Logger.log(`Bitbucket repository access check failed: ${String(err)}`);
         this.isActive = false;
         const host = this.repoInfo?.host || "bitbucket.org";
         const repoTokenUrl =
@@ -207,8 +190,7 @@ export class GitProviderBitbucket extends GitProvider {
             "https://support.atlassian.com/bitbucket-cloud/docs/access-tokens/",
         });
       }
-    }
-    else {
+    } else {
       Logger.log(
         `Could not extract Bitbucket workspace/repo from remote URL: ${this.repoInfo!.remoteUrl}`,
       );
@@ -439,11 +421,12 @@ export class GitProviderBitbucket extends GitProvider {
 
     // Primary: commit statuses reported against the PR (Jenkins, external CI)
     try {
-      const statusResponse = await this.bitbucketClient.repositories.listPullRequestStatuses({
-        workspace: this.workspace,
-        repo_slug: this.repoSlug,
-        pull_request_id: rawPr.id,  // rawPr.id is always a Bitbucket integer PR id
-      } as any);
+      const statusResponse =
+        await this.bitbucketClient.repositories.listPullRequestStatuses({
+          workspace: this.workspace,
+          repo_slug: this.repoSlug,
+          pull_request_id: rawPr.id, // rawPr.id is always a Bitbucket integer PR id
+        } as any);
       await this.logApiCall("repositories.listPullRequestStatuses", {
         caller: "fetchLatestJobsForPullRequest",
         pull_request_id: pr.id,
@@ -500,7 +483,9 @@ export class GitProviderBitbucket extends GitProvider {
         },
       ];
     } catch (err) {
-      Logger.log(`Error fetching jobs for PR on branch ${pr.sourceBranch}: ${String(err)}`);
+      Logger.log(
+        `Error fetching jobs for PR on branch ${pr.sourceBranch}: ${String(err)}`,
+      );
       return [];
     }
   }
@@ -515,23 +500,25 @@ export class GitProviderBitbucket extends GitProvider {
     // Primary: commit statuses for the latest commit on the branch (covers Jenkins, external CI)
     try {
       // listCommitsAt maps to /commits/{revision} — the canonical endpoint for branch commits
-      const commitsResponse = await this.bitbucketClient.repositories.listCommitsAt({
-        workspace: this.workspace,
-        repo_slug: this.repoSlug,
-        revision: branchName,
-        pagelen: 1,
-      } as any);
+      const commitsResponse =
+        await this.bitbucketClient.repositories.listCommitsAt({
+          workspace: this.workspace,
+          repo_slug: this.repoSlug,
+          revision: branchName,
+          pagelen: 1,
+        } as any);
       await this.logApiCall("repositories.listCommitsAt", {
         caller: "getJobsForBranchLatestCommit",
         revision: branchName,
       });
       const latestCommit = commitsResponse?.data?.values?.[0]?.hash;
       if (latestCommit) {
-        const statusResponse = await this.bitbucketClient.repositories.listCommitStatuses({
-          workspace: this.workspace,
-          repo_slug: this.repoSlug,
-          commit: latestCommit,
-        } as any);
+        const statusResponse =
+          await this.bitbucketClient.repositories.listCommitStatuses({
+            workspace: this.workspace,
+            repo_slug: this.repoSlug,
+            commit: latestCommit,
+          } as any);
         await this.logApiCall("repositories.listCommitStatuses", {
           caller: "getJobsForBranchLatestCommit",
           commit: latestCommit,
@@ -549,7 +536,9 @@ export class GitProviderBitbucket extends GitProvider {
         }
       }
     } catch (e) {
-      Logger.log(`Error fetching commit statuses for branch ${branchName}: ${String(e)}`);
+      Logger.log(
+        `Error fetching commit statuses for branch ${branchName}: ${String(e)}`,
+      );
     }
 
     // Fallback: Bitbucket Pipelines
@@ -644,7 +633,9 @@ export class GitProviderBitbucket extends GitProvider {
 
   // Maps Bitbucket commit status state strings to JobStatus.
   // Used for external CI systems (Jenkins, CircleCI, etc.) that report via the commit status API.
-  private mapCommitStatusStateToJobStatus(state: string | undefined): JobStatus {
+  private mapCommitStatusStateToJobStatus(
+    state: string | undefined,
+  ): JobStatus {
     if (!state) {
       return "unknown";
     }
