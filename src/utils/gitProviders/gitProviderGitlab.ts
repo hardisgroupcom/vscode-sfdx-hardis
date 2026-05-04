@@ -9,6 +9,7 @@ import { ProviderDescription, PullRequest, Job, JobStatus } from "./types";
 import { SecretsManager } from "../secretsManager";
 import { Logger } from "../../logger";
 import { t } from "../../i18n/i18n";
+import { showAuthFailureGuidance } from "../providerCredentials";
 
 export class GitProviderGitlab extends GitProvider {
   gitlabClient: InstanceType<typeof Gitlab> | null = null;
@@ -141,6 +142,14 @@ export class GitProviderGitlab extends GitProvider {
         Logger.log(
           `Could not extract GitLab project path from remote URL: ${this.repoInfo.remoteUrl}`,
         );
+      }
+      if (!this.isActive) {
+        showAuthFailureGuidance({
+          providerName: "GitLab",
+          guidance: t("gitlabAuthInfo"),
+          createTokenUrl: `https://${this.repoInfo.host}/-/user_settings/personal_access_tokens?name=sfdx-hardis&scopes=api,read_user`,
+          docUrl: "https://docs.gitlab.com/user/profile/personal_access_tokens/",
+        });
       }
     }
   }
@@ -447,18 +456,31 @@ export class GitProviderGitlab extends GitProvider {
       }
 
       if (!Array.isArray(pipelines) || pipelines.length === 0) {
+        // Fallback: commit statuses (Jenkins, etc.)
+        const sha = mr.sha;
+        if (sha) {
+          try {
+            // @ts-ignore - Commits.allStatuses is part of gitbeaker but may be missing from some type versions
+            const statuses: any[] = (await this.gitlabClient!.Commits.allStatuses(projectId, String(sha))) || [];
+            await this.logApiCall("Commits.allStatuses", {
+              caller: "fetchLatestJobsForPullRequest",
+              sha,
+            });
+            return this.mapGitLabCommitStatusesToJobs(statuses);
+          } catch (e) {
+            Logger.log(`Error fetching commit statuses for MR !${mrIid}: ${String(e)}`);
+          }
+        }
         return [];
       }
 
-      const converted: Job[] = pipelines.map((p: any) => {
-        return {
-          name: p.ref || p.sha || String(p.id || ""),
-          status: (p.status || "").toString(),
-          webUrl: p.web_url || p.webUrl || undefined,
-          updatedAt: p.updated_at || p.updatedAt || undefined,
-          raw: p,
-        };
-      });
+      const converted: Job[] = pipelines.map((p: any) => ({
+        name: p.ref || p.sha || String(p.id || ""),
+        status: this.mapGitLabPipelineStatusToJobStatus(p.status),
+        webUrl: p.web_url || p.webUrl || undefined,
+        updatedAt: p.updated_at || p.updatedAt || undefined,
+        raw: p,
+      }));
 
       return converted;
     } catch (e) {
@@ -510,7 +532,32 @@ export class GitProviderGitlab extends GitProvider {
       );
 
       if (commitPipelines.length === 0) {
-        return { jobs: [], jobsStatus: "unknown" };
+        // Fallback: commit statuses (Jenkins, etc.)
+        try {
+          const commits = await this.gitlabClient!.Commits.all(projectId, {
+            refName: branchName,
+            perPage: 1,
+          });
+          await this.logApiCall("Commits.all", {
+            caller: "getJobsForBranchLatestCommit",
+            action: "getLatestCommitSha",
+          });
+          const latestCommitSha = (commits as any[])[0]?.id;
+          if (!latestCommitSha) {
+            return { jobs: [], jobsStatus: "unknown" };
+          }
+          // @ts-ignore - Commits.allStatuses is part of gitbeaker but may be missing from some type versions
+          const statuses: any[] = (await this.gitlabClient!.Commits.allStatuses(projectId, String(latestCommitSha))) || [];
+          await this.logApiCall("Commits.allStatuses", {
+            caller: "getJobsForBranchLatestCommit",
+            sha: latestCommitSha,
+          });
+          const statusJobs = this.mapGitLabCommitStatusesToJobs(statuses);
+          return { jobs: statusJobs, jobsStatus: this.computeJobsStatus(statusJobs) };
+        } catch (e) {
+          Logger.log(`Error fetching commit statuses for branch ${branchName}: ${String(e)}`);
+          return { jobs: [], jobsStatus: "unknown" };
+        }
       }
 
       // Use the most recent commit-triggered pipeline
@@ -518,7 +565,7 @@ export class GitProviderGitlab extends GitProvider {
       const converted: Job[] = [
         {
           name: pipeline.ref || pipeline.sha || String(pipeline.id || ""),
-          status: (pipeline.status || "").toString() as JobStatus,
+          status: this.mapGitLabPipelineStatusToJobStatus(pipeline.status),
           webUrl: pipeline.web_url || pipeline.webUrl || undefined,
           updatedAt: pipeline.updated_at || pipeline.updatedAt || undefined,
           raw: pipeline,
@@ -530,6 +577,50 @@ export class GitProviderGitlab extends GitProvider {
       Logger.log(`Unexpected error fetching branch pipelines: ${String(e)}`);
       return null;
     }
+  }
+
+  private mapGitLabPipelineStatusToJobStatus(status: string): JobStatus {
+    switch ((status || "").toLowerCase()) {
+      case "success":
+        return "success";
+      case "failed":
+      case "canceled":
+        return "failed";
+      case "running":
+        return "running";
+      case "pending":
+      case "created":
+      case "waiting_for_resource":
+      case "preparing":
+      case "scheduled":
+        return "pending";
+      default:
+        return "unknown";
+    }
+  }
+
+  // Map GitLab commit statuses (Jenkins, etc.) to Job[].
+  // Deduplicates by name, keeping the latest entry per context name.
+  private mapGitLabCommitStatusesToJobs(statuses: any[]): Job[] {
+    const latestByName = new Map<string, any>();
+    for (const s of statuses) {
+      const key = s.name || "external-ci";
+      const existing = latestByName.get(key);
+      const existingTime = existing
+        ? new Date(existing.finished_at || existing.created_at || 0)
+        : new Date(0);
+      const sTime = new Date(s.finished_at || s.created_at || 0);
+      if (sTime > existingTime) {
+        latestByName.set(key, s);
+      }
+    }
+    return Array.from(latestByName.values()).map((s: any) => ({
+      name: s.name || "external-ci",
+      status: this.mapGitLabPipelineStatusToJobStatus(s.status),
+      webUrl: s.target_url || undefined,
+      updatedAt: s.finished_at || s.created_at || undefined,
+      raw: s,
+    }));
   }
 
   convertToPullRequest(mr: any): PullRequest {

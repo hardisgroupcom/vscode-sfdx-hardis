@@ -6,6 +6,7 @@ import { ProviderDescription, PullRequest, Job, JobStatus } from "./types";
 import { SecretsManager } from "../secretsManager";
 import { Logger } from "../../logger";
 import { t } from "../../i18n/i18n";
+import { showAuthFailureGuidance } from "../providerCredentials";
 
 export class GitProviderBitbucket extends GitProvider {
   bitbucketClient: InstanceType<typeof Bitbucket> | null = null;
@@ -24,19 +25,13 @@ export class GitProviderBitbucket extends GitProvider {
   }
 
   async disconnect(): Promise<void> {
-    // Bitbucket uses PAT tokens stored in secrets
-    // Delete the stored token
-    if (this.secretTokenIdentifier) {
+    const secretKeys = [
+      `${this.hostKey}_BITBUCKET_TOKEN`,
+      `${this.hostKey}_BITBUCKET_EMAIL`,
+    ];
+    for (const key of secretKeys) {
       try {
-        await SecretsManager.deleteSecret(this.secretTokenIdentifier);
-      } catch {
-        // Ignore if secret doesn't exist
-      }
-    } else if (this.repoInfo?.host) {
-      // Fallback if secretTokenIdentifier wasn't set
-      const hostKey = this.repoInfo.host.replace(/\./g, "_").toUpperCase();
-      try {
-        await SecretsManager.deleteSecret(`${hostKey}_TOKEN`);
+        await SecretsManager.deleteSecret(key);
       } catch {
         // Ignore if secret doesn't exist
       }
@@ -53,63 +48,171 @@ export class GitProviderBitbucket extends GitProvider {
   }
 
   async authenticate(): Promise<boolean | null> {
+    const ATLASSIAN_API_TOKEN_URL =
+      "https://id.atlassian.com/manage-profile/security/api-tokens";
+    // Repository-scoped access token URL: build from repoInfo when available
+    const host = this.repoInfo?.host || "bitbucket.org";
+    const owner = this.repoInfo?.owner || "";
+    const repo = this.repoInfo?.repo || "";
+    const repoAccessTokenUrl =
+      owner && repo
+        ? `https://${host}/${owner}/${repo}/admin/access-tokens`
+        : "https://support.atlassian.com/bitbucket-cloud/docs/access-tokens/";
+
+    const choice = await vscode.window.showQuickPick(
+      [
+        { label: t("useAccessToken"), value: "token" },
+        { label: t("useEmailAndApiToken"), value: "basic" },
+      ],
+      {
+        placeHolder: t("bitbucketAuthMethodPlaceholder"),
+        ignoreFocusOut: true,
+      },
+    );
+    if (!choice) {
+      return null;
+    }
+
+    if (choice.value === "token") {
+      return await this.authenticateWithToken(repoAccessTokenUrl);
+    }
+    else {
+      return await this.authenticateWithEmailAndToken(ATLASSIAN_API_TOKEN_URL);
+    }
+  }
+
+  private async authenticateWithToken(
+    tokenUrl: string,
+  ): Promise<boolean | null> {
     const token = await vscode.window.showInputBox({
       prompt: t("bitbucketEnterToken"),
       ignoreFocusOut: true,
       password: true,
+      placeHolder: t("bitbucketCreateApiTokenAt", { url: tokenUrl }),
     });
-    if (token) {
-      await SecretsManager.setSecret(this.secretTokenIdentifier, token);
-      await this.initialize();
-      return this.isActive;
+    if (!token) {
+      return null;
     }
-    return null;
+    await SecretsManager.setSecret(
+      this.hostKey + "_BITBUCKET_TOKEN",
+      token,
+    );
+    await SecretsManager.deleteSecret(
+      this.hostKey + "_BITBUCKET_EMAIL",
+    ).catch(() => {});
+    await this.initializeClient("", token);
+    return this.isActive;
+  }
+
+  private async authenticateWithEmailAndToken(
+    tokenUrl: string,
+  ): Promise<boolean | null> {
+    const email = await vscode.window.showInputBox({
+      prompt: t("bitbucketEnterEmail"),
+      ignoreFocusOut: true,
+      placeHolder: t("emailPlaceholder"),
+    });
+    if (!email) {
+      return null;
+    }
+    const token = await vscode.window.showInputBox({
+      prompt: t("bitbucketEnterToken"),
+      ignoreFocusOut: true,
+      password: true,
+      placeHolder: t("bitbucketCreateApiTokenAt", { url: tokenUrl }),
+    });
+    if (!token) {
+      return null;
+    }
+    await SecretsManager.setSecret(
+      this.hostKey + "_BITBUCKET_EMAIL",
+      email,
+    );
+    await SecretsManager.setSecret(
+      this.hostKey + "_BITBUCKET_TOKEN",
+      token,
+    );
+    await this.initializeClient(email, token);
+    return this.isActive;
   }
 
   async initialize() {
-    // Use a secret token stored in SecretsManager similar to GitLab provider
-    this.secretTokenIdentifier = this.hostKey + "_TOKEN";
-    const token = await SecretsManager.getSecret(this.secretTokenIdentifier);
+    this.secretTokenIdentifier = this.hostKey + "_BITBUCKET_TOKEN";
+    const token =
+      (await SecretsManager.getSecret(this.hostKey + "_BITBUCKET_TOKEN")) ||
+      "";
+    const email =
+      (await SecretsManager.getSecret(
+        this.hostKey + "_BITBUCKET_EMAIL",
+      )) || "";
+
     if (token && this.repoInfo?.host && this.repoInfo.remoteUrl) {
+      await this.initializeClient(email, token);
+    }
+  }
+
+  private async initializeClient(email: string, token: string): Promise<void> {
+    if (email) {
       this.bitbucketClient = new Bitbucket({
         auth: {
-          // Bitbucket accepts username/password or app passwords; use token in password with empty username
+          username: email,
+          password: token,
+        },
+      } as any);
+    }
+    else {
+      this.bitbucketClient = new Bitbucket({
+        auth: {
           token: token,
         },
       } as any);
+    }
 
-      // Extract workspace and repo slug from remote URL (common formats)
-      // Examples:
-      // git@bitbucket.org:workspace/repo.git
-      // https://bitbucket.org/workspace/repo.git
-      const match = this.repoInfo.remoteUrl.match(
-        new RegExp("[:/]([^/:]+/[^/]+)(.git)?$"),
-      );
-      const projectPath = match ? match[1] : null;
-      if (projectPath) {
-        const parts = projectPath.split("/");
-        this.workspace = parts[0];
-        this.repoSlug = parts[1];
-        // validate token by requesting repository info
-        try {
-          await this.bitbucketClient.repositories.get({
-            workspace: this.workspace,
-            repo_slug: this.repoSlug,
-          } as any);
-          await this.logApiCall("repositories.get", { caller: "initialize" });
-          this.isActive = true;
-        } catch (err) {
-          Logger.log(
-            `Bitbucket repository access check failed: ${String(err)}`,
-          );
-          this.isActive = false;
-        }
-      } else {
+    // Extract workspace and repo slug from remote URL (common formats)
+    // Examples:
+    // git@bitbucket.org:workspace/repo.git
+    // https://bitbucket.org/workspace/repo.git
+    const match = this.repoInfo!.remoteUrl.match(
+      new RegExp("[:/]([^/:]+/[^/]+)(.git)?$"),
+    );
+    const projectPath = match ? match[1] : null;
+    if (projectPath) {
+      const parts = projectPath.split("/");
+      this.workspace = parts[0];
+      this.repoSlug = parts[1];
+      // validate credentials by requesting repository info
+      try {
+        await this.bitbucketClient.repositories.get({
+          workspace: this.workspace,
+          repo_slug: this.repoSlug,
+        } as any);
+        await this.logApiCall("repositories.get", { caller: "initialize" });
+        this.isActive = true;
+      }
+      catch (err) {
         Logger.log(
-          `Could not extract Bitbucket workspace/repo from remote URL: ${this.repoInfo.remoteUrl}`,
+          `Bitbucket repository access check failed: ${String(err)}`,
         );
         this.isActive = false;
+        const host = this.repoInfo?.host || "bitbucket.org";
+        const repoTokenUrl =
+          this.workspace && this.repoSlug
+            ? `https://${host}/${this.workspace}/${this.repoSlug}/admin/access-tokens`
+            : "https://support.atlassian.com/bitbucket-cloud/docs/access-tokens/";
+        showAuthFailureGuidance({
+          providerName: "Bitbucket",
+          guidance: t("bitbucketAuthInfo"),
+          createTokenUrl: repoTokenUrl,
+          docUrl:
+            "https://support.atlassian.com/bitbucket-cloud/docs/access-tokens/",
+        });
       }
+    }
+    else {
+      Logger.log(
+        `Could not extract Bitbucket workspace/repo from remote URL: ${this.repoInfo!.remoteUrl}`,
+      );
+      this.isActive = false;
     }
   }
 
@@ -323,7 +426,9 @@ export class GitProviderBitbucket extends GitProvider {
     return `${this.repoInfo.webUrl}/pull-requests/new?source=${encodeURIComponent(sourceBranch)}&dest=${encodeURIComponent(targetBranch)}&title=${encodeURIComponent(title)}`;
   }
 
-  // Fetch pipelines for a Bitbucket PR (Bitbucket Cloud). Best-effort: query pipelines by commit/branch
+  // Fetch build statuses for a Bitbucket PR.
+  // Primary: commit statuses API (covers external CI like Jenkins, CircleCI, etc.)
+  // Fallback: Bitbucket Pipelines (for repos using native Bitbucket CI)
   private async fetchLatestJobsForPullRequest(
     rawPr: any,
     pr: PullRequest,
@@ -331,13 +436,38 @@ export class GitProviderBitbucket extends GitProvider {
     if (!this.bitbucketClient || !this.workspace || !this.repoSlug) {
       return [];
     }
+
+    // Primary: commit statuses reported against the PR (Jenkins, external CI)
     try {
-      // Try to find the commit hash
+      const statusResponse = await this.bitbucketClient.repositories.listPullRequestStatuses({
+        workspace: this.workspace,
+        repo_slug: this.repoSlug,
+        pull_request_id: rawPr.id,  // rawPr.id is always a Bitbucket integer PR id
+      } as any);
+      await this.logApiCall("repositories.listPullRequestStatuses", {
+        caller: "fetchLatestJobsForPullRequest",
+        pull_request_id: pr.id,
+      });
+      const statuses = statusResponse?.data?.values ?? [];
+      if (statuses.length > 0) {
+        return statuses.map((s: any) => ({
+          name: s.name || s.key || "Build",
+          status: this.mapCommitStatusStateToJobStatus(s.state),
+          webUrl: s.url || undefined,
+          updatedAt: s.updated_on || undefined,
+          raw: s,
+        }));
+      }
+    } catch (err) {
+      Logger.log(`Error fetching PR commit statuses: ${String(err)}`);
+    }
+
+    // Fallback: Bitbucket Pipelines
+    try {
       const commit =
         rawPr && rawPr.source && rawPr.source.commit
           ? rawPr.source.commit.hash
           : undefined;
-      // Query pipelines endpoint: GET /repositories/{workspace}/{repo_slug}/pipelines/?sort=-created_on&q=target.ref_name="branch"
       const q = commit
         ? `target.commit.hash = "${commit}"`
         : `target.ref_name = "${pr.sourceBranch}"`;
@@ -349,19 +479,14 @@ export class GitProviderBitbucket extends GitProvider {
       } as any);
       await this.logApiCall("pipelines.list", {
         caller: "fetchLatestJobsForPullRequest",
-        q: q,
+        q,
       });
-      const values =
-        response && response.data && response.data.values
-          ? response.data.values
-          : [];
-      if (!values || values.length === 0) {
+      const values = response?.data?.values ?? [];
+      if (values.length === 0) {
         return [];
       }
-      const pipeline1 = values[0];
-      // Map pipeline steps to PullRequestJob if available
-      const pipeline: any = pipeline1 as any;
-      const converted: Job[] = [
+      const pipeline: any = values[0];
+      return [
         {
           name:
             pipeline?.target?.selector?.target ||
@@ -374,8 +499,8 @@ export class GitProviderBitbucket extends GitProvider {
           raw: pipeline,
         },
       ];
-      return converted;
-    } catch {
+    } catch (err) {
+      Logger.log(`Error fetching jobs for PR on branch ${pr.sourceBranch}: ${String(err)}`);
       return [];
     }
   }
@@ -386,8 +511,49 @@ export class GitProviderBitbucket extends GitProvider {
     if (!this.bitbucketClient || !this.workspace || !this.repoSlug) {
       return null;
     }
+
+    // Primary: commit statuses for the latest commit on the branch (covers Jenkins, external CI)
     try {
-      // Query pipelines for the branch
+      // listCommitsAt maps to /commits/{revision} — the canonical endpoint for branch commits
+      const commitsResponse = await this.bitbucketClient.repositories.listCommitsAt({
+        workspace: this.workspace,
+        repo_slug: this.repoSlug,
+        revision: branchName,
+        pagelen: 1,
+      } as any);
+      await this.logApiCall("repositories.listCommitsAt", {
+        caller: "getJobsForBranchLatestCommit",
+        revision: branchName,
+      });
+      const latestCommit = commitsResponse?.data?.values?.[0]?.hash;
+      if (latestCommit) {
+        const statusResponse = await this.bitbucketClient.repositories.listCommitStatuses({
+          workspace: this.workspace,
+          repo_slug: this.repoSlug,
+          commit: latestCommit,
+        } as any);
+        await this.logApiCall("repositories.listCommitStatuses", {
+          caller: "getJobsForBranchLatestCommit",
+          commit: latestCommit,
+        });
+        const statuses = statusResponse?.data?.values ?? [];
+        if (statuses.length > 0) {
+          const jobs: Job[] = statuses.map((s: any) => ({
+            name: s.name || s.key || "Build",
+            status: this.mapCommitStatusStateToJobStatus(s.state),
+            webUrl: s.url || undefined,
+            updatedAt: s.updated_on || undefined,
+            raw: s,
+          }));
+          return { jobs, jobsStatus: this.computeJobsStatus(jobs) };
+        }
+      }
+    } catch (e) {
+      Logger.log(`Error fetching commit statuses for branch ${branchName}: ${String(e)}`);
+    }
+
+    // Fallback: Bitbucket Pipelines
+    try {
       const response = await this.bitbucketClient.pipelines.list({
         workspace: this.workspace,
         repo_slug: this.repoSlug,
@@ -398,28 +564,20 @@ export class GitProviderBitbucket extends GitProvider {
         caller: "getJobsForBranchLatestCommit",
         q: `target.ref_name = "${branchName}"`,
       });
-      const values =
-        response && response.data && response.data.values
-          ? response.data.values
-          : [];
+      const values = response?.data?.values ?? [];
       if (!values || values.length === 0) {
         return { jobs: [], jobsStatus: "unknown" };
       }
 
-      // Filter out pipelines triggered by pull requests
-      // Only keep pipelines triggered by direct commits (trigger type: 'PUSH', 'MANUAL', 'SCHEDULE', etc.)
-      // Exclude pipelines with trigger type: 'PULL_REQUEST'
+      // Exclude pipelines triggered by pull requests
       const commitPipelines = values.filter(
         (p: any) => p.trigger?.type !== "PULL_REQUEST",
       );
-
       if (commitPipelines.length === 0) {
         return { jobs: [], jobsStatus: "unknown" };
       }
 
-      // Use the most recent commit-triggered pipeline
-      const pipeline1 = commitPipelines[0];
-      const pipeline = pipeline1 as any;
+      const pipeline: any = commitPipelines[0];
       const job: Job = {
         name:
           pipeline?.target?.selector?.target ||
@@ -482,6 +640,26 @@ export class GitProviderBitbucket extends GitProvider {
       return "unknown";
     }
     return "unknown";
+  }
+
+  // Maps Bitbucket commit status state strings to JobStatus.
+  // Used for external CI systems (Jenkins, CircleCI, etc.) that report via the commit status API.
+  private mapCommitStatusStateToJobStatus(state: string | undefined): JobStatus {
+    if (!state) {
+      return "unknown";
+    }
+    switch (String(state).toUpperCase()) {
+      case "SUCCESSFUL":
+        return "success";
+      case "FAILED":
+        return "failed";
+      case "INPROGRESS":
+        return "running";
+      case "STOPPED":
+        return "failed";
+      default:
+        return "unknown";
+    }
   }
 
   // Helper to convert raw Bitbucket PR and attach jobs/jobsStatus
