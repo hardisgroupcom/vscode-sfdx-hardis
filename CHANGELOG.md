@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Improve assistance to users in case of Git or ticketing provider authentication error.
+
 ## [7.8.0] 2026-05-04
 
 - DevOps Pipeline

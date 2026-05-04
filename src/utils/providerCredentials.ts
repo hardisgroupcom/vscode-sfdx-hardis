@@ -4,6 +4,43 @@ import { TicketProvider } from "./ticketProviders/ticketProvider";
 import { SecretsManager } from "./secretsManager";
 import { getConfig } from "./pipeline/sfdxHardisConfig";
 import { Logger } from "../logger";
+import { t } from "../i18n/i18n";
+
+/**
+ * Shows a non-blocking VS Code information message when provider authentication fails.
+ * Includes buttons to open the token creation page on the provider tenant (when available)
+ * and the provider's documentation.
+ */
+export function showAuthFailureGuidance(options: {
+  providerName: string;
+  guidance: string;
+  createTokenUrl?: string;
+  docUrl: string;
+}): void {
+  const buttons: string[] = [];
+  const urlMap: Record<string, string> = {};
+
+  if (options.createTokenUrl) {
+    const createLabel = t("createToken");
+    buttons.push(createLabel);
+    urlMap[createLabel] = options.createTokenUrl;
+  }
+
+  const docLabel = t("viewDocumentation");
+  buttons.push(docLabel);
+  urlMap[docLabel] = options.docUrl;
+
+  const message =
+    t("authenticationFailed", { provider: options.providerName }) +
+    " " +
+    options.guidance;
+
+  vscode.window.showInformationMessage(message, ...buttons).then((action) => {
+    if (action && urlMap[action]) {
+      vscode.env.openExternal(vscode.Uri.parse(urlMap[action]));
+    }
+  });
+}
 
 /**
  * Environment variable keys that contain secrets and must NEVER be displayed
@@ -72,7 +109,9 @@ export async function collectProviderCredentialEnvVars(): Promise<
           break;
         }
         case "bitbucket": {
-          const token = await SecretsManager.getSecret(hostKey + "_TOKEN");
+          const token = await SecretsManager.getSecret(
+            hostKey + "_BITBUCKET_TOKEN",
+          );
           if (token) {
             env.CI_SFDX_HARDIS_BITBUCKET_TOKEN = token;
           }

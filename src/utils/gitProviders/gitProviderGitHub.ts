@@ -5,6 +5,7 @@ import type { Endpoints } from "@octokit/types";
 import { ProviderDescription, PullRequest, Job, JobStatus } from "./types";
 import { Logger } from "../../logger";
 import { t } from "../../i18n/i18n";
+import { showAuthFailureGuidance } from "../providerCredentials";
 
 export class GitProviderGitHub extends GitProvider {
   gitHubClient: InstanceType<typeof Octokit> | null = null;
@@ -68,6 +69,17 @@ export class GitProviderGitHub extends GitProvider {
     } catch {
       this.gitHubClient = null;
       this.isActive = false;
+      const isEnterprise =
+        this.repoInfo?.host && this.repoInfo.host !== "github.com";
+      showAuthFailureGuidance({
+        providerName: isEnterprise ? "GitHub Enterprise" : "GitHub",
+        guidance: t("githubEnterpriseAuthInfo"),
+        createTokenUrl: isEnterprise
+          ? `https://${this.repoInfo?.host}/settings/tokens`
+          : undefined,
+        docUrl:
+          "https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens",
+      });
     }
   }
 

@@ -9,6 +9,7 @@ import { ProviderDescription, PullRequest, Job, JobStatus } from "./types";
 import { SecretsManager } from "../secretsManager";
 import { Logger } from "../../logger";
 import { t } from "../../i18n/i18n";
+import { showAuthFailureGuidance } from "../providerCredentials";
 
 export class GitProviderGitlab extends GitProvider {
   gitlabClient: InstanceType<typeof Gitlab> | null = null;
@@ -141,6 +142,14 @@ export class GitProviderGitlab extends GitProvider {
         Logger.log(
           `Could not extract GitLab project path from remote URL: ${this.repoInfo.remoteUrl}`,
         );
+      }
+      if (!this.isActive) {
+        showAuthFailureGuidance({
+          providerName: "GitLab",
+          guidance: t("gitlabAuthInfo"),
+          createTokenUrl: `https://${this.repoInfo.host}/-/user_settings/personal_access_tokens?name=sfdx-hardis&scopes=api,read_user`,
+          docUrl: "https://docs.gitlab.com/user/profile/personal_access_tokens/",
+        });
       }
     }
   }

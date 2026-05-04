@@ -6,6 +6,7 @@ import { getConfig } from "../pipeline/sfdxHardisConfig";
 import { SecretsManager } from "../secretsManager";
 import { Version3Client } from "jira.js";
 import { t } from "../../i18n/i18n";
+import { showAuthFailureGuidance } from "../providerCredentials";
 
 export class JiraProvider extends TicketProvider {
   static readonly providerName: TicketProviderName = "JIRA";
@@ -154,6 +155,8 @@ export class JiraProvider extends TicketProvider {
     }
 
     await SecretsManager.setSecret(this.hostKey + "_JIRA_PAT", token);
+    await SecretsManager.deleteSecret(this.hostKey + "_JIRA_EMAIL").catch(() => {});
+    await SecretsManager.deleteSecret(this.hostKey + "_JIRA_TOKEN").catch(() => {});
     return await this.initializeClient(token, "", "");
   }
 
@@ -182,6 +185,7 @@ export class JiraProvider extends TicketProvider {
 
     await SecretsManager.setSecret(this.hostKey + "_JIRA_EMAIL", email);
     await SecretsManager.setSecret(this.hostKey + "_JIRA_TOKEN", token);
+    await SecretsManager.deleteSecret(this.hostKey + "_JIRA_PAT").catch(() => {});
     return await this.initializeClient("", email, token);
   }
 
@@ -225,6 +229,17 @@ export class JiraProvider extends TicketProvider {
       if (this.isAuthenticated) {
         return true;
       }
+      const isCloud = this.jiraHost.includes("atlassian.net");
+      const tokenUrl = isCloud
+        ? "https://id.atlassian.com/manage-profile/security/api-tokens"
+        : `${this.jiraHost}/secure/ViewProfile.jspa?selectedTab=com.atlassian.pats.pats-plugin:jira-user-personal-access-tokens`;
+      showAuthFailureGuidance({
+        providerName: "Jira",
+        guidance: isCloud ? t("jiraCloudAuthInfo") : t("jiraServerAuthInfo"),
+        createTokenUrl: tokenUrl,
+        docUrl:
+          "https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/",
+      });
       this.jiraClient = null;
       return false;
     } catch (error: any) {

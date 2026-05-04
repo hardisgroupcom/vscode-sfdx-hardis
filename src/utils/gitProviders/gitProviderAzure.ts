@@ -11,6 +11,7 @@ import { Logger } from "../../logger";
 import { SecretsManager } from "../secretsManager";
 import { BuildApi } from "azure-devops-node-api/BuildApi";
 import { t } from "../../i18n/i18n";
+import { showAuthFailureGuidance } from "../providerCredentials";
 
 /**
  * Azure DevOps Git Provider
@@ -171,6 +172,15 @@ export class GitProviderAzure extends GitProvider {
       );
       this.gitApi = null;
       this.isActive = false;
+      showAuthFailureGuidance({
+        providerName: "Azure DevOps",
+        guidance: t("azureDevOpsAuthInfo"),
+        createTokenUrl: orgUrl
+          ? `${orgUrl}/_usersSettings/tokens`
+          : "https://dev.azure.com/_usersSettings/tokens",
+        docUrl:
+          "https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate",
+      });
     }
   }
 

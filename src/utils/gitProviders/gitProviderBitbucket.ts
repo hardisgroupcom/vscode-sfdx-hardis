@@ -6,6 +6,7 @@ import { ProviderDescription, PullRequest, Job, JobStatus } from "./types";
 import { SecretsManager } from "../secretsManager";
 import { Logger } from "../../logger";
 import { t } from "../../i18n/i18n";
+import { showAuthFailureGuidance } from "../providerCredentials";
 
 export class GitProviderBitbucket extends GitProvider {
   bitbucketClient: InstanceType<typeof Bitbucket> | null = null;
@@ -24,19 +25,13 @@ export class GitProviderBitbucket extends GitProvider {
   }
 
   async disconnect(): Promise<void> {
-    // Bitbucket uses PAT tokens stored in secrets
-    // Delete the stored token
-    if (this.secretTokenIdentifier) {
+    const secretKeys = [
+      `${this.hostKey}_BITBUCKET_TOKEN`,
+      `${this.hostKey}_BITBUCKET_EMAIL`,
+    ];
+    for (const key of secretKeys) {
       try {
-        await SecretsManager.deleteSecret(this.secretTokenIdentifier);
-      } catch {
-        // Ignore if secret doesn't exist
-      }
-    } else if (this.repoInfo?.host) {
-      // Fallback if secretTokenIdentifier wasn't set
-      const hostKey = this.repoInfo.host.replace(/\./g, "_").toUpperCase();
-      try {
-        await SecretsManager.deleteSecret(`${hostKey}_TOKEN`);
+        await SecretsManager.deleteSecret(key);
       } catch {
         // Ignore if secret doesn't exist
       }
@@ -53,63 +48,171 @@ export class GitProviderBitbucket extends GitProvider {
   }
 
   async authenticate(): Promise<boolean | null> {
+    const ATLASSIAN_API_TOKEN_URL =
+      "https://id.atlassian.com/manage-profile/security/api-tokens";
+    // Repository-scoped access token URL: build from repoInfo when available
+    const host = this.repoInfo?.host || "bitbucket.org";
+    const owner = this.repoInfo?.owner || "";
+    const repo = this.repoInfo?.repo || "";
+    const repoAccessTokenUrl =
+      owner && repo
+        ? `https://${host}/${owner}/${repo}/admin/access-tokens`
+        : "https://support.atlassian.com/bitbucket-cloud/docs/access-tokens/";
+
+    const choice = await vscode.window.showQuickPick(
+      [
+        { label: t("useAccessToken"), value: "token" },
+        { label: t("useEmailAndApiToken"), value: "basic" },
+      ],
+      {
+        placeHolder: t("bitbucketAuthMethodPlaceholder"),
+        ignoreFocusOut: true,
+      },
+    );
+    if (!choice) {
+      return null;
+    }
+
+    if (choice.value === "token") {
+      return await this.authenticateWithToken(repoAccessTokenUrl);
+    }
+    else {
+      return await this.authenticateWithEmailAndToken(ATLASSIAN_API_TOKEN_URL);
+    }
+  }
+
+  private async authenticateWithToken(
+    tokenUrl: string,
+  ): Promise<boolean | null> {
     const token = await vscode.window.showInputBox({
       prompt: t("bitbucketEnterToken"),
       ignoreFocusOut: true,
       password: true,
+      placeHolder: t("bitbucketCreateApiTokenAt", { url: tokenUrl }),
     });
-    if (token) {
-      await SecretsManager.setSecret(this.secretTokenIdentifier, token);
-      await this.initialize();
-      return this.isActive;
+    if (!token) {
+      return null;
     }
-    return null;
+    await SecretsManager.setSecret(
+      this.hostKey + "_BITBUCKET_TOKEN",
+      token,
+    );
+    await SecretsManager.deleteSecret(
+      this.hostKey + "_BITBUCKET_EMAIL",
+    ).catch(() => {});
+    await this.initializeClient("", token);
+    return this.isActive;
+  }
+
+  private async authenticateWithEmailAndToken(
+    tokenUrl: string,
+  ): Promise<boolean | null> {
+    const email = await vscode.window.showInputBox({
+      prompt: t("bitbucketEnterEmail"),
+      ignoreFocusOut: true,
+      placeHolder: t("emailPlaceholder"),
+    });
+    if (!email) {
+      return null;
+    }
+    const token = await vscode.window.showInputBox({
+      prompt: t("bitbucketEnterToken"),
+      ignoreFocusOut: true,
+      password: true,
+      placeHolder: t("bitbucketCreateApiTokenAt", { url: tokenUrl }),
+    });
+    if (!token) {
+      return null;
+    }
+    await SecretsManager.setSecret(
+      this.hostKey + "_BITBUCKET_EMAIL",
+      email,
+    );
+    await SecretsManager.setSecret(
+      this.hostKey + "_BITBUCKET_TOKEN",
+      token,
+    );
+    await this.initializeClient(email, token);
+    return this.isActive;
   }
 
   async initialize() {
-    // Use a secret token stored in SecretsManager similar to GitLab provider
-    this.secretTokenIdentifier = this.hostKey + "_TOKEN";
-    const token = await SecretsManager.getSecret(this.secretTokenIdentifier);
+    this.secretTokenIdentifier = this.hostKey + "_BITBUCKET_TOKEN";
+    const token =
+      (await SecretsManager.getSecret(this.hostKey + "_BITBUCKET_TOKEN")) ||
+      "";
+    const email =
+      (await SecretsManager.getSecret(
+        this.hostKey + "_BITBUCKET_EMAIL",
+      )) || "";
+
     if (token && this.repoInfo?.host && this.repoInfo.remoteUrl) {
+      await this.initializeClient(email, token);
+    }
+  }
+
+  private async initializeClient(email: string, token: string): Promise<void> {
+    if (email) {
       this.bitbucketClient = new Bitbucket({
         auth: {
-          // Bitbucket accepts username/password or app passwords; use token in password with empty username
+          username: email,
+          password: token,
+        },
+      } as any);
+    }
+    else {
+      this.bitbucketClient = new Bitbucket({
+        auth: {
           token: token,
         },
       } as any);
+    }
 
-      // Extract workspace and repo slug from remote URL (common formats)
-      // Examples:
-      // git@bitbucket.org:workspace/repo.git
-      // https://bitbucket.org/workspace/repo.git
-      const match = this.repoInfo.remoteUrl.match(
-        new RegExp("[:/]([^/:]+/[^/]+)(.git)?$"),
-      );
-      const projectPath = match ? match[1] : null;
-      if (projectPath) {
-        const parts = projectPath.split("/");
-        this.workspace = parts[0];
-        this.repoSlug = parts[1];
-        // validate token by requesting repository info
-        try {
-          await this.bitbucketClient.repositories.get({
-            workspace: this.workspace,
-            repo_slug: this.repoSlug,
-          } as any);
-          await this.logApiCall("repositories.get", { caller: "initialize" });
-          this.isActive = true;
-        } catch (err) {
-          Logger.log(
-            `Bitbucket repository access check failed: ${String(err)}`,
-          );
-          this.isActive = false;
-        }
-      } else {
+    // Extract workspace and repo slug from remote URL (common formats)
+    // Examples:
+    // git@bitbucket.org:workspace/repo.git
+    // https://bitbucket.org/workspace/repo.git
+    const match = this.repoInfo!.remoteUrl.match(
+      new RegExp("[:/]([^/:]+/[^/]+)(.git)?$"),
+    );
+    const projectPath = match ? match[1] : null;
+    if (projectPath) {
+      const parts = projectPath.split("/");
+      this.workspace = parts[0];
+      this.repoSlug = parts[1];
+      // validate credentials by requesting repository info
+      try {
+        await this.bitbucketClient.repositories.get({
+          workspace: this.workspace,
+          repo_slug: this.repoSlug,
+        } as any);
+        await this.logApiCall("repositories.get", { caller: "initialize" });
+        this.isActive = true;
+      }
+      catch (err) {
         Logger.log(
-          `Could not extract Bitbucket workspace/repo from remote URL: ${this.repoInfo.remoteUrl}`,
+          `Bitbucket repository access check failed: ${String(err)}`,
         );
         this.isActive = false;
+        const host = this.repoInfo?.host || "bitbucket.org";
+        const repoTokenUrl =
+          this.workspace && this.repoSlug
+            ? `https://${host}/${this.workspace}/${this.repoSlug}/admin/access-tokens`
+            : "https://support.atlassian.com/bitbucket-cloud/docs/access-tokens/";
+        showAuthFailureGuidance({
+          providerName: "Bitbucket",
+          guidance: t("bitbucketAuthInfo"),
+          createTokenUrl: repoTokenUrl,
+          docUrl:
+            "https://support.atlassian.com/bitbucket-cloud/docs/access-tokens/",
+        });
       }
+    }
+    else {
+      Logger.log(
+        `Could not extract Bitbucket workspace/repo from remote URL: ${this.repoInfo!.remoteUrl}`,
+      );
+      this.isActive = false;
     }
   }
 

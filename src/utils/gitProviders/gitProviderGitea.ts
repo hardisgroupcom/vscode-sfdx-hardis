@@ -5,6 +5,7 @@ import { GitProviderGitHub } from "./gitProviderGitHub";
 import { SecretsManager } from "../secretsManager";
 import { Logger } from "../../logger";
 import { t } from "../../i18n/i18n";
+import { showAuthFailureGuidance } from "../providerCredentials";
 
 export class GitProviderGitea extends GitProviderGitHub {
   secretTokenIdentifier: string = "";
@@ -83,6 +84,12 @@ export class GitProviderGitea extends GitProviderGitHub {
     } catch {
       this.gitHubClient = null;
       this.isActive = false;
+      showAuthFailureGuidance({
+        providerName: "Gitea",
+        guidance: t("giteaAuthInfo"),
+        createTokenUrl: `https://${this.repoInfo?.host || ""}/user/settings/applications`,
+        docUrl: "https://docs.gitea.com/development/api-usage",
+      });
     }
   }
 }
