@@ -235,6 +235,15 @@
                                         <p class="command-description">{autoFixPRDescription}</p>
                                     </div>
                                 </template>
+                                <div class="command-card" onclick={handleBackpromote}>
+                                    <div class="command-header">
+                                        <div class="command-icon-container" style="background: linear-gradient(135deg, #0ea5e9 0%, #10b981 100%);">
+                                            <lightning-icon icon-name="utility:merge" size="small" variant="inverse"></lightning-icon>
+                                        </div>
+                                        <h3 class="command-title">{i18n.backpromote}</h3>
+                                    </div>
+                                    <p class="command-description">{i18n.backpromoteDescription}</p>
+                                </div>
                             </div>
                         </lightning-tab>
                         <lightning-tab label={openPrTabLabel} value="prs" icon-name="utility:topic2" icon-assistive-text={openPrTabLabel}>

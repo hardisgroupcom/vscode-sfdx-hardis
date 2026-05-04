@@ -1550,6 +1550,15 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     });
   }
 
+  handleBackpromote() {
+    window.sendMessageToVSCode({
+      type: "runCommand",
+      data: {
+        command: "sf hardis:work:backpromote",
+      },
+    });
+  }
+
   // Package XML handlers
   handleShowPackageXml() {
     window.sendMessageToVSCode({
