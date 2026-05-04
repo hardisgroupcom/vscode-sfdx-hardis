@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Improve assistance to users in case of Git or ticketing provider authentication error.
+- Update Git Providers to also be able to read PR Statuses (ex: Jenkins, CircleCI)
 
 ## [7.8.0] 2026-05-04
 

@@ -277,8 +277,9 @@ export class GitProviderGitHub extends GitProvider {
     return converted;
   }
 
-  // Fetch latest workflow run jobs for a pull request using the source branch
-  private async fetchLatestJobsForPullRequest(pr: PullRequest): Promise<Job[]> {
+  // Fetch latest workflow run jobs for a pull request using the source branch.
+  // Primary: GitHub Actions workflow runs. Fallback: commit statuses (Jenkins, CircleCI, etc.)
+  protected async fetchLatestJobsForPullRequest(pr: PullRequest): Promise<Job[]> {
     if (!this.gitHubClient || !this.repoInfo) {
       return [];
     }
@@ -301,7 +302,7 @@ export class GitProviderGitHub extends GitProvider {
       }
       const latestCommitSha = commitsResp.data[0].sha;
 
-      // List workflow runs for the PR using the commit SHA
+      // Primary: GitHub Actions workflow runs
       const runsResp = await this.gitHubClient.actions.listWorkflowRunsForRepo({
         owner,
         repo,
@@ -325,8 +326,23 @@ export class GitProviderGitHub extends GitProvider {
         return bIsSimulate - aIsSimulate;
       });
 
-      const converted: Job[] = this.mapWorkflowRunsToJobs(latestAttempts);
-      return converted;
+      if (latestAttempts.length > 0) {
+        return this.mapWorkflowRunsToJobs(latestAttempts);
+      }
+
+      // Fallback: commit statuses (Jenkins, CircleCI, etc.)
+      const statusesResp =
+        await this.gitHubClient.repos.listCommitStatusesForRef({
+          owner,
+          repo,
+          ref: latestCommitSha,
+          per_page: 50,
+        });
+      await this.logApiCall("repos.listCommitStatusesForRef", {
+        caller: "fetchLatestJobsForPullRequest",
+        ref: latestCommitSha,
+      });
+      return this.mapCommitStatusesToJobs(statusesResp.data || []);
     } catch {
       return [];
     }
@@ -371,8 +387,24 @@ export class GitProviderGitHub extends GitProvider {
         runsResp.data && runsResp.data.workflow_runs
           ? runsResp.data.workflow_runs
           : [];
-      if (!runs || runs.length === 0) {
-        return { jobs: [], jobsStatus: "unknown" };
+
+      if (runs.length === 0) {
+        // Fallback: commit statuses (Jenkins, CircleCI, etc.)
+        const statusesResp =
+          await this.gitHubClient.repos.listCommitStatusesForRef({
+            owner,
+            repo,
+            ref: latestCommitSha,
+            per_page: 50,
+          });
+        await this.logApiCall("repos.listCommitStatusesForRef", {
+          caller: "getJobsForBranchLatestCommit",
+          ref: latestCommitSha,
+        });
+        const statusJobs = this.mapCommitStatusesToJobs(
+          statusesResp.data || [],
+        );
+        return { jobs: statusJobs, jobsStatus: this.computeJobsStatus(statusJobs) };
       }
 
       // If there are multiple attempts for the same run, pick the latest attempt for each name
@@ -448,6 +480,40 @@ export class GitProviderGitHub extends GitProvider {
       case "in_progress":
         return "running";
       case "queued":
+      case "pending":
+        return "pending";
+      default:
+        return "unknown";
+    }
+  }
+
+  // Map GitHub commit statuses (Jenkins, CircleCI, etc.) to Job[]
+  // Deduplicates by context name, keeping the latest entry per context.
+  protected mapCommitStatusesToJobs(statuses: any[]): Job[] {
+    const latestByContext = new Map<string, any>();
+    for (const s of statuses) {
+      const key = s.context || "external-ci";
+      const existing = latestByContext.get(key);
+      if (!existing || new Date(s.updated_at) > new Date(existing.updated_at)) {
+        latestByContext.set(key, s);
+      }
+    }
+    return Array.from(latestByContext.values()).map((s: any) => ({
+      name: s.context || "external-ci",
+      status: this.convertCommitStatusToJobStatus(s.state),
+      webUrl: s.target_url || undefined,
+      updatedAt: s.updated_at || undefined,
+      raw: s,
+    }));
+  }
+
+  protected convertCommitStatusToJobStatus(state: string): JobStatus {
+    switch ((state || "").toLowerCase()) {
+      case "success":
+        return "success";
+      case "failure":
+      case "error":
+        return "failed";
       case "pending":
         return "pending";
       default:

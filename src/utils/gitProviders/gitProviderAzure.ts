@@ -6,6 +6,7 @@ import { GitApi } from "azure-devops-node-api/GitApi";
 import {
   PullRequestStatus,
   GitPullRequest,
+  GitStatusState,
 } from "azure-devops-node-api/interfaces/GitInterfaces";
 import { Logger } from "../../logger";
 import { SecretsManager } from "../secretsManager";
@@ -501,7 +502,44 @@ export class GitProviderAzure extends GitProvider {
       });
 
       if (matchingBuilds.length === 0) {
-        Logger.log(`No builds found for PR #${pr.number}`);
+        Logger.log(`No builds found for PR #${pr.number}, checking PR statuses`);
+
+        // Fallback: PR statuses (Jenkins, external CI)
+        if (pr.number) {
+          const prStatuses = await this.gitApi!.getPullRequestStatuses(
+            this.repoInfo.repo,
+            pr.number,
+            this.repoInfo.owner,
+          );
+          await this.logApiCall("gitApi.getPullRequestStatuses", {
+            caller: "fetchLatestJobsForPullRequest",
+            prNumber: pr.number,
+          });
+
+          if (prStatuses && prStatuses.length > 0) {
+            // Deduplicate by context name, keeping the most recent per context
+            const latestByContext = new Map<string, any>();
+            for (const s of prStatuses) {
+              const key = s.context?.name || "external-ci";
+              const existing = latestByContext.get(key);
+              const existingTime = existing
+                ? new Date(existing.creationDate || 0)
+                : new Date(0);
+              const sTime = new Date(s.creationDate || 0);
+              if (sTime > existingTime) {
+                latestByContext.set(key, s);
+              }
+            }
+            return Array.from(latestByContext.values()).map((s: any) => ({
+              name: s.context?.name || "external-ci",
+              status: this.mapAzureGitStatusStateToJobStatus(s.state),
+              webUrl: s.targetUrl || undefined,
+              updatedAt: s.creationDate?.toISOString() || undefined,
+              raw: s,
+            }));
+          }
+        }
+
         return [];
       }
 
@@ -578,6 +616,23 @@ export class GitProviderAzure extends GitProvider {
     return "failed";
   }
 
+  private mapAzureGitStatusStateToJobStatus(
+    state: GitStatusState | undefined,
+  ): JobStatus {
+    switch (state) {
+      case GitStatusState.Succeeded:
+      case GitStatusState.PartiallySucceeded:
+        return "success";
+      case GitStatusState.Failed:
+      case GitStatusState.Error:
+        return "failed";
+      case GitStatusState.Pending:
+        return "pending";
+      default:
+        return "unknown";
+    }
+  }
+
   async getJobsForBranchLatestCommit(
     branchName: string,
   ): Promise<{ jobs: Job[]; jobsStatus: JobStatus } | null> {
@@ -618,7 +673,48 @@ export class GitProviderAzure extends GitProvider {
       );
 
       if (commitBuilds.length === 0) {
-        return { jobs: [], jobsStatus: "unknown" };
+        // Fallback: commit statuses (Jenkins, external CI)
+        try {
+          const branchStats = await this.gitApi!.getBranch(
+            this.repoInfo.repo,
+            branchName,
+            this.repoInfo.owner,
+          );
+          await this.logApiCall("gitApi.getBranch", {
+            caller: "getJobsForBranchLatestCommit",
+            branch: branchName,
+          });
+          const latestCommitId = branchStats?.commit?.commitId;
+          if (!latestCommitId) {
+            return { jobs: [], jobsStatus: "unknown" };
+          }
+
+          const statuses = await this.gitApi!.getStatuses(
+            latestCommitId,
+            this.repoInfo.repo,
+            this.repoInfo.owner,
+          );
+          await this.logApiCall("gitApi.getStatuses", {
+            caller: "getJobsForBranchLatestCommit",
+            commitId: latestCommitId,
+          });
+
+          if (!statuses || statuses.length === 0) {
+            return { jobs: [], jobsStatus: "unknown" };
+          }
+
+          const statusJobs: Job[] = statuses.map((s: any) => ({
+            name: s.context?.name || "external-ci",
+            status: this.mapAzureGitStatusStateToJobStatus(s.state),
+            webUrl: s.targetUrl || undefined,
+            updatedAt: s.creationDate?.toISOString() || undefined,
+            raw: s,
+          }));
+          return { jobs: statusJobs, jobsStatus: this.computeJobsStatus(statusJobs) };
+        } catch (e) {
+          Logger.log(`Error fetching commit statuses for branch ${branchName}: ${String(e)}`);
+          return { jobs: [], jobsStatus: "unknown" };
+        }
       }
 
       const build = commitBuilds[0];

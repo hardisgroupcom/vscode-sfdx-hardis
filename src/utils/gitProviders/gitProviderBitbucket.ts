@@ -426,7 +426,9 @@ export class GitProviderBitbucket extends GitProvider {
     return `${this.repoInfo.webUrl}/pull-requests/new?source=${encodeURIComponent(sourceBranch)}&dest=${encodeURIComponent(targetBranch)}&title=${encodeURIComponent(title)}`;
   }
 
-  // Fetch pipelines for a Bitbucket PR (Bitbucket Cloud). Best-effort: query pipelines by commit/branch
+  // Fetch build statuses for a Bitbucket PR.
+  // Primary: commit statuses API (covers external CI like Jenkins, CircleCI, etc.)
+  // Fallback: Bitbucket Pipelines (for repos using native Bitbucket CI)
   private async fetchLatestJobsForPullRequest(
     rawPr: any,
     pr: PullRequest,
@@ -434,13 +436,38 @@ export class GitProviderBitbucket extends GitProvider {
     if (!this.bitbucketClient || !this.workspace || !this.repoSlug) {
       return [];
     }
+
+    // Primary: commit statuses reported against the PR (Jenkins, external CI)
     try {
-      // Try to find the commit hash
+      const statusResponse = await this.bitbucketClient.repositories.listPullRequestStatuses({
+        workspace: this.workspace,
+        repo_slug: this.repoSlug,
+        pull_request_id: rawPr.id,  // rawPr.id is always a Bitbucket integer PR id
+      } as any);
+      await this.logApiCall("repositories.listPullRequestStatuses", {
+        caller: "fetchLatestJobsForPullRequest",
+        pull_request_id: pr.id,
+      });
+      const statuses = statusResponse?.data?.values ?? [];
+      if (statuses.length > 0) {
+        return statuses.map((s: any) => ({
+          name: s.name || s.key || "Build",
+          status: this.mapCommitStatusStateToJobStatus(s.state),
+          webUrl: s.url || undefined,
+          updatedAt: s.updated_on || undefined,
+          raw: s,
+        }));
+      }
+    } catch (err) {
+      Logger.log(`Error fetching PR commit statuses: ${String(err)}`);
+    }
+
+    // Fallback: Bitbucket Pipelines
+    try {
       const commit =
         rawPr && rawPr.source && rawPr.source.commit
           ? rawPr.source.commit.hash
           : undefined;
-      // Query pipelines endpoint: GET /repositories/{workspace}/{repo_slug}/pipelines/?sort=-created_on&q=target.ref_name="branch"
       const q = commit
         ? `target.commit.hash = "${commit}"`
         : `target.ref_name = "${pr.sourceBranch}"`;
@@ -452,19 +479,14 @@ export class GitProviderBitbucket extends GitProvider {
       } as any);
       await this.logApiCall("pipelines.list", {
         caller: "fetchLatestJobsForPullRequest",
-        q: q,
+        q,
       });
-      const values =
-        response && response.data && response.data.values
-          ? response.data.values
-          : [];
-      if (!values || values.length === 0) {
+      const values = response?.data?.values ?? [];
+      if (values.length === 0) {
         return [];
       }
-      const pipeline1 = values[0];
-      // Map pipeline steps to PullRequestJob if available
-      const pipeline: any = pipeline1 as any;
-      const converted: Job[] = [
+      const pipeline: any = values[0];
+      return [
         {
           name:
             pipeline?.target?.selector?.target ||
@@ -477,8 +499,8 @@ export class GitProviderBitbucket extends GitProvider {
           raw: pipeline,
         },
       ];
-      return converted;
-    } catch {
+    } catch (err) {
+      Logger.log(`Error fetching jobs for PR on branch ${pr.sourceBranch}: ${String(err)}`);
       return [];
     }
   }
@@ -489,8 +511,49 @@ export class GitProviderBitbucket extends GitProvider {
     if (!this.bitbucketClient || !this.workspace || !this.repoSlug) {
       return null;
     }
+
+    // Primary: commit statuses for the latest commit on the branch (covers Jenkins, external CI)
     try {
-      // Query pipelines for the branch
+      // listCommitsAt maps to /commits/{revision} — the canonical endpoint for branch commits
+      const commitsResponse = await this.bitbucketClient.repositories.listCommitsAt({
+        workspace: this.workspace,
+        repo_slug: this.repoSlug,
+        revision: branchName,
+        pagelen: 1,
+      } as any);
+      await this.logApiCall("repositories.listCommitsAt", {
+        caller: "getJobsForBranchLatestCommit",
+        revision: branchName,
+      });
+      const latestCommit = commitsResponse?.data?.values?.[0]?.hash;
+      if (latestCommit) {
+        const statusResponse = await this.bitbucketClient.repositories.listCommitStatuses({
+          workspace: this.workspace,
+          repo_slug: this.repoSlug,
+          commit: latestCommit,
+        } as any);
+        await this.logApiCall("repositories.listCommitStatuses", {
+          caller: "getJobsForBranchLatestCommit",
+          commit: latestCommit,
+        });
+        const statuses = statusResponse?.data?.values ?? [];
+        if (statuses.length > 0) {
+          const jobs: Job[] = statuses.map((s: any) => ({
+            name: s.name || s.key || "Build",
+            status: this.mapCommitStatusStateToJobStatus(s.state),
+            webUrl: s.url || undefined,
+            updatedAt: s.updated_on || undefined,
+            raw: s,
+          }));
+          return { jobs, jobsStatus: this.computeJobsStatus(jobs) };
+        }
+      }
+    } catch (e) {
+      Logger.log(`Error fetching commit statuses for branch ${branchName}: ${String(e)}`);
+    }
+
+    // Fallback: Bitbucket Pipelines
+    try {
       const response = await this.bitbucketClient.pipelines.list({
         workspace: this.workspace,
         repo_slug: this.repoSlug,
@@ -501,28 +564,20 @@ export class GitProviderBitbucket extends GitProvider {
         caller: "getJobsForBranchLatestCommit",
         q: `target.ref_name = "${branchName}"`,
       });
-      const values =
-        response && response.data && response.data.values
-          ? response.data.values
-          : [];
+      const values = response?.data?.values ?? [];
       if (!values || values.length === 0) {
         return { jobs: [], jobsStatus: "unknown" };
       }
 
-      // Filter out pipelines triggered by pull requests
-      // Only keep pipelines triggered by direct commits (trigger type: 'PUSH', 'MANUAL', 'SCHEDULE', etc.)
-      // Exclude pipelines with trigger type: 'PULL_REQUEST'
+      // Exclude pipelines triggered by pull requests
       const commitPipelines = values.filter(
         (p: any) => p.trigger?.type !== "PULL_REQUEST",
       );
-
       if (commitPipelines.length === 0) {
         return { jobs: [], jobsStatus: "unknown" };
       }
 
-      // Use the most recent commit-triggered pipeline
-      const pipeline1 = commitPipelines[0];
-      const pipeline = pipeline1 as any;
+      const pipeline: any = commitPipelines[0];
       const job: Job = {
         name:
           pipeline?.target?.selector?.target ||
@@ -585,6 +640,26 @@ export class GitProviderBitbucket extends GitProvider {
       return "unknown";
     }
     return "unknown";
+  }
+
+  // Maps Bitbucket commit status state strings to JobStatus.
+  // Used for external CI systems (Jenkins, CircleCI, etc.) that report via the commit status API.
+  private mapCommitStatusStateToJobStatus(state: string | undefined): JobStatus {
+    if (!state) {
+      return "unknown";
+    }
+    switch (String(state).toUpperCase()) {
+      case "SUCCESSFUL":
+        return "success";
+      case "FAILED":
+        return "failed";
+      case "INPROGRESS":
+        return "running";
+      case "STOPPED":
+        return "failed";
+      default:
+        return "unknown";
+    }
   }
 
   // Helper to convert raw Bitbucket PR and attach jobs/jobsStatus
