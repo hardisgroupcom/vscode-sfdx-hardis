@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [7.8.1] 2026-05-05
+
 - Improve assistance to users in case of Git or ticketing provider authentication error.
 - Update Git Providers to also be able to read PR Statuses (ex: Jenkins, CircleCI)
 - Restore compatibility with JIRA Data Center / Server
