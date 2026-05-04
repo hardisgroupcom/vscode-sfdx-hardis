@@ -4,14 +4,14 @@ import { Ticket, TicketProviderName } from "./types";
 import { Logger } from "../../logger";
 import { getConfig } from "../pipeline/sfdxHardisConfig";
 import { SecretsManager } from "../secretsManager";
-import { Version3Client } from "jira.js";
+import { Version2Client, Version3Client } from "jira.js";
 import { t } from "../../i18n/i18n";
 import { showAuthFailureGuidance } from "../providerCredentials";
 
 export class JiraProvider extends TicketProvider {
   static readonly providerName: TicketProviderName = "JIRA";
 
-  private jiraClient: Version3Client | null = null;
+  private jiraClient: Version2Client | Version3Client | null = null;
   private jiraHost: string = "";
   private hostKey: string = "";
 
@@ -116,14 +116,23 @@ export class JiraProvider extends TicketProvider {
     this.hostKey = this.jiraHost.replace(/\./g, "_").toUpperCase();
 
     // Prompt user for authentication method
+    const isCloud = this.isJiraCloud();
+    const basicLabel = isCloud
+      ? t("useEmailAndApiToken")
+      : t("useUsernameAndPassword");
+    const patLabel = isCloud
+      ? t("usePersonalAccessToken")
+      : t("usePersonalAccessTokenRecommended");
     const choice = await vscode.window.showQuickPick(
-      [
-        { label: t("useEmailAndApiToken"), value: "basic" },
-        {
-          label: t("usePersonalAccessToken"),
-          value: "pat",
-        },
-      ],
+      isCloud
+        ? [
+            { label: basicLabel, value: "basic" },
+            { label: patLabel, value: "pat" },
+          ]
+        : [
+            { label: patLabel, value: "pat" },
+            { label: basicLabel, value: "basic" },
+          ],
       {
         placeHolder: t("jiraAuthMethodPlaceholder"),
         ignoreFocusOut: true,
@@ -135,7 +144,8 @@ export class JiraProvider extends TicketProvider {
 
     if (choice.value === "pat") {
       return await this.authenticateWithPAT();
-    } else {
+    }
+    else {
       return await this.authenticateWithBasicAuth();
     }
   }
@@ -165,22 +175,31 @@ export class JiraProvider extends TicketProvider {
   }
 
   private async authenticateWithBasicAuth(): Promise<boolean | null> {
+    const isCloud = this.isJiraCloud();
+
     const email = await vscode.window.showInputBox({
-      prompt: t("enterJiraEmail"),
+      prompt: isCloud ? t("enterJiraEmail") : t("enterJiraUsername"),
       ignoreFocusOut: true,
-      placeHolder: t("emailPlaceholder"),
+      placeHolder: isCloud ? t("emailPlaceholder") : t("usernamePlaceholder"),
     });
 
     if (!email) {
       return null;
     }
 
-    const tokenUrl = `${this.jiraHost}/secure/ViewProfile.jspa?selectedTab=com.atlassian.jira.jira-profile-plugin:apitokens-applink-apitokens`;
+    const tokenPrompt = isCloud
+      ? t("enterJiraApiToken")
+      : t("enterJiraPassword");
+    const tokenPlaceholder = isCloud
+      ? t("jiraCreateApiTokenAt", {
+          url: "https://id.atlassian.com/manage-profile/security/api-tokens",
+        })
+      : undefined;
     const token = await vscode.window.showInputBox({
-      prompt: t("enterJiraApiToken"),
+      prompt: tokenPrompt,
       ignoreFocusOut: true,
       password: true,
-      placeHolder: t("jiraCreateApiTokenAt", { url: tokenUrl }),
+      placeHolder: tokenPlaceholder,
     });
 
     if (!token) {
@@ -195,6 +214,21 @@ export class JiraProvider extends TicketProvider {
     return await this.initializeClient("", email, token);
   }
 
+  private isJiraCloud(): boolean {
+    return this.jiraHost.includes("atlassian.net") || this.jiraHost.includes(".jira.com");
+  }
+
+  private createJiraClient(
+    authConfig: { oauth2: { accessToken: string } } | { basic: { email: string; apiToken: string } },
+  ): Version2Client | Version3Client {
+    const host = this.jiraHost.replace(/\/$/, "");
+    if (this.isJiraCloud()) {
+      return new Version3Client({ host, authentication: authConfig });
+    }
+    // Jira Server/Data Center only supports REST API v2
+    return new Version2Client({ host, authentication: authConfig });
+  }
+
   private async initializeClient(
     pat: string,
     email: string,
@@ -205,29 +239,17 @@ export class JiraProvider extends TicketProvider {
         Logger.log("No valid JIRA credentials provided");
         return false;
       }
-      const host = this.jiraHost.replace(/\/$/, "");
-      // Check with Personal Access Token
+      // Check with Personal Access Token (Bearer auth)
       if (pat) {
-        this.jiraClient = new Version3Client({
-          host,
-          authentication: {
-            oauth2: {
-              accessToken: pat,
-            },
-          },
+        this.jiraClient = this.createJiraClient({
+          oauth2: { accessToken: pat },
         });
         await this.checkActiveUser("PersonalAccessToken");
       }
-      // Check with Email and API Token
+      // Check with Email/Username and API Token/Password (Basic auth)
       if (email && token && !this.isAuthenticated) {
-        this.jiraClient = new Version3Client({
-          host,
-          authentication: {
-            basic: {
-              email,
-              apiToken: token,
-            },
-          },
+        this.jiraClient = this.createJiraClient({
+          basic: { email, apiToken: token },
         });
         await this.checkActiveUser("EmailAndToken");
       }
@@ -235,7 +257,7 @@ export class JiraProvider extends TicketProvider {
       if (this.isAuthenticated) {
         return true;
       }
-      const isCloud = this.jiraHost.includes("atlassian.net");
+      const isCloud = this.isJiraCloud();
       const tokenUrl = isCloud
         ? "https://id.atlassian.com/manage-profile/security/api-tokens"
         : `${this.jiraHost}/secure/ViewProfile.jspa?selectedTab=com.atlassian.pats.pats-plugin:jira-user-personal-access-tokens`;
@@ -259,14 +281,18 @@ export class JiraProvider extends TicketProvider {
   }
 
   async checkActiveUser(mode: "PersonalAccessToken" | "EmailAndToken") {
-    const user = await this.jiraClient!.myself.getCurrentUser();
+    // Cast needed: Version2Client and Version3Client share the same method signature,
+    // but TypeScript cannot resolve the union of their overloaded signatures.
+    const user = await (this.jiraClient as Version2Client).myself.getCurrentUser();
     if (user.active) {
       this.isAuthenticated = true;
       Logger.log("JIRA authentication successful with mode: " + mode);
     }
-    Logger.log(
-      `JIRA authentication failed with mode ${mode}: Active user check failed. ${user ? JSON.stringify(user) : user}`,
-    );
+    else {
+      Logger.log(
+        `JIRA authentication failed with mode ${mode}: Active user check failed. ${user ? JSON.stringify(user) : user}`,
+      );
+    }
   }
 
   async getTicketIdentifierRegexes(): Promise<RegExp[]> {
@@ -276,7 +302,7 @@ export class JiraProvider extends TicketProvider {
     const regexes: RegExp[] = [];
 
     // Add URL-based regex to extract JIRA tickets from full URLs
-    regexes.push(/(https:\/\/.*(?:jira|atlassian\.net).*\/[A-Z0-9]+-\d+\b)/gi);
+    regexes.push(/(https:\/\/.*(?:jira|atlassian\.net|\.jira\.com).*\/[A-Z0-9]+-\d+\b)/gi);
 
     // Add identifier-based regex (customizable via .sfdx-hardis.yml)
     if (customRegex) {
@@ -308,7 +334,8 @@ export class JiraProvider extends TicketProvider {
     }
 
     try {
-      const issue = await this.jiraClient.issues.getIssue({
+      // Cast needed: same reason as checkActiveUser — union of overloaded signatures
+      const issue = await (this.jiraClient as Version2Client).issues.getIssue({
         issueIdOrKey: ticket.id,
         fields: ["summary", "status", "description", "reporter", "assignee"],
       });
@@ -329,10 +356,14 @@ export class JiraProvider extends TicketProvider {
           ticket.authorLabel = reporter.displayName;
         }
 
-        // Extract body from description (ADF format)
+        // Extract body from description
         const description = issue.fields?.description as any;
-        if (description?.content && Array.isArray(description.content)) {
-          // Flatten ADF content tree to extract text
+        if (typeof description === "string") {
+          // Jira Server (API v2): description is a plain string
+          ticket.body = description;
+        }
+        else if (description?.content && Array.isArray(description.content)) {
+          // Jira Cloud (API v3): description is ADF format
           const extractText = (node: any): string => {
             if (node.type === "text") {
               return node.text || "";
