@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Upgrade dependencies
+
 ## [7.8.1] 2026-05-05
 
 - Improve assistance to users in case of Git or ticketing provider authentication error.
