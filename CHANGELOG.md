@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [7.8.2] 2026-05-08
+
 - Upgrade dependencies
 
 ## [7.8.1] 2026-05-05
