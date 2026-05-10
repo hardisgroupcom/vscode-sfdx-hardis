@@ -398,7 +398,10 @@ export class ThemeUtils {
       "configure:auth:devhub": { vscode: "gear", hardis: "configure.svg" },
       "org:configure:monitoring": { vscode: "gear", hardis: "monitoring.svg" },
       "scratch:pool:create": { vscode: "gear", hardis: "pool.svg" },
-      "org:configure:generic-prompt": { vscode: "sparkle", hardis: "configure.svg" },
+      "org:configure:generic-prompt": {
+        vscode: "sparkle",
+        hardis: "configure.svg",
+      },
       "project:create": { vscode: "new-folder", hardis: "new.svg" },
       "hardis:package:create": { vscode: "plus", hardis: "package.svg" },
       "hardis:package:version:list": {
