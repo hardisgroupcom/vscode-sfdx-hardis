@@ -191,6 +191,9 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
       case "reportFile":
         this.addReportFile(data);
         break;
+      case "vscodeDiffFiles":
+        this.handleVscodeDiffFiles(data);
+        break;
       case "showPrompt":
         this.showPromptInPanel(data);
         break;
@@ -529,6 +532,143 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
   }
 
   @api
+  handleVscodeDiffFiles(data) {
+    const incoming = (data?.diffs || []).map((d) => ({
+      id: this.generateId(),
+      leftPath: d.leftPath,
+      rightPath: d.rightPath,
+      title: d.title,
+      metadataType: d.metadataType || this.i18n.diffFilesUnknownType,
+      metadataName: d.metadataName || d.title,
+      status: d.status,
+    }));
+    if (incoming.length === 0) {
+      return;
+    }
+
+    // Find an existing diff section (so multiple events merge into one).
+    const existingDiffSection = this.logSections.find(
+      (s) => s.type === "diff",
+    );
+    if (existingDiffSection) {
+      const seen = new Set(
+        existingDiffSection.diffFiles.map(
+          (f) => `${f.leftPath}|${f.rightPath}`,
+        ),
+      );
+      const additions = incoming.filter(
+        (f) => !seen.has(`${f.leftPath}|${f.rightPath}`),
+      );
+      if (additions.length === 0) {
+        return;
+      }
+      existingDiffSection.diffFiles = [
+        ...existingDiffSection.diffFiles,
+        ...additions,
+      ];
+      // Force expansion when new diffs arrive
+      existingDiffSection.isExpanded = true;
+      this.userSectionExpandState = {
+        ...this.userSectionExpandState,
+        [existingDiffSection.id]: true,
+      };
+      this.logSections = [...this.logSections];
+      this.scrollToBottom();
+      return;
+    }
+
+    // Create a new diff section and insert it just before the currently-active section.
+    const diffSection = {
+      id: this.generateId(),
+      type: "diff",
+      diffFiles: incoming,
+      actionLog: {
+        id: this.generateId(),
+        logType: "action",
+        message: this.i18n.diffFilesSectionTitle,
+        timestamp: new Date(),
+      },
+      logs: [],
+      startTime: new Date(),
+      endTime: null,
+      isActive: false,
+      isExpanded: true,
+      hasError: false,
+      isQuestion: false,
+      hasCopyTokens: false,
+    };
+
+    // Insert just below the section that is active at the moment the event arrives.
+    // currentSection is always the last entry in logSections, so we append.
+    this.logSections = [...this.logSections, diffSection];
+    this.userSectionExpandState = {
+      ...this.userSectionExpandState,
+      [diffSection.id]: true,
+    };
+    this.scrollToBottom();
+  }
+
+  handleOpenDiffFile(event) {
+    const id = event.currentTarget.dataset.diffId;
+    for (const section of this.logSections) {
+      if (section.type !== "diff") {
+        continue;
+      }
+      const file = section.diffFiles.find((f) => f.id === id);
+      if (file) {
+        window.sendMessageToVSCode({
+          type: "openVscodeDiff",
+          data: {
+            leftPath: file.leftPath,
+            rightPath: file.rightPath,
+            title: file.title,
+          },
+        });
+        return;
+      }
+    }
+  }
+
+  decorateDiffFiles(diffFiles) {
+    if (!diffFiles || diffFiles.length === 0) {
+      return [];
+    }
+    const groups = new Map();
+    for (const f of diffFiles) {
+      if (!groups.has(f.metadataType)) {
+        groups.set(f.metadataType, []);
+      }
+      let statusVariant = "warning";
+      let statusIcon = "utility:edit";
+      let statusLabel = this.i18n.diffStatusModified;
+      if (f.status === "added") {
+        statusVariant = "success";
+        statusIcon = "utility:add";
+        statusLabel = this.i18n.diffStatusAdded;
+      } else if (f.status === "deleted") {
+        statusVariant = "error";
+        statusIcon = "utility:delete";
+        statusLabel = this.i18n.diffStatusDeleted;
+      }
+      groups.get(f.metadataType).push({
+        ...f,
+        statusVariant,
+        statusIcon,
+        statusLabel,
+      });
+    }
+    return [...groups.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([type, files]) => ({
+        type,
+        files: files.sort((a, b) =>
+          a.metadataName.localeCompare(b.metadataName),
+        ),
+        count: files.length,
+      }));
+  }
+
+  @api
   addLogLine(logData) {
     // Skip logs that contain "Please see detailed .* log in" pattern
     if (
@@ -736,7 +876,8 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
       if (
         previousSection &&
         !previousSection.isQuestion &&
-        !previousSection.hasCopyTokens
+        !previousSection.hasCopyTokens &&
+        previousSection.type !== "diff"
       ) {
         previousSection.isExpanded = false;
       }
@@ -1214,6 +1355,8 @@ ${resultMessage}`;
     return this.logSections.map((section, idx) => {
       const isLatest = section.id === latestQuestionSectionId;
       const isProgress = section.type === "progress";
+      const isDiff = section.type === "diff";
+      const isRegular = !isProgress && !isDiff;
 
       // Table log support
       let tableLog = this.tableLogs[section.id] || null;
@@ -1250,6 +1393,9 @@ ${resultMessage}`;
       } else if (isProgress) {
         // Progress sections are expanded when active, collapsed when ended (unless user manually toggled)
         isExpanded = section.isActive === true;
+      } else if (isDiff) {
+        // Diff sections are expanded by default; respect user toggle if set
+        isExpanded = section.isExpanded === true;
       } else if (isSimple) {
         // In simple mode, keep sections containing copyable values open
         if (section.hasCopyTokens) {
@@ -1319,10 +1465,19 @@ ${resultMessage}`;
         }
       }
 
+      const diffFilesByType = isDiff
+        ? this.decorateDiffFiles(section.diffFiles)
+        : [];
+      const diffFilesCount = isDiff ? (section.diffFiles || []).length : 0;
+
       return {
         ...section,
         isExpanded,
         isProgress,
+        isDiff,
+        isRegular,
+        diffFilesByType,
+        diffFilesCount,
         progressPercentage,
         progressAnimationClass,
         progressStepText,
@@ -1359,12 +1514,14 @@ ${resultMessage}`;
           (section.logs && section.logs.length > 0) ||
           (isProgress &&
             section.progressLogs &&
-            section.progressLogs.length > 0),
+            section.progressLogs.length > 0) ||
+          (isDiff && diffFilesCount > 0),
         showToggle:
           (section.logs && section.logs.length > 0) ||
           (isProgress &&
             section.progressLogs &&
-            section.progressLogs.length > 0),
+            section.progressLogs.length > 0) ||
+          (isDiff && diffFilesCount > 0),
         isLatestQuestionSectionToHide: shouldHideLatest && isLatest,
         tableLog: tableLog ? { ...tableLog, rowsLimited } : null,
         tableShowAll,

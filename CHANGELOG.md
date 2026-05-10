@@ -3,6 +3,8 @@
 ## Unreleased
 
 - Add new menu entry to configure the Generic AI Prompt template in your Salesforce org
+- Display a list of files differing between the org and the local project in the command panel, grouped by metadata type, with one click to open VS Code's side-by-side diff editor
+- Improve command execution UI by adding vertical scrollbars in case of long multi-select lists
 
 ## [7.8.2] 2026-05-08
 

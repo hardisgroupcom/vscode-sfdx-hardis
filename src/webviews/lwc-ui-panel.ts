@@ -290,6 +290,9 @@ export class LwcUiPanel {
         case "openFile":
           await this.handleFileOpen(data.filePath);
           break;
+        case "openVscodeDiff":
+          await this.handleOpenVscodeDiff(data);
+          break;
         case "openPackageXmlViewer":
           await this.handleOpenPackageXmlViewer(data);
           break;
@@ -489,6 +492,37 @@ export class LwcUiPanel {
       "vscode-sfdx-hardis.showPackageXml",
       fileUri,
     );
+  }
+
+  private async handleOpenVscodeDiff(data: {
+    leftPath: string;
+    rightPath: string;
+    title: string;
+  }): Promise<void> {
+    if (!data || !data.leftPath || !data.rightPath) {
+      return;
+    }
+    try {
+      const leftResolved = this.resolveWorkspacePath(data.leftPath);
+      const rightResolved = this.resolveWorkspacePath(data.rightPath);
+      const leftUri = vscode.Uri.file(leftResolved);
+      const rightUri = vscode.Uri.file(rightResolved);
+      await vscode.workspace.fs.stat(leftUri);
+      await vscode.workspace.fs.stat(rightUri);
+      const title = data.title || path.basename(rightResolved);
+      await vscode.commands.executeCommand(
+        "vscode.diff",
+        leftUri,
+        rightUri,
+        title,
+      );
+      Logger.log(`Opened vscode.diff: ${leftResolved} <-> ${rightResolved}`);
+    } catch (error) {
+      Logger.log("Error opening vscode.diff:\n" + JSON.stringify(error));
+      vscode.window.showWarningMessage(
+        t("vscodeDiffOpenFailed", { title: data.title || "" }),
+      );
+    }
   }
 
   private async handleFileOpen(filePathInit: string): Promise<void> {

@@ -1,3 +1,10 @@
+/* Multiselect: cap height so the list doesn't push action buttons off-screen */
+.multiselect-options-list {
+    max-height: 50vh;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
 .select-option-content {
     display: flex;
     flex-direction: column;
