@@ -547,9 +547,7 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
     }
 
     // Find an existing diff section (so multiple events merge into one).
-    const existingDiffSection = this.logSections.find(
-      (s) => s.type === "diff",
-    );
+    const existingDiffSection = this.logSections.find((s) => s.type === "diff");
     if (existingDiffSection) {
       const seen = new Set(
         existingDiffSection.diffFiles.map(
