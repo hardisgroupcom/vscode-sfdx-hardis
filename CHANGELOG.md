@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add new menu entry to configure the Generic AI Prompt template in your Salesforce org
+
 ## [7.8.2] 2026-05-08
 
 - Upgrade dependencies
