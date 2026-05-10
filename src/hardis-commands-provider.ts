@@ -861,6 +861,13 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             command: "sf hardis:scratch:pool:create",
           },
           {
+            id: "org:configure:generic-prompt",
+            label: t("configureGenericPrompt"),
+            tooltip: t("configureGenericPromptTooltip"),
+            command: "sf hardis:org:configure:generic-prompt",
+            helpUrl: DOCSITE_URL + "/hardis/org/configure/generic-prompt/",
+          },
+          {
             id: "project:create",
             label: t("createANewSfdxProject"),
             tooltip: t("createNewSfdxProjectTooltip"),

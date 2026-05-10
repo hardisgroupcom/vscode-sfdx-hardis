@@ -207,6 +207,8 @@
   "configureDevHubCiAuth": "Configura l'autenticazione CI per DevHub",
   "configureDevHubCiAuthTooltip": "Configurazione assistita per connettersi a un'org Dev Hub durante la CI",
   "configureDevOpsPipeline": "Configura la Pipeline DevOps",
+  "configureGenericPrompt": "Configura Prompt Generico",
+  "configureGenericPromptTooltip": "Distribuisci i metadati del template GenAI SfdxHardisGenericPrompt per abilitare l'integrazione AI nella tua org Salesforce",
   "configureOrgCiAuth": "Configura l'autenticazione CI per l'org",
   "configureOrgCiAuthTooltip": "Configurazione assistita per connettere un branch protetto e la relativa org di rilascio durante la CI",
   "configureOrgMonitoring": "Configura il monitoraggio dell'org",

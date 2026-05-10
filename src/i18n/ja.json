@@ -211,6 +211,8 @@
   "configureDevHubCiAuth": "DevHub CI 認証を設定",
   "configureDevHubCiAuthTooltip": "CI 実行時に Dev Hub 組織へ接続するためのガイド付き設定",
   "configureDevOpsPipeline": "DevOps パイプラインを設定",
+  "configureGenericPrompt": "汎用プロンプトを設定",
+  "configureGenericPromptTooltip": "SfdxHardisGenericPrompt GenAI プロンプトテンプレートのメタデータをデプロイし、Salesforce 組織で AI 連携を有効化します",
   "configureOrgCiAuth": "組織の CI 認証を設定",
   "configureOrgCiAuthTooltip": "CI 実行時に保護 branch と関連するリリース組織を接続するためのガイド付き設定",
   "configureOrgMonitoring": "組織監視を設定",
