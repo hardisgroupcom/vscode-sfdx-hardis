@@ -211,6 +211,8 @@
   "configureDevHubCiAuth": "DevHub-CI-Authentifizierung konfigurieren",
   "configureDevHubCiAuthTooltip": "Unterstützte Konfiguration zur Verbindung mit einer Dev Hub-Org während CI",
   "configureDevOpsPipeline": "DevOps-Pipeline konfigurieren",
+  "configureGenericPrompt": "Generischen Prompt konfigurieren",
+  "configureGenericPromptTooltip": "Stellt die GenAI-Prompt-Vorlage SfdxHardisGenericPrompt bereit, um die KI-Integration in Ihrer Salesforce-Org zu aktivieren",
   "configureOrgCiAuth": "Org-CI-Authentifizierung konfigurieren",
   "configureOrgCiAuthTooltip": "Unterstützte Konfiguration zur Verbindung eines geschützten Branch mit seiner zugehörigen Release-Org während CI",
   "configureOrgMonitoring": "Org-Monitoring konfigurieren",

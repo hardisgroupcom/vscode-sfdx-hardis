@@ -19,7 +19,34 @@ Implement features, fixes, or changes in the vscode-sfdx-hardis extension.
 
 3. **Add i18n translations** for any new user-facing strings (all 9 locale files).
 
-4. **Verify** by running `yarn lint` and `yarn dev` (or `yarn build`).
+4. **Update CHANGELOG.md** with a concise, user-friendly entry describing the change (see "Changelog entry" section below).
+
+5. **Verify** by running `yarn lint` and `yarn dev` (or `yarn build`).
+
+## Changelog entry
+
+After any change to the repo (new feature, bug fix, UI change, command added, etc.), add a bullet under the `## Unreleased` section at the top of `CHANGELOG.md`. If `## Unreleased` does not exist, create it just under the `# Changelog` title.
+
+### Style rules
+- **Concise** — one short sentence per bullet; split into multiple bullets only if the change covers genuinely separate user-visible items.
+- **Non-technical** — written for end users (Salesforce consultants and developers), not for contributors. Describe *what they can now do* or *what is fixed*, not *how it was implemented*.
+- **User-friendly** — start with an action verb when possible (Add, Fix, Improve, Update, Remove). No file paths, no function names, no internal identifiers, no commit hashes, no PR numbers.
+- **Do not mention** refactors, dependency bumps unrelated to user impact, lint fixes, test changes, or pure code cleanup. Skip the changelog entry entirely for these.
+- Match the tone and granularity of existing entries. Group related sub-points under a parent bullet using two-space indentation when natural.
+
+### Examples
+Good:
+- `- Add new menu entry to configure the Generic AI Prompt template in your org`
+- `- Fix authentication error message when connecting to a Git provider`
+- `- Improve performance when loading the list of installed plugins`
+
+Bad (too technical / internal):
+- `- Update hardis-commands-provider.ts to register new tree item`
+- `- Refactor SharedMixin to expose i18n getter`
+- `- Bump simple-git from 3.35.0 to 3.36.0`
+
+### When unsure
+If the change has no visible impact for users (pure internal refactor, test-only change, doc-only change inside source files), skip the changelog entry and mention this in your final summary to the user.
 
 ## Code style rules
 
@@ -133,3 +160,4 @@ After implementing:
 1. `yarn lint` - Check for ESLint issues
 2. `yarn dev` or `yarn build` - Verify webpack compilation succeeds
 3. Test in VS Code Extension Development Host (F5)
+4. Confirm `CHANGELOG.md` has a user-friendly entry under `## Unreleased` (or that the change is internal-only and was intentionally skipped)
