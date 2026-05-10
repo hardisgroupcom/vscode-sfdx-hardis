@@ -333,6 +333,7 @@ export class LocalWebSocketServer {
     }
     /* jscpd:ignore-end */
     // VS Code visual diff request from CLI
+    /* jscpd:ignore-start */
     else if (data.event === "vscodeDiff") {
       // Ignore if not lwc UI
       if (this.config.get("userInput") !== "ui-lwc") {
@@ -346,6 +347,7 @@ export class LocalWebSocketServer {
         });
       }
     }
+    /* jscpd:ignore-end */
     // Request to refresh status box
     else if (data.event === "refreshStatus") {
       HardisStatusProvider.refreshOrgRelatedUis();
