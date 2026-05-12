@@ -75,6 +75,7 @@ export class SfdxHardisConfigHelper {
     { name: "allowedOrgTypes", scopes: ["global"] },
     { name: "availableProjects", scopes: ["global"] },
     { name: "availableTargetBranches", scopes: ["global"] },
+    { name: "availableTargetBranchesLabels", scopes: ["global"] },
     { name: "sharedDevSandboxes", scopes: ["global"] },
     { name: "newTaskNameRegex", scopes: ["global"] },
     { name: "newTaskNameRegexExample", scopes: "global" },
@@ -141,6 +142,7 @@ export class SfdxHardisConfigHelper {
       keys: [
         "developmentBranch",
         "availableTargetBranches",
+        "availableTargetBranchesLabels",
         "availableProjects",
         "allowedOrgTypes",
         "sharedDevSandboxes",

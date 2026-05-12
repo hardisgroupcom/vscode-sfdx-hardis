@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Add two new Pipeline Settings (Deployment tab): **Manual Actions Mode** (suppress the warning when not using an external manual actions file) and **Org Authentication Mode** (suppress the certificate warning when using CI/CD environment secrets instead of committed key files)
+- Add **Labels for available PR/MR target branches** field in Pipeline Settings (User Stories tab), shown below the target branches list
 
 ## [7.9.0] 2026-05-10
 
