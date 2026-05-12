@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add two new Pipeline Settings (Deployment tab): **Manual Actions Mode** (suppress the warning when not using an external manual actions file) and **Org Authentication Mode** (suppress the certificate warning when using CI/CD environment secrets instead of committed key files)
+
 ## [7.9.0] 2026-05-10
 
 - Add new menu entry to configure the Generic AI Prompt template in your Salesforce org
