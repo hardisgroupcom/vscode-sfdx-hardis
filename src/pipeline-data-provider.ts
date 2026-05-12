@@ -120,6 +120,9 @@ export class PipelineDataProvider {
   }
 
   checkManualActionsFile(projectConfig: any): void {
+    if (projectConfig.manualActionsMode === "sfdxHardis") {
+      return;
+    }
     if (!projectConfig.manualActionsFileUrl) {
       this.warnings.push(
         "The Pipeline should have Manual Actions tracking file (for pre-deployment and post-deployment manual actions). It is recommended to define one in Pipeline Settings.",
