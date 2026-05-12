@@ -208,9 +208,16 @@
       "type": "boolean",
       "default": false
     },
+    "codingAgentGenerateReports": {
+      "$id": "#/properties/codingAgentGenerateReports",
+      "description": "Set to true to enable coding-agent PPTX report generation in hardis:org:monitor:all. Equivalent to SFDX_HARDIS_CODING_AGENT_GENERATE_REPORTS env var.",
+      "title": "Enable coding agent monitoring reports",
+      "type": "boolean",
+      "default": false
+    },
     "codingAgent": {
       "$id": "#/properties/codingAgent",
-      "description": "Force a specific coding agent CLI instead of auto-detection. Equivalent to SFDX_HARDIS_CODING_AGENT env var.",
+      "description": "Coding agent CLI to use for features that invoke coding agents (auto-fix, monitoring reports, etc.). Must be set to enable coding agent features. Locally, agents authenticate via their own login (e.g. claude login); in CI, provide the matching API key env var. Equivalent to SFDX_HARDIS_CODING_AGENT env var.",
       "title": "Coding agent",
       "type": "string",
       "enum": ["claude", "codex-cli", "gemini-cli", "copilot-cli"],
@@ -346,6 +353,16 @@
       "title": "Available PR/MR target branches",
       "type": "array"
     },
+    "availableTargetBranchesLabels": {
+      "$id": "#/properties/availableTargetBranchesLabels",
+      "description": "Human-readable labels for the branches listed in availableTargetBranches, in the same order.\nWhen defined, the label at index N is shown instead of the raw branch name when prompting contributors to select a target branch.\nExample: availableTargetBranches: [preprod, integration] and availableTargetBranchesLabels: [Pre-Production, Integration]",
+      "examples": [["Pre-Production", "Integration"]],
+      "items": {
+        "type": "string"
+      },
+      "title": "Labels for available PR/MR target branches",
+      "type": "array"
+    },
     "branchPrefixChoices": {
       "$id": "#/properties/branchPrefixChoices",
       "description": "When calling hardis:work:new, you can override the default branch prefixes. Input title, value and description for each of them",
@@ -476,11 +493,19 @@
             "description": "Type of the action",
             "title": "Type",
             "type": "string",
-            "enum": ["command", "data", "apex", "publish-community", "manual"],
+            "enum": [
+              "command",
+              "data",
+              "apex",
+              "schedule-batch",
+              "publish-community",
+              "manual"
+            ],
             "enumNames": [
               "Command",
               "Data Import",
               "Apex Script",
+              "Schedule Batch",
               "Publish Community",
               "Manual Action"
             ],
@@ -556,7 +581,7 @@
             "$id": "#/properties/commandsPreDeploy/items/properties/runOnlyOnceByOrg",
             "description": "Run this action only once per target org (useful for idempotent post-deploy tasks)",
             "title": "Run only once by org",
-            "default": false,
+            "default": true,
             "type": "boolean"
           },
           "customUsername": {
@@ -708,7 +733,7 @@
             "$id": "#/properties/commandsPostDeploy/items/properties/runOnlyOnceByOrg",
             "description": "Run this action only once per target org (useful for idempotent post-deploy tasks)",
             "title": "Run only once by org",
-            "default": false,
+            "default": true,
             "type": "boolean"
           },
           "customUsername": {
@@ -1481,6 +1506,20 @@
       "title": "Manual Actions File URL",
       "type": "string"
     },
+    "manualActionsMode": {
+      "$id": "#/properties/manualActionsMode",
+      "default": "externalFile",
+      "description": "Defines how manual actions are managed for deployments.\n- **externalFile** (default): Manual actions are tracked in an external Excel/XLS file referenced by manualActionsFileUrl. The pipeline view will warn if this file is not configured.\n- **sfdxHardis**: Manual actions are managed directly within sfdx-hardis. No external file is required, and the pipeline view will not warn about a missing manual actions file.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-deploy/",
+      "enum": ["externalFile", "sfdxHardis"],
+      "enumNames": [
+        "External Excel file (manualActionsFileUrl)",
+        "sfdx-hardis built-in"
+      ],
+      "examples": ["externalFile", "sfdxHardis"],
+      "title": "Manual Actions Mode",
+      "type": "string"
+    },
     "mergeTargets": {
       "$id": "#/properties/mergeTargets",
       "description": "In branch-scoped config file, declares the list of branches that the current one can have as merge target. For example, integration will have mergeTargets [uat]",
@@ -1490,6 +1529,13 @@
       },
       "title": "Merge target branches",
       "type": "array"
+    },
+    "monitoringBackupSkipDataCloud": {
+      "$id": "#/properties/monitoringBackupSkipDataCloud",
+      "description": "Set to true to skip the backup of Data Cloud objects (__dlm and __dll CustomObjects) during hardis:org:monitor:backup. Can also be set via MONITORING_BACKUP_SKIP_DATA_CLOUD env variable.",
+      "title": "Skip Data Cloud objects backup",
+      "type": "boolean",
+      "default": false
     },
     "monitoringCommands": {
       "$id": "#/properties/monitoringCommands",
@@ -1654,6 +1700,20 @@
       },
       "title": "Disabled notification types",
       "type": "array"
+    },
+    "orgAuthenticationMode": {
+      "$id": "#/properties/orgAuthenticationMode",
+      "default": "encryptedCert",
+      "description": "Defines how the CI/CD pipeline authenticates to Salesforce orgs.\n- **encryptedCert** (default): Authentication uses encrypted certificate key files committed to the repository. The pipeline view will warn if a key file is missing for a branch.\n- **secretsOnly**: Authentication relies solely on CI/CD secrets variables (e.g. SFDX_HARDIS_CERT_<ORG>). No key file is required, and the pipeline view will not warn about missing certificate files.",
+      "docUrl": "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-setup-auth/",
+      "enum": ["encryptedCert", "secretsOnly"],
+      "enumNames": [
+        "Encrypted certificate key files",
+        "CI/CD secrets variables only"
+      ],
+      "examples": ["encryptedCert", "secretsOnly"],
+      "title": "Org Authentication Mode",
+      "type": "string"
     },
     "packageNoOverwritePath": {
       "$id": "#/properties/packageNoOverwritePath",
@@ -1838,6 +1898,14 @@
       "description": "WARNING: Use with caution, only in branch scoped config ! Do not check code coverage for a deployment",
       "title": "Skip code coverage check",
       "type": "boolean"
+    },
+    "skillsRepo": {
+      "$id": "#/properties/skillsRepo",
+      "default": "",
+      "description": "Git repository URL containing .claude/ skills, agents, and rules to import with hardis:project:skills:import",
+      "examples": ["https://github.com/mycompany/claude-skills.git"],
+      "title": "Skills Repository",
+      "type": "string"
     },
     "skipMinimizeProfiles": {
       "$id": "#/properties/skipMinimizeProfiles",

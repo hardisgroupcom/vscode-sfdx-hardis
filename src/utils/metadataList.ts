@@ -135,6 +135,13 @@ export function listMetadataTypes() {
       xmlName: "AffinityScoreDefinition",
     },
     {
+      directoryName: "aiAgentScorerDefinitions",
+      inFolder: false,
+      metaFile: false,
+      suffix: "aiAgentScorerDefinition",
+      xmlName: "AiAgentScorerDefinition",
+    },
+    {
       directoryName: "aiApplications",
       inFolder: false,
       metaFile: false,
@@ -169,6 +176,13 @@ export function listMetadataTypes() {
       xmlName: "AiEvaluationDefinition",
     },
     {
+      directoryName: "aiResponseFormats",
+      inFolder: false,
+      metaFile: false,
+      suffix: "aiResponseFormat",
+      xmlName: "AiResponseFormat",
+    },
+    {
       directoryName: "aiScoringModelDefinitions",
       inFolder: false,
       metaFile: false,
@@ -185,6 +199,20 @@ export function listMetadataTypes() {
       parentXmlName: "AIScoringModelDefinition",
       xmlTag: "aiScoringModelDefVersions",
       key: "fullName",
+    },
+    {
+      directoryName: "aiSurfaces",
+      inFolder: false,
+      metaFile: false,
+      suffix: "aiSurface",
+      xmlName: "AiSurface",
+    },
+    {
+      directoryName: "aiTestingDefinitions",
+      inFolder: false,
+      metaFile: false,
+      suffix: "aiTestingDefinition",
+      xmlName: "AiTestingDefinition",
     },
     {
       directoryName: "aiUsecaseDefinitions",
@@ -1935,17 +1963,6 @@ export function listMetadataTypes() {
       metaFile: false,
       suffix: "fieldMappingConfig",
       xmlName: "FieldMappingConfig",
-      childXmlNames: ["FieldMappingConfigItem"],
-    },
-    {
-      directoryName: "fieldMappingConfigItems",
-      inFolder: false,
-      metaFile: false,
-      suffix: "fieldMappingConfigItem",
-      xmlName: "FieldMappingConfigItem",
-      parentXmlName: "FieldMappingConfig",
-      xmlTag: "fieldMappingConfigItems",
-      key: "processType",
     },
     {
       directoryName: "fieldRestrictionRules",
@@ -2980,6 +2997,20 @@ export function listMetadataTypes() {
       metaFile: false,
       suffix: "platformEventSubscriberConfig",
       xmlName: "PlatformEventSubscriberConfig",
+    },
+    {
+      directoryName: "policyRuleDefinitions",
+      inFolder: false,
+      metaFile: false,
+      suffix: "policyRuleDefinition",
+      xmlName: "PolicyRuleDefinition",
+    },
+    {
+      directoryName: "policyRuleDefinitionSets",
+      inFolder: false,
+      metaFile: false,
+      suffix: "policyRuleDefinitionSet",
+      xmlName: "PolicyRuleDefinitionSet",
     },
     {
       directoryName: "portals",

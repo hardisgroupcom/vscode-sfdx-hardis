@@ -6,6 +6,7 @@ import sortArray from "sort-array";
 import { getWorkspaceRoot } from "../utils";
 import { Job, JobStatus, PullRequest } from "./gitProviders/types";
 import { GitProvider } from "./gitProviders/gitProvider";
+import { getConfig } from "./pipeline/sfdxHardisConfig";
 
 export interface MajorOrg {
   branchName: string;
@@ -31,6 +32,10 @@ export async function listMajorOrgs(
     ? await GitProvider.getInstance()
     : null;
 
+  const projectConfig = await getConfig("project");
+  const orgAuthenticationMode: string =
+    projectConfig?.orgAuthenticationMode || "encryptedCert";
+
   // Process all config files in parallel
   const configFileResults = await Promise.allSettled(
     configFiles.map((configFile) =>
@@ -40,6 +45,7 @@ export async function listMajorOrgs(
         workspaceRoot,
         gitProvider,
         options,
+        orgAuthenticationMode,
       ),
     ),
   );
@@ -102,6 +108,7 @@ async function processOrgSfdxHardisConfigFile(
   workspaceRoot: string,
   gitProvider: GitProvider | null,
   options: { browseGitProvider: boolean },
+  orgAuthenticationMode: string = "encryptedCert",
 ): Promise<MajorOrg | null> {
   const props = (yaml.load(fs.readFileSync(configFile, "utf-8")) || {}) as any;
   const branchNameRegex = /\.sfdx-hardis\.(.*)\.yml/gi;
@@ -170,11 +177,14 @@ async function processOrgSfdxHardisConfigFile(
   }
 
   // Check if there is an encrypted certificate key file for the branch
-  const certKeyFile = `config/branches/.jwt/${branchName}.key`;
-  if (!fs.existsSync(path.join(workspaceRoot, certKeyFile))) {
-    warnings.push(
-      `No encrypted certificate key file found for branch '${branchName}' (expected: ${certKeyFile}). You should configure the org authentication again (use "Add new org")`,
-    );
+  // Skip check when orgAuthenticationMode is 'secretsOnly' (uses CI/CD env secrets instead)
+  if (orgAuthenticationMode !== "secretsOnly") {
+    const certKeyFile = `config/branches/.jwt/${branchName}.key`;
+    if (!fs.existsSync(path.join(workspaceRoot, certKeyFile))) {
+      warnings.push(
+        `No encrypted certificate key file found for branch '${branchName}' (expected: ${certKeyFile}). You should configure the org authentication again (use "Add new org")`,
+      );
+    }
   }
 
   let jobs: Job[] = [];

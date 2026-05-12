@@ -12,7 +12,7 @@ const DESTINATION_PATH = path.resolve(
 );
 const MAX_REDIRECTS = 5;
 
-function fetchRemote(url, redirectCount = 0) {
+function fetchRemote(url, redirectCount = 0, rejectUnauthorized = true) {
   return new Promise((resolve, reject) => {
     if (redirectCount > MAX_REDIRECTS) {
       reject(new Error(`Too many redirects while fetching ${url}`));
@@ -25,6 +25,7 @@ function fetchRemote(url, redirectCount = 0) {
         headers: {
           "User-Agent": "vscode-sfdx-hardis-schema-sync",
         },
+        rejectUnauthorized,
       },
       (response) => {
         const { statusCode, headers } = response;
@@ -36,7 +37,13 @@ function fetchRemote(url, redirectCount = 0) {
           headers.location
         ) {
           response.resume();
-          resolve(fetchRemote(headers.location, redirectCount + 1));
+          resolve(
+            fetchRemote(
+              headers.location,
+              redirectCount + 1,
+              rejectUnauthorized,
+            ),
+          );
           return;
         }
 
@@ -67,9 +74,25 @@ function fetchRemote(url, redirectCount = 0) {
   });
 }
 
+function fetchRemoteWithFallback(url) {
+  return fetchRemote(url).catch((err) => {
+    if (
+      err.code === "UNABLE_TO_VERIFY_LEAF_SIGNATURE" ||
+      err.code === "CERT_UNTRUSTED" ||
+      err.message.includes("certificate")
+    ) {
+      console.warn(
+        "SSL certificate verification failed, retrying without strict TLS check...",
+      );
+      return fetchRemote(url, 0, false);
+    }
+    throw err;
+  });
+}
+
 async function main() {
   try {
-    const remoteContent = await fetchRemote(REMOTE_URL);
+    const remoteContent = await fetchRemoteWithFallback(REMOTE_URL);
 
     JSON.parse(remoteContent);
 
