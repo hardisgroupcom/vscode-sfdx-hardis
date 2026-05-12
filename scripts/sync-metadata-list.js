@@ -38,7 +38,13 @@ function fetchRemote(url, redirectCount = 0, rejectUnauthorized = true) {
           headers.location
         ) {
           response.resume();
-          resolve(fetchRemote(headers.location, redirectCount + 1, rejectUnauthorized));
+          resolve(
+            fetchRemote(
+              headers.location,
+              redirectCount + 1,
+              rejectUnauthorized,
+            ),
+          );
           return;
         }
 
@@ -71,8 +77,14 @@ function fetchRemote(url, redirectCount = 0, rejectUnauthorized = true) {
 
 function fetchRemoteWithFallback(url) {
   return fetchRemote(url).catch((err) => {
-    if (err.code === "UNABLE_TO_VERIFY_LEAF_SIGNATURE" || err.code === "CERT_UNTRUSTED" || err.message.includes("certificate")) {
-      console.warn("SSL certificate verification failed, retrying without strict TLS check...");
+    if (
+      err.code === "UNABLE_TO_VERIFY_LEAF_SIGNATURE" ||
+      err.code === "CERT_UNTRUSTED" ||
+      err.message.includes("certificate")
+    ) {
+      console.warn(
+        "SSL certificate verification failed, retrying without strict TLS check...",
+      );
       return fetchRemote(url, 0, false);
     }
     throw err;
