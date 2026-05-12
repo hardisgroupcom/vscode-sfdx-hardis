@@ -33,7 +33,8 @@ export async function listMajorOrgs(
     : null;
 
   const projectConfig = await getConfig("project");
-  const orgAuthenticationMode: string = projectConfig?.orgAuthenticationMode || "encryptedCert";
+  const orgAuthenticationMode: string =
+    projectConfig?.orgAuthenticationMode || "encryptedCert";
 
   // Process all config files in parallel
   const configFileResults = await Promise.allSettled(
