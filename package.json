@@ -259,6 +259,11 @@
         "icon": "$(pulse)"
       },
       {
+        "command": "vscode-sfdx-hardis.showMonitoringConfig",
+        "title": "SFDX Hardis: Monitoring Config Workbench",
+        "icon": "$(settings-gear)"
+      },
+      {
         "command": "vscode-sfdx-hardis.showDataWorkbench",
         "title": "SFDX Hardis: Data Import/Export Workbench",
         "icon": "$(database)"

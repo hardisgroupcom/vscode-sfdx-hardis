@@ -621,6 +621,14 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             helpUrl: DOCSITE_URL + "/salesforce-monitoring-home/",
           },
           {
+            id: "vscode-sfdx-hardis.showMonitoringConfig",
+            label: t("monitoringConfigWorkbench"),
+            tooltip: t("monitoringConfigWorkbenchTooltip"),
+            command: "vscode-sfdx-hardis.showMonitoringConfig",
+            requiresProject: false,
+            helpUrl: DOCSITE_URL + "/salesforce-monitoring-config-home/",
+          },
+          {
             id: "hardis:org:monitor:backup",
             label: t("metadatasBackup"),
             tooltip: t("metadatasBackupTooltip"),

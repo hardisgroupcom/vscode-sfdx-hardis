@@ -67,6 +67,7 @@ const lwcModules = {
   "s-command-execution": () => import("s/commandExecution"),
   "s-pipeline": () => import("s/pipeline"),
   "s-pipeline-config": () => import("s/pipelineConfig"),
+  "s-monitoring-config": () => import("s/monitoringConfig"),
   "s-extension-config": () => import("s/extensionConfig"),
   "s-metadata-retriever": () => import("s/metadataRetriever"),
   "s-multiline-helptext": () => import("s/multilineHelptext"),

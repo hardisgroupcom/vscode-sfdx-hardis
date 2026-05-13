@@ -96,6 +96,12 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
     });
   }
 
+  openMonitoringConfig() {
+    window.sendMessageToVSCode({
+      type: "openMonitoringConfig",
+    });
+  }
+
   viewSkipItemsPackage() {
     window.sendMessageToVSCode({
       type: "viewPackageConfig",

@@ -111,6 +111,12 @@ export function registerShowOrgMonitoring(commands: Commands) {
             await showPackageXmlPanel(packageConfig);
             break;
           }
+          case "openMonitoringConfig": {
+            await vscode.commands.executeCommand(
+              "vscode-sfdx-hardis.showMonitoringConfig",
+            );
+            break;
+          }
           default:
             break;
         }

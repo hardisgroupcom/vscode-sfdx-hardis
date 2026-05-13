@@ -1,0 +1,80 @@
+.monitoring-config-container {
+  padding: 1rem;
+}
+
+.header-section {
+  margin-bottom: 1rem;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.header-icon-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.5rem;
+}
+
+.header-icon-container.teal {
+  background-color: #06a59a;
+}
+
+.header-text {
+  flex: 1;
+}
+
+.header-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.header-subtitle {
+  margin: 0.25rem 0 0;
+  font-size: 0.875rem;
+  opacity: 0.8;
+}
+
+.toolbar-branch {
+  min-width: 16rem;
+}
+
+.cell-command {
+  min-width: 18rem;
+}
+
+.cell-select {
+  min-width: 9rem;
+}
+
+.cell-actions {
+  white-space: nowrap;
+  width: 1%;
+}
+
+.row-title {
+  display: flex;
+  align-items: center;
+}
+
+.row-description {
+  margin-top: 0.25rem;
+}
+
+.row-command {
+  margin-top: 0.25rem;
+}
+
+.row-command code {
+  word-break: break-all;
+}
+
+.custom-form {
+  background-color: rgba(127, 127, 127, 0.06);
+}
