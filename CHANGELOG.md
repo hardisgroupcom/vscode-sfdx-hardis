@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Fix "Install Salesforce Extension Pack" button in the Dependencies panel triggering an unauthorized command error instead of opening the extension installer
 - Add **Monitoring Config Workbench**: a new editor (launchable from the Org Monitoring home or from the sidebar) to configure trigger frequency and per-channel notification thresholds (messaging, email, API) for each monitoring command, with support for custom commands, per-command details (day of week, day of month, email recipients), and copying the configuration from another branch in the repository
 - Add two new Pipeline Settings (Deployment tab): **Manual Actions Mode** (suppress the warning when not using an external manual actions file) and **Org Authentication Mode** (suppress the certificate warning when using CI/CD environment secrets instead of committed key files)
 - Add **Labels for available PR/MR target branches** field in Pipeline Settings (User Stories tab), shown below the target branches list
