@@ -3,6 +3,7 @@ import * as path from "path";
 import yaml from "js-yaml";
 import simpleGit from "simple-git";
 import { execSfdxJson, getWorkspaceRoot } from "../utils";
+import { CacheManager } from "./cache-manager";
 import { Logger } from "../logger";
 
 export type MonitoringFrequency =
@@ -22,12 +23,12 @@ export type Weekday =
   | "sunday";
 
 export type NotificationThreshold =
-  | "log"
-  | "success"
-  | "info"
-  | "warning"
-  | "error"
   | "critical"
+  | "error"
+  | "warning"
+  | "info"
+  | "success"
+  | "log"
   | "off";
 
 export type NotificationChannel = "messaging" | "email" | "api";
@@ -59,6 +60,7 @@ export interface MonitoringCatalogEntry {
   kind: "monitoringCommand" | "notificationType";
   title: string;
   description: string;
+  category?: string;
   command?: string;
   frequency?: MonitoringFrequency;
   frequencyDay?: Weekday;
@@ -66,8 +68,16 @@ export interface MonitoringCatalogEntry {
   notifications: Record<NotificationChannel, NotificationThreshold>;
 }
 
+export interface MonitoringCatalogCategory {
+  key: string;
+  title: string;
+  description: string;
+  order: number;
+}
+
 export interface MonitoringCatalogPayload {
   entries: MonitoringCatalogEntry[];
+  categories: MonitoringCatalogCategory[];
   options: {
     frequencies: MonitoringFrequency[];
     frequencyDays: Weekday[];
@@ -76,10 +86,54 @@ export interface MonitoringCatalogPayload {
   };
 }
 
+const NOTIFICATION_THRESHOLD_ORDER: NotificationThreshold[] = [
+  "critical",
+  "error",
+  "warning",
+  "info",
+  "success",
+  "log",
+  "off",
+];
+
 const CONFIG_FILE = ".sfdx-hardis.yml";
 
 function getRootConfigPath(): string {
   return path.join(getWorkspaceRoot(), CONFIG_FILE);
+}
+
+const MONITORING_DEFAULTS_CMD = "sf hardis:config:monitoring-defaults";
+// execSfdxJson appends " --json" before caching, so the stored key has the suffix
+const MONITORING_DEFAULTS_CACHE_KEY = MONITORING_DEFAULTS_CMD + " --json";
+
+function normalizeThresholds(
+  thresholds: NotificationThreshold[] | undefined,
+): NotificationThreshold[] {
+  if (!Array.isArray(thresholds) || thresholds.length === 0) {
+    return NOTIFICATION_THRESHOLD_ORDER;
+  }
+  const thresholdSet = new Set(thresholds);
+  const normalized = NOTIFICATION_THRESHOLD_ORDER.filter((threshold) =>
+    thresholdSet.has(threshold),
+  );
+  for (const threshold of thresholds) {
+    if (!normalized.includes(threshold)) {
+      normalized.push(threshold);
+    }
+  }
+  return normalized;
+}
+
+function normalizeMonitoringCatalog(
+  payload: MonitoringCatalogPayload,
+): MonitoringCatalogPayload {
+  return {
+    ...payload,
+    options: {
+      ...payload.options,
+      thresholds: normalizeThresholds(payload.options?.thresholds),
+    },
+  };
 }
 
 /**
@@ -87,7 +141,7 @@ function getRootConfigPath(): string {
  * Throws if the command is unavailable so callers can prompt the user to upgrade.
  */
 export async function fetchMonitoringCatalog(): Promise<MonitoringCatalogPayload> {
-  const res = await execSfdxJson("sf hardis:config:monitoring-defaults", {
+  const res = await execSfdxJson(MONITORING_DEFAULTS_CMD, {
     fail: false,
     output: false,
     debug: false,
@@ -99,7 +153,26 @@ export async function fetchMonitoringCatalog(): Promise<MonitoringCatalogPayload
       res?.errorMessage || res?.stderr || "Unknown error fetching catalog";
     throw new Error(errorMsg);
   }
-  return res.result as MonitoringCatalogPayload;
+  const payload = normalizeMonitoringCatalog(
+    res.result as MonitoringCatalogPayload,
+  );
+  // Stale cache: old CLI format had no categories. Bust cache and re-fetch once.
+  if (!payload.categories || payload.categories.length === 0) {
+    await CacheManager.delete("app", MONITORING_DEFAULTS_CACHE_KEY);
+    const fresh = await execSfdxJson(MONITORING_DEFAULTS_CMD, {
+      fail: false,
+      output: false,
+      debug: false,
+      cacheSection: "app",
+      cacheExpiration: 1000 * 60 * 60 * 24,
+    });
+    if (fresh?.status === 0 && fresh?.result) {
+      return normalizeMonitoringCatalog(
+        fresh.result as MonitoringCatalogPayload,
+      );
+    }
+  }
+  return payload;
 }
 
 /**

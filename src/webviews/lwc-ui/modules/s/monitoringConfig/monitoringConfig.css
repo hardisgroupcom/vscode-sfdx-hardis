@@ -41,40 +41,192 @@
   opacity: 0.8;
 }
 
-.toolbar-branch {
-  min-width: 16rem;
+.category-section {
+  margin-bottom: 2rem;
 }
 
-.cell-command {
-  min-width: 18rem;
+.category-header {
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.375rem;
+  border-bottom: 2px solid #06a59a;
 }
 
-.cell-select {
-  min-width: 9rem;
+.category-title {
+  margin: 0;
+  font-weight: 700;
 }
 
-.cell-actions {
-  white-space: nowrap;
-  width: 1%;
+.category-description {
+  margin: 0.25rem 0 0;
+  background: transparent;
+  color: inherit;
 }
 
-.row-title {
+.category-header-content {
   display: flex;
   align-items: center;
+  gap: 0.75rem;
 }
 
-.row-description {
-  margin-top: 0.25rem;
+.category-header-text {
+  flex: 1;
+  min-width: 0;
 }
 
-.row-command {
-  margin-top: 0.25rem;
+.command-icon-container {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  border: none;
+  color: white;
 }
 
-.row-command code {
+.command-icon-container--lg {
+  width: 36px;
+  height: 36px;
+}
+
+.command-icon-container.backup {
+  background: linear-gradient(135deg, #1589ee 0%, #005fb2 100%);
+}
+
+.command-icon-container.alerts {
+  background: linear-gradient(135deg, #ea001e 0%, #c23934 100%);
+}
+
+.command-icon-container.audit {
+  background: linear-gradient(135deg, #9f4fea 0%, #7b2cbf 100%);
+}
+
+.command-icon-container.tests {
+  background: linear-gradient(135deg, #06a59a 0%, #045a55 100%);
+}
+
+.command-icon-container.limits {
+  background: linear-gradient(135deg, #ff6b35 0%, #d4471b 100%);
+}
+
+.command-icon-container.updates {
+  background: linear-gradient(135deg, #ffb439 0%, #e6930f 100%);
+}
+
+.command-icon-container.security {
+  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+}
+
+.command-icon-container.legacy {
+  background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+}
+
+.command-icon-container.users {
+  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+}
+
+.command-icon-container.licenses {
+  background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+}
+
+.command-icon-container.apex {
+  background: linear-gradient(135deg, #ff6b35 0%, #d4471b 100%);
+}
+
+.command-icon-container.connected-apps {
+  background: linear-gradient(135deg, #2980b9 0%, #1f618d 100%);
+}
+
+.command-icon-container.metadata-access {
+  background: linear-gradient(135deg, #8e44ad 0%, #6c3483 100%);
+}
+
+.command-icon-container.health {
+  background: linear-gradient(135deg, #1abc9c 0%, #13866f 100%);
+}
+
+.command-icon-container.unused-metadata {
+  background: linear-gradient(135deg, #27ae60 0%, #1e8449 100%);
+}
+
+.modal-command-display {
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.25rem;
+  background-color: rgba(127, 127, 127, 0.08);
   word-break: break-all;
 }
 
 .custom-form {
   background-color: rgba(127, 127, 127, 0.06);
+}
+
+.monitoring-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.monitoring-table th,
+.monitoring-table td {
+  vertical-align: middle;
+}
+
+.monitoring-table thead th {
+  font-size: 0.75rem;
+  letter-spacing: 0.0625rem;
+  font-weight: 700;
+}
+
+.monitoring-table thead th.monitoring-col-frequency > div,
+.monitoring-table thead th.monitoring-col-channel > div,
+.monitoring-table thead th.monitoring-col-actions > div {
+  text-align: center;
+}
+
+.monitoring-table tbody td {
+  text-align: center;
+}
+
+.monitoring-table tbody th {
+  text-align: left;
+}
+
+.monitoring-table tbody td lightning-combobox {
+  display: inline-block;
+  text-align: left;
+  width: 100%;
+}
+
+.monitoring-col-frequency {
+  width: 9rem;
+}
+
+.monitoring-col-channel {
+  width: 8rem;
+}
+
+.monitoring-col-actions {
+  width: 7rem;
+}
+
+.monitoring-row-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.monitoring-row-title-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.monitoring-row-actions {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.monitoring-row-actions lightning-button-icon {
+  margin: 0 0.125rem;
 }

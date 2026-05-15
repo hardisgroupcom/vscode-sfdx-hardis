@@ -39,30 +39,29 @@
                                     <p class="status-description">{i18n.orgMonitoringConfigActive}</p>
                                 </div>
                                 <div class="status-actions auth-actions">
-                                    <lightning-button
-                                        variant="brand"
-                                        label={i18n.reconfigureAuthentication}
-                                        title={i18n.reconfigureAuthTooltip}
-                                        onclick={reconfigureMonitoringAuth}
-                                        icon-name="utility:redo"
-                                        class="status-button"
-                                    ></lightning-button>
-                                    <lightning-button
-                                        variant="neutral"
-                                        label={i18n.editMonitoringConfig}
-                                        title={i18n.editMonitoringConfigTooltip}
-                                        onclick={openMonitoringConfig}
-                                        icon-name="utility:settings"
-                                        class="status-button"
-                                    ></lightning-button>
-                                    <lightning-button
-                                        variant="neutral"
-                                        label={i18n.monitorAnotherOrg}
-                                        title={i18n.monitorAnotherOrgTooltip}
-                                        onclick={configureAnotherOrg}
-                                        icon-name="utility:adduser"
-                                        class="status-button"
-                                    ></lightning-button>
+                                    <lightning-button-group>
+                                        <lightning-button
+                                            label={i18n.editMonitoringConfig}
+                                            variant="brand"
+                                            icon-name="utility:settings"
+                                            title={i18n.editMonitoringConfigTooltip}
+                                            onclick={openMonitoringConfig}>
+                                        </lightning-button>
+                                        <lightning-button
+                                            label={i18n.reconfigureAuthentication}
+                                            variant="neutral"
+                                            icon-name="utility:setup"
+                                            title={i18n.reconfigureAuthTooltip}
+                                            onclick={reconfigureMonitoringAuth}>
+                                        </lightning-button>
+                                        <lightning-button
+                                            label={i18n.monitorAnotherOrg}
+                                            variant="neutral"
+                                            icon-name="utility:people"
+                                            title={i18n.monitorAnotherOrgTooltip}
+                                            onclick={configureAnotherOrg}>
+                                        </lightning-button>
+                                    </lightning-button-group>
                                 </div>
                             </div>
                             <template if:true={instanceUrl}>

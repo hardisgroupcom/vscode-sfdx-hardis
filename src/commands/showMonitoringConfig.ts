@@ -15,6 +15,8 @@ import {
   MonitoringCommandEntry,
 } from "../utils/monitoringConfigUtils";
 
+let _gitHeadWatcher: vscode.FileSystemWatcher | null = null;
+
 export function registerShowMonitoringConfig(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
     "vscode-sfdx-hardis.showMonitoringConfig",
@@ -52,6 +54,39 @@ export function registerShowMonitoringConfig(commands: Commands) {
       );
       panel.updateTitle(t("monitoringConfigWorkbench"));
 
+      // Dispose any previous watcher (e.g. panel was reopened)
+      if (_gitHeadWatcher) {
+        _gitHeadWatcher.dispose();
+        _gitHeadWatcher = null;
+      }
+      _gitHeadWatcher = vscode.workspace.createFileSystemWatcher(
+        new vscode.RelativePattern(getWorkspaceRoot(), ".git/HEAD"),
+      );
+      _gitHeadWatcher.onDidChange(async () => {
+        if (panel.isDisposed()) {
+          _gitHeadWatcher?.dispose();
+          _gitHeadWatcher = null;
+          return;
+        }
+        try {
+          const newBranch = await getCurrentBranchName();
+          const newCommands = await readCurrentMonitoringCommands();
+          panel.sendMessage({
+            type: "branchChanged",
+            data: {
+              currentBranch: newBranch,
+              monitoringCommands: newCommands,
+            },
+          });
+        } catch (error: any) {
+          Logger.log("Error reloading monitoring config on branch change: " + error?.message);
+        }
+      });
+      LwcPanelManager.getInstance().setDisposalCallback("s-monitoring-config", () => {
+        _gitHeadWatcher?.dispose();
+        _gitHeadWatcher = null;
+      });
+
       panel.onMessage(async (type: string, data: any) => {
         switch (type) {
           case "saveMonitoringConfig": {
@@ -80,6 +115,14 @@ export function registerShowMonitoringConfig(commands: Commands) {
           case "loadFromBranch": {
             const branch = data?.branch;
             if (!branch || typeof branch !== "string") {
+              return;
+            }
+            const confirmed = await vscode.window.showWarningMessage(
+              t("confirmCopyFromBranch", { branch }),
+              { modal: true },
+              t("yesLabel"),
+            );
+            if (!confirmed) {
               return;
             }
             try {

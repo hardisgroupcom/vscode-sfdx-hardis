@@ -7,20 +7,89 @@ import { SharedMixin } from "s/sharedMixin";
 
 const DEFAULT_FREQUENCY = "weekly";
 
+const CATEGORY_ICONS = {
+  orgActivity: { icon: "utility:refresh", colorClass: "tests" },
+  userActivity: { icon: "utility:user", colorClass: "users" },
+  apexTestsSecurity: { icon: "utility:shield", colorClass: "security" },
+  orgInfo: { icon: "utility:info", colorClass: "health" },
+  technicalDebt: { icon: "utility:warning", colorClass: "limits" },
+  licensesPackages: { icon: "utility:package", colorClass: "licenses" },
+  other: { icon: "utility:apps", colorClass: "legacy" },
+  custom: { icon: "utility:add", colorClass: "backup" },
+};
+
+const COMMAND_ICONS = {
+  AUDIT_TRAIL: { icon: "utility:trail", colorClass: "audit" },
+  LEGACY_API: { icon: "utility:deprecate", colorClass: "legacy" },
+  APEX_FLOW_ERRORS: { icon: "utility:error", colorClass: "alerts" },
+  APEX_FLEX_QUEUE: { icon: "utility:list", colorClass: "tests" },
+  DEPLOYMENTS: { icon: "utility:upload", colorClass: "audit" },
+  ORG_LIMITS: { icon: "utility:graph", colorClass: "limits" },
+  UNSECURED_CONNECTED_APPS: { icon: "utility:shield", colorClass: "security" },
+  ORG_HEALTH_CHECK: { icon: "utility:check", colorClass: "health" },
+  ORG_INFO: { icon: "utility:info", colorClass: "health" },
+  RELEASE_UPDATES: { icon: "utility:new", colorClass: "updates" },
+  LINT_ACCESS: { icon: "utility:lock", colorClass: "metadata-access" },
+  UNUSED_METADATAS: { icon: "utility:custom_apps", colorClass: "unused-metadata" },
+  UNUSED_APEX_CLASSES: { icon: "utility:apex", colorClass: "apex" },
+  APEX_API_VERSION: { icon: "utility:apex", colorClass: "legacy" },
+  CONNECTED_APPS: { icon: "utility:connected_apps", colorClass: "connected-apps" },
+  METADATA_STATUS: { icon: "utility:flow", colorClass: "legacy" },
+  MISSING_ATTRIBUTES: { icon: "utility:description", colorClass: "metadata-access" },
+  UNDERUSED_PERMSETS: { icon: "utility:lock", colorClass: "licenses" },
+  MINIMAL_PERMSETS: { icon: "utility:shield", colorClass: "metadata-access" },
+  LICENSES: { icon: "utility:package", colorClass: "licenses" },
+  UNUSED_LICENSES: { icon: "utility:key", colorClass: "licenses" },
+  UNUSED_USERS: { icon: "utility:user", colorClass: "users" },
+  UNUSED_USERS_CRM_6_MONTHS: { icon: "utility:user", colorClass: "users" },
+  UNUSED_USERS_EXPERIENCE_6_MONTHS: { icon: "utility:user", colorClass: "users" },
+  ACTIVE_USERS_CRM_WEEKLY: { icon: "utility:user", colorClass: "tests" },
+  ACTIVE_USERS_EXPERIENCE_MONTHLY: { icon: "utility:user", colorClass: "tests" },
+  BACKUP: { icon: "utility:save", colorClass: "backup" },
+  DEPLOYMENT: { icon: "utility:upload", colorClass: "audit" },
+  APEX_TESTS: { icon: "utility:apex", colorClass: "tests" },
+  APEX_ERROR: { icon: "utility:error", colorClass: "alerts" },
+  FLOW_ERROR: { icon: "utility:flow", colorClass: "alerts" },
+  ACTIVE_USERS: { icon: "utility:user", colorClass: "users" },
+  MONITORING_SUMMARY: { icon: "utility:report", colorClass: "backup" },
+  RELEASE_NOTES: { icon: "utility:description", colorClass: "updates" },
+  DORA_REPORT: { icon: "utility:chart", colorClass: "health" },
+  AGENTFORCE_CONVERSATIONS: { icon: "utility:chat", colorClass: "tests" },
+  AGENTFORCE_FEEDBACK: { icon: "utility:like", colorClass: "tests" },
+  SERVICENOW_REPORT: { icon: "utility:table", colorClass: "backup" },
+};
+
+const DEFAULT_ICON = { icon: "utility:settings", colorClass: "legacy" };
+
+const OPTION_EMOJIS = {
+  daily: "☀️",
+  weekly: "📋",
+  biweekly: "🔄",
+  monthly: "🗓️",
+  off: "⛔",
+  log: "📝",
+  success: "✅",
+  info: "ℹ️",
+  warning: "⚠️",
+  error: "❌",
+  critical: "🚨",
+};
+
 export default class MonitoringConfig extends SharedMixin(LightningElement) {
   @track catalog = { entries: [], options: { frequencies: [], frequencyDays: [], thresholds: [], channels: [] } };
   @track userCommands = [];
   @track branches = [];
   @track currentBranch = "";
   @track docUrl = "";
-  @track copyFromBranch = "";
   @track modalOpen = false;
   @track modalEntry = null;
   @track modalEmailRecipientsText = "";
   @track modalReplaceRecipients = false;
   @track customRowDraft = null;
   @track customFormOpen = false;
-  @track dirty = false;
+  @track modalMessaging = "";
+  @track modalEmail = "";
+  @track modalApi = "";
 
   @api
   initialize(data) {
@@ -39,7 +108,6 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
     if (typeof data?.docUrl === "string") {
       this.docUrl = data.docUrl;
     }
-    this.dirty = false;
   }
 
   @api
@@ -52,7 +120,17 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
         return;
       }
       this.userCommands = JSON.parse(JSON.stringify(incoming));
-      this.dirty = true;
+      this._autoSave();
+    }
+    else if (type === "branchChanged") {
+      if (typeof data?.currentBranch === "string") {
+        this.currentBranch = data.currentBranch;
+      }
+      if (Array.isArray(data?.monitoringCommands)) {
+        this.userCommands = JSON.parse(JSON.stringify(data.monitoringCommands));
+      }
+      this.modalOpen = false;
+      this.modalEntry = null;
     }
   }
 
@@ -83,71 +161,102 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
     );
   }
 
-  get rows() {
+  buildRow(entry, userEntry, frequencies, thresholds, isCustom) {
+    const effective = this.resolveEffectiveEntry(entry, userEntry);
+    const key = isCustom ? userEntry.key : entry.key;
+    const iconData = COMMAND_ICONS[key] || DEFAULT_ICON;
+    const hasOverrides = isCustom ? true : this.hasOverrides(userEntry);
+    return {
+      key,
+      isCustom,
+      title: isCustom ? (userEntry.title || userEntry.key) : entry.title,
+      command: isCustom ? (userEntry.command || "") : (entry.command || ""),
+      iconName: iconData.icon,
+      iconContainerClass: "command-icon-container " + iconData.colorClass,
+      frequency: effective.frequency,
+      messaging: effective.notifications.messaging,
+      email: effective.notifications.email,
+      api: effective.notifications.api,
+      frequencyOptions: this.makeOptions(frequencies, effective.frequency),
+      messagingOptions: this.makeOptions(thresholds, effective.notifications.messaging),
+      emailOptions: this.makeOptions(thresholds, effective.notifications.email),
+      apiOptions: this.makeOptions(thresholds, effective.notifications.api),
+      hasOverrides,
+      showReset: !isCustom && hasOverrides,
+    };
+  }
+
+  getOptionLabel(value) {
+    if (!value) {
+      return "";
+    }
+    const text = this.t(`monitoringEnum_${value}`) || value;
+    const emoji = OPTION_EMOJIS[value];
+    return emoji ? `${emoji} ${text}` : text;
+  }
+
+  get rowsByCategory() {
     const opts = this.catalog?.options || {};
     const frequencies = opts.frequencies || [];
     const thresholds = opts.thresholds || [];
     const userMap = this.userByKey;
-    const rows = [];
-    // Built-in commands (from catalog)
+    const rowMap = {};
+
     for (const entry of this.catalog?.entries || []) {
       if (entry.kind && entry.kind !== "monitoringCommand") {
         continue;
       }
       const userEntry = userMap[entry.key] || {};
-      const effective = this.resolveEffectiveEntry(entry, userEntry);
-      rows.push({
-        key: entry.key,
-        isCustom: false,
-        title: entry.title,
-        description: entry.description,
-        command: entry.command,
-        commandDisplay: entry.command || "",
-        frequencyValue: effective.frequency,
-        frequencyOptions: this.makeOptions(frequencies, effective.frequency),
-        messagingValue: effective.notifications.messaging,
-        messagingOptions: this.makeOptions(
-          thresholds,
-          effective.notifications.messaging,
-        ),
-        emailValue: effective.notifications.email,
-        emailOptions: this.makeOptions(
-          thresholds,
-          effective.notifications.email,
-        ),
-        apiValue: effective.notifications.api,
-        apiOptions: this.makeOptions(thresholds, effective.notifications.api),
-        hasOverrides: this.hasOverrides(userEntry),
+      const catKey = entry.category || "other";
+      if (!rowMap[catKey]) {
+        rowMap[catKey] = [];
+      }
+      rowMap[catKey].push(this.buildRow(entry, userEntry, frequencies, thresholds, false));
+    }
+
+    let catalogCategories = (this.catalog?.categories || [])
+      .slice()
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
+
+    // Fallback: if catalog has no categories, derive them from the entry category keys
+    if (catalogCategories.length === 0) {
+      catalogCategories = Object.keys(rowMap).map((k) => ({ key: k, title: k, description: "", order: 0 }));
+    }
+
+    const result = [];
+    for (const cat of catalogCategories) {
+      const catRows = rowMap[cat.key] || [];
+      if (catRows.length === 0) {
+        continue;
+      }
+      const catIconData = CATEGORY_ICONS[cat.key] || { icon: "utility:apps", colorClass: "legacy" };
+      result.push({
+        key: cat.key,
+        title: cat.title,
+        description: cat.description || "",
+        icon: catIconData.icon,
+        iconContainerClass: "command-icon-container command-icon-container--lg " + catIconData.colorClass,
+        rows: catRows,
       });
     }
-    // Custom commands (not in catalog)
+
+    const customRows = [];
     for (const userEntry of this.customCommands) {
-      const effective = this.resolveEffectiveEntry(null, userEntry);
-      rows.push({
-        key: userEntry.key,
-        isCustom: true,
-        title: userEntry.title || userEntry.key,
+      customRows.push(this.buildRow(null, userEntry, frequencies, thresholds, true));
+    }
+    if (customRows.length > 0) {
+      const customIconData = CATEGORY_ICONS.custom;
+      result.push({
+        key: "custom",
+        title: this.i18n.monitoringCustomCategory,
         description: "",
-        command: userEntry.command || "",
-        commandDisplay: userEntry.command || "",
-        frequencyValue: effective.frequency,
-        frequencyOptions: this.makeOptions(frequencies, effective.frequency),
-        messagingValue: effective.notifications.messaging,
-        messagingOptions: this.makeOptions(
-          thresholds,
-          effective.notifications.messaging,
-        ),
-        emailValue: effective.notifications.email,
-        emailOptions: this.makeOptions(
-          thresholds,
-          effective.notifications.email,
-        ),
-        apiValue: effective.notifications.api,
-        apiOptions: this.makeOptions(thresholds, effective.notifications.api),
-        hasOverrides: true,
+        icon: customIconData.icon,
+        iconContainerClass: "command-icon-container command-icon-container--lg " + customIconData.colorClass,
+        rows: customRows,
       });
     }
-    return rows;
+
+    return result;
   }
 
   resolveEffectiveEntry(catalogEntry, userEntry) {
@@ -172,13 +281,15 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
   }
 
   makeOptions(values, current) {
-    const out = (values || []).map((v) => ({
-      label: this.t(`monitoringEnum_${v}`) || v,
-      value: v,
-    }));
-    // Ensure current value is included even if not in options list
+    const out = (values || []).map((v) => {
+      const text = this.t(`monitoringEnum_${v}`) || v;
+      const emoji = OPTION_EMOJIS[v];
+      return { label: emoji ? `${emoji} ${text}` : text, value: v };
+    });
     if (current && !out.some((o) => o.value === current)) {
-      out.push({ label: current, value: current });
+      const emoji = OPTION_EMOJIS[current];
+      const text = this.t(`monitoringEnum_${current}`) || current;
+      out.push({ label: emoji ? `${emoji} ${text}` : text, value: current });
     }
     return out;
   }
@@ -195,6 +306,92 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
     );
   }
 
+  // ----- Inline row edits & row actions -----
+
+  handleRowDetails(event) {
+    const key = event.currentTarget.dataset.key;
+    if (key) {
+      this._openDetailsForKey(key);
+    }
+  }
+
+  handleRowReset(event) {
+    const key = event.currentTarget.dataset.key;
+    if (!key) {
+      return;
+    }
+    this.userCommands = (this.userCommands || []).filter((c) => !c || c.key !== key);
+    this._autoSave();
+  }
+
+  handleRowDelete(event) {
+    const key = event.currentTarget.dataset.key;
+    if (!key) {
+      return;
+    }
+    this.userCommands = (this.userCommands || []).filter((c) => !c || c.key !== key);
+    this._autoSave();
+  }
+
+  handleRowFrequencyChange(event) {
+    const key = event.target.dataset.key;
+    const value = event.detail.value;
+    if (!key || !value) {
+      return;
+    }
+    this.updateUserEntry(key, (entry) => {
+      entry.frequency = value;
+      if (value !== "weekly" && value !== "biweekly") {
+        delete entry.frequencyDay;
+      }
+      if (value !== "monthly") {
+        delete entry.frequencyDayOfMonth;
+      }
+    });
+  }
+
+  handleRowMessagingChange(event) {
+    const key = event.target.dataset.key;
+    const value = event.detail.value;
+    if (!key || !value) {
+      return;
+    }
+    this.updateUserEntry(key, (entry) => {
+      entry.notifications = this.normalizeNotifications(entry.notifications);
+      entry.notifications.messaging = value;
+    });
+  }
+
+  handleRowEmailChange(event) {
+    const key = event.target.dataset.key;
+    const value = event.detail.value;
+    if (!key || !value) {
+      return;
+    }
+    this.updateUserEntry(key, (entry) => {
+      entry.notifications = this.normalizeNotifications(entry.notifications);
+      const existing = entry.notifications.email;
+      if (existing && typeof existing === "object") {
+        entry.notifications.email = { ...existing, threshold: value };
+      }
+      else {
+        entry.notifications.email = value;
+      }
+    });
+  }
+
+  handleRowApiChange(event) {
+    const key = event.target.dataset.key;
+    const value = event.detail.value;
+    if (!key || !value) {
+      return;
+    }
+    this.updateUserEntry(key, (entry) => {
+      entry.notifications = this.normalizeNotifications(entry.notifications);
+      entry.notifications.api = value;
+    });
+  }
+
   // ----- Branch picker -----
 
   get branchOptions() {
@@ -203,38 +400,23 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
       .map((b) => ({ label: b, value: b }));
   }
 
-  get hasBranches() {
-    return this.branchOptions.length > 0;
+  get noBranches() {
+    return this.branchOptions.length === 0;
   }
 
-  get copyDisabled() {
-    return !this.copyFromBranch;
-  }
-
-  handleCopyBranchChange(event) {
-    this.copyFromBranch = event.detail.value;
-  }
-
-  handleApplyCopy() {
-    if (!this.copyFromBranch) {
+  handleCopyBranchSelect(event) {
+    const branch = event.detail.value;
+    if (!branch) {
       return;
     }
     window.sendMessageToVSCode({
       type: "loadFromBranch",
-      data: { branch: this.copyFromBranch },
+      data: { branch },
     });
   }
 
-  // ----- Row edits -----
 
-  ensureUserEntry(key) {
-    let entry = (this.userCommands || []).find((c) => c && c.key === key);
-    if (!entry) {
-      entry = { key };
-      this.userCommands = [...(this.userCommands || []), entry];
-    }
-    return entry;
-  }
+  // ----- Row edits -----
 
   updateUserEntry(key, mutator) {
     const list = (this.userCommands || []).map((c) => ({ ...c }));
@@ -245,96 +427,32 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
     }
     mutator(entry);
     this.userCommands = list;
-    this.dirty = true;
-  }
-
-  handleFrequencyChange(event) {
-    const key = event.target.dataset.key;
-    const value = event.detail.value;
-    this.updateUserEntry(key, (entry) => {
-      entry.frequency = value;
-    });
-  }
-
-  handleMessagingChange(event) {
-    const key = event.target.dataset.key;
-    const value = event.detail.value;
-    this.updateUserEntry(key, (entry) => {
-      entry.notifications = this.normalizeNotifications(entry.notifications);
-      entry.notifications.messaging = value;
-    });
-  }
-
-  handleEmailChange(event) {
-    const key = event.target.dataset.key;
-    const value = event.detail.value;
-    this.updateUserEntry(key, (entry) => {
-      entry.notifications = this.normalizeNotifications(entry.notifications);
-      const existing = entry.notifications.email;
-      if (existing && typeof existing === "object") {
-        existing.threshold = value;
-      }
-      else {
-        entry.notifications.email = value;
-      }
-    });
-  }
-
-  handleApiChange(event) {
-    const key = event.target.dataset.key;
-    const value = event.detail.value;
-    this.updateUserEntry(key, (entry) => {
-      entry.notifications = this.normalizeNotifications(entry.notifications);
-      entry.notifications.api = value;
-    });
+    this._autoSave();
   }
 
   normalizeNotifications(notifs) {
     return notifs && typeof notifs === "object" ? { ...notifs } : {};
   }
 
-  // ----- Reset / delete -----
-
-  handleResetRow(event) {
-    const key = event.target.dataset.key;
-    this.userCommands = (this.userCommands || []).filter(
-      (c) => !c || c.key !== key,
-    );
-    this.dirty = true;
-  }
-
-  handleDeleteCustomRow(event) {
-    const key = event.target.dataset.key;
-    this.userCommands = (this.userCommands || []).filter(
-      (c) => !c || c.key !== key,
-    );
-    this.dirty = true;
-  }
-
   // ----- Details modal -----
 
-  handleOpenDetails(event) {
-    const key = event.target.dataset.key;
-    const catalogEntry = (this.catalog?.entries || []).find(
-      (e) => e.key === key,
-    );
+  _openDetailsForKey(key) {
+    const catalogEntry = (this.catalog?.entries || []).find((e) => e.key === key);
     const userEntry = this.userByKey[key] || {};
     const effective = this.resolveEffectiveEntry(catalogEntry, userEntry);
     const recipients = this.getEmailRecipients(userEntry);
     this.modalEntry = {
       key,
       title: catalogEntry?.title || userEntry.title || key,
+      command: catalogEntry?.command || userEntry.command || "",
       isCustom: !catalogEntry,
       frequency: effective.frequency,
-      frequencyDay:
-        userEntry.frequencyDay ||
-        catalogEntry?.frequencyDay ||
-        "monday",
-      frequencyDayOfMonth:
-        userEntry.frequencyDayOfMonth ||
-        catalogEntry?.frequencyDayOfMonth ||
-        1,
+      frequencyDay: userEntry.frequencyDay || catalogEntry?.frequencyDay || "monday",
+      frequencyDayOfMonth: userEntry.frequencyDayOfMonth || catalogEntry?.frequencyDayOfMonth || 1,
     };
+    this.modalMessaging = effective.notifications.messaging;
+    this.modalEmail = effective.notifications.email;
+    this.modalApi = effective.notifications.api;
     this.modalEmailRecipientsText = recipients.join("\n");
     this.modalReplaceRecipients = this.getReplaceRecipients(userEntry);
     this.modalOpen = true;
@@ -375,6 +493,18 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
     return this.makeOptions(this.catalog?.options?.frequencyDays, current);
   }
 
+  get modalMessagingOptions() {
+    return this.makeOptions(this.catalog?.options?.thresholds, this.modalMessaging);
+  }
+
+  get modalEmailThresholdOptions() {
+    return this.makeOptions(this.catalog?.options?.thresholds, this.modalEmail);
+  }
+
+  get modalApiOptions() {
+    return this.makeOptions(this.catalog?.options?.thresholds, this.modalApi);
+  }
+
   handleModalFrequencyChange(event) {
     if (!this.modalEntry) {
       return;
@@ -404,6 +534,18 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
     this.modalEntry = { ...this.modalEntry, frequencyDayOfMonth: n };
   }
 
+  handleModalMessagingChange(event) {
+    this.modalMessaging = event.detail.value;
+  }
+
+  handleModalEmailChange(event) {
+    this.modalEmail = event.detail.value;
+  }
+
+  handleModalApiChange(event) {
+    this.modalApi = event.detail.value;
+  }
+
   handleModalRecipientsChange(event) {
     this.modalEmailRecipientsText = event.target.value || "";
   }
@@ -421,6 +563,9 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
     const newFrequency = this.modalEntry.frequency;
     const newDay = this.modalEntry.frequencyDay;
     const newDayOfMonth = this.modalEntry.frequencyDayOfMonth;
+    const newMessaging = this.modalMessaging;
+    const newEmailThreshold = this.modalEmail;
+    const newApi = this.modalApi;
     const recipients = (this.modalEmailRecipientsText || "")
       .split(/[\r\n,;]+/)
       .map((s) => s.trim())
@@ -443,15 +588,16 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
       }
 
       entry.notifications = this.normalizeNotifications(entry.notifications);
-      const existingEmail = entry.notifications.email;
-      const existingThreshold =
-        existingEmail && typeof existingEmail === "object"
-          ? existingEmail.threshold
-          : existingEmail;
+      if (newMessaging) {
+        entry.notifications.messaging = newMessaging;
+      }
+      if (newApi) {
+        entry.notifications.api = newApi;
+      }
       if (recipients.length > 0 || replace) {
         const emailObj = {};
-        if (existingThreshold) {
-          emailObj.threshold = existingThreshold;
+        if (newEmailThreshold) {
+          emailObj.threshold = newEmailThreshold;
         }
         if (recipients.length > 0) {
           emailObj.recipients = recipients;
@@ -461,8 +607,8 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
         }
         entry.notifications.email = emailObj;
       }
-      else if (existingEmail && typeof existingEmail === "object") {
-        entry.notifications.email = existingThreshold;
+      else {
+        entry.notifications.email = newEmailThreshold || undefined;
       }
     });
 
@@ -535,7 +681,7 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
       frequency: draft.frequency || DEFAULT_FREQUENCY,
     };
     this.userCommands = [...(this.userCommands || []), newEntry];
-    this.dirty = true;
+    this._autoSave();
     this.customRowDraft = null;
     this.customFormOpen = false;
   }
@@ -545,16 +691,15 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
     this.customFormOpen = false;
   }
 
-  // ----- Save / cancel -----
+  // ----- Auto-save -----
 
-  handleSaveAll() {
+  _autoSave() {
     const cleaned = this.cleanCommandsForSave();
     window.sendMessageToVSCode({
       type: "saveMonitoringConfig",
       data: { monitoringCommands: cleaned },
     });
     this.userCommands = JSON.parse(JSON.stringify(cleaned));
-    this.dirty = false;
   }
 
   handleOpenDocs() {
