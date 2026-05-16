@@ -97,9 +97,6 @@ export function registerShowMonitoringConfig(commands: Commands) {
                 ? data.monitoringCommands
                 : [];
               await saveMonitoringCommands(list);
-              vscode.window.showInformationMessage(
-                t("monitoringConfigSaved"),
-              );
             } catch (error: any) {
               Logger.log(
                 "Error saving monitoring config: " + error?.message,

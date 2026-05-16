@@ -166,10 +166,13 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
     const key = isCustom ? userEntry.key : entry.key;
     const iconData = COMMAND_ICONS[key] || DEFAULT_ICON;
     const hasOverrides = isCustom ? true : this.hasOverrides(userEntry);
+    const rawTitle = isCustom ? (userEntry.title || userEntry.key) : entry.title;
+    const title = (rawTitle || "").replace(/\*\*/g, "");
     return {
       key,
       isCustom,
-      title: isCustom ? (userEntry.title || userEntry.key) : entry.title,
+      title,
+      titleSegments: this.parseTitleSegments(rawTitle),
       command: isCustom ? (userEntry.command || "") : (entry.command || ""),
       iconName: iconData.icon,
       iconContainerClass: "command-icon-container " + iconData.colorClass,
@@ -184,6 +187,40 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
       hasOverrides,
       showReset: !isCustom && hasOverrides,
     };
+  }
+
+  parseTitleSegments(title) {
+    if (!title) {
+      return [];
+    }
+    const segments = [];
+    const regex = /\*\*([^*]+)\*\*/g;
+    let lastIndex = 0;
+    let idx = 0;
+    let match;
+    while ((match = regex.exec(title)) !== null) {
+      if (match.index > lastIndex) {
+        segments.push({
+          idx: idx++,
+          text: title.slice(lastIndex, match.index),
+          cssClass: "monitoring-row-title-segment",
+        });
+      }
+      segments.push({
+        idx: idx++,
+        text: match[1],
+        cssClass: "monitoring-row-title-segment monitoring-row-title-bold",
+      });
+      lastIndex = regex.lastIndex;
+    }
+    if (lastIndex < title.length) {
+      segments.push({
+        idx: idx++,
+        text: title.slice(lastIndex),
+        cssClass: "monitoring-row-title-segment",
+      });
+    }
+    return segments;
   }
 
   getOptionLabel(value) {
@@ -256,7 +293,11 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
       });
     }
 
-    return result;
+    const total = result.length;
+    return result.map((category, index) => ({
+      ...category,
+      sectionStyle: `z-index: ${total - index};`,
+    }));
   }
 
   resolveEffectiveEntry(catalogEntry, userEntry) {
@@ -306,6 +347,14 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
     );
   }
 
+  getDatasetValue(event, name) {
+    return (
+      event?.currentTarget?.dataset?.[name] ||
+      event?.target?.dataset?.[name] ||
+      ""
+    );
+  }
+
   // ----- Inline row edits & row actions -----
 
   handleRowDetails(event) {
@@ -334,7 +383,7 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
   }
 
   handleRowFrequencyChange(event) {
-    const key = event.target.dataset.key;
+    const key = this.getDatasetValue(event, "key");
     const value = event.detail.value;
     if (!key || !value) {
       return;
@@ -351,7 +400,7 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
   }
 
   handleRowMessagingChange(event) {
-    const key = event.target.dataset.key;
+    const key = this.getDatasetValue(event, "key");
     const value = event.detail.value;
     if (!key || !value) {
       return;
@@ -363,7 +412,7 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
   }
 
   handleRowEmailChange(event) {
-    const key = event.target.dataset.key;
+    const key = this.getDatasetValue(event, "key");
     const value = event.detail.value;
     if (!key || !value) {
       return;
@@ -381,7 +430,7 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
   }
 
   handleRowApiChange(event) {
-    const key = event.target.dataset.key;
+    const key = this.getDatasetValue(event, "key");
     const value = event.detail.value;
     if (!key || !value) {
       return;
@@ -642,11 +691,14 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
     if (!this.customRowDraft) {
       return;
     }
-    const field = event.target.dataset.field;
+    const field = this.getDatasetValue(event, "field");
     const value =
       event.detail && event.detail.value !== undefined
         ? event.detail.value
         : event.target.value;
+    if (!field) {
+      return;
+    }
     this.customRowDraft = { ...this.customRowDraft, [field]: value };
   }
 

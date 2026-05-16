@@ -135,6 +135,29 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
     });
   }
 
+  handleAuthMenuSelect(event) {
+    const value = event.detail.value;
+    if (value === "reconfigure") {
+      this.reconfigureMonitoringAuth();
+    }
+    else if (value === "anotherOrg") {
+      this.configureAnotherOrg();
+    }
+  }
+
+  handlePackageMenuSelect(event) {
+    const value = event.detail.value;
+    if (value === "skip") {
+      this.viewSkipItemsPackage();
+    }
+    else if (value === "backup") {
+      this.viewBackupItemsPackage();
+    }
+    else if (value === "all-org") {
+      this.viewAllOrgItemsPackage();
+    }
+  }
+
   viewPackageConfig() {
     window.sendMessageToVSCode({
       type: "viewPackageConfig",

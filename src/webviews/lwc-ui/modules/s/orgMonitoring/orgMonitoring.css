@@ -119,6 +119,26 @@
 
 .status-card.installed {
     border-left: 4px solid #04844b;
+    padding: 0.75rem 1rem;
+    gap: 1rem;
+}
+
+.status-card.installed .status-header {
+    margin-bottom: 0.25rem;
+}
+
+.status-card.installed .status-title {
+    font-size: 1rem;
+    margin: 0;
+}
+
+.status-card.installed .status-description {
+    margin: 0;
+    font-size: 0.85rem;
+}
+
+.status-card.installed .instance-url-row {
+    margin: 0.25rem 0 0 0;
 }
 
 .status-card.not-installed {
@@ -232,9 +252,6 @@
 
 .config-actions {
     margin-bottom: 0.75rem;
-}
-.package-actions {
-    margin-top: 0.25rem;
 }
 
 .status-button {

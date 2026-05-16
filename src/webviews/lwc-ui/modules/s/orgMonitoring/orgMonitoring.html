@@ -47,20 +47,53 @@
                                             title={i18n.editMonitoringConfigTooltip}
                                             onclick={openMonitoringConfig}>
                                         </lightning-button>
-                                        <lightning-button
-                                            label={i18n.reconfigureAuthentication}
-                                            variant="neutral"
-                                            icon-name="utility:setup"
-                                            title={i18n.reconfigureAuthTooltip}
-                                            onclick={reconfigureMonitoringAuth}>
-                                        </lightning-button>
-                                        <lightning-button
-                                            label={i18n.monitorAnotherOrg}
-                                            variant="neutral"
-                                            icon-name="utility:people"
-                                            title={i18n.monitorAnotherOrgTooltip}
-                                            onclick={configureAnotherOrg}>
-                                        </lightning-button>
+                                        <lightning-button-menu
+                                            label={i18n.packages}
+                                            icon-name="utility:package"
+                                            variant="border"
+                                            alternative-text={i18n.packages}
+                                            title={i18n.packages}
+                                            menu-alignment="right"
+                                            onselect={handlePackageMenuSelect}>
+                                            <lightning-menu-item
+                                                value="skip"
+                                                label={i18n.skipItemsPackage}
+                                                title={i18n.skipItemsPackageTooltip}
+                                                prefix-icon-name="utility:ban">
+                                            </lightning-menu-item>
+                                            <lightning-menu-item
+                                                value="backup"
+                                                label={i18n.backupItemsPackage}
+                                                title={i18n.backupItemsPackageTooltip}
+                                                prefix-icon-name="utility:save">
+                                            </lightning-menu-item>
+                                            <lightning-menu-item
+                                                value="all-org"
+                                                label={i18n.allOrgItemsPackage}
+                                                title={i18n.allOrgItemsPackageTooltip}
+                                                prefix-icon-name="utility:package">
+                                            </lightning-menu-item>
+                                        </lightning-button-menu>
+                                        <lightning-button-menu
+                                            icon-name="utility:identity"
+                                            variant="border"
+                                            alternative-text={i18n.authentication}
+                                            title={i18n.authentication}
+                                            menu-alignment="right"
+                                            onselect={handleAuthMenuSelect}>
+                                            <lightning-menu-item
+                                                value="reconfigure"
+                                                label={i18n.reconfigureAuthentication}
+                                                title={i18n.reconfigureAuthTooltip}
+                                                prefix-icon-name="utility:setup">
+                                            </lightning-menu-item>
+                                            <lightning-menu-item
+                                                value="anotherOrg"
+                                                label={i18n.monitorAnotherOrg}
+                                                title={i18n.monitorAnotherOrgTooltip}
+                                                prefix-icon-name="utility:people">
+                                            </lightning-menu-item>
+                                        </lightning-button-menu>
                                     </lightning-button-group>
                                 </div>
                             </div>
@@ -77,32 +110,6 @@
                                     ></lightning-button>
                                 </div>
                             </template>
-                            <div class="status-actions package-actions">
-                                <lightning-button 
-                                    variant="brand" 
-                                    label={i18n.skipItemsPackage} 
-                                    title={i18n.skipItemsPackageTooltip}
-                                    onclick={viewSkipItemsPackage}
-                                    icon-name="utility:ban"
-                                    class="status-button"
-                                ></lightning-button>
-                                <lightning-button 
-                                    variant="outline-brand" 
-                                    label={i18n.backupItemsPackage} 
-                                    title={i18n.backupItemsPackageTooltip}
-                                    onclick={viewBackupItemsPackage}
-                                    icon-name="utility:save"
-                                    class="status-button"
-                                ></lightning-button>
-                                <lightning-button 
-                                    variant="outline-brand" 
-                                    label={i18n.allOrgItemsPackage} 
-                                    title={i18n.allOrgItemsPackageTooltip}
-                                    onclick={viewAllOrgItemsPackage}
-                                    icon-name="utility:package"
-                                    class="status-button"
-                                ></lightning-button>
-                            </div>
                         </div>
                     </div>
                 </template>

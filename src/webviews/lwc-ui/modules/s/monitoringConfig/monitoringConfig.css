@@ -43,6 +43,7 @@
 
 .category-section {
   margin-bottom: 2rem;
+  position: relative;
 }
 
 .category-header {
@@ -186,6 +187,8 @@
 
 .monitoring-table tbody td {
   text-align: center;
+  position: relative;
+  z-index: 0;
 }
 
 .monitoring-table tbody th {
@@ -196,6 +199,15 @@
   display: inline-block;
   text-align: left;
   width: 100%;
+  position: relative;
+  z-index: 2;
+}
+
+.monitoring-table,
+.monitoring-table tbody,
+.monitoring-table tr,
+.monitoring-table td {
+  overflow: visible;
 }
 
 .monitoring-col-frequency {
@@ -220,6 +232,10 @@
 .monitoring-row-title-text {
   flex: 1;
   min-width: 0;
+}
+
+.monitoring-row-title-bold {
+  font-weight: 700;
 }
 
 .monitoring-row-actions {

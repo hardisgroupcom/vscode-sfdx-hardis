@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Fix Monitoring Config dropdown selections when menu items overlap another table
 - Improve Monitoring Config threshold dropdowns by ordering notification levels by severity
 - Fix "Install Salesforce Extension Pack" button in the Dependencies panel triggering an unauthorized command error instead of opening the extension installer
 - Add **Monitoring Config Workbench**: a new editor (launchable from the Org Monitoring home or from the sidebar) to configure trigger frequency and per-channel notification thresholds (messaging, email, API) for each monitoring command, with support for custom commands, per-command details (day of week, day of month, email recipients), and copying the configuration from another branch in the repository; configuration is saved automatically whenever a value changes

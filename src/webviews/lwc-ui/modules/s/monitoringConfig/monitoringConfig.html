@@ -102,7 +102,7 @@
 
             <!-- Category tables -->
             <template for:each={rowsByCategory} for:item="category">
-                <div key={category.key} class="category-section">
+                <div key={category.key} class="category-section" style={category.sectionStyle}>
                     <div class="category-header">
                         <div class="category-header-content">
                             <div class={category.iconContainerClass}>
@@ -147,7 +147,11 @@
                                             <div class={row.iconContainerClass}>
                                                 <lightning-icon icon-name={row.iconName} size="x-small" variant="inverse"></lightning-icon>
                                             </div>
-                                            <span class="monitoring-row-title-text slds-truncate" title={row.title}>{row.title}</span>
+                                            <span class="monitoring-row-title-text slds-truncate" title={row.title}>
+                                                <template for:each={row.titleSegments} for:item="seg">
+                                                    <span key={seg.idx} class={seg.cssClass}>{seg.text}</span>
+                                                </template>
+                                            </span>
                                         </div>
                                     </th>
                                     <td data-label={i18n.frequencyLabel}>
