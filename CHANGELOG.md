@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## [7.10.1] 2026-05-17
+
+- Rewrite README who was outdated and not reflecting the current state of the extension, with new screenshots and gifs, and a more comprehensive description of features and commands
+
 ## [7.10.0] 2026-05-17
 
 - Features
