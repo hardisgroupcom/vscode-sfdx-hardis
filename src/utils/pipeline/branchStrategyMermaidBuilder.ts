@@ -301,14 +301,10 @@ export class BranchStrategyMermaidBuilder {
           orgLabel = orgLabel.replace(/\.my$/, ""); // Remove .my if present
           orgLabel = orgLabel.replace(/\.salesforce$/, ""); // Remove .salesforce if present
         }
-        let orgClass = "salesforceDev"; // Default to dev
-
-        if (branchAndOrg.orgType === "prod") {
-          orgClass = "salesforceProd";
-        } else {
-          // if (branchAndOrg.orgType === "preprod" || branchAndOrg.orgType === "integration") {
-          orgClass = "salesforceMajor";
-        }
+        const orgClass =
+          branchAndOrg.orgType === "prod"
+            ? "salesforceProd"
+            : "salesforceMajor";
 
         this.salesforceOrgs.push({
           name: branchAndOrg.branchName,

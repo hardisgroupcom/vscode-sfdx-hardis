@@ -448,6 +448,10 @@ export class ThemeUtils {
       "help:commands": { vscode: "list-unordered", hardis: "help.svg" },
       "help:cicd": { vscode: "github-action", hardis: "help.svg" },
       "help:org-monitoring": { vscode: "eye-watch", hardis: "monitoring.svg" },
+      "vscode-sfdx-hardis.showMonitoringConfig": {
+        vscode: "settings-gear",
+        hardis: "configure.svg",
+      },
       question: { vscode: "question", hardis: "help.svg" },
       hardis: { vscode: "info", hardis: "help.svg" },
       "vscode-sfdx-hardis.resetCache": {

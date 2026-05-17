@@ -31,6 +31,7 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
+          package-manager-cache: false
       - run: yarn --frozen-lockfile
       - name: Publish to Visual Studio Marketplace
         uses: HaaLeo/publish-vscode-extension@ca5561daa085dee804bf9f37fe0165785a9b14db # v2
@@ -53,6 +54,7 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
+          package-manager-cache: false
       - run: yarn --frozen-lockfile
       - name: Publish to Open VSX Registry
         uses: HaaLeo/publish-vscode-extension@ca5561daa085dee804bf9f37fe0165785a9b14db # v2

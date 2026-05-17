@@ -1,0 +1,605 @@
+<template>
+    <div class="slds-scope blue-back">
+        <div class="monitoring-config-container">
+            <!-- Header -->
+            <div class="header-section">
+                <div class="header-content">
+                    <div class="header-icon-container teal">
+                        <lightning-icon icon-name="utility:settings" size="medium" variant="inverse"></lightning-icon>
+                    </div>
+                    <div class="header-text">
+                        <h1 class="header-title">{i18n.monitoringConfigWorkbench}</h1>
+                        <p class="header-subtitle">{i18n.monitoringConfigDescription}</p>
+                    </div>
+                    <div class="header-actions">
+                        <lightning-button-group>
+                            <lightning-button
+                                label={i18n.addCustomCommand}
+                                variant="brand"
+                                icon-name="utility:add"
+                                onclick={handleOpenCustomForm}>
+                            </lightning-button>
+                            <lightning-button-menu
+                                label={i18n.copyFromBranch}
+                                icon-name="utility:copy"
+                                variant="border"
+                                alternative-text={i18n.copyFromBranch}
+                                disabled={noBranches}
+                                onselect={handleCopyBranchSelect}>
+                                <template for:each={branchOptions} for:item="branchOpt">
+                                    <lightning-menu-item key={branchOpt.value} value={branchOpt.value} label={branchOpt.label}></lightning-menu-item>
+                                </template>
+                            </lightning-button-menu>
+                            <lightning-button
+                                label={i18n.documentation}
+                                variant="neutral"
+                                icon-name="utility:help"
+                                onclick={handleOpenDocs}>
+                            </lightning-button>
+                        </lightning-button-group>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add Custom Command form -->
+            <template if:true={customFormOpen}>
+                <div class="custom-form slds-box slds-m-bottom_medium">
+                    <h3 class="slds-text-heading_small slds-m-bottom_small">{i18n.addCustomCommand}</h3>
+                    <div class="slds-grid slds-gutters slds-wrap">
+                        <div class="slds-col slds-size_1-of-4">
+                            <lightning-input
+                                label={i18n.customCommandKey}
+                                data-field="key"
+                                value={customRowDraft.key}
+                                onchange={handleCustomFieldChange}
+                                required>
+                            </lightning-input>
+                        </div>
+                        <div class="slds-col slds-size_1-of-4">
+                            <lightning-input
+                                label={i18n.customCommandTitle}
+                                data-field="title"
+                                value={customRowDraft.title}
+                                onchange={handleCustomFieldChange}>
+                            </lightning-input>
+                        </div>
+                        <div class="slds-col slds-size_2-of-4">
+                            <lightning-input
+                                label={i18n.customCommandCommand}
+                                placeholder="sf hardis:org:..."
+                                data-field="command"
+                                value={customRowDraft.command}
+                                onchange={handleCustomFieldChange}
+                                required>
+                            </lightning-input>
+                        </div>
+                        <div class="slds-col slds-size_1-of-4 slds-m-top_small">
+                            <lightning-combobox
+                                label={i18n.frequencyLabel}
+                                data-field="frequency"
+                                value={customRowDraft.frequency}
+                                options={customFormFrequencyOptions}
+                                onchange={handleCustomFieldChange}>
+                            </lightning-combobox>
+                        </div>
+                    </div>
+                    <div class="slds-m-top_medium slds-text-align_right">
+                        <lightning-button
+                            variant="neutral"
+                            label={i18n.cancelLabel}
+                            onclick={handleCustomFormCancel}
+                            class="slds-m-right_small">
+                        </lightning-button>
+                        <lightning-button
+                            variant="brand"
+                            label={i18n.addLabel}
+                            disabled={customFormSaveDisabled}
+                            onclick={handleCustomFormSave}>
+                        </lightning-button>
+                    </div>
+                </div>
+            </template>
+
+            <!-- Category tables -->
+            <template for:each={rowsByCategory} for:item="category">
+                <div key={category.key} class="category-section" style={category.sectionStyle}>
+                    <div class="category-header">
+                        <div class="category-header-content">
+                            <div class={category.iconContainerClass}>
+                                <lightning-icon icon-name={category.icon} size="small" variant="inverse"></lightning-icon>
+                            </div>
+                            <div class="category-header-text">
+                                <h2 class="category-title slds-text-heading_small">{category.title}</h2>
+                                <template if:true={category.description}>
+                                    <p class="category-description slds-text-body_small">{category.description}</p>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                    <table class="slds-table slds-table_bordered slds-table_cell-buffer slds-table_fixed-layout monitoring-table">
+                        <colgroup>
+                            <col class="monitoring-col-command">
+                            <col class="monitoring-col-frequency">
+                            <col class="monitoring-col-channel">
+                            <col class="monitoring-col-channel">
+                            <col class="monitoring-col-channel">
+                            <col class="monitoring-col-actions">
+                        </colgroup>
+                        <thead>
+                            <tr class="slds-line-height_reset">
+                                <th class="slds-text-title_caps monitoring-col-command" scope="col">
+                                    <div class="slds-truncate" title={i18n.commandColumn}>{i18n.commandColumn}</div>
+                                </th>
+                                <th class="slds-text-title_caps monitoring-col-frequency" scope="col">
+                                    <div class="slds-truncate" title={i18n.frequencyLabel}>{i18n.frequencyLabel}</div>
+                                </th>
+                                <th class="slds-text-title_caps monitoring-col-channel" scope="col">
+                                    <div class="slds-truncate" title={i18n.channelMessaging}>{i18n.channelMessaging}</div>
+                                </th>
+                                <th class="slds-text-title_caps monitoring-col-channel" scope="col">
+                                    <div class="slds-truncate" title={i18n.channelEmail}>{i18n.channelEmail}</div>
+                                </th>
+                                <th class="slds-text-title_caps monitoring-col-channel" scope="col">
+                                    <div class="slds-truncate" title={i18n.channelApi}>{i18n.channelApi}</div>
+                                </th>
+                                <th class="slds-text-title_caps monitoring-col-actions" scope="col">
+                                    <div class="slds-assistive-text">{i18n.actionsLabel}</div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template for:each={category.rows} for:item="row">
+                                <template if:true={row.rowKind}>
+                                    <!-- Command row -->
+                                    <template if:false={category.isStandaloneSection}>
+                                        <!-- Merged single-notification command row -->
+                                        <template if:true={row.isMerged}>
+                                            <tr key={row.compositeKey} class="slds-hint-parent monitoring-row-command monitoring-row-merged">
+                                                <th scope="row">
+                                                    <div class="monitoring-row-title">
+                                                        <div class={row.iconContainerClass}>
+                                                            <lightning-icon icon-name={row.iconName} size="x-small" variant="inverse"></lightning-icon>
+                                                        </div>
+                                                        <span class="monitoring-row-title-text slds-truncate" title={row.title}>
+                                                            <template for:each={row.titleSegments} for:item="mseg">
+                                                                <span key={mseg.idx} class={mseg.cssClass}>{mseg.text}</span>
+                                                            </template>
+                                                        </span>
+                                                    </div>
+                                                </th>
+                                                <td data-label={i18n.frequencyLabel}>
+                                                    <lightning-combobox
+                                                        variant="label-hidden"
+                                                        label={i18n.frequencyLabel}
+                                                        value={row.frequency}
+                                                        options={row.frequencyOptions}
+                                                        data-key={row.key}
+                                                        onchange={handleRowFrequencyChange}>
+                                                    </lightning-combobox>
+                                                </td>
+                                                <td data-label={i18n.channelMessaging}>
+                                                    <lightning-combobox
+                                                        variant="label-hidden"
+                                                        label={i18n.channelMessaging}
+                                                        value={row.messaging}
+                                                        options={row.messagingOptions}
+                                                        data-key={row.mergedNotificationKey}
+                                                        onchange={handleNotificationMessagingChange}>
+                                                    </lightning-combobox>
+                                                </td>
+                                                <td data-label={i18n.channelEmail}>
+                                                    <lightning-combobox
+                                                        variant="label-hidden"
+                                                        label={i18n.channelEmail}
+                                                        value={row.email}
+                                                        options={row.emailOptions}
+                                                        data-key={row.mergedNotificationKey}
+                                                        onchange={handleNotificationEmailChange}>
+                                                    </lightning-combobox>
+                                                </td>
+                                                <td data-label={i18n.channelApi}>
+                                                    <lightning-combobox
+                                                        variant="label-hidden"
+                                                        label={i18n.channelApi}
+                                                        value={row.api}
+                                                        options={row.apiOptions}
+                                                        data-key={row.mergedNotificationKey}
+                                                        onchange={handleNotificationApiChange}>
+                                                    </lightning-combobox>
+                                                </td>
+                                                <td class="monitoring-row-actions">
+                                                    <template if:true={row.hasThresholdWarning}>
+                                                        <lightning-icon
+                                                            icon-name="utility:warning"
+                                                            variant="warning"
+                                                            size="x-small"
+                                                            alternative-text={i18n.thresholdOverrideWarning}
+                                                            title={i18n.thresholdOverrideWarning}>
+                                                        </lightning-icon>
+                                                    </template>
+                                                    <lightning-button-icon
+                                                        icon-name="utility:edit"
+                                                        variant="bare"
+                                                        alternative-text={i18n.detailsLabel}
+                                                        title={i18n.detailsLabel}
+                                                        data-cmd-key={row.key}
+                                                        data-notif-key={row.mergedNotificationKey}
+                                                        onclick={handleMergedDetails}>
+                                                    </lightning-button-icon>
+                                                    <template if:true={row.mergedShowReset}>
+                                                        <lightning-button-icon
+                                                            icon-name="utility:undo"
+                                                            variant="bare"
+                                                            alternative-text={i18n.resetToDefault}
+                                                            title={i18n.resetToDefault}
+                                                            data-cmd-key={row.key}
+                                                            data-notif-key={row.mergedNotificationKey}
+                                                            onclick={handleMergedReset}>
+                                                        </lightning-button-icon>
+                                                    </template>
+                                                    <template if:true={row.isCustom}>
+                                                        <lightning-button-icon
+                                                            icon-name="utility:delete"
+                                                            variant="bare"
+                                                            alternative-text={i18n.deleteLabel}
+                                                            title={i18n.deleteLabel}
+                                                            data-key={row.key}
+                                                            onclick={handleRowDelete}>
+                                                        </lightning-button-icon>
+                                                    </template>
+                                                </td>
+                                            </tr>
+                                        </template>
+                                        <!-- Standard command row (no children, or 2+ children) -->
+                                        <template if:false={row.isMerged}>
+                                            <tr key={row.compositeKey} class="slds-hint-parent monitoring-row-command">
+                                                <th scope="row">
+                                                    <div class="monitoring-row-title">
+                                                        <div class={row.iconContainerClass}>
+                                                            <lightning-icon icon-name={row.iconName} size="x-small" variant="inverse"></lightning-icon>
+                                                        </div>
+                                                        <span class="monitoring-row-title-text slds-truncate" title={row.title}>
+                                                            <template for:each={row.titleSegments} for:item="seg">
+                                                                <span key={seg.idx} class={seg.cssClass}>{seg.text}</span>
+                                                            </template>
+                                                        </span>
+                                                    </div>
+                                                </th>
+                                                <td data-label={i18n.frequencyLabel}>
+                                                    <lightning-combobox
+                                                        variant="label-hidden"
+                                                        label={i18n.frequencyLabel}
+                                                        value={row.frequency}
+                                                        options={row.frequencyOptions}
+                                                        data-key={row.key}
+                                                        onchange={handleRowFrequencyChange}>
+                                                    </lightning-combobox>
+                                                </td>
+                                                <td data-label={i18n.channelMessaging} class="monitoring-cell-disabled">
+                                                    <span class="slds-text-color_weak">—</span>
+                                                </td>
+                                                <td data-label={i18n.channelEmail} class="monitoring-cell-disabled">
+                                                    <span class="slds-text-color_weak">—</span>
+                                                </td>
+                                                <td data-label={i18n.channelApi} class="monitoring-cell-disabled">
+                                                    <span class="slds-text-color_weak">—</span>
+                                                </td>
+                                                <td class="monitoring-row-actions">
+                                                    <lightning-button-icon
+                                                        icon-name="utility:edit"
+                                                        variant="bare"
+                                                        alternative-text={i18n.detailsLabel}
+                                                        title={i18n.detailsLabel}
+                                                        data-key={row.key}
+                                                        onclick={handleRowDetails}>
+                                                    </lightning-button-icon>
+                                                    <template if:true={row.showReset}>
+                                                        <lightning-button-icon
+                                                            icon-name="utility:undo"
+                                                            variant="bare"
+                                                            alternative-text={i18n.resetToDefault}
+                                                            title={i18n.resetToDefault}
+                                                            data-key={row.key}
+                                                            onclick={handleRowReset}>
+                                                        </lightning-button-icon>
+                                                    </template>
+                                                    <template if:true={row.isCustom}>
+                                                        <lightning-button-icon
+                                                            icon-name="utility:delete"
+                                                            variant="bare"
+                                                            alternative-text={i18n.deleteLabel}
+                                                            title={i18n.deleteLabel}
+                                                            data-key={row.key}
+                                                            onclick={handleRowDelete}>
+                                                        </lightning-button-icon>
+                                                    </template>
+                                                </td>
+                                            </tr>
+                                        </template>
+                                        <!-- Child notification rows for this command -->
+                                        <template for:each={row.children} for:item="child">
+                                            <tr key={child.compositeKey} class="slds-hint-parent monitoring-row-child">
+                                                <th scope="row">
+                                                    <div class="monitoring-row-title monitoring-row-title--indent">
+                                                        <span class="monitoring-row-child-bullet slds-text-color_weak" aria-hidden="true">↳</span>
+                                                        <div class={child.iconContainerClass}>
+                                                            <lightning-icon icon-name={child.iconName} size="x-small" variant="inverse"></lightning-icon>
+                                                        </div>
+                                                        <span class="monitoring-row-title-text slds-truncate" title={child.title}>
+                                                            <template for:each={child.titleSegments} for:item="cseg">
+                                                                <span key={cseg.idx} class={cseg.cssClass}>{cseg.text}</span>
+                                                            </template>
+                                                        </span>
+                                                    </div>
+                                                </th>
+                                                <td data-label={i18n.frequencyLabel} class="monitoring-cell-disabled">
+                                                    <span class="slds-text-color_weak">—</span>
+                                                </td>
+                                                <td data-label={i18n.channelMessaging}>
+                                                    <lightning-combobox
+                                                        variant="label-hidden"
+                                                        label={i18n.channelMessaging}
+                                                        value={child.messaging}
+                                                        options={child.messagingOptions}
+                                                        data-key={child.key}
+                                                        onchange={handleNotificationMessagingChange}>
+                                                    </lightning-combobox>
+                                                </td>
+                                                <td data-label={i18n.channelEmail}>
+                                                    <lightning-combobox
+                                                        variant="label-hidden"
+                                                        label={i18n.channelEmail}
+                                                        value={child.email}
+                                                        options={child.emailOptions}
+                                                        data-key={child.key}
+                                                        onchange={handleNotificationEmailChange}>
+                                                    </lightning-combobox>
+                                                </td>
+                                                <td data-label={i18n.channelApi}>
+                                                    <lightning-combobox
+                                                        variant="label-hidden"
+                                                        label={i18n.channelApi}
+                                                        value={child.api}
+                                                        options={child.apiOptions}
+                                                        data-key={child.key}
+                                                        onchange={handleNotificationApiChange}>
+                                                    </lightning-combobox>
+                                                </td>
+                                                <td class="monitoring-row-actions">
+                                                    <template if:true={child.hasThresholdWarning}>
+                                                        <lightning-icon
+                                                            icon-name="utility:warning"
+                                                            variant="warning"
+                                                            size="x-small"
+                                                            alternative-text={i18n.thresholdOverrideWarning}
+                                                            title={i18n.thresholdOverrideWarning}>
+                                                        </lightning-icon>
+                                                    </template>
+                                                    <lightning-button-icon
+                                                        icon-name="utility:edit"
+                                                        variant="bare"
+                                                        alternative-text={i18n.detailsLabel}
+                                                        title={i18n.detailsLabel}
+                                                        data-key={child.key}
+                                                        onclick={handleNotificationDetails}>
+                                                    </lightning-button-icon>
+                                                    <template if:true={child.showReset}>
+                                                        <lightning-button-icon
+                                                            icon-name="utility:undo"
+                                                            variant="bare"
+                                                            alternative-text={i18n.resetToDefault}
+                                                            title={i18n.resetToDefault}
+                                                            data-key={child.key}
+                                                            onclick={handleNotificationReset}>
+                                                        </lightning-button-icon>
+                                                    </template>
+                                                </td>
+                                            </tr>
+                                        </template>
+                                    </template>
+
+                                    <!-- Standalone notification row -->
+                                    <template if:true={category.isStandaloneSection}>
+                                        <tr key={row.compositeKey} class="slds-hint-parent">
+                                            <th scope="row">
+                                                <div class="monitoring-row-title">
+                                                    <div class={row.iconContainerClass}>
+                                                        <lightning-icon icon-name={row.iconName} size="x-small" variant="inverse"></lightning-icon>
+                                                    </div>
+                                                    <span class="monitoring-row-title-text slds-truncate" title={row.title}>
+                                                        <template for:each={row.titleSegments} for:item="sseg">
+                                                            <span key={sseg.idx} class={sseg.cssClass}>{sseg.text}</span>
+                                                        </template>
+                                                    </span>
+                                                </div>
+                                            </th>
+                                            <td data-label={i18n.frequencyLabel} class="monitoring-cell-disabled">
+                                                <span class="slds-text-color_weak">—</span>
+                                            </td>
+                                            <td data-label={i18n.channelMessaging}>
+                                                <lightning-combobox
+                                                    variant="label-hidden"
+                                                    label={i18n.channelMessaging}
+                                                    value={row.messaging}
+                                                    options={row.messagingOptions}
+                                                    data-key={row.key}
+                                                    onchange={handleNotificationMessagingChange}>
+                                                </lightning-combobox>
+                                            </td>
+                                            <td data-label={i18n.channelEmail}>
+                                                <lightning-combobox
+                                                    variant="label-hidden"
+                                                    label={i18n.channelEmail}
+                                                    value={row.email}
+                                                    options={row.emailOptions}
+                                                    data-key={row.key}
+                                                    onchange={handleNotificationEmailChange}>
+                                                </lightning-combobox>
+                                            </td>
+                                            <td data-label={i18n.channelApi}>
+                                                <lightning-combobox
+                                                    variant="label-hidden"
+                                                    label={i18n.channelApi}
+                                                    value={row.api}
+                                                    options={row.apiOptions}
+                                                    data-key={row.key}
+                                                    onchange={handleNotificationApiChange}>
+                                                </lightning-combobox>
+                                            </td>
+                                            <td class="monitoring-row-actions">
+                                                <template if:true={row.hasThresholdWarning}>
+                                                    <lightning-icon
+                                                        icon-name="utility:warning"
+                                                        variant="warning"
+                                                        size="x-small"
+                                                        alternative-text={i18n.thresholdOverrideWarning}
+                                                        title={i18n.thresholdOverrideWarning}>
+                                                    </lightning-icon>
+                                                </template>
+                                                <lightning-button-icon
+                                                    icon-name="utility:edit"
+                                                    variant="bare"
+                                                    alternative-text={i18n.detailsLabel}
+                                                    title={i18n.detailsLabel}
+                                                    data-key={row.key}
+                                                    onclick={handleNotificationDetails}>
+                                                </lightning-button-icon>
+                                                <template if:true={row.showReset}>
+                                                    <lightning-button-icon
+                                                        icon-name="utility:undo"
+                                                        variant="bare"
+                                                        alternative-text={i18n.resetToDefault}
+                                                        title={i18n.resetToDefault}
+                                                        data-key={row.key}
+                                                        onclick={handleNotificationReset}>
+                                                    </lightning-button-icon>
+                                                </template>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </template>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </template>
+
+            <!-- Details modal -->
+            <template if:true={modalOpen}>
+                <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+                    <div class="slds-modal__container">
+                        <header class="slds-modal__header">
+                            <button class="slds-button slds-button_icon slds-modal__close" title="Close" onclick={handleModalCancel}>
+                                <lightning-icon icon-name="utility:close" size="small" variant="inverse"></lightning-icon>
+                                <span class="slds-assistive-text">{i18n.closeLabel}</span>
+                            </button>
+                            <h2 class="slds-modal__title slds-hyphenate">{i18n.detailsLabel}: {modalEntry.title}</h2>
+                        </header>
+                        <div class="slds-modal__content slds-p-around_medium">
+                            <template if:true={modalEntry.command}>
+                                <div class="slds-form-element slds-m-bottom_medium">
+                                    <label class="slds-form-element__label">{i18n.commandColumn}</label>
+                                    <div class="slds-form-element__control">
+                                        <div class="modal-command-display slds-text-body_small">
+                                            <code>{modalEntry.command}</code>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                            <template if:true={modalIsCommand}>
+                                <div class="slds-form-element slds-m-bottom_small">
+                                    <lightning-combobox
+                                        label={i18n.frequencyLabel}
+                                        value={modalEntry.frequency}
+                                        options={modalFrequencyOptions}
+                                        onchange={handleModalFrequencyChange}>
+                                    </lightning-combobox>
+                                </div>
+                                <template if:true={modalIsWeekly}>
+                                    <div class="slds-form-element slds-m-bottom_small">
+                                        <lightning-combobox
+                                            label={i18n.frequencyDayLabel}
+                                            value={modalEntry.frequencyDay}
+                                            options={modalFrequencyDayOptions}
+                                            onchange={handleModalFrequencyDayChange}>
+                                        </lightning-combobox>
+                                    </div>
+                                </template>
+                                <template if:true={modalIsMonthly}>
+                                    <div class="slds-form-element slds-m-bottom_small">
+                                        <lightning-input
+                                            type="number"
+                                            min="1"
+                                            max="31"
+                                            label={i18n.frequencyDayOfMonthLabel}
+                                            value={modalEntry.frequencyDayOfMonth}
+                                            onchange={handleModalDayOfMonthChange}>
+                                        </lightning-input>
+                                    </div>
+                                </template>
+                            </template>
+                            <template if:true={modalIsNotification}>
+                                <div class="slds-form-element slds-m-bottom_small">
+                                    <lightning-combobox
+                                        label={i18n.channelMessaging}
+                                        value={modalMessaging}
+                                        options={modalMessagingOptions}
+                                        onchange={handleModalMessagingChange}>
+                                    </lightning-combobox>
+                                </div>
+                                <div class="slds-form-element slds-m-bottom_small">
+                                    <lightning-combobox
+                                        label={i18n.channelEmail}
+                                        value={modalEmail}
+                                        options={modalEmailThresholdOptions}
+                                        onchange={handleModalEmailChange}>
+                                    </lightning-combobox>
+                                </div>
+                                <div class="slds-form-element slds-m-bottom_small">
+                                    <lightning-combobox
+                                        label={i18n.channelApi}
+                                        value={modalApi}
+                                        options={modalApiOptions}
+                                        onchange={handleModalApiChange}>
+                                    </lightning-combobox>
+                                </div>
+                                <div class="slds-form-element slds-m-bottom_small">
+                                    <lightning-textarea
+                                        label={i18n.emailRecipientsLabel}
+                                        placeholder={i18n.emailRecipientsPlaceholder}
+                                        value={modalEmailRecipientsText}
+                                        onchange={handleModalRecipientsChange}>
+                                    </lightning-textarea>
+                                    <p class="slds-form-element__help">{i18n.emailRecipientsHelp}</p>
+                                </div>
+                                <div class="slds-form-element slds-m-bottom_small">
+                                    <lightning-input
+                                        type="checkbox"
+                                        label={i18n.replaceRecipientsLabel}
+                                        checked={modalReplaceRecipients}
+                                        onchange={handleModalReplaceChange}>
+                                    </lightning-input>
+                                    <p class="slds-form-element__help">{i18n.replaceRecipientsHelp}</p>
+                                </div>
+                            </template>
+                        </div>
+                        <footer class="slds-modal__footer">
+                            <lightning-button
+                                variant="neutral"
+                                label={i18n.cancelLabel}
+                                onclick={handleModalCancel}
+                                class="slds-m-right_small">
+                            </lightning-button>
+                            <lightning-button
+                                variant="brand"
+                                label={i18n.applyLabel}
+                                onclick={handleModalSave}>
+                            </lightning-button>
+                        </footer>
+                    </div>
+                </section>
+                <div class="slds-backdrop slds-backdrop_open"></div>
+            </template>
+        </div>
+    </div>
+</template>

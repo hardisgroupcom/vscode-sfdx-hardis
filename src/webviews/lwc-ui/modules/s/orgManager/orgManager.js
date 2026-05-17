@@ -8,7 +8,16 @@ export default class OrgManager extends SharedMixin(LightningElement) {
   @track viewAll = false;
   @track draftValues = [];
   @track validationErrors = [];
+  @track loading = false;
   internalCommands = [];
+
+  get isLoading() {
+    return this.loading === true;
+  }
+
+  get isInitialLoading() {
+    return this.loading === true && (!this.orgs || this.orgs.length === 0);
+  }
 
   get hasSelection() {
     return this.selectedRowKeys && this.selectedRowKeys.length > 0;
@@ -24,6 +33,11 @@ export default class OrgManager extends SharedMixin(LightningElement) {
 
   @api
   initialize(data) {
+    data = data || {};
+    // Update loading flag if provided (used for spinner during initial load and refresh)
+    if (Object.prototype.hasOwnProperty.call(data, "loading")) {
+      this.loading = data.loading === true;
+    }
     this.columns = [
       {
         label: this.t("instanceUrlLabel"),
@@ -86,7 +100,12 @@ export default class OrgManager extends SharedMixin(LightningElement) {
         cellAttributes: { class: { fieldName: "rowClass" } },
       },
     ];
-    this.orgs = (data && data.orgs) || [];
+    // Only refresh the org rows when the payload includes them; a loading-only
+    // update should keep the existing rows visible underneath the spinner.
+    if (!Object.prototype.hasOwnProperty.call(data, "orgs")) {
+      return;
+    }
+    this.orgs = data.orgs || [];
     // Normalize rows: compute connected label/variant and ensure username exists as key
     this.orgs = this.orgs.map((o) => ({
       ...o,

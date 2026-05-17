@@ -23,21 +23,34 @@
             </lightning-button-group>
         </div>
         <div class="slds-m-around_medium">
-            <lightning-datatable
-                key-field="username"
-                data={orgs}
-                column-widths-mode="auto"
-                columns={columns}
-                draft-values={draftValues}
-                oncellchange={handleDraftValuesChange}
-                onsave={handleSaveAliases}
-                oncancel={handleCancelAliasChanges}
-                onrowaction={handleRowAction}
-                onrowselection={handleRowSelection}
-                selected-rows={selectedRowKeys}
-                hide-checkbox-column={hasAliasChanges}
-                class="slds-m-bottom_medium"
-            ></lightning-datatable>
+            <template if:true={isInitialLoading}>
+                <div class="slds-text-align_center slds-p-around_large slds-is-relative org-manager-initial-loading">
+                    <lightning-spinner alternative-text={i18n.loadingSalesforceOrgsShort} size="medium"></lightning-spinner>
+                    <p class="slds-text-body_small slds-text-color_weak slds-m-top_x-large">{i18n.loadingSalesforceOrgsShort}</p>
+                </div>
+            </template>
+            <template if:false={isInitialLoading}>
+                <div class="slds-is-relative">
+                    <template if:true={isLoading}>
+                        <lightning-spinner alternative-text={i18n.loadingSalesforceOrgsShort} size="medium"></lightning-spinner>
+                    </template>
+                    <lightning-datatable
+                        key-field="username"
+                        data={orgs}
+                        column-widths-mode="auto"
+                        columns={columns}
+                        draft-values={draftValues}
+                        oncellchange={handleDraftValuesChange}
+                        onsave={handleSaveAliases}
+                        oncancel={handleCancelAliasChanges}
+                        onrowaction={handleRowAction}
+                        onrowselection={handleRowSelection}
+                        selected-rows={selectedRowKeys}
+                        hide-checkbox-column={hasAliasChanges}
+                        class="slds-m-bottom_medium"
+                    ></lightning-datatable>
+                </div>
+            </template>
             
             <!-- Validation errors display -->
             <template if:true={hasValidationErrors}>

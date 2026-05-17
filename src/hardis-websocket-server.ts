@@ -316,7 +316,7 @@ export class LocalWebSocketServer {
             isPackageXml = content.includes(
               '<Package xmlns="http://soap.sforce.com/2006/04/metadata">',
             );
-          } catch (e) {
+          } catch {
             // ignore read errors
           }
         }

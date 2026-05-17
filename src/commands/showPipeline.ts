@@ -600,7 +600,7 @@ export function registerShowPipeline(commands: Commands) {
           Logger.log(
             `Authenticating to Git provider: ${gitProvider.repoInfo?.providerName} at ${gitProvider.repoInfo?.host}`,
           );
-          let authRes: boolean | null = false;
+          let authRes: boolean | null;
           try {
             authRes = await gitProvider.authenticate();
           } catch (e) {

@@ -259,6 +259,11 @@
         "icon": "$(pulse)"
       },
       {
+        "command": "vscode-sfdx-hardis.showMonitoringConfig",
+        "title": "SFDX Hardis: Monitoring Config Workbench",
+        "icon": "$(settings-gear)"
+      },
+      {
         "command": "vscode-sfdx-hardis.showDataWorkbench",
         "title": "SFDX Hardis: Data Import/Export Workbench",
         "icon": "$(database)"
@@ -650,7 +655,7 @@
   "devDependencies": {
     "@babel/core": "^7.28.0",
     "@babel/preset-env": "^7.28.0",
-    "@eslint/js": "^9.29.0",
+    "@eslint/js": "^10.0.0",
     "@lwc/babel-plugin-component": "^8.25.1",
     "@lwc/engine-dom": "^8.25.1",
     "@lwc/module-resolver": "^8.25.1",
@@ -672,7 +677,7 @@
     "babel-loader": "^10.0.0",
     "copy-webpack-plugin": "^14.0.0",
     "css-loader": "^7.1.2",
-    "eslint": "^9.29.0",
+    "eslint": "^10.0.0",
     "glob": "^13.0.6",
     "lru-cache": "^7.18.3",
     "lwc": "^8.25.1",

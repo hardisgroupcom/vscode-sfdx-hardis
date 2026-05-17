@@ -352,7 +352,7 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
     const upgradeAvailableText = t("upgradeAvailableSuffix");
     if (sfdxCliVersion !== recommendedSfdxCliVersion) {
       // Check if sfdx is installed using npm and not the windows installer
-      let sfdxPath = "";
+      let sfdxPath: string;
       try {
         sfdxPath = await which("sf");
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -725,7 +725,7 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
         const installExtensionLabel = t("installVsCodeExtension", {
           name: extension.label,
         });
-        extensionItem.command = `code --install-extension ${extension.id}`;
+        extensionItem.command = `workbench.extensions.installExtension ${extension.id}`;
         extensionItem.tooltip = t("clickToInstallVsCodeExtension", {
           name: extension.label,
         });
@@ -738,8 +738,8 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
           .then((selection) => {
             if (selection === installExtensionLabel) {
               vscode.commands.executeCommand(
-                "vscode-sfdx-hardis.execute-command",
-                extensionItem.command,
+                "workbench.extensions.installExtension",
+                extension.id,
               );
             }
           });
@@ -854,7 +854,10 @@ class StatusTreeItem extends vscode.TreeItem {
       this.tooltip = options.tooltip;
     }
     if (hardisCommand !== "" && hardisCommand !== null) {
-      if (hardisCommand.startsWith("vscode-sfdx-hardis")) {
+      if (
+        hardisCommand.startsWith("vscode-sfdx-hardis") ||
+        hardisCommand.startsWith("workbench.extensions.installExtension")
+      ) {
         this.command = {
           title: label,
           command: hardisCommand.split(" ")[0],
