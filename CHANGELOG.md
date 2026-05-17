@@ -6,6 +6,7 @@
 - The **Org Monitoring** home page now picks up monitoring commands and categories directly from the sfdx-hardis CLI, so new commands appear without an extension update; click **Refresh** in the header to pull the latest list immediately
 - Add two new Pipeline Settings (Deployment tab): **Manual Actions Mode** (suppress the warning when not using an external manual actions file) and **Org Authentication Mode** (suppress the certificate warning when using CI/CD environment secrets instead of committed key files)
 - Add **Labels for available PR/MR target branches** field in Pipeline Settings (User Stories tab), shown below the target branches list
+- **Org Manager** now opens instantly and lazy-loads the org list, showing an in-panel spinner during the initial load and as an overlay during refresh/forget/alias-save reloads (replaces the previous VS Code progress toast)
 - Fix "Install Salesforce Extension Pack" button in the Dependencies panel triggering an unauthorized command error instead of opening the extension installer
 
 ## [7.9.0] 2026-05-10

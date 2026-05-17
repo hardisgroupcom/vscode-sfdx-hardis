@@ -9,7 +9,6 @@ import { t } from "../i18n/i18n";
 let loadOrgsInProgressPromise: Thenable<any> | null = null;
 let loadOrgsQueue: Array<{
   all: boolean;
-  title?: string;
   resolve: (value: any) => void;
   reject: (error: any) => void;
 }> = [];
@@ -20,24 +19,50 @@ export function registerShowOrgsManager(commandThis: Commands) {
     async () => {
       const lwcManager = LwcPanelManager.getInstance();
       let orgs: any = [];
-      // Load orgs using orgUtils
       try {
-        orgs = await loadOrgsWithProgress(false, t("loadingSalesforceOrgs"));
-
+        // Open the panel immediately with a loading flag so the LWC can render
+        // a spinner while orgs are fetched asynchronously.
         const panel = lwcManager.getOrCreatePanel("s-org-manager", {
-          orgs: orgs,
+          orgs: [],
+          loading: true,
         });
         panel.updateTitle(t("orgsManager"));
 
         // Track the last requested 'all' flag so it persists between operations
         let currentAllFlag = false;
 
+        // Kick off the initial load in the background; the spinner stays up
+        // until the orgs are sent to the panel.
+        loadOrgsWithProgress(false, t("loadingSalesforceOrgs"))
+          .then((loadedOrgs) => {
+            orgs = loadedOrgs;
+            panel.sendInitializationData({
+              orgs: [...orgs],
+              loading: false,
+            });
+          })
+          .catch((error: any) => {
+            panel.sendInitializationData({ orgs: [], loading: false });
+            vscode.window.showErrorMessage(
+              t("failedToOpenOrgManager", { error: error?.message || error }),
+            );
+          });
+
         panel.onMessage(async (type: string, data: any) => {
           if (type === "refreshOrgsFromUi") {
             const allFlag = !!(data && data.all === true);
             currentAllFlag = allFlag;
-            orgs = await loadOrgsWithProgress(allFlag);
-            panel.sendInitializationData({ orgs: [...orgs] });
+            panel.sendInitializationData({ loading: true });
+            try {
+              orgs = await loadOrgsWithProgress(allFlag);
+              panel.sendInitializationData({
+                orgs: [...orgs],
+                loading: false,
+              });
+            } catch (error: any) {
+              panel.sendInitializationData({ loading: false });
+              throw error;
+            }
           } else if (type === "connectOrg") {
             // run hardis:org:select to reconnect a disconnected org
             const username = data.username;
@@ -63,13 +88,17 @@ export function registerShowOrgsManager(commandThis: Commands) {
               );
 
               // send back result and refresh list
+              panel.sendInitializationData({ loading: true });
               setTimeout(async () => {
                 orgs = await loadOrgsWithProgress(
                   currentAllFlag,
                   undefined,
                   true,
                 );
-                panel.sendInitializationData({ orgs: [...orgs] });
+                panel.sendInitializationData({
+                  orgs: [...orgs],
+                  loading: false,
+                });
                 vscode.window.showInformationMessage(
                   t("forgotNOrgs", { count: result.successUsernames.length }),
                 );
@@ -116,13 +145,17 @@ export function registerShowOrgsManager(commandThis: Commands) {
                 }),
               );
               /* jscpd:ignore-start */
+              panel.sendInitializationData({ loading: true });
               setTimeout(async () => {
                 orgs = await loadOrgsWithProgress(
                   currentAllFlag,
                   undefined,
                   true,
                 );
-                panel.sendInitializationData({ orgs: [...orgs] });
+                panel.sendInitializationData({
+                  orgs: [...orgs],
+                  loading: false,
+                });
               }, 1000);
             } catch (error: any) {
               vscode.window.showErrorMessage(
@@ -185,13 +218,17 @@ export function registerShowOrgsManager(commandThis: Commands) {
 
               /* jscpd:ignore start */
               // Refresh the orgs list to show the updated aliases
+              panel.sendInitializationData({ loading: true });
               setTimeout(async () => {
                 orgs = await loadOrgsWithProgress(
                   currentAllFlag,
                   undefined,
                   true,
                 );
-                panel.sendInitializationData({ orgs: [...orgs] });
+                panel.sendInitializationData({
+                  orgs: [...orgs],
+                  loading: false,
+                });
               }, 1000);
             } catch (error: any) {
               vscode.window.showErrorMessage(
@@ -260,16 +297,17 @@ async function forgetOrgsWithProgress(usernames: string[], title: string) {
   );
 }
 
-// Helper: load orgs with a progress notification; preserves return value from listAllOrgs(all)
-// Prevents multiple simultaneous progress notifications by queuing requests
+// Helper: load orgs without a VS Code progress notification (the org manager
+// LWC renders its own spinner). Deduplicates concurrent requests via a queue.
 async function loadOrgsWithProgress(
   all: boolean = false,
-  title?: string,
+  _title?: string,
   forceReload: boolean = false,
 ): Promise<any> {
+  void _title;
   return new Promise((resolve, reject) => {
     // Add this request to the queue
-    loadOrgsQueue.push({ all, title, resolve, reject });
+    loadOrgsQueue.push({ all, resolve, reject });
 
     // If forceReload is true, cancel any in-progress operation and force a new load
     if (forceReload && loadOrgsInProgressPromise) {
@@ -298,23 +336,7 @@ async function processLoadOrgsQueue(): Promise<void> {
   const allQueuedRequests = [...loadOrgsQueue];
   loadOrgsQueue = []; // Clear the queue
 
-  const title =
-    latestRequest.title ||
-    (latestRequest.all
-      ? t("loadingAllSalesforceOrgs")
-      : t("loadingSalesforceOrgsShort"));
-
-  // Create the progress notification with the latest request's parameters
-  loadOrgsInProgressPromise = vscode.window.withProgress(
-    {
-      location: vscode.ProgressLocation.Notification,
-      title: title,
-      cancellable: false,
-    },
-    async () => {
-      return await listAllOrgs(latestRequest.all);
-    },
-  );
+  loadOrgsInProgressPromise = listAllOrgs(latestRequest.all);
 
   try {
     // Wait for the actual loading to complete
