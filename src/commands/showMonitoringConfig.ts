@@ -81,37 +81,39 @@ export function registerShowMonitoringConfig(commands: Commands) {
             },
           });
         } catch (error: any) {
-          Logger.log("Error reloading monitoring config on branch change: " + error?.message);
+          Logger.log(
+            "Error reloading monitoring config on branch change: " +
+              error?.message,
+          );
         }
       });
-      LwcPanelManager.getInstance().setDisposalCallback("s-monitoring-config", () => {
-        _gitHeadWatcher?.dispose();
-        _gitHeadWatcher = null;
-      });
+      LwcPanelManager.getInstance().setDisposalCallback(
+        "s-monitoring-config",
+        () => {
+          _gitHeadWatcher?.dispose();
+          _gitHeadWatcher = null;
+        },
+      );
 
       panel.onMessage(async (type: string, data: any) => {
         switch (type) {
           case "saveMonitoringConfig": {
             try {
-              const monitoringCommands: MonitoringCommandEntry[] = Array.isArray(
-                data?.monitoringCommands,
-              )
-                ? data.monitoringCommands
-                : [];
-              const notificationConfig: NotificationConfigEntry[] = Array.isArray(
-                data?.notificationConfig,
-              )
-                ? data.notificationConfig
-                : [];
+              const monitoringCommands: MonitoringCommandEntry[] =
+                Array.isArray(data?.monitoringCommands)
+                  ? data.monitoringCommands
+                  : [];
+              const notificationConfig: NotificationConfigEntry[] =
+                Array.isArray(data?.notificationConfig)
+                  ? data.notificationConfig
+                  : [];
               const payload: MonitoringUserConfig = {
                 monitoringCommands,
                 notificationConfig,
               };
               await saveMonitoringConfig(payload);
             } catch (error: any) {
-              Logger.log(
-                "Error saving monitoring config: " + error?.message,
-              );
+              Logger.log("Error saving monitoring config: " + error?.message);
               vscode.window.showErrorMessage(
                 t("monitoringConfigSaveError", {
                   error: error?.message || String(error),

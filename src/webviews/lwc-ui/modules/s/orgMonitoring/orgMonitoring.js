@@ -111,8 +111,7 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
         this.catalogLoading = true;
         this.catalog = null;
       }
-    }
-    else if (type === "monitoringCatalogLoaded") {
+    } else if (type === "monitoringCatalogLoaded") {
       this.catalog = data?.catalog || null;
       this.catalogLoading = false;
       this._catalogReceived = true;
@@ -168,7 +167,9 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
     // Collected per category first so EXTRA_COMMANDS declaration order is
     // preserved when prepended in front of the catalog entries.
     const catalogCommands = new Set(
-      (this.catalog.monitoringCommands || []).map((e) => e.command).filter(Boolean),
+      (this.catalog.monitoringCommands || [])
+        .map((e) => e.command)
+        .filter(Boolean),
     );
     const extrasByCategory = {};
     for (const extra of EXTRA_COMMANDS) {
@@ -228,11 +229,15 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
   // (`categories[].colorClass`); the only pseudo-category here is "custom", which falls back
   // to the local CATEGORY_ICONS map.
   colorClassForCategory(categoryKey) {
-    const fromCatalog = (this.catalog?.categories || []).find((c) => c && c.key === categoryKey);
+    const fromCatalog = (this.catalog?.categories || []).find(
+      (c) => c && c.key === categoryKey,
+    );
     if (fromCatalog && fromCatalog.colorClass) {
       return fromCatalog.colorClass;
     }
-    return CATEGORY_ICONS[categoryKey]?.colorClass || DEFAULT_CATEGORY_COLOR_CLASS;
+    return (
+      CATEGORY_ICONS[categoryKey]?.colorClass || DEFAULT_CATEGORY_COLOR_CLASS
+    );
   }
 
   // ----- User-facing actions -----
@@ -331,8 +336,7 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
     const value = event.detail.value;
     if (value === "reconfigure") {
       this.reconfigureMonitoringAuth();
-    }
-    else if (value === "anotherOrg") {
+    } else if (value === "anotherOrg") {
       this.configureAnotherOrg();
     }
   }
@@ -341,11 +345,9 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
     const value = event.detail.value;
     if (value === "skip") {
       this.viewSkipItemsPackage();
-    }
-    else if (value === "backup") {
+    } else if (value === "backup") {
       this.viewBackupItemsPackage();
-    }
-    else if (value === "all-org") {
+    } else if (value === "all-org") {
       this.viewAllOrgItemsPackage();
     }
   }

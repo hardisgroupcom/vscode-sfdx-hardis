@@ -278,7 +278,10 @@ export async function listAvailableBranches(): Promise<string[]> {
       "refs/heads",
       "refs/remotes/origin",
     ]);
-    const freshestByLogical = new Map<string, { ref: string; timestamp: number }>();
+    const freshestByLogical = new Map<
+      string,
+      { ref: string; timestamp: number }
+    >();
     for (const line of out.split(/\r?\n/)) {
       const trimmed = line.trim();
       if (!trimmed || trimmed.endsWith("/HEAD")) {
@@ -286,8 +289,11 @@ export async function listAvailableBranches(): Promise<string[]> {
       }
       const sep = trimmed.lastIndexOf("|");
       const ref = sep === -1 ? trimmed : trimmed.slice(0, sep);
-      const timestamp = sep === -1 ? 0 : parseInt(trimmed.slice(sep + 1), 10) || 0;
-      const logical = ref.startsWith("origin/") ? ref.slice("origin/".length) : ref;
+      const timestamp =
+        sep === -1 ? 0 : parseInt(trimmed.slice(sep + 1), 10) || 0;
+      const logical = ref.startsWith("origin/")
+        ? ref.slice("origin/".length)
+        : ref;
       if (!logical.toLowerCase().startsWith("monitoring")) {
         continue;
       }
@@ -315,22 +321,27 @@ export async function saveMonitoringConfig(
   let existing: Record<string, any> = {};
   if (await fs.pathExists(configPath)) {
     try {
-      existing = (yaml.load(await fs.readFile(configPath, "utf8")) as any) || {};
+      existing =
+        (yaml.load(await fs.readFile(configPath, "utf8")) as any) || {};
     } catch (e) {
       Logger.log(`Error parsing existing ${configPath}: ${e}`);
       existing = {};
     }
   }
-  if (Array.isArray(config.monitoringCommands) && config.monitoringCommands.length > 0) {
+  if (
+    Array.isArray(config.monitoringCommands) &&
+    config.monitoringCommands.length > 0
+  ) {
     existing.monitoringCommands = config.monitoringCommands;
-  }
-  else {
+  } else {
     delete existing.monitoringCommands;
   }
-  if (Array.isArray(config.notificationConfig) && config.notificationConfig.length > 0) {
+  if (
+    Array.isArray(config.notificationConfig) &&
+    config.notificationConfig.length > 0
+  ) {
     existing.notificationConfig = config.notificationConfig;
-  }
-  else {
+  } else {
     delete existing.notificationConfig;
   }
   await fs.ensureDir(path.dirname(configPath));

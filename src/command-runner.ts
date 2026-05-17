@@ -470,7 +470,10 @@ export class CommandRunner {
     try {
       childProcess = spawn(command!, commandParts.slice(1), spawnOptions);
     } catch (e) {
-      const msg = (e && typeof e === "object" && "message" in e) ? (e as any).message : String(e);
+      const msg =
+        e && typeof e === "object" && "message" in e
+          ? (e as any).message
+          : String(e);
       vscode.window.showErrorMessage(t("failedToStartCommand", { msg }));
       return;
     }

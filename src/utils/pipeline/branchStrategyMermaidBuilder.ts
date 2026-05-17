@@ -301,7 +301,10 @@ export class BranchStrategyMermaidBuilder {
           orgLabel = orgLabel.replace(/\.my$/, ""); // Remove .my if present
           orgLabel = orgLabel.replace(/\.salesforce$/, ""); // Remove .salesforce if present
         }
-        const orgClass = branchAndOrg.orgType === "prod" ? "salesforceProd" : "salesforceMajor";
+        const orgClass =
+          branchAndOrg.orgType === "prod"
+            ? "salesforceProd"
+            : "salesforceMajor";
 
         this.salesforceOrgs.push({
           name: branchAndOrg.branchName,

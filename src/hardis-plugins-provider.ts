@@ -854,7 +854,10 @@ class StatusTreeItem extends vscode.TreeItem {
       this.tooltip = options.tooltip;
     }
     if (hardisCommand !== "" && hardisCommand !== null) {
-      if (hardisCommand.startsWith("vscode-sfdx-hardis") || hardisCommand.startsWith("workbench.extensions.installExtension")) {
+      if (
+        hardisCommand.startsWith("vscode-sfdx-hardis") ||
+        hardisCommand.startsWith("workbench.extensions.installExtension")
+      ) {
         this.command = {
           title: label,
           command: hardisCommand.split(" ")[0],

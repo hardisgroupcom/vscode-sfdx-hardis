@@ -49,10 +49,10 @@ The CLI payload (`sf hardis:config:monitoring-defaults --json`) is split into tw
 
 `notificationConfig[].availableThresholds` is the per-type allow-list driving the threshold dropdowns in the Workbench. **Always use it as the option source for messaging / email / api selectors**, not the global `options.thresholds`. When a saved user override under `notificationConfig:` in `.sfdx-hardis.yml` falls outside this list, the row renders a warning icon — the override is preserved but it behaves as `off` at runtime. If `availableThresholds` is missing from a payload (older CLI), `monitoringConfig.js` falls back to `options.thresholds`.
 
-| List | Carries | Org Monitoring home (Run cards) | Monitoring Config Workbench |
-|---|---|---|---|
+| List                   | Carries                                                    | Org Monitoring home (Run cards)                              | Monitoring Config Workbench                                                                                                                             |
+|------------------------|------------------------------------------------------------|--------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `monitoringCommands[]` | `command`, `frequency`, `notificationTypes[]` (cross-refs) | Shown — user can launch it. Frequency is metadata only here. | Shown — frequency editable. **No threshold editors on the command row itself.** Each command expands into sub-rows for the notification types it emits. |
-| `notificationConfig[]` | `notifications.{messaging,email,api}` thresholds | **Hidden** — no `command`, not runnable. | Sub-rows beneath a command (when referenced via `notificationTypes`) OR a final **Standalone notifications** section (when referenced by no command). |
+| `notificationConfig[]` | `notifications.{messaging,email,api}` thresholds           | **Hidden** — no `command`, not runnable.                     | Sub-rows beneath a command (when referenced via `notificationTypes`) OR a final **Standalone notifications** section (when referenced by no command).   |
 
 Rules:
 - `orgMonitoring.js`'s `categorySections` iterates `catalog.monitoringCommands` directly and requires `entry.command` to be truthy — there's nothing else to filter.
@@ -85,7 +85,7 @@ Rules:
 3. **Add i18n keys to all 9 locale files** (`src/i18n/en.json`, `fr.json`, `es.json`, `de.json`, `it.json`, `nl.json`, `ja.json`, `pl.json`, `pt-BR.json`) for the tree entry only:
    - `<labelKey>` — short, action-oriented label shown in the tree (e.g. `"Detect Suspicious Audit Trail Activities"`)
    - `<tooltipKey>` — one-sentence explanation of what the command does
-   
+
    Keep keys in alphabetical order, flat JSON, camelCase. Use existing audit-trail / health-check entries as a reference for tone in each language. Follow the language-specific style rules in `CLAUDE.md` (formal "vous" in French, formal "Sie" in German, informal "tu" in Italian, etc.). Reuse upstream sfdx-hardis terminology where it exists. **No card-specific keys are needed** — the Org Monitoring LWC reads its card title and description directly from the CLI catalog.
 
 4. **(Recommended) Add icon mappings.** Both the Org Monitoring home LWC and the Monitoring Config Workbench have a `COMMAND_ICONS` map at the top of their JS file. Add an entry keyed by the CLI catalog `entries[].key` (UPPER_SNAKE_CASE) to both:
@@ -94,7 +94,7 @@ Rules:
    ```javascript
    <CATALOG_KEY>: { icon: "utility:<sldsIconName>", colorClass: "<existing-class>" },
    ```
-   Pick an SLDS utility icon (https://www.lightningdesignsystem.com/icons/) and reuse one of the existing `colorClass` values for category coherence. If you omit this, both surfaces fall back to `DEFAULT_ICON` (gear) — functional but visually generic. The two maps should stay in sync; if you're adding many commands at once, factor them into a shared module rather than copying entries.
+   Pick an SLDS utility icon (<https://www.lightningdesignsystem.com/icons/>) and reuse one of the existing `colorClass` values for category coherence. If you omit this, both surfaces fall back to `DEFAULT_ICON` (gear) — functional but visually generic. The two maps should stay in sync; if you're adding many commands at once, factor them into a shared module rather than copying entries.
 
 5. **(Optional) Add a tree-view icon mapping.** Edit `src/utils/themeUtils.ts` in `getAllCommandIcons()` and add an entry keyed by the command id:
    ```typescript
@@ -148,13 +148,13 @@ Hard rules:
 
 ## Quick reference — files to touch
 
-| File | Required? | Why |
-|---|---|---|
-| `src/hardis-commands-provider.ts` (org-monitoring topic) | **Required** | Tree menu entry |
-| `src/i18n/*.json` (all 9 locales) | **Required** | Tree entry label + tooltip translations |
-| `src/webviews/lwc-ui/modules/s/orgMonitoring/orgMonitoring.js` (`COMMAND_ICONS`) | Recommended | Per-command icon on the Org Monitoring home cards |
-| `src/webviews/lwc-ui/modules/s/monitoringConfig/monitoringConfig.js` (`COMMAND_ICONS`) | Recommended | Per-command icon in the Config Workbench rows |
-| `src/utils/themeUtils.ts` (`getAllCommandIcons`) | Optional | Tree view icon |
-| `CHANGELOG.md` (`## Unreleased`, merged) | Recommended | User-visible release note |
-| sfdx-hardis CLI plugin (external) | **Required for LWCs** | Catalog source of truth — provides `key`, `title`, `description`, `command`, `category` |
-| `orgMonitoring.js` / `orgMonitoring.html` (card markup) | **DO NOT EDIT** | Cards are generated from the CLI catalog — no per-command HTML or JS handler |
+| File                                                                                   | Required?             | Why                                                                                     |
+|----------------------------------------------------------------------------------------|-----------------------|-----------------------------------------------------------------------------------------|
+| `src/hardis-commands-provider.ts` (org-monitoring topic)                               | **Required**          | Tree menu entry                                                                         |
+| `src/i18n/*.json` (all 9 locales)                                                      | **Required**          | Tree entry label + tooltip translations                                                 |
+| `src/webviews/lwc-ui/modules/s/orgMonitoring/orgMonitoring.js` (`COMMAND_ICONS`)       | Recommended           | Per-command icon on the Org Monitoring home cards                                       |
+| `src/webviews/lwc-ui/modules/s/monitoringConfig/monitoringConfig.js` (`COMMAND_ICONS`) | Recommended           | Per-command icon in the Config Workbench rows                                           |
+| `src/utils/themeUtils.ts` (`getAllCommandIcons`)                                       | Optional              | Tree view icon                                                                          |
+| `CHANGELOG.md` (`## Unreleased`, merged)                                               | Recommended           | User-visible release note                                                               |
+| sfdx-hardis CLI plugin (external)                                                      | **Required for LWCs** | Catalog source of truth — provides `key`, `title`, `description`, `command`, `category` |
+| `orgMonitoring.js` / `orgMonitoring.html` (card markup)                                | **DO NOT EDIT**       | Cards are generated from the CLI catalog — no per-command HTML or JS handler            |

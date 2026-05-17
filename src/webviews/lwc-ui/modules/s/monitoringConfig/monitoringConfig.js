@@ -40,7 +40,12 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
     monitoringCommands: [],
     notificationConfig: [],
     categories: [],
-    options: { frequencies: [], frequencyDays: [], thresholds: [], channels: [] },
+    options: {
+      frequencies: [],
+      frequencyDays: [],
+      thresholds: [],
+      channels: [],
+    },
   };
   @track userCommands = [];
   @track userNotifications = [];
@@ -68,7 +73,9 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
       this.userCommands = JSON.parse(JSON.stringify(data.monitoringCommands));
     }
     if (Array.isArray(data?.notificationConfig)) {
-      this.userNotifications = JSON.parse(JSON.stringify(data.notificationConfig));
+      this.userNotifications = JSON.parse(
+        JSON.stringify(data.notificationConfig),
+      );
     }
     if (Array.isArray(data?.branches)) {
       this.branches = data.branches;
@@ -84,16 +91,19 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
   @api
   handleMessage(type, data) {
     if (type === "branchConfigLoaded") {
-      const cmds = Array.isArray(data?.monitoringCommands) ? data.monitoringCommands : [];
-      const notifs = Array.isArray(data?.notificationConfig) ? data.notificationConfig : [];
+      const cmds = Array.isArray(data?.monitoringCommands)
+        ? data.monitoringCommands
+        : [];
+      const notifs = Array.isArray(data?.notificationConfig)
+        ? data.notificationConfig
+        : [];
       if (cmds.length === 0 && notifs.length === 0) {
         return;
       }
       this.userCommands = JSON.parse(JSON.stringify(cmds));
       this.userNotifications = JSON.parse(JSON.stringify(notifs));
       this._autoSave();
-    }
-    else if (type === "branchChanged") {
+    } else if (type === "branchChanged") {
       if (typeof data?.currentBranch === "string") {
         this.currentBranch = data.currentBranch;
       }
@@ -101,7 +111,9 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
         this.userCommands = JSON.parse(JSON.stringify(data.monitoringCommands));
       }
       if (Array.isArray(data?.notificationConfig)) {
-        this.userNotifications = JSON.parse(JSON.stringify(data.notificationConfig));
+        this.userNotifications = JSON.parse(
+          JSON.stringify(data.notificationConfig),
+        );
       }
       this.modalOpen = false;
       this.modalEntry = null;
@@ -110,10 +122,19 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
 
   normalizeCatalog(raw) {
     return {
-      monitoringCommands: Array.isArray(raw.monitoringCommands) ? raw.monitoringCommands : [],
-      notificationConfig: Array.isArray(raw.notificationConfig) ? raw.notificationConfig : [],
+      monitoringCommands: Array.isArray(raw.monitoringCommands)
+        ? raw.monitoringCommands
+        : [],
+      notificationConfig: Array.isArray(raw.notificationConfig)
+        ? raw.notificationConfig
+        : [],
       categories: Array.isArray(raw.categories) ? raw.categories : [],
-      options: raw.options || { frequencies: [], frequencyDays: [], thresholds: [], channels: [] },
+      options: raw.options || {
+        frequencies: [],
+        frequencyDays: [],
+        thresholds: [],
+        channels: [],
+      },
     };
   }
 
@@ -180,11 +201,15 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
   // (`categories[].colorClass`); pseudo-categories ("custom", "standalone") are UI-only and
   // fall back to the local CATEGORY_ICONS map.
   colorClassForCategory(categoryKey) {
-    const fromCatalog = (this.catalog?.categories || []).find((c) => c && c.key === categoryKey);
+    const fromCatalog = (this.catalog?.categories || []).find(
+      (c) => c && c.key === categoryKey,
+    );
     if (fromCatalog && fromCatalog.colorClass) {
       return fromCatalog.colorClass;
     }
-    return CATEGORY_ICONS[categoryKey]?.colorClass || DEFAULT_CATEGORY_COLOR_CLASS;
+    return (
+      CATEGORY_ICONS[categoryKey]?.colorClass || DEFAULT_CATEGORY_COLOR_CLASS
+    );
   }
 
   parseTitleSegments(title) {
@@ -235,7 +260,9 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
     const colorClass =
       (catalogEntry && catalogEntry.colorClass) ||
       this.colorClassForCategory(categoryKey);
-    const rawTitle = isCustom ? (userEntry.title || userEntry.key) : catalogEntry.title;
+    const rawTitle = isCustom
+      ? userEntry.title || userEntry.key
+      : catalogEntry.title;
     const title = (rawTitle || "").replace(/\*\*/g, "");
     const frequencyOptions = this.catalog?.options?.frequencies || [];
     const effectiveFrequency =
@@ -250,7 +277,7 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
       isCustom,
       title,
       titleSegments: this.parseTitleSegments(rawTitle),
-      command: isCustom ? (userEntry.command || "") : (catalogEntry.command || ""),
+      command: isCustom ? userEntry.command || "" : catalogEntry.command || "",
       iconName,
       iconContainerClass: "command-icon-container " + colorClass,
       frequency: effectiveFrequency,
@@ -266,13 +293,20 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
     const iconName = catalogEntry.icon || FALLBACK_ICON_NAME;
     // Prefer the catalog-supplied per-notification colorClass; fall back to the category one.
     const colorClass =
-      catalogEntry.colorClass || this.colorClassForCategory(catalogEntry.category);
+      catalogEntry.colorClass ||
+      this.colorClassForCategory(catalogEntry.category);
     const rawTitle = catalogEntry.title || key;
     const title = (rawTitle || "").replace(/\*\*/g, "");
     const thresholds = this.getAvailableThresholds(catalogEntry);
-    const effective = this.resolveNotificationThresholds(catalogEntry, userEntry);
+    const effective = this.resolveNotificationThresholds(
+      catalogEntry,
+      userEntry,
+    );
     const hasOverrides = this.notificationHasOverrides(userEntry);
-    const hasThresholdWarning = this.detectThresholdWarning(userEntry, thresholds);
+    const hasThresholdWarning = this.detectThresholdWarning(
+      userEntry,
+      thresholds,
+    );
     return {
       rowKind: "notification",
       key,
@@ -308,7 +342,12 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
   }
 
   detectThresholdWarning(userEntry, available) {
-    if (!userEntry || !userEntry.notifications || !Array.isArray(available) || available.length === 0) {
+    if (
+      !userEntry ||
+      !userEntry.notifications ||
+      !Array.isArray(available) ||
+      available.length === 0
+    ) {
       return false;
     }
     const allowed = new Set(available);
@@ -333,7 +372,9 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
     const userNotifs = (userEntry && userEntry.notifications) || {};
     const emailUser = userNotifs.email;
     const emailValue =
-      emailUser && typeof emailUser === "object" ? emailUser.threshold : emailUser;
+      emailUser && typeof emailUser === "object"
+        ? emailUser.threshold
+        : emailUser;
     return {
       messaging: userNotifs.messaging || catNotifs.messaging || "info",
       email: emailValue || catNotifs.email || "info",
@@ -349,7 +390,8 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
       userEntry.frequency !== undefined ||
       userEntry.frequencyDay !== undefined ||
       userEntry.frequencyDayOfMonth !== undefined ||
-      (Array.isArray(userEntry.notificationTypes) && userEntry.notificationTypes.length > 0)
+      (Array.isArray(userEntry.notificationTypes) &&
+        userEntry.notificationTypes.length > 0)
     );
   }
 
@@ -404,7 +446,11 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
         }
         boundNotificationKeys.add(notifKey);
         row.children.push(
-          this.buildNotificationRow(notifCatalog, userNotifMap[notifKey] || {}, cmd.key),
+          this.buildNotificationRow(
+            notifCatalog,
+            userNotifMap[notifKey] || {},
+            cmd.key,
+          ),
         );
       }
       rowsByCat[catKey].push(row);
@@ -434,7 +480,8 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
       // a generic glyph if nothing else is available.
       const catalogIcon = cat.icon;
       const localData = CATEGORY_ICONS[cat.key];
-      const catIcon = catalogIcon || (localData && localData.icon) || FALLBACK_ICON_NAME;
+      const catIcon =
+        catalogIcon || (localData && localData.icon) || FALLBACK_ICON_NAME;
       const catColorClass =
         cat.colorClass || this.colorClassForCategory(cat.key);
       result.push({
@@ -458,7 +505,8 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
       // If the user did not pin specific notification types on this custom
       // command, assume it emits a single notification keyed by the command
       // itself (so author-implemented channels are configurable in the UI).
-      const notifKeys = explicitTypes.length > 0 ? explicitTypes : [userCmd.key];
+      const notifKeys =
+        explicitTypes.length > 0 ? explicitTypes : [userCmd.key];
       for (const notifKey of notifKeys) {
         const notifCatalog = notifDefaults[notifKey];
         if (!notifCatalog) {
@@ -466,7 +514,11 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
         }
         boundNotificationKeys.add(notifKey);
         row.children.push(
-          this.buildNotificationRow(notifCatalog, userNotifMap[notifKey] || {}, userCmd.key),
+          this.buildNotificationRow(
+            notifCatalog,
+            userNotifMap[notifKey] || {},
+            userCmd.key,
+          ),
         );
       }
       customRows.push(row);
@@ -479,7 +531,8 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
         description: "",
         icon: customIconData.icon,
         iconContainerClass:
-          "command-icon-container command-icon-container--lg " + customIconData.colorClass,
+          "command-icon-container command-icon-container--lg " +
+          customIconData.colorClass,
         rows: customRows,
       });
     }
@@ -490,17 +543,21 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
       if (boundNotificationKeys.has(notif.key)) {
         continue;
       }
-      standaloneRows.push(this.buildNotificationRow(notif, userNotifMap[notif.key] || {}, ""));
+      standaloneRows.push(
+        this.buildNotificationRow(notif, userNotifMap[notif.key] || {}, ""),
+      );
     }
     if (standaloneRows.length > 0) {
       const standaloneIconData = CATEGORY_ICONS.standalone;
       result.push({
         key: "standalone",
         title: this.i18n.monitoringStandaloneNotifications,
-        description: this.i18n.monitoringStandaloneNotificationsDescription || "",
+        description:
+          this.i18n.monitoringStandaloneNotificationsDescription || "",
         icon: standaloneIconData.icon,
         iconContainerClass:
-          "command-icon-container command-icon-container--lg " + standaloneIconData.colorClass,
+          "command-icon-container command-icon-container--lg " +
+          standaloneIconData.colorClass,
         rows: standaloneRows,
         isStandaloneSection: true,
       });
@@ -512,7 +569,11 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
         continue;
       }
       for (const row of section.rows) {
-        if (row.rowKind !== "command" || !Array.isArray(row.children) || row.children.length !== 1) {
+        if (
+          row.rowKind !== "command" ||
+          !Array.isArray(row.children) ||
+          row.children.length !== 1
+        ) {
           continue;
         }
         const child = row.children[0];
@@ -590,8 +651,7 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
       const existing = entry.notifications.email;
       if (existing && typeof existing === "object") {
         entry.notifications.email = { ...existing, threshold: value };
-      }
-      else {
+      } else {
         entry.notifications.email = value;
       }
     });
@@ -614,7 +674,9 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
     if (!key) {
       return;
     }
-    this.userCommands = (this.userCommands || []).filter((c) => !c || c.key !== key);
+    this.userCommands = (this.userCommands || []).filter(
+      (c) => !c || c.key !== key,
+    );
     this._autoSave();
   }
 
@@ -634,7 +696,9 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
     if (!key) {
       return;
     }
-    this.userCommands = (this.userCommands || []).filter((c) => !c || c.key !== key);
+    this.userCommands = (this.userCommands || []).filter(
+      (c) => !c || c.key !== key,
+    );
     this._autoSave();
   }
 
@@ -734,7 +798,9 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
   }
 
   _openCommandDetails(key) {
-    const catalogEntry = (this.catalog.monitoringCommands || []).find((e) => e.key === key);
+    const catalogEntry = (this.catalog.monitoringCommands || []).find(
+      (e) => e.key === key,
+    );
     const userEntry = this.userCommandsByKey[key] || {};
     const effectiveFrequency =
       userEntry.frequency || catalogEntry?.frequency || DEFAULT_FREQUENCY;
@@ -745,8 +811,10 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
       command: catalogEntry?.command || userEntry.command || "",
       isCustom: !catalogEntry,
       frequency: effectiveFrequency,
-      frequencyDay: userEntry.frequencyDay || catalogEntry?.frequencyDay || "monday",
-      frequencyDayOfMonth: userEntry.frequencyDayOfMonth || catalogEntry?.frequencyDayOfMonth || 1,
+      frequencyDay:
+        userEntry.frequencyDay || catalogEntry?.frequencyDay || "monday",
+      frequencyDayOfMonth:
+        userEntry.frequencyDayOfMonth || catalogEntry?.frequencyDayOfMonth || 1,
     };
     this.modalMessaging = "";
     this.modalEmail = "";
@@ -763,7 +831,10 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
       return;
     }
     const userEntry = this.userNotificationsByKey[key] || {};
-    const effective = this.resolveNotificationThresholds(catalogEntry, userEntry);
+    const effective = this.resolveNotificationThresholds(
+      catalogEntry,
+      userEntry,
+    );
     const recipients = this.getEmailRecipients(userEntry);
     this.modalKind = "notification";
     this.modalEntry = {
@@ -807,7 +878,8 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
       command: cmdCatalog?.command || userCmd.command || "",
       isCustom,
       frequency: effectiveFreq,
-      frequencyDay: userCmd.frequencyDay || cmdCatalog?.frequencyDay || "monday",
+      frequencyDay:
+        userCmd.frequencyDay || cmdCatalog?.frequencyDay || "monday",
       frequencyDayOfMonth:
         userCmd.frequencyDayOfMonth || cmdCatalog?.frequencyDayOfMonth || 1,
     };
@@ -845,12 +917,17 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
     return (
       this.modalIsCommand &&
       this.modalEntry &&
-      (this.modalEntry.frequency === "weekly" || this.modalEntry.frequency === "biweekly")
+      (this.modalEntry.frequency === "weekly" ||
+        this.modalEntry.frequency === "biweekly")
     );
   }
 
   get modalIsMonthly() {
-    return this.modalIsCommand && this.modalEntry && this.modalEntry.frequency === "monthly";
+    return (
+      this.modalIsCommand &&
+      this.modalEntry &&
+      this.modalEntry.frequency === "monthly"
+    );
   }
 
   get modalFrequencyOptions() {
@@ -864,7 +941,10 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
   }
 
   get modalThresholdSource() {
-    if (Array.isArray(this.modalAvailableThresholds) && this.modalAvailableThresholds.length > 0) {
+    if (
+      Array.isArray(this.modalAvailableThresholds) &&
+      this.modalAvailableThresholds.length > 0
+    ) {
       return this.modalAvailableThresholds;
     }
     return this.catalog?.options?.thresholds || [];
@@ -948,7 +1028,8 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
         return;
       }
       const commandKey = this.modalEntry.key;
-      const notificationKey = this.modalEntry.notificationKey || this.modalEntry.key;
+      const notificationKey =
+        this.modalEntry.notificationKey || this.modalEntry.key;
 
       if (this.modalIsCommand) {
         const newFrequency = this.modalEntry.frequency;
@@ -961,12 +1042,10 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
           if (newFrequency === "weekly" || newFrequency === "biweekly") {
             entry.frequencyDay = newDay;
             delete entry.frequencyDayOfMonth;
-          }
-          else if (newFrequency === "monthly") {
+          } else if (newFrequency === "monthly") {
             entry.frequencyDayOfMonth = newDayOfMonth;
             delete entry.frequencyDay;
-          }
-          else {
+          } else {
             delete entry.frequencyDay;
             delete entry.frequencyDayOfMonth;
           }
@@ -984,7 +1063,9 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
         const replace = this.modalReplaceRecipients;
 
         this.updateUserNotification(notificationKey, (entry) => {
-          entry.notifications = this.normalizeNotifications(entry.notifications);
+          entry.notifications = this.normalizeNotifications(
+            entry.notifications,
+          );
           if (newMessaging) {
             entry.notifications.messaging = newMessaging;
           }
@@ -1003,17 +1084,14 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
               emailObj.replaceRecipients = true;
             }
             entry.notifications.email = emailObj;
-          }
-          else if (newEmailThreshold) {
+          } else if (newEmailThreshold) {
             entry.notifications.email = newEmailThreshold;
-          }
-          else {
+          } else {
             delete entry.notifications.email;
           }
         });
       }
-    }
-    catch (error) {
+    } catch (error) {
       // Surface the error in the webview console; never leave the modal stuck open.
       // eslint-disable-next-line no-console
       console.error("[monitoringConfig] handleModalSave failed:", error);
@@ -1113,7 +1191,9 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
       data: cleaned,
     });
     this.userCommands = JSON.parse(JSON.stringify(cleaned.monitoringCommands));
-    this.userNotifications = JSON.parse(JSON.stringify(cleaned.notificationConfig));
+    this.userNotifications = JSON.parse(
+      JSON.stringify(cleaned.notificationConfig),
+    );
   }
 
   handleOpenDocs() {
@@ -1145,13 +1225,19 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
       if (c.frequency) {
         entry.frequency = c.frequency;
       }
-      if (c.frequencyDay && (c.frequency === "weekly" || c.frequency === "biweekly")) {
+      if (
+        c.frequencyDay &&
+        (c.frequency === "weekly" || c.frequency === "biweekly")
+      ) {
         entry.frequencyDay = c.frequencyDay;
       }
       if (c.frequencyDayOfMonth && c.frequency === "monthly") {
         entry.frequencyDayOfMonth = c.frequencyDayOfMonth;
       }
-      if (Array.isArray(c.notificationTypes) && c.notificationTypes.length > 0) {
+      if (
+        Array.isArray(c.notificationTypes) &&
+        c.notificationTypes.length > 0
+      ) {
         entry.notificationTypes = c.notificationTypes.slice();
       }
       const hasOverride =
@@ -1194,8 +1280,7 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
           if (Object.keys(emailObj).length > 0) {
             notifs.email = emailObj;
           }
-        }
-        else if (email) {
+        } else if (email) {
           notifs.email = email;
         }
         if (Object.keys(notifs).length > 0) {

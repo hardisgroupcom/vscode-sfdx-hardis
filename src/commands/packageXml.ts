@@ -430,7 +430,9 @@ async function loadPackageXmlData(
     const xmlContent = await fs.readFile(packagePath, "utf8");
     return await parsePackageXml(xmlContent);
   } catch (error: any) {
-    throw new Error(`Failed to read package-skip-items.xml: ${error.message}`, { cause: error });
+    throw new Error(`Failed to read package-skip-items.xml: ${error.message}`, {
+      cause: error,
+    });
   }
 }
 
@@ -475,7 +477,9 @@ export async function parsePackageXml(xmlContent: string): Promise<any> {
       types: types,
     };
   } catch (error: any) {
-    throw new Error(`Failed to parse XML content: ${error.message}`, { cause: error });
+    throw new Error(`Failed to parse XML content: ${error.message}`, {
+      cause: error,
+    });
   }
 }
 
