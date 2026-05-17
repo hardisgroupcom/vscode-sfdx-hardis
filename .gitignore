@@ -9,3 +9,5 @@ yarn-error.log
 
 megalinter-reports/
 .sfdx/
+hardis-report/
+config/user/

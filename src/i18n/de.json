@@ -1500,6 +1500,7 @@
   "runApexTests": "Apex-Tests ausführen",
   "runApexTestsTooltip": "Führt alle Apex-Tests in der ausgewählten Org aus. Gibt einen Fehler aus, wenn die minimale Apex-Code-Abdeckung nicht erreicht wird",
   "runBackup": "Sicherung ausführen",
+  "runCommandLabel": "Ausführen",
   "runDebugger": "Debugger ausführen",
   "runDebuggerTooltip": "Debugger auf einer Apex-Protokolldatei ausführen",
   "runDuplicateCommandAnyway": "No, you are wrong, let me run it again.",

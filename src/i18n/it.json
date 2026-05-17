@@ -1487,6 +1487,7 @@
   "runApexTests": "Esegui test Apex",
   "runApexTestsTooltip": "Esegue tutti i test Apex sull'org selezionata. Genererà un errore se la copertura minima del codice Apex non viene raggiunta",
   "runBackup": "Esegui backup",
+  "runCommandLabel": "Esegui",
   "runDebugger": "Esegui debugger",
   "runDebuggerTooltip": "Esegui il debugger su un file di log Apex",
   "runDuplicateCommandAnyway": "No, you are wrong, let me run it again.",

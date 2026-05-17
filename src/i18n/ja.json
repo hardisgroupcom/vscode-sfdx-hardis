@@ -1500,6 +1500,7 @@
   "runApexTests": "Apex テストを実行",
   "runApexTestsTooltip": "選択した組織ですべての Apex テストを実行します。Apex コードカバレッジの最小値に達していない場合はエラーになります",
   "runBackup": "バックアップを実行",
+  "runCommandLabel": "実行",
   "runDebugger": "デバッガーを実行",
   "runDebuggerTooltip": "Apex ログファイルでデバッガーを実行",
   "runDuplicateCommandAnyway": "No, you are wrong, let me run it again.",

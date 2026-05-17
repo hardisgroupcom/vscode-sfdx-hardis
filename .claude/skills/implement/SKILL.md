@@ -27,6 +27,14 @@ Implement features, fixes, or changes in the vscode-sfdx-hardis extension.
 
 After any change to the repo (new feature, bug fix, UI change, command added, etc.), add a bullet under the `## Unreleased` section at the top of `CHANGELOG.md`. If `## Unreleased` does not exist, create it just under the `# Changelog` title.
 
+### Merging with existing Unreleased entries
+**Always read the existing `## Unreleased` section first and merge your update with what is already there — do not append blindly.**
+
+- If an existing bullet already covers the same feature, bug fix, or area, **update or extend that bullet** instead of adding a new one. Reword for clarity if needed.
+- If your work is part of a larger new feature already mentioned in `## Unreleased`, **do not add a bullet for every incremental change** (sub-fix, polish, follow-up tweak). Keep a single high-level summary bullet describing the feature as a whole, and refine its wording as the feature evolves.
+- Only add a new bullet when the change is genuinely separate from anything already listed (different feature, unrelated bug fix, etc.).
+- When merging, preserve any sub-bullets that still describe distinct user-visible aspects; drop sub-bullets that have become redundant with the parent summary.
+
 ### Style rules
 - **Concise** — one short sentence per bullet; split into multiple bullets only if the change covers genuinely separate user-visible items.
 - **Non-technical** — written for end users (Salesforce consultants and developers), not for contributors. Describe *what they can now do* or *what is fixed*, not *how it was implemented*.

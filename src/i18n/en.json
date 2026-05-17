@@ -1500,6 +1500,7 @@
   "runApexTests": "Run Apex tests",
   "runApexTestsTooltip": "Runs all apex tests on the selected org. Will trigger error if minimum apex code coverage is not reached",
   "runBackup": "Run Backup",
+  "runCommandLabel": "Run",
   "runDebugger": "Run debugger",
   "runDebuggerTooltip": "Run debugger on an apex log file",
   "runDuplicateCommandAnyway": "No, you are wrong, let me run it again.",

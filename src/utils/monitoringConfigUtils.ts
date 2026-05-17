@@ -137,6 +137,13 @@ function normalizeMonitoringCatalog(
 }
 
 /**
+ * Drop the cached monitoring catalog so the next fetch hits the CLI.
+ */
+export async function clearMonitoringCatalogCache(): Promise<void> {
+  await CacheManager.delete("app", MONITORING_DEFAULTS_CACHE_KEY);
+}
+
+/**
  * Fetch the monitoring catalog (defaults + option lists) from sfdx-hardis CLI.
  * Throws if the command is unavailable so callers can prompt the user to upgrade.
  */
@@ -146,7 +153,7 @@ export async function fetchMonitoringCatalog(): Promise<MonitoringCatalogPayload
     output: false,
     debug: false,
     cacheSection: "app",
-    cacheExpiration: 1000 * 60 * 60 * 24, // 1 day
+    cacheExpiration: 1000 * 60 * 60 * 24 * 7, // 7 days
   });
   if (!res || res.status !== 0 || !res.result) {
     const errorMsg =
@@ -164,7 +171,7 @@ export async function fetchMonitoringCatalog(): Promise<MonitoringCatalogPayload
       output: false,
       debug: false,
       cacheSection: "app",
-      cacheExpiration: 1000 * 60 * 60 * 24,
+      cacheExpiration: 1000 * 60 * 60 * 24 * 7,
     });
     if (fresh?.status === 0 && fresh?.result) {
       return normalizeMonitoringCatalog(
@@ -221,8 +228,10 @@ export async function readMonitoringCommandsFromBranch(
 }
 
 /**
- * List local + remote-tracking branches in the workspace's git repo.
- * Filters out HEAD pointer refs (e.g. origin/HEAD).
+ * List branches whose name starts with "monitoring" (local + remote-tracking).
+ * When a local branch and its `origin/` counterpart both exist, keep only the
+ * ref with the most recent commit so the user is offered a single option per
+ * logical branch.
  */
 export async function listAvailableBranches(): Promise<string[]> {
   const workspaceRoot = getWorkspaceRoot();
@@ -230,15 +239,29 @@ export async function listAvailableBranches(): Promise<string[]> {
   try {
     const out = await git.raw([
       "for-each-ref",
-      "--format=%(refname:short)",
+      "--format=%(refname:short)|%(committerdate:unix)",
       "refs/heads",
       "refs/remotes/origin",
     ]);
-    const branches = out
-      .split(/\r?\n/)
-      .map((b) => b.trim())
-      .filter((b) => b.length > 0 && !b.endsWith("/HEAD"));
-    return Array.from(new Set(branches));
+    const freshestByLogical = new Map<string, { ref: string; timestamp: number }>();
+    for (const line of out.split(/\r?\n/)) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.endsWith("/HEAD")) {
+        continue;
+      }
+      const sep = trimmed.lastIndexOf("|");
+      const ref = sep === -1 ? trimmed : trimmed.slice(0, sep);
+      const timestamp = sep === -1 ? 0 : parseInt(trimmed.slice(sep + 1), 10) || 0;
+      const logical = ref.startsWith("origin/") ? ref.slice("origin/".length) : ref;
+      if (!logical.toLowerCase().startsWith("monitoring")) {
+        continue;
+      }
+      const existing = freshestByLogical.get(logical);
+      if (!existing || timestamp > existing.timestamp) {
+        freshestByLogical.set(logical, { ref, timestamp });
+      }
+    }
+    return Array.from(freshestByLogical.values()).map((entry) => entry.ref);
   } catch (e) {
     Logger.log(`Error listing branches: ${e}`);
     return [];

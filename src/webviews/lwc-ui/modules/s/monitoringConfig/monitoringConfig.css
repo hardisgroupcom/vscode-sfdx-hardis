@@ -168,15 +168,31 @@
   width: 100%;
 }
 
-.monitoring-table th,
-.monitoring-table td {
-  vertical-align: middle;
+.monitoring-table col.monitoring-col-command {
+  width: 48%;
+}
+
+.monitoring-table col.monitoring-col-frequency {
+  width: 13%;
+}
+
+.monitoring-table col.monitoring-col-channel {
+  width: 11%;
+}
+
+.monitoring-table col.monitoring-col-actions {
+  width: 4rem;
 }
 
 .monitoring-table thead th {
   font-size: 0.75rem;
   letter-spacing: 0.0625rem;
   font-weight: 700;
+}
+
+.monitoring-table th,
+.monitoring-table td {
+  vertical-align: middle;
 }
 
 .monitoring-table thead th.monitoring-col-frequency > div,
@@ -214,18 +230,6 @@
 .monitoring-table tr,
 .monitoring-table td {
   overflow: visible;
-}
-
-.monitoring-col-frequency {
-  width: 9rem;
-}
-
-.monitoring-col-channel {
-  width: 8rem;
-}
-
-.monitoring-col-actions {
-  width: 7rem;
 }
 
 .monitoring-row-title {

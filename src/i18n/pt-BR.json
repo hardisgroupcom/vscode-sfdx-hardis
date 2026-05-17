@@ -1494,6 +1494,7 @@
   "runApexTests": "Executar testes Apex",
   "runApexTestsTooltip": "Executa todos os testes apex na org selecionada. Gerará erro se a cobertura mínima de código Apex não for atingida",
   "runBackup": "Executar Backup",
+  "runCommandLabel": "Executar",
   "runDebugger": "Executar depurador",
   "runDebuggerTooltip": "Executar o depurador em um arquivo de log apex",
   "runDuplicateCommandAnyway": "No, you are wrong, let me run it again.",

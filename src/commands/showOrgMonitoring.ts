@@ -9,6 +9,23 @@ import { Commands } from "../commands";
 import { showPackageXmlPanel } from "./packageXml";
 import { t } from "../i18n/i18n";
 import { DOCSITE_URL } from "../constants";
+import {
+  fetchMonitoringCatalog,
+  clearMonitoringCatalogCache,
+  MonitoringCatalogPayload,
+} from "../utils/monitoringConfigUtils";
+
+async function safeFetchMonitoringCatalog(): Promise<MonitoringCatalogPayload | null> {
+  try {
+    return await fetchMonitoringCatalog();
+  } catch (error: any) {
+    Logger.log(
+      "Error fetching monitoring catalog for Org Monitoring panel: " +
+        (error?.message || error),
+    );
+    return null;
+  }
+}
 
 export function registerShowOrgMonitoring(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
@@ -58,6 +75,18 @@ export function registerShowOrgMonitoring(commands: Commands) {
         monitoringHomeUrl: DOCSITE_URL + "/salesforce-monitoring-home/",
         monitoringConfigUrl:
           DOCSITE_URL + "/salesforce-monitoring-config-home/",
+        catalog: null,
+        catalogLoading: true,
+      });
+      // Fetch the catalog in the background so the page renders immediately.
+      safeFetchMonitoringCatalog().then((catalog) => {
+        if (panel.isDisposed && panel.isDisposed()) {
+          return;
+        }
+        panel.sendMessage({
+          type: "monitoringCatalogLoaded",
+          data: { catalog },
+        });
       });
       panel.updateTitle(t("orgMonitoringWorkbench"));
 
@@ -95,6 +124,9 @@ export function registerShowOrgMonitoring(commands: Commands) {
                 `Unable to read monitoring_repository from config: ${e}`,
               );
             }
+            // Refresh implies the user wants the latest data: bust the cached catalog
+            // and tell the LWC to show the spinner while we re-fetch in the background.
+            await clearMonitoringCatalogCache();
             panel.sendMessage({
               type: "installationStatusUpdated",
               data: {
@@ -102,7 +134,17 @@ export function registerShowOrgMonitoring(commands: Commands) {
                 isCiCdRepo: isCiCdRepo2,
                 monitoringRepository: monitoringRepository2,
                 instanceUrl: instanceUrl2,
+                catalogLoading: true,
               },
+            });
+            safeFetchMonitoringCatalog().then((refreshedCatalog) => {
+              if (panel.isDisposed && panel.isDisposed()) {
+                return;
+              }
+              panel.sendMessage({
+                type: "monitoringCatalogLoaded",
+                data: { catalog: refreshedCatalog },
+              });
             });
             break;
           }

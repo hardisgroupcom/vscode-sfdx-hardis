@@ -1492,6 +1492,7 @@
   "runApexTests": "Uruchom testy Apex",
   "runApexTestsTooltip": "Uruchamia wszystkie testy Apex na wybranej org. Zgłosi błąd, jeśli minimalne pokrycie kodu Apex nie zostanie osiągnięte",
   "runBackup": "Uruchom kopię zapasową",
+  "runCommandLabel": "Uruchom",
   "runDebugger": "Uruchom debugger",
   "runDebuggerTooltip": "Uruchamia debugger na pliku logów Apex",
   "runDuplicateCommandAnyway": "No, you are wrong, let me run it again.",
