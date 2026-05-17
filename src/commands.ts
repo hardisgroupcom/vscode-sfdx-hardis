@@ -15,6 +15,7 @@ import { registerShowSetup } from "./commands/showSetup";
 import { registerShowPipelineConfig } from "./commands/showPipelineConfig";
 import { registerShowInstalledPackages } from "./commands/showInstalledPackages";
 import { registerShowOrgMonitoring } from "./commands/showOrgMonitoring";
+import { registerShowMonitoringConfig } from "./commands/showMonitoringConfig";
 import { registerShowFilesWorkbench } from "./commands/showFilesWorkbench";
 import { registerShowDataWorkbench } from "./commands/showDataWorkbench";
 import { registerOpenKeyFile } from "./commands/openKeyFile";
@@ -89,6 +90,7 @@ export class Commands {
     registerShowInstalledPackages(this);
     registerShowOrgsManager(this);
     registerShowOrgMonitoring(this);
+    registerShowMonitoringConfig(this);
     registerShowFilesWorkbench(this);
     registerShowDataWorkbench(this);
     registerRunLocalHtmlDocPages(this);

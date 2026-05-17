@@ -1,6 +1,8 @@
-import js from "@eslint/js";
-import typescript from "@typescript-eslint/eslint-plugin";
-import typescriptParser from "@typescript-eslint/parser";
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+const js = require("@eslint/js");
+const typescript = require("@typescript-eslint/eslint-plugin");
+const typescriptParser = require("@typescript-eslint/parser");
 
 export default [
   // Base JavaScript recommended rules
@@ -187,9 +189,9 @@ export default [
     },
   },
 
-  // JavaScript worker files configuration
+  // JavaScript CommonJS files: src worker, scripts, webpack config
   {
-    files: ["src/**/*.js"],
+    files: ["src/**/*.js", "scripts/**/*.js", "webpack*.js"],
     languageOptions: {
       ecmaVersion: 2020,
       sourceType: "commonjs",
@@ -215,6 +217,57 @@ export default [
       eqeqeq: "warn",
       "no-throw-literal": "warn",
       semi: "off",
+    },
+  },
+
+  // LWC webview components — ESM with legacy decorator syntax (@api, @track, @wire)
+  {
+    files: ["src/webviews/lwc-ui/**/*.js"],
+    plugins: {
+      // Stub so eslint-disable comments for @lwc/lwc rules don't cause "rule not found" errors
+      "@lwc/lwc": {
+        rules: {
+          "no-async-operation": { create: () => ({}) },
+        },
+      },
+    },
+    languageOptions: {
+      parser: typescriptParser,
+      parserOptions: {
+        sourceType: "module",
+        experimentalDecorators: true,
+      },
+      globals: {
+        window: "readonly",
+        document: "readonly",
+        console: "readonly",
+        setTimeout: "readonly",
+        setInterval: "readonly",
+        clearTimeout: "readonly",
+        clearInterval: "readonly",
+        Promise: "readonly",
+        CustomEvent: "readonly",
+        requestAnimationFrame: "readonly",
+      },
+    },
+    linterOptions: {
+      reportUnusedDisableDirectives: "off",
+    },
+    rules: {
+      // Style rules off — prevents MegaLinter auto-fix from modifying LWC source files
+      curly: "off",
+      eqeqeq: "off",
+      semi: "off",
+      // Downgrade to warn with patterns matching the project convention
+      "no-unused-vars": ["warn", {
+        argsIgnorePattern: "^_",
+        varsIgnorePattern: "^_",
+        caughtErrors: "none",
+      }],
+      // Existing LWC code uses lexical declarations in switch cases
+      "no-case-declarations": "off",
+      // Existing LWC code has intermediate assignment patterns
+      "no-useless-assignment": "off",
     },
   },
 

@@ -12,9 +12,9 @@
                         <p class="header-subtitle">{i18n.monitorOrgDescription}</p>
                     </div>
                     <div class="header-actions">
-                        <lightning-button 
-                            variant="neutral" 
-                            label={i18n.refreshLabel} 
+                        <lightning-button
+                            variant="neutral"
+                            label={i18n.refreshLabel}
                             title={i18n.checkInstallationStatusAgain}
                             onclick={checkInstallationStatus}
                             icon-name="utility:refresh"
@@ -39,28 +39,68 @@
                                     <p class="status-description">{i18n.orgMonitoringConfigActive}</p>
                                 </div>
                                 <div class="status-actions auth-actions">
-                                    <lightning-button 
-                                        variant="brand"
-                                        label={i18n.reconfigureAuthentication} 
-                                        title={i18n.reconfigureAuthTooltip}
-                                        onclick={reconfigureMonitoringAuth}
-                                        icon-name="utility:redo"
-                                        class="status-button"
-                                    ></lightning-button>
-                                    <lightning-button 
-                                        variant="neutral" 
-                                        label={i18n.monitorAnotherOrg} 
-                                        title={i18n.monitorAnotherOrgTooltip}
-                                        onclick={configureAnotherOrg}
-                                        icon-name="utility:adduser"
-                                        class="status-button"
-                                    ></lightning-button>
+                                    <lightning-button-group>
+                                        <lightning-button
+                                            label={i18n.editMonitoringConfig}
+                                            variant="brand"
+                                            icon-name="utility:settings"
+                                            title={i18n.editMonitoringConfigTooltip}
+                                            onclick={openMonitoringConfig}>
+                                        </lightning-button>
+                                        <lightning-button-menu
+                                            label={i18n.packages}
+                                            icon-name="utility:package"
+                                            variant="border"
+                                            alternative-text={i18n.packages}
+                                            title={i18n.packages}
+                                            menu-alignment="right"
+                                            onselect={handlePackageMenuSelect}>
+                                            <lightning-menu-item
+                                                value="skip"
+                                                label={i18n.skipItemsPackage}
+                                                title={i18n.skipItemsPackageTooltip}
+                                                prefix-icon-name="utility:ban">
+                                            </lightning-menu-item>
+                                            <lightning-menu-item
+                                                value="backup"
+                                                label={i18n.backupItemsPackage}
+                                                title={i18n.backupItemsPackageTooltip}
+                                                prefix-icon-name="utility:save">
+                                            </lightning-menu-item>
+                                            <lightning-menu-item
+                                                value="all-org"
+                                                label={i18n.allOrgItemsPackage}
+                                                title={i18n.allOrgItemsPackageTooltip}
+                                                prefix-icon-name="utility:package">
+                                            </lightning-menu-item>
+                                        </lightning-button-menu>
+                                        <lightning-button-menu
+                                            icon-name="utility:identity"
+                                            variant="border"
+                                            alternative-text={i18n.authentication}
+                                            title={i18n.authentication}
+                                            menu-alignment="right"
+                                            onselect={handleAuthMenuSelect}>
+                                            <lightning-menu-item
+                                                value="reconfigure"
+                                                label={i18n.reconfigureAuthentication}
+                                                title={i18n.reconfigureAuthTooltip}
+                                                prefix-icon-name="utility:setup">
+                                            </lightning-menu-item>
+                                            <lightning-menu-item
+                                                value="anotherOrg"
+                                                label={i18n.monitorAnotherOrg}
+                                                title={i18n.monitorAnotherOrgTooltip}
+                                                prefix-icon-name="utility:people">
+                                            </lightning-menu-item>
+                                        </lightning-button-menu>
+                                    </lightning-button-group>
                                 </div>
                             </div>
                             <template if:true={instanceUrl}>
                                 <div class="instance-url-row">
                                     <span class="instance-url-label">{i18n.monitoredOrgLabel}</span>
-                                    <lightning-button 
+                                    <lightning-button
                                         variant="base"
                                         label={instanceUrl}
                                         icon-name="utility:new_window"
@@ -70,32 +110,6 @@
                                     ></lightning-button>
                                 </div>
                             </template>
-                            <div class="status-actions package-actions">
-                                <lightning-button 
-                                    variant="brand" 
-                                    label={i18n.skipItemsPackage} 
-                                    title={i18n.skipItemsPackageTooltip}
-                                    onclick={viewSkipItemsPackage}
-                                    icon-name="utility:ban"
-                                    class="status-button"
-                                ></lightning-button>
-                                <lightning-button 
-                                    variant="outline-brand" 
-                                    label={i18n.backupItemsPackage} 
-                                    title={i18n.backupItemsPackageTooltip}
-                                    onclick={viewBackupItemsPackage}
-                                    icon-name="utility:save"
-                                    class="status-button"
-                                ></lightning-button>
-                                <lightning-button 
-                                    variant="outline-brand" 
-                                    label={i18n.allOrgItemsPackage} 
-                                    title={i18n.allOrgItemsPackageTooltip}
-                                    onclick={viewAllOrgItemsPackage}
-                                    icon-name="utility:package"
-                                    class="status-button"
-                                ></lightning-button>
-                            </div>
                         </div>
                     </div>
                 </template>
@@ -115,17 +129,17 @@
                                     </p>
                                     <template if:true={monitoringRepository}>
                                         <div class="status-actions">
-                                            <lightning-button 
-                                                variant="brand" 
-                                                label={i18n.openMonitoringRepository} 
+                                            <lightning-button
+                                                variant="brand"
+                                                label={i18n.openMonitoringRepository}
                                                 title={i18n.openMonitoringRepositoryTooltip}
                                                 onclick={openMonitoringRepository}
                                                 icon-name="utility:new_window"
                                                 class="status-button"
                                             ></lightning-button>
-                                            <lightning-button 
-                                                variant="neutral" 
-                                                label={i18n.learnMore} 
+                                            <lightning-button
+                                                variant="neutral"
+                                                label={i18n.learnMore}
                                                 title={i18n.learnMoreTooltip}
                                                 onclick={learnMore}
                                                 icon-name="utility:info"
@@ -135,9 +149,9 @@
                                     </template>
                                     <template if:false={monitoringRepository}>
                                         <div class="status-actions">
-                                            <lightning-button 
-                                                variant="neutral" 
-                                                label={i18n.learnMore} 
+                                            <lightning-button
+                                                variant="neutral"
+                                                label={i18n.learnMore}
                                                 title={i18n.learnMoreTooltip}
                                                 onclick={learnMore}
                                                 icon-name="utility:info"
@@ -159,17 +173,17 @@
                                         {i18n.orgMonitoringNotInstalledDescription}
                                     </p>
                                     <div class="status-actions">
-                                        <lightning-button 
-                                            variant="brand" 
-                                            label={i18n.installOrgMonitoring} 
+                                        <lightning-button
+                                            variant="brand"
+                                            label={i18n.installOrgMonitoring}
                                             title={i18n.installOrgMonitoringTooltip}
                                             onclick={installOrgMonitoring}
                                             icon-name="utility:download"
                                             class="status-button primary"
                                         ></lightning-button>
-                                        <lightning-button 
-                                            variant="neutral" 
-                                            label={i18n.learnMore} 
+                                        <lightning-button
+                                            variant="neutral"
+                                            label={i18n.learnMore}
                                             title={i18n.learnMoreTooltip}
                                             onclick={learnMore}
                                             icon-name="utility:info"
@@ -182,536 +196,61 @@
                     </template>
             </div>
 
-            <!-- Monitoring Commands Section -->
-            <!-- Section: Org Activity (daily) -->
-            <div class="section">
-                <div class="section-header">
-                    <h2 class="section-title"><span class="section-icon">🔄</span>{i18n.sectionOrgActivity}</h2>
-                    <p class="section-subtitle">{i18n.sectionOrgActivityDescription}</p>
-                </div>
-                <div class="commands-grid">
-                    <!-- Metadata Backup -->
-                    <div class="command-card">
-                        <div class="command-header">
-                            <div class="command-icon-container backup">
-                                <lightning-icon icon-name="utility:save" size="small" variant="inverse"></lightning-icon>
-                            </div>
-                            <h3 class="command-title">{i18n.metadataBackup}</h3>
-                        </div>
-                        <p class="command-description">{i18n.metadataBackupDescription}</p>
-                        <lightning-button
-                            variant="outline-brand"
-                            label={i18n.runBackup}
-                            onclick={runMetadataBackup}
-                            class="command-button"
-                        ></lightning-button>
-                    </div>
-
-                    <!-- Audit Trail -->
-                    <div class="command-card">
-                        <div class="command-header">
-                            <div class="command-icon-container audit">
-                                <lightning-icon icon-name="utility:trail" size="small" variant="inverse"></lightning-icon>
-                            </div>
-                            <h3 class="command-title">{i18n.auditTrailAnalysis}</h3>
-                        </div>
-                        <p class="command-description">{i18n.auditTrailAnalysisDescription}</p>
-                        <lightning-button
-                            variant="outline-brand"
-                            label={i18n.analyzeAuditTrail}
-                            onclick={runAuditTrail}
-                            class="command-button"
-                        ></lightning-button>
-                    </div>
-
-                    <!-- Apex and Flow Errors -->
-                    <div class="command-card">
-                        <div class="command-header">
-                            <div class="command-icon-container alerts">
-                                <lightning-icon icon-name="utility:error" size="small" variant="inverse"></lightning-icon>
-                            </div>
-                            <h3 class="command-title">{i18n.apexAndFlowErrors}</h3>
-                        </div>
-                        <p class="command-description">{i18n.apexAndFlowErrorsDescription}</p>
-                        <lightning-button
-                            variant="outline-brand"
-                            label={i18n.monitorErrors}
-                            onclick={runApexAndFlowErrors}
-                            class="command-button"
-                        ></lightning-button>
-                    </div>
-
-                    <!-- Legacy API Usage -->
-                    <div class="command-card">
-                        <div class="command-header">
-                            <div class="command-icon-container legacy">
-                                <lightning-icon icon-name="utility:deprecate" size="small" variant="inverse"></lightning-icon>
-                            </div>
-                            <h3 class="command-title">{i18n.legacyApiUsage}</h3>
-                        </div>
-                        <p class="command-description">{i18n.legacyApiUsageDescription}</p>
-                        <lightning-button
-                            variant="outline-brand"
-                            label={i18n.checkApis}
-                            onclick={checkLegacyApi}
-                            class="command-button"
-                        ></lightning-button>
-                    </div>
-
-                    <!-- Deployments Analysis -->
-                    <div class="command-card">
-                        <div class="command-header">
-                            <div class="command-icon-container audit">
-                                <lightning-icon icon-name="utility:upload" size="small" variant="inverse"></lightning-icon>
-                            </div>
-                            <h3 class="command-title">{i18n.deploymentsAnalysis}</h3>
-                        </div>
-                        <p class="command-description">{i18n.deploymentsAnalysisDescription}</p>
-                        <lightning-button
-                            variant="outline-brand"
-                            label={i18n.analyzeDeployments}
-                            onclick={runDeploymentsAnalysis}
-                            class="command-button"
-                        ></lightning-button>
+            <!-- Monitoring Commands Section (catalog-driven, lazy-loaded) -->
+            <template if:true={isCatalogLoading}>
+                <div class="section">
+                    <div class="slds-is-relative spinner-wrapper" style="height: 6rem;">
+                        <s-spinner
+                            alternative-text={i18n.loadingMonitoringConfig}
+                            size="medium"
+                            variant="brand">
+                        </s-spinner>
                     </div>
                 </div>
-            </div>
+            </template>
 
-            <!-- Section: User Activity (weekly) -->
-            <div class="section">
-                <div class="section-header">
-                    <h2 class="section-title"><span class="section-icon">👤</span>{i18n.sectionUserActivity}</h2>
-                    <p class="section-subtitle">{i18n.sectionUserActivityDescription}</p>
-                </div>
-                <div class="commands-grid">
-                    <!-- Unused Users (all, 6 months) -->
-                    <div class="command-card">
-                        <div class="command-header">
-                            <div class="command-icon-container users">
-                                <lightning-icon icon-name="utility:user" size="small" variant="inverse"></lightning-icon>
-                            </div>
-                            <h3 class="command-title">{i18n.unusedUsers}</h3>
+            <template if:true={hasNoCatalog}>
+                <div class="section">
+                    <div class="status-card not-installed">
+                        <div class="status-icon-container warning">
+                            <lightning-icon icon-name="utility:warning" size="small" variant="inverse"></lightning-icon>
                         </div>
-                        <p class="command-description">{i18n.unusedUsersDescription}</p>
-                        <lightning-button
-                            variant="outline-brand"
-                            label={i18n.findUsers}
-                            onclick={findUnusedUsers}
-                            class="command-button"
-                        ></lightning-button>
-                    </div>
-
-                    <!-- Inactive CRM Users (6 months) -->
-                    <div class="command-card">
-                        <div class="command-header">
-                            <div class="command-icon-container users">
-                                <lightning-icon icon-name="utility:user" size="small" variant="inverse"></lightning-icon>
-                            </div>
-                            <h3 class="command-title">{i18n.unusedUsersCrm6Months}</h3>
+                        <div class="status-content">
+                            <h3 class="status-title">{i18n.monitoringConfigCatalogUnavailable}</h3>
                         </div>
-                        <p class="command-description">{i18n.unusedUsersCrm6MonthsDescription}</p>
-                        <lightning-button
-                            variant="outline-brand"
-                            label={i18n.findInactiveCrmUsers}
-                            onclick={findUnusedUsersCrm6Months}
-                            class="command-button"
-                        ></lightning-button>
-                    </div>
-
-                    <!-- Inactive Portal Users (6 months) -->
-                    <div class="command-card">
-                        <div class="command-header">
-                            <div class="command-icon-container users">
-                                <lightning-icon icon-name="utility:user" size="small" variant="inverse"></lightning-icon>
-                            </div>
-                            <h3 class="command-title">{i18n.unusedUsersExperience6Months}</h3>
-                        </div>
-                        <p class="command-description">{i18n.unusedUsersExperience6MonthsDescription}</p>
-                        <lightning-button
-                            variant="outline-brand"
-                            label={i18n.findInactivePortalUsers}
-                            onclick={findUnusedUsersExperience6Months}
-                            class="command-button"
-                        ></lightning-button>
-                    </div>
-
-                    <!-- Weekly Active CRM Users -->
-                    <div class="command-card">
-                        <div class="command-header">
-                            <div class="command-icon-container tests">
-                                <lightning-icon icon-name="utility:user" size="small" variant="inverse"></lightning-icon>
-                            </div>
-                            <h3 class="command-title">{i18n.activeUsersCrmWeekly}</h3>
-                        </div>
-                        <p class="command-description">{i18n.activeUsersCrmWeeklyDescription}</p>
-                        <lightning-button
-                            variant="outline-brand"
-                            label={i18n.findActiveUsersCrm}
-                            onclick={findActiveUsersCrmWeekly}
-                            class="command-button"
-                        ></lightning-button>
-                    </div>
-
-                    <!-- Monthly Active Portal Users -->
-                    <div class="command-card">
-                        <div class="command-header">
-                            <div class="command-icon-container tests">
-                                <lightning-icon icon-name="utility:user" size="small" variant="inverse"></lightning-icon>
-                            </div>
-                            <h3 class="command-title">{i18n.activeUsersExperienceMonthly}</h3>
-                        </div>
-                        <p class="command-description">{i18n.activeUsersExperienceMonthlyDescription}</p>
-                        <lightning-button
-                            variant="outline-brand"
-                            label={i18n.findActivePortalUsers}
-                            onclick={findActiveUsersExperienceMonthly}
-                            class="command-button"
-                        ></lightning-button>
                     </div>
                 </div>
-            </div>
+            </template>
 
-            <!-- Section: Apex Tests & Security (weekly) -->
-            <div class="section">
-                <div class="section-header">
-                    <h2 class="section-title"><span class="section-icon">🔒</span>{i18n.sectionApexTestsSecurity}</h2>
-                    <p class="section-subtitle">{i18n.sectionApexTestsSecurityDescription}</p>
-                </div>
-                <div class="commands-grid">
-                    <!-- Apex Tests -->
-                    <div class="command-card">
-                        <div class="command-header">
-                            <div class="command-icon-container tests">
-                                <lightning-icon icon-name="utility:apex" size="small" variant="inverse"></lightning-icon>
-                            </div>
-                            <h3 class="command-title">{i18n.apexTests}</h3>
-                        </div>
-                        <p class="command-description">{i18n.apexTestsDescription}</p>
-                        <lightning-button
-                            variant="outline-brand"
-                            label={i18n.runTests}
-                            onclick={runApexTests}
-                            class="command-button"
-                        ></lightning-button>
+            <template for:each={categorySections} for:item="section">
+                <div key={section.key} class="section">
+                    <div class="section-header">
+                        <h2 class="section-title"><span class="section-icon">{section.emoji}</span>{section.title}</h2>
+                        <p class="section-subtitle">{section.description}</p>
                     </div>
-
-                    <!-- Security Health Check -->
-                    <div class="command-card">
-                        <div class="command-header">
-                            <div class="command-icon-container health">
-                                <lightning-icon icon-name="utility:check" size="small" variant="inverse"></lightning-icon>
+                    <div class="commands-grid">
+                        <template for:each={section.rows} for:item="row">
+                            <div key={row.key} class="command-card">
+                                <div class="command-header">
+                                    <div class={row.iconContainerClass}>
+                                        <lightning-icon icon-name={row.iconName} size="small" variant="inverse"></lightning-icon>
+                                    </div>
+                                    <h3 class="command-title">{row.title}</h3>
+                                </div>
+                                <p class="command-description">{row.description}</p>
+                                <lightning-button
+                                    variant="outline-brand"
+                                    label={i18n.runCommandLabel}
+                                    icon-name="utility:play"
+                                    data-command={row.command}
+                                    onclick={handleRunCommand}
+                                    class="command-button"
+                                ></lightning-button>
                             </div>
-                            <h3 class="command-title">{i18n.securityHealthCheck}</h3>
-                        </div>
-                        <p class="command-description">{i18n.securityHealthCheckDescription}</p>
-                        <lightning-button
-                            variant="outline-brand"
-                            label={i18n.runHealthCheck}
-                            onclick={runHealthCheck}
-                            class="command-button"
-                        ></lightning-button>
-                    </div>
-
-                    <!-- Connected Apps Security -->
-                    <div class="command-card">
-                        <div class="command-header">
-                            <div class="command-icon-container security">
-                                <lightning-icon icon-name="utility:shield" size="small" variant="inverse"></lightning-icon>
-                            </div>
-                            <h3 class="command-title">{i18n.connectedAppsSecurity}</h3>
-                        </div>
-                        <p class="command-description">{i18n.connectedAppsSecurityDescription}</p>
-                        <lightning-button
-                            variant="outline-brand"
-                            label={i18n.checkSecurity}
-                            onclick={checkConnectedAppsSecurity}
-                            class="command-button"
-                        ></lightning-button>
+                        </template>
                     </div>
                 </div>
-            </div>
-
-            <!-- Section: Org Info (weekly) -->
-            <div class="section">
-                <div class="section-header">
-                    <h2 class="section-title"><span class="section-icon">ℹ️</span>{i18n.sectionOrgInfo}</h2>
-                    <p class="section-subtitle">{i18n.sectionOrgInfoDescription}</p>
-                </div>
-                <div class="commands-grid">
-                    <!-- Release Updates -->
-                    <div class="command-card">
-                        <div class="command-header">
-                            <div class="command-icon-container updates">
-                                <lightning-icon icon-name="utility:new" size="small" variant="inverse"></lightning-icon>
-                            </div>
-                            <h3 class="command-title">{i18n.releaseUpdates}</h3>
-                        </div>
-                        <p class="command-description">{i18n.releaseUpdatesDescription}</p>
-                        <lightning-button
-                            variant="outline-brand"
-                            label={i18n.checkUpdates}
-                            onclick={checkReleaseUpdates}
-                            class="command-button"
-                        ></lightning-button>
-                    </div>
-
-                    <!-- Org Info & Instance Upgrade -->
-                    <div class="command-card">
-                        <div class="command-header">
-                            <div class="command-icon-container health">
-                                <lightning-icon icon-name="utility:info" size="small" variant="inverse"></lightning-icon>
-                            </div>
-                            <h3 class="command-title">{i18n.orgInfoInstance}</h3>
-                        </div>
-                        <p class="command-description">{i18n.orgInfoInstanceDescription}</p>
-                        <lightning-button
-                            variant="outline-brand"
-                            label={i18n.checkOrgInstanceInfo}
-                            onclick={checkOrgInstanceInfo}
-                            class="command-button"
-                        ></lightning-button>
-                    </div>
-
-                    <!-- Org Limits Check -->
-                    <div class="command-card">
-                        <div class="command-header">
-                            <div class="command-icon-container limits">
-                                <lightning-icon icon-name="utility:graph" size="small" variant="inverse"></lightning-icon>
-                            </div>
-                            <h3 class="command-title">{i18n.orgLimitsCheck}</h3>
-                        </div>
-                        <p class="command-description">{i18n.orgLimitsCheckDescription}</p>
-                        <lightning-button
-                            variant="outline-brand"
-                            label={i18n.checkLimits}
-                            onclick={checkOrgLimits}
-                            class="command-button"
-                        ></lightning-button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Section: Technical Debt (weekly) -->
-            <div class="section">
-                <div class="section-header">
-                    <h2 class="section-title"><span class="section-icon">🏚️</span>{i18n.sectionTechnicalDebt}</h2>
-                    <p class="section-subtitle">{i18n.sectionTechnicalDebtDescription}</p>
-                </div>
-                <div class="commands-grid">
-                    <!-- Metadata Status -->
-                    <div class="command-card">
-                        <div class="command-header">
-                            <div class="command-icon-container legacy">
-                                <lightning-icon icon-name="utility:flow" size="small" variant="inverse"></lightning-icon>
-                            </div>
-                            <h3 class="command-title">{i18n.metadataStatus}</h3>
-                        </div>
-                        <p class="command-description">{i18n.metadataStatusDescription}</p>
-                        <lightning-button
-                            variant="outline-brand"
-                            label={i18n.checkMetadataStatus}
-                            onclick={checkMetadataStatus}
-                            class="command-button"
-                        ></lightning-button>
-                    </div>
-
-                    <!-- Missing Attributes -->
-                    <div class="command-card">
-                        <div class="command-header">
-                            <div class="command-icon-container metadata-access">
-                                <lightning-icon icon-name="utility:description" size="small" variant="inverse"></lightning-icon>
-                            </div>
-                            <h3 class="command-title">{i18n.missingAttributes}</h3>
-                        </div>
-                        <p class="command-description">{i18n.missingAttributesDescription}</p>
-                        <lightning-button
-                            variant="outline-brand"
-                            label={i18n.checkMissingAttributes}
-                            onclick={checkMissingAttributes}
-                            class="command-button"
-                        ></lightning-button>
-                    </div>
-
-                    <!-- Unused Metadatas -->
-                    <div class="command-card">
-                        <div class="command-header">
-                            <div class="command-icon-container unused-metadata">
-                                <lightning-icon icon-name="utility:custom_apps" size="small" variant="inverse"></lightning-icon>
-                            </div>
-                            <h3 class="command-title">{i18n.unusedMetadatas}</h3>
-                        </div>
-                        <p class="command-description">{i18n.unusedMetadatasDescription}</p>
-                        <lightning-button
-                            variant="outline-brand"
-                            label={i18n.findMetadata}
-                            onclick={findUnusedMetadata}
-                            class="command-button"
-                        ></lightning-button>
-                    </div>
-
-                    <!-- Unused Apex Classes -->
-                    <div class="command-card">
-                        <div class="command-header">
-                            <div class="command-icon-container apex">
-                                <lightning-icon icon-name="utility:apex" size="small" variant="inverse"></lightning-icon>
-                            </div>
-                            <h3 class="command-title">{i18n.unusedApexClasses}</h3>
-                        </div>
-                        <p class="command-description">{i18n.unusedApexClassesDescription}</p>
-                        <lightning-button
-                            variant="outline-brand"
-                            label={i18n.findClasses}
-                            onclick={findUnusedApexClasses}
-                            class="command-button"
-                        ></lightning-button>
-                    </div>
-
-                    <!-- Unused Connected Apps -->
-                    <div class="command-card">
-                        <div class="command-header">
-                            <div class="command-icon-container connected-apps">
-                                <lightning-icon icon-name="utility:connected_apps" size="small" variant="inverse"></lightning-icon>
-                            </div>
-                            <h3 class="command-title">{i18n.unusedConnectedApps}</h3>
-                        </div>
-                        <p class="command-description">{i18n.unusedConnectedAppsDescription}</p>
-                        <lightning-button
-                            variant="outline-brand"
-                            label={i18n.findApps}
-                            onclick={findUnusedConnectedApps}
-                            class="command-button"
-                        ></lightning-button>
-                    </div>
-
-                    <!-- Metadata Access Check -->
-                    <div class="command-card">
-                        <div class="command-header">
-                            <div class="command-icon-container metadata-access">
-                                <lightning-icon icon-name="utility:lock" size="small" variant="inverse"></lightning-icon>
-                            </div>
-                            <h3 class="command-title">{i18n.metadataAccessCheck}</h3>
-                        </div>
-                        <p class="command-description">{i18n.metadataAccessCheckDescription}</p>
-                        <lightning-button
-                            variant="outline-brand"
-                            label={i18n.checkAccess}
-                            onclick={checkMetadataAccess}
-                            class="command-button"
-                        ></lightning-button>
-                    </div>
-
-                    <!-- Apex API Version Check -->
-                    <div class="command-card">
-                        <div class="command-header">
-                            <div class="command-icon-container legacy">
-                                <lightning-icon icon-name="utility:apex" size="small" variant="inverse"></lightning-icon>
-                            </div>
-                            <h3 class="command-title">{i18n.apexApiVersionCheck}</h3>
-                        </div>
-                        <p class="command-description">{i18n.apexApiVersionCheckDescription}</p>
-                        <lightning-button
-                            variant="outline-brand"
-                            label={i18n.checkApexApiVersion}
-                            onclick={checkApexApiVersion}
-                            class="command-button"
-                        ></lightning-button>
-                    </div>
-
-                    <!-- Object Field Usage -->
-                    <div class="command-card">
-                        <div class="command-header">
-                            <div class="command-icon-container metadata-access">
-                                <lightning-icon icon-name="utility:table" size="small" variant="inverse"></lightning-icon>
-                            </div>
-                            <h3 class="command-title">{i18n.objectFieldUsage}</h3>
-                        </div>
-                        <p class="command-description">{i18n.objectFieldUsageDescription}</p>
-                        <lightning-button
-                            variant="outline-brand"
-                            label={i18n.analyzeFields}
-                            onclick={runObjectFieldUsage}
-                            class="command-button"
-                        ></lightning-button>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Section: Licenses & Packages (weekly) -->
-            <div class="section">
-                <div class="section-header">
-                    <h2 class="section-title"><span class="section-icon">📦</span>{i18n.sectionLicensesPackages}</h2>
-                    <p class="section-subtitle">{i18n.sectionLicensesPackagesDescription}</p>
-                </div>
-                <div class="commands-grid">
-                    <!-- Licenses Info -->
-                    <div class="command-card">
-                        <div class="command-header">
-                            <div class="command-icon-container licenses">
-                                <lightning-icon icon-name="utility:package" size="small" variant="inverse"></lightning-icon>
-                            </div>
-                            <h3 class="command-title">{i18n.licensesInfo}</h3>
-                        </div>
-                        <p class="command-description">{i18n.licensesInfoDescription}</p>
-                        <lightning-button
-                            variant="outline-brand"
-                            label={i18n.getLicensesInfo}
-                            onclick={getLicensesInfo}
-                            class="command-button"
-                        ></lightning-button>
-                    </div>
-
-                    <!-- Unused Licenses -->
-                    <div class="command-card">
-                        <div class="command-header">
-                            <div class="command-icon-container licenses">
-                                <lightning-icon icon-name="utility:key" size="small" variant="inverse"></lightning-icon>
-                            </div>
-                            <h3 class="command-title">{i18n.unusedLicenses}</h3>
-                        </div>
-                        <p class="command-description">{i18n.unusedLicensesDescription}</p>
-                        <lightning-button
-                            variant="outline-brand"
-                            label={i18n.checkLicenses}
-                            onclick={checkUnusedLicenses}
-                            class="command-button"
-                        ></lightning-button>
-                    </div>
-
-                    <!-- Underused Permission Sets -->
-                    <div class="command-card">
-                        <div class="command-header">
-                            <div class="command-icon-container licenses">
-                                <lightning-icon icon-name="utility:lock" size="small" variant="inverse"></lightning-icon>
-                            </div>
-                            <h3 class="command-title">{i18n.underusedPermissionSets}</h3>
-                        </div>
-                        <p class="command-description">{i18n.underusedPermissionSetsDescription}</p>
-                        <lightning-button
-                            variant="outline-brand"
-                            label={i18n.findPermissionSets}
-                            onclick={findUnderusedPermissionSets}
-                            class="command-button"
-                        ></lightning-button>
-                    </div>
-
-                    <!-- Minimal Permission Sets -->
-                    <div class="command-card">
-                        <div class="command-header">
-                            <div class="command-icon-container licenses">
-                                <lightning-icon icon-name="utility:shield" size="small" variant="inverse"></lightning-icon>
-                            </div>
-                            <h3 class="command-title">{i18n.minimalPermSets}</h3>
-                        </div>
-                        <p class="command-description">{i18n.minimalPermSetsDescription}</p>
-                        <lightning-button
-                            variant="outline-brand"
-                            label={i18n.findMinimalPermSets}
-                            onclick={findMinimalPermSets}
-                            class="command-button"
-                        ></lightning-button>
-                    </div>
-                </div>
-            </div>
+            </template>
 
             <!-- Documentation Section -->
             <div class="docs-section">
@@ -724,16 +263,16 @@
                         {i18n.learnMoreDocDescription}
                     </p>
                     <div class="docs-actions">
-                        <lightning-button 
-                            variant="neutral" 
-                            label={i18n.monitoringDocumentation} 
+                        <lightning-button
+                            variant="neutral"
+                            label={i18n.monitoringDocumentation}
                             icon-name="utility:new_window"
                             onclick={openMonitoringDocs}
                             class="docs-button"
                         ></lightning-button>
-                        <lightning-button 
-                            variant="neutral" 
-                            label={i18n.setupGuide} 
+                        <lightning-button
+                            variant="neutral"
+                            label={i18n.setupGuide}
                             icon-name="utility:setup"
                             onclick={openSetupGuide}
                             class="docs-button"

@@ -295,7 +295,7 @@ export async function execCommand(
     spinner: true,
   },
 ): Promise<any> {
-  let commandResult = null;
+  let commandResult: any;
   // Call command (disable color before for json parsing)
   const prevForceColor = process.env.FORCE_COLOR;
   process.env.FORCE_COLOR = "0";

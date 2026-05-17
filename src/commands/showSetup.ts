@@ -55,7 +55,7 @@ export function registerShowSetup(commands: Commands) {
         // Check presence and validity of a dependency
         else if (type === "checkDependency") {
           const dependency = dependencies[data.id];
-          let res = null;
+          let res: any;
           if (dependency && typeof dependency.checkMethod === "function") {
             try {
               res = await dependency.checkMethod();
