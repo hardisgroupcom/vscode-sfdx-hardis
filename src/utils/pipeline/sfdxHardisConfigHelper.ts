@@ -334,9 +334,9 @@ export class SfdxHardisConfigHelper {
       : null;
     let baseGlobalConfig: SfdxHardisConfig = {};
     let rootConfig: SfdxHardisConfig = {};
-    let globalConfig: SfdxHardisConfig = {};
+    let globalConfig: SfdxHardisConfig;
     let branchConfig: SfdxHardisConfig = {};
-    let config: SfdxHardisConfig = {};
+    let config: SfdxHardisConfig;
     if (await fs.pathExists(globalPath)) {
       baseGlobalConfig =
         (yaml.load(

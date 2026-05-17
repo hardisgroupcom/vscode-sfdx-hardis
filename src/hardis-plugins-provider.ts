@@ -352,7 +352,7 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
     const upgradeAvailableText = t("upgradeAvailableSuffix");
     if (sfdxCliVersion !== recommendedSfdxCliVersion) {
       // Check if sfdx is installed using npm and not the windows installer
-      let sfdxPath = "";
+      let sfdxPath: string;
       try {
         sfdxPath = await which("sf");
         // eslint-disable-next-line @typescript-eslint/no-unused-vars

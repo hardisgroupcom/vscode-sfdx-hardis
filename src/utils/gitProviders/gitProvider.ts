@@ -77,7 +77,7 @@ export class GitProvider {
 
   static async detectRepoInfo(): Promise<RepoInfo | null> {
     const git = simpleGit(getWorkspaceRoot());
-    let remotes: any[] = [];
+    let remotes: any[];
     try {
       remotes = await git.getRemotes(true);
     } catch {
@@ -161,7 +161,7 @@ export class GitProvider {
     }
 
     // Compute webUrl for repo homepage
-    let webUrl = "";
+    let webUrl: string;
     switch (providerName) {
       case "github": {
         // https://github.com/owner/repo

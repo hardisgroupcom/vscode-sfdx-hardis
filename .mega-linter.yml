@@ -16,6 +16,11 @@ DISABLE_ERRORS_LINTERS:
   - YAML_YAMLLINT
 JAVASCRIPT_DEFAULT_STYLE: prettier
 TYPESCRIPT_DEFAULT_STYLE: prettier
+JAVASCRIPT_ES_PRE_COMMANDS:
+  - command: yarn install --frozen-lockfile --ignore-scripts
+    cwd: workspace
+    continue_if_failed: false
+JAVASCRIPT_ES_CLI_EXECUTABLE: node_modules/.bin/eslint
 FILTER_REGEX_EXCLUDE: (\.vscode)
 MARKDOWN_MARKDOWN_LINK_CHECK_DISABLE_ERRORS: true
 SHOW_ELAPSED_TIME: true
