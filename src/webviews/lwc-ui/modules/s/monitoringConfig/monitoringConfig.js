@@ -7,60 +7,19 @@ import { SharedMixin } from "s/sharedMixin";
 
 const DEFAULT_FREQUENCY = "weekly";
 
+// Category icon + colorClass for the seven real categories now come from the CLI catalog
+// (`categories[].icon` and `categories[].colorClass`). Per-command and per-notification
+// icons/colorClass also come from the catalog -- see buildCommandRow / buildNotificationRow.
+//
+// This map only carries the two pseudo-categories that exist purely in this UI ("custom"
+// and "standalone") and the global fallback values for unknown keys.
 const CATEGORY_ICONS = {
-  orgActivity: { icon: "utility:refresh", colorClass: "tests" },
-  userActivity: { icon: "utility:user", colorClass: "users" },
-  apexTestsSecurity: { icon: "utility:shield", colorClass: "security" },
-  orgInfo: { icon: "utility:info", colorClass: "health" },
-  technicalDebt: { icon: "utility:warning", colorClass: "limits" },
-  licensesPackages: { icon: "utility:package", colorClass: "licenses" },
-  other: { icon: "utility:apps", colorClass: "legacy" },
   custom: { icon: "utility:add", colorClass: "backup" },
   standalone: { icon: "utility:notification", colorClass: "alerts" },
 };
 
-const COMMAND_ICONS = {
-  AUDIT_TRAIL: { icon: "utility:trail", colorClass: "audit" },
-  LEGACY_API: { icon: "utility:deprecate", colorClass: "legacy" },
-  APEX_FLOW_ERRORS: { icon: "utility:error", colorClass: "alerts" },
-  APEX_FLEX_QUEUE: { icon: "utility:list", colorClass: "tests" },
-  DEPLOYMENTS: { icon: "utility:upload", colorClass: "audit" },
-  ORG_LIMITS: { icon: "utility:graph", colorClass: "limits" },
-  UNSECURED_CONNECTED_APPS: { icon: "utility:shield", colorClass: "security" },
-  ORG_HEALTH_CHECK: { icon: "utility:check", colorClass: "health" },
-  ORG_INFO: { icon: "utility:info", colorClass: "health" },
-  RELEASE_UPDATES: { icon: "utility:new", colorClass: "updates" },
-  LINT_ACCESS: { icon: "utility:lock", colorClass: "metadata-access" },
-  UNUSED_METADATAS: { icon: "utility:custom_apps", colorClass: "unused-metadata" },
-  UNUSED_APEX_CLASSES: { icon: "utility:apex", colorClass: "apex" },
-  APEX_API_VERSION: { icon: "utility:apex", colorClass: "legacy" },
-  CONNECTED_APPS: { icon: "utility:connected_apps", colorClass: "connected-apps" },
-  METADATA_STATUS: { icon: "utility:flow", colorClass: "legacy" },
-  MISSING_ATTRIBUTES: { icon: "utility:description", colorClass: "metadata-access" },
-  UNDERUSED_PERMSETS: { icon: "utility:lock", colorClass: "licenses" },
-  MINIMAL_PERMSETS: { icon: "utility:shield", colorClass: "metadata-access" },
-  LICENSES: { icon: "utility:package", colorClass: "licenses" },
-  UNUSED_LICENSES: { icon: "utility:key", colorClass: "licenses" },
-  UNUSED_USERS: { icon: "utility:user", colorClass: "users" },
-  UNUSED_USERS_CRM_6_MONTHS: { icon: "utility:user", colorClass: "users" },
-  UNUSED_USERS_EXPERIENCE_6_MONTHS: { icon: "utility:user", colorClass: "users" },
-  ACTIVE_USERS_CRM_WEEKLY: { icon: "utility:user", colorClass: "tests" },
-  ACTIVE_USERS_EXPERIENCE_MONTHLY: { icon: "utility:user", colorClass: "tests" },
-  BACKUP: { icon: "utility:save", colorClass: "backup" },
-  DEPLOYMENT: { icon: "utility:upload", colorClass: "audit" },
-  APEX_TESTS: { icon: "utility:apex", colorClass: "tests" },
-  APEX_ERROR: { icon: "utility:error", colorClass: "alerts" },
-  FLOW_ERROR: { icon: "utility:flow", colorClass: "alerts" },
-  ACTIVE_USERS: { icon: "utility:user", colorClass: "users" },
-  MONITORING_SUMMARY: { icon: "utility:report", colorClass: "backup" },
-  RELEASE_NOTES: { icon: "utility:description", colorClass: "updates" },
-  DORA_REPORT: { icon: "utility:chart", colorClass: "health" },
-  AGENTFORCE_CONVERSATIONS: { icon: "utility:chat", colorClass: "tests" },
-  AGENTFORCE_FEEDBACK: { icon: "utility:like", colorClass: "tests" },
-  SERVICENOW_REPORT: { icon: "utility:table", colorClass: "backup" },
-};
-
-const DEFAULT_ICON = { icon: "utility:settings", colorClass: "legacy" };
+const DEFAULT_CATEGORY_COLOR_CLASS = "legacy";
+const FALLBACK_ICON_NAME = "utility:settings";
 
 const OPTION_EMOJIS = {
   daily: "☀️",
@@ -217,6 +176,17 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
 
   // ----- Row builders -----
 
+  // Resolve a CSS colorClass for a category key. Real categories come from the CLI catalog
+  // (`categories[].colorClass`); pseudo-categories ("custom", "standalone") are UI-only and
+  // fall back to the local CATEGORY_ICONS map.
+  colorClassForCategory(categoryKey) {
+    const fromCatalog = (this.catalog?.categories || []).find((c) => c && c.key === categoryKey);
+    if (fromCatalog && fromCatalog.colorClass) {
+      return fromCatalog.colorClass;
+    }
+    return CATEGORY_ICONS[categoryKey]?.colorClass || DEFAULT_CATEGORY_COLOR_CLASS;
+  }
+
   parseTitleSegments(title) {
     if (!title) {
       return [];
@@ -253,7 +223,18 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
 
   buildCommandRow(catalogEntry, userEntry, isCustom) {
     const key = isCustom ? userEntry.key : catalogEntry.key;
-    const iconData = COMMAND_ICONS[key] || DEFAULT_ICON;
+    const iconName =
+      (catalogEntry && catalogEntry.icon) ||
+      (userEntry && userEntry.icon) ||
+      FALLBACK_ICON_NAME;
+    const categoryKey = isCustom
+      ? "custom"
+      : (catalogEntry && catalogEntry.category) || "other";
+    // Prefer the catalog-supplied per-command colorClass; fall back to category lookup
+    // for custom commands (no catalog entry) and unknown categories.
+    const colorClass =
+      (catalogEntry && catalogEntry.colorClass) ||
+      this.colorClassForCategory(categoryKey);
     const rawTitle = isCustom ? (userEntry.title || userEntry.key) : catalogEntry.title;
     const title = (rawTitle || "").replace(/\*\*/g, "");
     const frequencyOptions = this.catalog?.options?.frequencies || [];
@@ -270,8 +251,8 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
       title,
       titleSegments: this.parseTitleSegments(rawTitle),
       command: isCustom ? (userEntry.command || "") : (catalogEntry.command || ""),
-      iconName: iconData.icon,
-      iconContainerClass: "command-icon-container " + iconData.colorClass,
+      iconName,
+      iconContainerClass: "command-icon-container " + colorClass,
       frequency: effectiveFrequency,
       frequencyOptions: this.makeOptions(frequencyOptions, effectiveFrequency),
       hasOverrides,
@@ -282,7 +263,10 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
 
   buildNotificationRow(catalogEntry, userEntry, ownerKey) {
     const key = catalogEntry.key;
-    const iconData = COMMAND_ICONS[key] || DEFAULT_ICON;
+    const iconName = catalogEntry.icon || FALLBACK_ICON_NAME;
+    // Prefer the catalog-supplied per-notification colorClass; fall back to the category one.
+    const colorClass =
+      catalogEntry.colorClass || this.colorClassForCategory(catalogEntry.category);
     const rawTitle = catalogEntry.title || key;
     const title = (rawTitle || "").replace(/\*\*/g, "");
     const thresholds = this.getAvailableThresholds(catalogEntry);
@@ -297,8 +281,8 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
       isCustom: false,
       title,
       titleSegments: this.parseTitleSegments(rawTitle),
-      iconName: iconData.icon,
-      iconContainerClass: "command-icon-container " + iconData.colorClass,
+      iconName,
+      iconContainerClass: "command-icon-container " + colorClass,
       messaging: effective.messaging,
       email: effective.email,
       api: effective.api,
@@ -445,14 +429,21 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
       if (catRows.length === 0) {
         continue;
       }
-      const catIconData = CATEGORY_ICONS[cat.key] || { icon: "utility:apps", colorClass: "legacy" };
+      // Prefer the catalog-supplied per-category icon / colorClass; fall back to the local
+      // CATEGORY_ICONS map (only useful for pseudo-categories or an unexpected key) and to
+      // a generic glyph if nothing else is available.
+      const catalogIcon = cat.icon;
+      const localData = CATEGORY_ICONS[cat.key];
+      const catIcon = catalogIcon || (localData && localData.icon) || FALLBACK_ICON_NAME;
+      const catColorClass =
+        cat.colorClass || this.colorClassForCategory(cat.key);
       result.push({
         key: cat.key,
         title: cat.title,
         description: cat.description || "",
-        icon: catIconData.icon,
+        icon: catIcon,
         iconContainerClass:
-          "command-icon-container command-icon-container--lg " + catIconData.colorClass,
+          "command-icon-container command-icon-container--lg " + catColorClass,
         rows: catRows,
       });
     }

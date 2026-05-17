@@ -68,6 +68,8 @@ export interface MonitoringCommandDefault {
   title: string;
   description?: string;
   category: string;
+  /** SLDS icon name (e.g. `"utility:shield"`) supplied by the CLI catalog. */
+  icon?: string;
   command?: string;
   frequency?: MonitoringFrequency;
   frequencyDay?: Weekday;
@@ -80,6 +82,8 @@ export interface NotificationConfigDefault {
   title: string;
   description?: string;
   category: string;
+  /** SLDS icon name (e.g. `"utility:shield"`) supplied by the CLI catalog. */
+  icon?: string;
   notifications: Record<NotificationChannel, NotificationThreshold>;
   /**
    * Severities this notification type can actually be emitted with, plus "off".
