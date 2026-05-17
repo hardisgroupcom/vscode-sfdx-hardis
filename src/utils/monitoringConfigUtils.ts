@@ -220,6 +220,18 @@ export async function fetchMonitoringCatalog(): Promise<MonitoringCatalogPayload
  * from the root `.sfdx-hardis.yml`. Returns empty arrays when the file or keys
  * are missing.
  */
+function buildMonitoringConfig(raw: string): MonitoringUserConfig {
+  const parsed = (yaml.load(raw) as any) || {};
+  return {
+    monitoringCommands: Array.isArray(parsed.monitoringCommands)
+      ? parsed.monitoringCommands
+      : [],
+    notificationConfig: Array.isArray(parsed.notificationConfig)
+      ? parsed.notificationConfig
+      : [],
+  };
+}
+
 export async function readCurrentMonitoringConfig(): Promise<MonitoringUserConfig> {
   const configPath = getRootConfigPath();
   if (!(await fs.pathExists(configPath))) {
@@ -227,15 +239,7 @@ export async function readCurrentMonitoringConfig(): Promise<MonitoringUserConfi
   }
   try {
     const raw = await fs.readFile(configPath, "utf8");
-    const parsed = (yaml.load(raw) as any) || {};
-    return {
-      monitoringCommands: Array.isArray(parsed.monitoringCommands)
-        ? parsed.monitoringCommands
-        : [],
-      notificationConfig: Array.isArray(parsed.notificationConfig)
-        ? parsed.notificationConfig
-        : [],
-    };
+    return buildMonitoringConfig(raw);
   } catch (e) {
     Logger.log(`Error reading monitoring config from ${configPath}: ${e}`);
     return { monitoringCommands: [], notificationConfig: [] };
@@ -257,15 +261,7 @@ export async function readMonitoringConfigFromBranch(
     if (!raw) {
       return { monitoringCommands: [], notificationConfig: [] };
     }
-    const parsed = (yaml.load(raw) as any) || {};
-    return {
-      monitoringCommands: Array.isArray(parsed.monitoringCommands)
-        ? parsed.monitoringCommands
-        : [],
-      notificationConfig: Array.isArray(parsed.notificationConfig)
-        ? parsed.notificationConfig
-        : [],
-    };
+    return buildMonitoringConfig(raw);
   } catch (e) {
     Logger.log(`No ${CONFIG_FILE} on branch ${branch}: ${e}`);
     return { monitoringCommands: [], notificationConfig: [] };

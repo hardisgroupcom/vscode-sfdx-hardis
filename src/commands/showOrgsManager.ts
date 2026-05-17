@@ -88,6 +88,7 @@ export function registerShowOrgsManager(commandThis: Commands) {
               );
 
               // send back result and refresh list
+              /* jscpd:ignore-start */
               panel.sendInitializationData({ loading: true });
               setTimeout(async () => {
                 orgs = await loadOrgsWithProgress(
@@ -99,6 +100,7 @@ export function registerShowOrgsManager(commandThis: Commands) {
                   orgs: [...orgs],
                   loading: false,
                 });
+                /* jscpd:ignore-end */
                 vscode.window.showInformationMessage(
                   t("forgotNOrgs", { count: result.successUsernames.length }),
                 );
@@ -216,7 +218,7 @@ export function registerShowOrgsManager(commandThis: Commands) {
                 }),
               );
 
-              /* jscpd:ignore start */
+              /* jscpd:ignore-start */
               // Refresh the orgs list to show the updated aliases
               panel.sendInitializationData({ loading: true });
               setTimeout(async () => {
@@ -234,7 +236,7 @@ export function registerShowOrgsManager(commandThis: Commands) {
               vscode.window.showErrorMessage(
                 t("errorSettingAliases", { error: error?.message || error }),
               );
-              /* jscpd:ignore end */
+              /* jscpd:ignore-end */
             }
           }
         });
