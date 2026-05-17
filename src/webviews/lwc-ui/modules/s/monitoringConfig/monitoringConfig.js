@@ -171,6 +171,20 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
         map[entry.key] = entry;
       }
     }
+    // Custom commands emit notifications under their own key by default —
+    // synthesize a catalog entry so the Workbench can render threshold editors.
+    for (const userCmd of this.customCommands) {
+      if (!userCmd || !userCmd.key || map[userCmd.key]) {
+        continue;
+      }
+      map[userCmd.key] = {
+        key: userCmd.key,
+        title: userCmd.title || userCmd.key,
+        category: "custom",
+        notifications: { messaging: "info", email: "info", api: "log" },
+        isSynthetic: true,
+      };
+    }
     return map;
   }
 
@@ -447,9 +461,13 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
     const customRows = [];
     for (const userCmd of this.customCommands) {
       const row = this.buildCommandRow(null, userCmd, true);
-      const notifKeys = Array.isArray(userCmd.notificationTypes)
+      const explicitTypes = Array.isArray(userCmd.notificationTypes)
         ? userCmd.notificationTypes
         : [];
+      // If the user did not pin specific notification types on this custom
+      // command, assume it emits a single notification keyed by the command
+      // itself (so author-implemented channels are configurable in the UI).
+      const notifKeys = explicitTypes.length > 0 ? explicitTypes : [userCmd.key];
       for (const notifKey of notifKeys) {
         const notifCatalog = notifDefaults[notifKey];
         if (!notifCatalog) {
@@ -775,14 +793,16 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
     const cmdCatalog = (this.catalog.monitoringCommands || []).find(
       (e) => e.key === commandKey,
     );
+    const userCmd = this.userCommandsByKey[commandKey] || {};
     const notifCatalog = this.notificationDefaultsByKey[notificationKey];
-    if (!cmdCatalog || !notifCatalog) {
+    // For custom commands, cmdCatalog is undefined — fall back to the user entry.
+    if (!notifCatalog || (!cmdCatalog && !userCmd.key)) {
       return;
     }
-    const userCmd = this.userCommandsByKey[commandKey] || {};
+    const isCustom = !cmdCatalog;
     const userNotif = this.userNotificationsByKey[notificationKey] || {};
     const effectiveFreq =
-      userCmd.frequency || cmdCatalog.frequency || DEFAULT_FREQUENCY;
+      userCmd.frequency || cmdCatalog?.frequency || DEFAULT_FREQUENCY;
     const effectiveThresholds = this.resolveNotificationThresholds(
       notifCatalog,
       userNotif,
@@ -792,13 +812,13 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
     this.modalEntry = {
       key: commandKey,
       notificationKey,
-      title: cmdCatalog.title || commandKey,
-      command: cmdCatalog.command || "",
-      isCustom: false,
+      title: cmdCatalog?.title || userCmd.title || commandKey,
+      command: cmdCatalog?.command || userCmd.command || "",
+      isCustom,
       frequency: effectiveFreq,
-      frequencyDay: userCmd.frequencyDay || cmdCatalog.frequencyDay || "monday",
+      frequencyDay: userCmd.frequencyDay || cmdCatalog?.frequencyDay || "monday",
       frequencyDayOfMonth:
-        userCmd.frequencyDayOfMonth || cmdCatalog.frequencyDayOfMonth || 1,
+        userCmd.frequencyDayOfMonth || cmdCatalog?.frequencyDayOfMonth || 1,
     };
     this.modalMessaging = effectiveThresholds.messaging;
     this.modalEmail = effectiveThresholds.email;
@@ -889,7 +909,10 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
     if (!this.modalEntry) {
       return;
     }
-    const raw = event.target.value;
+    const raw =
+      event.detail && event.detail.value !== undefined
+        ? event.detail.value
+        : event.target?.value;
     let n = Number(raw);
     if (isNaN(n) || n < 1) {
       n = 1;
@@ -913,79 +936,97 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
   }
 
   handleModalRecipientsChange(event) {
-    this.modalEmailRecipientsText = event.target.value || "";
+    const value =
+      event.detail && typeof event.detail.value === "string"
+        ? event.detail.value
+        : event.target?.value || "";
+    this.modalEmailRecipientsText = value;
   }
 
   handleModalReplaceChange(event) {
-    this.modalReplaceRecipients = !!event.target.checked;
+    const checked =
+      event.detail && typeof event.detail.checked === "boolean"
+        ? event.detail.checked
+        : !!event.target?.checked;
+    this.modalReplaceRecipients = checked;
   }
 
   handleModalSave() {
-    if (!this.modalEntry) {
-      this.modalOpen = false;
-      return;
-    }
-    const commandKey = this.modalEntry.key;
-    const notificationKey = this.modalEntry.notificationKey || this.modalEntry.key;
+    try {
+      if (!this.modalEntry) {
+        return;
+      }
+      const commandKey = this.modalEntry.key;
+      const notificationKey = this.modalEntry.notificationKey || this.modalEntry.key;
 
-    if (this.modalIsCommand && this.modalKind !== "notification") {
-      const newFrequency = this.modalEntry.frequency;
-      const newDay = this.modalEntry.frequencyDay;
-      const newDayOfMonth = this.modalEntry.frequencyDayOfMonth;
-      this.updateUserCommand(commandKey, (entry) => {
-        entry.frequency = newFrequency;
-        if (newFrequency === "weekly" || newFrequency === "biweekly") {
-          entry.frequencyDay = newDay;
-          delete entry.frequencyDayOfMonth;
-        }
-        else if (newFrequency === "monthly") {
-          entry.frequencyDayOfMonth = newDayOfMonth;
-          delete entry.frequencyDay;
-        }
-        else {
-          delete entry.frequencyDay;
-          delete entry.frequencyDayOfMonth;
-        }
-      });
-    }
-
-    if (this.modalIsNotification && this.modalKind !== "command") {
-      const newMessaging = this.modalMessaging;
-      const newEmailThreshold = this.modalEmail;
-      const newApi = this.modalApi;
-      const recipients = (this.modalEmailRecipientsText || "")
-        .split(/[\r\n,;]+/)
-        .map((s) => s.trim())
-        .filter(Boolean);
-      const replace = this.modalReplaceRecipients;
-
-      this.updateUserNotification(notificationKey, (entry) => {
-        entry.notifications = this.normalizeNotifications(entry.notifications);
-        if (newMessaging) {
-          entry.notifications.messaging = newMessaging;
-        }
-        if (newApi) {
-          entry.notifications.api = newApi;
-        }
-        if (recipients.length > 0 || replace) {
-          const emailObj = {};
-          if (newEmailThreshold) {
-            emailObj.threshold = newEmailThreshold;
+      if (this.modalIsCommand) {
+        const newFrequency = this.modalEntry.frequency;
+        const newDay = this.modalEntry.frequencyDay;
+        const newDayOfMonth = this.modalEntry.frequencyDayOfMonth;
+        this.updateUserCommand(commandKey, (entry) => {
+          if (newFrequency) {
+            entry.frequency = newFrequency;
           }
-          if (recipients.length > 0) {
-            emailObj.recipients = recipients;
+          if (newFrequency === "weekly" || newFrequency === "biweekly") {
+            entry.frequencyDay = newDay;
+            delete entry.frequencyDayOfMonth;
           }
-          if (replace) {
-            emailObj.replaceRecipients = true;
+          else if (newFrequency === "monthly") {
+            entry.frequencyDayOfMonth = newDayOfMonth;
+            delete entry.frequencyDay;
           }
-          entry.notifications.email = emailObj;
-        }
-        else {
-          entry.notifications.email = newEmailThreshold || undefined;
-        }
-      });
-    }
+          else {
+            delete entry.frequencyDay;
+            delete entry.frequencyDayOfMonth;
+          }
+        });
+      }
 
+      if (this.modalIsNotification) {
+        const newMessaging = this.modalMessaging;
+        const newEmailThreshold = this.modalEmail;
+        const newApi = this.modalApi;
+        const recipients = (this.modalEmailRecipientsText || "")
+          .split(/[\r\n,;]+/)
+          .map((s) => s.trim())
+          .filter(Boolean);
+        const replace = this.modalReplaceRecipients;
+
+        this.updateUserNotification(notificationKey, (entry) => {
+          entry.notifications = this.normalizeNotifications(entry.notifications);
+          if (newMessaging) {
+            entry.notifications.messaging = newMessaging;
+          }
+          if (newApi) {
+            entry.notifications.api = newApi;
+          }
+          if (recipients.length > 0 || replace) {
+            const emailObj = {};
+            if (newEmailThreshold) {
+              emailObj.threshold = newEmailThreshold;
+            }
+            if (recipients.length > 0) {
+              emailObj.recipients = recipients;
+            }
+            if (replace) {
+              emailObj.replaceRecipients = true;
+            }
+            entry.notifications.email = emailObj;
+          }
+          else if (newEmailThreshold) {
+            entry.notifications.email = newEmailThreshold;
+          }
+          else {
+            delete entry.notifications.email;
+          }
+        });
+      }
+    }
+    catch (error) {
+      // Surface the error in the webview console; never leave the modal stuck open.
+      // eslint-disable-next-line no-console
+      console.error("[monitoringConfig] handleModalSave failed:", error);
+    }
     this.modalOpen = false;
     this.modalEntry = null;
   }
@@ -1071,7 +1112,11 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
   // ----- Persistence -----
 
   _autoSave() {
-    const cleaned = this.cleanForSave();
+    // Deep-clone via JSON so any LWC @track proxy wrappers nested inside the
+    // payload (notificationTypes[], notifications.email.recipients[], etc.)
+    // get stripped — otherwise postMessage's structured-clone algorithm throws
+    // "[object Array] could not be cloned." and the save never reaches the host.
+    const cleaned = JSON.parse(JSON.stringify(this.cleanForSave()));
     window.sendMessageToVSCode({
       type: "saveMonitoringConfig",
       data: cleaned,
