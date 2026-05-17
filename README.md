@@ -72,12 +72,12 @@ Salesforce DX is powerful, but you have to glue together dozens of `sf` commands
 
 ## Who is it for?
 
-| Role | What you get |
-|---|---|
-| **Salesforce Consultants / Admins** | A guided, Git-free UI to build user stories, pull changes, and publish work without touching the command line. |
-| **Developers** | Power-user shortcuts: anonymous Apex runner, debugger, delta deployment simulation, project cleaning, Flow git diff, package management. |
-| **Release Managers / Architects** | A visual pipeline, deployment simulation, branch-strategy diagrams, and full org monitoring with notifications. |
-| **CTOs / Project sponsors** | Open-Source tooling that standardizes DevOps across teams and makes Salesforce delivery auditable. |
+| Role                                | What you get                                                                                                                             |
+|-------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------|
+| **Salesforce Consultants / Admins** | A guided, Git-free UI to build user stories, pull changes, and publish work without touching the command line.                           |
+| **Developers**                      | Power-user shortcuts: anonymous Apex runner, debugger, delta deployment simulation, project cleaning, Flow git diff, package management. |
+| **Release Managers / Architects**   | A visual pipeline, deployment simulation, branch-strategy diagrams, and full org monitoring with notifications.                          |
+| **CTOs / Project sponsors**         | Open-Source tooling that standardizes DevOps across teams and makes Salesforce delivery auditable.                                       |
 
 ---
 
@@ -119,8 +119,8 @@ The pipeline supports the major Git platforms out of the box: **GitHub, GitLab, 
 
 Designed for consultant profiles: **start a user story → work in the org → save & publish** without ever opening a terminal.
 
-| New user story | Retrieve & commit | Save & publish |
-|---|---|---|
+| New user story                                                                                                       | Retrieve & commit                                                                                                              | Save & publish                                                                                                          |
+|----------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------|
 | ![New user story](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/new-user-story-2026.gif) | ![Retrieve and commit](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/retrieve-and-commit-2026.gif) | ![Save and publish](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/save-publish-pr-2026.gif) |
 
 - [Start a new user story](https://sfdx-hardis.cloudity.com/hardis/work/new/) - branches and configures everything for you.
