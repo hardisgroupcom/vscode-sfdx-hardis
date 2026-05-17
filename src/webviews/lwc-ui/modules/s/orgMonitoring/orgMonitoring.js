@@ -153,7 +153,11 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
   // ----- Catalog-driven category groups -----
 
   get hasCatalog() {
-    return !!(this.catalog && Array.isArray(this.catalog.entries) && this.catalog.entries.length > 0);
+    return !!(
+      this.catalog &&
+      Array.isArray(this.catalog.monitoringCommands) &&
+      this.catalog.monitoringCommands.length > 0
+    );
   }
 
   get hasNoCatalog() {
@@ -169,10 +173,7 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
       return [];
     }
     const rowMap = {};
-    for (const entry of this.catalog.entries || []) {
-      if (entry.kind && entry.kind !== "monitoringCommand") {
-        continue;
-      }
+    for (const entry of this.catalog.monitoringCommands || []) {
       if (!entry.command) {
         continue;
       }
@@ -196,7 +197,7 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
     // Collected per category first so EXTRA_COMMANDS declaration order is
     // preserved when prepended in front of the catalog entries.
     const catalogCommands = new Set(
-      (this.catalog.entries || []).map((e) => e.command).filter(Boolean),
+      (this.catalog.monitoringCommands || []).map((e) => e.command).filter(Boolean),
     );
     const extrasByCategory = {};
     for (const extra of EXTRA_COMMANDS) {

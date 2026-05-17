@@ -49,23 +49,44 @@ export interface MonitoringCommandEntry {
   key: string;
   title?: string;
   command?: string;
+  category?: string;
   frequency?: MonitoringFrequency;
   frequencyDay?: Weekday;
   frequencyDayOfMonth?: number;
+  notificationTypes?: string[];
+}
+
+export interface NotificationConfigEntry {
+  key: string;
+  title?: string;
+  category?: string;
   notifications?: MonitoringNotifications;
 }
 
-export interface MonitoringCatalogEntry {
+export interface MonitoringCommandDefault {
   key: string;
-  kind: "monitoringCommand" | "notificationType";
   title: string;
-  description: string;
-  category?: string;
+  description?: string;
+  category: string;
   command?: string;
   frequency?: MonitoringFrequency;
   frequencyDay?: Weekday;
   frequencyDayOfMonth?: number;
+  notificationTypes?: string[];
+}
+
+export interface NotificationConfigDefault {
+  key: string;
+  title: string;
+  description?: string;
+  category: string;
   notifications: Record<NotificationChannel, NotificationThreshold>;
+  /**
+   * Severities this notification type can actually be emitted with, plus "off".
+   * Sorted most-restrictive to least-restrictive; last element is always "off".
+   * Drives the threshold selector options in the Workbench.
+   */
+  availableThresholds?: NotificationThreshold[];
 }
 
 export interface MonitoringCatalogCategory {
@@ -76,7 +97,8 @@ export interface MonitoringCatalogCategory {
 }
 
 export interface MonitoringCatalogPayload {
-  entries: MonitoringCatalogEntry[];
+  monitoringCommands: MonitoringCommandDefault[];
+  notificationConfig: NotificationConfigDefault[];
   categories: MonitoringCatalogCategory[];
   options: {
     frequencies: MonitoringFrequency[];
@@ -84,6 +106,11 @@ export interface MonitoringCatalogPayload {
     thresholds: NotificationThreshold[];
     channels: NotificationChannel[];
   };
+}
+
+export interface MonitoringUserConfig {
+  monitoringCommands: MonitoringCommandEntry[];
+  notificationConfig: NotificationConfigEntry[];
 }
 
 const NOTIFICATION_THRESHOLD_ORDER: NotificationThreshold[] = [
@@ -103,7 +130,6 @@ function getRootConfigPath(): string {
 }
 
 const MONITORING_DEFAULTS_CMD = "sf hardis:config:monitoring-defaults";
-// execSfdxJson appends " --json" before caching, so the stored key has the suffix
 const MONITORING_DEFAULTS_CACHE_KEY = MONITORING_DEFAULTS_CMD + " --json";
 
 function normalizeThresholds(
@@ -129,31 +155,31 @@ function normalizeMonitoringCatalog(
 ): MonitoringCatalogPayload {
   return {
     ...payload,
+    monitoringCommands: Array.isArray(payload.monitoringCommands)
+      ? payload.monitoringCommands
+      : [],
+    notificationConfig: Array.isArray(payload.notificationConfig)
+      ? payload.notificationConfig
+      : [],
+    categories: Array.isArray(payload.categories) ? payload.categories : [],
     options: {
-      ...payload.options,
+      ...(payload.options || ({} as MonitoringCatalogPayload["options"])),
       thresholds: normalizeThresholds(payload.options?.thresholds),
     },
   };
 }
 
-/**
- * Drop the cached monitoring catalog so the next fetch hits the CLI.
- */
 export async function clearMonitoringCatalogCache(): Promise<void> {
   await CacheManager.delete("app", MONITORING_DEFAULTS_CACHE_KEY);
 }
 
-/**
- * Fetch the monitoring catalog (defaults + option lists) from sfdx-hardis CLI.
- * Throws if the command is unavailable so callers can prompt the user to upgrade.
- */
 export async function fetchMonitoringCatalog(): Promise<MonitoringCatalogPayload> {
   const res = await execSfdxJson(MONITORING_DEFAULTS_CMD, {
     fail: false,
     output: false,
     debug: false,
     cacheSection: "app",
-    cacheExpiration: 1000 * 60 * 60 * 24 * 7, // 7 days
+    cacheExpiration: 1000 * 60 * 60 * 24 * 7,
   });
   if (!res || res.status !== 0 || !res.result) {
     const errorMsg =
@@ -163,8 +189,11 @@ export async function fetchMonitoringCatalog(): Promise<MonitoringCatalogPayload
   const payload = normalizeMonitoringCatalog(
     res.result as MonitoringCatalogPayload,
   );
-  // Stale cache: old CLI format had no categories. Bust cache and re-fetch once.
-  if (!payload.categories || payload.categories.length === 0) {
+  // Detect stale cached payloads produced by an older CLI shape (no monitoringCommands key).
+  if (
+    !Array.isArray((res.result as any).monitoringCommands) &&
+    !Array.isArray((res.result as any).notificationConfig)
+  ) {
     await CacheManager.delete("app", MONITORING_DEFAULTS_CACHE_KEY);
     const fresh = await execSfdxJson(MONITORING_DEFAULTS_CMD, {
       fail: false,
@@ -183,56 +212,62 @@ export async function fetchMonitoringCatalog(): Promise<MonitoringCatalogPayload
 }
 
 /**
- * Read the current monitoringCommands array from the root .sfdx-hardis.yml.
- * Returns [] if the file or key is missing.
+ * Read the user-defined `monitoringCommands:` and `notificationConfig:` arrays
+ * from the root `.sfdx-hardis.yml`. Returns empty arrays when the file or keys
+ * are missing.
  */
-export async function readCurrentMonitoringCommands(): Promise<
-  MonitoringCommandEntry[]
-> {
+export async function readCurrentMonitoringConfig(): Promise<MonitoringUserConfig> {
   const configPath = getRootConfigPath();
   if (!(await fs.pathExists(configPath))) {
-    return [];
+    return { monitoringCommands: [], notificationConfig: [] };
   }
   try {
     const raw = await fs.readFile(configPath, "utf8");
     const parsed = (yaml.load(raw) as any) || {};
-    const list = parsed.monitoringCommands;
-    return Array.isArray(list) ? list : [];
+    return {
+      monitoringCommands: Array.isArray(parsed.monitoringCommands)
+        ? parsed.monitoringCommands
+        : [],
+      notificationConfig: Array.isArray(parsed.notificationConfig)
+        ? parsed.notificationConfig
+        : [],
+    };
   } catch (e) {
-    Logger.log(`Error reading monitoringCommands from ${configPath}: ${e}`);
-    return [];
+    Logger.log(`Error reading monitoring config from ${configPath}: ${e}`);
+    return { monitoringCommands: [], notificationConfig: [] };
   }
 }
 
 /**
- * Read monitoringCommands from .sfdx-hardis.yml on another branch (without checkout).
- * Returns [] if the file doesn't exist on that branch or the key is missing.
+ * Read `monitoringCommands:` and `notificationConfig:` from `.sfdx-hardis.yml`
+ * on another branch (without checkout). Returns empty arrays when the file
+ * doesn't exist on that branch or the keys are missing.
  */
-export async function readMonitoringCommandsFromBranch(
+export async function readMonitoringConfigFromBranch(
   branch: string,
-): Promise<MonitoringCommandEntry[]> {
+): Promise<MonitoringUserConfig> {
   const workspaceRoot = getWorkspaceRoot();
   const git = simpleGit(workspaceRoot);
   try {
     const raw = await git.raw(["show", `${branch}:${CONFIG_FILE}`]);
     if (!raw) {
-      return [];
+      return { monitoringCommands: [], notificationConfig: [] };
     }
     const parsed = (yaml.load(raw) as any) || {};
-    const list = parsed.monitoringCommands;
-    return Array.isArray(list) ? list : [];
+    return {
+      monitoringCommands: Array.isArray(parsed.monitoringCommands)
+        ? parsed.monitoringCommands
+        : [],
+      notificationConfig: Array.isArray(parsed.notificationConfig)
+        ? parsed.notificationConfig
+        : [],
+    };
   } catch (e) {
     Logger.log(`No ${CONFIG_FILE} on branch ${branch}: ${e}`);
-    return [];
+    return { monitoringCommands: [], notificationConfig: [] };
   }
 }
 
-/**
- * List branches whose name starts with "monitoring" (local + remote-tracking).
- * When a local branch and its `origin/` counterpart both exist, keep only the
- * ref with the most recent commit so the user is offered a single option per
- * logical branch.
- */
 export async function listAvailableBranches(): Promise<string[]> {
   const workspaceRoot = getWorkspaceRoot();
   const git = simpleGit(workspaceRoot);
@@ -269,11 +304,12 @@ export async function listAvailableBranches(): Promise<string[]> {
 }
 
 /**
- * Persist the monitoringCommands array to the root .sfdx-hardis.yml,
- * preserving all other keys and overall file formatting.
+ * Persist `monitoringCommands:` and `notificationConfig:` to the root
+ * `.sfdx-hardis.yml`, preserving all other keys and overall file formatting.
+ * Either array, if empty, is removed from the YAML so the file stays clean.
  */
-export async function saveMonitoringCommands(
-  commands: MonitoringCommandEntry[],
+export async function saveMonitoringConfig(
+  config: MonitoringUserConfig,
 ): Promise<void> {
   const configPath = getRootConfigPath();
   let existing: Record<string, any> = {};
@@ -285,7 +321,18 @@ export async function saveMonitoringCommands(
       existing = {};
     }
   }
-  existing.monitoringCommands = commands;
+  if (Array.isArray(config.monitoringCommands) && config.monitoringCommands.length > 0) {
+    existing.monitoringCommands = config.monitoringCommands;
+  }
+  else {
+    delete existing.monitoringCommands;
+  }
+  if (Array.isArray(config.notificationConfig) && config.notificationConfig.length > 0) {
+    existing.notificationConfig = config.notificationConfig;
+  }
+  else {
+    delete existing.notificationConfig;
+  }
   await fs.ensureDir(path.dirname(configPath));
   await fs.writeFile(configPath, yaml.dump(existing), "utf8");
 }

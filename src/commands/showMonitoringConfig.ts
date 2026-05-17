@@ -8,11 +8,13 @@ import { t } from "../i18n/i18n";
 import { DOCSITE_URL } from "../constants";
 import {
   fetchMonitoringCatalog,
-  readCurrentMonitoringCommands,
-  readMonitoringCommandsFromBranch,
+  readCurrentMonitoringConfig,
+  readMonitoringConfigFromBranch,
   listAvailableBranches,
-  saveMonitoringCommands,
+  saveMonitoringConfig,
   MonitoringCommandEntry,
+  NotificationConfigEntry,
+  MonitoringUserConfig,
 } from "../utils/monitoringConfigUtils";
 
 let _gitHeadWatcher: vscode.FileSystemWatcher | null = null;
@@ -21,7 +23,6 @@ export function registerShowMonitoringConfig(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
     "vscode-sfdx-hardis.showMonitoringConfig",
     async () => {
-      // Fetch catalog from CLI; if it fails, the user must upgrade sfdx-hardis
       let catalog;
       try {
         catalog = await vscode.window.withProgress(
@@ -38,7 +39,7 @@ export function registerShowMonitoringConfig(commands: Commands) {
         return;
       }
 
-      const monitoringCommands = await readCurrentMonitoringCommands();
+      const userConfig = await readCurrentMonitoringConfig();
       const branches = await listAvailableBranches();
       const currentBranch = await getCurrentBranchName();
 
@@ -46,7 +47,8 @@ export function registerShowMonitoringConfig(commands: Commands) {
         "s-monitoring-config",
         {
           catalog,
-          monitoringCommands,
+          monitoringCommands: userConfig.monitoringCommands,
+          notificationConfig: userConfig.notificationConfig,
           branches,
           currentBranch,
           docUrl: DOCSITE_URL + "/salesforce-monitoring-config-home/",
@@ -54,7 +56,6 @@ export function registerShowMonitoringConfig(commands: Commands) {
       );
       panel.updateTitle(t("monitoringConfigWorkbench"));
 
-      // Dispose any previous watcher (e.g. panel was reopened)
       if (_gitHeadWatcher) {
         _gitHeadWatcher.dispose();
         _gitHeadWatcher = null;
@@ -70,12 +71,13 @@ export function registerShowMonitoringConfig(commands: Commands) {
         }
         try {
           const newBranch = await getCurrentBranchName();
-          const newCommands = await readCurrentMonitoringCommands();
+          const newUserConfig = await readCurrentMonitoringConfig();
           panel.sendMessage({
             type: "branchChanged",
             data: {
               currentBranch: newBranch,
-              monitoringCommands: newCommands,
+              monitoringCommands: newUserConfig.monitoringCommands,
+              notificationConfig: newUserConfig.notificationConfig,
             },
           });
         } catch (error: any) {
@@ -91,12 +93,21 @@ export function registerShowMonitoringConfig(commands: Commands) {
         switch (type) {
           case "saveMonitoringConfig": {
             try {
-              const list: MonitoringCommandEntry[] = Array.isArray(
+              const monitoringCommands: MonitoringCommandEntry[] = Array.isArray(
                 data?.monitoringCommands,
               )
                 ? data.monitoringCommands
                 : [];
-              await saveMonitoringCommands(list);
+              const notificationConfig: NotificationConfigEntry[] = Array.isArray(
+                data?.notificationConfig,
+              )
+                ? data.notificationConfig
+                : [];
+              const payload: MonitoringUserConfig = {
+                monitoringCommands,
+                notificationConfig,
+              };
+              await saveMonitoringConfig(payload);
             } catch (error: any) {
               Logger.log(
                 "Error saving monitoring config: " + error?.message,
@@ -123,9 +134,11 @@ export function registerShowMonitoringConfig(commands: Commands) {
               return;
             }
             try {
-              const branchCommands =
-                await readMonitoringCommandsFromBranch(branch);
-              if (branchCommands.length === 0) {
+              const branchConfig = await readMonitoringConfigFromBranch(branch);
+              if (
+                branchConfig.monitoringCommands.length === 0 &&
+                branchConfig.notificationConfig.length === 0
+              ) {
                 vscode.window.showWarningMessage(
                   t("monitoringConfigBranchEmpty", { branch }),
                 );
@@ -134,7 +147,8 @@ export function registerShowMonitoringConfig(commands: Commands) {
                 type: "branchConfigLoaded",
                 data: {
                   branch,
-                  monitoringCommands: branchCommands,
+                  monitoringCommands: branchConfig.monitoringCommands,
+                  notificationConfig: branchConfig.notificationConfig,
                 },
               });
             } catch (error: any) {

@@ -256,3 +256,15 @@
 .monitoring-row-actions lightning-button-icon {
   margin: 0 0.125rem;
 }
+
+.monitoring-row-title--indent {
+  padding-left: 1.25rem;
+}
+
+.monitoring-row-child-bullet {
+  margin-right: 0.25rem;
+}
+
+.monitoring-cell-disabled {
+  text-align: center;
+}

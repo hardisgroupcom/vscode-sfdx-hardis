@@ -16,6 +16,7 @@ const CATEGORY_ICONS = {
   licensesPackages: { icon: "utility:package", colorClass: "licenses" },
   other: { icon: "utility:apps", colorClass: "legacy" },
   custom: { icon: "utility:add", colorClass: "backup" },
+  standalone: { icon: "utility:notification", colorClass: "alerts" },
 };
 
 const COMMAND_ICONS = {
@@ -76,12 +77,19 @@ const OPTION_EMOJIS = {
 };
 
 export default class MonitoringConfig extends SharedMixin(LightningElement) {
-  @track catalog = { entries: [], options: { frequencies: [], frequencyDays: [], thresholds: [], channels: [] } };
+  @track catalog = {
+    monitoringCommands: [],
+    notificationConfig: [],
+    categories: [],
+    options: { frequencies: [], frequencyDays: [], thresholds: [], channels: [] },
+  };
   @track userCommands = [];
+  @track userNotifications = [];
   @track branches = [];
   @track currentBranch = "";
   @track docUrl = "";
   @track modalOpen = false;
+  @track modalKind = "command"; // "command" | "notification"
   @track modalEntry = null;
   @track modalEmailRecipientsText = "";
   @track modalReplaceRecipients = false;
@@ -90,14 +98,18 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
   @track modalMessaging = "";
   @track modalEmail = "";
   @track modalApi = "";
+  @track modalAvailableThresholds = [];
 
   @api
   initialize(data) {
     if (data?.catalog) {
-      this.catalog = data.catalog;
+      this.catalog = this.normalizeCatalog(data.catalog);
     }
     if (Array.isArray(data?.monitoringCommands)) {
       this.userCommands = JSON.parse(JSON.stringify(data.monitoringCommands));
+    }
+    if (Array.isArray(data?.notificationConfig)) {
+      this.userNotifications = JSON.parse(JSON.stringify(data.notificationConfig));
     }
     if (Array.isArray(data?.branches)) {
       this.branches = data.branches;
@@ -113,13 +125,13 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
   @api
   handleMessage(type, data) {
     if (type === "branchConfigLoaded") {
-      const incoming = Array.isArray(data?.monitoringCommands)
-        ? data.monitoringCommands
-        : [];
-      if (incoming.length === 0) {
+      const cmds = Array.isArray(data?.monitoringCommands) ? data.monitoringCommands : [];
+      const notifs = Array.isArray(data?.notificationConfig) ? data.notificationConfig : [];
+      if (cmds.length === 0 && notifs.length === 0) {
         return;
       }
-      this.userCommands = JSON.parse(JSON.stringify(incoming));
+      this.userCommands = JSON.parse(JSON.stringify(cmds));
+      this.userNotifications = JSON.parse(JSON.stringify(notifs));
       this._autoSave();
     }
     else if (type === "branchChanged") {
@@ -129,22 +141,40 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
       if (Array.isArray(data?.monitoringCommands)) {
         this.userCommands = JSON.parse(JSON.stringify(data.monitoringCommands));
       }
+      if (Array.isArray(data?.notificationConfig)) {
+        this.userNotifications = JSON.parse(JSON.stringify(data.notificationConfig));
+      }
       this.modalOpen = false;
       this.modalEntry = null;
     }
   }
 
-  // ----- Catalog merge: build the rendered row list -----
-
-  get builtInCommandKeys() {
-    return (this.catalog?.entries || []).map((e) => e.key);
+  normalizeCatalog(raw) {
+    return {
+      monitoringCommands: Array.isArray(raw.monitoringCommands) ? raw.monitoringCommands : [],
+      notificationConfig: Array.isArray(raw.notificationConfig) ? raw.notificationConfig : [],
+      categories: Array.isArray(raw.categories) ? raw.categories : [],
+      options: raw.options || { frequencies: [], frequencyDays: [], thresholds: [], channels: [] },
+    };
   }
 
-  get builtInKeySet() {
-    return new Set(this.builtInCommandKeys);
+  // ----- Lookups -----
+
+  get builtInCommandKeySet() {
+    return new Set((this.catalog.monitoringCommands || []).map((e) => e.key));
   }
 
-  get userByKey() {
+  get notificationDefaultsByKey() {
+    const map = {};
+    for (const entry of this.catalog.notificationConfig || []) {
+      if (entry && entry.key) {
+        map[entry.key] = entry;
+      }
+    }
+    return map;
+  }
+
+  get userCommandsByKey() {
     const map = {};
     for (const entry of this.userCommands || []) {
       if (entry && entry.key) {
@@ -154,40 +184,24 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
     return map;
   }
 
+  get userNotificationsByKey() {
+    const map = {};
+    for (const entry of this.userNotifications || []) {
+      if (entry && entry.key) {
+        map[entry.key] = entry;
+      }
+    }
+    return map;
+  }
+
   get customCommands() {
-    const builtIns = this.builtInKeySet;
+    const builtIns = this.builtInCommandKeySet;
     return (this.userCommands || []).filter(
       (c) => c && c.key && !builtIns.has(c.key),
     );
   }
 
-  buildRow(entry, userEntry, frequencies, thresholds, isCustom) {
-    const effective = this.resolveEffectiveEntry(entry, userEntry);
-    const key = isCustom ? userEntry.key : entry.key;
-    const iconData = COMMAND_ICONS[key] || DEFAULT_ICON;
-    const hasOverrides = isCustom ? true : this.hasOverrides(userEntry);
-    const rawTitle = isCustom ? (userEntry.title || userEntry.key) : entry.title;
-    const title = (rawTitle || "").replace(/\*\*/g, "");
-    return {
-      key,
-      isCustom,
-      title,
-      titleSegments: this.parseTitleSegments(rawTitle),
-      command: isCustom ? (userEntry.command || "") : (entry.command || ""),
-      iconName: iconData.icon,
-      iconContainerClass: "command-icon-container " + iconData.colorClass,
-      frequency: effective.frequency,
-      messaging: effective.notifications.messaging,
-      email: effective.notifications.email,
-      api: effective.notifications.api,
-      frequencyOptions: this.makeOptions(frequencies, effective.frequency),
-      messagingOptions: this.makeOptions(thresholds, effective.notifications.messaging),
-      emailOptions: this.makeOptions(thresholds, effective.notifications.email),
-      apiOptions: this.makeOptions(thresholds, effective.notifications.api),
-      hasOverrides,
-      showReset: !isCustom && hasOverrides,
-    };
-  }
+  // ----- Row builders -----
 
   parseTitleSegments(title) {
     if (!title) {
@@ -223,102 +237,129 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
     return segments;
   }
 
-  getOptionLabel(value) {
-    if (!value) {
-      return "";
-    }
-    const text = this.t(`monitoringEnum_${value}`) || value;
-    const emoji = OPTION_EMOJIS[value];
-    return emoji ? `${emoji} ${text}` : text;
+  buildCommandRow(catalogEntry, userEntry, isCustom) {
+    const key = isCustom ? userEntry.key : catalogEntry.key;
+    const iconData = COMMAND_ICONS[key] || DEFAULT_ICON;
+    const rawTitle = isCustom ? (userEntry.title || userEntry.key) : catalogEntry.title;
+    const title = (rawTitle || "").replace(/\*\*/g, "");
+    const frequencyOptions = this.catalog?.options?.frequencies || [];
+    const effectiveFrequency =
+      (userEntry && userEntry.frequency) ||
+      (catalogEntry && catalogEntry.frequency) ||
+      DEFAULT_FREQUENCY;
+    const hasOverrides = isCustom ? true : this.commandHasOverrides(userEntry);
+    return {
+      rowKind: "command",
+      key,
+      compositeKey: `cmd:${key}`,
+      isCustom,
+      title,
+      titleSegments: this.parseTitleSegments(rawTitle),
+      command: isCustom ? (userEntry.command || "") : (catalogEntry.command || ""),
+      iconName: iconData.icon,
+      iconContainerClass: "command-icon-container " + iconData.colorClass,
+      frequency: effectiveFrequency,
+      frequencyOptions: this.makeOptions(frequencyOptions, effectiveFrequency),
+      hasOverrides,
+      showReset: !isCustom && hasOverrides,
+      children: [],
+    };
   }
 
-  get rowsByCategory() {
-    const opts = this.catalog?.options || {};
-    const frequencies = opts.frequencies || [];
-    const thresholds = opts.thresholds || [];
-    const userMap = this.userByKey;
-    const rowMap = {};
-
-    for (const entry of this.catalog?.entries || []) {
-      if (entry.kind && entry.kind !== "monitoringCommand") {
-        continue;
-      }
-      const userEntry = userMap[entry.key] || {};
-      const catKey = entry.category || "other";
-      if (!rowMap[catKey]) {
-        rowMap[catKey] = [];
-      }
-      rowMap[catKey].push(this.buildRow(entry, userEntry, frequencies, thresholds, false));
-    }
-
-    let catalogCategories = (this.catalog?.categories || [])
-      .slice()
-      .sort((a, b) => (a.order || 0) - (b.order || 0));
-
-    // Fallback: if catalog has no categories, derive them from the entry category keys
-    if (catalogCategories.length === 0) {
-      catalogCategories = Object.keys(rowMap).map((k) => ({ key: k, title: k, description: "", order: 0 }));
-    }
-
-    const result = [];
-    for (const cat of catalogCategories) {
-      const catRows = rowMap[cat.key] || [];
-      if (catRows.length === 0) {
-        continue;
-      }
-      const catIconData = CATEGORY_ICONS[cat.key] || { icon: "utility:apps", colorClass: "legacy" };
-      result.push({
-        key: cat.key,
-        title: cat.title,
-        description: cat.description || "",
-        icon: catIconData.icon,
-        iconContainerClass: "command-icon-container command-icon-container--lg " + catIconData.colorClass,
-        rows: catRows,
-      });
-    }
-
-    const customRows = [];
-    for (const userEntry of this.customCommands) {
-      customRows.push(this.buildRow(null, userEntry, frequencies, thresholds, true));
-    }
-    if (customRows.length > 0) {
-      const customIconData = CATEGORY_ICONS.custom;
-      result.push({
-        key: "custom",
-        title: this.i18n.monitoringCustomCategory,
-        description: "",
-        icon: customIconData.icon,
-        iconContainerClass: "command-icon-container command-icon-container--lg " + customIconData.colorClass,
-        rows: customRows,
-      });
-    }
-
-    const total = result.length;
-    return result.map((category, index) => ({
-      ...category,
-      sectionStyle: `z-index: ${total - index};`,
-    }));
+  buildNotificationRow(catalogEntry, userEntry, ownerKey) {
+    const key = catalogEntry.key;
+    const iconData = COMMAND_ICONS[key] || DEFAULT_ICON;
+    const rawTitle = catalogEntry.title || key;
+    const title = (rawTitle || "").replace(/\*\*/g, "");
+    const thresholds = this.getAvailableThresholds(catalogEntry);
+    const effective = this.resolveNotificationThresholds(catalogEntry, userEntry);
+    const hasOverrides = this.notificationHasOverrides(userEntry);
+    const hasThresholdWarning = this.detectThresholdWarning(userEntry, thresholds);
+    return {
+      rowKind: "notification",
+      key,
+      compositeKey: ownerKey ? `notif:${ownerKey}:${key}` : `notif::${key}`,
+      ownerKey: ownerKey || "",
+      isCustom: false,
+      title,
+      titleSegments: this.parseTitleSegments(rawTitle),
+      iconName: iconData.icon,
+      iconContainerClass: "command-icon-container " + iconData.colorClass,
+      messaging: effective.messaging,
+      email: effective.email,
+      api: effective.api,
+      messagingOptions: this.makeOptions(thresholds, effective.messaging),
+      emailOptions: this.makeOptions(thresholds, effective.email),
+      apiOptions: this.makeOptions(thresholds, effective.api),
+      availableThresholds: thresholds,
+      hasOverrides,
+      showReset: hasOverrides,
+      hasThresholdWarning,
+    };
   }
 
-  resolveEffectiveEntry(catalogEntry, userEntry) {
-    const catalogNotifs = (catalogEntry && catalogEntry.notifications) || {};
+  getAvailableThresholds(catalogEntry) {
+    const list =
+      catalogEntry && Array.isArray(catalogEntry.availableThresholds)
+        ? catalogEntry.availableThresholds
+        : null;
+    if (list && list.length > 0) {
+      return list;
+    }
+    return this.catalog?.options?.thresholds || [];
+  }
+
+  detectThresholdWarning(userEntry, available) {
+    if (!userEntry || !userEntry.notifications || !Array.isArray(available) || available.length === 0) {
+      return false;
+    }
+    const allowed = new Set(available);
+    const notifs = userEntry.notifications;
+    if (notifs.messaging && !allowed.has(notifs.messaging)) {
+      return true;
+    }
+    if (notifs.api && !allowed.has(notifs.api)) {
+      return true;
+    }
+    const email = notifs.email;
+    const emailValue =
+      email && typeof email === "object" ? email.threshold : email;
+    if (emailValue && !allowed.has(emailValue)) {
+      return true;
+    }
+    return false;
+  }
+
+  resolveNotificationThresholds(catalogEntry, userEntry) {
+    const catNotifs = (catalogEntry && catalogEntry.notifications) || {};
     const userNotifs = (userEntry && userEntry.notifications) || {};
     const emailUser = userNotifs.email;
     const emailValue =
-      emailUser && typeof emailUser === "object"
-        ? emailUser.threshold
-        : emailUser;
+      emailUser && typeof emailUser === "object" ? emailUser.threshold : emailUser;
     return {
-      frequency:
-        userEntry?.frequency ||
-        catalogEntry?.frequency ||
-        DEFAULT_FREQUENCY,
-      notifications: {
-        messaging: userNotifs.messaging || catalogNotifs.messaging || "info",
-        email: emailValue || catalogNotifs.email || "info",
-        api: userNotifs.api || catalogNotifs.api || "log",
-      },
+      messaging: userNotifs.messaging || catNotifs.messaging || "info",
+      email: emailValue || catNotifs.email || "info",
+      api: userNotifs.api || catNotifs.api || "log",
     };
+  }
+
+  commandHasOverrides(userEntry) {
+    if (!userEntry) {
+      return false;
+    }
+    return (
+      userEntry.frequency !== undefined ||
+      userEntry.frequencyDay !== undefined ||
+      userEntry.frequencyDayOfMonth !== undefined ||
+      (Array.isArray(userEntry.notificationTypes) && userEntry.notificationTypes.length > 0)
+    );
+  }
+
+  notificationHasOverrides(userEntry) {
+    if (!userEntry) {
+      return false;
+    }
+    return userEntry.notifications !== undefined;
   }
 
   makeOptions(values, current) {
@@ -335,16 +376,159 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
     return out;
   }
 
-  hasOverrides(userEntry) {
-    if (!userEntry) {
-      return false;
+  // ----- Rendered structure -----
+
+  get rowsByCategory() {
+    const userCmdMap = this.userCommandsByKey;
+    const userNotifMap = this.userNotificationsByKey;
+    const notifDefaults = this.notificationDefaultsByKey;
+
+    // Track which notifications are bound to a command (so the rest become "standalone").
+    const boundNotificationKeys = new Set();
+
+    const rowsByCat = {};
+    for (const cmd of this.catalog.monitoringCommands || []) {
+      const userCmd = userCmdMap[cmd.key] || {};
+      const catKey = cmd.category || "other";
+      if (!rowsByCat[catKey]) {
+        rowsByCat[catKey] = [];
+      }
+      const row = this.buildCommandRow(cmd, userCmd, false);
+      const notifKeys = Array.isArray(userCmd.notificationTypes)
+        ? userCmd.notificationTypes
+        : Array.isArray(cmd.notificationTypes)
+          ? cmd.notificationTypes
+          : [];
+      for (const notifKey of notifKeys) {
+        const notifCatalog = notifDefaults[notifKey];
+        if (!notifCatalog) {
+          continue;
+        }
+        boundNotificationKeys.add(notifKey);
+        row.children.push(
+          this.buildNotificationRow(notifCatalog, userNotifMap[notifKey] || {}, cmd.key),
+        );
+      }
+      rowsByCat[catKey].push(row);
     }
-    return (
-      userEntry.frequency !== undefined ||
-      userEntry.frequencyDay !== undefined ||
-      userEntry.frequencyDayOfMonth !== undefined ||
-      userEntry.notifications !== undefined
-    );
+
+    // Categories ordered by catalog `order`; fallback to derived key list.
+    let catalogCategories = (this.catalog.categories || [])
+      .slice()
+      .sort((a, b) => (a.order || 0) - (b.order || 0));
+    if (catalogCategories.length === 0) {
+      catalogCategories = Object.keys(rowsByCat).map((k) => ({
+        key: k,
+        title: k,
+        description: "",
+        order: 0,
+      }));
+    }
+
+    const result = [];
+    for (const cat of catalogCategories) {
+      const catRows = rowsByCat[cat.key] || [];
+      if (catRows.length === 0) {
+        continue;
+      }
+      const catIconData = CATEGORY_ICONS[cat.key] || { icon: "utility:apps", colorClass: "legacy" };
+      result.push({
+        key: cat.key,
+        title: cat.title,
+        description: cat.description || "",
+        icon: catIconData.icon,
+        iconContainerClass:
+          "command-icon-container command-icon-container--lg " + catIconData.colorClass,
+        rows: catRows,
+      });
+    }
+
+    // Custom commands (added by the user, not in the catalog).
+    const customRows = [];
+    for (const userCmd of this.customCommands) {
+      const row = this.buildCommandRow(null, userCmd, true);
+      const notifKeys = Array.isArray(userCmd.notificationTypes)
+        ? userCmd.notificationTypes
+        : [];
+      for (const notifKey of notifKeys) {
+        const notifCatalog = notifDefaults[notifKey];
+        if (!notifCatalog) {
+          continue;
+        }
+        boundNotificationKeys.add(notifKey);
+        row.children.push(
+          this.buildNotificationRow(notifCatalog, userNotifMap[notifKey] || {}, userCmd.key),
+        );
+      }
+      customRows.push(row);
+    }
+    if (customRows.length > 0) {
+      const customIconData = CATEGORY_ICONS.custom;
+      result.push({
+        key: "custom",
+        title: this.i18n.monitoringCustomCategory,
+        description: "",
+        icon: customIconData.icon,
+        iconContainerClass:
+          "command-icon-container command-icon-container--lg " + customIconData.colorClass,
+        rows: customRows,
+      });
+    }
+
+    // Standalone notifications: notificationConfig entries not bound to any command.
+    const standaloneRows = [];
+    for (const notif of this.catalog.notificationConfig || []) {
+      if (boundNotificationKeys.has(notif.key)) {
+        continue;
+      }
+      standaloneRows.push(this.buildNotificationRow(notif, userNotifMap[notif.key] || {}, ""));
+    }
+    if (standaloneRows.length > 0) {
+      const standaloneIconData = CATEGORY_ICONS.standalone;
+      result.push({
+        key: "standalone",
+        title: this.i18n.monitoringStandaloneNotifications,
+        description: this.i18n.monitoringStandaloneNotificationsDescription || "",
+        icon: standaloneIconData.icon,
+        iconContainerClass:
+          "command-icon-container command-icon-container--lg " + standaloneIconData.colorClass,
+        rows: standaloneRows,
+        isStandaloneSection: true,
+      });
+    }
+
+    // Merge single-notification commands into a one-line row.
+    for (const section of result) {
+      if (section.isStandaloneSection) {
+        continue;
+      }
+      for (const row of section.rows) {
+        if (row.rowKind !== "command" || !Array.isArray(row.children) || row.children.length !== 1) {
+          continue;
+        }
+        const child = row.children[0];
+        row.isMerged = true;
+        row.mergedNotificationKey = child.key;
+        row.mergedNotificationTitle = child.title;
+        row.messaging = child.messaging;
+        row.email = child.email;
+        row.api = child.api;
+        row.messagingOptions = child.messagingOptions;
+        row.emailOptions = child.emailOptions;
+        row.apiOptions = child.apiOptions;
+        row.availableThresholds = child.availableThresholds;
+        row.mergedHasOverrides = row.hasOverrides || child.hasOverrides;
+        row.mergedShowReset = row.mergedHasOverrides && !row.isCustom;
+        row.hasThresholdWarning = child.hasThresholdWarning;
+        row.children = [];
+      }
+    }
+
+    const total = result.length;
+    return result.map((category, index) => ({
+      ...category,
+      sectionStyle: `z-index: ${total - index};`,
+    }));
   }
 
   getDatasetValue(event, name) {
@@ -355,32 +539,7 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
     );
   }
 
-  // ----- Inline row edits & row actions -----
-
-  handleRowDetails(event) {
-    const key = event.currentTarget.dataset.key;
-    if (key) {
-      this._openDetailsForKey(key);
-    }
-  }
-
-  handleRowReset(event) {
-    const key = event.currentTarget.dataset.key;
-    if (!key) {
-      return;
-    }
-    this.userCommands = (this.userCommands || []).filter((c) => !c || c.key !== key);
-    this._autoSave();
-  }
-
-  handleRowDelete(event) {
-    const key = event.currentTarget.dataset.key;
-    if (!key) {
-      return;
-    }
-    this.userCommands = (this.userCommands || []).filter((c) => !c || c.key !== key);
-    this._autoSave();
-  }
+  // ----- Inline edits (table-level) -----
 
   handleRowFrequencyChange(event) {
     const key = this.getDatasetValue(event, "key");
@@ -388,7 +547,7 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
     if (!key || !value) {
       return;
     }
-    this.updateUserEntry(key, (entry) => {
+    this.updateUserCommand(key, (entry) => {
       entry.frequency = value;
       if (value !== "weekly" && value !== "biweekly") {
         delete entry.frequencyDay;
@@ -399,25 +558,25 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
     });
   }
 
-  handleRowMessagingChange(event) {
+  handleNotificationMessagingChange(event) {
     const key = this.getDatasetValue(event, "key");
     const value = event.detail.value;
     if (!key || !value) {
       return;
     }
-    this.updateUserEntry(key, (entry) => {
+    this.updateUserNotification(key, (entry) => {
       entry.notifications = this.normalizeNotifications(entry.notifications);
       entry.notifications.messaging = value;
     });
   }
 
-  handleRowEmailChange(event) {
+  handleNotificationEmailChange(event) {
     const key = this.getDatasetValue(event, "key");
     const value = event.detail.value;
     if (!key || !value) {
       return;
     }
-    this.updateUserEntry(key, (entry) => {
+    this.updateUserNotification(key, (entry) => {
       entry.notifications = this.normalizeNotifications(entry.notifications);
       const existing = entry.notifications.email;
       if (existing && typeof existing === "object") {
@@ -429,16 +588,45 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
     });
   }
 
-  handleRowApiChange(event) {
+  handleNotificationApiChange(event) {
     const key = this.getDatasetValue(event, "key");
     const value = event.detail.value;
     if (!key || !value) {
       return;
     }
-    this.updateUserEntry(key, (entry) => {
+    this.updateUserNotification(key, (entry) => {
       entry.notifications = this.normalizeNotifications(entry.notifications);
       entry.notifications.api = value;
     });
+  }
+
+  handleRowReset(event) {
+    const key = event.currentTarget.dataset.key;
+    if (!key) {
+      return;
+    }
+    this.userCommands = (this.userCommands || []).filter((c) => !c || c.key !== key);
+    this._autoSave();
+  }
+
+  handleNotificationReset(event) {
+    const key = event.currentTarget.dataset.key;
+    if (!key) {
+      return;
+    }
+    this.userNotifications = (this.userNotifications || []).filter(
+      (c) => !c || c.key !== key,
+    );
+    this._autoSave();
+  }
+
+  handleRowDelete(event) {
+    const key = event.currentTarget.dataset.key;
+    if (!key) {
+      return;
+    }
+    this.userCommands = (this.userCommands || []).filter((c) => !c || c.key !== key);
+    this._autoSave();
   }
 
   // ----- Branch picker -----
@@ -464,10 +652,9 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
     });
   }
 
+  // ----- User-list mutators -----
 
-  // ----- Row edits -----
-
-  updateUserEntry(key, mutator) {
+  updateUserCommand(key, mutator) {
     const list = (this.userCommands || []).map((c) => ({ ...c }));
     let entry = list.find((c) => c && c.key === key);
     if (!entry) {
@@ -479,31 +666,146 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
     this._autoSave();
   }
 
+  updateUserNotification(key, mutator) {
+    const list = (this.userNotifications || []).map((c) => ({ ...c }));
+    let entry = list.find((c) => c && c.key === key);
+    if (!entry) {
+      entry = { key };
+      list.push(entry);
+    }
+    mutator(entry);
+    this.userNotifications = list;
+    this._autoSave();
+  }
+
   normalizeNotifications(notifs) {
     return notifs && typeof notifs === "object" ? { ...notifs } : {};
   }
 
   // ----- Details modal -----
 
-  _openDetailsForKey(key) {
-    const catalogEntry = (this.catalog?.entries || []).find((e) => e.key === key);
-    const userEntry = this.userByKey[key] || {};
-    const effective = this.resolveEffectiveEntry(catalogEntry, userEntry);
-    const recipients = this.getEmailRecipients(userEntry);
+  handleRowDetails(event) {
+    const key = event.currentTarget.dataset.key;
+    if (!key) {
+      return;
+    }
+    this._openCommandDetails(key);
+  }
+
+  handleNotificationDetails(event) {
+    const key = event.currentTarget.dataset.key;
+    if (!key) {
+      return;
+    }
+    this._openNotificationDetails(key);
+  }
+
+  handleMergedDetails(event) {
+    const cmdKey = event.currentTarget.dataset.cmdKey;
+    const notifKey = event.currentTarget.dataset.notifKey;
+    if (!cmdKey || !notifKey) {
+      return;
+    }
+    this._openMergedDetails(cmdKey, notifKey);
+  }
+
+  handleMergedReset(event) {
+    const cmdKey = event.currentTarget.dataset.cmdKey;
+    const notifKey = event.currentTarget.dataset.notifKey;
+    if (!cmdKey || !notifKey) {
+      return;
+    }
+    this.userCommands = (this.userCommands || []).filter(
+      (c) => !c || c.key !== cmdKey,
+    );
+    this.userNotifications = (this.userNotifications || []).filter(
+      (c) => !c || c.key !== notifKey,
+    );
+    this._autoSave();
+  }
+
+  _openCommandDetails(key) {
+    const catalogEntry = (this.catalog.monitoringCommands || []).find((e) => e.key === key);
+    const userEntry = this.userCommandsByKey[key] || {};
+    const effectiveFrequency =
+      userEntry.frequency || catalogEntry?.frequency || DEFAULT_FREQUENCY;
+    this.modalKind = "command";
     this.modalEntry = {
       key,
       title: catalogEntry?.title || userEntry.title || key,
       command: catalogEntry?.command || userEntry.command || "",
       isCustom: !catalogEntry,
-      frequency: effective.frequency,
+      frequency: effectiveFrequency,
       frequencyDay: userEntry.frequencyDay || catalogEntry?.frequencyDay || "monday",
       frequencyDayOfMonth: userEntry.frequencyDayOfMonth || catalogEntry?.frequencyDayOfMonth || 1,
     };
-    this.modalMessaging = effective.notifications.messaging;
-    this.modalEmail = effective.notifications.email;
-    this.modalApi = effective.notifications.api;
+    this.modalMessaging = "";
+    this.modalEmail = "";
+    this.modalApi = "";
+    this.modalAvailableThresholds = [];
+    this.modalEmailRecipientsText = "";
+    this.modalReplaceRecipients = false;
+    this.modalOpen = true;
+  }
+
+  _openNotificationDetails(key) {
+    const catalogEntry = this.notificationDefaultsByKey[key];
+    if (!catalogEntry) {
+      return;
+    }
+    const userEntry = this.userNotificationsByKey[key] || {};
+    const effective = this.resolveNotificationThresholds(catalogEntry, userEntry);
+    const recipients = this.getEmailRecipients(userEntry);
+    this.modalKind = "notification";
+    this.modalEntry = {
+      key,
+      notificationKey: key,
+      title: catalogEntry.title || key,
+    };
+    this.modalMessaging = effective.messaging;
+    this.modalEmail = effective.email;
+    this.modalApi = effective.api;
+    this.modalAvailableThresholds = this.getAvailableThresholds(catalogEntry);
     this.modalEmailRecipientsText = recipients.join("\n");
     this.modalReplaceRecipients = this.getReplaceRecipients(userEntry);
+    this.modalOpen = true;
+  }
+
+  _openMergedDetails(commandKey, notificationKey) {
+    const cmdCatalog = (this.catalog.monitoringCommands || []).find(
+      (e) => e.key === commandKey,
+    );
+    const notifCatalog = this.notificationDefaultsByKey[notificationKey];
+    if (!cmdCatalog || !notifCatalog) {
+      return;
+    }
+    const userCmd = this.userCommandsByKey[commandKey] || {};
+    const userNotif = this.userNotificationsByKey[notificationKey] || {};
+    const effectiveFreq =
+      userCmd.frequency || cmdCatalog.frequency || DEFAULT_FREQUENCY;
+    const effectiveThresholds = this.resolveNotificationThresholds(
+      notifCatalog,
+      userNotif,
+    );
+    const recipients = this.getEmailRecipients(userNotif);
+    this.modalKind = "merged";
+    this.modalEntry = {
+      key: commandKey,
+      notificationKey,
+      title: cmdCatalog.title || commandKey,
+      command: cmdCatalog.command || "",
+      isCustom: false,
+      frequency: effectiveFreq,
+      frequencyDay: userCmd.frequencyDay || cmdCatalog.frequencyDay || "monday",
+      frequencyDayOfMonth:
+        userCmd.frequencyDayOfMonth || cmdCatalog.frequencyDayOfMonth || 1,
+    };
+    this.modalMessaging = effectiveThresholds.messaging;
+    this.modalEmail = effectiveThresholds.email;
+    this.modalApi = effectiveThresholds.api;
+    this.modalAvailableThresholds = this.getAvailableThresholds(notifCatalog);
+    this.modalEmailRecipientsText = recipients.join("\n");
+    this.modalReplaceRecipients = this.getReplaceRecipients(userNotif);
     this.modalOpen = true;
   }
 
@@ -520,16 +822,24 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
     return !!(email && typeof email === "object" && email.replaceRecipients);
   }
 
+  get modalIsCommand() {
+    return this.modalKind === "command" || this.modalKind === "merged";
+  }
+
+  get modalIsNotification() {
+    return this.modalKind === "notification" || this.modalKind === "merged";
+  }
+
   get modalIsWeekly() {
     return (
+      this.modalIsCommand &&
       this.modalEntry &&
-      (this.modalEntry.frequency === "weekly" ||
-        this.modalEntry.frequency === "biweekly")
+      (this.modalEntry.frequency === "weekly" || this.modalEntry.frequency === "biweekly")
     );
   }
 
   get modalIsMonthly() {
-    return this.modalEntry && this.modalEntry.frequency === "monthly";
+    return this.modalIsCommand && this.modalEntry && this.modalEntry.frequency === "monthly";
   }
 
   get modalFrequencyOptions() {
@@ -542,16 +852,23 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
     return this.makeOptions(this.catalog?.options?.frequencyDays, current);
   }
 
+  get modalThresholdSource() {
+    if (Array.isArray(this.modalAvailableThresholds) && this.modalAvailableThresholds.length > 0) {
+      return this.modalAvailableThresholds;
+    }
+    return this.catalog?.options?.thresholds || [];
+  }
+
   get modalMessagingOptions() {
-    return this.makeOptions(this.catalog?.options?.thresholds, this.modalMessaging);
+    return this.makeOptions(this.modalThresholdSource, this.modalMessaging);
   }
 
   get modalEmailThresholdOptions() {
-    return this.makeOptions(this.catalog?.options?.thresholds, this.modalEmail);
+    return this.makeOptions(this.modalThresholdSource, this.modalEmail);
   }
 
   get modalApiOptions() {
-    return this.makeOptions(this.catalog?.options?.thresholds, this.modalApi);
+    return this.makeOptions(this.modalThresholdSource, this.modalApi);
   }
 
   handleModalFrequencyChange(event) {
@@ -608,58 +925,66 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
       this.modalOpen = false;
       return;
     }
-    const key = this.modalEntry.key;
-    const newFrequency = this.modalEntry.frequency;
-    const newDay = this.modalEntry.frequencyDay;
-    const newDayOfMonth = this.modalEntry.frequencyDayOfMonth;
-    const newMessaging = this.modalMessaging;
-    const newEmailThreshold = this.modalEmail;
-    const newApi = this.modalApi;
-    const recipients = (this.modalEmailRecipientsText || "")
-      .split(/[\r\n,;]+/)
-      .map((s) => s.trim())
-      .filter(Boolean);
-    const replace = this.modalReplaceRecipients;
+    const commandKey = this.modalEntry.key;
+    const notificationKey = this.modalEntry.notificationKey || this.modalEntry.key;
 
-    this.updateUserEntry(key, (entry) => {
-      entry.frequency = newFrequency;
-      if (newFrequency === "weekly" || newFrequency === "biweekly") {
-        entry.frequencyDay = newDay;
-        delete entry.frequencyDayOfMonth;
-      }
-      else if (newFrequency === "monthly") {
-        entry.frequencyDayOfMonth = newDayOfMonth;
-        delete entry.frequencyDay;
-      }
-      else {
-        delete entry.frequencyDay;
-        delete entry.frequencyDayOfMonth;
-      }
+    if (this.modalIsCommand && this.modalKind !== "notification") {
+      const newFrequency = this.modalEntry.frequency;
+      const newDay = this.modalEntry.frequencyDay;
+      const newDayOfMonth = this.modalEntry.frequencyDayOfMonth;
+      this.updateUserCommand(commandKey, (entry) => {
+        entry.frequency = newFrequency;
+        if (newFrequency === "weekly" || newFrequency === "biweekly") {
+          entry.frequencyDay = newDay;
+          delete entry.frequencyDayOfMonth;
+        }
+        else if (newFrequency === "monthly") {
+          entry.frequencyDayOfMonth = newDayOfMonth;
+          delete entry.frequencyDay;
+        }
+        else {
+          delete entry.frequencyDay;
+          delete entry.frequencyDayOfMonth;
+        }
+      });
+    }
 
-      entry.notifications = this.normalizeNotifications(entry.notifications);
-      if (newMessaging) {
-        entry.notifications.messaging = newMessaging;
-      }
-      if (newApi) {
-        entry.notifications.api = newApi;
-      }
-      if (recipients.length > 0 || replace) {
-        const emailObj = {};
-        if (newEmailThreshold) {
-          emailObj.threshold = newEmailThreshold;
+    if (this.modalIsNotification && this.modalKind !== "command") {
+      const newMessaging = this.modalMessaging;
+      const newEmailThreshold = this.modalEmail;
+      const newApi = this.modalApi;
+      const recipients = (this.modalEmailRecipientsText || "")
+        .split(/[\r\n,;]+/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+      const replace = this.modalReplaceRecipients;
+
+      this.updateUserNotification(notificationKey, (entry) => {
+        entry.notifications = this.normalizeNotifications(entry.notifications);
+        if (newMessaging) {
+          entry.notifications.messaging = newMessaging;
         }
-        if (recipients.length > 0) {
-          emailObj.recipients = recipients;
+        if (newApi) {
+          entry.notifications.api = newApi;
         }
-        if (replace) {
-          emailObj.replaceRecipients = true;
+        if (recipients.length > 0 || replace) {
+          const emailObj = {};
+          if (newEmailThreshold) {
+            emailObj.threshold = newEmailThreshold;
+          }
+          if (recipients.length > 0) {
+            emailObj.recipients = recipients;
+          }
+          if (replace) {
+            emailObj.replaceRecipients = true;
+          }
+          entry.notifications.email = emailObj;
         }
-        entry.notifications.email = emailObj;
-      }
-      else {
-        entry.notifications.email = newEmailThreshold || undefined;
-      }
-    });
+        else {
+          entry.notifications.email = newEmailThreshold || undefined;
+        }
+      });
+    }
 
     this.modalOpen = false;
     this.modalEntry = null;
@@ -712,7 +1037,7 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
     if (!key || !command) {
       return true;
     }
-    if (this.builtInKeySet.has(key)) {
+    if (this.builtInCommandKeySet.has(key)) {
       return true;
     }
     if ((this.userCommands || []).some((c) => c && c.key === key)) {
@@ -743,15 +1068,16 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
     this.customFormOpen = false;
   }
 
-  // ----- Auto-save -----
+  // ----- Persistence -----
 
   _autoSave() {
-    const cleaned = this.cleanCommandsForSave();
+    const cleaned = this.cleanForSave();
     window.sendMessageToVSCode({
       type: "saveMonitoringConfig",
-      data: { monitoringCommands: cleaned },
+      data: cleaned,
     });
-    this.userCommands = JSON.parse(JSON.stringify(cleaned));
+    this.userCommands = JSON.parse(JSON.stringify(cleaned.monitoringCommands));
+    this.userNotifications = JSON.parse(JSON.stringify(cleaned.notificationConfig));
   }
 
   handleOpenDocs() {
@@ -763,9 +1089,9 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
     }
   }
 
-  cleanCommandsForSave() {
-    const builtIns = this.builtInKeySet;
-    const out = [];
+  cleanForSave() {
+    const builtIns = this.builtInCommandKeySet;
+    const cmdOut = [];
     for (const c of this.userCommands || []) {
       if (!c || !c.key) {
         continue;
@@ -789,15 +1115,35 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
       if (c.frequencyDayOfMonth && c.frequency === "monthly") {
         entry.frequencyDayOfMonth = c.frequencyDayOfMonth;
       }
-      if (c.notifications && typeof c.notifications === "object") {
+      if (Array.isArray(c.notificationTypes) && c.notificationTypes.length > 0) {
+        entry.notificationTypes = c.notificationTypes.slice();
+      }
+      const hasOverride =
+        isCustom ||
+        entry.frequency !== undefined ||
+        entry.frequencyDay !== undefined ||
+        entry.frequencyDayOfMonth !== undefined ||
+        entry.notificationTypes !== undefined;
+      if (hasOverride) {
+        cmdOut.push(entry);
+      }
+    }
+
+    const notifOut = [];
+    for (const n of this.userNotifications || []) {
+      if (!n || !n.key) {
+        continue;
+      }
+      const entry = { key: n.key };
+      if (n.notifications && typeof n.notifications === "object") {
         const notifs = {};
-        if (c.notifications.messaging) {
-          notifs.messaging = c.notifications.messaging;
+        if (n.notifications.messaging) {
+          notifs.messaging = n.notifications.messaging;
         }
-        if (c.notifications.api) {
-          notifs.api = c.notifications.api;
+        if (n.notifications.api) {
+          notifs.api = n.notifications.api;
         }
-        const email = c.notifications.email;
+        const email = n.notifications.email;
         if (email && typeof email === "object") {
           const emailObj = {};
           if (email.threshold) {
@@ -820,17 +1166,11 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
           entry.notifications = notifs;
         }
       }
-      // Skip entries with no useful info (built-in with zero overrides)
-      const hasOverride =
-        isCustom ||
-        entry.frequency !== undefined ||
-        entry.frequencyDay !== undefined ||
-        entry.frequencyDayOfMonth !== undefined ||
-        entry.notifications !== undefined;
-      if (hasOverride) {
-        out.push(entry);
+      if (entry.notifications !== undefined) {
+        notifOut.push(entry);
       }
     }
-    return out;
+
+    return { monitoringCommands: cmdOut, notificationConfig: notifOut };
   }
 }

@@ -120,9 +120,45 @@ else {
   ```
 - Use `{i18n.keyName}` in templates for static labels
 - Use `this.t("key", { var: value })` in JS getters for dynamic/interpolated strings
-- Use SLDS classes for styling - no custom CSS unless SLDS cannot provide it
 - **No ternaries or expression evaluations in LWC HTML templates**
 - Send messages to extension: `window.sendMessageToVSCode({ type, data })`
+
+### LWC styling — global stylesheet + SLDS, theme-aware (dark + light mode)
+
+VS Code webviews render in BOTH dark and light themes. Hardcoded colors break one of them. Every webview already loads two project-wide stylesheets (see `src/webviews/lwc-ui-panel.ts` `getHtmlForWebview`, around line 894) plus the official SLDS stylesheet — use those before writing custom CSS.
+
+**Loaded globally on every webview:**
+- `resources/global-theme.css` — project-wide reusable classes, pre-themed via `.slds-scope[data-theme="light"|"dark"]`.
+- `resources/global-theme-variables.css` — SLDS palette tokens such as `--slds-g-color-palette-purple-40` (auto light/dark via the CSS `light-dark()` function).
+- `out/assets/styles/salesforce-lightning-design-system.min.css` — the official SLDS library.
+
+#### Lookup order before writing any new CSS rule
+
+1. **Check `resources/global-theme.css` first.** Reusable, already-themed classes include:
+   - **Page chrome**: `.header-section`, `.header-content` (+ `.no-bg`), `.header-text`, `.header-title` (+ `.single-line`), `.header-subtitle`.
+   - **Icon containers** with `.green`, `.teal`, `.gray`, `.blue`, `.purple`, `.orange`, `.yellow`, `.small` color variants: `.header-icon-container`, `.feature-icon-container`, `.icon-container`.
+   - **Command icons** with category colors: `.command-icon-container` + one of `.backup`, `.audit`, `.tests`, `.limits`, `.updates`, `.security`, `.legacy`, `.users`, `.licenses`, `.apex`, `.connected-apps`, `.metadata-access`, `.unused-metadata`, `.new-story`, `.pull-action`, `.package-action`, `.save-action`.
+   - **Logs / answer / downloads / modals**: `.log-sections`, `.section-logs`, `.log-lines`, `.log-message`, `.log-timestamp`, `.log-icon`, `.answer-formatted`, `.download-panel`, `.select-option-desc`, `.submission-modal-backdrop`, `.submission-modal`.
+   - If a class name already exists globally, NEVER redefine it in component CSS — the local rule will shadow the global one on specificity tie-breaking and silently break theming.
+
+2. **Then check SLDS classes**: `.slds-badge` (+ `_lightest`, `_inverse`), `.slds-text-color_*`, `.slds-text-heading_*`, `.slds-box`, `.slds-button`, `.slds-icon`, etc. Reference: <https://www.lightningdesignsystem.com/>.
+
+3. **Only if neither covers it**, write a small custom rule using **theme-aware tokens only**:
+   - SLDS palette variables from `global-theme-variables.css` (e.g. `var(--slds-g-color-palette-purple-40)`, `var(--slds-g-color-palette-green-50)`).
+   - VS Code theme tokens (`var(--vscode-foreground)`, `var(--vscode-editor-background)`, `var(--vscode-descriptionForeground)`, `var(--vscode-textLink-foreground)`, `inherit`, `currentColor`).
+   - **Never** literal `#hex`, `rgb()`, `color: white`, `background: linear-gradient(#aaa, #bbb)`, `font-family: "Inter"`, `font-weight: 700`. These do not adapt and produce unreadable text in the opposite mode.
+
+#### What's safe in component CSS
+
+- **Layout-only properties**: `display`, `flex`, `gap`, `padding`, `margin`, `width`, `border-radius`, `overflow`, `position`. These carry no color/typography.
+- **Compositions of global/SLDS classes**: wrapper classes that arrange already-themed children.
+
+#### What's NOT safe
+
+- Inventing a new badge / pill / chip / button rule with hardcoded colors. SLDS or the global stylesheet already ships one.
+- Redefining a class name that already exists globally (e.g. `.header-icon-container.teal`, `.command-icon-container.audit`) — your rule wins on specificity tie-breaking and silently disables the theme-aware version.
+- "Just for now" hex colors with a TODO. There's no theme switch event — the bad render ships.
+- Some existing components (e.g. parts of `monitoringConfig.css`) already redefine global classes with hardcoded hex colors. Treat these as legacy bugs, not patterns — do not copy them.
 
 ## i18n checklist
 

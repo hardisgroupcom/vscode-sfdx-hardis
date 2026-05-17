@@ -13,7 +13,7 @@ Add a new monitoring command to the extension so it shows up in the **Org Monito
 
 ## Background — how monitoring commands work in this repo
 
-The canonical list of monitoring commands lives **in the sfdx-hardis CLI plugin** (external to this repo), exposed via `sf hardis:config:monitoring-defaults --json`. Both the **Monitoring Config Workbench** *and* the **Org Monitoring home LWC** fetch that catalog dynamically (`fetchMonitoringCatalog()` in `src/utils/monitoringConfigUtils.ts`) and render their cards from `entries[]` grouped by `categories[]` — **no hardcoding of the command list in this repo**.
+The canonical list of monitoring commands and notification types lives **in the sfdx-hardis CLI plugin** (external to this repo), exposed via `sf hardis:config:monitoring-defaults --json`. Both the **Monitoring Config Workbench** *and* the **Org Monitoring home LWC** fetch that catalog dynamically (`fetchMonitoringCatalog()` in `src/utils/monitoringConfigUtils.ts`) and render their content from `monitoringCommands[]`, `notificationConfig[]`, and `categories[]` — **no hardcoding of the command list in this repo**.
 
 Catalog caching:
 - The CLI response is cached for **7 days** (`cacheExpiration: 1000 * 60 * 60 * 24 * 7`).
@@ -30,9 +30,42 @@ What this repo does **not** need to do per new monitoring command:
 
 If the command does not appear in the Org Monitoring home or the Config Workbench, the CLI catalog is the place to look — not this repo.
 
+## Two top-level catalog lists
+
+The CLI payload (`sf hardis:config:monitoring-defaults --json`) is split into two parallel arrays — they are surfaced differently and must not be mixed up:
+
+```jsonc
+{
+  "monitoringCommands": [{ "key": "...", "command": "sf hardis:...", "frequency": "daily", "category": "orgActivity", "notificationTypes": ["APEX_ERROR", "FLOW_ERROR"] }, ...],
+  "notificationConfig":  [
+    { "key": "APEX_ERROR", "category": "orgActivity",
+      "notifications": { "messaging": "warning", "email": "error", "api": "log" },
+      "availableThresholds": ["error", "warning", "success", "off"] }  // severities this type can emit, last is always "off"
+  ],
+  "categories":          [{ "key": "orgActivity", "title": "Org Activity", "order": 1 }, ...],
+  "options":             { "frequencies": [...], "frequencyDays": [...], "thresholds": [...], "channels": [...] }
+}
+```
+
+`notificationConfig[].availableThresholds` is the per-type allow-list driving the threshold dropdowns in the Workbench. **Always use it as the option source for messaging / email / api selectors**, not the global `options.thresholds`. When a saved user override under `notificationConfig:` in `.sfdx-hardis.yml` falls outside this list, the row renders a warning icon — the override is preserved but it behaves as `off` at runtime. If `availableThresholds` is missing from a payload (older CLI), `monitoringConfig.js` falls back to `options.thresholds`.
+
+| List | Carries | Org Monitoring home (Run cards) | Monitoring Config Workbench |
+|---|---|---|---|
+| `monitoringCommands[]` | `command`, `frequency`, `notificationTypes[]` (cross-refs) | Shown — user can launch it. Frequency is metadata only here. | Shown — frequency editable. **No threshold editors on the command row itself.** Each command expands into sub-rows for the notification types it emits. |
+| `notificationConfig[]` | `notifications.{messaging,email,api}` thresholds | **Hidden** — no `command`, not runnable. | Sub-rows beneath a command (when referenced via `notificationTypes`) OR a final **Standalone notifications** section (when referenced by no command). |
+
+Rules:
+- `orgMonitoring.js`'s `categorySections` iterates `catalog.monitoringCommands` directly and requires `entry.command` to be truthy — there's nothing else to filter.
+- `monitoringConfig.js` (`rowsByCategory()`) iterates `catalog.monitoringCommands` per category and attaches child rows by looking up each key in `notificationConfig[]`. Any `notificationConfig` entry never referenced by `notificationTypes` becomes a standalone row.
+- User overrides live in **two separate YAML keys** in `.sfdx-hardis.yml`:
+  - `monitoringCommands:` — `frequency`, `frequencyDay`, `frequencyDayOfMonth`, custom commands, optional override `notificationTypes:`.
+  - `notificationConfig:` — `notifications.{messaging,email,api}` thresholds and email recipients, keyed by notification-type key.
+- Thresholds NEVER live under `monitoringCommands:` anymore. The save path enforces this; `cleanForSave()` in `monitoringConfig.js` outputs the two arrays separately.
+- When adding a brand-new notification type to the CLI catalog, add it to `notificationConfig[]` with a `category` reference. Either reference it from a command via `notificationTypes` (it will appear as a sub-row under that command) or leave it unreferenced (it will appear in the **Standalone notifications** section).
+
 ## Steps (in order)
 
-1. **Confirm the CLI side first.** Before editing anything here, verify the command is published in `sf hardis:config:monitoring-defaults --json` output (under `entries[].key` / `entries[].command`). If it's not there yet, the Workbench will not pick it up — flag this to the user and stop, unless they explicitly want only the tree-menu entry.
+1. **Confirm the CLI side first.** Before editing anything here, verify the command is published in `sf hardis:config:monitoring-defaults --json` output (under `monitoringCommands[].key` / `monitoringCommands[].command`). For a new notification type, verify it lives under `notificationConfig[]`. If it's not there yet, the Workbench will not pick it up — flag this to the user and stop, unless they explicitly want only the tree-menu entry.
 
 2. **Register the command in the Org Monitoring tree menu.** Edit `src/hardis-commands-provider.ts`, in the `org-monitoring` topic block (around lines 611-770 — look for `id: "org-monitoring"`). Add a new entry following the existing pattern:
    ```typescript
@@ -79,6 +112,22 @@ If the command does not appear in the Org Monitoring home or the Config Workbenc
    - Open the **Org Monitoring** home page (from the sidebar) → confirm the new card appears in the correct category section, with title/description coming from the catalog, the configured icon, and a working **Run** button that launches the command in the terminal. If the card doesn't appear, click **Refresh** on the home page header — this clears the 7-day catalog cache and refetches from the CLI.
    - Open the **Monitoring Config Workbench** → confirm the new command appears as a row with the configured icon, and that frequency / threshold dropdowns work. Same cache behavior as above: use **Refresh** on the Org Monitoring home page to bust the cache if needed.
    - If the command still doesn't appear, the issue is on the CLI side — run `sf hardis:config:monitoring-defaults --json` in a terminal to inspect what the CLI is publishing.
+
+## Styling rule (LWC) — global stylesheet + SLDS, theme-aware
+
+The Monitoring Config Workbench and Org Monitoring home pages render in **both dark and light VS Code themes**. Any custom CSS that hardcodes a color, font, or font-weight will break one of the two.
+
+Lookup order before writing any CSS:
+
+1. **`resources/global-theme.css`** — already loaded by every webview (see `src/webviews/lwc-ui-panel.ts:894`). It ships `.header-section`, `.header-content`, `.header-text`, `.header-title`, `.header-subtitle`, `.header-icon-container.{green,teal,gray,blue,purple,orange,yellow}`, and `.command-icon-container.{backup,audit,tests,limits,updates,security,legacy,users,licenses,apex,connected-apps,metadata-access,unused-metadata,...}` — all pre-themed via `.slds-scope[data-theme="light"|"dark"]`. Reuse, don't redefine.
+2. **SLDS classes** — `slds-badge`, `slds-badge_lightest`, `slds-badge_inverse`, `slds-text-color_*`, `slds-text-heading_*`, `slds-box`, etc. Reference: <https://www.lightningdesignsystem.com/>.
+3. **Theme-aware tokens** if neither covers it — SLDS palette vars (`var(--slds-g-color-palette-purple-40)`) from `resources/global-theme-variables.css`, or VS Code tokens (`var(--vscode-foreground)`, `var(--vscode-editor-background)`, `var(--vscode-descriptionForeground)`, `inherit`, `currentColor`).
+
+Hard rules:
+- Do NOT hardcode `#hex`, `rgb()`, `color: white`, `background: linear-gradient(<literal-color>, ...)`, `font-family`, `font-weight: <number>`. They do not theme.
+- Do NOT redefine a class name that already exists in `global-theme.css` — your local rule wins on specificity tie-breaking and silently shadows the themed version.
+- Layout-only properties (display, flex, gap, padding, margin, border-radius, overflow) are fine in custom CSS.
+- Notification-type rows in the Workbench render a static "📡 Event" badge — use `<span class="slds-badge slds-badge_lightest">`, never a custom-coloured pill.
 
 ## What NOT to do
 
