@@ -1602,8 +1602,6 @@
   "setupInstallFailedMessage": "{{label}} のインストールに失敗しました: {{message}}",
   "sfCliAndPlugins": "SF CLI とプラグイン",
   "sfCliRecommendedInstalled": "推奨バージョンの @salesforce/cli がインストールされています",
-  "sfCliUninstallFirstTooltip": "最初に、Windows -> プログラム -> プログラムのアンインストール（または Mac の同等機能）から Salesforce DX / Salesforce CLI をアンインストールする必要があります",
-  "sfCliWronglyInstalledSuffix": " ({{path}} に誤ってインストールされています)",
   "sfdmuProjectHelp": "'data' アクション用の SFDMU プロジェクトへのパス",
   "sfdmuProjectPath": "SFDMU プロジェクトパス",
   "sfdxDeprecatedTooltip": "sfdx は非推奨です。最新の Salesforce CLI をインストールしてください。アップグレードするにはクリックしてください",

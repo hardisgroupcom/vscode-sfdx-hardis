@@ -22,7 +22,7 @@ import { listPluginsProvidingHardisCommands } from "./sfdx-hardis-config-utils";
  * MSI, macOS pkg, Linux apt/rpm). Returns false when it lives in an npm/node/nvm/fnm
  * tree, or when the binary cannot be located at all.
  */
-function isNativeSfCliInstall(sfdxPath: string): boolean {
+export function isNativeSfCliInstall(sfdxPath: string | null | undefined): boolean {
   if (!sfdxPath || sfdxPath === "missing") {
     return false;
   }
@@ -36,6 +36,33 @@ function isNativeSfCliInstall(sfdxPath: string): boolean {
     return false;
   }
   return true;
+}
+
+/**
+ * Builds the shell command that upgrades the Salesforce CLI to {@link recommended}.
+ * - Native installer (Windows MSI / macOS pkg / Linux apt/rpm): `sf update`
+ * - npm/node/nvm/fnm install: `npm install @salesforce/cli@<recommended> -g`
+ */
+export function buildSfCliUpgradeCommand(
+  sfdxPath: string | null | undefined,
+  recommended?: string | null,
+): string {
+  if (isNativeSfCliInstall(sfdxPath)) {
+    return "sf update";
+  }
+  return `npm install @salesforce/cli@${recommended || "latest"} -g`;
+}
+
+/**
+ * Resolves the `sf` binary path via `which`, swallowing the error and returning
+ * the sentinel `"missing"` if it cannot be located.
+ */
+export async function resolveSfCliPath(): Promise<string> {
+  try {
+    return await which("sf");
+  } catch {
+    return "missing";
+  }
 }
 
 export type DependencyInfo = {
@@ -385,9 +412,7 @@ export class SetupHelper {
       }
 
       const nativeInstall = isNativeSfCliInstall(sfdxPath);
-      const upgradeCommand = nativeInstall
-        ? "sf update"
-        : `npm install @salesforce/cli@${recommended || "latest"} -g`;
+      const upgradeCommand = buildSfCliUpgradeCommand(sfdxPath, recommended);
       const nativeInstallNote = nativeInstall
         ? t("depSfCliNativeInstallNote")
         : undefined;
@@ -590,20 +615,11 @@ export class SetupHelper {
     // (Windows MSI, macOS pkg, Linux apt/rpm). If so, use `sf update` to upgrade
     // in place — running `npm install -g` on top of a native install causes
     // duplicate binaries and broken PATH resolution.
-    let nativeInstall = false;
-    try {
-      const sfdxPath = await which("sf");
-      nativeInstall = isNativeSfCliInstall(sfdxPath);
-    } catch {
-      // sf not on PATH — fall back to npm install
-    }
-    const command = nativeInstall
-      ? "sf update"
-      : "npm install @salesforce/cli" +
-        (RECOMMENDED_SFDX_CLI_VERSION
-          ? "@" + RECOMMENDED_SFDX_CLI_VERSION
-          : "") +
-        " -g";
+    const sfdxPath = await resolveSfCliPath();
+    const command = buildSfCliUpgradeCommand(
+      sfdxPath,
+      RECOMMENDED_SFDX_CLI_VERSION,
+    );
     if (this.hasUpdatesInProgress()) {
       return {
         success: false,
