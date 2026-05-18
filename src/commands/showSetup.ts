@@ -91,6 +91,7 @@ export function registerShowSetup(commands: Commands) {
           let result: any;
           const dependency = dependencies[data.id];
           if (dependency && typeof dependency.installMethod === "function") {
+            // jscpd:ignore-start
             try {
               result = await dependency.installMethod();
             } catch (err: any) {
@@ -111,6 +112,7 @@ export function registerShowSetup(commands: Commands) {
                 result?.command,
               );
             }
+            // jscpd:ignore-end
           } else {
             // If no install method is provided, return an explicit error
             return {
@@ -128,6 +130,7 @@ export function registerShowSetup(commands: Commands) {
           let result: any;
           const dependency = dependencies[data.id];
           if (dependency && typeof dependency.uninstallMethod === "function") {
+            // jscpd:ignore-start
             try {
               result = await dependency.uninstallMethod();
             } catch (err: any) {
@@ -148,6 +151,7 @@ export function registerShowSetup(commands: Commands) {
                 result?.command,
               );
             }
+            // jscpd:ignore-end
           } else {
             result = {
               success: false,

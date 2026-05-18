@@ -677,6 +677,37 @@ export class SetupHelper {
     }
   }
 
+  // Shared lifecycle wrapper for install/uninstall operations: short-circuits when
+  // another update is running, toggles in-progress state around `action`, refreshes
+  // the plugins view on success, and normalizes failures.
+  private async runUpdateOperation(
+    name: string,
+    action: () => Promise<void>,
+    command?: string,
+  ): Promise<{ success: boolean; message?: string; command?: string }> {
+    if (this.hasUpdatesInProgress()) {
+      return {
+        success: false,
+        message: t("installInProgress"),
+        ...(command !== undefined ? { command } : {}),
+      };
+    }
+    this.setUpdateInProgress(true, name);
+    try {
+      await action();
+      this.setUpdateInProgress(false, name);
+      vscode.commands.executeCommand("vscode-sfdx-hardis.refreshPluginsView");
+      return { success: true };
+    } catch (err: any) {
+      this.setUpdateInProgress(false, name);
+      return {
+        success: false,
+        message: err?.message || String(err),
+        ...(command !== undefined ? { command } : {}),
+      };
+    }
+  }
+
   async installSfCliWithNpm(): Promise<{
     success: boolean;
     message?: string;
@@ -691,31 +722,17 @@ export class SetupHelper {
       sfdxPath,
       RECOMMENDED_SFDX_CLI_VERSION,
     );
-    if (this.hasUpdatesInProgress()) {
-      return {
-        success: false,
-        message: t("installInProgress"),
-        command,
-      };
-    }
-    this.setUpdateInProgress(true, "sf");
-    try {
-      await execCommandWithProgress(
-        command,
-        { fail: true, output: true },
-        t("installingSalesforceCli"),
-      );
-      this.setUpdateInProgress(false, "sf");
-      vscode.commands.executeCommand("vscode-sfdx-hardis.refreshPluginsView");
-      return { success: true };
-    } catch (err: any) {
-      this.setUpdateInProgress(false, "sf");
-      return {
-        success: false,
-        message: err?.message || String(err),
-        command,
-      };
-    }
+    return this.runUpdateOperation(
+      "sf",
+      async () => {
+        await execCommandWithProgress(
+          command,
+          { fail: true, output: true },
+          t("installingSalesforceCli"),
+        );
+      },
+      command,
+    );
   }
 
   async installSfPlugin(
@@ -724,108 +741,65 @@ export class SetupHelper {
     const installTag =
       pluginName === "sfdx-hardis" ? getSfdxHardisInstallTag() : "latest";
     const command = `echo y | sf plugins install ${pluginName}@${installTag}`;
-    if (this.hasUpdatesInProgress()) {
-      return {
-        success: false,
-        message: t("installInProgress"),
-        command,
-      };
-    }
-    this.setUpdateInProgress(true, pluginName);
-    try {
-      const isMergeDriver = pluginName === "sf-git-merge-driver";
-      let mergeDriverWasEnabled = false;
-      if (isMergeDriver) {
-        const mergeDriverStatus =
-          await isMergeDriverEnabled(getWorkspaceRoot());
-        mergeDriverWasEnabled = mergeDriverStatus === true;
+    return this.runUpdateOperation(
+      pluginName,
+      async () => {
+        const isMergeDriver = pluginName === "sf-git-merge-driver";
+        let mergeDriverWasEnabled = false;
+        if (isMergeDriver) {
+          const mergeDriverStatus =
+            await isMergeDriverEnabled(getWorkspaceRoot());
+          mergeDriverWasEnabled = mergeDriverStatus === true;
+          if (mergeDriverWasEnabled) {
+            await execCommandWithProgress(
+              "sf git merge driver disable",
+              { fail: false, output: true },
+              t("gitMergeDriverDisablingBeforeUpgrade"),
+            );
+          }
+        }
+        await execCommandWithProgress(
+          command,
+          { fail: true, output: true },
+          t("runningInstallCommandFor", { plugin: pluginName }),
+        );
         if (mergeDriverWasEnabled) {
           await execCommandWithProgress(
-            "sf git merge driver disable",
+            "sf git merge driver enable",
             { fail: false, output: true },
-            t("gitMergeDriverDisablingBeforeUpgrade"),
+            t("gitMergeDriverReenablingAfterUpgrade"),
           );
         }
-      }
-      await execCommandWithProgress(
-        command,
-        { fail: true, output: true },
-        t("runningInstallCommandFor", { plugin: pluginName }),
-      );
-      if (mergeDriverWasEnabled) {
-        await execCommandWithProgress(
-          "sf git merge driver enable",
-          { fail: false, output: true },
-          t("gitMergeDriverReenablingAfterUpgrade"),
-        );
-      }
-      this.setUpdateInProgress(false, pluginName);
-      vscode.commands.executeCommand("vscode-sfdx-hardis.refreshPluginsView");
-      return { success: true };
-    } catch (err: any) {
-      this.setUpdateInProgress(false, pluginName);
-      return {
-        success: false,
-        message: err?.message || String(err),
-        command,
-      };
-    }
+      },
+      command,
+    );
   }
 
   async uninstallSfPlugin(
     pluginName: string,
   ): Promise<{ success: boolean; message?: string; command?: string }> {
     const command = `sf plugins uninstall ${pluginName}`;
-    if (this.hasUpdatesInProgress()) {
-      return {
-        success: false,
-        message: t("installInProgress"),
-        command,
-      };
-    }
-    this.setUpdateInProgress(true, pluginName);
-    try {
-      await execCommandWithProgress(
-        command,
-        { fail: true, output: true },
-        t("runningUninstallCommandFor", { plugin: pluginName }),
-      );
-      this.setUpdateInProgress(false, pluginName);
-      vscode.commands.executeCommand("vscode-sfdx-hardis.refreshPluginsView");
-      return { success: true };
-    } catch (err: any) {
-      this.setUpdateInProgress(false, pluginName);
-      return {
-        success: false,
-        message: err?.message || String(err),
-        command,
-      };
-    }
+    return this.runUpdateOperation(
+      pluginName,
+      async () => {
+        await execCommandWithProgress(
+          command,
+          { fail: true, output: true },
+          t("runningUninstallCommandFor", { plugin: pluginName }),
+        );
+      },
+      command,
+    );
   }
 
-  /* jscpd:ignore-start */
   async installNpmPackage(
     packageName: string,
   ): Promise<{ success: boolean; message?: string }> {
-    if (this.hasUpdatesInProgress()) {
-      return {
-        success: false,
-        message: t("installInProgress"),
-      };
-    }
-    this.setUpdateInProgress(true, packageName);
-    try {
+    return this.runUpdateOperation(packageName, async () => {
       await execCommand(`npm i -g ${packageName}`, {
         fail: false,
         output: true,
       });
-      this.setUpdateInProgress(false, packageName);
-      vscode.commands.executeCommand("vscode-sfdx-hardis.refreshPluginsView");
-      return { success: true };
-    } catch (err: any) {
-      this.setUpdateInProgress(false, packageName);
-      return { success: false, message: err?.message || String(err) };
-    }
+    });
   }
-  /* jscpd:ignore-end */
 }
