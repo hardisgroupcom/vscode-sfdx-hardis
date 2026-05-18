@@ -313,6 +313,8 @@
   "depNodeInstallLink": "NodeJS downloaden en installeren (gebruik {{platformLabel}})",
   "depNodeMissingMessage": "Node.js is niet geïnstalleerd of niet gevonden in PATH (vereiste minimumversie: {{version}})",
   "depNodeOutdatedMessage": "Geïnstalleerde NodeJS-hoofdversie {{major}} is ouder dan de aanbevolen versie {{minMajor}}.\nHet wordt aanbevolen NodeJS {{minMajor}} te installeren en vervolgens VsCode opnieuw te starten.",
+  "depSalesforceExtensionPackExplanation": "Officiële Salesforce-extensies voor VS Code (Apex, LWC, deploy/retrieve, debugging en meer).",
+  "depSalesforceExtensionPackMissing": "Het Salesforce Extension Pack is niet geïnstalleerd. Klik op Installeren om de extensiepagina in VS Code te openen en druk daar op Install.",
   "depSfCliExplanation": "De moderne Salesforce CLI (sf) is vereist om Salesforce-opdrachten uit te voeren die door de extensie worden gebruikt.",
   "depSfCliLegacyLink": "sfdx-cli verwijderen en vervolgens sf installeren",
   "depSfCliLegacyMessage": "Verouderde sfdx-cli gedetecteerd. Verwijder deze met `npm uninstall sfdx-cli -g` en upgrade naar @salesforce/cli.",

@@ -163,6 +163,17 @@ export class SetupHelper {
         checkMethod: this.checkGit.bind(this),
         installMethod: undefined,
       },
+      "vscode:salesforce-extension-pack": {
+        label: "Salesforce Extension Pack",
+        explanation: t("depSalesforceExtensionPackExplanation"),
+        installable: true,
+        iconName: "utility:apps",
+        prerequisites: [],
+        helpUrl:
+          "https://marketplace.visualstudio.com/items?itemName=salesforce.salesforcedx-vscode",
+        checkMethod: this.checkSalesforceExtensionPack.bind(this),
+        installMethod: this.installSalesforceExtensionPack.bind(this),
+      },
       sf: {
         label: "Salesforce CLI (sf)",
         explanation: t("depSfCliExplanation"),
@@ -362,6 +373,45 @@ export class SetupHelper {
         message: t("depGitMissingMessage"),
         messageLinkLabel: t("depGitDownloadLink"),
       };
+    }
+  }
+
+  async checkSalesforceExtensionPack(): Promise<DependencyCheckResult> {
+    const id = "vscode:salesforce-extension-pack";
+    const normalId = "salesforce.salesforcedx-vscode";
+    const extendedId = "salesforce.salesforcedx-vscode-expanded";
+    const normal = vscode.extensions.getExtension(normalId);
+    const extended = vscode.extensions.getExtension(extendedId);
+    const found = normal || extended;
+    const installed = !!found;
+    return {
+      id,
+      label: "Salesforce Extension Pack",
+      installed,
+      version: found?.packageJSON?.version ?? null,
+      recommended: null,
+      status: installed ? "ok" : "missing",
+      helpUrl:
+        "https://marketplace.visualstudio.com/items?itemName=salesforce.salesforcedx-vscode",
+      message: installed ? undefined : t("depSalesforceExtensionPackMissing"),
+    };
+  }
+
+  async installSalesforceExtensionPack(): Promise<{
+    success: boolean;
+    message?: string;
+  }> {
+    try {
+      // Open the extension page in VS Code's Extensions panel so the user can
+      // click "Install". We use the normal pack (not the extended one) per the
+      // sfdx-hardis recommendation.
+      await vscode.commands.executeCommand(
+        "extension.open",
+        "salesforce.salesforcedx-vscode",
+      );
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, message: err?.message || String(err) };
     }
   }
 

@@ -313,6 +313,8 @@
   "depNodeInstallLink": "NodeJS をダウンロードしてインストール（{{platformLabel}} を使用）",
   "depNodeMissingMessage": "Node.js がインストールされていないか、PATH で見つかりません（必要な最小バージョン: {{version}}）",
   "depNodeOutdatedMessage": "インストールされている NodeJS のメジャーバージョン {{major}} は推奨バージョン {{minMajor}} より古いです。\nNodeJS {{minMajor}} をインストールしてから VsCode を再起動することを推奨します。",
+  "depSalesforceExtensionPackExplanation": "VS Code 用の公式 Salesforce 拡張機能（Apex、LWC、デプロイ／取得、デバッグなど）。",
+  "depSalesforceExtensionPackMissing": "Salesforce Extension Pack がインストールされていません。「インストール」をクリックして VS Code の拡張機能ページを開き、そこで Install を押してください。",
   "depSfCliExplanation": "この拡張機能で使用する Salesforce コマンドを実行するには、最新の Salesforce CLI（sf）が必要です。",
   "depSfCliLegacyLink": "sfdx-cli をアンインストールして sf をインストール",
   "depSfCliLegacyMessage": "レガシーな sfdx-cli が検出されました。`npm uninstall sfdx-cli -g` を使用してアンインストールし、その後 @salesforce/cli にアップグレードしてください。",

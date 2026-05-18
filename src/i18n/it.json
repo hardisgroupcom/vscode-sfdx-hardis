@@ -309,6 +309,8 @@
   "depNodeInstallLink": "Scarica e installa NodeJS (usa {{platformLabel}})",
   "depNodeMissingMessage": "Node.js non è installato o non è stato trovato nel PATH (versione minima richiesta: {{version}})",
   "depNodeOutdatedMessage": "La versione major di NodeJS installata {{major}} è precedente a quella consigliata {{minMajor}}.\nSi consiglia di installare NodeJS {{minMajor}}, poi riavviare VS Code.",
+  "depSalesforceExtensionPackExplanation": "Estensioni Salesforce ufficiali per VS Code (Apex, LWC, deploy/retrieve, debugging e altro).",
+  "depSalesforceExtensionPackMissing": "Il pacchetto di estensioni Salesforce non è installato. Clicca su Installa per aprire la pagina dell'estensione in VS Code, poi premi Install lì.",
   "depSfCliExplanation": "Salesforce CLI moderno (sf) è necessario per eseguire i comandi Salesforce usati dall'estensione.",
   "depSfCliLegacyLink": "Disinstalla sfdx-cli e poi installa sf",
   "depSfCliLegacyMessage": "Rilevato sfdx-cli legacy. Disinstallalo usando `npm uninstall sfdx-cli -g` e poi aggiorna a @salesforce/cli.",
