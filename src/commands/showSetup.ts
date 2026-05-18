@@ -2,6 +2,8 @@ import * as vscode from "vscode";
 import { LwcPanelManager } from "../lwc-panel-manager";
 import { SetupHelper } from "../utils/setupUtils";
 import { Commands } from "../commands";
+import { t } from "../i18n/i18n";
+import { Logger } from "../logger";
 
 export function registerShowSetup(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
@@ -91,9 +93,16 @@ export function registerShowSetup(commands: Commands) {
             try {
               result = await dependency.installMethod();
             } catch (err: any) {
-              result = { success: false, message: err?.message || String(err) };
-              vscode.window.showErrorMessage(
-                `Installation of ${dependency.label} failed: ${result.message}`,
+              result = {
+                success: false,
+                message: err?.message || String(err),
+              };
+            }
+            if (!result?.success) {
+              await handleInstallFailure(
+                dependency.label,
+                result?.message || "",
+                result?.command,
               );
             }
           } else {
@@ -148,4 +157,77 @@ export function registerShowSetup(commands: Commands) {
     },
   );
   commands.disposables.push(disposable);
+}
+
+function isRightsRelatedError(message: string): boolean {
+  if (!message) {
+    return false;
+  }
+  const m = message.toLowerCase();
+  return (
+    m.includes("eacces") ||
+    m.includes("eperm") ||
+    m.includes("permission denied") ||
+    m.includes("access denied") ||
+    m.includes("operation not permitted") ||
+    m.includes("access is denied")
+  );
+}
+
+function getOrCreateSetupTerminal(): vscode.Terminal {
+  const existing = vscode.window.terminals.find(
+    (term) => term.name === "SFDX Hardis",
+  );
+  if (existing) {
+    return existing;
+  }
+  return vscode.window.createTerminal("SFDX Hardis");
+}
+
+async function handleInstallFailure(
+  label: string,
+  message: string,
+  command: string | undefined,
+): Promise<void> {
+  Logger.log(`Installation of ${label} failed: ${message}`);
+  const isWindows = process.platform === "win32";
+  const rightsRelated = isRightsRelatedError(message);
+  const runInTerminal = t("setupErrorRunInTerminal");
+  const runWithSudo = t("setupErrorRunWithSudo");
+  const pasteInTerminal = t("setupErrorPasteInTerminal");
+  const viewLog = t("setupErrorViewLog");
+
+  const buttons: string[] = [];
+  if (command) {
+    buttons.push(runInTerminal);
+    if (rightsRelated && !isWindows) {
+      buttons.push(runWithSudo);
+    }
+    buttons.push(pasteInTerminal);
+  }
+  buttons.push(viewLog);
+
+  const errorTitle = t("setupInstallFailedMessage", { label, message });
+  const action = await vscode.window.showErrorMessage(errorTitle, ...buttons);
+  if (!action || !command) {
+    if (action === viewLog) {
+      Logger.showOutputChannel();
+    }
+    return;
+  }
+  if (action === runInTerminal) {
+    const terminal = getOrCreateSetupTerminal();
+    terminal.show(false);
+    terminal.sendText(command, true);
+  } else if (action === runWithSudo) {
+    const terminal = getOrCreateSetupTerminal();
+    terminal.show(false);
+    terminal.sendText(`sudo ${command}`, true);
+  } else if (action === pasteInTerminal) {
+    const terminal = getOrCreateSetupTerminal();
+    terminal.show(false);
+    terminal.sendText(command, false);
+  } else if (action === viewLog) {
+    Logger.showOutputChannel();
+  }
 }

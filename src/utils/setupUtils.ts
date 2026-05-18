@@ -573,21 +573,26 @@ export class SetupHelper {
     }
   }
 
-  async installSfCliWithNpm(): Promise<{ success: boolean; message?: string }> {
+  async installSfCliWithNpm(): Promise<{
+    success: boolean;
+    message?: string;
+    command?: string;
+  }> {
+    const command =
+      "npm install @salesforce/cli" +
+      (RECOMMENDED_SFDX_CLI_VERSION ? "@" + RECOMMENDED_SFDX_CLI_VERSION : "") +
+      " -g";
     if (this.hasUpdatesInProgress()) {
       return {
         success: false,
         message: t("installInProgress"),
+        command,
       };
     }
     this.setUpdateInProgress(true, "sf");
     try {
       await execCommandWithProgress(
-        "npm install @salesforce/cli" +
-          (RECOMMENDED_SFDX_CLI_VERSION
-            ? "@" + RECOMMENDED_SFDX_CLI_VERSION
-            : "") +
-          " -g",
+        command,
         { fail: true, output: true },
         t("installingSalesforceCli"),
       );
@@ -596,17 +601,25 @@ export class SetupHelper {
       return { success: true };
     } catch (err: any) {
       this.setUpdateInProgress(false, "sf");
-      return { success: false, message: err?.message || String(err) };
+      return {
+        success: false,
+        message: err?.message || String(err),
+        command,
+      };
     }
   }
 
   async installSfPlugin(
     pluginName: string,
-  ): Promise<{ success: boolean; message?: string }> {
+  ): Promise<{ success: boolean; message?: string; command?: string }> {
+    const installTag =
+      pluginName === "sfdx-hardis" ? getSfdxHardisInstallTag() : "latest";
+    const command = `echo y | sf plugins install ${pluginName}@${installTag}`;
     if (this.hasUpdatesInProgress()) {
       return {
         success: false,
         message: t("installInProgress"),
+        command,
       };
     }
     this.setUpdateInProgress(true, pluginName);
@@ -625,10 +638,8 @@ export class SetupHelper {
           );
         }
       }
-      const installTag =
-        pluginName === "sfdx-hardis" ? getSfdxHardisInstallTag() : "latest";
       await execCommandWithProgress(
-        `echo y | sf plugins install ${pluginName}@${installTag}`,
+        command,
         { fail: true, output: true },
         t("runningInstallCommandFor", { plugin: pluginName }),
       );
@@ -644,7 +655,11 @@ export class SetupHelper {
       return { success: true };
     } catch (err: any) {
       this.setUpdateInProgress(false, pluginName);
-      return { success: false, message: err?.message || String(err) };
+      return {
+        success: false,
+        message: err?.message || String(err),
+        command,
+      };
     }
   }
 
