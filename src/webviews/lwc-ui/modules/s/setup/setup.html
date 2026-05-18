@@ -94,6 +94,15 @@
                                         onclick={handleUnifiedAction}
                                         disabled={chk.buttonDisabled}
                                     ></lightning-button>
+                                    <template if:true={chk.showUninstallButton}>
+                                        <lightning-button
+                                            class="status-button"
+                                            variant="destructive-text"
+                                            label={chk.uninstallLabel}
+                                            data-id={chk.id}
+                                            onclick={handleUninstall}
+                                        ></lightning-button>
+                                    </template>
                                 </template>
                                 <!-- show prereq hint only after we know the check completed and prerequisites are actually missing -->
                                 <template if:true={chk.missingPrerequisitesText}>

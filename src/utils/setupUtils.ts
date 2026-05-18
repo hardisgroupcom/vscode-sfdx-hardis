@@ -68,12 +68,23 @@ export async function resolveSfCliPath(): Promise<string> {
 export type DependencyInfo = {
   explanation: string;
   installable: boolean;
+  /** When true, the LWC shows an "Uninstall" button next to the main one. */
+  uninstallable?: boolean;
   label: string;
   iconName?: string;
   prerequisites?: string[];
   helpUrl?: string;
   checkMethod?: () => Promise<DependencyCheckResult>;
-  installMethod?: () => Promise<{ success: boolean; message?: string }>;
+  installMethod?: () => Promise<{
+    success: boolean;
+    message?: string;
+    command?: string;
+  }>;
+  uninstallMethod?: () => Promise<{
+    success: boolean;
+    message?: string;
+    command?: string;
+  }>;
 };
 
 export type DependencyCheckResult = {
@@ -163,17 +174,6 @@ export class SetupHelper {
         checkMethod: this.checkGit.bind(this),
         installMethod: undefined,
       },
-      "vscode:salesforce-extension-pack": {
-        label: "Salesforce Extension Pack",
-        explanation: t("depSalesforceExtensionPackExplanation"),
-        installable: true,
-        iconName: "utility:apps",
-        prerequisites: [],
-        helpUrl:
-          "https://marketplace.visualstudio.com/items?itemName=salesforce.salesforcedx-vscode",
-        checkMethod: this.checkSalesforceExtensionPack.bind(this),
-        installMethod: this.installSalesforceExtensionPack.bind(this),
-      },
       sf: {
         label: "Salesforce CLI (sf)",
         explanation: t("depSfCliExplanation"),
@@ -242,6 +242,20 @@ export class SetupHelper {
         checkMethod: this.checkSfPlugin.bind(this, "sf-git-merge-driver"),
         installMethod: this.installSfPlugin.bind(this, "sf-git-merge-driver"),
       },
+      // VS Code extension entry sits between recommended sfdx-hardis plugins
+      // (above) and community/non-recommended plugins (added below). Order
+      // matters: the LWC renders cards in this object's insertion order.
+      "vscode:salesforce-extension-pack": {
+        label: "Salesforce Extension Pack",
+        explanation: t("depSalesforceExtensionPackExplanation"),
+        installable: true,
+        iconName: "utility:apps",
+        prerequisites: [],
+        helpUrl:
+          "https://marketplace.visualstudio.com/items?itemName=salesforce.salesforcedx-vscode",
+        checkMethod: this.checkSalesforceExtensionPack.bind(this),
+        installMethod: this.installSalesforceExtensionPack.bind(this),
+      },
     };
     const hardisCommandsPlugins = await listPluginsProvidingHardisCommands();
     // Pre-warm npm version cache for community plugins in parallel so checkSfPlugin hits cache
@@ -251,15 +265,19 @@ export class SetupHelper {
     for (const plugin of hardisCommandsPlugins) {
       const dependencyId = `sfplugin:${plugin.name}`;
       if (!dependencies[dependencyId]) {
+        // Community plugins are not part of the sfdx-hardis recommended set:
+        // expose an Uninstall action so users can remove them if undesired.
         dependencies[dependencyId] = {
           label: `${plugin.name} ${t("communityPluginLabel")}`,
           explanation: t("communityPluginTrustExplanation"),
           installable: true,
+          uninstallable: true,
           iconName: "utility:package",
           prerequisites: ["sf"],
           helpUrl: plugin.helpUrl,
           checkMethod: this.checkSfPlugin.bind(this, plugin.name),
           installMethod: this.installSfPlugin.bind(this, plugin.name),
+          uninstallMethod: this.uninstallSfPlugin.bind(this, plugin.name),
         };
       }
     }
@@ -738,6 +756,37 @@ export class SetupHelper {
           t("gitMergeDriverReenablingAfterUpgrade"),
         );
       }
+      this.setUpdateInProgress(false, pluginName);
+      vscode.commands.executeCommand("vscode-sfdx-hardis.refreshPluginsView");
+      return { success: true };
+    } catch (err: any) {
+      this.setUpdateInProgress(false, pluginName);
+      return {
+        success: false,
+        message: err?.message || String(err),
+        command,
+      };
+    }
+  }
+
+  async uninstallSfPlugin(
+    pluginName: string,
+  ): Promise<{ success: boolean; message?: string; command?: string }> {
+    const command = `sf plugins uninstall ${pluginName}`;
+    if (this.hasUpdatesInProgress()) {
+      return {
+        success: false,
+        message: t("installInProgress"),
+        command,
+      };
+    }
+    this.setUpdateInProgress(true, pluginName);
+    try {
+      await execCommandWithProgress(
+        command,
+        { fail: true, output: true },
+        t("runningUninstallCommandFor", { plugin: pluginName }),
+      );
       this.setUpdateInProgress(false, pluginName);
       vscode.commands.executeCommand("vscode-sfdx-hardis.refreshPluginsView");
       return { success: true };

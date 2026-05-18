@@ -39,6 +39,7 @@ export function registerShowSetup(commands: Commands) {
               label: meta.label || key,
               explanation: meta.explanation,
               installable: meta.installable,
+              uninstallable: meta.uninstallable === true,
               iconName: meta.iconName,
               prerequisites: meta.prerequisites || [],
               installed: false,
@@ -99,9 +100,14 @@ export function registerShowSetup(commands: Commands) {
               };
             }
             if (!result?.success) {
-              await handleInstallFailure(
-                dependency.label,
-                result?.message || "",
+              const message = result?.message || "";
+              await handleSetupActionFailure(
+                t("setupInstallFailedMessage", {
+                  label: dependency.label,
+                  message,
+                }),
+                `Installation of ${dependency.label} failed`,
+                message,
                 result?.command,
               );
             }
@@ -114,6 +120,42 @@ export function registerShowSetup(commands: Commands) {
           }
           panel.sendMessage({
             type: "installResult",
+            data: { id: data.id, res: result },
+          });
+        }
+        // Uninstall a dependency (only available on non-recommended plugins)
+        else if (type === "uninstallDependency") {
+          let result: any;
+          const dependency = dependencies[data.id];
+          if (dependency && typeof dependency.uninstallMethod === "function") {
+            try {
+              result = await dependency.uninstallMethod();
+            } catch (err: any) {
+              result = {
+                success: false,
+                message: err?.message || String(err),
+              };
+            }
+            if (!result?.success) {
+              const message = result?.message || "";
+              await handleSetupActionFailure(
+                t("setupUninstallFailedMessage", {
+                  label: dependency.label,
+                  message,
+                }),
+                `Uninstall of ${dependency.label} failed`,
+                message,
+                result?.command,
+              );
+            }
+          } else {
+            result = {
+              success: false,
+              message: `No uninstaller available for ${dependency?.label || data.id}`,
+            };
+          }
+          panel.sendMessage({
+            type: "uninstallResult",
             data: { id: data.id, res: result },
           });
         }
@@ -184,12 +226,18 @@ function getOrCreateSetupTerminal(): vscode.Terminal {
   return vscode.window.createTerminal("SFDX Hardis");
 }
 
-async function handleInstallFailure(
-  label: string,
+/**
+ * Surface a failed setup action (install / uninstall) in a VS Code dialog with
+ * actionable buttons. Used by both the install and uninstall flows so the dialog
+ * shape stays consistent.
+ */
+async function handleSetupActionFailure(
+  errorTitle: string,
+  logPrefix: string,
   message: string,
   command: string | undefined,
 ): Promise<void> {
-  Logger.log(`Installation of ${label} failed: ${message}`);
+  Logger.log(`${logPrefix}: ${message}`);
   const isWindows = process.platform === "win32";
   const rightsRelated = isRightsRelatedError(message);
   const runInTerminal = t("setupErrorRunInTerminal");
@@ -207,7 +255,6 @@ async function handleInstallFailure(
   }
   buttons.push(viewLog);
 
-  const errorTitle = t("setupInstallFailedMessage", { label, message });
   const action = await vscode.window.showErrorMessage(errorTitle, ...buttons);
   if (!action || !command) {
     if (action === viewLog) {
