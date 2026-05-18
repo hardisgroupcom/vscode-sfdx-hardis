@@ -31,7 +31,10 @@ export function isNativeSfCliInstall(sfdxPath: string | null | undefined): boole
     sfdxPath.includes("node") ||
     sfdxPath.includes("nvm") ||
     sfdxPath.includes("fnm") ||
-    sfdxPath.includes("/home/codebuilder/")
+    sfdxPath.includes("/home/codebuilder/") ||
+    // macOS: /usr/local/bin is the typical npm global install location, not a
+    // native Salesforce installer.
+    (process.platform === "darwin" && sfdxPath.includes("/usr/local/bin"))
   ) {
     return false;
   }
