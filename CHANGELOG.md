@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Setup / Dependencies panel
+  - Show an actionable dialog (Run / sudo / paste / view log) when an install fails silently (helps for Mac users with permission issues)
+  - Support Salesforce CLI installed via the Windows / macOS native installer (upgrades use `sf update`)
+  - Add a Salesforce Extension Pack card
+  - Add an Uninstall button on non-recommended plugin cards
+
 ## [7.10.1] 2026-05-17
 
 - Rewrite README who was outdated and not reflecting the current state of the extension, with new screenshots and gifs, and a more comprehensive description of features and commands
