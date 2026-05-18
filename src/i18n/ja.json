@@ -316,7 +316,7 @@
   "depSfCliExplanation": "この拡張機能で使用する Salesforce コマンドを実行するには、最新の Salesforce CLI（sf）が必要です。",
   "depSfCliLegacyLink": "sfdx-cli をアンインストールして sf をインストール",
   "depSfCliLegacyMessage": "レガシーな sfdx-cli が検出されました。`npm uninstall sfdx-cli -g` を使用してアンインストールし、その後 @salesforce/cli にアップグレードしてください。",
-  "depSfCliNonNpmMessage": "{{path}} に npm 以外のインストールが検出されました（Salesforce Web サイトの実行ファイルインストーラーによる不適切なインストール）。\n\"Windows -> Uninstall program\"（または Mac の同等機能）で Salesforce CLI をアンインストールし、その後 sfdx-hardis Wizard（NPM ベース）を使って再インストールしてください。",
+  "depSfCliNativeInstallNote": "Salesforce のネイティブインストーラー（Windows/Mac）でインストールされています。これはサポートされていますが、sfdx-hardis との互換性向上のため NPM ベースのインストールを推奨します。",
   "depSfCliOutdatedMessage": "sf CLI のバージョン {{version}} は推奨バージョン {{recommended}} と異なります",
   "depSfPackagingExplanation": "@salesforce/plugin-packaging は、パッケージの作成とバージョン管理に使用されるパッケージングコマンドを提供します。",
   "depSfPluginOutdatedMessage": "{{plugin}} の新しいバージョン（{{latest}}）が利用可能です",

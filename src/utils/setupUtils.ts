@@ -17,6 +17,27 @@ import {
 } from "../constants";
 import { listPluginsProvidingHardisCommands } from "./sfdx-hardis-config-utils";
 
+/**
+ * Returns true when the `sf` binary path looks like a native installer (Windows
+ * MSI, macOS pkg, Linux apt/rpm). Returns false when it lives in an npm/node/nvm/fnm
+ * tree, or when the binary cannot be located at all.
+ */
+function isNativeSfCliInstall(sfdxPath: string): boolean {
+  if (!sfdxPath || sfdxPath === "missing") {
+    return false;
+  }
+  if (
+    sfdxPath.includes("npm") ||
+    sfdxPath.includes("node") ||
+    sfdxPath.includes("nvm") ||
+    sfdxPath.includes("fnm") ||
+    sfdxPath.includes("/home/codebuilder/")
+  ) {
+    return false;
+  }
+  return true;
+}
+
 export type DependencyInfo = {
   explanation: string;
   installable: boolean;
@@ -40,6 +61,7 @@ export type DependencyCheckResult = {
   messageLinkLabel?: string;
   installCommand?: string;
   upgradeAvailable?: boolean;
+  note?: string;
 };
 
 export class SetupHelper {
@@ -362,29 +384,13 @@ export class SetupHelper {
         };
       }
 
-      if (
-        !sfdxPath.includes("npm") &&
-        !sfdxPath.includes("node") &&
-        !sfdxPath.includes("nvm") &&
-        !sfdxPath.includes("fnm") &&
-        !sfdxPath.includes("/home/codebuilder/") &&
-        !(
-          sfdxPath.includes("/usr/local/bin") && process.platform === "darwin"
-        ) &&
-        sfdxPath !== "missing"
-      ) {
-        return {
-          id: "sf",
-          label: "Salesforce CLI (sf)",
-          installed: true,
-          version,
-          recommended,
-          status: "error",
-          message: t("depSfCliNonNpmMessage", { path: sfdxPath }),
-          installCommand: `npm install @salesforce/cli@${recommended || "latest"} -g`,
-          upgradeAvailable: false,
-        };
-      }
+      const nativeInstall = isNativeSfCliInstall(sfdxPath);
+      const upgradeCommand = nativeInstall
+        ? "sf update"
+        : `npm install @salesforce/cli@${recommended || "latest"} -g`;
+      const nativeInstallNote = nativeInstall
+        ? t("depSfCliNativeInstallNote")
+        : undefined;
 
       // If installed but not the recommended version
       if (ok && recommended && version !== recommended) {
@@ -401,8 +407,9 @@ export class SetupHelper {
             version: version ?? "",
             recommended: recommended ?? "",
           }),
-          installCommand: `npm install @salesforce/cli@${recommended} -g`,
+          installCommand: upgradeCommand,
           upgradeAvailable: true,
+          note: nativeInstallNote,
         };
       }
 
@@ -415,6 +422,7 @@ export class SetupHelper {
         status: ok ? "ok" : "missing",
         helpUrl:
           "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_unified.htm",
+        note: nativeInstallNote,
       };
     } catch {
       return {
@@ -578,10 +586,24 @@ export class SetupHelper {
     message?: string;
     command?: string;
   }> {
-    const command =
-      "npm install @salesforce/cli" +
-      (RECOMMENDED_SFDX_CLI_VERSION ? "@" + RECOMMENDED_SFDX_CLI_VERSION : "") +
-      " -g";
+    // Detect whether the existing sf binary comes from a native installer
+    // (Windows MSI, macOS pkg, Linux apt/rpm). If so, use `sf update` to upgrade
+    // in place — running `npm install -g` on top of a native install causes
+    // duplicate binaries and broken PATH resolution.
+    let nativeInstall = false;
+    try {
+      const sfdxPath = await which("sf");
+      nativeInstall = isNativeSfCliInstall(sfdxPath);
+    } catch {
+      // sf not on PATH — fall back to npm install
+    }
+    const command = nativeInstall
+      ? "sf update"
+      : "npm install @salesforce/cli" +
+        (RECOMMENDED_SFDX_CLI_VERSION
+          ? "@" + RECOMMENDED_SFDX_CLI_VERSION
+          : "") +
+        " -g";
     if (this.hasUpdatesInProgress()) {
       return {
         success: false,

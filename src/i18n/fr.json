@@ -316,7 +316,7 @@
   "depSfCliExplanation": "La Salesforce CLI moderne (sf) est nécessaire pour exécuter les commandes Salesforce utilisées par l'extension.",
   "depSfCliLegacyLink": "Désinstaller sfdx-cli puis installer sf",
   "depSfCliLegacyMessage": "sfdx-cli hérité détecté. Veuillez le désinstaller avec `npm uninstall sfdx-cli -g` puis passer à @salesforce/cli.",
-  "depSfCliNonNpmMessage": "Installation non-npm détectée à {{path}} (mauvaise installation via l'installateur Salesforce).\nVeuillez désinstaller Salesforce CLI depuis \"Windows -> Programmes et fonctionnalités\" (ou équivalent sur Mac), puis réinstaller via l'assistant sfdx-hardis (basé sur NPM).",
+  "depSfCliNativeInstallNote": "Installé via l'installateur natif Salesforce (Windows/Mac). C'est supporté, mais une installation via NPM est recommandée pour une meilleure compatibilité avec sfdx-hardis.",
   "depSfCliOutdatedMessage": "Votre version de sf CLI ({{version}}) diffère de la version recommandée ({{recommended}})",
   "depSfPackagingExplanation": "@salesforce/plugin-packaging fournit les commandes de packaging utilisées pour la création et la gestion des versions de packages.",
   "depSfPluginOutdatedMessage": "Une nouvelle version ({{latest}}) de {{plugin}} est disponible",

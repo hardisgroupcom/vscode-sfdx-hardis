@@ -316,7 +316,7 @@
   "depSfCliExplanation": "De moderne Salesforce CLI (sf) is vereist om Salesforce-opdrachten uit te voeren die door de extensie worden gebruikt.",
   "depSfCliLegacyLink": "sfdx-cli verwijderen en vervolgens sf installeren",
   "depSfCliLegacyMessage": "Verouderde sfdx-cli gedetecteerd. Verwijder deze met `npm uninstall sfdx-cli -g` en upgrade naar @salesforce/cli.",
-  "depSfCliNonNpmMessage": "Niet-npm-installatie gedetecteerd op {{path}} (onjuiste installatie via het uitvoerbare installatieprogramma van de Salesforce-website).\nVerwijder Salesforce CLI via \"Windows -> Programma's verwijderen\" (of het equivalent op Mac) en installeer het opnieuw via de sfdx-hardis Wizard (NPM-gebaseerd).",
+  "depSfCliNativeInstallNote": "Geïnstalleerd via de native Salesforce-installer (Windows/Mac). Dit wordt ondersteund, maar een NPM-installatie wordt aanbevolen voor een betere compatibiliteit met sfdx-hardis.",
   "depSfCliOutdatedMessage": "Je sf CLI-versie {{version}} verschilt van de aanbevolen versie {{recommended}}",
   "depSfPackagingExplanation": "@salesforce/plugin-packaging biedt paketopdrachten voor het aanmaken en versiebeheer van pakketten.",
   "depSfPluginOutdatedMessage": "Er is een nieuwere versie ({{latest}}) van {{plugin}} beschikbaar",
