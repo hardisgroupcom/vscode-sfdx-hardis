@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [7.10.2] 2026-05-18
+
 - Setup / Dependencies panel
   - Show an actionable dialog (Run / sudo / paste / view log) when an install fails silently (helps for Mac users with permission issues)
   - Support Salesforce CLI installed via the Windows / macOS native installer (upgrades use `sf update`)
