@@ -10,10 +10,14 @@ import {
   execCommandWithProgress,
 } from "./utils";
 import { Logger } from "./logger";
-import which from "which";
 import { ThemeUtils } from "./utils/themeUtils";
 import { t } from "./i18n/i18n";
-import { SetupHelper } from "./utils/setupUtils";
+import {
+  SetupHelper,
+  buildSfCliUpgradeCommand,
+  isNativeSfCliInstall,
+  resolveSfCliPath,
+} from "./utils/setupUtils";
 import { isMergeDriverEnabled } from "./utils/gitMergeDriverUtils";
 import {
   NODE_JS_MINIMUM_VERSION,
@@ -350,50 +354,37 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
     };
     let sfdxCliOutdated = false;
     const upgradeAvailableText = t("upgradeAvailableSuffix");
+    // Resolve `sf` path once: needed both to pick the right upgrade command for
+    // the CLI item and to prefix the bulk upgrade command later on.
+    const sfdxPath = await resolveSfCliPath();
     if (sfdxCliVersion !== recommendedSfdxCliVersion) {
-      // Check if sfdx is installed using npm and not the windows installer
-      let sfdxPath: string;
-      try {
-        sfdxPath = await which("sf");
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      } catch (_e) {
-        sfdxPath = "missing";
-      }
       if (legacySfdx) {
         sfdxCliItem.label = t("upgradeToSalesforceCli");
         sfdxCliItem.command = `npm uninstall sfdx-cli --global && npm install @salesforce/cli --global`;
         sfdxCliItem.tooltip = t("sfdxDeprecatedTooltip");
         sfdxCliItem.status = "dependency-error";
-      } else if (
-        !sfdxPath.includes("npm") &&
-        !sfdxPath.includes("node") &&
-        !sfdxPath.includes("nvm") &&
-        !sfdxPath.includes("/home/codebuilder/") &&
-        !(
-          sfdxPath.includes("/usr/local/bin") && process.platform === "darwin"
-        ) &&
-        sfdxPath !== "missing"
-      ) {
-        sfdxCliItem.label =
-          sfdxCliItem.label +
-          t("sfCliWronglyInstalledSuffix", { path: sfdxPath });
-        sfdxCliItem.command = `echo "You need to install Salesforce CLI using Node.JS. First, you need to uninstall Salesforce DX / Salesforce CI using Windows -> Programs -> Uninstall (or equivalent on MAC)"`;
-        sfdxCliItem.tooltip = t("sfCliUninstallFirstTooltip");
-        sfdxCliItem.status = "dependency-error";
       } else {
-        // sfdx-cli is just outdated
+        // sfdx-cli is outdated — upgrade command depends on install kind
+        // (npm vs native installer).
         sfdxCliOutdated = true;
         sfdxCliItem.label =
           sfdxCliItem.label.includes("missing") &&
           !sfdxCliItem.label.includes("(link)")
             ? sfdxCliItem.label
             : sfdxCliItem.label + upgradeAvailableText;
-        sfdxCliItem.command = `npm install @salesforce/cli@${recommendedSfdxCliVersion} -g`;
+        sfdxCliItem.command = buildSfCliUpgradeCommand(
+          sfdxPath,
+          recommendedSfdxCliVersion,
+        );
         sfdxCliItem.tooltip = t("clickToUpgradeSfCliTo", {
           version: recommendedSfdxCliVersion,
         });
         sfdxCliItem.status = "dependency-warning";
       }
+    } else if (isNativeSfCliInstall(sfdxPath)) {
+      // CLI is up to date but installed via the native installer — surface a
+      // soft hint that the NPM-based install is preferred, without blocking.
+      sfdxCliItem.tooltip = t("depSfCliNativeInstallNote");
     }
     items.push(sfdxCliItem);
     // get currently installed plugins
@@ -549,6 +540,7 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
         legacySfdx,
         sfdxCliOutdated,
         mergeDriverWasEnabled,
+        sfdxPath,
       );
       const setupHelper = SetupHelper.getInstance();
       const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
@@ -601,6 +593,7 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
     legacySfdx: boolean,
     sfdxCliOutdated: boolean,
     mergeDriverWasEnabled: boolean,
+    sfdxPath: string,
   ): string {
     const hardisTag = getSfdxHardisInstallTag();
     let command = outdated
@@ -619,7 +612,7 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
           })
           .join(" && ");
     } else if (sfdxCliOutdated === true) {
-      command = "npm install @salesforce/cli -g && " + command;
+      command = buildSfCliUpgradeCommand(sfdxPath) + " && " + command;
     }
     if (mergeDriverWasEnabled) {
       command =

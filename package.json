@@ -719,10 +719,10 @@
     "tree-kill": "^1.2.2",
     "uuid": "^14.0.0",
     "which": "^4.0.0",
-    "ws": "^8.18.0"
+    "ws": "^8.20.1"
   },
   "resolutions": {
-    "@vscode/vsce/glob/minimatch/brace-expansion": "5.0.5",
+    "@vscode/vsce/glob/minimatch/brace-expansion": "5.0.6",
     "uuid": "^14.0.0",
     "@vscode/vsce/minimatch/brace-expansion": "1.1.13",
     "axios": "1.16.0",

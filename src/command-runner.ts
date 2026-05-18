@@ -46,6 +46,7 @@ const SF_STANDARD_COMMANDS = [
   "sf sobject",
   "sf template",
   "sf ui-bundle",
+  "sf update",
 ];
 
 /**

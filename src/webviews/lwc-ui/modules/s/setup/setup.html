@@ -77,6 +77,9 @@
                                     <span class="status-version">{chk.version}</span>
                                 </h3>
                                 <p class="status-description">{chk.explanation}</p>
+                                <template if:true={chk.note}>
+                                    <p class="slds-text-body_small slds-text-color_weak slds-m-top_xx-small">{chk.note}</p>
+                                </template>
                             </div>
 
                             <div class="status-actions slds-grid slds-grid_vertical slds-grid_align-start">
@@ -91,6 +94,15 @@
                                         onclick={handleUnifiedAction}
                                         disabled={chk.buttonDisabled}
                                     ></lightning-button>
+                                    <template if:true={chk.showUninstallButton}>
+                                        <lightning-button
+                                            class="status-button"
+                                            variant="destructive-text"
+                                            label={chk.uninstallLabel}
+                                            data-id={chk.id}
+                                            onclick={handleUninstall}
+                                        ></lightning-button>
+                                    </template>
                                 </template>
                                 <!-- show prereq hint only after we know the check completed and prerequisites are actually missing -->
                                 <template if:true={chk.missingPrerequisitesText}>

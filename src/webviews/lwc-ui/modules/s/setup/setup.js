@@ -28,6 +28,7 @@ export default class Setup extends SharedMixin(LightningElement) {
         ...c,
         explanation: c.explanation || "",
         installable: typeof c.installable === "boolean" ? c.installable : true,
+        uninstallable: c.uninstallable === true,
         prerequisites: c.prerequisites || [],
         checking: false, // per-item checking state
         installed: false,
@@ -35,6 +36,7 @@ export default class Setup extends SharedMixin(LightningElement) {
         upgradeAvailable: false,
         version: c.version || "",
         installing: false,
+        uninstalling: false,
       }));
 
       // compute prerequisites/installDisabled after initial mapping
@@ -67,6 +69,7 @@ export default class Setup extends SharedMixin(LightningElement) {
             status,
             checking: false,
             installing: false,
+            uninstalling: false,
             hasChecked: true,
             upgradeAvailable,
             installed,
@@ -94,6 +97,11 @@ export default class Setup extends SharedMixin(LightningElement) {
     else if (type === "installResult") {
       const { id, res } = data || {};
       // After install, re-run the single check to refresh its status
+      this._startCheck(id);
+    }
+    // Receive uninstall result
+    else if (type === "uninstallResult") {
+      const { id, res } = data || {};
       this._startCheck(id);
     } else if (type === "refresh") {
       // Refresh the entire setup state (e.g. after changing a config)
@@ -152,6 +160,17 @@ export default class Setup extends SharedMixin(LightningElement) {
     // ensure buttons reflect checking state immediately
     this._updateDependencyCardsState();
     window.sendMessageToVSCode({ type: "installDependency", data: { id } });
+  }
+
+  handleUninstall(e) {
+    const id = e.currentTarget.dataset.id;
+    this.checks = this.checks.map((c) =>
+      c.id === id
+        ? { ...c, checking: false, uninstalling: true, status: "" }
+        : c,
+    );
+    this._updateDependencyCardsState();
+    window.sendMessageToVSCode({ type: "uninstallDependency", data: { id } });
   }
 
   handleInstructions(e) {
@@ -303,15 +322,13 @@ export default class Setup extends SharedMixin(LightningElement) {
     this.checks = this.checks.map((c) => {
       // derive primary display status from canonical state
       const status = c.status || "";
-      let statusIcon =
-        c.checking || c.installing ? "utility:sync" : "utility:info";
-      let cardClass =
-        c.checking || c.installing ? "status-card checking" : "status-card";
-      let iconContainerClass =
-        c.checking || c.installing
-          ? "status-icon-container checking"
-          : "status-icon-container neutral";
-      if (!(c.checking || c.installing)) {
+      const busy = c.checking || c.installing || c.uninstalling;
+      let statusIcon = busy ? "utility:sync" : "utility:info";
+      let cardClass = busy ? "status-card checking" : "status-card";
+      let iconContainerClass = busy
+        ? "status-icon-container checking"
+        : "status-icon-container neutral";
+      if (!busy) {
         switch (status) {
           case "ok":
             statusIcon = "utility:check";
@@ -340,10 +357,14 @@ export default class Setup extends SharedMixin(LightningElement) {
       let buttonAction = "error";
       let buttonDisabled = false;
 
-      if (c.checking || c.installing) {
-        buttonLabel = c.checking
-          ? this.t("checking")
-          : this.t("installingLabel");
+      if (busy) {
+        if (c.uninstalling) {
+          buttonLabel = this.t("uninstallingLabel");
+        } else if (c.installing) {
+          buttonLabel = this.t("installingLabel");
+        } else {
+          buttonLabel = this.t("checking");
+        }
         buttonVariant = "neutral";
         ((buttonAction = ""), (buttonDisabled = true));
       } else if (status === "outdated") {
@@ -369,9 +390,18 @@ export default class Setup extends SharedMixin(LightningElement) {
         buttonAction = "instructions";
       }
 
+      // Uninstall button is offered for non-recommended plugins that are
+      // currently installed (status "ok", "outdated", or "error" with a known
+      // version). Hidden while any action is in flight on this card.
+      const showUninstallButton =
+        c.uninstallable === true &&
+        !busy &&
+        (status === "ok" || status === "outdated" || status === "error") &&
+        !!c.version;
+
       return {
         ...c,
-        isBusy: c.checking || c.installing,
+        isBusy: busy,
         statusIcon,
         cardClass,
         iconContainerClass,
@@ -379,6 +409,8 @@ export default class Setup extends SharedMixin(LightningElement) {
         buttonVariant,
         buttonAction,
         buttonDisabled,
+        showUninstallButton,
+        uninstallLabel: this.t("uninstallLabel"),
       };
     });
     this.checks = [...this.checks];

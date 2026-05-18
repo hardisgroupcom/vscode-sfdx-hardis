@@ -17,15 +17,77 @@ import {
 } from "../constants";
 import { listPluginsProvidingHardisCommands } from "./sfdx-hardis-config-utils";
 
+/**
+ * Returns true when the `sf` binary path looks like a native installer (Windows
+ * MSI, macOS pkg, Linux apt/rpm). Returns false when it lives in an npm/node/nvm/fnm
+ * tree, or when the binary cannot be located at all.
+ */
+export function isNativeSfCliInstall(sfdxPath: string | null | undefined): boolean {
+  if (!sfdxPath || sfdxPath === "missing") {
+    return false;
+  }
+  if (
+    sfdxPath.includes("npm") ||
+    sfdxPath.includes("node") ||
+    sfdxPath.includes("nvm") ||
+    sfdxPath.includes("fnm") ||
+    sfdxPath.includes("/home/codebuilder/") ||
+    // macOS: /usr/local/bin is the typical npm global install location, not a
+    // native Salesforce installer.
+    (process.platform === "darwin" && sfdxPath.includes("/usr/local/bin"))
+  ) {
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Builds the shell command that upgrades the Salesforce CLI to {@link recommended}.
+ * - Native installer (Windows MSI / macOS pkg / Linux apt/rpm): `sf update`
+ * - npm/node/nvm/fnm install: `npm install @salesforce/cli@<recommended> -g`
+ */
+export function buildSfCliUpgradeCommand(
+  sfdxPath: string | null | undefined,
+  recommended?: string | null,
+): string {
+  if (isNativeSfCliInstall(sfdxPath)) {
+    return "sf update";
+  }
+  return `npm install @salesforce/cli@${recommended || "latest"} -g`;
+}
+
+/**
+ * Resolves the `sf` binary path via `which`, swallowing the error and returning
+ * the sentinel `"missing"` if it cannot be located.
+ */
+export async function resolveSfCliPath(): Promise<string> {
+  try {
+    return await which("sf");
+  } catch {
+    return "missing";
+  }
+}
+
 export type DependencyInfo = {
   explanation: string;
   installable: boolean;
+  /** When true, the LWC shows an "Uninstall" button next to the main one. */
+  uninstallable?: boolean;
   label: string;
   iconName?: string;
   prerequisites?: string[];
   helpUrl?: string;
   checkMethod?: () => Promise<DependencyCheckResult>;
-  installMethod?: () => Promise<{ success: boolean; message?: string }>;
+  installMethod?: () => Promise<{
+    success: boolean;
+    message?: string;
+    command?: string;
+  }>;
+  uninstallMethod?: () => Promise<{
+    success: boolean;
+    message?: string;
+    command?: string;
+  }>;
 };
 
 export type DependencyCheckResult = {
@@ -40,6 +102,7 @@ export type DependencyCheckResult = {
   messageLinkLabel?: string;
   installCommand?: string;
   upgradeAvailable?: boolean;
+  note?: string;
 };
 
 export class SetupHelper {
@@ -182,6 +245,20 @@ export class SetupHelper {
         checkMethod: this.checkSfPlugin.bind(this, "sf-git-merge-driver"),
         installMethod: this.installSfPlugin.bind(this, "sf-git-merge-driver"),
       },
+      // VS Code extension entry sits between recommended sfdx-hardis plugins
+      // (above) and community/non-recommended plugins (added below). Order
+      // matters: the LWC renders cards in this object's insertion order.
+      "vscode:salesforce-extension-pack": {
+        label: "Salesforce Extension Pack",
+        explanation: t("depSalesforceExtensionPackExplanation"),
+        installable: true,
+        iconName: "utility:apps",
+        prerequisites: [],
+        helpUrl:
+          "https://marketplace.visualstudio.com/items?itemName=salesforce.salesforcedx-vscode",
+        checkMethod: this.checkSalesforceExtensionPack.bind(this),
+        installMethod: this.installSalesforceExtensionPack.bind(this),
+      },
     };
     const hardisCommandsPlugins = await listPluginsProvidingHardisCommands();
     // Pre-warm npm version cache for community plugins in parallel so checkSfPlugin hits cache
@@ -191,15 +268,19 @@ export class SetupHelper {
     for (const plugin of hardisCommandsPlugins) {
       const dependencyId = `sfplugin:${plugin.name}`;
       if (!dependencies[dependencyId]) {
+        // Community plugins are not part of the sfdx-hardis recommended set:
+        // expose an Uninstall action so users can remove them if undesired.
         dependencies[dependencyId] = {
           label: `${plugin.name} ${t("communityPluginLabel")}`,
           explanation: t("communityPluginTrustExplanation"),
           installable: true,
+          uninstallable: true,
           iconName: "utility:package",
           prerequisites: ["sf"],
           helpUrl: plugin.helpUrl,
           checkMethod: this.checkSfPlugin.bind(this, plugin.name),
           installMethod: this.installSfPlugin.bind(this, plugin.name),
+          uninstallMethod: this.uninstallSfPlugin.bind(this, plugin.name),
         };
       }
     }
@@ -316,6 +397,45 @@ export class SetupHelper {
     }
   }
 
+  async checkSalesforceExtensionPack(): Promise<DependencyCheckResult> {
+    const id = "vscode:salesforce-extension-pack";
+    const normalId = "salesforce.salesforcedx-vscode";
+    const extendedId = "salesforce.salesforcedx-vscode-expanded";
+    const normal = vscode.extensions.getExtension(normalId);
+    const extended = vscode.extensions.getExtension(extendedId);
+    const found = normal || extended;
+    const installed = !!found;
+    return {
+      id,
+      label: "Salesforce Extension Pack",
+      installed,
+      version: found?.packageJSON?.version ?? null,
+      recommended: null,
+      status: installed ? "ok" : "missing",
+      helpUrl:
+        "https://marketplace.visualstudio.com/items?itemName=salesforce.salesforcedx-vscode",
+      message: installed ? undefined : t("depSalesforceExtensionPackMissing"),
+    };
+  }
+
+  async installSalesforceExtensionPack(): Promise<{
+    success: boolean;
+    message?: string;
+  }> {
+    try {
+      // Open the extension page in VS Code's Extensions panel so the user can
+      // click "Install". We use the normal pack (not the extended one) per the
+      // sfdx-hardis recommendation.
+      await vscode.commands.executeCommand(
+        "extension.open",
+        "salesforce.salesforcedx-vscode",
+      );
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, message: err?.message || String(err) };
+    }
+  }
+
   async checkSfCli(): Promise<DependencyCheckResult> {
     try {
       const res: any = await execCommand("sf --version", {
@@ -362,29 +482,11 @@ export class SetupHelper {
         };
       }
 
-      if (
-        !sfdxPath.includes("npm") &&
-        !sfdxPath.includes("node") &&
-        !sfdxPath.includes("nvm") &&
-        !sfdxPath.includes("fnm") &&
-        !sfdxPath.includes("/home/codebuilder/") &&
-        !(
-          sfdxPath.includes("/usr/local/bin") && process.platform === "darwin"
-        ) &&
-        sfdxPath !== "missing"
-      ) {
-        return {
-          id: "sf",
-          label: "Salesforce CLI (sf)",
-          installed: true,
-          version,
-          recommended,
-          status: "error",
-          message: t("depSfCliNonNpmMessage", { path: sfdxPath }),
-          installCommand: `npm install @salesforce/cli@${recommended || "latest"} -g`,
-          upgradeAvailable: false,
-        };
-      }
+      const nativeInstall = isNativeSfCliInstall(sfdxPath);
+      const upgradeCommand = buildSfCliUpgradeCommand(sfdxPath, recommended);
+      const nativeInstallNote = nativeInstall
+        ? t("depSfCliNativeInstallNote")
+        : undefined;
 
       // If installed but not the recommended version
       if (ok && recommended && version !== recommended) {
@@ -401,8 +503,9 @@ export class SetupHelper {
             version: version ?? "",
             recommended: recommended ?? "",
           }),
-          installCommand: `npm install @salesforce/cli@${recommended} -g`,
+          installCommand: upgradeCommand,
           upgradeAvailable: true,
+          note: nativeInstallNote,
         };
       }
 
@@ -415,6 +518,7 @@ export class SetupHelper {
         status: ok ? "ok" : "missing",
         helpUrl:
           "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_unified.htm",
+        note: nativeInstallNote,
       };
     } catch {
       return {
@@ -573,104 +677,129 @@ export class SetupHelper {
     }
   }
 
-  async installSfCliWithNpm(): Promise<{ success: boolean; message?: string }> {
+  // Shared lifecycle wrapper for install/uninstall operations: short-circuits when
+  // another update is running, toggles in-progress state around `action`, refreshes
+  // the plugins view on success, and normalizes failures.
+  private async runUpdateOperation(
+    name: string,
+    action: () => Promise<void>,
+    command?: string,
+  ): Promise<{ success: boolean; message?: string; command?: string }> {
     if (this.hasUpdatesInProgress()) {
       return {
         success: false,
         message: t("installInProgress"),
+        ...(command !== undefined ? { command } : {}),
       };
     }
-    this.setUpdateInProgress(true, "sf");
+    this.setUpdateInProgress(true, name);
     try {
-      await execCommandWithProgress(
-        "npm install @salesforce/cli" +
-          (RECOMMENDED_SFDX_CLI_VERSION
-            ? "@" + RECOMMENDED_SFDX_CLI_VERSION
-            : "") +
-          " -g",
-        { fail: true, output: true },
-        t("installingSalesforceCli"),
-      );
-      this.setUpdateInProgress(false, "sf");
+      await action();
+      this.setUpdateInProgress(false, name);
       vscode.commands.executeCommand("vscode-sfdx-hardis.refreshPluginsView");
       return { success: true };
     } catch (err: any) {
-      this.setUpdateInProgress(false, "sf");
-      return { success: false, message: err?.message || String(err) };
+      this.setUpdateInProgress(false, name);
+      return {
+        success: false,
+        message: err?.message || String(err),
+        ...(command !== undefined ? { command } : {}),
+      };
     }
+  }
+
+  async installSfCliWithNpm(): Promise<{
+    success: boolean;
+    message?: string;
+    command?: string;
+  }> {
+    // Detect whether the existing sf binary comes from a native installer
+    // (Windows MSI, macOS pkg, Linux apt/rpm). If so, use `sf update` to upgrade
+    // in place — running `npm install -g` on top of a native install causes
+    // duplicate binaries and broken PATH resolution.
+    const sfdxPath = await resolveSfCliPath();
+    const command = buildSfCliUpgradeCommand(
+      sfdxPath,
+      RECOMMENDED_SFDX_CLI_VERSION,
+    );
+    return this.runUpdateOperation(
+      "sf",
+      async () => {
+        await execCommandWithProgress(
+          command,
+          { fail: true, output: true },
+          t("installingSalesforceCli"),
+        );
+      },
+      command,
+    );
   }
 
   async installSfPlugin(
     pluginName: string,
-  ): Promise<{ success: boolean; message?: string }> {
-    if (this.hasUpdatesInProgress()) {
-      return {
-        success: false,
-        message: t("installInProgress"),
-      };
-    }
-    this.setUpdateInProgress(true, pluginName);
-    try {
-      const isMergeDriver = pluginName === "sf-git-merge-driver";
-      let mergeDriverWasEnabled = false;
-      if (isMergeDriver) {
-        const mergeDriverStatus =
-          await isMergeDriverEnabled(getWorkspaceRoot());
-        mergeDriverWasEnabled = mergeDriverStatus === true;
+  ): Promise<{ success: boolean; message?: string; command?: string }> {
+    const installTag =
+      pluginName === "sfdx-hardis" ? getSfdxHardisInstallTag() : "latest";
+    const command = `echo y | sf plugins install ${pluginName}@${installTag}`;
+    return this.runUpdateOperation(
+      pluginName,
+      async () => {
+        const isMergeDriver = pluginName === "sf-git-merge-driver";
+        let mergeDriverWasEnabled = false;
+        if (isMergeDriver) {
+          const mergeDriverStatus =
+            await isMergeDriverEnabled(getWorkspaceRoot());
+          mergeDriverWasEnabled = mergeDriverStatus === true;
+          if (mergeDriverWasEnabled) {
+            await execCommandWithProgress(
+              "sf git merge driver disable",
+              { fail: false, output: true },
+              t("gitMergeDriverDisablingBeforeUpgrade"),
+            );
+          }
+        }
+        await execCommandWithProgress(
+          command,
+          { fail: true, output: true },
+          t("runningInstallCommandFor", { plugin: pluginName }),
+        );
         if (mergeDriverWasEnabled) {
           await execCommandWithProgress(
-            "sf git merge driver disable",
+            "sf git merge driver enable",
             { fail: false, output: true },
-            t("gitMergeDriverDisablingBeforeUpgrade"),
+            t("gitMergeDriverReenablingAfterUpgrade"),
           );
         }
-      }
-      const installTag =
-        pluginName === "sfdx-hardis" ? getSfdxHardisInstallTag() : "latest";
-      await execCommandWithProgress(
-        `echo y | sf plugins install ${pluginName}@${installTag}`,
-        { fail: true, output: true },
-        t("runningInstallCommandFor", { plugin: pluginName }),
-      );
-      if (mergeDriverWasEnabled) {
-        await execCommandWithProgress(
-          "sf git merge driver enable",
-          { fail: false, output: true },
-          t("gitMergeDriverReenablingAfterUpgrade"),
-        );
-      }
-      this.setUpdateInProgress(false, pluginName);
-      vscode.commands.executeCommand("vscode-sfdx-hardis.refreshPluginsView");
-      return { success: true };
-    } catch (err: any) {
-      this.setUpdateInProgress(false, pluginName);
-      return { success: false, message: err?.message || String(err) };
-    }
+      },
+      command,
+    );
   }
 
-  /* jscpd:ignore-start */
+  async uninstallSfPlugin(
+    pluginName: string,
+  ): Promise<{ success: boolean; message?: string; command?: string }> {
+    const command = `sf plugins uninstall ${pluginName}`;
+    return this.runUpdateOperation(
+      pluginName,
+      async () => {
+        await execCommandWithProgress(
+          command,
+          { fail: true, output: true },
+          t("runningUninstallCommandFor", { plugin: pluginName }),
+        );
+      },
+      command,
+    );
+  }
+
   async installNpmPackage(
     packageName: string,
   ): Promise<{ success: boolean; message?: string }> {
-    if (this.hasUpdatesInProgress()) {
-      return {
-        success: false,
-        message: t("installInProgress"),
-      };
-    }
-    this.setUpdateInProgress(true, packageName);
-    try {
+    return this.runUpdateOperation(packageName, async () => {
       await execCommand(`npm i -g ${packageName}`, {
         fail: false,
         output: true,
       });
-      this.setUpdateInProgress(false, packageName);
-      vscode.commands.executeCommand("vscode-sfdx-hardis.refreshPluginsView");
-      return { success: true };
-    } catch (err: any) {
-      this.setUpdateInProgress(false, packageName);
-      return { success: false, message: err?.message || String(err) };
-    }
+    });
   }
-  /* jscpd:ignore-end */
 }

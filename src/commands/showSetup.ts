@@ -2,6 +2,8 @@ import * as vscode from "vscode";
 import { LwcPanelManager } from "../lwc-panel-manager";
 import { SetupHelper } from "../utils/setupUtils";
 import { Commands } from "../commands";
+import { t } from "../i18n/i18n";
+import { Logger } from "../logger";
 
 export function registerShowSetup(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
@@ -37,6 +39,7 @@ export function registerShowSetup(commands: Commands) {
               label: meta.label || key,
               explanation: meta.explanation,
               installable: meta.installable,
+              uninstallable: meta.uninstallable === true,
               iconName: meta.iconName,
               prerequisites: meta.prerequisites || [],
               installed: false,
@@ -88,14 +91,28 @@ export function registerShowSetup(commands: Commands) {
           let result: any;
           const dependency = dependencies[data.id];
           if (dependency && typeof dependency.installMethod === "function") {
+            // jscpd:ignore-start
             try {
               result = await dependency.installMethod();
             } catch (err: any) {
-              result = { success: false, message: err?.message || String(err) };
-              vscode.window.showErrorMessage(
-                `Installation of ${dependency.label} failed: ${result.message}`,
+              result = {
+                success: false,
+                message: err?.message || String(err),
+              };
+            }
+            if (!result?.success) {
+              const message = result?.message || "";
+              await handleSetupActionFailure(
+                t("setupInstallFailedMessage", {
+                  label: dependency.label,
+                  message,
+                }),
+                `Installation of ${dependency.label} failed`,
+                message,
+                result?.command,
               );
             }
+            // jscpd:ignore-end
           } else {
             // If no install method is provided, return an explicit error
             return {
@@ -105,6 +122,44 @@ export function registerShowSetup(commands: Commands) {
           }
           panel.sendMessage({
             type: "installResult",
+            data: { id: data.id, res: result },
+          });
+        }
+        // Uninstall a dependency (only available on non-recommended plugins)
+        else if (type === "uninstallDependency") {
+          let result: any;
+          const dependency = dependencies[data.id];
+          if (dependency && typeof dependency.uninstallMethod === "function") {
+            // jscpd:ignore-start
+            try {
+              result = await dependency.uninstallMethod();
+            } catch (err: any) {
+              result = {
+                success: false,
+                message: err?.message || String(err),
+              };
+            }
+            if (!result?.success) {
+              const message = result?.message || "";
+              await handleSetupActionFailure(
+                t("setupUninstallFailedMessage", {
+                  label: dependency.label,
+                  message,
+                }),
+                `Uninstall of ${dependency.label} failed`,
+                message,
+                result?.command,
+              );
+            }
+            // jscpd:ignore-end
+          } else {
+            result = {
+              success: false,
+              message: `No uninstaller available for ${dependency?.label || data.id}`,
+            };
+          }
+          panel.sendMessage({
+            type: "uninstallResult",
             data: { id: data.id, res: result },
           });
         }
@@ -148,4 +203,82 @@ export function registerShowSetup(commands: Commands) {
     },
   );
   commands.disposables.push(disposable);
+}
+
+function isRightsRelatedError(message: string): boolean {
+  if (!message) {
+    return false;
+  }
+  const m = message.toLowerCase();
+  return (
+    m.includes("eacces") ||
+    m.includes("eperm") ||
+    m.includes("permission denied") ||
+    m.includes("access denied") ||
+    m.includes("operation not permitted") ||
+    m.includes("access is denied")
+  );
+}
+
+function getOrCreateSetupTerminal(): vscode.Terminal {
+  const existing = vscode.window.terminals.find(
+    (term) => term.name === "SFDX Hardis",
+  );
+  if (existing) {
+    return existing;
+  }
+  return vscode.window.createTerminal("SFDX Hardis");
+}
+
+/**
+ * Surface a failed setup action (install / uninstall) in a VS Code dialog with
+ * actionable buttons. Used by both the install and uninstall flows so the dialog
+ * shape stays consistent.
+ */
+async function handleSetupActionFailure(
+  errorTitle: string,
+  logPrefix: string,
+  message: string,
+  command: string | undefined,
+): Promise<void> {
+  Logger.log(`${logPrefix}: ${message}`);
+  const isWindows = process.platform === "win32";
+  const rightsRelated = isRightsRelatedError(message);
+  const runInTerminal = t("setupErrorRunInTerminal");
+  const runWithSudo = t("setupErrorRunWithSudo");
+  const pasteInTerminal = t("setupErrorPasteInTerminal");
+  const viewLog = t("setupErrorViewLog");
+
+  const buttons: string[] = [];
+  if (command) {
+    buttons.push(runInTerminal);
+    if (rightsRelated && !isWindows) {
+      buttons.push(runWithSudo);
+    }
+    buttons.push(pasteInTerminal);
+  }
+  buttons.push(viewLog);
+
+  const action = await vscode.window.showErrorMessage(errorTitle, ...buttons);
+  if (!action || !command) {
+    if (action === viewLog) {
+      Logger.showOutputChannel();
+    }
+    return;
+  }
+  if (action === runInTerminal) {
+    const terminal = getOrCreateSetupTerminal();
+    terminal.show(false);
+    terminal.sendText(command, true);
+  } else if (action === runWithSudo) {
+    const terminal = getOrCreateSetupTerminal();
+    terminal.show(false);
+    terminal.sendText(`sudo ${command}`, true);
+  } else if (action === pasteInTerminal) {
+    const terminal = getOrCreateSetupTerminal();
+    terminal.show(false);
+    terminal.sendText(command, false);
+  } else if (action === viewLog) {
+    Logger.showOutputChannel();
+  }
 }
