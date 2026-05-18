@@ -22,7 +22,9 @@ import { listPluginsProvidingHardisCommands } from "./sfdx-hardis-config-utils";
  * MSI, macOS pkg, Linux apt/rpm). Returns false when it lives in an npm/node/nvm/fnm
  * tree, or when the binary cannot be located at all.
  */
-export function isNativeSfCliInstall(sfdxPath: string | null | undefined): boolean {
+export function isNativeSfCliInstall(
+  sfdxPath: string | null | undefined,
+): boolean {
   if (!sfdxPath || sfdxPath === "missing") {
     return false;
   }
