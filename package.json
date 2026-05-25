@@ -726,7 +726,7 @@
     "uuid": "^14.0.0",
     "@vscode/vsce/minimatch/brace-expansion": "1.1.13",
     "axios": "1.16.0",
-    "qs": "6.14.2",
+    "qs": "6.15.2",
     "lodash-es": "4.18.1",
     "mocha/diff": "8.0.3",
     "mocha/serialize-javascript": "7.0.5",
