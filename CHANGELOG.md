@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## [7.10.3] 2026-05-25
+
+- Fixes
+  - DevOps Pipeline: clicking a major branch node again opens the modal with its pull requests, tickets and deployment actions (was empty since the bump to mermaid 11.15, which prefixes node DOM IDs with the graph id and broke branch-name extraction)
+
 ## [7.10.2] 2026-05-18
 
 - Setup / Dependencies panel

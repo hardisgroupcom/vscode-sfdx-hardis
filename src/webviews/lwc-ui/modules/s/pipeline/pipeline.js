@@ -1835,7 +1835,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     if (!nodeId) {
       return "";
     }
-    return nodeId.replace(/^flowchart-/, "").replace(/-\d+$/, "");
+    // Mermaid >=11.x prefixes node IDs with the graph id passed to render()
+    // (e.g. "graphDiv-flowchart-preprodBranch-9"). Strip everything up to and
+    // including "flowchart-" so we always get the original node name.
+    return nodeId.replace(/^.*flowchart-/, "").replace(/-\d+$/, "");
   }
 
   _decorateMermaidNodes(mermaidSvg) {
