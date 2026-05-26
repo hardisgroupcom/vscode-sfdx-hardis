@@ -23,6 +23,16 @@ import { generatePackageXml, mergeIntoPackageXml } from "./packageXml";
 
 type LocalPackageOption = { label: string; value: string };
 
+// Salesforce Metadata API requires a folder name for these types.
+// Map them to their corresponding *Folder listing type.
+// Note: EmailTemplate maps to EmailFolder (not EmailTemplateFolder).
+const FOLDER_TYPE_MAP: Record<string, string> = {
+  Report: "ReportFolder",
+  Dashboard: "DashboardFolder",
+  EmailTemplate: "EmailFolder",
+  Document: "DocumentFolder",
+};
+
 class DefaultLocalPackageGuard {
   private initialDefaultPackagePath: string | null = null;
 
@@ -214,6 +224,7 @@ export function registerShowMetadataRetriever(commands: Commands) {
         .map((mt) => ({
           label: mt.xmlName,
           value: mt.xmlName,
+          inFolder: !!mt.inFolder,
         }))
         .sort((a, b) => a.label.localeCompare(b.label));
 
@@ -271,6 +282,12 @@ export function registerShowMetadataRetriever(commands: Commands) {
           await handleListMetadataTypes(
             panel,
             data && data.username ? data.username : null,
+          );
+        } else if (type === "listMetadataFolders") {
+          await handleListMetadataFolders(
+            panel,
+            data && data.username ? data.username : null,
+            data && data.metadataType ? data.metadataType : null,
           );
         } else if (type === "retrieveMetadata") {
           await handleRetrieveMetadata(panel, data);
@@ -408,9 +425,13 @@ async function executeMetadataRetrieve(
     }
   }
 
-  // Split metadata list and create separate --metadata flags for each item
+  // Split metadata list and create separate --metadata flags for each item.
+  // For foldered types (Report, Dashboard, EmailTemplate, Document) also pull
+  // the parent folder metadata in if it is missing locally, so deploys to
+  // other orgs do not fail because the folder does not exist there.
   const workspaceRoot = getWorkspaceRoot();
-  const metadataItems = metadataList
+  const expandedList = await expandWithMissingFolderItems(metadataList);
+  const metadataItems = expandedList
     .filter((item) => !(item?.deleted === true))
     .map((item) => `--metadata "${item.memberType}:${item.memberName}"`)
     .join(" ");
@@ -466,7 +487,7 @@ async function executeMetadataRetrieve(
       // Group metadata by type
       const metadataByType = new Map<string, string[]>();
 
-      metadataList
+      expandedList
         .filter((item) => !(item?.deleted === true))
         .forEach((item) => {
           if (!metadataByType.has(item.memberType)) {
@@ -791,6 +812,7 @@ async function handleQueryMetadata(panel: any, data: any) {
       dateTo,
       packageFilter,
       checkLocalFiles,
+      folder,
     } = data;
 
     if (!username) {
@@ -810,6 +832,7 @@ async function handleQueryMetadata(panel: any, data: any) {
         metadataName,
         packageFilter,
         !!checkLocalFiles,
+        folder || null,
       );
     } else {
       // Default to recentChanges mode (SourceMember query)
@@ -1042,6 +1065,62 @@ async function handleListMetadataTypes(
   // });
 }
 
+async function handleListMetadataFolders(
+  panel: LwcUiPanel,
+  username: string | null,
+  metadataType: string | null,
+) {
+  if (!username || !metadataType) {
+    panel.sendMessage({
+      type: "listMetadataFoldersResults",
+      data: { metadataType, folders: [] },
+    });
+    return;
+  }
+
+  const folderType = FOLDER_TYPE_MAP[metadataType];
+  if (!folderType) {
+    panel.sendMessage({
+      type: "listMetadataFoldersResults",
+      data: { metadataType, folders: [] },
+    });
+    return;
+  }
+
+  try {
+    const command = `sf org list metadata --metadata-type ${folderType} --target-org ${username} --json`;
+    const result = await execSfdxJson(command, {
+      cacheExpiration: 1000 * 60 * 60 * 24, // 1 day
+      cacheSection: "project",
+    });
+
+    const folders: Array<{ label: string; value: string }> = [];
+    if (result && result.status === 0 && Array.isArray(result.result)) {
+      for (const item of result.result) {
+        const fullName = (item.fullName || "").toString().trim();
+        if (!fullName) {
+          continue;
+        }
+        folders.push({ label: fullName, value: fullName });
+      }
+    }
+    folders.sort((a, b) => a.label.localeCompare(b.label));
+
+    panel.sendMessage({
+      type: "listMetadataFoldersResults",
+      data: { metadataType, folders },
+    });
+  } catch (error: any) {
+    Logger.log(
+      `Error listing folders for ${metadataType} (${folderType}): ${error?.message || error}`,
+    );
+    panel.sendMessage({
+      type: "listMetadataFoldersResults",
+      data: { metadataType, folders: [] },
+    });
+  }
+}
+
 async function handleSourceMemberQuery(
   panel: any,
   username: string,
@@ -1193,6 +1272,7 @@ async function handleListMetadata(
   metadataName: string | null,
   packageFilter: string | null,
   checkLocalFiles: boolean = false,
+  folder: string | null = null,
 ) {
   // Require specific metadata type for All Metadata mode
   if (!metadataType) {
@@ -1205,13 +1285,28 @@ async function handleListMetadata(
     return;
   }
 
+  // Foldered types (Report, Dashboard, EmailTemplate, Document) require a
+  // folder to be passed to the Metadata API listMetadata call; otherwise it
+  // silently returns an empty array.
+  const requiresFolder = !!FOLDER_TYPE_MAP[metadataType];
+  if (requiresFolder && !folder) {
+    panel.sendMessage({
+      type: "queryError",
+      data: {
+        message: t("selectFolderRequired", { metadataType }),
+      },
+    });
+    return;
+  }
+
   const typesToQuery: string[] = [metadataType];
   const allResults: any[] = [];
+  const folderFlag = folder ? ` --folder "${folder.replace(/"/g, '\\"')}"` : "";
 
   // Query metadata for each type
   for (const type of typesToQuery) {
     try {
-      const command = `sf org list metadata --metadata-type ${type} --target-org ${username} --json`;
+      const command = `sf org list metadata --metadata-type ${type}${folderFlag} --target-org ${username} --json`;
       Logger.log(`Executing listMetadata for type: ${type}`);
 
       const result = await execSfdxJson(command);
@@ -1441,9 +1536,145 @@ async function annotateLocalFiles(records: any[]): Promise<any[]> {
   }
 }
 
+// For each foldered item in the list (Report, Dashboard, EmailTemplate,
+// Document), determine the parent folder and add the corresponding *Folder
+// metadata to the list IF it is not already present locally. Items that are
+// marked for deletion are skipped (we do not auto-include a folder when the
+// user is deleting items in it). Folder items already in the input list (e.g.
+// the user explicitly selected ReportFolder:X) are de-duplicated.
+async function expandWithMissingFolderItems(
+  metadataList: any[],
+): Promise<any[]> {
+  if (!Array.isArray(metadataList) || metadataList.length === 0) {
+    return metadataList;
+  }
+
+  const seen = new Set<string>();
+  for (const item of metadataList) {
+    if (!item || !item.memberType || !item.memberName) {
+      continue;
+    }
+    seen.add(`${item.memberType}::${item.memberName}`);
+  }
+
+  // Collect candidate folder paths by folder metadata type.
+  // Salesforce supports nested folders (Lightning). For a fullName like
+  // "A/B/C/D" where D is the leaf item, the parent folder hierarchy is:
+  //   "A", "A/B", "A/B/C"
+  // Each ancestor must be retrieved separately as a *Folder metadata, with
+  // its own fullName (including the path), so a downstream deploy can
+  // recreate the full tree.
+  const candidatesByFolderType = new Map<string, Set<string>>();
+  for (const item of metadataList) {
+    if (!item || item.deleted === true) {
+      continue;
+    }
+    const folderType = FOLDER_TYPE_MAP[item.memberType];
+    if (!folderType) {
+      continue;
+    }
+    const memberName = (item.memberName || "").toString();
+    if (!memberName.includes("/")) {
+      continue;
+    }
+    const parts = memberName.split("/").filter((p: string) => p.length > 0);
+    if (parts.length < 2) {
+      continue;
+    }
+    // Build every ancestor path (excludes the leaf item itself)
+    for (let i = 1; i < parts.length; i++) {
+      const folderPath = parts.slice(0, i).join("/");
+      if (seen.has(`${folderType}::${folderPath}`)) {
+        continue;
+      }
+      if (!candidatesByFolderType.has(folderType)) {
+        candidatesByFolderType.set(folderType, new Set());
+      }
+      candidatesByFolderType.get(folderType)!.add(folderPath);
+    }
+  }
+
+  if (candidatesByFolderType.size === 0) {
+    return metadataList;
+  }
+
+  // Resolve folder metadata file patterns from the registry, then check each
+  // candidate against the package directories. Add it only when missing.
+  const metadataTypes = listMetadataTypes();
+  const typeMap: Record<string, any> = {};
+  for (const t of metadataTypes) {
+    if (t.xmlName) {
+      typeMap[t.xmlName] = t;
+    }
+  }
+
+  let packageDirs: string[] = [];
+  try {
+    packageDirs = await listSfdxProjectPackageDirectories();
+  } catch {
+    // ignore - keep empty list, which causes all folder candidates to be added
+  }
+
+  const additions: any[] = [];
+  for (const [folderType, folderNames] of candidatesByFolderType.entries()) {
+    const mt = typeMap[folderType];
+    if (!mt) {
+      continue;
+    }
+    for (const folderPath of folderNames) {
+      let existsLocally = false;
+      if (packageDirs.length > 0) {
+        // Source format path for a (possibly nested) folder:
+        //   <pkg>/**/<directoryName>/<folderPath>/<leaf>.<suffix>-meta.xml
+        // where <folderPath> is the full ancestor path (e.g. A/B/C) and
+        // <leaf> is the last segment (e.g. C).
+        const segments = folderPath.split("/");
+        const leafName = segments[segments.length - 1];
+        const patterns = packageDirs.map((pkg) =>
+          path
+            .join(
+              pkg,
+              "**",
+              mt.directoryName || "",
+              ...segments,
+              `${leafName}.${mt.suffix}-meta.xml`,
+            )
+            .replace(/\\/g, "/"),
+        );
+        try {
+          const found = await fg(patterns, { dot: true, onlyFiles: true });
+          existsLocally = found && found.length > 0;
+        } catch {
+          existsLocally = false;
+        }
+      }
+      if (!existsLocally) {
+        additions.push({ memberType: folderType, memberName: folderPath });
+        seen.add(`${folderType}::${folderPath}`);
+      }
+    }
+  }
+
+  if (additions.length === 0) {
+    return metadataList;
+  }
+
+  Logger.log(
+    `Auto-including ${additions.length} missing folder metadata item(s): ` +
+      additions.map((a) => `${a.memberType}:${a.memberName}`).join(", "),
+  );
+  return [...metadataList, ...additions];
+}
+
 function buildMetadataKeys(name: any, mt: any) {
   const candidateKeys = new Set<string>();
-  const splitName = name.includes(".") ? name.split(".") : [name];
+  // Foldered types (Report, Dashboard, EmailTemplate, Document) use "/" as
+  // the folder separator in fullName (e.g. "MyFolder/MyReport"). Other
+  // foldered metadata (e.g. CustomField on objects) uses "." as separator.
+  const folderSeparator = mt.inFolder === true ? "/" : ".";
+  const splitName = name.includes(folderSeparator)
+    ? name.split(folderSeparator)
+    : [name];
   if (splitName.length > 1 && mt.directoryName) {
     // handle foldered metadata (e.g. CustomField, EmailTemplate, Dashboard, Report)
     const parentApiName = splitName.slice(0, -1).join("/");

@@ -36,11 +36,12 @@ After any change to the repo (new feature, bug fix, UI change, command added, et
 - When merging, preserve any sub-bullets that still describe distinct user-visible aspects; drop sub-bullets that have become redundant with the parent summary.
 
 ### Style rules
-- **Concise** — one short sentence per bullet; split into multiple bullets only if the change covers genuinely separate user-visible items.
+- **Concise** — one short sentence per bullet.
+- **Use sub-bullets for multi-aspect features** — when a single feature has multiple distinct user-visible aspects (e.g. new UI control + new behavior + bug fix), write a short parent bullet describing the feature and indent sub-bullets (two spaces) for each aspect. NEVER pack several aspects into one long run-on sentence under a single bullet.
 - **Non-technical** — written for end users (Salesforce consultants and developers), not for contributors. Describe *what they can now do* or *what is fixed*, not *how it was implemented*.
 - **User-friendly** — start with an action verb when possible (Add, Fix, Improve, Update, Remove). No file paths, no function names, no internal identifiers, no commit hashes, no PR numbers.
 - **Do not mention** refactors, dependency bumps unrelated to user impact, lint fixes, test changes, or pure code cleanup. Skip the changelog entry entirely for these.
-- Match the tone and granularity of existing entries. Group related sub-points under a parent bullet using two-space indentation when natural.
+- Match the tone and granularity of existing entries. Always prefer parent-with-sub-bullets over a single long sentence when a change has 3+ distinct facets.
 
 ### Examples
 Good:
@@ -48,10 +49,21 @@ Good:
 - `- Fix authentication error message when connecting to a Git provider`
 - `- Improve performance when loading the list of installed plugins`
 
+Good (multi-aspect feature with sub-bullets):
+```
+- Metadata Retriever: support folder-based types
+  - Folder selector appears in All Metadata mode for Report/Dashboard/EmailTemplate/Document
+  - Folder list cached 24h per org
+  - Parent folder metadata auto-included on retrieve when missing locally
+```
+
 Bad (too technical / internal):
 - `- Update hardis-commands-provider.ts to register new tree item`
 - `- Refactor SharedMixin to expose i18n getter`
 - `- Bump simple-git from 3.35.0 to 3.36.0`
+
+Bad (multiple aspects packed into one run-on sentence — split into sub-bullets instead):
+- `- Metadata Retriever: in All Metadata mode, when you pick a folder-based type, a Folder selector now appears and is required before searching, the folder list is fetched from the org and cached for 24 hours per org, and when retrieving items of these types the parent folder metadata is also pulled in automatically when missing locally.`
 
 ### When unsure
 If the change has no visible impact for users (pure internal refactor, test-only change, doc-only change inside source files), skip the changelog entry and mention this in your final summary to the user.

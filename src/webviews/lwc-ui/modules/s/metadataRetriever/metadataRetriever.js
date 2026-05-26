@@ -52,6 +52,12 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
   @track initialLocalPackage = null;
   @track isRetrieving = false;
 
+  // Folder selector for metadata types that require a folder
+  // (Report, Dashboard, EmailTemplate, Document)
+  @track folderOptions = [];
+  @track selectedFolder = "";
+  @track isLoadingFolders = false;
+
   // Performance optimization properties
   searchDebounceTimer = null;
   cachedDateFrom = null;
@@ -208,9 +214,54 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
         ? []
         : [{ label: this.t("allLabel"), value: "All" }];
     if (this.metadataTypes && Array.isArray(this.metadataTypes)) {
-      return options.concat(this.metadataTypes);
+      // Strip non-combobox properties (e.g. inFolder) before passing to
+      // lightning-combobox so it doesn't complain about unknown options.
+      const cleaned = this.metadataTypes.map((mt) => ({
+        label: mt.label,
+        value: mt.value,
+      }));
+      return options.concat(cleaned);
     }
     return options;
+  }
+
+  // True when the currently selected metadata type requires a folder
+  // (Report, Dashboard, EmailTemplate, Document).
+  get isFolderedType() {
+    if (
+      !this.metadataType ||
+      this.metadataType === "All" ||
+      !this.metadataTypes ||
+      !Array.isArray(this.metadataTypes)
+    ) {
+      return false;
+    }
+    const found = this.metadataTypes.find(
+      (mt) => mt && mt.value === this.metadataType,
+    );
+    return !!(found && found.inFolder === true);
+  }
+
+  // Show the folder combobox only when needed: All Metadata mode and a
+  // foldered type is selected.
+  get showFolderSelector() {
+    return this.isAllMetadataMode && this.isFolderedType;
+  }
+
+  get folderSelectorOptions() {
+    const opts = [];
+    if (this.isLoadingFolders) {
+      opts.push({ label: this.t("loadingLabel"), value: "" });
+      return opts;
+    }
+    if (Array.isArray(this.folderOptions)) {
+      opts.push(...this.folderOptions);
+    }
+    return opts;
+  }
+
+  get folderSelectorPlaceholder() {
+    return this.t("selectFolder");
   }
 
   get queryModeOptions() {
@@ -279,6 +330,14 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
     if (
       this.queryMode === "allMetadata" &&
       (this.metadataType === "All" || !this.metadataType)
+    ) {
+      return false;
+    }
+    // For foldered types in All Metadata mode, require a folder selection
+    if (
+      this.queryMode === "allMetadata" &&
+      this.isFolderedType &&
+      !this.selectedFolder
     ) {
       return false;
     }
@@ -428,6 +487,9 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
     this.isLoading = false;
     // Reset search state when switching orgs
     this.hasSearched = false;
+    // Reset folder list (cache is per-org on the backend)
+    this.selectedFolder = "";
+    this.folderOptions = [];
 
     // When org changes, lazy-load installed package namespaces for that org
     this.isLoadingPackages = true;
@@ -482,6 +544,23 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
     this.filteredMetadata = [];
     this.selectedRows = [];
     this.selectedRowKeys = [];
+    // Reset folder state when switching modes
+    this.selectedFolder = "";
+    this.folderOptions = [];
+    // If the user just switched to All Metadata mode while a foldered type
+    // (Report, Dashboard, EmailTemplate, Document) is already selected,
+    // request the folder list so the combobox is populated. Backend caches
+    // per org for 1 day, so this is cheap on subsequent switches.
+    if (this.isAllMetadataMode && this.isFolderedType && this.selectedOrg) {
+      this.isLoadingFolders = true;
+      window.sendMessageToVSCode({
+        type: "listMetadataFolders",
+        data: {
+          username: this.selectedOrg,
+          metadataType: this.metadataType,
+        },
+      });
+    }
     // Reset search state when switching query modes
     this.hasSearched = false;
   }
@@ -515,7 +594,27 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
 
   handleMetadataTypeChange(event) {
     this.metadataType = event.detail.value;
+    // Reset folder selection whenever the metadata type changes
+    this.selectedFolder = "";
+    this.folderOptions = [];
+    // If the newly selected type requires a folder (All Metadata mode only),
+    // request the folder list from the backend. The backend caches per org
+    // for 1 day.
+    if (this.isAllMetadataMode && this.isFolderedType && this.selectedOrg) {
+      this.isLoadingFolders = true;
+      window.sendMessageToVSCode({
+        type: "listMetadataFolders",
+        data: {
+          username: this.selectedOrg,
+          metadataType: this.metadataType,
+        },
+      });
+    }
     this.applyFilters();
+  }
+
+  handleFolderChange(event) {
+    this.selectedFolder = event.detail.value || "";
   }
 
   handlePackageChange(event) {
@@ -634,6 +733,10 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
         dateFrom: this.isRecentChangesMode ? this.dateFrom || null : null,
         dateTo: this.isRecentChangesMode ? this.dateTo || null : null,
         checkLocalFiles: this.checkLocalFiles || false,
+        folder:
+          this.isAllMetadataMode && this.isFolderedType && this.selectedFolder
+            ? this.selectedFolder
+            : null,
       },
     });
   }
@@ -666,6 +769,8 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
     this.dateTo = "";
     this.searchTerm = "";
     this.packageFilter = "All";
+    this.selectedFolder = "";
+    this.folderOptions = [];
     this.selectedRows = [];
     this.selectedRowKeys = [];
     this.applyFilters();
@@ -871,6 +976,8 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
       this.handleListPackagesResults(data);
     } else if (type === "listMetadataTypesResults") {
       this.handleListMetadataTypesResults(data);
+    } else if (type === "listMetadataFoldersResults") {
+      this.handleListMetadataFoldersResults(data);
     } else if (type === "queryResults") {
       this.handleQueryResults(data);
     } else if (type === "queryError") {
@@ -974,6 +1081,20 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
   handleListMetadataTypesResults(data) {
     if (data && data.metadataTypes && Array.isArray(data.metadataTypes)) {
       this.metadataTypes = data.metadataTypes;
+    }
+  }
+
+  handleListMetadataFoldersResults(data) {
+    this.isLoadingFolders = false;
+    // Ignore late responses for a different metadata type than the one
+    // currently selected (e.g. user changed type while folders were loading).
+    if (!data || data.metadataType !== this.metadataType) {
+      return;
+    }
+    if (Array.isArray(data.folders)) {
+      this.folderOptions = data.folders;
+    } else {
+      this.folderOptions = [];
     }
   }
 

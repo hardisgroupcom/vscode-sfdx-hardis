@@ -43,6 +43,20 @@
             ></lightning-combobox>
           </div>
 
+          <!-- Folder Filter (only for foldered types in All Metadata mode) -->
+          <template if:true={showFolderSelector}>
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-large-size_1-of-6">
+              <lightning-combobox
+                label={i18n.folderLabel}
+                value={selectedFolder}
+                options={folderSelectorOptions}
+                onchange={handleFolderChange}
+                placeholder={folderSelectorPlaceholder}
+                required
+              ></lightning-combobox>
+            </div>
+          </template>
+
           <!-- Metadata Name Filter -->
           <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-large-size_1-of-6">
             <lightning-input
