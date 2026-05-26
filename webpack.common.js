@@ -105,21 +105,12 @@ const lwcWebviewConfig = {
           path.resolve(__dirname, "src/webviews/lwc-ui"),
           path.resolve(__dirname, "src/webviews"),
         ],
+        exclude: [path.resolve(__dirname, "src/webviews/lwc-ui/modules")],
         use: [
           {
             loader: "babel-loader",
             options: {
               presets: ["@babel/preset-env"],
-              plugins: [
-                [
-                  "@lwc/babel-plugin-component",
-                  {
-                    namespace: "s",
-                    experimentalDynamicComponent: true,
-                    enableDynamicComponents: true,
-                  },
-                ],
-              ],
             },
           },
         ],
