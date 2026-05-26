@@ -1301,9 +1301,7 @@ async function handleListMetadata(
 
   const typesToQuery: string[] = [metadataType];
   const allResults: any[] = [];
-  const folderFlag = folder
-    ? ` --folder "${folder.replace(/"/g, '\\"')}"`
-    : "";
+  const folderFlag = folder ? ` --folder "${folder.replace(/"/g, '\\"')}"` : "";
 
   // Query metadata for each type
   for (const type of typesToQuery) {
