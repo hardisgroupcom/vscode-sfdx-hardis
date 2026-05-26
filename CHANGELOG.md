@@ -2,10 +2,10 @@
 
 ## Unreleased
 
-- Metadata Retriever: support folder-based types (Report, Dashboard, EmailTemplate, Document)
+## [7.10.4] 2026-05-25
+
+- **Metadata Retriever**: support folder-based types (Report, Dashboard, EmailTemplate, Document)
   - In **All Metadata** mode, a Folder selector now appears when a folder-based type is selected, and a folder must be picked before searching
-  - The folder list is fetched from the org and cached for 24 hours per org
-  - Fixes the previous empty result for these types
   - When retrieving items of these types, every ancestor folder (including nested sub-folders) is pulled in automatically when it is missing locally, so deploys to other orgs do not fail because the folder hierarchy does not exist there
 
 ## [7.10.3] 2026-05-25
