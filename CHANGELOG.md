@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Fixes
+  - Dependencies panel: upgrading the Salesforce CLI or installing/upgrading sf CLI plugins no longer fails with an "unauthorized command" error
+  - Dependencies panel & Setup page: after upgrading the Salesforce CLI, it is no longer incorrectly flagged as still outdated, and the new version is now shown right away
+
 ## [7.10.4] 2026-05-25
 
 - **Metadata Retriever**: support folder-based types (Report, Dashboard, EmailTemplate, Document)

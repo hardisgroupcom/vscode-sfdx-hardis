@@ -11,6 +11,10 @@ metadata:
 
 Write or update documentation for the vscode-sfdx-hardis extension.
 
+## Delegation
+
+A matching **`document`** sub-agent is defined in `.claude/agents/document.md`. Prefer delegating this task to the `document` sub-agent via your tool's sub-agent mechanism so it runs with the dedicated tooling and configuration defined there. Handle it inline only when delegation would lose important context.
+
 ## Steps
 
 1. Identify what needs documenting and where it belongs (see table below).

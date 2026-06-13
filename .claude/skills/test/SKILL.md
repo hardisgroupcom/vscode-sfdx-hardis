@@ -11,6 +11,10 @@ metadata:
 
 Run and write tests for the vscode-sfdx-hardis extension.
 
+## Delegation
+
+A matching **`test`** sub-agent is defined in `.claude/agents/test.md`. Prefer delegating this task to the `test` sub-agent via your tool's sub-agent mechanism so it runs with the dedicated tooling and configuration defined there. Handle it inline only when delegation would lose important context.
+
 ## Steps
 
 ### Running tests

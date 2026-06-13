@@ -34,11 +34,9 @@ jobs:
           package-manager-cache: false
       - run: yarn --frozen-lockfile
       - name: Publish to Visual Studio Marketplace
-        uses: HaaLeo/publish-vscode-extension@ca5561daa085dee804bf9f37fe0165785a9b14db # v2
-        with:
-          pat: ${{ secrets.VSCE_TOKEN }}
-          registryUrl: https://marketplace.visualstudio.com
-          yarn: true
+        run: yarn vsce publish -p "$VSCE_TOKEN" # zizmor: ignore[use-trusted-publishing]
+        env:
+          VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
 
   deploy_ovsx:
     name: Deploy on Open VSX
@@ -57,8 +55,6 @@ jobs:
           package-manager-cache: false
       - run: yarn --frozen-lockfile
       - name: Publish to Open VSX Registry
-        uses: HaaLeo/publish-vscode-extension@ca5561daa085dee804bf9f37fe0165785a9b14db # v2
-        with:
-          pat: ${{ secrets.OPENVSX_TOKEN }}
-          registryUrl: https://open-vsx.org
-          yarn: true
+        run: yarn ovsx publish -p "$OPENVSX_TOKEN" # zizmor: ignore[use-trusted-publishing]
+        env:
+          OPENVSX_TOKEN: ${{ secrets.OPENVSX_TOKEN }}
