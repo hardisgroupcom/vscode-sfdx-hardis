@@ -8,6 +8,10 @@ compatibility: Designed for Claude Code (or similar products)
 
 Resolve duplicate-code findings raised by **jscpd** (run via MegaLinter as `COPYPASTE_JSCPD`). For each duplicate, the correct answer is one of two things — **factorize** (extract a shared helper) or **ignore** (mark the block with `jscpd:ignore` markers). This skill picks between them deliberately, not by reflex.
 
+## Delegation
+
+Resolving duplicates is an implementation task. Prefer delegating it to the **`implement`** sub-agent (`.claude/agents/implement.md`) via your tool's sub-agent mechanism, and have it follow the procedure in this skill. Handle it inline only when delegation would lose important context.
+
 ## Background — how jscpd runs in this repo
 
 - **Config**: `.jscpd.json` at repo root, `threshold: 0` (any duplicate fails).

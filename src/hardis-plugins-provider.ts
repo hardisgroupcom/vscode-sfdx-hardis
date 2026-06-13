@@ -360,7 +360,10 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
     if (sfdxCliVersion !== recommendedSfdxCliVersion) {
       if (legacySfdx) {
         sfdxCliItem.label = t("upgradeToSalesforceCli");
-        sfdxCliItem.command = `npm uninstall sfdx-cli --global && npm install @salesforce/cli --global`;
+        // Append the refreshPlugins websocket event so the cached `sf --version`
+        // is invalidated and the new CLI version is detected once the upgrade
+        // completes (see refreshPluginsView -> resetCache).
+        sfdxCliItem.command = `npm uninstall sfdx-cli --global && npm install @salesforce/cli --global && sf hardis:work:ws --event refreshPlugins`;
         sfdxCliItem.tooltip = t("sfdxDeprecatedTooltip");
         sfdxCliItem.status = "dependency-error";
       } else {
@@ -372,10 +375,12 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
           !sfdxCliItem.label.includes("(link)")
             ? sfdxCliItem.label
             : sfdxCliItem.label + upgradeAvailableText;
-        sfdxCliItem.command = buildSfCliUpgradeCommand(
-          sfdxPath,
-          recommendedSfdxCliVersion,
-        );
+        // Append the refreshPlugins websocket event so the cached `sf --version`
+        // is invalidated and the new CLI version is detected once the upgrade
+        // completes (see refreshPluginsView -> resetCache).
+        sfdxCliItem.command =
+          buildSfCliUpgradeCommand(sfdxPath, recommendedSfdxCliVersion) +
+          ` && sf hardis:work:ws --event refreshPlugins`;
         sfdxCliItem.tooltip = t("clickToUpgradeSfCliTo", {
           version: recommendedSfdxCliVersion,
         });
@@ -541,6 +546,7 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
         sfdxCliOutdated,
         mergeDriverWasEnabled,
         sfdxPath,
+        recommendedSfdxCliVersion,
       );
       const setupHelper = SetupHelper.getInstance();
       const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
@@ -594,6 +600,7 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
     sfdxCliOutdated: boolean,
     mergeDriverWasEnabled: boolean,
     sfdxPath: string,
+    recommendedSfdxCliVersion?: string,
   ): string {
     const hardisTag = getSfdxHardisInstallTag();
     let command = outdated
@@ -612,7 +619,14 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
           })
           .join(" && ");
     } else if (sfdxCliOutdated === true) {
-      command = buildSfCliUpgradeCommand(sfdxPath) + " && " + command;
+      // Pin the exact recommended/latest version rather than letting
+      // buildSfCliUpgradeCommand fall back to @latest: the installed version is
+      // compared against recommendedSfdxCliVersion, so installing a different
+      // resolved version would keep showing the CLI as outdated.
+      command =
+        buildSfCliUpgradeCommand(sfdxPath, recommendedSfdxCliVersion) +
+        " && " +
+        command;
     }
     if (mergeDriverWasEnabled) {
       command =

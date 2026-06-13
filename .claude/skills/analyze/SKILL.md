@@ -11,6 +11,10 @@ metadata:
 
 Analyze code, architecture, or behavior in the vscode-sfdx-hardis extension.
 
+## Delegation
+
+A matching **`analyze`** sub-agent is defined in `.claude/agents/analyze.md`. Prefer delegating this task to the `analyze` sub-agent via your tool's sub-agent mechanism so it runs with the dedicated tooling and configuration defined there. Handle it inline only when delegation would lose important context.
+
 ## Steps
 
 1. **Identify scope** - Determine if the analysis targets a specific file, a feature area, a cross-cutting pattern, or the whole extension.

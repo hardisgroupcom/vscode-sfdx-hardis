@@ -11,6 +11,10 @@ metadata:
 
 Implement features, fixes, or changes in the vscode-sfdx-hardis extension.
 
+## Delegation
+
+A matching **`implement`** sub-agent is defined in `.claude/agents/implement.md`. Prefer delegating this task to the `implement` sub-agent via your tool's sub-agent mechanism so it runs with the dedicated tooling and configuration defined there. Handle it inline only when delegation would lose important context.
+
 ## Steps
 
 1. **Read existing code** before modifying. Understand the context and patterns already in use.
@@ -38,8 +42,8 @@ After any change to the repo (new feature, bug fix, UI change, command added, et
 ### Style rules
 - **Concise** — one short sentence per bullet.
 - **Use sub-bullets for multi-aspect features** — when a single feature has multiple distinct user-visible aspects (e.g. new UI control + new behavior + bug fix), write a short parent bullet describing the feature and indent sub-bullets (two spaces) for each aspect. NEVER pack several aspects into one long run-on sentence under a single bullet.
-- **Non-technical** — written for end users (Salesforce consultants and developers), not for contributors. Describe *what they can now do* or *what is fixed*, not *how it was implemented*.
-- **User-friendly** — start with an action verb when possible (Add, Fix, Improve, Update, Remove). No file paths, no function names, no internal identifiers, no commit hashes, no PR numbers.
+- **Non-technical** — written for end users (Salesforce consultants and developers), not for contributors. Describe *what they can now do* or *what is fixed*, not *how it was implemented*. This applies even when you avoid file/function names: do NOT describe the internal mechanism of a fix (caches, events, background/terminal modes, command-line flags, gates, validation rules, dist-tags like `@latest`, etc.). The user does not care *why* it was broken or *how* the plumbing now works — only that the feature/fix now behaves correctly. Stop the sentence at the user-visible outcome; cut any "... by/because/so that <internal reason>" clause.
+- **User-friendly** — start with an action verb when possible (Add, Fix, Improve, Update, Remove). No file paths, no function names, no internal identifiers, no commit hashes, no PR numbers, no shell commands.
 - **Do not mention** refactors, dependency bumps unrelated to user impact, lint fixes, test changes, or pure code cleanup. Skip the changelog entry entirely for these.
 - Match the tone and granularity of existing entries. Always prefer parent-with-sub-bullets over a single long sentence when a change has 3+ distinct facets.
 
@@ -64,6 +68,18 @@ Bad (too technical / internal):
 
 Bad (multiple aspects packed into one run-on sentence — split into sub-bullets instead):
 - `- Metadata Retriever: in All Metadata mode, when you pick a folder-based type, a Folder selector now appears and is required before searching, the folder list is fetched from the org and cached for 24 hours per org, and when retrieving items of these types the parent folder metadata is also pulled in automatically when missing locally.`
+
+Bad (leaks the internal mechanism even though no file/function names appear — describe only the user-visible outcome):
+- `- Dependencies panel: upgrading the CLI no longer fails because these maintenance commands now run in the visible terminal, bypassing the background-mode "registered commands only" gate (they chain steps with &&)`
+- `- Dependencies panel: the CLI upgrade now pins the exact recommended version (npm install @salesforce/cli@<version> -g) instead of @latest, so the installed version matches the version the check compares against`
+- `- Dependencies panel: after upgrading, the new version is detected immediately because the upgrade now triggers the refreshPlugins event which clears the cached sf --version result`
+
+Good (same three fixes, stated as user-visible outcomes — and merged into one bullet since they all concern upgrading the CLI):
+```
+- Dependencies panel
+  - Upgrading the Salesforce CLI or installing/upgrading sf CLI plugins no longer fails with an error
+  - After upgrading the Salesforce CLI, it is no longer wrongly shown as still outdated, and the new version appears right away
+```
 
 ### When unsure
 If the change has no visible impact for users (pure internal refactor, test-only change, doc-only change inside source files), skip the changelog entry and mention this in your final summary to the user.

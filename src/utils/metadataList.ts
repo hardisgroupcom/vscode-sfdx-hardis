@@ -797,6 +797,20 @@ export function listMetadataTypes() {
       xmlName: "CnfgItemTypeDef",
     },
     {
+      directoryName: "cnfgItemTypeIdentFieldMaps",
+      inFolder: false,
+      metaFile: false,
+      suffix: "cnfgItemTypeIdentFieldMap",
+      xmlName: "CnfgItemTypeIdentFieldMap",
+    },
+    {
+      directoryName: "cnfgItemTypeIdentRules",
+      inFolder: false,
+      metaFile: false,
+      suffix: "cnfgItemTypeIdentRule",
+      xmlName: "CnfgItemTypeIdentRule",
+    },
+    {
       directoryName: "cnfgItemTypeRelationDefs",
       inFolder: false,
       metaFile: false,
@@ -2222,6 +2236,13 @@ export function listMetadataTypes() {
       metaFile: false,
       suffix: "homePageLayout",
       xmlName: "HomePageLayout",
+    },
+    {
+      directoryName: "householdNamingConfigs",
+      inFolder: false,
+      metaFile: false,
+      suffix: "householdNamingConfig",
+      xmlName: "HouseholdNamingConfig",
     },
     {
       directoryName: "icons",

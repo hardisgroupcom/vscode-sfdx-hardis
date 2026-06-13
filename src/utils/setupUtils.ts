@@ -720,10 +720,14 @@ export class SetupHelper {
     // in place — running `npm install -g` on top of a native install causes
     // duplicate binaries and broken PATH resolution.
     const sfdxPath = await resolveSfCliPath();
-    const command = buildSfCliUpgradeCommand(
-      sfdxPath,
-      RECOMMENDED_SFDX_CLI_VERSION,
-    );
+    // Resolve the exact version to install. Falling back to @latest (the default
+    // when no version is provided) can install a version that differs from the
+    // one the dependency check compares against, keeping the CLI flagged as
+    // outdated; pin the resolved npm latest version instead.
+    const recommended =
+      RECOMMENDED_SFDX_CLI_VERSION ||
+      (await getNpmLatestVersion("@salesforce/cli").catch(() => null));
+    const command = buildSfCliUpgradeCommand(sfdxPath, recommended);
     return this.runUpdateOperation(
       "sf",
       async () => {
