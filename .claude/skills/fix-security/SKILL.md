@@ -14,6 +14,10 @@ Resolve CVEs and advisories raised by **Trivy** and **OSV-Scanner** (both run vi
 
 Never silence a finding without verifying step 1 and step 2 are not viable.
 
+## Delegation
+
+Triaging and fixing these findings is an implementation task. Prefer delegating it to the **`implement`** sub-agent (`.claude/agents/implement.md`) via your tool's sub-agent mechanism, and have it follow the procedure in this skill. Handle it inline only when delegation would lose important context.
+
 ## Background — how the scanners run in this repo
 
 - **Trivy** scans dependency manifests and the filesystem. Configured via `.mega-linter.yml` (`REPOSITORY_TRIVY` linter). Findings come with a CVE id, the package, the introduced/fixed versions, and a severity.

@@ -11,6 +11,10 @@ metadata:
 
 Add a new monitoring command to the extension so it shows up in the **Org Monitoring** tree menu, the **Org Monitoring home LWC** (manual-run cards), and the **Monitoring Config Workbench** (frequency + per-channel notification thresholds).
 
+## Delegation
+
+Adding a monitoring command is an implementation task. Prefer delegating it to the **`implement`** sub-agent (`.claude/agents/implement.md`) via your tool's sub-agent mechanism, and have it follow the procedure in this skill. Handle it inline only when delegation would lose important context.
+
 ## Background — how monitoring commands work in this repo
 
 The canonical list of monitoring commands and notification types lives **in the sfdx-hardis CLI plugin** (external to this repo), exposed via `sf hardis:config:monitoring-defaults --json`. Both the **Monitoring Config Workbench** *and* the **Org Monitoring home LWC** fetch that catalog dynamically (`fetchMonitoringCatalog()` in `src/utils/monitoringConfigUtils.ts`) and render their content from `monitoringCommands[]`, `notificationConfig[]`, and `categories[]` — **no hardcoding of the command list in this repo**.
@@ -22,7 +26,7 @@ Catalog caching:
 What this repo still needs to do per new monitoring command:
 - Register the command in the **Org Monitoring tree menu** (sidebar tree, separate from the LWC).
 - Provide **i18n labels and tooltips** for the tree entry.
-- Optionally, map a nice **icon** for the Org Monitoring home LWC cards, the Monitoring Config Workbench rows, and the tree view.
+- Optionally, map a **tree-view icon** for the sidebar entry. (The home-page card and Config Workbench row icons come from the CLI catalog entry's `icon` / `colorClass`, not this repo.)
 
 What this repo does **not** need to do per new monitoring command:
 - No code change in `orgMonitoring.js` / `orgMonitoring.html` for the manual-run card — the card is generated automatically from the CLI catalog entry's `title`, `description`, `command`, and `category`.
@@ -88,13 +92,7 @@ Rules:
 
    Keep keys in alphabetical order, flat JSON, camelCase. Use existing audit-trail / health-check entries as a reference for tone in each language. Follow the language-specific style rules in `CLAUDE.md` (formal "vous" in French, formal "Sie" in German, informal "tu" in Italian, etc.). Reuse upstream sfdx-hardis terminology where it exists. **No card-specific keys are needed** — the Org Monitoring LWC reads its card title and description directly from the CLI catalog.
 
-4. **(Recommended) Add icon mappings.** Both the Org Monitoring home LWC and the Monitoring Config Workbench have a `COMMAND_ICONS` map at the top of their JS file. Add an entry keyed by the CLI catalog `entries[].key` (UPPER_SNAKE_CASE) to both:
-   - `src/webviews/lwc-ui/modules/s/orgMonitoring/orgMonitoring.js` (top of file)
-   - `src/webviews/lwc-ui/modules/s/monitoringConfig/monitoringConfig.js` (top of file)
-   ```javascript
-   <CATALOG_KEY>: { icon: "utility:<sldsIconName>", colorClass: "<existing-class>" },
-   ```
-   Pick an SLDS utility icon (<https://www.lightningdesignsystem.com/icons/>) and reuse one of the existing `colorClass` values for category coherence. If you omit this, both surfaces fall back to `DEFAULT_ICON` (gear) — functional but visually generic. The two maps should stay in sync; if you're adding many commands at once, factor them into a shared module rather than copying entries.
+4. **(Usually nothing to do) Per-command icons come from the CLI catalog.** Each command's `icon` and `colorClass` are published by its CLI catalog entry (`monitoringCommands[].icon` / `.colorClass`) and rendered automatically on both the Org Monitoring home cards and the Config Workbench rows — so a command already in the catalog needs **no icon edit in this repo**. When no icon is supplied, both surfaces fall back to `FALLBACK_ICON_NAME` (`"utility:settings"`). The only local icon maps are `CATEGORY_ICONS` at the top of `orgMonitoring.js` and `monitoringConfig.js`; they carry category-level icons plus the UI-only pseudo-categories (`custom`, `standalone`) — edit them only when introducing a brand-new *category*, never per command. If you need a command on the home page *before* it ships in the CLI catalog, add an entry (with its own `icon` / `colorClass`) to the `EXTRA_COMMANDS` array in `orgMonitoring.js`, and remove it once the CLI publishes the command.
 
 5. **(Optional) Add a tree-view icon mapping.** Edit `src/utils/themeUtils.ts` in `getAllCommandIcons()` and add an entry keyed by the command id:
    ```typescript
@@ -131,7 +129,7 @@ Hard rules:
 
 ## What NOT to do
 
-- **Do not** hardcode the new command into `orgMonitoring.js` / `orgMonitoring.html` or `monitoringConfig.js` beyond `COMMAND_ICONS`. The list of commands, their titles, descriptions, categories, default frequency, default thresholds, channels, and severity ordering all come from the CLI catalog. Adding a per-command `runXxx()` method or `<lightning-button>` will be ignored at best, or shadow the catalog entry at worst.
+- **Do not** hardcode the new command into `orgMonitoring.js` / `orgMonitoring.html` or `monitoringConfig.js` — the only sanctioned exception is the temporary `EXTRA_COMMANDS` array in `orgMonitoring.js`, for a command not yet published in the CLI catalog. The list of commands, their titles, descriptions, categories, icons, default frequency, default thresholds, channels, and severity ordering all come from the CLI catalog. Adding a per-command `runXxx()` method or `<lightning-button>` will be ignored at best, or shadow the catalog entry at worst.
 - **Do not** add the command to `CONFIGURABLE_FIELDS` / `SECTIONS` in `src/utils/pipeline/sfdxHardisConfigHelper.ts` — that file is for Pipeline Settings, not monitoring.
 - **Do not** write into `.sfdx-hardis.yml` from this repo. The Workbench owns the `monitoringCommands:` array under the user's workspace config — it persists automatically when the user edits values.
 - **Do not** invent a new `NotificationThreshold`, channel, or frequency in `monitoringConfigUtils.ts`. Those types mirror the CLI contract; changing them here without a matching CLI change will desync the Workbench.
@@ -152,8 +150,8 @@ Hard rules:
 |----------------------------------------------------------------------------------------|-----------------------|-----------------------------------------------------------------------------------------|
 | `src/hardis-commands-provider.ts` (org-monitoring topic)                               | **Required**          | Tree menu entry                                                                         |
 | `src/i18n/*.json` (all 9 locales)                                                      | **Required**          | Tree entry label + tooltip translations                                                 |
-| `src/webviews/lwc-ui/modules/s/orgMonitoring/orgMonitoring.js` (`COMMAND_ICONS`)       | Recommended           | Per-command icon on the Org Monitoring home cards                                       |
-| `src/webviews/lwc-ui/modules/s/monitoringConfig/monitoringConfig.js` (`COMMAND_ICONS`) | Recommended           | Per-command icon in the Config Workbench rows                                           |
+| `src/webviews/lwc-ui/modules/s/orgMonitoring/orgMonitoring.js` (`EXTRA_COMMANDS`)      | Optional              | Only if the command is not yet in the CLI catalog and must appear on the home page early |
+| `orgMonitoring.js` + `monitoringConfig.js` (`CATEGORY_ICONS`)                          | Rare                  | Only when introducing a brand-new category — not per command (per-command icons come from the catalog) |
 | `src/utils/themeUtils.ts` (`getAllCommandIcons`)                                       | Optional              | Tree view icon                                                                          |
 | `CHANGELOG.md` (`## Unreleased`, merged)                                               | Recommended           | User-visible release note                                                               |
 | sfdx-hardis CLI plugin (external)                                                      | **Required for LWCs** | Catalog source of truth — provides `key`, `title`, `description`, `command`, `category` |

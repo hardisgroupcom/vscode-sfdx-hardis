@@ -11,6 +11,10 @@ metadata:
 
 Implement features, fixes, or changes in the vscode-sfdx-hardis extension.
 
+## Delegation
+
+A matching **`implement`** sub-agent is defined in `.claude/agents/implement.md`. Prefer delegating this task to the `implement` sub-agent via your tool's sub-agent mechanism so it runs with the dedicated tooling and configuration defined there. Handle it inline only when delegation would lose important context.
+
 ## Steps
 
 1. **Read existing code** before modifying. Understand the context and patterns already in use.

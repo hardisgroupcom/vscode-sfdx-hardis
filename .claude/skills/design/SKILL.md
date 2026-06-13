@@ -11,6 +11,10 @@ metadata:
 
 Design new features or architectural changes for the vscode-sfdx-hardis extension.
 
+## Delegation
+
+A matching **`design`** sub-agent is defined in `.claude/agents/design.md`. Prefer delegating this task to the `design` sub-agent via your tool's sub-agent mechanism so it runs with the dedicated tooling and configuration defined there. Handle it inline only when delegation would lose important context.
+
 ## Steps
 
 1. **Understand requirements** - Clarify what the feature should do and who it serves (beginner consultants vs expert developers vs both).
