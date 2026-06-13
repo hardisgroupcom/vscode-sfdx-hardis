@@ -34,7 +34,7 @@ jobs:
           package-manager-cache: false
       - run: yarn --frozen-lockfile
       - name: Publish to Visual Studio Marketplace
-        run: yarn vsce publish -p $VSCE_TOKEN
+        run: yarn vsce publish -p "$VSCE_TOKEN" # zizmor: ignore[use-trusted-publishing]
         env:
           VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
 
@@ -55,6 +55,6 @@ jobs:
           package-manager-cache: false
       - run: yarn --frozen-lockfile
       - name: Publish to Open VSX Registry
-        run: yarn ovsx publish -p $OPENVSX_TOKEN
+        run: yarn ovsx publish -p "$OPENVSX_TOKEN" # zizmor: ignore[use-trusted-publishing]
         env:
           OPENVSX_TOKEN: ${{ secrets.OPENVSX_TOKEN }}

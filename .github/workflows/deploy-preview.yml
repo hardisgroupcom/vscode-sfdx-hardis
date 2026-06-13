@@ -33,6 +33,6 @@ jobs:
           package-manager-cache: false
       - run: yarn --frozen-lockfile
       - name: Publish pre-release to Visual Studio Marketplace
-        run: yarn vsce publish --pre-release -p $VSCE_TOKEN --allow-package-secrets github
+        run: yarn vsce publish --pre-release -p "$VSCE_TOKEN" --allow-package-secrets github # zizmor: ignore[use-trusted-publishing]
         env:
           VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
