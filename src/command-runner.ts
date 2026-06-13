@@ -49,6 +49,23 @@ const SF_STANDARD_COMMANDS = [
   "sf update",
 ];
 
+// Dependency-maintenance commands issued by the extension itself (Dependencies
+// panel: CLI upgrade, plugin install / upgrade / uninstall, merge-driver toggle).
+// They are NOT typed by the user nor sent by a remote LWC / WebSocket message,
+// and they frequently chain steps with && (e.g. install a plugin then refresh
+// the plugins view) which background mode forbids. They are matched here so they
+// can always be run in the visible integrated terminal, bypassing the
+// background-mode "registered commands only" gate. Patterns are anchored at the
+// start of the (trimmed) command to keep the trust surface tight.
+const INTERNAL_MAINTENANCE_COMMAND_PATTERNS: RegExp[] = [
+  /^echo\s+y\s*\|\s*sf\s+plugins[ :]install\b/,
+  /^sf\s+plugins[ :](install|uninstall)\b/,
+  /^npm\s+uninstall\s+sfdx-cli\b/,
+  /^npm\s+install\s+@salesforce\/cli\b/,
+  /^sf\s+update\b/,
+  /^sf\s+git\s+merge\s+driver\s+(enable|disable)\b/,
+];
+
 /**
  * CommandRunner handles all logic related to terminal management and command execution.
  * It is designed to be used by the Commands class.
@@ -105,6 +122,20 @@ export class CommandRunner {
     const trimmedCommand = command.trimStart();
     return SF_STANDARD_COMMANDS.some((prefix) =>
       trimmedCommand.startsWith(prefix),
+    );
+  }
+
+  /**
+   * Whether the command is an extension-issued dependency-maintenance command
+   * (CLI upgrade, plugin install/upgrade/uninstall, merge-driver toggle) coming
+   * from the Dependencies panel. These are always run in the visible terminal so
+   * they are never blocked by the background-mode "registered commands only"
+   * gate (they often chain steps with && which background mode forbids).
+   */
+  private isInternalMaintenanceCommand(command: string): boolean {
+    const trimmedCommand = command.trimStart();
+    return INTERNAL_MAINTENANCE_COMMAND_PATTERNS.some((pattern) =>
+      pattern.test(trimmedCommand),
     );
   }
 
@@ -166,6 +197,19 @@ export class CommandRunner {
       } catch {
         // Silently continue without credentials
       }
+    }
+
+    // ── Internal maintenance path ─────────────────────────────────────────────
+    // Dependency-maintenance commands issued by the extension itself (Dependencies
+    // panel: CLI upgrade, plugin install/upgrade/uninstall, merge-driver toggle)
+    // are run unconditionally in the visible integrated terminal. They are not
+    // user-typed nor sent by a remote LWC/WebSocket message, and they frequently
+    // chain steps with && which background mode forbids. Running them in the
+    // terminal bypasses the background-mode "registered commands only" gate and
+    // lets the user watch install progress.
+    if (this.isInternalMaintenanceCommand(trimmedCommand)) {
+      this.executeCommandTerminal(sfdxHardisCommand, extraEnv);
+      return;
     }
 
     // ── Fast path ────────────────────────────────────────────────────────────
