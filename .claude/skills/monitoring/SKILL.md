@@ -146,13 +146,13 @@ Hard rules:
 
 ## Quick reference — files to touch
 
-| File                                                                                   | Required?             | Why                                                                                     |
-|----------------------------------------------------------------------------------------|-----------------------|-----------------------------------------------------------------------------------------|
-| `src/hardis-commands-provider.ts` (org-monitoring topic)                               | **Required**          | Tree menu entry                                                                         |
-| `src/i18n/*.json` (all 9 locales)                                                      | **Required**          | Tree entry label + tooltip translations                                                 |
-| `src/webviews/lwc-ui/modules/s/orgMonitoring/orgMonitoring.js` (`EXTRA_COMMANDS`)      | Optional              | Only if the command is not yet in the CLI catalog and must appear on the home page early |
-| `orgMonitoring.js` + `monitoringConfig.js` (`CATEGORY_ICONS`)                          | Rare                  | Only when introducing a brand-new category — not per command (per-command icons come from the catalog) |
-| `src/utils/themeUtils.ts` (`getAllCommandIcons`)                                       | Optional              | Tree view icon                                                                          |
-| `CHANGELOG.md` (`## Unreleased`, merged)                                               | Recommended           | User-visible release note                                                               |
-| sfdx-hardis CLI plugin (external)                                                      | **Required for LWCs** | Catalog source of truth — provides `key`, `title`, `description`, `command`, `category` |
-| `orgMonitoring.js` / `orgMonitoring.html` (card markup)                                | **DO NOT EDIT**       | Cards are generated from the CLI catalog — no per-command HTML or JS handler            |
+| File                                                                              | Required?             | Why                                                                                                    |
+|-----------------------------------------------------------------------------------|-----------------------|--------------------------------------------------------------------------------------------------------|
+| `src/hardis-commands-provider.ts` (org-monitoring topic)                          | **Required**          | Tree menu entry                                                                                        |
+| `src/i18n/*.json` (all 9 locales)                                                 | **Required**          | Tree entry label + tooltip translations                                                                |
+| `src/webviews/lwc-ui/modules/s/orgMonitoring/orgMonitoring.js` (`EXTRA_COMMANDS`) | Optional              | Only if the command is not yet in the CLI catalog and must appear on the home page early               |
+| `orgMonitoring.js` + `monitoringConfig.js` (`CATEGORY_ICONS`)                     | Rare                  | Only when introducing a brand-new category — not per command (per-command icons come from the catalog) |
+| `src/utils/themeUtils.ts` (`getAllCommandIcons`)                                  | Optional              | Tree view icon                                                                                         |
+| `CHANGELOG.md` (`## Unreleased`, merged)                                          | Recommended           | User-visible release note                                                                              |
+| sfdx-hardis CLI plugin (external)                                                 | **Required for LWCs** | Catalog source of truth — provides `key`, `title`, `description`, `command`, `category`                |
+| `orgMonitoring.js` / `orgMonitoring.html` (card markup)                           | **DO NOT EDIT**       | Cards are generated from the CLI catalog — no per-command HTML or JS handler                           |
