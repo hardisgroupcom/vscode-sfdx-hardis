@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [7.10.5] 2026-06-13
+
 - Fixes
   - Dependencies panel: upgrading the Salesforce CLI or installing/upgrading sf CLI plugins no longer fails with an "unauthorized command" error
   - Dependencies panel & Setup page: after upgrading the Salesforce CLI, it is no longer incorrectly flagged as still outdated, and the new version is now shown right away
