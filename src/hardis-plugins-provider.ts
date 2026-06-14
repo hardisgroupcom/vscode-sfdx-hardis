@@ -33,6 +33,23 @@ import {
 
 let nodeInstallOk = false;
 let gitInstallOk = false;
+// Per-session guards for core dependency prompts
+let nodeMissingPromptShown = false;
+let gitMissingPromptShown = false;
+
+// Two-phase plugin rendering flags — mirroring the GIT_MENUS pattern
+// null  = not started yet; false = in progress; true = detail pass completed
+let PLUGINS_DETAIL_LOADED: boolean | null = null;
+// Placeholder items from phase 1 (installed versions, no upgrade info yet)
+let PLUGINS_PHASE1_ITEMS: any[] | null = null;
+// Finalised items from phase 2 (with upgrade decorations)
+let PLUGINS_DETAIL_ITEMS: any[] | null = null;
+// Per-session guards: prevent repeated dialogs across re-renders
+let PLUGINS_OUTDATED_PROMPT_SHOWN = false;
+let PLUGINS_SFDXHARDIS_PROMPT_SHOWN = false;
+let PLUGINS_AUTO_UPGRADE_STARTED = false;
+// Guard against concurrent background detail passes
+let PLUGINS_DETAIL_IN_FLIGHT = false;
 
 export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTreeItem> {
   protected themeUtils: ThemeUtils;
@@ -139,9 +156,11 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
       if (!nodeVersionMatch) {
         nodeItem.status = "dependency-missing";
         nodeItem.tooltip = t("nodeJsMissing");
-        ((nodeItem.command = `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
+        nodeItem.command = `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
           "https://nodejs.org/en/",
-        )}`),
+        )}`;
+        if (!nodeMissingPromptShown) {
+          nodeMissingPromptShown = true;
           vscode.window
             .showWarningMessage(
               t("nodeNotInstalled", { version: NODE_JS_MINIMUM_VERSION }),
@@ -153,7 +172,8 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
                   vscode.Uri.parse("https://nodejs.org/en/"),
                 );
               }
-            }));
+            });
+        }
       } else if (
         parseInt(nodeVersionMatch[1]) < NODE_JS_MINIMUM_VERSION &&
         !process.env.PATH?.includes("/home/codebuilder/")
@@ -161,9 +181,11 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
         nodeItem.label += " v" + nodeVersionMatch[1];
         nodeItem.status = "dependency-warning";
         nodeItem.tooltip = t("nodeJsOutdated");
-        ((nodeItem.command = `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
+        nodeItem.command = `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
           "https://nodejs.org/en/",
-        )}`),
+        )}`;
+        if (!nodeMissingPromptShown) {
+          nodeMissingPromptShown = true;
           vscode.window
             .showWarningMessage(
               t("nodeVersionTooOld", {
@@ -178,7 +200,8 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
                   vscode.Uri.parse("https://nodejs.org/en/"),
                 );
               }
-            }));
+            });
+        }
       } else {
         nodeItem.label +=
           " v" + nodeVersionMatch[1] + "." + nodeVersionMatch.slice(2).join("");
@@ -218,9 +241,11 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
       if (!gitVersionMatch) {
         gitItem.status = "dependency-missing";
         gitItem.tooltip = t("gitMissing");
-        ((gitItem.command = `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
+        gitItem.command = `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
           "https://git-scm.com/downloads",
-        )}`),
+        )}`;
+        if (!gitMissingPromptShown) {
+          gitMissingPromptShown = true;
           vscode.window
             .showWarningMessage(t("gitNotInstalled"), downloadGitLabel)
             .then((selection) => {
@@ -229,7 +254,8 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
                   vscode.Uri.parse("https://git-scm.com/downloads"),
                 );
               }
-            }));
+            });
+        }
       } else {
         gitItem.label +=
           " v" + gitVersionMatch[1] + "." + gitVersionMatch.slice(2).join("");
@@ -241,9 +267,7 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
   }
 
   private async getPluginsItems(): Promise<any[]> {
-    const items: any = [];
-
-    // Check sfdx related installs
+    // --- Build the static plugin list (same every call) ---
     const plugins = [
       {
         name: "@salesforce/plugin-packaging",
@@ -271,7 +295,8 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
 
     // Display temporary list until cache is preloaded
     if (!isCachePreloaded()) {
-      items.push({
+      const loadingItems: any[] = [];
+      loadingItems.push({
         id: `sfdx-cli-info`,
         label: `@salesforce/cli`,
         status: "loading",
@@ -279,46 +304,50 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
           "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_unified.htm",
       });
       for (const plugin of plugins) {
-        const pluginItem = {
+        loadingItems.push({
           id: `plugin-info-${plugin.name}`,
           label: `${plugin.name}`,
           status: "loading",
           helpUrl: plugin.helpUrl,
-        };
-        items.push(pluginItem);
+        });
       }
-      return items.sort((a: any, b: any) => (a.label > b.label ? 1 : -1));
+      return loadingItems.sort((a: any, b: any) => (a.label > b.label ? 1 : -1));
     }
 
-    // Complete with local config plugins
+    // --- Phase 2 complete: return final decorated items ---
+    if (PLUGINS_DETAIL_LOADED === true && PLUGINS_DETAIL_ITEMS !== null) {
+      return PLUGINS_DETAIL_ITEMS;
+    }
+
+    // --- Phase 2 in flight: return phase-1 placeholder items ---
+    if (PLUGINS_DETAIL_LOADED === false && PLUGINS_PHASE1_ITEMS !== null) {
+      return PLUGINS_PHASE1_ITEMS;
+    }
+
+    // --- Phase 1: build items from cached sf --version + sf plugins immediately ---
+    // Mark detail pass as in progress before any await to prevent concurrent launches
+    PLUGINS_DETAIL_LOADED = false;
+
+    // Complete with local config plugins (may trigger a background refresh if config not ready)
     await this.loadAdditionalPlugins(plugins);
 
-    const outdated: any[] = [];
-    // Run the three independent slow operations in parallel (all cached 1 day after first call)
-    const [sfVersionResult, latestSfdxCliVersionResult, sfPluginsResult] =
-      await Promise.allSettled([
-        execCommand("sf --version", {
-          output: true,
-          fail: false,
-          cacheSection: "app",
-          cacheExpiration: 1000 * 60 * 60 * 24, // 1 day
-        }),
-        getNpmLatestVersion("@salesforce/cli"),
-        execCommand("sf plugins", {
-          output: true,
-          fail: false,
-          cacheSection: "app",
-          cacheExpiration: 1000 * 60 * 60 * 24, // 1 day
-        }),
-      ]);
+    // Read sf --version and sf plugins from cache (both are cached 1 day after first call)
+    const [sfVersionResult, sfPluginsResult] = await Promise.allSettled([
+      execCommand("sf --version", {
+        output: true,
+        fail: false,
+        cacheSection: "app",
+        cacheExpiration: 1000 * 60 * 60 * 24, // 1 day
+      }),
+      execCommand("sf plugins", {
+        output: true,
+        fail: false,
+        cacheSection: "app",
+        cacheExpiration: 1000 * 60 * 60 * 24, // 1 day
+      }),
+    ]);
 
-    if (latestSfdxCliVersionResult.status === "rejected") {
-      Logger.log(`Error while fetching latest version for @salesforce/cli`);
-      return [];
-    }
-    const latestSfdxCliVersion = latestSfdxCliVersionResult.value;
-
-    // check sfdx-cli version
+    // Parse sf --version output
     const sfdxCliVersionStdOut: string =
       sfVersionResult.status === "fulfilled"
         ? sfVersionResult.value.stdout
@@ -338,61 +367,7 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
       }
     }
 
-    const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
-    const recommendedSfdxCliVersion =
-      config.get("ignoreSfdxCliRecommendedVersion") === true
-        ? latestSfdxCliVersion
-        : RECOMMENDED_SFDX_CLI_VERSION || latestSfdxCliVersion;
-    const sfdxCliItem = {
-      id: `sfdx-cli-info`,
-      label: `@salesforce/cli v${sfdxCliVersion}`,
-      command: `echo "Nothing to do here 😁"`,
-      tooltip: t("sfCliRecommendedInstalled"),
-      status: "dependency-ok",
-      helpUrl:
-        "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_unified.htm",
-    };
-    let sfdxCliOutdated = false;
-    const upgradeAvailableText = t("upgradeAvailableSuffix");
-    // Resolve `sf` path once: needed both to pick the right upgrade command for
-    // the CLI item and to prefix the bulk upgrade command later on.
-    const sfdxPath = await resolveSfCliPath();
-    if (sfdxCliVersion !== recommendedSfdxCliVersion) {
-      if (legacySfdx) {
-        sfdxCliItem.label = t("upgradeToSalesforceCli");
-        // Append the refreshPlugins websocket event so the cached `sf --version`
-        // is invalidated and the new CLI version is detected once the upgrade
-        // completes (see refreshPluginsView -> resetCache).
-        sfdxCliItem.command = `npm uninstall sfdx-cli --global && npm install @salesforce/cli --global && sf hardis:work:ws --event refreshPlugins`;
-        sfdxCliItem.tooltip = t("sfdxDeprecatedTooltip");
-        sfdxCliItem.status = "dependency-error";
-      } else {
-        // sfdx-cli is outdated — upgrade command depends on install kind
-        // (npm vs native installer).
-        sfdxCliOutdated = true;
-        sfdxCliItem.label =
-          sfdxCliItem.label.includes("missing") &&
-          !sfdxCliItem.label.includes("(link)")
-            ? sfdxCliItem.label
-            : sfdxCliItem.label + upgradeAvailableText;
-        // Append the refreshPlugins websocket event so the cached `sf --version`
-        // is invalidated and the new CLI version is detected once the upgrade
-        // completes (see refreshPluginsView -> resetCache).
-        sfdxCliItem.command =
-          buildSfCliUpgradeCommand(sfdxPath, recommendedSfdxCliVersion) +
-          ` && sf hardis:work:ws --event refreshPlugins`;
-        sfdxCliItem.tooltip = t("clickToUpgradeSfCliTo", {
-          version: recommendedSfdxCliVersion,
-        });
-        sfdxCliItem.status = "dependency-warning";
-      }
-    } else if (isNativeSfCliInstall(sfdxPath)) {
-      // CLI is up to date but installed via the native installer — surface a
-      // soft hint that the NPM-based install is preferred, without blocking.
-      sfdxCliItem.tooltip = t("depSfCliNativeInstallNote");
-    }
-    items.push(sfdxCliItem);
-    // get currently installed plugins
+    // Get installed plugins output
     let sfdxPlugins: string =
       sfPluginsResult.status === "fulfilled"
         ? sfPluginsResult.value.stdout || ""
@@ -402,72 +377,29 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
     if (uninstalledJitIndex > -1) {
       sfdxPlugins = sfdxPlugins.substring(0, uninstalledJitIndex).trim();
     }
-    // Check installed plugins status version
-    const pluginPromises = plugins.map(async (plugin) => {
-      // Special check for sfdx-hardis version
-      if (plugin.name === "sfdx-hardis") {
-        let installedVersion = null;
-        // Match semver (e.g., 1.2.3, 1.2.3-beta, 1.2.3-alpha.1, etc.)
-        const regex = new RegExp(
-          `${plugin.name} (\\d+\\.\\d+\\.\\d+(?:-[\\w.-]+)?)`,
-          "gm",
-        );
-        const match = regex.exec(sfdxPlugins);
-        if (match && match[1]) {
-          installedVersion = match[1];
-        }
-        const sfdxHardisInstallTag = getSfdxHardisInstallTag();
-        if (
-          installedVersion &&
-          ((isExtensionPreRelease() && !installedVersion.includes("alpha")) ||
-            (RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION !== "beta" &&
-              !isExtensionPreRelease() &&
-              this.compareVersions(
-                installedVersion,
-                RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION,
-              ) < 0) ||
-            (RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION === "beta" &&
-              !installedVersion.includes("(beta)")))
-        ) {
-          const versionToInstall = sfdxHardisInstallTag;
-          const upgradeNowLabel = t("upgradeNow");
-          const errorMessageForUSer = isExtensionPreRelease()
-            ? t("sfdxHardisPreReleaseAlphaMessage")
-            : RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION === "beta"
-              ? t("sfdxHardisPreReleaseBetaMessage")
-              : t("sfdxHardisPluginOutdated", {
-                  version: installedVersion,
-                  versionToInstall,
-                });
-          vscode.window
-            .showErrorMessage(errorMessageForUSer, upgradeNowLabel)
-            .then((selection) => {
-              if (selection === upgradeNowLabel) {
-                vscode.commands.executeCommand(
-                  "vscode-sfdx-hardis.execute-command",
-                  `echo y|sf plugins:install sfdx-hardis@${versionToInstall} && sf hardis:work:ws --event refreshPlugins`,
-                );
-              }
-            });
-        }
-      }
 
-      // Check latest plugin version
-      let latestPluginVersion;
-      try {
-        latestPluginVersion = await getNpmLatestVersion(plugin.name);
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      } catch (e) {
-        Logger.log(`Error while fetching latest version for ${plugin.name}`);
-        return;
-      }
+    // Build phase-1 items: installed versions, neutral status (no upgrade info yet)
+    const phase1Items: any[] = [];
+
+    // CLI item with installed version — upgrade decoration deferred to phase 2
+    const sfdxCliItemPhase1 = {
+      id: `sfdx-cli-info`,
+      label: `@salesforce/cli v${sfdxCliVersion}`,
+      command: `echo "Nothing to do here 😁"`,
+      tooltip: t("sfCliRecommendedInstalled"),
+      status: "dependency-ok",
+      helpUrl:
+        "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_unified.htm",
+    };
+    phase1Items.push(sfdxCliItemPhase1);
+
+    // Plugin items with installed versions — upgrade info deferred to phase 2
+    for (const plugin of plugins) {
       let pluginLabel = (plugin as any).isCommunity
         ? `${plugin.name} ${t("communityPluginLabel")}`
         : plugin.name;
-      let isPluginMissing = false;
-      const previewLabel = t("pluginPreviewLabel");
       const regexVersion = new RegExp(
-        `${plugin.altName || plugin.name} (.*)`,
+        `${(plugin as any).altName || plugin.name} (.*)`,
         "gm",
       );
       const versionMatches = [...sfdxPlugins.matchAll(regexVersion)];
@@ -475,122 +407,357 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
         pluginLabel += ` v${versionMatches[0][1]}`;
       } else {
         pluginLabel += t("pluginMissingSuffix");
-        isPluginMissing = true;
       }
-      const pluginItem = {
+      phase1Items.push({
         id: `plugin-info-${plugin.name}`,
         label: pluginLabel,
         command: `echo "Nothing to do here 😁"`,
         tooltip: t("sfdxPluginLatestInstalled", { plugin: plugin.name }),
         status: "dependency-ok",
         helpUrl: plugin.helpUrl,
-      };
-      if (
-        !sfdxPlugins.includes(`${plugin.name} ${latestPluginVersion}`) &&
-        !sfdxPlugins.includes(
-          `${plugin.altName || "nope"} ${latestPluginVersion}`,
-        )
-      ) {
-        pluginItem.label =
-          pluginItem.label.includes("(beta)") ||
-          pluginItem.label.includes("(alpha)")
-            ? pluginItem.label + " " + previewLabel
-            : pluginItem.label.includes("(link)")
-              ? pluginItem.label.replace("(link)", "(localdev)")
-              : isPluginMissing
-                ? pluginItem.label
-                : pluginItem.label + upgradeAvailableText;
-        const installTag =
-          plugin.name === "sfdx-hardis" ? getSfdxHardisInstallTag() : "latest";
-        pluginItem.command = `echo y|sf plugins:install ${plugin.name}@${installTag} && sf hardis:work:ws --event refreshPlugins`;
-        pluginItem.tooltip = t("clickToUpgradeSfdxPluginTo", {
-          plugin: plugin.name,
-          version: latestPluginVersion,
-        });
-        if (!pluginItem.label.includes("(localdev)")) {
-          pluginItem.status = isPluginMissing
-            ? "dependency-missing"
-            : pluginItem.label.includes(previewLabel)
-              ? "dependency-preview"
-              : "dependency-warning";
-          if (!pluginItem.label.includes(previewLabel)) {
-            outdated.push(plugin);
-          }
-        }
-      }
-      if (pluginItem.label.includes("(localdev)")) {
-        pluginItem.status = "dependency-local";
-        pluginItem.tooltip = t("usingLocallyDevelopedPlugin", {
-          plugin: plugin.name,
-        });
-      }
-      items.push(pluginItem);
-    });
-    // Await parallel promises to be completed
-    await Promise.allSettled(pluginPromises);
-    // Ensure community/custom plugins are always displayed at the end
-    items.sort(
+      });
+    }
+
+    // Sort community plugins to end; apply label sort
+    phase1Items.sort(
       (a: any, b: any) => (a.isCommunity ? 1 : 0) - (b.isCommunity ? 1 : 0),
     );
-    // Propose user to upgrade if necessary
-    let mergeDriverWasEnabled = false;
-    if (outdated.some((plugin) => plugin.name === "sf-git-merge-driver")) {
-      const mergeDriverStatus = await isMergeDriverEnabled(getWorkspaceRoot());
-      mergeDriverWasEnabled = mergeDriverStatus === true;
-    }
-    if (outdated.length > 0) {
-      const command = this.buildUpgradeCommand(
-        outdated,
+    PLUGINS_PHASE1_ITEMS = phase1Items.sort(
+      (a: any, b: any) => (a.label > b.label ? 1 : -1),
+    );
+
+    // --- Phase 2: background detail pass (npm latest versions + upgrade decorations) ---
+    if (!PLUGINS_DETAIL_IN_FLIGHT) {
+      PLUGINS_DETAIL_IN_FLIGHT = true;
+      void this.runPluginsDetailPass(
         plugins,
+        sfdxPlugins,
+        sfdxCliVersion,
         legacySfdx,
-        sfdxCliOutdated,
-        mergeDriverWasEnabled,
-        sfdxPath,
-        recommendedSfdxCliVersion,
       );
-      const setupHelper = SetupHelper.getInstance();
-      const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
-      if (
-        config.get("autoUpdateDependencies") === true &&
-        !setupHelper.hasUpdatesInProgress()
-      ) {
-        setupHelper.setUpdateInProgress(true, command);
-        execCommandWithProgress(
-          command,
-          { fail: false, output: true },
-          t("autoUpgradingDependencies", { command }),
-        )
-          .then(() => {
-            setupHelper.setUpdateInProgress(false, command);
-            vscode.commands.executeCommand(
-              "vscode-sfdx-hardis.refreshPluginsView",
-            );
-          })
-          .catch(() => {
-            setupHelper.setUpdateInProgress(false, command);
-            vscode.commands.executeCommand(
-              "vscode-sfdx-hardis.refreshPluginsView",
-            );
-          });
-      } else if (!setupHelper.hasUpdatesInProgress()) {
-        const upgradePluginsLabel = t("upgradePlugins");
-        vscode.window
-          .showWarningMessage(t("somePluginsNotUpToDate"), upgradePluginsLabel)
-          .then((selection) => {
-            if (selection === upgradePluginsLabel) {
-              if (config.get("userInput") === "ui-lwc") {
-                vscode.commands.executeCommand("vscode-sfdx-hardis.showSetup");
-                return;
-              }
-              vscode.commands.executeCommand(
-                "vscode-sfdx-hardis.execute-command",
-                command,
-              );
-            }
-          });
-      }
     }
-    return items.sort((a: any, b: any) => (a.label > b.label ? 1 : -1));
+
+    return PLUGINS_PHASE1_ITEMS;
+  }
+
+  /**
+   * Background detail pass: fetch npm latest versions, apply upgrade decorations,
+   * fire prompts (once per session), then call refreshPluginsView(true) to replace
+   * the phase-1 placeholders with the final decorated rows.
+   */
+  private async runPluginsDetailPass(
+    plugins: any[],
+    sfdxPlugins: string,
+    sfdxCliVersion: string,
+    legacySfdx: boolean,
+  ): Promise<void> {
+    try {
+      const items: any[] = [];
+
+      const [latestSfdxCliVersionResult, sfVersionResult] = await Promise.allSettled([
+        getNpmLatestVersion("@salesforce/cli"),
+        execCommand("sf --version", {
+          output: true,
+          fail: false,
+          cacheSection: "app",
+          cacheExpiration: 1000 * 60 * 60 * 24, // 1 day
+        }),
+      ]);
+
+      // getNpmLatestVersion never rejects; a null value means "unknown" (cold/offline)
+      const latestSfdxCliVersion: string | null =
+        latestSfdxCliVersionResult.status === "fulfilled"
+          ? latestSfdxCliVersionResult.value
+          : null;
+      if (latestSfdxCliVersionResult.status === "rejected") {
+        Logger.log(`Error while fetching latest version for @salesforce/cli`);
+      }
+
+      // Re-parse sf --version in case of late cache population
+      const sfdxCliVersionStdOut: string =
+        sfVersionResult.status === "fulfilled"
+          ? sfVersionResult.value.stdout
+          : "";
+      let sfdxCliVersionMatchDetail = /sfdx-cli\/([^\s]+)/gm.exec(sfdxCliVersionStdOut);
+      let sfdxCliVersionDetail = sfdxCliVersion;
+      let legacySfdxDetail = legacySfdx;
+      if (sfdxCliVersionMatchDetail) {
+        sfdxCliVersionDetail = sfdxCliVersionMatchDetail[1];
+        legacySfdxDetail = true;
+      } else {
+        sfdxCliVersionMatchDetail = /@salesforce\/cli\/([^\s]+)/gm.exec(
+          sfdxCliVersionStdOut,
+        );
+        if (sfdxCliVersionMatchDetail) {
+          sfdxCliVersionDetail = sfdxCliVersionMatchDetail[1];
+        }
+      }
+
+      const vsConfig = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+      // When latestSfdxCliVersion is null (offline/cold cache), fall back to
+      // RECOMMENDED_SFDX_CLI_VERSION only — never use null as the target version.
+      const recommendedSfdxCliVersion: string | null =
+        vsConfig.get("ignoreSfdxCliRecommendedVersion") === true
+          ? latestSfdxCliVersion
+          : RECOMMENDED_SFDX_CLI_VERSION || latestSfdxCliVersion;
+
+      const sfdxCliItem = {
+        id: `sfdx-cli-info`,
+        label: `@salesforce/cli v${sfdxCliVersionDetail}`,
+        command: `echo "Nothing to do here 😁"`,
+        tooltip: t("sfCliRecommendedInstalled"),
+        status: "dependency-ok",
+        helpUrl:
+          "https://developer.salesforce.com/docs/atlas.en-us.sfdx_cli_reference.meta/sfdx_cli_reference/cli_reference_unified.htm",
+      };
+      let sfdxCliOutdated = false;
+      const upgradeAvailableText = t("upgradeAvailableSuffix");
+      // Resolve `sf` path once for upgrade command and bulk upgrade prefix
+      const sfdxPath = await resolveSfCliPath();
+      // Only compare versions when we have a known target; skip if latest is unknown
+      if (recommendedSfdxCliVersion !== null && sfdxCliVersionDetail !== recommendedSfdxCliVersion) {
+        if (legacySfdxDetail) {
+          sfdxCliItem.label = t("upgradeToSalesforceCli");
+          sfdxCliItem.command = `npm uninstall sfdx-cli --global && npm install @salesforce/cli --global && sf hardis:work:ws --event refreshPlugins`;
+          sfdxCliItem.tooltip = t("sfdxDeprecatedTooltip");
+          sfdxCliItem.status = "dependency-error";
+        } else {
+          sfdxCliOutdated = true;
+          sfdxCliItem.label =
+            sfdxCliItem.label.includes("missing") &&
+            !sfdxCliItem.label.includes("(link)")
+              ? sfdxCliItem.label
+              : sfdxCliItem.label + upgradeAvailableText;
+          sfdxCliItem.command =
+            buildSfCliUpgradeCommand(sfdxPath, recommendedSfdxCliVersion) +
+            ` && sf hardis:work:ws --event refreshPlugins`;
+          sfdxCliItem.tooltip = t("clickToUpgradeSfCliTo", {
+            version: recommendedSfdxCliVersion,
+          });
+          sfdxCliItem.status = "dependency-warning";
+        }
+      } else if (isNativeSfCliInstall(sfdxPath)) {
+        sfdxCliItem.tooltip = t("depSfCliNativeInstallNote");
+      }
+      items.push(sfdxCliItem);
+
+      // Check installed plugins with npm latest version comparison
+      const outdated: any[] = [];
+      const pluginPromises = plugins.map(async (plugin) => {
+        // Special check for sfdx-hardis version — show prompt once per session
+        if (plugin.name === "sfdx-hardis" && !PLUGINS_SFDXHARDIS_PROMPT_SHOWN) {
+          let installedVersion = null;
+          const regex = new RegExp(
+            `${plugin.name} (\\d+\\.\\d+\\.\\d+(?:-[\\w.-]+)?)`,
+            "gm",
+          );
+          const match = regex.exec(sfdxPlugins);
+          if (match && match[1]) {
+            installedVersion = match[1];
+          }
+          const sfdxHardisInstallTag = getSfdxHardisInstallTag();
+          if (
+            installedVersion &&
+            ((isExtensionPreRelease() && !installedVersion.includes("alpha")) ||
+              (RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION !== "beta" &&
+                !isExtensionPreRelease() &&
+                this.compareVersions(
+                  installedVersion,
+                  RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION,
+                ) < 0) ||
+              (RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION === "beta" &&
+                !installedVersion.includes("(beta)")))
+          ) {
+            PLUGINS_SFDXHARDIS_PROMPT_SHOWN = true;
+            const versionToInstall = sfdxHardisInstallTag;
+            const upgradeNowLabel = t("upgradeNow");
+            const errorMessageForUSer = isExtensionPreRelease()
+              ? t("sfdxHardisPreReleaseAlphaMessage")
+              : RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION === "beta"
+                ? t("sfdxHardisPreReleaseBetaMessage")
+                : t("sfdxHardisPluginOutdated", {
+                    version: installedVersion,
+                    versionToInstall,
+                  });
+            vscode.window
+              .showErrorMessage(errorMessageForUSer, upgradeNowLabel)
+              .then((selection) => {
+                if (selection === upgradeNowLabel) {
+                  vscode.commands.executeCommand(
+                    "vscode-sfdx-hardis.execute-command",
+                    `echo y|sf plugins:install sfdx-hardis@${versionToInstall} && sf hardis:work:ws --event refreshPlugins`,
+                  );
+                }
+              });
+          }
+        }
+
+        // Check latest plugin version (may be null when offline / cold cache)
+        const latestPluginVersion: string | null = await getNpmLatestVersion(plugin.name);
+        if (latestPluginVersion === null) {
+          Logger.log(`Latest version for ${plugin.name} is not yet available (cold/offline)`);
+        }
+        let pluginLabel = (plugin as any).isCommunity
+          ? `${plugin.name} ${t("communityPluginLabel")}`
+          : plugin.name;
+        let isPluginMissing = false;
+        const previewLabel = t("pluginPreviewLabel");
+        const regexVersion = new RegExp(
+          `${(plugin as any).altName || plugin.name} (.*)`,
+          "gm",
+        );
+        const versionMatches = [...sfdxPlugins.matchAll(regexVersion)];
+        if (versionMatches.length > 0) {
+          pluginLabel += ` v${versionMatches[0][1]}`;
+        } else {
+          pluginLabel += t("pluginMissingSuffix");
+          isPluginMissing = true;
+        }
+        const pluginItem = {
+          id: `plugin-info-${plugin.name}`,
+          label: pluginLabel,
+          command: `echo "Nothing to do here 😁"`,
+          tooltip: t("sfdxPluginLatestInstalled", { plugin: plugin.name }),
+          status: "dependency-ok",
+          helpUrl: plugin.helpUrl,
+        };
+        // Only show upgrade decoration when we have a known latest version
+        if (
+          latestPluginVersion !== null &&
+          !sfdxPlugins.includes(`${plugin.name} ${latestPluginVersion}`) &&
+          !sfdxPlugins.includes(
+            `${(plugin as any).altName || "nope"} ${latestPluginVersion}`,
+          )
+        ) {
+          pluginItem.label =
+            pluginItem.label.includes("(beta)") ||
+            pluginItem.label.includes("(alpha)")
+              ? pluginItem.label + " " + previewLabel
+              : pluginItem.label.includes("(link)")
+                ? pluginItem.label.replace("(link)", "(localdev)")
+                : isPluginMissing
+                  ? pluginItem.label
+                  : pluginItem.label + upgradeAvailableText;
+          const installTag =
+            plugin.name === "sfdx-hardis" ? getSfdxHardisInstallTag() : "latest";
+          pluginItem.command = `echo y|sf plugins:install ${plugin.name}@${installTag} && sf hardis:work:ws --event refreshPlugins`;
+          pluginItem.tooltip = t("clickToUpgradeSfdxPluginTo", {
+            plugin: plugin.name,
+            version: latestPluginVersion,
+          });
+          if (!pluginItem.label.includes("(localdev)")) {
+            pluginItem.status = isPluginMissing
+              ? "dependency-missing"
+              : pluginItem.label.includes(previewLabel)
+                ? "dependency-preview"
+                : "dependency-warning";
+            if (!pluginItem.label.includes(previewLabel)) {
+              outdated.push(plugin);
+            }
+          }
+        }
+        if (pluginItem.label.includes("(localdev)")) {
+          pluginItem.status = "dependency-local";
+          pluginItem.tooltip = t("usingLocallyDevelopedPlugin", {
+            plugin: plugin.name,
+          });
+        }
+        items.push(pluginItem);
+      });
+      // Await parallel promises to be completed
+      await Promise.allSettled(pluginPromises);
+
+      // Ensure community/custom plugins are always displayed at the end
+      items.sort(
+        (a: any, b: any) => (a.isCommunity ? 1 : 0) - (b.isCommunity ? 1 : 0),
+      );
+
+      // Propose user to upgrade if necessary — once per session
+      let mergeDriverWasEnabled = false;
+      if (outdated.some((plugin) => plugin.name === "sf-git-merge-driver")) {
+        const mergeDriverStatus = await isMergeDriverEnabled(getWorkspaceRoot());
+        mergeDriverWasEnabled = mergeDriverStatus === true;
+      }
+      if (outdated.length > 0) {
+        const upgradeCommand = this.buildUpgradeCommand(
+          outdated,
+          plugins,
+          legacySfdxDetail,
+          sfdxCliOutdated,
+          mergeDriverWasEnabled,
+          sfdxPath,
+          recommendedSfdxCliVersion ?? undefined,
+        );
+        const setupHelper = SetupHelper.getInstance();
+        const vsConfigInner = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+        if (
+          vsConfigInner.get("autoUpdateDependencies") === true &&
+          !setupHelper.hasUpdatesInProgress() &&
+          !PLUGINS_AUTO_UPGRADE_STARTED
+        ) {
+          PLUGINS_AUTO_UPGRADE_STARTED = true;
+          setupHelper.setUpdateInProgress(true, upgradeCommand);
+          execCommandWithProgress(
+            upgradeCommand,
+            { fail: false, output: true },
+            t("autoUpgradingDependencies", { command: upgradeCommand }),
+          )
+            .then(() => {
+              setupHelper.setUpdateInProgress(false, upgradeCommand);
+              vscode.commands.executeCommand(
+                "vscode-sfdx-hardis.refreshPluginsView",
+              );
+            })
+            .catch(() => {
+              setupHelper.setUpdateInProgress(false, upgradeCommand);
+              vscode.commands.executeCommand(
+                "vscode-sfdx-hardis.refreshPluginsView",
+              );
+            });
+        } else if (!setupHelper.hasUpdatesInProgress() && !PLUGINS_OUTDATED_PROMPT_SHOWN) {
+          PLUGINS_OUTDATED_PROMPT_SHOWN = true;
+          const upgradePluginsLabel = t("upgradePlugins");
+          vscode.window
+            .showWarningMessage(t("somePluginsNotUpToDate"), upgradePluginsLabel)
+            .then((selection) => {
+              if (selection === upgradePluginsLabel) {
+                if (vsConfigInner.get("userInput") === "ui-lwc") {
+                  vscode.commands.executeCommand("vscode-sfdx-hardis.showSetup");
+                  return;
+                }
+                vscode.commands.executeCommand(
+                  "vscode-sfdx-hardis.execute-command",
+                  upgradeCommand,
+                );
+              }
+            });
+        }
+      }
+
+      // Store final items and mark detail pass complete
+      PLUGINS_DETAIL_ITEMS = items.sort(
+        (a: any, b: any) => (a.label > b.label ? 1 : -1),
+      );
+      PLUGINS_DETAIL_LOADED = true;
+    } catch (e) {
+      Logger.log("[vscode-sfdx-hardis] runPluginsDetailPass failed: " + String(e));
+      // Fall back to the phase-1 placeholders (installed versions, no upgrade
+      // info) so getPluginsItems returns them via the LOADED===true branch.
+      // Without this, DETAIL_ITEMS stays null and getPluginsItems would fall
+      // through to phase 1 again and relaunch the detail pass — an infinite
+      // refresh loop if the failure is deterministic.
+      if (PLUGINS_DETAIL_ITEMS === null) {
+        PLUGINS_DETAIL_ITEMS = PLUGINS_PHASE1_ITEMS ?? [];
+      }
+      PLUGINS_DETAIL_LOADED = true;
+    } finally {
+      PLUGINS_DETAIL_IN_FLIGHT = false;
+      // Fire refresh so the final decorated rows replace the placeholders
+      vscode.commands.executeCommand(
+        "vscode-sfdx-hardis.refreshPluginsView",
+        true,
+      );
+    }
   }
 
   private buildUpgradeCommand(
@@ -806,6 +973,18 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
   async refresh(keepCache: boolean): Promise<void> {
     if (!keepCache) {
       await resetCache();
+      // Hard refresh: re-run the full two-phase detail pass and re-allow prompts
+      PLUGINS_DETAIL_LOADED = null;
+      PLUGINS_PHASE1_ITEMS = null;
+      PLUGINS_DETAIL_ITEMS = null;
+      PLUGINS_OUTDATED_PROMPT_SHOWN = false;
+      PLUGINS_SFDXHARDIS_PROMPT_SHOWN = false;
+      PLUGINS_AUTO_UPGRADE_STARTED = false;
+      PLUGINS_DETAIL_IN_FLIGHT = false;
+      nodeInstallOk = false;
+      gitInstallOk = false;
+      nodeMissingPromptShown = false;
+      gitMissingPromptShown = false;
     }
     this.themeUtils = new ThemeUtils();
     this._onDidChangeTreeData.fire();
