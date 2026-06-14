@@ -135,6 +135,7 @@ export function registerShowDataWorkbench(commands: Commands) {
             workspaces: workspaces,
             loading: false,
           });
+          // jscpd:ignore-start
         } catch (e: any) {
           Logger.log(
             "[vscode-sfdx-hardis] Data Workbench init failed: " +
@@ -145,6 +146,7 @@ export function registerShowDataWorkbench(commands: Commands) {
             loadError: String(e?.message || e),
           });
         }
+        // jscpd:ignore-end
       };
 
       panel.onMessage(async (type: string, data: any) => {

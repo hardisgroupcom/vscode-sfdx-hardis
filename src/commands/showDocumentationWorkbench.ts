@@ -146,6 +146,7 @@ export function registerShowDocumentationWorkbench(commands: Commands) {
             ...buildDocConfigPayload(config, schema),
             loading: false,
           });
+          // jscpd:ignore-start
         } catch (e: any) {
           Logger.log(
             "[vscode-sfdx-hardis] Documentation Workbench init failed: " +
@@ -156,6 +157,7 @@ export function registerShowDocumentationWorkbench(commands: Commands) {
             loadError: String(e?.message || e),
           });
         }
+        // jscpd:ignore-end
       };
 
       panel.onMessage(async (type: string, data: any) => {
