@@ -2,10 +2,20 @@ import * as vscode from "vscode";
 import { GitProvider } from "./gitProvider";
 import { Octokit } from "@octokit/rest";
 import type { Endpoints } from "@octokit/types";
-import { ProviderDescription, PullRequest, Job, JobStatus } from "./types";
+import {
+  CreateTokenOption,
+  ProviderDescription,
+  PullRequest,
+  Job,
+  JobStatus,
+} from "./types";
 import { Logger } from "../../logger";
+import { SecretsManager } from "../secretsManager";
 import { t } from "../../i18n/i18n";
-import { showAuthFailureGuidance } from "../providerCredentials";
+import {
+  promptForToken,
+  showAuthFailureGuidance,
+} from "../providerCredentials";
 
 export class GitProviderGitHub extends GitProvider {
   gitHubClient: InstanceType<typeof Octokit> | null = null;
@@ -14,10 +24,29 @@ export class GitProviderGitHub extends GitProvider {
     return true;
   }
 
+  getCreateTokenOptions(): CreateTokenOption[] {
+    // Both github.com and GitHub Enterprise expose tokens under /settings/tokens.
+    // github.com normally uses native VS Code sign-in, but the user can still
+    // choose to authenticate with a personal access token.
+    const host = this.repoInfo?.host || "github.com";
+    return [
+      {
+        id: "pat",
+        label: t("createGithubPat"),
+        url: `https://${host}/settings/tokens`,
+        scopesHint: "repo",
+      },
+    ];
+  }
+
   async disconnect(): Promise<void> {
-    // GitHub uses VS Code's embedded authentication
-    // We don't delete the session here as it's managed by VS Code
-    // Just clear local state
+    // GitHub can use either VS Code's embedded authentication (session managed by
+    // VS Code, not deleted here) or a stored personal access token. Remove the PAT.
+    try {
+      await SecretsManager.deleteSecret(this.hostKey + "_TOKEN");
+    } catch {
+      // Ignore if secret doesn't exist
+    }
     this.gitHubClient = null;
     this.isActive = false;
     Logger.log(
@@ -37,26 +66,71 @@ export class GitProviderGitHub extends GitProvider {
   }
 
   async authenticate(): Promise<boolean | null> {
+    const builtInLabel = t("githubAuthBuiltIn");
+    const tokenLabel = t("githubAuthToken");
+    const choice = await vscode.window.showInformationMessage(
+      t("githubAuthMethod"),
+      { modal: true },
+      builtInLabel,
+      tokenLabel,
+    );
+    if (!choice) {
+      return null;
+    }
+    if (choice === tokenLabel) {
+      return await this.authenticateWithToken();
+    }
+    return await this.authenticateWithBuiltIn();
+  }
+
+  private async authenticateWithBuiltIn(): Promise<boolean> {
     const session = await vscode.authentication.getSession("github", ["repo"], {
       forceNewSession: true,
     });
-    if (session.accessToken) {
+    if (session?.accessToken) {
+      // Drop any stored PAT so initialize() relies on the native VS Code session
+      await SecretsManager.deleteSecret(this.hostKey + "_TOKEN").catch(() => {});
       await this.initialize();
       return this.isActive;
     }
     return false;
   }
 
-  async initialize() {
-    const session = await vscode.authentication.getSession("github", ["repo"], {
-      createIfNone: false,
+  private async authenticateWithToken(): Promise<boolean | null> {
+    const token = await promptForToken({
+      providerLabel: "GitHub",
+      inputPrompt: t("githubEnterPAT"),
+      createTokenOptions: this.getCreateTokenOptions(),
     });
-    if (!session || !this.repoInfo?.host || !this.repoInfo.remoteUrl) {
+    if (!token) {
+      return null;
+    }
+    await SecretsManager.setSecret(this.hostKey + "_TOKEN", token);
+    await this.initialize();
+    return this.isActive;
+  }
+
+  async initialize() {
+    if (!this.repoInfo?.host || !this.repoInfo.remoteUrl) {
+      return;
+    }
+    // Prefer a stored personal access token; otherwise fall back to the native
+    // VS Code GitHub session.
+    let accessToken = await SecretsManager.getSecret(this.hostKey + "_TOKEN");
+    if (!accessToken) {
+      const session = await vscode.authentication.getSession(
+        "github",
+        ["repo"],
+        { createIfNone: false },
+      );
+      accessToken = session?.accessToken;
+    }
+    if (!accessToken) {
       return;
     }
     try {
       this.gitHubClient = new Octokit({
-        auth: session.accessToken,
+        auth: accessToken,
         baseUrl:
           this.repoInfo.host === "github.com"
             ? undefined
@@ -74,9 +148,7 @@ export class GitProviderGitHub extends GitProvider {
       showAuthFailureGuidance({
         providerName: isEnterprise ? "GitHub Enterprise" : "GitHub",
         guidance: t("githubEnterpriseAuthInfo"),
-        createTokenUrl: isEnterprise
-          ? `https://${this.repoInfo?.host}/settings/tokens`
-          : undefined,
+        retry: () => this.reauthenticateAndRefresh(),
         docUrl:
           "https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens",
       });

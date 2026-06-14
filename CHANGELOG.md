@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Git provider sign-in: when connecting to a git provider, the token prompt now appears as a modal dialog (so it is no longer missed) and first asks whether you already have an access token or want help creating one
+  - Choosing "help me create one" opens the correct token creation page for your provider (GitHub, GitLab, Gitea, Azure DevOps, Bitbucket), then returns to the prompt so you can paste the new token
+  - The prompt now tells you exactly which permissions/scopes to select when creating the token (covering read/write pull requests and comments, issues, and running builds/pipelines), so the token also works for the sfdx-hardis CI/CD commands
+  - When authentication fails (wrong or expired token), the error message now offers "Sign in again" which restarts the exact same guided flow and refreshes the pipeline once reconnected, instead of just linking to the token page
+  - GitHub now lets you choose between signing in with the built-in VS Code account and using a personal access token (the token option also works for GitHub Enterprise and for github.com)
+  - Bitbucket now lets you pick which kind of token to use: a Repository Access Token (for repository admins) or an Atlassian account API token (for non-admins), each opening its own creation page
+  - Gitea is now supported as a git provider: it is auto-detected for `gitea.*` hosts, and can be forced for any self-hosted instance by setting `gitProvider: gitea` in `.sfdx-hardis.yml`
+
 ## [7.10.5] 2026-06-13
 
 - Fixes

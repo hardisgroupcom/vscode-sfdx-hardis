@@ -1,15 +1,23 @@
-import * as vscode from "vscode";
 import { GitProvider } from "./gitProvider";
 import { Gitlab } from "@gitbeaker/rest";
 import type {
   MergeRequestSchemaWithBasicLabels,
   Camelize,
 } from "@gitbeaker/rest";
-import { ProviderDescription, PullRequest, Job, JobStatus } from "./types";
+import {
+  CreateTokenOption,
+  ProviderDescription,
+  PullRequest,
+  Job,
+  JobStatus,
+} from "./types";
 import { SecretsManager } from "../secretsManager";
 import { Logger } from "../../logger";
 import { t } from "../../i18n/i18n";
-import { showAuthFailureGuidance } from "../providerCredentials";
+import {
+  promptForToken,
+  showAuthFailureGuidance,
+} from "../providerCredentials";
 
 export class GitProviderGitlab extends GitProvider {
   gitlabClient: InstanceType<typeof Gitlab> | null = null;
@@ -17,11 +25,25 @@ export class GitProviderGitlab extends GitProvider {
   gitlabProjectId: number | null = null;
   secretTokenIdentifier: string = "";
 
+  getCreateTokenOptions(): CreateTokenOption[] {
+    if (!this.repoInfo?.host) {
+      return [];
+    }
+    return [
+      {
+        id: "pat",
+        label: t("createGitlabPat"),
+        url: `https://${this.repoInfo.host}/-/user_settings/personal_access_tokens?name=sfdx-hardis&scopes=api,read_user,read_repository,write_repository`,
+        scopesHint: "api, read_user, read_repository, write_repository",
+      },
+    ];
+  }
+
   async authenticate(): Promise<boolean | null> {
-    const token = await vscode.window.showInputBox({
-      prompt: t("gitlabEnterPAT"),
-      ignoreFocusOut: true,
-      password: true,
+    const token = await promptForToken({
+      providerLabel: "GitLab",
+      inputPrompt: t("gitlabEnterPAT"),
+      createTokenOptions: this.getCreateTokenOptions(),
     });
     if (token) {
       await SecretsManager.setSecret(this.secretTokenIdentifier, token);
@@ -147,7 +169,7 @@ export class GitProviderGitlab extends GitProvider {
         showAuthFailureGuidance({
           providerName: "GitLab",
           guidance: t("gitlabAuthInfo"),
-          createTokenUrl: `https://${this.repoInfo.host}/-/user_settings/personal_access_tokens?name=sfdx-hardis&scopes=api,read_user`,
+          retry: () => this.reauthenticateAndRefresh(),
           docUrl:
             "https://docs.gitlab.com/user/profile/personal_access_tokens/",
         });
