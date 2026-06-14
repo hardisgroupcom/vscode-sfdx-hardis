@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { GitProvider } from "./gitProviders/gitProvider";
+import { CreateTokenOption } from "./gitProviders/types";
 import { TicketProvider } from "./ticketProviders/ticketProvider";
 import { SecretsManager } from "./secretsManager";
 import { getConfig } from "./pipeline/sfdxHardisConfig";
@@ -7,20 +8,96 @@ import { Logger } from "../logger";
 import { t } from "../i18n/i18n";
 
 /**
+ * Prompts the user for a git provider access token.
+ *
+ * First shows a MODAL choice (so users actually notice it) asking whether they already
+ * have a token or want help creating one. When the provider exposes one or more token
+ * creation pages (`createTokenOptions`), each is offered as a button that opens the page
+ * in the browser, then returns to the choice so the user can paste the freshly created
+ * token. The actual token entry uses a password InputBox.
+ *
+ * @returns the entered token, or null if the user cancelled at any step.
+ */
+export async function promptForToken(options: {
+  providerLabel: string; // brand name, e.g. "GitLab" (not translated)
+  inputPrompt: string; // translated InputBox prompt
+  createTokenOptions: CreateTokenOption[];
+  password?: boolean; // default true
+}): Promise<string | null> {
+  const { providerLabel, inputPrompt, createTokenOptions } = options;
+  const password = options.password !== false;
+
+  // When the provider knows where tokens are created, drive a modal choice that can
+  // route the user to the right creation page before they paste the token.
+  if (createTokenOptions.length > 0) {
+    const alreadyHaveLabel = t("iAlreadyHaveToken");
+    // Tell the user which scopes/permissions to select when creating the token.
+    const scopeHints = createTokenOptions
+      .map((option) => option.scopesHint)
+      .filter((hint): hint is string => !!hint);
+    const detail =
+      scopeHints.length > 0
+        ? t("tokenScopesHint", { scopes: scopeHints.join("; ") })
+        : undefined;
+    // Loop so that after opening a creation page the user comes back to the choice.
+    for (;;) {
+      const buttons = [
+        alreadyHaveLabel,
+        ...createTokenOptions.map((option) => option.label),
+      ];
+      const choice = await vscode.window.showInformationMessage(
+        t("gitTokenIntro", { provider: providerLabel }),
+        { modal: true, detail },
+        ...buttons,
+      );
+      if (!choice) {
+        // Modal dismissed / cancelled
+        return null;
+      }
+      if (choice === alreadyHaveLabel) {
+        break;
+      }
+      const selectedOption = createTokenOptions.find(
+        (option) => option.label === choice,
+      );
+      if (selectedOption) {
+        await vscode.env.openExternal(vscode.Uri.parse(selectedOption.url));
+        // Loop back to the modal so the user can paste the token once created
+      }
+    }
+  }
+
+  const token = await vscode.window.showInputBox({
+    prompt: inputPrompt,
+    ignoreFocusOut: true,
+    password,
+  });
+  return token ?? null;
+}
+
+/**
  * Shows a non-blocking VS Code information message when provider authentication fails.
- * Includes buttons to open the token creation page on the provider tenant (when available)
- * and the provider's documentation.
+ *
+ * When a `retry` callback is provided (git providers), the message offers a "Sign in
+ * again" button that re-runs the exact same authentication flow as clicking the git
+ * provider icon (token-type choice, token creation page with the right scopes, token
+ * entry) — unifying the failure path with the proactive one. Otherwise (e.g. ticketing
+ * providers) it falls back to a "Create Token" button opening `createTokenUrl`.
  */
 export function showAuthFailureGuidance(options: {
   providerName: string;
   guidance: string;
   createTokenUrl?: string;
   docUrl: string;
+  retry?: () => Promise<void> | void;
 }): void {
   const buttons: string[] = [];
   const urlMap: Record<string, string> = {};
 
-  if (options.createTokenUrl) {
+  const retryLabel = t("signInAgain");
+  if (options.retry) {
+    buttons.push(retryLabel);
+  } else if (options.createTokenUrl) {
     const createLabel = t("createToken");
     buttons.push(createLabel);
     urlMap[createLabel] = options.createTokenUrl;
@@ -36,7 +113,9 @@ export function showAuthFailureGuidance(options: {
     options.guidance;
 
   vscode.window.showInformationMessage(message, ...buttons).then((action) => {
-    if (action && urlMap[action]) {
+    if (action === retryLabel && options.retry) {
+      options.retry();
+    } else if (action && urlMap[action]) {
       vscode.env.openExternal(vscode.Uri.parse(urlMap[action]));
     }
   });
@@ -83,13 +162,21 @@ export async function collectProviderCredentialEnvVars(): Promise<
 
       switch (providerName) {
         case "github": {
-          const session = await vscode.authentication.getSession(
-            "github",
-            ["repo"],
-            { createIfNone: false, silent: true },
+          // Prefer a stored personal access token; otherwise use the native session
+          const storedToken = await SecretsManager.getSecret(
+            hostKey + "_TOKEN",
           );
-          if (session?.accessToken) {
-            env.GITHUB_TOKEN = session.accessToken;
+          if (storedToken) {
+            env.GITHUB_TOKEN = storedToken;
+          } else {
+            const session = await vscode.authentication.getSession(
+              "github",
+              ["repo"],
+              { createIfNone: false, silent: true },
+            );
+            if (session?.accessToken) {
+              env.GITHUB_TOKEN = session.accessToken;
+            }
           }
           break;
         }

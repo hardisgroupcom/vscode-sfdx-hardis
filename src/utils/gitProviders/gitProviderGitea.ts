@@ -1,14 +1,30 @@
-import * as vscode from "vscode";
 import { Octokit } from "@octokit/rest";
-import { ProviderDescription } from "./types";
+import { CreateTokenOption, ProviderDescription } from "./types";
 import { GitProviderGitHub } from "./gitProviderGitHub";
 import { SecretsManager } from "../secretsManager";
 import { Logger } from "../../logger";
 import { t } from "../../i18n/i18n";
-import { showAuthFailureGuidance } from "../providerCredentials";
+import {
+  promptForToken,
+  showAuthFailureGuidance,
+} from "../providerCredentials";
 
 export class GitProviderGitea extends GitProviderGitHub {
   secretTokenIdentifier: string = "";
+
+  getCreateTokenOptions(): CreateTokenOption[] {
+    if (!this.repoInfo?.host) {
+      return [];
+    }
+    return [
+      {
+        id: "pat",
+        label: t("createGiteaPat"),
+        url: `https://${this.repoInfo.host}/user/settings/applications`,
+        scopesHint: "write:repository, write:issue, read:user",
+      },
+    ];
+  }
 
   handlesNativeGitAuth(): boolean {
     return false;
@@ -52,10 +68,10 @@ export class GitProviderGitea extends GitProviderGitHub {
   }
 
   async authenticate(): Promise<boolean | null> {
-    const token = await vscode.window.showInputBox({
-      prompt: t("giteaEnterPAT"),
-      ignoreFocusOut: true,
-      password: true,
+    const token = await promptForToken({
+      providerLabel: "Gitea",
+      inputPrompt: t("giteaEnterPAT"),
+      createTokenOptions: this.getCreateTokenOptions(),
     });
     if (token) {
       await SecretsManager.setSecret(this.secretTokenIdentifier, token);
@@ -76,7 +92,8 @@ export class GitProviderGitea extends GitProviderGitHub {
     try {
       this.gitHubClient = new Octokit({
         auth: giteaToken,
-        baseUrl: (this.repoInfo.host = `https://${this.repoInfo.host}/api/v3`),
+        // Gitea exposes a GitHub-compatible API under /api/v1
+        baseUrl: `https://${this.repoInfo.host}/api/v1`,
       });
       // validate token by calling GET /user
       await this.gitHubClient.request("GET /user");
@@ -87,7 +104,7 @@ export class GitProviderGitea extends GitProviderGitHub {
       showAuthFailureGuidance({
         providerName: "Gitea",
         guidance: t("giteaAuthInfo"),
-        createTokenUrl: `https://${this.repoInfo?.host || ""}/user/settings/applications`,
+        retry: () => this.reauthenticateAndRefresh(),
         docUrl: "https://docs.gitea.com/development/api-usage",
       });
     }
