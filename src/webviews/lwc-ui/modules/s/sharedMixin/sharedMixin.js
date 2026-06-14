@@ -122,4 +122,34 @@ export const SharedMixin = (BaseClass) =>
         this._colorContrast = data.colorContrast;
       }
     }
+
+    // --- Lazy-load three-state contract -------------------------------------
+    // Panels that load asynchronously declare reactive `loading` / `loadError`
+    // fields and render a spinner / error / content view. These getters expose
+    // the three render states to their templates; `applyLoadingState` applies
+    // the loading flags carried by an incoming initialize() payload.
+
+    get isLoadingState() {
+      return this.loading === true && !this.loadError;
+    }
+
+    get hasError() {
+      return !!this.loadError;
+    }
+
+    get isReady() {
+      return this.loading !== true && !this.loadError;
+    }
+
+    applyLoadingState(data) {
+      if (Object.prototype.hasOwnProperty.call(data, "loading")) {
+        this.loading = data.loading === true;
+        if (this.loading) {
+          this.loadError = null;
+        }
+      }
+      if (Object.prototype.hasOwnProperty.call(data, "loadError")) {
+        this.loadError = data.loadError || null;
+      }
+    }
   };

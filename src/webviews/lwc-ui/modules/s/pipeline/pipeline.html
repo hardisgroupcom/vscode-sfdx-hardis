@@ -98,194 +98,207 @@
                 </div>
             </div>
         </div>
-        <template if:true={pipelineData}>
-            <template if:true={pipelineData.orgs}>
-                <template if:true={pipelineData.orgs.length}>
-                    <div class="pipeline-container">
-                        <template if:true={loading}>
-                            <div class="slds-align_absolute-center slds-m-vertical_small">
-                                <s-spinner alternative-text={i18n.loadingPipelineData} size="medium" variant="brand"></s-spinner>
-                            </div>
-                        </template>
-                        <div style="position: relative;">
-                            <template if:true={loading}>
-                                <div class="pipeline-loading-overlay"></div>
-                            </template>
-                            <div class="pipeline-diagram-controls">
-                                <lightning-button-group>
-                                    <lightning-button-icon
-                                        icon-name="utility:zoomin"
-                                        variant="border-filled"
-                                        alternative-text={i18n.zoomDiagram}
-                                        title={i18n.zoomDiagram}
-                                        onclick={handleMermaidZoomIn}
-                                    ></lightning-button-icon>
-                                    <lightning-button-icon
-                                        icon-name="utility:zoomout"
-                                        variant="border-filled"
-                                        alternative-text={i18n.unzoomDiagram}
-                                        title={i18n.unzoomDiagram}
-                                        onclick={handleMermaidZoomOut}
-                                        disabled={isMermaidUnzoomed}
-                                    ></lightning-button-icon>
-                                </lightning-button-group>
-                            </div>
-                            <div class={mermaidViewportClass} onmousedown={handleMermaidMouseDown} onwheel={handleMermaidWheel}>
-                                <div class="mermaid"></div>
-                            </div>
-                        </div>
-                        <template if:true={error}>
-                            <pre class="mermaid-debug" style="color:#888;font-size:10px;max-height:100px;overflow:auto;"></pre>
-                        </template>
-                        <template if:true={hasWarnings}>
-                            <div class="slds-box slds-theme_warning slds-m-top_small" style="font-size:13px;">
-                                <div class="slds-text-title_caps slds-m-bottom_x-small">{i18n.warnings}</div>
-                                <ul class="slds-list_dotted">
-                                    <template for:each={warnings} for:item="warning">
-                                        <li key={warning}>{warning}</li>
+
+        <!-- Diagram region: fatal error OR mermaid spinner OR diagram content -->
+        <template if:true={hasError}>
+            <div class="slds-text-align_center slds-p-around_large">
+                <p>{i18n.featureLoadFailed}</p>
+                <p class="slds-text-color_weak slds-text-body_small slds-m-top_small">{loadError}</p>
+                <div class="slds-m-top_medium"><lightning-button label={i18n.tryAgainLabel} onclick={handleRetry}></lightning-button></div>
+            </div>
+        </template>
+        <template if:false={hasError}>
+            <template if:true={isMermaidLoading}>
+                <div class="slds-is-relative slds-p-vertical_large slds-text-align_center">
+                    <lightning-spinner alternative-text={i18n.loadingPipelineData} size="medium"></lightning-spinner>
+                </div>
+            </template>
+            <template if:false={isMermaidLoading}>
+                <template if:true={pipelineData}>
+                    <template if:true={pipelineData.orgs}>
+                        <template if:true={pipelineData.orgs.length}>
+                            <div class="pipeline-container">
+                                <div style="position: relative;">
+                                    <!-- Manual refresh: keep the diagram visible with a spinner overlaid on top -->
+                                    <template if:true={isMermaidRefreshing}>
+                                        <div class="pipeline-loading-overlay"></div>
+                                        <lightning-spinner alternative-text={i18n.loadingPipelineData} size="medium" variant="brand"></lightning-spinner>
                                     </template>
-                                </ul>
+                                    <div class="pipeline-diagram-controls">
+                                        <lightning-button-group>
+                                            <lightning-button-icon
+                                                icon-name="utility:zoomin"
+                                                variant="border-filled"
+                                                alternative-text={i18n.zoomDiagram}
+                                                title={i18n.zoomDiagram}
+                                                onclick={handleMermaidZoomIn}
+                                            ></lightning-button-icon>
+                                            <lightning-button-icon
+                                                icon-name="utility:zoomout"
+                                                variant="border-filled"
+                                                alternative-text={i18n.unzoomDiagram}
+                                                title={i18n.unzoomDiagram}
+                                                onclick={handleMermaidZoomOut}
+                                                disabled={isMermaidUnzoomed}
+                                            ></lightning-button-icon>
+                                        </lightning-button-group>
+                                    </div>
+                                    <div class={mermaidViewportClass} onmousedown={handleMermaidMouseDown} onwheel={handleMermaidWheel}>
+                                        <div class="mermaid"></div>
+                                    </div>
+                                </div>
+                                <template if:true={error}>
+                                    <pre class="mermaid-debug" style="color:#888;font-size:10px;max-height:100px;overflow:auto;"></pre>
+                                </template>
+                                <template if:true={hasWarnings}>
+                                    <div class="slds-box slds-theme_warning slds-m-top_small" style="font-size:13px;">
+                                        <div class="slds-text-title_caps slds-m-bottom_x-small">{i18n.warnings}</div>
+                                        <ul class="slds-list_dotted">
+                                            <template for:each={warnings} for:item="warning">
+                                                <li key={warning}>{warning}</li>
+                                            </template>
+                                        </ul>
+                                    </div>
+                                </template>
                             </div>
                         </template>
-                    </div>
+                        <template if:false={pipelineData.orgs.length}>
+                            <div class="slds-align_absolute-center" style="flex-direction:column;display:flex;align-items:center;padding:2rem;">
+                                <div class="slds-text-heading_medium slds-m-bottom_medium">{i18n.noPipelineConfigured}</div>
+                                <div class="slds-m-bottom_medium">{i18n.noPipelineConfiguredDescription}</div>
+                                <a class="slds-button slds-button_brand slds-m-bottom_medium" href="https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/" target="_blank">{i18n.configureDevOpsPipeline}</a>
+                                <a href="https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/" target="_blank" style="display:block;max-width:600px;width:100%;margin:1.5rem 0;">
+                                    <img src="https://sfdx-hardis.cloudity.com/assets/images/devops-comparison.png" alt="DevOps Comparison" style="max-width:600px;width:100%;box-shadow:0 2px 8px #0001;border-radius:8px;" />
+                                </a>
+                                <div class="slds-m-bottom_medium slds-text-body_regular" style="max-width:600px;text-align:center;">{i18n.pipelineDevOpsComparison}</div>
+                            </div>
+                        </template>
+                    </template>
                 </template>
-                <template if:false={pipelineData.orgs.length}>
-                    <div class="slds-align_absolute-center" style="flex-direction:column;display:flex;align-items:center;padding:2rem;">
-                        <div class="slds-text-heading_medium slds-m-bottom_medium">{i18n.noPipelineConfigured}</div>
-                        <div class="slds-m-bottom_medium">{i18n.noPipelineConfiguredDescription}</div>
-                        <a class="slds-button slds-button_brand slds-m-bottom_medium" href="https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/" target="_blank">{i18n.configureDevOpsPipeline}</a>
-                        <a href="https://sfdx-hardis.cloudity.com/salesforce-ci-cd-home/" target="_blank" style="display:block;max-width:600px;width:100%;margin:1.5rem 0;">
-                            <img src="https://sfdx-hardis.cloudity.com/assets/images/devops-comparison.png" alt="DevOps Comparison" style="max-width:600px;width:100%;box-shadow:0 2px 8px #0001;border-radius:8px;" />
-                        </a>
-                        <div class="slds-m-bottom_medium slds-text-body_regular" style="max-width:600px;text-align:center;">{i18n.pipelineDevOpsComparison}</div>
-                    </div>
+                <template if:true={error}>
+                    <p class="slds-text-color_error">{errorLoadingPipelineMsg}</p>
                 </template>
             </template>
-        </template>
-        <template if:false={pipelineData}>
-            <p>{i18n.loadingPipelineData}</p>
-        </template>
-        <template if:true={error}>
-            <p class="slds-text-color_error">{errorLoadingPipelineMsg}</p>
         </template>
     </lightning-card>
 
-    <!-- Quick Development Actions Card - only show when pipeline data exists -->
-    <template if:true={pipelineData}>
-        <template if:true={pipelineData.orgs}>
-            <template if:true={pipelineData.orgs.length}>
-                <div class="pipeline-card-spacing">
-                    <lightning-card hide-header="true">
-                    <lightning-tabset class="pipeline-tabs">
-                        <lightning-tab label={i18n.projectContributionWorkflow} value="workflow" icon-name="utility:trail" icon-assistive-text={i18n.projectContributionWorkflow}>
-                            <div class="commands-grid">
-                                <div class="command-card" onclick={handleNewUserStory}>
-                                    <div class="command-header">
-                                        <div class="command-icon-container new-story">
-                                            <lightning-icon icon-name="utility:add" size="small" variant="inverse"></lightning-icon>
-                                        </div>
-                                        <h3 class="command-title">{i18n.newUserStory}</h3>
-                                    </div>
-                                    <p class="command-description">{i18n.newUserStoryDescription}</p>
-                                </div>
-                                <div class="command-card" onclick={handleOpenMetadataRetriever}>
-                                    <div class="command-header">
-                                        <div class="command-icon-container pull-action">
-                                            <lightning-icon icon-name="utility:download" size="small" variant="inverse"></lightning-icon>
-                                        </div>
-                                        <h3 class="command-title">{i18n.commitChanges}</h3>
-                                    </div>
-                                    <p class="command-description">{i18n.commitChangesDescription}</p>
-                                </div>
-                                <div class="command-card" onclick={handleShowInstalledPackages}>
-                                    <div class="command-header">
-                                        <div class="command-icon-container package-action">
-                                            <lightning-icon icon-name="utility:package" size="small" variant="inverse"></lightning-icon>
-                                        </div>
-                                        <h3 class="command-title">{i18n.managePackages}</h3>
-                                    </div>
-                                    <p class="command-description">{i18n.managePackagesDescription}</p>
-                                </div>
-                                <div class="command-card" onclick={handleSaveUserStory}>
-                                    <div class="command-header">
-                                        <div class="command-icon-container save-action">
-                                            <lightning-icon icon-name="utility:upload" size="small" variant="inverse"></lightning-icon>
-                                        </div>
-                                        <h3 class="command-title">{i18n.savePublish}</h3>
-                                    </div>
-                                    <p class="command-description">{i18n.savePublishDescription}</p>
-                                </div>
-                                <div class={currentPrCardClasses} onclick={handleOpenCurrentPR}>
-                                    <div class="command-header">
-                                        <div class="command-icon-container pr-action" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                                            <lightning-icon icon-name="utility:topic2" size="small" variant="inverse"></lightning-icon>
-                                        </div>
-                                        <h3 class="command-title">{currentPRCardTitle}</h3>
-                                    </div>
-                                    <p class="command-description">{currentPRDescription}</p>
-                                </div>
-                                <template if:true={hasAutoFixPullRequest}>
-                                    <div class="command-card" onclick={handleOpenAutoFixPR}>
-                                        <div class="command-header">
-                                            <div class="command-icon-container" style="background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);">
-                                                <lightning-icon icon-name="utility:task" size="small" variant="inverse"></lightning-icon>
-                                            </div>
-                                            <h3 class="command-title">{autoFixPRCardTitle}</h3>
-                                        </div>
-                                        <p class="command-description">{autoFixPRDescription}</p>
-                                    </div>
-                                </template>
-                                <div class="command-card" onclick={handleBackpromote}>
-                                    <div class="command-header">
-                                        <div class="command-icon-container" style="background: linear-gradient(135deg, #0ea5e9 0%, #10b981 100%);">
-                                            <lightning-icon icon-name="utility:merge" size="small" variant="inverse"></lightning-icon>
-                                        </div>
-                                        <h3 class="command-title">{i18n.backpromote}</h3>
-                                    </div>
-                                    <p class="command-description">{i18n.backpromoteDescription}</p>
-                                </div>
+    <!-- Quick Development Actions Card - always rendered so static actions are available immediately -->
+    <div class="pipeline-card-spacing">
+        <lightning-card hide-header="true">
+        <lightning-tabset class="pipeline-tabs">
+            <lightning-tab label={i18n.projectContributionWorkflow} value="workflow" icon-name="utility:trail" icon-assistive-text={i18n.projectContributionWorkflow}>
+                <div class="commands-grid">
+                    <div class="command-card" onclick={handleNewUserStory}>
+                        <div class="command-header">
+                            <div class="command-icon-container new-story">
+                                <lightning-icon icon-name="utility:add" size="small" variant="inverse"></lightning-icon>
                             </div>
-                        </lightning-tab>
-                        <lightning-tab label={openPrTabLabel} value="prs" icon-name="utility:topic2" icon-assistive-text={openPrTabLabel}>
-                                <template if:true={gitAuthenticated}>
-                                    <lightning-datatable
-                                        key-field="id"
-                                        data={openPullRequests}
-                                        column-widths-mode="auto"
-                                        columns={prColumns}
-                                        hide-checkbox-column
-                                        onrowaction={handlePRRowAction}
-                                    ></lightning-datatable>
-                                    <template if:true={prButtonInfo}>
-                                        <div class="slds-m-top_small slds-align_absolute-center">
-                                            <lightning-button 
-                                                icon-name="utility:share"
-                                                variant="brand"
-                                                label={prButtonInfo.label} 
-                                                title={prButtonInfo.label} 
-                                                onclick={openPrPage}
-                                            ></lightning-button>
-                                        </div>
-                                    </template>
-                                </template>
-                                <template if:false={gitAuthenticated}>
-                                    <div class="slds-m-around_small slds-grid slds-grid_align-center">
-                                        <lightning-button
-                                            icon-name={connectedIconName}
-                                            variant={connectedVariant}
-                                            label={connectedLabel}
-                                            title={i18n.connectToGitProvider}
-                                            onclick={handleGitConnect}
-                                        ></lightning-button>
-                                    </div>
-                                </template>
-                        </lightning-tab>
-                    </lightning-tabset>
-                    </lightning-card>
+                            <h3 class="command-title">{i18n.newUserStory}</h3>
+                        </div>
+                        <p class="command-description">{i18n.newUserStoryDescription}</p>
+                    </div>
+                    <div class="command-card" onclick={handleOpenMetadataRetriever}>
+                        <div class="command-header">
+                            <div class="command-icon-container pull-action">
+                                <lightning-icon icon-name="utility:download" size="small" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="command-title">{i18n.commitChanges}</h3>
+                        </div>
+                        <p class="command-description">{i18n.commitChangesDescription}</p>
+                    </div>
+                    <div class="command-card" onclick={handleShowInstalledPackages}>
+                        <div class="command-header">
+                            <div class="command-icon-container package-action">
+                                <lightning-icon icon-name="utility:package" size="small" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="command-title">{i18n.managePackages}</h3>
+                        </div>
+                        <p class="command-description">{i18n.managePackagesDescription}</p>
+                    </div>
+                    <div class="command-card" onclick={handleSaveUserStory}>
+                        <div class="command-header">
+                            <div class="command-icon-container save-action">
+                                <lightning-icon icon-name="utility:upload" size="small" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="command-title">{i18n.savePublish}</h3>
+                        </div>
+                        <p class="command-description">{i18n.savePublishDescription}</p>
+                    </div>
+                    <div class={currentPrCardClasses} onclick={handleOpenCurrentPR}>
+                        <div class="command-header">
+                            <div class="command-icon-container pr-action" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                                <lightning-icon icon-name="utility:topic2" size="small" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="command-title">{currentPRCardTitle}</h3>
+                        </div>
+                        <p class="command-description">{currentPRDescription}</p>
+                    </div>
+                    <template if:true={hasAutoFixPullRequest}>
+                        <div class="command-card" onclick={handleOpenAutoFixPR}>
+                            <div class="command-header">
+                                <div class="command-icon-container" style="background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);">
+                                    <lightning-icon icon-name="utility:task" size="small" variant="inverse"></lightning-icon>
+                                </div>
+                                <h3 class="command-title">{autoFixPRCardTitle}</h3>
+                            </div>
+                            <p class="command-description">{autoFixPRDescription}</p>
+                        </div>
+                    </template>
+                    <div class="command-card" onclick={handleBackpromote}>
+                        <div class="command-header">
+                            <div class="command-icon-container" style="background: linear-gradient(135deg, #0ea5e9 0%, #10b981 100%);">
+                                <lightning-icon icon-name="utility:merge" size="small" variant="inverse"></lightning-icon>
+                            </div>
+                            <h3 class="command-title">{i18n.backpromote}</h3>
+                        </div>
+                        <p class="command-description">{i18n.backpromoteDescription}</p>
+                    </div>
                 </div>
-            </template>
-        </template>
-    </template>
+            </lightning-tab>
+            <lightning-tab label={openPrTabLabel} value="prs" icon-name="utility:topic2" icon-assistive-text={openPrTabLabel}>
+                    <template if:true={isPrLoading}>
+                        <div class="slds-is-relative slds-p-vertical_large slds-text-align_center">
+                            <lightning-spinner alternative-text={i18n.loadingLabel} size="medium"></lightning-spinner>
+                        </div>
+                    </template>
+                    <template if:false={isPrLoading}>
+                        <template if:true={gitAuthenticated}>
+                            <lightning-datatable
+                                key-field="id"
+                                data={openPullRequests}
+                                column-widths-mode="auto"
+                                columns={prColumns}
+                                hide-checkbox-column
+                                onrowaction={handlePRRowAction}
+                            ></lightning-datatable>
+                            <template if:true={prButtonInfo}>
+                                <div class="slds-m-top_small slds-align_absolute-center">
+                                    <lightning-button
+                                        icon-name="utility:share"
+                                        variant="brand"
+                                        label={prButtonInfo.label}
+                                        title={prButtonInfo.label}
+                                        onclick={openPrPage}
+                                    ></lightning-button>
+                                </div>
+                            </template>
+                        </template>
+                        <template if:false={gitAuthenticated}>
+                            <div class="slds-m-around_small slds-grid slds-grid_align-center">
+                                <lightning-button
+                                    icon-name={connectedIconName}
+                                    variant={connectedVariant}
+                                    label={connectedLabel}
+                                    title={i18n.connectToGitProvider}
+                                    onclick={handleGitConnect}
+                                ></lightning-button>
+                            </div>
+                        </template>
+                    </template>
+            </lightning-tab>
+        </lightning-tabset>
+        </lightning-card>
+    </div>
     </div>
 
     <!-- PR Modal -->

@@ -28,6 +28,21 @@
         </div>
       </div>
 
+      <!-- Panel-level three-state body switch -->
+      <template if:true={isPanelLoading}>
+        <div class="slds-is-relative slds-p-vertical_large slds-text-align_center">
+          <lightning-spinner alternative-text={i18n.loadingLabel} size="medium"></lightning-spinner>
+        </div>
+      </template>
+      <template if:true={hasPanelError}>
+        <div class="slds-text-align_center slds-p-around_large">
+          <p>{i18n.featureLoadFailed}</p>
+          <p class="slds-text-color_weak slds-text-body_small slds-m-top_small">{loadError}</p>
+          <div class="slds-m-top_medium"><lightning-button label={i18n.tryAgainLabel} onclick={handleRetry}></lightning-button></div>
+        </div>
+      </template>
+      <template if:true={isPanelReady}>
+
       <!-- Filters Section -->
       <div class="slds-p-around_x-small">
         <div class="slds-grid slds-gutters_x-small slds-wrap">
@@ -280,6 +295,8 @@
           </div>
         </div>
       </template>
+
+      </template><!-- end isPanelReady -->
     </lightning-card>
   </div>
 </template>

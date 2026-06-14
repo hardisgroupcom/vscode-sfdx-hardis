@@ -281,16 +281,13 @@ export function registerShowPipeline(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
     "vscode-sfdx-hardis.showPipeline",
     async () => {
-      let pipelineProperties = await loadAllPipelineInfo({
-        browseGitProvider: false,
-        resetGit: false,
-        withProgress: true,
-      });
+      // Open the panel immediately with spinner flags so the LWC can render
+      // partial content while pipeline data is fetched asynchronously.
       const panel = LwcPanelManager.getInstance().getOrCreatePanel(
         "s-pipeline",
         {
-          ...pipelineProperties,
-          firstDisplay: true,
+          mermaidLoading: true,
+          prLoading: true,
           imagePaths: {
             git: ["icons", "git.svg"],
             ticket: ["icons", "ticket.svg"],
@@ -306,6 +303,98 @@ export function registerShowPipeline(commands: Commands) {
       );
 
       panel.updateTitle(t("devOpsPipeline"));
+
+      let pipelineProperties: PipelineInfo | null = null;
+
+      // Staged 3-step pipeline loader:
+      // Step 1: spinner flags already sent via getOrCreatePanel init data.
+      // Step 2: fast load (no git provider) — renders diagram without PR annotations.
+      // Step 3: full load (with git provider) — renders diagram with PRs + populates PR list.
+      const loadPipelineStaged = async (opts?: { resetGit?: boolean }) => {
+        const stagedT0 = Date.now();
+        Logger.logPerf("[pipeline-perf] staged load START (step 2: no git)");
+        panel.sendInitializationData({ mermaidLoading: true, prLoading: true });
+        try {
+          const fast = await loadAllPipelineInfo({
+            browseGitProvider: false,
+            resetGit: opts?.resetGit ?? false,
+            withProgress: false,
+          });
+          pipelineProperties = fast;
+          Logger.logPerf(
+            `[pipeline-perf] STEP 2 done (mermaid without PRs ready): ${Date.now() - stagedT0}ms`,
+          );
+          // Step 2: render the diagram (no PR annotations yet) with a spinner
+          // overlaid on it while the git provider data loads for step 3.
+          panel.sendInitializationData({
+            ...fast,
+            mermaidLoading: false,
+            mermaidRefreshing: true,
+            prLoading: true,
+          });
+          const full = await loadAllPipelineInfo({
+            browseGitProvider: true,
+            resetGit: opts?.resetGit ?? false,
+            withProgress: false,
+          });
+          pipelineProperties = full;
+          Logger.logPerf(
+            `[pipeline-perf] STEP 3 done (mermaid with PRs ready): ${Date.now() - stagedT0}ms total`,
+          );
+          // Step 3: re-render with PR annotations and clear the overlay.
+          panel.sendInitializationData({
+            ...full,
+            mermaidLoading: false,
+            mermaidRefreshing: false,
+            prLoading: false,
+          });
+        } catch (e: any) {
+          Logger.log(
+            "[vscode-sfdx-hardis] pipeline staged load failed: " +
+              (e?.message || e),
+          );
+          panel.sendInitializationData({
+            mermaidLoading: false,
+            mermaidRefreshing: false,
+            prLoading: false,
+            loadError: String(e?.message || e),
+          });
+        }
+      };
+
+      // Single-step full reload (used by the Refresh button): load everything
+      // including git jobs & PRs and render the diagram once. Unlike the staged
+      // loader, it skips the intermediate PR-less render. The refresh spinner is
+      // driven by the LWC itself (overlay on the existing diagram for a manual
+      // refresh, nothing for an auto/interval refresh), so this routine does NOT
+      // push mermaidLoading:true up front — that would replace the diagram.
+      const loadPipelineFull = async (opts?: { resetGit?: boolean }) => {
+        try {
+          const full = await loadAllPipelineInfo({
+            browseGitProvider: true,
+            resetGit: opts?.resetGit ?? false,
+            withProgress: false,
+          });
+          pipelineProperties = full;
+          panel.sendInitializationData({
+            ...full,
+            mermaidLoading: false,
+            mermaidRefreshing: false,
+            prLoading: false,
+          });
+        } catch (e: any) {
+          Logger.log(
+            "[vscode-sfdx-hardis] pipeline full reload failed: " +
+              (e?.message || e),
+          );
+          panel.sendInitializationData({
+            mermaidLoading: false,
+            mermaidRefreshing: false,
+            prLoading: false,
+            loadError: String(e?.message || e),
+          });
+        }
+      };
 
       function showCommitReminder(prNumber: number, msg: string) {
         if (prNumber === -1) {
@@ -323,14 +412,15 @@ export function registerShowPipeline(commands: Commands) {
       }
 
       panel.onMessage(async (type, data) => {
-        // Refresh
+        // Retry after initial load error
+        if (type === "retryInit") {
+          await loadPipelineStaged();
+          return;
+        }
+        // Refresh (Refresh button) — full single-step reload (mermaid with jobs
+        // & PRs), keeps top bar visible; no intermediate PR-less render.
         if (type === "refreshPipeline") {
-          pipelineProperties = await loadAllPipelineInfo({
-            browseGitProvider: true,
-            resetGit: false,
-            withProgress: false,
-          });
-          panel.sendInitializationData(pipelineProperties);
+          await loadPipelineFull();
         }
         // Update panel title
         else if (type === "updatePanelTitle") {
@@ -626,12 +716,7 @@ export function registerShowPipeline(commands: Commands) {
             // getSession({ createIfNone: false }) immediately after the new VS Code
             // sign-in, which can momentarily return no session and wrongly report the
             // provider as not connected.
-            pipelineProperties = await loadAllPipelineInfo({
-              browseGitProvider: true,
-              resetGit: false,
-              withProgress: true,
-            });
-            panel.sendInitializationData(pipelineProperties);
+            await loadPipelineStaged();
           } else if (authRes === false) {
             const viewLogsLabel = t("viewLogs");
             vscode.window
@@ -686,12 +771,7 @@ export function registerShowPipeline(commands: Commands) {
               providerName: ticketProvider.providerName,
             }),
           );
-          pipelineProperties = await loadAllPipelineInfo({
-            browseGitProvider: true,
-            resetGit: false,
-            withProgress: true,
-          });
-          panel.sendInitializationData(pipelineProperties);
+          await loadPipelineStaged();
         }
         // Prompt user for Git provider action when already connected
         else if (type === "promptGitProviderAction") {
@@ -722,12 +802,7 @@ export function registerShowPipeline(commands: Commands) {
                 t("disconnectedFrom", { providerName }),
               );
               // Refresh pipeline with unauthenticated state
-              pipelineProperties = await loadAllPipelineInfo({
-                browseGitProvider: false,
-                resetGit: true,
-                withProgress: true,
-              });
-              panel.sendInitializationData(pipelineProperties);
+              await loadPipelineStaged({ resetGit: true });
             }
           }
         }
@@ -779,15 +854,13 @@ export function registerShowPipeline(commands: Commands) {
             }
 
             // Refresh pipeline with unauthenticated ticketing state
-            pipelineProperties = await loadAllPipelineInfo({
-              browseGitProvider: true,
-              resetGit: false,
-              withProgress: true,
-            });
-            panel.sendInitializationData(pipelineProperties);
+            await loadPipelineStaged();
           }
         }
       });
+
+      // Start the staged background load — panel shows partial content immediately.
+      loadPipelineStaged();
     },
   );
   commands.disposables.push(disposable);
@@ -821,7 +894,26 @@ export function registerShowPipeline(commands: Commands) {
     const loadData = async () => {
       const browseGitProvider = options?.browseGitProvider ?? true;
       const resetGit = options?.resetGit ?? false;
-      const gitProvider = await GitProvider.getInstance(resetGit);
+      // ── [pipeline-perf] timing instrumentation ──────────────────────────────
+      const perfT0 = Date.now();
+      let perfLast = perfT0;
+      const perfStep = (label: string) => {
+        const now = Date.now();
+        Logger.logPerf(
+          `[pipeline-perf][browseGit=${browseGitProvider}] ${label}: ${now - perfLast}ms (total ${now - perfT0}ms)`,
+        );
+        perfLast = now;
+      };
+      Logger.logPerf(
+        `[pipeline-perf][browseGit=${browseGitProvider}] loadData START`,
+      );
+      // Step 2 (browseGitProvider=false) renders the mermaid from local config
+      // only — skip the git provider init entirely (its cold detection + token
+      // validation costs ~10s on first run). It is initialized in step 3.
+      const gitProvider = browseGitProvider
+        ? await GitProvider.getInstance(resetGit)
+        : null;
+      perfStep("GitProvider.getInstance");
       let openPullRequests: PullRequest[] = [];
       let gitAuthenticated = false;
       let currentBranchPullRequest: PullRequest | null = null;
@@ -852,6 +944,7 @@ export function registerShowPipeline(commands: Commands) {
         gitAuthenticated = true;
         if (browseGitProvider) {
           openPullRequests = await gitProvider.listOpenPullRequests();
+          perfStep("gitProvider.listOpenPullRequests");
           const currentGitBranch = await getCurrentGitBranch();
           if (currentGitBranch) {
             const prActionsFileDraft = path.join(
@@ -864,6 +957,7 @@ export function registerShowPipeline(commands: Commands) {
               await gitProvider.getActivePullRequestFromBranch(
                 currentGitBranch,
               );
+            perfStep("getActivePullRequestFromBranch");
             if (currentBranchPullRequest) {
               if (fs.existsSync(prActionsFileDraft)) {
                 // Rename draft file to associate it with the current PR
@@ -982,6 +1076,7 @@ export function registerShowPipeline(commands: Commands) {
           colorTheme: colorTheme,
         },
       );
+      perfStep("getPipelineData (mermaid)");
 
       // Read displayFeatureBranches configuration
       const displayFeatureBranches =
@@ -991,6 +1086,7 @@ export function registerShowPipeline(commands: Commands) {
         reset: false,
         authenticate: false,
       });
+      perfStep("TicketProvider.getInstance");
       let ticketAuthenticated = false;
       let ticketProviderName = "";
       if (ticketProvider) {
@@ -1000,17 +1096,34 @@ export function registerShowPipeline(commands: Commands) {
         ticketAuthenticated = true;
       }
 
-      const projectApexScripts = await listProjectApexScripts();
-      const projectDataWorkspaces = await listProjectDataWorkspaces();
+      // Deployment-action modal data (apex scripts, SFDMU workspaces, apex test
+      // classes) is only used once the user opens that modal from a PR — never
+      // by the mermaid. Load it ONLY in the full pass (browseGitProvider) so the
+      // fast step-2 mermaid render is never blocked by scanning the project
+      // (listProjectApexTestClasses reads every .cls file).
+      const projectApexScripts = browseGitProvider
+        ? await listProjectApexScripts()
+        : [];
+      perfStep("listProjectApexScripts");
+      const projectDataWorkspaces = browseGitProvider
+        ? await listProjectDataWorkspaces()
+        : [];
+      perfStep("listProjectDataWorkspaces");
 
       // Read enableDeploymentApexTestClasses from config/.sfdx-hardis.yml
       const projectHardisConfig = await readSfdxHardisConfig();
+      perfStep("readSfdxHardisConfig");
       const enableDeploymentApexTestClasses =
         projectHardisConfig?.enableDeploymentApexTestClasses === true;
 
-      const availableApexTestClasses = enableDeploymentApexTestClasses
-        ? await listProjectApexTestClasses()
-        : [];
+      const availableApexTestClasses =
+        browseGitProvider && enableDeploymentApexTestClasses
+          ? await listProjectApexTestClasses()
+          : [];
+      perfStep("listProjectApexTestClasses");
+      Logger.logPerf(
+        `[pipeline-perf][browseGit=${browseGitProvider}] loadData TOTAL: ${Date.now() - perfT0}ms`,
+      );
 
       return {
         pipelineData: pipelineData,

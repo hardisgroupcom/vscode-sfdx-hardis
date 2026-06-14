@@ -12,6 +12,10 @@ const METADATA_DOC_BASE_URL =
   "https://sf-explorer.github.io/sf-doc-to-json/#/cloud/all/object/";
 
 export default class MetadataRetriever extends SharedMixin(LightningElement) {
+  // Panel-level loading state (true until init data arrives from backend)
+  @track panelLoading = true;
+  @track loadError = null;
+
   @api orgs = [];
   @api metadataTypes = [];
   @track selectedOrg = null;
@@ -44,6 +48,19 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
 
   get imgFeatureLogo() {
     return this.getImageUrl("featureLogo");
+  }
+
+  // Panel-level three-state render getters
+  get isPanelLoading() {
+    return this.panelLoading === true && !this.loadError;
+  }
+
+  get hasPanelError() {
+    return !!this.loadError;
+  }
+
+  get isPanelReady() {
+    return this.panelLoading !== true && !this.loadError;
   }
 
   // Local package selector (sfdx-project.json packageDirectories)
@@ -407,12 +424,31 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
 
   @api
   initialize(data) {
+    data = data || {};
+
+    // Handle panel-level loading/error state
+    if (Object.prototype.hasOwnProperty.call(data, "loading")) {
+      this.panelLoading = data.loading === true;
+      if (this.panelLoading) {
+        this.loadError = null;
+      }
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "loadError")) {
+      this.loadError = data.loadError || null;
+    }
+
+    // First call only carries {loading:true} — guard all content fields
+    if (!Object.prototype.hasOwnProperty.call(data, "orgs")) {
+      return;
+    }
+
     // Update packageOptions labels with translations
     this.packageOptions = [
       { label: this.t("allLabel"), value: "All" },
       { label: this.t("localLabel"), value: "Local" },
     ];
-    if (data) {
+
+    if (Object.prototype.hasOwnProperty.call(data, "orgs")) {
       if (data.orgs && Array.isArray(data.orgs)) {
         this.orgs = data.orgs;
         // Set default org if provided or use first available
@@ -426,21 +462,29 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
           data: { username: this.selectedOrg },
         });
       }
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "metadataTypes")) {
       if (data.metadataTypes && Array.isArray(data.metadataTypes)) {
         this.metadataTypes = data.metadataTypes;
       }
-      // Backend can indicate whether local file checking is available
+    }
+    // Backend can indicate whether local file checking is available
+    if (Object.prototype.hasOwnProperty.call(data, "checkLocalAvailable")) {
       if (typeof data.checkLocalAvailable === "boolean") {
         this.checkLocalAvailable = data.checkLocalAvailable;
         if (!this.checkLocalAvailable) {
           this.checkLocalFiles = false; // force-uncheck
         }
       }
+    }
 
-      // Local packages from sfdx-project.json
+    // Local packages from sfdx-project.json
+    if (Object.prototype.hasOwnProperty.call(data, "localPackageOptions")) {
       if (data.localPackageOptions && Array.isArray(data.localPackageOptions)) {
         this.localPackageOptions = data.localPackageOptions;
       }
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "defaultLocalPackage")) {
       if (data.defaultLocalPackage) {
         this.selectedLocalPackage = data.defaultLocalPackage;
         this.initialLocalPackage = data.defaultLocalPackage;
@@ -453,6 +497,12 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
         this.initialLocalPackage = this.selectedLocalPackage;
       }
     }
+  }
+
+  handleRetry() {
+    this.loadError = null;
+    this.panelLoading = true;
+    window.sendMessageToVSCode({ type: "retryInit" });
   }
 
   // Show the selector only when the retrieve action is visible

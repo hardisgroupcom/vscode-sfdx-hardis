@@ -7,6 +7,12 @@ console.log("LWC UI initializing...");
 
 const pendingMessages = [];
 
+// Tracks whether the component has already been initialized via an `initialize`
+// message (buffered or live). Used to avoid clobbering freshly-loaded data with
+// the stale embedded data-init-data placeholder when content loads faster than
+// the webview mounts (otherwise a fast-loading panel stays stuck on its spinner).
+let componentInitialized = false;
+
 function routeMessageToComponent(message) {
   const component = window.lwcComponentInstance;
   if (!component) {
@@ -25,6 +31,7 @@ function routeMessageToComponent(message) {
     } else if (typeof component.showPrompt === "function") {
       component.showPrompt(message.data);
     }
+    componentInitialized = true;
   }
 
   if (message.type === "updateTheme") {
@@ -185,8 +192,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       // Wait a bit for the component to fully initialize
       setTimeout(() => {
-        // Initialize the component if it has initialization data
-        if (initData) {
+        // Only apply the embedded init data if no initialize message has been
+        // delivered yet. Otherwise the stale placeholder baked into the HTML
+        // (e.g. { loading: true }) would clobber fresher data already received
+        // by message - which happens when content loads before the webview
+        // finishes mounting, leaving fast panels stuck on their spinner.
+        if (initData && !componentInitialized) {
           if (typeof element.initialize === "function") {
             element.initialize(initData);
           } else if (typeof element.showPrompt === "function") {
