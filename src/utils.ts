@@ -237,13 +237,27 @@ export async function getNpmLatestVersion(
   if (staleValue !== undefined) {
     // If the value is stale (fresh marker expired), kick off a background refresh
     if (!isFresh) {
-      triggerNpmBackgroundRefresh(packageName, NPM_STALE_KEY, NPM_FRESH_KEY, ONE_DAY_MS, SEVEN_DAYS_MS, staleValue);
+      triggerNpmBackgroundRefresh(
+        packageName,
+        NPM_STALE_KEY,
+        NPM_FRESH_KEY,
+        ONE_DAY_MS,
+        SEVEN_DAYS_MS,
+        staleValue,
+      );
     }
     return staleValue;
   }
 
   // Nothing cached at all — try one background fetch but return null immediately
-  triggerNpmBackgroundRefresh(packageName, NPM_STALE_KEY, NPM_FRESH_KEY, ONE_DAY_MS, SEVEN_DAYS_MS, null);
+  triggerNpmBackgroundRefresh(
+    packageName,
+    NPM_STALE_KEY,
+    NPM_FRESH_KEY,
+    ONE_DAY_MS,
+    SEVEN_DAYS_MS,
+    null,
+  );
   return null;
 }
 

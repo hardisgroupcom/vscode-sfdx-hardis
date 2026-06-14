@@ -311,7 +311,9 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
           helpUrl: plugin.helpUrl,
         });
       }
-      return loadingItems.sort((a: any, b: any) => (a.label > b.label ? 1 : -1));
+      return loadingItems.sort((a: any, b: any) =>
+        a.label > b.label ? 1 : -1,
+      );
     }
 
     // --- Phase 2 complete: return final decorated items ---
@@ -422,8 +424,8 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
     phase1Items.sort(
       (a: any, b: any) => (a.isCommunity ? 1 : 0) - (b.isCommunity ? 1 : 0),
     );
-    PLUGINS_PHASE1_ITEMS = phase1Items.sort(
-      (a: any, b: any) => (a.label > b.label ? 1 : -1),
+    PLUGINS_PHASE1_ITEMS = phase1Items.sort((a: any, b: any) =>
+      a.label > b.label ? 1 : -1,
     );
 
     // --- Phase 2: background detail pass (npm latest versions + upgrade decorations) ---
@@ -454,15 +456,16 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
     try {
       const items: any[] = [];
 
-      const [latestSfdxCliVersionResult, sfVersionResult] = await Promise.allSettled([
-        getNpmLatestVersion("@salesforce/cli"),
-        execCommand("sf --version", {
-          output: true,
-          fail: false,
-          cacheSection: "app",
-          cacheExpiration: 1000 * 60 * 60 * 24, // 1 day
-        }),
-      ]);
+      const [latestSfdxCliVersionResult, sfVersionResult] =
+        await Promise.allSettled([
+          getNpmLatestVersion("@salesforce/cli"),
+          execCommand("sf --version", {
+            output: true,
+            fail: false,
+            cacheSection: "app",
+            cacheExpiration: 1000 * 60 * 60 * 24, // 1 day
+          }),
+        ]);
 
       // getNpmLatestVersion never rejects; a null value means "unknown" (cold/offline)
       const latestSfdxCliVersion: string | null =
@@ -478,7 +481,9 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
         sfVersionResult.status === "fulfilled"
           ? sfVersionResult.value.stdout
           : "";
-      let sfdxCliVersionMatchDetail = /sfdx-cli\/([^\s]+)/gm.exec(sfdxCliVersionStdOut);
+      let sfdxCliVersionMatchDetail = /sfdx-cli\/([^\s]+)/gm.exec(
+        sfdxCliVersionStdOut,
+      );
       let sfdxCliVersionDetail = sfdxCliVersion;
       let legacySfdxDetail = legacySfdx;
       if (sfdxCliVersionMatchDetail) {
@@ -515,7 +520,10 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
       // Resolve `sf` path once for upgrade command and bulk upgrade prefix
       const sfdxPath = await resolveSfCliPath();
       // Only compare versions when we have a known target; skip if latest is unknown
-      if (recommendedSfdxCliVersion !== null && sfdxCliVersionDetail !== recommendedSfdxCliVersion) {
+      if (
+        recommendedSfdxCliVersion !== null &&
+        sfdxCliVersionDetail !== recommendedSfdxCliVersion
+      ) {
         if (legacySfdxDetail) {
           sfdxCliItem.label = t("upgradeToSalesforceCli");
           sfdxCliItem.command = `npm uninstall sfdx-cli --global && npm install @salesforce/cli --global && sf hardis:work:ws --event refreshPlugins`;
@@ -593,9 +601,13 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
         }
 
         // Check latest plugin version (may be null when offline / cold cache)
-        const latestPluginVersion: string | null = await getNpmLatestVersion(plugin.name);
+        const latestPluginVersion: string | null = await getNpmLatestVersion(
+          plugin.name,
+        );
         if (latestPluginVersion === null) {
-          Logger.log(`Latest version for ${plugin.name} is not yet available (cold/offline)`);
+          Logger.log(
+            `Latest version for ${plugin.name} is not yet available (cold/offline)`,
+          );
         }
         let pluginLabel = (plugin as any).isCommunity
           ? `${plugin.name} ${t("communityPluginLabel")}`
@@ -639,7 +651,9 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
                   ? pluginItem.label
                   : pluginItem.label + upgradeAvailableText;
           const installTag =
-            plugin.name === "sfdx-hardis" ? getSfdxHardisInstallTag() : "latest";
+            plugin.name === "sfdx-hardis"
+              ? getSfdxHardisInstallTag()
+              : "latest";
           pluginItem.command = `echo y|sf plugins:install ${plugin.name}@${installTag} && sf hardis:work:ws --event refreshPlugins`;
           pluginItem.tooltip = t("clickToUpgradeSfdxPluginTo", {
             plugin: plugin.name,
@@ -675,7 +689,8 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
       // Propose user to upgrade if necessary — once per session
       let mergeDriverWasEnabled = false;
       if (outdated.some((plugin) => plugin.name === "sf-git-merge-driver")) {
-        const mergeDriverStatus = await isMergeDriverEnabled(getWorkspaceRoot());
+        const mergeDriverStatus =
+          await isMergeDriverEnabled(getWorkspaceRoot());
         mergeDriverWasEnabled = mergeDriverStatus === true;
       }
       if (outdated.length > 0) {
@@ -689,7 +704,8 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
           recommendedSfdxCliVersion ?? undefined,
         );
         const setupHelper = SetupHelper.getInstance();
-        const vsConfigInner = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+        const vsConfigInner =
+          vscode.workspace.getConfiguration("vsCodeSfdxHardis");
         if (
           vsConfigInner.get("autoUpdateDependencies") === true &&
           !setupHelper.hasUpdatesInProgress() &&
@@ -714,15 +730,23 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
                 "vscode-sfdx-hardis.refreshPluginsView",
               );
             });
-        } else if (!setupHelper.hasUpdatesInProgress() && !PLUGINS_OUTDATED_PROMPT_SHOWN) {
+        } else if (
+          !setupHelper.hasUpdatesInProgress() &&
+          !PLUGINS_OUTDATED_PROMPT_SHOWN
+        ) {
           PLUGINS_OUTDATED_PROMPT_SHOWN = true;
           const upgradePluginsLabel = t("upgradePlugins");
           vscode.window
-            .showWarningMessage(t("somePluginsNotUpToDate"), upgradePluginsLabel)
+            .showWarningMessage(
+              t("somePluginsNotUpToDate"),
+              upgradePluginsLabel,
+            )
             .then((selection) => {
               if (selection === upgradePluginsLabel) {
                 if (vsConfigInner.get("userInput") === "ui-lwc") {
-                  vscode.commands.executeCommand("vscode-sfdx-hardis.showSetup");
+                  vscode.commands.executeCommand(
+                    "vscode-sfdx-hardis.showSetup",
+                  );
                   return;
                 }
                 vscode.commands.executeCommand(
@@ -735,12 +759,14 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
       }
 
       // Store final items and mark detail pass complete
-      PLUGINS_DETAIL_ITEMS = items.sort(
-        (a: any, b: any) => (a.label > b.label ? 1 : -1),
+      PLUGINS_DETAIL_ITEMS = items.sort((a: any, b: any) =>
+        a.label > b.label ? 1 : -1,
       );
       PLUGINS_DETAIL_LOADED = true;
     } catch (e) {
-      Logger.log("[vscode-sfdx-hardis] runPluginsDetailPass failed: " + String(e));
+      Logger.log(
+        "[vscode-sfdx-hardis] runPluginsDetailPass failed: " + String(e),
+      );
       // Fall back to the phase-1 placeholders (installed versions, no upgrade
       // info) so getPluginsItems returns them via the LOADED===true branch.
       // Without this, DETAIL_ITEMS stays null and getPluginsItems would fall

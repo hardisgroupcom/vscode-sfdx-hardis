@@ -286,7 +286,10 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
         if (config?.poolConfig) {
           if (SCRATCH_POOL_LOADED) {
             // Background fetch already completed — read the cached result
-            const cachedPoolRes = CacheManager.get<any>("project", "scratchPoolView");
+            const cachedPoolRes = CacheManager.get<any>(
+              "project",
+              "scratchPoolView",
+            );
             if (
               cachedPoolRes?.status === 0 &&
               (cachedPoolRes?.result?.availableScratchOrgs ||
@@ -312,10 +315,17 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
                   "sf hardis:scratch:pool:view",
                   { output: false, fail: false },
                 );
-                await CacheManager.set("project", "scratchPoolView", poolViewRes, 1000 * 60 * 15);
+                await CacheManager.set(
+                  "project",
+                  "scratchPoolView",
+                  poolViewRes,
+                  1000 * 60 * 15,
+                );
                 SCRATCH_POOL_LOADED = true;
               } catch (e) {
-                Logger.log("[vscode-sfdx-hardis] scratch pool view failed: " + String(e));
+                Logger.log(
+                  "[vscode-sfdx-hardis] scratch pool view failed: " + String(e),
+                );
                 SCRATCH_POOL_LOADED = true;
               } finally {
                 SCRATCH_POOL_LOADING = false;
@@ -529,11 +539,19 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
               const parentGitBranch = (await getGitParentBranch()) || "";
               // Throttle: skip fetch if it ran recently for this branch
               const fetchCacheKey = `gitFetchAt:${branchForFetch}`;
-              const lastFetchAt = CacheManager.get<number>("project", fetchCacheKey);
+              const lastFetchAt = CacheManager.get<number>(
+                "project",
+                fetchCacheKey,
+              );
               const now = Date.now();
               if (!lastFetchAt || now - lastFetchAt >= GIT_FETCH_TTL_MS) {
                 await git.fetch("origin", parentGitBranch);
-                await CacheManager.set("project", fetchCacheKey, now, GIT_FETCH_CACHE_TTL_MS);
+                await CacheManager.set(
+                  "project",
+                  fetchCacheKey,
+                  now,
+                  GIT_FETCH_CACHE_TTL_MS,
+                );
               }
               // Get parent branch latest commit (uses local ref after fetch)
               const parentLatestCommit = await git.revparse(
@@ -547,7 +565,8 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
               // Check if there is a commit in current branch containing the ref of the latest parent branch commit
               const currentBranchCommits = await git.log([branchForFetch]);
               const mergeNeeded =
-                (gitDiff.length > 0 && currentBranchCommits?.all.length === 0) ||
+                (gitDiff.length > 0 &&
+                  currentBranchCommits?.all.length === 0) ||
                 (currentBranchCommits?.all &&
                   currentBranchCommits?.all.length > 0 &&
                   !currentBranchCommits.all.some((currentBranchCommit) =>
