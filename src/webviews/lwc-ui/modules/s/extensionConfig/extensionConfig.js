@@ -4,12 +4,37 @@ import { SharedMixin } from "s/sharedMixin";
 export default class ExtensionConfig extends SharedMixin(LightningElement) {
   @track sections = [];
   @track loading = true;
+  @track loadError = null;
   @track error = null;
   @track activeTabValue = null;
 
+  get isLoadingState() {
+    return this.loading === true && !this.loadError;
+  }
+
+  get hasError() {
+    return !!this.loadError;
+  }
+
+  get isReady() {
+    return this.loading !== true && !this.loadError;
+  }
+
   @api
   initialize(data) {
-    this.loading = false;
+    data = data || {};
+    if (Object.prototype.hasOwnProperty.call(data, "loading")) {
+      this.loading = data.loading === true;
+      if (this.loading) {
+        this.loadError = null;
+      }
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "loadError")) {
+      this.loadError = data.loadError || null;
+    }
+    if (!Object.prototype.hasOwnProperty.call(data, "sections")) {
+      return;
+    }
     this.error = null;
     this.activeTabValue = data.activeTabValue || null;
 
@@ -107,6 +132,12 @@ export default class ExtensionConfig extends SharedMixin(LightningElement) {
 
   handleRefresh() {
     window.sendMessageToVSCode({ type: "refresh" });
+  }
+
+  handleRetry() {
+    this.loadError = null;
+    this.loading = true;
+    window.sendMessageToVSCode({ type: "retryInit" });
   }
 
   @api

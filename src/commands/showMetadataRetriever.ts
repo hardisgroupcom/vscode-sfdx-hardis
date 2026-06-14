@@ -183,63 +183,6 @@ export function registerShowMetadataRetriever(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
     "vscode-sfdx-hardis.showMetadataRetriever",
     async () => {
-      // Get selected org username
-      let selectedOrgUsername: string | null = null;
-      let instanceUrl: string | null = null;
-
-      await vscode.window.withProgress(
-        {
-          location: vscode.ProgressLocation.Notification,
-          title: "Initializing Metadata Retriever...",
-          cancellable: false,
-        },
-        async () => {
-          try {
-            selectedOrgUsername = await getDefaultTargetOrgUsername();
-            instanceUrl = await getUsernameInstanceUrl(
-              selectedOrgUsername || "",
-            );
-          } catch (err: any) {
-            Logger.log(`Error detecting default org: ${err?.message || err}`);
-            vscode.window.showWarningMessage(
-              "Could not detect default org. Please select an org in the UI.",
-            );
-          }
-        },
-      );
-      const connectedOrgs: SalesforceOrg[] = selectedOrgUsername
-        ? [
-            {
-              username: selectedOrgUsername,
-              isDefaultUsername: true,
-              connectedStatus: "Connected",
-              instanceUrl: instanceUrl || "",
-            },
-          ]
-        : [];
-
-      // Get metadata types list
-      const metadataTypes = listMetadataTypes();
-      const metadataTypeOptions = metadataTypes
-        .map((mt) => ({
-          label: mt.xmlName,
-          value: mt.xmlName,
-          inFolder: !!mt.inFolder,
-        }))
-        .sort((a, b) => a.label.localeCompare(b.label));
-
-      // Determine whether local file checking is available by looking for sfdx-project.json
-      const packageDirs = await listSfdxProjectPackageDirectories();
-
-      // Local package combobox options (from sfdx-project.json)
-      const {
-        options: localPackageOptions,
-        defaultValue: defaultLocalPackage,
-      } = await getLocalPackageOptionsFromSfdxProjectJson();
-      defaultLocalPackageGuard.setInitialDefaultPackagePathIfEmpty(
-        defaultLocalPackage,
-      );
-
       // Ensure we restore initial default when extension deactivates
       if (!packageGuardDisposableRegistered) {
         packageGuardDisposableRegistered = true;
@@ -250,26 +193,92 @@ export function registerShowMetadataRetriever(commands: Commands) {
         );
       }
 
+      // Open the panel immediately with a loading flag so the LWC can render
+      // a spinner while the heavy init work runs asynchronously.
       const panel = LwcPanelManager.getInstance().getOrCreatePanel(
         "s-metadata-retriever",
-        {
-          orgs: connectedOrgs,
-          selectedOrgUsername: selectedOrgUsername,
-          metadataTypes: metadataTypeOptions,
-          checkLocalAvailable: packageDirs.length > 0,
-          packageDirectories: packageDirs,
-          localPackageOptions,
-          defaultLocalPackage,
-          imagePaths: {
-            featureLogo: ["logo-m.png"],
-          },
-        },
+        { loading: true },
       );
-
       panel.updateTitle(t("metadataRetriever"));
+
+      const loadAndPush = async () => {
+        panel.sendInitializationData({ loading: true });
+        try {
+          // Get selected org username
+          let selectedOrgUsername: string | null = null;
+          let instanceUrl: string | null = null;
+          try {
+            selectedOrgUsername = await getDefaultTargetOrgUsername();
+            instanceUrl = await getUsernameInstanceUrl(
+              selectedOrgUsername || "",
+            );
+          } catch (err: any) {
+            Logger.log(`Error detecting default org: ${err?.message || err}`);
+          }
+
+          const connectedOrgs: SalesforceOrg[] = selectedOrgUsername
+            ? [
+                {
+                  username: selectedOrgUsername,
+                  isDefaultUsername: true,
+                  connectedStatus: "Connected",
+                  instanceUrl: instanceUrl || "",
+                },
+              ]
+            : [];
+
+          // Get metadata types list
+          const metadataTypes = listMetadataTypes();
+          const metadataTypeOptions = metadataTypes
+            .map((mt) => ({
+              label: mt.xmlName,
+              value: mt.xmlName,
+              inFolder: !!mt.inFolder,
+            }))
+            .sort((a, b) => a.label.localeCompare(b.label));
+
+          // Determine whether local file checking is available by looking for sfdx-project.json
+          const packageDirs = await listSfdxProjectPackageDirectories();
+
+          // Local package combobox options (from sfdx-project.json)
+          const {
+            options: localPackageOptions,
+            defaultValue: defaultLocalPackage,
+          } = await getLocalPackageOptionsFromSfdxProjectJson();
+          defaultLocalPackageGuard.setInitialDefaultPackagePathIfEmpty(
+            defaultLocalPackage,
+          );
+
+          panel.sendInitializationData({
+            orgs: connectedOrgs,
+            selectedOrgUsername: selectedOrgUsername,
+            metadataTypes: metadataTypeOptions,
+            checkLocalAvailable: packageDirs.length > 0,
+            packageDirectories: packageDirs,
+            localPackageOptions,
+            defaultLocalPackage,
+            imagePaths: {
+              featureLogo: ["logo-m.png"],
+            },
+            loading: false,
+          });
+        } catch (e: any) {
+          Logger.log(
+            "[vscode-sfdx-hardis] Metadata Retriever init failed: " +
+              (e?.message || e),
+          );
+          panel.sendInitializationData({
+            loading: false,
+            loadError: String(e?.message || e),
+          });
+        }
+      };
+
       // Register message handlers
       panel.onMessage(async (type: string, data: any) => {
-        if (type === "listOrgs") {
+        if (type === "retryInit") {
+          await loadAndPush();
+        } else if (type === "listOrgs") {
           await handleListOrgs(panel);
         } else if (type === "queryMetadata") {
           await handleQueryMetadata(panel, data);
@@ -305,6 +314,8 @@ export function registerShowMetadataRetriever(commands: Commands) {
           await defaultLocalPackageGuard.restoreInitialDefaultIfNeeded();
         }
       });
+
+      loadAndPush();
     },
   );
   commands.disposables.push(disposable);

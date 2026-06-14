@@ -281,16 +281,12 @@ export function registerShowPipeline(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
     "vscode-sfdx-hardis.showPipeline",
     async () => {
-      let pipelineProperties = await loadAllPipelineInfo({
-        browseGitProvider: false,
-        resetGit: false,
-        withProgress: true,
-      });
+      // Open the panel immediately with a loading flag so the LWC can render
+      // a spinner while pipeline data is fetched asynchronously.
       const panel = LwcPanelManager.getInstance().getOrCreatePanel(
         "s-pipeline",
         {
-          ...pipelineProperties,
-          firstDisplay: true,
+          loading: true,
           imagePaths: {
             git: ["icons", "git.svg"],
             ticket: ["icons", "ticket.svg"],
@@ -306,6 +302,34 @@ export function registerShowPipeline(commands: Commands) {
       );
 
       panel.updateTitle(t("devOpsPipeline"));
+
+      let pipelineProperties: PipelineInfo | null = null;
+
+      // Loads all pipeline data and pushes it to the panel. Also used for retry.
+      const loadAndPush = async () => {
+        panel.sendInitializationData({ loading: true });
+        try {
+          pipelineProperties = await loadAllPipelineInfo({
+            browseGitProvider: false,
+            resetGit: false,
+            withProgress: false,
+          });
+          panel.sendInitializationData({
+            ...pipelineProperties,
+            firstDisplay: true,
+            loading: false,
+          });
+        } catch (e: any) {
+          Logger.log(
+            "[vscode-sfdx-hardis] pipeline init failed: " +
+              (e?.message || e),
+          );
+          panel.sendInitializationData({
+            loading: false,
+            loadError: String(e?.message || e),
+          });
+        }
+      };
 
       function showCommitReminder(prNumber: number, msg: string) {
         if (prNumber === -1) {
@@ -323,6 +347,11 @@ export function registerShowPipeline(commands: Commands) {
       }
 
       panel.onMessage(async (type, data) => {
+        // Retry after initial load error
+        if (type === "retryInit") {
+          await loadAndPush();
+          return;
+        }
         // Refresh
         if (type === "refreshPipeline") {
           pipelineProperties = await loadAllPipelineInfo({
@@ -330,7 +359,7 @@ export function registerShowPipeline(commands: Commands) {
             resetGit: false,
             withProgress: false,
           });
-          panel.sendInitializationData(pipelineProperties);
+          panel.sendInitializationData({ ...pipelineProperties, loading: false });
         }
         // Update panel title
         else if (type === "updatePanelTitle") {
@@ -631,7 +660,7 @@ export function registerShowPipeline(commands: Commands) {
               resetGit: false,
               withProgress: true,
             });
-            panel.sendInitializationData(pipelineProperties);
+            panel.sendInitializationData({ ...pipelineProperties, loading: false });
           } else if (authRes === false) {
             const viewLogsLabel = t("viewLogs");
             vscode.window
@@ -691,7 +720,7 @@ export function registerShowPipeline(commands: Commands) {
             resetGit: false,
             withProgress: true,
           });
-          panel.sendInitializationData(pipelineProperties);
+          panel.sendInitializationData({ ...pipelineProperties, loading: false });
         }
         // Prompt user for Git provider action when already connected
         else if (type === "promptGitProviderAction") {
@@ -727,7 +756,7 @@ export function registerShowPipeline(commands: Commands) {
                 resetGit: true,
                 withProgress: true,
               });
-              panel.sendInitializationData(pipelineProperties);
+              panel.sendInitializationData({ ...pipelineProperties, loading: false });
             }
           }
         }
@@ -784,10 +813,13 @@ export function registerShowPipeline(commands: Commands) {
               resetGit: false,
               withProgress: true,
             });
-            panel.sendInitializationData(pipelineProperties);
+            panel.sendInitializationData({ ...pipelineProperties, loading: false });
           }
         }
       });
+
+      // Start the background load — panel shows spinner until data arrives.
+      loadAndPush();
     },
   );
   commands.disposables.push(disposable);

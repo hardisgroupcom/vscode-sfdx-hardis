@@ -8,6 +8,7 @@ import path from "path";
 import { Logger } from "../logger";
 import { isQueryValid, parseQuery } from "@jetstreamapp/soql-parser-js";
 import axios from "axios";
+import { t } from "../i18n/i18n";
 // jscpd:ignore-end
 
 const DATA_TEMPLATES_URL =
@@ -121,13 +122,28 @@ export function registerShowDataWorkbench(commands: Commands) {
     async () => {
       const lwcManager = LwcPanelManager.getInstance();
 
-      const workspaces = await loadDataWorkspaces();
-
       const panel = lwcManager.getOrCreatePanel("s-data-workbench", {
-        workspaces: workspaces,
+        loading: true,
       });
+      panel.updateTitle(t("dataWorkbench"));
+
+      const loadAndPush = async () => {
+        panel.sendInitializationData({ loading: true });
+        try {
+          const workspaces = await loadDataWorkspaces();
+          panel.sendInitializationData({ workspaces: workspaces, loading: false });
+        }
+        catch (e: any) {
+          Logger.log("[vscode-sfdx-hardis] Data Workbench init failed: " + (e?.message || e));
+          panel.sendInitializationData({ loading: false, loadError: String(e?.message || e) });
+        }
+      };
 
       panel.onMessage(async (type: string, data: any) => {
+        if (type === "retryInit") {
+          await loadAndPush();
+          return;
+        }
         // Built-in messages (runCommand, openFile, runVsCodeCommand, etc.)
         // are handled by the LwcUiPanel router. Only workspace-specific
         // actions are processed here.
@@ -286,6 +302,7 @@ export function registerShowDataWorkbench(commands: Commands) {
             break;
         }
       });
+      loadAndPush();
     },
   );
   commands.disposables.push(disposable);

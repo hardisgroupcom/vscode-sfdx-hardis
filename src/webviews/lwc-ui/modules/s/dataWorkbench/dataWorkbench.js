@@ -65,9 +65,23 @@ function createDefaultObject() {
 export default class DataWorkbench extends SharedMixin(LightningElement) {
   workspaces = [];
   selectedWorkspace = null;
+  @track loading = true;
+  @track loadError = null;
   isLoading = false;
   pendingSelectedWorkspacePath = null;
   showLargeActions = true;
+
+  get isLoadingState() {
+    return this.loading === true && !this.loadError;
+  }
+
+  get hasError() {
+    return !!this.loadError;
+  }
+
+  get isReady() {
+    return this.loading !== true && !this.loadError;
+  }
 
   // Template support (create mode only)
   availableTemplates = [];
@@ -291,13 +305,29 @@ export default class DataWorkbench extends SharedMixin(LightningElement) {
 
   @api
   initialize(data) {
-    if (data && data.workspaces) {
+    data = data || {};
+    if (Object.prototype.hasOwnProperty.call(data, "loading")) {
+      this.loading = data.loading === true;
+      if (this.loading) {
+        this.loadError = null;
+      }
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "loadError")) {
+      this.loadError = data.loadError || null;
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "workspaces")) {
       this.workspaces = this.normalizeWorkspaces(data.workspaces);
     }
   }
 
   handleInitialize(data) {
     this.initialize(data);
+  }
+
+  handleRetry() {
+    this.loadError = null;
+    this.loading = true;
+    window.sendMessageToVSCode({ type: "retryInit" });
   }
 
   handleWorkspacesLoaded(data) {

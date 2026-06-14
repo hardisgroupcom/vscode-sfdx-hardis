@@ -22,7 +22,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   @track openPullRequests = [];
   @track displayFeatureBranches = false;
   @track mermaidZoomLevel = 1;
-  @track loading = false;
+  @track loading = true;
+  @track loadError = null;
   @track projectApexScripts = [];
   @track projectSfdmuWorkspaces = [];
   @track projectSchedulableClasses = [];
@@ -478,6 +479,24 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     return this.mermaidZoomLevel <= this._mermaidMinZoomLevel;
   }
 
+  get isLoading() {
+    return this.loading === true && !this.loadError;
+  }
+
+  get hasError() {
+    return !!this.loadError;
+  }
+
+  get isReady() {
+    return this.loading !== true && !this.loadError;
+  }
+
+  handleRetry() {
+    this.loadError = null;
+    this.loading = true;
+    window.sendMessageToVSCode({ type: "retryInit" });
+  }
+
   handleShowPipelineConfig() {
     window.sendMessageToVSCode({
       type: "runVsCodeCommand",
@@ -490,22 +509,50 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
   @api
   initialize(data) {
-    this.loading = this._isAutoRefresh ? false : false;
+    data = data || {};
+
+    // Handle loading / error flags first — the first call only carries these.
+    if (Object.prototype.hasOwnProperty.call(data, "loading")) {
+      this.loading = data.loading === true;
+      if (this.loading) {
+        this.loadError = null;
+      }
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "loadError")) {
+      this.loadError = data.loadError || null;
+    }
+
+    // When only loading/loadError flags are present (placeholder init), stop here.
+    if (!Object.prototype.hasOwnProperty.call(data, "pipelineData")) {
+      return;
+    }
+
+    // Full data payload — update all content fields.
     this._isAutoRefresh = false;
-    this.pipelineData = data.pipelineData;
-    this.repoPlatformLabel = data.repoPlatformLabel || "Git";
-    this.prButtonInfo = data.prButtonInfo;
-    this.warnings = this.pipelineData.warnings || [];
+
+    if (Object.prototype.hasOwnProperty.call(data, "pipelineData")) {
+      this.pipelineData = data.pipelineData;
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "repoPlatformLabel")) {
+      this.repoPlatformLabel = data.repoPlatformLabel || "Git";
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "prButtonInfo")) {
+      this.prButtonInfo = data.prButtonInfo;
+    }
+    this.warnings = (this.pipelineData && this.pipelineData.warnings) || [];
     this.hasWarnings = this.warnings.length > 0;
     this.showOnlyMajor = false;
-    this.displayFeatureBranches = data?.displayFeatureBranches ?? false;
-    this.enableDeploymentApexTestClasses =
-      !!data?.enableDeploymentApexTestClasses;
-    this.availableApexTestClasses = Array.isArray(
-      data?.availableApexTestClasses,
-    )
-      ? data.availableApexTestClasses
-      : [];
+    if (Object.prototype.hasOwnProperty.call(data, "displayFeatureBranches")) {
+      this.displayFeatureBranches = data.displayFeatureBranches ?? false;
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "enableDeploymentApexTestClasses")) {
+      this.enableDeploymentApexTestClasses = !!data.enableDeploymentApexTestClasses;
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "availableApexTestClasses")) {
+      this.availableApexTestClasses = Array.isArray(data.availableApexTestClasses)
+        ? data.availableApexTestClasses
+        : [];
+    }
 
     // Store branch PR data for modal display
     this.branchPullRequestsMap = new Map();
@@ -528,7 +575,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       : this.pipelineData.mermaidDiagramMajor;
     this.error = undefined;
     this.lastDiagram = "";
-    this.gitAuthenticated = data?.gitAuthenticated ?? false;
+
+    if (Object.prototype.hasOwnProperty.call(data, "gitAuthenticated")) {
+      this.gitAuthenticated = data.gitAuthenticated ?? false;
+    }
     this.connectedLabel = this.gitAuthenticated
       ? this.t("connectedTo", { platform: this.repoPlatformLabel })
       : this.t("connectTo", { platform: this.repoPlatformLabel });
@@ -537,8 +587,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       : "utility:link";
 
     // Update ticketing authentication state
-    this.ticketAuthenticated = data?.ticketAuthenticated ?? false;
-    this.ticketProviderName = data?.ticketProviderName || "Ticketing";
+    if (Object.prototype.hasOwnProperty.call(data, "ticketAuthenticated")) {
+      this.ticketAuthenticated = data.ticketAuthenticated ?? false;
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "ticketProviderName")) {
+      this.ticketProviderName = data.ticketProviderName || "Ticketing";
+    }
     this.ticketConnectedLabel = this.ticketAuthenticated
       ? this.t("connectedTo", { platform: this.ticketProviderName })
       : this.t("connectTo", { platform: this.ticketProviderName });
@@ -549,19 +603,33 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       ? "success"
       : "neutral";
 
-    this.openPullRequests = this._mapPrsWithIcons(data.openPullRequests || []);
-    // ensure reactivity for computed label
-    this.openPullRequests = Array.isArray(this.openPullRequests)
-      ? this.openPullRequests
-      : [];
+    if (Object.prototype.hasOwnProperty.call(data, "openPullRequests")) {
+      this.openPullRequests = this._mapPrsWithIcons(data.openPullRequests || []);
+      // ensure reactivity for computed label
+      this.openPullRequests = Array.isArray(this.openPullRequests)
+        ? this.openPullRequests
+        : [];
+    }
     // Store current branch PR
-    this.currentBranchPullRequest = data.currentBranchPullRequest || null;
-    this.autoFixPullRequest = data.autoFixPullRequest || null;
+    if (Object.prototype.hasOwnProperty.call(data, "currentBranchPullRequest")) {
+      this.currentBranchPullRequest = data.currentBranchPullRequest || null;
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "autoFixPullRequest")) {
+      this.autoFixPullRequest = data.autoFixPullRequest || null;
+    }
     // Store project resources
-    this.projectApexScripts = data.projectApexScripts || [];
-    this.projectSfdmuWorkspaces = data.projectSfdmuWorkspaces || [];
-    this.projectSchedulableClasses = data.projectSchedulableClasses || [];
-    this.projectCommunities = data.projectCommunities || [];
+    if (Object.prototype.hasOwnProperty.call(data, "projectApexScripts")) {
+      this.projectApexScripts = data.projectApexScripts || [];
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "projectSfdmuWorkspaces")) {
+      this.projectSfdmuWorkspaces = data.projectSfdmuWorkspaces || [];
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "projectSchedulableClasses")) {
+      this.projectSchedulableClasses = data.projectSchedulableClasses || [];
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "projectCommunities")) {
+      this.projectCommunities = data.projectCommunities || [];
+    }
     // adjust columns to fit the available width immediately
     setTimeout(() => this.adjustPrColumns(), 50);
     // Render the Mermaid diagram after a brief delay to ensure DOM is ready
