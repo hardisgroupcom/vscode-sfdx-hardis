@@ -47,8 +47,12 @@ export class PipelineDataProvider {
       let majorOrgs: MajorOrg[] = await listMajorOrgs({
         browseGitProvider: options.browseGitProvider || false,
       });
-      // Get the git provider instance to pass to mermaid builder for create PR URLs
-      const gitProvider = await GitProvider.getInstance();
+      // Get the git provider instance to pass to mermaid builder for create PR URLs.
+      // Skip it entirely when not browsing the git provider (step 2 / no-PR
+      // render) so the cold provider init (~10s) does not block the first paint.
+      const gitProvider = options.browseGitProvider
+        ? await GitProvider.getInstance()
+        : null;
       // majorOrgs = await completeOrgsWithPullRequests(majorOrgs);
       const mermaidBuilder = new BranchStrategyMermaidBuilder(
         majorOrgs,

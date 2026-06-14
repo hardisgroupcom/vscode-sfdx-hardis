@@ -148,7 +148,11 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
         devHubAliasRes.result[0].value
       ) {
         devHubUsername = devHubAliasRes.result[0].value;
-        orgDisplayCommand += ` --target-org ${devHubUsername}`;
+        // Quote the username so this command string matches the one built by
+        // getUsernameInstanceUrl (utils.ts) — identical strings let the in-flight
+        // dedup + "orgs" cache collapse them into a single `sf org display` call
+        // instead of two (each can take tens of seconds cold on a slow org).
+        orgDisplayCommand += ` --target-org "${devHubUsername}"`;
       } else {
         items.push({
           id: "org-not-connected-devhub",
@@ -160,6 +164,10 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
         return items;
       }
     }
+    Logger.logPerf(
+      `[status-perf] getOrgItems(devHub=${!!options.devHub}) org display START: ${orgDisplayCommand}`,
+    );
+    const orgDisplayT0 = Date.now();
     const orgInfoResult = await execSfdxJson(orgDisplayCommand, {
       fail: false,
       output: false,
@@ -169,7 +177,14 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
       cacheExpiration: orgDisplayCommand.includes("--target-org")
         ? 1000 * 60 * 60 * 24 * 90
         : 1000 * 60 * 15, // 90 days for named orgs, 15 minutes for default org
+      // The status sidebar is background info — it must never hold a high-priority
+      // slot (a slow org's `sf org display` can take tens of seconds) and block a
+      // panel the user actively opens. Yield to interactive commands.
+      lowPriority: true,
     });
+    Logger.logPerf(
+      `[status-perf] getOrgItems(devHub=${!!options.devHub}) org display DONE: ${Date.now() - orgDisplayT0}ms`,
+    );
     if (orgInfoResult.result || orgInfoResult.id) {
       const orgInfo = orgInfoResult.result || orgInfoResult;
       setOrgCache(orgInfo);
@@ -562,8 +577,13 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
                 parentGitBranch || "",
                 `origin/${parentGitBranch}`,
               ]);
-              // Check if there is a commit in current branch containing the ref of the latest parent branch commit
-              const currentBranchCommits = await git.log([branchForFetch]);
+              // Check if there is a commit in current branch containing the ref of the latest parent branch commit.
+              // Limit to the 100 most recent commits so simple-git does not parse the full history on large repos.
+              const currentBranchCommits = await git.log([
+                "-n",
+                "100",
+                branchForFetch,
+              ]);
               const mergeNeeded =
                 (gitDiff.length > 0 &&
                   currentBranchCommits?.all.length === 0) ||

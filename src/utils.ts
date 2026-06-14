@@ -41,6 +41,11 @@ export interface ExecCommandOptions {
   cwd?: string;
   cacheExpiration?: number;
   cacheSection?: CacheSection;
+  // When true, the command is treated as low priority by the concurrency
+  // limiter (runs after / yields slots to interactive panel-feature commands).
+  // When omitted, it is auto-detected from the command (version / plugins
+  // checks are low priority). Pass false to force normal priority.
+  lowPriority?: boolean;
 }
 
 let MULTITHREAD_ACTIVE: boolean | null = null;
@@ -50,6 +55,102 @@ let GIT_MENUS: any[] | null = null;
 
 // Dedup in-flight background npm version refreshes
 const NPM_REFRESH_IN_FLIGHT: Map<string, Promise<void>> = new Map();
+
+// ── Fix #4: concurrency limiter for execShell ─────────────────────────────
+// On Windows, each `sf` spawn is CPU-heavy at boot time. Without a limit, a
+// burst of 8-10 concurrent spawns (sf --version, sf plugins, plugin commands…)
+// saturates the CPU and piles synchronous JSON.parse work on the main thread,
+// stalling the extension host for seconds. Capping at 4 concurrent processes
+// keeps the extension responsive while still overlapping I/O.
+//
+// No-deadlock guarantee: the only callers of execShell are execCommand (called
+// by execSfdxJson / execCommandWithProgress) and getPythonCommand. Neither
+// awaits another execShell call while holding a slot — the call chain is
+// strictly linear (execSfdxJson → execCommand → execShell, one level deep).
+// Two-tier priority: panel-feature commands (high priority) may use all
+// MAX_CONCURRENT_SHELL slots; background/status commands (sf --version, sf
+// plugins, plugin discovery…) are low priority and capped at
+// MAX_CONCURRENT_LOW_PRIORITY so they never occupy every slot. This keeps
+// headroom for interactive commands, which are also served first from the queue.
+const MAX_CONCURRENT_SHELL = 4;
+const MAX_CONCURRENT_LOW_PRIORITY = 2;
+let runningShellCount = 0;
+let runningLowPriorityCount = 0;
+const highPriorityShellQueue: Array<() => void> = [];
+const lowPriorityShellQueue: Array<() => void> = [];
+
+function acquireShellSlot(lowPriority: boolean): Promise<void> {
+  if (lowPriority) {
+    if (
+      runningShellCount < MAX_CONCURRENT_SHELL &&
+      runningLowPriorityCount < MAX_CONCURRENT_LOW_PRIORITY
+    ) {
+      runningShellCount++;
+      runningLowPriorityCount++;
+      return Promise.resolve();
+    }
+    return new Promise<void>((resolve) => {
+      lowPriorityShellQueue.push(resolve);
+    });
+  }
+  if (runningShellCount < MAX_CONCURRENT_SHELL) {
+    runningShellCount++;
+    return Promise.resolve();
+  }
+  return new Promise<void>((resolve) => {
+    highPriorityShellQueue.push(resolve);
+  });
+}
+
+function releaseShellSlot(lowPriority: boolean): void {
+  runningShellCount--;
+  if (lowPriority) {
+    runningLowPriorityCount--;
+  }
+  pumpShellQueues();
+}
+
+// After a slot frees, admit waiters — high priority first, then low priority
+// (respecting its sub-cap). Admitted waiters are counted before resolving so
+// the freed capacity is reserved for them.
+function pumpShellQueues(): void {
+  while (
+    highPriorityShellQueue.length > 0 &&
+    runningShellCount < MAX_CONCURRENT_SHELL
+  ) {
+    runningShellCount++;
+    highPriorityShellQueue.shift()!();
+  }
+  while (
+    lowPriorityShellQueue.length > 0 &&
+    runningShellCount < MAX_CONCURRENT_SHELL &&
+    runningLowPriorityCount < MAX_CONCURRENT_LOW_PRIORITY
+  ) {
+    runningShellCount++;
+    runningLowPriorityCount++;
+    lowPriorityShellQueue.shift()!();
+  }
+}
+
+// Heuristic: status/dependency "infrastructure" commands are low priority vs
+// panel-feature commands. Matches exact version checks, `sf plugins`, and
+// per-plugin `:hardis-commands` discovery — the calls that flood on panel load.
+function isLowPriorityCommand(command: string): boolean {
+  const c = command.trim();
+  return (
+    /^(node|git|npm|yarn|sf|sfdx) --version$/.test(c) ||
+    /^sf plugins( --json)?$/.test(c) ||
+    /:hardis-commands\b/.test(c)
+  );
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── Fix #2: memoize getGitParentBranch ───────────────────────────────────────
+// git show-branch -a is heavy on large repos. Cache the result keyed by the
+// current HEAD rev so a hard refresh (resetCache) forces recomputation.
+let cachedParentBranch: string | null = null;
+let cachedParentBranchRev: string | null = null;
+// ─────────────────────────────────────────────────────────────────────────────
 
 export function isMultithreadActive() {
   if (MULTITHREAD_ACTIVE !== null) {
@@ -75,53 +176,74 @@ let sharedWorkerCallbacks: Map<
 > = new Map();
 let sharedWorkerRequestSeq = 0;
 
-export async function execShell(cmd: string, execOptions: any) {
-  if (isMultithreadActive()) {
-    if (!sharedWorker) {
-      sharedWorker = new Worker(path.join(__dirname, "worker.js"));
-      sharedWorker.on("message", (result: any) => {
-        const reqId = result && result.requestId;
-        if (!reqId || !sharedWorkerCallbacks.has(reqId)) {
-          return;
-        }
-        const cb = sharedWorkerCallbacks.get(reqId)!;
-        sharedWorkerCallbacks.delete(reqId);
-        if (result && result.error) {
-          cb.reject(result);
-        } else {
-          cb.resolve({ stdout: result.stdout, stderr: result.stderr });
-        }
-      });
-      sharedWorker.on("exit", () => {
-        rejectPendingSharedWorkerCallbacks(
-          new Error("Shared worker exited unexpectedly"),
-        );
-        sharedWorker = null;
-      });
-      sharedWorker.on("error", (error) => {
-        rejectPendingSharedWorkerCallbacks(error);
-        sharedWorker = null;
+export async function execShell(
+  cmd: string,
+  execOptions: any,
+  lowPriority = false,
+) {
+  // Acquire a concurrency slot before spawning. Released in the finally block
+  // so it is freed on success, synchronous throw, worker reject, and
+  // childProcess.exec error alike.
+  const shellWaitT0 = Date.now();
+  await acquireShellSlot(lowPriority);
+  const shellWaited = Date.now() - shellWaitT0;
+  const shellExecT0 = Date.now();
+  try {
+    if (isMultithreadActive()) {
+      if (!sharedWorker) {
+        sharedWorker = new Worker(path.join(__dirname, "worker.js"));
+        sharedWorker.on("message", (result: any) => {
+          const reqId = result && result.requestId;
+          if (!reqId || !sharedWorkerCallbacks.has(reqId)) {
+            return;
+          }
+          const cb = sharedWorkerCallbacks.get(reqId)!;
+          sharedWorkerCallbacks.delete(reqId);
+          if (result && result.error) {
+            cb.reject(result);
+          }
+          else {
+            cb.resolve({ stdout: result.stdout, stderr: result.stderr });
+          }
+        });
+        sharedWorker.on("exit", () => {
+          rejectPendingSharedWorkerCallbacks(
+            new Error("Shared worker exited unexpectedly"),
+          );
+          sharedWorker = null;
+        });
+        sharedWorker.on("error", (error) => {
+          rejectPendingSharedWorkerCallbacks(error);
+          sharedWorker = null;
+        });
+      }
+      return await new Promise<any>((resolve, reject) => {
+        const requestId = `req_${Date.now()}_${sharedWorkerRequestSeq++}`;
+        sharedWorkerCallbacks.set(requestId, { resolve, reject });
+        sharedWorker!.postMessage({
+          cliCommand: { cmd: cmd, execOptions: JSON.stringify(execOptions) },
+          requestId,
+          path: "./worker.ts",
+        });
       });
     }
-    return new Promise<any>((resolve, reject) => {
-      const requestId = `req_${Date.now()}_${sharedWorkerRequestSeq++}`;
-      sharedWorkerCallbacks.set(requestId, { resolve, reject });
-      sharedWorker!.postMessage({
-        cliCommand: { cmd: cmd, execOptions: JSON.stringify(execOptions) },
-        requestId,
-        path: "./worker.ts",
+    else {
+      // Use main process to perform CLI command
+      return await new Promise<any>((resolve, reject) => {
+        childProcess.exec(cmd, execOptions, (error, stdout, stderr) => {
+          if (error) {
+            return reject({ error: error, stdout: stdout, stderr: stderr });
+          }
+          return resolve({ stdout: stdout, stderr: stderr });
+        });
       });
-    });
-  } else {
-    // Use main process to perform CLI command
-    return new Promise<any>((resolve, reject) => {
-      childProcess.exec(cmd, execOptions, (error, stdout, stderr) => {
-        if (error) {
-          return reject({ error: error, stdout: stdout, stderr: stderr });
-        }
-        return resolve({ stdout: stdout, stderr: stderr });
-      });
-    });
+    }
+  }
+  finally {
+    releaseShellSlot(lowPriority);
+    Logger.logPerf(
+      `[shell-perf] ${lowPriority ? "LOW " : "HIGH"} wait=${shellWaited}ms exec=${Date.now() - shellExecT0}ms :: ${cmd.slice(0, 140)}`,
+    );
   }
 }
 
@@ -304,6 +426,9 @@ export async function resetCache() {
   COMMANDS_RESULTS = {};
   GIT_MENUS = null;
   cachedWorkspaceRoot = null;
+  // Clear the getGitParentBranch memo so a hard refresh recomputes it
+  cachedParentBranch = null;
+  cachedParentBranchRev = null;
   resetSfdxHardisConfigCache();
   Logger.log("[vscode-sfdx-hardis] Reset cache");
 }
@@ -409,7 +534,12 @@ export async function execCommand(
       // callers hit the dedup branch above instead of spawning a second process
       Logger.log("[vscode-sfdx-hardis][command] " + command);
       console.time(command);
-      const commandResultPromise = execShell(command, execOptions);
+      const lowPriority = options.lowPriority ?? isLowPriorityCommand(command);
+      const commandResultPromise = execShell(
+        command,
+        execOptions,
+        lowPriority,
+      );
       COMMANDS_RESULTS[command] = { promise: commandResultPromise };
       try {
         commandResult = await commandResultPromise;
@@ -642,22 +772,31 @@ export async function getDefaultTargetOrgUsername(): Promise<string | null> {
 
 export async function getUsernameInstanceUrl(
   username: string,
+  options: { lowPriority?: boolean } = {},
 ): Promise<string | null> {
+  // Normalize: strip any surrounding quotes a caller may pass, so the cache key
+  // and command string stay consistent with getOrgItems / setOrgCache (and never
+  // produce a malformed `--target-org ""x""`).
+  const cleanUsername = String(username).replace(/^["']+|["']+$/g, "");
   const cacheValue = CacheManager.get(
     "orgs",
-    `username-instanceUrl:${username}`,
+    `username-instanceUrl:${cleanUsername}`,
   );
   if (cacheValue) {
     return cacheValue as string;
   }
-  // request org
+  // request org. Identical command string to getOrgItems lets the in-flight
+  // dedup + "orgs" cache collapse them into a single `sf org display` call.
   const orgInfoResult = await execSfdxJson(
-    `sf org display --target-org ${username}`,
+    `sf org display --target-org "${cleanUsername}"`,
     {
       fail: false,
       output: false,
       cacheExpiration: 1000 * 60 * 60 * 24, // 1 day (milliseconds)
       cacheSection: "orgs",
+      // Callers doing background work (e.g. org-color detection) pass true so
+      // this never blocks an interactive panel command.
+      lowPriority: options.lowPriority ?? false,
     },
   );
   if (orgInfoResult.result) {
@@ -687,14 +826,19 @@ export function setGitMenusItems(menuItems: any): void {
 
 export async function getGitParentBranch() {
   try {
-    const outputFromGit = (
-      await simpleGit({ trimmed: true }).raw("show-branch", "-a")
-    ).split("\n");
+    // Resolve current HEAD rev first so we can skip the expensive show-branch
+    // call when the branch has not changed since the last invocation.
     const rev = await simpleGit({ trimmed: true }).raw(
       "rev-parse",
       "--abbrev-ref",
       "HEAD",
     );
+    if (rev === cachedParentBranchRev && cachedParentBranch !== null) {
+      return cachedParentBranch;
+    }
+    const outputFromGit = (
+      await simpleGit({ trimmed: true }).raw("show-branch", "-a")
+    ).split("\n");
     const allLinesNormalized = outputFromGit.map((line) =>
       line.trim().replace(/\].*/, ""),
     );
@@ -704,9 +848,12 @@ export async function getGitParentBranch() {
         /^.*\[/,
         "",
       );
+      cachedParentBranchRev = rev;
+      cachedParentBranch = parentBranch;
       return parentBranch;
     }
-  } catch {
+  }
+  catch {
     return null;
   }
   return null;
@@ -760,9 +907,13 @@ export async function getPythonCommand() {
   const candidates = ["python", "python3", "py", "py3"];
   for (const candidate of candidates) {
     try {
-      const result = await execShell(`${candidate} --version`, {
-        maxBuffer: 10000 * 10000,
-      });
+      const result = await execShell(
+        `${candidate} --version`,
+        {
+          maxBuffer: 10000 * 10000,
+        },
+        true, // background probe — low priority
+      );
       if (
         result &&
         result.stdout &&

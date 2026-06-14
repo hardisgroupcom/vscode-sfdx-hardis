@@ -25,7 +25,11 @@ export async function listMajorOrgs(
   options: { browseGitProvider: boolean } = { browseGitProvider: false },
 ): Promise<MajorOrg[]> {
   const workspaceRoot = getWorkspaceRoot();
-  const branchConfigPattern = "**/config/branches/.sfdx-hardis.*.yml";
+  // Branch config files live only in <workspaceRoot>/config/branches/. Anchor the
+  // pattern there (no leading "**/") so glob reads a single directory instead of
+  // walking the entire working tree (node_modules, .git, force-app…), which on a
+  // large repo took 25s+ cold and was the dominant pipeline-load cost.
+  const branchConfigPattern = "config/branches/.sfdx-hardis.*.yml";
   const configFiles = await glob(branchConfigPattern, { cwd: workspaceRoot });
   const majorOrgs: MajorOrg[] = [];
   const gitProvider = options.browseGitProvider

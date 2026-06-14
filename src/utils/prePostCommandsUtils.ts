@@ -3,6 +3,7 @@ import * as yaml from "js-yaml";
 import * as path from "path";
 import fg from "fast-glob";
 import { getWorkspaceRoot, listSfdxProjectPackageDirectories } from "../utils";
+import { CacheManager } from "./cache-manager";
 import { PullRequest } from "./gitProviders/types";
 
 export interface PrePostCommand {
@@ -266,7 +267,21 @@ export async function saveDeploymentApexTestClasses(
   return prConfigFileName;
 }
 
+const APEX_TEST_CLASSES_CACHE_KEY = "projectApexTestClasses";
+const APEX_TEST_CLASSES_CACHE_TTL_MS = 1000 * 60 * 10; // 10 minutes
+// Read files in parallel batches: scanning thousands of .cls files one-at-a-time
+// (sequential await) took ~minutes cold on large repos.
+const APEX_TEST_READ_BATCH_SIZE = 60;
+
 export async function listProjectApexTestClasses(): Promise<string[]> {
+  const cached = CacheManager.get<string[]>(
+    "project",
+    APEX_TEST_CLASSES_CACHE_KEY,
+  );
+  if (cached) {
+    return cached;
+  }
+
   const workspaceRoot = getWorkspaceRoot();
   if (!workspaceRoot) {
     return [];
@@ -301,14 +316,26 @@ export async function listProjectApexTestClasses(): Promise<string[]> {
   const found: string[] = [];
   const seen = new Set<string>();
 
-  for (const relFile of files) {
-    try {
-      const fullPath = path.join(workspaceRoot, relFile);
-      const content = await fs.readFile(fullPath, "utf8");
-      if (!isTestRegex.test(content || "")) {
-        continue;
-      }
-      const className = path.basename(relFile, ".cls").trim();
+  for (let i = 0; i < files.length; i += APEX_TEST_READ_BATCH_SIZE) {
+    const batch = files.slice(i, i + APEX_TEST_READ_BATCH_SIZE);
+    const batchClassNames = await Promise.all(
+      batch.map(async (relFile) => {
+        try {
+          const content = await fs.readFile(
+            path.join(workspaceRoot, relFile),
+            "utf8",
+          );
+          if (!isTestRegex.test(content || "")) {
+            return null;
+          }
+          return path.basename(relFile, ".cls").trim() || null;
+        } catch {
+          // ignore file read errors
+          return null;
+        }
+      }),
+    );
+    for (const className of batchClassNames) {
       if (!className) {
         continue;
       }
@@ -317,12 +344,16 @@ export async function listProjectApexTestClasses(): Promise<string[]> {
         seen.add(key);
         found.push(className);
       }
-    } catch {
-      // ignore file read errors
     }
   }
 
   found.sort((a, b) => a.localeCompare(b));
+  await CacheManager.set(
+    "project",
+    APEX_TEST_CLASSES_CACHE_KEY,
+    found,
+    APEX_TEST_CLASSES_CACHE_TTL_MS,
+  );
   return found;
 }
 
