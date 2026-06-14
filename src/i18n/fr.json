@@ -1015,6 +1015,7 @@
   "jiraCloudAuthInfo": "Jira Cloud requiert un jeton API utilisé avec votre adresse e-mail.",
   "jiraHostNotConfigured": "L'hôte JIRA n'est pas configuré. Veuillez définir jiraHost dans les Paramètres du pipeline.",
   "jiraServerAuthInfo": "Jira Server/Data Center requiert un jeton d'accès personnel (PAT).",
+  "jiraUseClassicApiTokenHint": "Choisissez « Create API token » (un jeton classique), pas « API token with scopes ».",
   "langDutch": "Néerlandais",
   "langEnglish": "English",
   "langFrench": "Français",

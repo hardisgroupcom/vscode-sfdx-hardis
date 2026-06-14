@@ -1015,6 +1015,7 @@
   "jiraCloudAuthInfo": "Jira Cloud requires an API Token used with your email address.",
   "jiraHostNotConfigured": "JIRA host is not configured. Please set jiraHost in Pipeline Settings.",
   "jiraServerAuthInfo": "Jira Server/Data Center requires a Personal Access Token (PAT).",
+  "jiraUseClassicApiTokenHint": "Choose \"Create API token\" (a classic token), not \"API token with scopes\".",
   "langDutch": "Dutch",
   "langEnglish": "English",
   "langFrench": "Français",

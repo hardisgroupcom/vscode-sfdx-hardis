@@ -1015,6 +1015,7 @@
   "jiraCloudAuthInfo": "Jira Cloud はメールアドレスと組み合わせた API トークンが必要です。",
   "jiraHostNotConfigured": "JIRA ホストが設定されていません。パイプライン設定で jiraHost を設定してください。",
   "jiraServerAuthInfo": "Jira Server/Data Center は Personal Access Token (PAT) が必要です。",
+  "jiraUseClassicApiTokenHint": "「Create API token」（従来のトークン）を選択してください。「API token with scopes」は選ばないでください。",
   "langDutch": "オランダ語",
   "langEnglish": "English",
   "langFrench": "Français",

@@ -182,6 +182,10 @@ export class JiraProvider extends TicketProvider {
       // Jira Cloud: ask the questions first (create-token modal + clickable button,
       // then paste the token), and only then prompt for the email — so the guided
       // messages come first and the plain value inputs come together at the end.
+      // NOTE: must be a CLASSIC API token. Scoped Atlassian API tokens are silently
+      // rejected when used with Basic auth against the site URL (…atlassian.net) and
+      // return 401 — they only work through the api.atlassian.com/ex/jira/{cloudId}
+      // gateway, which this client does not use.
       token = await promptForToken({
         providerLabel: "Jira",
         inputPrompt: t("enterJiraApiToken"),
@@ -190,8 +194,7 @@ export class JiraProvider extends TicketProvider {
             id: "apiToken",
             label: t("createJiraApiToken"),
             url: "https://id.atlassian.com/manage-profile/security/api-tokens",
-            creationHint: t("atlassianApiTokenWithScopesHint"),
-            scopesHint: "read:jira-work, read:jira-user",
+            creationHint: t("jiraUseClassicApiTokenHint"),
           },
         ],
       });
