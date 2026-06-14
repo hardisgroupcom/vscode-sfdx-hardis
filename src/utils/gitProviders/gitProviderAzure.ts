@@ -75,8 +75,10 @@ export class GitProviderAzure extends GitProvider {
       // Ignore if secret doesn't exist
     }
 
-    // OAuth sessions are managed by VS Code, so we don't delete them
-    // Just clear local state
+    // OAuth sessions are managed by VS Code and cannot be removed programmatically,
+    // so remember the explicit disconnect to prevent initialize() from silently
+    // re-connecting from the still-present session.
+    await SecretsManager.setSecret(this.hostKey + "_DISCONNECTED", "true");
     this.connection = null;
     this.gitApi = null;
     this.buildApi = null;
@@ -136,6 +138,9 @@ export class GitProviderAzure extends GitProvider {
     }
 
     await SecretsManager.setSecret(this.hostKey + "_TOKEN", token);
+    await SecretsManager.deleteSecret(this.hostKey + "_DISCONNECTED").catch(
+      () => {},
+    );
     await this.initialize();
     return this.isActive;
   }
@@ -151,15 +156,29 @@ export class GitProviderAzure extends GitProvider {
       return false;
     }
 
+    await SecretsManager.deleteSecret(this.hostKey + "_DISCONNECTED").catch(
+      () => {},
+    );
     await this.initialize();
     return this.isActive;
   }
 
   async initialize() {
     const pat = await SecretsManager.getSecret(this.hostKey + "_TOKEN");
-    const authHandler = pat
-      ? azdev.getPersonalAccessTokenHandler(pat)
-      : await this.getOAuthHandler();
+    let authHandler: any;
+    if (pat) {
+      authHandler = azdev.getPersonalAccessTokenHandler(pat);
+    } else {
+      // The native VS Code (OAuth) session cannot be removed programmatically, so
+      // honor an explicit disconnect to avoid silently re-connecting from it.
+      const disconnected = await SecretsManager.getSecret(
+        this.hostKey + "_DISCONNECTED",
+      );
+      if (disconnected) {
+        return;
+      }
+      authHandler = await this.getOAuthHandler();
+    }
 
     if (!authHandler || !this.repoInfo) {
       return;

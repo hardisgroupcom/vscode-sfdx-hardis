@@ -47,6 +47,9 @@ export class GitProviderGitHub extends GitProvider {
     } catch {
       // Ignore if secret doesn't exist
     }
+    // The native VS Code session cannot be removed programmatically, so remember the
+    // explicit disconnect to prevent initialize() from silently re-connecting from it.
+    await SecretsManager.setSecret(this.hostKey + "_DISCONNECTED", "true");
     this.gitHubClient = null;
     this.isActive = false;
     Logger.log(
@@ -88,8 +91,12 @@ export class GitProviderGitHub extends GitProvider {
       forceNewSession: true,
     });
     if (session?.accessToken) {
-      // Drop any stored PAT so initialize() relies on the native VS Code session
+      // Drop any stored PAT so initialize() relies on the native VS Code session,
+      // and clear the disconnect flag so initialize() may use the session again.
       await SecretsManager.deleteSecret(this.hostKey + "_TOKEN").catch(() => {});
+      await SecretsManager.deleteSecret(this.hostKey + "_DISCONNECTED").catch(
+        () => {},
+      );
       await this.initialize();
       return this.isActive;
     }
@@ -106,6 +113,9 @@ export class GitProviderGitHub extends GitProvider {
       return null;
     }
     await SecretsManager.setSecret(this.hostKey + "_TOKEN", token);
+    await SecretsManager.deleteSecret(this.hostKey + "_DISCONNECTED").catch(
+      () => {},
+    );
     await this.initialize();
     return this.isActive;
   }
@@ -115,9 +125,16 @@ export class GitProviderGitHub extends GitProvider {
       return;
     }
     // Prefer a stored personal access token; otherwise fall back to the native
-    // VS Code GitHub session.
+    // VS Code GitHub session — unless the user explicitly disconnected (the native
+    // session cannot be removed programmatically, so we honor a disconnect flag).
     let accessToken = await SecretsManager.getSecret(this.hostKey + "_TOKEN");
     if (!accessToken) {
+      const disconnected = await SecretsManager.getSecret(
+        this.hostKey + "_DISCONNECTED",
+      );
+      if (disconnected) {
+        return;
+      }
       const session = await vscode.authentication.getSession(
         "github",
         ["repo"],
