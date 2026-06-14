@@ -6,7 +6,10 @@ import { getConfig } from "../pipeline/sfdxHardisConfig";
 import { SecretsManager } from "../secretsManager";
 import { Version2Client, Version3Client } from "jira.js";
 import { t } from "../../i18n/i18n";
-import { showAuthFailureGuidance } from "../providerCredentials";
+import {
+  promptForToken,
+  showAuthFailureGuidance,
+} from "../providerCredentials";
 
 export class JiraProvider extends TicketProvider {
   static readonly providerName: TicketProviderName = "JIRA";
@@ -54,6 +57,7 @@ export class JiraProvider extends TicketProvider {
       Logger.log(`Disconnected from JIRA host: ${this.jiraHost}`);
     }
 
+    await this.markDisconnected();
     this.isAuthenticated = false;
     this.jiraClient = null;
   }
@@ -97,13 +101,11 @@ export class JiraProvider extends TicketProvider {
       Logger.log(
         "JIRA host not configured. Please set jiraHost in .sfdx-hardis.yml",
       );
+      const pipelineSettingsLabel = t("pipelineConfig");
       vscode.window
-        .showErrorMessage(
-          "JIRA host not configured. Please set jiraHost in .sfdx-hardis.yml (use Pipeline Settings)",
-          "View Pipeline Settings",
-        )
+        .showErrorMessage(t("jiraHostNotConfigured"), pipelineSettingsLabel)
         .then((action) => {
-          if (action === "View Pipeline Settings") {
+          if (action === pipelineSettingsLabel) {
             vscode.commands.executeCommand(
               "vscode-sfdx-hardis.showPipelineConfig",
               null,
@@ -115,7 +117,8 @@ export class JiraProvider extends TicketProvider {
     }
     this.hostKey = this.jiraHost.replace(/\./g, "_").toUpperCase();
 
-    // Prompt user for authentication method
+    // Prompt user for authentication method using a MODAL dialog (consistent with the
+    // git provider sign-in flow), so the prompt is not missed when clicking the icon.
     const isCloud = this.isJiraCloud();
     const basicLabel = isCloud
       ? t("useEmailAndApiToken")
@@ -123,40 +126,36 @@ export class JiraProvider extends TicketProvider {
     const patLabel = isCloud
       ? t("usePersonalAccessToken")
       : t("usePersonalAccessTokenRecommended");
-    const choice = await vscode.window.showQuickPick(
-      isCloud
-        ? [
-            { label: basicLabel, value: "basic" },
-            { label: patLabel, value: "pat" },
-          ]
-        : [
-            { label: patLabel, value: "pat" },
-            { label: basicLabel, value: "basic" },
-          ],
-      {
-        placeHolder: t("jiraAuthMethodPlaceholder"),
-        ignoreFocusOut: true,
-      },
+    // Offer the recommended method first.
+    const buttons = isCloud ? [basicLabel, patLabel] : [patLabel, basicLabel];
+    const choice = await vscode.window.showInformationMessage(
+      t("jiraAuthMethodPlaceholder"),
+      { modal: true },
+      ...buttons,
     );
     if (!choice) {
       return null;
     }
 
-    if (choice.value === "pat") {
+    if (choice === patLabel) {
       return await this.authenticateWithPAT();
-    } else {
-      return await this.authenticateWithBasicAuth();
     }
+    return await this.authenticateWithBasicAuth();
   }
 
   private async authenticateWithPAT(): Promise<boolean | null> {
     const patUrl = `${this.jiraHost}/secure/ViewProfile.jspa?selectedTab=com.atlassian.pats.pats-plugin:jira-user-personal-access-tokens`;
 
-    const token = await vscode.window.showInputBox({
-      prompt: t("enterJiraPat"),
-      ignoreFocusOut: true,
-      password: true,
-      placeHolder: t("jiraCreatePatAt", { url: patUrl }),
+    const token = await promptForToken({
+      providerLabel: "Jira",
+      inputPrompt: t("enterJiraPat"),
+      createTokenOptions: [
+        {
+          id: "pat",
+          label: t("createJiraPat"),
+          url: patUrl,
+        },
+      ],
     });
 
     if (!token) {
@@ -186,20 +185,30 @@ export class JiraProvider extends TicketProvider {
       return null;
     }
 
-    const tokenPrompt = isCloud
-      ? t("enterJiraApiToken")
-      : t("enterJiraPassword");
-    const tokenPlaceholder = isCloud
-      ? t("jiraCreateApiTokenAt", {
-          url: "https://id.atlassian.com/manage-profile/security/api-tokens",
-        })
-      : undefined;
-    const token = await vscode.window.showInputBox({
-      prompt: tokenPrompt,
-      ignoreFocusOut: true,
-      password: true,
-      placeHolder: tokenPlaceholder,
-    });
+    let token: string | null | undefined;
+    if (isCloud) {
+      // Jira Cloud: offer a clickable button to create the API token, then paste it.
+      token = await promptForToken({
+        providerLabel: "Jira",
+        inputPrompt: t("enterJiraApiToken"),
+        createTokenOptions: [
+          {
+            id: "apiToken",
+            label: t("createJiraApiToken"),
+            url: "https://id.atlassian.com/manage-profile/security/api-tokens",
+            creationHint: t("atlassianApiTokenWithScopesHint"),
+            scopesHint: "read:jira-work, read:jira-user",
+          },
+        ],
+      });
+    } else {
+      // Jira Server/Data Center basic auth uses the account password (no token page).
+      token = await vscode.window.showInputBox({
+        prompt: t("enterJiraPassword"),
+        ignoreFocusOut: true,
+        password: true,
+      });
+    }
 
     if (!token) {
       return null;

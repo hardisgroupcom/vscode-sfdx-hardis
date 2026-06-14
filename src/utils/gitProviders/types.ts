@@ -18,6 +18,7 @@ export type CreateTokenOption = {
   label: string; // translated label shown to the user in the choice
   url: string; // provider page where the token can be created
   scopesHint?: string; // technical scopes/permissions to select when creating the token (not translated)
+  creationHint?: string; // translated note shown when creating the token (e.g. which repositories to grant access to, or which token type/scopes to pick)
 };
 
 export type ProviderDescription = {

@@ -15,8 +15,10 @@ export class GenericTicketingProvider extends TicketProvider {
   }
 
   async disconnect(): Promise<void> {
-    // Generic provider doesn't store credentials, just configuration
-    // Simply clear the authenticated state
+    // Generic provider doesn't store credentials, just configuration.
+    // Remember the explicit disconnect so we don't silently reconnect from config
+    // on the next pipeline refresh.
+    await this.markDisconnected();
     this.isAuthenticated = false;
     Logger.log("Disconnected from Generic ticketing provider");
   }
@@ -31,7 +33,7 @@ export class GenericTicketingProvider extends TicketProvider {
     }
 
     // Extract base URL from the URL builder pattern (remove placeholder parts)
-    // Example: "https://tickets.example.com/view/{{TICKET_ID}}" -> "https://tickets.example.com"
+    // Example: "https://tickets.example.com/view/{ticketId}" -> "https://tickets.example.com"
     const urlMatch = urlBuilder.match(/^(https?:\/\/[^/]+)/);
     return urlMatch ? urlMatch[1] : null;
   }
@@ -73,7 +75,12 @@ export class GenericTicketingProvider extends TicketProvider {
       return "";
     }
 
-    return urlBuilder.replace("{REF}", ticketId);
+    // Support the documented {ticketId} placeholder as well as the legacy {REF}
+    // and {{TICKET_ID}} variants so existing configurations keep working.
+    return urlBuilder
+      .replace(/\{\{?\s*ticketId\s*\}?\}/gi, ticketId)
+      .replace(/\{\{?\s*TICKET_ID\s*\}?\}/g, ticketId)
+      .replace(/\{REF\}/g, ticketId);
   }
 
   async completeTicketDetails(ticket: Ticket): Promise<Ticket> {

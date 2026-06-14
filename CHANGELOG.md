@@ -7,11 +7,18 @@
   - The prompt now tells you exactly which permissions/scopes to select when creating the token (covering read/write pull requests and comments, issues, and running builds/pipelines), so the token also works for the sfdx-hardis CI/CD commands
   - When authentication fails (wrong or expired token), the error message now offers "Sign in again" which restarts the exact same guided flow and refreshes the pipeline once reconnected, instead of just linking to the token page
   - Disconnecting now works when signed in with the built-in VS Code account (GitHub, Azure DevOps): it no longer silently reconnects, and stays disconnected until you sign in again
-  - GitHub "Use an access token" now guides you to create a **fine-grained** token (not a classic one), pointing to the right page and listing the exact repository permissions to grant
+  - GitHub "Use an access token" now guides you to create a **fine-grained** token (not a classic one), pointing to the right page, telling you to grant access only to the current repository, and listing the exact repository permissions to grant
   - Fixed the pipeline view sometimes still showing GitHub as disconnected right after a successful built-in sign-in
+  - GitHub now shows as disconnected (greyed icon) until you explicitly connect, instead of appearing connected because of an unrelated VS Code GitHub session
   - GitHub now lets you choose between signing in with the built-in VS Code account and using a personal access token (the token option also works for GitHub Enterprise and for github.com)
-  - Bitbucket now lets you pick which kind of token to use: a Repository Access Token (for repository admins) or an Atlassian account API token (for non-admins), each opening its own creation page
+  - Bitbucket now lets you pick which kind of token to use: a Repository Access Token (for repository admins) or an Atlassian account API token (for non-admins), each opening its own creation page; for the Atlassian API token it tells you to create an "API token with scopes" and lists the exact scopes to grant
   - Gitea is now supported as a git provider: it is auto-detected for `gitea.*` hosts, and can be forced for any self-hosted instance by setting `gitProvider: gitea` in `.sfdx-hardis.yml`
+  - Authentication failure messages now list the full set of required permissions for every git provider, so you grant the right scopes the first time
+- Ticketing provider sign-in: connecting to a ticketing tool now follows the same guided experience as git providers
+  - Jira: when connecting, a button opens the correct API token / Personal Access Token creation page, then returns to the prompt so you can paste the new token; for Jira Cloud it tells you to create an "API token with scopes" and which scopes to grant
+  - Disconnecting from Jira, Azure Boards or a generic ticketing provider now stays disconnected and no longer silently reconnects until you connect again
+  - Fixed generic ticketing links not opening the right page when the URL template used the documented `{ticketId}` placeholder
+  - The "Jira not configured" message is now translated and offers a shortcut to open Pipeline Settings
 
 ## [7.10.5] 2026-06-13
 

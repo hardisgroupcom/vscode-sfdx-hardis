@@ -31,11 +31,18 @@ export class GitProviderGitHub extends GitProvider {
     // below. "Workflows" is intentionally NOT requested (it would allow editing workflow
     // definitions); "Metadata: Read" is added automatically by GitHub.
     const host = this.repoInfo?.host || "github.com";
+    const repoSlug =
+      this.repoInfo?.owner && this.repoInfo?.repo
+        ? `${this.repoInfo.owner}/${this.repoInfo.repo}`
+        : this.repoInfo?.repo || "";
     return [
       {
         id: "pat",
         label: t("createGithubPat"),
         url: `https://${host}/settings/personal-access-tokens/new`,
+        creationHint: repoSlug
+          ? t("githubTokenRepositoryHint", { repo: repoSlug })
+          : undefined,
         scopesHint:
           "Contents (Read and write), Pull requests (Read and write), Issues (Read and write), Actions (Read and write), Commit statuses (Read)",
       },
@@ -50,6 +57,10 @@ export class GitProviderGitHub extends GitProvider {
     } catch {
       // Ignore if secret doesn't exist
     }
+    // Forget the explicit built-in sign-in so the native session is no longer reused.
+    await SecretsManager.deleteSecret(
+      this.hostKey + "_GITHUB_BUILTIN_AUTH",
+    ).catch(() => {});
     // The native VS Code session cannot be removed programmatically, so remember the
     // explicit disconnect to prevent initialize() from silently re-connecting from it.
     await SecretsManager.setSecret(this.hostKey + "_DISCONNECTED", "true");
@@ -94,6 +105,13 @@ export class GitProviderGitHub extends GitProvider {
       forceNewSession: true,
     });
     if (session?.accessToken) {
+      // Remember that the user explicitly chose the built-in VS Code sign-in, so
+      // initialize() may reuse the native session on later loads (and so an ambient
+      // session the user never opted into does not make GitHub look connected).
+      await SecretsManager.setSecret(
+        this.hostKey + "_GITHUB_BUILTIN_AUTH",
+        "true",
+      );
       // Drop any stored PAT so initialize() relies on the native VS Code session,
       // and clear the disconnect flag so initialize() may use the session again.
       await SecretsManager.deleteSecret(this.hostKey + "_TOKEN").catch(
@@ -138,6 +156,16 @@ export class GitProviderGitHub extends GitProvider {
         this.hostKey + "_DISCONNECTED",
       );
       if (disconnected) {
+        return;
+      }
+      // Only reuse the native VS Code GitHub session when the user explicitly chose
+      // the built-in sign-in. Otherwise an ambient VS Code session (often present for
+      // unrelated reasons) would make GitHub appear connected before the user opted
+      // in — unlike the PAT-only providers, which stay disconnected until connected.
+      const builtInAuth = await SecretsManager.getSecret(
+        this.hostKey + "_GITHUB_BUILTIN_AUTH",
+      );
+      if (!builtInAuth) {
         return;
       }
       const session = await vscode.authentication.getSession(

@@ -31,14 +31,23 @@ export async function promptForToken(options: {
   // route the user to the right creation page before they paste the token.
   if (createTokenOptions.length > 0) {
     const alreadyHaveLabel = t("iAlreadyHaveToken");
-    // Tell the user which scopes/permissions to select when creating the token.
+    // Show any token-creation guidance (e.g. which repositories to grant access to,
+    // or which token type/scopes to pick) and which scopes/permissions to select.
+    const creationHints = createTokenOptions
+      .map((option) => option.creationHint)
+      .filter((hint): hint is string => !!hint);
     const scopeHints = createTokenOptions
       .map((option) => option.scopesHint)
       .filter((hint): hint is string => !!hint);
+    const detailParts: string[] = [];
+    if (creationHints.length > 0) {
+      detailParts.push(creationHints.join("\n"));
+    }
+    if (scopeHints.length > 0) {
+      detailParts.push(t("tokenScopesHint", { scopes: scopeHints.join("; ") }));
+    }
     const detail =
-      scopeHints.length > 0
-        ? t("tokenScopesHint", { scopes: scopeHints.join("; ") })
-        : undefined;
+      detailParts.length > 0 ? detailParts.join("\n\n") : undefined;
     // Loop so that after opening a creation page the user comes back to the choice.
     for (;;) {
       const buttons = [

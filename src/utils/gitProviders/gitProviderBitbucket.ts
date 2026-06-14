@@ -77,8 +77,9 @@ export class GitProviderBitbucket extends GitProvider {
         id: "atlassianApiToken",
         label: t("createBitbucketAtlassianToken"),
         url: "https://id.atlassian.com/manage-profile/security/api-tokens",
+        creationHint: t("atlassianApiTokenWithScopesHint"),
         scopesHint:
-          "Repositories, Pull requests, Issues and Pipelines (read and write)",
+          "read:pipeline:bitbucket, read:pullrequest:bitbucket, read:repository:bitbucket, read:me, read:user:bitbucket, write:issue:bitbucket, write:pullrequest:bitbucket, write:repository:bitbucket",
       },
     ];
   }
