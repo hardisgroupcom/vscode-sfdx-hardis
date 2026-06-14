@@ -175,19 +175,13 @@ export class JiraProvider extends TicketProvider {
   private async authenticateWithBasicAuth(): Promise<boolean | null> {
     const isCloud = this.isJiraCloud();
 
-    const email = await vscode.window.showInputBox({
-      prompt: isCloud ? t("enterJiraEmail") : t("enterJiraUsername"),
-      ignoreFocusOut: true,
-      placeHolder: isCloud ? t("emailPlaceholder") : t("usernamePlaceholder"),
-    });
-
-    if (!email) {
-      return null;
-    }
-
+    let email: string | undefined;
     let token: string | null | undefined;
+
     if (isCloud) {
-      // Jira Cloud: offer a clickable button to create the API token, then paste it.
+      // Jira Cloud: ask the questions first (create-token modal + clickable button,
+      // then paste the token), and only then prompt for the email — so the guided
+      // messages come first and the plain value inputs come together at the end.
       token = await promptForToken({
         providerLabel: "Jira",
         inputPrompt: t("enterJiraApiToken"),
@@ -201,8 +195,25 @@ export class JiraProvider extends TicketProvider {
           },
         ],
       });
+      if (!token) {
+        return null;
+      }
+      email = await vscode.window.showInputBox({
+        prompt: t("enterJiraEmail"),
+        ignoreFocusOut: true,
+        placeHolder: t("emailPlaceholder"),
+      });
     } else {
-      // Jira Server/Data Center basic auth uses the account password (no token page).
+      // Jira Server/Data Center basic auth uses the account username and password
+      // (no token creation page).
+      email = await vscode.window.showInputBox({
+        prompt: t("enterJiraUsername"),
+        ignoreFocusOut: true,
+        placeHolder: t("usernamePlaceholder"),
+      });
+      if (!email) {
+        return null;
+      }
       token = await vscode.window.showInputBox({
         prompt: t("enterJiraPassword"),
         ignoreFocusOut: true,
@@ -210,7 +221,7 @@ export class JiraProvider extends TicketProvider {
       });
     }
 
-    if (!token) {
+    if (!email || !token) {
       return null;
     }
 
