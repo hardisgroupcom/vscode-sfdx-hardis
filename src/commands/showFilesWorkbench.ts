@@ -7,6 +7,7 @@ import * as fs from "fs-extra";
 import path from "path";
 import { Logger } from "../logger";
 import axios from "axios";
+import { t } from "../i18n/i18n";
 // jscpd:ignore-end
 
 const FILE_TEMPLATES_URL =
@@ -18,15 +19,37 @@ export function registerShowFilesWorkbench(commands: Commands) {
     async () => {
       const lwcManager = LwcPanelManager.getInstance();
 
-      // Load existing workspaces
-      const workspaces = await loadFilesWorkspaces();
-
       const panel = lwcManager.getOrCreatePanel("s-files-workbench", {
-        workspaces: workspaces,
+        loading: true,
       });
+      panel.updateTitle(t("filesWorkbench"));
+
+      const loadAndPush = async () => {
+        panel.sendInitializationData({ loading: true });
+        try {
+          const workspaces = await loadFilesWorkspaces();
+          panel.sendInitializationData({
+            workspaces: workspaces,
+            loading: false,
+          });
+        } catch (e: any) {
+          Logger.log(
+            "[vscode-sfdx-hardis] Files Workbench init failed: " +
+              (e?.message || e),
+          );
+          panel.sendInitializationData({
+            loading: false,
+            loadError: String(e?.message || e),
+          });
+        }
+      };
 
       // Handle messages from the LWC panel
       panel.onMessage(async (type: string, data: any) => {
+        if (type === "retryInit") {
+          await loadAndPush();
+          return;
+        }
         switch (type) {
           case "loadWorkspaces": {
             const updatedWorkspaces = await loadFilesWorkspaces();
@@ -140,6 +163,7 @@ export function registerShowFilesWorkbench(commands: Commands) {
             break;
         }
       });
+      loadAndPush();
     },
   );
   commands.disposables.push(disposable);

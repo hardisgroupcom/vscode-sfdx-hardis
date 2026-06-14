@@ -155,9 +155,15 @@ export class HardisColors {
       fileContent["target-org"] || fileContent["defaultusername"];
     if (fileDefaultOrg !== this.currentDefaultOrg) {
       this.currentDefaultOrg = fileDefaultOrg;
-      this.currentDefaultOrgDomain = await getUsernameInstanceUrl(
-        `"${this.currentDefaultOrg}"`,
-      );
+      // Pass the username UNQUOTED so it hits the shared "orgs" cache populated
+      // by the status panel (a pre-quoted value missed the cache → cold 25-40s
+      // `sf org display` every startup). Low priority: org coloring is cosmetic
+      // background work and must never block an interactive panel command.
+      this.currentDefaultOrgDomain = this.currentDefaultOrg
+        ? await getUsernameInstanceUrl(this.currentDefaultOrg, {
+            lowPriority: true,
+          })
+        : null;
       const orgColor = await this.getCurrentDefaultOrgColor();
       await this.applyColor(orgColor);
       // Refresh status panel when colors is changed except at initialization
@@ -278,6 +284,10 @@ export class HardisColors {
         output: true,
         cacheSection: "orgs",
         cacheExpiration: 1000 * 60 * 60 * 24 * 90 * 30, // 90 days
+        // Cosmetic org-color detection — must yield to interactive panel-feature
+        // commands so it never blocks opening a panel (the cold query can take
+        // tens of seconds on a slow org).
+        lowPriority: true,
       },
     );
     if (orgRes?.result?.records?.length === 1) {

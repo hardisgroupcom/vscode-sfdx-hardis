@@ -855,6 +855,7 @@
   "failedToStartCommand": "コマンドの開始に失敗しました: {{msg}}",
   "failedToUpdateConfigKey": "設定の更新に失敗しました: {{configKey}}",
   "failedToUpdateWorkspace": "ワークスペースの更新に失敗しました: {{message}}",
+  "featureLoadFailed": "読み込みに失敗しました。もう一度お試しください。",
   "fileLocationLabel": "ファイルの場所:",
   "fileNameFormatField": "ファイル名形式:",
   "fileNameFormatHelp": "エクスポートされるファイルの命名方法:<br/>- title: 元のファイルタイトルを使用<br/>- title_id: タイトル + Salesforce ID<br/>- id_title: Salesforce ID + タイトル<br/>- id: Salesforce ID のみ",

@@ -17,6 +17,7 @@ import { CacheManager } from "./utils/cache-manager";
 import { runSalesforceCliMcpServer } from "./utils/mcpUtils";
 import { SecretsManager } from "./utils/secretsManager";
 import { getExtensionConfigSections } from "./utils/extensionConfigUtils";
+import { startEventLoopMonitor } from "./utils/eventLoopMonitor";
 import {
   getAllTranslations,
   getCurrentLocale,
@@ -39,6 +40,10 @@ export function activate(context: vscode.ExtensionContext) {
   initI18n();
 
   new Logger(vscode.window);
+  // Diagnostic: watch for extension-host event-loop stalls during the async
+  // startup work (CLI spawn storm, etc.). Silent unless the
+  // `vsCodeSfdxHardis.debugVsCodeSfdxHardis` setting is enabled.
+  startEventLoopMonitor(context);
   console.time("Hardis_Activate");
   const timeInit = Date.now();
   // Use the console to output diagnostic information (console.log) and errors (console.error)

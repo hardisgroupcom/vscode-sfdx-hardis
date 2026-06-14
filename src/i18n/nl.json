@@ -855,6 +855,7 @@
   "failedToStartCommand": "Opdracht starten mislukt: {{msg}}",
   "failedToUpdateConfigKey": "Configuratie bijwerken mislukt: {{configKey}}",
   "failedToUpdateWorkspace": "Workspace bijwerken mislukt: {{message}}",
+  "featureLoadFailed": "Laden mislukt. Probeer het opnieuw.",
   "fileLocationLabel": "Bestandslocatie:",
   "fileNameFormatField": "Bestandsnaamopmaak:",
   "fileNameFormatHelp": "Hoe de geëxporteerde bestanden te benoemen:<br/>- title: Gebruik de oorspronkelijke bestandstitel<br/>- title_id: Titel + Salesforce ID<br/>- id_title: Salesforce ID + Titel<br/>- id: Alleen het Salesforce ID",

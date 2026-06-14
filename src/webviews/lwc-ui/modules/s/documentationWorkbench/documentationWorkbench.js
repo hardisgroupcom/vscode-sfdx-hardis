@@ -15,6 +15,10 @@ import { SharedMixin } from "s/sharedMixin";
 export default class DocumentationWorkbench extends SharedMixin(
   LightningElement,
 ) {
+  // Panel-level loading state (true until init data arrives from backend)
+  @track panelLoading = true;
+  @track loadError = null;
+
   // Generation options (state tracked here, synced with config panel)
   @track generatePdf = false;
   @track generateExcel = false;
@@ -30,56 +34,94 @@ export default class DocumentationWorkbench extends SharedMixin(
   @track docLanguage = ""; // empty = use VS Code language setting
   @track helpUrl = "";
 
+  // Panel-level three-state render getters
+  get isPanelLoading() {
+    return this.panelLoading === true && !this.loadError;
+  }
+
+  get hasPanelError() {
+    return !!this.loadError;
+  }
+
+  get isPanelReady() {
+    return this.panelLoading !== true && !this.loadError;
+  }
+
   @api
   initialize(data) {
-    if (data) {
-      // Initialize generation options if provided
-      if (data.generatePdf !== undefined) {
-        this.generatePdf = data.generatePdf;
-      }
-      if (data.generateExcel !== undefined) {
-        this.generateExcel = data.generateExcel;
-      }
-      if (data.withHistory !== undefined) {
-        this.withHistory = data.withHistory;
-      }
-      if (data.generatePackagesDoc !== undefined) {
-        this.generatePackagesDoc = data.generatePackagesDoc;
-      }
-      if (data.generateApexDoc !== undefined) {
-        this.generateApexDoc = data.generateApexDoc;
-      }
-      if (data.generateFlowDoc !== undefined) {
-        this.generateFlowDoc = data.generateFlowDoc;
-      }
-      if (data.generatePagesDoc !== undefined) {
-        this.generatePagesDoc = data.generatePagesDoc;
-      }
-      if (data.generateProfilesDoc !== undefined) {
-        this.generateProfilesDoc = data.generateProfilesDoc;
-      }
-      if (data.generateObjectsDoc !== undefined) {
-        this.generateObjectsDoc = data.generateObjectsDoc;
-      }
-      if (data.generateAutomationsDoc !== undefined) {
-        this.generateAutomationsDoc = data.generateAutomationsDoc;
-      }
-      if (data.generateLwcDoc !== undefined) {
-        this.generateLwcDoc = data.generateLwcDoc;
-      }
-      if (data.docLanguage !== undefined) {
-        this.docLanguage = data.docLanguage;
-      }
-      if (data.helpUrl !== undefined) {
-        this.helpUrl = data.helpUrl;
+    data = data || {};
+
+    // Handle panel-level loading/error state
+    if (Object.prototype.hasOwnProperty.call(data, "loading")) {
+      this.panelLoading = data.loading === true;
+      if (this.panelLoading) {
+        this.loadError = null;
       }
     }
+    if (Object.prototype.hasOwnProperty.call(data, "loadError")) {
+      this.loadError = data.loadError || null;
+    }
+
+    // First call only carries {loading:true} — guard all content fields
+    if (!Object.prototype.hasOwnProperty.call(data, "helpUrl")) {
+      return;
+    }
+
+    // Initialize generation options if provided
+    if (Object.prototype.hasOwnProperty.call(data, "generatePdf")) {
+      this.generatePdf = data.generatePdf;
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "generateExcel")) {
+      this.generateExcel = data.generateExcel;
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "withHistory")) {
+      this.withHistory = data.withHistory;
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "generatePackagesDoc")) {
+      this.generatePackagesDoc = data.generatePackagesDoc;
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "generateApexDoc")) {
+      this.generateApexDoc = data.generateApexDoc;
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "generateFlowDoc")) {
+      this.generateFlowDoc = data.generateFlowDoc;
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "generatePagesDoc")) {
+      this.generatePagesDoc = data.generatePagesDoc;
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "generateProfilesDoc")) {
+      this.generateProfilesDoc = data.generateProfilesDoc;
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "generateObjectsDoc")) {
+      this.generateObjectsDoc = data.generateObjectsDoc;
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "generateAutomationsDoc")) {
+      this.generateAutomationsDoc = data.generateAutomationsDoc;
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "generateLwcDoc")) {
+      this.generateLwcDoc = data.generateLwcDoc;
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "docLanguage")) {
+      this.docLanguage = data.docLanguage;
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "helpUrl")) {
+      this.helpUrl = data.helpUrl;
+    }
+  }
+
+  handleRetry() {
+    this.loadError = null;
+    this.panelLoading = true;
+    window.sendMessageToVSCode({ type: "retryInit" });
   }
 
   @api
   handleMessage(type, data) {
     if (type === "initialize") {
       this.initialize(data);
+    } else if (type === "configLoaded") {
+      // configLoaded carries real content — apply it as init data clearing loading state
+      this.initialize({ ...data, loading: false });
     }
   }
 

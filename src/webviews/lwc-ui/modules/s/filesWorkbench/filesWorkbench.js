@@ -4,6 +4,8 @@ import { SharedMixin } from "s/sharedMixin";
 export default class FilesWorkbench extends SharedMixin(LightningElement) {
   workspaces = [];
   selectedWorkspace = null;
+  @track loading = true;
+  @track loadError = null;
   isLoading = false;
   showCreateWorkspace = false;
   editingWorkspace = null;
@@ -144,13 +146,21 @@ export default class FilesWorkbench extends SharedMixin(LightningElement) {
 
   @api
   initialize(data) {
-    if (data && data.workspaces) {
+    data = data || {};
+    this.applyLoadingState(data);
+    if (Object.prototype.hasOwnProperty.call(data, "workspaces")) {
       this.workspaces = data.workspaces;
     }
   }
 
   handleInitialize(data) {
     this.initialize(data);
+  }
+
+  handleRetry() {
+    this.loadError = null;
+    this.loading = true;
+    window.sendMessageToVSCode({ type: "retryInit" });
   }
 
   handleWorkspacesLoaded(data) {

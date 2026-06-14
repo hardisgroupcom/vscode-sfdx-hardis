@@ -849,6 +849,7 @@
   "failedToStartCommand": "Nie udało się uruchomić polecenia: {{msg}}",
   "failedToUpdateConfigKey": "Nie udało się zaktualizować konfiguracji: {{configKey}}",
   "failedToUpdateWorkspace": "Nie udało się zaktualizować obszaru roboczego: {{message}}",
+  "featureLoadFailed": "Nie udało się załadować. Spróbuj ponownie.",
   "fileLocationLabel": "Lokalizacja pliku:",
   "fileNameFormatField": "Format nazwy pliku:",
   "fileNameFormatHelp": "Jak nazywać eksportowane pliki:<br/>- title: Użyj oryginalnego tytułu pliku<br/>- title_id: Tytuł + Salesforce ID<br/>- id_title: Salesforce ID + Tytuł<br/>- id: Tylko Salesforce ID",
