@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [7.11.0] 2026-06-15
+
 - Faster, smoother Status and Dependencies panels
   - Panels now appear right away with your installed versions, then fill in upgrade and branch warnings as they become available
   - Loading the panels no longer slows down other features
