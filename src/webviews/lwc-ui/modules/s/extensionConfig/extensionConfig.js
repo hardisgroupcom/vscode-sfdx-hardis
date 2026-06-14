@@ -8,30 +8,10 @@ export default class ExtensionConfig extends SharedMixin(LightningElement) {
   @track error = null;
   @track activeTabValue = null;
 
-  get isLoadingState() {
-    return this.loading === true && !this.loadError;
-  }
-
-  get hasError() {
-    return !!this.loadError;
-  }
-
-  get isReady() {
-    return this.loading !== true && !this.loadError;
-  }
-
   @api
   initialize(data) {
     data = data || {};
-    if (Object.prototype.hasOwnProperty.call(data, "loading")) {
-      this.loading = data.loading === true;
-      if (this.loading) {
-        this.loadError = null;
-      }
-    }
-    if (Object.prototype.hasOwnProperty.call(data, "loadError")) {
-      this.loadError = data.loadError || null;
-    }
+    this.applyLoadingState(data);
     if (!Object.prototype.hasOwnProperty.call(data, "sections")) {
       return;
     }

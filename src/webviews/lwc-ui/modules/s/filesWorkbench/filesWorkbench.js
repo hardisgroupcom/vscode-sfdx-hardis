@@ -8,18 +8,6 @@ export default class FilesWorkbench extends SharedMixin(LightningElement) {
   @track loadError = null;
   isLoading = false;
   showCreateWorkspace = false;
-
-  get isLoadingState() {
-    return this.loading === true && !this.loadError;
-  }
-
-  get hasError() {
-    return !!this.loadError;
-  }
-
-  get isReady() {
-    return this.loading !== true && !this.loadError;
-  }
   editingWorkspace = null;
   pendingSelectedWorkspacePath = null;
   // Template support
@@ -159,15 +147,7 @@ export default class FilesWorkbench extends SharedMixin(LightningElement) {
   @api
   initialize(data) {
     data = data || {};
-    if (Object.prototype.hasOwnProperty.call(data, "loading")) {
-      this.loading = data.loading === true;
-      if (this.loading) {
-        this.loadError = null;
-      }
-    }
-    if (Object.prototype.hasOwnProperty.call(data, "loadError")) {
-      this.loadError = data.loadError || null;
-    }
+    this.applyLoadingState(data);
     if (Object.prototype.hasOwnProperty.call(data, "workspaces")) {
       this.workspaces = data.workspaces;
     }

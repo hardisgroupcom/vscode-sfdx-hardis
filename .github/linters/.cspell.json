@@ -50,6 +50,7 @@
     "Dedup",
     "Finalised",
     "dedup",
+    "worktrees",
     "GHSA",
     "vulns",
     "misconfigs",
