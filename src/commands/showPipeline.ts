@@ -281,12 +281,13 @@ export function registerShowPipeline(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
     "vscode-sfdx-hardis.showPipeline",
     async () => {
-      // Open the panel immediately with a loading flag so the LWC can render
-      // a spinner while pipeline data is fetched asynchronously.
+      // Open the panel immediately with spinner flags so the LWC can render
+      // partial content while pipeline data is fetched asynchronously.
       const panel = LwcPanelManager.getInstance().getOrCreatePanel(
         "s-pipeline",
         {
-          loading: true,
+          mermaidLoading: true,
+          prLoading: true,
           imagePaths: {
             git: ["icons", "git.svg"],
             ticket: ["icons", "ticket.svg"],
@@ -305,27 +306,83 @@ export function registerShowPipeline(commands: Commands) {
 
       let pipelineProperties: PipelineInfo | null = null;
 
-      // Loads all pipeline data and pushes it to the panel. Also used for retry.
-      const loadAndPush = async () => {
-        panel.sendInitializationData({ loading: true });
+      // Staged 3-step pipeline loader:
+      // Step 1: spinner flags already sent via getOrCreatePanel init data.
+      // Step 2: fast load (no git provider) — renders diagram without PR annotations.
+      // Step 3: full load (with git provider) — renders diagram with PRs + populates PR list.
+      const loadPipelineStaged = async (opts?: { resetGit?: boolean }) => {
+        panel.sendInitializationData({ mermaidLoading: true, prLoading: true });
         try {
-          pipelineProperties = await loadAllPipelineInfo({
+          const fast = await loadAllPipelineInfo({
             browseGitProvider: false,
-            resetGit: false,
+            resetGit: opts?.resetGit ?? false,
             withProgress: false,
           });
+          pipelineProperties = fast;
+          // Step 2: render the diagram (no PR annotations yet) with a spinner
+          // overlaid on it while the git provider data loads for step 3.
           panel.sendInitializationData({
-            ...pipelineProperties,
-            firstDisplay: true,
-            loading: false,
+            ...fast,
+            mermaidLoading: false,
+            mermaidRefreshing: true,
+            prLoading: true,
+          });
+          const full = await loadAllPipelineInfo({
+            browseGitProvider: true,
+            resetGit: opts?.resetGit ?? false,
+            withProgress: false,
+          });
+          pipelineProperties = full;
+          // Step 3: re-render with PR annotations and clear the overlay.
+          panel.sendInitializationData({
+            ...full,
+            mermaidLoading: false,
+            mermaidRefreshing: false,
+            prLoading: false,
           });
         } catch (e: any) {
           Logger.log(
-            "[vscode-sfdx-hardis] pipeline init failed: " +
+            "[vscode-sfdx-hardis] pipeline staged load failed: " +
               (e?.message || e),
           );
           panel.sendInitializationData({
-            loading: false,
+            mermaidLoading: false,
+            mermaidRefreshing: false,
+            prLoading: false,
+            loadError: String(e?.message || e),
+          });
+        }
+      };
+
+      // Single-step full reload (used by the Refresh button): load everything
+      // including git jobs & PRs and render the diagram once. Unlike the staged
+      // loader, it skips the intermediate PR-less render. The refresh spinner is
+      // driven by the LWC itself (overlay on the existing diagram for a manual
+      // refresh, nothing for an auto/interval refresh), so this routine does NOT
+      // push mermaidLoading:true up front — that would replace the diagram.
+      const loadPipelineFull = async (opts?: { resetGit?: boolean }) => {
+        try {
+          const full = await loadAllPipelineInfo({
+            browseGitProvider: true,
+            resetGit: opts?.resetGit ?? false,
+            withProgress: false,
+          });
+          pipelineProperties = full;
+          panel.sendInitializationData({
+            ...full,
+            mermaidLoading: false,
+            mermaidRefreshing: false,
+            prLoading: false,
+          });
+        } catch (e: any) {
+          Logger.log(
+            "[vscode-sfdx-hardis] pipeline full reload failed: " +
+              (e?.message || e),
+          );
+          panel.sendInitializationData({
+            mermaidLoading: false,
+            mermaidRefreshing: false,
+            prLoading: false,
             loadError: String(e?.message || e),
           });
         }
@@ -349,17 +406,13 @@ export function registerShowPipeline(commands: Commands) {
       panel.onMessage(async (type, data) => {
         // Retry after initial load error
         if (type === "retryInit") {
-          await loadAndPush();
+          await loadPipelineStaged();
           return;
         }
-        // Refresh
+        // Refresh (Refresh button) — full single-step reload (mermaid with jobs
+        // & PRs), keeps top bar visible; no intermediate PR-less render.
         if (type === "refreshPipeline") {
-          pipelineProperties = await loadAllPipelineInfo({
-            browseGitProvider: true,
-            resetGit: false,
-            withProgress: false,
-          });
-          panel.sendInitializationData({ ...pipelineProperties, loading: false });
+          await loadPipelineFull();
         }
         // Update panel title
         else if (type === "updatePanelTitle") {
@@ -655,12 +708,7 @@ export function registerShowPipeline(commands: Commands) {
             // getSession({ createIfNone: false }) immediately after the new VS Code
             // sign-in, which can momentarily return no session and wrongly report the
             // provider as not connected.
-            pipelineProperties = await loadAllPipelineInfo({
-              browseGitProvider: true,
-              resetGit: false,
-              withProgress: true,
-            });
-            panel.sendInitializationData({ ...pipelineProperties, loading: false });
+            await loadPipelineStaged();
           } else if (authRes === false) {
             const viewLogsLabel = t("viewLogs");
             vscode.window
@@ -715,12 +763,7 @@ export function registerShowPipeline(commands: Commands) {
               providerName: ticketProvider.providerName,
             }),
           );
-          pipelineProperties = await loadAllPipelineInfo({
-            browseGitProvider: true,
-            resetGit: false,
-            withProgress: true,
-          });
-          panel.sendInitializationData({ ...pipelineProperties, loading: false });
+          await loadPipelineStaged();
         }
         // Prompt user for Git provider action when already connected
         else if (type === "promptGitProviderAction") {
@@ -751,12 +794,7 @@ export function registerShowPipeline(commands: Commands) {
                 t("disconnectedFrom", { providerName }),
               );
               // Refresh pipeline with unauthenticated state
-              pipelineProperties = await loadAllPipelineInfo({
-                browseGitProvider: false,
-                resetGit: true,
-                withProgress: true,
-              });
-              panel.sendInitializationData({ ...pipelineProperties, loading: false });
+              await loadPipelineStaged({ resetGit: true });
             }
           }
         }
@@ -808,18 +846,13 @@ export function registerShowPipeline(commands: Commands) {
             }
 
             // Refresh pipeline with unauthenticated ticketing state
-            pipelineProperties = await loadAllPipelineInfo({
-              browseGitProvider: true,
-              resetGit: false,
-              withProgress: true,
-            });
-            panel.sendInitializationData({ ...pipelineProperties, loading: false });
+            await loadPipelineStaged();
           }
         }
       });
 
-      // Start the background load — panel shows spinner until data arrives.
-      loadAndPush();
+      // Start the staged background load — panel shows partial content immediately.
+      loadPipelineStaged();
     },
   );
   commands.disposables.push(disposable);

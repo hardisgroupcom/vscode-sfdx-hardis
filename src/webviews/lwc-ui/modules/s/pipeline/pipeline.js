@@ -22,7 +22,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   @track openPullRequests = [];
   @track displayFeatureBranches = false;
   @track mermaidZoomLevel = 1;
-  @track loading = true;
+  @track mermaidLoading = true;
+  @track mermaidRefreshing = false;
+  @track prLoading = true;
   @track loadError = null;
   @track projectApexScripts = [];
   @track projectSfdmuWorkspaces = [];
@@ -479,21 +481,29 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     return this.mermaidZoomLevel <= this._mermaidMinZoomLevel;
   }
 
-  get isLoading() {
-    return this.loading === true && !this.loadError;
+  get isMermaidLoading() {
+    return this.mermaidLoading === true && !this.loadError;
+  }
+
+  // Manual refresh of an already-rendered diagram: keep the diagram visible and
+  // overlay a spinner on top of it (distinct from isMermaidLoading, which
+  // replaces the empty area during the very first load).
+  get isMermaidRefreshing() {
+    return this.mermaidRefreshing === true && !this.loadError;
+  }
+
+  get isPrLoading() {
+    return this.prLoading === true;
   }
 
   get hasError() {
     return !!this.loadError;
   }
 
-  get isReady() {
-    return this.loading !== true && !this.loadError;
-  }
-
   handleRetry() {
     this.loadError = null;
-    this.loading = true;
+    this.mermaidLoading = true;
+    this.prLoading = true;
     window.sendMessageToVSCode({ type: "retryInit" });
   }
 
@@ -511,21 +521,34 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   initialize(data) {
     data = data || {};
 
-    // Handle loading / error flags first — the first call only carries these.
-    if (Object.prototype.hasOwnProperty.call(data, "loading")) {
-      this.loading = data.loading === true;
-      if (this.loading) {
+    // Handle staged loading flags first — always processed regardless of payload type.
+    if (Object.prototype.hasOwnProperty.call(data, "mermaidLoading")) {
+      this.mermaidLoading = data.mermaidLoading === true;
+      if (this.mermaidLoading) {
         this.loadError = null;
       }
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "prLoading")) {
+      this.prLoading = data.prLoading === true;
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "mermaidRefreshing")) {
+      this.mermaidRefreshing = data.mermaidRefreshing === true;
     }
     if (Object.prototype.hasOwnProperty.call(data, "loadError")) {
       this.loadError = data.loadError || null;
     }
 
-    // When only loading/loadError flags are present (placeholder init), stop here.
+    // When only flag fields are present (step-1 or error-only payload), stop here.
     if (!Object.prototype.hasOwnProperty.call(data, "pipelineData")) {
       return;
     }
+
+    // Diagram data has arrived — the first-load spinner is no longer needed.
+    // The refresh overlay (mermaidRefreshing) is NOT cleared here: it is driven
+    // explicitly per payload (step 2 turns it on while git data loads, step 3 and
+    // refresh completions turn it off), so it can stay on over the rendered
+    // no-PR diagram between steps 2 and 3.
+    this.mermaidLoading = false;
 
     // Full data payload — update all content fields.
     this._isAutoRefresh = false;
@@ -639,9 +662,6 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this._updatePanelTitle();
     // Start auto-refresh timer
     this._startAutoRefresh();
-    if (data.firstDisplay) {
-      this.refreshPipeline(false);
-    }
   }
 
   get prLabel() {
@@ -1573,7 +1593,21 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   // Added refreshPipeline method
   refreshPipeline(isAutoRefresh = false) {
     this._isAutoRefresh = isAutoRefresh;
-    this.loading = !isAutoRefresh;
+    // Manual refresh: overlay a spinner on the already-rendered diagram (keeping
+    // it visible). If no diagram is shown yet, fall back to the full first-load
+    // spinner. Auto-refresh (interval): keep current content visible, no spinner.
+    if (!isAutoRefresh) {
+      const hasDiagram = !!(
+        this.pipelineData &&
+        this.pipelineData.orgs &&
+        this.pipelineData.orgs.length
+      );
+      if (hasDiagram) {
+        this.mermaidRefreshing = true;
+      } else {
+        this.mermaidLoading = true;
+      }
+    }
     window.sendMessageToVSCode({
       type: "refreshPipeline",
       data: {},
