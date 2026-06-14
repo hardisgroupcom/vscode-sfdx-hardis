@@ -69,7 +69,9 @@ function start(): void {
     lastTick = now;
     if (lag >= LAG_REPORT_THRESHOLD_MS) {
       const sincePrevious =
-        lastReportAt > 0 ? ` (+${now - lastReportAt}ms since previous stall)` : "";
+        lastReportAt > 0
+          ? ` (+${now - lastReportAt}ms since previous stall)`
+          : "";
       lastReportAt = now;
       Logger.log(
         `[event-loop-lag] Extension host stalled ~${lag}ms${sincePrevious} ` +
