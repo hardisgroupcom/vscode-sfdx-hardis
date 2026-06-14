@@ -20,6 +20,15 @@ import { t } from "./i18n/i18n";
 import { DOCSITE_URL } from "./constants";
 import { ThemeUtils } from "./utils/themeUtils";
 import { loadProjectSfdxHardisConfig } from "./utils/sfdx-hardis-config-utils";
+import { CacheManager } from "./utils/cache-manager";
+
+// Module-level flag: true while the background scratch-pool fetch is in flight
+let SCRATCH_POOL_LOADING = false;
+// Module-level flag: true once the scratch-pool result has been inserted into the tree
+let SCRATCH_POOL_LOADED = false;
+
+const GIT_FETCH_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const GIT_FETCH_CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes (CacheManager TTL)
 
 export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeItem> {
   public themeUtils: ThemeUtils;
@@ -271,29 +280,51 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
       }
 
       if (options.devHub) {
-        // Scratch org pool info
+        // Scratch org pool info — rendered in the background to avoid blocking first paint
         const config = await loadProjectSfdxHardisConfig();
-        // Get pool info only if defined in config
+        // Only fetch pool info when poolConfig is defined in project config
         if (config?.poolConfig) {
-          const poolViewRes = await execSfdxJson(
-            "sf hardis:scratch:pool:view",
-            { output: false, fail: false },
-          );
-          if (
-            poolViewRes?.status === 0 &&
-            (poolViewRes?.result?.availableScratchOrgs ||
-              poolViewRes?.result?.availableScratchOrgs === 0)
-          ) {
-            items.push({
-              id: "scratch-org-pool-view",
-              label: t("poolAvailable", {
-                available: poolViewRes.result.availableScratchOrgs,
-                max: poolViewRes.result.maxScratchOrgs,
-              }),
-              tooltip: t("poolTooltip"),
-              command: "sf hardis:scratch:pool:view",
-              iconId: "org:pool",
-            });
+          if (SCRATCH_POOL_LOADED) {
+            // Background fetch already completed — read the cached result
+            const cachedPoolRes = CacheManager.get<any>("project", "scratchPoolView");
+            if (
+              cachedPoolRes?.status === 0 &&
+              (cachedPoolRes?.result?.availableScratchOrgs ||
+                cachedPoolRes?.result?.availableScratchOrgs === 0)
+            ) {
+              items.push({
+                id: "scratch-org-pool-view",
+                label: t("poolAvailable", {
+                  available: cachedPoolRes.result.availableScratchOrgs,
+                  max: cachedPoolRes.result.maxScratchOrgs,
+                }),
+                tooltip: t("poolTooltip"),
+                command: "sf hardis:scratch:pool:view",
+                iconId: "org:pool",
+              });
+            }
+          } else if (!SCRATCH_POOL_LOADING) {
+            // Start background fetch; do not block first paint
+            SCRATCH_POOL_LOADING = true;
+            void (async () => {
+              try {
+                const poolViewRes = await execSfdxJson(
+                  "sf hardis:scratch:pool:view",
+                  { output: false, fail: false },
+                );
+                await CacheManager.set("project", "scratchPoolView", poolViewRes, 1000 * 60 * 15);
+                SCRATCH_POOL_LOADED = true;
+              } catch (e) {
+                Logger.log("[vscode-sfdx-hardis] scratch pool view failed: " + String(e));
+                SCRATCH_POOL_LOADED = true;
+              } finally {
+                SCRATCH_POOL_LOADING = false;
+                vscode.commands.executeCommand(
+                  "vscode-sfdx-hardis.refreshStatusView",
+                  true,
+                );
+              }
+            })();
           }
         }
       }
@@ -401,7 +432,7 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
         // Display repo
         if (origin) {
           const parsedGitUrl = GitUrlParse(origin.refs.fetch);
-          let httpGitUrl =
+          const httpGitUrl =
             parsedGitUrl.toString("https") || origin?.refs?.fetch || "";
           items.push({
             id: "git-info-repo",
@@ -425,7 +456,7 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
           });
         }
       }
-      // Display branch & merge request info
+      // Display branch & merge request info — use purely LOCAL git state for first paint
       let currentBranch: string | null = null;
       try {
         currentBranch = await git.revparse(["--abbrev-ref", "HEAD"]);
@@ -433,58 +464,11 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
         // Unable to determine current branch
       }
       if (currentBranch) {
-        let gitIconId = "git:branch";
-        let gitLabel = t("branchLabel", { branch: currentBranch });
-        let gitTooltip = t("isCurrentGitBranch");
-        let gitCommand = "";
-        const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
-        if (
-          currentBranch.includes("/") &&
-          config.get("disableGitMergeRequiredCheck") !== true
-        ) {
-          // Check if current branch is not up to date with origin parent branch
-          try {
-            // Fetch parent branch to make it up to date
-            const parentGitBranch = (await getGitParentBranch()) || "";
-            await git.fetch("origin", parentGitBranch);
-            // Get parent branch latest commit
-            const parentLatestCommit = await git.revparse(
-              `origin/${parentGitBranch}`,
-            );
-            // Check if parent branch has been updated since we created the branch
-            const gitDiff = await git.diff([
-              parentGitBranch || "",
-              `origin/${parentGitBranch}`,
-            ]);
-            // Check if there is a commit in current branch containing the ref of the latest parent branch commit
-            const currentBranchCommits = await git.log([currentBranch]);
-            if (
-              (gitDiff.length > 0 && currentBranchCommits?.all.length === 0) ||
-              (currentBranchCommits?.all &&
-                currentBranchCommits?.all.length > 0 &&
-                !currentBranchCommits.all.some((currentBranchCommit) =>
-                  currentBranchCommit.message.includes(parentLatestCommit),
-                ))
-            ) {
-              // Display message if a merge might be required
-              gitIconId = "git:branch:warning";
-              gitLabel = t("branchNotUpToDate", {
-                branch: currentBranch,
-                parent: parentGitBranch,
-              });
-              gitTooltip = t("branchMergeNeededTooltip", {
-                branch: currentBranch,
-                parent: parentGitBranch,
-              });
-              gitCommand = `vscode-sfdx-hardis.openExternal ${DOCSITE_URL}/salesforce-ci-cd-merge-parent-branch/`;
-            }
-          } catch {
-            Logger.log(
-              "Unable to check if remote parent git branch is up to date",
-            );
-          }
-        }
-        // branch info
+        // Phase 1: local branch row (neutral, no network)
+        const gitIconId = "git:branch";
+        const gitLabel = t("branchLabel", { branch: currentBranch });
+        const gitTooltip = t("isCurrentGitBranch");
+        const gitCommand = "";
         items.push({
           id: "git-info-branch",
           label: gitLabel,
@@ -492,6 +476,8 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
           tooltip: gitTooltip,
           command: gitCommand,
         });
+
+        // Phase 1: local log + userConfig merge requests (no network)
         const userConfig = await getConfig("user");
         if (userConfig.mergeRequests) {
           const mergeRequests = userConfig.mergeRequests.filter(
@@ -513,7 +499,6 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
               )}`,
             });
           }
-
           // Create merge request URL
           else if (mergeRequests[0] && mergeRequests[0].urlCreate) {
             items.push({
@@ -529,6 +514,87 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
               )}`,
             });
           }
+        }
+
+        // Phase 2 (background): fetch + diff check — only when branch contains "/"
+        const vsConfig = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
+        if (
+          currentBranch.includes("/") &&
+          vsConfig.get("disableGitMergeRequiredCheck") !== true
+        ) {
+          // Capture branch name for the closure
+          const branchForFetch = currentBranch;
+          void (async () => {
+            try {
+              const parentGitBranch = (await getGitParentBranch()) || "";
+              // Throttle: skip fetch if it ran recently for this branch
+              const fetchCacheKey = `gitFetchAt:${branchForFetch}`;
+              const lastFetchAt = CacheManager.get<number>("project", fetchCacheKey);
+              const now = Date.now();
+              if (!lastFetchAt || now - lastFetchAt >= GIT_FETCH_TTL_MS) {
+                await git.fetch("origin", parentGitBranch);
+                await CacheManager.set("project", fetchCacheKey, now, GIT_FETCH_CACHE_TTL_MS);
+              }
+              // Get parent branch latest commit (uses local ref after fetch)
+              const parentLatestCommit = await git.revparse(
+                `origin/${parentGitBranch}`,
+              );
+              // Check if parent branch has been updated since we created the branch
+              const gitDiff = await git.diff([
+                parentGitBranch || "",
+                `origin/${parentGitBranch}`,
+              ]);
+              // Check if there is a commit in current branch containing the ref of the latest parent branch commit
+              const currentBranchCommits = await git.log([branchForFetch]);
+              const mergeNeeded =
+                (gitDiff.length > 0 && currentBranchCommits?.all.length === 0) ||
+                (currentBranchCommits?.all &&
+                  currentBranchCommits?.all.length > 0 &&
+                  !currentBranchCommits.all.some((currentBranchCommit) =>
+                    currentBranchCommit.message.includes(parentLatestCommit),
+                  ));
+              if (mergeNeeded) {
+                // Re-read current GIT_MENUS and patch the branch row with warning decoration
+                const currentItems: any[] = (getGitMenusItems() as any[]) || [];
+                // Guard: only patch if the menu is populated and the branch row
+                // is present. Avoids wiping GIT_MENUS if phase 1 has not yet
+                // stored its items (would otherwise overwrite with an empty list).
+                const hasBranchRow = currentItems.some(
+                  (item: any) => item.id === "git-info-branch",
+                );
+                if (!hasBranchRow) {
+                  return;
+                }
+                const patchedItems = currentItems.map((item: any) => {
+                  if (item.id === "git-info-branch") {
+                    return {
+                      ...item,
+                      iconId: "git:branch:warning",
+                      label: t("branchNotUpToDate", {
+                        branch: branchForFetch,
+                        parent: parentGitBranch,
+                      }),
+                      tooltip: t("branchMergeNeededTooltip", {
+                        branch: branchForFetch,
+                        parent: parentGitBranch,
+                      }),
+                      command: `vscode-sfdx-hardis.openExternal ${DOCSITE_URL}/salesforce-ci-cd-merge-parent-branch/`,
+                    };
+                  }
+                  return item;
+                });
+                setGitMenusItems(patchedItems);
+                vscode.commands.executeCommand(
+                  "vscode-sfdx-hardis.refreshStatusView",
+                  true,
+                );
+              }
+            } catch {
+              Logger.log(
+                "Unable to check if remote parent git branch is up to date",
+              );
+            }
+          })();
         }
       }
     }
@@ -580,6 +646,9 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
   async refresh(keepCache: boolean): Promise<void> {
     if (!keepCache) {
       await resetCache();
+      // Reset scratch pool flags so the background fetch reruns on hard refresh
+      SCRATCH_POOL_LOADING = false;
+      SCRATCH_POOL_LOADED = false;
     }
     this.themeUtils = new ThemeUtils();
     this._onDidChangeTreeData.fire();

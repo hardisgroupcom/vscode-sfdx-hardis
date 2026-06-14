@@ -48,6 +48,9 @@ let CACHE_IS_PRELOADED: boolean = false;
 let COMMANDS_RESULTS: Record<string, any> = {};
 let GIT_MENUS: any[] | null = null;
 
+// Dedup in-flight background npm version refreshes
+const NPM_REFRESH_IN_FLIGHT: Map<string, Promise<void>> = new Map();
+
 export function isMultithreadActive() {
   if (MULTITHREAD_ACTIVE !== null) {
     return MULTITHREAD_ACTIVE;
@@ -143,8 +146,10 @@ export function isCachePreloaded() {
 
 export function preLoadCache() {
   console.time("sfdxHardisPreload");
-  const preLoadPromises = [];
   const oneDayInMs = 1000 * 60 * 60 * 24;
+
+  // LOCAL tier: CLI tools that must finish before we declare the cache ready
+  const localTierPromises = [];
   const cliCommands = [
     ["node --version", oneDayInMs * 30], // 30 days
     ["git --version", oneDayInMs * 30], // 30 days
@@ -152,7 +157,7 @@ export function preLoadCache() {
     ["sf plugins", oneDayInMs], // 1 day
   ];
   for (const cmd of cliCommands) {
-    preLoadPromises.push(
+    localTierPromises.push(
       execCommand(String(cmd[0]), {
         cacheExpiration: Number(cmd[1]),
         cacheSection: "app",
@@ -164,25 +169,14 @@ export function preLoadCache() {
     ["sf config get target-dev-hub", oneDayInMs], // 1 day
   ];
   for (const cmd of sfdxJsonCommands) {
-    preLoadPromises.push(
+    localTierPromises.push(
       execSfdxJson(String(cmd[0]), {
         cacheExpiration: Number(cmd[1]),
         cacheSection: "project",
       }),
     );
   }
-  const npmPackages = [
-    "@salesforce/cli",
-    "@salesforce/plugin-packaging",
-    "sfdx-hardis",
-    "sfdmu",
-    "sfdx-git-delta",
-    "sf-git-merge-driver",
-    // "texei-sfdx-plugin",
-  ];
-  for (const npmPackage of npmPackages) {
-    preLoadPromises.push(getNpmLatestVersion(npmPackage));
-  }
+
   const markCachePreloaded = () => {
     if (CACHE_IS_PRELOADED) {
       return;
@@ -199,34 +193,95 @@ export function preLoadCache() {
     );
   };
 
-  // Safety net: if any preload promise hangs (slow CLI, unreachable npm registry…),
-  // force-unblock the plugins panel after 90 s so spinners never run forever.
+  // Safety net: if any local-tier promise hangs (slow CLI…),
+  // force-unblock the panels after 30 s so spinners never run forever.
   const preloadTimeoutId = setTimeout(() => {
     Logger.log(
-      "[vscode-sfdx-hardis] Cache preload timed out after 90 s – forcing refresh",
+      "[vscode-sfdx-hardis] Cache preload timed out after 30 s – forcing refresh",
     );
     markCachePreloaded();
-  }, 90000);
+  }, 30000);
 
-  Promise.allSettled(preLoadPromises).then(() => {
+  Promise.allSettled(localTierPromises).then(() => {
     clearTimeout(preloadTimeoutId);
     markCachePreloaded();
   });
+
+  // BACKGROUND tier: npm version lookups — fire-and-forget, do NOT block the gate
+  const npmPackages = [
+    "@salesforce/cli",
+    "@salesforce/plugin-packaging",
+    "sfdx-hardis",
+    "sfdmu",
+    "sfdx-git-delta",
+    "sf-git-merge-driver",
+    // "texei-sfdx-plugin",
+  ];
+  for (const npmPackage of npmPackages) {
+    getNpmLatestVersion(npmPackage);
+  }
 }
 
 export async function getNpmLatestVersion(
   packageName: string,
-): Promise<string> {
-  if (CacheManager.get("app", packageName)) {
-    return CacheManager.get("app", packageName) as string;
+): Promise<string | null> {
+  const NPM_STALE_KEY = `npmLatest:${packageName}`;
+  const NPM_FRESH_KEY = `npmLatestFresh:${packageName}`;
+  const ONE_DAY_MS = 1000 * 60 * 60 * 24;
+  const SEVEN_DAYS_MS = ONE_DAY_MS * 7;
+
+  // Return whatever stale value we have immediately (stale-while-revalidate)
+  const staleValue = CacheManager.get<string>("app", NPM_STALE_KEY);
+  const isFresh = CacheManager.get<boolean>("app", NPM_FRESH_KEY);
+
+  if (staleValue !== undefined) {
+    // If the value is stale (fresh marker expired), kick off a background refresh
+    if (!isFresh) {
+      triggerNpmBackgroundRefresh(packageName, NPM_STALE_KEY, NPM_FRESH_KEY, ONE_DAY_MS, SEVEN_DAYS_MS, staleValue);
+    }
+    return staleValue;
   }
-  const versionRes = await axios.get(
-    "https://registry.npmjs.org/" + packageName + "/latest",
-    { timeout: 15000 },
-  );
-  const version = versionRes.data.version;
-  CacheManager.set("app", packageName, version, 1000 * 60 * 60 * 24); // 1 day
-  return version;
+
+  // Nothing cached at all — try one background fetch but return null immediately
+  triggerNpmBackgroundRefresh(packageName, NPM_STALE_KEY, NPM_FRESH_KEY, ONE_DAY_MS, SEVEN_DAYS_MS, null);
+  return null;
+}
+
+function triggerNpmBackgroundRefresh(
+  packageName: string,
+  staleKey: string,
+  freshKey: string,
+  oneDayMs: number,
+  sevenDaysMs: number,
+  previousValue: string | null,
+): void {
+  // Dedup: only one in-flight refresh per package at a time
+  if (NPM_REFRESH_IN_FLIGHT.has(packageName)) {
+    return;
+  }
+  const refreshPromise = (async () => {
+    try {
+      const versionRes = await axios.get(
+        "https://registry.npmjs.org/" + packageName + "/latest",
+        { timeout: 4000 },
+      );
+      const version: string = versionRes.data.version;
+      await CacheManager.set("app", staleKey, version, sevenDaysMs);
+      await CacheManager.set("app", freshKey, true, oneDayMs);
+      // If value changed, trigger a targeted panel refresh so users see updated decoration
+      if (version !== previousValue) {
+        vscode.commands.executeCommand(
+          "vscode-sfdx-hardis.refreshPluginsView",
+          true,
+        );
+      }
+    } catch {
+      // Network failure or timeout — leave stale value in cache, no-op
+    } finally {
+      NPM_REFRESH_IN_FLIGHT.delete(packageName);
+    }
+  })();
+  NPM_REFRESH_IN_FLIGHT.set(packageName, refreshPromise);
 }
 
 export async function resetCache() {
@@ -296,13 +351,12 @@ export async function execCommand(
   },
 ): Promise<any> {
   let commandResult: any;
-  // Call command (disable color before for json parsing)
-  const prevForceColor = process.env.FORCE_COLOR;
-  process.env.FORCE_COLOR = "0";
+  // Build a per-call env copy; set FORCE_COLOR=0 here so the child process
+  // never emits ANSI codes without mutating the global process.env.
   const execOptions: any = {
     maxBuffer: 10000 * 10000,
     cwd: options.cwd || vscode.workspace.rootPath,
-    env: { ...process.env },
+    env: { ...process.env, FORCE_COLOR: "0" },
   };
   const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
   const langSetting = config.get<string>("lang", "auto");
@@ -324,13 +378,12 @@ export async function execCommand(
   if (cacheSection) {
     const cached = CacheManager.get(cacheSection, command);
     if (cached) {
-      process.env.FORCE_COLOR = prevForceColor;
       return cached;
     }
   }
   try {
     if (COMMANDS_RESULTS[command]) {
-      // use cache
+      // use in-flight or completed result
       Logger.log(
         `[vscode-sfdx-hardis][command] Waiting for promise already started for command ${command}`,
       );
@@ -338,12 +391,19 @@ export async function execCommand(
         COMMANDS_RESULTS[command].result ??
         (await COMMANDS_RESULTS[command].promise);
     } else {
-      // no cache
+      // no in-flight entry — store the unresolved promise first so concurrent
+      // callers hit the dedup branch above instead of spawning a second process
       Logger.log("[vscode-sfdx-hardis][command] " + command);
       console.time(command);
-      const commandResultPromise = await execShell(command, execOptions);
+      const commandResultPromise = execShell(command, execOptions);
       COMMANDS_RESULTS[command] = { promise: commandResultPromise };
-      commandResult = await commandResultPromise;
+      try {
+        commandResult = await commandResultPromise;
+      } catch (spawnError) {
+        // Remove the poisoned promise so the next caller retries cleanly
+        delete COMMANDS_RESULTS[command];
+        throw spawnError;
+      }
       COMMANDS_RESULTS[command] = { result: commandResult };
       setTimeout(() => {
         if (COMMANDS_RESULTS[command] && COMMANDS_RESULTS[command].result) {
@@ -354,7 +414,6 @@ export async function execCommand(
     }
   } catch (e: any) {
     console.timeEnd(command);
-    process.env.FORCE_COLOR = prevForceColor;
     // Display error in red if not json
     if (!command.includes("--json") || options.fail === true) {
       if (options.fail === true) {
@@ -386,7 +445,6 @@ export async function execCommand(
     Logger.log(commandResult.stdout.toString());
   }
   // Return status 0 if not --json
-  process.env.FORCE_COLOR = prevForceColor;
   if (!command.includes("--json")) {
     const resultObj = {
       status: 0,
