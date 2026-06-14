@@ -170,7 +170,9 @@ export class GitProvider {
     // which otherwise would be wrongly detected as GitHub (Gitea mimics the GitHub API).
     try {
       const config = await getConfig("project");
-      const configuredProvider = String(config?.gitProvider || "").toLowerCase();
+      const configuredProvider = String(
+        config?.gitProvider || "",
+      ).toLowerCase();
       const validProviders: ProviderName[] = [
         "gitlab",
         "github",

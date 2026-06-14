@@ -93,7 +93,9 @@ export class GitProviderGitHub extends GitProvider {
     if (session?.accessToken) {
       // Drop any stored PAT so initialize() relies on the native VS Code session,
       // and clear the disconnect flag so initialize() may use the session again.
-      await SecretsManager.deleteSecret(this.hostKey + "_TOKEN").catch(() => {});
+      await SecretsManager.deleteSecret(this.hostKey + "_TOKEN").catch(
+        () => {},
+      );
       await SecretsManager.deleteSecret(this.hostKey + "_DISCONNECTED").catch(
         () => {},
       );
