@@ -25,16 +25,19 @@ export class GitProviderGitHub extends GitProvider {
   }
 
   getCreateTokenOptions(): CreateTokenOption[] {
-    // Both github.com and GitHub Enterprise expose tokens under /settings/tokens.
-    // github.com normally uses native VS Code sign-in, but the user can still
-    // choose to authenticate with a personal access token.
+    // Use GitHub fine-grained tokens only (not classic). The creation page is
+    // /settings/personal-access-tokens/new (GitHub Enterprise Server 3.10+ supports it).
+    // The user must grant the token access to this repository, then set the permissions
+    // below. "Workflows" is intentionally NOT requested (it would allow editing workflow
+    // definitions); "Metadata: Read" is added automatically by GitHub.
     const host = this.repoInfo?.host || "github.com";
     return [
       {
         id: "pat",
         label: t("createGithubPat"),
-        url: `https://${host}/settings/tokens`,
-        scopesHint: "repo",
+        url: `https://${host}/settings/personal-access-tokens/new`,
+        scopesHint:
+          "Contents (Read and write), Pull requests (Read and write), Issues (Read and write), Actions (Read and write), Commit statuses (Read)",
       },
     ];
   }

@@ -260,7 +260,7 @@
   "createFilesWorkspace": "Nieuwe bestanden import/export workspace aanmaken",
   "createFirstWorkspace": "Je eerste workspace aanmaken",
   "createGiteaPat": "Een Gitea-toegangstoken aanmaken",
-  "createGithubPat": "Een GitHub-toegangstoken aanmaken",
+  "createGithubPat": "Een GitHub fine-grained token aanmaken",
   "createGitlabPat": "Een GitLab-toegangstoken aanmaken",
   "createMergeRequest": "Merge Request: Aanmaken",
   "createNewPackageVersionTooltip": "Een nieuwe versie van een pakket aanmaken",

@@ -260,7 +260,7 @@
   "createFilesWorkspace": "Créer un nouvel projet Import/Export de fichiers",
   "createFirstWorkspace": "Créer votre premier projet",
   "createGiteaPat": "Créer un jeton d'accès Gitea",
-  "createGithubPat": "Créer un jeton d'accès GitHub",
+  "createGithubPat": "Créer un jeton GitHub granulaire (fine-grained)",
   "createGitlabPat": "Créer un jeton d'accès GitLab",
   "createMergeRequest": "Merge Request : Créer",
   "createNewPackageVersionTooltip": "Créer une nouvelle version d'un package",

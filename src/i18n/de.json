@@ -260,7 +260,7 @@
   "createFilesWorkspace": "Neuen Datei-Import/-Export-Workspace erstellen",
   "createFirstWorkspace": "Ersten Workspace erstellen",
   "createGiteaPat": "Einen Gitea-Zugriffstoken erstellen",
-  "createGithubPat": "Einen GitHub-Zugriffstoken erstellen",
+  "createGithubPat": "Einen feingranularen GitHub-Token erstellen (fine-grained)",
   "createGitlabPat": "Einen GitLab-Zugriffstoken erstellen",
   "createMergeRequest": "Merge Request: Erstellen",
   "createNewPackageVersionTooltip": "Eine neue Version eines Pakets erstellen",

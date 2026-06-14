@@ -260,7 +260,7 @@
   "createFilesWorkspace": "新しいファイル インポート/エクスポート ワークスペースを作成",
   "createFirstWorkspace": "最初のワークスペースを作成",
   "createGiteaPat": "Gitea アクセストークンを作成",
-  "createGithubPat": "GitHub アクセストークンを作成",
+  "createGithubPat": "GitHub ファイングレインドトークンを作成",
   "createGitlabPat": "GitLab アクセストークンを作成",
   "createMergeRequest": "Merge Request: 作成",
   "createNewPackageVersionTooltip": "パッケージの新しいバージョンを作成します",
