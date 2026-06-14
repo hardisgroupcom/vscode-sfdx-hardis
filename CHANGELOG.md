@@ -5,7 +5,9 @@
 - Faster, smoother Status and Dependencies panels
   - Panels now appear right away with your installed versions, then fill in upgrade and branch warnings as they become available
   - Loading the panels no longer slows down other features
-
+- Features opened from the Welcome page now open instantly and load their content inside the panel, instead of leaving you waiting on the Welcome page
+  - Applies to Pipeline, Metadata Retriever, Documentation Workbench, Data Workbench, Files Workbench and Extension Configuration
+  - If loading fails, the panel shows an error with a Try Again button
 - Easier sign-in to Git providers (GitHub, GitLab, Gitea, Azure DevOps, Bitbucket)
   - A guided prompt helps you create an access token with the right permissions, then paste it
   - GitHub offers built-in VS Code sign-in or a fine-grained token (also for GitHub Enterprise)

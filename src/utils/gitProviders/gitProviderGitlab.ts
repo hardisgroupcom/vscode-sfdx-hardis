@@ -12,6 +12,7 @@ import {
   JobStatus,
 } from "./types";
 import { SecretsManager } from "../secretsManager";
+import { CacheManager } from "../cache-manager";
 import { Logger } from "../../logger";
 import { t } from "../../i18n/i18n";
 import {
@@ -70,6 +71,12 @@ export class GitProviderGitlab extends GitProvider {
       } catch {
         // Ignore if secret doesn't exist
       }
+    }
+
+    // Drop the cached project id (computed from host + path, both still set here)
+    // so a future reconnect re-validates instead of trusting a stale entry.
+    if (this.gitlabProjectPath) {
+      await CacheManager.delete("orgs", this.gitlabProjectIdCacheKey());
     }
 
     this.gitlabClient = null;
@@ -132,34 +139,7 @@ export class GitProviderGitlab extends GitProvider {
         this.gitlabProjectPath = null;
       }
       if (this.gitlabProjectPath) {
-        try {
-          // validate token by calling the user endpoint first
-          const currentUser = await this.gitlabClient.Users.showCurrentUser();
-          await this.logApiCall("Users.showCurrentUser", {
-            caller: "initialize",
-          });
-          if (currentUser && currentUser.id) {
-            // Find related project Id
-            const project = await this.gitlabClient.Projects.show(
-              this.gitlabProjectPath,
-            );
-            await this.logApiCall("Projects.show", { caller: "initialize" });
-            if (project && project.id) {
-              this.gitlabProjectId = project.id;
-              this.isActive = true;
-            } else {
-              Logger.log(
-                `Could not find Gitlab project for path: ${this.gitlabProjectPath}`,
-              );
-            }
-          } else {
-            Logger.log(
-              `Gitlab authentication failed: could not fetch current user with provided token.`,
-            );
-          }
-        } catch (err) {
-          Logger.log(`Gitlab access check failed: ${String(err)}`);
-        }
+        await this.resolveGitlabAccess();
       } else {
         Logger.log(
           `Could not extract GitLab project path from remote URL: ${this.repoInfo.remoteUrl}`,
@@ -174,6 +154,87 @@ export class GitProviderGitlab extends GitProvider {
             "https://docs.gitlab.com/user/profile/personal_access_tokens/",
         });
       }
+    }
+  }
+
+  // Cache key for the (stable) GitLab project id, scoped to host + project path.
+  // Stored in the long-lived "orgs" cache section so it survives hard refreshes;
+  // it is self-healed by the background re-validation on each initialize().
+  private gitlabProjectIdCacheKey(): string {
+    return `gitlabProjectId:${this.repoInfo?.host}:${this.gitlabProjectPath}`;
+  }
+
+  // Validate the GitLab token and resolve the project id. The token is ALWAYS
+  // re-checked (Users.showCurrentUser) so isActive reflects whether the token is
+  // still valid on every init. The project id is stable, so when it is cached we
+  // skip the extra Projects.show lookup; otherwise both calls run in parallel
+  // (≈halves cold init time) and the resolved id is cached for next time.
+  private async resolveGitlabAccess(): Promise<boolean> {
+    if (!this.gitlabClient || !this.gitlabProjectPath) {
+      return false;
+    }
+    const cacheKey = this.gitlabProjectIdCacheKey();
+    const cachedProjectId = CacheManager.get<number>("orgs", cacheKey);
+    const PROJECT_ID_TTL_MS = 1000 * 60 * 60 * 24 * 30; // 30 days
+    try {
+      if (cachedProjectId) {
+        // Project id known — only verify the token is still valid.
+        const currentUser = await this.gitlabClient.Users.showCurrentUser();
+        await this.logApiCall("Users.showCurrentUser", {
+          caller: "initialize",
+        });
+        if (!currentUser || !currentUser.id) {
+          Logger.log(
+            `Gitlab authentication failed: could not fetch current user with provided token.`,
+          );
+          // Token no longer valid — drop the cached id so a later init re-resolves.
+          await CacheManager.delete("orgs", cacheKey);
+          return false;
+        }
+        this.gitlabProjectId = cachedProjectId;
+        this.isActive = true;
+        // Refresh the cache TTL while the token remains valid.
+        await CacheManager.set(
+          "orgs",
+          cacheKey,
+          cachedProjectId,
+          PROJECT_ID_TTL_MS,
+        );
+        return true;
+      }
+
+      // No cached project id: validate the token and resolve the project id in
+      // parallel, distinguishing "invalid token" from "no access to project".
+      const [userResult, projectResult] = await Promise.allSettled([
+        this.gitlabClient.Users.showCurrentUser(),
+        this.gitlabClient.Projects.show(this.gitlabProjectPath),
+      ]);
+      await this.logApiCall("Users.showCurrentUser", { caller: "initialize" });
+      await this.logApiCall("Projects.show", { caller: "initialize" });
+      const currentUser =
+        userResult.status === "fulfilled" ? userResult.value : null;
+      const project =
+        projectResult.status === "fulfilled" ? projectResult.value : null;
+      if (!currentUser || !currentUser.id) {
+        Logger.log(
+          `Gitlab authentication failed: could not fetch current user with provided token.`,
+        );
+        return false;
+      }
+      if (!project || !project.id) {
+        // Token is valid but the user cannot access this project.
+        Logger.log(
+          `Gitlab authentication succeeded, but project '${this.gitlabProjectPath}' is not accessible with this token (insufficient access or wrong path).`,
+        );
+        return false;
+      }
+      this.gitlabProjectId = project.id;
+      this.isActive = true;
+      await CacheManager.set("orgs", cacheKey, project.id, PROJECT_ID_TTL_MS);
+      return true;
+    } catch (err) {
+      Logger.log(`Gitlab access check failed: ${String(err)}`);
+      return false;
     }
   }
 

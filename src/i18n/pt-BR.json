@@ -851,6 +851,7 @@
   "failedToStartCommand": "Falha ao iniciar o comando: {{msg}}",
   "failedToUpdateConfigKey": "Falha ao atualizar a configuração: {{configKey}}",
   "failedToUpdateWorkspace": "Falha ao atualizar espaço de trabalho: {{message}}",
+  "featureLoadFailed": "Falha ao carregar. Tente novamente.",
   "fileLocationLabel": "Localização do Arquivo:",
   "fileNameFormatField": "Formato do Nome do Arquivo:",
   "fileNameFormatHelp": "Como nomear os arquivos exportados:<br/>- title: Usar o título original do arquivo<br/>- title_id: Título + ID do Salesforce<br/>- id_title: ID do Salesforce + Título<br/>- id: Somente o ID do Salesforce",

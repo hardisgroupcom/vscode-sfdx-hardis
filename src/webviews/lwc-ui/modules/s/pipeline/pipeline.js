@@ -22,7 +22,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   @track openPullRequests = [];
   @track displayFeatureBranches = false;
   @track mermaidZoomLevel = 1;
-  @track loading = false;
+  @track mermaidLoading = true;
+  @track mermaidRefreshing = false;
+  @track prLoading = true;
+  @track loadError = null;
   @track projectApexScripts = [];
   @track projectSfdmuWorkspaces = [];
   @track projectSchedulableClasses = [];
@@ -478,6 +481,32 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     return this.mermaidZoomLevel <= this._mermaidMinZoomLevel;
   }
 
+  get isMermaidLoading() {
+    return this.mermaidLoading === true && !this.loadError;
+  }
+
+  // Manual refresh of an already-rendered diagram: keep the diagram visible and
+  // overlay a spinner on top of it (distinct from isMermaidLoading, which
+  // replaces the empty area during the very first load).
+  get isMermaidRefreshing() {
+    return this.mermaidRefreshing === true && !this.loadError;
+  }
+
+  get isPrLoading() {
+    return this.prLoading === true;
+  }
+
+  get hasError() {
+    return !!this.loadError;
+  }
+
+  handleRetry() {
+    this.loadError = null;
+    this.mermaidLoading = true;
+    this.prLoading = true;
+    window.sendMessageToVSCode({ type: "retryInit" });
+  }
+
   handleShowPipelineConfig() {
     window.sendMessageToVSCode({
       type: "runVsCodeCommand",
@@ -490,22 +519,63 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
   @api
   initialize(data) {
-    this.loading = this._isAutoRefresh ? false : false;
+    data = data || {};
+
+    // Handle staged loading flags first — always processed regardless of payload type.
+    if (Object.prototype.hasOwnProperty.call(data, "mermaidLoading")) {
+      this.mermaidLoading = data.mermaidLoading === true;
+      if (this.mermaidLoading) {
+        this.loadError = null;
+      }
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "prLoading")) {
+      this.prLoading = data.prLoading === true;
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "mermaidRefreshing")) {
+      this.mermaidRefreshing = data.mermaidRefreshing === true;
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "loadError")) {
+      this.loadError = data.loadError || null;
+    }
+
+    // When only flag fields are present (step-1 or error-only payload), stop here.
+    if (!Object.prototype.hasOwnProperty.call(data, "pipelineData")) {
+      return;
+    }
+
+    // Diagram data has arrived — the first-load spinner is no longer needed.
+    // The refresh overlay (mermaidRefreshing) is NOT cleared here: it is driven
+    // explicitly per payload (step 2 turns it on while git data loads, step 3 and
+    // refresh completions turn it off), so it can stay on over the rendered
+    // no-PR diagram between steps 2 and 3.
+    this.mermaidLoading = false;
+
+    // Full data payload — update all content fields.
     this._isAutoRefresh = false;
-    this.pipelineData = data.pipelineData;
-    this.repoPlatformLabel = data.repoPlatformLabel || "Git";
-    this.prButtonInfo = data.prButtonInfo;
-    this.warnings = this.pipelineData.warnings || [];
+
+    if (Object.prototype.hasOwnProperty.call(data, "pipelineData")) {
+      this.pipelineData = data.pipelineData;
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "repoPlatformLabel")) {
+      this.repoPlatformLabel = data.repoPlatformLabel || "Git";
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "prButtonInfo")) {
+      this.prButtonInfo = data.prButtonInfo;
+    }
+    this.warnings = (this.pipelineData && this.pipelineData.warnings) || [];
     this.hasWarnings = this.warnings.length > 0;
     this.showOnlyMajor = false;
-    this.displayFeatureBranches = data?.displayFeatureBranches ?? false;
-    this.enableDeploymentApexTestClasses =
-      !!data?.enableDeploymentApexTestClasses;
-    this.availableApexTestClasses = Array.isArray(
-      data?.availableApexTestClasses,
-    )
-      ? data.availableApexTestClasses
-      : [];
+    if (Object.prototype.hasOwnProperty.call(data, "displayFeatureBranches")) {
+      this.displayFeatureBranches = data.displayFeatureBranches ?? false;
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "enableDeploymentApexTestClasses")) {
+      this.enableDeploymentApexTestClasses = !!data.enableDeploymentApexTestClasses;
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "availableApexTestClasses")) {
+      this.availableApexTestClasses = Array.isArray(data.availableApexTestClasses)
+        ? data.availableApexTestClasses
+        : [];
+    }
 
     // Store branch PR data for modal display
     this.branchPullRequestsMap = new Map();
@@ -528,7 +598,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       : this.pipelineData.mermaidDiagramMajor;
     this.error = undefined;
     this.lastDiagram = "";
-    this.gitAuthenticated = data?.gitAuthenticated ?? false;
+
+    if (Object.prototype.hasOwnProperty.call(data, "gitAuthenticated")) {
+      this.gitAuthenticated = data.gitAuthenticated ?? false;
+    }
     this.connectedLabel = this.gitAuthenticated
       ? this.t("connectedTo", { platform: this.repoPlatformLabel })
       : this.t("connectTo", { platform: this.repoPlatformLabel });
@@ -537,8 +610,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       : "utility:link";
 
     // Update ticketing authentication state
-    this.ticketAuthenticated = data?.ticketAuthenticated ?? false;
-    this.ticketProviderName = data?.ticketProviderName || "Ticketing";
+    if (Object.prototype.hasOwnProperty.call(data, "ticketAuthenticated")) {
+      this.ticketAuthenticated = data.ticketAuthenticated ?? false;
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "ticketProviderName")) {
+      this.ticketProviderName = data.ticketProviderName || "Ticketing";
+    }
     this.ticketConnectedLabel = this.ticketAuthenticated
       ? this.t("connectedTo", { platform: this.ticketProviderName })
       : this.t("connectTo", { platform: this.ticketProviderName });
@@ -549,19 +626,33 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       ? "success"
       : "neutral";
 
-    this.openPullRequests = this._mapPrsWithIcons(data.openPullRequests || []);
-    // ensure reactivity for computed label
-    this.openPullRequests = Array.isArray(this.openPullRequests)
-      ? this.openPullRequests
-      : [];
+    if (Object.prototype.hasOwnProperty.call(data, "openPullRequests")) {
+      this.openPullRequests = this._mapPrsWithIcons(data.openPullRequests || []);
+      // ensure reactivity for computed label
+      this.openPullRequests = Array.isArray(this.openPullRequests)
+        ? this.openPullRequests
+        : [];
+    }
     // Store current branch PR
-    this.currentBranchPullRequest = data.currentBranchPullRequest || null;
-    this.autoFixPullRequest = data.autoFixPullRequest || null;
+    if (Object.prototype.hasOwnProperty.call(data, "currentBranchPullRequest")) {
+      this.currentBranchPullRequest = data.currentBranchPullRequest || null;
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "autoFixPullRequest")) {
+      this.autoFixPullRequest = data.autoFixPullRequest || null;
+    }
     // Store project resources
-    this.projectApexScripts = data.projectApexScripts || [];
-    this.projectSfdmuWorkspaces = data.projectSfdmuWorkspaces || [];
-    this.projectSchedulableClasses = data.projectSchedulableClasses || [];
-    this.projectCommunities = data.projectCommunities || [];
+    if (Object.prototype.hasOwnProperty.call(data, "projectApexScripts")) {
+      this.projectApexScripts = data.projectApexScripts || [];
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "projectSfdmuWorkspaces")) {
+      this.projectSfdmuWorkspaces = data.projectSfdmuWorkspaces || [];
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "projectSchedulableClasses")) {
+      this.projectSchedulableClasses = data.projectSchedulableClasses || [];
+    }
+    if (Object.prototype.hasOwnProperty.call(data, "projectCommunities")) {
+      this.projectCommunities = data.projectCommunities || [];
+    }
     // adjust columns to fit the available width immediately
     setTimeout(() => this.adjustPrColumns(), 50);
     // Render the Mermaid diagram after a brief delay to ensure DOM is ready
@@ -571,9 +662,6 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this._updatePanelTitle();
     // Start auto-refresh timer
     this._startAutoRefresh();
-    if (data.firstDisplay) {
-      this.refreshPipeline(false);
-    }
   }
 
   get prLabel() {
@@ -1505,7 +1593,21 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   // Added refreshPipeline method
   refreshPipeline(isAutoRefresh = false) {
     this._isAutoRefresh = isAutoRefresh;
-    this.loading = !isAutoRefresh;
+    // Manual refresh: overlay a spinner on the already-rendered diagram (keeping
+    // it visible). If no diagram is shown yet, fall back to the full first-load
+    // spinner. Auto-refresh (interval): keep current content visible, no spinner.
+    if (!isAutoRefresh) {
+      const hasDiagram = !!(
+        this.pipelineData &&
+        this.pipelineData.orgs &&
+        this.pipelineData.orgs.length
+      );
+      if (hasDiagram) {
+        this.mermaidRefreshing = true;
+      } else {
+        this.mermaidLoading = true;
+      }
+    }
     window.sendMessageToVSCode({
       type: "refreshPipeline",
       data: {},

@@ -18,7 +18,6 @@ import * as yaml from "js-yaml";
 import * as os from "os";
 import * as path from "path";
 import { simpleGit } from "simple-git";
-import * as child from "child_process";
 import { getWorkspaceRoot } from "../../utils";
 import { Logger } from "../../logger";
 
@@ -39,7 +38,7 @@ const REMOTE_CONFIGS: any = {};
 const IN_FLIGHT_CONFIGS: Map<string, Promise<any>> = new Map();
 
 async function getBranchConfigFiles() {
-  if (!isGitRepo()) {
+  if (!(await isGitRepo())) {
     return [];
   }
   const gitBranchFormatted = await getCurrentGitBranch({ formatted: true });
@@ -93,7 +92,7 @@ export const setConfig = async (
 ): Promise<void> => {
   if (
     layer === "user" &&
-    (fs.readdirSync(process.cwd()).length === 0 || !isGitRepo())
+    (fs.readdirSync(process.cwd()).length === 0 || !(await isGitRepo()))
   ) {
     console.warn(
       "log",
@@ -183,24 +182,39 @@ export async function setInConfigFile(
 }
 
 let isGitRepoCache: boolean | null = null;
-export function isGitRepo() {
+let isGitRepoInFlight: Promise<boolean> | null = null;
+export async function isGitRepo(): Promise<boolean> {
   if (isGitRepoCache !== null) {
     return isGitRepoCache;
   }
-  const isInsideWorkTree = child.spawnSync(
-    "git",
-    ["rev-parse", "--is-inside-work-tree"],
-    {
-      encoding: "utf8",
-      windowsHide: true,
-    },
-  );
-  isGitRepoCache = isInsideWorkTree.status === 0;
-  return isGitRepoCache;
+  // Dedupe concurrent callers so the git check runs at most once.
+  if (isGitRepoInFlight) {
+    return isGitRepoInFlight;
+  }
+  // Use the authoritative `git rev-parse --is-inside-work-tree` check, run
+  // asynchronously via simple-git so it never blocks the extension-host event
+  // loop (unlike a synchronous spawn). Handles worktrees, submodules, GIT_DIR
+  // and bare repos correctly, which a plain `.git` filesystem check does not.
+  isGitRepoInFlight = (async () => {
+    try {
+      const out = await simpleGit(getWorkspaceRoot() || process.cwd()).raw([
+        "rev-parse",
+        "--is-inside-work-tree",
+      ]);
+      isGitRepoCache = out.trim() === "true";
+    } catch {
+      // Not a git repository (or git unavailable)
+      isGitRepoCache = false;
+    } finally {
+      isGitRepoInFlight = null;
+    }
+    return isGitRepoCache;
+  })();
+  return isGitRepoInFlight;
 }
 
 export async function getCurrentGitBranch(options: any = { formatted: false }) {
-  if (!isGitRepo()) {
+  if (!(await isGitRepo())) {
     return null;
   }
   let gitBranch: string | null = process.env.CI_COMMIT_REF_NAME || null;
