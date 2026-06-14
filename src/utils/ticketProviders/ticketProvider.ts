@@ -1,5 +1,6 @@
 import { Logger } from "../../logger";
 import { getConfig } from "../pipeline/sfdxHardisConfig";
+import { SecretsManager } from "../secretsManager";
 import { Ticket, TicketProviderName } from "./types";
 
 export class TicketProvider {
@@ -39,15 +40,56 @@ export class TicketProvider {
       );
       if (providerClass) {
         this.instance = new providerClass();
-        const connectionIsOk = await this.instance.initializeConnection();
-        if (!connectionIsOk && options.authenticate) {
-          await this.instance.authenticate();
+        // An explicit connect (authenticate=true, user clicked "Connect") clears any
+        // previous disconnect so the provider may connect again.
+        if (options.authenticate) {
+          await this.instance.clearDisconnectedFlag();
+        }
+        // Honor an explicit disconnect: never silently reconnect on passive loads.
+        // Azure Boards and the Generic provider derive their authentication from the
+        // git connection / project config (no own credentials to delete), so without
+        // this flag they would re-authenticate on the next pipeline refresh.
+        if (
+          !options.authenticate &&
+          (await this.instance.isExplicitlyDisconnected())
+        ) {
+          this.instance.isAuthenticated = false;
+        } else {
+          const connectionIsOk = await this.instance.initializeConnection();
+          if (!connectionIsOk && options.authenticate) {
+            await this.instance.authenticate();
+          }
         }
       } else {
         this.instance = null;
       }
     }
     return this.instance;
+  }
+
+  /**
+   * Secret key used to remember that the user explicitly disconnected this ticketing
+   * provider. Mirrors the `_DISCONNECTED` flag used by git providers whose session
+   * cannot be revoked programmatically.
+   */
+  protected disconnectedFlagKey(): string {
+    return `TICKETING_${this.providerName || "UNKNOWN"}_DISCONNECTED`;
+  }
+
+  protected async markDisconnected(): Promise<void> {
+    await SecretsManager.setSecret(this.disconnectedFlagKey(), "true").catch(
+      () => {},
+    );
+  }
+
+  async clearDisconnectedFlag(): Promise<void> {
+    await SecretsManager.deleteSecret(this.disconnectedFlagKey()).catch(
+      () => {},
+    );
+  }
+
+  async isExplicitlyDisconnected(): Promise<boolean> {
+    return !!(await SecretsManager.getSecret(this.disconnectedFlagKey()));
   }
 
   async initializeConnection(): Promise<boolean | null> {

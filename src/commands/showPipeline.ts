@@ -621,9 +621,14 @@ export function registerShowPipeline(commands: Commands) {
             vscode.window.showInformationMessage(
               t("successfullyConnectedToGitProvider"),
             );
+            // Reuse the just-authenticated provider instance instead of rebuilding it
+            // (resetGit: false). Rebuilding would re-run initialize() and call
+            // getSession({ createIfNone: false }) immediately after the new VS Code
+            // sign-in, which can momentarily return no session and wrongly report the
+            // provider as not connected.
             pipelineProperties = await loadAllPipelineInfo({
               browseGitProvider: true,
-              resetGit: true,
+              resetGit: false,
               withProgress: true,
             });
             panel.sendInitializationData(pipelineProperties);

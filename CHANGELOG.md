@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Easier sign-in to Git providers (GitHub, GitLab, Gitea, Azure DevOps, Bitbucket)
+  - A guided prompt helps you create an access token with the right permissions, then paste it
+  - GitHub offers built-in VS Code sign-in or a fine-grained token (also for GitHub Enterprise)
+  - The provider icon now reliably shows connected or disconnected, and disconnecting no longer reconnects on its own
+- Easier sign-in to ticketing tools (Jira, Azure Boards, generic), with the same guided experience
+  - Jira walks you through creating an API token or Personal Access Token
+  - Disconnecting a ticketing provider now stays disconnected
+  - Fixed generic ticketing links not opening the right page
+- Added Gitea as a supported Git provider
+
 ## [7.10.5] 2026-06-13
 
 - Fixes

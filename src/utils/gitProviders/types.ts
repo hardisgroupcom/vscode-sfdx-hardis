@@ -1,7 +1,25 @@
 import { PrePostCommand } from "../prePostCommandsUtils";
 import { Ticket } from "../ticketProviders/types";
 
-export type ProviderName = "gitlab" | "github" | "azure" | "bitbucket";
+export type ProviderName =
+  | "gitlab"
+  | "github"
+  | "azure"
+  | "bitbucket"
+  | "gitea";
+
+/**
+ * An access token the user can create on a git provider to authenticate the extension.
+ * Providers may offer several kinds of token (e.g. Bitbucket repository access token vs
+ * Atlassian account API token), so credential prompts expose a list of these options.
+ */
+export type CreateTokenOption = {
+  id: string; // stable identifier, e.g. "pat", "repoToken", "atlassianApiToken"
+  label: string; // translated label shown to the user in the choice
+  url: string; // provider page where the token can be created
+  scopesHint?: string; // technical scopes/permissions to select when creating the token (not translated)
+  creationHint?: string; // translated note shown when creating the token (e.g. which repositories to grant access to, or which token type/scopes to pick)
+};
 
 export type ProviderDescription = {
   providerLabel: string; // e.g. 'GitLab', 'GitHub', 'Azure DevOps', 'Bitbucket'

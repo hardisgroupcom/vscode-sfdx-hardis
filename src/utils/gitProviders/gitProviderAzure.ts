@@ -1,6 +1,12 @@
 import * as vscode from "vscode";
 import { GitProvider } from "./gitProvider";
-import { ProviderDescription, PullRequest, Job, JobStatus } from "./types";
+import {
+  CreateTokenOption,
+  ProviderDescription,
+  PullRequest,
+  Job,
+  JobStatus,
+} from "./types";
 import * as azdev from "azure-devops-node-api";
 import { GitApi } from "azure-devops-node-api/GitApi";
 import {
@@ -12,7 +18,10 @@ import { Logger } from "../../logger";
 import { SecretsManager } from "../secretsManager";
 import { BuildApi } from "azure-devops-node-api/BuildApi";
 import { t } from "../../i18n/i18n";
-import { showAuthFailureGuidance } from "../providerCredentials";
+import {
+  promptForToken,
+  showAuthFailureGuidance,
+} from "../providerCredentials";
 
 /**
  * Azure DevOps Git Provider
@@ -66,8 +75,10 @@ export class GitProviderAzure extends GitProvider {
       // Ignore if secret doesn't exist
     }
 
-    // OAuth sessions are managed by VS Code, so we don't delete them
-    // Just clear local state
+    // OAuth sessions are managed by VS Code and cannot be removed programmatically,
+    // so remember the explicit disconnect to prevent initialize() from silently
+    // re-connecting from the still-present session.
+    await SecretsManager.setSecret(this.hostKey + "_DISCONNECTED", "true");
     this.connection = null;
     this.gitApi = null;
     this.buildApi = null;
@@ -78,23 +89,37 @@ export class GitProviderAzure extends GitProvider {
     await super.disconnect();
   }
 
-  async authenticate(): Promise<boolean | null> {
-    const choice = await vscode.window.showQuickPick(
-      [
-        { label: t("azureDevOpsAuthOAuth"), value: "oauth" },
-        { label: t("azureDevOpsAuthPAT"), value: "pat" },
-      ],
+  getCreateTokenOptions(): CreateTokenOption[] {
+    const orgUrl = this.buildOrganizationUrl();
+    const url = orgUrl
+      ? `${orgUrl}/_usersSettings/tokens`
+      : "https://dev.azure.com/_usersSettings/tokens";
+    return [
       {
-        placeHolder: t("azureDevOpsAuthMethod"),
-        ignoreFocusOut: true,
+        id: "pat",
+        label: t("createAzurePat"),
+        url,
+        scopesHint:
+          "Code (Read & Write), Build (Read & Execute), Work Items (Read & Write)",
       },
+    ];
+  }
+
+  async authenticate(): Promise<boolean | null> {
+    const oauthLabel = t("azureDevOpsAuthOAuth");
+    const patLabel = t("azureDevOpsAuthPAT");
+    const choice = await vscode.window.showInformationMessage(
+      t("azureDevOpsAuthMethod"),
+      { modal: true },
+      oauthLabel,
+      patLabel,
     );
 
     if (!choice) {
       return null;
     }
 
-    if (choice.value === "pat") {
+    if (choice === patLabel) {
       return await this.authenticateWithPAT();
     }
 
@@ -102,16 +127,10 @@ export class GitProviderAzure extends GitProvider {
   }
 
   private async authenticateWithPAT(): Promise<boolean | null> {
-    const orgUrl = this.buildOrganizationUrl();
-    const patUrl = orgUrl
-      ? `${orgUrl}/_usersSettings/tokens`
-      : "https://dev.azure.com/_usersSettings/tokens";
-
-    const token = await vscode.window.showInputBox({
-      prompt: t("azureDevOpsEnterPAT"),
-      ignoreFocusOut: true,
-      password: true,
-      placeHolder: t("azureDevOpsCreatePATAt", { patUrl }),
+    const token = await promptForToken({
+      providerLabel: "Azure DevOps",
+      inputPrompt: t("azureDevOpsEnterPAT"),
+      createTokenOptions: this.getCreateTokenOptions(),
     });
 
     if (!token) {
@@ -119,6 +138,9 @@ export class GitProviderAzure extends GitProvider {
     }
 
     await SecretsManager.setSecret(this.hostKey + "_TOKEN", token);
+    await SecretsManager.deleteSecret(this.hostKey + "_DISCONNECTED").catch(
+      () => {},
+    );
     await this.initialize();
     return this.isActive;
   }
@@ -134,15 +156,29 @@ export class GitProviderAzure extends GitProvider {
       return false;
     }
 
+    await SecretsManager.deleteSecret(this.hostKey + "_DISCONNECTED").catch(
+      () => {},
+    );
     await this.initialize();
     return this.isActive;
   }
 
   async initialize() {
     const pat = await SecretsManager.getSecret(this.hostKey + "_TOKEN");
-    const authHandler = pat
-      ? azdev.getPersonalAccessTokenHandler(pat)
-      : await this.getOAuthHandler();
+    let authHandler: any;
+    if (pat) {
+      authHandler = azdev.getPersonalAccessTokenHandler(pat);
+    } else {
+      // The native VS Code (OAuth) session cannot be removed programmatically, so
+      // honor an explicit disconnect to avoid silently re-connecting from it.
+      const disconnected = await SecretsManager.getSecret(
+        this.hostKey + "_DISCONNECTED",
+      );
+      if (disconnected) {
+        return;
+      }
+      authHandler = await this.getOAuthHandler();
+    }
 
     if (!authHandler || !this.repoInfo) {
       return;
@@ -176,9 +212,7 @@ export class GitProviderAzure extends GitProvider {
       showAuthFailureGuidance({
         providerName: "Azure DevOps",
         guidance: t("azureDevOpsAuthInfo"),
-        createTokenUrl: orgUrl
-          ? `${orgUrl}/_usersSettings/tokens`
-          : "https://dev.azure.com/_usersSettings/tokens",
+        retry: () => this.reauthenticateAndRefresh(),
         docUrl:
           "https://learn.microsoft.com/en-us/azure/devops/organizations/accounts/use-personal-access-tokens-to-authenticate",
       });

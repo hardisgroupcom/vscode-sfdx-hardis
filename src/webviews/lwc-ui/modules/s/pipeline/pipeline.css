@@ -240,10 +240,13 @@ lightning-datatable .hardis-emoji-cell a {
     margin-top: 0.6rem;
 }
 
-/* Greyed (not connected) - apply filter to SVG images */
+/* Greyed (not connected). Strong fade so the disconnected state is unmistakable
+   even for monochrome marks (e.g. the black GitHub logo), where grayscale alone has
+   no visible effect. Opacity fades the whole icon toward the background, so it reads
+   as "off" in both light and dark themes. */
 .provider-icon.provider-grey {
-    filter: grayscale(100%) brightness(80%);
-    opacity: 0.85;
+    filter: grayscale(100%);
+    opacity: 0.4;
 }
 
 /* Colored (connected) - show as-is, but increase saturation slightly */

@@ -2,11 +2,20 @@ import * as vscode from "vscode";
 import { GitProvider } from "./gitProvider";
 import { Bitbucket } from "bitbucket";
 import type { Schema } from "bitbucket";
-import { ProviderDescription, PullRequest, Job, JobStatus } from "./types";
+import {
+  CreateTokenOption,
+  ProviderDescription,
+  PullRequest,
+  Job,
+  JobStatus,
+} from "./types";
 import { SecretsManager } from "../secretsManager";
 import { Logger } from "../../logger";
 import { t } from "../../i18n/i18n";
-import { showAuthFailureGuidance } from "../providerCredentials";
+import {
+  promptForToken,
+  showAuthFailureGuidance,
+} from "../providerCredentials";
 
 export class GitProviderBitbucket extends GitProvider {
   bitbucketClient: InstanceType<typeof Bitbucket> | null = null;
@@ -47,9 +56,7 @@ export class GitProviderBitbucket extends GitProvider {
     await super.disconnect();
   }
 
-  async authenticate(): Promise<boolean | null> {
-    const ATLASSIAN_API_TOKEN_URL =
-      "https://id.atlassian.com/manage-profile/security/api-tokens";
+  getCreateTokenOptions(): CreateTokenOption[] {
     // Repository-scoped access token URL: build from repoInfo when available
     const host = this.repoInfo?.host || "bitbucket.org";
     const owner = this.repoInfo?.owner || "";
@@ -58,36 +65,63 @@ export class GitProviderBitbucket extends GitProvider {
       owner && repo
         ? `https://${host}/${owner}/${repo}/admin/access-tokens`
         : "https://support.atlassian.com/bitbucket-cloud/docs/access-tokens/";
-
-    const choice = await vscode.window.showQuickPick(
-      [
-        { label: t("useAccessToken"), value: "token" },
-        { label: t("useEmailAndApiToken"), value: "basic" },
-      ],
+    return [
       {
-        placeHolder: t("bitbucketAuthMethodPlaceholder"),
-        ignoreFocusOut: true,
+        id: "repoToken",
+        label: t("createBitbucketRepoToken"),
+        url: repoAccessTokenUrl,
+        scopesHint:
+          "Repositories: Read, Pull requests: Write, Issues: Write, Pipelines: Write",
       },
+      {
+        id: "atlassianApiToken",
+        label: t("createBitbucketAtlassianToken"),
+        url: "https://id.atlassian.com/manage-profile/security/api-tokens",
+        creationHint: t("atlassianApiTokenWithScopesHint"),
+        scopesHint:
+          "read:pipeline:bitbucket, read:pullrequest:bitbucket, read:repository:bitbucket, read:me, read:user:bitbucket, write:issue:bitbucket, write:pullrequest:bitbucket, write:repository:bitbucket",
+      },
+    ];
+  }
+
+  async authenticate(): Promise<boolean | null> {
+    const options = this.getCreateTokenOptions();
+    const repoOption = options.find((option) => option.id === "repoToken");
+    const atlassianOption = options.find(
+      (option) => option.id === "atlassianApiToken",
+    );
+
+    // A Repository Access Token (repo admin) is used as a Bearer token (token only),
+    // while an Atlassian account API token (non-admin) is used with the account email
+    // (Basic auth). Let the user pick which kind matches their permissions.
+    const repoLabel = t("bitbucketUseRepoAccessToken");
+    const atlassianLabel = t("bitbucketUseAtlassianApiToken");
+    const choice = await vscode.window.showInformationMessage(
+      t("bitbucketTokenKindPrompt"),
+      { modal: true },
+      repoLabel,
+      atlassianLabel,
     );
     if (!choice) {
       return null;
     }
 
-    if (choice.value === "token") {
-      return await this.authenticateWithToken(repoAccessTokenUrl);
-    } else {
-      return await this.authenticateWithEmailAndToken(ATLASSIAN_API_TOKEN_URL);
+    if (choice === repoLabel && repoOption) {
+      return await this.authenticateWithToken(repoOption);
     }
+    if (atlassianOption) {
+      return await this.authenticateWithEmailAndToken(atlassianOption);
+    }
+    return null;
   }
 
   private async authenticateWithToken(
-    tokenUrl: string,
+    createOption: CreateTokenOption,
   ): Promise<boolean | null> {
-    const token = await vscode.window.showInputBox({
-      prompt: t("bitbucketEnterToken"),
-      ignoreFocusOut: true,
-      password: true,
-      placeHolder: t("bitbucketCreateApiTokenAt", { url: tokenUrl }),
+    const token = await promptForToken({
+      providerLabel: "Bitbucket",
+      inputPrompt: t("bitbucketEnterToken"),
+      createTokenOptions: [createOption],
     });
     if (!token) {
       return null;
@@ -101,23 +135,24 @@ export class GitProviderBitbucket extends GitProvider {
   }
 
   private async authenticateWithEmailAndToken(
-    tokenUrl: string,
+    createOption: CreateTokenOption,
   ): Promise<boolean | null> {
+    // Ask the questions first (token choice + creation page if needed), then the
+    // plain value inputs: token, then email.
+    const token = await promptForToken({
+      providerLabel: "Bitbucket",
+      inputPrompt: t("bitbucketEnterToken"),
+      createTokenOptions: [createOption],
+    });
+    if (!token) {
+      return null;
+    }
     const email = await vscode.window.showInputBox({
       prompt: t("bitbucketEnterEmail"),
       ignoreFocusOut: true,
       placeHolder: t("emailPlaceholder"),
     });
     if (!email) {
-      return null;
-    }
-    const token = await vscode.window.showInputBox({
-      prompt: t("bitbucketEnterToken"),
-      ignoreFocusOut: true,
-      password: true,
-      placeHolder: t("bitbucketCreateApiTokenAt", { url: tokenUrl }),
-    });
-    if (!token) {
       return null;
     }
     await SecretsManager.setSecret(this.hostKey + "_BITBUCKET_EMAIL", email);
@@ -177,15 +212,10 @@ export class GitProviderBitbucket extends GitProvider {
       } catch (err) {
         Logger.log(`Bitbucket repository access check failed: ${String(err)}`);
         this.isActive = false;
-        const host = this.repoInfo?.host || "bitbucket.org";
-        const repoTokenUrl =
-          this.workspace && this.repoSlug
-            ? `https://${host}/${this.workspace}/${this.repoSlug}/admin/access-tokens`
-            : "https://support.atlassian.com/bitbucket-cloud/docs/access-tokens/";
         showAuthFailureGuidance({
           providerName: "Bitbucket",
           guidance: t("bitbucketAuthInfo"),
-          createTokenUrl: repoTokenUrl,
+          retry: () => this.reauthenticateAndRefresh(),
           docUrl:
             "https://support.atlassian.com/bitbucket-cloud/docs/access-tokens/",
         });

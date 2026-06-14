@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import simpleGit from "simple-git";
 import type {
+  CreateTokenOption,
   ProviderDescription,
   ProviderName,
   PullRequest,
@@ -9,6 +10,7 @@ import type {
   JobStatus,
 } from "./types";
 import { getReportDirectory, getWorkspaceRoot } from "../../utils";
+import { getConfig } from "../pipeline/sfdxHardisConfig";
 import { Logger } from "../../logger";
 import { SecretsManager } from "../secretsManager";
 import { TicketProvider } from "../ticketProviders/ticketProvider";
@@ -56,6 +58,11 @@ export class GitProvider {
           this.instance = new (
             await import("./gitProviderBitbucket")
           ).GitProviderBitbucket();
+          break;
+        case "gitea":
+          this.instance = new (
+            await import("./gitProviderGitea")
+          ).GitProviderGitea();
           break;
         default:
           return null;
@@ -136,6 +143,10 @@ export class GitProvider {
     // Robust checks for common provider indicators (handles on-prem domains like gitlab.company.com)
     if (/(^|\.)gitlab(\.|$)/i.test(hostLower) || hostLower.includes("gitlab")) {
       providerName = "gitlab";
+    } else if (hostLower.includes("gitea")) {
+      // Gitea is self-hosted; recognize obvious "gitea.*" domains by host hint.
+      // Other Gitea instances must be declared via the gitProvider config below.
+      providerName = "gitea";
     } else if (
       /(^|\.)github(\.|$)/i.test(hostLower) ||
       hostLower.includes("github")
@@ -153,6 +164,31 @@ export class GitProvider {
     ) {
       providerName = "bitbucket";
     }
+
+    // Allow an explicit override from .sfdx-hardis.yml (gitProvider: gitea|github|gitlab|azure|bitbucket).
+    // This is the robust way to detect self-hosted Gitea instances on arbitrary domains,
+    // which otherwise would be wrongly detected as GitHub (Gitea mimics the GitHub API).
+    try {
+      const config = await getConfig("project");
+      const configuredProvider = String(
+        config?.gitProvider || "",
+      ).toLowerCase();
+      const validProviders: ProviderName[] = [
+        "gitlab",
+        "github",
+        "azure",
+        "bitbucket",
+        "gitea",
+      ];
+      if (validProviders.includes(configuredProvider as ProviderName)) {
+        providerName = configuredProvider as ProviderName;
+      }
+    } catch (e) {
+      Logger.log(
+        `detectRepoInfo: could not read gitProvider from config: ${e instanceof Error ? e.message : String(e)}`,
+      );
+    }
+
     if (!providerName) {
       Logger.log(
         `detectRepoInfo: unable to map provider for host=${host} remoteUrl=${remoteUrl} owner=${owner} repo=${repo}`,
@@ -165,6 +201,11 @@ export class GitProvider {
     switch (providerName) {
       case "github": {
         // https://github.com/owner/repo
+        webUrl = `https://${host}/${owner}/${repo}`;
+        break;
+      }
+      case "gitea": {
+        // https://gitea.company.com/owner/repo
         webUrl = `https://${host}/${owner}/${repo}`;
         break;
       }
@@ -217,6 +258,18 @@ export class GitProvider {
       `authenticate not implemented on ${this.repoInfo?.providerName || "unknown provider"}`,
     );
     return false;
+  }
+
+  /**
+   * Re-runs the interactive authentication flow (same path as clicking the git
+   * provider icon) and refreshes the pipeline view on success. Used as the retry
+   * action of the authentication-failure guidance message.
+   */
+  async reauthenticateAndRefresh(): Promise<void> {
+    const authenticated = await this.authenticate();
+    if (authenticated) {
+      await vscode.commands.executeCommand("vscode-sfdx-hardis.showPipeline");
+    }
   }
 
   async disconnect(): Promise<void> {
@@ -429,6 +482,17 @@ export class GitProvider {
       `getCreatePullRequestUrl not implemented on ${this.repoInfo?.providerName || "unknown provider"}`,
     );
     return null;
+  }
+
+  /**
+   * Returns the list of access tokens the user can create on this provider to
+   * authenticate the extension, each with the page URL where it can be created.
+   * Single source of truth consumed both by the credential prompt and by the
+   * post-failure guidance. Defaults to an empty list (e.g. providers using
+   * native VS Code authentication).
+   */
+  getCreateTokenOptions(): CreateTokenOption[] {
+    return [];
   }
 
   private async setIntervalWriteApiLogs() {
