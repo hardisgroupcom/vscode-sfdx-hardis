@@ -28,11 +28,19 @@ export function registerShowFilesWorkbench(commands: Commands) {
         panel.sendInitializationData({ loading: true });
         try {
           const workspaces = await loadFilesWorkspaces();
-          panel.sendInitializationData({ workspaces: workspaces, loading: false });
-        }
-        catch (e: any) {
-          Logger.log("[vscode-sfdx-hardis] Files Workbench init failed: " + (e?.message || e));
-          panel.sendInitializationData({ loading: false, loadError: String(e?.message || e) });
+          panel.sendInitializationData({
+            workspaces: workspaces,
+            loading: false,
+          });
+        } catch (e: any) {
+          Logger.log(
+            "[vscode-sfdx-hardis] Files Workbench init failed: " +
+              (e?.message || e),
+          );
+          panel.sendInitializationData({
+            loading: false,
+            loadError: String(e?.message || e),
+          });
         }
       };
 

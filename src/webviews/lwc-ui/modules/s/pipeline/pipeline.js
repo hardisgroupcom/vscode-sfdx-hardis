@@ -568,11 +568,21 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     if (Object.prototype.hasOwnProperty.call(data, "displayFeatureBranches")) {
       this.displayFeatureBranches = data.displayFeatureBranches ?? false;
     }
-    if (Object.prototype.hasOwnProperty.call(data, "enableDeploymentApexTestClasses")) {
-      this.enableDeploymentApexTestClasses = !!data.enableDeploymentApexTestClasses;
+    if (
+      Object.prototype.hasOwnProperty.call(
+        data,
+        "enableDeploymentApexTestClasses",
+      )
+    ) {
+      this.enableDeploymentApexTestClasses =
+        !!data.enableDeploymentApexTestClasses;
     }
-    if (Object.prototype.hasOwnProperty.call(data, "availableApexTestClasses")) {
-      this.availableApexTestClasses = Array.isArray(data.availableApexTestClasses)
+    if (
+      Object.prototype.hasOwnProperty.call(data, "availableApexTestClasses")
+    ) {
+      this.availableApexTestClasses = Array.isArray(
+        data.availableApexTestClasses,
+      )
         ? data.availableApexTestClasses
         : [];
     }
@@ -627,14 +637,18 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       : "neutral";
 
     if (Object.prototype.hasOwnProperty.call(data, "openPullRequests")) {
-      this.openPullRequests = this._mapPrsWithIcons(data.openPullRequests || []);
+      this.openPullRequests = this._mapPrsWithIcons(
+        data.openPullRequests || [],
+      );
       // ensure reactivity for computed label
       this.openPullRequests = Array.isArray(this.openPullRequests)
         ? this.openPullRequests
         : [];
     }
     // Store current branch PR
-    if (Object.prototype.hasOwnProperty.call(data, "currentBranchPullRequest")) {
+    if (
+      Object.prototype.hasOwnProperty.call(data, "currentBranchPullRequest")
+    ) {
       this.currentBranchPullRequest = data.currentBranchPullRequest || null;
     }
     if (Object.prototype.hasOwnProperty.call(data, "autoFixPullRequest")) {
@@ -647,7 +661,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     if (Object.prototype.hasOwnProperty.call(data, "projectSfdmuWorkspaces")) {
       this.projectSfdmuWorkspaces = data.projectSfdmuWorkspaces || [];
     }
-    if (Object.prototype.hasOwnProperty.call(data, "projectSchedulableClasses")) {
+    if (
+      Object.prototype.hasOwnProperty.call(data, "projectSchedulableClasses")
+    ) {
       this.projectSchedulableClasses = data.projectSchedulableClasses || [];
     }
     if (Object.prototype.hasOwnProperty.call(data, "projectCommunities")) {

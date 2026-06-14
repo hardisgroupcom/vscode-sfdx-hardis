@@ -19,12 +19,19 @@ export function registerShowExtensionConfig(commands: Commands) {
       const loadAndPush = async () => {
         panel.sendInitializationData({ loading: true });
         try {
-          const sections = await getExtensionConfigSections(commands.extensionUri);
+          const sections = await getExtensionConfigSections(
+            commands.extensionUri,
+          );
           panel.sendInitializationData({ sections: sections, loading: false });
-        }
-        catch (e: any) {
-          Logger.log("[vscode-sfdx-hardis] Extension Config init failed: " + (e?.message || e));
-          panel.sendInitializationData({ loading: false, loadError: String(e?.message || e) });
+        } catch (e: any) {
+          Logger.log(
+            "[vscode-sfdx-hardis] Extension Config init failed: " +
+              (e?.message || e),
+          );
+          panel.sendInitializationData({
+            loading: false,
+            loadError: String(e?.message || e),
+          });
         }
       };
 

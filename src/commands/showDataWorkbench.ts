@@ -131,11 +131,19 @@ export function registerShowDataWorkbench(commands: Commands) {
         panel.sendInitializationData({ loading: true });
         try {
           const workspaces = await loadDataWorkspaces();
-          panel.sendInitializationData({ workspaces: workspaces, loading: false });
-        }
-        catch (e: any) {
-          Logger.log("[vscode-sfdx-hardis] Data Workbench init failed: " + (e?.message || e));
-          panel.sendInitializationData({ loading: false, loadError: String(e?.message || e) });
+          panel.sendInitializationData({
+            workspaces: workspaces,
+            loading: false,
+          });
+        } catch (e: any) {
+          Logger.log(
+            "[vscode-sfdx-hardis] Data Workbench init failed: " +
+              (e?.message || e),
+          );
+          panel.sendInitializationData({
+            loading: false,
+            loadError: String(e?.message || e),
+          });
         }
       };
 

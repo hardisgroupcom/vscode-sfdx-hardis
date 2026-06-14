@@ -201,8 +201,7 @@ export async function execShell(
           sharedWorkerCallbacks.delete(reqId);
           if (result && result.error) {
             cb.reject(result);
-          }
-          else {
+          } else {
             cb.resolve({ stdout: result.stdout, stderr: result.stderr });
           }
         });
@@ -226,8 +225,7 @@ export async function execShell(
           path: "./worker.ts",
         });
       });
-    }
-    else {
+    } else {
       // Use main process to perform CLI command
       return await new Promise<any>((resolve, reject) => {
         childProcess.exec(cmd, execOptions, (error, stdout, stderr) => {
@@ -238,8 +236,7 @@ export async function execShell(
         });
       });
     }
-  }
-  finally {
+  } finally {
     releaseShellSlot(lowPriority);
     Logger.logPerf(
       `[shell-perf] ${lowPriority ? "LOW " : "HIGH"} wait=${shellWaited}ms exec=${Date.now() - shellExecT0}ms :: ${cmd.slice(0, 140)}`,
@@ -535,11 +532,7 @@ export async function execCommand(
       Logger.log("[vscode-sfdx-hardis][command] " + command);
       console.time(command);
       const lowPriority = options.lowPriority ?? isLowPriorityCommand(command);
-      const commandResultPromise = execShell(
-        command,
-        execOptions,
-        lowPriority,
-      );
+      const commandResultPromise = execShell(command, execOptions, lowPriority);
       COMMANDS_RESULTS[command] = { promise: commandResultPromise };
       try {
         commandResult = await commandResultPromise;
@@ -852,8 +845,7 @@ export async function getGitParentBranch() {
       cachedParentBranch = parentBranch;
       return parentBranch;
     }
-  }
-  catch {
+  } catch {
     return null;
   }
   return null;
