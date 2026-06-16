@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Pipeline diagram now shows the count of merged pull requests on Bitbucket branches (such as preprod), which was previously always missing
+  - The count now also includes every merged pull request when a branch has more than fit in a single page of results
+
 ## [7.11.0] 2026-06-15
 
 - Faster, smoother Status and Dependencies panels

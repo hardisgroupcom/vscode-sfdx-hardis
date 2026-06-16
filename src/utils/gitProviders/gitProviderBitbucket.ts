@@ -288,6 +288,35 @@ export class GitProviderBitbucket extends GitProvider {
     }
   }
 
+  /**
+   * Bitbucket Cloud paginates list responses (pull requests, commits...). Each
+   * response only carries one page of `values` plus a `next` link when more
+   * pages exist. This helper follows `next` (via the `page` param) and returns
+   * every item across all pages, so callers never silently miss results.
+   * `pagelen` maxes out at 50 for pull requests and 100 for commits.
+   */
+  private async fetchAllPages(
+    listFn: (params: any) => Promise<any>,
+    params: any,
+    maxPages: number = 50,
+  ): Promise<any[]> {
+    const all: any[] = [];
+    let page = 1;
+    while (page <= maxPages) {
+      const response = await listFn({ ...params, page });
+      const values =
+        response && response.data && response.data.values
+          ? response.data.values
+          : [];
+      all.push(...values);
+      if (!response?.data?.next || values.length === 0) {
+        break;
+      }
+      page++;
+    }
+    return all;
+  }
+
   async listPullRequestsInBranchSinceLastMerge(
     currentBranchName: string,
     targetBranchName: string,
@@ -298,11 +327,15 @@ export class GitProviderBitbucket extends GitProvider {
     }
 
     try {
-      // Step 1: Find the last merged PR from currentBranch to targetBranch
+      // Step 1: Find the last merged PR from currentBranch to targetBranch.
+      // Sort most-recent-first and take a single result so [0] is reliably the
+      // latest merge, independent of the API's default ordering.
       const lastMergeResponse = await this.bitbucketClient.pullrequests.list({
         workspace: this.workspace,
         repo_slug: this.repoSlug,
         q: `source.branch.name = "${currentBranchName}" AND destination.branch.name = "${targetBranchName}" AND state = "MERGED"`,
+        sort: "-updated_on",
+        pagelen: 1,
       } as any);
       await this.logApiCall("pullrequests.list", {
         caller: "listPullRequestsInBranchSinceLastMerge",
@@ -319,54 +352,58 @@ export class GitProviderBitbucket extends GitProvider {
       const lastMergeToTarget =
         lastMergePRs.length > 0 ? lastMergePRs[0] : null;
 
-      // Step 2: Get commits between branches
-      const commitsResponse = await this.bitbucketClient.commits.list({
-        workspace: this.workspace,
-        repo_slug: this.repoSlug,
-        include: currentBranchName,
-        exclude: lastMergeToTarget
-          ? lastMergeToTarget.merge_commit?.hash
-          : targetBranchName,
-      } as any);
+      // Step 2: Get commits between branches (paginated: a busy branch can have
+      // far more than one page of commits since the last merge)
+      const exclude = lastMergeToTarget
+        ? lastMergeToTarget.merge_commit?.hash
+        : targetBranchName;
+      const commits = await this.fetchAllPages(
+        (params) => this.bitbucketClient!.commits.list(params),
+        {
+          workspace: this.workspace,
+          repo_slug: this.repoSlug,
+          include: currentBranchName,
+          exclude,
+          pagelen: 100,
+        },
+      );
       await this.logApiCall("commits.list", {
         caller: "listPullRequestsInBranchSinceLastMerge",
         include: currentBranchName,
-        exclude: lastMergeToTarget
-          ? lastMergeToTarget.merge_commit?.hash
-          : targetBranchName,
+        exclude,
       });
-
-      const commits =
-        commitsResponse && commitsResponse.data && commitsResponse.data.values
-          ? commitsResponse.data.values
-          : [];
 
       if (commits.length === 0) {
         return [];
       }
 
-      const commitHashes = new Set(commits.map((c: any) => c.hash));
+      // Bitbucket's commits.list returns FULL 40-char hashes, while
+      // pullrequests.list returns merge_commit.hash ABBREVIATED to 12 chars.
+      // An exact-string Set lookup would therefore never match, so we keep the
+      // full hashes and compare with prefix awareness in Step 4.
+      const commitHashes: string[] = commits.map((c: any) => c.hash);
 
       // Step 3: Get all merged PRs targeting currentBranch and child branches (parallelized)
       const allBranches = [currentBranchName, ...childBranchesNames];
 
       const prPromises = allBranches.map(async (branchName) => {
         try {
-          const response = await this.bitbucketClient!.pullrequests.list({
-            workspace: this.workspace!,
-            repo_slug: this.repoSlug!,
-            q: `destination.branch.name = "${branchName}" AND state = "MERGED"`,
-          } as any);
+          const q = `destination.branch.name = "${branchName}" AND state = "MERGED"`;
+          // Paginate: a branch can have more merged PRs than fit on one page
+          const values = await this.fetchAllPages(
+            (params) => this.bitbucketClient!.pullrequests.list(params),
+            {
+              workspace: this.workspace!,
+              repo_slug: this.repoSlug!,
+              q,
+              pagelen: 50,
+            },
+          );
           await this.logApiCall("pullrequests.list", {
             caller: "listPullRequestsInBranchSinceLastMerge",
             action: "fetchMergedPRs",
-            q: `destination.branch.name = "${branchName}" AND state = "MERGED"`,
+            q,
           });
-
-          const values =
-            response && response.data && response.data.values
-              ? response.data.values
-              : [];
           return values;
         } catch (err) {
           Logger.log(
@@ -379,10 +416,20 @@ export class GitProviderBitbucket extends GitProvider {
       const prResults = await Promise.all(prPromises);
       const allMergedPRs: any[] = prResults.flat();
 
-      // Step 4: Filter PRs whose merge commit is in our commit list
+      // Step 4: Filter PRs whose merge commit is in our commit list.
+      // The PR merge_commit hash (12 chars) is a prefix of the full commit hash
+      // (40 chars), so match when either hash is a prefix of the other.
       const relevantPRs = allMergedPRs.filter((pr) => {
         const mergeCommitHash = pr.merge_commit?.hash;
-        return mergeCommitHash && commitHashes.has(mergeCommitHash);
+        if (!mergeCommitHash) {
+          return false;
+        }
+        return commitHashes.some(
+          (hash) =>
+            hash === mergeCommitHash ||
+            hash.startsWith(mergeCommitHash) ||
+            mergeCommitHash.startsWith(hash),
+        );
       });
 
       // Step 5: Remove duplicates
