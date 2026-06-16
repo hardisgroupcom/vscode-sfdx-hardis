@@ -4,6 +4,7 @@ import { Octokit } from "@octokit/rest";
 import type { Endpoints } from "@octokit/types";
 import {
   CreateTokenOption,
+  GoLive,
   ProviderDescription,
   PullRequest,
   Job,
@@ -314,60 +315,225 @@ export class GitProviderGitHub extends GitProvider {
 
       const commitSHAs = new Set(comparison.commits.map((c) => c.sha));
 
-      // Step 3: Get all merged PRs targeting currentBranch and child branches (parallelized)
+      // Step 3-6: Get merged PRs targeting currentBranch and child branches,
+      // keep those whose merge commit belongs to our commit list, dedupe, convert
       const allBranches = [currentBranchName, ...childBranchesNames];
-
-      const prPromises = allBranches.map(async (branchName) => {
-        try {
-          const { data: prs } = await this.gitHubClient!.pulls.list({
-            owner,
-            repo,
-            state: "closed",
-            base: branchName,
-            per_page: 1000,
-          });
-          await this.logApiCall("pulls.list", {
-            caller: "listPullRequestsInBranchSinceLastMerge",
-            action: "fetchMergedPRs",
-            targetBranch: branchName,
-          });
-          return prs.filter((pr) => pr.merged_at);
-        } catch (err) {
-          Logger.log(
-            `Error fetching merged PRs for branch ${branchName}: ${String(err)}`,
-          );
-          return [];
-        }
-      });
-
-      const prResults = await Promise.all(prPromises);
-      const allMergedPRs: any[] = prResults.flat();
-
-      // Step 4: Filter PRs whose merge commit is in our commit list
-      const relevantPRs = allMergedPRs.filter((pr) => {
-        return pr.merge_commit_sha && commitSHAs.has(pr.merge_commit_sha);
-      });
-
-      // Step 5: Remove duplicates
-      const uniquePRsMap = new Map();
-      for (const pr of relevantPRs) {
-        if (!uniquePRsMap.has(pr.number)) {
-          uniquePRsMap.set(pr.number, pr);
-        }
-      }
-
-      const uniquePRs = Array.from(uniquePRsMap.values());
-
-      // Step 6: Convert to PullRequest format
-      return await this.convertAndCollectJobsList(uniquePRs, {
-        withJobs: false,
-      });
+      return await this.collectMergedPRsForCommits(allBranches, commitSHAs);
     } catch (err) {
       Logger.log(
         `Error in listPullRequestsInBranchSinceLastMerge: ${String(err)}`,
       );
       return [];
     }
+  }
+
+  async getBranchLatestCommitId(
+    branchName: string,
+  ): Promise<string | undefined> {
+    if (!this.gitHubClient || !this.repoInfo) {
+      return undefined;
+    }
+    const [owner, repo] = [this.repoInfo.owner, this.repoInfo.repo];
+    try {
+      const { data: branch } = await this.gitHubClient.repos.getBranch({
+        owner,
+        repo,
+        branch: branchName,
+      });
+      await this.logApiCall("repos.getBranch", {
+        caller: "getBranchLatestCommitId",
+        branch: branchName,
+      });
+      return branch?.commit?.sha;
+    } catch (err) {
+      Logger.log(
+        `Error fetching latest commit for branch ${branchName}: ${String(err)}`,
+      );
+      return undefined;
+    }
+  }
+
+  /**
+   * Lists the go lives (merges into a top branch such as main/prod), most recent
+   * first. Each merged PR into the branch is a go live; only the merge commit and
+   * a few display fields are returned (no PR contents).
+   */
+  async fetchGoLives(branchName: string): Promise<GoLive[]> {
+    if (!this.gitHubClient || !this.repoInfo) {
+      return [];
+    }
+    const [owner, repo] = [this.repoInfo.owner, this.repoInfo.repo];
+    try {
+      const { data: closedPRs } = await this.gitHubClient.pulls.list({
+        owner,
+        repo,
+        state: "closed",
+        base: branchName,
+        sort: "updated",
+        direction: "desc",
+        per_page: 100,
+      });
+      await this.logApiCall("pulls.list", {
+        caller: "fetchGoLives",
+        targetBranch: branchName,
+      });
+      return closedPRs
+        .filter((pr) => pr.merged_at && pr.merge_commit_sha)
+        .map((pr) => ({
+          id: pr.merge_commit_sha as string,
+          prNumber: pr.number,
+          title: pr.title,
+          mergeDate: pr.merged_at || undefined,
+          webUrl: pr.html_url || "",
+        }));
+    } catch (err) {
+      Logger.log(`Error fetching GitHub go lives: ${String(err)}`);
+      return [];
+    }
+  }
+
+  /**
+   * Lists the Pull Requests carried by a specific go live (merge commit
+   * `mergeCommitSha`) into a top branch. Commits introduced by the go live are
+   * those reachable from the merge commit but not from its first parent (the
+   * mainline before the go live), so other go lives are excluded.
+   */
+  async listPullRequestsInGoLive(
+    branchName: string,
+    childBranchesNames: string[],
+    mergeCommitSha: string,
+  ): Promise<PullRequest[]> {
+    if (!this.gitHubClient || !this.repoInfo || !mergeCommitSha) {
+      return [];
+    }
+
+    const [owner, repo] = [this.repoInfo.owner, this.repoInfo.repo];
+
+    // Return the cached result: a given go live never changes
+    const cacheKey = this.getLatestMergeCacheKey(
+      branchName,
+      childBranchesNames,
+      mergeCommitSha,
+    );
+    const cached = this.latestMergePrCache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    try {
+      // Step 1: Resolve the merge commit's first parent (the mainline before the
+      // go live). Without it we cannot bound the go live, so bail out rather than
+      // over-reporting every merged PR.
+      let firstParent: string | undefined;
+      try {
+        const { data: mergeCommit } = await this.gitHubClient.repos.getCommit({
+          owner,
+          repo,
+          ref: mergeCommitSha,
+        });
+        await this.logApiCall("repos.getCommit", {
+          caller: "listPullRequestsInGoLive",
+          ref: mergeCommitSha,
+        });
+        firstParent = mergeCommit.parents?.[0]?.sha;
+      } catch (err) {
+        Logger.log(
+          `Error fetching merge commit ${mergeCommitSha}: ${String(err)}`,
+        );
+      }
+      if (!firstParent) {
+        return [];
+      }
+
+      // Step 2: Commits introduced by the go live
+      const { data: comparison } = await this.gitHubClient.repos.compareCommits(
+        {
+          owner,
+          repo,
+          base: firstParent,
+          head: mergeCommitSha,
+          per_page: 1000,
+        },
+      );
+      await this.logApiCall("repos.compareCommits", {
+        caller: "listPullRequestsInGoLive",
+        base: firstParent,
+        head: mergeCommitSha,
+      });
+      if (!comparison.commits || comparison.commits.length === 0) {
+        return [];
+      }
+      const commitSHAs = new Set(comparison.commits.map((c) => c.sha));
+      // The merge commit itself is the head of the comparison range, not part of
+      // comparison.commits, so add it so the go-live promotion PR matches too.
+      commitSHAs.add(mergeCommitSha);
+
+      // Step 3-5: same matching as listPullRequestsInBranchSinceLastMerge
+      const allBranches = [branchName, ...childBranchesNames];
+      const result = await this.collectMergedPRsForCommits(
+        allBranches,
+        commitSHAs,
+      );
+      this.latestMergePrCache.set(cacheKey, result);
+      return result;
+    } catch (err) {
+      Logger.log(`Error in listPullRequestsInGoLive: ${String(err)}`);
+      return [];
+    }
+  }
+
+  /**
+   * Shared tail of the "PRs in branch" queries: fetch all merged PRs targeting
+   * each branch in `allBranches`, keep those whose merge commit SHA is part of
+   * `commitSHAs`, dedupe by PR number and convert to the common PullRequest shape.
+   */
+  private async collectMergedPRsForCommits(
+    allBranches: string[],
+    commitSHAs: Set<string>,
+  ): Promise<PullRequest[]> {
+    const [owner, repo] = [this.repoInfo!.owner, this.repoInfo!.repo];
+
+    const prPromises = allBranches.map(async (branchName) => {
+      try {
+        const { data: prs } = await this.gitHubClient!.pulls.list({
+          owner,
+          repo,
+          state: "closed",
+          base: branchName,
+          per_page: 1000,
+        });
+        await this.logApiCall("pulls.list", {
+          caller: "collectMergedPRsForCommits",
+          action: "fetchMergedPRs",
+          targetBranch: branchName,
+        });
+        return prs.filter((pr) => pr.merged_at);
+      } catch (err) {
+        Logger.log(
+          `Error fetching merged PRs for branch ${branchName}: ${String(err)}`,
+        );
+        return [];
+      }
+    });
+
+    const prResults = await Promise.all(prPromises);
+    const allMergedPRs: any[] = prResults.flat();
+
+    const relevantPRs = allMergedPRs.filter((pr) => {
+      return pr.merge_commit_sha && commitSHAs.has(pr.merge_commit_sha);
+    });
+
+    const uniquePRsMap = new Map();
+    for (const pr of relevantPRs) {
+      if (!uniquePRsMap.has(pr.number)) {
+        uniquePRsMap.set(pr.number, pr);
+      }
+    }
+    const uniquePRs = Array.from(uniquePRsMap.values());
+
+    return await this.convertAndCollectJobsList(uniquePRs, {
+      withJobs: false,
+    });
   }
 
   // Helper to convert a raw GitHub PR and attach jobs/jobsStatus

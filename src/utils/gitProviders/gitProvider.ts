@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import simpleGit from "simple-git";
 import type {
   CreateTokenOption,
+  GoLive,
   ProviderDescription,
   ProviderName,
   PullRequest,
@@ -31,6 +32,20 @@ export class GitProvider {
   isLoggerOn: boolean = false;
   apiCallsCounter: number = 0;
   apiCallsLogs: any[] = [];
+
+  // In-memory, per-session cache for listPullRequestsInLatestMerge results,
+  // keyed by branch + child branches + latest merge commit id. The latest go
+  // live rarely changes between pipeline refreshes, so this avoids recomputing
+  // the (expensive) commit comparison + merged PR fetch on every refresh. It
+  // lives on the singleton instance and is dropped whenever the provider is
+  // re-instantiated (e.g. reconnect, see getInstance(reset)).
+  protected latestMergePrCache: Map<string, PullRequest[]> = new Map();
+
+  // In-memory, per-session cache for listGoLives results, keyed by branch + its
+  // latest commit id. The go-lives list only changes when a new commit lands on
+  // the (top) branch, so as long as the branch tip is unchanged the cached list
+  // is still valid and the PR listing can be skipped. Same lifetime as above.
+  protected goLivesCache: Map<string, GoLive[]> = new Map();
 
   static async getInstance(reset = false): Promise<GitProvider | null> {
     if (!this.instance || reset === true) {
@@ -316,6 +331,126 @@ export class GitProvider {
       `listPullRequestsInBranchSinceLastMerge not implemented on ${this.repoInfo?.providerName || "unknown provider"}`,
     );
     return [];
+  }
+
+  /**
+   * Lists the "go lives" (merges/promotions into a top branch such as main/prod),
+   * most recent first. Lightweight: no PR contents are loaded — use
+   * listPullRequestsInGoLive to fetch the PRs of a selected go live. Powers the
+   * go-lives selector of the pipeline branch modal.
+   *
+   * Cached per session, keyed by the branch's latest commit: the list only
+   * changes when a new commit lands on the branch, so an unchanged tip serves
+   * the cached result and skips the PR listing. Providers implement
+   * getBranchLatestCommitId (cheap tip lookup) and fetchGoLives (the listing).
+   */
+  async listGoLives(branchName: string): Promise<GoLive[]> {
+    const latestCommitId = await this.getBranchLatestCommitId(branchName);
+    if (!latestCommitId) {
+      // Cannot determine the tip → fetch fresh and do not cache (avoid serving
+      // a stale list forever after a transient lookup failure).
+      return await this.fetchGoLives(branchName);
+    }
+    const key = this.getGoLivesCacheKey(branchName, latestCommitId);
+    const cached = this.goLivesCache.get(key);
+    if (cached) {
+      return cached;
+    }
+    const result = await this.fetchGoLives(branchName);
+    this.goLivesCache.set(key, result);
+    return result;
+  }
+
+  /**
+   * Returns the latest commit id (HEAD) of the given branch — a cheap lookup used
+   * to invalidate the go-lives cache. Returns undefined when it cannot be
+   * resolved (caller then fetches without caching).
+   */
+  async getBranchLatestCommitId(
+    _branchName: string,
+  ): Promise<string | undefined> {
+    Logger.log(
+      `getBranchLatestCommitId not implemented on ${this.repoInfo?.providerName || "unknown provider"}`,
+    );
+    return undefined;
+  }
+
+  /**
+   * Provider-specific listing of go lives (merges into the branch), most recent
+   * first. Called by listGoLives, which adds caching on top.
+   */
+  async fetchGoLives(_branchName: string): Promise<GoLive[]> {
+    Logger.log(
+      `fetchGoLives not implemented on ${this.repoInfo?.providerName || "unknown provider"}`,
+    );
+    return [];
+  }
+
+  /**
+   * Lists the Pull Requests carried by a specific go live (the merge whose merge
+   * commit is `mergeCommitId`) into a top branch. Commits introduced by the go
+   * live are those reachable from the merge commit but not from its first parent,
+   * so other go lives are excluded. Results are cached per session, keyed by the
+   * merge commit, since a given go live never changes.
+   */
+  async listPullRequestsInGoLive(
+    _branchName: string,
+    _childBranchesNames: string[],
+    _mergeCommitId: string,
+  ): Promise<PullRequest[]> {
+    Logger.log(
+      `listPullRequestsInGoLive not implemented on ${this.repoInfo?.providerName || "unknown provider"}`,
+    );
+    return [];
+  }
+
+  /**
+   * Lists the Pull Requests that were part of the LATEST go live into a top
+   * branch that has no merge target of its own (e.g. main/prod). Convenience
+   * wrapper: resolves the most recent go live then delegates to
+   * listPullRequestsInGoLive. Used to surface the contents of the last release on
+   * the top branch box of the pipeline view, where
+   * listPullRequestsInBranchSinceLastMerge would always be empty.
+   */
+  async listPullRequestsInLatestMerge(
+    branchName: string,
+    childBranchesNames: string[],
+  ): Promise<PullRequest[]> {
+    const goLives = await this.listGoLives(branchName);
+    if (!goLives || goLives.length === 0) {
+      return [];
+    }
+    return await this.listPullRequestsInGoLive(
+      branchName,
+      childBranchesNames,
+      goLives[0].id,
+    );
+  }
+
+  /**
+   * Builds the cache key for listPullRequestsInLatestMerge. The latest merge
+   * commit id is the invalidation token: as long as it (and the requested
+   * branches) stay the same, the cached PR list is still valid.
+   */
+  protected getLatestMergeCacheKey(
+    branchName: string,
+    childBranchesNames: string[],
+    latestMergeCommitId: string,
+  ): string {
+    const branches = [...childBranchesNames].sort().join(",");
+    return `${branchName}::${branches}::${latestMergeCommitId}`;
+  }
+
+  /**
+   * Builds the cache key for listGoLives. The branch's latest commit id is the
+   * invalidation token: as long as the branch tip is unchanged, no new go live
+   * could have happened, so the cached list is still valid.
+   */
+  protected getGoLivesCacheKey(
+    branchName: string,
+    latestCommitId: string,
+  ): string {
+    return `${branchName}::${latestCommitId}`;
   }
 
   handlesNativeGitAuth(): boolean {

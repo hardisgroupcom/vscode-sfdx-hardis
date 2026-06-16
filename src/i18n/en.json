@@ -966,6 +966,8 @@
   "globalPipelineSettings": "Global Pipeline Settings",
   "globalSettings": "Global Settings",
   "globalValueLabel": "Global:",
+  "goLiveSelectorLabel": "Go Live",
+  "goLiveSelectorPlaceholder": "Select a go-live",
   "hardisCommandNotAllowedInBackground": "Error: SFDX-Hardis command not allowed in background mode.",
   "help": "Help",
   "hideFilter": "Hide filter",

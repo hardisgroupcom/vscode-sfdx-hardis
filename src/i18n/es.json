@@ -966,6 +966,8 @@
   "globalPipelineSettings": "Parámetros globales del pipeline",
   "globalSettings": "Parámetros globales",
   "globalValueLabel": "Global:",
+  "goLiveSelectorLabel": "Puesta en producción",
+  "goLiveSelectorPlaceholder": "Seleccione una puesta en producción",
   "hardisCommandNotAllowedInBackground": "Error: SFDX-Hardis command not allowed in background mode.",
   "help": "Ayuda",
   "hideFilter": "Ocultar filtro",
