@@ -58,7 +58,7 @@ gh run view "$RUN_ID" --log-failed > /tmp/pr-watch-fail.log
 
 Grep the log for the actionable line (do not dump the whole log):
 - `error TS` -> TypeScript compile error (`yarn compile`)
-- `error  ` / `✖` -> ESLint failure (`yarn lint`)
+- `error` / `✖` -> ESLint failure (`yarn lint`)
 - `failing` / `passing` / `AssertionError` / `✗` -> VS Code extension test failure (`yarn test`, Mocha)
 - `Cannot find module` -> missing import (often a missing `.js` suffix)
 - `JSCPD` / `COPYPASTE` -> jscpd clone (MegaLinter)
