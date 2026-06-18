@@ -16,6 +16,11 @@ DISABLE_ERRORS_LINTERS:
   - YAML_YAMLLINT
 JAVASCRIPT_DEFAULT_STYLE: prettier
 TYPESCRIPT_DEFAULT_STYLE: prettier
+# Security scanners: point each tool at its repo-level ignore config so triaged,
+# non-reachable findings (see .grype.yaml / osv-scanner.toml / .trivyignore) are suppressed with justification + expiry.
+REPOSITORY_GRYPE_ARGUMENTS: "--config .grype.yaml"
+REPOSITORY_OSV_SCANNER_ARGUMENTS: "--config=osv-scanner.toml"
+REPOSITORY_TRIVY_ARGUMENTS: "--ignorefile .trivyignore"
 FILTER_REGEX_EXCLUDE: (\.vscode)
 MARKDOWN_MARKDOWN_LINK_CHECK_DISABLE_ERRORS: true
 SHOW_ELAPSED_TIME: true
