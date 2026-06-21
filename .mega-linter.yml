@@ -16,6 +16,8 @@ DISABLE_ERRORS_LINTERS:
   - YAML_YAMLLINT
 JAVASCRIPT_DEFAULT_STYLE: prettier
 TYPESCRIPT_DEFAULT_STYLE: prettier
+FLAVOR_SUGGESTIONS: false
+SECURITY_SUGGESTIONS: false
 # Security scanners: point each tool at its repo-level ignore config so triaged,
 # non-reachable findings (see .grype.yaml / osv-scanner.toml / .trivyignore) are suppressed with justification + expiry.
 REPOSITORY_GRYPE_ARGUMENTS: "--config .grype.yaml"
