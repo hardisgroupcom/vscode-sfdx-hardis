@@ -120,6 +120,19 @@ function buildDocConfigPayload(config: any, schema: Record<string, any>) {
   };
 }
 
+// Persist each documentation config key, allowing booleans (including false)
+// and non-empty string values while skipping undefined / empty entries.
+async function saveDocConfigKeys(configToSave: any): Promise<void> {
+  for (const key of DOC_CONFIG_KEYS) {
+    if (
+      configToSave[key] !== undefined &&
+      (typeof configToSave[key] === "boolean" || configToSave[key] !== "")
+    ) {
+      await writeSfdxHardisConfig(key, configToSave[key]);
+    }
+  }
+}
+
 export function registerShowDocumentationWorkbench(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
     "vscode-sfdx-hardis.showDocumentationWorkbench",
@@ -209,16 +222,7 @@ export function registerShowDocumentationWorkbench(commands: Commands) {
                     }
                   } else if (configType === "saveDocConfig") {
                     try {
-                      const configToSave = configData?.config || {};
-                      for (const key of DOC_CONFIG_KEYS) {
-                        if (
-                          configToSave[key] !== undefined &&
-                          (typeof configToSave[key] === "boolean" ||
-                            configToSave[key] !== "")
-                        ) {
-                          await writeSfdxHardisConfig(key, configToSave[key]);
-                        }
-                      }
+                      await saveDocConfigKeys(configData?.config || {});
                       configPanel.sendMessage({
                         type: "configSaved",
                         data: {},
@@ -249,17 +253,7 @@ export function registerShowDocumentationWorkbench(commands: Commands) {
 
           case "saveDocConfig": {
             try {
-              const configToSave = data?.config || {};
-              for (const key of DOC_CONFIG_KEYS) {
-                // Allow booleans (including false) and non-empty string values
-                if (
-                  configToSave[key] !== undefined &&
-                  (typeof configToSave[key] === "boolean" ||
-                    configToSave[key] !== "")
-                ) {
-                  await writeSfdxHardisConfig(key, configToSave[key]);
-                }
-              }
+              await saveDocConfigKeys(data?.config || {});
               panel.sendMessage({ type: "configSaved", data: {} });
               vscode.window.showInformationMessage(
                 "Documentation configuration saved successfully.",

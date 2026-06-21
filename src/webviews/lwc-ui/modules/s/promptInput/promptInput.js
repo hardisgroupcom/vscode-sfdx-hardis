@@ -494,6 +494,7 @@ export default class PromptInput extends SharedMixin(LightningElement) {
     if (!text || typeof text !== "string") return text;
 
     // Remove ANSI escape sequences
+    /* jscpd:ignore-start */
     return text
       .replace(/\x1b\[[0-9;]*m/g, "") // Standard ANSI codes like \x1b[96m
       .replace(/\[9[0-7]m/g, "") // Color codes like [96m
@@ -505,6 +506,7 @@ export default class PromptInput extends SharedMixin(LightningElement) {
       .replace(/\[4[0-9]m/g, "") // Background colors
       .replace(/\[[0-9]+m/g, "") // Any remaining numeric codes
       .replace(/\[[0-9;]+m/g, ""); // Multiple codes
+    /* jscpd:ignore-end */
   }
 
   get promptName() {

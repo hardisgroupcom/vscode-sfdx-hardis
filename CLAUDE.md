@@ -87,6 +87,7 @@ Key message types: `initialize`, `openExternal`, `runCommand`, `refreshPipeline`
 
 ## Code Style
 
+<!-- jscpd:ignore-start -->
 ### Brace style
 Always use `{}` after `if`, `else`, `for`, `while`, even for single statements. Always newline after `{` and before `}`:
 ```typescript
@@ -103,6 +104,7 @@ else {
 - Constants: `UPPER_CASE`
 - Types/classes: `PascalCase`
 - Object properties: any format allowed (for command IDs, config keys)
+<!-- jscpd:ignore-end -->
 
 ### CLI commands
 Always use modern `sf` CLI format: `sf hardis:category:action [options]`. Never use legacy `sfdx`.

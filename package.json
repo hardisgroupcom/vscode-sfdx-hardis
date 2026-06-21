@@ -737,7 +737,7 @@
     "@babel/core": "7.29.7",
     "form-data": "4.0.6",
     "js-yaml": "4.2.0",
-    "mermaid/dompurify": "3.4.9",
+    "mermaid/dompurify": "3.4.11",
     "webpack-bundle-analyzer/ws": "7.5.11",
     "@azure/opentelemetry-instrumentation-azure-sdk/@opentelemetry/core": "2.8.0",
     "@opentelemetry/sdk-trace-web": "2.8.0"

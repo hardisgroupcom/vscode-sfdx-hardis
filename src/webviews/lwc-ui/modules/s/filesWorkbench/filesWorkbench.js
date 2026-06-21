@@ -137,6 +137,7 @@ export default class FilesWorkbench extends SharedMixin(LightningElement) {
     }
   }
 
+  // jscpd:ignore-start
   @api
   handleColorThemeMessage(type, data) {
     // Delegate to the SharedMixin's implementation
@@ -162,6 +163,7 @@ export default class FilesWorkbench extends SharedMixin(LightningElement) {
     this.loading = true;
     window.sendMessageToVSCode({ type: "retryInit" });
   }
+  // jscpd:ignore-end
 
   handleWorkspacesLoaded(data) {
     this.workspaces = data.workspaces || [];

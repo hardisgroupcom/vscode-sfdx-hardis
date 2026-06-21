@@ -64,11 +64,9 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
   @track modalApi = "";
   @track modalAvailableThresholds = [];
 
-  @api
-  initialize(data) {
-    if (data?.catalog) {
-      this.catalog = this.normalizeCatalog(data.catalog);
-    }
+  // Deep-copy monitoringCommands / notificationConfig from a message payload
+  // into the local user state when present.
+  _applyUserConfigFromData(data) {
     if (Array.isArray(data?.monitoringCommands)) {
       this.userCommands = JSON.parse(JSON.stringify(data.monitoringCommands));
     }
@@ -77,6 +75,14 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
         JSON.stringify(data.notificationConfig),
       );
     }
+  }
+
+  @api
+  initialize(data) {
+    if (data?.catalog) {
+      this.catalog = this.normalizeCatalog(data.catalog);
+    }
+    this._applyUserConfigFromData(data);
     if (Array.isArray(data?.branches)) {
       this.branches = data.branches;
     }
@@ -107,14 +113,7 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
       if (typeof data?.currentBranch === "string") {
         this.currentBranch = data.currentBranch;
       }
-      if (Array.isArray(data?.monitoringCommands)) {
-        this.userCommands = JSON.parse(JSON.stringify(data.monitoringCommands));
-      }
-      if (Array.isArray(data?.notificationConfig)) {
-        this.userNotifications = JSON.parse(
-          JSON.stringify(data.notificationConfig),
-        );
-      }
+      this._applyUserConfigFromData(data);
       this.modalOpen = false;
       this.modalEntry = null;
     }
