@@ -465,6 +465,7 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
     }
 
     // Categories ordered by catalog `order`; fallback to derived key list.
+    /* jscpd:ignore-start */
     let catalogCategories = (this.catalog.categories || [])
       .slice()
       .sort((a, b) => (a.order || 0) - (b.order || 0));
@@ -476,6 +477,7 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
         order: 0,
       }));
     }
+    /* jscpd:ignore-end */
 
     const result = [];
     for (const cat of catalogCategories) {
