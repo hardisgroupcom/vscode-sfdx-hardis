@@ -172,14 +172,12 @@ export default class OrgManager extends SharedMixin(LightningElement) {
               iconName: "utility:recycle_bin_full",
             });
           }
-          // External Client App credentials rotation (non-scratch, non-sandbox)
-          if (!isScratch && !isSandbox) {
-            actions.push({
-              label: this.t("rotateExtClientAppCredentials"),
-              name: "rotateExtClientAppCredentials",
-              iconName: "utility:key",
-            });
-          }
+          // External Client App credentials rotation (all org types)
+          actions.push({
+            label: this.t("rotateExtClientAppCredentials"),
+            name: "rotateExtClientAppCredentials",
+            iconName: "utility:key",
+          });
           // Scratch org operations
           if (isScratch) {
             actions.push({
