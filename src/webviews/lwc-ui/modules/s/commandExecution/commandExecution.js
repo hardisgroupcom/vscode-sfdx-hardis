@@ -2392,7 +2392,9 @@ ${resultMessage}`;
 
     // Auto-collapse the progress section when it ends, unless user has manually toggled it
     if (
-      !this.userSectionExpandState.hasOwnProperty(this.currentProgressSection.id)
+      !this.userSectionExpandState.hasOwnProperty(
+        this.currentProgressSection.id,
+      )
     ) {
       this.userSectionExpandState[this.currentProgressSection.id] = false;
     }

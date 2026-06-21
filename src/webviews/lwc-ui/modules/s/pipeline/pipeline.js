@@ -1998,7 +1998,11 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
   handleGoLiveChange(event) {
     const mergeCommitId = event.detail.value;
-    if (!mergeCommitId || mergeCommitId === this.selectedGoLiveId || mergeCommitId === "__loading__") {
+    if (
+      !mergeCommitId ||
+      mergeCommitId === this.selectedGoLiveId ||
+      mergeCommitId === "__loading__"
+    ) {
       return;
     }
     this.selectedGoLiveId = mergeCommitId;
