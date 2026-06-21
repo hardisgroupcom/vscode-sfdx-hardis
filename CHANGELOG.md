@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add "Rotate External Client App credentials" action in the Org Manager, allowing you to generate a new OAuth consumer key and secret for an External Client App directly in the org
 - Pipeline diagram now shows the count of merged pull requests on Bitbucket branches (such as preprod), which was previously always missing
   - The count now also includes every merged pull request when a branch has more than fit in a single page of results
 - Production-level branches (such as main/prod) in the pipeline diagram now list the pull requests that were part of the latest go-live, instead of showing nothing

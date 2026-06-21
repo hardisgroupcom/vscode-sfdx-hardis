@@ -1517,6 +1517,8 @@
   "retrieveSelectedSingle": "Geselecteerde ophalen",
   "retrievingInstalledPackages": "Geïnstalleerde pakketten ophalen van org...",
   "roleLabel": "Rol",
+  "rotateExtClientAppCredentials": "External Client App-referenties roteren",
+  "rotateExtClientAppCredentialsTooltip": "Genereert een nieuwe OAuth consumer key en secret voor een External Client App in de org. De nieuwe referenties worden eenmalig weergegeven en kunnen veilig worden opgeslagen in CI/CD-variabelen.",
   "runAnonymousApex": "Anonieme Apex uitvoeren",
   "runAnonymousApexCode": "Anonieme Apex-code uitvoeren",
   "runAnonymousApexDescription": "Voer anonieme Apex-code rechtstreeks uit in je Salesforce org voor testen en debuggen, zoals in de Developer Console",

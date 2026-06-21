@@ -1517,6 +1517,8 @@
   "retrieveSelectedSingle": "選択項目を取得",
   "retrievingInstalledPackages": "組織からインストール済みパッケージを取得しています...",
   "roleLabel": "ロール",
+  "rotateExtClientAppCredentials": "外部クライアントアプリの認証情報をローテート",
+  "rotateExtClientAppCredentialsTooltip": "組織の外部クライアントアプリに新しい OAuth コンシューマーキーとシークレットを生成します。新しい認証情報は一度だけ表示され、CI/CD 変数に安全に保存できます。",
   "runAnonymousApex": "匿名ブロックの実行",
   "runAnonymousApexCode": "匿名ブロックを実行",
   "runAnonymousApexDescription": "Developer Console のように Salesforce 組織で匿名ブロックを直接実行してテストとデバッグを行います",

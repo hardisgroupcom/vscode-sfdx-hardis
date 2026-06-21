@@ -282,6 +282,10 @@ export class ThemeUtils {
         vscode: "trash",
         hardis: "clean.svg",
       },
+      "hardis:org:ext-client-app:rotate-credentials": {
+        vscode: "key",
+        hardis: "password.svg",
+      },
       "hardis:org:monitor:backup": { vscode: "save-all", hardis: "backup.svg" },
       "hardis:org:monitor:errors": {
         vscode: "error",

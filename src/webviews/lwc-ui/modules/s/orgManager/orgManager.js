@@ -172,6 +172,14 @@ export default class OrgManager extends SharedMixin(LightningElement) {
               iconName: "utility:recycle_bin_full",
             });
           }
+          // External Client App credentials rotation (non-scratch, non-sandbox)
+          if (!isScratch && !isSandbox) {
+            actions.push({
+              label: this.t("rotateExtClientAppCredentials"),
+              name: "rotateExtClientAppCredentials",
+              iconName: "utility:key",
+            });
+          }
           // Scratch org operations
           if (isScratch) {
             actions.push({
@@ -445,6 +453,13 @@ export default class OrgManager extends SharedMixin(LightningElement) {
         type: "runCommand",
         data: {
           command: `sf hardis:org:refresh:after-refresh --target-org ${row.username}`,
+        },
+      });
+    } else if (actionName === "rotateExtClientAppCredentials") {
+      window.sendMessageToVSCode({
+        type: "runCommand",
+        data: {
+          command: `sf hardis:org:ext-client-app:rotate-credentials --target-org ${row.username}`,
         },
       });
     } else if (actionName === "reconnect") {

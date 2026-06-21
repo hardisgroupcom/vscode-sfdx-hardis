@@ -1517,6 +1517,8 @@
   "retrieveSelectedSingle": "Retrieve selected",
   "retrievingInstalledPackages": "Retrieving Installed Packages from org...",
   "roleLabel": "Role",
+  "rotateExtClientAppCredentials": "Rotate External Client App credentials",
+  "rotateExtClientAppCredentialsTooltip": "Generate a new OAuth consumer key and secret for an External Client App in the org. The new credentials are displayed once and can be safely stored in CI/CD variables.",
   "runAnonymousApex": "Run Anonymous Apex",
   "runAnonymousApexCode": "Run anonymous Apex code",
   "runAnonymousApexDescription": "Execute anonymous Apex code directly in your Salesforce org for testing and debugging, like in Developer Console",

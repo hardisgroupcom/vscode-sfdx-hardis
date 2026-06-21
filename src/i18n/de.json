@@ -1517,6 +1517,8 @@
   "retrieveSelectedSingle": "Ausgewähltes abrufen",
   "retrievingInstalledPackages": "Installierte Pakete von der Org werden abgerufen...",
   "roleLabel": "Rolle",
+  "rotateExtClientAppCredentials": "Anmeldedaten der External Client App rotieren",
+  "rotateExtClientAppCredentialsTooltip": "Generiert einen neuen OAuth-Consumer-Key und -Secret für eine External Client App in der Org. Die neuen Anmeldedaten werden einmalig angezeigt und können sicher in CI/CD-Variablen gespeichert werden.",
   "runAnonymousApex": "Anonymes Apex ausführen",
   "runAnonymousApexCode": "Anonymen Apex-Code ausführen",
   "runAnonymousApexDescription": "Anonymen Apex-Code direkt in Ihrer Salesforce-Org für Tests und Debugging ausführen, wie in der Developer Console",
