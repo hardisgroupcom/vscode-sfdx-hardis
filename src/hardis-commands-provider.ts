@@ -606,6 +606,14 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             requiresProject: true,
             helpUrl: DOCSITE_URL + "/hardis/org/purge/profile/",
           },
+          {
+            id: "hardis:org:ext-client-app:rotate-credentials",
+            label: t("rotateExtClientAppCredentials"),
+            tooltip: t("rotateExtClientAppCredentialsTooltip"),
+            command: "sf hardis:org:ext-client-app:rotate-credentials",
+            helpUrl:
+              DOCSITE_URL + "/hardis/org/ext-client-app/rotate-credentials/",
+          },
         ],
       },
       {

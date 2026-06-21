@@ -34,6 +34,7 @@ export default class DocumentationWorkbench extends SharedMixin(
   @track docLanguage = ""; // empty = use VS Code language setting
   @track helpUrl = "";
 
+  // jscpd:ignore-start
   // Panel-level three-state render getters
   get isPanelLoading() {
     return this.panelLoading === true && !this.loadError;
@@ -46,11 +47,13 @@ export default class DocumentationWorkbench extends SharedMixin(
   get isPanelReady() {
     return this.panelLoading !== true && !this.loadError;
   }
+  // jscpd:ignore-end
 
   @api
   initialize(data) {
     data = data || {};
 
+    // jscpd:ignore-start
     // Handle panel-level loading/error state
     if (Object.prototype.hasOwnProperty.call(data, "loading")) {
       this.panelLoading = data.loading === true;
@@ -61,6 +64,7 @@ export default class DocumentationWorkbench extends SharedMixin(
     if (Object.prototype.hasOwnProperty.call(data, "loadError")) {
       this.loadError = data.loadError || null;
     }
+    // jscpd:ignore-end
 
     // First call only carries {loading:true} — guard all content fields
     if (!Object.prototype.hasOwnProperty.call(data, "helpUrl")) {

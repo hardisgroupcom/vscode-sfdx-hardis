@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Add **Rotate External Client App credentials** action in Org Manager
+- Production branches (main/prod) in the pipeline diagram now show the pull requests included in the latest go-live
+  - Open the branch popup to browse previous go-lives and see which tickets and PRs were part of each release
+  - Generate release notes directly from the popup for any selected go-live
+  - Works across GitHub, GitLab, Azure DevOps and Bitbucket
+- Bitbucket: PR counts on preprod-type branches are now always complete
+- Bitbucket: fixed "Unauthorized" error when using an Atlassian account API token to generate release notes
+
 ## [7.11.0] 2026-06-15
 
 - Faster, smoother Status and Dependencies panels

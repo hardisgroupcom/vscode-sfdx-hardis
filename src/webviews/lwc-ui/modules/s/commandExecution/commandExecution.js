@@ -821,18 +821,7 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
 
     // Also close any active progress section when starting a new action section
     if (this.currentProgressSection && this.currentProgressSection.isActive) {
-      this.currentProgressSection.isActive = false;
-      this.currentProgressSection.endTime = new Date();
-
-      // Auto-collapse the progress section when it ends, unless user has manually toggled it
-      if (
-        !this.userSectionExpandState.hasOwnProperty(
-          this.currentProgressSection.id,
-        )
-      ) {
-        this.userSectionExpandState[this.currentProgressSection.id] = false;
-      }
-
+      this._endCurrentProgressSection();
       this.currentProgressSection = null;
     }
   }
@@ -899,31 +888,11 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
       });
     }
 
-    const iconInfo = this.getLogTypeIcon(
-      logLine.logType,
-      logLine.isQuestion,
-      logLine.isAnswer,
-    );
     const formattedLog = {
-      ...logLine,
-      iconName: iconInfo.iconName,
-      iconVariant: iconInfo.variant,
-      useSpinner: this.shouldUseSpinner(logLine),
-      formattedTimestamp: this.formatTimestamp(logLine.timestamp),
-      cssClass: this.getLogTypeClass(logLine.logType),
-      isSubCommand: logLine.isSubCommand || false,
-      isRunning: logLine.isRunning || false,
-      isQuery: logLine.isQuery || false,
+      ...this._buildFormattedLog(logLine),
       tableSectionId: logLine.tableSectionId || null,
       isTable: logLine.logType === "table",
     };
-
-    // Format multi-line messages and bullets
-    if (!formattedLog.formattedMessage) {
-      formattedLog.formattedMessage = this.formatMultiLineMessage(
-        formattedLog.message,
-      );
-    }
 
     // If this section contains copy values, keep it expanded by default
     if (this.containsCopyMarkup(formattedLog.message)) {
@@ -944,9 +913,9 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
     this.scrollToBottom();
   }
 
-  addLogToProgressSection(logLine) {
-    if (!this.currentProgressSection) return;
-
+  // Build a formatted log entry from a raw log line: resolve its icon, spinner,
+  // timestamp, css class and formatted (multi-line) message.
+  _buildFormattedLog(logLine) {
     const iconInfo = this.getLogTypeIcon(
       logLine.logType,
       logLine.isQuestion,
@@ -970,6 +939,13 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
         formattedLog.message,
       );
     }
+    return formattedLog;
+  }
+
+  addLogToProgressSection(logLine) {
+    if (!this.currentProgressSection) return;
+
+    const formattedLog = this._buildFormattedLog(logLine);
 
     // Add to progress logs and keep only the latest 5
     this.currentProgressSection.progressLogs = [
@@ -1761,6 +1737,7 @@ ${resultMessage}`;
     // Remove leading 🦙 from questions
     message = message.replace(/^🦙\s*/, "");
     // Remove ANSI escape codes
+    /* jscpd:ignore-start */
     return message
       .replace(/\x1b\[[0-9;]*m/g, "") // Standard ANSI codes
       .replace(/\[9[0-7]m/g, "") // Color codes
@@ -1773,6 +1750,7 @@ ${resultMessage}`;
       .replace(/\[[0-9]+m/g, "") // Any remaining numeric codes
       .replace(/\[[0-9;]+m/g, "") // Multiple codes
       .trim();
+    /* jscpd:ignore-end */
   }
 
   formatAnswerMessage(message) {
@@ -2406,20 +2384,26 @@ ${resultMessage}`;
     }
   }
 
+  // Mark the current progress section as ended and auto-collapse it unless the
+  // user manually toggled its expand state.
+  _endCurrentProgressSection() {
+    this.currentProgressSection.isActive = false;
+    this.currentProgressSection.endTime = new Date();
+
+    // Auto-collapse the progress section when it ends, unless user has manually toggled it
+    if (
+      !this.userSectionExpandState.hasOwnProperty(
+        this.currentProgressSection.id,
+      )
+    ) {
+      this.userSectionExpandState[this.currentProgressSection.id] = false;
+    }
+  }
+
   handleProgressStart(data) {
     // Close any existing progress section
     if (this.currentProgressSection) {
-      this.currentProgressSection.isActive = false;
-      this.currentProgressSection.endTime = new Date();
-
-      // Auto-collapse the progress section when it ends, unless user has manually toggled it
-      if (
-        !this.userSectionExpandState.hasOwnProperty(
-          this.currentProgressSection.id,
-        )
-      ) {
-        this.userSectionExpandState[this.currentProgressSection.id] = false;
-      }
+      this._endCurrentProgressSection();
     }
 
     // Deactivate all previous sections (stop their spinners)

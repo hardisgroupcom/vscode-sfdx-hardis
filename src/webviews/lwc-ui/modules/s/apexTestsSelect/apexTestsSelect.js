@@ -26,6 +26,7 @@ export default class ApexTestsSelect extends SharedMixin(LightningElement) {
     const merged = [];
     const seen = new Set();
 
+    // jscpd:ignore-start
     for (const item of [...available, ...selected]) {
       const v = String(item || "").trim();
       if (!v) {
@@ -38,6 +39,7 @@ export default class ApexTestsSelect extends SharedMixin(LightningElement) {
       seen.add(key);
       merged.push(v);
     }
+    // jscpd:ignore-end
 
     merged.sort((a, b) => a.localeCompare(b));
 

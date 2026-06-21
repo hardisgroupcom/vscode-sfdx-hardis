@@ -27,6 +27,7 @@ import path from "path";
 import fs from "fs-extra";
 import simpleGit from "simple-git";
 import { listAllOrgs } from "../utils/orgUtils";
+import { getChildBranchNames } from "../utils/orgConfigUtils";
 import { readSfdxHardisConfig } from "../utils/sfdx-hardis-config-utils";
 
 const SCHEDULABLE_CLASSES_CACHE_TTL_MS = 15 * 60 * 1000;
@@ -584,6 +585,72 @@ export function registerShowPipeline(commands: Commands) {
             vscode.window.showErrorMessage(
               t("errorGettingPrInfo", { prLabel }),
             );
+          }
+        }
+        // Lazy-load the list of go-lives for a top branch (selector content only)
+        else if (type === "loadGoLives") {
+          const requestId = data?.requestId || null;
+          const branchName = data?.branchName || "";
+          try {
+            const gitProvider = await GitProvider.getInstance();
+            const goLives =
+              gitProvider && branchName
+                ? await gitProvider.listGoLives(branchName)
+                : [];
+            panel.sendMessage({
+              type: "returnGoLives",
+              data: { requestId, branchName, goLives },
+            });
+          } catch (error: any) {
+            Logger.log(
+              `Error loading go-lives for branch ${branchName}: ${error?.message || error}`,
+            );
+            panel.sendMessage({
+              type: "returnGoLives",
+              data: { requestId, branchName, goLives: [] },
+            });
+          }
+        }
+        // Lazy-load the Pull Requests carried by a selected go-live
+        else if (type === "loadGoLivePullRequests") {
+          const requestId = data?.requestId || null;
+          const branchName = data?.branchName || "";
+          const mergeCommitId = data?.mergeCommitId || "";
+          try {
+            const gitProvider = await GitProvider.getInstance();
+            let pullRequests: PullRequest[] = [];
+            if (gitProvider && branchName && mergeCommitId) {
+              const childBranchesNames = await getChildBranchNames(branchName);
+              pullRequests = await gitProvider.listPullRequestsInGoLive(
+                branchName,
+                childBranchesNames,
+                mergeCommitId,
+              );
+              // Enrich like the pipeline load does (tickets + deployment actions)
+              await gitProvider.completePullRequestsWithTickets(pullRequests, {
+                fetchDetails: true,
+              });
+              await gitProvider.completePullRequestsWithPrePostCommands(
+                pullRequests,
+              );
+            }
+            panel.sendMessage({
+              type: "returnGoLivePullRequests",
+              data: { requestId, branchName, mergeCommitId, pullRequests },
+            });
+          } catch (error: any) {
+            Logger.log(
+              `Error loading go-live pull requests for branch ${branchName} (${mergeCommitId}): ${error?.message || error}`,
+            );
+            panel.sendMessage({
+              type: "returnGoLivePullRequests",
+              data: {
+                requestId,
+                branchName,
+                mergeCommitId,
+                pullRequests: [],
+              },
+            });
           }
         }
         // Update VS Code configuration

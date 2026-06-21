@@ -140,6 +140,7 @@ export const SECRET_ENV_KEYS = new Set([
   "CI_SFDX_HARDIS_AZURE_TOKEN",
   "SYSTEM_ACCESSTOKEN",
   "CI_SFDX_HARDIS_BITBUCKET_TOKEN",
+  "CI_SFDX_HARDIS_BITBUCKET_EMAIL",
   "JIRA_PAT",
   "JIRA_EMAIL",
   "JIRA_TOKEN",
@@ -211,6 +212,21 @@ export async function collectProviderCredentialEnvVars(): Promise<
           if (token) {
             env.CI_SFDX_HARDIS_BITBUCKET_TOKEN = token;
           }
+          // Two connection methods are supported (see GitProviderBitbucket):
+          //  - Repository/Workspace Access Token → used as a Bearer token (token only)
+          //  - Atlassian account API token → used as Basic auth (email + token)
+          // When an email was stored, the token is an Atlassian API token that
+          // only works with Basic auth, so pass the email too. The CLI uses it as
+          // the Basic-auth username; without it the CLI would (wrongly) try the
+          // token as a Bearer token and get "Unauthorized".
+          const email = await SecretsManager.getSecret(
+            hostKey + "_BITBUCKET_EMAIL",
+          );
+          if (email) {
+            env.CI_SFDX_HARDIS_BITBUCKET_EMAIL = email;
+          }
+          // Note: BITBUCKET_WORKSPACE / BITBUCKET_REPO_SLUG are intentionally not
+          // set here — the CLI auto-detects them from the git remote URL.
           break;
         }
       }
