@@ -86,7 +86,6 @@ If the change has no visible impact for users (pure internal refactor, test-only
 
 ## Code style rules
 
-<!-- jscpd:ignore-start -->
 ### Brace style (enforced)
 Always use `{}` after `if`, `else`, `for`, `while` - even for single statements. Always newline after `{` and before `}`:
 ```typescript
@@ -103,7 +102,6 @@ else {
 - Constants: `UPPER_CASE`
 - Types/classes: `PascalCase`
 - Object properties: any format allowed (for command IDs, config keys)
-<!-- jscpd:ignore-end -->
 
 ### General
 - Use `yarn` (not `npm`) for all package operations
