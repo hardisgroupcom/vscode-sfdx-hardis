@@ -23,6 +23,8 @@
     "**/packageXml.ts",
     "**/src/utils/gitProviders/**",
     "**/scripts/**",
-    "**/eslint.config.mjs"
+    "**/eslint.config.mjs",
+    "**/CLAUDE.md",
+    "**/.claude/**"
   ]
 }

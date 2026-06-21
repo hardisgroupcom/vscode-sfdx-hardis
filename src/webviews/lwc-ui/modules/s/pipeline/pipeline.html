@@ -320,6 +320,30 @@
                     </h2>
                 </header>
                 <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                    <!-- Go-lives selector (top branches such as main/prod) -->
+                    <template if:true={modalIsTopBranch}>
+                        <div class="slds-m-bottom_small">
+                            <lightning-combobox
+                                label={i18n.goLiveSelectorLabel}
+                                value={selectedGoLiveId}
+                                placeholder={i18n.goLiveSelectorPlaceholder}
+                                options={goLivesComboboxOptions}
+                                disabled={isGoLivesComboboxDisabled}
+                                onchange={handleGoLiveChange}
+                            ></lightning-combobox>
+                        </div>
+                    </template>
+                    <!-- While a selected release is loading, show a spinner in place of the tables -->
+                    <template if:true={isLoadingReleaseDetails}>
+                        <div class="slds-spinner_container slds-is-relative slds-p-around_large">
+                            <div role="status" class="slds-spinner slds-spinner_medium slds-spinner_brand">
+                                <span class="slds-assistive-text">{i18n.loadingLabel}</span>
+                                <div class="slds-spinner__dot-a"></div>
+                                <div class="slds-spinner__dot-b"></div>
+                            </div>
+                        </div>
+                    </template>
+                    <template if:false={isLoadingReleaseDetails}>
                     <lightning-tabset>
                         <template if:true={showPRTab}>
                             <lightning-tab label={modalPrsTabLabel} value="prs" icon-name="utility:topic2" icon-assistive-text={modalPrsTabLabel}>
@@ -450,6 +474,7 @@
                                 </lightning-tab>
                             </template>
                     </lightning-tabset>
+                    </template>
                 </div>
                 <footer class="slds-modal__footer" style="display: flex; justify-content: space-between;">
                     <div>
@@ -462,7 +487,7 @@
                             ></lightning-button>
                         </template>
                         <template if:false={isSinglePRMode}>
-                            <template if:true={hasBranchPullRequests}>
+                            <template if:true={showPreviewReleaseNotes}>
                                 <lightning-button
                                     variant="success"
                                     label={i18n.previewReleaseNotes}

@@ -150,6 +150,20 @@ export type PullRequest = {
  */
 // computeJobsStatus moved to GitProvider class implementation; keep types file pure types-only.
 
+/**
+ * A "go live": a single merge ("promotion") into a top branch (e.g. main/prod).
+ * Used to populate the go-lives selector of the pipeline branch modal. It is
+ * intentionally lightweight (no PR contents): the contents of a given go live
+ * are fetched lazily via listPullRequestsInGoLive(branch, children, id).
+ */
+export type GoLive = {
+  id: string; // merge commit id/sha/hash — the invalidation/lookup key
+  prNumber?: number; // provider-native id of the promotion PR, when available
+  title?: string; // promotion PR title, when available
+  mergeDate?: string; // ISO date string of the merge
+  webUrl?: string; // canonical UI url of the promotion PR
+};
+
 export type RepoInfo = {
   providerName: ProviderName;
   host: string; // e.g. 'gitlab.com', 'github.com', 'dev.azure.com', 'bitbucket.org'

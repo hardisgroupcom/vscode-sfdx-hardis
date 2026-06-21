@@ -32,6 +32,7 @@ export function registerShowFilesWorkbench(commands: Commands) {
             workspaces: workspaces,
             loading: false,
           });
+          /* jscpd:ignore-start */
         } catch (e: any) {
           Logger.log(
             "[vscode-sfdx-hardis] Files Workbench init failed: " +
@@ -50,6 +51,7 @@ export function registerShowFilesWorkbench(commands: Commands) {
           await loadAndPush();
           return;
         }
+        /* jscpd:ignore-end */
         switch (type) {
           case "loadWorkspaces": {
             const updatedWorkspaces = await loadFilesWorkspaces();

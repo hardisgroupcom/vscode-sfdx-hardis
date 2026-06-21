@@ -77,15 +77,19 @@ export async function listMajorOrgs(
             org.branchName,
             majorOrgsSorted,
           );
-          if (org.mergeTargets.length === 0) {
-            // Case of main/prod branch
-            return;
-          }
-          const prs = await gitProvider.listPullRequestsInBranchSinceLastMerge(
-            org.branchName,
-            org.mergeTargets[0], // use first merge target as target branch
-            [...childBranchesNames],
-          );
+          const prs =
+            org.mergeTargets.length === 0
+              ? // Top branch (e.g. main/prod): no merge target of its own, so
+                // show the PRs carried by the latest "go live" merge into it
+                await gitProvider.listPullRequestsInLatestMerge(
+                  org.branchName,
+                  [...childBranchesNames],
+                )
+              : await gitProvider.listPullRequestsInBranchSinceLastMerge(
+                  org.branchName,
+                  org.mergeTargets[0], // use first merge target as target branch
+                  [...childBranchesNames],
+                );
           // Sort PRs by mergeDate date desc
           prs.sort((a, b) => {
             const dateA = a.mergeDate ? new Date(a.mergeDate).getTime() : 0;
@@ -212,6 +216,19 @@ async function processOrgSfdxHardisConfigFile(
     jobs: jobs,
     jobsStatus: jobsStatus,
   };
+}
+
+/**
+ * Returns the recursive list of child branch names for a given branch (branches
+ * that merge into it, then their children, etc.). Reads only branch config files
+ * (no git provider call), so it is cheap enough to call from message handlers
+ * that need the child branches of a branch (e.g. go-lives lazy loading).
+ */
+export async function getChildBranchNames(
+  branchName: string,
+): Promise<string[]> {
+  const majorOrgs = await listMajorOrgs({ browseGitProvider: false });
+  return [...recursiveGetChildBranches(branchName, majorOrgs)];
 }
 
 function recursiveGetChildBranches(

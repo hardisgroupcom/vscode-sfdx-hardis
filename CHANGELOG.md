@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+- Add "Rotate External Client App credentials" action in the Org Manager, allowing you to generate a new OAuth consumer key and secret for an External Client App directly in the org
+- Pipeline diagram now shows the count of merged pull requests on Bitbucket branches (such as preprod), which was previously always missing
+  - The count now also includes every merged pull request when a branch has more than fit in a single page of results
+- Production-level branches (such as main/prod) in the pipeline diagram now list the pull requests that were part of the latest go-live, instead of showing nothing
+  - Works across GitHub, GitLab, Azure DevOps and Bitbucket
+- The branch details popup of a production-level branch now lets you browse previous go-lives
+  - A selector at the top lists the past go-lives; picking one loads its pull requests on demand
+  - While the go-live list is loading, the selector shows a "Loading releases…" placeholder and stays disabled until it is ready
+  - Picking a different go-live now replaces the tables below with a centered spinner while the new data loads, so you always know something is happening
+  - Generating release notes from the popup now targets the selected go-live
+  - The "Preview Release Notes" button is hidden for these branches, where it does not apply
+- Commands launched from the extension now authenticate to Bitbucket correctly when you connected with an Atlassian account API token (email + token), not only with a repository access token
+  - Previously such commands (for example generating release notes) failed to list pull requests with an "Unauthorized" error
+
 ## [7.11.0] 2026-06-15
 
 - Faster, smoother Status and Dependencies panels

@@ -4,6 +4,7 @@ import { Bitbucket } from "bitbucket";
 import type { Schema } from "bitbucket";
 import {
   CreateTokenOption,
+  GoLive,
   ProviderDescription,
   PullRequest,
   Job,
@@ -288,6 +289,35 @@ export class GitProviderBitbucket extends GitProvider {
     }
   }
 
+  /**
+   * Bitbucket Cloud paginates list responses (pull requests, commits...). Each
+   * response only carries one page of `values` plus a `next` link when more
+   * pages exist. This helper follows `next` (via the `page` param) and returns
+   * every item across all pages, so callers never silently miss results.
+   * `pagelen` maxes out at 50 for pull requests and 100 for commits.
+   */
+  private async fetchAllPages(
+    listFn: (params: any) => Promise<any>,
+    params: any,
+    maxPages: number = 50,
+  ): Promise<any[]> {
+    const all: any[] = [];
+    let page = 1;
+    while (page <= maxPages) {
+      const response = await listFn({ ...params, page });
+      const values =
+        response && response.data && response.data.values
+          ? response.data.values
+          : [];
+      all.push(...values);
+      if (!response?.data?.next || values.length === 0) {
+        break;
+      }
+      page++;
+    }
+    return all;
+  }
+
   async listPullRequestsInBranchSinceLastMerge(
     currentBranchName: string,
     targetBranchName: string,
@@ -298,11 +328,15 @@ export class GitProviderBitbucket extends GitProvider {
     }
 
     try {
-      // Step 1: Find the last merged PR from currentBranch to targetBranch
+      // Step 1: Find the last merged PR from currentBranch to targetBranch.
+      // Sort most-recent-first and take a single result so [0] is reliably the
+      // latest merge, independent of the API's default ordering.
       const lastMergeResponse = await this.bitbucketClient.pullrequests.list({
         workspace: this.workspace,
         repo_slug: this.repoSlug,
         q: `source.branch.name = "${currentBranchName}" AND destination.branch.name = "${targetBranchName}" AND state = "MERGED"`,
+        sort: "-updated_on",
+        pagelen: 1,
       } as any);
       await this.logApiCall("pullrequests.list", {
         caller: "listPullRequestsInBranchSinceLastMerge",
@@ -319,92 +353,275 @@ export class GitProviderBitbucket extends GitProvider {
       const lastMergeToTarget =
         lastMergePRs.length > 0 ? lastMergePRs[0] : null;
 
-      // Step 2: Get commits between branches
-      const commitsResponse = await this.bitbucketClient.commits.list({
-        workspace: this.workspace,
-        repo_slug: this.repoSlug,
-        include: currentBranchName,
-        exclude: lastMergeToTarget
-          ? lastMergeToTarget.merge_commit?.hash
-          : targetBranchName,
-      } as any);
+      // Step 2: Get commits between branches (paginated: a busy branch can have
+      // far more than one page of commits since the last merge)
+      const exclude = lastMergeToTarget
+        ? lastMergeToTarget.merge_commit?.hash
+        : targetBranchName;
+      const commits = await this.fetchAllPages(
+        (params) => this.bitbucketClient!.commits.list(params),
+        {
+          workspace: this.workspace,
+          repo_slug: this.repoSlug,
+          include: currentBranchName,
+          exclude,
+          pagelen: 100,
+        },
+      );
       await this.logApiCall("commits.list", {
         caller: "listPullRequestsInBranchSinceLastMerge",
         include: currentBranchName,
-        exclude: lastMergeToTarget
-          ? lastMergeToTarget.merge_commit?.hash
-          : targetBranchName,
+        exclude,
       });
-
-      const commits =
-        commitsResponse && commitsResponse.data && commitsResponse.data.values
-          ? commitsResponse.data.values
-          : [];
 
       if (commits.length === 0) {
         return [];
       }
 
-      const commitHashes = new Set(commits.map((c: any) => c.hash));
+      // Bitbucket's commits.list returns FULL 40-char hashes, while
+      // pullrequests.list returns merge_commit.hash ABBREVIATED to 12 chars.
+      // An exact-string Set lookup would therefore never match, so we keep the
+      // full hashes and compare with prefix awareness in Step 4.
+      const commitHashes: string[] = commits.map((c: any) => c.hash);
 
-      // Step 3: Get all merged PRs targeting currentBranch and child branches (parallelized)
+      // Step 3-6: Get merged PRs targeting currentBranch and child branches,
+      // keep those whose merge commit belongs to our commit list, dedupe, convert
       const allBranches = [currentBranchName, ...childBranchesNames];
-
-      const prPromises = allBranches.map(async (branchName) => {
-        try {
-          const response = await this.bitbucketClient!.pullrequests.list({
-            workspace: this.workspace!,
-            repo_slug: this.repoSlug!,
-            q: `destination.branch.name = "${branchName}" AND state = "MERGED"`,
-          } as any);
-          await this.logApiCall("pullrequests.list", {
-            caller: "listPullRequestsInBranchSinceLastMerge",
-            action: "fetchMergedPRs",
-            q: `destination.branch.name = "${branchName}" AND state = "MERGED"`,
-          });
-
-          const values =
-            response && response.data && response.data.values
-              ? response.data.values
-              : [];
-          return values;
-        } catch (err) {
-          Logger.log(
-            `Error fetching merged PRs for branch ${branchName}: ${String(err)}`,
-          );
-          return [];
-        }
-      });
-
-      const prResults = await Promise.all(prPromises);
-      const allMergedPRs: any[] = prResults.flat();
-
-      // Step 4: Filter PRs whose merge commit is in our commit list
-      const relevantPRs = allMergedPRs.filter((pr) => {
-        const mergeCommitHash = pr.merge_commit?.hash;
-        return mergeCommitHash && commitHashes.has(mergeCommitHash);
-      });
-
-      // Step 5: Remove duplicates
-      const uniquePRsMap = new Map();
-      for (const pr of relevantPRs) {
-        if (!uniquePRsMap.has(pr.id)) {
-          uniquePRsMap.set(pr.id, pr);
-        }
-      }
-
-      const uniquePRs = Array.from(uniquePRsMap.values());
-
-      // Step 6: Convert to PullRequest format with jobs
-      return await this.convertAndCollectJobsList(uniquePRs, {
-        withJobs: false,
-      });
+      return await this.collectMergedPRsForCommits(allBranches, commitHashes);
     } catch (err) {
       Logger.log(
         `Error in listPullRequestsInBranchSinceLastMerge: ${String(err)}`,
       );
       return [];
     }
+  }
+
+  async getBranchLatestCommitId(
+    branchName: string,
+  ): Promise<string | undefined> {
+    if (!this.bitbucketClient || !this.workspace || !this.repoSlug) {
+      return undefined;
+    }
+    try {
+      const response = await this.bitbucketClient.repositories.listCommitsAt({
+        workspace: this.workspace,
+        repo_slug: this.repoSlug,
+        revision: branchName,
+        pagelen: 1,
+      } as any);
+      await this.logApiCall("repositories.listCommitsAt", {
+        caller: "getBranchLatestCommitId",
+        revision: branchName,
+      });
+      return response?.data?.values?.[0]?.hash;
+    } catch (err) {
+      Logger.log(
+        `Error fetching latest commit for branch ${branchName}: ${String(err)}`,
+      );
+      return undefined;
+    }
+  }
+
+  /**
+   * Lists the go lives (merges into a top branch such as main/prod), most recent
+   * first. Each merged PR into the branch is a go live; only the merge commit and
+   * a few display fields are returned (no PR contents).
+   */
+  async fetchGoLives(branchName: string): Promise<GoLive[]> {
+    if (!this.bitbucketClient || !this.workspace || !this.repoSlug) {
+      return [];
+    }
+    try {
+      const q = `destination.branch.name = "${branchName}" AND state = "MERGED"`;
+      // A couple of pages of recent promotions is plenty for the selector
+      const values = await this.fetchAllPages(
+        (params) => this.bitbucketClient!.pullrequests.list(params),
+        {
+          workspace: this.workspace,
+          repo_slug: this.repoSlug,
+          q,
+          sort: "-updated_on",
+          pagelen: 50,
+        },
+        2,
+      );
+      await this.logApiCall("pullrequests.list", {
+        caller: "fetchGoLives",
+        q,
+      });
+      return values
+        .filter((pr: any) => pr?.merge_commit?.hash)
+        .map((pr: any) => ({
+          id: pr.merge_commit.hash,
+          prNumber: pr.id,
+          title: pr.title,
+          mergeDate: pr.updated_on,
+          webUrl: pr.links?.html?.href || pr.links?.self?.href || "",
+        }));
+    } catch (err) {
+      Logger.log(`Error fetching Bitbucket go lives: ${String(err)}`);
+      return [];
+    }
+  }
+
+  /**
+   * Lists the Pull Requests carried by a specific go live (merge commit
+   * `mergeCommitId`) into a top branch. Commits introduced by the go live are
+   * those reachable from the merge commit but not from its first parent (the
+   * mainline before the go live), so other go lives are excluded.
+   */
+  async listPullRequestsInGoLive(
+    branchName: string,
+    childBranchesNames: string[],
+    mergeCommitId: string,
+  ): Promise<PullRequest[]> {
+    if (
+      !this.bitbucketClient ||
+      !this.workspace ||
+      !this.repoSlug ||
+      !mergeCommitId
+    ) {
+      return [];
+    }
+
+    // Return the cached result: a given go live never changes
+    const cacheKey = this.getLatestMergeCacheKey(
+      branchName,
+      childBranchesNames,
+      mergeCommitId,
+    );
+    const cached = this.latestMergePrCache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    try {
+      // Step 1: Resolve the merge commit's first parent (the mainline before the
+      // go live). Without it we cannot bound the go live and would over-report
+      // every merged PR, so bail out rather than returning everything.
+      let firstParent: string | undefined;
+      try {
+        const commitResponse =
+          await this.bitbucketClient.repositories.getCommit({
+            workspace: this.workspace,
+            repo_slug: this.repoSlug,
+            commit: mergeCommitId,
+          } as any);
+        await this.logApiCall("repositories.getCommit", {
+          caller: "listPullRequestsInGoLive",
+          commit: mergeCommitId,
+        });
+        firstParent = (commitResponse?.data?.parents ?? [])[0]?.hash;
+      } catch (err) {
+        Logger.log(
+          `Error fetching merge commit ${mergeCommitId}: ${String(err)}`,
+        );
+      }
+      if (!firstParent) {
+        return [];
+      }
+
+      // Step 2: Commits introduced by the go live (paginated)
+      const commits = await this.fetchAllPages(
+        (params) => this.bitbucketClient!.commits.list(params),
+        {
+          workspace: this.workspace,
+          repo_slug: this.repoSlug,
+          include: mergeCommitId,
+          exclude: firstParent,
+          pagelen: 100,
+        },
+      );
+      await this.logApiCall("commits.list", {
+        caller: "listPullRequestsInGoLive",
+        include: mergeCommitId,
+        exclude: firstParent,
+      });
+      if (commits.length === 0) {
+        return [];
+      }
+      const commitHashes: string[] = commits.map((c: any) => c.hash);
+
+      // Step 3-5: same matching as listPullRequestsInBranchSinceLastMerge
+      const allBranches = [branchName, ...childBranchesNames];
+      const result = await this.collectMergedPRsForCommits(
+        allBranches,
+        commitHashes,
+      );
+      this.latestMergePrCache.set(cacheKey, result);
+      return result;
+    } catch (err) {
+      Logger.log(`Error in listPullRequestsInGoLive: ${String(err)}`);
+      return [];
+    }
+  }
+
+  /**
+   * Shared tail of the "PRs in branch" queries: fetch all merged PRs targeting
+   * each branch in `allBranches`, keep those whose merge commit is part of
+   * `commitHashes`, dedupe by PR id and convert to the common PullRequest shape.
+   * Bitbucket's commits.list returns FULL 40-char hashes while pullrequests.list
+   * returns merge_commit.hash ABBREVIATED to 12 chars, so we compare with prefix
+   * awareness instead of exact equality.
+   */
+  private async collectMergedPRsForCommits(
+    allBranches: string[],
+    commitHashes: string[],
+  ): Promise<PullRequest[]> {
+    const prPromises = allBranches.map(async (branchName) => {
+      try {
+        const q = `destination.branch.name = "${branchName}" AND state = "MERGED"`;
+        // Paginate: a branch can have more merged PRs than fit on one page
+        const values = await this.fetchAllPages(
+          (params) => this.bitbucketClient!.pullrequests.list(params),
+          {
+            workspace: this.workspace!,
+            repo_slug: this.repoSlug!,
+            q,
+            pagelen: 50,
+          },
+        );
+        await this.logApiCall("pullrequests.list", {
+          caller: "collectMergedPRsForCommits",
+          action: "fetchMergedPRs",
+          q,
+        });
+        return values;
+      } catch (err) {
+        Logger.log(
+          `Error fetching merged PRs for branch ${branchName}: ${String(err)}`,
+        );
+        return [];
+      }
+    });
+
+    const prResults = await Promise.all(prPromises);
+    const allMergedPRs: any[] = prResults.flat();
+
+    const relevantPRs = allMergedPRs.filter((pr) => {
+      const mergeCommitHash = pr.merge_commit?.hash;
+      if (!mergeCommitHash) {
+        return false;
+      }
+      return commitHashes.some(
+        (hash) =>
+          hash === mergeCommitHash ||
+          hash.startsWith(mergeCommitHash) ||
+          mergeCommitHash.startsWith(hash),
+      );
+    });
+
+    const uniquePRsMap = new Map();
+    for (const pr of relevantPRs) {
+      if (!uniquePRsMap.has(pr.id)) {
+        uniquePRsMap.set(pr.id, pr);
+      }
+    }
+    const uniquePRs = Array.from(uniquePRsMap.values());
+
+    return await this.convertAndCollectJobsList(uniquePRs, {
+      withJobs: false,
+    });
   }
 
   convertToPullRequest(pr: any): PullRequest {

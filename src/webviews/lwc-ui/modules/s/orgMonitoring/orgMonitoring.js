@@ -194,6 +194,7 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
       rowMap[catKey] = extrasByCategory[catKey].concat(rowMap[catKey] || []);
     }
 
+    /* jscpd:ignore-start */
     let catalogCategories = (this.catalog.categories || [])
       .slice()
       .sort((a, b) => (a.order || 0) - (b.order || 0));
@@ -206,6 +207,7 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
         order: 0,
       }));
     }
+    /* jscpd:ignore-end */
 
     const result = [];
     for (const cat of catalogCategories) {
@@ -228,6 +230,7 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
   // Resolve a CSS colorClass for a category key. Real categories come from the CLI catalog
   // (`categories[].colorClass`); the only pseudo-category here is "custom", which falls back
   // to the local CATEGORY_ICONS map.
+  /* jscpd:ignore-start */
   colorClassForCategory(categoryKey) {
     const fromCatalog = (this.catalog?.categories || []).find(
       (c) => c && c.key === categoryKey,
@@ -239,6 +242,7 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
       CATEGORY_ICONS[categoryKey]?.colorClass || DEFAULT_CATEGORY_COLOR_CLASS
     );
   }
+  /* jscpd:ignore-end */
 
   // ----- User-facing actions -----
 

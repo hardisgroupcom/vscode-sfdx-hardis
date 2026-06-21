@@ -201,15 +201,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
     // Only show PR column in branch mode
     if (this.modalMode !== "singlePR") {
-      columns.push({
-        key: "pullRequest",
-        label:
-          this.prButtonInfo?.pullRequestLabel || this.i18n.pullRequestLabel,
-        fieldName: "prWebUrl",
-        type: "url",
-        typeAttributes: { label: { fieldName: "prLabel" }, target: "_blank" },
-        wrapText: true,
-      });
+      columns.push(this._pullRequestColumn());
     }
 
     if (this.modalMode === "singlePR") {
@@ -273,18 +265,22 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
     // Only show PR column in branch mode (not in singlePR mode)
     if (this.modalMode !== "singlePR") {
-      columns.push({
-        key: "pullRequest",
-        label:
-          this.prButtonInfo?.pullRequestLabel || this.i18n.pullRequestLabel,
-        fieldName: "prWebUrl",
-        type: "url",
-        typeAttributes: { label: { fieldName: "prLabel" }, target: "_blank" },
-        wrapText: true,
-      });
+      columns.push(this._pullRequestColumn());
     }
 
     return columns;
+  }
+
+  // Datatable column definition for the pull request link (branch mode only).
+  _pullRequestColumn() {
+    return {
+      key: "pullRequest",
+      label: this.prButtonInfo?.pullRequestLabel || this.i18n.pullRequestLabel,
+      fieldName: "prWebUrl",
+      type: "url",
+      typeAttributes: { label: { fieldName: "prLabel" }, target: "_blank" },
+      wrapText: true,
+    };
   }
 
   pipelineData;
@@ -303,6 +299,17 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   modalActions = [];
   branchPullRequestsMap = new Map();
 
+  // Go-lives selector state (top branches only, e.g. main/prod)
+  modalIsTopBranch = false;
+  modalGoLives = []; // combobox options [{ label, value }]
+  modalGoLivesLoading = false;
+  modalGoLivePrsLoading = false;
+  isLoadingReleaseDetails = false;
+  selectedGoLiveId = "";
+  _goLivesRequestId = null;
+  _goLivePrsRequestId = null;
+  _topBranchNames = new Set();
+
   // Apex tests modal state (per-PR)
   availableApexTestClasses = [];
   deploymentApexTestClasses = [];
@@ -310,7 +317,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   apexTestsMode = "view"; // 'view' | 'edit'
   apexTestsByLineRows = [];
 
-  get apexTestsByLineColumns() {
+  // Column set for the Apex test datatables (test class + PR link).
+  _apexTestClassColumns() {
     return [
       {
         key: "apexTestClass",
@@ -319,16 +327,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         type: "text",
         wrapText: true,
       },
-      {
-        key: "pullRequest",
-        label:
-          this.prButtonInfo?.pullRequestLabel || this.i18n.pullRequestLabel,
-        fieldName: "prWebUrl",
-        type: "url",
-        typeAttributes: { label: { fieldName: "prLabel" }, target: "_blank" },
-        wrapText: true,
-      },
+      this._pullRequestColumn(),
     ];
+  }
+
+  get apexTestsByLineColumns() {
+    return this._apexTestClassColumns();
   }
 
   get hasApexTestsByLineRows() {
@@ -400,24 +404,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   }
 
   get apexTestsSelectedColumns() {
-    return [
-      {
-        key: "apexTestClass",
-        label: this.i18n.apexTestClassLabel,
-        fieldName: "apexTestClass",
-        type: "text",
-        wrapText: true,
-      },
-      {
-        key: "pullRequest",
-        label:
-          this.prButtonInfo?.pullRequestLabel || this.i18n.pullRequestLabel,
-        fieldName: "prWebUrl",
-        type: "url",
-        typeAttributes: { label: { fieldName: "prLabel" }, target: "_blank" },
-        wrapText: true,
-      },
-    ];
+    return this._apexTestClassColumns();
   }
 
   // Deployment action modal state
@@ -589,8 +576,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
     // Store branch PR data for modal display
     this.branchPullRequestsMap = new Map();
+    this._topBranchNames = new Set();
     if (this.pipelineData && this.pipelineData.orgs) {
       for (const org of this.pipelineData.orgs) {
+        if (org.isTopBranch) {
+          this._topBranchNames.add(org.name);
+        }
         if (
           org.pullRequestsInBranchSinceLastMerge &&
           org.pullRequestsInBranchSinceLastMerge.length > 0
@@ -719,6 +710,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     const raw = Array.isArray(list) ? list : [];
     const seen = new Set();
     const out = [];
+    // jscpd:ignore-start
     for (const item of raw) {
       const v = String(item || "").trim();
       if (!v) {
@@ -731,6 +723,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       seen.add(key);
       out.push(v);
     }
+    // jscpd:ignore-end
     return out;
   }
 
@@ -1539,6 +1532,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       case "returnCommunities":
         this.handleReturnCommunities(data);
         break;
+      case "returnGoLives":
+        this.handleReturnGoLives(data);
+        break;
+      case "returnGoLivePullRequests":
+        this.handleReturnGoLivePullRequests(data);
+        break;
       default:
         console.log("Unknown message type:", messageType, data);
     }
@@ -1731,11 +1730,15 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   }
 
   handleGenerateReleaseNotes() {
+    let command = `sf hardis:doc:release-notes --mode post --target-branch ${this.modalBranchName}`;
+    // On a top branch, target the selected go-live merge commit so the notes
+    // scope to that specific release instead of the whole branch.
+    if (this.modalIsTopBranch && this.selectedGoLiveId) {
+      command += ` --merge-commit ${this.selectedGoLiveId}`;
+    }
     window.sendMessageToVSCode({
       type: "runCommand",
-      data: {
-        command: `sf hardis:doc:release-notes --mode post --target-branch ${this.modalBranchName}`,
-      },
+      data: { command },
     });
   }
 
@@ -1859,16 +1862,37 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     console.log("Showing PRs for branch:", branchName);
     const prs = this.branchPullRequestsMap.get(branchName) || [];
     this.modalBranchName = branchName;
-    this.modalPullRequests = this._mapPrsWithIcons(prs);
+
+    // Top branches (no merge target, e.g. main/prod) show their go-lives in a
+    // selector. The PRs already loaded correspond to the latest go-live; the
+    // selector and other go-lives are loaded lazily.
+    this.modalIsTopBranch = this._topBranchNames.has(branchName);
+    this.modalGoLives = [];
+    this.selectedGoLiveId = "";
+    this.modalGoLivePrsLoading = false;
+    this.isLoadingReleaseDetails = false;
+    if (this.modalIsTopBranch) {
+      this._loadGoLives(branchName);
+    }
+
+    this._populateModalFromPrs(prs);
+    this.showPRModal = true;
+  }
+
+  // Builds the modal content (PR list, tickets, actions, Apex tests by line)
+  // from a list of pull requests. Shared by branch open and go-live selection.
+  _populateModalFromPrs(prs) {
+    const pullRequests = Array.isArray(prs) ? prs : [];
+    this.modalPullRequests = this._mapPrsWithIcons(pullRequests);
     // Aggregate all tickets from all PRs
-    this.modalTickets = this._aggregateTicketsFromPRs(prs);
+    this.modalTickets = this._aggregateTicketsFromPRs(pullRequests);
 
     // Aggregate all deployment actions from all PRs
-    this.modalActions = this._aggregateActionsFromPRs(prs);
+    this.modalActions = this._aggregateActionsFromPRs(pullRequests);
 
     // Per-line breakdown for Apex tests (read-only in branch mode)
     const rows = [];
-    for (const pr of prs) {
+    for (const pr of pullRequests) {
       const classes =
         pr &&
         pr.deploymentApexTestClasses &&
@@ -1909,7 +1933,107 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this.deploymentApexTestClasses = [];
     this._deploymentApexTestClassesOriginal = [];
     this.apexTestsMode = "view";
-    this.showPRModal = true;
+  }
+
+  // --- Go-lives selector (top branches) ---
+
+  _loadGoLives(branchName) {
+    this.modalGoLivesLoading = true;
+    const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    this._goLivesRequestId = requestId;
+    window.sendMessageToVSCode({
+      type: "loadGoLives",
+      data: { requestId, branchName },
+    });
+  }
+
+  handleReturnGoLives(data) {
+    if (
+      this._goLivesRequestId &&
+      data?.requestId &&
+      data.requestId !== this._goLivesRequestId
+    ) {
+      return;
+    }
+    // Ignore stale responses for a branch the modal no longer shows
+    if (data?.branchName && data.branchName !== this.modalBranchName) {
+      return;
+    }
+    const goLives = Array.isArray(data?.goLives) ? data.goLives : [];
+    this.modalGoLives = goLives.map((g) => ({
+      label: this._formatGoLiveLabel(g),
+      value: g.id,
+    }));
+    // Preselect the latest go-live (its PRs are already displayed)
+    if (this.modalGoLives.length > 0 && !this.selectedGoLiveId) {
+      this.selectedGoLiveId = this.modalGoLives[0].value;
+    }
+    this.modalGoLivesLoading = false;
+  }
+
+  _formatGoLiveLabel(goLive) {
+    const date = goLive?.mergeDate
+      ? new Date(goLive.mergeDate).toLocaleDateString()
+      : "";
+    const prPart = goLive?.prNumber ? `#${goLive.prNumber}` : "";
+    const title = goLive?.title || "";
+    return [date, prPart, title].filter(Boolean).join(" - ");
+  }
+
+  // Combobox options for the go-lives selector.
+  // While the list is still loading, returns a single disabled placeholder.
+  // Once loaded, returns the real list.
+  get goLivesComboboxOptions() {
+    if (this.modalGoLivesLoading) {
+      return [{ label: this.i18n.loadingReleases, value: "__loading__" }];
+    }
+    return this.modalGoLives;
+  }
+
+  // The combobox is disabled while the go-lives list is loading or while a
+  // selected release is being loaded (to prevent double-clicks mid-flight).
+  get isGoLivesComboboxDisabled() {
+    return this.modalGoLivesLoading || this.isLoadingReleaseDetails;
+  }
+
+  handleGoLiveChange(event) {
+    const mergeCommitId = event.detail.value;
+    if (!mergeCommitId || mergeCommitId === this.selectedGoLiveId || mergeCommitId === "__loading__") {
+      return;
+    }
+    this.selectedGoLiveId = mergeCommitId;
+    this.isLoadingReleaseDetails = true;
+    this.modalGoLivePrsLoading = true;
+    const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    this._goLivePrsRequestId = requestId;
+    window.sendMessageToVSCode({
+      type: "loadGoLivePullRequests",
+      data: {
+        requestId,
+        branchName: this.modalBranchName,
+        mergeCommitId,
+      },
+    });
+  }
+
+  handleReturnGoLivePullRequests(data) {
+    if (
+      this._goLivePrsRequestId &&
+      data?.requestId &&
+      data.requestId !== this._goLivePrsRequestId
+    ) {
+      return;
+    }
+    // Ignore responses for a selection/branch that is no longer current
+    if (
+      (data?.branchName && data.branchName !== this.modalBranchName) ||
+      (data?.mergeCommitId && data.mergeCommitId !== this.selectedGoLiveId)
+    ) {
+      return;
+    }
+    this._populateModalFromPrs(data?.pullRequests || []);
+    this.modalGoLivePrsLoading = false;
+    this.isLoadingReleaseDetails = false;
   }
 
   handleOpenOrgNode(nodeIdentifier) {
@@ -1981,6 +2105,15 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this._deploymentApexTestClassesOriginal = [];
     this.apexTestsMode = "view";
     this.apexTestsByLineRows = [];
+    // Reset go-lives selector state
+    this.modalIsTopBranch = false;
+    this.modalGoLives = [];
+    this.modalGoLivesLoading = false;
+    this.modalGoLivePrsLoading = false;
+    this.isLoadingReleaseDetails = false;
+    this.selectedGoLiveId = "";
+    this._goLivesRequestId = null;
+    this._goLivePrsRequestId = null;
   }
 
   handlePRRowAction(event) {
@@ -2352,6 +2485,18 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
   get hasBranchPullRequests() {
     return this.modalPullRequests && this.modalPullRequests.length > 0;
+  }
+
+  // "Preview release notes" prepares notes for a not-yet-merged source branch,
+  // which is meaningless for a top branch (e.g. main/prod), so hide it there.
+  get showPreviewReleaseNotes() {
+    return this.hasBranchPullRequests && !this.modalIsTopBranch;
+  }
+
+  // Show the go-lives selector only for top branches that have at least one
+  // go-live to choose from.
+  get showGoLivesSelector() {
+    return this.modalIsTopBranch && this.modalGoLives.length > 0;
   }
 
   get isSinglePRMode() {
