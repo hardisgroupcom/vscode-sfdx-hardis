@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [7.12.0] 2026-06-21
+
 - Add **Rotate External Client App credentials** action in Org Manager
 - Production branches (main/prod) in the pipeline diagram now show the pull requests included in the latest go-live
   - Open the branch popup to browse previous go-lives and see which tickets and PRs were part of each release

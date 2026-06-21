@@ -258,7 +258,7 @@ export function registerShowMetadataRetriever(commands: Commands) {
             localPackageOptions,
             defaultLocalPackage,
             imagePaths: {
-              featureLogo: ["logo-m.png"],
+              featureLogo: ["logo-m.jpg"],
             },
             loading: false,
           });

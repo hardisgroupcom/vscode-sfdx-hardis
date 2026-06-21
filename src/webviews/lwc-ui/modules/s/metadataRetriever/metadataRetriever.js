@@ -690,7 +690,7 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
         // Calculate number of days before November 29, 2025
         const days =
           Math.ceil(
-            (new Date("2026-05-28") - new Date()) / (1000 * 60 * 60 * 24),
+            (new Date("2026-07-27") - new Date()) / (1000 * 60 * 60 * 24),
           ) - 1;
         this.featureText = `Can't wait to see you in ${days} days 🥰`;
         this.showFeature = true;
