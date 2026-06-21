@@ -1058,6 +1058,7 @@
   "loadingPackageConfig": "Caricamento configurazione package in corso...",
   "loadingPipelineData": "Caricamento dati pipeline in corso...",
   "loadingPipelineInformation": "Caricamento informazioni pipeline in corso...",
+  "loadingReleases": "Caricamento versioni in corso...",
   "loadingSalesforceOrgs": "Caricamento org Salesforce in corso...\n(potrebbe richiedere del tempo, effettua alcune operazioni di pulizia per velocizzare 🙃)",
   "loadingSalesforceOrgsShort": "Caricamento org Salesforce in corso...",
   "loadingSchedulableClasses": "Caricamento classi pianificate in corso...",

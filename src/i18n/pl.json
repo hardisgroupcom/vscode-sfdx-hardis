@@ -1062,6 +1062,7 @@
   "loadingPackageConfig": "Ładowanie konfiguracji pakietu...",
   "loadingPipelineData": "Ładowanie danych pipeline'u...",
   "loadingPipelineInformation": "Ładowanie informacji o pipeline'ie...",
+  "loadingReleases": "Ładowanie wersji...",
   "loadingSalesforceOrgs": "Ładowanie orgów Salesforce...\n(może to potrwać chwilę, posprzątaj trochę, żeby przyspieszyć 🙃)",
   "loadingSalesforceOrgsShort": "Ładowanie orgów Salesforce...",
   "loadingSchedulableClasses": "Ładowanie zaplanowanych klas...",

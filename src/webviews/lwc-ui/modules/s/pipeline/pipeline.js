@@ -304,6 +304,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   modalGoLives = []; // combobox options [{ label, value }]
   modalGoLivesLoading = false;
   modalGoLivePrsLoading = false;
+  isLoadingReleaseDetails = false;
   selectedGoLiveId = "";
   _goLivesRequestId = null;
   _goLivePrsRequestId = null;
@@ -1869,6 +1870,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this.modalGoLives = [];
     this.selectedGoLiveId = "";
     this.modalGoLivePrsLoading = false;
+    this.isLoadingReleaseDetails = false;
     if (this.modalIsTopBranch) {
       this._loadGoLives(branchName);
     }
@@ -1978,13 +1980,29 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     return [date, prPart, title].filter(Boolean).join(" - ");
   }
 
+  // Combobox options for the go-lives selector.
+  // While the list is still loading, returns a single disabled placeholder.
+  // Once loaded, returns the real list.
+  get goLivesComboboxOptions() {
+    if (this.modalGoLivesLoading) {
+      return [{ label: this.i18n.loadingReleases, value: "__loading__" }];
+    }
+    return this.modalGoLives;
+  }
+
+  // The combobox is disabled while the go-lives list is loading or while a
+  // selected release is being loaded (to prevent double-clicks mid-flight).
+  get isGoLivesComboboxDisabled() {
+    return this.modalGoLivesLoading || this.isLoadingReleaseDetails;
+  }
+
   handleGoLiveChange(event) {
     const mergeCommitId = event.detail.value;
-    if (!mergeCommitId || mergeCommitId === this.selectedGoLiveId) {
-      this.selectedGoLiveId = mergeCommitId;
+    if (!mergeCommitId || mergeCommitId === this.selectedGoLiveId || mergeCommitId === "__loading__") {
       return;
     }
     this.selectedGoLiveId = mergeCommitId;
+    this.isLoadingReleaseDetails = true;
     this.modalGoLivePrsLoading = true;
     const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     this._goLivePrsRequestId = requestId;
@@ -2015,6 +2033,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     }
     this._populateModalFromPrs(data?.pullRequests || []);
     this.modalGoLivePrsLoading = false;
+    this.isLoadingReleaseDetails = false;
   }
 
   handleOpenOrgNode(nodeIdentifier) {
@@ -2091,6 +2110,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this.modalGoLives = [];
     this.modalGoLivesLoading = false;
     this.modalGoLivePrsLoading = false;
+    this.isLoadingReleaseDetails = false;
     this.selectedGoLiveId = "";
     this._goLivesRequestId = null;
     this._goLivePrsRequestId = null;

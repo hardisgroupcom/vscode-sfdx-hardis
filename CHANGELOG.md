@@ -9,6 +9,8 @@
   - Works across GitHub, GitLab, Azure DevOps and Bitbucket
 - The branch details popup of a production-level branch now lets you browse previous go-lives
   - A selector at the top lists the past go-lives; picking one loads its pull requests on demand
+  - While the go-live list is loading, the selector shows a "Loading releases…" placeholder and stays disabled until it is ready
+  - Picking a different go-live now replaces the tables below with a centered spinner while the new data loads, so you always know something is happening
   - Generating release notes from the popup now targets the selected go-live
   - The "Preview Release Notes" button is hidden for these branches, where it does not apply
 - Commands launched from the extension now authenticate to Bitbucket correctly when you connected with an Atlassian account API token (email + token), not only with a repository access token

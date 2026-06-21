@@ -1068,6 +1068,7 @@
   "loadingPackageConfig": "Pakketconfiguratie wordt geladen...",
   "loadingPipelineData": "Pipeline-gegevens worden geladen...",
   "loadingPipelineInformation": "Pipeline-informatie wordt geladen...",
+  "loadingReleases": "Versies worden geladen...",
   "loadingSalesforceOrgs": "Salesforce orgs worden geladen...\n(dit kan lang duren, maak wat ruimte vrij om het sneller te maken 🙃)",
   "loadingSalesforceOrgsShort": "Salesforce orgs worden geladen...",
   "loadingSchedulableClasses": "Geplande klassen worden geladen...",

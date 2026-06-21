@@ -322,26 +322,28 @@
                 <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
                     <!-- Go-lives selector (top branches such as main/prod) -->
                     <template if:true={modalIsTopBranch}>
-                        <div class="slds-m-bottom_small slds-is-relative" style="min-height: 1.5rem;">
-                            <template if:true={modalGoLivesLoading}>
-                                <lightning-spinner alternative-text={i18n.loadingLabel} size="small" variant="brand"></lightning-spinner>
-                            </template>
-                            <template if:true={showGoLivesSelector}>
-                                <lightning-combobox
-                                    label={i18n.goLiveSelectorLabel}
-                                    value={selectedGoLiveId}
-                                    placeholder={i18n.goLiveSelectorPlaceholder}
-                                    options={modalGoLives}
-                                    onchange={handleGoLiveChange}
-                                ></lightning-combobox>
-                            </template>
+                        <div class="slds-m-bottom_small">
+                            <lightning-combobox
+                                label={i18n.goLiveSelectorLabel}
+                                value={selectedGoLiveId}
+                                placeholder={i18n.goLiveSelectorPlaceholder}
+                                options={goLivesComboboxOptions}
+                                disabled={isGoLivesComboboxDisabled}
+                                onchange={handleGoLiveChange}
+                            ></lightning-combobox>
                         </div>
                     </template>
-                    <template if:true={modalGoLivePrsLoading}>
-                        <div class="slds-is-relative slds-p-around_large">
-                            <lightning-spinner alternative-text={i18n.loadingLabel} size="medium" variant="brand"></lightning-spinner>
+                    <!-- While a selected release is loading, show a spinner in place of the tables -->
+                    <template if:true={isLoadingReleaseDetails}>
+                        <div class="slds-spinner_container slds-is-relative slds-p-around_large">
+                            <div role="status" class="slds-spinner slds-spinner_medium slds-spinner_brand">
+                                <span class="slds-assistive-text">{i18n.loadingLabel}</span>
+                                <div class="slds-spinner__dot-a"></div>
+                                <div class="slds-spinner__dot-b"></div>
+                            </div>
                         </div>
                     </template>
+                    <template if:false={isLoadingReleaseDetails}>
                     <lightning-tabset>
                         <template if:true={showPRTab}>
                             <lightning-tab label={modalPrsTabLabel} value="prs" icon-name="utility:topic2" icon-assistive-text={modalPrsTabLabel}>
@@ -472,6 +474,7 @@
                                 </lightning-tab>
                             </template>
                     </lightning-tabset>
+                    </template>
                 </div>
                 <footer class="slds-modal__footer" style="display: flex; justify-content: space-between;">
                     <div>
