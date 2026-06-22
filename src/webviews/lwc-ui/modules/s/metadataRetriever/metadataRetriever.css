@@ -53,15 +53,21 @@
   border-radius: 8px;
   min-width: 280px;
   max-width: 90vw;
+  max-height: 810px; 
+  overflow-y: auto;  
   box-shadow: 0 10px 30px rgba(0,0,0,0.25);
   z-index: 10001;
   text-align: center;
+  background: #ffffff
 }
 [data-feature-content] img {
-  width: 100%;
+  width: auto;  
   height: auto;
+  max-height: 400px;  
+  max-width: 100%;
+  object-fit: contain; 
   display: block;
-  margin: 0 auto;
+  margin: 0 auto 12px;
 }
 [data-feature-close] {
   position: absolute;
