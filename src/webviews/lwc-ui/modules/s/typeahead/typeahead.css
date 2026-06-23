@@ -1,0 +1,15 @@
+/* Ensure the typeahead dropdown floats above neighbouring form controls and
+   is not clipped by the surrounding grid columns. */
+.slds-combobox_container {
+  width: 100%;
+}
+
+.slds-dropdown {
+  z-index: 9001;
+}
+
+/* The right-hand arrow is decorative: let clicks fall through to the input so
+   tapping the arrow area opens the dropdown. */
+.slds-input__icon_right {
+  pointer-events: none;
+}
