@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Metadata Retriever: the Metadata Type filter is now a searchable combobox — start typing to filter the list instead of scrolling through every type
+- Org selector: when several users are connected to the same org, each one is now listed separately instead of being collapsed into a single entry
+  - Orgs are now shown by their alias when available, making them easier to recognize at a glance
+
 ## [7.12.0] 2026-06-21
 
 - Add **Rotate External Client App credentials** action in Org Manager

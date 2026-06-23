@@ -1,0 +1,121 @@
+<template>
+  <div class={formElementClass}>
+    <label class={computedLabelClass} for={inputId}>
+      <template if:true={required}>
+        <abbr class="slds-required" title={requiredLabel}>*</abbr>
+      </template>
+      {label}
+    </label>
+    <div class="slds-form-element__control">
+      <div class="slds-combobox_container">
+        <div
+          class={comboboxClass}
+          aria-expanded={ariaExpanded}
+          aria-haspopup="listbox"
+          role="combobox"
+        >
+          <div
+            class="slds-combobox__form-element slds-input-has-icon slds-input-has-icon_right"
+            role="none"
+          >
+            <input
+              type="text"
+              id={inputId}
+              class="slds-input slds-combobox__input"
+              role="textbox"
+              autocomplete="off"
+              aria-autocomplete="list"
+              aria-controls={listboxId}
+              aria-describedby={ariaDescribedBy}
+              aria-invalid={ariaInvalid}
+              aria-required={ariaRequired}
+              placeholder={placeholder}
+              value={inputValue}
+              disabled={disabled}
+              required={required}
+              onfocus={handleFocus}
+              onclick={handleClick}
+              oninput={handleInput}
+              onblur={handleBlur}
+              onkeydown={handleKeydown}
+            />
+            <span
+              class="slds-icon_container slds-icon-utility-down slds-input__icon slds-input__icon_right"
+            >
+              <lightning-icon
+                icon-name="utility:down"
+                size="xx-small"
+                alternative-text={label}
+                class="slds-icon slds-icon_x-small slds-icon-text-default"
+              ></lightning-icon>
+            </span>
+          </div>
+          <template if:true={showDropdown}>
+            <div
+              id={listboxId}
+              class="slds-dropdown slds-dropdown_length-with-icon-7 slds-dropdown_fluid"
+              role="listbox"
+            >
+              <ul
+                class="slds-listbox slds-listbox_vertical"
+                role="presentation"
+              >
+                <template for:each={filteredOptions} for:item="opt">
+                  <li
+                    key={opt.key}
+                    role="presentation"
+                    class="slds-listbox__item"
+                    data-value={opt.value}
+                    onmousedown={handleOptionMouseDown}
+                  >
+                    <div
+                      class={opt.optionClass}
+                      role="option"
+                      aria-selected={opt.ariaSelected}
+                    >
+                      <span
+                        class="slds-media__figure slds-listbox__option-icon"
+                      >
+                        <template if:true={opt.selected}>
+                          <lightning-icon
+                            icon-name="utility:check"
+                            size="x-small"
+                            class="slds-icon slds-icon_x-small slds-icon-text-default"
+                          ></lightning-icon>
+                        </template>
+                      </span>
+                      <span class="slds-media__body">
+                        <span class="slds-truncate" title={opt.label}
+                          >{opt.label}</span
+                        >
+                      </span>
+                    </div>
+                  </li>
+                </template>
+                <template if:true={hasNoMatches}>
+                  <li role="presentation" class="slds-listbox__item">
+                    <div
+                      class="slds-media slds-listbox__option slds-listbox__option_plain slds-media_small"
+                      role="presentation"
+                    >
+                      <span class="slds-media__body">
+                        <span class="slds-truncate slds-text-color_weak"
+                          >{noMatchesLabel}</span
+                        >
+                      </span>
+                    </div>
+                  </li>
+                </template>
+              </ul>
+            </div>
+          </template>
+        </div>
+      </div>
+    </div>
+    <template if:true={showValidationError}>
+      <div id={errorMessageId} class="slds-form-element__help">
+        {validationMessage}
+      </div>
+    </template>
+  </div>
+</template>

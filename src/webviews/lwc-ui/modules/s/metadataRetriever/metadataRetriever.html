@@ -46,16 +46,16 @@
       <!-- Filters Section -->
       <div class="slds-p-around_x-small">
         <div class="slds-grid slds-gutters_x-small slds-wrap">
-          <!-- Metadata Type Filter -->
+          <!-- Metadata Type Filter (typeahead: filter the list by typing) -->
           <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-large-size_1-of-6">
-            <lightning-combobox
+            <s-typeahead
               label={i18n.metadataTypeLabel}
               value={metadataType}
               options={metadataTypeOptions}
               onchange={handleMetadataTypeChange}
               placeholder={i18n.selectMetadataType}
               required={isAllMetadataMode}
-            ></lightning-combobox>
+            ></s-typeahead>
           </div>
 
           <!-- Folder Filter (only for foldered types in All Metadata mode) -->
