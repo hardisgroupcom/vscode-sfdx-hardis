@@ -199,13 +199,14 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
       return [];
     }
     const formatLabel = (org) => {
+      if(org.alias) return org.alias;
       if (org.instanceUrl) {
         return org.instanceUrl
           .replace(/^https?:\/\//i, "")
           .replace(/\/$/, "")
           .replace(/\.my\.salesforce\.com$/i, "");
       }
-      return org.alias || org.username;
+      return org.username;
     };
 
     const sortedOrgs = [...this.orgs].sort((a, b) => {

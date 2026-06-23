@@ -54,7 +54,7 @@ export async function listAllOrgs(
       continue;
     }
     const key =
-      org.orgId || org.username || org.instanceUrl || JSON.stringify(org);
+      org.username || org.orgId || org.instanceUrl || JSON.stringify(org);
     if (seen.has(key)) {
       // already added (avoid duplicates)
       continue;
