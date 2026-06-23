@@ -111,7 +111,14 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(disposableTreePlugins);
 
   // Anonymous telemetry respecting VsCode Guidelines -> https://code.visualstudio.com/api/extension-guides/telemetry
-  reporter = new TelemetryReporter("cf83e6dc-2621-4cb6-b92b-30905d1c8476");
+  // Uses an Application Insights connection string (not a bare instrumentation key) so events route through
+  // the modern, region-aware ingestion endpoint instead of the deprecated classic global ingestion.
+  // TODO: replace <REGION> below with the IngestionEndpoint/LiveEndpoint region from the Azure portal
+  // (Application Insights resource -> Overview -> Connection String). The InstrumentationKey is unchanged,
+  // so telemetry keeps landing in the same resource.
+  reporter = new TelemetryReporter(
+    "InstrumentationKey=cf83e6dc-2621-4cb6-b92b-30905d1c8476;IngestionEndpoint=https://<REGION>.in.applicationinsights.azure.com/;LiveEndpoint=https://<REGION>.livediagnostics.monitor.azure.com/",
+  );
   context.subscriptions.push(reporter);
 
   // Register common commands

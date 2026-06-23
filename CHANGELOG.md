@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Updated anonymous usage telemetry to use the current Azure Application Insights connection string, replacing the legacy ingestion method that Microsoft is retiring
+
 ## [7.12.1] 2026-06-23
 
 - Metadata Retriever: the Metadata Type filter is now a searchable combobox — start typing to filter the list instead of scrolling through every type
