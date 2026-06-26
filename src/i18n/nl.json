@@ -288,6 +288,8 @@
   "customOrPluginCommandRunInTerminal": "This is a custom or plugin command. Run in terminal?",
   "dangerZone": "Gevarzone",
   "darkTheme": "Donker",
+  "dataDictionary": "Datawoordenboek",
+  "dataDictionaryDescription": "Genereert een datawoordenboek dat de objecten en velden van de org documenteert",
   "dataImportExport": "Data Import/Export",
   "dataImportExportWorkbench": "Data Import/Export Workbench",
   "dataStorageStatistics": "Statistieken voor dataopslag",
