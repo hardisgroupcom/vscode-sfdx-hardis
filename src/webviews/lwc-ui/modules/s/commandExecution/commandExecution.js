@@ -144,7 +144,6 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
               logType: "table",
               message: "[Table]",
               timestamp: data.timestamp ? new Date(data.timestamp) : new Date(),
-              tableSectionId: null, // will be set below
             };
             // Add to current section
             if (!this.currentSection) {
@@ -155,10 +154,10 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
               });
             }
             this.addLogToCurrentSection(logLine);
-            // Store table data for this section
-            const sectionId = this.currentSection.id;
-            logLine.tableSectionId = sectionId;
-            this.tableLogs[sectionId] = {
+            // Store table data keyed by the table log line id (not the section id), so
+            // several tables in the same section don't overwrite each other (e.g. a
+            // success table followed by a failure table).
+            this.tableLogs[logLine.id] = {
               columns,
               rows: tableData,
               showAll: false,
@@ -890,7 +889,6 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
 
     const formattedLog = {
       ...this._buildFormattedLog(logLine),
-      tableSectionId: logLine.tableSectionId || null,
       isTable: logLine.logType === "table",
     };
 
@@ -962,16 +960,16 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
 
   // Handler for "See more" button in table logs
   handleSeeMoreTable(event) {
-    const sectionId = event.target.dataset.sectionId;
-    if (sectionId && this.tableLogs[sectionId]) {
-      this.tableLogs[sectionId].showAll = true;
+    const tableId = event.target.dataset.tableId;
+    if (tableId && this.tableLogs[tableId]) {
+      this.tableLogs[tableId].showAll = true;
       // Force reactivity
       this.tableLogs = { ...this.tableLogs };
     }
   }
-  // Helper to get table log data for a section
-  getTableLog(sectionId) {
-    return this.tableLogs[sectionId] || null;
+  // Helper to get table log data for a given table log line id
+  getTableLog(tableLogId) {
+    return this.tableLogs[tableLogId] || null;
   }
 
   mergeQueryResult(queryLogId, resultMessage) {
@@ -1332,19 +1330,23 @@ ${resultMessage}`;
       const isDiff = section.type === "diff";
       const isRegular = !isProgress && !isDiff;
 
-      // Table log support
-      let tableLog = this.tableLogs[section.id] || null;
-      let tableShowAll = false;
-      let tableShowMoreButton = false;
-      let rowsLimited = [];
-      let tableRows = [];
-      let tableTruncatedMessage = null;
-      if (tableLog) {
-        tableShowAll = !!tableLog.showAll;
-        rowsLimited = tableLog.rows ? tableLog.rows.slice(0, 10) : [];
-        tableShowMoreButton =
+      // Table log support: tables are keyed by their own log line id, so a section can
+      // hold several tables (e.g. a success table and a failure table) without one
+      // overwriting the other. Attach the render data to each table log line.
+      const logs = (section.logs || []).map((logLine) => {
+        if (!logLine.isTable) {
+          return logLine;
+        }
+        const tableLog = this.tableLogs[logLine.id] || null;
+        if (!tableLog) {
+          return logLine;
+        }
+        const tableShowAll = !!tableLog.showAll;
+        const rowsLimited = tableLog.rows ? tableLog.rows.slice(0, 10) : [];
+        const tableShowMoreButton =
           !tableShowAll && tableLog.rows && tableLog.rows.length > 10;
         let rawRows = tableShowAll ? tableLog.rows : rowsLimited;
+        let tableTruncatedMessage = null;
         // Detect truncation message row
         if (
           rawRows.length > 0 &&
@@ -1354,8 +1356,15 @@ ${resultMessage}`;
             rawRows[rawRows.length - 1].sfdxHardisTruncatedMessage;
           rawRows = rawRows.slice(0, rawRows.length - 1);
         }
-        tableRows = rawRows;
-      }
+        return {
+          ...logLine,
+          tableLog: { ...tableLog, rowsLimited },
+          tableShowAll,
+          tableShowMoreButton,
+          tableRows: rawRows,
+          tableTruncatedMessage,
+        };
+      });
 
       // --- SIMPLE/ADVANCED LOGIC ---
       let isExpanded = section.isExpanded;
@@ -1446,6 +1455,7 @@ ${resultMessage}`;
 
       return {
         ...section,
+        logs,
         isExpanded,
         isProgress,
         isDiff,
@@ -1497,11 +1507,6 @@ ${resultMessage}`;
             section.progressLogs.length > 0) ||
           (isDiff && diffFilesCount > 0),
         isLatestQuestionSectionToHide: shouldHideLatest && isLatest,
-        tableLog: tableLog ? { ...tableLog, rowsLimited } : null,
-        tableShowAll,
-        tableShowMoreButton,
-        tableRows,
-        tableTruncatedMessage,
       };
     });
   }

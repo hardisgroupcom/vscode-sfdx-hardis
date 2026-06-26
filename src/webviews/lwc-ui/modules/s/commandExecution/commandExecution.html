@@ -355,28 +355,28 @@
                       <template for:each={section.logs} for:item="logLine">
                         <template if:true={logLine.isTable}>
                           <div key={logLine.id} style="padding-top: 0; padding-bottom: 0.5rem;">
-                            <template lwc:if={section.tableLog}>
+                            <template lwc:if={logLine.tableLog}>
                               <div class="slds-scrollable_x" style="max-width: 100%; color: black;">
                                 <lightning-datatable
                                   key-field="id"
-                                  data={section.tableRows}
+                                  data={logLine.tableRows}
                                   column-widths-mode="auto"
-                                  columns={section.tableLog.columns}
+                                  columns={logLine.tableLog.columns}
                                   hide-checkbox-column
                                 >
                                 </lightning-datatable>
                               </div>
-                              <template if:true={section.tableTruncatedMessage}>
+                              <template if:true={logLine.tableTruncatedMessage}>
                                 <div class="slds-text-color_weak slds-p-vertical_x-small slds-text-align_center" style="font-style:italic;">
-                                  {section.tableTruncatedMessage}
+                                  {logLine.tableTruncatedMessage}
                                 </div>
                               </template>
-                              <template lwc:if={section.tableShowMoreButton}>
+                              <template lwc:if={logLine.tableShowMoreButton}>
                                 <div class="slds-m-top_x-small slds-align_absolute-center">
                                   <lightning-button
                                     label={i18n.seeMore}
                                     variant="neutral"
-                                    data-section-id={section.id}
+                                    data-table-id={logLine.id}
                                     onclick={handleSeeMoreTable}
                                     class="slds-m-top_x-small">
                                   </lightning-button>
