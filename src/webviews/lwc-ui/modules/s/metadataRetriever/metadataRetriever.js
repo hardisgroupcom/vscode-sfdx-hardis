@@ -199,7 +199,7 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
       return [];
     }
     const formatLabel = (org) => {
-      if(org.alias) return org.alias;
+      if (org.alias) return org.alias;
       if (org.instanceUrl) {
         return org.instanceUrl
           .replace(/^https?:\/\//i, "")
