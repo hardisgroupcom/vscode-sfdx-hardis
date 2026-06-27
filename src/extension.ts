@@ -111,7 +111,7 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(disposableTreePlugins);
 
   // Anonymous telemetry respecting VsCode Guidelines -> https://code.visualstudio.com/api/extension-guides/telemetry
-  reporter = new TelemetryReporter("cf83e6dc-2621-4cb6-b92b-30905d1c8476");
+  reporter = new TelemetryReporter("cf83e6dc-2621-4cb6-b92b-30905d1c8476"); // gitleaks:allow - public Application Insights telemetry key, intentionally embedded
   context.subscriptions.push(reporter);
 
   // Register common commands

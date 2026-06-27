@@ -57,6 +57,15 @@ const EXTRA_COMMANDS = [
     icon: "utility:table",
     colorClass: "metadata-access",
   },
+  {
+    key: "EXTRA_DATA_DICTIONARY",
+    titleKey: "dataDictionary",
+    descriptionKey: "dataDictionaryDescription",
+    category: "technicalDebt",
+    command: "sf hardis:doc:data-dictionary",
+    icon: "utility:database",
+    colorClass: "metadata-access",
+  },
 ];
 
 export default class OrgMonitoring extends SharedMixin(LightningElement) {
