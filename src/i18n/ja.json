@@ -288,6 +288,8 @@
   "customOrPluginCommandRunInTerminal": "This is a custom or plugin command. Run in terminal?",
   "dangerZone": "危険ゾーン",
   "darkTheme": "ダーク",
+  "dataDictionary": "データディクショナリ",
+  "dataDictionaryDescription": "組織のオブジェクトと項目を文書化したデータディクショナリを生成します",
   "dataImportExport": "データのインポート/エクスポート",
   "dataImportExportWorkbench": "データ インポート/エクスポート ワークベンチ",
   "dataStorageStatistics": "データストレージ統計",

@@ -287,6 +287,8 @@
   "customOrPluginCommandRunInTerminal": "This is a custom or plugin command. Run in terminal?",
   "dangerZone": "Strefa zagrożenia",
   "darkTheme": "Ciemny",
+  "dataDictionary": "Słownik danych",
+  "dataDictionaryDescription": "Generuje słownik danych dokumentujący obiekty i pola w org",
   "dataImportExport": "Import/eksport danych",
   "dataImportExportWorkbench": "Workbench importu/eksportu danych",
   "dataStorageStatistics": "Statystyki przechowywania danych",

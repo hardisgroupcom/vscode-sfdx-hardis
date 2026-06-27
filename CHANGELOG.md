@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add `hardis:doc:data-dictionary` command in Monitoring
+
 ## [7.12.1] 2026-06-23
 
 - Metadata Retriever: the Metadata Type filter is now a searchable combobox — start typing to filter the list instead of scrolling through every type
