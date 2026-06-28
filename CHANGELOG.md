@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [7.13.0] 2026-06-28
+
 - Add `hardis:doc:data-dictionary` command in Monitoring
 
 ## [7.12.1] 2026-06-23
