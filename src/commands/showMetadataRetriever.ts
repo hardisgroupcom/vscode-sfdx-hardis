@@ -412,6 +412,75 @@ function collectMetadataErrorDetails(messages: any[]): string[] {
   return errorDetails;
 }
 
+function asArray(value: any): any[] {
+  if (Array.isArray(value)) {
+    return value;
+  }
+  return value ? [value] : [];
+}
+
+function getCrudReadOutcomePayload(result: any): any | null {
+  const candidates = [result?.result, result];
+  for (const candidate of candidates) {
+    if (
+      candidate &&
+      (Array.isArray(candidate.successes) ||
+        Array.isArray(candidate.failures) ||
+        Array.isArray(candidate.skipped))
+    ) {
+      return candidate;
+    }
+  }
+  return null;
+}
+
+function toRetrieveFile(item: any, state: "Changed" | "Failed", error?: string) {
+  return {
+    state,
+    type: item?.type || item?.memberType || "",
+    fullName: item?.fullName || item?.memberName || "",
+    error: error || item?.error,
+  };
+}
+
+function toRetrieveMessage(item: any, defaultProblem: string) {
+  const type = item?.type || item?.memberType || "";
+  const fullName = item?.fullName || item?.memberName || "";
+  return {
+    fileName: type && fullName ? `${type}: ${fullName}` : fullName || type,
+    problem: item?.error || defaultProblem,
+  };
+}
+
+function normalizeCrudReadResult(result: any): any | null {
+  const payload = getCrudReadOutcomePayload(result);
+  if (!payload) {
+    return null;
+  }
+
+  const successes = asArray(payload.successes);
+  const failures = asArray(payload.failures);
+  const skipped = asArray(payload.skipped);
+  const skippedProblem =
+    "Skipped by CRUD Metadata API because this metadata type is not supported. Use the standard retrieve for this component.";
+
+  const files = [
+    ...successes.map((item) => toRetrieveFile(item, "Changed")),
+    ...failures.map((item) => toRetrieveFile(item, "Failed")),
+    ...skipped.map((item) => toRetrieveFile(item, "Failed", skippedProblem)),
+  ];
+  const messages = [
+    ...failures.map((item) => toRetrieveMessage(item, "CRUD Metadata API read failed")),
+    ...skipped.map((item) => toRetrieveMessage(item, skippedProblem)),
+  ];
+
+  return {
+    success: failures.length === 0 && skipped.length === 0,
+    files,
+    messages,
+  };
+}
+
 async function executeMetadataRetrieve(
   username: string,
   metadataList: any[],
@@ -419,6 +488,7 @@ async function executeMetadataRetrieve(
   panel: LwcUiPanel,
   forceOverwrite = false,
   localPackagePath: string | null = null,
+  useCrudApi = false,
 ): Promise<any> {
   // Lock local package selector while retrieving
   try {
@@ -434,6 +504,7 @@ async function executeMetadataRetrieve(
   const initialDefaultPackage =
     defaultLocalPackageGuard.getInitialDefaultPackagePath();
   const shouldSwitchPackage =
+    !useCrudApi &&
     !!localPackagePath &&
     !!initialDefaultPackage &&
     normalizeSfdxProjectPath(localPackagePath) !==
@@ -456,32 +527,52 @@ async function executeMetadataRetrieve(
   // the parent folder metadata in if it is missing locally, so deploys to
   // other orgs do not fail because the folder does not exist there.
   const workspaceRoot = getWorkspaceRoot();
-  const expandedList = await expandWithMissingFolderItems(metadataList);
+  // Folder auto-inclusion only applies to the file-based retrieve. The CRUD
+  // Metadata API (readMetadata) targets the requested components directly.
+  const expandedList = useCrudApi
+    ? metadataList
+    : await expandWithMissingFolderItems(metadataList);
   const metadataItems = expandedList
     .filter((item) => !(item?.deleted === true))
     .map((item) => `--metadata "${item.memberType}:${item.memberName}"`)
     .join(" ");
-  const command =
-    `sf project retrieve start ${metadataItems} --target-org ${username}` +
-    (forceOverwrite ? " --ignore-conflicts" : "") +
-    " --json";
+  const command = useCrudApi
+    ? `sf hardis mdapi read ${metadataItems} --target-org ${username}` +
+      (localPackagePath ? ` --output-dir "${localPackagePath}"` : "") +
+      " --agent --ignore-errors --json"
+    : `sf project retrieve start ${metadataItems} --target-org ${username}` +
+      (forceOverwrite ? " --ignore-conflicts" : "") +
+      " --json";
   Logger.log(`Retrieving metadata: ${command}`);
 
+  // When every selected item is marked deleted there are no members to read or
+  // retrieve. Skip the CLI call so we never run a command without any --metadata
+  // members; the deleted-items handling below still removes the local files.
+  const hasItemsToRetrieve = metadataItems.trim().length > 0;
   let result: any = null;
   try {
-    result = await vscode.window.withProgress(
-      {
-        location: vscode.ProgressLocation.Notification,
-        title: displayTitle,
-        cancellable: false,
-      },
-      async (_progress) => {
-        return await execSfdxJson(command, { cwd: workspaceRoot });
-      },
-    );
+    if (hasItemsToRetrieve) {
+      result = await vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Notification,
+          title: displayTitle,
+          cancellable: false,
+        },
+        async (_progress) => {
+          return await execSfdxJson(command, { cwd: workspaceRoot });
+        },
+      );
+    }
+    else {
+      result = {
+        status: 0,
+        result: { success: true, files: [], messages: [] },
+      };
+    }
 
-    // Suggest user to force in case of conflicts
-    if (result.code === "SourceConflictError") {
+    // Suggest user to force in case of conflicts (file-based retrieve only;
+    // the CRUD Metadata API overwrites local files without conflict checks).
+    if (!useCrudApi && result.code === "SourceConflictError") {
       const choice = await vscode.window.showErrorMessage(
         `Failed to retrieve metadata due to source conflicts.`,
         "I don't care, overwrite! 🤪",
@@ -495,6 +586,7 @@ async function executeMetadataRetrieve(
           panel,
           true,
           localPackagePath,
+          useCrudApi,
         );
       }
     }
@@ -539,10 +631,13 @@ async function executeMetadataRetrieve(
       await fs.writeFile(tmpPackageXml, packageXmlContent, {
         encoding: "utf8",
       });
-      const commandManifest =
-        `sf project retrieve start --manifest "${tmpPackageXml}" --target-org ${username}` +
-        (forceOverwrite ? " --ignore-conflicts" : "") +
-        " --json";
+      const commandManifest = useCrudApi
+        ? `sf hardis mdapi read --manifest "${tmpPackageXml}" --target-org ${username}` +
+          (localPackagePath ? ` --output-dir "${localPackagePath}"` : "") +
+          " --agent --ignore-errors --json"
+        : `sf project retrieve start --manifest "${tmpPackageXml}" --target-org ${username}` +
+          (forceOverwrite ? " --ignore-conflicts" : "") +
+          " --json";
       Logger.log(`Retrieving metadata with manifest: ${commandManifest}`);
       result = await vscode.window.withProgress(
         {
@@ -560,6 +655,40 @@ async function executeMetadataRetrieve(
         await fs.rm(tempDir, { recursive: true, force: true });
       } catch {
         // ignore
+      }
+    }
+
+    // The CRUD Metadata API command (sf hardis mdapi read) returns
+    // successes/failures/skipped instead of the `sf project retrieve start`
+    // files/messages shape. Normalize it so partial success remains visible to
+    // the shared notification, local-file re-check and package.xml handling.
+    if (useCrudApi) {
+      const normalizedCrudResult = normalizeCrudReadResult(result);
+      const crudFailed =
+        !result ||
+        result.status === 1 ||
+        !!result.error ||
+        !!result.errorMessage;
+      if (normalizedCrudResult) {
+        result.result = normalizedCrudResult;
+      }
+      else if (crudFailed) {
+        // Force the shared error branch to surface the CLI error message.
+        if (result) {
+          result.result = null;
+        }
+      }
+      else {
+        // Backward-compatible fallback for older command output that does not
+        // expose successes/failures/skipped yet.
+        const retrievedFiles = expandedList
+          .filter((item) => !(item?.deleted === true))
+          .map((item) => toRetrieveFile(item, "Changed"));
+        result.result = {
+          success: true,
+          files: retrievedFiles,
+          messages: [],
+        };
       }
     }
 
@@ -616,7 +745,11 @@ async function executeMetadataRetrieve(
     let singleName: string | null = null;
 
     // Check if command executed and has result
-    if (result && result.result) {
+    if (!hasItemsToRetrieve) {
+      // Only deleted items were processed (handled above) — there is no
+      // retrieve/read outcome to report here.
+    }
+    else if (result && result.result) {
       const retrieveResult = result.result;
       const success = retrieveResult.success === true;
       const files = retrieveResult.files || [];
@@ -1705,7 +1838,7 @@ function buildMetadataKeys(name: any, mt: any) {
 /* jscpd:ignore-start */
 async function handleRetrieveSelectedMetadata(panel: any, data: any) {
   try {
-    const { username, metadata, localPackage } = data;
+    const { username, metadata, localPackage, useCrudApi } = data;
 
     if (
       !username ||
@@ -1733,6 +1866,7 @@ async function handleRetrieveSelectedMetadata(panel: any, data: any) {
       panel,
       false,
       localPackage || null,
+      useCrudApi === true,
     );
   } catch (error: any) {
     Logger.log(`Error retrieving selected metadata: ${error.message}`);
@@ -1762,7 +1896,8 @@ async function handleOpenRetrieveFolder() {
 
 async function handleRetrieveMetadata(panel: any, data: any) {
   try {
-    const { username, memberType, memberName, deleted, localPackage } = data;
+    const { username, memberType, memberName, deleted, localPackage, useCrudApi } =
+      data;
 
     if (!username || !memberType || !memberName) {
       vscode.window.showErrorMessage(
@@ -1794,6 +1929,7 @@ async function handleRetrieveMetadata(panel: any, data: any) {
       panel,
       false,
       localPackage || null,
+      useCrudApi === true,
     );
   } catch (error: any) {
     Logger.log(`Error retrieving metadata: ${error.message}`);
