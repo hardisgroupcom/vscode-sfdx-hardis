@@ -155,20 +155,38 @@
           </div>
           <div class="slds-col slds-no-flex slds-form-element slds-form-element_compact">
             <div class="slds-form-element__control slds-grid slds-grid_vertical-align-center" style="align-items:center;">
-              <div class="slds-m-right_x-small slds-text-body_regular slds-align-middle">{i18n.checkLocalFiles}</div>
+              <lightning-input
+                class="slds-m-right_large"
+                type="toggle"
+                label={i18n.useCrudApiLabel}
+                aria-label={i18n.useCrudApiLabel}
+                checked={useCrudApi}
+                onchange={handleUseCrudApiChange}
+                variant="standard"
+                title={useCrudApiTooltip}
+              ></lightning-input>
               <lightning-input
                 type="toggle"
                 label={i18n.checkLocalFiles}
                 aria-label={i18n.checkLocalFiles}
                 checked={checkLocalFiles}
                 onchange={handleCheckLocalChange}
-                variant="label-hidden"
+                variant="standard"
                 disabled={checkLocalDisabled}
                 title={checkLocalTooltip}
               ></lightning-input>
             </div>
           </div>
         </div>
+
+        <!-- CRUD API deployability notice (shown only when Full metadata is on) -->
+        <template if:true={useCrudApi}>
+          <div class="slds-m-top_x-small slds-notify slds-notify_alert slds-alert_warning" role="alert">
+            <span class="slds-assistive-text">warning</span>
+            <lightning-icon icon-name="utility:warning" size="x-small" variant="inverse" class="slds-m-right_x-small"></lightning-icon>
+            <span>{i18n.useCrudApiWarning}</span>
+          </div>
+        </template>
       </div>
 
       <!-- Loading Spinner -->
