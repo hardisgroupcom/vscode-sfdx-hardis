@@ -142,6 +142,7 @@
   "checkLicenses": "Licenties controleren",
   "checkLimits": "Limieten controleren",
   "checkLocalFiles": "Lokale bestanden controleren",
+  "checkLocalFilesTooltip": "Vergelijkt de componenten van de org met de bestanden van je lokale project en voegt een kolom toe die laat zien welke al lokaal bestaan.",
   "checkMetadataStatus": "Metagegevensstatus controleren",
   "checkMissingAttributes": "Ontbrekende attributen controleren",
   "checkOrgInstanceInfo": "Instantiegegevens controleren",

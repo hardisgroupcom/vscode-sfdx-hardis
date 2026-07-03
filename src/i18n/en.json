@@ -142,6 +142,7 @@
   "checkLicenses": "Check Licenses",
   "checkLimits": "Check Limits",
   "checkLocalFiles": "Check local files",
+  "checkLocalFilesTooltip": "Compare the org's components with your local project files, adding a column that shows which ones already exist locally.",
   "checkMetadataStatus": "Check Metadata Status",
   "checkMissingAttributes": "Check Missing Attributes",
   "checkOrgInstanceInfo": "Check Instance Info",

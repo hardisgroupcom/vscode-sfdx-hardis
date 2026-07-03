@@ -142,6 +142,7 @@
   "checkLicenses": "Verificar Licenças",
   "checkLimits": "Verificar Limites",
   "checkLocalFiles": "Verificar arquivos locais",
+  "checkLocalFilesTooltip": "Compara os componentes da organização com os arquivos do seu projeto local, adicionando uma coluna que mostra quais já existem localmente.",
   "checkMetadataStatus": "Verificar status dos metadados",
   "checkMissingAttributes": "Verificar atributos ausentes",
   "checkOrgInstanceInfo": "Verificar informações da instância",

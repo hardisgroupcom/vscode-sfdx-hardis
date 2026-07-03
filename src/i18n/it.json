@@ -138,6 +138,7 @@
   "checkLicenses": "Controlla Licenze",
   "checkLimits": "Controlla Limiti",
   "checkLocalFiles": "Controlla i file locali",
+  "checkLocalFilesTooltip": "Confronta i componenti dell'org con i file del tuo progetto locale, aggiungendo una colonna che mostra quali esistono già localmente.",
   "checkMetadataStatus": "Verifica stato metadati",
   "checkMissingAttributes": "Verifica attributi mancanti",
   "checkOrgInstanceInfo": "Verifica informazioni istanza",

@@ -306,7 +306,9 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
   }
 
   get checkLocalTooltip() {
-    return this.checkLocalAvailable ? "" : this.t("noProjectJsonFound");
+    return this.checkLocalAvailable
+      ? this.t("checkLocalFilesTooltip")
+      : this.t("noProjectJsonFound");
   }
 
   get useCrudApiTooltip() {

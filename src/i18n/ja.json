@@ -142,6 +142,7 @@
   "checkLicenses": "ライセンスを確認",
   "checkLimits": "制限を確認",
   "checkLocalFiles": "ローカルファイルを確認",
+  "checkLocalFilesTooltip": "組織のコンポーネントをローカルプロジェクトのファイルと比較し、どのコンポーネントがすでにローカルに存在するかを示す列を追加します。",
   "checkMetadataStatus": "メタデータのステータスを確認",
   "checkMissingAttributes": "不足している属性を確認",
   "checkOrgInstanceInfo": "インスタンス情報を確認",
