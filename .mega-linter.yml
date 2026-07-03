@@ -22,8 +22,8 @@ SECURITY_SUGGESTIONS: false
 # non-reachable findings (see .grype.yaml / osv-scanner.toml / .trivyignore) are suppressed with justification + expiry.
 REPOSITORY_GRYPE_ARGUMENTS: "--config .grype.yaml"
 REPOSITORY_OSV_SCANNER_ARGUMENTS: "--config=osv-scanner.toml"
-REPOSITORY_TRIVY_ARGUMENTS: "--ignorefile .trivyignore"
-FILTER_REGEX_EXCLUDE: (\.vscode)
+REPOSITORY_TRIVY_ARGUMENTS: "--ignorefile .trivyignore --skip-dirs .megalinter_github_conf"
+FILTER_REGEX_EXCLUDE: (\.vscode|\.claude)
 MARKDOWN_MARKDOWN_LINK_CHECK_DISABLE_ERRORS: true
 SHOW_ELAPSED_TIME: true
 CONFIG_REPORTER: false
