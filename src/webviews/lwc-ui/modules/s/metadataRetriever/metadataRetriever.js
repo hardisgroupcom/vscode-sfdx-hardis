@@ -34,6 +34,7 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
   @track hasSearched = false;
   @track checkLocalFiles = false;
   @track checkLocalAvailable = true;
+  @track useCrudApi = false;
   @track isLoadingOrgs = false;
   @track isLoadingPackages = false;
   @track isLoading = false;
@@ -199,7 +200,7 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
       return [];
     }
     const formatLabel = (org) => {
-      if(org.alias) return org.alias;
+      if (org.alias) return org.alias;
       if (org.instanceUrl) {
         return org.instanceUrl
           .replace(/^https?:\/\//i, "")
@@ -305,7 +306,13 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
   }
 
   get checkLocalTooltip() {
-    return this.checkLocalAvailable ? "" : this.t("noProjectJsonFound");
+    return this.checkLocalAvailable
+      ? this.t("checkLocalFilesTooltip")
+      : this.t("noProjectJsonFound");
+  }
+
+  get useCrudApiTooltip() {
+    return this.t("useCrudApiTooltip");
   }
 
   get hasResults() {
@@ -581,6 +588,14 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
     }
   }
 
+  handleUseCrudApiChange(event) {
+    // lightning-input toggle may expose the boolean on event.target.checked or event.detail.checked
+    this.useCrudApi =
+      event.target?.checked === true ||
+      event.detail?.checked === true ||
+      event.detail?.value === true;
+  }
+
   handleQueryModeChange(event) {
     this.queryMode = event.detail.value;
     // Reset metadata type when switching to All Metadata mode (force user to select)
@@ -804,6 +819,7 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
       data: {
         username: this.selectedOrg,
         localPackage: this.selectedLocalPackage,
+        useCrudApi: this.useCrudApi,
         metadata: this.selectedRows.map((row) => ({
           memberType: row.MemberType,
           memberName: row.MemberName,
@@ -1011,6 +1027,7 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
       data: {
         username: this.selectedOrg,
         localPackage: this.selectedLocalPackage,
+        useCrudApi: this.useCrudApi,
         memberType: row.MemberType,
         memberName: row.MemberName,
         deleted: row.ChangeIcon === "🔴",

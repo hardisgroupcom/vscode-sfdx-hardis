@@ -171,6 +171,14 @@ Set up scheduled monitoring jobs to track your Salesforce orgs over time: **meta
 
 Results can be pushed to **Slack, MS Teams, Email, Jira, Grafana / Prometheus**, or browsed as Excel reports.
 
+### Data Dictionary
+
+Generate a **Data Dictionary** documenting all your org objects and fields as a navigable Excel workbook: an index sheet listing every object with its label, field count, validation rules, record types and key prefix, plus one detailed sheet per object describing each field (type, required, unique, references, picklist values, default value, formula…).
+
+![Data Dictionary index](https://github.com/hardisgroupcom/vscode-sfdx-hardis/raw/main/docs/assets/images/data-dictionary-index.png)
+
+![Data Dictionary object fields](https://github.com/hardisgroupcom/vscode-sfdx-hardis/raw/main/docs/assets/images/data-dictionary-object-fields.png)
+
 ### Monitoring Config Workbench
 
 Edit triggers, frequency, and notification channels for every monitoring command in a single visual editor - no YAML editing required.

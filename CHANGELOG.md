@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Metadata Retriever: new **Full metadata** toggle to retrieve complete components such as Profiles and Workflows without anything being truncated
+  - Slower than the standard retrieval, so it stays off by default
+  - A notice reminds you that most components retrieved this way can still be deployed with the standard Metadata API, though a few are not supported by Salesforce
+
+## [7.13.0] 2026-06-28
+
+- Add `hardis:doc:data-dictionary` command in Monitoring
+
 ## [7.12.1] 2026-06-23
 
 - Metadata Retriever: the Metadata Type filter is now a searchable combobox — start typing to filter the list instead of scrolling through every type

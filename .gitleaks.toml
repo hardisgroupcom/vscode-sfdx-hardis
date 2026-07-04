@@ -1,0 +1,19 @@
+# Gitleaks configuration for vscode-sfdx-hardis
+# MegaLinter passes this repo-root file to gitleaks via --config.
+# It extends the default gitleaks ruleset and allowlists known false positives.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Allowlisted false positives"
+# The Application Insights telemetry instrumentation key is a public, non-secret
+# identifier intentionally embedded per VS Code telemetry guidelines
+# (https://code.visualstudio.com/api/extension-guides/telemetry).
+# It only routes anonymous telemetry to the publisher's dashboard and grants no access.
+paths = [
+  '''src/extension\.ts''',
+]
+regexes = [
+  '''cf83e6dc-2621-4cb6-b92b-30905d1c8476''',
+]
