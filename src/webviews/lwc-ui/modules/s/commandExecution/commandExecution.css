@@ -194,9 +194,16 @@
 .report-format-dropdown .slds-dropdown__item a {
   padding: 0.5rem 0.75rem;
   text-decoration: none;
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start; /* Override SLDS space-between so label sits next to its icon */
+  text-align: left;
   font-size: 0.875rem;
   line-height: 1.25;
+}
+
+.report-format-dropdown .slds-dropdown__item a .report-dropdown-option-icon {
+  flex-shrink: 0;
 }
 
 .report-format-dropdown .slds-dropdown__item a:hover {

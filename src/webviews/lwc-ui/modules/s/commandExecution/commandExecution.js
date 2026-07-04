@@ -1622,12 +1622,19 @@ ${resultMessage}`;
                 type: f.type,
                 file: f.file,
                 format: f.format,
+                iconName:
+                  f.format === "CSV"
+                    ? "doctype:csv"
+                    : f.format === "XLSX"
+                      ? "doctype:excel"
+                      : "utility:file",
               })),
               {
                 label: this.i18n.openFolderInExplorer,
                 type: folderRefFile.type,
                 file: folderRefFile.file,
                 format: "openFolder",
+                iconName: "utility:open_folder",
               },
             ],
           });
@@ -1661,18 +1668,21 @@ ${resultMessage}`;
               type: f.type,
               file: f.file,
               format: "packagexmlViewer",
+              iconName: "utility:page",
             },
             {
               label: this.i18n.openWithVsCode,
               type: f.type,
               file: f.file,
               format: "packagexmlVsCode",
+              iconName: "utility:open",
             },
             {
               label: this.i18n.openFolderInExplorer,
               type: f.type,
               file: f.file,
               format: "openFolder",
+              iconName: "utility:open_folder",
             },
           ],
         };
@@ -1700,12 +1710,14 @@ ${resultMessage}`;
               type: f.type,
               file: f.file,
               format: "openFileLocal",
+              iconName: "utility:open",
             },
             {
               label: this.i18n.openFolderInExplorer,
               type: f.type,
               file: f.file,
               format: "openFolder",
+              iconName: "utility:open_folder",
             },
           ],
         };
