@@ -1606,18 +1606,26 @@ ${resultMessage}`;
             title: baseTitle,
             type: group.files[0].type, // Use the type from the first file
             isDropdown: true,
-            dropdownOptions: group.files.map((f) => ({
-              label:
-                f.format === "CSV"
-                  ? "CSV"
-                  : f.format === "XLSX"
-                    ? "Excel"
-                    : f.format,
-              value: f.file, // Keep value for compatibility if needed elsewhere
-              type: f.type,
-              file: f.file,
-              format: f.format,
-            })),
+            dropdownOptions: [
+              ...group.files.map((f) => ({
+                label:
+                  f.format === "CSV"
+                    ? "CSV"
+                    : f.format === "XLSX"
+                      ? "Excel"
+                      : f.format,
+                value: f.file, // Keep value for compatibility if needed elsewhere
+                type: f.type,
+                file: f.file,
+                format: f.format,
+              })),
+              {
+                label: this.i18n.openFolderInExplorer,
+                type: group.files[0].type,
+                file: group.files[0].file,
+                format: "openFolder",
+              },
+            ],
           });
         }
       }
@@ -1655,6 +1663,45 @@ ${resultMessage}`;
               type: f.type,
               file: f.file,
               format: "packagexmlVsCode",
+            },
+            {
+              label: this.i18n.openFolderInExplorer,
+              type: f.type,
+              file: f.file,
+              format: "openFolder",
+            },
+          ],
+        };
+      }
+
+      // Handle standalone local report files with a dedicated two-option dropdown
+      // (open file / open containing folder)
+      if (
+        f.type === "report" &&
+        f.file &&
+        !f.file.startsWith("http") &&
+        !f.isDropdown
+      ) {
+        const stableId = `report_${(f.id || f.file || "").replace(/[^a-zA-Z0-9]/g, "")}`;
+        return {
+          ...f,
+          id: stableId,
+          buttonVariant: "success",
+          iconName: "utility:page",
+          iconVariant: "inverse",
+          isDropdown: true,
+          dropdownOptions: [
+            {
+              label: this.i18n.openFile,
+              type: f.type,
+              file: f.file,
+              format: "openFileLocal",
+            },
+            {
+              label: this.i18n.openFolderInExplorer,
+              type: f.type,
+              file: f.file,
+              format: "openFolder",
             },
           ],
         };
@@ -2264,6 +2311,18 @@ ${resultMessage}`;
       window.sendMessageToVSCode({
         type: "openFile",
         data: { filePath },
+      });
+      return;
+    }
+    if (format === "openFolder") {
+      const idx = Math.max(
+        filePath.lastIndexOf("/"),
+        filePath.lastIndexOf("\\"),
+      );
+      const folderPath = idx > 0 ? filePath.substring(0, idx) : filePath;
+      window.sendMessageToVSCode({
+        type: "openFolderInFileManager",
+        data: { folderPath },
       });
       return;
     }

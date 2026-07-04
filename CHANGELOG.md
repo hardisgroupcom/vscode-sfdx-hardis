@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Command results: file buttons now offer an option to open the file's containing folder in the file explorer
 - Metadata Retriever: new **Full metadata** toggle to retrieve complete components such as Profiles and Workflows without anything being truncated
   - Slower than the standard retrieval, so it stays off by default
   - A notice reminds you that most components retrieved this way can still be deployed with the standard Metadata API, though a few are not supported by Salesforce

@@ -4,6 +4,7 @@ import {
   execCommandWithProgress,
   execSfdxJsonWithProgress,
   isWebVsCode,
+  openFolderInExplorer,
 } from "../utils";
 import { Logger } from "../logger";
 import { getAllTranslations, getCurrentLocale, t } from "../i18n/i18n";
@@ -298,6 +299,9 @@ export class LwcUiPanel {
           break;
         case "openFolder":
           await this.handleFolderOpen(data.folderPath);
+          break;
+        case "openFolderInFileManager":
+          await this.handleOpenFolderInFileManager(data.folderPath);
           break;
         case "openExternal":
           await this.handleOpenExternal(data.url || data);
@@ -618,6 +622,31 @@ export class LwcUiPanel {
       Logger.log(`Revealed folder in explorer: ${resolvedPath}`);
     } catch (error) {
       Logger.log("Error revealing folder:\n" + JSON.stringify(error));
+      vscode.window.showErrorMessage(t("failedToOpenFolder", { error }));
+    }
+  }
+
+  /**
+   * Handle request to open a folder in the OS file manager (Explorer/Finder)
+   * @param folderPathInit Path to the folder to open
+   */
+  private async handleOpenFolderInFileManager(
+    folderPathInit: string,
+  ): Promise<void> {
+    try {
+      const resolvedPath = this.resolveWorkspacePath(folderPathInit);
+      const folderUri = vscode.Uri.file(resolvedPath);
+      const stat = await vscode.workspace.fs.stat(folderUri);
+      if (!(stat.type & vscode.FileType.Directory)) {
+        vscode.window.showErrorMessage(
+          t("pathIsNotAFolder", { path: resolvedPath }),
+        );
+        return;
+      }
+      openFolderInExplorer(resolvedPath);
+      Logger.log(`Opened folder in file manager: ${resolvedPath}`);
+    } catch (error) {
+      Logger.log("Error opening folder in file manager:\n" + JSON.stringify(error));
       vscode.window.showErrorMessage(t("failedToOpenFolder", { error }));
     }
   }

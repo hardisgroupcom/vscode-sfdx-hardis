@@ -1256,6 +1256,7 @@
   "openCommandLogFile": "Abrir arquivo de log do comando",
   "openExportJson": "Abrir export.json",
   "openExportJsonInVsCode": "Abrir export.json no VS Code",
+  "openFile": "Abrir arquivo",
   "openFolderInExplorer": "Abrir pasta no explorador",
   "openGit": "Abrir Git",
   "openLabel": "Abrir",
