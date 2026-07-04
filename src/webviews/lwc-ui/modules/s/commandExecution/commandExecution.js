@@ -1650,42 +1650,47 @@ ${resultMessage}`;
     const groupedReports = groupSimilarFiles(reports);
     const groupedDocUrls = groupSimilarFiles(docUrls);
 
+    // Shared "open containing folder in the OS explorer" dropdown option
+    const openFolderOption = (f) => ({
+      label: this.i18n.openFolderInExplorer,
+      type: f.type,
+      file: f.file,
+      format: "openFolder",
+      iconName: "utility:open_folder",
+    });
+
+    // Shared builder for the dropdown result shape (stable id + success button)
+    const buildDropdownResult = (f, idPrefix, dropdownOptions) => ({
+      ...f,
+      id: `${idPrefix}_${(f.id || f.file || "").replace(/[^a-zA-Z0-9]/g, "")}`,
+      buttonVariant: "success",
+      iconName: "utility:page",
+      iconVariant: "inverse",
+      isDropdown: true,
+      dropdownOptions,
+    });
+
     // Map to add button/icon props as before
     const decorate = (f) => {
       // Handle package.xml files with a dedicated two-option dropdown
       if (f.isPackageXml) {
-        const stableId = `packagexml_${(f.id || f.file || "").replace(/[^a-zA-Z0-9]/g, "")}`;
-        return {
-          ...f,
-          id: stableId,
-          buttonVariant: "success",
-          iconName: "utility:page",
-          iconVariant: "inverse",
-          isDropdown: true,
-          dropdownOptions: [
-            {
-              label: this.i18n.openWithPackageXmlViewer,
-              type: f.type,
-              file: f.file,
-              format: "packagexmlViewer",
-              iconName: "utility:page",
-            },
-            {
-              label: this.i18n.openWithVsCode,
-              type: f.type,
-              file: f.file,
-              format: "packagexmlVsCode",
-              iconName: "utility:open",
-            },
-            {
-              label: this.i18n.openFolderInExplorer,
-              type: f.type,
-              file: f.file,
-              format: "openFolder",
-              iconName: "utility:open_folder",
-            },
-          ],
-        };
+        return buildDropdownResult(f, "packagexml", [
+          {
+            label: this.i18n.openWithPackageXmlViewer,
+            type: f.type,
+            file: f.file,
+            format: "packagexmlViewer",
+            iconName: "utility:page",
+          },
+          {
+            label: this.i18n.openWithVsCode,
+            type: f.type,
+            file: f.file,
+            format: "packagexmlVsCode",
+            iconName: "utility:open",
+          },
+          openFolderOption(f),
+        ]);
       }
 
       // Handle standalone local report files with a dedicated two-option dropdown
@@ -1696,31 +1701,16 @@ ${resultMessage}`;
         !f.file.startsWith("http") &&
         !f.isDropdown
       ) {
-        const stableId = `report_${(f.id || f.file || "").replace(/[^a-zA-Z0-9]/g, "")}`;
-        return {
-          ...f,
-          id: stableId,
-          buttonVariant: "success",
-          iconName: "utility:page",
-          iconVariant: "inverse",
-          isDropdown: true,
-          dropdownOptions: [
-            {
-              label: this.i18n.openFile,
-              type: f.type,
-              file: f.file,
-              format: "openFileLocal",
-              iconName: "utility:open",
-            },
-            {
-              label: this.i18n.openFolderInExplorer,
-              type: f.type,
-              file: f.file,
-              format: "openFolder",
-              iconName: "utility:open_folder",
-            },
-          ],
-        };
+        return buildDropdownResult(f, "report", [
+          {
+            label: this.i18n.openFile,
+            type: f.type,
+            file: f.file,
+            format: "openFileLocal",
+            iconName: "utility:open",
+          },
+          openFolderOption(f),
+        ]);
       }
 
       const baseProps = {
