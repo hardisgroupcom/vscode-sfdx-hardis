@@ -1601,6 +1601,10 @@ ${resultMessage}`;
           // Multiple formats, create dropdown
           // Use a stable ID based on the title to prevent issues on re-render
           const stableId = `dropdown_${baseTitle.replace(/[^a-zA-Z0-9]/g, "")}`;
+          // Prefer the Excel file for the "open folder" option so its folder is
+          // revealed (and the Excel file selected); fall back to the first file.
+          const folderRefFile =
+            group.files.find((f) => f.format === "XLSX") || group.files[0];
           result.push({
             id: stableId,
             title: baseTitle,
@@ -1621,8 +1625,8 @@ ${resultMessage}`;
               })),
               {
                 label: this.i18n.openFolderInExplorer,
-                type: group.files[0].type,
-                file: group.files[0].file,
+                type: folderRefFile.type,
+                file: folderRefFile.file,
                 format: "openFolder",
               },
             ],
@@ -2315,14 +2319,11 @@ ${resultMessage}`;
       return;
     }
     if (format === "openFolder") {
-      const idx = Math.max(
-        filePath.lastIndexOf("/"),
-        filePath.lastIndexOf("\\"),
-      );
-      const folderPath = idx > 0 ? filePath.substring(0, idx) : filePath;
+      // Reveal the file in the OS file manager; VS Code opens its parent folder
+      // and pre-selects the file.
       window.sendMessageToVSCode({
         type: "openFolderInFileManager",
-        data: { folderPath },
+        data: { filePath },
       });
       return;
     }

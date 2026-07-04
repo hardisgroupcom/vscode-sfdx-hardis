@@ -4,7 +4,6 @@ import {
   execCommandWithProgress,
   execSfdxJsonWithProgress,
   isWebVsCode,
-  openFolderInExplorer,
 } from "../utils";
 import { Logger } from "../logger";
 import { getAllTranslations, getCurrentLocale, t } from "../i18n/i18n";
@@ -301,7 +300,7 @@ export class LwcUiPanel {
           await this.handleFolderOpen(data.folderPath);
           break;
         case "openFolderInFileManager":
-          await this.handleOpenFolderInFileManager(data.folderPath);
+          await this.handleOpenFolderInFileManager(data.filePath);
           break;
         case "openExternal":
           await this.handleOpenExternal(data.url || data);
@@ -627,26 +626,25 @@ export class LwcUiPanel {
   }
 
   /**
-   * Handle request to open a folder in the OS file manager (Explorer/Finder)
-   * @param folderPathInit Path to the folder to open
+   * Handle request to reveal a file in the OS file manager (Explorer/Finder).
+   * Opens the file's parent folder and pre-selects the file, cross-platform.
+   * @param filePathInit Path to the file to reveal
    */
   private async handleOpenFolderInFileManager(
-    folderPathInit: string,
+    filePathInit: string,
   ): Promise<void> {
     try {
-      const resolvedPath = this.resolveWorkspacePath(folderPathInit);
-      const folderUri = vscode.Uri.file(resolvedPath);
-      const stat = await vscode.workspace.fs.stat(folderUri);
-      if (!(stat.type & vscode.FileType.Directory)) {
-        vscode.window.showErrorMessage(
-          t("pathIsNotAFolder", { path: resolvedPath }),
-        );
-        return;
-      }
-      openFolderInExplorer(resolvedPath);
-      Logger.log(`Opened folder in file manager: ${resolvedPath}`);
+      const resolvedPath = this.resolveWorkspacePath(filePathInit);
+      const fileUri = vscode.Uri.file(resolvedPath);
+      // Ensure the target exists before asking the OS to reveal it
+      await vscode.workspace.fs.stat(fileUri);
+      // revealFileInOS opens the OS file manager and selects the file
+      await vscode.commands.executeCommand("revealFileInOS", fileUri);
+      Logger.log(`Revealed file in OS file manager: ${resolvedPath}`);
     } catch (error) {
-      Logger.log("Error opening folder in file manager:\n" + JSON.stringify(error));
+      Logger.log(
+        "Error revealing file in file manager:\n" + JSON.stringify(error),
+      );
       vscode.window.showErrorMessage(t("failedToOpenFolder", { error }));
     }
   }
