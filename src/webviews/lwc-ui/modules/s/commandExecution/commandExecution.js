@@ -2241,8 +2241,23 @@ ${resultMessage}`;
     const isOpen = container.classList.contains("slds-is-open");
 
     if (!isOpen) {
+      // Open first so the dropdown gets laid out (its height is 0 while the
+      // SLDS trigger is closed), then measure to decide the direction.
       container.classList.add("slds-is-open");
       dropdown.classList.add("slds-is-open");
+
+      // Flip above the button when there is not enough room below it (the panel
+      // scroll area would otherwise clip the dropdown). Done synchronously in
+      // the same tick so the user never sees it open in the wrong direction.
+      const containerRect = container.getBoundingClientRect();
+      const dropdownHeight = dropdown.offsetHeight || 0;
+      const spaceBelow = window.innerHeight - containerRect.bottom;
+      const spaceAbove = containerRect.top;
+      if (spaceBelow < dropdownHeight + 8 && spaceAbove > spaceBelow) {
+        container.classList.add("dropdown-above");
+      } else {
+        container.classList.remove("dropdown-above");
+      }
 
       // Add document listener (use pre-bound reference)
       setTimeout(() => {

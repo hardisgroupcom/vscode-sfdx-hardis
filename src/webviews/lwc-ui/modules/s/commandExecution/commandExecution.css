@@ -150,20 +150,31 @@
 }
 
 /* Reset the dropdown itself, as it's now inside the positioned container */
-.report-format-dropdown {
+.report-dropdown-container .report-format-dropdown {
   min-width: 120px;
 
-  /* Default hidden state (in case wrapper is missing or was removed) */
+  /* Default: open below the button */
   position: absolute;
   left: 0;
+  top: 100%;
+  bottom: auto;
+  margin-top: 4px;
+  margin-bottom: 0;
   z-index: 9999;
   visibility: hidden;
   opacity: 0;
-  transform: translateY(8px);
+  transform: translateY(-8px);
   transition: all 0.12s ease-out;
   pointer-events: none;
+}
+
+/* Flip above the button when there is not enough room below */
+.report-dropdown-container.dropdown-above .report-format-dropdown {
+  top: auto;
   bottom: 100%;
+  margin-top: 0;
   margin-bottom: 4px;
+  transform: translateY(8px);
 }
 
 /* When the dropdown container receives slds-is-open, show the dropdown */
