@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-- Command results: file buttons now offer an option to open the file's containing folder in the file explorer
+- Command results: file buttons now let you open the file's containing folder, opening your system file explorer with the file already selected
+  - When a result offers both CSV and Excel versions, the Excel file's folder is opened
+  - Each option in the file button menu now shows an icon, and the menu stays fully visible instead of being cut off at the bottom of the panel
 - Metadata Retriever: new **Full metadata** toggle to retrieve complete components such as Profiles and Workflows without anything being truncated
   - Slower than the standard retrieval, so it stays off by default
   - A notice reminds you that most components retrieved this way can still be deployed with the standard Metadata API, though a few are not supported by Salesforce
