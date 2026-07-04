@@ -1000,12 +1000,15 @@ export async function promptToDisableTlsIfNeeded(
 
 export function openFolderInExplorer(folderPath: string) {
   const platform = process.platform;
+  // Normalize to platform-specific separators: Windows Explorer only accepts
+  // backslashes and silently falls back to the Documents folder otherwise.
+  const normalizedPath = path.normalize(folderPath);
   if (platform === "win32") {
-    childProcess.exec(`explorer "${folderPath}"`);
+    childProcess.exec(`explorer "${normalizedPath}"`);
   } else if (platform === "darwin") {
-    childProcess.exec(`open "${folderPath}"`);
+    childProcess.exec(`open "${normalizedPath}"`);
   } else if (platform === "linux") {
-    childProcess.exec(`xdg-open "${folderPath}"`);
+    childProcess.exec(`xdg-open "${normalizedPath}"`);
   } else {
     vscode.window.showErrorMessage(`Unsupported platform ${platform}`);
   }

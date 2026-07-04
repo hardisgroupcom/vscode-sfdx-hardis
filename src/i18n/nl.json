@@ -1260,6 +1260,7 @@
   "openCommandLogFile": "Opdrachtlogboekbestand openen",
   "openExportJson": "export.json openen",
   "openExportJsonInVsCode": "export.json openen in VS Code",
+  "openFile": "Bestand openen",
   "openFolderInExplorer": "Map openen in verkenner",
   "openGit": "Git openen",
   "openLabel": "Openen",

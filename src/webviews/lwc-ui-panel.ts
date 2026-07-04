@@ -299,6 +299,9 @@ export class LwcUiPanel {
         case "openFolder":
           await this.handleFolderOpen(data.folderPath);
           break;
+        case "openFolderInFileManager":
+          await this.handleOpenFolderInFileManager(data.filePath);
+          break;
         case "openExternal":
           await this.handleOpenExternal(data.url || data);
           break;
@@ -618,6 +621,30 @@ export class LwcUiPanel {
       Logger.log(`Revealed folder in explorer: ${resolvedPath}`);
     } catch (error) {
       Logger.log("Error revealing folder:\n" + JSON.stringify(error));
+      vscode.window.showErrorMessage(t("failedToOpenFolder", { error }));
+    }
+  }
+
+  /**
+   * Handle request to reveal a file in the OS file manager (Explorer/Finder).
+   * Opens the file's parent folder and pre-selects the file, cross-platform.
+   * @param filePathInit Path to the file to reveal
+   */
+  private async handleOpenFolderInFileManager(
+    filePathInit: string,
+  ): Promise<void> {
+    try {
+      const resolvedPath = this.resolveWorkspacePath(filePathInit);
+      const fileUri = vscode.Uri.file(resolvedPath);
+      // Ensure the target exists before asking the OS to reveal it
+      await vscode.workspace.fs.stat(fileUri);
+      // revealFileInOS opens the OS file manager and selects the file
+      await vscode.commands.executeCommand("revealFileInOS", fileUri);
+      Logger.log(`Revealed file in OS file manager: ${resolvedPath}`);
+    } catch (error) {
+      Logger.log(
+        "Error revealing file in file manager:\n" + JSON.stringify(error),
+      );
       vscode.window.showErrorMessage(t("failedToOpenFolder", { error }));
     }
   }

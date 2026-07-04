@@ -1601,23 +1601,42 @@ ${resultMessage}`;
           // Multiple formats, create dropdown
           // Use a stable ID based on the title to prevent issues on re-render
           const stableId = `dropdown_${baseTitle.replace(/[^a-zA-Z0-9]/g, "")}`;
+          // Prefer the Excel file for the "open folder" option so its folder is
+          // revealed (and the Excel file selected); fall back to the first file.
+          const folderRefFile =
+            group.files.find((f) => f.format === "XLSX") || group.files[0];
           result.push({
             id: stableId,
             title: baseTitle,
             type: group.files[0].type, // Use the type from the first file
             isDropdown: true,
-            dropdownOptions: group.files.map((f) => ({
-              label:
-                f.format === "CSV"
-                  ? "CSV"
-                  : f.format === "XLSX"
-                    ? "Excel"
-                    : f.format,
-              value: f.file, // Keep value for compatibility if needed elsewhere
-              type: f.type,
-              file: f.file,
-              format: f.format,
-            })),
+            dropdownOptions: [
+              ...group.files.map((f) => ({
+                label:
+                  f.format === "CSV"
+                    ? "CSV"
+                    : f.format === "XLSX"
+                      ? "Excel"
+                      : f.format,
+                value: f.file, // Keep value for compatibility if needed elsewhere
+                type: f.type,
+                file: f.file,
+                format: f.format,
+                iconName:
+                  f.format === "CSV"
+                    ? "doctype:csv"
+                    : f.format === "XLSX"
+                      ? "doctype:excel"
+                      : "utility:file",
+              })),
+              {
+                label: this.i18n.openFolderInExplorer,
+                type: folderRefFile.type,
+                file: folderRefFile.file,
+                format: "openFolder",
+                iconName: "utility:open_folder",
+              },
+            ],
           });
         }
       }
@@ -1631,33 +1650,67 @@ ${resultMessage}`;
     const groupedReports = groupSimilarFiles(reports);
     const groupedDocUrls = groupSimilarFiles(docUrls);
 
+    // Shared "open containing folder in the OS explorer" dropdown option
+    const openFolderOption = (f) => ({
+      label: this.i18n.openFolderInExplorer,
+      type: f.type,
+      file: f.file,
+      format: "openFolder",
+      iconName: "utility:open_folder",
+    });
+
+    // Shared builder for the dropdown result shape (stable id + success button)
+    const buildDropdownResult = (f, idPrefix, dropdownOptions) => ({
+      ...f,
+      id: `${idPrefix}_${(f.id || f.file || "").replace(/[^a-zA-Z0-9]/g, "")}`,
+      buttonVariant: "success",
+      iconName: "utility:page",
+      iconVariant: "inverse",
+      isDropdown: true,
+      dropdownOptions,
+    });
+
     // Map to add button/icon props as before
     const decorate = (f) => {
       // Handle package.xml files with a dedicated two-option dropdown
       if (f.isPackageXml) {
-        const stableId = `packagexml_${(f.id || f.file || "").replace(/[^a-zA-Z0-9]/g, "")}`;
-        return {
-          ...f,
-          id: stableId,
-          buttonVariant: "success",
-          iconName: "utility:page",
-          iconVariant: "inverse",
-          isDropdown: true,
-          dropdownOptions: [
-            {
-              label: this.i18n.openWithPackageXmlViewer,
-              type: f.type,
-              file: f.file,
-              format: "packagexmlViewer",
-            },
-            {
-              label: this.i18n.openWithVsCode,
-              type: f.type,
-              file: f.file,
-              format: "packagexmlVsCode",
-            },
-          ],
-        };
+        return buildDropdownResult(f, "packagexml", [
+          {
+            label: this.i18n.openWithPackageXmlViewer,
+            type: f.type,
+            file: f.file,
+            format: "packagexmlViewer",
+            iconName: "utility:page",
+          },
+          {
+            label: this.i18n.openWithVsCode,
+            type: f.type,
+            file: f.file,
+            format: "packagexmlVsCode",
+            iconName: "utility:open",
+          },
+          openFolderOption(f),
+        ]);
+      }
+
+      // Handle standalone local report files with a dedicated two-option dropdown
+      // (open file / open containing folder)
+      if (
+        f.type === "report" &&
+        f.file &&
+        !f.file.startsWith("http") &&
+        !f.isDropdown
+      ) {
+        return buildDropdownResult(f, "report", [
+          {
+            label: this.i18n.openFile,
+            type: f.type,
+            file: f.file,
+            format: "openFileLocal",
+            iconName: "utility:open",
+          },
+          openFolderOption(f),
+        ]);
       }
 
       const baseProps = {
@@ -2190,8 +2243,23 @@ ${resultMessage}`;
     const isOpen = container.classList.contains("slds-is-open");
 
     if (!isOpen) {
+      // Open first so the dropdown gets laid out (its height is 0 while the
+      // SLDS trigger is closed), then measure to decide the direction.
       container.classList.add("slds-is-open");
       dropdown.classList.add("slds-is-open");
+
+      // Flip above the button when there is not enough room below it (the panel
+      // scroll area would otherwise clip the dropdown). Done synchronously in
+      // the same tick so the user never sees it open in the wrong direction.
+      const containerRect = container.getBoundingClientRect();
+      const dropdownHeight = dropdown.offsetHeight || 0;
+      const spaceBelow = window.innerHeight - containerRect.bottom;
+      const spaceAbove = containerRect.top;
+      if (spaceBelow < dropdownHeight + 8 && spaceAbove > spaceBelow) {
+        container.classList.add("dropdown-above");
+      } else {
+        container.classList.remove("dropdown-above");
+      }
 
       // Add document listener (use pre-bound reference)
       setTimeout(() => {
@@ -2263,6 +2331,15 @@ ${resultMessage}`;
     if (format === "packagexmlVsCode") {
       window.sendMessageToVSCode({
         type: "openFile",
+        data: { filePath },
+      });
+      return;
+    }
+    if (format === "openFolder") {
+      // Reveal the file in the OS file manager; VS Code opens its parent folder
+      // and pre-selects the file.
+      window.sendMessageToVSCode({
+        type: "openFolderInFileManager",
         data: { filePath },
       });
       return;

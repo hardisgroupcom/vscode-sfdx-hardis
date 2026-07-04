@@ -1260,6 +1260,7 @@
   "openCommandLogFile": "コマンドログファイルを開く",
   "openExportJson": "export.json を開く",
   "openExportJsonInVsCode": "VS Code で export.json を開く",
+  "openFile": "ファイルを開く",
   "openFolderInExplorer": "エクスプローラーでフォルダーを開く",
   "openGit": "Git を開く",
   "openLabel": "開く",

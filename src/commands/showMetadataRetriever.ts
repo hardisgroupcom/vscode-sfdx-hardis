@@ -434,7 +434,11 @@ function getCrudReadOutcomePayload(result: any): any | null {
   return null;
 }
 
-function toRetrieveFile(item: any, state: "Changed" | "Failed", error?: string) {
+function toRetrieveFile(
+  item: any,
+  state: "Changed" | "Failed",
+  error?: string,
+) {
   return {
     state,
     type: item?.type || item?.memberType || "",
@@ -470,7 +474,9 @@ function normalizeCrudReadResult(result: any): any | null {
     ...skipped.map((item) => toRetrieveFile(item, "Failed", skippedProblem)),
   ];
   const messages = [
-    ...failures.map((item) => toRetrieveMessage(item, "CRUD Metadata API read failed")),
+    ...failures.map((item) =>
+      toRetrieveMessage(item, "CRUD Metadata API read failed"),
+    ),
     ...skipped.map((item) => toRetrieveMessage(item, skippedProblem)),
   ];
 
@@ -562,8 +568,7 @@ async function executeMetadataRetrieve(
           return await execSfdxJson(command, { cwd: workspaceRoot });
         },
       );
-    }
-    else {
+    } else {
       result = {
         status: 0,
         result: { success: true, files: [], messages: [] },
@@ -671,14 +676,12 @@ async function executeMetadataRetrieve(
         !!result.errorMessage;
       if (normalizedCrudResult) {
         result.result = normalizedCrudResult;
-      }
-      else if (crudFailed) {
+      } else if (crudFailed) {
         // Force the shared error branch to surface the CLI error message.
         if (result) {
           result.result = null;
         }
-      }
-      else {
+      } else {
         // Backward-compatible fallback for older command output that does not
         // expose successes/failures/skipped yet.
         const retrievedFiles = expandedList
@@ -748,8 +751,7 @@ async function executeMetadataRetrieve(
     if (!hasItemsToRetrieve) {
       // Only deleted items were processed (handled above) — there is no
       // retrieve/read outcome to report here.
-    }
-    else if (result && result.result) {
+    } else if (result && result.result) {
       const retrieveResult = result.result;
       const success = retrieveResult.success === true;
       const files = retrieveResult.files || [];
@@ -1896,8 +1898,14 @@ async function handleOpenRetrieveFolder() {
 
 async function handleRetrieveMetadata(panel: any, data: any) {
   try {
-    const { username, memberType, memberName, deleted, localPackage, useCrudApi } =
-      data;
+    const {
+      username,
+      memberType,
+      memberName,
+      deleted,
+      localPackage,
+      useCrudApi,
+    } = data;
 
     if (!username || !memberType || !memberName) {
       vscode.window.showErrorMessage(

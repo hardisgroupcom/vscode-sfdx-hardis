@@ -28,7 +28,7 @@
             <span class="slds-text-heading_small">{commandTitle}</span>
             <template if:true={commandLogFile}>
               <lightning-button-icon
-                icon-name="utility:log"
+                icon-name="utility:description"
                 variant="bare"
                 alternative-text={i18n.openCommandLogFile}
                 title={i18n.openCommandLogFile}
@@ -532,12 +532,13 @@
                           <ul class="slds-dropdown__list" role="menu">
                             <template for:each={reportFile.dropdownOptions} for:item="option">
                               <li key={option.type} class="slds-dropdown__item" role="presentation">
-                                <a href="javascript:void(0);" role="menuitem" tabindex="-1" 
-                                   data-type={option.type} 
+                                <a href="javascript:void(0);" role="menuitem" tabindex="-1"
+                                   data-type={option.type}
                                    data-file-path={option.file}
                                    data-format={option.format}
                                    data-report-id={reportFile.id}
                                    onclick={handleReportFileDropdownSelect}>
+                                  <lightning-icon icon-name={option.iconName} size="x-small" class="slds-m-right_x-small report-dropdown-option-icon"></lightning-icon>
                                   <span class="slds-truncate" title={option.label}>{option.label}</span>
                                 </a>
                               </li>

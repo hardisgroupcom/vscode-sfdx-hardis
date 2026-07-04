@@ -1260,6 +1260,7 @@
   "openCommandLogFile": "Befehlsprotokolldatei öffnen",
   "openExportJson": "export.json öffnen",
   "openExportJsonInVsCode": "export.json in VS Code öffnen",
+  "openFile": "Datei öffnen",
   "openFolderInExplorer": "Ordner im Explorer öffnen",
   "openGit": "Git öffnen",
   "openLabel": "Öffnen",
