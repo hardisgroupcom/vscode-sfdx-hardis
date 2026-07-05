@@ -650,3 +650,62 @@ div.slds-scope[data-theme="dark"] {
 .slds-scope[data-theme="dark"] .select-option-label {
     color: #ffffff;
 }
+
+/* ------------------------------------------------------------------ */
+/* Command-result buttons (Actions / Reports / Docs)                  */
+/* Soft, tinted buttons color-coded to the three categories named in  */
+/* the section title. Built on the neutral SLDS button base so they   */
+/* stay readable and theme-aware in both light and dark modes. The    */
+/* palette tokens are light-dark() values, so no per-theme overrides  */
+/* and no hardcoded colors are needed.                                */
+/* ------------------------------------------------------------------ */
+.slds-scope[data-theme] .rf-type-action .slds-button,
+.slds-scope[data-theme] .rf-type-report .slds-button,
+.slds-scope[data-theme] .rf-type-doc .slds-button {
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease,
+    box-shadow 0.12s ease;
+}
+/* Icons follow the button text color for a cohesive per-category tint */
+.slds-scope[data-theme] .rf-type-action .slds-button .slds-button__icon,
+.slds-scope[data-theme] .rf-type-report .slds-button .slds-button__icon,
+.slds-scope[data-theme] .rf-type-doc .slds-button .slds-button__icon {
+  fill: currentColor;
+}
+
+/* Actions: run a command / open a URL -> blue */
+.slds-scope[data-theme] .rf-type-action .slds-button {
+  background: var(--slds-g-color-palette-electric-blue-90);
+  border-color: var(--slds-g-color-palette-electric-blue-40);
+  color: var(--slds-g-color-palette-electric-blue-20);
+}
+.slds-scope[data-theme] .rf-type-action .slds-button:hover,
+.slds-scope[data-theme] .rf-type-action .slds-button:focus {
+  border-color: var(--slds-g-color-palette-electric-blue-30);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14);
+}
+
+/* Reports: generated files -> green */
+.slds-scope[data-theme] .rf-type-report .slds-button {
+  background: var(--slds-g-color-palette-green-90);
+  border-color: var(--slds-g-color-palette-green-40);
+  color: var(--slds-g-color-palette-green-30);
+}
+.slds-scope[data-theme] .rf-type-report .slds-button:hover,
+.slds-scope[data-theme] .rf-type-report .slds-button:focus {
+  border-color: var(--slds-g-color-palette-green-30);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14);
+}
+
+/* Docs: documentation links -> recessive neutral grey */
+.slds-scope[data-theme] .rf-type-doc .slds-button {
+  background: var(--slds-g-color-neutral-base-95);
+  border-color: var(--slds-g-color-neutral-base-60);
+  color: var(--slds-g-color-neutral-base-30);
+}
+.slds-scope[data-theme] .rf-type-doc .slds-button:hover,
+.slds-scope[data-theme] .rf-type-doc .slds-button:focus {
+  border-color: var(--slds-g-color-neutral-base-30);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14);
+}

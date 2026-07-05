@@ -3,6 +3,10 @@
 ## Unreleased
 
 - Command results
+  - Refreshed the report and action buttons at the bottom of the panel for a cleaner, more consistent look
+    - Buttons are now color-coded by what they do: run a command, open a link, open the documentation, or open a generated report file
+    - File format choices (Excel, CSV, package.xml) now show their matching file icon in the button menu
+    - The buttons now follow the VS Code theme correctly in both dark and light modes
   - File buttons now let you open the file's containing folder, opening your system file explorer with the file already selected
     - When a result offers both CSV and Excel versions, the Excel file's folder is opened
     - Each option in the file button menu now shows an icon, and the menu stays fully visible instead of being cut off at the bottom of the panel

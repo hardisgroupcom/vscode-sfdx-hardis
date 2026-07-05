@@ -64,9 +64,6 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
       }
       this.scrollToBottom();
     }, 100);
-
-    // Bind document click handler once so we can remove the exact same reference later
-    this._boundHandleDocumentClick = this.handleDocumentClick.bind(this);
   }
 
   renderedCallback() {
@@ -97,10 +94,6 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
     if (this.embeddedPromptListener) {
       this.removeEventListener("promptsubmit", this.embeddedPromptListener);
       this.removeEventListener("promptexit", this.embeddedPromptListener);
-    }
-
-    if (this._boundHandleDocumentClick) {
-      document.removeEventListener("click", this._boundHandleDocumentClick);
     }
   }
 
@@ -1659,13 +1652,46 @@ ${resultMessage}`;
       iconName: "utility:open_folder",
     });
 
-    // Shared builder for the dropdown result shape (stable id + success button)
+    // The buttons at the bottom of a command result are color-coded to the three
+    // categories named in the section title ("Actions, Reports, Docs"). Every button
+    // uses the neutral SLDS base (already theme-aware) and is given a soft, tinted
+    // look by category via a CSS class in global-theme.css, so contrast stays correct
+    // in both VS Code dark and light modes (no hardcoded colors here):
+    //  - action (run a command / open a URL) -> blue
+    //  - report (generated file)             -> green
+    //  - doc (documentation link)            -> recessive grey
+    const iconForType = (type) => {
+      switch (type) {
+        case "actionCommand":
+          return "utility:play";
+        case "actionUrl":
+          return "utility:new_window";
+        case "docUrl":
+          return "utility:info";
+        default:
+          return "utility:page"; // report and anything else
+      }
+    };
+    const wrapperClassForType = (type) => {
+      const category =
+        type === "docUrl"
+          ? "rf-type-doc"
+          : type === "report"
+            ? "rf-type-report"
+            : "rf-type-action"; // actionCommand, actionUrl
+      return `report-file-btn-wrapper ${category}`;
+    };
+
+    // Shared builder for the split-button shape (stable id + a menu that pairs with
+    // the main button in a button-group). Both parts use the neutral base and get
+    // their category tint from the wrapper class.
     const buildDropdownResult = (f, idPrefix, dropdownOptions) => ({
       ...f,
       id: `${idPrefix}_${(f.id || f.file || "").replace(/[^a-zA-Z0-9]/g, "")}`,
-      buttonVariant: "success",
-      iconName: "utility:page",
-      iconVariant: "inverse",
+      buttonVariant: "neutral",
+      menuVariant: "border-filled",
+      iconName: iconForType(f.type),
+      wrapperClass: wrapperClassForType(f.type),
       isDropdown: true,
       dropdownOptions,
     });
@@ -1680,7 +1706,7 @@ ${resultMessage}`;
             type: f.type,
             file: f.file,
             format: "packagexmlViewer",
-            iconName: "utility:page",
+            iconName: "doctype:xml",
           },
           {
             label: this.i18n.openWithVsCode,
@@ -1715,28 +1741,14 @@ ${resultMessage}`;
 
       const baseProps = {
         ...f,
-        buttonVariant:
-          f.type === "actionCommand"
-            ? "brand"
-            : f.type === "actionUrl"
-              ? "brand"
-              : f.type === "docUrl"
-                ? "outline-brand"
-                : "success",
-        iconName:
-          f.type === "actionCommand"
-            ? "utility:play"
-            : f.type === "actionUrl"
-              ? "utility:link"
-              : f.type === "docUrl"
-                ? "utility:info"
-                : "utility:page",
-        iconVariant: f.type === "docUrl" ? "brand" : "inverse",
+        buttonVariant: "neutral",
+        iconName: iconForType(f.type),
+        wrapperClass: wrapperClassForType(f.type),
       };
 
-      // Add dropdown-specific properties
+      // Menu button that pairs with the main button in the split button-group.
       if (f.isDropdown) {
-        baseProps.dropdownOptionsJson = JSON.stringify(f.dropdownOptions);
+        baseProps.menuVariant = "border-filled";
       }
 
       return baseProps;
@@ -2210,128 +2222,60 @@ ${resultMessage}`;
     }
   }
 
-  // Replace the dropdown toggle handler with a more defensive implementation
-  handleReportDropdownToggle(event) {
-    // Handle click on multi-format report button to toggle dropdown
-    event.stopPropagation();
-
-    // Defensive reportId resolution (lightning-button wraps the real button)
-    const reportId =
-      (event.currentTarget &&
-        event.currentTarget.dataset &&
-        event.currentTarget.dataset.reportId) ||
-      (event.target && event.target.dataset && event.target.dataset.reportId) ||
-      (event.target &&
-        event.target.closest &&
-        event.target.closest("[data-report-id]") &&
-        event.target.closest("[data-report-id]").dataset.reportId);
-
-    if (!reportId) return;
-
-    // Close any other open dropdowns
-    this.closeAllDropdowns();
-
-    const container = this.template.querySelector(
-      `[data-report-id="${reportId}"].report-dropdown-container`,
-    );
-    const dropdown = this.template.querySelector(
-      `[data-report-id="${reportId}"].report-format-dropdown`,
-    );
-
-    if (!container || !dropdown) return;
-
-    const isOpen = container.classList.contains("slds-is-open");
-
-    if (!isOpen) {
-      // Open first so the dropdown gets laid out (its height is 0 while the
-      // SLDS trigger is closed), then measure to decide the direction.
-      container.classList.add("slds-is-open");
-      dropdown.classList.add("slds-is-open");
-
-      // Flip above the button when there is not enough room below it (the panel
-      // scroll area would otherwise clip the dropdown). Done synchronously in
-      // the same tick so the user never sees it open in the wrong direction.
-      const containerRect = container.getBoundingClientRect();
-      const dropdownHeight = dropdown.offsetHeight || 0;
-      const spaceBelow = window.innerHeight - containerRect.bottom;
-      const spaceAbove = containerRect.top;
-      if (spaceBelow < dropdownHeight + 8 && spaceAbove > spaceBelow) {
-        container.classList.add("dropdown-above");
-      } else {
-        container.classList.remove("dropdown-above");
-      }
-
-      // Add document listener (use pre-bound reference)
-      setTimeout(() => {
-        document.addEventListener("click", this._boundHandleDocumentClick);
-      }, 0);
-    } else {
-      // Close it
-      container.classList.remove("slds-is-open");
-      dropdown.classList.remove("slds-is-open");
-      if (this._boundHandleDocumentClick) {
-        document.removeEventListener("click", this._boundHandleDocumentClick);
-      }
-    }
-  }
-
+  // Click on the primary (left) part of the split button: run the default option
+  // (Excel if present, otherwise the first option).
   handleDropdownMainButtonClick(event) {
-    // Handle click on the main button part of a dropdown button - open Excel by default
-    event.stopPropagation();
-
     const reportId = event.currentTarget.dataset.reportId;
-    if (!reportId) return;
+    if (!reportId) {
+      return;
+    }
 
-    // Find the report file by ID
     const reportFile = this.sortedReportFiles.find((f) => f.id === reportId);
-    if (!reportFile || !reportFile.isDropdown) return;
+    if (!reportFile || !reportFile.isDropdown) {
+      return;
+    }
 
     // Look for Excel/XLSX option first, fallback to first option
-    let targetOption = reportFile.dropdownOptions.find(
-      (opt) => opt.format === "XLSX",
-    );
-    if (!targetOption) {
-      targetOption = reportFile.dropdownOptions[0];
-    }
-
-    if (targetOption) {
-      // Open with PackageXML viewer
-      if (targetOption.format === "packagexmlViewer") {
-        window.sendMessageToVSCode({
-          type: "openPackageXmlViewer",
-          data: { filePath: targetOption.file },
-        });
-      } else {
-        // Trigger the same file opening logic as dropdown selection
-        this.handleReportFileAction(targetOption.file, targetOption.label);
-      }
-    }
+    const targetOption =
+      reportFile.dropdownOptions.find((opt) => opt.format === "XLSX") ||
+      reportFile.dropdownOptions[0];
+    this._dispatchReportOption(targetOption);
   }
 
-  handleReportFileDropdownSelect(event) {
-    // Handle selection from dropdown
-    event.preventDefault();
-    event.stopPropagation();
-
-    const filePath = event.currentTarget.dataset.filePath;
+  // Selection from the native SLDS button-menu (chevron part of the split button).
+  handleReportMenuSelect(event) {
     const reportId = event.currentTarget.dataset.reportId;
-    const format = event.currentTarget.dataset.format;
+    const selectedFormat = event.detail.value;
 
-    // Close the dropdown
-    this.closeAllDropdowns();
+    const reportFile = this.sortedReportFiles.find((f) => f.id === reportId);
+    if (!reportFile || !reportFile.dropdownOptions) {
+      return;
+    }
 
-    // Route directly by format for packageXml options (both share the same file path)
+    const selectedOption = reportFile.dropdownOptions.find(
+      (option) => option.format === selectedFormat,
+    );
+    this._dispatchReportOption(selectedOption);
+  }
+
+  // Route a chosen report option to the right VS Code action based on its format.
+  _dispatchReportOption(option) {
+    if (!option) {
+      return;
+    }
+    const { format, file } = option;
+
     if (format === "packagexmlViewer") {
       window.sendMessageToVSCode({
         type: "openPackageXmlViewer",
-        data: { filePath },
+        data: { filePath: file },
       });
       return;
     }
     if (format === "packagexmlVsCode") {
       window.sendMessageToVSCode({
         type: "openFile",
-        data: { filePath },
+        data: { filePath: file },
       });
       return;
     }
@@ -2340,69 +2284,13 @@ ${resultMessage}`;
       // and pre-selects the file.
       window.sendMessageToVSCode({
         type: "openFolderInFileManager",
-        data: { filePath },
+        data: { filePath: file },
       });
       return;
     }
 
-    // Find the parent report file group from the memoized/stable sortedReportFiles
-    const parentReportFile = this.sortedReportFiles.find(
-      (rf) => rf.id === reportId,
-    );
-    if (!parentReportFile) {
-      return;
-    }
-
-    // Find the specific selected option from the dropdown
-    const selectedOption = parentReportFile.dropdownOptions.find(
-      (option) => option.file === filePath,
-    );
-    if (!selectedOption) {
-      return;
-    }
-
-    // Use the common action handler
-    this.handleReportFileAction(selectedOption.file, selectedOption.label);
-  }
-
-  handleDocumentClick(event) {
-    // Close dropdowns when clicking outside
-    const dropdownContainers = this.template.querySelectorAll(
-      ".report-dropdown-container",
-    );
-    let clickedInside = false;
-
-    dropdownContainers.forEach((container) => {
-      if (container.contains(event.target)) {
-        clickedInside = true;
-      }
-    });
-
-    if (!clickedInside) {
-      this.closeAllDropdowns();
-    }
-  }
-
-  closeAllDropdowns() {
-    // Close all open dropdowns
-    const containers = this.template.querySelectorAll(
-      ".report-dropdown-container",
-    );
-    const dropdowns = this.template.querySelectorAll(".report-format-dropdown");
-
-    containers.forEach((container) => {
-      container.classList.remove("slds-is-open");
-      container.classList.remove("dropdown-above"); // Clean up positioning class
-    });
-
-    dropdowns.forEach((dropdown) => {
-      dropdown.classList.remove("slds-is-open");
-    });
-
-    // Remove document click listener (use bound reference)
-    if (this._boundHandleDocumentClick) {
-      document.removeEventListener("click", this._boundHandleDocumentClick);
-    }
+    // Default: open (or download) the report file itself
+    this.handleReportFileAction(file, option.label);
   }
 
   handleReportFileAction(filePath, label) {
