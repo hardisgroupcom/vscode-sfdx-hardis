@@ -7,11 +7,7 @@ import { CacheManager } from "./cache-manager";
 import { Logger } from "../logger";
 
 export type MonitoringFrequency =
-  | "daily"
-  | "weekly"
-  | "biweekly"
-  | "monthly"
-  | "off";
+  "daily" | "weekly" | "biweekly" | "monthly" | "off";
 
 export type Weekday =
   | "monday"
@@ -23,13 +19,7 @@ export type Weekday =
   | "sunday";
 
 export type NotificationThreshold =
-  | "critical"
-  | "error"
-  | "warning"
-  | "info"
-  | "success"
-  | "log"
-  | "off";
+  "critical" | "error" | "warning" | "info" | "success" | "log" | "off";
 
 export type NotificationChannel = "messaging" | "email" | "api";
 

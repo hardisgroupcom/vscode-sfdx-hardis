@@ -498,7 +498,7 @@
             <div class="section-logs slds-m-top_x-small slds-m-left_medium slds-m-right_x-small slds-m-bottom_x-small">
               <div class="report-files-flex-container">
                 <template for:each={sortedReportFiles} for:item="reportFile">
-                  <div key={reportFile.id} class="report-file-btn-wrapper">
+                  <div key={reportFile.id} class={reportFile.wrapperClass}>
                     <!-- Regular button for single files -->
                     <template if:false={reportFile.isDropdown}>
                       <lightning-button
@@ -511,41 +511,37 @@
                         title={reportFile.title}
                       ></lightning-button>
                     </template>
-                    
-                    <!-- Real button for multiple format files -->
+
+                    <!-- Native SLDS split button: primary action + format/actions menu -->
                     <template if:true={reportFile.isDropdown}>
-                      <div class="slds-dropdown-trigger slds-dropdown-trigger_click report-dropdown-container" data-report-id={reportFile.id}>
-                        <div class="report-button-with-dropdown">
-                          <lightning-button
-                            label={reportFile.title}
-                            variant={reportFile.buttonVariant}
-                            icon-name={reportFile.iconName}
-                            icon-position="left"
-                            onclick={handleDropdownMainButtonClick}
-                            data-report-id={reportFile.id}
-                            title={reportFile.title}
-                            class="report-dropdown-button"
-                          ></lightning-button>
-                          <span class="dropdown-indicator" onclick={handleReportDropdownToggle} data-report-id={reportFile.id}>⏷</span>
-                        </div>
-                        <div class="slds-dropdown slds-dropdown_left report-format-dropdown" data-report-id={reportFile.id}>
-                          <ul class="slds-dropdown__list" role="menu">
-                            <template for:each={reportFile.dropdownOptions} for:item="option">
-                              <li key={option.type} class="slds-dropdown__item" role="presentation">
-                                <a href="javascript:void(0);" role="menuitem" tabindex="-1"
-                                   data-type={option.type}
-                                   data-file-path={option.file}
-                                   data-format={option.format}
-                                   data-report-id={reportFile.id}
-                                   onclick={handleReportFileDropdownSelect}>
-                                  <lightning-icon icon-name={option.iconName} size="x-small" class="slds-m-right_x-small report-dropdown-option-icon"></lightning-icon>
-                                  <span class="slds-truncate" title={option.label}>{option.label}</span>
-                                </a>
-                              </li>
-                            </template>
-                          </ul>
-                        </div>
-                      </div>
+                      <lightning-button-group>
+                        <lightning-button
+                          label={reportFile.title}
+                          variant={reportFile.buttonVariant}
+                          icon-name={reportFile.iconName}
+                          icon-position="left"
+                          onclick={handleDropdownMainButtonClick}
+                          data-report-id={reportFile.id}
+                          title={reportFile.title}
+                        ></lightning-button>
+                        <lightning-button-menu
+                          variant={reportFile.menuVariant}
+                          menu-alignment="bottom-right"
+                          alternative-text={i18n.moreOptions}
+                          title={i18n.moreOptions}
+                          data-report-id={reportFile.id}
+                          onselect={handleReportMenuSelect}
+                        >
+                          <template for:each={reportFile.dropdownOptions} for:item="option">
+                            <lightning-menu-item
+                              key={option.format}
+                              value={option.format}
+                              label={option.label}
+                              prefix-icon-name={option.iconName}
+                            ></lightning-menu-item>
+                          </template>
+                        </lightning-button-menu>
+                      </lightning-button-group>
                     </template>
                   </div>
                 </template>
