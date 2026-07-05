@@ -2,11 +2,7 @@ import { PrePostCommand } from "../prePostCommandsUtils";
 import { Ticket } from "../ticketProviders/types";
 
 export type ProviderName =
-  | "gitlab"
-  | "github"
-  | "azure"
-  | "bitbucket"
-  | "gitea";
+  "gitlab" | "github" | "azure" | "bitbucket" | "gitea";
 
 /**
  * An access token the user can create on a git provider to authenticate the extension.
@@ -49,11 +45,7 @@ export type PullRequestStatus = "open" | "closed" | "merged" | "declined";
 
 // Job run status for CI workflows associated with a pull request commit
 export type JobStatus =
-  | "running"
-  | "success"
-  | "failed"
-  | "pending"
-  | "unknown";
+  "running" | "success" | "failed" | "pending" | "unknown";
 
 export type Job = {
   // job identifier/name (e.g. workflow name or job name)
