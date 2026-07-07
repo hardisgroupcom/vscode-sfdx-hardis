@@ -1119,9 +1119,7 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
           {
             id: "question",
             label: t("postIssueOnGithub"),
-            command: `vscode-sfdx-hardis.openExternal ${vscode.Uri.parse(
-              "https://github.com/hardisgroupcom/sfdx-hardis/issues",
-            )}`,
+            command: "vscode-sfdx-hardis.postIssueOnGithub",
           },
           {
             id: "hardis",

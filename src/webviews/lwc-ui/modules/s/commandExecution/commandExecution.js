@@ -682,6 +682,7 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
       isQuestion: logData.isQuestion || false,
       isAnswer: this.isWaitingForAnswer,
       isQuery: logData.isQuery || false,
+      alwaysVisible: logData.alwaysVisible || false,
     };
 
     // Detect if this is a sub-command and determine its running state
@@ -847,6 +848,8 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
       hasError: false,
       isQuestion: actionLog.isQuestion || false,
       hasCopyTokens: this.containsCopyMarkup(actionLog.message),
+      // An action flagged alwaysVisible keeps its own section expanded even when new sections open
+      alwaysVisible: actionLog.alwaysVisible === true,
     };
 
     // Collapse the previous section if it's not a question
@@ -856,6 +859,7 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
         previousSection &&
         !previousSection.isQuestion &&
         !previousSection.hasCopyTokens &&
+        !previousSection.alwaysVisible &&
         previousSection.type !== "diff"
       ) {
         previousSection.isExpanded = false;
@@ -888,6 +892,11 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
     // If this section contains copy values, keep it expanded by default
     if (this.containsCopyMarkup(formattedLog.message)) {
       this.currentSection.hasCopyTokens = true;
+    }
+
+    // A non-action log flagged alwaysVisible keeps its enclosing section expanded by default
+    if (logLine.alwaysVisible === true) {
+      this.currentSection.alwaysVisible = true;
     }
 
     this.currentSection.logs = [...this.currentSection.logs, formattedLog];
@@ -1364,6 +1373,9 @@ ${resultMessage}`;
       // By default, question sections and progress sections are expanded, but user can collapse them
       if (this.userSectionExpandState.hasOwnProperty(section.id)) {
         isExpanded = this.userSectionExpandState[section.id];
+      } else if (section.alwaysVisible) {
+        // Sections explicitly flagged alwaysVisible stay open in both simple and advanced modes
+        isExpanded = true;
       } else if (section.isQuestion) {
         isExpanded = true;
       } else if (isProgress) {

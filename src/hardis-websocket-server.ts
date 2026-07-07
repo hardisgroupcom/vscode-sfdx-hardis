@@ -212,6 +212,7 @@ export class LocalWebSocketServer {
             message: data.message,
             timestamp: new Date(),
             isQuestion: data.isQuestion || false,
+            alwaysVisible: data.alwaysVisible || false,
           },
         });
       }
@@ -423,6 +424,18 @@ export class LocalWebSocketServer {
             vscode.commands.executeCommand("markdown.showPreview", doc);
           });
         }
+      });
+    }
+    // Request the extension version (used by "sf hardis:doctor").
+    // Answered regardless of userInput mode, as the command can run outside the LWC UI.
+    else if (data.event === "getExtensionVersion") {
+      const ext = vscode.extensions.getExtension(
+        "NicolasVuillamy.vscode-sfdx-hardis",
+      );
+      const extensionVersion = ext?.packageJSON?.version ?? "unknown";
+      this.sendResponse(ws, {
+        event: "extensionVersionResponse",
+        extensionVersion,
       });
     }
     // Request user input

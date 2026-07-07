@@ -245,7 +245,7 @@
   "connectedTo": "{{platform}} に接続済み",
   "connectedToProviderAction": "{{providerName}} に接続済みです。何を行いますか？",
   "contactUs": "お問い合わせ",
-  "contactUsForHelp": "サポートが必要な場合はお問い合わせください 🤗",
+  "contactUsForHelp": "Cloudity のサポートを受ける 🤗",
   "copiedLabel": "コピーしました！",
   "copiedToClipboard": "クリップボードにコピーしました。",
   "copyFromBranch": "別のブランチからコピー",
