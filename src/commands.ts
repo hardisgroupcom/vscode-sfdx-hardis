@@ -4,7 +4,7 @@ import { HardisCommandsProvider } from "./hardis-commands-provider";
 import { HardisStatusProvider } from "./hardis-status-provider";
 import { HardisPluginsProvider } from "./hardis-plugins-provider";
 import { LocalWebSocketServer } from "./hardis-websocket-server";
-import { openFolderInExplorer, resetCache } from "./utils";
+import { execCommand, openFolderInExplorer, resetCache } from "./utils";
 import TelemetryReporter from "@vscode/extension-telemetry";
 import { CommandRunner } from "./command-runner";
 import { runSalesforceCliMcpServer } from "./utils/mcpUtils";
@@ -75,6 +75,7 @@ export class Commands {
     this.registerOpenPluginHelp();
     this.registerShowMessage();
     this.registerSelectExtensionTheme();
+    this.registerPostIssueOnGithub();
     this.registerSimulateDeployment();
     this.registerGeneratePackageXmlDoc();
     this.registerGenerateFlowDocumentation();
@@ -314,6 +315,47 @@ export class Commands {
       "vscode-sfdx-hardis.selectExtensionTheme",
       async () => {
         await ThemeUtils.promptUpdateConfiguration();
+      },
+    );
+    this.disposables.push(disposable);
+  }
+
+  registerPostIssueOnGithub() {
+    // "Post an issue on GitHub" menu entry.
+    // Prefer running "sf hardis:doctor", which collects diagnostics and guides
+    // the user to open a well-formed GitHub issue. When the sfdx-hardis plugin
+    // is not installed (so the command cannot run), fall back to opening the
+    // GitHub issues page directly in the browser.
+    const disposable = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.postIssueOnGithub",
+      async () => {
+        const issuesUrl =
+          "https://github.com/hardisgroupcom/sfdx-hardis/issues";
+        let isSfdxHardisInstalled: boolean;
+        try {
+          const sfPluginsResult = await execCommand("sf plugins", {
+            output: true,
+            fail: false,
+            cacheSection: "app",
+            cacheExpiration: 1000 * 60 * 60 * 24, // 1 day
+          });
+          isSfdxHardisInstalled = (sfPluginsResult?.stdout || "").includes(
+            "sfdx-hardis",
+          );
+        } catch {
+          isSfdxHardisInstalled = false;
+        }
+        if (isSfdxHardisInstalled) {
+          vscode.commands.executeCommand(
+            "vscode-sfdx-hardis.execute-command",
+            "sf hardis:doctor",
+          );
+        } else {
+          vscode.commands.executeCommand(
+            "vscode-sfdx-hardis.openExternal",
+            vscode.Uri.parse(issuesUrl),
+          );
+        }
       },
     );
     this.disposables.push(disposable);
