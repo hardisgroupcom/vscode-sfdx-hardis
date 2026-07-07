@@ -331,7 +331,7 @@ export class Commands {
       async () => {
         const issuesUrl =
           "https://github.com/hardisgroupcom/sfdx-hardis/issues";
-        let isSfdxHardisInstalled = false;
+        let isSfdxHardisInstalled: boolean;
         try {
           const sfPluginsResult = await execCommand("sf plugins", {
             output: true,
