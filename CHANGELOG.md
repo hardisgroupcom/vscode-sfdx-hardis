@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [7.15.0] 2026-07-12
+
 - Help menu
   - The **Post an issue on GitHub** entry now runs `sf hardis:doctor`, which collects diagnostics to help you open a well-formed issue, and falls back to opening the GitHub issues page in your browser when sfdx-hardis is not installed
   - Renamed the **Contact us to get help** entry to **Get assistance from Cloudity**
