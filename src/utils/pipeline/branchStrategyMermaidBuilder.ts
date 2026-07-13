@@ -209,9 +209,12 @@ export class BranchStrategyMermaidBuilder {
           (b) => b.branchName === pullRequest.sourceBranch,
         )
       ) {
+        // Use the same level as the lowest leaf branch so that feature branches
+        // are grouped with (and, thanks to branchTypeOrder, displayed before)
+        // any major "leaf" branch sitting at the same level (e.g. UatPermSet).
         const level =
           noMergeTargetBranchAndOrg.length > 0
-            ? Math.min(...noMergeTargetBranchAndOrg.map((b) => b.level)) + 1
+            ? Math.min(...noMergeTargetBranchAndOrg.map((b) => b.level))
             : 50;
         const nodeName =
           this.sanitizeNodeName(pullRequest.sourceBranch) + "Branch"; // + "Branch" + (this.featureBranchNb + 1);
@@ -222,6 +225,7 @@ export class BranchStrategyMermaidBuilder {
           class: "gitFeature",
           level: level,
           group: pullRequest.sourceBranch,
+          createdAt: pullRequest.createdAt,
         });
         const prLinkLabel =
           pullRequest.number || pullRequest.id
@@ -262,9 +266,18 @@ export class BranchStrategyMermaidBuilder {
     // }
 
     // Sort branches & links
+    // Within the same level, display feature branches before major/main branches.
+    // Feature branches are then ordered by PR creation date (ascending); other
+    // branches fall through to an alphabetical order by name.
     this.gitBranches = sortArray(this.gitBranches, {
-      by: ["level", "name"],
-      order: ["asc", "asc"],
+      by: ["level", "branchTypeOrder", "featureCreatedAt", "name"],
+      order: ["asc", "asc", "asc", "asc"],
+      computed: {
+        branchTypeOrder: (branch: any) =>
+          branch.class === "gitFeature" ? 0 : 1,
+        featureCreatedAt: (branch: any) =>
+          branch.class === "gitFeature" ? branch.createdAt || "" : "",
+      },
     });
     this.gitLinks = sortArray(this.gitLinks, {
       by: ["level", "source"],

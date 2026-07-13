@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- DevOps Pipeline
+  - When feature branches and major branches sit at the same level, feature branches are now displayed before the major branches
+  - Feature branches at the same level are now ordered by their pull request creation date, from oldest to newest
+  - Fixed the pipeline sometimes showing "No pipeline configured" even though branch configuration files exist, when the workspace was not opened from its own directory
+
 ## [7.15.0] 2026-07-12
 
 - Help menu

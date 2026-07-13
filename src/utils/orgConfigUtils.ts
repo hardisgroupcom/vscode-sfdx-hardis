@@ -118,7 +118,14 @@ async function processOrgSfdxHardisConfigFile(
   options: { browseGitProvider: boolean },
   orgAuthenticationMode: string = "encryptedCert",
 ): Promise<MajorOrg | null> {
-  const props = (yaml.load(fs.readFileSync(configFile, "utf-8")) || {}) as any;
+  // `configFile` is workspace-relative (glob ran with cwd: workspaceRoot), so it
+  // must be resolved against workspaceRoot rather than process.cwd() — the two
+  // differ when the workspace was not opened from its own directory (e.g. the
+  // Extension Development Host), which otherwise makes every read fail and the
+  // pipeline wrongly appear as "not configured".
+  const props = (yaml.load(
+    fs.readFileSync(path.join(workspaceRoot, configFile), "utf-8"),
+  ) || {}) as any;
   const branchNameRegex = /\.sfdx-hardis\.(.*)\.yml/gi;
   const m = branchNameRegex.exec(configFile);
   if (!m) {
