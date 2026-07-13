@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-- DevOps Pipeline
+## [7.16.0] 2026-07-13
+
+- DevOps Pipeline visual enhancements
   - When feature branches and major branches sit at the same level, feature branches are now displayed before the major branches
   - Feature branches at the same level are now ordered by their pull request creation date, from oldest to newest
   - When more than 3 feature branches target the same major branch, the older ones are now folded into a single **+N more** node, shown below the individual feature branches, to keep the diagram readable
