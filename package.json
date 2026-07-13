@@ -175,6 +175,12 @@
           "default": false,
           "description": "Display feature branches in the DevOps Pipeline diagram"
         },
+        "vsCodeSfdxHardis.pipelineFeatureBranchGroupThreshold": {
+          "type": "integer",
+          "default": 3,
+          "minimum": 0,
+          "description": "In the DevOps Pipeline diagram, when more than this number of feature branches target the same major branch, the older ones are folded into a single \"+N more\" node. Set to a very high value to disable grouping."
+        },
         "vsCodeSfdxHardis.showCommandsDetails": {
           "type": "boolean",
           "default": false,
