@@ -5,6 +5,12 @@
 - DevOps Pipeline
   - When feature branches and major branches sit at the same level, feature branches are now displayed before the major branches
   - Feature branches at the same level are now ordered by their pull request creation date, from oldest to newest
+  - When more than 3 feature branches target the same major branch, the older ones are now folded into a single **+N more** node, shown below the individual feature branches, to keep the diagram readable
+    - Clicking the **+N more** node, or the link joining it to the major branch, opens a modal listing all the pull requests targeting that branch, with a column showing each pull request's job status
+    - The folded link turns red with animated dashes when any of the folded pull requests has a running or pending job
+    - The number of feature branches kept visible is configurable with the new **Pipeline Feature Branch Group Threshold** setting (default 3), available in the extension settings under a new **Pipeline** section
+  - Clicking an individual feature branch now opens its pull request in the Pull Requests tab (with its job status), instead of an empty modal
+  - The single pull request and **+N more** group modals now show a clickable job status column (same emoji as the diagram) that opens the related job or pull request, and no longer display the Tickets and Deployment Actions tabs since they are always empty in that context
   - Fixed the pipeline sometimes showing "No pipeline configured" even though branch configuration files exist, when the workspace was not opened from its own directory
 
 ## [7.15.0] 2026-07-12
