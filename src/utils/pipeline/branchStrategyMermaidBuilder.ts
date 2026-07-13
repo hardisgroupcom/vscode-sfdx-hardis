@@ -5,6 +5,28 @@ import { PullRequest, JobStatus } from "../gitProviders/types";
 import { GitProvider } from "../gitProviders/gitProvider";
 import { t } from "../../i18n/i18n";
 
+/**
+ * Describes a "+N more" node that folds the older feature branches targeting a
+ * given major branch when they exceed the configured threshold. Exposed to the
+ * pipeline webview so a click on the group node or its link can open a modal
+ * listing the related pull requests.
+ */
+export interface FeatureBranchGroup {
+  nodeName: string;
+  targetBranch: string;
+  foldedCount: number;
+  hasPendingJob: boolean;
+  // All pull requests targeting this major branch (folded + still visible)
+  pullRequests: PullRequest[];
+  // Index of the aggregated link among the rendered edges (declaration order),
+  // used by the webview to bind a click handler on the corresponding SVG path.
+  edgeIndex: number;
+}
+
+// Default number of feature branches per target branch above which the older
+// ones are folded into a single "+N more" group node.
+export const DEFAULT_FEATURE_BRANCH_GROUP_THRESHOLD = 3;
+
 export class BranchStrategyMermaidBuilder {
   private isAuthenticated: boolean = false;
   private gitProvider: GitProvider | null = null;
@@ -19,6 +41,9 @@ export class BranchStrategyMermaidBuilder {
   private retrofitLinks: any[] = [];
   private mermaidLines: string[] = [];
   private colorTheme: string = "light";
+  private featureBranchGroupThreshold: number =
+    DEFAULT_FEATURE_BRANCH_GROUP_THRESHOLD;
+  private featureBranchGroups: FeatureBranchGroup[] = [];
 
   constructor(
     branchesAndOrgs: any[],
@@ -26,12 +51,26 @@ export class BranchStrategyMermaidBuilder {
     openPullRequests: PullRequest[] = [],
     gitProvider: GitProvider | null = null,
     colorTheme: string = "light",
+    featureBranchGroupThreshold: number = DEFAULT_FEATURE_BRANCH_GROUP_THRESHOLD,
   ) {
     this.branchesAndOrgs = branchesAndOrgs;
     this.openPullRequests = openPullRequests;
     this.isAuthenticated = isAuthenticated;
     this.gitProvider = gitProvider;
     this.colorTheme = colorTheme;
+    this.featureBranchGroupThreshold =
+      typeof featureBranchGroupThreshold === "number" &&
+      featureBranchGroupThreshold >= 0
+        ? featureBranchGroupThreshold
+        : DEFAULT_FEATURE_BRANCH_GROUP_THRESHOLD;
+  }
+
+  /**
+   * Returns the feature-branch groups computed during the last build() call.
+   * Only meaningful for the full diagram (feature branches shown).
+   */
+  public getFeatureBranchGroups(): FeatureBranchGroup[] {
+    return this.featureBranchGroups;
   }
 
   /**
@@ -54,6 +93,7 @@ export class BranchStrategyMermaidBuilder {
     this.sbDevLinks = [];
     this.retrofitLinks = [];
     this.mermaidLines = [];
+    this.featureBranchGroups = [];
 
     this.listGitBranchesAndLinks();
     this.listSalesforceOrgsAndLinks();
@@ -202,44 +242,55 @@ export class BranchStrategyMermaidBuilder {
       }
     }
 
-    // Add feature branches and links for PRs whose source branch does not exist in the branchesAndOrgs list
-    for (const pullRequest of this.openPullRequests) {
-      if (
+    // Feature branches are the open PRs whose source branch is not a major
+    // branch. Use the same level as the lowest leaf branch so they are grouped
+    // with (and, thanks to branchTypeOrder, displayed before) any major "leaf"
+    // branch sitting at the same level (e.g. UatPermSet).
+    const featureBranchLevel =
+      noMergeTargetBranchAndOrg.length > 0
+        ? Math.min(...noMergeTargetBranchAndOrg.map((b) => b.level))
+        : 50;
+    const featurePullRequests = this.openPullRequests.filter(
+      (pullRequest) =>
         !this.branchesAndOrgs.find(
           (b) => b.branchName === pullRequest.sourceBranch,
-        )
-      ) {
-        // Use the same level as the lowest leaf branch so that feature branches
-        // are grouped with (and, thanks to branchTypeOrder, displayed before)
-        // any major "leaf" branch sitting at the same level (e.g. UatPermSet).
-        const level =
-          noMergeTargetBranchAndOrg.length > 0
-            ? Math.min(...noMergeTargetBranchAndOrg.map((b) => b.level))
-            : 50;
-        const nodeName =
-          this.sanitizeNodeName(pullRequest.sourceBranch) + "Branch"; // + "Branch" + (this.featureBranchNb + 1);
-        this.gitBranches.push({
-          name: pullRequest.sourceBranch,
-          nodeName: nodeName,
-          label: pullRequest.sourceBranch,
-          class: "gitFeature",
-          level: level,
-          group: pullRequest.sourceBranch,
-          createdAt: pullRequest.createdAt,
-        });
-        const prLinkLabel =
-          pullRequest.number || pullRequest.id
-            ? `#${pullRequest.number || pullRequest.id} ${this.getPrStatusEmoji(pullRequest.jobsStatus)}`
-            : this.isAuthenticated
-              ? t("noPr")
-              : t("mergeLabel");
-        this.gitLinks.push({
-          source: nodeName,
-          target: this.sanitizeNodeName(pullRequest.targetBranch) + "Branch",
-          type: "gitFeatureMerge",
-          label: prLinkLabel,
-          activePR: pullRequest,
-        });
+        ),
+    );
+    // Group feature PRs by their target (major) branch. When a target has more
+    // than the threshold, only the newest ones stay as individual nodes and the
+    // older ones are folded into a single "+N more" group node + aggregated link.
+    const featurePrsByTarget = new Map<string, PullRequest[]>();
+    for (const pullRequest of featurePullRequests) {
+      const target = pullRequest.targetBranch || "";
+      if (!featurePrsByTarget.has(target)) {
+        featurePrsByTarget.set(target, []);
+      }
+      featurePrsByTarget.get(target)!.push(pullRequest);
+    }
+    for (const [targetBranch, prs] of featurePrsByTarget) {
+      // Oldest first (ascending PR creation date; missing dates sort first)
+      const prsOldestFirst = [...prs].sort((a, b) =>
+        (a.createdAt || "").localeCompare(b.createdAt || ""),
+      );
+      const threshold = this.featureBranchGroupThreshold;
+      const mustGroup = prsOldestFirst.length > threshold;
+      // Keep the newest `threshold` PRs visible; fold the older remainder.
+      const foldedPrs = mustGroup
+        ? prsOldestFirst.slice(0, prsOldestFirst.length - threshold)
+        : [];
+      const visiblePrs = mustGroup
+        ? prsOldestFirst.slice(prsOldestFirst.length - threshold)
+        : prsOldestFirst;
+      for (const pullRequest of visiblePrs) {
+        this.addFeatureBranchAndLink(pullRequest, featureBranchLevel);
+      }
+      if (foldedPrs.length > 0) {
+        this.addFeatureBranchGroup(
+          targetBranch,
+          foldedPrs,
+          prsOldestFirst,
+          featureBranchLevel,
+        );
       }
     }
 
@@ -269,20 +320,144 @@ export class BranchStrategyMermaidBuilder {
     // Within the same level, display feature branches before major/main branches.
     // Feature branches are then ordered by PR creation date (ascending); other
     // branches fall through to an alphabetical order by name.
+    // Feature branches and "+N more" group nodes are both feature-type: they
+    // sort before major branches within a level. Individual feature branches are
+    // ordered by PR creation date; "+N more" group nodes always come last (after
+    // the individual feature branches), thanks to featureGroupOrder.
+    const isFeatureClass = (cls: string) =>
+      cls === "gitFeature" || cls === "gitFeatureGroup";
     this.gitBranches = sortArray(this.gitBranches, {
-      by: ["level", "branchTypeOrder", "featureCreatedAt", "name"],
-      order: ["asc", "asc", "asc", "asc"],
+      by: ["level", "branchTypeOrder", "featureGroupOrder", "featureCreatedAt", "name"],
+      order: ["asc", "asc", "asc", "asc", "asc"],
       computed: {
         branchTypeOrder: (branch: any) =>
-          branch.class === "gitFeature" ? 0 : 1,
+          isFeatureClass(branch.class) ? 0 : 1,
+        // Individual feature branches (0) before "+N more" group nodes (1)
+        featureGroupOrder: (branch: any) =>
+          branch.class === "gitFeatureGroup" ? 1 : 0,
         featureCreatedAt: (branch: any) =>
-          branch.class === "gitFeature" ? branch.createdAt || "" : "",
+          isFeatureClass(branch.class) ? branch.createdAt || "" : "",
       },
     });
     this.gitLinks = sortArray(this.gitLinks, {
       by: ["level", "source"],
       order: ["asc", "asc"],
     });
+
+    // Record each group's aggregated-link index among the rendered edges. Edges
+    // are emitted in gitLinks order first (see generateMermaidLines), so the
+    // index within the sorted gitLinks equals the global edge index used by the
+    // webview to bind a click handler on the SVG path.
+    for (const group of this.featureBranchGroups) {
+      group.edgeIndex = this.gitLinks.findIndex(
+        (link) => link.isFeatureGroup && link.groupNodeName === group.nodeName,
+      );
+    }
+  }
+
+  /**
+   * Create an individual feature branch node and its merge link to the target
+   * major branch (one open pull request = one feature branch).
+   */
+  private addFeatureBranchAndLink(
+    pullRequest: PullRequest,
+    level: number,
+  ): void {
+    const nodeName =
+      this.sanitizeNodeName(pullRequest.sourceBranch) + "Branch";
+    this.gitBranches.push({
+      name: pullRequest.sourceBranch,
+      nodeName: nodeName,
+      label: pullRequest.sourceBranch,
+      class: "gitFeature",
+      level: level,
+      group: pullRequest.sourceBranch,
+      createdAt: pullRequest.createdAt,
+    });
+    const prLinkLabel =
+      pullRequest.number || pullRequest.id
+        ? `#${pullRequest.number || pullRequest.id} ${this.getPrStatusEmoji(pullRequest.jobsStatus)}`
+        : this.isAuthenticated
+          ? t("noPr")
+          : t("mergeLabel");
+    this.gitLinks.push({
+      source: nodeName,
+      target: this.sanitizeNodeName(pullRequest.targetBranch) + "Branch",
+      type: "gitFeatureMerge",
+      label: prLinkLabel,
+      activePR: pullRequest,
+    });
+  }
+
+  /**
+   * Create a single "+N more" group node folding the older feature branches of
+   * a target, plus a single aggregated link. The link turns red with animated
+   * dashes when any folded pull request has a running/pending job.
+   */
+  private addFeatureBranchGroup(
+    targetBranch: string,
+    foldedPrs: PullRequest[],
+    allTargetPrs: PullRequest[],
+    level: number,
+  ): void {
+    const groupNodeName =
+      this.sanitizeNodeName(targetBranch) + "FeaturesGroup";
+    const aggregateStatus = this.aggregateJobsStatus(foldedPrs);
+    const hasPendingJob =
+      aggregateStatus === "running" || aggregateStatus === "pending";
+    // Sort key: oldest folded PR date so the group node sorts above the newer
+    // individual feature branches kept for this target.
+    const oldestCreatedAt = foldedPrs
+      .map((pr) => pr.createdAt || "")
+      .sort((a, b) => a.localeCompare(b))[0] || "";
+    this.gitBranches.push({
+      name: groupNodeName,
+      nodeName: groupNodeName,
+      label: t("featureBranchesGroupNode", { count: foldedPrs.length }),
+      class: "gitFeatureGroup",
+      level: level,
+      createdAt: oldestCreatedAt,
+      isFeatureGroup: true,
+    });
+    this.gitLinks.push({
+      // Base type so addLinks() renders the edge; forceAnimated flips it to the
+      // red animated variant (via addLinks) when a folded PR has a pending job.
+      source: groupNodeName,
+      target: this.sanitizeNodeName(targetBranch) + "Branch",
+      type: "gitFeatureMerge",
+      label: this.getPrStatusEmoji(aggregateStatus),
+      isFeatureGroup: true,
+      forceAnimated: hasPendingJob,
+      groupNodeName: groupNodeName,
+    });
+    this.featureBranchGroups.push({
+      nodeName: groupNodeName,
+      targetBranch: targetBranch,
+      foldedCount: foldedPrs.length,
+      hasPendingJob: hasPendingJob,
+      pullRequests: allTargetPrs,
+      edgeIndex: -1,
+    });
+  }
+
+  /**
+   * Aggregate the job status of a set of pull requests, worst-first: a single
+   * running/pending/failed job dominates; success only when all succeeded.
+   */
+  private aggregateJobsStatus(prs: PullRequest[]): JobStatus {
+    if (prs.some((pr) => pr.jobsStatus === "running")) {
+      return "running";
+    }
+    if (prs.some((pr) => pr.jobsStatus === "pending")) {
+      return "pending";
+    }
+    if (prs.some((pr) => pr.jobsStatus === "failed")) {
+      return "failed";
+    }
+    if (prs.length > 0 && prs.every((pr) => pr.jobsStatus === "success")) {
+      return "success";
+    }
+    return "unknown";
   }
 
   private listSalesforceOrgsAndLinks(): any {
@@ -396,9 +571,11 @@ export class BranchStrategyMermaidBuilder {
     );
     this.mermaidLines.push(this.indent("direction TB", 2));
     for (const gitBranch of this.gitBranches) {
+      // "+N more" group nodes use a stack icon to read as an aggregate.
+      const nodeIcon = gitBranch.class === "gitFeatureGroup" ? "🗂️" : "🌿";
       this.mermaidLines.push(
         this.indent(
-          `${gitBranch.nodeName}["🌿${gitBranch.label}"]:::${gitBranch.class}`,
+          `${gitBranch.nodeName}["${nodeIcon}${gitBranch.label}"]:::${gitBranch.class}`,
           2,
         ),
       );
@@ -574,6 +751,10 @@ export class BranchStrategyMermaidBuilder {
           // For completed PRs (success/failed/unknown), keep gitFeatureMerge type (plain style)
         }
         /* jscpd:ignore-end */
+        // Aggregated "+N more" link: turn red/animated when a folded PR is pending
+        if (link.forceAnimated) {
+          link.type = "gitFeatureMergeWithPRAnimated";
+        }
         this.mermaidLines.push(
           this.indent(`${link.source} -->|"${label}"| ${link.target}`, 1),
         );
@@ -610,6 +791,7 @@ export class BranchStrategyMermaidBuilder {
   classDef gitMajor fill:#032d60,stroke:#78b0fd,stroke-width:3px,color:#d8e6fe,font-weight:900,border-radius:16px;
   classDef gitMain fill:#014486,stroke:#aacbff,stroke-width:3px,color:#d8e6fe,font-weight:900,border-radius:16px;
   classDef gitFeature fill:#181818,stroke:#444,stroke-width:1.5px,color:#e5e5e5,font-weight:500,border-radius:16px;
+  classDef gitFeatureGroup fill:#1a2233,stroke:#78b0fd,stroke-width:2px,color:#d8e6fe,font-weight:700,border-radius:16px;
   style GitBranches fill:#181818,color:#d8e6fe,stroke:#0176d3,stroke-width:2px;
   style SalesforceOrgs fill:#181818,color:#acf3e4,stroke:#06a59a,stroke-width:2px;
   style SalesforceDevOrgs fill:#181818,color:#d8e6fe,stroke:#0176d3,stroke-width:2px;
@@ -621,6 +803,7 @@ export class BranchStrategyMermaidBuilder {
   classDef gitMajor fill:#4A9FD8,stroke:#032D60,stroke-width:3px,color:#fff,font-weight:900,border-radius:16px;
   classDef gitMain fill:#0176D3,stroke:#032D60,stroke-width:3px,color:#fff,font-weight:900,border-radius:16px;
   classDef gitFeature fill:#fff,stroke:#E5E5E5,stroke-width:1.5px,color:#3E3E3C,font-weight:500,border-radius:16px;
+  classDef gitFeatureGroup fill:#E8F0FE,stroke:#0176D3,stroke-width:2px,color:#032D60,font-weight:700,border-radius:16px;
   style GitBranches fill:#F0F6FB,color:#032D60,stroke:#0176D3,stroke-width:2px;
   style SalesforceOrgs fill:#F0F6FB,color:#032D60,stroke:#04844B,stroke-width:2px;
   style SalesforceDevOrgs fill:#F0F6FB,color:#032D60,stroke:#0176D3,stroke-width:2px;

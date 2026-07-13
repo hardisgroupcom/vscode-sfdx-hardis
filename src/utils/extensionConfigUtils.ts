@@ -42,6 +42,16 @@ export const sectionDefs = [
     ],
   },
   {
+    label: "pipelineSection",
+    value: "pipeline",
+    iconName: "utility:merge",
+    description: "DevOps Pipeline display settings.",
+    keys: [
+      "vsCodeSfdxHardis.pipelineDisplayFeatureBranches",
+      "vsCodeSfdxHardis.pipelineFeatureBranchGroupThreshold",
+    ],
+  },
+  {
     label: "languageSection",
     value: "language",
     iconName: "utility:translate",

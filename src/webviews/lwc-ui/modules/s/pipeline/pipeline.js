@@ -107,8 +107,26 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     },
   ];
 
-  // Columns for modal PR display (without jobs status, with merge date)
+  // Columns for modal PR display (with merge date). The job status column is
+  // included only for single PR / "+N more" group modals (showJobStatusColumn).
   get modalPrColumns() {
+    const statusColumn = this.showJobStatusColumn
+      ? [
+          {
+            key: "status",
+            label: this.i18n.statusLabel,
+            fieldName: "jobsStatusUrl",
+            type: "url",
+            typeAttributes: {
+              label: { fieldName: "jobsStatusDisplay" },
+              target: "_blank",
+            },
+            wrapText: true,
+            initialWidth: 120,
+            cellAttributes: { class: "hardis-status-cell" },
+          },
+        ]
+      : [];
     return [
       {
         key: "number",
@@ -127,6 +145,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         initialWidth: 300,
         wrapText: true,
       },
+      ...statusColumn,
       {
         key: "author",
         label: this.i18n.authorLabel,
@@ -293,11 +312,20 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   showOnlyMajor = false;
   showPRModal = false;
   modalMode = "branch"; // "branch" or "singlePR"
+  // Show the job status column in the PR modal only for a single PR or a "+N
+  // more" group (not for a major branch's pending-promotion / go-live PRs).
+  showJobStatusColumn = false;
+  // True for the single feature branch / "+N more" group modals, whose PRs are
+  // not enriched with tickets/deployment actions — so those tabs are hidden.
+  isFeaturePrModal = false;
   modalBranchName = "";
   modalPullRequests = [];
   modalTickets = [];
   modalActions = [];
   branchPullRequestsMap = new Map();
+  // Map of "+N more" group node name -> group descriptor (target branch + PRs),
+  // used to open the PR modal when a group node or its aggregated link is clicked.
+  featureBranchGroupsMap = new Map();
 
   // Go-lives selector state (top branches only, e.g. main/prod)
   modalIsTopBranch = false;
@@ -593,6 +621,17 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         }
       }
     }
+
+    // Store "+N more" feature-branch groups (node name -> descriptor) so a click
+    // on the group node or its aggregated link opens a modal listing its PRs.
+    this.featureBranchGroupsMap = new Map();
+    if (this.pipelineData && Array.isArray(this.pipelineData.featureBranchGroups)) {
+      for (const group of this.pipelineData.featureBranchGroups) {
+        if (group && group.nodeName) {
+          this.featureBranchGroupsMap.set(group.nodeName, group);
+        }
+      }
+    }
     // Select diagram based on displayFeatureBranches toggle
     this.currentDiagram = this.displayFeatureBranches
       ? this.pipelineData.mermaidDiagram
@@ -796,6 +835,22 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       };
       // Show emoji only (accessibility: we may add a visually-hidden label later if needed)
       copy.jobsStatusEmoji = emojiMap[normalized] || emojiMap.unknown;
+      // Localized status label + combined display for the modal "Status" column
+      const labelMap = {
+        running: this.t("jobStatusRunning"),
+        pending: this.t("jobStatusPending"),
+        success: this.t("jobStatusSuccess"),
+        failed: this.t("jobStatusFailed"),
+        unknown: this.t("jobStatusUnknown"),
+      };
+      copy.jobsStatusLabel = labelMap[normalized] || labelMap.unknown;
+      copy.jobsStatusDisplay = `${copy.jobsStatusEmoji} ${copy.jobsStatusLabel}`;
+      // URL for the clickable job status: prefer the CI job URL, fall back to
+      // the pull request page (mirrors the diagram link behavior).
+      copy.jobsStatusUrl =
+        Array.isArray(pr.jobs) && pr.jobs[0] && pr.jobs[0].webUrl
+          ? pr.jobs[0].webUrl
+          : pr.webUrl || "";
 
       // Format merge date for display
       if (pr.mergeDate) {
@@ -1425,12 +1480,21 @@ export default class Pipeline extends SharedMixin(LightningElement) {
               return;
             }
 
+            // "+N more" group node -> modal with all PRs targeting that branch
+            if (nodeIdentifier && nodeIdentifier.endsWith("FeaturesGroup")) {
+              this.handleShowFeatureBranchGroup(nodeIdentifier);
+              return;
+            }
+
             if (nodeIdentifier && nodeIdentifier.endsWith("Branch")) {
               const branchName =
                 this._resolveBranchNameFromNode(nodeIdentifier);
-              this.handleShowBranchPRs(branchName);
+              this.handleShowBranchOrFeaturePRs(branchName);
             }
           });
+
+          // Make the aggregated "+N more" links clickable (open the PR modal).
+          this._bindFeatureGroupEdgeClicks(mermaidSvg);
         }
 
         // Apply animation classes to links with running/pending PRs
@@ -1507,6 +1571,51 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         path.classList.add(animationClass);
         // Force browser to recognize the class change
         void path.offsetWidth;
+      }
+    }
+  }
+
+  // Bind a click handler on each aggregated "+N more" link so clicking it opens
+  // the same PR modal as its group node. The group's edgeIndex matches the SVG
+  // edge order (declaration order), the same index correspondence relied on by
+  // applyLinkAnimations(). Only meaningful for the full diagram (feature
+  // branches shown), where the group edges exist.
+  _bindFeatureGroupEdgeClicks(mermaidSvg) {
+    if (!this.displayFeatureBranches || !mermaidSvg) {
+      return;
+    }
+    if (!this.featureBranchGroupsMap || this.featureBranchGroupsMap.size === 0) {
+      return;
+    }
+    const edgePathsGroup = mermaidSvg.querySelector("g.edgePaths");
+    const edgeLabelsGroup = mermaidSvg.querySelector("g.edgeLabels");
+    if (!edgePathsGroup) {
+      return;
+    }
+    const edgePaths = edgePathsGroup.querySelectorAll("path.flowchart-link");
+    const edgeLabels = edgeLabelsGroup
+      ? edgeLabelsGroup.querySelectorAll("g.edgeLabel")
+      : [];
+    for (const group of this.featureBranchGroupsMap.values()) {
+      const idx = group.edgeIndex;
+      if (typeof idx !== "number" || idx < 0 || idx >= edgePaths.length) {
+        continue;
+      }
+      const bindClick = (element) => {
+        if (!element) {
+          return;
+        }
+        element.style.cursor = "pointer";
+        element.addEventListener("click", (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          this.handleShowFeatureBranchGroup(group.nodeName);
+        });
+      };
+      // The thin path is the primary target; the label gives a larger hit area.
+      bindClick(edgePaths[idx]);
+      if (idx < edgeLabels.length) {
+        bindClick(edgeLabels[idx]);
       }
     }
   }
@@ -1858,10 +1967,87 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     });
   }
 
+  // Route a branch node click: major branches open the branch PR modal; feature
+  // branches (one PR each) open that PR directly in single-PR mode.
+  handleShowBranchOrFeaturePRs(branchName) {
+    const isMajorBranch =
+      this.pipelineData &&
+      Array.isArray(this.pipelineData.orgs) &&
+      this.pipelineData.orgs.some((org) => org.name === branchName);
+    if (isMajorBranch) {
+      this.handleShowBranchPRs(branchName);
+      return;
+    }
+    // Feature branch: find its pull request by source branch. The node name is a
+    // sanitized form of the branch (slashes become underscores), so compare
+    // against the sanitized source branch as well as the raw value.
+    const pr = (this.openPullRequests || []).find(
+      (pullRequest) =>
+        pullRequest.sourceBranch === branchName ||
+        this._sanitizeBranchName(pullRequest.sourceBranch) === branchName,
+    );
+    if (pr) {
+      // Open the branch modal with a single PR so the "Pull Requests" tab shows
+      // it (with the job status column), consistent with the group node modal.
+      this.modalMode = "branch";
+      this.modalBranchName = pr.sourceBranch || branchName;
+      this.showJobStatusColumn = true;
+      this.isFeaturePrModal = true;
+      this.modalIsTopBranch = false;
+      this.modalGoLives = [];
+      this.selectedGoLiveId = "";
+      this.modalGoLivePrsLoading = false;
+      this.isLoadingReleaseDetails = false;
+      this._populateModalFromPrs([pr]);
+      this.showPRModal = true;
+      return;
+    }
+    // Fallback: show the (possibly empty) branch modal.
+    this.handleShowBranchPRs(branchName);
+  }
+
+  // Mirror of the backend sanitizeNodeName() so a feature node identifier can be
+  // matched back to its pull request source branch.
+  _sanitizeBranchName(branchName) {
+    if (!branchName) {
+      return "";
+    }
+    return branchName
+      .replace(/[^a-zA-Z0-9_-]/g, "_")
+      .replace(/_{2,}/g, "_")
+      .replace(/^_+|_+$/g, "")
+      .replace(/-+/g, "-");
+  }
+
+  // Open a modal listing all pull requests targeting the branch behind a
+  // "+N more" group node (both the folded and still-visible ones).
+  handleShowFeatureBranchGroup(nodeIdentifier) {
+    const group = this.featureBranchGroupsMap.get(nodeIdentifier);
+    if (!group) {
+      return;
+    }
+    this.modalMode = "branch";
+    this.modalBranchName = group.targetBranch || "";
+    this.showJobStatusColumn = true;
+    this.isFeaturePrModal = true;
+    // Group nodes are never top branches, so no go-lives selector.
+    this.modalIsTopBranch = false;
+    this.modalGoLives = [];
+    this.selectedGoLiveId = "";
+    this.modalGoLivePrsLoading = false;
+    this.isLoadingReleaseDetails = false;
+    this._populateModalFromPrs(group.pullRequests || []);
+    this.showPRModal = true;
+  }
+
   handleShowBranchPRs(branchName) {
     console.log("Showing PRs for branch:", branchName);
     const prs = this.branchPullRequestsMap.get(branchName) || [];
     this.modalBranchName = branchName;
+    // Major branch PR lists (pending promotion / go-lives) don't show job status
+    // and keep the tickets / deployment actions tabs.
+    this.showJobStatusColumn = false;
+    this.isFeaturePrModal = false;
 
     // Top branches (no merge target, e.g. main/prod) show their go-lives in a
     // selector. The PRs already loaded correspond to the latest go-live; the
@@ -2102,6 +2288,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this.showPRModal = false;
     this.modalMode = "branch";
     this.modalBranchName = "";
+    this.showJobStatusColumn = false;
+    this.isFeaturePrModal = false;
     this.modalPullRequests = [];
     this.modalTickets = [];
     this.modalActions = [];
@@ -2163,7 +2351,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   handleReturnGetPrInfoForModal(pr) {
     this.modalMode = "singlePR";
     this.modalBranchName = pr.sourceBranch || "";
-    this.modalPullRequests = [pr];
+    this.showJobStatusColumn = true;
+    // Single PR details are enriched with tickets / deployment actions, so keep
+    // those tabs visible.
+    this.isFeaturePrModal = false;
+    // Map through icons so the job status column (jobsStatusDisplay) is populated.
+    this.modalPullRequests = this._mapPrsWithIcons([pr]);
 
     // Aggregate tickets from this single PR
     this.modalTickets = this._aggregateTicketsFromPRs([pr]);

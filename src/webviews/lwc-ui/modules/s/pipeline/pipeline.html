@@ -356,6 +356,7 @@
                             ></lightning-datatable>
                         </lightning-tab>
                         </template>
+                        <template if:false={isFeaturePrModal}>
                         <lightning-tab label={modalTicketsTabLabel} value="tickets" icon-name="utility:link" icon-assistive-text={modalTicketsTabLabel}>
                             <template if:true={modalTickets.length}>
                                 <lightning-datatable
@@ -399,6 +400,7 @@
                                 </div>
                             </template>
                         </lightning-tab>
+                        </template>
                             <!-- Apex Tests Tab (only when enabled in .sfdx-hardis.yml) -->
                             <template if:true={showApexTestsTab}>
                                 <lightning-tab label={modalApexTestsTabLabel} value="apexTests" icon-name="utility:bug" icon-assistive-text={modalApexTestsTabLabel}>

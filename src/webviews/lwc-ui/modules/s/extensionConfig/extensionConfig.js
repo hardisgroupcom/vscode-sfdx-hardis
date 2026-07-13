@@ -26,15 +26,22 @@ export default class ExtensionConfig extends SharedMixin(LightningElement) {
         let valueBoolean = false;
         let valueEnum = "";
         let valueArray = "";
+        let valueNumber = null;
         let optionsLwc = [];
         // Precompute type flags for template
         const isBoolean = entry.type === "boolean";
         const isEnum =
           Array.isArray(entry.enum) && entry.enum.length > 0 && !isBoolean;
         const isArray = entry.type === "array";
-        const isString = entry.type === "string" && !isEnum;
+        const isNumber =
+          (entry.type === "integer" || entry.type === "number") && !isEnum;
+        const isString =
+          entry.type === "string" && !isEnum && !isNumber;
         if (isString) {
           valueString = entry.value ?? "";
+        }
+        if (isNumber) {
+          valueNumber = entry.value ?? entry.default ?? null;
         }
         if (isBoolean) {
           valueBoolean = !!entry.value;
@@ -59,11 +66,13 @@ export default class ExtensionConfig extends SharedMixin(LightningElement) {
           valueBoolean,
           valueEnum,
           valueArray,
+          valueNumber,
           optionsLwc,
           isString,
           isBoolean,
           isEnum,
           isArray,
+          isNumber,
         };
       }),
     }));
@@ -72,6 +81,23 @@ export default class ExtensionConfig extends SharedMixin(LightningElement) {
   handleTextChange(event) {
     const key = event.target.name;
     const value = event.detail.value;
+    window.sendMessageToVSCode({
+      type: "updateVsCodeSfdxHardisConfiguration",
+      data: { configKey: key, value },
+    });
+  }
+
+  handleNumberChange(event) {
+    const key = event.target.name;
+    const raw = event.detail.value;
+    // Ignore empty / invalid input so we never store NaN
+    if (raw === "" || raw === null || raw === undefined) {
+      return;
+    }
+    const value = Number(raw);
+    if (Number.isNaN(value)) {
+      return;
+    }
     window.sendMessageToVSCode({
       type: "updateVsCodeSfdxHardisConfiguration",
       data: { configKey: key, value },

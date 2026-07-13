@@ -1134,6 +1134,10 @@ export function registerShowPipeline(commands: Commands) {
           }
         }
       }
+      const featureBranchGroupThreshold = config.get<number>(
+        "pipelineFeatureBranchGroupThreshold",
+        3,
+      );
       const pipelineDataProvider = new PipelineDataProvider();
       const pipelineData = await pipelineDataProvider.getPipelineData(
         gitAuthenticated,
@@ -1141,6 +1145,7 @@ export function registerShowPipeline(commands: Commands) {
           openPullRequests: openPullRequests,
           browseGitProvider: browseGitProvider,
           colorTheme: colorTheme,
+          featureBranchGroupThreshold: featureBranchGroupThreshold,
         },
       );
       perfStep("getPipelineData (mermaid)");

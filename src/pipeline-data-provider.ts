@@ -1,5 +1,9 @@
 import * as vscode from "vscode";
-import { BranchStrategyMermaidBuilder } from "./utils/pipeline/branchStrategyMermaidBuilder";
+import {
+  BranchStrategyMermaidBuilder,
+  DEFAULT_FEATURE_BRANCH_GROUP_THRESHOLD,
+  FeatureBranchGroup,
+} from "./utils/pipeline/branchStrategyMermaidBuilder";
 import { listMajorOrgs, MajorOrg } from "./utils/orgConfigUtils";
 import { getConfig } from "./utils/pipeline/sfdxHardisConfig";
 import { PullRequest } from "./utils/gitProviders/types";
@@ -31,6 +35,9 @@ export interface PipelineData {
   mermaidDiagram: string;
   mermaidDiagramMajor: string;
   warnings: string[];
+  // Folded "+N more" feature-branch groups shown in the full diagram, so the
+  // webview can open a PR modal when a group node or its link is clicked.
+  featureBranchGroups: FeatureBranchGroup[];
 }
 
 export class PipelineDataProvider {
@@ -44,6 +51,7 @@ export class PipelineDataProvider {
       browseGitProvider?: boolean;
       openPullRequests?: PullRequest[];
       colorTheme?: string;
+      featureBranchGroupThreshold?: number;
     } = {},
   ): Promise<PipelineData> {
     try {
@@ -63,11 +71,16 @@ export class PipelineDataProvider {
         options.openPullRequests || [],
         gitProvider,
         options.colorTheme || "light",
+        options.featureBranchGroupThreshold ??
+          DEFAULT_FEATURE_BRANCH_GROUP_THRESHOLD,
       );
       const mermaidDiagram = mermaidBuilder.build({
         format: "string",
         withMermaidTag: true,
       }) as string;
+      // Capture groups from the full build (feature branches shown) before the
+      // major-only build recomputes state without them.
+      const featureBranchGroups = mermaidBuilder.getFeatureBranchGroups();
       const mermaidDiagramMajor = mermaidBuilder.build({
         format: "string",
         withMermaidTag: true,
@@ -112,6 +125,7 @@ export class PipelineDataProvider {
         mermaidDiagram,
         mermaidDiagramMajor,
         warnings: this.warnings,
+        featureBranchGroups,
       };
     } catch (error: any) {
       vscode.window.showErrorMessage(
@@ -123,6 +137,7 @@ export class PipelineDataProvider {
         mermaidDiagram: "Error generating pipeline diagram.",
         mermaidDiagramMajor: "Error generating pipeline diagram.",
         warnings: [error.message],
+        featureBranchGroups: [],
       };
     }
   }

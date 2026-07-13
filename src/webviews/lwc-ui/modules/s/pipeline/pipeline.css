@@ -190,6 +190,14 @@ lightning-datatable .hardis-emoji-cell a {
     cursor: pointer !important;
 }
 
+/* Job status column: use an emoji-capable font so the status emoji renders in
+   color (like the Mermaid diagram) instead of a monochrome/missing glyph. */
+lightning-datatable .hardis-status-cell,
+lightning-datatable .hardis-status-cell * {
+    font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji",
+        var(--vscode-font-family, sans-serif) !important;
+}
+
 /* Provider icon button (replaces connect buttons) */
 .provider-button {
     display: inline-flex;
