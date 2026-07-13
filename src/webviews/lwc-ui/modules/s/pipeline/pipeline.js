@@ -625,7 +625,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     // Store "+N more" feature-branch groups (node name -> descriptor) so a click
     // on the group node or its aggregated link opens a modal listing its PRs.
     this.featureBranchGroupsMap = new Map();
-    if (this.pipelineData && Array.isArray(this.pipelineData.featureBranchGroups)) {
+    if (
+      this.pipelineData &&
+      Array.isArray(this.pipelineData.featureBranchGroups)
+    ) {
       for (const group of this.pipelineData.featureBranchGroups) {
         if (group && group.nodeName) {
           this.featureBranchGroupsMap.set(group.nodeName, group);
@@ -1584,7 +1587,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     if (!this.displayFeatureBranches || !mermaidSvg) {
       return;
     }
-    if (!this.featureBranchGroupsMap || this.featureBranchGroupsMap.size === 0) {
+    if (
+      !this.featureBranchGroupsMap ||
+      this.featureBranchGroupsMap.size === 0
+    ) {
       return;
     }
     const edgePathsGroup = mermaidSvg.querySelector("g.edgePaths");

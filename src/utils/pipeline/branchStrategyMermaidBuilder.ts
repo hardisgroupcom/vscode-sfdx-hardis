@@ -327,7 +327,13 @@ export class BranchStrategyMermaidBuilder {
     const isFeatureClass = (cls: string) =>
       cls === "gitFeature" || cls === "gitFeatureGroup";
     this.gitBranches = sortArray(this.gitBranches, {
-      by: ["level", "branchTypeOrder", "featureGroupOrder", "featureCreatedAt", "name"],
+      by: [
+        "level",
+        "branchTypeOrder",
+        "featureGroupOrder",
+        "featureCreatedAt",
+        "name",
+      ],
       order: ["asc", "asc", "asc", "asc", "asc"],
       computed: {
         branchTypeOrder: (branch: any) =>
@@ -363,8 +369,7 @@ export class BranchStrategyMermaidBuilder {
     pullRequest: PullRequest,
     level: number,
   ): void {
-    const nodeName =
-      this.sanitizeNodeName(pullRequest.sourceBranch) + "Branch";
+    const nodeName = this.sanitizeNodeName(pullRequest.sourceBranch) + "Branch";
     this.gitBranches.push({
       name: pullRequest.sourceBranch,
       nodeName: nodeName,
@@ -400,16 +405,16 @@ export class BranchStrategyMermaidBuilder {
     allTargetPrs: PullRequest[],
     level: number,
   ): void {
-    const groupNodeName =
-      this.sanitizeNodeName(targetBranch) + "FeaturesGroup";
+    const groupNodeName = this.sanitizeNodeName(targetBranch) + "FeaturesGroup";
     const aggregateStatus = this.aggregateJobsStatus(foldedPrs);
     const hasPendingJob =
       aggregateStatus === "running" || aggregateStatus === "pending";
     // Sort key: oldest folded PR date so the group node sorts above the newer
     // individual feature branches kept for this target.
-    const oldestCreatedAt = foldedPrs
-      .map((pr) => pr.createdAt || "")
-      .sort((a, b) => a.localeCompare(b))[0] || "";
+    const oldestCreatedAt =
+      foldedPrs
+        .map((pr) => pr.createdAt || "")
+        .sort((a, b) => a.localeCompare(b))[0] || "";
     this.gitBranches.push({
       name: groupNodeName,
       nodeName: groupNodeName,

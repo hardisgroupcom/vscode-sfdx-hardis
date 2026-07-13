@@ -35,8 +35,7 @@ export default class ExtensionConfig extends SharedMixin(LightningElement) {
         const isArray = entry.type === "array";
         const isNumber =
           (entry.type === "integer" || entry.type === "number") && !isEnum;
-        const isString =
-          entry.type === "string" && !isEnum && !isNumber;
+        const isString = entry.type === "string" && !isEnum && !isNumber;
         if (isString) {
           valueString = entry.value ?? "";
         }
