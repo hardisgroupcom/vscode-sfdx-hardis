@@ -16,6 +16,14 @@
   pointer-events: auto;
 }
 
+/* Metadata types contained in the selected preset */
+.preset-types {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  row-gap: 4px;
+}
+
 .local-package-combo {
   min-width: 220px;
 }

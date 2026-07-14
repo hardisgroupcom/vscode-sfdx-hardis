@@ -13,6 +13,11 @@ import {
 } from "../utils";
 import { Logger } from "../logger";
 import { listMetadataTypes } from "../utils/metadataList";
+import {
+  isSfdxHardisConfigFile,
+  listMetadataPresets,
+  openMetadataPresetsConfigFile,
+} from "../utils/metadataPresets";
 import { t } from "../i18n/i18n";
 import { openMetadataFile } from "../utils/projectUtils";
 import fg from "fast-glob";
@@ -32,6 +37,12 @@ const FOLDER_TYPE_MAP: Record<string, string> = {
   EmailTemplate: "EmailFolder",
   Document: "DocumentFolder",
 };
+
+// Maximum number of `sf org list metadata` calls run at the same time when a
+// preset (or a foldered type) fans out into many queries. A preset can expand
+// into dozens of queries (one per folder), so this cap keeps the number of
+// concurrent CLI processes reasonable while still running them in parallel.
+const LIST_METADATA_CONCURRENCY = 8;
 
 class DefaultLocalPackageGuard {
   private initialDefaultPackagePath: string | null = null;
@@ -70,6 +81,8 @@ class DefaultLocalPackageGuard {
 
 const defaultLocalPackageGuard = new DefaultLocalPackageGuard();
 let packageGuardDisposableRegistered = false;
+// Watches .sfdx-hardis.yml to refresh metadata presets while the panel is open
+let presetsConfigWatcher: vscode.Disposable | null = null;
 
 function normalizeSfdxProjectPath(p: string): string {
   return (p || "").toString().trim().replace(/\\/g, "/").replace(/\/+$/, "");
@@ -237,6 +250,9 @@ export function registerShowMetadataRetriever(commands: Commands) {
             }))
             .sort((a, b) => a.label.localeCompare(b.label));
 
+          // Metadata presets (groups of metadata types) defined in .sfdx-hardis.yml
+          const metadataPresets = await listMetadataPresets();
+
           // Determine whether local file checking is available by looking for sfdx-project.json
           const packageDirs = await listSfdxProjectPackageDirectories();
 
@@ -253,6 +269,7 @@ export function registerShowMetadataRetriever(commands: Commands) {
             orgs: connectedOrgs,
             selectedOrgUsername: selectedOrgUsername,
             metadataTypes: metadataTypeOptions,
+            metadataPresets: metadataPresets,
             checkLocalAvailable: packageDirs.length > 0,
             packageDirectories: packageDirs,
             localPackageOptions,
@@ -275,6 +292,20 @@ export function registerShowMetadataRetriever(commands: Commands) {
         }
       };
 
+      // Reload presets in the panel as soon as the user saves .sfdx-hardis.yml.
+      // The panel is a singleton, so dispose any watcher from a previous opening.
+      if (presetsConfigWatcher) {
+        presetsConfigWatcher.dispose();
+      }
+      presetsConfigWatcher = vscode.workspace.onDidSaveTextDocument(
+        async (document) => {
+          if (isSfdxHardisConfigFile(document.uri.fsPath)) {
+            await handleListMetadataPresets(panel);
+          }
+        },
+      );
+      commands.disposables.push(presetsConfigWatcher);
+
       // Register message handlers
       panel.onMessage(async (type: string, data: any) => {
         if (type === "retryInit") {
@@ -284,6 +315,10 @@ export function registerShowMetadataRetriever(commands: Commands) {
           await handleListOrgs(panel);
         } else if (type === "queryMetadata") {
           await handleQueryMetadata(panel, data);
+        } else if (type === "listMetadataPresets") {
+          await handleListMetadataPresets(panel);
+        } else if (type === "openMetadataPresetsConfig") {
+          await handleOpenMetadataPresetsConfig(panel);
         } else if (type === "listPackages") {
           await handleListPackages(
             panel,
@@ -313,6 +348,10 @@ export function registerShowMetadataRetriever(commands: Commands) {
         } else if (type === "openRetrieveFolder") {
           await handleOpenRetrieveFolder();
         } else if (type === "panelDisposed") {
+          if (presetsConfigWatcher) {
+            presetsConfigWatcher.dispose();
+            presetsConfigWatcher = null;
+          }
           await defaultLocalPackageGuard.restoreInitialDefaultIfNeeded();
         }
       });
@@ -947,12 +986,57 @@ async function executeMetadataRetrieve(
   return result;
 }
 
+/** Sends the metadata presets (defaults + .sfdx-hardis.yml ones) to the panel */
+async function handleListMetadataPresets(panel: LwcUiPanel) {
+  try {
+    const metadataPresets = await listMetadataPresets();
+    panel.sendMessage({
+      type: "listMetadataPresetsResults",
+      data: { metadataPresets },
+    });
+  } catch (error: any) {
+    Logger.log(`Error listing metadata presets: ${error?.message || error}`);
+    panel.sendMessage({
+      type: "listMetadataPresetsResults",
+      data: { metadataPresets: [] },
+    });
+  }
+}
+
+/** Opens .sfdx-hardis.yml so the user can create/update presets, then refreshes them */
+async function handleOpenMetadataPresetsConfig(panel: LwcUiPanel) {
+  try {
+    const configFile = await openMetadataPresetsConfigFile();
+    if (!configFile) {
+      vscode.window.showWarningMessage(t("noWorkspaceFolderFound"));
+      return;
+    }
+    await handleListMetadataPresets(panel);
+  } catch (error: any) {
+    Logger.log(`Error opening metadata presets config: ${error?.message}`);
+    vscode.window.showErrorMessage(t("errorOpeningPresetsConfig"));
+  }
+}
+
+/**
+ * Resolves the list of metadata types to query.
+ * A preset sends several types in `metadataTypes`, while a manual selection sends a single `metadataType`.
+ */
+function resolveQueriedMetadataTypes(data: any): string[] {
+  if (Array.isArray(data?.metadataTypes) && data.metadataTypes.length > 0) {
+    return data.metadataTypes.filter((type: any) => !!type);
+  }
+  if (data?.metadataType) {
+    return [data.metadataType];
+  }
+  return [];
+}
+
 async function handleQueryMetadata(panel: any, data: any) {
   try {
     const {
       username,
       queryMode,
-      metadataType,
       metadataName,
       lastUpdatedBy,
       dateFrom,
@@ -970,12 +1054,14 @@ async function handleQueryMetadata(panel: any, data: any) {
       return;
     }
 
+    const metadataTypes = resolveQueriedMetadataTypes(data);
+
     // Handle different query modes
     if (queryMode === "allMetadata") {
       await handleListMetadata(
         panel,
         username,
-        metadataType,
+        metadataTypes,
         metadataName,
         packageFilter,
         !!checkLocalFiles,
@@ -986,7 +1072,7 @@ async function handleQueryMetadata(panel: any, data: any) {
       await handleSourceMemberQuery(
         panel,
         username,
-        metadataType,
+        metadataTypes,
         metadataName,
         lastUpdatedBy,
         dateFrom,
@@ -1201,6 +1287,45 @@ async function handleListMetadataTypes(
   // });
 }
 
+/**
+ * Returns the org folders of a foldered metadata type (Report, Dashboard,
+ * EmailTemplate, Document). Results are cached for 1 day by execSfdxJson.
+ */
+async function fetchMetadataFolders(
+  username: string,
+  metadataType: string,
+): Promise<string[]> {
+  const folderType = FOLDER_TYPE_MAP[metadataType];
+  if (!folderType) {
+    return [];
+  }
+
+  try {
+    const command = `sf org list metadata --metadata-type ${folderType} --target-org ${username} --json`;
+    const result = await execSfdxJson(command, {
+      cacheExpiration: 1000 * 60 * 60 * 24, // 1 day
+      cacheSection: "project",
+    });
+
+    const folders: string[] = [];
+    if (result && result.status === 0 && Array.isArray(result.result)) {
+      for (const item of result.result) {
+        const fullName = (item.fullName || "").toString().trim();
+        if (fullName && !folders.includes(fullName)) {
+          folders.push(fullName);
+        }
+      }
+    }
+    folders.sort((a, b) => a.localeCompare(b));
+    return folders;
+  } catch (error: any) {
+    Logger.log(
+      `Error listing folders for ${metadataType} (${folderType}): ${error?.message || error}`,
+    );
+    return [];
+  }
+}
+
 async function handleListMetadataFolders(
   panel: LwcUiPanel,
   username: string | null,
@@ -1214,53 +1339,22 @@ async function handleListMetadataFolders(
     return;
   }
 
-  const folderType = FOLDER_TYPE_MAP[metadataType];
-  if (!folderType) {
-    panel.sendMessage({
-      type: "listMetadataFoldersResults",
-      data: { metadataType, folders: [] },
-    });
-    return;
-  }
+  const folderNames = await fetchMetadataFolders(username, metadataType);
+  const folders = folderNames.map((folderName) => ({
+    label: folderName,
+    value: folderName,
+  }));
 
-  try {
-    const command = `sf org list metadata --metadata-type ${folderType} --target-org ${username} --json`;
-    const result = await execSfdxJson(command, {
-      cacheExpiration: 1000 * 60 * 60 * 24, // 1 day
-      cacheSection: "project",
-    });
-
-    const folders: Array<{ label: string; value: string }> = [];
-    if (result && result.status === 0 && Array.isArray(result.result)) {
-      for (const item of result.result) {
-        const fullName = (item.fullName || "").toString().trim();
-        if (!fullName) {
-          continue;
-        }
-        folders.push({ label: fullName, value: fullName });
-      }
-    }
-    folders.sort((a, b) => a.label.localeCompare(b.label));
-
-    panel.sendMessage({
-      type: "listMetadataFoldersResults",
-      data: { metadataType, folders },
-    });
-  } catch (error: any) {
-    Logger.log(
-      `Error listing folders for ${metadataType} (${folderType}): ${error?.message || error}`,
-    );
-    panel.sendMessage({
-      type: "listMetadataFoldersResults",
-      data: { metadataType, folders: [] },
-    });
-  }
+  panel.sendMessage({
+    type: "listMetadataFoldersResults",
+    data: { metadataType, folders },
+  });
 }
 
 async function handleSourceMemberQuery(
   panel: any,
   username: string,
-  metadataType: string | null,
+  metadataTypes: string[],
   metadataName: string | null,
   lastUpdatedBy: string | null,
   dateFrom: string | null,
@@ -1273,10 +1367,15 @@ async function handleSourceMemberQuery(
     "SELECT MemberName, MemberType, LastModifiedDate, LastModifiedBy.Name, IsNewMember, IsDeleted, IsNameObsolete FROM SourceMember";
   const conditions: string[] = [];
 
-  if (metadataType) {
-    // Escape single quotes for SOQL
-    const escapedType = metadataType.replace(/'/g, "\\'");
+  // A single type uses "=", a preset (several types) uses "IN"
+  if (metadataTypes.length === 1) {
+    const escapedType = metadataTypes[0].replace(/'/g, "\\'");
     conditions.push(`MemberType = '${escapedType}'`);
+  } else if (metadataTypes.length > 1) {
+    const escapedTypes = metadataTypes
+      .map((type) => `'${type.replace(/'/g, "\\'")}'`)
+      .join(", ");
+    conditions.push(`MemberType IN (${escapedTypes})`);
   }
 
   if (metadataName) {
@@ -1401,101 +1500,220 @@ async function handleSourceMemberQuery(
   }
 }
 
+/**
+ * Builds the list of (type, folder) queries to run for a metadata type.
+ * Foldered types (Report, Dashboard, EmailTemplate, Document) must be listed
+ * folder by folder, otherwise the Metadata API silently returns an empty array.
+ */
+async function buildListMetadataQueries(
+  username: string,
+  metadataType: string,
+  folder: string | null,
+): Promise<Array<{ type: string; folder: string | null }>> {
+  const requiresFolder = !!FOLDER_TYPE_MAP[metadataType];
+  if (!requiresFolder) {
+    return [{ type: metadataType, folder: null }];
+  }
+  // A folder explicitly selected in the UI wins over the automatic expansion
+  if (folder) {
+    return [{ type: metadataType, folder }];
+  }
+  // Preset case: no folder selected, so query all folders of the org
+  const folders = await fetchMetadataFolders(username, metadataType);
+  return folders.map((folderName) => ({
+    type: metadataType,
+    folder: folderName,
+  }));
+}
+
+/**
+ * Runs async tasks over `items` with a bounded number of concurrent workers.
+ * Preserves natural completion order (results are collected by the worker's
+ * side effects), and never spawns more than `limit` tasks at once.
+ */
+async function runWithConcurrencyLimit<T>(
+  items: T[],
+  limit: number,
+  worker: (item: T, index: number) => Promise<void>,
+): Promise<void> {
+  if (items.length === 0) {
+    return;
+  }
+  let nextIndex = 0;
+
+  const runNext = async (): Promise<void> => {
+    const current = nextIndex;
+    nextIndex += 1;
+    if (current >= items.length) {
+      return;
+    }
+    await worker(items[current], current);
+    await runNext();
+  };
+
+  const runnerCount = Math.min(Math.max(1, limit), items.length);
+  const runners: Promise<void>[] = [];
+  for (let i = 0; i < runnerCount; i++) {
+    runners.push(runNext());
+  }
+  await Promise.all(runners);
+}
+
+/**
+ * Runs a single `sf org list metadata` query for one (type, folder) pair and
+ * returns the normalized, filtered records. Errors are logged and swallowed so
+ * one failing type never aborts the whole parallel batch.
+ */
+async function runSingleListMetadataQuery(
+  username: string,
+  query: { type: string; folder: string | null },
+  metadataName: string | null,
+  packageFilter: string | null,
+): Promise<any[]> {
+  const type = query.type;
+  try {
+    const folderFlag = query.folder
+      ? ` --folder "${query.folder.replace(/"/g, '\\"')}"`
+      : "";
+    const command = `sf org list metadata --metadata-type ${type}${folderFlag} --target-org ${username} --json`;
+    Logger.log(`Executing listMetadata for type: ${type}`);
+
+    const result = await execSfdxJson(command);
+    if (!result || !result.result || !Array.isArray(result.result)) {
+      return [];
+    }
+
+    let typeResults = result.result.map((item: any) => {
+      const memberName = fixMemberName(item.fullName, type);
+      return {
+        fullName: memberName,
+        type: type,
+        MemberName: memberName,
+        MemberType: type,
+        LastModifiedByName: item.lastModifiedByName || "",
+        LastModifiedDate: item.lastModifiedDate || null,
+      };
+    });
+
+    // Apply name filter if provided
+    if (metadataName) {
+      const nameLower = metadataName.toLowerCase();
+      typeResults = typeResults.filter(
+        (item: any) =>
+          item.fullName && item.fullName.toLowerCase().includes(nameLower),
+      );
+    }
+
+    // Apply packageFilter post-listing
+    if (packageFilter && packageFilter !== "All") {
+      if (packageFilter === "Local") {
+        typeResults = typeResults.filter((item: any) =>
+          isLocalMetadata(item.fullName || ""),
+        );
+      } else {
+        // Component segment starts with namespace__ pattern
+        const nsPattern = `${packageFilter}__`;
+        typeResults = typeResults.filter((item: any) => {
+          const fn = (item.fullName || "").toString();
+          const compName = fn.includes(".") ? fn.split(".").pop() || fn : fn;
+          return compName.startsWith(nsPattern);
+        });
+      }
+    }
+
+    return typeResults;
+  } catch (error: any) {
+    Logger.log(`Error listing metadata for type ${type}: ${error.message}`);
+    // Continue with other types
+    return [];
+  }
+}
+
 async function handleListMetadata(
   panel: any,
   username: string,
-  metadataType: string | null,
+  metadataTypes: string[],
   metadataName: string | null,
   packageFilter: string | null,
   checkLocalFiles: boolean = false,
   folder: string | null = null,
 ) {
-  // Require specific metadata type for All Metadata mode
-  if (!metadataType) {
+  // Require at least one metadata type (single selection or preset) in All Metadata mode
+  if (!metadataTypes || metadataTypes.length === 0) {
     panel.sendMessage({
       type: "queryError",
-      data: {
-        message: "Please select a specific metadata type for All Metadata mode",
-      },
+      data: { message: t("selectMetadataTypeOrPresetRequired") },
     });
     return;
   }
 
-  // Foldered types (Report, Dashboard, EmailTemplate, Document) require a
-  // folder to be passed to the Metadata API listMetadata call; otherwise it
-  // silently returns an empty array.
-  const requiresFolder = !!FOLDER_TYPE_MAP[metadataType];
-  if (requiresFolder && !folder) {
-    panel.sendMessage({
-      type: "queryError",
-      data: {
-        message: t("selectFolderRequired", { metadataType }),
-      },
-    });
-    return;
-  }
-
-  const typesToQuery: string[] = [metadataType];
-  const allResults: any[] = [];
-  const folderFlag = folder ? ` --folder "${folder.replace(/"/g, '\\"')}"` : "";
-
-  // Query metadata for each type
-  for (const type of typesToQuery) {
-    try {
-      const command = `sf org list metadata --metadata-type ${type}${folderFlag} --target-org ${username} --json`;
-      Logger.log(`Executing listMetadata for type: ${type}`);
-
-      const result = await execSfdxJson(command);
-
-      if (result && result.result && Array.isArray(result.result)) {
-        let typeResults = result.result.map((item: any) => {
-          const memberName = fixMemberName(item.fullName, type);
-          return {
-            fullName: memberName,
-            type: type,
-            MemberName: memberName,
-            MemberType: type,
-            LastModifiedByName: item.lastModifiedByName || "",
-            LastModifiedDate: item.lastModifiedDate || null,
-          };
-        });
-
-        // Apply name filter if provided
-        if (metadataName) {
-          const nameLower = metadataName.toLowerCase();
-          typeResults = typeResults.filter(
-            (item: any) =>
-              item.fullName && item.fullName.toLowerCase().includes(nameLower),
-          );
-        }
-
-        // Apply packageFilter post-listing
-        if (packageFilter && packageFilter !== "All") {
-          if (packageFilter === "Local") {
-            typeResults = typeResults.filter((item: any) =>
-              isLocalMetadata(item.fullName || ""),
-            );
-          } else {
-            // Component segment starts with namespace__ pattern
-            const ns = packageFilter;
-            const nsPattern = `${ns}__`;
-            typeResults = typeResults.filter((item: any) => {
-              const fn = (item.fullName || "").toString();
-              const compName = fn.includes(".")
-                ? fn.split(".").pop() || fn
-                : fn;
-              return compName.startsWith(nsPattern);
-            });
-          }
-        }
-
-        allResults.push(...typeResults);
-      }
-    } catch (error: any) {
-      Logger.log(`Error listing metadata for type ${type}: ${error.message}`);
-      // Continue with other types
+  // A single foldered type selected manually still requires an explicit folder,
+  // so the user is not forced to wait for a full org-wide folder scan.
+  if (metadataTypes.length === 1) {
+    const singleType = metadataTypes[0];
+    if (FOLDER_TYPE_MAP[singleType] && !folder) {
+      panel.sendMessage({
+        type: "queryError",
+        data: {
+          message: t("selectFolderRequired", { metadataType: singleType }),
+        },
+      });
+      return;
     }
   }
+
+  // Expand foldered types into one query per folder. This preparation step is
+  // itself parallelized, since foldered types need a CLI call to list folders.
+  const expandedQueryLists = await Promise.all(
+    metadataTypes.map(async (metadataType) => {
+      try {
+        return await buildListMetadataQueries(username, metadataType, folder);
+      } catch (error: any) {
+        Logger.log(
+          `Error preparing queries for type ${metadataType}: ${error?.message || error}`,
+        );
+        return [];
+      }
+    }),
+  );
+  const queries: Array<{ type: string; folder: string | null }> =
+    expandedQueryLists.flat();
+
+  const allResults: any[] = [];
+  let completed = 0;
+
+  // Run the per-type queries in parallel (bounded concurrency) instead of
+  // waiting for each one to finish before starting the next. Results are
+  // gathered as each query completes, so a slow type no longer blocks the rest.
+  await runWithConcurrencyLimit(
+    queries,
+    LIST_METADATA_CONCURRENCY,
+    async (query) => {
+      const typeResults = await runSingleListMetadataQuery(
+        username,
+        query,
+        metadataName,
+        packageFilter,
+      );
+      // JS is single-threaded, so this push is atomic between await points and
+      // safe to call from concurrently running workers.
+      allResults.push(...typeResults);
+
+      // Progress is reported as each query finishes. Because queries run in
+      // parallel, `metadataType` is simply the one that just completed.
+      completed++;
+      if (queries.length > 1) {
+        panel.sendMessage({
+          type: "queryProgress",
+          data: {
+            current: completed,
+            total: queries.length,
+            metadataType: query.type,
+          },
+        });
+      }
+    },
+  );
 
   // Order allResults by MemberType and MemberName
   allResults.sort((a, b) => {

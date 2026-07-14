@@ -133,6 +133,40 @@ A modern replacement for the standard Org Browser. Filter by **type, name, last 
 
 ![Metadata Retriever](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/metadata-retriever.gif)
 
+#### Metadata presets
+
+Instead of searching one metadata type at a time, select a **preset** to query a whole group of types at once.
+Two presets are available out of the box:
+
+- **Developer Metadata**: ApexClass, ApexTrigger, AuraDefinitionBundle, CustomLabel, CustomMetadata, Flow, LightningComponentBundle, StaticResource.
+- **General Metadata**: ApexClass, ApexTrigger, AuraDefinitionBundle, CustomField, CustomLabel, CustomMetadata, CustomObject, FlexiPage, Flow, GlobalValueSet, Layout, LightningComponentBundle, ListView, PermissionSet, PermissionSetGroup, QuickAction, RecordType, StaticResource, ValidationRule,
+
+Presets are configurable in your project `.sfdx-hardis.yml` (root or `config/` folder). Click **Manage Presets** in the
+panel to open the file: if it does not define any preset yet, the default ones are written into it, ready to be edited.
+Presets are reloaded as soon as you save the file.
+
+```yaml
+metadataRetrieverPresets:
+  - id: developerMetadata # a preset reusing a default id overrides that default preset
+    label: Developer Metadata
+    description: Apex, Flows and Lightning components
+    types:
+      - ApexClass
+      - ApexTrigger
+      - Flow
+      - LightningComponentBundle
+  - id: securityMetadata
+    label: Security Metadata
+    types:
+      - PermissionSet
+      - PermissionSetGroup
+      - Profile
+      - SharingRules
+
+# Set to true to hide the presets shipped with the extension
+metadataRetrieverPresetsOverrideDefaults: false
+```
+
 ### Data Workbench (SFDMU)
 
 Import and export records between orgs using the [Salesforce Data Move Utility (SFDMU)](https://github.com/forcedotcom/SFDX-Data-Move-Utility), with full visual configuration support.

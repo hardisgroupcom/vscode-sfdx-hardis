@@ -46,6 +46,18 @@
       <!-- Filters Section -->
       <div class="slds-p-around_x-small">
         <div class="slds-grid slds-gutters_x-small slds-wrap">
+          <!-- Metadata Preset Filter (group of metadata types defined in .sfdx-hardis.yml) -->
+          <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-large-size_1-of-6">
+            <lightning-combobox
+              label={i18n.metadataPresetLabel}
+              value={selectedPreset}
+              options={presetOptions}
+              onchange={handlePresetChange}
+              placeholder={i18n.selectMetadataPreset}
+              title={presetTooltip}
+            ></lightning-combobox>
+          </div>
+
           <!-- Metadata Type Filter (typeahead: filter the list by typing) -->
           <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-large-size_1-of-6">
             <s-typeahead
@@ -53,8 +65,9 @@
               value={metadataType}
               options={metadataTypeOptions}
               onchange={handleMetadataTypeChange}
-              placeholder={i18n.selectMetadataType}
-              required={isAllMetadataMode}
+              placeholder={metadataTypePlaceholder}
+              required={metadataTypeRequired}
+              disabled={metadataTypeDisabled}
             ></s-typeahead>
           </div>
 
@@ -125,6 +138,20 @@
 
         </div>
 
+        <!-- Metadata types included in the selected preset -->
+        <template if:true={isPresetSelected}>
+          <div class="slds-m-top_x-small preset-types">
+            <span class="slds-text-body_small slds-text-color_weak slds-m-right_x-small">
+              {presetSummaryLabel}
+            </span>
+            <template for:each={presetTypePills} for:item="presetType">
+              <span key={presetType.key} class="slds-badge slds-m-right_xx-small">
+                {presetType.label}
+              </span>
+            </template>
+          </div>
+        </template>
+
         <!-- Action Buttons -->
         <div class="slds-m-top_x-small slds-grid slds-grid_vertical-align-center slds-grid_align-spread">
           <div class="slds-col">
@@ -136,6 +163,15 @@
               disabled={cannotSearch}
               class="slds-m-right_small"
               size="small"
+            ></lightning-button>
+            <lightning-button
+              variant="neutral"
+              label={i18n.managePresets}
+              icon-name="utility:settings"
+              onclick={handleManagePresets}
+              size="small"
+              class="slds-m-right_small"
+              title={i18n.managePresetsTooltip}
             ></lightning-button>
             <lightning-button
               variant="neutral"
@@ -191,8 +227,14 @@
 
       <!-- Loading Spinner -->
       <template if:true={isLoading}>
-        <div class="slds-p-around_small slds-text-align_center">
+        <div class="slds-p-around_small slds-text-align_center slds-is-relative">
           <lightning-spinner alternative-text={i18n.loadingMetadata} size="medium"></lightning-spinner>
+          <!-- Presets query one metadata type at a time: show the progress -->
+          <template if:true={hasQueryProgress}>
+            <p class="slds-text-body_small slds-text-color_weak slds-m-top_large">
+              {queryProgressLabel}
+            </p>
+          </template>
         </div>
       </template>
 

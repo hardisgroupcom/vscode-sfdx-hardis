@@ -18,6 +18,10 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
 
   @api orgs = [];
   @api metadataTypes = [];
+  // Presets are groups of metadata types defined in .sfdx-hardis.yml
+  @api metadataPresets = [];
+  @track selectedPreset = ""; // "" = no preset (single metadata type mode)
+  @track queryProgress = null; // { current, total, metadataType } while a preset query runs
   @track selectedOrg = null;
   @track queryMode = "recentChanges"; // "recentChanges" or "allMetadata"
   @track metadataType = "All";
@@ -246,6 +250,91 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
     return options;
   }
 
+  // --- Metadata presets (groups of metadata types) ---------------------------
+
+  // Options of the preset combobox: "No preset" + presets from .sfdx-hardis.yml
+  get presetOptions() {
+    const options = [{ label: this.t("noPresetLabel"), value: "" }];
+    if (this.metadataPresets && Array.isArray(this.metadataPresets)) {
+      for (const preset of this.metadataPresets) {
+        options.push({ label: preset.label, value: preset.id });
+      }
+    }
+    return options;
+  }
+
+  get selectedPresetObject() {
+    if (!this.selectedPreset || !Array.isArray(this.metadataPresets)) {
+      return null;
+    }
+    return (
+      this.metadataPresets.find(
+        (preset) => preset.id === this.selectedPreset,
+      ) || null
+    );
+  }
+
+  get isPresetSelected() {
+    return this.selectedPresetObject !== null;
+  }
+
+  get selectedPresetTypes() {
+    const preset = this.selectedPresetObject;
+    return preset && Array.isArray(preset.types) ? preset.types : [];
+  }
+
+  // Pills displayed under the filters to show what the preset contains
+  get presetTypePills() {
+    return this.selectedPresetTypes.map((type) => ({
+      key: type,
+      label: type,
+    }));
+  }
+
+  get presetSummaryLabel() {
+    return this.t("presetTypesIncluded", {
+      count: this.selectedPresetTypes.length,
+    });
+  }
+
+  get presetTooltip() {
+    const preset = this.selectedPresetObject;
+    return preset && preset.description
+      ? preset.description
+      : this.t("metadataPresetTooltip");
+  }
+
+  // A preset drives the metadata types, so the single-type field is disabled
+  get metadataTypeDisabled() {
+    return this.isPresetSelected;
+  }
+
+  // The single metadata type is only mandatory when no preset is selected
+  get metadataTypeRequired() {
+    return this.isAllMetadataMode && !this.isPresetSelected;
+  }
+
+  get metadataTypePlaceholder() {
+    return this.isPresetSelected
+      ? this.t("metadataTypeDisabledByPreset")
+      : this.t("selectMetadataType");
+  }
+
+  get hasQueryProgress() {
+    return this.isLoading && this.queryProgress !== null;
+  }
+
+  get queryProgressLabel() {
+    if (!this.queryProgress) {
+      return "";
+    }
+    return this.t("queryProgressLabel", {
+      current: this.queryProgress.current,
+      total: this.queryProgress.total,
+      metadataType: this.queryProgress.metadataType,
+    });
+  }
+
   // True when the currently selected metadata type requires a folder
   // (Report, Dashboard, EmailTemplate, Document).
   get isFolderedType() {
@@ -352,6 +441,10 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
   get canSearch() {
     if (this.selectedOrg === null) {
       return false;
+    }
+    // A preset always provides its own metadata types
+    if (this.isPresetSelected) {
+      return true;
     }
     // In All Metadata mode, require a specific metadata type
     if (
@@ -478,6 +571,12 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
     if (Object.prototype.hasOwnProperty.call(data, "metadataTypes")) {
       if (data.metadataTypes && Array.isArray(data.metadataTypes)) {
         this.metadataTypes = data.metadataTypes;
+      }
+    }
+    // Metadata presets defined in .sfdx-hardis.yml (+ extension defaults)
+    if (Object.prototype.hasOwnProperty.call(data, "metadataPresets")) {
+      if (data.metadataPresets && Array.isArray(data.metadataPresets)) {
+        this.metadataPresets = data.metadataPresets;
       }
     }
     // Backend can indicate whether local file checking is available
@@ -668,6 +767,26 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
     setTimeout(() => this.checkRetrieveButtonVisibility(), 0);
   }
 
+  handlePresetChange(event) {
+    this.selectedPreset = event.detail.value || "";
+    // A preset replaces the single metadata type selection
+    if (this.isPresetSelected) {
+      this.metadataType = this.isAllMetadataMode ? "" : "All";
+      this.selectedFolder = "";
+      this.folderOptions = [];
+    }
+    this.applyFilters();
+  }
+
+  // Open .sfdx-hardis.yml to create or update presets. Defaults are written in
+  // the file when it does not declare any preset yet.
+  handleManagePresets() {
+    window.sendMessageToVSCode({
+      type: "openMetadataPresetsConfig",
+      data: {},
+    });
+  }
+
   handleMetadataTypeChange(event) {
     this.metadataType = event.detail.value;
     // Reset folder selection whenever the metadata type changes
@@ -778,15 +897,21 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
     }
     this.selectedRows = [];
     this.selectedRowKeys = [];
+    this.queryProgress = null;
 
-    // Send filter criteria to VS Code with query mode
+    // Send filter criteria to VS Code with query mode.
+    // metadataTypes (preset) takes precedence over metadataType (single selection).
     window.sendMessageToVSCode({
       type: "queryMetadata",
       data: {
         username: this.selectedOrg,
         queryMode: this.queryMode,
+        presetId: this.selectedPreset || null,
+        metadataTypes: this.isPresetSelected ? this.selectedPresetTypes : null,
         metadataType:
-          this.metadataType && this.metadataType !== "All"
+          !this.isPresetSelected &&
+          this.metadataType &&
+          this.metadataType !== "All"
             ? this.metadataType
             : null,
         metadataName: this.metadataName || null,
@@ -830,6 +955,7 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
   }
 
   handleClearFilters() {
+    this.selectedPreset = "";
     this.metadataType = "All";
     this.metadataName = "";
     this.lastUpdatedBy = "";
@@ -887,10 +1013,18 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
       : null;
     const searchLower = this.searchTerm ? this.searchTerm.toLowerCase() : null;
 
+    // Cache preset types so the lookup is done once for the whole pass
+    const presetTypes = this.isPresetSelected ? this.selectedPresetTypes : null;
+
     // Single pass filtering
     this.filteredMetadata = this.metadata.filter((item) => {
-      // Apply metadata type filter
-      if (this.metadataType && this.metadataType !== "All") {
+      // Apply preset filter (a preset accepts several metadata types)
+      if (presetTypes) {
+        if (!presetTypes.includes(item.MemberType)) {
+          return false;
+        }
+      } else if (this.metadataType && this.metadataType !== "All") {
+        // Apply single metadata type filter
         if (item.MemberType !== this.metadataType) {
           return false;
         }
@@ -1045,8 +1179,12 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
       this.handleListPackagesResults(data);
     } else if (type === "listMetadataTypesResults") {
       this.handleListMetadataTypesResults(data);
+    } else if (type === "listMetadataPresetsResults") {
+      this.handleListMetadataPresetsResults(data);
     } else if (type === "listMetadataFoldersResults") {
       this.handleListMetadataFoldersResults(data);
+    } else if (type === "queryProgress") {
+      this.handleQueryProgress(data);
     } else if (type === "queryResults") {
       this.handleQueryResults(data);
     } else if (type === "queryError") {
@@ -1153,6 +1291,26 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
     }
   }
 
+  handleListMetadataPresetsResults(data) {
+    if (data && Array.isArray(data.metadataPresets)) {
+      this.metadataPresets = data.metadataPresets;
+      // The selected preset may have been renamed or removed from the config file
+      if (this.selectedPreset && !this.isPresetSelected) {
+        this.selectedPreset = "";
+      }
+    }
+  }
+
+  handleQueryProgress(data) {
+    if (data && data.total) {
+      this.queryProgress = {
+        current: data.current,
+        total: data.total,
+        metadataType: data.metadataType,
+      };
+    }
+  }
+
   handleListMetadataFoldersResults(data) {
     this.isLoadingFolders = false;
     // Ignore late responses for a different metadata type than the one
@@ -1169,6 +1327,7 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
 
   handleQueryResults(data) {
     this.isLoading = false;
+    this.queryProgress = null;
     if (data && data.records && Array.isArray(data.records)) {
       // Transform records - handle both SourceMember (nested) and Metadata API (flat) formats
       this.metadata = data.records.map((record) => {
@@ -1209,6 +1368,7 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
 
   handleQueryError(data) {
     this.isLoading = false;
+    this.queryProgress = null;
     this.error =
       data && data.message
         ? data.message
