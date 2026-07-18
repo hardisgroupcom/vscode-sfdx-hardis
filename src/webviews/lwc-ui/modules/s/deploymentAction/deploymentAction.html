@@ -329,6 +329,30 @@
               </div>
             </template>
 
+            <template if:true={showPackageXmlItemsField}>
+              <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                <div class="slds-form-element">
+                  <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                    <span>
+                      <abbr class="slds-required" title={i18n.requiredField}>*</abbr>
+                      {i18n.packageXmlItemsLabel}
+                    </span>
+                    <s-multiline-helptext content={i18n.packageXmlItemsHelp} class="slds-icon-text-info"></s-multiline-helptext>
+                  </label>
+                  <lightning-textarea
+                    value={packageXmlItemsText}
+                    data-field="parameters.packageXmlItems"
+                    onchange={handleFieldChange}
+                    required={isEditMode}
+                    disabled={isViewMode}
+                    variant="label-hidden"
+                    placeholder={i18n.packageXmlItemsPlaceholder}
+                    style="--slds-c-textarea-sizing-min-height: 160px;">
+                  ></lightning-textarea>
+                </div>
+              </div>
+            </template>
+
             <!-- Additional flags -->
             <template if:true={showSkipIfErrorField}>
               <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
@@ -370,23 +394,25 @@
               </div>
             </template>
 
-            <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
-              <div class="slds-form-element">
-                <div style="display:flex;align-items:center;gap:0.25rem;margin-bottom:0.25rem;">
-                  <span class="slds-form-element__label">{i18n.runOnlyOnceByOrg}</span>
-                  <s-multiline-helptext content={i18n.runOnlyOnceByOrgHelp} class="slds-icon-text-info"></s-multiline-helptext>
+            <template if:true={showRunOnlyOnceByOrgField}>
+              <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
+                <div class="slds-form-element">
+                  <div style="display:flex;align-items:center;gap:0.25rem;margin-bottom:0.25rem;">
+                    <span class="slds-form-element__label">{i18n.runOnlyOnceByOrg}</span>
+                    <s-multiline-helptext content={i18n.runOnlyOnceByOrgHelp} class="slds-icon-text-info"></s-multiline-helptext>
+                  </div>
+                  <lightning-input
+                    type="toggle"
+                    label={i18n.runOnlyOnceByOrg}
+                    checked={displayedAction.runOnlyOnceByOrg}
+                    data-field="runOnlyOnceByOrg"
+                    onchange={handleCheckboxChange}
+                    disabled={isViewMode}
+                    variant="label-hidden"
+                  ></lightning-input>
                 </div>
-                <lightning-input
-                  type="toggle"
-                  label={i18n.runOnlyOnceByOrg}
-                  checked={displayedAction.runOnlyOnceByOrg}
-                  data-field="runOnlyOnceByOrg"
-                  onchange={handleCheckboxChange}
-                  disabled={isViewMode}
-                  variant="label-hidden"
-                ></lightning-input>
               </div>
-            </div>
+            </template>
 
             <!-- customUsername (optional) -->
             <template if:true={showCustomUsernameField}>
