@@ -15,7 +15,8 @@ export interface PrePostCommand {
     | "apex"
     | "publish-community"
     | "manual"
-    | "schedule-batch";
+    | "schedule-batch"
+    | "remove-packagexml-items";
   when: "pre-deploy" | "post-deploy";
   // Known parameters used by action implementations. Additional keys allowed.
   parameters?: {
@@ -26,6 +27,9 @@ export interface PrePostCommand {
     className?: string; // for 'schedule-batch' actions
     cronExpression?: string; // for 'schedule-batch' actions
     jobName?: string; // optional for 'schedule-batch' actions
+    // for 'remove-packagexml-items' actions: entries "TypeName:Member1,Member2"
+    // (use "*" as member to remove the whole type). A single string is also accepted.
+    packageXmlItems?: string[] | string;
     [key: string]: any;
   };
   command: string;

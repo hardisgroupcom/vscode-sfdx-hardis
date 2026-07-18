@@ -2851,6 +2851,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       apex: this.i18n.apexType,
       "schedule-batch": this.i18n.scheduleBatchType,
       "publish-community": this.i18n.publishCommunityType,
+      "remove-packagexml-items": this.i18n.removePackageXmlItemsType,
       manual: this.i18n.manualType,
     };
     return typeLabelByCode[typeCode] || this.i18n.unknownLabel;
@@ -2863,6 +2864,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       apex: "utility:apex_alt",
       "schedule-batch": "utility:event",
       "publish-community": "utility:global",
+      "remove-packagexml-items": "utility:filterList",
       manual: "utility:task",
     };
     return typeIconByCode[typeCode] || "utility:question";

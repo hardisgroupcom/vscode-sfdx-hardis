@@ -72,6 +72,10 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       { label: this.t("apexType"), value: "apex" },
       { label: this.t("scheduleBatchType"), value: "schedule-batch" },
       { label: this.t("publishCommunityType"), value: "publish-community" },
+      {
+        label: this.t("removePackageXmlItemsType"),
+        value: "remove-packagexml-items",
+      },
       { label: this.t("manualType"), value: "manual" },
     ];
   }
@@ -102,6 +106,11 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       "publish-community": {
         when: ["post-deploy"],
         context: ["process-deployment-only"],
+      },
+      "remove-packagexml-items": {
+        // Filtering package.xml only makes sense before the metadata deployment
+        when: ["pre-deploy"],
+        context: ["all", "check-deployment-only", "process-deployment-only"],
       },
       manual: {
         when: ["pre-deploy", "post-deploy"],
@@ -163,25 +172,11 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       return;
     }
 
-    if (!this.action) {
-      return;
-    }
-
-    if (allowedWhen.length > 0) {
-      if (allowedWhen.length === 1) {
-        this.action.when = allowedWhen[0];
-      } else if (!allowedWhen.includes(this.action.when)) {
-        this.action.when = allowedWhen[0];
-      }
-    }
-
-    if (allowedContext.length > 0) {
-      if (allowedContext.length === 1) {
-        this.action.context = allowedContext[0];
-      } else if (!allowedContext.includes(this.action.context)) {
-        this.action.context = allowedContext[0];
-      }
-    }
+    // View mode: `this.action` is a read-only @api prop (LWC wraps parent-passed
+    // objects in a read-only membrane), so we must NOT write to it — assigning
+    // this.action.when/context throws "'set' on proxy" and aborts rendering,
+    // leaving the modal blank. The disabled comboboxes just display the stored
+    // values as-is; no normalization is needed when the fields can't be edited.
   }
 
   // Available action types
@@ -327,6 +322,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       if (!this.editedAction.type) {
         this.editedAction.type = "command";
       }
+      this._normalizeEditedPackageXmlItems();
     } else if (this.action) {
       // Ensure action has parameters object for view mode
       if (!this.action.parameters) {
@@ -394,6 +390,11 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     return type === "manual";
   }
 
+  get showPackageXmlItemsField() {
+    const type = this.displayedAction?.type;
+    return type === "remove-packagexml-items";
+  }
+
   get showScheduleBatchClassNameField() {
     const type = this.displayedAction?.type;
     return type === "schedule-batch";
@@ -426,7 +427,15 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
 
   get showCustomUsernameField() {
     const type = this.displayedAction?.type;
-    return type !== "manual";
+    // 'manual' and 'remove-packagexml-items' do not run a command against the org
+    return type !== "manual" && type !== "remove-packagexml-items";
+  }
+
+  get showRunOnlyOnceByOrgField() {
+    const type = this.displayedAction?.type;
+    // 'remove-packagexml-items' only filters the current deployment's package.xml,
+    // so it must run every time (runOnlyOnceByOrg has no effect for it)
+    return type !== "remove-packagexml-items";
   }
 
   get hasApexScriptSelected() {
@@ -460,6 +469,37 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
 
   get instructions() {
     return this.action?.parameters?.instructions || "";
+  }
+
+  // packageXmlItems can be an array (documented list format) or a single string.
+  // The textarea works with one entry per line, so normalize both shapes to text.
+  get packageXmlItemsText() {
+    return this._packageXmlItemsToText(
+      this.displayedAction?.parameters?.packageXmlItems,
+    );
+  }
+
+  _packageXmlItemsToText(items) {
+    if (Array.isArray(items)) {
+      return items.join("\n");
+    }
+    if (typeof items === "string") {
+      return items;
+    }
+    return "";
+  }
+
+  _packageXmlItemsToArray(value) {
+    if (Array.isArray(value)) {
+      return value.map((item) => String(item).trim()).filter((item) => item);
+    }
+    if (typeof value === "string") {
+      return value
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line);
+    }
+    return [];
   }
 
   get scheduleBatchClassName() {
@@ -499,8 +539,19 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     if (!this.editedAction.parameters) {
       this.editedAction.parameters = {};
     }
+    this._normalizeEditedPackageXmlItems();
     // Dispatch event to parent
     this.dispatchEvent(new CustomEvent("edit"));
+  }
+
+  // Represent packageXmlItems as one-entry-per-line text while editing so the
+  // textarea binding and required-field validation both operate on a string.
+  _normalizeEditedPackageXmlItems() {
+    const items = this.editedAction?.parameters?.packageXmlItems;
+    if (items !== undefined) {
+      this.editedAction.parameters.packageXmlItems =
+        this._packageXmlItemsToText(items);
+    }
   }
 
   handleCancel() {
@@ -602,6 +653,16 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     }
 
     this.validationError = "";
+    // Persist packageXmlItems as a clean list of entries (drop empty lines)
+    if (
+      this.editedAction.type === "remove-packagexml-items" &&
+      this.editedAction.parameters
+    ) {
+      this.editedAction.parameters.packageXmlItems =
+        this._packageXmlItemsToArray(
+          this.editedAction.parameters.packageXmlItems,
+        );
+    }
     // Dispatch save event to parent with edited action
     this.dispatchEvent(
       new CustomEvent("save", {
@@ -653,6 +714,8 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       requiredFields.push("parameters.communityName");
     } else if (currentType === "manual") {
       requiredFields.push("parameters.instructions");
+    } else if (currentType === "remove-packagexml-items") {
+      requiredFields.push("parameters.packageXmlItems");
     } else if (currentType === "schedule-batch") {
       requiredFields.push("parameters.className", "parameters.cronExpression");
     }
