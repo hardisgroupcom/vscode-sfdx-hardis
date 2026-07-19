@@ -12,6 +12,17 @@
                         <p class="header-subtitle">{i18n.monitorOrgDescription}</p>
                     </div>
                     <div class="header-actions">
+                        <template if:true={showFilter}>
+                            <lightning-input
+                                type="search"
+                                variant="label-hidden"
+                                placeholder={i18n.filterMonitoringCommands}
+                                value={filterText}
+                                onchange={handleFilterChange}
+                                oninput={handleFilterChange}
+                                class="filter-input"
+                            ></lightning-input>
+                        </template>
                         <lightning-button
                             variant="neutral"
                             label={i18n.refreshLabel}
@@ -222,7 +233,13 @@
                 </div>
             </template>
 
-            <template for:each={categorySections} for:item="section">
+            <template if:true={hasNoFilterResults}>
+                <div class="section">
+                    <p class="section-subtitle">{i18n.noMonitoringCommandsMatchFilter}</p>
+                </div>
+            </template>
+
+            <template for:each={filteredSections} for:item="section">
                 <div key={section.key} class="section">
                     <div class="section-header">
                         <h2 class="section-title"><span class="section-icon">{section.emoji}</span>{section.title}</h2>
