@@ -11,6 +11,11 @@ import { SharedMixin } from "s/sharedMixin";
 const METADATA_DOC_BASE_URL =
   "https://sf-explorer.github.io/sf-doc-to-json/#/cloud/all/object/";
 
+// Presets are surfaced inside the metadata type list (right after "All").
+// Their option value is prefixed so we can tell a preset selection apart from
+// a single metadata type selection.
+const PRESET_VALUE_PREFIX = "preset::";
+
 export default class MetadataRetriever extends SharedMixin(LightningElement) {
   // Panel-level loading state (true until init data arrives from backend)
   @track panelLoading = true;
@@ -238,9 +243,21 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
       this.queryMode === "allMetadata"
         ? []
         : [{ label: this.t("allLabel"), value: "All" }];
+    // Presets (groups of metadata types defined in .sfdx-hardis.yml) are listed
+    // right after "All" so the user can pick a whole group from the same field
+    // instead of a separate combobox. Their value is prefixed to distinguish
+    // them from single metadata types.
+    if (this.metadataPresets && Array.isArray(this.metadataPresets)) {
+      for (const preset of this.metadataPresets) {
+        options.push({
+          label: `⭐ ${preset.label}`,
+          value: `${PRESET_VALUE_PREFIX}${preset.id}`,
+        });
+      }
+    }
     if (this.metadataTypes && Array.isArray(this.metadataTypes)) {
       // Strip non-combobox properties (e.g. inFolder) before passing to
-      // lightning-combobox so it doesn't complain about unknown options.
+      // the typeahead so it doesn't complain about unknown options.
       const cleaned = this.metadataTypes.map((mt) => ({
         label: mt.label,
         value: mt.value,
@@ -251,17 +268,6 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
   }
 
   // --- Metadata presets (groups of metadata types) ---------------------------
-
-  // Options of the preset combobox: "No preset" + presets from .sfdx-hardis.yml
-  get presetOptions() {
-    const options = [{ label: this.t("noPresetLabel"), value: "" }];
-    if (this.metadataPresets && Array.isArray(this.metadataPresets)) {
-      for (const preset of this.metadataPresets) {
-        options.push({ label: preset.label, value: preset.id });
-      }
-    }
-    return options;
-  }
 
   get selectedPresetObject() {
     if (!this.selectedPreset || !Array.isArray(this.metadataPresets)) {
@@ -297,27 +303,14 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
     });
   }
 
-  get presetTooltip() {
-    const preset = this.selectedPresetObject;
-    return preset && preset.description
-      ? preset.description
-      : this.t("metadataPresetTooltip");
-  }
-
-  // A preset drives the metadata types, so the single-type field is disabled
-  get metadataTypeDisabled() {
-    return this.isPresetSelected;
-  }
-
-  // The single metadata type is only mandatory when no preset is selected
+  // The metadata type field is mandatory in All Metadata mode when neither a
+  // single type nor a preset is selected.
   get metadataTypeRequired() {
     return this.isAllMetadataMode && !this.isPresetSelected;
   }
 
   get metadataTypePlaceholder() {
-    return this.isPresetSelected
-      ? this.t("metadataTypeDisabledByPreset")
-      : this.t("selectMetadataType");
+    return this.t("selectMetadataType");
   }
 
   get hasQueryProgress() {
@@ -767,17 +760,6 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
     setTimeout(() => this.checkRetrieveButtonVisibility(), 0);
   }
 
-  handlePresetChange(event) {
-    this.selectedPreset = event.detail.value || "";
-    // A preset replaces the single metadata type selection
-    if (this.isPresetSelected) {
-      this.metadataType = this.isAllMetadataMode ? "" : "All";
-      this.selectedFolder = "";
-      this.folderOptions = [];
-    }
-    this.applyFilters();
-  }
-
   // Open .sfdx-hardis.yml to create or update presets. Defaults are written in
   // the file when it does not declare any preset yet.
   handleManagePresets() {
@@ -788,7 +770,15 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
   }
 
   handleMetadataTypeChange(event) {
-    this.metadataType = event.detail.value;
+    const value = event.detail.value;
+    this.metadataType = value;
+    // A preset is encoded in the same list with a prefixed value. Derive the
+    // selected preset (or clear it when a single metadata type is chosen).
+    if (value && value.startsWith(PRESET_VALUE_PREFIX)) {
+      this.selectedPreset = value.slice(PRESET_VALUE_PREFIX.length);
+    } else {
+      this.selectedPreset = "";
+    }
     // Reset folder selection whenever the metadata type changes
     this.selectedFolder = "";
     this.folderOptions = [];
@@ -1297,6 +1287,9 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
       // The selected preset may have been renamed or removed from the config file
       if (this.selectedPreset && !this.isPresetSelected) {
         this.selectedPreset = "";
+        // Reset the metadata type field, which was displaying the stale preset
+        this.metadataType = this.isAllMetadataMode ? "" : "All";
+        this.applyFilters();
       }
     }
   }
