@@ -2259,6 +2259,13 @@ export function listMetadataTypes() {
       xmlName: "IdentityVerificationProcDef",
     },
     {
+      directoryName: "idpConfigurations",
+      inFolder: false,
+      metaFile: false,
+      suffix: "idpConfiguration",
+      xmlName: "IdpConfiguration",
+    },
+    {
       directoryName: "iframeWhiteListUrlSettings",
       inFolder: false,
       metaFile: false,
@@ -3799,6 +3806,12 @@ export function listMetadataTypes() {
       metaFile: true,
       suffix: "uiview",
       xmlName: "UiViewDefinition",
+    },
+    {
+      directoryName: "uiWidgets",
+      inFolder: false,
+      metaFile: false,
+      xmlName: "UiWidgetBundle",
     },
     {
       directoryName: "useraccesspolicies",
