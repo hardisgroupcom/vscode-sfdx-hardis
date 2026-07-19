@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [7.17.0] 2026-07-19
+
 - Org Monitoring
   - Added a **filter field** next to the **Refresh** button that instantly narrows the list of monitoring commands as you type, matching against each command's title and description
     - Categories with no matching command are hidden, and a short message is shown when nothing matches the filter
