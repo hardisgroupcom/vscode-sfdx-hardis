@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Org Monitoring
+  - Added a **filter field** next to the **Refresh** button that instantly narrows the list of monitoring commands as you type, matching against each command's title and description
+    - Categories with no matching command are hidden, and a short message is shown when nothing matches the filter
+
 - Metadata Retriever
   - Added **presets**: reusable groups of metadata types that you can select to search and retrieve several metadata types at once
     - Presets appear at the top of the **Metadata Type** list, marked with a ⭐, right after the **All** entry
