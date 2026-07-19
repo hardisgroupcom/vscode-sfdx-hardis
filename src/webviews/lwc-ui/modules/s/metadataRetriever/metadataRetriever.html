@@ -46,19 +46,8 @@
       <!-- Filters Section -->
       <div class="slds-p-around_x-small">
         <div class="slds-grid slds-gutters_x-small slds-wrap">
-          <!-- Metadata Preset Filter (group of metadata types defined in .sfdx-hardis.yml) -->
-          <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-large-size_1-of-6">
-            <lightning-combobox
-              label={i18n.metadataPresetLabel}
-              value={selectedPreset}
-              options={presetOptions}
-              onchange={handlePresetChange}
-              placeholder={i18n.selectMetadataPreset}
-              title={presetTooltip}
-            ></lightning-combobox>
-          </div>
-
-          <!-- Metadata Type Filter (typeahead: filter the list by typing) -->
+          <!-- Metadata Type Filter (typeahead: filter the list by typing).
+               Presets (⭐) are listed right after "All". -->
           <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-large-size_1-of-6">
             <s-typeahead
               label={i18n.metadataTypeLabel}
@@ -67,7 +56,6 @@
               onchange={handleMetadataTypeChange}
               placeholder={metadataTypePlaceholder}
               required={metadataTypeRequired}
-              disabled={metadataTypeDisabled}
             ></s-typeahead>
           </div>
 
@@ -166,15 +154,6 @@
             ></lightning-button>
             <lightning-button
               variant="neutral"
-              label={i18n.managePresets}
-              icon-name="utility:settings"
-              onclick={handleManagePresets}
-              size="small"
-              class="slds-m-right_small"
-              title={i18n.managePresetsTooltip}
-            ></lightning-button>
-            <lightning-button
-              variant="neutral"
               label={i18n.clearFilters}
               icon-name="utility:clear"
               onclick={handleClearFilters}
@@ -187,6 +166,15 @@
               icon-name="utility:real_time"
               onclick={handleViewHistory}
               size="small"
+              class="slds-m-right_small"
+            ></lightning-button>
+            <lightning-button
+              variant="neutral"
+              label={i18n.managePresets}
+              icon-name="utility:settings"
+              onclick={handleManagePresets}
+              size="small"
+              title={i18n.managePresetsTooltip}
             ></lightning-button>
           </div>
           <div class="slds-col slds-no-flex slds-form-element slds-form-element_compact">

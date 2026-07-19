@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Metadata Retriever
+  - Added **presets**: reusable groups of metadata types that you can select to search and retrieve several metadata types at once
+    - Presets appear at the top of the **Metadata Type** list, marked with a ⭐, right after the **All** entry
+    - Use the **Manage presets** button to open `.sfdx-hardis.yml` and create or edit your own presets
+
 - Deployment Actions
   - Added support for the new **Remove package.xml Items** action type, which removes selected metadata items from the deployment's package.xml before the metadata is deployed
     - Enter one entry per line using the `TypeName:Member1,Member2` format, or use `*` as the member to remove a whole metadata type
