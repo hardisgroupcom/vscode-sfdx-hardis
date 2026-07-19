@@ -269,9 +269,7 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
   // empty state instead of a blank area.
   get hasNoFilterResults() {
     return (
-      this.hasCatalog &&
-      !!this.filterText &&
-      this.filteredSections.length === 0
+      this.hasCatalog && !!this.filterText && this.filteredSections.length === 0
     );
   }
 
