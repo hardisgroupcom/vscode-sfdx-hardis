@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Deployment Actions
+  - Added support for the new **Remove package.xml Items** action type, which removes selected metadata items from the deployment's package.xml before the metadata is deployed
+    - Enter one entry per line using the `TypeName:Member1,Member2` format, or use `*` as the member to remove a whole metadata type
+    - Available as a pre-deployment action only, since it filters the deployment package before it is sent to the org
+
 ## [7.16.0] 2026-07-13
 
 - DevOps Pipeline visual enhancements
