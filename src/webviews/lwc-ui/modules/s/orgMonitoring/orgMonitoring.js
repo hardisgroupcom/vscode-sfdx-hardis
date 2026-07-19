@@ -78,6 +78,7 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
   @track monitoringConfigUrl = "";
   @track catalog = null;
   @track catalogLoading = true;
+  @track filterText = "";
   _catalogReceived = false;
 
   @api
@@ -234,6 +235,46 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
       });
     }
     return result;
+  }
+
+  // Client-side live filter: matches the user-typed text against the title and
+  // description shown on each command card. Sections with no matching command
+  // are dropped so the UI collapses to only the relevant cards.
+  get filteredSections() {
+    const sections = this.categorySections;
+    const filter = this.filterText;
+    if (!filter) {
+      return sections;
+    }
+    const result = [];
+    for (const section of sections) {
+      const rows = section.rows.filter((row) =>
+        `${row.title || ""} ${row.description || ""}`
+          .toLowerCase()
+          .includes(filter),
+      );
+      if (rows.length > 0) {
+        result.push({ ...section, rows });
+      }
+    }
+    return result;
+  }
+
+  // Show the filter input only when there is a command catalog to filter.
+  get showFilter() {
+    return this.hasCatalog;
+  }
+
+  // True when a filter is active but no command matches it, so we can show an
+  // empty state instead of a blank area.
+  get hasNoFilterResults() {
+    return (
+      this.hasCatalog && !!this.filterText && this.filteredSections.length === 0
+    );
+  }
+
+  handleFilterChange(event) {
+    this.filterText = (event.target.value || "").toLowerCase();
   }
 
   // Resolve a CSS colorClass for a category key. Real categories come from the CLI catalog

@@ -43,6 +43,10 @@
     gap: 0.5rem;
 }
 
+.filter-input {
+    width: 16rem;
+}
+
 .header-icon-container {
     width: 56px;
     height: 56px;
