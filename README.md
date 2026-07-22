@@ -1,3 +1,4 @@
+<!-- markdownlint-disable-next-line MD041 -->
 [![sfdx-hardis by Cloudity Banner](https://github.com/hardisgroupcom/sfdx-hardis/raw/main/docs/assets/images/sfdx-hardis-banner.png)](https://sfdx-hardis.cloudity.com)
 
 # SFDX Hardis for Visual Studio Code
