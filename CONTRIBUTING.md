@@ -245,7 +245,7 @@ git push origin feature/your-feature-name
 
 ## Project Structure
 
-```
+```text
 vscode-sfdx-hardis/
 ├── src/
 │   ├── extension.ts              # Main extension entry point

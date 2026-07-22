@@ -153,14 +153,47 @@ export class GitProvider {
       repo = decodeURIComponent(parts.pop() as string);
       owner = decodeURIComponent(parts.join("/"));
     }
+    // Read an explicit override from .sfdx-hardis.yml (gitProvider: gitea|github|gitlab|azure|bitbucket).
+    // A forced value ALWAYS takes priority over the provider guessed from the remote host below.
+    // This is the robust way to detect self-hosted instances on arbitrary domains (e.g. Gitea, which
+    // otherwise would be wrongly detected as GitHub because it mimics the GitHub API).
+    let forcedProvider: ProviderName | null = null;
+    try {
+      const config = await getConfig("project");
+      const configuredProvider = String(
+        config?.gitProvider || "",
+      ).toLowerCase();
+      const validProviders: ProviderName[] = [
+        "gitlab",
+        "github",
+        "azure",
+        "bitbucket",
+        "gitea",
+      ];
+      if (validProviders.includes(configuredProvider as ProviderName)) {
+        forcedProvider = configuredProvider as ProviderName;
+      }
+    } catch (e) {
+      Logger.log(
+        `detectRepoInfo: could not read gitProvider from config: ${e instanceof Error ? e.message : String(e)}`,
+      );
+    }
+
     let providerName: ProviderName | null = null;
     const hostLower = host.toLowerCase();
+    if (forcedProvider) {
+      // Forced value wins: skip host-guessing entirely.
+      providerName = forcedProvider;
+    }
     // Robust checks for common provider indicators (handles on-prem domains like gitlab.company.com)
-    if (/(^|\.)gitlab(\.|$)/i.test(hostLower) || hostLower.includes("gitlab")) {
+    else if (
+      /(^|\.)gitlab(\.|$)/i.test(hostLower) ||
+      hostLower.includes("gitlab")
+    ) {
       providerName = "gitlab";
     } else if (hostLower.includes("gitea")) {
       // Gitea is self-hosted; recognize obvious "gitea.*" domains by host hint.
-      // Other Gitea instances must be declared via the gitProvider config below.
+      // Other Gitea instances must be declared via the gitProvider config above.
       providerName = "gitea";
     } else if (
       /(^|\.)github(\.|$)/i.test(hostLower) ||
@@ -180,33 +213,10 @@ export class GitProvider {
       providerName = "bitbucket";
     }
 
-    // Allow an explicit override from .sfdx-hardis.yml (gitProvider: gitea|github|gitlab|azure|bitbucket).
-    // This is the robust way to detect self-hosted Gitea instances on arbitrary domains,
-    // which otherwise would be wrongly detected as GitHub (Gitea mimics the GitHub API).
-    try {
-      const config = await getConfig("project");
-      const configuredProvider = String(
-        config?.gitProvider || "",
-      ).toLowerCase();
-      const validProviders: ProviderName[] = [
-        "gitlab",
-        "github",
-        "azure",
-        "bitbucket",
-        "gitea",
-      ];
-      if (validProviders.includes(configuredProvider as ProviderName)) {
-        providerName = configuredProvider as ProviderName;
-      }
-    } catch (e) {
-      Logger.log(
-        `detectRepoInfo: could not read gitProvider from config: ${e instanceof Error ? e.message : String(e)}`,
-      );
-    }
-
     if (!providerName) {
       Logger.log(
-        `detectRepoInfo: unable to map provider for host=${host} remoteUrl=${remoteUrl} owner=${owner} repo=${repo}`,
+        `detectRepoInfo: unable to map provider for host=${host} remoteUrl=${remoteUrl} owner=${owner} repo=${repo}. ` +
+          `You can force it by setting the "gitProvider" property (one of: gitlab, github, azure, bitbucket, gitea) in config/.sfdx-hardis.yml`,
       );
       return null;
     }

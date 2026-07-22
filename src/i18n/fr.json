@@ -1215,7 +1215,7 @@
   "noCommandsAvailable": "🦙 Aucune commande disponible tant que vous n'avez pas ouvert un dossier",
   "noCommandsAvailableUntilFolderOpen": "🦙 Aucune commande disponible tant que vous n'avez pas ouvert un dossier",
   "noCommunityFound": "Aucune communauté disponible",
-  "noGitProviderDetected": "Aucun fournisseur Git pris en charge détecté dans le dépôt actuel.",
+  "noGitProviderDetected": "Aucun fournisseur Git pris en charge détecté dans le dépôt actuel. Vous pouvez le forcer en définissant la propriété \"gitProvider\" (gitlab, github, azure, bitbucket ou gitea) dans config/.sfdx-hardis.yml.",
   "noGitRepositoryDetected": "Aucun dépôt git détecté dans le projet actuel.",
   "noInfoAvailableUntilProjectOpen": "🦙 Aucune information disponible tant que vous n'avez pas ouvert un projet Salesforce",
   "noInternalCommandSpecified": "Aucune commande interne spécifiée à exécuter.",

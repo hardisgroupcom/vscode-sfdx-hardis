@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- DevOps Pipeline
+  - You can now force the Git provider when it can't be recognized from the repository's remote URL, by setting the **gitProvider** property (`gitlab`, `github`, `azure`, `bitbucket` or `gitea`) in `config/.sfdx-hardis.yml`
+    - A forced value always takes priority over the provider guessed from the remote URL
+    - When no provider is detected, the guidance now tells you how to force it
+
 ## [7.17.0] 2026-07-19
 
 - Org Monitoring
@@ -124,7 +129,9 @@
 ## [7.10.0] 2026-05-17
 
 - Features
-  - Add **Monitoring Config Workbench**: a new editor (launchable from the Org Monitoring home or from the sidebar) to configure scheduled monitoring commands and the notification types they emit. Each command row shows its frequency and expands into sub-rows where you set per-channel thresholds (messaging, email, API) for every notification it can send; a final **Standalone notifications** section covers notification types that are not bound to any command. Supports custom commands, day-of-week / day-of-month, email recipients, and copying the configuration from another branch. Configuration is saved automatically whenever a value changes
+  - Add **Monitoring Config Workbench**: a new editor (launchable from the Org Monitoring home or from the sidebar) to configure scheduled monitoring commands and the notification types they emit.
+    Each command row shows its frequency and expands into sub-rows where you set per-channel thresholds (messaging, email, API) for every notification it can send; a final **Standalone notifications** section covers notification types that are not bound to any command.
+    Supports custom commands, day-of-week / day-of-month, email recipients, and copying the configuration from another branch. Configuration is saved automatically whenever a value changes
   - The **Org Monitoring** home page now picks up monitoring commands and categories directly from the sfdx-hardis CLI, so new commands appear without an extension update; click **Refresh** in the header to pull the latest list immediately
   - Add two new Pipeline Settings (Deployment tab): **Manual Actions Mode** (suppress the warning when not using an external manual actions file) and **Org Authentication Mode** (suppress the certificate warning when using CI/CD environment secrets instead of committed key files)
   - Add **Labels for available PR/MR target branches** field in Pipeline Settings (User Stories tab), shown below the target branches list

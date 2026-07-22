@@ -45,6 +45,14 @@ Trust its `state`, but remember the rule it encodes: "done" requires BOTH zero p
 - **`failures`** -> go to step 5 (fix).
 - **`running`** -> go to step 4 (wait).
 
+**Fix pre-existing / environmental failures automatically - do NOT ask first.** A red check that is not caused by the PR's own diff is still a failure to fix, not a question to raise. This explicitly includes:
+
+- **Security scanners** (Trivy / Grype / OSV-Scanner) failing on newly-disclosed CVEs in existing dependencies - even when `main` was green days earlier. Fix via the `fix-security` approach (bump the dep or add a `yarn` resolution; ignore only if genuinely non-exploitable).
+- **Workflow action-pinning** findings (zizmor `ref-version-mismatch`, etc.) in `.github/workflows/*` the PR never touched.
+- **Markdown / formatting lint** surfaced because the PR touched a file (e.g. CHANGELOG.md) that has pre-existing violations, or in docs the PR did not touch when the linter runs on the whole repo.
+
+Send all of these straight to `pr-fix` (step 5) as normal work. Only escalate to an `AskUserQuestion` for the genuine blockers listed in step 5 (ambiguous cause, flake, credential/scope limit, force-push, >3 cycles). "This failure looks unrelated to my change" is by itself **not** a reason to ask.
+
 ### 4. Wait for running jobs
 
 Poll every **5 minutes**, fixed interval, no backoff - the user wants a 5-minute cadence so failures surface fast. Use a persistent `Monitor` with a description starting with `PR watch:` so step 0 of a future invocation can find and stop it. The Monitor does plain `gh`/`jq` polling (no model) and emits only on state changes (new failures or completion), not every 5 minutes.
@@ -87,7 +95,9 @@ Spawn the `pr-fix` agent (Opus) via the Agent tool. Pass it the branch, PR numbe
 `pr-fix` returns one of:
 
 - **A fix report** (job fixed, root cause, files changed, new HEAD SHA pushed) -> note the new SHA, sleep ~60s for GitHub to register new runs, then go back to step 2.
-- **A `NEEDS-USER-INPUT` block** (ambiguous cause, likely flake, fork-PR secret error, generated-artifact edit, non-bot commits on origin, more than 3 cycles without progress) -> **do not loop**. Turn it into an `AskUserQuestion`: show the failing job, the key error line, the agent's hypothesis, and offer its 2-3 options plus "stop and let me investigate". Wait for the user.
+- **A `NEEDS-USER-INPUT` block** (ambiguous cause, likely flake, fork-PR secret error, generated-artifact edit, non-bot commits on origin, missing token scope for the push, more than 3 cycles without progress) -> **do not loop**. Turn it into an `AskUserQuestion`: show the failing job, the key error line, the agent's hypothesis, and offer its 2-3 options plus "stop and let me investigate". Wait for the user.
+
+  Note the **`workflow` OAuth scope** case specifically: pushing any commit that modifies `.github/workflows/*` requires the git/gh token to hold the `workflow` scope, which the default `repo`-scoped token does not. When `pr-fix` reports it committed a workflow-file fix locally but the push was rejected for this reason, the fix itself is correct - the only blocker is credentials. Offer the user to grant the scope (`! gh auth refresh -h github.com -s workflow`, run via the `!` prefix so it happens in-session) and then push the pending commit yourself, or have them push it. Do not treat this as a fix failure.
 
 If a single subtask inside the fix is pure i18n key propagation across the 9 locales (`en, fr, es, de, it, nl, ja, pl, pt-BR`), you may instead spawn the `document` agent (Sonnet) for that part.
 
