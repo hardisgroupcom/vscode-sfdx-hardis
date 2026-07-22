@@ -1215,7 +1215,7 @@
   "noCommandsAvailable": "🦙 No hay comandos disponibles hasta que abra una carpeta",
   "noCommandsAvailableUntilFolderOpen": "🦙 No hay comandos disponibles hasta que abra una carpeta",
   "noCommunityFound": "No hay comunidades disponibles",
-  "noGitProviderDetected": "No se detectó ningún proveedor Git compatible en el repositorio actual.",
+  "noGitProviderDetected": "No se detectó ningún proveedor Git compatible en el repositorio actual. Puede forzarlo estableciendo la propiedad \"gitProvider\" (gitlab, github, azure, bitbucket o gitea) en config/.sfdx-hardis.yml.",
   "noGitRepositoryDetected": "No se detectó ningún repositorio git en el proyecto actual.",
   "noInfoAvailableUntilProjectOpen": "🦙 No hay información disponible hasta que abra un proyecto Salesforce",
   "noInternalCommandSpecified": "No se especificó ningún comando interno para ejecutar.",

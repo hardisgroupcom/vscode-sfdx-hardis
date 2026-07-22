@@ -1209,7 +1209,7 @@
   "noCommandsAvailable": "🦙 Brak dostępnych poleceń, dopóki nie otworzysz folderu",
   "noCommandsAvailableUntilFolderOpen": "🦙 Brak dostępnych poleceń, dopóki nie otworzysz folderu",
   "noCommunityFound": "Brak dostępnych Community",
-  "noGitProviderDetected": "Nie wykryto obsługiwanego dostawcy Git w bieżącym repozytorium.",
+  "noGitProviderDetected": "Nie wykryto obsługiwanego dostawcy Git w bieżącym repozytorium. Możesz go wymusić, ustawiając właściwość \"gitProvider\" (gitlab, github, azure, bitbucket lub gitea) w config/.sfdx-hardis.yml.",
   "noGitRepositoryDetected": "Nie wykryto repozytorium Git w bieżącym obszarze roboczym.",
   "noInfoAvailableUntilProjectOpen": "🦙 Brak dostępnych informacji, dopóki nie otworzysz projektu Salesforce",
   "noInternalCommandSpecified": "Nie podano wewnętrznego polecenia do uruchomienia.",

@@ -1215,7 +1215,7 @@
   "noCommandsAvailable": "🦙 Geen opdrachten beschikbaar totdat je een map opent",
   "noCommandsAvailableUntilFolderOpen": "🦙 Geen opdrachten beschikbaar totdat je een map opent",
   "noCommunityFound": "Geen beschikbare communities",
-  "noGitProviderDetected": "Geen ondersteunde Git-provider gedetecteerd in de huidige repository.",
+  "noGitProviderDetected": "Geen ondersteunde Git-provider gedetecteerd in de huidige repository. Je kunt deze forceren door de eigenschap \"gitProvider\" (gitlab, github, azure, bitbucket of gitea) in te stellen in config/.sfdx-hardis.yml.",
   "noGitRepositoryDetected": "Geen git-repository gedetecteerd in de huidige workspace.",
   "noInfoAvailableUntilProjectOpen": "🦙 Geen informatie beschikbaar totdat je een Salesforce-project opent",
   "noInternalCommandSpecified": "Geen intern commando opgegeven om uit te voeren.",

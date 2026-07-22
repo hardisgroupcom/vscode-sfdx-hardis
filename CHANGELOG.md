@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- DevOps Pipeline
+  - You can now force the Git provider when it can't be recognized from the repository's remote URL, by setting the **gitProvider** property (`gitlab`, `github`, `azure`, `bitbucket` or `gitea`) in `config/.sfdx-hardis.yml`
+    - A forced value always takes priority over the provider guessed from the remote URL
+    - When no provider is detected, the guidance now tells you how to force it
+
 ## [7.17.0] 2026-07-19
 
 - Org Monitoring

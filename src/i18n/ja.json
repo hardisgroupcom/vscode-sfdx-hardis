@@ -1215,7 +1215,7 @@
   "noCommandsAvailable": "🦙 フォルダを開くまで利用可能なコマンドはありません",
   "noCommandsAvailableUntilFolderOpen": "🦙 フォルダを開くまで利用可能なコマンドはありません",
   "noCommunityFound": "利用可能なコミュニティがありません",
-  "noGitProviderDetected": "現在のリポジトリではサポートされている Git プロバイダーが検出されませんでした。",
+  "noGitProviderDetected": "現在のリポジトリではサポートされている Git プロバイダーが検出されませんでした。config/.sfdx-hardis.yml で \"gitProvider\" プロパティ（gitlab、github、azure、bitbucket、gitea のいずれか）を設定して強制的に指定できます。",
   "noGitRepositoryDetected": "現在のワークスペースで git リポジトリが検出されませんでした。",
   "noInfoAvailableUntilProjectOpen": "🦙 Salesforce プロジェクトを開くまで利用可能な情報はありません",
   "noInternalCommandSpecified": "実行する内部コマンドが指定されていません。",
