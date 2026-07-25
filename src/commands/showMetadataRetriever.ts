@@ -1584,7 +1584,13 @@ async function runSingleListMetadataQuery(
     }
 
     let typeResults = result.result.map((item: any) => {
-      const memberName = fixMemberName(item.fullName, type);
+      // listMetadata returns the real namespace of the component in namespacePrefix,
+      // which can be different from the namespace of its parent object (ex: Layouts)
+      const memberName = fixMemberName(
+        item.fullName,
+        type,
+        item.namespacePrefix,
+      );
       return {
         fullName: memberName,
         type: type,
@@ -1735,40 +1741,79 @@ async function handleListMetadata(
   });
 }
 
-function fixMemberName(name: string, type: string): string {
-  let fixedName = name;
-  if (type === "Layout") {
-    // Handle managed package layouts: ObjectName-LayoutName format
-    // Examples:
-    // - Managed on managed: abc__object__c-abc__object Layout
-    // - Custom on managed: abc__object__c-custom name Layout
-    // - Packaged on standard: Object-abc__Object layout
+// A Salesforce namespace prefix is 1 to 15 characters, starts with a letter,
+// contains only alphanumeric characters and single underscores (ex: CHANNEL_ORDERS)
+const NAMESPACE_PREFIX_REGEX = /^([A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)*)__/;
 
-    const parts = name.split("-");
-    if (parts.length >= 2) {
-      const objectName = parts[0];
-      const layoutName = parts.slice(1).join("-");
+/**
+ * Tells if a metadata name already starts with a namespace prefix (ex: pkgB__My Layout)
+ */
+function hasNamespacePrefix(name: string): boolean {
+  const match = name.match(NAMESPACE_PREFIX_REGEX);
+  return match !== null && match[1].length <= 15;
+}
 
-      // Check if object has namespace (namespace__ObjectName__c vs ObjectName__c)
-      // Match pattern: anything__anything__c (captures everything before the last __ObjectName__c)
-      const objectNamespaceMatch = objectName.match(
-        /^(.+?)__([^_]+(?:_[^_]+)*)__(?:c|mdt)$/,
-      );
-      if (objectNamespaceMatch) {
-        const namespace = objectNamespaceMatch[1];
-
-        // Add namespace to layout if missing
-        // e.g., CHANNEL_ORDERS__Customer__c-COA Customer Layout
-        //    -> CHANNEL_ORDERS__Customer__c-CHANNEL_ORDERS__COA Customer Layout
-        if (!layoutName.startsWith(namespace + "__")) {
-          fixedName = `${objectName}-${namespace}__${layoutName}`;
-        } else {
-          fixedName = name;
-        }
-      }
-    }
+/**
+ * Some metadata names returned by the org can not be used as-is to retrieve the component.
+ *
+ * For Layouts, the Metadata API strips the namespace of the layout itself while keeping it
+ * on the object (ex: pkgB__MyObject_Entity is returned as MyObject_Entity), so it has to be
+ * added back before retrieving.
+ *
+ * @param name Metadata full name returned by the org
+ * @param type Metadata type
+ * @param namespacePrefix Namespace of the component when the org provides it (listMetadata).
+ *                        Leave undefined when unknown (SourceMember queries)
+ */
+function fixMemberName(
+  name: string,
+  type: string,
+  namespacePrefix?: string | null,
+): string {
+  if (type !== "Layout") {
+    return name;
   }
-  return fixedName;
+  // Handle managed package layouts: ObjectName-LayoutName format
+  // Examples:
+  // - Managed on managed: abc__object__c-abc__object Layout
+  // - Custom on managed: abc__object__c-custom name Layout
+  // - Packaged on standard: Object-abc__Object layout
+  const parts = name.split("-");
+  if (parts.length < 2) {
+    return name;
+  }
+  const objectName = parts[0];
+  const layoutName = parts.slice(1).join("-");
+
+  // The layout already carries its own namespace: leave it alone, as it can belong to
+  // a different managed package than its object
+  // e.g., pkgA__MyObject__c-pkgB__MyObject_Entity
+  if (hasNamespacePrefix(layoutName)) {
+    return name;
+  }
+
+  // The org told us the namespace of the layout: use it rather than guessing
+  // An empty namespace means the layout is local, so its name is already correct
+  if (namespacePrefix !== undefined && namespacePrefix !== null) {
+    if (namespacePrefix === "") {
+      return name;
+    }
+    return `${objectName}-${namespacePrefix}__${layoutName}`;
+  }
+
+  // Namespace unknown: fall back to the namespace of the object, which is the right one
+  // when the layout comes from the same managed package as its object
+  // Check if object has namespace (namespace__ObjectName__c vs ObjectName__c)
+  // Match pattern: anything__anything__c (captures everything before the last __ObjectName__c)
+  const objectNamespaceMatch = objectName.match(
+    /^(.+?)__([^_]+(?:_[^_]+)*)__(?:c|mdt)$/,
+  );
+  if (objectNamespaceMatch) {
+    // e.g., CHANNEL_ORDERS__Customer__c-COA Customer Layout
+    //    -> CHANNEL_ORDERS__Customer__c-CHANNEL_ORDERS__COA Customer Layout
+    return `${objectName}-${objectNamespaceMatch[1]}__${layoutName}`;
+  }
+  return name;
 }
 
 /**

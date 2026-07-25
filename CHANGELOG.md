@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Metadata Retriever
+  - Fixed the retrieval of page layouts when the layout and its object come from two different managed packages: the layout name is no longer rewritten with the object's namespace, so the retrieve does not fail anymore with "Entity of type 'Layout' ... cannot be found"
+  - Page layouts installed on a standard object are now also retrieved with their package namespace
+
 - DevOps Pipeline
   - You can now force the Git provider when it can't be recognized from the repository's remote URL, by setting the **gitProvider** property (`gitlab`, `github`, `azure`, `bitbucket` or `gitea`) in `config/.sfdx-hardis.yml`
     - A forced value always takes priority over the provider guessed from the remote URL
