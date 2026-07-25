@@ -5,3 +5,14 @@
 # so the vulnerable code path is not reachable. Re-evaluate when applicationinsights ships OTel 2.x.
 # exp:2026-09-18
 CVE-2026-54285
+
+# brace-expansion DoS/OOM on hostile brace patterns. The 5.x line is already bumped to the patched 5.0.8.
+# The two copies left are 1.1.16 (devDependency @vscode/vsce > minimatch@3) and 2.1.2 (devDependency
+# mocha > minimatch@9 / glob@10 > minimatch@9). No patched 1.x or 2.x release exists, and 5.x is not a
+# drop-in replacement (CommonJS build exports { expand } instead of module.exports = expand, while
+# @vscode/vsce calls the module as a function), so neither an upgrade nor a scoped resolution is viable.
+# The only patterns reaching vsce and mocha are this repo's own globs (.vscodeignore, package.json,
+# .mocharc) - never untrusted input - and both parents are devDependency-only tooling that is not
+# bundled into the shipped extension. Re-evaluate when @vscode/vsce and mocha move to minimatch@10.
+# exp:2026-10-25
+CVE-2026-14257

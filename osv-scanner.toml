@@ -2,3 +2,8 @@
 id = "GHSA-8988-4f7v-96qf"
 ignoreUntil = 2026-09-18
 reason = "Affects @opentelemetry/core only via the 1.x tree pinned inside @vscode/extension-telemetry > applicationinsights (sdk-trace-base/resources all pin core 1.30.1, no patched 1.x release exists - only 2.8.0). The 2.x copies are already resolved to 2.8.0. CVE-2026-54285 is unbounded memory allocation while PARSING an inbound W3C Baggage header; this extension only EMITS outbound telemetry to Azure and never parses attacker-controlled baggage headers, so the path is not reachable. Re-evaluate when applicationinsights ships an OTel 2.x line or a patched 1.x core."
+
+[[IgnoredVulns]]
+id = "GHSA-mh99-v99m-4gvg"
+ignoreUntil = 2026-10-25
+reason = "CVE-2026-14257, brace-expansion. The 5.x line is already bumped to the patched 5.0.8. The only two copies left in the tree are 1.1.16 (devDependency @vscode/vsce > minimatch@3) and 2.1.2 (devDependency mocha > minimatch@9 and mocha > glob@10 > minimatch@9); no patched 1.x or 2.x release exists and 5.x is not a drop-in replacement for them (its CommonJS build exports { expand } instead of module.exports = expand, and @vscode/vsce calls the module as a function), so neither an upgrade nor a scoped resolution is viable. The vulnerability is a DoS/OOM while expanding a hostile brace pattern: the only patterns reaching vsce and mocha are the glob patterns declared in this repo (.vscodeignore, package.json, .mocharc), never untrusted input. Both parents are devDependency-only build/test tooling and are not bundled into the shipped extension (webpack bundles only src/ and its runtime dependencies). Re-evaluate when @vscode/vsce and mocha move to minimatch@10 (brace-expansion 5.x)."
