@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## [7.18.0] 2026-07-26
+
 - Org Monitoring
   - Added **Install Grafana Dashboards**, which installs the **Org Monitoring by sfdx-hardis** dashboards on your Grafana instance (Grafana Cloud or self-hosted)
     - Available from the **Setup Configuration** menu, and from a new **Grafana Dashboards** menu in the Org Monitoring workbench
