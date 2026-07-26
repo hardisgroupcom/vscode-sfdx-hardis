@@ -395,6 +395,18 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
     }
   }
 
+  handleGrafanaMenuSelect(event) {
+    const value = event.detail.value;
+    const command =
+      value === "dashboardsWithAlerts"
+        ? "sf hardis:org:configure:grafana-dashboards --with-alerts"
+        : "sf hardis:org:configure:grafana-dashboards";
+    window.sendMessageToVSCode({
+      type: "runCommand",
+      data: { command },
+    });
+  }
+
   handlePackageMenuSelect(event) {
     const value = event.detail.value;
     if (value === "skip") {

@@ -871,6 +871,13 @@ export class HardisCommandsProvider implements vscode.TreeDataProvider<CommandTr
             command: "sf hardis:org:configure:monitoring",
           },
           {
+            id: "org:configure:grafana-dashboards",
+            label: t("installGrafanaDashboards"),
+            tooltip: t("installGrafanaDashboardsTooltip"),
+            command: "sf hardis:org:configure:grafana-dashboards",
+            helpUrl: DOCSITE_URL + "/hardis/org/configure/grafana-dashboards/",
+          },
+          {
             id: "scratch:pool:create",
             label: t("configureScratchOrgsPool"),
             tooltip: t("configureScratchOrgsPoolTooltip"),

@@ -401,6 +401,10 @@ export class ThemeUtils {
       "configure:auth:deployment": { vscode: "gear", hardis: "configure.svg" },
       "configure:auth:devhub": { vscode: "gear", hardis: "configure.svg" },
       "org:configure:monitoring": { vscode: "gear", hardis: "monitoring.svg" },
+      "org:configure:grafana-dashboards": {
+        vscode: "graph",
+        hardis: "gauge.svg",
+      },
       "scratch:pool:create": { vscode: "gear", hardis: "pool.svg" },
       "org:configure:generic-prompt": {
         vscode: "sparkle",
