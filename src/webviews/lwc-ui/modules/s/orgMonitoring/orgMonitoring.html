@@ -86,6 +86,27 @@
                                             </lightning-menu-item>
                                         </lightning-button-menu>
                                         <lightning-button-menu
+                                            label={i18n.grafanaDashboards}
+                                            icon-name="utility:metrics"
+                                            variant="border"
+                                            alternative-text={i18n.grafanaDashboards}
+                                            title={i18n.grafanaDashboards}
+                                            menu-alignment="right"
+                                            onselect={handleGrafanaMenuSelect}>
+                                            <lightning-menu-item
+                                                value="dashboards"
+                                                label={i18n.installGrafanaDashboards}
+                                                title={i18n.installGrafanaDashboardsTooltip}
+                                                prefix-icon-name="utility:chart">
+                                            </lightning-menu-item>
+                                            <lightning-menu-item
+                                                value="dashboardsWithAlerts"
+                                                label={i18n.installGrafanaDashboardsWithAlerts}
+                                                title={i18n.installGrafanaDashboardsWithAlertsTooltip}
+                                                prefix-icon-name="utility:notification">
+                                            </lightning-menu-item>
+                                        </lightning-button-menu>
+                                        <lightning-button-menu
                                             icon-name="utility:identity"
                                             variant="border"
                                             alternative-text={i18n.authentication}

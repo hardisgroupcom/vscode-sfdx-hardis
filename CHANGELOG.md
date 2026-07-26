@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Org Monitoring
+  - Added **Install Grafana Dashboards**, which installs the **Org Monitoring by sfdx-hardis** dashboards on your Grafana instance (Grafana Cloud or self-hosted)
+    - Available from the **Setup Configuration** menu, and from a new **Grafana Dashboards** menu in the Org Monitoring workbench
+    - A second option also installs the sfdx-hardis alert rules pack; all alert rules are installed paused, so you enable them from Grafana when you are ready
+
 - Metadata Retriever
   - Fixed the retrieval of page layouts when the layout and its object come from two different managed packages: the layout name is no longer rewritten with the object's namespace, so the retrieve does not fail anymore with "Entity of type 'Layout' ... cannot be found"
   - Page layouts installed on a standard object are now also retrieved with their package namespace
