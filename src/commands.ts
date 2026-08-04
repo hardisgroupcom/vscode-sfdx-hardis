@@ -100,6 +100,49 @@ export class Commands {
     registerShowMetadataRetriever(this);
     registerShowPackageXml(this);
     registerShowDocumentationWorkbench(this);
+    this.registerSearchCommands();
+  }
+
+  registerSearchCommands() {
+    const disposable = vscode.commands.registerCommand(
+      "vscode-sfdx-hardis.searchCommands",
+      async () => {
+        if (!this.hardisCommandsProvider) {
+          return;
+        }
+        const topics = await this.hardisCommandsProvider.getChildren(undefined);
+        const items: (vscode.QuickPickItem & { _cmd: vscode.Command })[] = [];
+        for (const topic of topics) {
+          if (topic.collapsibleState === vscode.TreeItemCollapsibleState.None) {
+            continue;
+          }
+          const children = await this.hardisCommandsProvider.getChildren(topic);
+          for (const child of children) {
+            if (!child.command) {
+              continue;
+            }
+            items.push({
+              label: child.label as string,
+              description: topic.label as string,
+              detail: (child.tooltip as string) || undefined,
+              _cmd: child.command,
+            });
+          }
+        }
+        const selected = await vscode.window.showQuickPick(items, {
+          placeHolder: "Search commands…",
+          matchOnDescription: true,
+          matchOnDetail: true,
+        });
+        if (selected) {
+          await vscode.commands.executeCommand(
+            selected._cmd.command,
+            ...(selected._cmd.arguments || []),
+          );
+        }
+      },
+    );
+    this.disposables.push(disposable);
   }
 
   registerExecuteCommand() {
