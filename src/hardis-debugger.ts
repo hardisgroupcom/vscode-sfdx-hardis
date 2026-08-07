@@ -319,17 +319,13 @@ export class HardisDebugger {
     }
 
     if (!debugLevelId) {
-      throw new Error(
-        "Unable to determine the Replay Debugger log level ID.",
-      );
+      throw new Error("Unable to determine the Replay Debugger log level ID.");
     }
 
     return debugLevelId;
   }
 
-  private async getDeveloperLogTraceFlag(
-    userId: string,
-  ): Promise<any | null> {
+  private async getDeveloperLogTraceFlag(userId: string): Promise<any | null> {
     const traceFlagQueryResult = await this.runSfJsonCommand(
       `sf data query --use-tooling-api --query ` +
         `"SELECT Id, ExpirationDate FROM TraceFlag ` +
@@ -374,9 +370,7 @@ export class HardisDebugger {
     });
 
     if (result?.status !== 0) {
-      throw new Error(
-        result?.message || result?.errorMessage || errorMessage,
-      );
+      throw new Error(result?.message || result?.errorMessage || errorMessage);
     }
 
     return result;
