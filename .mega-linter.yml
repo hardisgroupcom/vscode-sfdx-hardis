@@ -3,6 +3,8 @@
 
 APPLY_FIXES: all # all, none, or list of linter keys
 DEFAULT_BRANCH: main # Usually master or main
+MEGALINTER_FLAVOR: javascript
+MEGALINTER_VERSION: beta
 # ENABLE: # If you use ENABLE variable, all other languages/formats/tooling-formats will be disabled by default
 # ENABLE_LINTERS: # If you use ENABLE_LINTERS variable, all other linters will be disabled by default
 DISABLE:
@@ -24,7 +26,6 @@ REPOSITORY_GRYPE_ARGUMENTS: "--config .grype.yaml"
 REPOSITORY_OSV_SCANNER_ARGUMENTS: "--config=osv-scanner.toml"
 REPOSITORY_TRIVY_ARGUMENTS: "--ignorefile .trivyignore"
 FILTER_REGEX_EXCLUDE: (\.vscode|\.claude)
-MARKDOWN_MARKDOWN_LINK_CHECK_DISABLE_ERRORS: true
 SHOW_ELAPSED_TIME: true
 CONFIG_REPORTER: false
 FILEIO_REPORTER: false
