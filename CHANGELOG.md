@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Commands
+  - Added a **Search** button in the Commands tree view header that opens a QuickPick listing commands from every category
+    - The picker supports fuzzy filtering on each command's label, category, and tooltip
+
 ## [7.18.0] 2026-07-26
 
 - Org Monitoring

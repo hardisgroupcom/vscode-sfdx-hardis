@@ -130,7 +130,7 @@ export class Commands {
           }
         }
         const selected = await vscode.window.showQuickPick(items, {
-          placeHolder: "Search commands…",
+          placeHolder: "Search SFDX-HARDIS commands…",
           matchOnDescription: true,
           matchOnDetail: true,
         });
