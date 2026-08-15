@@ -405,6 +405,11 @@
         "icon": "$(refresh)"
       },
       {
+        "command": "vscode-sfdx-hardis.searchCommands",
+        "title": "Search SFDX-HARDIS Commands",
+        "icon": "$(search)"
+      },
+      {
         "command": "vscode-sfdx-hardis.debug.launch",
         "title": "Run apex replay debugger",
         "icon": "$(debug-console)"
@@ -544,6 +549,11 @@
         },
         {
           "command": "vscode-sfdx-hardis.refreshCommandsView",
+          "when": "view == sfdx-hardis-commands",
+          "group": "navigation"
+        },
+        {
+          "command": "vscode-sfdx-hardis.searchCommands",
           "when": "view == sfdx-hardis-commands",
           "group": "navigation"
         },
