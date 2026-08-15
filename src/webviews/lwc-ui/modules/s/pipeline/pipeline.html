@@ -344,7 +344,7 @@
                         </div>
                     </template>
                     <template if:false={isLoadingReleaseDetails}>
-                    <lightning-tabset>
+                    <lightning-tabset active-tab-value={modalActiveTabValue}>
                         <template if:true={showPRTab}>
                             <lightning-tab label={modalPrsTabLabel} value="prs" icon-name="utility:topic2" icon-assistive-text={modalPrsTabLabel}>
                             <lightning-datatable
@@ -528,6 +528,7 @@
             schedulable-classes-loading={schedulableClassesLoading}
             communities={projectCommunities}
             communities-loading={communitiesLoading}
+            major-branches={majorBranchNames}
             parent-translations={translations}
             onclose={handleCloseDeploymentActionModal}
             onedit={handleEditDeploymentAction}

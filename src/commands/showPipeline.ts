@@ -281,12 +281,26 @@ export function registerShowPipeline(commands: Commands) {
 
   const disposable = vscode.commands.registerCommand(
     "vscode-sfdx-hardis.showPipeline",
-    async () => {
+    async (deepLink?: any) => {
+      // Optional deep-link request, sent by the CLI at the end of hardis:work:save.
+      // Only the deployment actions focus is supported, and the payload is rebuilt
+      // here so nothing else from the WebSocket message reaches the webview.
+      const pipelineDeepLink =
+        deepLink && deepLink.focus === "deploymentActions"
+          ? { focus: "deploymentActions" }
+          : null;
+      if (pipelineDeepLink) {
+        Logger.log(
+          `[vscode-sfdx-hardis] pipeline deep link requested for branch ${deepLink.sourceBranch || "(current)"}`,
+        );
+      }
+
       // Open the panel immediately with spinner flags so the LWC can render
       // partial content while pipeline data is fetched asynchronously.
       const panel = LwcPanelManager.getInstance().getOrCreatePanel(
         "s-pipeline",
         {
+          deepLink: pipelineDeepLink,
           mermaidLoading: true,
           prLoading: true,
           imagePaths: {

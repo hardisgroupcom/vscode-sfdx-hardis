@@ -34,6 +34,14 @@ export interface PrePostCommand {
   };
   command: string;
   context: "all" | "check-deployment-only" | "process-deployment-only";
+  // Run the action only when the deployment targets one of these branches.
+  // "dev-sandboxes" matches any target without a branch config file.
+  // Mutually exclusive with excludeTargetBranches.
+  includeTargetBranches?: string[];
+  // Run the action on every target branch except these ones.
+  excludeTargetBranches?: string[];
+  // Deprecated in sfdx-hardis and ignored: post-deployment actions are never run
+  // when the metadata deployment failed. Kept so existing YAML values survive a save.
   skipIfError?: boolean;
   allowFailure?: boolean;
   runOnlyOnceByOrg?: boolean;
@@ -44,7 +52,7 @@ export interface PrePostCommand {
 }
 
 export type ActionResult = {
-  statusCode: "success" | "failed" | "skipped" | "manual";
+  statusCode: "success" | "failed" | "skipped" | "manual" | "not-run";
   output?: string;
   skippedReason?: string;
 };
@@ -116,9 +124,10 @@ export async function listPrePostCommandsForPullRequest(
 function handleDefaultAttributes(cmd: PrePostCommand): void {
   cmd.type = cmd.type ?? "command";
   cmd.context = cmd.context ?? "process-deployment-only";
-  cmd.skipIfError = cmd.skipIfError ?? true;
   cmd.allowFailure = cmd.allowFailure ?? false;
-  cmd.runOnlyOnceByOrg = cmd.runOnlyOnceByOrg ?? false;
+  // Same default as sfdx-hardis: an action runs only once per target org unless
+  // it is explicitly set to false
+  cmd.runOnlyOnceByOrg = cmd.runOnlyOnceByOrg ?? true;
   cmd.parameters = cmd.parameters ?? {};
 }
 

@@ -1,7 +1,7 @@
 const showBanner = false;
 export const RECOMMENDED_SFDX_CLI_VERSION = null; //"7.111.6";
 export const NODE_JS_MINIMUM_VERSION = 24.0;
-export const RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION: string = "6.7.1";
+export const RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION: string = "7.23.0";
 export const BANNER_IMAGE_URL = showBanner
   ? "https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/refs/heads/main/docs/assets/images/cloudity-banner.png"
   : false;

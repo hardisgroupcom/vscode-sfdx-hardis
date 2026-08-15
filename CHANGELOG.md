@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+- DevOps Pipeline
+  - **Update the Deployment Actions of your Pull Request** button at the end of **Save / Publish Task**, opening the DevOps Pipeline straight on the Deployment Actions of your pull request, instead of leaving you to find them yourself
+    - When the pull request is not created yet, the draft deployment actions of your current branch are displayed, so you can declare them right after saving your task
+    - When no pull request can be found, the DevOps Pipeline simply opens on its home view
+  - Deployment actions can now be **restricted to some target orgs**: choose to run an action everywhere, only on some major branches, or everywhere except a few
+    - Select **Developer sandboxes** to target the orgs that have no branch configuration file
+  - New actions are now created with **Run only once by org** enabled, matching sfdx-hardis. Until now an action created here re-ran at every deployment to the same org
+  - Removed the **Skip if deployment error** option, which sfdx-hardis now ignores: post-deployment actions are never run when the metadata deployment failed
+  - The pipeline no longer warns when no manual actions tracking file is configured, since manual actions are now declared in pull requests and ticked off in their comments
+
+- Pipeline Settings
+  - New settings for Flow deletion in destructive changes: **Flow Delete Interviews** (in the Danger Zone), **Flow Delete Max Attempts** and **Flow Delete Retry Delay**
+  - New **Translate deployment notification messages** setting
+  - Fixed **Branch-scoped custom Package-No-Overwrite path**, which never appeared in the settings
+  - Deployment actions edited from the settings no longer offer the obsolete **Skip if deploy error** option
+
+- Commands
+  - Added 12 commands to the Commands panel: **MFA Readiness**, **Unsecure Permissions**, **Usage-Based Entitlements**, **Consumption Alerts**, **AI Credit Usage**, **Run Agentforce Tests**, **Unlink Security Keys / MFA**, **Read Metadata (CRUD API)**, **Write Metadata (CRUD API)**, **Data Dictionary**, **DORA Metrics Report** and **Release Notes**
+
 - Commands
   - Added a **Search** button in the Commands tree view header that opens a QuickPick listing commands from every category
     - The picker supports fuzzy filtering on each command's label, category, and tooltip

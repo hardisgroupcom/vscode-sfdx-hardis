@@ -64,7 +64,7 @@ export class SfdxHardisConfigHelper {
     { name: "initPermissionSets", scopes: ["global"] },
     { name: "scratchOrgInitApexScripts", scopes: ["global"] },
     { name: "dataPackages", scopes: ["global"] },
-    { name: "packageNoOverwritePath", scope: ["branch"] },
+    { name: "packageNoOverwritePath", scopes: ["branch"] },
     { name: "useDeltaDeployment", scopes: ["global"] },
     { name: "useDeltaDeploymentWithDependencies", scopes: ["global"] },
     { name: "useSmartDeploymentTests", scopes: ["global"] },
@@ -78,7 +78,7 @@ export class SfdxHardisConfigHelper {
     { name: "availableTargetBranchesLabels", scopes: ["global"] },
     { name: "sharedDevSandboxes", scopes: ["global"] },
     { name: "newTaskNameRegex", scopes: ["global"] },
-    { name: "newTaskNameRegexExample", scopes: "global" },
+    { name: "newTaskNameRegexExample", scopes: ["global"] },
     { name: "installPackagesDuringCheckDeploy", scopes: ["global"] },
     { name: "autoCleanTypes", scopes: ["global"] },
     { name: "autoRetrieveWhenPull", scopes: ["global"] },
@@ -104,6 +104,10 @@ export class SfdxHardisConfigHelper {
     { name: "testLevel", scopes: ["branch"] },
     { name: "testCoverageNotBlocking", scopes: ["branch"] },
     { name: "skipCodeCoverage", scopes: ["branch"] },
+    { name: "notifTranslateDeploymentMessages", scopes: ["global"] },
+    { name: "flowDeleteMaxAttempts", scopes: ["global"] },
+    { name: "flowDeleteRetryDelayMs", scopes: ["global"] },
+    { name: "flowDeleteInterviews", scopes: ["global"] },
   ];
   static readonly SECTIONS = [
     {
@@ -127,6 +131,8 @@ export class SfdxHardisConfigHelper {
         "orgAuthenticationMode",
         "packageNoOverwritePath",
         "mergeTargets",
+        "flowDeleteMaxAttempts",
+        "flowDeleteRetryDelayMs",
       ],
     },
     {
@@ -208,13 +214,14 @@ export class SfdxHardisConfigHelper {
         "testCoverageNotBlocking",
         "skipCodeCoverage",
         "enableDeprecatedDeploymentPlan",
+        "flowDeleteInterviews",
       ],
     },
     {
       label: "other",
       description: "",
       iconName: "utility:settings",
-      keys: ["extends"],
+      keys: ["extends", "notifTranslateDeploymentMessages"],
     },
   ];
   static readonly REMOTE_SCHEMA_URL =

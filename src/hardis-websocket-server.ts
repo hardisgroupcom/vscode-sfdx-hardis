@@ -328,6 +328,10 @@ export class LocalWebSocketServer {
             title: data.title,
             type: data.type, // Forward the type property for LWC simplification
             isPackageXml,
+            // Arguments of an "actionCommand" button, used to deep-link into a panel section
+            commandArgs: Array.isArray(data.commandArgs)
+              ? data.commandArgs
+              : undefined,
           },
         });
       }

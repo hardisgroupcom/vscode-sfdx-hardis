@@ -25,6 +25,8 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
 
   @api apexScripts = [];
   @api sfdmuWorkspaces = [];
+  // Major branch names of the pipeline, used to restrict an action to some target orgs
+  @api majorBranches = [];
   _storedSchedulableClasses = null;
   _storedCommunities = null;
 
@@ -420,9 +422,81 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     return type !== "manual";
   }
 
-  get showSkipIfErrorField() {
-    const when = this.displayedAction?.when;
-    return when !== "pre-deploy";
+  // --- Target branches restriction -------------------------------------------
+  // includeTargetBranches and excludeTargetBranches are mutually exclusive, so a
+  // single mode selector drives them: only one of the two is ever written.
+
+  get targetBranchesModeOptions() {
+    return [
+      { label: this.t("targetBranchesModeAll"), value: "all" },
+      { label: this.t("targetBranchesModeInclude"), value: "include" },
+      { label: this.t("targetBranchesModeExclude"), value: "exclude" },
+    ];
+  }
+
+  get targetBranchesMode() {
+    const action = this.displayedAction;
+    if (action?.excludeTargetBranches?.length) {
+      return "exclude";
+    }
+    if (action?.includeTargetBranches?.length) {
+      return "include";
+    }
+    return "all";
+  }
+
+  get showTargetBranchesSelector() {
+    return this.targetBranchesMode !== "all";
+  }
+
+  get targetBranchOptions() {
+    const branches = Array.isArray(this.majorBranches) ? this.majorBranches : [];
+    const options = branches.map((branch) => ({
+      label: branch,
+      value: branch,
+    }));
+    // Virtual branch matching every target without a branch configuration file
+    options.push({ label: this.t("devSandboxesOption"), value: "dev-sandboxes" });
+    return options;
+  }
+
+  get selectedTargetBranches() {
+    const action = this.displayedAction;
+    if (this.targetBranchesMode === "exclude") {
+      return action?.excludeTargetBranches || [];
+    }
+    return action?.includeTargetBranches || [];
+  }
+
+  get targetBranchesSelectorLabel() {
+    return this.targetBranchesMode === "exclude"
+      ? this.t("targetBranchesExcludedLabel")
+      : this.t("targetBranchesIncludedLabel");
+  }
+
+  handleTargetBranchesModeChange(event) {
+    const mode = event.detail.value;
+    const previous = this.selectedTargetBranches;
+    delete this.editedAction.includeTargetBranches;
+    delete this.editedAction.excludeTargetBranches;
+    if (mode === "include") {
+      this.editedAction.includeTargetBranches = [...previous];
+    } else if (mode === "exclude") {
+      this.editedAction.excludeTargetBranches = [...previous];
+    }
+    this.validationError = "";
+    this.editedAction = { ...this.editedAction };
+  }
+
+  handleTargetBranchesChange(event) {
+    const values = event.detail.value || [];
+    if (this.targetBranchesMode === "exclude") {
+      this.editedAction.excludeTargetBranches = [...values];
+    } else {
+      this.editedAction.includeTargetBranches = [...values];
+    }
+    this.validationError = "";
+    this.editedAction = { ...this.editedAction };
   }
 
   get showCustomUsernameField() {
