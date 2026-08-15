@@ -446,10 +446,13 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       return this.targetBranchesModeOverride;
     }
     const action = this.displayedAction;
-    if (action?.excludeTargetBranches?.length) {
+    // The list is present but empty right after picking a mode, so the mode is read
+    // from the presence of the list, not from its content: an action that restricts
+    // nothing has no list at all (empty ones are dropped when saving)
+    if (Array.isArray(action?.excludeTargetBranches)) {
       return "exclude";
     }
-    if (action?.includeTargetBranches?.length) {
+    if (Array.isArray(action?.includeTargetBranches)) {
       return "include";
     }
     return "all";
