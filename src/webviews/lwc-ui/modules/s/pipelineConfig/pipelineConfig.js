@@ -28,8 +28,31 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
   @track activeTabValue;
   @track initialActiveTableValue;
   @track apexTestsFieldMode = "view"; // 'view' | 'edit' (field-level toggle)
+  // Deployment actions are edited with the same modal as the DevOps Pipeline panel,
+  // instead of the generic form built from the schema, so that both places offer
+  // the action types, their parameters and the target orgs restriction
+  @track showDeploymentActionModal = false;
+  @track currentDeploymentAction = null;
+  @track projectApexScripts = [];
+  @track projectSfdmuWorkspaces = [];
+  @track projectSchedulableClasses = [];
+  @track schedulableClassesLoading = false;
+  @track projectCommunities = [];
+  @track communitiesLoading = false;
+  _deploymentActionKey = null; // commandsPreDeploy | commandsPostDeploy
+  _deploymentActionEditIndex = -1;
+  _schedulableClassesRequestId = null;
+  _communitiesRequestId = null;
   _apexTestsFieldOriginal = [];
   initData = {};
+
+  // Config keys holding deployment actions, and the "when" each one implies
+  get deploymentActionKeys() {
+    return {
+      commandsPreDeploy: "pre-deploy",
+      commandsPostDeploy: "post-deploy",
+    };
+  }
 
   get isEditMode() {
     return this.mode === "edit";
@@ -279,8 +302,12 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
             isApexTestsSelect &&
             Array.isArray(valueEdit) &&
             valueEdit.length > 0;
+          const isDeploymentActions =
+            isArrayObject && this.deploymentActionKeys[key] !== undefined;
           entries.push({
             key,
+            isDeploymentActions,
+            isGenericArrayObject: isArrayObject && !isDeploymentActions,
             label,
             description,
             value,
@@ -378,6 +405,14 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
       this.branchName = this.initData.branchName || "";
       this.sections = this.initData.sections || [];
       this.availableBranches = this.initData.availableBranches || [];
+      this.projectApexScripts = Array.isArray(this.initData.projectApexScripts)
+        ? this.initData.projectApexScripts
+        : [];
+      this.projectSfdmuWorkspaces = Array.isArray(
+        this.initData.projectSfdmuWorkspaces,
+      )
+        ? this.initData.projectSfdmuWorkspaces
+        : [];
 
       this.resetApexTestsFieldToggle();
 
@@ -608,8 +643,134 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
   }
 
   // Array Object Form Management
+  // --- Deployment actions: edited with the s-deployment-action modal ----------
+
+  _openDeploymentActionModal(key, index) {
+    const currentArray = this.editedConfig[key] || this.config[key] || [];
+    const action =
+      index >= 0
+        ? JSON.parse(JSON.stringify(currentArray[index] || {}))
+        : { id: "", label: "", type: null, command: "", parameters: {} };
+    // The array an action is stored in is what defines when it runs
+    action.when = this.deploymentActionKeys[key];
+    this._deploymentActionKey = key;
+    this._deploymentActionEditIndex = index;
+    this.currentDeploymentAction = action;
+    this.showDeploymentActionModal = true;
+  }
+
+  handleCloseDeploymentActionModal() {
+    this.showDeploymentActionModal = false;
+    this.currentDeploymentAction = null;
+    this._deploymentActionKey = null;
+    this._deploymentActionEditIndex = -1;
+  }
+
+  handleSaveDeploymentActionItem(event) {
+    const action = JSON.parse(JSON.stringify(event.detail));
+    const sourceKey = this._deploymentActionKey;
+    const editIndex = this._deploymentActionEditIndex;
+    if (!sourceKey) {
+      return;
+    }
+    // "when" can be changed in the modal, and it is also forced by some action
+    // types (ex: schedule-batch is always post-deploy): the action then belongs
+    // to the other config key, so move it instead of storing an inconsistent one
+    const targetKey =
+      Object.keys(this.deploymentActionKeys).find(
+        (key) => this.deploymentActionKeys[key] === action.when,
+      ) || sourceKey;
+    // "when" is implied by the array itself and is not stored in the config file
+    delete action.when;
+    delete action.pullRequest;
+
+    const sourceArray = [
+      ...(this.editedConfig[sourceKey] || this.config[sourceKey] || []),
+    ];
+    if (targetKey === sourceKey) {
+      if (editIndex >= 0) {
+        sourceArray[editIndex] = action;
+      } else {
+        sourceArray.push(action);
+      }
+      this._applyDeploymentActions({ [sourceKey]: sourceArray });
+    } else {
+      if (editIndex >= 0) {
+        sourceArray.splice(editIndex, 1);
+      }
+      const targetArray = [
+        ...(this.editedConfig[targetKey] || this.config[targetKey] || []),
+      ];
+      targetArray.push(action);
+      this._applyDeploymentActions({
+        [sourceKey]: sourceArray,
+        [targetKey]: targetArray,
+      });
+    }
+    this.handleCloseDeploymentActionModal();
+  }
+
+  _applyDeploymentActions(arraysByKey) {
+    for (const [key, array] of Object.entries(arraysByKey)) {
+      this.editedConfig[key] = array;
+    }
+    this.editedConfig = { ...this.editedConfig };
+    // Force refresh of config to update the datatable display
+    this.config = { ...this.config, ...arraysByKey };
+  }
+
+  handleLoadSchedulableClasses() {
+    this.schedulableClassesLoading = true;
+    const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    this._schedulableClassesRequestId = requestId;
+    window.sendMessageToVSCode({
+      type: "loadSchedulableClasses",
+      data: { requestId },
+    });
+  }
+
+  handleReturnSchedulableClasses(data) {
+    if (
+      this._schedulableClassesRequestId &&
+      data?.requestId &&
+      data.requestId !== this._schedulableClassesRequestId
+    ) {
+      return;
+    }
+    this.projectSchedulableClasses = Array.isArray(data?.values)
+      ? data.values
+      : [];
+    this.schedulableClassesLoading = false;
+  }
+
+  handleLoadCommunities() {
+    this.communitiesLoading = true;
+    const requestId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    this._communitiesRequestId = requestId;
+    window.sendMessageToVSCode({
+      type: "loadCommunities",
+      data: { requestId },
+    });
+  }
+
+  handleReturnCommunities(data) {
+    if (
+      this._communitiesRequestId &&
+      data?.requestId &&
+      data.requestId !== this._communitiesRequestId
+    ) {
+      return;
+    }
+    this.projectCommunities = Array.isArray(data?.values) ? data.values : [];
+    this.communitiesLoading = false;
+  }
+
   handleAddArrayObjectItem(event) {
     const key = event.target.dataset.key;
+    if (this.deploymentActionKeys[key] !== undefined) {
+      this._openDeploymentActionModal(key, -1);
+      return;
+    }
     const schema = this.configSchema[key];
     const formData = {};
     // Initialize form data with defaults from schema
@@ -636,6 +797,10 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
   handleEditArrayObjectItem(event) {
     const key = event.target.dataset.key;
     const index = parseInt(event.target.dataset.index, 10);
+    if (this.deploymentActionKeys[key] !== undefined) {
+      this._openDeploymentActionModal(key, index);
+      return;
+    }
     const currentArray = this.editedConfig[key] || this.config[key] || [];
     const itemToEdit = currentArray[index] || {};
     this.arrayObjectEditorState[key] = {
@@ -722,6 +887,10 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
         }
         break;
       case "edit":
+        if (this.deploymentActionKeys[key] !== undefined) {
+          this._openDeploymentActionModal(key, index);
+          break;
+        }
         const currentArrayEdit =
           this.editedConfig[key] || this.config[key] || [];
         const itemToEdit = currentArrayEdit[index] || {};
@@ -962,6 +1131,10 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
   handleMessage(type, data) {
     if (type === "initialize") {
       this.initialize(data);
+    } else if (type === "returnSchedulableClasses") {
+      this.handleReturnSchedulableClasses(data);
+    } else if (type === "returnCommunities") {
+      this.handleReturnCommunities(data);
     }
   }
 }

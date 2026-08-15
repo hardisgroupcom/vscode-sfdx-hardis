@@ -18,6 +18,9 @@
   - New **Translate deployment notification messages** setting
   - Fixed **Branch-scoped custom Package-No-Overwrite path**, which never appeared in the settings
   - Deployment actions edited from the settings no longer offer the obsolete **Skip if deploy error** option
+  - Global and branch deployment actions are now edited with the **same editor as the one of the DevOps Pipeline**, instead of a reduced form that offered only the text and toggle fields of an action
+    - Gives access to the action types and their parameters (Apex script, SFDMU workspace, Apex class to schedule, community to publish, package.xml items to remove) and to the **Target orgs** restriction, none of which could be set from the settings
+    - Changing **When** moves the action between the pre-deployment and the post-deployment list, including when the action type imposes it (ex: a scheduled batch always runs after the deployment)
 
 - Command results
   - The buttons displayed at the end of a command now keep the order the command sent them in, so its main action stays the first one (ex: **Create Pull Request** at the end of **Save / Publish Task**, which was pushed behind the other buttons)

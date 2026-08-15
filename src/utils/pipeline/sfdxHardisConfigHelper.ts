@@ -38,6 +38,9 @@ export interface SfdxHardisConfigEditorInput {
   }>;
   availableBranches?: string[];
   availableApexTestClasses?: string[];
+  // Lists proposed by the deployment action editor
+  projectApexScripts?: Array<{ label: string; value: string }>;
+  projectSfdmuWorkspaces?: Array<{ label: string; value: string }>;
 }
 
 export interface SfdxHardisConfigEditorSaveData {

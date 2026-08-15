@@ -17,11 +17,8 @@ import {
   savePrePostCommand,
 } from "../utils/prePostCommandsUtils";
 import { getCurrentGitBranch } from "../utils/pipeline/sfdxHardisConfig";
-import {
-  execCommandWithProgress,
-  execSfdxJson,
-  getWorkspaceRoot,
-} from "../utils";
+import { handleDeploymentActionPickerMessage } from "../utils/pipeline/deploymentActionPickers";
+import { execCommandWithProgress, getWorkspaceRoot } from "../utils";
 import { t } from "../i18n/i18n";
 import path from "path";
 import fs from "fs-extra";
@@ -30,98 +27,10 @@ import { listAllOrgs } from "../utils/orgUtils";
 import { getChildBranchNames } from "../utils/orgConfigUtils";
 import { readSfdxHardisConfig } from "../utils/sfdx-hardis-config-utils";
 
-const SCHEDULABLE_CLASSES_CACHE_TTL_MS = 15 * 60 * 1000;
 const GIT_PULL_REFUSAL_COOLDOWN_MS = 60 * 60 * 1000;
 const promptedRemoteUpdatesByBranch = new Map<string, string>();
 const declinedRemotePullPromptUntilByBranch = new Map<string, number>();
 const notifiedAutoFixBranchHeadByPullRequest = new Map<string, string>();
-const schedulableClassesByOrgCache = new Map<
-  string,
-  { expiresAt: number; values: string[] }
->();
-const communitiesByOrgCache = new Map<
-  string,
-  { expiresAt: number; values: string[] }
->();
-
-async function getDefaultOrgUsername(): Promise<string> {
-  try {
-    const orgDisplay = await execSfdxJson("sf org display --json", {
-      fail: false,
-      output: false,
-    });
-    return (
-      orgDisplay?.result?.username || orgDisplay?.result?.alias || "default"
-    );
-  } catch {
-    return "default";
-  }
-}
-
-async function fetchAndCacheOrgNames(
-  cache: Map<string, { expiresAt: number; values: string[] }>,
-  orgKey: string,
-  now: number,
-  command: string,
-  filter?: (record: any) => boolean,
-): Promise<string[]> {
-  const result = await execSfdxJson(command, {
-    fail: false,
-    output: false,
-  });
-  const records = Array.isArray(result?.result?.records)
-    ? result.result.records
-    : [];
-  const filtered = filter ? records.filter(filter) : records;
-  const values = filtered
-    .map((record: any) => String(record?.Name || "").trim())
-    .filter((v: string) => v.length > 0);
-  const uniqueSorted: string[] = [...new Set<string>(values)].sort(
-    (a: string, b: string) => a.localeCompare(b),
-  );
-  if (uniqueSorted.length > 0) {
-    cache.set(orgKey, {
-      expiresAt: now + SCHEDULABLE_CLASSES_CACHE_TTL_MS,
-      values: uniqueSorted,
-    });
-  }
-  return uniqueSorted;
-}
-
-async function listSchedulableClassesFromDefaultOrg(): Promise<string[]> {
-  const orgKey = await getDefaultOrgUsername();
-  const now = Date.now();
-  const cached = schedulableClassesByOrgCache.get(orgKey);
-  if (cached && cached.expiresAt > now) {
-    return cached.values;
-  }
-  const query =
-    "SELECT Name, Body FROM ApexClass WHERE ManageableState = 'unmanaged' ORDER BY Name";
-  const command = `sf data query --query "${query}" --use-tooling-api --json`;
-  return fetchAndCacheOrgNames(
-    schedulableClassesByOrgCache,
-    orgKey,
-    now,
-    command,
-    (record: any) =>
-      String(record?.Body || "")
-        .toLowerCase()
-        .includes("schedulable"),
-  );
-}
-
-async function listCommunitiesFromDefaultOrg(): Promise<string[]> {
-  const orgKey = await getDefaultOrgUsername();
-  const now = Date.now();
-  const cached = communitiesByOrgCache.get(orgKey);
-  if (cached && cached.expiresAt > now) {
-    return cached.values;
-  }
-  const query = "SELECT Name FROM Network ORDER BY Name";
-  const command = `sf data query --query "${query}" --json`;
-  return fetchAndCacheOrgNames(communitiesByOrgCache, orgKey, now, command);
-}
-
 async function getOriginBranchUpdateStatus(branchName: string): Promise<{
   remoteHeadSha: string | null;
   hasNewRemoteCommit: boolean;
@@ -521,53 +430,10 @@ export function registerShowPipeline(commands: Commands) {
                 });
           showCommitReminder(data.prNumber, msg);
         }
-        // Lazy-load Schedulable classes for schedule-batch deployment actions
-        else if (type === "loadSchedulableClasses") {
-          const requestId = data?.requestId || null;
-          try {
-            const values = await listSchedulableClassesFromDefaultOrg();
-            panel.sendMessage({
-              type: "returnSchedulableClasses",
-              data: {
-                requestId,
-                values,
-              },
-            });
-          } catch (error: any) {
-            Logger.log(
-              `Error loading schedulable classes with Tooling API: ${error?.message || error}`,
-            );
-            panel.sendMessage({
-              type: "returnSchedulableClasses",
-              data: {
-                requestId,
-                values: [],
-              },
-            });
-          }
-        }
-        // Lazy-load communities for publish-community deployment actions
-        else if (type === "loadCommunities") {
-          const requestId = data?.requestId || null;
-          try {
-            const values = await listCommunitiesFromDefaultOrg();
-            panel.sendMessage({
-              type: "returnCommunities",
-              data: {
-                requestId,
-                values,
-              },
-            });
-          } catch (error: any) {
-            Logger.log(`Error loading communities: ${error?.message || error}`);
-            panel.sendMessage({
-              type: "returnCommunities",
-              data: {
-                requestId,
-                values: [],
-              },
-            });
-          }
+        // Lazy-load the schedulable classes and communities of the deployment
+        // action editor, which the Pipeline Settings panel also opens
+        else if (await handleDeploymentActionPickerMessage(panel, type, data)) {
+          // Message handled by the shared deployment action pickers
         }
         // Get PR info for modal
         else if (type === "getPrInfoForModal") {
