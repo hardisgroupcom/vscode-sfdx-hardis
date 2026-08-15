@@ -210,9 +210,20 @@ export async function savePrePostCommand(
   ensureTargetArray(prConfigParsed, targetArrayName);
 
   // Check if command with same id exists, replace it
-  const existingIndex = prConfigParsed[targetArrayName].findIndex(
+  let existingIndex = prConfigParsed[targetArrayName].findIndex(
     (cmd: PrePostCommand) => cmd.id === command.id,
   );
+  // Actions written by hand in the YAML file have no id: match them on their
+  // content instead, so that editing one updates it rather than duplicating it
+  if (existingIndex < 0) {
+    existingIndex = prConfigParsed[targetArrayName].findIndex(
+      (cmd: PrePostCommand) =>
+        !cmd.id &&
+        cmd.label === command.label &&
+        (cmd.type ?? "command") === (command.type ?? "command") &&
+        cmd.command === command.command,
+    );
+  }
   if (existingIndex >= 0) {
     prConfigParsed[targetArrayName][existingIndex] =
       normalizePrePostCommandToSave(command);

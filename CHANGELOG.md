@@ -10,6 +10,7 @@
     - Select **Developer sandboxes** to target the orgs that have no branch configuration file
   - New actions are now created with **Run only once by org** enabled, matching sfdx-hardis. Until now an action created here re-ran at every deployment to the same org
   - Removed the **Skip if deployment error** option, which sfdx-hardis now ignores: post-deployment actions are never run when the metadata deployment failed
+  - Fixed editing a deployment action creating a copy of it instead of updating it: an action created from the panel had no identifier until the pipeline was reloaded, so every save appended a new entry to the configuration file
   - The pipeline no longer warns when no manual actions tracking file is configured, since manual actions are now declared in pull requests and ticked off in their comments
 
 - Pipeline Settings

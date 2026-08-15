@@ -739,6 +739,21 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     this.dispatchEvent(new CustomEvent("loadcommunities"));
   }
 
+  _generateActionId() {
+    if (
+      typeof crypto !== "undefined" &&
+      typeof crypto.randomUUID === "function"
+    ) {
+      return crypto.randomUUID();
+    }
+    // Fallback for the contexts where crypto.randomUUID is not available
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (char) => {
+      const random = Math.floor(Math.random() * 16);
+      const value = char === "x" ? random : (random & 0x3) | 0x8;
+      return value.toString(16);
+    });
+  }
+
   handleSave() {
     const isValid = this._validateRequiredFields();
     if (!isValid) {
@@ -747,6 +762,13 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     }
 
     this.validationError = "";
+    // A new action is created with an empty id: give it one here, because the id
+    // generated while writing it to the configuration file never comes back to
+    // this panel, and without it every later edit of the action would be saved
+    // as a new action instead of updating it
+    if (!this.editedAction.id) {
+      this.editedAction.id = this._generateActionId();
+    }
     // An empty restriction list means "all target orgs": do not leave an empty
     // includeTargetBranches / excludeTargetBranches behind in the configuration file
     ["includeTargetBranches", "excludeTargetBranches"].forEach((key) => {
