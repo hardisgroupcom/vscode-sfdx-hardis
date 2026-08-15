@@ -54,6 +54,12 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   @api communitiesLoading = false;
   @track editedAction = {};
   @track validationError = "";
+  // Target branches restriction mode picked in the selector. It has to be stored
+  // aside from the action: right after picking "only these branches" or "all except
+  // these branches", the matching list is still empty, so deriving the mode from the
+  // action alone would fall back to "all" and hide the branch selector before any
+  // branch can be picked. Null means "derive it from the action".
+  @track targetBranchesModeOverride = null;
   _schedulableClassesRequested = false;
   _communitiesRequested = false;
 
@@ -315,6 +321,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     // Options arrays depend on translations - init them after auto-translation load.
     this._initOptions();
     if (this.isEditMode && this.action) {
+      this.targetBranchesModeOverride = null;
       this.editedAction = JSON.parse(JSON.stringify(this.action));
       // Ensure parameters object exists
       if (!this.editedAction.parameters) {
@@ -435,6 +442,9 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   }
 
   get targetBranchesMode() {
+    if (this.targetBranchesModeOverride) {
+      return this.targetBranchesModeOverride;
+    }
     const action = this.displayedAction;
     if (action?.excludeTargetBranches?.length) {
       return "exclude";
@@ -482,6 +492,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   handleTargetBranchesModeChange(event) {
     const mode = event.detail.value;
     const previous = this.selectedTargetBranches;
+    this.targetBranchesModeOverride = mode;
     delete this.editedAction.includeTargetBranches;
     delete this.editedAction.excludeTargetBranches;
     if (mode === "include") {
@@ -613,6 +624,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   }
 
   handleEdit() {
+    this.targetBranchesModeOverride = null;
     this.editedAction = JSON.parse(JSON.stringify(this.action));
     // Ensure parameters object exists
     if (!this.editedAction.parameters) {
@@ -732,6 +744,16 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     }
 
     this.validationError = "";
+    // An empty restriction list means "all target orgs": do not leave an empty
+    // includeTargetBranches / excludeTargetBranches behind in the configuration file
+    ["includeTargetBranches", "excludeTargetBranches"].forEach((key) => {
+      if (
+        Array.isArray(this.editedAction[key]) &&
+        this.editedAction[key].length === 0
+      ) {
+        delete this.editedAction[key];
+      }
+    });
     // Persist packageXmlItems as a clean list of entries (drop empty lines)
     if (
       this.editedAction.type === "remove-packagexml-items" &&
