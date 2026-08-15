@@ -649,6 +649,24 @@ export class BranchStrategyMermaidBuilder {
     this.addLinks(this.sbDevLinks);
     this.addLinks(this.retrofitLinks);
 
+    // Stack the Salesforce orgs vertically. Their subgraph declares "direction TB",
+    // but mermaid only applies a subgraph direction when that subgraph has edges
+    // between its own nodes, and the orgs only have incoming deployment links. An
+    // invisible chain ("~~~") gives it those internal edges, so the direction applies.
+    // These links MUST stay after every real link: linkStyle targets links by their
+    // declaration index, so declaring them earlier would shift all the styled indices.
+    if (majorOrgs.length > 1) {
+      for (let i = 0; i < majorOrgs.length - 1; i++) {
+        this.mermaidLines.push(
+          this.indent(
+            `${majorOrgs[i].nodeName} ~~~ ${majorOrgs[i + 1].nodeName}`,
+            1,
+          ),
+        );
+      }
+      this.mermaidLines.push("");
+    }
+
     // Classes and styles (only include those that are actually used)
     const usedClasses = new Set<string>();
     const usedStyles = new Set<string>();
