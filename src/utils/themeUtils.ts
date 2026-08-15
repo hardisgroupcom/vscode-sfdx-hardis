@@ -312,15 +312,7 @@ export class ThemeUtils {
         vscode: "sparkle",
         hardis: "dollar.svg",
       },
-      "hardis:org:user:unlink-security-key": {
-        vscode: "key",
-        hardis: "password.svg",
-      },
-      "hardis:mdapi:read": { vscode: "cloud-download", hardis: "pull.svg" },
-      "hardis:mdapi:upsert": { vscode: "cloud-upload", hardis: "push.svg" },
       "hardis:doc:data-dictionary": { vscode: "book", hardis: "data.svg" },
-      "hardis:doc:dora-report": { vscode: "graph", hardis: "gauge.svg" },
-      "hardis:doc:release-notes": { vscode: "book", hardis: "doc.svg" },
       "org:test:apex": { vscode: "testing-run-all-icon", hardis: "test.svg" },
       "hardis:org:test:agents": {
         vscode: "sparkle",

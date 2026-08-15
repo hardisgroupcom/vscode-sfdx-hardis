@@ -19,7 +19,7 @@
   - Deployment actions edited from the settings no longer offer the obsolete **Skip if deploy error** option
 
 - Commands
-  - Added 12 commands to the Commands panel: **MFA Readiness**, **Unsecure Permissions**, **Usage-Based Entitlements**, **Consumption Alerts**, **AI Credit Usage**, **Run Agentforce Tests**, **Unlink Security Keys / MFA**, **Read Metadata (CRUD API)**, **Write Metadata (CRUD API)**, **Data Dictionary**, **DORA Metrics Report** and **Release Notes**
+  - Added 7 commands to the Commands panel: **MFA Readiness**, **Unsecure Permissions**, **Usage-Based Entitlements**, **Consumption Alerts**, **AI Credit Usage**, **Run Agentforce Tests** and **Data Dictionary**
 
 - Commands
   - Added a **Search** button in the Commands tree view header that opens a QuickPick listing commands from every category
