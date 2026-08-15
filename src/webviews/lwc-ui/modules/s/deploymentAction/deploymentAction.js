@@ -494,14 +494,15 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
 
   handleTargetBranchesModeChange(event) {
     const mode = event.detail.value;
-    const previous = this.selectedTargetBranches;
     this.targetBranchesModeOverride = mode;
+    // Start from an empty selection: branches picked to be included are not the
+    // ones to exclude, and the opposite is just as true
     delete this.editedAction.includeTargetBranches;
     delete this.editedAction.excludeTargetBranches;
     if (mode === "include") {
-      this.editedAction.includeTargetBranches = [...previous];
+      this.editedAction.includeTargetBranches = [];
     } else if (mode === "exclude") {
-      this.editedAction.excludeTargetBranches = [...previous];
+      this.editedAction.excludeTargetBranches = [];
     }
     this.validationError = "";
     this.editedAction = { ...this.editedAction };
