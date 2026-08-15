@@ -516,6 +516,11 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
         type: type,
         url: type === "actionUrl" ? data.file : null,
         vscodeCommand: type === "actionCommand" ? data.file : null,
+        // Arguments forwarded to the VS Code command (deep-link into a panel section)
+        commandArgs:
+          type === "actionCommand" && Array.isArray(data.commandArgs)
+            ? data.commandArgs
+            : null,
         isPackageXml: data.isPackageXml === true,
       };
       this.reportFiles = [...this.reportFiles, reportFile];
@@ -2212,7 +2217,10 @@ ${resultMessage}`;
         // Run a VS Code command
         window.sendMessageToVSCode({
           type: "runVsCodeCommand",
-          data: { command: reportFile.file },
+          data: {
+            command: reportFile.file,
+            args: reportFile.commandArgs || undefined,
+          },
         });
         break;
       case "actionUrl":

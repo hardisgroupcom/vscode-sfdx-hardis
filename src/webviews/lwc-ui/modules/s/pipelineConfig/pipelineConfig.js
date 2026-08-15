@@ -907,8 +907,16 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
       exampleItem = schemaExamples[0][0]; // Get first item from first example array
     }
 
+    // Properties written by sfdx-hardis itself, that users must not set by hand
+    const cliManagedProps = ["when"];
+
     Object.keys(properties).forEach((propKey) => {
       const propSchema = properties[propKey];
+      // Skip deprecated properties (ex: skipIfError, now ignored by sfdx-hardis)
+      // and properties maintained by the CLI
+      if (propSchema.deprecated === true || cliManagedProps.includes(propKey)) {
+        return;
+      }
       const formData = this.arrayObjectEditorState[entry.key]?.formData || {};
       const value =
         formData[propKey] !== undefined

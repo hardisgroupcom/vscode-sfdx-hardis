@@ -115,7 +115,6 @@ export class PipelineDataProvider {
 
       // Additional warnings
       const projectConfig = await getConfig("project");
-      this.checkManualActionsFile(projectConfig);
       this.checkDevelopmentBranchExists(projectConfig, majorOrgs);
       this.checkAvailableTargetBranchesExist(projectConfig, majorOrgs);
 
@@ -139,17 +138,6 @@ export class PipelineDataProvider {
         warnings: [error.message],
         featureBranchGroups: [],
       };
-    }
-  }
-
-  checkManualActionsFile(projectConfig: any): void {
-    if (projectConfig.manualActionsMode === "sfdxHardis") {
-      return;
-    }
-    if (!projectConfig.manualActionsFileUrl) {
-      this.warnings.push(
-        "The Pipeline should have Manual Actions tracking file (for pre-deployment and post-deployment manual actions). It is recommended to define one in Pipeline Settings.",
-      );
     }
   }
 

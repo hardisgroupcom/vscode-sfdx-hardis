@@ -295,7 +295,29 @@ export class ThemeUtils {
         vscode: "eye-watch",
         hardis: "monitoring.svg",
       },
+      "hardis:org:diagnose:mfa": { vscode: "key", hardis: "password.svg" },
+      "hardis:org:diagnose:unsecure-permissions": {
+        vscode: "shield",
+        hardis: "warning-red.svg",
+      },
+      "hardis:org:diagnose:usage-entitlements": {
+        vscode: "graph",
+        hardis: "gauge.svg",
+      },
+      "hardis:org:diagnose:consumption-alerts": {
+        vscode: "warning",
+        hardis: "dollar.svg",
+      },
+      "hardis:org:diagnose:ai-usage": {
+        vscode: "sparkle",
+        hardis: "dollar.svg",
+      },
+      "hardis:doc:data-dictionary": { vscode: "book", hardis: "data.svg" },
       "org:test:apex": { vscode: "testing-run-all-icon", hardis: "test.svg" },
+      "hardis:org:test:agents": {
+        vscode: "sparkle",
+        hardis: "test.svg",
+      },
       "hardis:org:diagnose:unused-apex-classes": {
         vscode: "code",
         hardis: "old.svg",

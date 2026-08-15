@@ -356,13 +356,27 @@ export class LwcUiPanel {
    */
   private async handleRunVsCodeCommand(data: {
     command: string;
+    args?: any[];
   }): Promise<void> {
     if (!data || !data.command || typeof data.command !== "string") {
       vscode.window.showErrorMessage(t("noVsCodeCommandSpecified"));
       return;
     }
+    // Security: messages can come from the CLI through the WebSocket server, so only
+    // allow this extension's own commands, plus the VS Code built-in views that the
+    // CLI and the Welcome page legitimately open (ex: workbench.view.scm).
+    const isOwnCommand = data.command.startsWith("vscode-sfdx-hardis.");
+    if (!isOwnCommand && !data.command.startsWith("workbench.")) {
+      Logger.log(`Refused to run VS Code command: ${data.command}`);
+      vscode.window.showErrorMessage(
+        t("vsCodeCommandNotAllowed", { command: data.command }),
+      );
+      return;
+    }
+    // Arguments are only forwarded to this extension's own commands
+    const args = isOwnCommand && Array.isArray(data.args) ? data.args : [];
     try {
-      await vscode.commands.executeCommand(data.command);
+      await vscode.commands.executeCommand(data.command, ...args);
     } catch (error) {
       Logger.log("Error running VS Code command:\n" + JSON.stringify(error));
       vscode.window.showErrorMessage(
