@@ -18,6 +18,9 @@
   - Fixed **Branch-scoped custom Package-No-Overwrite path**, which never appeared in the settings
   - Deployment actions edited from the settings no longer offer the obsolete **Skip if deploy error** option
 
+- Command results
+  - The buttons displayed at the end of a command now keep the order the command sent them in, so its main action stays the first one (ex: **Create Pull Request** at the end of **Save / Publish Task**, which was pushed behind the other buttons)
+
 - Commands
   - Added 7 commands to the Commands panel: **MFA Readiness**, **Unsecure Permissions**, **Usage-Based Entitlements**, **Consumption Alerts**, **AI Credit Usage**, **Run Agentforce Tests** and **Data Dictionary**
 

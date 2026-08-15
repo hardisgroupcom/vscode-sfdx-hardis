@@ -1549,18 +1549,19 @@ ${resultMessage}`;
   }
 
   get sortedReportFiles() {
-    // Sort: actionCommand, actionUrl, report, docUrl
-    const actionCommands = [];
-    const actionUrls = [];
+    // Sort: actions, report, docUrl.
+    // actionCommand and actionUrl share the same group so that actions keep the
+    // order the command sent them in: a command knows which of its actions is the
+    // main one, and that one must stay the first button (ex: "Create Pull Request"
+    // before the secondary actions of hardis:work:save).
+    const actions = [];
     const reports = [];
     const docUrls = [];
     for (const f of this.reportFiles) {
       switch (f.type) {
         case "actionCommand":
-          actionCommands.push(f);
-          break;
         case "actionUrl":
-          actionUrls.push(f);
+          actions.push(f);
           break;
         case "report":
           reports.push(f);
@@ -1655,8 +1656,7 @@ ${resultMessage}`;
     };
 
     // Group similar files for each category
-    const groupedActionCommands = groupSimilarFiles(actionCommands);
-    const groupedActionUrls = groupSimilarFiles(actionUrls);
+    const groupedActions = groupSimilarFiles(actions);
     const groupedReports = groupSimilarFiles(reports);
     const groupedDocUrls = groupSimilarFiles(docUrls);
 
@@ -1772,8 +1772,7 @@ ${resultMessage}`;
     };
 
     return [
-      ...groupedActionCommands.map(decorate),
-      ...groupedActionUrls.map(decorate),
+      ...groupedActions.map(decorate),
       ...groupedReports.map(decorate),
       ...groupedDocUrls.map(decorate),
     ];
