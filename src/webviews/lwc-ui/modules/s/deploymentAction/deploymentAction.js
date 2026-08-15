@@ -450,13 +450,18 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   }
 
   get targetBranchOptions() {
-    const branches = Array.isArray(this.majorBranches) ? this.majorBranches : [];
+    const branches = Array.isArray(this.majorBranches)
+      ? this.majorBranches
+      : [];
     const options = branches.map((branch) => ({
       label: branch,
       value: branch,
     }));
     // Virtual branch matching every target without a branch configuration file
-    options.push({ label: this.t("devSandboxesOption"), value: "dev-sandboxes" });
+    options.push({
+      label: this.t("devSandboxesOption"),
+      value: "dev-sandboxes",
+    });
     return options;
   }
 
