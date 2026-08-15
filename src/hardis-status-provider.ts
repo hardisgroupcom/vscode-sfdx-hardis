@@ -1,6 +1,5 @@
 import * as vscode from "vscode";
-import GitUrlParse from "git-url-parse";
-import moment = require("moment");
+import { gitRemoteToHttps } from "./utils/gitUrlUtils";
 import {
   execSfdxJson,
   getGitMenusItems,
@@ -254,9 +253,10 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
         }
       }
       if (orgInfo.expirationDate) {
-        const expiration = moment(orgInfo.expirationDate);
-        const today = moment();
-        const daysBeforeExpiration = expiration.diff(today, "days");
+        const daysBeforeExpiration = Math.floor(
+          (new Date(orgInfo.expirationDate).getTime() - Date.now()) /
+            86_400_000,
+        );
         orgDetailItem.label += ` ${t("orgExpiresLabel", { expirationDate: orgInfo.expirationDate })}`;
         orgDetailItem.tooltip += t("orgExpiresInNDays", {
           days: daysBeforeExpiration,
@@ -456,9 +456,8 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
         const origin = gitRemotesOrigins[0];
         // Display repo
         if (origin) {
-          const parsedGitUrl = GitUrlParse(origin.refs.fetch);
           const httpGitUrl =
-            parsedGitUrl.toString("https") || origin?.refs?.fetch || "";
+            gitRemoteToHttps(origin.refs.fetch) || origin?.refs?.fetch || "";
           items.push({
             id: "git-info-repo",
             label: `Repo: ${(httpGitUrl.split("/").pop() || "").replace(

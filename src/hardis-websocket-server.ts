@@ -1,5 +1,5 @@
 import * as http from "http";
-import getPort, { portNumbers } from "get-port";
+import { findAvailablePort } from "./utils/portUtils";
 import { WebSocketServer } from "ws";
 import * as vscode from "vscode";
 import * as fs from "fs-extra";
@@ -40,7 +40,7 @@ export class LocalWebSocketServer {
     let port = DEFAULT_PORT;
     if (port === 2702) {
       // Define random port if not forced by the user with env var SFDX_HARDIS_WEBSOCKET_PORT
-      port = await getPort({ port: portNumbers(2702, 2784) });
+      port = await findAvailablePort(2702, 2784);
     }
     this.listen();
     //start our server

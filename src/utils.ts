@@ -1,5 +1,5 @@
 import axios from "axios";
-import c from "chalk";
+import * as c from "./utils/ansiColors";
 import * as childProcess from "child_process";
 import * as fs from "fs-extra";
 import * as path from "path";

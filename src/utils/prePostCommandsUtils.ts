@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import * as fs from "fs-extra";
 import * as yaml from "js-yaml";
 import * as path from "path";
@@ -230,8 +231,7 @@ export async function savePrePostCommand(
   } else {
     // If Id not set, generate a new one with uuid
     if (!command.id || command.id.trim() === "") {
-      const { v4: uuidv4 } = await import("uuid");
-      command.id = uuidv4();
+      command.id = randomUUID();
     }
     prConfigParsed[targetArrayName].push(
       normalizePrePostCommandToSave(command),

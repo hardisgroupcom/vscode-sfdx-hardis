@@ -11,7 +11,7 @@ getConfig(layer) returns:
 */
 
 import axios from "axios";
-import c from "chalk";
+import * as c from "../ansiColors";
 import { cosmiconfig } from "cosmiconfig";
 import fs from "fs-extra";
 import * as yaml from "js-yaml";
