@@ -25,6 +25,8 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
 
   @api apexScripts = [];
   @api sfdmuWorkspaces = [];
+  // Major branch names of the pipeline, used to restrict an action to some target orgs
+  @api majorBranches = [];
   _storedSchedulableClasses = null;
   _storedCommunities = null;
 
@@ -52,6 +54,12 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   @api communitiesLoading = false;
   @track editedAction = {};
   @track validationError = "";
+  // Target branches restriction mode picked in the selector. It has to be stored
+  // aside from the action: right after picking "only these branches" or "all except
+  // these branches", the matching list is still empty, so deriving the mode from the
+  // action alone would fall back to "all" and hide the branch selector before any
+  // branch can be picked. Null means "derive it from the action".
+  @track targetBranchesModeOverride = null;
   _schedulableClassesRequested = false;
   _communitiesRequested = false;
 
@@ -313,6 +321,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     // Options arrays depend on translations - init them after auto-translation load.
     this._initOptions();
     if (this.isEditMode && this.action) {
+      this.targetBranchesModeOverride = null;
       this.editedAction = JSON.parse(JSON.stringify(this.action));
       // Ensure parameters object exists
       if (!this.editedAction.parameters) {
@@ -420,9 +429,94 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     return type !== "manual";
   }
 
-  get showSkipIfErrorField() {
-    const when = this.displayedAction?.when;
-    return when !== "pre-deploy";
+  // --- Target branches restriction -------------------------------------------
+  // includeTargetBranches and excludeTargetBranches are mutually exclusive, so a
+  // single mode selector drives them: only one of the two is ever written.
+
+  get targetBranchesModeOptions() {
+    return [
+      { label: this.t("targetBranchesModeAll"), value: "all" },
+      { label: this.t("targetBranchesModeInclude"), value: "include" },
+      { label: this.t("targetBranchesModeExclude"), value: "exclude" },
+    ];
+  }
+
+  get targetBranchesMode() {
+    if (this.targetBranchesModeOverride) {
+      return this.targetBranchesModeOverride;
+    }
+    const action = this.displayedAction;
+    // The list is present but empty right after picking a mode, so the mode is read
+    // from the presence of the list, not from its content: an action that restricts
+    // nothing has no list at all (empty ones are dropped when saving)
+    if (Array.isArray(action?.excludeTargetBranches)) {
+      return "exclude";
+    }
+    if (Array.isArray(action?.includeTargetBranches)) {
+      return "include";
+    }
+    return "all";
+  }
+
+  get showTargetBranchesSelector() {
+    return this.targetBranchesMode !== "all";
+  }
+
+  get targetBranchOptions() {
+    const branches = Array.isArray(this.majorBranches)
+      ? this.majorBranches
+      : [];
+    const options = branches.map((branch) => ({
+      label: branch,
+      value: branch,
+    }));
+    // Virtual branch matching every target without a branch configuration file
+    options.push({
+      label: this.t("devSandboxesOption"),
+      value: "dev-sandboxes",
+    });
+    return options;
+  }
+
+  get selectedTargetBranches() {
+    const action = this.displayedAction;
+    if (this.targetBranchesMode === "exclude") {
+      return action?.excludeTargetBranches || [];
+    }
+    return action?.includeTargetBranches || [];
+  }
+
+  get targetBranchesSelectorLabel() {
+    return this.targetBranchesMode === "exclude"
+      ? this.t("targetBranchesExcludedLabel")
+      : this.t("targetBranchesIncludedLabel");
+  }
+
+  handleTargetBranchesModeChange(event) {
+    const mode = event.detail.value;
+    this.targetBranchesModeOverride = mode;
+    // Start from an empty selection: branches picked to be included are not the
+    // ones to exclude, and the opposite is just as true
+    delete this.editedAction.includeTargetBranches;
+    delete this.editedAction.excludeTargetBranches;
+    if (mode === "include") {
+      this.editedAction.includeTargetBranches = [];
+    } else if (mode === "exclude") {
+      this.editedAction.excludeTargetBranches = [];
+    }
+    this.validationError = "";
+    this.editedAction = { ...this.editedAction };
+  }
+
+  handleTargetBranchesChange(event) {
+    const values = event.detail.value || [];
+    if (this.targetBranchesMode === "exclude") {
+      this.editedAction.excludeTargetBranches = [...values];
+    } else {
+      this.editedAction.includeTargetBranches = [...values];
+    }
+    this.validationError = "";
+    this.editedAction = { ...this.editedAction };
   }
 
   get showCustomUsernameField() {
@@ -534,6 +628,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   }
 
   handleEdit() {
+    this.targetBranchesModeOverride = null;
     this.editedAction = JSON.parse(JSON.stringify(this.action));
     // Ensure parameters object exists
     if (!this.editedAction.parameters) {
@@ -645,6 +740,39 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     this.dispatchEvent(new CustomEvent("loadcommunities"));
   }
 
+  _generateActionId() {
+    if (
+      typeof crypto !== "undefined" &&
+      typeof crypto.randomUUID === "function"
+    ) {
+      return crypto.randomUUID();
+    }
+    // Fallback for the contexts where crypto.randomUUID is not available:
+    // build an RFC 4122 version 4 identifier from 16 random bytes
+    const bytes = new Uint8Array(16);
+    if (
+      typeof crypto !== "undefined" &&
+      typeof crypto.getRandomValues === "function"
+    ) {
+      crypto.getRandomValues(bytes);
+    } else {
+      for (let index = 0; index < bytes.length; index++) {
+        bytes[index] = Math.floor(Math.random() * 256);
+      }
+    }
+    // Force the version (4) and the variant (RFC 4122) bits
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0"));
+    return [
+      hex.slice(0, 4).join(""),
+      hex.slice(4, 6).join(""),
+      hex.slice(6, 8).join(""),
+      hex.slice(8, 10).join(""),
+      hex.slice(10, 16).join(""),
+    ].join("-");
+  }
+
   handleSave() {
     const isValid = this._validateRequiredFields();
     if (!isValid) {
@@ -653,6 +781,23 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     }
 
     this.validationError = "";
+    // A new action is created with an empty id: give it one here, because the id
+    // generated while writing it to the configuration file never comes back to
+    // this panel, and without it every later edit of the action would be saved
+    // as a new action instead of updating it
+    if (!this.editedAction.id) {
+      this.editedAction.id = this._generateActionId();
+    }
+    // An empty restriction list means "all target orgs": do not leave an empty
+    // includeTargetBranches / excludeTargetBranches behind in the configuration file
+    ["includeTargetBranches", "excludeTargetBranches"].forEach((key) => {
+      if (
+        Array.isArray(this.editedAction[key]) &&
+        this.editedAction[key].length === 0
+      ) {
+        delete this.editedAction[key];
+      }
+    });
     // Persist packageXmlItems as a clean list of entries (drop empty lines)
     if (
       this.editedAction.type === "remove-packagexml-items" &&

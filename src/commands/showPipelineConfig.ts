@@ -4,7 +4,12 @@ import { getWorkspaceRoot } from "../utils";
 import { SfdxHardisConfigHelper } from "../utils/pipeline/sfdxHardisConfigHelper";
 import { listMajorOrgs } from "../utils/orgConfigUtils";
 import { LwcPanelManager } from "../lwc-panel-manager";
-import { listProjectApexTestClasses } from "../utils/prePostCommandsUtils";
+import {
+  listProjectApexScripts,
+  listProjectApexTestClasses,
+  listProjectDataWorkspaces,
+} from "../utils/prePostCommandsUtils";
+import { handleDeploymentActionPickerMessage } from "../utils/pipeline/deploymentActionPickers";
 import { t } from "../i18n/i18n";
 import { readSfdxHardisConfig } from "../utils/sfdx-hardis-config-utils";
 
@@ -31,6 +36,11 @@ export function registerShowPipelineConfig(commands: Commands) {
         ? await listProjectApexTestClasses()
         : [];
 
+      // Lists proposed by the deployment action editor, which the deployment
+      // actions of this panel open just like the DevOps Pipeline panel does
+      const projectApexScripts = await listProjectApexScripts();
+      const projectSfdmuWorkspaces = await listProjectDataWorkspaces();
+
       // Show progress while loading config editor input
       const configEditorInput = await vscode.window.withProgress(
         {
@@ -45,6 +55,8 @@ export function registerShowPipelineConfig(commands: Commands) {
           // Add available branches to the input
           input.availableBranches = availableBranches;
           input.availableApexTestClasses = availableApexTestClasses;
+          input.projectApexScripts = projectApexScripts;
+          input.projectSfdmuWorkspaces = projectSfdmuWorkspaces;
           return input;
         },
       );
@@ -93,6 +105,8 @@ export function registerShowPipelineConfig(commands: Commands) {
                 // Add available branches to the input
                 input.availableBranches = availableBranches;
                 input.availableApexTestClasses = availableApexTestClasses;
+                input.projectApexScripts = projectApexScripts;
+                input.projectSfdmuWorkspaces = projectSfdmuWorkspaces;
                 return input;
               },
             );
@@ -109,6 +123,9 @@ export function registerShowPipelineConfig(commands: Commands) {
               "Error loading configuration: " + error.message,
             );
           }
+        } else {
+          // Lazy-loaded lists of the deployment action editor
+          await handleDeploymentActionPickerMessage(panel, type, data);
         }
       });
     },

@@ -2,6 +2,32 @@
 
 ## Unreleased
 
+- DevOps Pipeline
+  - **Update the Deployment Actions of your Pull Request** button at the end of **Save / Publish Task**, opening the DevOps Pipeline straight on the Deployment Actions of your pull request, instead of leaving you to find them yourself
+    - When the pull request is not created yet, the draft deployment actions of your current branch are displayed, so you can declare them right after saving your task
+    - When no pull request can be found, the DevOps Pipeline simply opens on its home view
+  - Deployment actions can now be **restricted to some target orgs**: choose to run an action everywhere, only on some major branches, or everywhere except a few
+    - Select **Developer sandboxes** to target the orgs that have no branch configuration file
+  - New actions are now created with **Run only once by org** enabled, matching sfdx-hardis. Until now an action created here re-ran at every deployment to the same org
+  - Removed the **Skip if deployment error** option, which sfdx-hardis now ignores: post-deployment actions are never run when the metadata deployment failed
+  - Fixed editing a deployment action creating a copy of it instead of updating it: an action created from the panel had no identifier until the pipeline was reloaded, so every save appended a new entry to the configuration file
+  - The pipeline no longer warns when no manual actions tracking file is configured, since manual actions are now declared in pull requests and ticked off in their comments
+
+- Pipeline Settings
+  - New settings for Flow deletion in destructive changes: **Flow Delete Interviews** (in the Danger Zone), **Flow Delete Max Attempts** and **Flow Delete Retry Delay**
+  - New **Translate deployment notification messages** setting
+  - Fixed **Branch-scoped custom Package-No-Overwrite path**, which never appeared in the settings
+  - Deployment actions edited from the settings no longer offer the obsolete **Skip if deploy error** option
+  - Global and branch deployment actions are now edited with the **same editor as the one of the DevOps Pipeline**, instead of a reduced form that offered only the text and toggle fields of an action
+    - Gives access to the action types and their parameters (Apex script, SFDMU workspace, Apex class to schedule, community to publish, package.xml items to remove) and to the **Target orgs** restriction, none of which could be set from the settings
+    - Changing **When** moves the action between the pre-deployment and the post-deployment list, including when the action type imposes it (ex: a scheduled batch always runs after the deployment)
+
+- Command results
+  - The buttons displayed at the end of a command now keep the order the command sent them in, so its main action stays the first one (ex: **Create Pull Request** at the end of **Save / Publish Task**, which was pushed behind the other buttons)
+
+- Commands
+  - Added 7 commands to the Commands panel: **MFA Readiness**, **Unsecure Permissions**, **Usage-Based Entitlements**, **Consumption Alerts**, **AI Credit Usage**, **Run Agentforce Tests** and **Data Dictionary**
+
 - Commands
   - Added a **Search** button in the Commands tree view header that opens a QuickPick listing commands from every category
     - The picker supports fuzzy filtering on each command's label, category, and tooltip

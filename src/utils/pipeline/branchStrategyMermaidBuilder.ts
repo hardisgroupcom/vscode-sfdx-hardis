@@ -574,7 +574,9 @@ export class BranchStrategyMermaidBuilder {
     this.mermaidLines.push(
       this.indent(`subgraph GitBranches [${gitBranchesLabel}]`, 1),
     );
-    this.mermaidLines.push(this.indent("direction TB", 2));
+    // No "direction" here on purpose: the branch promotion chain must flow left to
+    // right like the parent "flowchart LR". Declaring "direction TB" turned the chain
+    // vertical from mermaid 11.16 on, which started honoring it (11.15 ignored it).
     for (const gitBranch of this.gitBranches) {
       // "+N more" group nodes use a stack icon to read as an aggregate.
       const nodeIcon = gitBranch.class === "gitFeatureGroup" ? "🗂️" : "🌿";

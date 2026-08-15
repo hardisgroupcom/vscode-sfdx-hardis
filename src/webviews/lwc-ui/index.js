@@ -97,7 +97,16 @@ window.vscodeAPI = acquireVsCodeApi();
 // Function to send messages to VS Code
 window.sendMessageToVSCode = function (message) {
   console.log("Sending message to VS Code:", message);
-  window.vscodeAPI.postMessage(message);
+  // Values read from @track / @api properties are LWC reactive proxies, and the
+  // structured clone used by postMessage cannot serialize them (DataCloneError).
+  // Send a plain deep copy so any message payload can carry arrays and objects.
+  let payload = message;
+  try {
+    payload = JSON.parse(JSON.stringify(message));
+  } catch (error) {
+    console.error("Unable to serialize message to VS Code:", error);
+  }
+  window.vscodeAPI.postMessage(payload);
 };
 
 // Listen for messages from VS Code

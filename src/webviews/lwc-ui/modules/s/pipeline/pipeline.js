@@ -322,6 +322,13 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   modalPullRequests = [];
   modalTickets = [];
   modalActions = [];
+  // Tab the PR modal opens on. Set to "actions" by a deployment actions deep link.
+  modalActiveTabValue = "prs";
+  // Tab to activate the next time the single PR modal opens (consumed on open).
+  _nextModalTab = null;
+  // Deep link received before the pull request data is available, applied as soon
+  // as the current branch pull request is known (see _maybeApplyPendingDeepLink).
+  _pendingDeepLink = null;
   branchPullRequestsMap = new Map();
   // Map of "+N more" group node name -> group descriptor (target branch + PRs),
   // used to open the PR modal when a group node or its aggregated link is clicked.
@@ -552,6 +559,12 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     if (Object.prototype.hasOwnProperty.call(data, "loadError")) {
       this.loadError = data.loadError || null;
     }
+    // Deep link (ex: the "Update the Deployment Actions of your Pull Request" button
+    // at the end of hardis:work:save). It arrives with the very first payload, before
+    // the pull requests are loaded, so it is kept until the data is there.
+    if (Object.prototype.hasOwnProperty.call(data, "deepLink")) {
+      this._pendingDeepLink = data.deepLink || null;
+    }
 
     // When only flag fields are present (step-1 or error-only payload), stop here.
     if (!Object.prototype.hasOwnProperty.call(data, "pipelineData")) {
@@ -711,10 +724,44 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this._updatePanelTitle();
     // Start auto-refresh timer
     this._startAutoRefresh();
+    // Apply a pending deep link now that the pull requests are known
+    this._maybeApplyPendingDeepLink();
+  }
+
+  /**
+   * Opens the deployment actions of the current branch pull request when the panel
+   * was opened by a deep link. Waits for the pull request loading stage to complete,
+   * since the current branch pull request is only known at that point.
+   */
+  _maybeApplyPendingDeepLink() {
+    if (!this._pendingDeepLink || this.prLoading) {
+      return;
+    }
+    const deepLink = this._pendingDeepLink;
+    this._pendingDeepLink = null;
+    if (
+      deepLink.focus !== "deploymentActions" ||
+      !this.currentBranchPullRequest
+    ) {
+      // No pull request to focus (ex: no git provider authenticated): leave the
+      // pipeline panel on its home view rather than opening an empty modal.
+      return;
+    }
+    this._nextModalTab = "actions";
+    this.showSinglePRModal(this.currentBranchPullRequest);
   }
 
   get prLabel() {
     return this.prButtonInfo?.pullRequestLabel || this.i18n.pullRequestLabel;
+  }
+
+  // Major branch names, offered when restricting a deployment action to some target orgs
+  get majorBranchNames() {
+    const orgs = this.pipelineData?.orgs;
+    if (!Array.isArray(orgs)) {
+      return [];
+    }
+    return orgs.map((org) => org.name).filter(Boolean);
   }
 
   get showApexTestsTab() {
@@ -2005,6 +2052,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       this.modalGoLivePrsLoading = false;
       this.isLoadingReleaseDetails = false;
       this._populateModalFromPrs([pr]);
+      this.modalActiveTabValue = "prs";
       this.showPRModal = true;
       return;
     }
@@ -2043,6 +2091,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     this.modalGoLivePrsLoading = false;
     this.isLoadingReleaseDetails = false;
     this._populateModalFromPrs(group.pullRequests || []);
+    this.modalActiveTabValue = "prs";
     this.showPRModal = true;
   }
 
@@ -2068,6 +2117,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     }
 
     this._populateModalFromPrs(prs);
+    this.modalActiveTabValue = "prs";
     this.showPRModal = true;
   }
 
@@ -2383,6 +2433,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     ];
     this.apexTestsMode = "view";
     this.apexTestsByLineRows = [];
+
+    // Open on the tab requested by a deep link, on the Pull Requests tab otherwise
+    this.modalActiveTabValue = this._nextModalTab || "prs";
+    this._nextModalTab = null;
 
     this.showPRModal = true;
   }

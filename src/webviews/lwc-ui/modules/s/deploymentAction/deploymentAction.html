@@ -354,26 +354,6 @@
             </template>
 
             <!-- Additional flags -->
-            <template if:true={showSkipIfErrorField}>
-              <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
-                <div class="slds-form-element">
-                  <div style="display:flex;align-items:center;gap:0.25rem;margin-bottom:0.25rem;">
-                    <span class="slds-form-element__label">{i18n.skipIfDeploymentError}</span>
-                    <s-multiline-helptext content={i18n.skipIfDeploymentErrorHelp} class="slds-icon-text-info"></s-multiline-helptext>
-                  </div>
-                  <lightning-input
-                    type="toggle"
-                    label={i18n.skipIfDeploymentError}
-                    checked={displayedAction.skipIfError}
-                    data-field="skipIfError"
-                    onchange={handleCheckboxChange}
-                    disabled={isViewMode}
-                    variant="label-hidden"
-                  ></lightning-input>
-                </div>
-              </div>
-            </template>
-
             <template if:true={showAllowFailureField}>
               <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
                 <div class="slds-form-element">
@@ -429,6 +409,39 @@
                     disabled={isViewMode}
                     variant="label-hidden"
                   ></lightning-input>
+                </div>
+              </div>
+            </template>
+
+            <!-- Restrict the action to some target orgs -->
+            <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
+              <div class="slds-form-element">
+                <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                  <span>{i18n.targetBranchesLabel}</span>
+                  <s-multiline-helptext content={i18n.targetBranchesHelp} class="slds-icon-text-info"></s-multiline-helptext>
+                </label>
+                <lightning-combobox
+                  options={targetBranchesModeOptions}
+                  value={targetBranchesMode}
+                  onchange={handleTargetBranchesModeChange}
+                  disabled={isViewMode}
+                  variant="label-hidden"
+                ></lightning-combobox>
+              </div>
+            </div>
+
+            <template if:true={showTargetBranchesSelector}>
+              <div class="slds-col slds-size_2-of-3 slds-m-bottom_small">
+                <div class="slds-form-element">
+                  <lightning-dual-listbox
+                    label={targetBranchesSelectorLabel}
+                    source-label={i18n.targetBranchesAvailableLabel}
+                    selected-label={i18n.targetBranchesSelectedLabel}
+                    options={targetBranchOptions}
+                    value={selectedTargetBranches}
+                    onchange={handleTargetBranchesChange}
+                    disabled={isViewMode}
+                  ></lightning-dual-listbox>
                 </div>
               </div>
             </template>
