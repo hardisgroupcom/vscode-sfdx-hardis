@@ -25,6 +25,8 @@ suite("gitUrlUtils Test Suite", () => {
 
   test("strips embedded credentials from an https remote", () => {
     assert.strictEqual(
+      // Fake credentials: this fixture exists to assert that they are stripped away.
+      // secretlint-disable-next-line
       gitRemoteToHttps("https://user:token@gitlab.com/group/project.git"),
       "https://gitlab.com/group/project",
     );
