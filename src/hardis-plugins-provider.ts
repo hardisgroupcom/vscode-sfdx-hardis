@@ -563,19 +563,38 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
           if (match && match[1]) {
             installedVersion = match[1];
           }
+          // `sf plugins` displays the install tag after the version number
+          // (ex: "sfdx-hardis 6.1.0 (link) C:\git\sfdx-hardis", "sfdx-hardis 6.1.0 (beta)"),
+          // so the whole line is required to detect local dev / alpha / beta installs
+          const pluginLineMatch = new RegExp(
+            `^\\s*${plugin.name} (.*)$`,
+            "m",
+          ).exec(sfdxPlugins);
+          const installedVersionDetail = pluginLineMatch
+            ? pluginLineMatch[1]
+            : installedVersion || "";
+          // Locally developed plugin (sf plugins link): reinstalling it would break
+          // the dev setup, so never prompt for an upgrade
+          const isLocalDevPlugin = /\(link\)/i.test(installedVersionDetail);
+          // Alpha or beta build: the user knowingly runs a preview version
+          const isPreviewPlugin = /\((?:alpha|beta)\)|-(?:alpha|beta)/i.test(
+            installedVersionDetail,
+          );
+          const isPreviewExpected =
+            isExtensionPreRelease() ||
+            RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION === "beta";
+          // When a preview plugin is expected (pre-release extension or beta
+          // recommendation), any local / alpha / beta install is fine.
+          // Otherwise, only compare version numbers with the recommended one.
+          const mustUpgradePlugin = isPreviewExpected
+            ? !isLocalDevPlugin && !isPreviewPlugin
+            : !isLocalDevPlugin &&
+              this.compareVersions(
+                installedVersion || "",
+                RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION,
+              ) < 0;
           const sfdxHardisInstallTag = getSfdxHardisInstallTag();
-          if (
-            installedVersion &&
-            ((isExtensionPreRelease() && !installedVersion.includes("alpha")) ||
-              (RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION !== "beta" &&
-                !isExtensionPreRelease() &&
-                this.compareVersions(
-                  installedVersion,
-                  RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION,
-                ) < 0) ||
-              (RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION === "beta" &&
-                !installedVersion.includes("(beta)")))
-          ) {
+          if (installedVersion && mustUpgradePlugin) {
             PLUGINS_SFDXHARDIS_PROMPT_SHOWN = true;
             const versionToInstall = sfdxHardisInstallTag;
             const upgradeNowLabel = t("upgradeNow");

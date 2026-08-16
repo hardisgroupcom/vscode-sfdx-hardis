@@ -31,6 +31,9 @@
     - If the CLI crashes before connecting, the tab reports the failure with its error output instead of staying stuck
     - The "Initializing command" notification is no longer shown when the execution tab is already open, since it was redundant with it
     - Fixed a wrong "duplicate command" error when running a command again right after closing its execution tab
+  - New warning at startup when the Salesforce Extensions setting **Source Tracking: Enable Conflict Detection** is enabled: it constantly checks conflicts in the background and slows down the whole VS Code
+    - Click **Disable it** to turn it off right away, **Not now** to be asked again at the next startup, or **Never ask again** to never see the warning again
+    - The check runs after the startup, so it never delays it
   - Commands run in a terminal now start immediately: the terminal was previously created with a fixed 4-second wait before the command was typed
     - On Windows, commands now run in a Git Bash terminal automatically when Git Bash is installed, without requiring to change the default VS Code terminal
   - Commands clicked right after VS Code startup are no longer rejected with "not initialized yet": the communication server now starts immediately (previously after a fixed 5-second delay) and commands wait for it to be ready
@@ -78,6 +81,10 @@
 - Commands
   - Added a **Search** button in the Commands tree view header that opens a QuickPick listing commands from every category
     - The picker supports fuzzy filtering on each command's label, category, and tooltip
+
+- Dependencies
+  - Fixed the pre-release version of the extension asking to install the alpha version of the sfdx-hardis plugin even when an alpha, a beta, or a locally developed (linked) plugin was already installed
+    - A locally developed plugin never triggers an upgrade prompt anymore, as reinstalling it would break the local development setup
 
 ## [7.18.0] 2026-07-26
 
