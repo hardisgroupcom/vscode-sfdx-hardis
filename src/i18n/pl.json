@@ -203,6 +203,7 @@
   "commandTitleCompleted": "{{commandName}} - Zakończono",
   "commandTitleError": "{{commandName}} - Błąd",
   "commandTitleRunning": "{{commandName}} - W toku",
+  "commandTitleStarting": "{{commandName}} - Uruchamianie...",
   "commandType": "Komenda",
   "commercialUseAllowed": "Dozwolone użycie komercyjne",
   "commitAndPushFile": "Commit & Push {{fileName}}",

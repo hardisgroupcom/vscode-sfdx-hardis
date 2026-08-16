@@ -5,7 +5,7 @@ import { HardisStatusProvider } from "./hardis-status-provider";
 import { HardisPluginsProvider } from "./hardis-plugins-provider";
 import { LocalWebSocketServer } from "./hardis-websocket-server";
 import { execCommand, openFolderInExplorer, resetCache } from "./utils";
-import TelemetryReporter from "@vscode/extension-telemetry";
+import type TelemetryReporter from "@vscode/extension-telemetry";
 import { CommandRunner } from "./command-runner";
 import { runSalesforceCliMcpServer } from "./utils/mcpUtils";
 import { registerShowWelcome } from "./commands/showWelcome";
@@ -49,7 +49,7 @@ export class Commands {
     hardisCommandsProvider: HardisCommandsProvider,
     hardisStatusProvider: HardisStatusProvider,
     hardisPluginsProvider: HardisPluginsProvider,
-    reporter: TelemetryReporter,
+    reporter: TelemetryReporter | null,
   ) {
     this.extensionUri = extensionUri;
     this.hardisCommandsProvider = hardisCommandsProvider;

@@ -8,15 +8,26 @@ export class TicketProvider {
   providerName: TicketProviderName | null = null;
   isAuthenticated: boolean | null = null;
 
+  // Caches the "no ticketing provider configured" result for a short while:
+  // without it, every command launch re-reads the project configuration files.
+  private static noProviderUntil = 0;
+  private static NO_PROVIDER_CACHE_TTL_MS = 60000;
+
   static async getInstance(options: {
     reset: boolean;
     authenticate: boolean;
   }): Promise<TicketProvider | null> {
+    if (options.reset) {
+      this.noProviderUntil = 0;
+    } else if (this.instance === null && Date.now() < this.noProviderUntil) {
+      return null;
+    }
     if (options.reset || this.instance === null) {
       const config = await getConfig("project");
       const providerName = config.ticketingProvider || null;
       if (!providerName) {
         this.instance = null;
+        this.noProviderUntil = Date.now() + this.NO_PROVIDER_CACHE_TTL_MS;
         return this.instance;
       }
 

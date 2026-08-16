@@ -146,6 +146,28 @@ export const SECRET_ENV_KEYS = new Set([
   "JIRA_TOKEN",
 ]);
 
+// In-memory cache of collected credentials: they are re-read from secret
+// storage (and provider singletons re-validated) at most once per TTL instead
+// of on every single command click.
+let credentialEnvCache: {
+  value: Record<string, string>;
+  expiresAt: number;
+} | null = null;
+const CREDENTIAL_ENV_CACHE_TTL_MS = 120000;
+// Hard bound on the time credential collection may add to a command launch:
+// provider initialization can perform network validation with OS-level
+// timeouts (dozens of seconds on unreachable hosts).
+const CREDENTIAL_COLLECT_TIMEOUT_MS = 5000;
+
+/** Clears the cached credentials (call after connect/disconnect/token change) */
+export function invalidateProviderCredentialEnvCache(): void {
+  credentialEnvCache = null;
+}
+
+// Any stored/deleted secret (provider connect, disconnect, token update)
+// invalidates the cached credential env vars
+SecretsManager.onSecretChanged(invalidateProviderCredentialEnvCache);
+
 /**
  * Collects available provider credentials (git + ticketing) and returns them
  * as a Record mapping sfdx-hardis environment variable names to their values.
@@ -154,11 +176,50 @@ export const SECRET_ENV_KEYS = new Set([
  * CLI commands so that the CLI can authenticate with the same providers
  * the extension is connected to.
  *
+ * Results are cached for a couple of minutes, and collection is bounded by a
+ * timeout so a slow git/ticketing host can never stall a command launch.
+ *
  * SECURITY: The returned values are secrets. They must:
  *   - Be passed via spawnOptions.env (background mode) — never on the command line
  *   - Never be logged, displayed in the terminal, or stored outside secure storage
  */
 export async function collectProviderCredentialEnvVars(): Promise<
+  Record<string, string>
+> {
+  if (credentialEnvCache && Date.now() < credentialEnvCache.expiresAt) {
+    return { ...credentialEnvCache.value };
+  }
+  const collectPromise = collectProviderCredentialEnvVarsNow();
+  const collected = await Promise.race([
+    collectPromise,
+    new Promise<null>((resolve) =>
+      setTimeout(() => resolve(null), CREDENTIAL_COLLECT_TIMEOUT_MS),
+    ),
+  ]);
+  if (collected === null) {
+    Logger.log(
+      "Provider credential collection timed out: running command without provider credentials",
+    );
+    // Let the slow collection finish in the background and prime the cache
+    // for the next command launch
+    collectPromise
+      .then((value) => {
+        credentialEnvCache = {
+          value,
+          expiresAt: Date.now() + CREDENTIAL_ENV_CACHE_TTL_MS,
+        };
+      })
+      .catch(() => {});
+    return {};
+  }
+  credentialEnvCache = {
+    value: collected,
+    expiresAt: Date.now() + CREDENTIAL_ENV_CACHE_TTL_MS,
+  };
+  return { ...collected };
+}
+
+async function collectProviderCredentialEnvVarsNow(): Promise<
   Record<string, string>
 > {
   const env: Record<string, string> = {};

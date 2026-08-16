@@ -50,6 +50,8 @@ export interface ExecCommandOptions {
 
 let MULTITHREAD_ACTIVE: boolean | null = null;
 let CACHE_IS_PRELOADED: boolean = false;
+let CACHE_ORG_IS_PRELOADED: boolean = false;
+let CACHE_TOOLING_IS_PRELOADED: boolean = false;
 let COMMANDS_RESULTS: Record<string, any> = {};
 let GIT_MENUS: any[] | null = null;
 
@@ -263,12 +265,25 @@ export function isCachePreloaded() {
   return false;
 }
 
+// Independent readiness of the "org" preload tier (sf org display + dev-hub
+// config): the Status tree only needs these, so it unblocks without waiting
+// for `sf plugins` and friends (and vice versa for the Dependencies tree).
+export function isOrgCachePreloaded() {
+  return CACHE_ORG_IS_PRELOADED === true || CACHE_IS_PRELOADED === true;
+}
+
+// Independent readiness of the "tooling" preload tier (node/git/sf versions +
+// sf plugins), consumed by the Dependencies tree.
+export function isToolingCachePreloaded() {
+  return CACHE_TOOLING_IS_PRELOADED === true || CACHE_IS_PRELOADED === true;
+}
+
 export function preLoadCache() {
   console.time("sfdxHardisPreload");
   const oneDayInMs = 1000 * 60 * 60 * 24;
 
-  // LOCAL tier: CLI tools that must finish before we declare the cache ready
-  const localTierPromises = [];
+  // TOOLING tier: CLI tools versions + installed plugins (Dependencies tree)
+  const toolingTierPromises = [];
   const cliCommands = [
     ["node --version", oneDayInMs * 30], // 30 days
     ["git --version", oneDayInMs * 30], // 30 days
@@ -276,19 +291,21 @@ export function preLoadCache() {
     ["sf plugins", oneDayInMs], // 1 day
   ];
   for (const cmd of cliCommands) {
-    localTierPromises.push(
+    toolingTierPromises.push(
       execCommand(String(cmd[0]), {
         cacheExpiration: Number(cmd[1]),
         cacheSection: "app",
       }),
     );
   }
+  // ORG tier: default org + dev hub info (Status tree)
+  const orgTierPromises = [];
   const sfdxJsonCommands = [
     ["sf org display", oneDayInMs], // 1 day
     ["sf config get target-dev-hub", oneDayInMs], // 1 day
   ];
   for (const cmd of sfdxJsonCommands) {
-    localTierPromises.push(
+    orgTierPromises.push(
       execSfdxJson(String(cmd[0]), {
         cacheExpiration: Number(cmd[1]),
         cacheSection: "project",
@@ -296,23 +313,37 @@ export function preLoadCache() {
     );
   }
 
+  const markToolingCachePreloaded = () => {
+    if (CACHE_TOOLING_IS_PRELOADED) {
+      return;
+    }
+    CACHE_TOOLING_IS_PRELOADED = true;
+    vscode.commands.executeCommand(
+      "vscode-sfdx-hardis.refreshPluginsView",
+      true,
+    );
+  };
+  const markOrgCachePreloaded = () => {
+    if (CACHE_ORG_IS_PRELOADED) {
+      return;
+    }
+    CACHE_ORG_IS_PRELOADED = true;
+    vscode.commands.executeCommand(
+      "vscode-sfdx-hardis.refreshStatusView",
+      true,
+    );
+  };
   const markCachePreloaded = () => {
     if (CACHE_IS_PRELOADED) {
       return;
     }
     console.timeEnd("sfdxHardisPreload");
     CACHE_IS_PRELOADED = true;
-    vscode.commands.executeCommand(
-      "vscode-sfdx-hardis.refreshStatusView",
-      true,
-    );
-    vscode.commands.executeCommand(
-      "vscode-sfdx-hardis.refreshPluginsView",
-      true,
-    );
+    markToolingCachePreloaded();
+    markOrgCachePreloaded();
   };
 
-  // Safety net: if any local-tier promise hangs (slow CLI…),
+  // Safety net: if any preload promise hangs (slow CLI…),
   // force-unblock the panels after 30 s so spinners never run forever.
   const preloadTimeoutId = setTimeout(() => {
     Logger.log(
@@ -321,7 +352,13 @@ export function preLoadCache() {
     markCachePreloaded();
   }, 30000);
 
-  Promise.allSettled(localTierPromises).then(() => {
+  Promise.allSettled(toolingTierPromises).then(() => {
+    markToolingCachePreloaded();
+  });
+  Promise.allSettled(orgTierPromises).then(() => {
+    markOrgCachePreloaded();
+  });
+  Promise.allSettled([...toolingTierPromises, ...orgTierPromises]).then(() => {
     clearTimeout(preloadTimeoutId);
     markCachePreloaded();
   });

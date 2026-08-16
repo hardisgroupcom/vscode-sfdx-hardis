@@ -19,6 +19,12 @@ import {
   collectProviderCredentialEnvVars,
   SECRET_ENV_KEYS,
 } from "./utils/providerCredentials";
+import {
+  extractCommandId,
+  generateProvisionalContextId,
+  registerPendingCommandPanel,
+  removePendingCommandPanel,
+} from "./utils/pendingCommandPanels";
 
 const SF_STANDARD_COMMANDS = [
   "sf agent",
@@ -187,7 +193,9 @@ export class CommandRunner {
 
     // Auto-inject provider credentials for sf hardis commands so the CLI
     // can authenticate with the same git/ticketing providers as the extension.
-    if (isHardisCommand) {
+    // Only in background mode: terminal mode strips all secret env vars anyway
+    // (see runCommandInTerminal), so collecting them would be pure latency.
+    if (isHardisCommand && isBackgroundMode) {
       try {
         const credentialEnv = await collectProviderCredentialEnvVars();
         if (Object.keys(credentialEnv).length > 0) {
@@ -219,6 +227,7 @@ export class CommandRunner {
     // (plugin probes + progress notification) for these everyday commands.
     if (isHardisCommand || isSfStandard || isNpmInstallSf) {
       if (isBackgroundMode) {
+        await this.waitForWebSocketServerReady();
         this.executeCommandBackground(sfdxHardisCommand, extraEnv);
       } else {
         this.executeCommandTerminal(sfdxHardisCommand, extraEnv);
@@ -331,15 +340,39 @@ export class CommandRunner {
     this.executeCommandTerminal(sfdxHardisCommand, extraEnv);
   }
 
-  private executeCommandUsingCurrentMode(
+  private async executeCommandUsingCurrentMode(
     isBackgroundMode: boolean,
     command: string,
     extraEnv?: Record<string, string>,
   ) {
     if (isBackgroundMode && this.isCommandAllowedInBackground(command)) {
+      await this.waitForWebSocketServerReady();
       this.executeCommandBackground(command, extraEnv);
     } else {
       this.executeCommandTerminal(command, extraEnv);
+    }
+  }
+
+  /**
+   * Waits until the local WebSocket server is listening (bounded by a timeout)
+   * so that commands clicked right after activation are not rejected with
+   * "not initialized yet" while the server binds its port.
+   */
+  private async waitForWebSocketServerReady(): Promise<void> {
+    const server = this.commandsInstance?.disposableWebSocketServer;
+    if (
+      server &&
+      server.websocketHostPort === null &&
+      typeof server.whenReady === "function"
+    ) {
+      try {
+        await Promise.race([
+          server.whenReady(),
+          new Promise<void>((resolve) => setTimeout(resolve, 10000)),
+        ]);
+      } catch {
+        // Server failed to start: preprocessAndValidateCommand will surface it
+      }
     }
   }
 
@@ -512,6 +545,63 @@ export class CommandRunner {
     if (process.platform === "win32" && gitBashPath) {
       spawnOptions.shell = gitBashPath;
     }
+    // Open the command execution panel right away (LWC UI mode, sf hardis
+    // commands only): the user gets instant feedback instead of a blank wait
+    // during the whole Salesforce CLI boot. The provisional context id is
+    // passed to the CLI (SFDX_HARDIS_COMMAND_CONTEXT_ID) so the panel is
+    // adopted when the CLI connects to the WebSocket server.
+    let pendingPanelLwcId: string | null = null;
+    let pendingPanelAdopted = false;
+    let pendingCommandName: string | null = null;
+    if (
+      config.get("userInput") === "ui-lwc" &&
+      preprocessedCommand.trimStart().startsWith("sf hardis")
+    ) {
+      try {
+        const provisionalContextId = generateProvisionalContextId();
+        const commandId = extractCommandId(preprocessedCommand);
+        pendingCommandName = commandId || preprocessedCommand;
+        pendingPanelLwcId = `s-command-execution-${provisionalContextId}`;
+        spawnOptions.env.SFDX_HARDIS_COMMAND_CONTEXT_ID = provisionalContextId;
+        const panelManager = LwcPanelManager.getInstance();
+        const panel = panelManager.getOrCreatePanel(pendingPanelLwcId, {
+          id: provisionalContextId,
+          command: pendingCommandName,
+        });
+        panel.commandStatus = "pending";
+        panel.updateTitle(
+          t("commandTitleStarting", { commandName: pendingCommandName }),
+        );
+        registerPendingCommandPanel({
+          lwcId: pendingPanelLwcId,
+          contextId: provisionalContextId,
+          commandId,
+          createdAt: Date.now(),
+          onAdopted: () => {
+            pendingPanelAdopted = true;
+          },
+        });
+        // Closing the panel before the CLI has connected cancels the command
+        const unsubscribePending = panel.onMessage((messageType: string) => {
+          if (messageType === "panelDisposed" && !pendingPanelAdopted) {
+            removePendingCommandPanel(pendingPanelLwcId!);
+            unsubscribePending();
+            if (childProcess?.pid) {
+              try {
+                killProcessTree(childProcess.pid, "SIGTERM", () => {});
+              } catch {
+                // Process may already be gone
+              }
+            }
+          }
+        });
+      } catch (e: any) {
+        Logger.log(
+          `Could not open command execution panel at click time: ${e?.message || e}`,
+        );
+        pendingPanelLwcId = null;
+      }
+    }
     try {
       childProcess = spawn(command!, commandParts.slice(1), spawnOptions);
     } catch (e) {
@@ -519,6 +609,14 @@ export class CommandRunner {
         e && typeof e === "object" && "message" in e
           ? (e as any).message
           : String(e);
+      if (pendingPanelLwcId) {
+        removePendingCommandPanel(pendingPanelLwcId);
+        try {
+          LwcPanelManager.getInstance().disposePanel(pendingPanelLwcId);
+        } catch {
+          // Panel manager not initialized
+        }
+      }
       vscode.window.showErrorMessage(t("failedToStartCommand", { msg }));
       return;
     }
@@ -612,7 +710,9 @@ export class CommandRunner {
       }
     }
     function handleLogLine(cleanLine: string) {
-      if (cleanLine?.startsWith("WS Client started")) {
+      // The marker can arrive coalesced with other stdout in one data chunk,
+      // so match anywhere in the chunk instead of only at its start
+      if (cleanLine?.includes("WS Client started")) {
         closeProgress();
       }
     }
@@ -642,10 +742,44 @@ export class CommandRunner {
       stderrLines.push(clean);
       tryNotifyCertificateIssue(clean);
     });
+    const finalizePendingPanel = (exitCode: number | null) => {
+      // When the CLI never connected to the WebSocket server (crash during
+      // boot, disableWebsocket command, ...), close the loop on the panel
+      // opened at click time so it does not stay in "Starting" state forever.
+      if (!pendingPanelLwcId || pendingPanelAdopted) {
+        return;
+      }
+      removePendingCommandPanel(pendingPanelLwcId);
+      try {
+        const panel = LwcPanelManager.getInstance().getPanel(pendingPanelLwcId);
+        if (panel) {
+          const success = exitCode === 0;
+          panel.commandStatus = success ? "completed" : "error";
+          panel.sendMessage({
+            type: "completeCommand",
+            data: {
+              success,
+              status: success ? "success" : "error",
+              error: success ? undefined : stderrLines.join("\n"),
+            },
+          });
+          panel.updateTitle(
+            success
+              ? t("commandTitleCompleted", {
+                  commandName: pendingCommandName,
+                })
+              : t("commandTitleError", { commandName: pendingCommandName }),
+          );
+        }
+      } catch {
+        // Panel manager not initialized
+      }
+    };
     childProcess.on("close", (code: any) => {
       output.appendLine(`[Ended] ${preprocessedCommand} (exit code: ${code})`);
       this.activeCommands.delete(preprocessedCommand);
       closeProgress();
+      finalizePendingPanel(typeof code === "number" ? code : null);
       if (code && code !== 0) {
         tryNotifyCertificateIssue(stderrLines.join("\n"));
       }
@@ -673,6 +807,7 @@ export class CommandRunner {
       output.appendLine(`[Error] ${err.message}`);
       this.activeCommands.delete(preprocessedCommand);
       closeProgress();
+      finalizePendingPanel(1);
       tryNotifyCertificateIssue(err?.message || "");
     });
   }
@@ -684,17 +819,18 @@ export class CommandRunner {
     sfdxHardisCommand: string,
     extraEnv?: Record<string, string>,
   ) {
-    // Filter killed terminals
+    // Filter killed terminals (compare Terminal instances: processId is a
+    // Thenable, comparing those was unreliable)
     this.terminalStack = this.terminalStack.filter(
       (terminal: vscode.Terminal) =>
-        vscode.window.terminals.filter(
-          (vsTerminal) => vsTerminal.processId === terminal.processId,
-        ).length > 0,
+        vscode.window.terminals.includes(terminal) &&
+        terminal.exitStatus === undefined,
     );
     // Sync with parent
     this.commandsInstance.terminalStack = this.terminalStack;
 
-    // Check if any LWC panel is running a command
+    // Check if any LWC panel is running a command (structured status flag:
+    // the previous title-based check only worked with the English locale)
     let panelIsBusy = false;
     try {
       const panelManager = LwcPanelManager.getInstance();
@@ -702,11 +838,12 @@ export class CommandRunner {
       for (const id of activeIds) {
         if (id.startsWith("s-command-execution-")) {
           const panel = panelManager.getPanel(id);
-          if (panel && panel.getTitle && typeof panel.getTitle === "function") {
-            const title = panel.getTitle();
-            if (title.includes("Running")) {
-              panelIsBusy = true;
-            }
+          if (
+            panel &&
+            (panel.commandStatus === "running" ||
+              panel.commandStatus === "pending")
+          ) {
+            panelIsBusy = true;
             break;
           }
         }
@@ -722,8 +859,36 @@ export class CommandRunner {
       this.terminalStack.length === 0 ||
       vscode.window.terminals.length === 0
     ) {
-      // Check bash is the default terminal if we are on windows
-      if (process.platform === "win32") {
+      const newTerminal = this.createHardisTerminal();
+      if (!newTerminal) {
+        return;
+      }
+      this.terminalStack.push(newTerminal);
+      this.commandsInstance.terminalStack = this.terminalStack;
+      this.runCommandInTerminal(sfdxHardisCommand, extraEnv);
+    } else {
+      this.runCommandInTerminal(sfdxHardisCommand, extraEnv);
+    }
+  }
+
+  /**
+   * Creates the SFDX Hardis terminal instantly with vscode.window.createTerminal
+   * (text sent with sendText is queued by VS Code until the shell is ready, so
+   * no arbitrary wait is needed - previously a fixed 4s delay).
+   * On Windows, Git Bash is used directly as the terminal shell when installed,
+   * so users no longer have to change their default terminal profile.
+   * Returns null when no suitable shell is available (warning shown).
+   */
+  private createHardisTerminal(): vscode.Terminal | null {
+    const terminalOptions: vscode.TerminalOptions = { name: "SFDX Hardis" };
+    if (process.platform === "win32") {
+      const gitBashPath = getGitBashPath();
+      if (gitBashPath) {
+        terminalOptions.shellPath = gitBashPath;
+      } else {
+        // Git Bash not found at its standard locations: fall back to the
+        // default terminal profile, but require it to be bash-compatible
+        // (sf hardis commands use POSIX syntax like VAR=value prefixes)
         const terminalConfig = vscode.workspace.getConfiguration("terminal");
         const selectedTerminal: string =
           terminalConfig.integrated?.shell?.windows ||
@@ -755,24 +920,12 @@ export class CommandRunner {
                   );
                 }
               });
-            return;
+            return null;
           }
         }
       }
-      vscode.commands.executeCommand(
-        "workbench.action.terminal.newInActiveWorkspace",
-        "SFDX Hardis",
-      );
-      new Promise((resolve) => setTimeout(resolve, 4000)).then(() => {
-        const newTerminal =
-          vscode.window.terminals[vscode.window.terminals.length - 1];
-        this.terminalStack.push(newTerminal);
-        this.commandsInstance.terminalStack = this.terminalStack;
-        this.runCommandInTerminal(sfdxHardisCommand, extraEnv);
-      });
-    } else {
-      this.runCommandInTerminal(sfdxHardisCommand, extraEnv);
     }
+    return vscode.window.createTerminal(terminalOptions);
   }
 
   /**
@@ -795,6 +948,10 @@ export class CommandRunner {
     if (!cmd) {
       return;
     }
+    // preprocessAndValidateCommand registered this exact command string for
+    // duplicate detection; keep it so the cleanup below removes the right key
+    // even after env-prefix / shell adaptations mutate `cmd`.
+    const registeredCmd = cmd;
     if (this.debugNodeJs && !extraEnv?.NODE_OPTIONS) {
       cmd = `NODE_OPTIONS=--inspect-brk ${cmd}`;
     }
@@ -829,7 +986,14 @@ export class CommandRunner {
         cmd = `${envPrefix} ${cmd}`;
       }
     }
-    if (terminal?.name?.includes("powershell")) {
+    const terminalShellPath = String(
+      (terminal.creationOptions as vscode.TerminalOptions)?.shellPath || "",
+    ).toLowerCase();
+    if (
+      terminal?.name?.toLowerCase().includes("powershell") ||
+      terminalShellPath.includes("powershell") ||
+      terminalShellPath.includes("pwsh")
+    ) {
       cmd = cmd.replace(/ && /g, " ; ").replace(/echo y/g, "Write-Output 'y'");
     }
     // Send command to terminal
@@ -837,27 +1001,26 @@ export class CommandRunner {
     // Mark as sent to terminal (for duplicate prevention)
     this.activeCommands.set(cmd, { type: "terminal", sentToTerminal: true });
     vscode.commands.executeCommand("workbench.action.terminal.scrollToBottom");
-    // Remove from activeCommands after a delay
+    // Remove from activeCommands after a delay (both the key registered by
+    // preprocessAndValidateCommand and the possibly-mutated final command:
+    // previously only the mutated key was deleted, so any env-prefixed command
+    // stayed "active" forever and every re-run raised the duplicate warning)
     setTimeout(() => {
       this.activeCommands.delete(cmd);
+      this.activeCommands.delete(registeredCmd);
     }, 3000);
   }
 
   /**
    * Creates a new terminal and adds it to the stack.
    */
-  /* jscpd:ignore-start */
   createNewTerminal() {
-    vscode.commands.executeCommand(
-      "workbench.action.terminal.newInActiveWorkspace",
-      "SFDX Hardis",
-    );
-    new Promise((resolve) => setTimeout(resolve, 4000)).then(() => {
-      const newTerminal =
-        vscode.window.terminals[vscode.window.terminals.length - 1];
-      this.terminalStack.push(newTerminal);
-      this.commandsInstance.terminalStack = this.terminalStack;
-    });
+    const newTerminal = this.createHardisTerminal();
+    if (!newTerminal) {
+      return;
+    }
+    newTerminal.show(false);
+    this.terminalStack.push(newTerminal);
+    this.commandsInstance.terminalStack = this.terminalStack;
   }
-  /* jscpd:ignore-end */
 }

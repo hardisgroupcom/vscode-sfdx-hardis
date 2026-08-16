@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import * as os from "os";
 import { Commands } from "../commands";
 import { LwcPanelManager } from "../lwc-panel-manager";
 import { listAllOrgs, SalesforceOrg } from "../utils/orgUtils";
@@ -646,7 +647,7 @@ async function executeMetadataRetrieve(
       errorMsg.includes(`ENAMETOOLONG`)
     ) {
       const tempDir = await fs.promises.mkdtemp(
-        path.join(require("os").tmpdir(), "sfdx-retrieve-"),
+        path.join(os.tmpdir(), "sfdx-retrieve-"),
       );
       const tmpPackageXml = path.join(tempDir, "package.xml");
       // Group metadata by type

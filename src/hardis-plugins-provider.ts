@@ -4,7 +4,7 @@ import {
   getNpmLatestVersion,
   getSfdxHardisInstallTag,
   getWorkspaceRoot,
-  isCachePreloaded,
+  isToolingCachePreloaded,
   isExtensionPreRelease,
   resetCache,
   execCommandWithProgress,
@@ -125,7 +125,7 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
     const items: any = [];
     const downloadNodeLtsLabel = t("downloadAndInstallNodeJsLts");
     const downloadGitLabel = t("downloadAndInstallGit");
-    const nodeItem = isCachePreloaded()
+    const nodeItem = isToolingCachePreloaded()
       ? {
           id: `plugin-info-node`,
           label: "Node.js",
@@ -141,7 +141,7 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
           helpUrl: "https://nodejs.org/en/",
         };
     // Check node.js version
-    if (isCachePreloaded() && nodeInstallOk === false) {
+    if (isToolingCachePreloaded() && nodeInstallOk === false) {
       const nodeVersionStdOut: string =
         (
           await execCommand("node --version", {
@@ -211,7 +211,7 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
     items.push(nodeItem);
 
     // Check git version
-    const gitItem = isCachePreloaded()
+    const gitItem = isToolingCachePreloaded()
       ? {
           id: `plugin-info-git`,
           label: "Git",
@@ -226,7 +226,7 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
           status: "loading",
           helpUrl: "https://git-scm.com/",
         };
-    if (isCachePreloaded() && gitInstallOk === false) {
+    if (isToolingCachePreloaded() && gitInstallOk === false) {
       const gitVersionStdOut: string =
         (
           await execCommand("git --version", {
@@ -294,7 +294,7 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
     ];
 
     // Display temporary list until cache is preloaded
-    if (!isCachePreloaded()) {
+    if (!isToolingCachePreloaded()) {
       const loadingItems: any[] = [];
       loadingItems.push({
         id: `sfdx-cli-info`,

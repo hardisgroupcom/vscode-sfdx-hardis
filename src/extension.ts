@@ -1,7 +1,7 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
-import TelemetryReporter from "@vscode/extension-telemetry";
+import type TelemetryReporter from "@vscode/extension-telemetry";
 import { Commands } from "./commands";
 //import *  from './commands/vscode-sfdx-hardis.execute-command';
 import { HardisCommandsProvider } from "./hardis-commands-provider";
@@ -26,7 +26,7 @@ import {
 } from "./i18n/i18n";
 
 let refreshInterval: any = null;
-let reporter;
+let reporter: TelemetryReporter | null = null;
 let welcomeShownThisSession = false; // Flag to track if welcome was shown this session
 
 // this method is called when your extension is activated
@@ -56,17 +56,11 @@ export function activate(context: vscode.ExtensionContext) {
   // Call cli commands before their result is used, to improve startup performances
   preLoadCache();
 
-  // Register Commands tree data provider
+  // Register Commands tree view (createTreeView registers the data provider,
+  // a separate registerTreeDataProvider call for the same view id is redundant)
   const hardisCommandsProvider = new HardisCommandsProvider(
     currentWorkspaceFolderUri,
   );
-  const disposableTreeCommands = vscode.window.registerTreeDataProvider(
-    "sfdx-hardis-commands",
-    hardisCommandsProvider,
-  );
-  context.subscriptions.push(disposableTreeCommands);
-
-  // Auto-show Welcome panel when tree view becomes visible (once per session)
   const treeView = vscode.window.createTreeView("sfdx-hardis-commands", {
     treeDataProvider: hardisCommandsProvider,
     showCollapseAll: false,
@@ -110,17 +104,13 @@ export function activate(context: vscode.ExtensionContext) {
   );
   context.subscriptions.push(disposableTreePlugins);
 
-  // Anonymous telemetry respecting VsCode Guidelines -> https://code.visualstudio.com/api/extension-guides/telemetry
-  reporter = new TelemetryReporter("cf83e6dc-2621-4cb6-b92b-30905d1c8476"); // gitleaks:allow - public Application Insights telemetry key, intentionally embedded
-  context.subscriptions.push(reporter);
-
-  // Register common commands
+  // Register common commands (telemetry reporter is attached later, see below)
   const commands = new Commands(
     context.extensionUri,
     hardisCommandsProvider,
     hardisStatusProvider,
     hardisPluginsProvider,
-    reporter,
+    null,
   );
   context.subscriptions.push(...commands.disposables);
 
@@ -136,30 +126,26 @@ export function activate(context: vscode.ExtensionContext) {
   const hardisDebugger = new HardisDebugger();
   context.subscriptions.push(...hardisDebugger.disposables);
 
-  // Manage WebSocket server to communicate with sfdx-hardis cli plugin
-  function startWebSocketServer() {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // Kill previously launched server if existing
-        if (commands.disposableWebSocketServer) {
-          commands.disposableWebSocketServer.dispose();
-        }
-        // Wait a while to run WebSocket server, as it can be time consuming
-        try {
-          commands.disposableWebSocketServer = new LocalWebSocketServer(
-            context,
-          );
-          commands.disposableWebSocketServer.start();
-          context.subscriptions.push(commands.disposableWebSocketServer);
-          resolve(commands.disposableWebSocketServer);
-        } catch (e: any) {
-          Logger.log("Error while launching WebSocket Server: " + e.message);
-          vscode.window.showWarningMessage(
-            "Local WebSocket Server was unable to start.\nUser prompts will be in the terminal.",
-          );
-        }
-      }, 5000);
-    });
+  // Manage WebSocket server to communicate with sfdx-hardis cli plugin.
+  // Started immediately: commands run right after activation used to be
+  // rejected ("not initialized yet") during a previous arbitrary 5s delay.
+  async function startWebSocketServer() {
+    // Kill previously launched server if existing
+    if (commands.disposableWebSocketServer) {
+      commands.disposableWebSocketServer.dispose();
+    }
+    try {
+      commands.disposableWebSocketServer = new LocalWebSocketServer(context);
+      context.subscriptions.push(commands.disposableWebSocketServer);
+      await commands.disposableWebSocketServer.start();
+      return commands.disposableWebSocketServer;
+    } catch (e: any) {
+      Logger.log("Error while launching WebSocket Server: " + e.message);
+      vscode.window.showWarningMessage(
+        "Local WebSocket Server was unable to start.\nUser prompts will be in the terminal.",
+      );
+      return null;
+    }
   }
 
   async function manageWebSocketServer() {
@@ -324,23 +310,38 @@ export function activate(context: vscode.ExtensionContext) {
     }
   });
 
-  // Refresh commands if a sfdx-Project.json has been added
+  // Refresh commands if a sfdx-project.json has been added.
+  // (must use .some(): the previous .filter() call was always truthy, so ANY
+  // created/renamed file wiped the CLI cache and re-triggered the whole
+  // startup CLI storm - the main cause of recurring cold starts)
   vscode.workspace.onDidCreateFiles((event) => {
-    if (event.files.filter((uri) => uri.fsPath.includes("sfdx-project.json"))) {
-      vscode.commands.executeCommand("vscode-sfdx-hardis.refreshCommandsView");
+    if (event.files.some((uri) => uri.fsPath.endsWith("sfdx-project.json"))) {
+      vscode.commands.executeCommand(
+        "vscode-sfdx-hardis.refreshCommandsView",
+        true,
+      );
     }
   });
 
-  // Refresh commands if a sfdx-Project.json has been added
+  // Refresh commands if a sfdx-project.json has been added
   vscode.workspace.onDidRenameFiles((event) => {
     if (
-      event.files.filter((rename) =>
-        rename.newUri.fsPath.includes("sfdx-project.json"),
+      event.files.some((rename) =>
+        rename.newUri.fsPath.endsWith("sfdx-project.json"),
       )
     ) {
-      vscode.commands.executeCommand("vscode-sfdx-hardis.refreshCommandsView");
-      vscode.commands.executeCommand("vscode-sfdx-hardis.refreshStatusView");
-      vscode.commands.executeCommand("vscode-sfdx-hardis.refreshPluginsView");
+      vscode.commands.executeCommand(
+        "vscode-sfdx-hardis.refreshCommandsView",
+        true,
+      );
+      vscode.commands.executeCommand(
+        "vscode-sfdx-hardis.refreshStatusView",
+        true,
+      );
+      vscode.commands.executeCommand(
+        "vscode-sfdx-hardis.refreshPluginsView",
+        true,
+      );
     }
   });
 
@@ -351,8 +352,42 @@ export function activate(context: vscode.ExtensionContext) {
   }, 14400000);
 
   console.timeEnd("Hardis_Activate");
-  const timeSpent = (timeInit - Date.now()) / 1000;
-  reporter.sendTelemetryEvent("startup", {}, { startupTimeSeconds: timeSpent });
+  const activationTimeSeconds = (Date.now() - timeInit) / 1000;
+
+  // Anonymous telemetry respecting VsCode Guidelines -> https://code.visualstudio.com/api/extension-guides/telemetry
+  // Deferred: applicationinsights/OpenTelemetry are among the heaviest modules
+  // of the bundle and nothing needs telemetry during the first seconds.
+  setTimeout(async () => {
+    try {
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      const { default: TelemetryReporterClass } = await import(
+        "@vscode/extension-telemetry"
+      );
+      reporter = new TelemetryReporterClass(
+        "cf83e6dc-2621-4cb6-b92b-30905d1c8476", // gitleaks:allow - public Application Insights telemetry key, intentionally embedded
+      );
+      context.subscriptions.push(reporter);
+      commands.reporter = reporter;
+      reporter.sendTelemetryEvent(
+        "startup",
+        {},
+        { startupTimeSeconds: activationTimeSeconds },
+      );
+    } catch (e: any) {
+      Logger.log("Could not initialize telemetry reporter: " + e?.message);
+    }
+  }, 10000);
+
+  // Extension exports, used by UI integration tests to observe internal state
+  // (see src/test/ui). NOT a public API: shape may change at any time.
+  return {
+    commands,
+    hardisCommandsProvider,
+    hardisStatusProvider,
+    hardisPluginsProvider,
+    getLwcPanelManager: () => LwcPanelManager.getInstance(),
+    activationTimeSeconds,
+  };
 }
 
 // this method is called when your extension is deactivated

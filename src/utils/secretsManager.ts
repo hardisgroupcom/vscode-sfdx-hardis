@@ -25,6 +25,26 @@ export class SecretsManager {
     this.context = context;
   }
 
+  private static changeListeners: Array<() => void> = [];
+
+  /**
+   * Registers a listener notified whenever any secret is stored or deleted
+   * (used to invalidate in-memory caches derived from secrets)
+   */
+  static onSecretChanged(listener: () => void): void {
+    this.changeListeners.push(listener);
+  }
+
+  private static notifySecretChanged(): void {
+    for (const listener of this.changeListeners) {
+      try {
+        listener();
+      } catch {
+        // Listeners must never break secret operations
+      }
+    }
+  }
+
   static async getSecret(key: string): Promise<string | undefined> {
     const value = await this.instance!.context!.secrets.get(key);
     return value || process.env[key] || undefined;
@@ -32,9 +52,11 @@ export class SecretsManager {
 
   static async setSecret(key: string, value: string): Promise<void> {
     await this.instance!.context!.secrets.store(key, value);
+    this.notifySecretChanged();
   }
 
   static async deleteSecret(key: string): Promise<void> {
     await this.instance!.context!.secrets.delete(key);
+    this.notifySecretChanged();
   }
 }
