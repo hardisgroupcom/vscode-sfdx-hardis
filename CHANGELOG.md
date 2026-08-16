@@ -22,6 +22,7 @@
     - All dialog windows (Data Workbench, Files Workbench, Pipeline Config, Monitoring Config, Deployment Actions) open with the same brand accent strip as the pull requests modal
   - Quick action cards and other panels (Org Monitoring, Package XML, Documentation, Welcome, Setup, Monitoring Config, Metadata Retriever) now use the official Salesforce color palette for their icons and buttons
   - Deployment action execution contexts were renamed for clarity: "Validation and Deployment jobs", "Validation job only" and "Deployment job only" (previously "Check job" and "Process Deployment job"), in all languages
+  - Fix help tooltips that displayed black text on their dark blue background in dark mode, making them nearly impossible to read: their text is now light in dark mode, in every panel ([#2051](https://github.com/hardisgroupcom/sfdx-hardis/issues/2051))
 
 - Performance
   - Commands launched from the menu now open their execution tab **immediately** when clicked, instead of after the Salesforce CLI finished booting (which could take more than 10 seconds)

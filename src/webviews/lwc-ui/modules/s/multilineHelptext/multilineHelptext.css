@@ -16,12 +16,19 @@
     align-items: center;
 }
 
+/* Theme-aware colors: this CSS is scoped to the component, so selectors based
+   on the <body> theme attribute (.slds-scope[data-theme] ...) can never match
+   from here - LWC appends the scope token to every compound selector. Use
+   light-dark(), which follows the color-scheme set by global-theme-variables.css
+   on the themed body, and the SLDS tooltip styling hooks pinned in
+   global-theme.css for anything SLDS colors itself. */
 .multiline-helptext-popover {
     position: absolute;
-    background: #032d60;
-    color: #fff;
+    background: var(--slds-c-tooltip-color-background, #032d60);
+    color: var(--slds-c-tooltip-text-color, #fff);
+    border: 1px solid light-dark(transparent, rgba(255, 255, 255, 0.06));
     border-radius: 8px;
-    box-shadow: 0 2px 8px #0002;
+    box-shadow: light-dark(0 2px 8px rgba(0, 0, 0, 0.13), 0 6px 18px rgba(0, 0, 0, 0.6));
     padding: 0.5rem;
     font-size: 14px;
     z-index: 2147483647;
@@ -34,35 +41,12 @@
     user-select: text;
 }
 
-/* Light theme (explicit) */
-.slds-scope[data-theme] .multiline-helptext-popover {
-    background: #032d60;
-    color: #fff;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.13);
+.multiline-helptext-popover a {
+    color: light-dark(#87ceeb, #7fc7ff);
 }
 
-.slds-scope[data-theme] .multiline-helptext-popover a {
-    color: #87ceeb;
-}
-
-.slds-scope[data-theme] .multiline-helptext-popover a:hover {
-    color: #b0e0e6;
-}
-
-/* Dark theme overrides (component-scoped) */
-.blue-back[data-theme="dark"] .multiline-helptext-popover {
-    background: #0b2236; /* slightly lighter than surrounding bg */
-    color: #e6eef9;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.6);
-    border: 1px solid rgba(255,255,255,0.04);
-}
-
-.blue-back[data-theme="dark"] .multiline-helptext-popover a {
-    color: #7fc7ff;
-}
-
-.blue-back[data-theme="dark"] .multiline-helptext-popover a:hover {
-    color: #bde8ff;
+.multiline-helptext-popover a:hover {
+    color: light-dark(#b0e0e6, #bde8ff);
 }
 
 /* Horizontal positioning */
@@ -87,6 +71,9 @@
     transform: translateY(50%);
 }
 
+/* SLDS colors .slds-popover__body directly, so the popover text color is not
+   inherited from the bubble - it has to be overridden on the body element. */
 .multiline-helptext-popover .slds-popover__body {
     padding: 0;
+    color: inherit;
 }
