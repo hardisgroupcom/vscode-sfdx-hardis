@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import * as fs from "fs";
 import * as yaml from "js-yaml";
 import * as path from "path";
-import fg from "fast-glob";
+import * as vscode from "vscode";
 import { getWorkspaceRoot, listSfdxProjectPackageDirectories } from "../utils";
 import { CacheManager } from "./cache-manager";
 import { PullRequest } from "./gitProviders/types";
@@ -319,22 +319,16 @@ export async function listProjectApexTestClasses(): Promise<string[]> {
     const normalized = String(pkgDir || ".").replace(/\\/g, "/");
     return `${normalized}/**/classes/*.cls`;
   });
+  const combinedPattern =
+    patterns.length > 1 ? `{${patterns.join(",")}}` : patterns[0];
+  const excludePattern =
+    "**/{node_modules,.git,dist,out,.sf,.sfdx,.vscode}/**";
 
-  const files = await fg(patterns, {
-    cwd: workspaceRoot,
-    onlyFiles: true,
-    unique: true,
-    dot: false,
-    ignore: [
-      "**/node_modules/**",
-      "**/.git/**",
-      "**/dist/**",
-      "**/out/**",
-      "**/.sf/**",
-      "**/.sfdx/**",
-      "**/.vscode/**",
-    ],
-  });
+  const uris = await vscode.workspace.findFiles(
+    new vscode.RelativePattern(workspaceRoot, combinedPattern),
+    excludePattern,
+  );
+  const files = Array.from(new Set(uris.map((uri) => uri.fsPath)));
 
   const isTestRegex = /@istest\b/i;
   const found: string[] = [];
@@ -343,16 +337,13 @@ export async function listProjectApexTestClasses(): Promise<string[]> {
   for (let i = 0; i < files.length; i += APEX_TEST_READ_BATCH_SIZE) {
     const batch = files.slice(i, i + APEX_TEST_READ_BATCH_SIZE);
     const batchClassNames = await Promise.all(
-      batch.map(async (relFile) => {
+      batch.map(async (absFile) => {
         try {
-          const content = await fs.promises.readFile(
-            path.join(workspaceRoot, relFile),
-            "utf8",
-          );
+          const content = await fs.promises.readFile(absFile, "utf8");
           if (!isTestRegex.test(content || "")) {
             return null;
           }
-          return path.basename(relFile, ".cls").trim() || null;
+          return path.basename(absFile, ".cls").trim() || null;
         } catch {
           // ignore file read errors
           return null;

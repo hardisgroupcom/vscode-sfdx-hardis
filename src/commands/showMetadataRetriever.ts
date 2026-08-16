@@ -20,7 +20,6 @@ import {
 } from "../utils/metadataPresets";
 import { t } from "../i18n/i18n";
 import { openMetadataFile } from "../utils/projectUtils";
-import fg from "fast-glob";
 import * as path from "path";
 import * as fs from "fs";
 import { LwcUiPanel } from "../webviews/lwc-ui-panel";
@@ -755,11 +754,23 @@ async function executeMetadataRetrieve(
           ...buildMetadataKeys(delItem.memberName, metadataType),
         ];
         const fileSearchPatterns = candidateGlobPatterns.flatMap((pattern) => {
+          const relPattern = pattern.replace(/^\//, "");
           return packages.map((pkgDir) =>
-            path.join(pkgDir, "**", pattern).replace(/\\/g, "/"),
+            path.join(pkgDir, "**", relPattern).replace(/\\/g, "/"),
           );
         });
-        const filesToDelete = await fg(fileSearchPatterns, { dot: true });
+        let filesToDelete: string[] = [];
+        if (fileSearchPatterns.length > 0) {
+          const combinedPattern =
+            fileSearchPatterns.length > 1
+              ? `{${fileSearchPatterns.join(",")}}`
+              : fileSearchPatterns[0];
+          const uris = await vscode.workspace.findFiles(
+            new vscode.RelativePattern(workspaceRoot, combinedPattern),
+            null,
+          );
+          filesToDelete = uris.map((uri) => uri.fsPath);
+        }
         for (const filePath of filesToDelete) {
           try {
             await fs.promises.rm(filePath);
@@ -1842,6 +1853,7 @@ async function annotateLocalFiles(records: any[]): Promise<any[]> {
     if (!packageDirs || packageDirs.length === 0) {
       return records.map((r) => ({ ...r, LocalFileExists: false }));
     }
+    const workspaceRoot = getWorkspaceRoot();
 
     // Build list of unique metadata types present in records to limit scanning
     const typesNeeded = new Set<string>();
@@ -1865,31 +1877,26 @@ async function annotateLocalFiles(records: any[]): Promise<any[]> {
         }
         const dirName = mt.directoryName || "";
         // pattern to list all files under the metadata dir
-        const baseGlob = path
-          .join(pkg, "**", dirName, "**", "*")
-          .replace(/\\/g, "/");
+        const relativeGlob = dirName ? `**/${dirName}/**/*` : "**/*";
+        const base = path.join(workspaceRoot, pkg);
         const key = `${pkg}::${tName}`;
 
-        const prom = new Promise<void>((resolve) => {
-          fg(baseGlob, {
-            dot: true,
-            onlyFiles: true,
-            followSymbolicLinks: true,
-          })
-            .then((files: string[]) => {
-              const set = new Set<string>();
-              for (const f of files) {
-                set.add(f);
-              }
-              index.set(key, set);
-              resolve();
-            })
-            .catch(() => {
-              // ignore scanning errors
-              index.set(key, new Set());
-              resolve();
-            });
-        });
+        const prom = (async () => {
+          try {
+            const uris = await vscode.workspace.findFiles(
+              new vscode.RelativePattern(base, relativeGlob),
+              null,
+            );
+            const set = new Set<string>();
+            for (const uri of uris) {
+              set.add(uri.fsPath.replace(/\\/g, "/"));
+            }
+            index.set(key, set);
+          } catch {
+            // ignore scanning errors
+            index.set(key, new Set());
+          }
+        })();
         scanPromises.push(prom);
       }
     }
@@ -2017,6 +2024,7 @@ async function expandWithMissingFolderItems(
   } catch {
     // ignore - keep empty list, which causes all folder candidates to be added
   }
+  const workspaceRoot = getWorkspaceRoot();
 
   const additions: any[] = [];
   for (const [folderType, folderNames] of candidatesByFolderType.entries()) {
@@ -2033,20 +2041,25 @@ async function expandWithMissingFolderItems(
         // <leaf> is the last segment (e.g. C).
         const segments = folderPath.split("/");
         const leafName = segments[segments.length - 1];
-        const patterns = packageDirs.map((pkg) =>
-          path
-            .join(
-              pkg,
-              "**",
-              mt.directoryName || "",
-              ...segments,
-              `${leafName}.${mt.suffix}-meta.xml`,
-            )
-            .replace(/\\/g, "/"),
+        const patterns = packageDirs.map((pkgDir) =>
+          [
+            pkgDir,
+            "**",
+            mt.directoryName || "",
+            ...segments,
+            `${leafName}.${mt.suffix}-meta.xml`,
+          ]
+            .filter(Boolean)
+            .join("/"),
         );
+        const combinedPattern =
+          patterns.length > 1 ? `{${patterns.join(",")}}` : patterns[0];
         try {
-          const found = await fg(patterns, { dot: true, onlyFiles: true });
-          existsLocally = found && found.length > 0;
+          const uris = await vscode.workspace.findFiles(
+            new vscode.RelativePattern(workspaceRoot, combinedPattern),
+            null,
+          );
+          existsLocally = uris.length > 0;
         } catch {
           existsLocally = false;
         }
