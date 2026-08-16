@@ -2374,11 +2374,28 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       return;
     }
     const nodes = mermaidSvg.querySelectorAll("g.node");
+    const svgScale = this._getMermaidEffectiveScale(mermaidSvg);
     nodes.forEach((node) => {
       node.style.cursor = "pointer";
       node.setAttribute("tabindex", "0");
-      this._drawNodeCountBubble(node);
+      this._drawNodeCountBubble(node, svgScale);
     });
+  }
+
+  // Effective on-screen scale of the mermaid SVG: _applyMermaidZoom shrinks
+  // the whole SVG to fit the viewport (typically 0.5-0.8x on real pipelines),
+  // so anything drawn in SVG units must compensate to stay readable.
+  _getMermaidEffectiveScale(mermaidSvg) {
+    try {
+      const viewBox = mermaidSvg.viewBox && mermaidSvg.viewBox.baseVal;
+      const styledWidth = parseFloat(mermaidSvg.style.width);
+      if (viewBox && viewBox.width > 0 && styledWidth > 0) {
+        return styledWidth / viewBox.width;
+      }
+    } catch (e) {
+      // fall through to neutral scale
+    }
+    return 1;
   }
 
   // Draw the open-PR counter of a branch node as a notification-style bubble
@@ -2387,7 +2404,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   // BranchStrategyMermaidBuilder): it cannot be shown in the label itself
   // because foreignObject clips any HTML overflowing the label box, while SVG
   // elements appended to the node group are not clipped.
-  _drawNodeCountBubble(node) {
+  _drawNodeCountBubble(node, svgScale) {
     const marker = node.querySelector(".hardis-node-count");
     if (!marker) {
       return;
@@ -2407,12 +2424,25 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       return;
     }
     const SVG_NS = "http://www.w3.org/2000/svg";
-    const height = 22;
-    const width = Math.max(height, 13 + 9 * String(count).length);
-    // The badge is styled ENTIRELY inline (style attribute): inline styles
-    // beat every stylesheet, so a stale cached global-theme.css can never
-    // repaint it with outdated colors, and the numeral gets an explicit UI
-    // font instead of inheriting mermaid's default (trebuchet ms).
+    // Target ON-SCREEN size converted to SVG units: the whole SVG is scaled
+    // down to fit the viewport, so the badge is drawn 1/scale larger to still
+    // measure ~20px on screen (clamped so it never becomes gigantic).
+    const unit = 1 / Math.min(Math.max(svgScale || 1, 0.35), 1);
+    const height = Math.round(20 * unit);
+    const fontSize = Math.round(13 * unit);
+    const width = Math.max(
+      height,
+      Math.round((11 + 8 * String(count).length) * unit),
+    );
+    const ringWidth = Math.max(1.5, 2 * unit);
+    // The badge is styled ENTIRELY inline (style attribute), and every paint
+    // property is set explicitly: mermaid compiles classDefs into
+    // "#id .gitMajor>*{stroke:...!important}" rules that hit this group (a
+    // direct child of the node), so without an explicit inline stroke:none
+    // the numeral glyphs get outlined in the node border color and become
+    // unreadable. Inline styles also make the badge immune to stale cached
+    // stylesheets, and the explicit font stack avoids mermaid's default
+    // trebuchet ms.
     const isDark = this.colorTheme === "dark";
     const pillFill = isDark ? "#1b96ff" : "#0b5cab";
     const ringAndText = isDark ? "#000000" : "#ffffff";
@@ -2428,13 +2458,13 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     bubble.setAttribute("class", "hardis-count-bubble");
     const pill = document.createElementNS(SVG_NS, "rect");
     pill.setAttribute("x", String(cornerX - Math.round(width / 2)));
-    pill.setAttribute("y", String(cornerY - height / 2));
+    pill.setAttribute("y", String(cornerY - Math.round(height / 2)));
     pill.setAttribute("width", String(width));
     pill.setAttribute("height", String(height));
     pill.setAttribute("rx", String(height / 2));
     pill.setAttribute(
       "style",
-      `fill:${pillFill};stroke:${ringAndText};stroke-width:2px;`,
+      `fill:${pillFill};stroke:${ringAndText};stroke-width:${ringWidth}px;stroke-dasharray:none;`,
     );
     const text = document.createElementNS(SVG_NS, "text");
     text.setAttribute("x", String(cornerX));
@@ -2443,7 +2473,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     text.setAttribute("dominant-baseline", "central");
     text.setAttribute(
       "style",
-      `fill:${ringAndText};font-family:${fontFamily};font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:0;`,
+      `fill:${ringAndText};stroke:none;font-family:${fontFamily};font-size:${fontSize}px;font-weight:700;font-variant-numeric:tabular-nums;`,
     );
     text.textContent = count;
     bubble.appendChild(pill);
