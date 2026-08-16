@@ -2,7 +2,7 @@ import * as http from "http";
 import { findAvailablePort } from "./utils/portUtils";
 import { WebSocketServer } from "ws";
 import * as vscode from "vscode";
-import * as fs from "fs-extra";
+import * as fs from "fs/promises";
 import * as path from "path";
 import { getWorkspaceRoot, stripAnsi } from "./utils";
 import { Logger } from "./logger";

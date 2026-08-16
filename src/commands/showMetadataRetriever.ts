@@ -22,7 +22,7 @@ import { t } from "../i18n/i18n";
 import { openMetadataFile } from "../utils/projectUtils";
 import fg from "fast-glob";
 import * as path from "path";
-import * as fs from "fs-extra";
+import * as fs from "fs";
 import { LwcUiPanel } from "../webviews/lwc-ui-panel";
 import { generatePackageXml, mergeIntoPackageXml } from "./packageXml";
 
@@ -94,13 +94,17 @@ function getSfdxProjectJsonFullPath(): string {
 
 async function readSfdxProjectJsonFromDisk(): Promise<any> {
   const pjPath = getSfdxProjectJsonFullPath();
-  const txt = await fs.readFile(pjPath, "utf8");
+  const txt = await fs.promises.readFile(pjPath, "utf8");
   return JSON.parse(txt || "{}");
 }
 
 async function writeSfdxProjectJsonToDisk(pj: any): Promise<void> {
   const pjPath = getSfdxProjectJsonFullPath();
-  await fs.writeFile(pjPath, JSON.stringify(pj, null, 2) + "\n", "utf8");
+  await fs.promises.writeFile(
+    pjPath,
+    JSON.stringify(pj, null, 2) + "\n",
+    "utf8",
+  );
 }
 
 function getDefaultPackageDirectoryPathFromProjectJson(pj: any): string | null {
@@ -408,7 +412,7 @@ async function generateRetrievePackageXmls(
   // Get report directory and create retrieve subdirectory
   const reportDir = await getReportDirectory();
   const retrieveDir = path.join(reportDir, "retrieve");
-  await fs.ensureDir(retrieveDir);
+  await fs.promises.mkdir(retrieveDir, { recursive: true });
 
   // Generate timestamp for the file name
   const now = new Date();
@@ -424,7 +428,7 @@ async function generateRetrievePackageXmls(
     retrieveDir,
     `retrieved-package-${timestamp}.xml`,
   );
-  await fs.writeFile(timestampedFilePath, timestampedPackageXml, {
+  await fs.promises.writeFile(timestampedFilePath, timestampedPackageXml, {
     encoding: "utf8",
   });
   Logger.log(`Generated retrieve package.xml: ${timestampedFilePath}`);
@@ -642,7 +646,7 @@ async function executeMetadataRetrieve(
       errorMsg.includes(`ligne de commande est trop longue`) ||
       errorMsg.includes(`ENAMETOOLONG`)
     ) {
-      const tempDir = await fs.mkdtemp(
+      const tempDir = await fs.promises.mkdtemp(
         path.join(require("os").tmpdir(), "sfdx-retrieve-"),
       );
       const tmpPackageXml = path.join(tempDir, "package.xml");
@@ -672,7 +676,7 @@ async function executeMetadataRetrieve(
     ${typesBlocks}
       <version>${apiVersion}</version>
     </Package>`;
-      await fs.writeFile(tmpPackageXml, packageXmlContent, {
+      await fs.promises.writeFile(tmpPackageXml, packageXmlContent, {
         encoding: "utf8",
       });
       const commandManifest = useCrudApi
@@ -696,7 +700,7 @@ async function executeMetadataRetrieve(
       );
       // Clean up temp dir
       try {
-        await fs.rm(tempDir, { recursive: true, force: true });
+        await fs.promises.rm(tempDir, { recursive: true, force: true });
       } catch {
         // ignore
       }
@@ -758,7 +762,7 @@ async function executeMetadataRetrieve(
         const filesToDelete = await fg(fileSearchPatterns, { dot: true });
         for (const filePath of filesToDelete) {
           try {
-            await fs.rm(filePath);
+            await fs.promises.rm(filePath);
             deletedItemsSuccess.push(delItem);
           } catch (err) {
             Logger.log(`Error deleting file ${filePath}: ${err}`);
@@ -2146,7 +2150,7 @@ async function handleOpenRetrieveFolder() {
     const retrieveDir = path.join(reportDir, "retrieve");
 
     // Ensure the directory exists
-    await fs.ensureDir(retrieveDir);
+    await fs.promises.mkdir(retrieveDir, { recursive: true });
 
     // Open the retrieve folder in VS Code explorer
     const retrieveDirUri = vscode.Uri.file(retrieveDir);

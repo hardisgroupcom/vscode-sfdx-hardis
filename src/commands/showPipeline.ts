@@ -21,7 +21,7 @@ import { handleDeploymentActionPickerMessage } from "../utils/pipeline/deploymen
 import { execCommandWithProgress, getWorkspaceRoot } from "../utils";
 import { t } from "../i18n/i18n";
 import path from "path";
-import fs from "fs-extra";
+import * as fs from "fs";
 import simpleGit from "simple-git";
 import { listAllOrgs } from "../utils/orgUtils";
 import { getChildBranchNames } from "../utils/orgConfigUtils";
@@ -915,7 +915,10 @@ export function registerShowPipeline(commands: Commands) {
                   "actions",
                   `.sfdx-hardis.${prNumber}.yml`,
                 );
-                await fs.rename(prActionsFileDraft, prActionsFileNewName);
+                await fs.promises.rename(
+                  prActionsFileDraft,
+                  prActionsFileNewName,
+                );
                 const commitAndPushLabel = t("commitAndPushFile", {
                   fileName: `.sfdx-hardis.${prNumber}.yml`,
                 });

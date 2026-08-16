@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import * as fs from "fs-extra";
+import * as fs from "fs";
 import * as yaml from "js-yaml";
 import * as path from "path";
 import fg from "fast-glob";
@@ -81,7 +81,7 @@ export async function listPrePostCommandsForPullRequest(
     return commands;
   }
   try {
-    const prConfig = await fs.readFile(prConfigFileName, "utf8");
+    const prConfig = await fs.promises.readFile(prConfigFileName, "utf8");
     const prConfigParsed = yaml.load(prConfig) as any;
     if (prConfigParsed) {
       // Extract commandsPreDeploy
@@ -153,7 +153,7 @@ async function loadPrConfig(prConfigFileName: string): Promise<any> {
   if (!fs.existsSync(prConfigFileName)) {
     return {};
   }
-  const prConfig = await fs.readFile(prConfigFileName, "utf8");
+  const prConfig = await fs.promises.readFile(prConfigFileName, "utf8");
   const prConfigParsed = yaml.load(prConfig) as any;
   return prConfigParsed || {};
 }
@@ -164,8 +164,8 @@ async function savePrConfig(
   prConfigParsed: any,
 ): Promise<void> {
   const yamlContent = yaml.dump(prConfigParsed);
-  await fs.ensureDir(path.dirname(prConfigFileName));
-  await fs.writeFile(prConfigFileName, yamlContent, "utf8");
+  await fs.promises.mkdir(path.dirname(prConfigFileName), { recursive: true });
+  await fs.promises.writeFile(prConfigFileName, yamlContent, "utf8");
 }
 
 // Helper function to get target array name from when value
@@ -345,7 +345,7 @@ export async function listProjectApexTestClasses(): Promise<string[]> {
     const batchClassNames = await Promise.all(
       batch.map(async (relFile) => {
         try {
-          const content = await fs.readFile(
+          const content = await fs.promises.readFile(
             path.join(workspaceRoot, relFile),
             "utf8",
           );
@@ -460,7 +460,7 @@ export async function listProjectApexScripts(): Promise<
   const apexScriptsDir = path.join(workspaceRoot, "scripts", "apex");
   const options: { label: string; value: string }[] = [];
   if (fs.existsSync(apexScriptsDir)) {
-    const files = await fs.readdir(apexScriptsDir);
+    const files = await fs.promises.readdir(apexScriptsDir);
     for (const file of files) {
       if (file.endsWith(".apex")) {
         options.push({
@@ -481,17 +481,20 @@ export async function listProjectDataWorkspaces(): Promise<
   const options: { label: string; value: string }[] = [];
   // List all folders in data that contain an export.json
   if (fs.existsSync(sfdmuProjectsDir)) {
-    const items = await fs.readdir(sfdmuProjectsDir);
+    const items = await fs.promises.readdir(sfdmuProjectsDir);
     for (const item of items) {
       const itemPath = path.join(sfdmuProjectsDir, item);
       const exportJsonPath = path.join(itemPath, "export.json");
       if (
-        (await fs.stat(itemPath)).isDirectory() &&
+        (await fs.promises.stat(itemPath)).isDirectory() &&
         fs.existsSync(exportJsonPath)
       ) {
         let hardisLabel = "";
         try {
-          const jsonContent = await fs.readFile(exportJsonPath, "utf8");
+          const jsonContent = await fs.promises.readFile(
+            exportJsonPath,
+            "utf8",
+          );
           const parsed = JSON.parse(jsonContent);
           hardisLabel = parsed.sfdxHardisLabel || item;
         } catch {

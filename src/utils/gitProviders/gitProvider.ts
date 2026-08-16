@@ -21,7 +21,7 @@ import {
   listPrePostCommandsForPullRequest,
 } from "../prePostCommandsUtils";
 import path from "path";
-import fs from "fs-extra";
+import * as fs from "fs";
 
 export class GitProvider {
   static instance: GitProvider | null;
@@ -650,9 +650,9 @@ export class GitProvider {
       "gitProviders",
       `${logTime}.csv`,
     );
-    await fs.ensureDir(path.dirname(reportFile));
+    await fs.promises.mkdir(path.dirname(reportFile), { recursive: true });
     const csvHeader = "DateTime,Endpoint or Method,Caller,Params(json)\n";
-    await fs.writeFile(reportFile, csvHeader, { encoding: "utf8" });
+    await fs.promises.writeFile(reportFile, csvHeader, { encoding: "utf8" });
     setInterval(async () => {
       if (this.apiCallsLogs.length === 0) {
         return;
@@ -669,7 +669,9 @@ export class GitProvider {
         const paramsJson = JSON.stringify(params).replace(/"/g, '""');
         logLines += `${dateTime},"${endpointOrMethod}","${caller}","${paramsJson}"\n`;
       }
-      await fs.appendFile(reportFile, logLines, { encoding: "utf8" });
+      await fs.promises.appendFile(reportFile, logLines, {
+        encoding: "utf8",
+      });
     }, 5 * 1000); // every 5 seconds
   }
 }

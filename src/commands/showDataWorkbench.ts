@@ -3,7 +3,7 @@ import * as vscode from "vscode";
 import { LwcPanelManager } from "../lwc-panel-manager";
 import { Commands } from "../commands";
 import { getWorkspaceRoot, openFolderInExplorer } from "../utils";
-import * as fs from "fs-extra";
+import * as fs from "fs";
 import path from "path";
 import { Logger } from "../logger";
 import { isQueryValid, parseQuery } from "@jetstreamapp/soql-parser-js";
@@ -565,13 +565,13 @@ async function createDataWorkspace(data: any): Promise<string> {
   const dataFolder = path.join(workspaceRoot, "scripts", "data");
   const workspacePath = path.join(dataFolder, data.name);
 
-  await fs.ensureDir(dataFolder);
+  await fs.promises.mkdir(dataFolder, { recursive: true });
 
   if (fs.existsSync(workspacePath)) {
     throw new Error(`Workspace ${data.name} already exists`);
   }
 
-  await fs.ensureDir(workspacePath);
+  await fs.promises.mkdir(workspacePath, { recursive: true });
 
   const objects: SfdmuObjectConfig[] = Array.isArray(data.objects)
     ? data.objects
@@ -600,7 +600,10 @@ async function createDataWorkspace(data: any): Promise<string> {
   };
 
   const exportJsonPath = path.join(workspacePath, "export.json");
-  await fs.writeFile(exportJsonPath, JSON.stringify(exportConfig, null, 2));
+  await fs.promises.writeFile(
+    exportJsonPath,
+    JSON.stringify(exportConfig, null, 2),
+  );
 
   vscode.window.showInformationMessage(
     `Data workspace "${data.label}" created successfully!`,
@@ -627,9 +630,9 @@ async function updateDataWorkspace(data: any): Promise<string> {
         `A workspace named "${workspaceName}" already exists. Choose another name.`,
       );
     }
-    await fs.move(oldPath, newPath, { overwrite: false });
+    await fs.promises.rename(oldPath, newPath);
   } else {
-    await fs.ensureDir(newPath);
+    await fs.promises.mkdir(newPath, { recursive: true });
   }
 
   const exportJsonPath = path.join(newPath, "export.json");
@@ -655,7 +658,10 @@ async function updateDataWorkspace(data: any): Promise<string> {
     throw new SoqlValidationError(soqlErrors);
   }
 
-  await fs.writeFile(exportJsonPath, JSON.stringify(exportConfig, null, 2));
+  await fs.promises.writeFile(
+    exportJsonPath,
+    JSON.stringify(exportConfig, null, 2),
+  );
 
   return exportJsonPath;
 }
@@ -737,7 +743,7 @@ function validateSoqlQueries(objects: SfdmuObjectConfig[]): string[] {
 
 async function deleteDataWorkspace(workspacePath: string): Promise<void> {
   if (fs.existsSync(workspacePath)) {
-    await fs.remove(workspacePath);
+    await fs.promises.rm(workspacePath, { recursive: true, force: true });
     vscode.window.showInformationMessage(
       "Data workspace deleted successfully!",
     );

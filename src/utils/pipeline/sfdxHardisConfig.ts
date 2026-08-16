@@ -13,7 +13,7 @@ getConfig(layer) returns:
 import { getText } from "../httpUtils";
 import * as c from "../ansiColors";
 import { cosmiconfig } from "cosmiconfig";
-import fs from "fs-extra";
+import * as fs from "fs";
 import * as yaml from "js-yaml";
 import * as os from "os";
 import * as path from "path";
@@ -174,8 +174,8 @@ export async function setInConfigFile(
     doc = yaml.load(fs.readFileSync(configFile, "utf-8"));
   }
   doc = Object.assign(doc, propValues);
-  await fs.ensureDir(path.dirname(configFile));
-  await fs.writeFile(configFile, yaml.dump(doc));
+  await fs.promises.mkdir(path.dirname(configFile), { recursive: true });
+  await fs.promises.writeFile(configFile, yaml.dump(doc));
   if (explorer) {
     explorer.clearCaches();
   }

@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import * as fs from "fs-extra";
+import * as fs from "fs";
 import * as path from "path";
 import { getJson } from "../utils/httpUtils";
 import { LwcPanelManager } from "../lwc-panel-manager";
@@ -60,7 +60,7 @@ async function loadJsonSchema(): Promise<any> {
     "./resources/sfdx-hardis.jsonschema.json",
   );
   if (fs.existsSync(localPath)) {
-    return fs.readJSONSync(localPath);
+    return JSON.parse(fs.readFileSync(localPath, "utf8"));
   }
   return {};
 }

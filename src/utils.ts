@@ -1,6 +1,6 @@
 import * as c from "./utils/ansiColors";
 import * as childProcess from "child_process";
-import * as fs from "fs-extra";
+import * as fs from "fs";
 import * as path from "path";
 import simpleGit from "simple-git";
 
@@ -1022,7 +1022,7 @@ export async function getReportDirectory() {
     "hardis-report",
   );
   const reportDir = configProject.reportDirectory || defaultReportDir;
-  await fs.ensureDir(reportDir);
+  await fs.promises.mkdir(reportDir, { recursive: true });
   return reportDir;
 }
 
@@ -1032,7 +1032,7 @@ export async function listSfdxProjectPackageDirectories() {
   try {
     const sfdxProjectPath = path.join(workspaceRoot, "sfdx-project.json");
     try {
-      const txt = await fs.readFile(sfdxProjectPath, "utf8");
+      const txt = await fs.promises.readFile(sfdxProjectPath, "utf8");
       const pj = JSON.parse(txt || "{}");
       if (
         pj &&

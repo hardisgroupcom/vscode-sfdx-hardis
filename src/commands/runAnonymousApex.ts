@@ -1,12 +1,22 @@
 import * as vscode from "vscode";
 import { Commands } from "../commands";
-import fs from "fs-extra";
+import * as fs from "fs";
 import path from "path";
 import {
   execSfdxJsonWithProgress,
   getReportDirectory,
   getWorkspaceRoot,
 } from "../utils";
+
+// Async existence check (fs has no promise-based equivalent to fs.existsSync)
+async function pathExists(targetPath: string): Promise<boolean> {
+  try {
+    await fs.promises.access(targetPath);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export async function registerRunAnonymousApex(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
@@ -18,7 +28,7 @@ export async function registerRunAnonymousApex(commands: Commands) {
       const anonymousApexReportDir = `${reportDir}/anonymousApex`;
       let anonymousApex: string | undefined;
       if (params && params.fsPath) {
-        anonymousApex = await fs.readFile(params.fsPath, "utf8");
+        anonymousApex = await fs.promises.readFile(params.fsPath, "utf8");
       } else {
         const editor = vscode.window.activeTextEditor;
         if (editor && editor.document.languageId === "apex") {
@@ -30,8 +40,7 @@ export async function registerRunAnonymousApex(commands: Commands) {
             "scripts",
             "apex",
           );
-          const scriptsApexFolderExists =
-            await fs.pathExists(apexScriptsFolder);
+          const scriptsApexFolderExists = await pathExists(apexScriptsFolder);
           const apexFolderToUse = scriptsApexFolderExists
             ? apexScriptsFolder
             : anonymousApexReportDir;
@@ -40,14 +49,14 @@ export async function registerRunAnonymousApex(commands: Commands) {
             "anonymousApex.apex",
           );
           // Open file in a document tab if existing
-          const fileExists = await fs.pathExists(newAnonymousApexFilePath);
+          const fileExists = await pathExists(newAnonymousApexFilePath);
           if (fileExists) {
             const document = await vscode.workspace.openTextDocument(
               newAnonymousApexFilePath,
             );
             await vscode.window.showTextDocument(document);
           } else {
-            await fs.ensureDir(apexFolderToUse);
+            await fs.promises.mkdir(apexFolderToUse, { recursive: true });
             const defaultApexCode = `// Write your anonymous Apex code here
 // Then run it using either:
 // - the menu command "Nerdy stuff -> Run anonymous Apex code"
@@ -55,7 +64,7 @@ export async function registerRunAnonymousApex(commands: Commands) {
 
 System.debug('sfdx-hardis rocks !!!');
 `;
-            await fs.writeFile(
+            await fs.promises.writeFile(
               newAnonymousApexFilePath,
               defaultApexCode,
               "utf8",
@@ -75,10 +84,10 @@ System.debug('sfdx-hardis rocks !!!');
         return;
       }
       // Create a temporary file to store the anonymous apex code
-      await fs.ensureDir(anonymousApexReportDir);
+      await fs.promises.mkdir(anonymousApexReportDir, { recursive: true });
       let fileName = "anonymousApex";
       if (params && params.fsPath) {
-        fileName = fs.pathExistsSync(params.fsPath)
+        fileName = fs.existsSync(params.fsPath)
           ? path.basename(params.fsPath, ".apex")
           : "anonymousApex";
       } else {
@@ -91,7 +100,7 @@ System.debug('sfdx-hardis rocks !!!');
       const pad = (n: number) => String(n).padStart(2, "0");
       const formattedDate = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
       const tempFilePath = `${anonymousApexReportDir}/${fileName}_${formattedDate}.apex`;
-      await fs.writeFile(tempFilePath, anonymousApex, "utf8");
+      await fs.promises.writeFile(tempFilePath, anonymousApex, "utf8");
       // Run the anonymous apex
       const apexRunCommand = `sf apex run --file "${tempFilePath}"`;
       const apexRes = await execSfdxJsonWithProgress(
@@ -171,7 +180,7 @@ System.debug('sfdx-hardis rocks !!!');
       if (apexRes && apexRes.result) {
         const logFile = tempFilePath.replace(".apex", ".log");
         const logContent = apexRes.result.logs || "No log available.";
-        await fs.writeFile(logFile, logContent, "utf8");
+        await fs.promises.writeFile(logFile, logContent, "utf8");
         await showMessageWithLog(
           "info",
           "🦙 Anonymous Apex executed successfully.",
@@ -181,7 +190,7 @@ System.debug('sfdx-hardis rocks !!!');
         // In case of error, we can still have a log
         const logFile = tempFilePath.replace(".apex", ".err.log");
         const logContent = apexRes.data.logs || "No log available.";
-        await fs.writeFile(logFile, logContent, "utf8");
+        await fs.promises.writeFile(logFile, logContent, "utf8");
         // Display error with a button to open log file
         await showMessageWithLog(
           "error",
@@ -208,7 +217,7 @@ export async function registerDisplayLogDebugOnly(commands: Commands) {
     async (logFileVsCodeUri: vscode.Uri) => {
       const logFile = logFileVsCodeUri.fsPath;
       const debugLogFile = logFile.replace(".log", ".debug.log");
-      const logContent = await fs.readFile(logFile, "utf8");
+      const logContent = await fs.promises.readFile(logFile, "utf8");
       const debugLines = logContent
         .split("\n")
         .filter((line) => line.includes("|USER_DEBUG|"))
@@ -221,7 +230,7 @@ export async function registerDisplayLogDebugOnly(commands: Commands) {
           return line;
         })
         .join("\n");
-      await fs.writeFile(debugLogFile, debugLines, "utf8");
+      await fs.promises.writeFile(debugLogFile, debugLines, "utf8");
       const document = await vscode.workspace.openTextDocument(debugLogFile);
       await vscode.window.showTextDocument(document);
     },

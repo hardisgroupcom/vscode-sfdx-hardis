@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { getConfig } from "./pipeline/sfdxHardisConfig";
 import * as yaml from "js-yaml";
-import * as fs from "fs-extra";
+import * as fs from "fs";
 import * as path from "path";
 import { getText } from "./httpUtils";
 import { t } from "../i18n/i18n";
@@ -261,10 +261,10 @@ export async function writeSfdxHardisConfig(
     const configFile = fs.existsSync(rootConfigFile)
       ? rootConfigFile
       : configConfigFile;
-    await fs.ensureDir(path.dirname(configFile));
+    await fs.promises.mkdir(path.dirname(configFile), { recursive: true });
     const config = await readSfdxHardisConfig();
     config[key] = value;
-    await fs.writeFile(configFile, yaml.dump(config));
+    await fs.promises.writeFile(configFile, yaml.dump(config));
   }
   return {};
 }

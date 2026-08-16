@@ -1,5 +1,5 @@
 import * as path from "path";
-import * as fs from "fs-extra";
+import * as fs from "fs";
 
 function getGitDirPath(workspaceRoot: string): string | null {
   const dotGitPath = path.join(workspaceRoot, ".git");
@@ -51,7 +51,7 @@ export async function isMergeDriverEnabled(
     return false;
   }
   try {
-    const content = await fs.readFile(attributesPath, "utf8");
+    const content = await fs.promises.readFile(attributesPath, "utf8");
     const lines = content.split(/\r?\n/g);
     for (const line of lines) {
       const trimmedLeft = line.replace(/^\s+/, "");

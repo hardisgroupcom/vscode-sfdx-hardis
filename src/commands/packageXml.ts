@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import * as fs from "fs-extra";
+import * as fs from "fs";
 import path from "path";
 import { LwcPanelManager } from "../lwc-panel-manager";
 import { getWorkspaceRoot } from "../utils";
@@ -427,7 +427,7 @@ async function loadPackageXmlData(
   }
 
   try {
-    const xmlContent = await fs.readFile(packagePath, "utf8");
+    const xmlContent = await fs.promises.readFile(packagePath, "utf8");
     return await parsePackageXml(xmlContent);
   } catch (error: any) {
     throw new Error(`Failed to read package-skip-items.xml: ${error.message}`, {
@@ -515,8 +515,8 @@ async function savePackageXmlData(
   });
 
   const xmlContent = generatePackageXml(metadataList, apiVersion);
-  await fs.ensureDir(path.dirname(packagePath));
-  await fs.writeFile(packagePath, xmlContent, { encoding: "utf8" });
+  await fs.promises.mkdir(path.dirname(packagePath), { recursive: true });
+  await fs.promises.writeFile(packagePath, xmlContent, { encoding: "utf8" });
 }
 
 /**
@@ -584,9 +584,13 @@ export async function mergeIntoPackageXml(
     let existingApiVersion = apiVersion;
 
     // Try to load existing package.xml
-    if (await fs.pathExists(packageXmlPath)) {
+    const packageXmlExists = await fs.promises
+      .access(packageXmlPath)
+      .then(() => true)
+      .catch(() => false);
+    if (packageXmlExists) {
       try {
-        const xmlContent = await fs.readFile(packageXmlPath, "utf8");
+        const xmlContent = await fs.promises.readFile(packageXmlPath, "utf8");
         existingPackageData = await parsePackageXml(xmlContent);
         existingApiVersion = existingPackageData.apiVersion || apiVersion;
       } catch {
@@ -636,10 +640,12 @@ export async function mergeIntoPackageXml(
     );
 
     // Ensure directory exists
-    await fs.ensureDir(path.dirname(packageXmlPath));
+    await fs.promises.mkdir(path.dirname(packageXmlPath), { recursive: true });
 
     // Write the merged package.xml
-    await fs.writeFile(packageXmlPath, packageXmlContent, { encoding: "utf8" });
+    await fs.promises.writeFile(packageXmlPath, packageXmlContent, {
+      encoding: "utf8",
+    });
   } catch (error: any) {
     throw new Error(
       `Failed to merge package.xml at ${packageXmlPath}: ${error.message}`,
