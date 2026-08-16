@@ -36,6 +36,11 @@ export default [
         setImmediate: "readonly",
         clearImmediate: "readonly",
 
+        // Node.js 18+ / VS Code extension host built-in fetch API
+        fetch: "readonly",
+        Response: "readonly",
+        AbortSignal: "readonly",
+
         // VS Code extension globals
         Thenable: "readonly",
       },

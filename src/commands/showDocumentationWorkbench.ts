@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import * as fs from "fs-extra";
 import * as path from "path";
-import axios from "axios";
+import { getJson } from "../utils/httpUtils";
 import { LwcPanelManager } from "../lwc-panel-manager";
 import { Commands } from "../commands";
 import { getWorkspaceRoot } from "../utils";
@@ -48,8 +48,7 @@ const PROMPT_TEMPLATES_RELATIVE_PATH = path.join("config", "prompt-templates");
  */
 async function loadJsonSchema(): Promise<any> {
   try {
-    const response = await axios.get(REMOTE_SCHEMA_URL, { timeout: 8000 });
-    return response.data;
+    return await getJson<any>(REMOTE_SCHEMA_URL, { timeoutMs: 8000 });
   } catch (e: any) {
     Logger.log(
       `Failed to fetch remote JSON schema, falling back to local: ${e.message}`,

@@ -6,7 +6,7 @@ import { getWorkspaceRoot, openFolderInExplorer } from "../utils";
 import * as fs from "fs-extra";
 import path from "path";
 import { Logger } from "../logger";
-import axios from "axios";
+import { getJson } from "../utils/httpUtils";
 import { t } from "../i18n/i18n";
 // jscpd:ignore-end
 
@@ -122,10 +122,10 @@ export function registerShowFilesWorkbench(commands: Commands) {
           // jscpd:ignore-start
           case "loadTemplates": {
             try {
-              const response = await axios.get(FILE_TEMPLATES_URL, {
-                timeout: 8000,
+              const response = await getJson<any>(FILE_TEMPLATES_URL, {
+                timeoutMs: 8000,
               });
-              const templates = response.data?.templates || [];
+              const templates = response?.templates || [];
               panel.sendMessage({
                 type: "templatesLoaded",
                 data: { templates },
@@ -142,10 +142,12 @@ export function registerShowFilesWorkbench(commands: Commands) {
 
           case "loadTemplate": {
             try {
-              const response = await axios.get(data.url, { timeout: 8000 });
+              const template = await getJson<any>(data.url, {
+                timeoutMs: 8000,
+              });
               panel.sendMessage({
                 type: "templateLoaded",
-                data: { template: response.data },
+                data: { template },
               });
             } catch (e: any) {
               Logger.log(`Failed to load file template: ${e?.message || e}`);

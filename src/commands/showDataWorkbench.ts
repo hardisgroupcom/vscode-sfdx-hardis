@@ -7,7 +7,7 @@ import * as fs from "fs-extra";
 import path from "path";
 import { Logger } from "../logger";
 import { isQueryValid, parseQuery } from "@jetstreamapp/soql-parser-js";
-import axios from "axios";
+import { getJson } from "../utils/httpUtils";
 import { t } from "../i18n/i18n";
 // jscpd:ignore-end
 
@@ -269,10 +269,10 @@ export function registerShowDataWorkbench(commands: Commands) {
           // jscpd:ignore-start
           case "loadTemplates": {
             try {
-              const response = await axios.get(DATA_TEMPLATES_URL, {
-                timeout: 8000,
+              const response = await getJson<any>(DATA_TEMPLATES_URL, {
+                timeoutMs: 8000,
               });
-              const templates = response.data?.templates || [];
+              const templates = response?.templates || [];
               panel.sendMessage({
                 type: "templatesLoaded",
                 data: { templates },
@@ -289,10 +289,12 @@ export function registerShowDataWorkbench(commands: Commands) {
 
           case "loadTemplate": {
             try {
-              const response = await axios.get(data.url, { timeout: 8000 });
+              const template = await getJson<any>(data.url, {
+                timeoutMs: 8000,
+              });
               panel.sendMessage({
                 type: "templateLoaded",
-                data: { template: response.data },
+                data: { template },
               });
             } catch (e: any) {
               Logger.log(`Failed to load data template: ${e?.message || e}`);

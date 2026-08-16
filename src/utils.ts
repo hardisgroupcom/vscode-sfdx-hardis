@@ -1,4 +1,3 @@
-import axios from "axios";
 import * as c from "./utils/ansiColors";
 import * as childProcess from "child_process";
 import * as fs from "fs-extra";
@@ -12,6 +11,7 @@ import { CacheManager, CacheSection } from "./utils/cache-manager";
 import { getConfig } from "./utils/pipeline/sfdxHardisConfig";
 import { RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION } from "./constants";
 import { resetSfdxHardisConfigCache } from "./utils/sfdx-hardis-config-utils";
+import { getJson } from "./utils/httpUtils";
 
 // Returns true if the extension is running as a pre-release version (preview: true in package.json)
 export function isExtensionPreRelease(): boolean {
@@ -394,11 +394,11 @@ function triggerNpmBackgroundRefresh(
   }
   const refreshPromise = (async () => {
     try {
-      const versionRes = await axios.get(
+      const versionRes = await getJson<{ version: string }>(
         "https://registry.npmjs.org/" + packageName + "/latest",
-        { timeout: 4000 },
+        { timeoutMs: 4000 },
       );
-      const version: string = versionRes.data.version;
+      const version: string = versionRes.version;
       await CacheManager.set("app", staleKey, version, sevenDaysMs);
       await CacheManager.set("app", freshKey, true, oneDayMs);
       // If value changed, trigger a targeted panel refresh so users see updated decoration

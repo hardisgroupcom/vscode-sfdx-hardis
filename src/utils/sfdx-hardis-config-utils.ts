@@ -3,7 +3,7 @@ import { getConfig } from "./pipeline/sfdxHardisConfig";
 import * as yaml from "js-yaml";
 import * as fs from "fs-extra";
 import * as path from "path";
-import axios from "axios";
+import { getText } from "./httpUtils";
 import { t } from "../i18n/i18n";
 import { execSfdxJson } from "../utils";
 import { Logger } from "../logger";
@@ -202,16 +202,19 @@ async function loadFromRemoteConfigFile(url: string) {
   if (REMOTE_CONFIGS[url]) {
     return REMOTE_CONFIGS[url];
   }
-  const remoteConfigResp = await axios.get(url);
-  if (remoteConfigResp.status !== 200) {
+  let remoteConfigText: string;
+  try {
+    remoteConfigText = await getText(url);
+  } catch (e: any) {
     throw new Error(
       "[sfdx-hardis] Unable to read remote configuration file at " +
         url +
         "\n" +
-        JSON.stringify(remoteConfigResp),
+        (e?.message || e),
+      { cause: e },
     );
   }
-  const remoteConfig = yaml.load(remoteConfigResp.data);
+  const remoteConfig = yaml.load(remoteConfigText);
   REMOTE_CONFIGS[url] = remoteConfig;
   return remoteConfig;
 }

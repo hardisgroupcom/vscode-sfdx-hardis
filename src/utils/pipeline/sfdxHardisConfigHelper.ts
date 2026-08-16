@@ -1,7 +1,7 @@
 import * as fs from "fs-extra";
 import * as path from "path";
 import yaml from "js-yaml";
-import axios from "axios";
+import { getJson } from "../httpUtils";
 import { t } from "../../i18n/i18n";
 import * as vscode from "vscode";
 
@@ -276,9 +276,11 @@ export class SfdxHardisConfigHelper {
     let schema: any = null;
     // Try remote first
     try {
-      const res = await axios.get(this.REMOTE_SCHEMA_URL, { timeout: 5000 });
-      if (res.status === 200 && res.data) {
-        schema = res.data;
+      const res = await getJson<any>(this.REMOTE_SCHEMA_URL, {
+        timeoutMs: 5000,
+      });
+      if (res) {
+        schema = res;
       }
     } catch (e) {
       console.warn("Failed to load remote schema, falling back to local", e);

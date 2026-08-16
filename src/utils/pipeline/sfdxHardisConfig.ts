@@ -10,7 +10,7 @@ getConfig(layer) returns:
 - project if layer is project
 */
 
-import axios from "axios";
+import { getText } from "../httpUtils";
 import * as c from "../ansiColors";
 import { cosmiconfig } from "cosmiconfig";
 import fs from "fs-extra";
@@ -136,16 +136,19 @@ async function loadFromRemoteConfigFile(url: string) {
   if (REMOTE_CONFIGS[url]) {
     return REMOTE_CONFIGS[url];
   }
-  const remoteConfigResp = await axios.get(url);
-  if (remoteConfigResp.status !== 200) {
+  let remoteConfigText: string;
+  try {
+    remoteConfigText = await getText(url);
+  } catch (e: any) {
     throw new Error(
       "[sfdx-hardis] Unable to read remote configuration file at " +
         url +
         "\n" +
-        JSON.stringify(remoteConfigResp),
+        (e?.message || e),
+      { cause: e },
     );
   }
-  const remoteConfig = yaml.load(remoteConfigResp.data);
+  const remoteConfig = yaml.load(remoteConfigText);
   REMOTE_CONFIGS[url] = remoteConfig;
   return remoteConfig;
 }
