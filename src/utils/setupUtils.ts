@@ -557,6 +557,18 @@ export class SetupHelper {
       const match = regex.exec(stdout);
       const installedVersion = match && match[1] ? match[1].trim() : null;
       const installed = !!installedVersion;
+      // `sf plugins` displays the install tag after the version number
+      // (ex: "sfdx-hardis 6.1.0 (link) C:\git\sfdx-hardis", "sfdx-hardis 6.1.0 (beta)"),
+      // so the whole line is required to detect local dev / alpha / beta installs
+      const lineMatch = new RegExp(escapedName + "\\s+(.*)$", "m").exec(stdout);
+      const installedVersionDetail = lineMatch ? lineMatch[1].trim() : "";
+      // Locally developed plugin (sf plugins link): reinstalling it would break
+      // the dev setup, so never propose an upgrade
+      const isLocalDevPlugin = /\(link\)/i.test(installedVersionDetail);
+      // Alpha or beta build: the user knowingly runs a preview version
+      const isPreviewPlugin = /\((?:alpha|beta)\)|-(?:alpha|beta)/i.test(
+        installedVersionDetail,
+      );
       // Get latest from npm to detect upgrades
       let latestPluginVersion: string | null = null;
       try {
@@ -569,8 +581,9 @@ export class SetupHelper {
       if (pluginName === "sfdx-hardis" && installedVersion) {
         const minimal = RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION || null;
         const sfdxHardisTag = getSfdxHardisInstallTag();
-        // When running a pre-release extension, require alpha version
-        if (isExtensionPreRelease() && !installedVersion.includes("alpha")) {
+        // When running a pre-release extension, require a preview version
+        // (an alpha, a beta, or a locally developed plugin)
+        if (isExtensionPreRelease() && !isLocalDevPlugin && !isPreviewPlugin) {
           return {
             id: `sfplugin:${pluginName}`,
             label: pluginName,
@@ -588,6 +601,7 @@ export class SetupHelper {
           minimal &&
           minimal !== "beta" &&
           !isExtensionPreRelease() &&
+          !isLocalDevPlugin &&
           this.compareVersions(installedVersion, minimal) < 0
         ) {
           return {
@@ -608,11 +622,14 @@ export class SetupHelper {
         }
       }
 
-      // If installed and latest is known and differs -> outdated
+      // If installed and latest is known and differs -> outdated.
+      // Local dev and preview installs are expected to differ from npm latest
       if (
         installed &&
         latestPluginVersion &&
-        latestPluginVersion !== installedVersion
+        latestPluginVersion !== installedVersion &&
+        !isLocalDevPlugin &&
+        !isPreviewPlugin
       ) {
         return {
           id: `sfplugin:${pluginName}`,
@@ -639,6 +656,11 @@ export class SetupHelper {
         recommended: latestPluginVersion,
         status: installed ? "ok" : "missing",
         helpUrl: `https://www.npmjs.com/package/${pluginName}`,
+        note: isLocalDevPlugin
+          ? t("usingLocallyDevelopedPlugin", { plugin: pluginName })
+          : isPreviewPlugin
+            ? t("usingPreviewPlugin", { plugin: pluginName })
+            : undefined,
       };
     } catch {
       return {

@@ -13,12 +13,25 @@ import { RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION } from "./constants";
 import { resetSfdxHardisConfigCache } from "./utils/sfdx-hardis-config-utils";
 import { getJson } from "./utils/httpUtils";
 
+// Cached result of isExtensionPreRelease(): the installed extension package
+// can not change while VS Code is running, so it is resolved only once
+let extensionPreRelease: boolean | undefined = undefined;
+
 // Returns true if the extension is running as a pre-release version (preview: true in package.json)
 export function isExtensionPreRelease(): boolean {
+  if (extensionPreRelease !== undefined) {
+    return extensionPreRelease;
+  }
   const ext = vscode.extensions.getExtension(
     "NicolasVuillamy.vscode-sfdx-hardis",
   );
-  return ext?.packageJSON?.preview === true;
+  if (!ext) {
+    // Extension not found in the registry (ex: not installed while running
+    // from sources): do not cache, so a later call can still resolve it
+    return false;
+  }
+  extensionPreRelease = ext.packageJSON?.preview === true;
+  return extensionPreRelease;
 }
 
 // Returns the npm install tag to use for sfdx-hardis plugin

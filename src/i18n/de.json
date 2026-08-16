@@ -1819,6 +1819,7 @@
   "usernamePlaceholder": "your.username",
   "usernameTooltip": "Benutzername in Ihrer Remote-Salesforce-Org: {{username}}\nKlicken, um Benutzereinstellungen in Salesforce zu öffnen",
   "usingLocallyDevelopedPlugin": "Sie verwenden eine lokal entwickelte Version von {{plugin}}",
+  "usingPreviewPlugin": "Sie verwenden eine Vorabversion (Alpha oder Beta) von {{plugin}}",
   "validate": "Validieren",
   "versionColumn": "Version",
   "viewAllOrgs": "Alle Orgs anzeigen",

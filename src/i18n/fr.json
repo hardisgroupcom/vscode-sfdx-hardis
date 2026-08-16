@@ -1819,6 +1819,7 @@
   "usernamePlaceholder": "your.username",
   "usernameTooltip": "Nom d'utilisateur sur votre org Salesforce distante : {{username}}\nCliquer pour ouvrir les paramètres utilisateur dans Salesforce",
   "usingLocallyDevelopedPlugin": "Vous utilisez une version développée localement de {{plugin}}",
+  "usingPreviewPlugin": "Vous utilisez une version préliminaire (alpha ou beta) de {{plugin}}",
   "validate": "Valider",
   "versionColumn": "Version",
   "viewAllOrgs": "Voir toutes les orgs",

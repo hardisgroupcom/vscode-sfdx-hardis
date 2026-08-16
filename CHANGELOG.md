@@ -84,7 +84,9 @@
 
 - Dependencies
   - Fixed the pre-release version of the extension asking to install the alpha version of the sfdx-hardis plugin even when an alpha, a beta, or a locally developed (linked) plugin was already installed
+    - Fixed in the startup notification and in the **Setup** panel, which also displayed the plugin as outdated because its version differs from the one published on npm
     - A locally developed plugin never triggers an upgrade prompt anymore, as reinstalling it would break the local development setup
+    - The **Setup** panel now indicates when a plugin is a locally developed or a preview (alpha/beta) version
 
 ## [7.18.0] 2026-07-26
 
