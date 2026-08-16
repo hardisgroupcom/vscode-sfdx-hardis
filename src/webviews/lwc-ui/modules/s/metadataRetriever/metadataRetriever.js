@@ -1,5 +1,6 @@
 import { LightningElement, api, track } from "lwc";
 import { SharedMixin } from "s/sharedMixin";
+import { getAvatarClass, getInitials } from "s/avatarUtils";
 
 /**
  * LWC to retrieve and search metadata from a Salesforce org
@@ -1358,9 +1359,9 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
           // Initials avatar for the "Last Updated By" column (avatarText cell type).
           // The color variant is stable per name (hash of the name). Left empty when
           // the name is unknown so the cell only shows the (empty) name text.
-          lastModifiedInitials: this._getLastModifiedInitials(lastModifiedByName),
+          lastModifiedInitials: getInitials(lastModifiedByName),
           lastModifiedAvatarClass: lastModifiedByName
-            ? `hardis-avatar hardis-avatar-c${this._hashString(lastModifiedByName) % 6}`
+            ? getAvatarClass(lastModifiedByName)
             : "",
           uniqueKey: `${record.MemberType}::${record.MemberName}`,
           ChangeIcon: icon,
@@ -1373,33 +1374,6 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
       this.metadata = [];
       this.filteredMetadata = [];
     }
-  }
-
-  // Initials for the avatarText cell type (Last Updated By column). Empty
-  // when the name is unknown so the cell only displays the name text.
-  _getLastModifiedInitials(name) {
-    if (!name) {
-      return "";
-    }
-    const words = name.trim().split(/\s+/).filter(Boolean);
-    if (words.length === 0) {
-      return "";
-    }
-    if (words.length === 1) {
-      return words[0].slice(0, 2).toUpperCase();
-    }
-    return (
-      words[0].charAt(0) + words[words.length - 1].charAt(0)
-    ).toUpperCase();
-  }
-
-  // Deterministic hash used to pick a stable avatar color variant per name.
-  _hashString(str) {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      hash = (hash * 31 + str.charCodeAt(i)) | 0;
-    }
-    return Math.abs(hash);
   }
 
   handleQueryError(data) {

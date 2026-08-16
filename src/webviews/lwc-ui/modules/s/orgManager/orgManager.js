@@ -1,5 +1,6 @@
 import { LightningElement, api, track } from "lwc";
 import { SharedMixin } from "s/sharedMixin";
+import { getAvatarClass, getUsernameInitials } from "s/avatarUtils";
 
 export default class OrgManager extends SharedMixin(LightningElement) {
   @track orgs = [];
@@ -144,10 +145,12 @@ export default class OrgManager extends SharedMixin(LightningElement) {
         : "hardis-pill hardis-status-failed",
       // Initials avatar for the username column (avatarText cell type). The
       // color variant is stable per username (hash of the name).
-      usernameInitials: this._getUsernameInitials(
+      usernameInitials: getUsernameInitials(
         o.username || o.loginUrl || o.instanceUrl,
       ),
-      usernameAvatarClass: `hardis-avatar hardis-avatar-c${this._hashString(o.username || o.loginUrl || o.instanceUrl || "") % 6}`,
+      usernameAvatarClass: getAvatarClass(
+        o.username || o.loginUrl || o.instanceUrl,
+      ),
       // Compute row actions for the Actions column: Open (connected), Reconnect (disconnected), Remove (always)
       rowActions: (() => {
         const isConnected = (o.connectedStatus || "")
@@ -614,31 +617,6 @@ export default class OrgManager extends SharedMixin(LightningElement) {
     }
 
     return null; // No validation errors
-  }
-
-  // Derive two initials from a username (e.g. "nicolas.vuillamy@cloudity.com" -> "NV")
-  // for the avatarText cell type used in the username column.
-  _getUsernameInitials(username) {
-    if (!username) {
-      return "?";
-    }
-    const namePart = username.toString().split("@")[0];
-    const words = namePart.split(/[.\-_]+/).filter(Boolean);
-    if (words.length === 0) {
-      return namePart.slice(0, 2).toUpperCase();
-    }
-    if (words.length === 1) {
-      return words[0].slice(0, 2).toUpperCase();
-    }
-    return (words[0].charAt(0) + words[1].charAt(0)).toUpperCase();
-  }
-
-  _hashString(str) {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      hash = (hash * 31 + str.charCodeAt(i)) | 0;
-    }
-    return Math.abs(hash);
   }
 
   requestRunInternalCommand(internalCommand) {

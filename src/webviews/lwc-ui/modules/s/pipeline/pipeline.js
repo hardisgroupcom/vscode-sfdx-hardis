@@ -4,6 +4,7 @@
 // eslint-env es6
 import { LightningElement, api, track } from "lwc";
 import { SharedMixin } from "s/sharedMixin";
+import { getAvatarClass, getInitials } from "s/avatarUtils";
 
 export default class Pipeline extends SharedMixin(LightningElement) {
   @track prButtonInfo;
@@ -904,8 +905,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
       // Initials avatar for the author column (avatarText cell type). The
       // color variant is stable per author (hash of the name).
-      copy.authorInitials = this._getInitials(copy.authorLabel);
-      copy.authorAvatarClass = `hardis-avatar hardis-avatar-c${this._hashString(copy.authorLabel || "") % 6}`;
+      copy.authorInitials = getInitials(copy.authorLabel) || "?";
+      copy.authorAvatarClass = getAvatarClass(copy.authorLabel);
 
       // Compact merge date: "Aug 15, 18:30" (adds the year when not current)
       // so the column stays on a single line.
@@ -913,28 +914,6 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
       return copy;
     });
-  }
-
-  _getInitials(name) {
-    if (!name) {
-      return "?";
-    }
-    const words = name.trim().split(/\s+/).filter(Boolean);
-    if (words.length === 0) {
-      return "?";
-    }
-    if (words.length === 1) {
-      return words[0].slice(0, 2).toUpperCase();
-    }
-    return (words[0].charAt(0) + words[words.length - 1].charAt(0)).toUpperCase();
-  }
-
-  _hashString(str) {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      hash = (hash * 31 + str.charCodeAt(i)) | 0;
-    }
-    return Math.abs(hash);
   }
 
   _formatCompactDate(value) {
