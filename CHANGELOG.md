@@ -2,6 +2,27 @@
 
 ## Unreleased
 
+- Look & Feel
+  - The DevOps Pipeline diagram was redesigned with the official Salesforce Lightning color palette, in light and dark themes
+    - Branches, orgs and connectors now share one consistent color family, with rounded nodes and lighter frames around the Git Branches and Salesforce Orgs sections
+    - CI job status is now color-coded consistently everywhere: blue animated = running, orange = pending, red = failed, green = success (previously running and pending showed as red, and failed jobs were not highlighted at all)
+    - Long feature branch names are shortened in the diagram so it stays compact (the full name remains visible on hover and in the pull request modal)
+    - Pull requests, deployments and "Create PR" links are shown as small colored chips instead of emoji and underlined links, and each branch's open pull request counter is displayed as a notification bubble attached to the node's corner
+    - Branch and org icons are now crisp vector icons that match the theme, replacing emoji that rendered differently on each operating system
+    - The "+N more" folded feature branches are displayed as a stack of cards, and a legend below the diagram explains connectors and status colors
+    - The diagram text now uses the same font as the rest of the panel
+  - Pull request tables are easier to scan
+    - Alternate row background colors and a hover highlight, in all tables of the extension
+    - Job status displayed as a colored chip with its label, author shown with an initials avatar, source and target branches as compact monospace chips, and merge dates in a short one-line format
+  - The pull requests modal got a design refresh: brand accent strip, branch name and pull request count displayed as chips in the title, and theme-aware Release Notes buttons (the previous green buttons could be hard to read in dark mode)
+  - The same design was applied to the tables and modals of the other panels
+    - Org Manager: the connection status is a green/red colored chip, the default org and Dev Hub roles are highlighted chips, and each username gets an initials avatar
+    - Metadata Retriever: "Last Updated By" shows an initials avatar, and update dates are aligned for easier scanning
+    - Installed Packages: package namespaces are displayed as compact monospace chips
+    - All dialog windows (Data Workbench, Files Workbench, Pipeline Config, Monitoring Config, Deployment Actions) open with the same brand accent strip as the pull requests modal
+  - Quick action cards and other panels (Org Monitoring, Package XML, Documentation, Welcome, Setup, Monitoring Config, Metadata Retriever) now use the official Salesforce color palette for their icons and buttons
+  - Deployment action execution contexts were renamed for clarity: "Validation and Deployment jobs", "Validation job only" and "Deployment job only" (previously "Check job" and "Process Deployment job"), in all languages
+
 - Performance
   - Commands launched from the menu now open their execution tab **immediately** when clicked, instead of after the Salesforce CLI finished booting (which could take more than 10 seconds)
     - The tab first shows the command as starting, then streams its logs as soon as the CLI is connected

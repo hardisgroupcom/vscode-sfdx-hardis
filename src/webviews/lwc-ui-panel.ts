@@ -921,24 +921,33 @@ export class LwcUiPanel {
     );
 
     // Global theme stylesheet (built/copied to out/assets/styles/global-theme.css by the build)
-    const globalThemeVarsCssUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(
-        this.extensionUri,
-        "out",
-        "assets",
-        "styles",
-        "global-theme-variables.css",
-      ),
-    );
-    const globalThemeCssUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(
-        this.extensionUri,
-        "out",
-        "assets",
-        "styles",
-        "global-theme.css",
-      ),
-    );
+    // Cache-busting query: the webview service worker can keep serving a stale
+    // copy of these stylesheets across extension updates (and across rebuilds
+    // in the Extension Development Host), leaving panels styled with outdated
+    // rules. A per-panel-creation version forces a fresh fetch.
+    const stylesVersion = Date.now();
+    const globalThemeVarsCssUri = webview
+      .asWebviewUri(
+        vscode.Uri.joinPath(
+          this.extensionUri,
+          "out",
+          "assets",
+          "styles",
+          "global-theme-variables.css",
+        ),
+      )
+      .with({ query: `v=${stylesVersion}` });
+    const globalThemeCssUri = webview
+      .asWebviewUri(
+        vscode.Uri.joinPath(
+          this.extensionUri,
+          "out",
+          "assets",
+          "styles",
+          "global-theme.css",
+        ),
+      )
+      .with({ query: `v=${stylesVersion}` });
 
     // Determine theme based on configuration
     const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis.theme");
@@ -955,17 +964,23 @@ export class LwcUiPanel {
       .replace(/"/g, "&quot;");
 
     const mermaidTheme = {
-      clusterBkg: "#EAF5FC",
-      edgeLabelBackground: "rgba(232,232,232, 0.8)",
+      clusterBkg: "#f8fbfd",
+      clusterBorder: "#dce5ee",
+      edgeLabelBackground: "rgba(243, 248, 252, 0.85)",
+      lineColor: "#aebfce",
     };
     if (colorTheme === "dark") {
-      mermaidTheme.clusterBkg = "#333";
-      mermaidTheme.edgeLabelBackground = "rgba(77, 77, 77, 0.5)";
+      mermaidTheme.clusterBkg = "#161d25";
+      mermaidTheme.clusterBorder = "#2b3642";
+      mermaidTheme.edgeLabelBackground = "rgba(28, 36, 46, 0.85)";
+      mermaidTheme.lineColor = "#4a5a6b";
     }
 
     // mermaid.min.js weighs several MB: only the pipeline panel renders
     // mermaid diagrams, so other panels (including the auto-opened Welcome
     // page) skip loading and initializing it entirely.
+    // fontFamily matches the SLDS stack used by the rest of the panel so the
+    // diagram doesn't fall back to mermaid's default trebuchet ms.
     const needsMermaid = this.lwcId === "s-pipeline";
     const mermaidScripts = needsMermaid
       ? `<script src="${webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, "out", "webviews", "mermaid.min.js"))}"></script>
@@ -974,8 +989,16 @@ export class LwcUiPanel {
               startOnLoad: false,
               securityLevel: 'loose',
               themeVariables: {
+                fontFamily: "'Salesforce Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif",
+                fontSize: "13px",
                 clusterBkg: "${mermaidTheme.clusterBkg}",
-                edgeLabelBackground: "${mermaidTheme.edgeLabelBackground}"
+                clusterBorder: "${mermaidTheme.clusterBorder}",
+                edgeLabelBackground: "${mermaidTheme.edgeLabelBackground}",
+                lineColor: "${mermaidTheme.lineColor}"
+              },
+              flowchart: {
+                nodeSpacing: 55,
+                rankSpacing: 65
               }
             });
         </script>`

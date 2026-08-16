@@ -1,5 +1,6 @@
 import { LightningElement, api, track } from "lwc";
 import { SharedMixin } from "s/sharedMixin";
+import { getAvatarClass, getInitials } from "s/avatarUtils";
 
 /**
  * LWC to retrieve and search metadata from a Salesforce org
@@ -149,10 +150,14 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
     cols.push({
       label: this.t("lastUpdatedByLabel"),
       fieldName: "LastModifiedByName",
-      type: "text",
+      type: "avatarText",
       sortable: true,
       wrapText: true,
       initialWidth: 165,
+      typeAttributes: {
+        initials: { fieldName: "lastModifiedInitials" },
+        avatarClass: { fieldName: "lastModifiedAvatarClass" },
+      },
     });
 
     // Last Updated Date
@@ -169,6 +174,9 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
         minute: "2-digit",
       },
       initialWidth: 165,
+      cellAttributes: {
+        class: "hardis-date-cell",
+      },
     });
 
     // Local file existence column (centered) - only when the user enabled the toggle
@@ -1334,6 +1342,12 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
           icon = "🔴";
         }
 
+        // Handle both SourceMember format (LastModifiedBy.Name) and Metadata API format (lastModifiedByName)
+        const lastModifiedByName =
+          record.LastModifiedByName ||
+          (record.LastModifiedBy ? record.LastModifiedBy.Name : "") ||
+          "";
+
         return {
           MemberName: record.MemberName,
           MemberType: record.MemberType,
@@ -1341,11 +1355,14 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
           MemberTypeTitle: `View ${record.MemberType} documentation`,
           MemberNameTitle: `Open metadata for ${record.MemberType} ${record.MemberName}`,
           LastModifiedDate: record.LastModifiedDate,
-          // Handle both SourceMember format (LastModifiedBy.Name) and Metadata API format (lastModifiedByName)
-          LastModifiedByName:
-            record.LastModifiedByName ||
-            (record.LastModifiedBy ? record.LastModifiedBy.Name : "") ||
-            "",
+          LastModifiedByName: lastModifiedByName,
+          // Initials avatar for the "Last Updated By" column (avatarText cell type).
+          // The color variant is stable per name (hash of the name). Left empty when
+          // the name is unknown so the cell only shows the (empty) name text.
+          lastModifiedInitials: getInitials(lastModifiedByName),
+          lastModifiedAvatarClass: lastModifiedByName
+            ? getAvatarClass(lastModifiedByName)
+            : "",
           uniqueKey: `${record.MemberType}::${record.MemberName}`,
           ChangeIcon: icon,
           // Local file indicator: show  when present; otherwise leave empty

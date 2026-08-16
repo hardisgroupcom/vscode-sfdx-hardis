@@ -111,6 +111,7 @@ export default class DataWorkbench extends SharedMixin(LightningElement) {
         label: this.t("dwbColumnCreatedDate"),
         fieldName: "createdLabel",
         type: "text",
+        cellAttributes: { class: "hardis-date-cell" },
       },
       {
         label: this.t("dwbColumnSize"),
@@ -148,6 +149,7 @@ export default class DataWorkbench extends SharedMixin(LightningElement) {
         label: this.t("dwbColumnCreatedDate"),
         fieldName: "createdLabel",
         type: "text",
+        cellAttributes: { class: "hardis-date-cell" },
       },
       {
         label: this.t("dwbColumnSize"),

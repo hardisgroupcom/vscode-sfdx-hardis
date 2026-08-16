@@ -145,24 +145,41 @@
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
 }
 
+/* Quick-action tiles: gradients built from SLDS palette hues so the card row
+   reads as one family (no Tailwind / Flat-UI colors). */
 .command-icon-container.new-story {
-    background: linear-gradient(135deg, #1589ee 0%, #005fb2 100%);
-    box-shadow: 0 2px 8px rgba(21, 137, 238, 0.3);
+    background: linear-gradient(135deg, #1b96ff 0%, #0b5cab 100%);
+    box-shadow: 0 2px 8px rgba(27, 150, 255, 0.3);
 }
 
 .command-icon-container.pull-action {
-    background: linear-gradient(135deg, #06a59a 0%, #045a55 100%);
+    background: linear-gradient(135deg, #06a59a 0%, #056764 100%);
     box-shadow: 0 2px 8px rgba(6, 165, 154, 0.3);
 }
 
 .command-icon-container.package-action {
-    background: linear-gradient(135deg, #9f4fea 0%, #7b2cbf 100%);
-    box-shadow: 0 2px 8px rgba(159, 79, 234, 0.3);
+    background: linear-gradient(135deg, #9050e9 0%, #7526e3 100%);
+    box-shadow: 0 2px 8px rgba(144, 80, 233, 0.3);
 }
 
 .command-icon-container.save-action {
-    background: linear-gradient(135deg, #27ae60 0%, #1e8449 100%);
-    box-shadow: 0 2px 8px rgba(39, 174, 96, 0.3);
+    background: linear-gradient(135deg, #3ba755 0%, #194e31 100%);
+    box-shadow: 0 2px 8px rgba(59, 167, 85, 0.3);
+}
+
+.command-icon-container.pr-action {
+    background: linear-gradient(135deg, #5867e8 0%, #321d71 100%);
+    box-shadow: 0 2px 8px rgba(88, 103, 232, 0.3);
+}
+
+.command-icon-container.autofix-action {
+    background: linear-gradient(135deg, #dd7a01 0%, #8c4b02 100%);
+    box-shadow: 0 2px 8px rgba(221, 122, 1, 0.3);
+}
+
+.command-icon-container.backpromote-action {
+    background: linear-gradient(135deg, #0d9dda 0%, #05628a 100%);
+    box-shadow: 0 2px 8px rgba(13, 157, 218, 0.3);
 }
 
 .command-title {
@@ -184,19 +201,16 @@
     margin-top: 0.5rem !important;
 }
 
-/* Make URL labels (emoji) look native: no underline and pointer cursor only for emoji cells */
-lightning-datatable .hardis-emoji-cell a {
-    text-decoration: none !important;
-    cursor: pointer !important;
+/* Shared card treatment for the two page cards (diagram + workflow tabs):
+   one radius, one shadow token */
+.blue-back .slds-card {
+    border-radius: 12px;
+    box-shadow: var(--slds-g-shadow-1);
 }
 
-/* Job status column: use an emoji-capable font so the status emoji renders in
-   color (like the Mermaid diagram) instead of a monochrome/missing glyph. */
-lightning-datatable .hardis-status-cell,
-lightning-datatable .hardis-status-cell * {
-    font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji",
-        var(--vscode-font-family, sans-serif) !important;
-}
+/* Job status / author / branch columns now use the s-hardis-datatable custom
+   cell types (statusPill / avatarText / branchChip) styled by the shared
+   global-theme.css, so no emoji-font or underline workarounds are needed. */
 
 /* Provider icon button (replaces connect buttons) */
 .provider-button {
@@ -263,46 +277,137 @@ lightning-datatable .hardis-status-cell * {
     opacity: 1;
 }
 
-/* Mermaid link animations for running/pending PRs */
-/* Apply subtle pulsing animation to links with red color */
+/* Mermaid link animations for running/pending CI jobs. Edge colors are
+   semantic and set by the builder's linkStyle output (blue = running,
+   amber = pending, red = failed), so the animation only pulses opacity. */
 @keyframes edgeAnimationFast {
     0%, 100% {
         opacity: 1;
-        stroke-width: 3px;
     }
     50% {
-        opacity: 0.7;
-        stroke-width: 3.5px;
+        opacity: 0.5;
     }
 }
 
 @keyframes edgeAnimationSlow {
     0%, 100% {
         opacity: 1;
-        stroke-width: 2.5px;
     }
     50% {
-        opacity: 0.8;
-        stroke-width: 3px;
+        opacity: 0.65;
     }
 }
 
-/* Apply red color and animation to running PRs (fast) - using multiple selectors for maximum specificity */
-.mermaid svg path.edge-animation-fast,
-.mermaid svg g.edgePath path.edge-animation-fast,
-.mermaid svg g.edgePaths path.edge-animation-fast {
-    stroke: #e74c3c !important; /* Red color */
-    stroke-width: 3px !important;
-    animation: edgeAnimationFast 1s ease-in-out infinite !important;
+.mermaid svg path.edge-animation-fast {
+    animation: edgeAnimationFast 1s ease-in-out infinite;
 }
 
-/* Apply red color and animation to pending PRs (slow) - using multiple selectors for maximum specificity */
-.mermaid svg path.edge-animation-slow,
-.mermaid svg g.edgePath path.edge-animation-slow,
-.mermaid svg g.edgePaths path.edge-animation-slow {
-    stroke: #e74c3c !important; /* Red color (same as running) */
-    stroke-width: 2.5px !important;
-    animation: edgeAnimationSlow 2s ease-in-out infinite !important;
+.mermaid svg path.edge-animation-slow {
+    animation: edgeAnimationSlow 2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mermaid svg path.edge-animation-fast,
+    .mermaid svg path.edge-animation-slow {
+        animation: none;
+    }
+}
+
+/* ========================================
+   MERMAID LABEL COMPONENTS
+   Status chips, node icons, count badges and dots injected by
+   BranchStrategyMermaidBuilder as HTML labels. Colors come from the shared
+   .hardis-pill / .hardis-pill-dot rules in global-theme.css.
+   ======================================== */
+
+/* Compact chips on edges (PR number, deploy status, "+ PR") */
+.mermaid .hardis-chip {
+    font-size: 10.5px;
+    padding: 1px 8px;
+    line-height: 1.5;
+    cursor: pointer;
+}
+
+.slds-scope[data-theme] .hardis-chip-create {
+    background: var(--slds-g-color-palette-blue-90);
+    color: var(--slds-g-color-palette-blue-40);
+}
+
+/* Inline SVG icons inside node labels follow the node text color */
+.mermaid .hardis-node-icon {
+    vertical-align: -1px;
+    margin-right: 1px;
+}
+
+/* PR count marker: hidden in the label, drawn by _drawNodeCountBubble as an
+   SVG bubble on the node corner (styles in global-theme.css) */
+.mermaid .hardis-node-count {
+    display: none;
+}
+
+/* Job status dot on feature branch nodes */
+.mermaid .hardis-node-dot {
+    width: 8px;
+    height: 8px;
+    margin-right: 2px;
+}
+
+/* Edge label pills: round the themed background behind labels */
+.mermaid span.edgeLabel {
+    border-radius: 8px;
+    padding: 0 3px;
+}
+
+/* Subgraph titles as quiet uppercase section labels */
+.mermaid .cluster-label span,
+.mermaid .cluster-label p {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+/* Diagram legend under the mermaid viewport */
+.pipeline-legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 0.4rem 0.5rem 0;
+    font-size: 0.72rem;
+    color: var(--slds-g-color-neutral-base-30);
+}
+
+.legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.legend-line {
+    display: inline-block;
+    width: 22px;
+    height: 0;
+    border-top: 2.5px solid var(--slds-g-color-palette-blue-50);
+}
+
+.legend-line-feature {
+    border-top: 1.5px dashed var(--slds-g-color-neutral-base-60);
+}
+
+.legend-line-deploy {
+    border-top: 1.5px dotted var(--slds-g-color-palette-green-50);
+}
+
+.legend-separator {
+    width: 1px;
+    height: 14px;
+    background: var(--slds-g-color-neutral-base-80);
+}
+
+.legend-dot {
+    width: 8px;
+    height: 8px;
 }
 
 /* Make clickable branch nodes show pointer cursor */
@@ -327,6 +432,14 @@ lightning-datatable .hardis-status-cell * {
     height: 95vh !important;
     display: flex !important;
     flex-direction: column !important;
+}
+
+/* Modal accent strip, title parts and count badge are shared across all
+   webviews — styles live in resources/global-theme.css */
+
+.modal-branch-chip {
+    font-size: 0.95rem;
+    padding: 2px 10px;
 }
 
 /* Ensure modal content area is flexible and scrollable */
@@ -377,7 +490,7 @@ lightning-datatable .hardis-status-cell * {
 }
 
 .slds-scope[data-theme="light"] .command-card:hover {
-    border-color: #1589ee;
+    border-color: #0176d3;
 }
 
 .slds-scope[data-theme="light"] .command-title {

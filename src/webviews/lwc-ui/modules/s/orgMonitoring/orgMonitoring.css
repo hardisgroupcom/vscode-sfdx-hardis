@@ -19,8 +19,8 @@
 }
 
 .command-icon-container.unused-metadata {
-    background: linear-gradient(135deg, #27ae60 0%, #1e8449 100%);
-    box-shadow: 0 2px 6px rgba(39, 174, 96, 0.3);
+    background: linear-gradient(135deg, #3ba755 0%, #194e31 100%);
+    box-shadow: 0 2px 6px rgba(59, 167, 85, 0.3);
 };
 
 
@@ -151,7 +151,7 @@
 
 /* Info style for CI/CD repositories where monitoring is intentionally absent */
 .status-card.cicd {
-    border-left: 4px solid #1589ee;
+    border-left: 4px solid #0176d3;
 }
 
 .status-header {
@@ -175,7 +175,7 @@
 }
 
 .status-icon-container.info {
-    background: linear-gradient(135deg, #1589ee 0%, #005fb2 100%);
+    background: linear-gradient(135deg, #1b96ff 0%, #0b5cab 100%);
     color: white;
 }
 
@@ -289,7 +289,7 @@
 .command-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    border-color: #1589ee;
+    border-color: #0176d3;
 }
 
 .command-header {
@@ -321,8 +321,8 @@
 }
 
 .command-icon-container.backup {
-    background: linear-gradient(135deg, #1589ee 0%, #005fb2 100%);
-    box-shadow: 0 2px 8px rgba(21, 137, 238, 0.3);
+    background: linear-gradient(135deg, #1b96ff 0%, #0b5cab 100%);
+    box-shadow: 0 2px 8px rgba(27, 150, 255, 0.3);
 }
 
 .command-icon-container.alerts {
@@ -331,8 +331,8 @@
 }
 
 .command-icon-container.audit {
-    background: linear-gradient(135deg, #9f4fea 0%, #7b2cbf 100%);
-    box-shadow: 0 2px 8px rgba(159, 79, 234, 0.3);
+    background: linear-gradient(135deg, #9050e9 0%, #7526e3 100%);
+    box-shadow: 0 2px 8px rgba(144, 80, 233, 0.3);
 }
 
 .command-icon-container.tests {
@@ -391,8 +391,8 @@
 }
 
 .command-icon-container.unused-metadata {
-    background: linear-gradient(135deg, #27ae60 0%, #1e8449 100%);
-    box-shadow: 0 2px 8px rgba(39, 174, 96, 0.3);
+    background: linear-gradient(135deg, #3ba755 0%, #194e31 100%);
+    box-shadow: 0 2px 8px rgba(59, 167, 85, 0.3);
 }
 
 .command-title {

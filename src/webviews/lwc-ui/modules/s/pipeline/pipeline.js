@@ -4,6 +4,7 @@
 // eslint-env es6
 import { LightningElement, api, track } from "lwc";
 import { SharedMixin } from "s/sharedMixin";
+import { getAvatarClass, getInitials } from "s/avatarUtils";
 
 export default class Pipeline extends SharedMixin(LightningElement) {
   @track prButtonInfo;
@@ -70,40 +71,45 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       initialWidth: 420,
       wrapText: true,
     },
-    // Jobs status column (emoji indicator) - clickable, uses PR webUrl but shows emoji as label
+    // Jobs status column: colored pill (dot + localized label), clickable to
+    // the CI job (or the PR page as fallback)
     {
       key: "status",
       label: "",
-      fieldName: "webUrl",
-      type: "url",
-      initialWidth: 32,
+      fieldName: "jobsStatusLabel",
+      type: "statusPill",
+      initialWidth: 110,
       wrapText: false,
       typeAttributes: {
-        label: { fieldName: "jobsStatusEmoji" },
-        target: "_blank",
+        label: { fieldName: "jobsStatusLabel" },
+        pillClass: { fieldName: "statusPillClass" },
+        url: { fieldName: "jobsStatusUrl" },
       },
-      cellAttributes: { class: "hardis-emoji-cell" },
     },
     {
       key: "author",
       label: "Author",
       fieldName: "authorLabel",
-      type: "text",
-      wrapText: true,
+      type: "avatarText",
+      wrapText: false,
+      typeAttributes: {
+        initials: { fieldName: "authorInitials" },
+        avatarClass: { fieldName: "authorAvatarClass" },
+      },
     },
     {
       key: "source",
       label: "Source",
       fieldName: "sourceBranch",
-      type: "text",
-      wrapText: true,
+      type: "branchChip",
+      wrapText: false,
     },
     {
       key: "target",
       label: "Target",
       fieldName: "targetBranch",
-      type: "text",
-      wrapText: true,
+      type: "branchChip",
+      wrapText: false,
     },
   ];
 
@@ -115,15 +121,15 @@ export default class Pipeline extends SharedMixin(LightningElement) {
           {
             key: "status",
             label: this.i18n.statusLabel,
-            fieldName: "jobsStatusUrl",
-            type: "url",
+            fieldName: "jobsStatusLabel",
+            type: "statusPill",
             typeAttributes: {
-              label: { fieldName: "jobsStatusDisplay" },
-              target: "_blank",
+              label: { fieldName: "jobsStatusLabel" },
+              pillClass: { fieldName: "statusPillClass" },
+              url: { fieldName: "jobsStatusUrl" },
             },
-            wrapText: true,
+            wrapText: false,
             initialWidth: 120,
-            cellAttributes: { class: "hardis-status-cell" },
           },
         ]
       : [];
@@ -133,7 +139,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         label: "#",
         fieldName: "number",
         type: "text",
-        initialWidth: 40,
+        initialWidth: 60,
         wrapText: true,
       },
       {
@@ -150,31 +156,36 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         key: "author",
         label: this.i18n.authorLabel,
         fieldName: "authorLabel",
-        type: "text",
-        wrapText: true,
+        type: "avatarText",
+        wrapText: false,
+        typeAttributes: {
+          initials: { fieldName: "authorInitials" },
+          avatarClass: { fieldName: "authorAvatarClass" },
+        },
       },
       {
         key: "mergeDate",
         label: this.i18n.mergedLabel,
         fieldName: "mergeDateFormatted",
         type: "text",
-        wrapText: true,
-        initialWidth: 100,
+        wrapText: false,
+        initialWidth: 130,
+        cellAttributes: { class: "hardis-date-cell" },
       },
       {
         key: "source",
         label: this.i18n.sourceLabel,
         fieldName: "sourceBranch",
-        type: "text",
-        wrapText: true,
+        type: "branchChip",
+        wrapText: false,
         initialWidth: 200,
       },
       {
         key: "target",
         label: this.i18n.targetLabel,
         fieldName: "targetBranch",
-        type: "text",
-        wrapText: true,
+        type: "branchChip",
+        wrapText: false,
       },
     ];
   }
@@ -875,17 +886,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       )
         ? key
         : "unknown";
-      // Add a SLDS-friendly emoji indicator column (quick, robust fallback)
-      const emojiMap = {
-        running: "⚙️",
-        pending: "⏳",
-        success: "✅",
-        failed: "❌",
-        unknown: "❔",
-      };
-      // Show emoji only (accessibility: we may add a visually-hidden label later if needed)
-      copy.jobsStatusEmoji = emojiMap[normalized] || emojiMap.unknown;
-      // Localized status label + combined display for the modal "Status" column
+      // Localized status label + pill CSS classes for the statusPill cell type
       const labelMap = {
         running: this.t("jobStatusRunning"),
         pending: this.t("jobStatusPending"),
@@ -894,7 +895,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         unknown: this.t("jobStatusUnknown"),
       };
       copy.jobsStatusLabel = labelMap[normalized] || labelMap.unknown;
-      copy.jobsStatusDisplay = `${copy.jobsStatusEmoji} ${copy.jobsStatusLabel}`;
+      copy.statusPillClass = `hardis-pill hardis-status-${normalized}`;
       // URL for the clickable job status: prefer the CI job URL, fall back to
       // the pull request page (mirrors the diagram link behavior).
       copy.jobsStatusUrl =
@@ -902,20 +903,36 @@ export default class Pipeline extends SharedMixin(LightningElement) {
           ? pr.jobs[0].webUrl
           : pr.webUrl || "";
 
-      // Format merge date for display
-      if (pr.mergeDate) {
-        try {
-          const date = new Date(pr.mergeDate);
-          copy.mergeDateFormatted = date.toLocaleString();
-        } catch (e) {
-          copy.mergeDateFormatted = pr.mergeDate;
-        }
-      } else {
-        copy.mergeDateFormatted = "";
-      }
+      // Initials avatar for the author column (avatarText cell type). The
+      // color variant is stable per author (hash of the name).
+      copy.authorInitials = getInitials(copy.authorLabel) || "?";
+      copy.authorAvatarClass = getAvatarClass(copy.authorLabel);
+
+      // Compact merge date: "Aug 15, 18:30" (adds the year when not current)
+      // so the column stays on a single line.
+      copy.mergeDateFormatted = this._formatCompactDate(pr.mergeDate);
 
       return copy;
     });
+  }
+
+  _formatCompactDate(value) {
+    if (!value) {
+      return "";
+    }
+    try {
+      const date = new Date(value);
+      if (isNaN(date.getTime())) {
+        return value;
+      }
+      const sameYear = date.getFullYear() === new Date().getFullYear();
+      const options = sameYear
+        ? { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }
+        : { year: "numeric", month: "short", day: "numeric" };
+      return new Intl.DateTimeFormat(undefined, options).format(date);
+    } catch (e) {
+      return value;
+    }
   }
 
   connectedCallback() {
@@ -1191,7 +1208,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
   adjustPrColumns() {
     try {
-      const dt = this.template.querySelector("lightning-datatable");
+      const dt = this.template.querySelector("s-hardis-datatable");
       // fallback container
       const container =
         this.template.querySelector(".pipeline-card-spacing") ||
@@ -1214,8 +1231,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
       // Minimum widths
       const minNumber = 80;
-      const minStatus = 36;
-      const minAuthor = 140;
+      const minStatus = 110;
+      const minAuthor = 150;
       const minSource = 220;
       const minTarget = 140;
 
@@ -1225,7 +1242,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       // We'll compute float widths first, then convert to integers and distribute rounding
       const absMin = {
         number: 40,
-        status: 24,
+        status: 90,
         author: 80,
         source: 80,
         target: 60,
@@ -1341,8 +1358,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         const k = copy.key || copy.fieldName;
         if (k === "number") copy.initialWidth = numberW;
         else if (k === "title") copy.initialWidth = titleW;
-        else if (k === "status" || k === "jobsStatusEmoji")
-          copy.initialWidth = statusW;
+        else if (k === "status") copy.initialWidth = statusW;
         else if (k === "author") copy.initialWidth = authorW;
         else if (k === "source") copy.initialWidth = sourceW;
         else if (k === "target") copy.initialWidth = targetW;
@@ -1605,12 +1621,15 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       const label = edgeLabels[i];
       const path = edgePaths[i];
 
-      // Get the text content from the label (may be nested in foreignObject/div/span/p/a)
+      // Status is carried by the chip CSS classes emitted by the mermaid
+      // builder (hardis-status-*); keep the legacy emoji check as fallback.
       const labelText = label.textContent || "";
-
-      // Check for running (⚙️) or pending (⏳) emoji
-      const hasRunning = labelText.includes("⚙️");
-      const hasPending = labelText.includes("⏳");
+      const hasRunning =
+        !!label.querySelector(".hardis-status-running") ||
+        labelText.includes("⚙️");
+      const hasPending =
+        !!label.querySelector(".hardis-status-pending") ||
+        labelText.includes("⏳");
 
       if (hasRunning || hasPending) {
         // Apply the same animation class based on job status (running vs pending)
@@ -2334,10 +2353,134 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       return;
     }
     const nodes = mermaidSvg.querySelectorAll("g.node");
+    const svgScale = this._getMermaidEffectiveScale(mermaidSvg);
     nodes.forEach((node) => {
       node.style.cursor = "pointer";
       node.setAttribute("tabindex", "0");
+      this._drawNodeCountBubble(node, svgScale);
     });
+  }
+
+  // Effective on-screen scale of the mermaid SVG: _applyMermaidZoom shrinks
+  // the whole SVG to fit the viewport (typically 0.5-0.8x on real pipelines),
+  // so anything drawn in SVG units must compensate to stay readable.
+  _getMermaidEffectiveScale(mermaidSvg) {
+    try {
+      const viewBox = mermaidSvg.viewBox && mermaidSvg.viewBox.baseVal;
+      const styledWidth = parseFloat(mermaidSvg.style.width);
+      if (viewBox && viewBox.width > 0 && styledWidth > 0) {
+        return styledWidth / viewBox.width;
+      }
+    } catch (e) {
+      // fall through to neutral scale
+    }
+    return 1;
+  }
+
+  // Draw the open-PR counter of a branch node as a notification-style bubble
+  // half inside / half outside the node's top-right corner. The count travels
+  // as a hidden ".hardis-node-count" marker in the HTML label (emitted by
+  // BranchStrategyMermaidBuilder): it cannot be shown in the label itself
+  // because foreignObject clips any HTML overflowing the label box, while SVG
+  // elements appended to the node group are not clipped.
+  _drawNodeCountBubble(node, svgScale) {
+    const marker = node.querySelector(".hardis-node-count");
+    if (!marker) {
+      return;
+    }
+    const count = marker.getAttribute("data-count");
+    if (!count || node.querySelector(".hardis-count-bubble")) {
+      return;
+    }
+    const shape = node.querySelector("rect, polygon, path");
+    if (!shape || typeof shape.getBBox !== "function") {
+      return;
+    }
+    let box;
+    try {
+      box = shape.getBBox();
+    } catch (e) {
+      return;
+    }
+    const SVG_NS = "http://www.w3.org/2000/svg";
+    // Target ON-SCREEN size converted to SVG units: the whole SVG is scaled
+    // down to fit the viewport, so the badge is drawn 1/scale larger to still
+    // measure ~17px on screen (clamped so it never becomes gigantic).
+    const unit = 1 / Math.min(Math.max(svgScale || 1, 0.35), 1);
+    const height = Math.round(17 * unit);
+    const fontSize = Math.round(11.5 * unit);
+    const width = Math.max(
+      height,
+      Math.round((9 + 7 * String(count).length) * unit),
+    );
+    const ringWidth = Math.max(1, 1.25 * unit);
+    // The badge is styled ENTIRELY inline (style attribute), and every paint
+    // property is set explicitly: mermaid compiles classDefs into
+    // "#id .gitMajor>*{stroke:...!important}" rules that hit this group (a
+    // direct child of the node), so without an explicit inline stroke:none
+    // the numeral glyphs get outlined in the node border color and become
+    // unreadable. Inline styles also make the badge immune to stale cached
+    // stylesheets, and the explicit font stack avoids mermaid's default
+    // trebuchet ms.
+    // Look: white pill / navy numeral / blue hairline + soft shadow (light),
+    // dark surface pill / bright hairline (dark) - separates cleanly from
+    // both the node fill and the page background instead of competing with
+    // the node blues.
+    const isDark = this.colorTheme === "dark";
+    const pillFill = isDark ? "#101720" : "#ffffff";
+    const pillStroke = isDark ? "#57a3fd" : "#0176d3";
+    const numColor = isDark ? "#eaf3ff" : "#032d60";
+    const shadow = isDark
+      ? `drop-shadow(0 ${1 * unit}px ${1.5 * unit}px rgba(0,0,0,0.5))`
+      : `drop-shadow(0 ${1 * unit}px ${1.5 * unit}px rgba(3,45,96,0.35))`;
+    const fontFamily =
+      "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif";
+    // Bubble centered on the node's top-right corner (coordinates are local
+    // to the node group, which mermaid translates to the node center).
+    // Exact float geometry: the SVG is CSS-scaled anyway, so rounding to
+    // integer SVG units cannot produce pixel alignment and only introduces
+    // pill/numeral centering asymmetry.
+    const cornerX = box.x + box.width;
+    const cornerY = box.y;
+    const bubble = document.createElementNS(SVG_NS, "g");
+    bubble.setAttribute("class", "hardis-count-bubble");
+    const pill = document.createElementNS(SVG_NS, "rect");
+    pill.setAttribute("x", String(cornerX - width / 2));
+    pill.setAttribute("y", String(cornerY - height / 2));
+    pill.setAttribute("width", String(width));
+    pill.setAttribute("height", String(height));
+    pill.setAttribute("rx", String(height / 2));
+    pill.setAttribute(
+      "style",
+      `fill:${pillFill};stroke:${pillStroke};stroke-width:${ringWidth}px;stroke-dasharray:none;filter:${shadow};`,
+    );
+    const text = document.createElementNS(SVG_NS, "text");
+    text.setAttribute("x", String(cornerX));
+    text.setAttribute("y", String(cornerY));
+    text.setAttribute("text-anchor", "middle");
+    text.setAttribute("dominant-baseline", "central");
+    text.setAttribute(
+      "style",
+      `fill:${numColor};stroke:none;font-family:${fontFamily};font-size:${fontSize}px;font-weight:700;font-variant-numeric:tabular-nums;`,
+    );
+    text.textContent = count;
+    bubble.appendChild(pill);
+    bubble.appendChild(text);
+    node.appendChild(bubble);
+    // Optical centering: dominant-baseline centers the em box, not the digit
+    // outlines. Measure the rendered glyphs and shift so the glyph bounding
+    // box is exactly centered on the pill (both axes).
+    try {
+      const glyphBox = text.getBBox();
+      if (glyphBox && glyphBox.height > 0) {
+        const shiftY = cornerY - (glyphBox.y + glyphBox.height / 2);
+        const shiftX = cornerX - (glyphBox.x + glyphBox.width / 2);
+        text.setAttribute("y", String(cornerY + shiftY));
+        text.setAttribute("x", String(cornerX + shiftX));
+      }
+    } catch (e) {
+      // keep baseline-centered position
+    }
   }
 
   handleClosePRModal() {
@@ -2418,7 +2561,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     // Single PR details are enriched with tickets / deployment actions, so keep
     // those tabs visible.
     this.isFeaturePrModal = false;
-    // Map through icons so the job status column (jobsStatusDisplay) is populated.
+    // Map through icons so the job status column (statusPill) is populated.
     this.modalPullRequests = this._mapPrsWithIcons([pr]);
 
     // Aggregate tickets from this single PR
@@ -2727,6 +2870,28 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       branch: this.modalBranchName,
       count,
     });
+  }
+
+  // Branch-mode modal header parts: "<PR label>s in" + branch chip + count
+  // badge (the single string form stays available through modalTitle).
+  get modalTitlePrefix() {
+    const prLabel =
+      this.prButtonInfo?.pullRequestLabel || this.i18n.pullRequestLabel;
+    return this.t("prModalTitlePrefix", { prLabel });
+  }
+
+  get modalPrCount() {
+    return this.modalPullRequests.length;
+  }
+
+  // Branch-mode modals use the chip + badge title layout; single-PR modals
+  // whose PR is not yet created (number === -1) fall back to the plain title.
+  get showBranchModalTitle() {
+    return this.modalMode !== "singlePR";
+  }
+
+  get showPlainModalTitle() {
+    return this.modalMode === "singlePR" && !this.isSinglePRMode;
   }
 
   get modalPrsTabLabel() {

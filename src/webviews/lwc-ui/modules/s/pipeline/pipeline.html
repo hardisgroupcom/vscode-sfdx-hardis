@@ -147,6 +147,17 @@
                                         <div class="mermaid"></div>
                                     </div>
                                 </div>
+                                <!-- Diagram legend: edge kinds + CI job statuses -->
+                                <div class="pipeline-legend">
+                                        <span class="legend-item"><span class="legend-line legend-line-promotion"></span>{i18n.legendPromotion}</span>
+                                        <span class="legend-item"><span class="legend-line legend-line-feature"></span>{i18n.legendFeaturePr}</span>
+                                        <span class="legend-item"><span class="legend-line legend-line-deploy"></span>{i18n.deployment}</span>
+                                        <span class="legend-separator"></span>
+                                        <span class="legend-item"><span class="hardis-pill-dot legend-dot hardis-status-success"></span>{i18n.jobStatusSuccess}</span>
+                                        <span class="legend-item"><span class="hardis-pill-dot legend-dot hardis-status-running"></span>{i18n.jobStatusRunning}</span>
+                                        <span class="legend-item"><span class="hardis-pill-dot legend-dot hardis-status-pending"></span>{i18n.jobStatusPending}</span>
+                                        <span class="legend-item"><span class="hardis-pill-dot legend-dot hardis-status-failed"></span>{i18n.jobStatusFailed}</span>
+                                </div>
                                 <template if:true={error}>
                                     <pre class="mermaid-debug" style="color:#888;font-size:10px;max-height:100px;overflow:auto;"></pre>
                                 </template>
@@ -226,7 +237,7 @@
                     </div>
                     <div class={currentPrCardClasses} onclick={handleOpenCurrentPR}>
                         <div class="command-header">
-                            <div class="command-icon-container pr-action" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                            <div class="command-icon-container pr-action">
                                 <lightning-icon icon-name="utility:topic2" size="small" variant="inverse"></lightning-icon>
                             </div>
                             <h3 class="command-title">{currentPRCardTitle}</h3>
@@ -236,7 +247,7 @@
                     <template if:true={hasAutoFixPullRequest}>
                         <div class="command-card" onclick={handleOpenAutoFixPR}>
                             <div class="command-header">
-                                <div class="command-icon-container" style="background: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);">
+                                <div class="command-icon-container autofix-action">
                                     <lightning-icon icon-name="utility:task" size="small" variant="inverse"></lightning-icon>
                                 </div>
                                 <h3 class="command-title">{autoFixPRCardTitle}</h3>
@@ -246,7 +257,7 @@
                     </template>
                     <div class="command-card" onclick={handleBackpromote}>
                         <div class="command-header">
-                            <div class="command-icon-container" style="background: linear-gradient(135deg, #0ea5e9 0%, #10b981 100%);">
+                            <div class="command-icon-container backpromote-action">
                                 <lightning-icon icon-name="utility:merge" size="small" variant="inverse"></lightning-icon>
                             </div>
                             <h3 class="command-title">{i18n.backpromote}</h3>
@@ -263,14 +274,14 @@
                     </template>
                     <template if:false={isPrLoading}>
                         <template if:true={gitAuthenticated}>
-                            <lightning-datatable
+                            <s-hardis-datatable
                                 key-field="id"
                                 data={openPullRequests}
                                 column-widths-mode="auto"
                                 columns={prColumns}
                                 hide-checkbox-column
                                 onrowaction={handlePRRowAction}
-                            ></lightning-datatable>
+                            ></s-hardis-datatable>
                             <template if:true={prButtonInfo}>
                                 <div class="slds-m-top_small slds-align_absolute-center">
                                     <lightning-button
@@ -305,6 +316,7 @@
     <template if:true={showPRModal}>
         <section role="dialog" tabindex="-1" aria-modal="true" aria-labelledby="modal-heading-01" class="slds-modal slds-fade-in-open">
             <div class="slds-modal__container">
+                <div class="modal-accent-strip"></div>
                 <header class="slds-modal__header">
                     <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title={i18n.close} onclick={handleClosePRModal}>
                         <lightning-icon icon-name="utility:close" size="small" alternative-text={i18n.close}></lightning-icon>
@@ -314,7 +326,14 @@
                         <template if:true={isSinglePRMode}>
                             <a href="#" onclick={handleOpenSinglePRUrl} style="color: inherit; text-decoration: underline;">{modalTitle}</a>
                         </template>
-                        <template if:false={isSinglePRMode}>
+                        <template if:true={showBranchModalTitle}>
+                            <span class="modal-title-parts">
+                                <span>{modalTitlePrefix}</span>
+                                <span class="hardis-branch-chip modal-branch-chip">{modalBranchName}</span>
+                                <span class="modal-count-badge">{modalPrCount}</span>
+                            </span>
+                        </template>
+                        <template if:true={showPlainModalTitle}>
                             {modalTitle}
                         </template>
                     </h2>
@@ -347,13 +366,13 @@
                     <lightning-tabset active-tab-value={modalActiveTabValue}>
                         <template if:true={showPRTab}>
                             <lightning-tab label={modalPrsTabLabel} value="prs" icon-name="utility:topic2" icon-assistive-text={modalPrsTabLabel}>
-                            <lightning-datatable
+                            <s-hardis-datatable
                                 key-field="id"
                                 data={modalPullRequests}
                                 columns={modalPrColumns}
                                 hide-checkbox-column
                                 column-widths-mode="auto"
-                            ></lightning-datatable>
+                            ></s-hardis-datatable>
                         </lightning-tab>
                         </template>
                         <template if:false={isFeaturePrModal}>
@@ -491,7 +510,8 @@
                         <template if:false={isSinglePRMode}>
                             <template if:true={showPreviewReleaseNotes}>
                                 <lightning-button
-                                    variant="success"
+                                    class="hardis-btn-tinted-green"
+                                    variant="neutral"
                                     label={i18n.previewReleaseNotes}
                                     icon-name="utility:preview"
                                     icon-position="left"
@@ -499,8 +519,8 @@
                                 ></lightning-button>
                             </template>
                             <lightning-button
-                                class="slds-m-left_small"
-                                variant="success"
+                                class="slds-m-left_small hardis-btn-tinted-green"
+                                variant="neutral"
                                 label={i18n.generateReleaseNotes}
                                 icon-name="utility:document_preview"
                                 icon-position="left"

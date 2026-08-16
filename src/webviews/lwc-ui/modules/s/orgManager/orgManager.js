@@ -1,5 +1,6 @@
 import { LightningElement, api, track } from "lwc";
 import { SharedMixin } from "s/sharedMixin";
+import { getAvatarClass, getUsernameInitials } from "s/avatarUtils";
 
 export default class OrgManager extends SharedMixin(LightningElement) {
   @track orgs = [];
@@ -59,7 +60,11 @@ export default class OrgManager extends SharedMixin(LightningElement) {
       {
         label: this.t("usernameLabel"),
         fieldName: "username",
-        type: "text",
+        type: "avatarText",
+        typeAttributes: {
+          initials: { fieldName: "usernameInitials" },
+          avatarClass: { fieldName: "usernameAvatarClass" },
+        },
         cellAttributes: { class: { fieldName: "rowClass" } },
       },
       {
@@ -79,15 +84,23 @@ export default class OrgManager extends SharedMixin(LightningElement) {
       {
         label: this.t("connectedLabel"),
         fieldName: "connectedLabel",
-        type: "text",
-        initialWidth: 140,
+        type: "statusPill",
+        typeAttributes: {
+          label: { fieldName: "connectedLabel" },
+          pillClass: { fieldName: "connectedPillClass" },
+        },
+        initialWidth: 150,
         cellAttributes: { class: { fieldName: "rowClass" } },
       },
       {
         label: this.t("roleLabel"),
         fieldName: "defaultLabel",
-        type: "text",
-        initialWidth: 100,
+        type: "statusPill",
+        typeAttributes: {
+          label: { fieldName: "defaultLabel" },
+          pillClass: { fieldName: "rolePillClass" },
+        },
+        initialWidth: 130,
         cellAttributes: { class: { fieldName: "rowClass" } },
       },
       {
@@ -123,6 +136,21 @@ export default class OrgManager extends SharedMixin(LightningElement) {
         .match(/connected|authorized/)
         ? this.t("connectedLabel")
         : this.t("disconnectedStatus"),
+      // Pill CSS class for the Connected column (statusPill cell type)
+      connectedPillClass: (o.connectedStatus || "")
+        .toString()
+        .toLowerCase()
+        .match(/connected|authorized/)
+        ? "hardis-pill hardis-status-success"
+        : "hardis-pill hardis-status-failed",
+      // Initials avatar for the username column (avatarText cell type). The
+      // color variant is stable per username (hash of the name).
+      usernameInitials: getUsernameInitials(
+        o.username || o.loginUrl || o.instanceUrl,
+      ),
+      usernameAvatarClass: getAvatarClass(
+        o.username || o.loginUrl || o.instanceUrl,
+      ),
       // Compute row actions for the Actions column: Open (connected), Reconnect (disconnected), Remove (always)
       rowActions: (() => {
         const isConnected = (o.connectedStatus || "")
@@ -229,6 +257,10 @@ export default class OrgManager extends SharedMixin(LightningElement) {
         : o.isDefaultDevHubUsername
           ? this.t("devHub")
           : "",
+      // Pill CSS class for the Role column (statusPill cell type)
+      rolePillClass: o.isDefaultUsername
+        ? "hardis-pill hardis-status-success"
+        : "hardis-pill hardis-status-unknown",
     }));
     // If a default org or a default dev hub exists, move them to the top of the list
     const prioritized = [];
@@ -351,7 +383,7 @@ export default class OrgManager extends SharedMixin(LightningElement) {
     // Try to gather usernames from tracked selection; if empty, fallback to the datatable's selected rows
     let usernames = (this.selectedRowKeys || []).slice();
     if (!usernames || usernames.length === 0) {
-      const table = this.template.querySelector("lightning-datatable");
+      const table = this.template.querySelector("s-hardis-datatable");
       if (table && typeof table.getSelectedRows === "function") {
         const rows = table.getSelectedRows() || [];
         usernames = rows.map((r) => r.username).filter(Boolean);

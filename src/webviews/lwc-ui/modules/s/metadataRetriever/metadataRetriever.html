@@ -283,7 +283,8 @@
                 <div class="slds-col slds-no-flex">
                     <lightning-button
                       data-id="retrieve-button"
-                      variant="success"
+                      class="hardis-btn-tinted-green"
+                      variant="neutral"
                       label={retrieveSelectedLabel}
                       icon-name="utility:download"
                       onclick={handleRetrieveSelected}
@@ -292,7 +293,7 @@
                   </div>
             </template>
           </div>
-          <lightning-datatable
+          <s-hardis-datatable
             key-field="uniqueKey"
             data={filteredMetadata}
             columns={columns}
@@ -303,14 +304,15 @@
             onsort={handleSort}
             sorted-by={sortBy}
             sorted-direction={sortDirection}
-          ></lightning-datatable>
+          ></s-hardis-datatable>
         </div>
       </template>
 
       <!-- Floating retrieve button (shown when main retrieve button is off-screen) -->
       <div class="retrieve-floating" data-id="retrieve-button-floating">
         <lightning-button
-          variant="success"
+          class="hardis-btn-tinted-green"
+          variant="neutral"
           label={retrieveSelectedLabel}
           icon-name="utility:download"
           onclick={handleRetrieveSelected}
