@@ -17,6 +17,9 @@ export class LwcUiPanel {
   private lwcId: string;
   private disposables: vscode.Disposable[] = [];
   private messageListeners: MessageListener[] = [];
+  // Listeners that survive clearExistingOnMessageListeners (panel reuse):
+  // e.g. the command-runner cancel wiring of command-execution panels
+  private persistentMessageListeners: MessageListener[] = [];
   private initializationData: any = null;
   private _isDisposed: boolean = false;
   /**
@@ -131,6 +134,9 @@ export class LwcUiPanel {
    * @param title New title for the panel
    */
   public updateTitle(title: string): void {
+    if (this._isDisposed) {
+      return;
+    }
     this.panel.title = title;
   }
 
@@ -211,6 +217,7 @@ export class LwcUiPanel {
 
     // Clear message listeners
     this.messageListeners = [];
+    this.persistentMessageListeners = [];
   }
 
   public isDisposed(): boolean {
@@ -230,6 +237,11 @@ export class LwcUiPanel {
    * @param data The data to send to the webview for initialization
    */
   public sendInitializationData(data: any): void {
+    // The panel can be closed by the user before the delayed initialization
+    // fires: accessing the webview of a disposed panel throws
+    if (this._isDisposed) {
+      return;
+    }
     const resolvedData = LwcUiPanel.resolveImagePathsInData(
       this.panel.webview,
       this.extensionUri,
@@ -268,6 +280,9 @@ export class LwcUiPanel {
    * @param message The message to send
    */
   public sendMessage(message: any): void {
+    if (this._isDisposed) {
+      return;
+    }
     this.panel.webview.postMessage(message);
   }
 
@@ -276,20 +291,29 @@ export class LwcUiPanel {
    * @param listener Function that will be called when a message is received
    * @returns Function to unregister the listener
    */
-  public onMessage(listener: MessageListener): () => void {
-    this.messageListeners.push(listener);
+  public onMessage(
+    listener: MessageListener,
+    persistent: boolean = false,
+  ): () => void {
+    const targetList = persistent
+      ? this.persistentMessageListeners
+      : this.messageListeners;
+    targetList.push(listener);
 
     // Return unsubscribe function
     return () => {
-      const index = this.messageListeners.indexOf(listener);
+      const index = targetList.indexOf(listener);
       if (index > -1) {
-        this.messageListeners.splice(index, 1);
+        targetList.splice(index, 1);
       }
     };
   }
 
   public clearExistingOnMessageListeners(): void {
-    // Clear listeners previously added with onMessage method
+    // Clear listeners previously added with onMessage method.
+    // Persistent listeners are kept: they belong to the panel lifecycle
+    // (e.g. cancel-on-close of command-execution panels), not to the LWC
+    // initialization that getOrCreatePanel is about to redo.
     this.messageListeners = [];
   }
 
@@ -790,15 +814,19 @@ export class LwcUiPanel {
     const messageType = message.type || "unknown";
     const data = message.data || message;
 
-    this.messageListeners.forEach((listener) => {
-      try {
-        listener(messageType, data);
-      } catch (error) {
-        Logger.log(
-          "Error in LWC UI message listener:\n" + JSON.stringify(error),
-        );
-      }
-    });
+    // Iterate over a copy: a listener that unsubscribes itself while being
+    // notified must not make the next listener be skipped
+    [...this.messageListeners, ...this.persistentMessageListeners].forEach(
+      (listener) => {
+        try {
+          listener(messageType, data);
+        } catch (error) {
+          Logger.log(
+            "Error in LWC UI message listener:\n" + JSON.stringify(error),
+          );
+        }
+      },
+    );
   }
 
   private update() {

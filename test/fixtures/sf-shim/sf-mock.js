@@ -114,6 +114,11 @@ async function main() {
 }
 
 async function runHardisCommand(commandId) {
+  // Commands containing "slow-boot" simulate a real CLI whose boot takes a
+  // while: the window during which the user can close the pending panel
+  if (commandId.includes("slow-boot")) {
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+  }
   // Same marker as the real sfdx-hardis WebSocketClient constructor
   console.log("WS Client started");
 
@@ -150,6 +155,20 @@ async function runHardisCommand(commandId) {
 
     const send = (data) => ws.send(JSON.stringify({ ...data, context }));
 
+    // Like the real sfdx-hardis: exit when the extension cancels the command
+    // (the user closed the command execution tab)
+    ws.on("message", (raw) => {
+      try {
+        const data = JSON.parse(raw.toString());
+        if (data.event === "cancelCommand") {
+          logInvocation({ event: "cancelled" });
+          process.exit(1);
+        }
+      } catch {
+        // Ignore unparseable messages
+      }
+    });
+
     ws.on("open", () => {
       logInvocation({ event: "wsOpen" });
       send({ event: "initClient" });
@@ -158,6 +177,11 @@ async function runHardisCommand(commandId) {
         logType: "log",
         message: `Mock execution of ${commandId}`,
       });
+      if (commandId.includes("long-run")) {
+        // Long-running command: stays connected until cancelled by the
+        // extension or until the safety timeout fires
+        return;
+      }
       send({
         event: "commandLogLine",
         logType: "success",

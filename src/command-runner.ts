@@ -581,20 +581,44 @@ export class CommandRunner {
             pendingPanelAdopted = true;
           },
         });
-        // Closing the panel before the CLI has connected cancels the command
-        const unsubscribePending = panel.onMessage((messageType: string) => {
-          if (messageType === "panelDisposed" && !pendingPanelAdopted) {
-            removePendingCommandPanel(pendingPanelLwcId!);
-            unsubscribePending();
-            if (childProcess?.pid) {
-              try {
-                killProcessTree(childProcess.pid, "SIGTERM", () => {});
-              } catch {
-                // Process may already be gone
+        // Closing the panel cancels the command: before the CLI has connected
+        // the process is killed here; once adopted, the WebSocket server sends
+        // a cancelCommand event and the CLI exits by itself. In both cases the
+        // command is unregistered immediately, so re-running it right away is
+        // not blocked by the duplicate-command detection while the cancelled
+        // process is still shutting down.
+        // Persistent listener: the WebSocket server wipes the regular
+        // listeners of this panel (clearExistingOnMessageListeners) when the
+        // CLI connects and adopts it - the cancel wiring must survive that
+        const unsubscribePanelDisposed = panel.onMessage(
+          (messageType: string) => {
+            if (messageType !== "panelDisposed") {
+              return;
+            }
+            unsubscribePanelDisposed();
+            const active = this.activeCommands.get(preprocessedCommand!);
+            if (active?.process === childProcess) {
+              this.activeCommands.delete(preprocessedCommand!);
+            }
+            if (!pendingPanelAdopted) {
+              removePendingCommandPanel(pendingPanelLwcId!);
+              if (childProcess?.pid) {
+                try {
+                  killProcessTree(childProcess.pid, "SIGTERM", (err) => {
+                    if (err) {
+                      Logger.log(
+                        `Error killing cancelled command process: ${err.message}`,
+                      );
+                    }
+                  });
+                } catch {
+                  // Process may already be gone
+                }
               }
             }
-          }
-        });
+          },
+          true,
+        );
       } catch (e: any) {
         Logger.log(
           `Could not open command execution panel at click time: ${e?.message || e}`,
@@ -779,9 +803,17 @@ export class CommandRunner {
         // Panel manager not initialized
       }
     };
+    // Only unregister if this process is still the registered one: after a
+    // cancel (tab closed) the same command may already be running again
+    const unregisterActiveCommand = () => {
+      const active = this.activeCommands.get(preprocessedCommand!);
+      if (active?.process === childProcess) {
+        this.activeCommands.delete(preprocessedCommand!);
+      }
+    };
     childProcess.on("close", (code: any) => {
       output.appendLine(`[Ended] ${preprocessedCommand} (exit code: ${code})`);
-      this.activeCommands.delete(preprocessedCommand);
+      unregisterActiveCommand();
       closeProgress();
       finalizePendingPanel(typeof code === "number" ? code : null);
       if (code && code !== 0) {
@@ -809,7 +841,7 @@ export class CommandRunner {
     });
     childProcess.on("error", (err: any) => {
       output.appendLine(`[Error] ${err.message}`);
-      this.activeCommands.delete(preprocessedCommand);
+      unregisterActiveCommand();
       closeProgress();
       finalizePendingPanel(1);
       tryNotifyCertificateIssue(err?.message || "");
