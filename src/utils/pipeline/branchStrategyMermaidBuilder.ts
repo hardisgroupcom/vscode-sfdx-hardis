@@ -212,12 +212,16 @@ export class BranchStrategyMermaidBuilder {
       }
       const prCount =
         branchAndOrg?.pullRequestsInBranchSinceLastMerge?.length || 0;
+      // The PR count is embedded as a hidden marker: the webview draws it as
+      // a notification-style bubble on the node's top-right corner (see
+      // _decorateMermaidNodes in pipeline.js). It cannot be rendered inside
+      // the label because foreignObject clips HTML label overflow.
       const branchLabel =
         BRANCH_ICON_SVG +
         " " +
         this.escapeHtmlLabel(branchAndOrg.branchName) +
         (prCount > 0
-          ? ` <span class='hardis-count-badge'>${prCount}</span>`
+          ? `<span class='hardis-node-count' data-count='${prCount}' style='display:none;'></span>`
           : "");
       return {
         name: branchAndOrg.branchName,

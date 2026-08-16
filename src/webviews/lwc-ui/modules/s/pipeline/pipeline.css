@@ -339,17 +339,10 @@
     margin-right: 1px;
 }
 
-/* PR count badge on major branch nodes */
-.mermaid .hardis-count-badge {
-    display: inline-block;
-    font-size: 10px;
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-    border-radius: 999px;
-    padding: 0 6px;
-    margin-left: 3px;
-    background: rgba(255, 255, 255, 0.25);
-    color: inherit;
+/* PR count marker: hidden in the label, drawn by _drawNodeCountBubble as an
+   SVG bubble on the node corner (styles in global-theme.css) */
+.mermaid .hardis-node-count {
+    display: none;
 }
 
 /* Job status dot on feature branch nodes */

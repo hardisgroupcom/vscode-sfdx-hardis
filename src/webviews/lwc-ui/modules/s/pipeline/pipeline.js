@@ -2377,7 +2377,59 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     nodes.forEach((node) => {
       node.style.cursor = "pointer";
       node.setAttribute("tabindex", "0");
+      this._drawNodeCountBubble(node);
     });
+  }
+
+  // Draw the open-PR counter of a branch node as a notification-style bubble
+  // half inside / half outside the node's top-right corner. The count travels
+  // as a hidden ".hardis-node-count" marker in the HTML label (emitted by
+  // BranchStrategyMermaidBuilder): it cannot be shown in the label itself
+  // because foreignObject clips any HTML overflowing the label box, while SVG
+  // elements appended to the node group are not clipped.
+  _drawNodeCountBubble(node) {
+    const marker = node.querySelector(".hardis-node-count");
+    if (!marker) {
+      return;
+    }
+    const count = marker.getAttribute("data-count");
+    if (!count || node.querySelector(".hardis-count-bubble")) {
+      return;
+    }
+    const shape = node.querySelector("rect, polygon, path");
+    if (!shape || typeof shape.getBBox !== "function") {
+      return;
+    }
+    let box;
+    try {
+      box = shape.getBBox();
+    } catch (e) {
+      return;
+    }
+    const SVG_NS = "http://www.w3.org/2000/svg";
+    const height = 15;
+    const width = Math.max(height, 9 + 6 * String(count).length);
+    // Bubble centered on the node's top-right corner (coordinates are local
+    // to the node group, which mermaid translates to the node center).
+    const cornerX = box.x + box.width;
+    const cornerY = box.y;
+    const bubble = document.createElementNS(SVG_NS, "g");
+    bubble.setAttribute("class", "hardis-count-bubble");
+    const pill = document.createElementNS(SVG_NS, "rect");
+    pill.setAttribute("x", String(cornerX - width / 2));
+    pill.setAttribute("y", String(cornerY - height / 2));
+    pill.setAttribute("width", String(width));
+    pill.setAttribute("height", String(height));
+    pill.setAttribute("rx", String(height / 2));
+    const text = document.createElementNS(SVG_NS, "text");
+    text.setAttribute("x", String(cornerX));
+    text.setAttribute("y", String(cornerY + 0.5));
+    text.setAttribute("text-anchor", "middle");
+    text.setAttribute("dominant-baseline", "central");
+    text.textContent = count;
+    bubble.appendChild(pill);
+    bubble.appendChild(text);
+    node.appendChild(bubble);
   }
 
   handleClosePRModal() {

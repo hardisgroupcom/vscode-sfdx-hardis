@@ -828,6 +828,23 @@ div.slds-scope[data-theme="dark"] {
 }
 
 /* ------------------------------------------------------------------ */
+/* Node count bubbles (pipeline mermaid diagram)                      */
+/* Notification-style counter drawn as SVG on a branch node's         */
+/* top-right corner by _drawNodeCountBubble (pipeline.js).            */
+/* ------------------------------------------------------------------ */
+.slds-scope[data-theme] .hardis-count-bubble rect {
+  fill: var(--slds-g-color-palette-blue-90);
+  stroke: var(--slds-g-color-palette-blue-50);
+  stroke-width: 1px;
+}
+.slds-scope[data-theme] .hardis-count-bubble text {
+  fill: var(--slds-g-color-palette-blue-30);
+  font-size: 9.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------------------------------------------ */
 /* Initials avatars (s-hardis-datatable avatarText cell type)         */
 /* 50-level palette tokens are theme-invariant, so white text stays   */
 /* readable in both themes. Color variant is a stable per-name hash.  */

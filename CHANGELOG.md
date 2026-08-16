@@ -7,7 +7,7 @@
     - Branches, orgs and connectors now share one consistent color family, with rounded nodes and lighter frames around the Git Branches and Salesforce Orgs sections
     - CI job status is now color-coded consistently everywhere: blue animated = running, orange = pending, red = failed, green = success (previously running and pending showed as red, and failed jobs were not highlighted at all)
     - Long feature branch names are shortened in the diagram so it stays compact (the full name remains visible on hover and in the pull request modal)
-    - Pull requests, deployments and "Create PR" links are shown as small colored chips instead of emoji and underlined links, and open pull request counters are displayed as badges on branch nodes
+    - Pull requests, deployments and "Create PR" links are shown as small colored chips instead of emoji and underlined links, and each branch's open pull request counter is displayed as a notification bubble attached to the node's corner
     - Branch and org icons are now crisp vector icons that match the theme, replacing emoji that rendered differently on each operating system
     - The "+N more" folded feature branches are displayed as a stack of cards, and a legend below the diagram explains connectors and status colors
     - The diagram text now uses the same font as the rest of the panel
