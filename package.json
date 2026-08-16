@@ -717,7 +717,7 @@
     "jira.js": "^5.2.2",
     "js-yaml": "^4.3.0",
     "lightning-base-components": "1.28.15-alpha",
-    "mermaid": "11.15.0",
+    "mermaid": "11.16.1",
     "simple-git": "^3.36.0",
     "ws": "^8.21.0"
   },
