@@ -3,10 +3,10 @@ import * as vscode from "vscode";
 import { LwcPanelManager } from "../lwc-panel-manager";
 import { Commands } from "../commands";
 import { getWorkspaceRoot, openFolderInExplorer } from "../utils";
-import * as fs from "fs-extra";
+import * as fs from "fs";
 import path from "path";
 import { Logger } from "../logger";
-import axios from "axios";
+import { getJson } from "../utils/httpUtils";
 import { t } from "../i18n/i18n";
 // jscpd:ignore-end
 
@@ -122,10 +122,10 @@ export function registerShowFilesWorkbench(commands: Commands) {
           // jscpd:ignore-start
           case "loadTemplates": {
             try {
-              const response = await axios.get(FILE_TEMPLATES_URL, {
-                timeout: 8000,
+              const response = await getJson<any>(FILE_TEMPLATES_URL, {
+                timeoutMs: 8000,
               });
-              const templates = response.data?.templates || [];
+              const templates = response?.templates || [];
               panel.sendMessage({
                 type: "templatesLoaded",
                 data: { templates },
@@ -142,10 +142,12 @@ export function registerShowFilesWorkbench(commands: Commands) {
 
           case "loadTemplate": {
             try {
-              const response = await axios.get(data.url, { timeout: 8000 });
+              const template = await getJson<any>(data.url, {
+                timeoutMs: 8000,
+              });
               panel.sendMessage({
                 type: "templateLoaded",
-                data: { template: response.data },
+                data: { template },
               });
             } catch (e: any) {
               Logger.log(`Failed to load file template: ${e?.message || e}`);
@@ -232,7 +234,7 @@ async function createFilesWorkspace(data: any): Promise<string> {
   const workspacePath = path.join(filesFolder, data.name);
 
   // Ensure the parent directories exist
-  await fs.ensureDir(filesFolder);
+  await fs.promises.mkdir(filesFolder, { recursive: true });
 
   // Check if workspace already exists
   if (fs.existsSync(workspacePath)) {
@@ -240,7 +242,7 @@ async function createFilesWorkspace(data: any): Promise<string> {
   }
 
   // Create workspace directory
-  await fs.ensureDir(workspacePath);
+  await fs.promises.mkdir(workspacePath, { recursive: true });
 
   // Create export.json configuration
   const exportConfig = {
@@ -256,7 +258,10 @@ async function createFilesWorkspace(data: any): Promise<string> {
   };
 
   const exportJsonPath = path.join(workspacePath, "export.json");
-  await fs.writeFile(exportJsonPath, JSON.stringify(exportConfig, null, 2));
+  await fs.promises.writeFile(
+    exportJsonPath,
+    JSON.stringify(exportConfig, null, 2),
+  );
 
   vscode.window.showInformationMessage(
     `Files workspace "${data.label}" created successfully!`,
@@ -272,7 +277,10 @@ async function updateFilesWorkspace(data: any): Promise<void> {
 
   // If the name changed, rename the directory
   if (oldPath !== newPath && fs.existsSync(oldPath)) {
-    await fs.move(oldPath, newPath);
+    if (fs.existsSync(newPath)) {
+      throw new Error(`Cannot rename files workspace: ${newPath} already exists`);
+    }
+    await fs.promises.rename(oldPath, newPath);
   }
 
   // Update export.json configuration
@@ -291,7 +299,10 @@ async function updateFilesWorkspace(data: any): Promise<void> {
   /* jscpd:ignore-end */
 
   const exportJsonPath = path.join(newPath, "export.json");
-  await fs.writeFile(exportJsonPath, JSON.stringify(exportConfig, null, 2));
+  await fs.promises.writeFile(
+    exportJsonPath,
+    JSON.stringify(exportConfig, null, 2),
+  );
 
   vscode.window.showInformationMessage(
     `Files workspace "${data.label}" updated successfully!`,
@@ -300,7 +311,7 @@ async function updateFilesWorkspace(data: any): Promise<void> {
 
 async function deleteFilesWorkspace(workspacePath: string): Promise<void> {
   if (fs.existsSync(workspacePath)) {
-    await fs.remove(workspacePath);
+    await fs.promises.rm(workspacePath, { recursive: true, force: true });
     vscode.window.showInformationMessage(
       "Files workspace deleted successfully!",
     );

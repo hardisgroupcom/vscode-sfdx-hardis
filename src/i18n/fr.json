@@ -1274,6 +1274,7 @@
   "notDefined": "Non défini",
   "notVisibleFromBranch": "{{value}} (non visible depuis cette branche git)",
   "notVisibleFromOrg": "{{value}} (non visible depuis cette org)",
+  "notVisibleFromPipeline": "{{value}} (branche qui n'est plus dans le pipeline)",
   "objectFieldUsage": "Utilisation des champs d'objet",
   "objectFieldUsageDescription": "Analyser l'utilisation des champs d'objets et produire un rapport de nettoyage",
   "objectFieldUsageTooltip": "Analyser l'utilisation des champs d'objets et produire un rapport de documentation pour les décisions de nettoyage",

@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import * as fs from "fs-extra";
+import * as fs from "fs";
 import * as path from "path";
 import * as yaml from "js-yaml";
 import { Logger } from "../logger";
@@ -275,7 +275,9 @@ export async function openMetadataPresetsConfigFile(): Promise<string | null> {
   let hasPresets = false;
   if (fs.existsSync(configFile)) {
     try {
-      const config: any = yaml.load(await fs.readFile(configFile, "utf-8"));
+      const config: any = yaml.load(
+        await fs.promises.readFile(configFile, "utf-8"),
+      );
       hasPresets = !!(config && config[METADATA_PRESETS_CONFIG_KEY]);
     } catch (error: any) {
       Logger.log(
@@ -286,13 +288,13 @@ export async function openMetadataPresetsConfigFile(): Promise<string | null> {
 
   if (!hasPresets) {
     // Append (never rewrite) so user comments and formatting are kept as-is
-    await fs.ensureDir(path.dirname(configFile));
+    await fs.promises.mkdir(path.dirname(configFile), { recursive: true });
     const existingContent = fs.existsSync(configFile)
-      ? await fs.readFile(configFile, "utf-8")
+      ? await fs.promises.readFile(configFile, "utf-8")
       : "";
     const separator =
       existingContent.length > 0 && !existingContent.endsWith("\n") ? "\n" : "";
-    await fs.appendFile(
+    await fs.promises.appendFile(
       configFile,
       `${separator}${buildDefaultPresetsYamlBlock()}`,
     );

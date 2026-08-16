@@ -2,7 +2,7 @@ import * as fs from "fs";
 import path from "path";
 import { glob } from "glob";
 import * as yaml from "js-yaml";
-import sortArray from "sort-array";
+import { sortArray } from "./sortUtils";
 import { getWorkspaceRoot } from "../utils";
 import { Job, JobStatus, PullRequest } from "./gitProviders/types";
 import { GitProvider } from "./gitProviders/gitProvider";

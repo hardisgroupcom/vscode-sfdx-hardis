@@ -1,4 +1,4 @@
-import treeKill from "tree-kill";
+import { killProcessTree } from "./utils/processUtils";
 import * as vscode from "vscode";
 import { LwcPanelManager } from "./lwc-panel-manager";
 import { t } from "./i18n/i18n";
@@ -580,7 +580,7 @@ export class CommandRunner {
               killed = true;
               if (childProcess && childProcess.pid) {
                 try {
-                  treeKill(childProcess.pid, "SIGTERM", (err) => {
+                  killProcessTree(childProcess.pid, "SIGTERM", (err) => {
                     if (err) {
                       output.appendLine(
                         `[Cancelled by user] Error killing child process: ${err.message}`,

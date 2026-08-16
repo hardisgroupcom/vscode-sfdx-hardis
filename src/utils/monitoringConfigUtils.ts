@@ -1,10 +1,20 @@
-import * as fs from "fs-extra";
+import * as fs from "fs";
 import * as path from "path";
 import yaml from "js-yaml";
 import simpleGit from "simple-git";
 import { execSfdxJson, getWorkspaceRoot } from "../utils";
 import { CacheManager } from "./cache-manager";
 import { Logger } from "../logger";
+
+// Async existence check (fs has no promise-based equivalent to fs.existsSync)
+async function pathExists(targetPath: string): Promise<boolean> {
+  try {
+    await fs.promises.access(targetPath);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export type MonitoringFrequency =
   "daily" | "weekly" | "biweekly" | "monthly" | "off";
@@ -227,11 +237,11 @@ function buildMonitoringConfig(raw: string): MonitoringUserConfig {
 
 export async function readCurrentMonitoringConfig(): Promise<MonitoringUserConfig> {
   const configPath = getRootConfigPath();
-  if (!(await fs.pathExists(configPath))) {
+  if (!(await pathExists(configPath))) {
     return { monitoringCommands: [], notificationConfig: [] };
   }
   try {
-    const raw = await fs.readFile(configPath, "utf8");
+    const raw = await fs.promises.readFile(configPath, "utf8");
     return buildMonitoringConfig(raw);
   } catch (e) {
     Logger.log(`Error reading monitoring config from ${configPath}: ${e}`);
@@ -312,10 +322,11 @@ export async function saveMonitoringConfig(
 ): Promise<void> {
   const configPath = getRootConfigPath();
   let existing: Record<string, any> = {};
-  if (await fs.pathExists(configPath)) {
+  if (await pathExists(configPath)) {
     try {
       existing =
-        (yaml.load(await fs.readFile(configPath, "utf8")) as any) || {};
+        (yaml.load(await fs.promises.readFile(configPath, "utf8")) as any) ||
+        {};
     } catch (e) {
       Logger.log(`Error parsing existing ${configPath}: ${e}`);
       existing = {};
@@ -337,6 +348,6 @@ export async function saveMonitoringConfig(
   } else {
     delete existing.notificationConfig;
   }
-  await fs.ensureDir(path.dirname(configPath));
-  await fs.writeFile(configPath, yaml.dump(existing), "utf8");
+  await fs.promises.mkdir(path.dirname(configPath), { recursive: true });
+  await fs.promises.writeFile(configPath, yaml.dump(existing), "utf8");
 }

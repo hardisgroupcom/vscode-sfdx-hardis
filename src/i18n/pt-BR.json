@@ -1270,6 +1270,7 @@
   "notDefined": "Não definido",
   "notVisibleFromBranch": "{{value}} (não visível a partir desta branch git)",
   "notVisibleFromOrg": "{{value}} (não visível a partir desta org)",
+  "notVisibleFromPipeline": "{{value}} (branch não está mais no pipeline)",
   "objectFieldUsage": "Uso de Campos de Objeto",
   "objectFieldUsageDescription": "Analisar o uso de campos de objeto e produzir um relatório de limpeza",
   "objectFieldUsageTooltip": "Analisar o uso de campos de objeto e produzir um relatório de documentação para decisões de limpeza",

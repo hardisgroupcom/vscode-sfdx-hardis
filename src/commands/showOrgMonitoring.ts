@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import { getWorkspaceRoot } from "../utils";
 import { LwcPanelManager } from "../lwc-panel-manager";
 import path from "path";
-import * as fs from "fs-extra";
+import * as fs from "fs";
 import yaml from "js-yaml";
 import { Logger } from "../logger";
 import { Commands } from "../commands";

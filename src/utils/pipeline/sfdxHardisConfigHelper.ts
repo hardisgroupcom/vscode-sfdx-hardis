@@ -1,9 +1,19 @@
-import * as fs from "fs-extra";
+import * as fs from "fs";
 import * as path from "path";
 import yaml from "js-yaml";
-import axios from "axios";
+import { getJson } from "../httpUtils";
 import { t } from "../../i18n/i18n";
 import * as vscode from "vscode";
+
+// Async existence check (fs has no promise-based equivalent to fs.existsSync)
+async function pathExists(targetPath: string): Promise<boolean> {
+  try {
+    await fs.promises.access(targetPath);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export interface SfdxHardisConfig {
   [key: string]: any;
@@ -276,18 +286,20 @@ export class SfdxHardisConfigHelper {
     let schema: any = null;
     // Try remote first
     try {
-      const res = await axios.get(this.REMOTE_SCHEMA_URL, { timeout: 5000 });
-      if (res.status === 200 && res.data) {
-        schema = res.data;
+      const res = await getJson<any>(this.REMOTE_SCHEMA_URL, {
+        timeoutMs: 5000,
+      });
+      if (res) {
+        schema = res;
       }
     } catch (e) {
       console.warn("Failed to load remote schema, falling back to local", e);
     }
     if (!schema && this.LOCAL_SCHEMA_PATH) {
       try {
-        if (await fs.pathExists(this.LOCAL_SCHEMA_PATH)) {
+        if (await pathExists(this.LOCAL_SCHEMA_PATH)) {
           schema = JSON.parse(
-            await fs.readFile(this.LOCAL_SCHEMA_PATH, "utf8"),
+            await fs.promises.readFile(this.LOCAL_SCHEMA_PATH, "utf8"),
           );
         }
       } catch (e) {
@@ -347,24 +359,24 @@ export class SfdxHardisConfigHelper {
     let globalConfig: SfdxHardisConfig;
     let branchConfig: SfdxHardisConfig = {};
     let config: SfdxHardisConfig;
-    if (await fs.pathExists(globalPath)) {
+    if (await pathExists(globalPath)) {
       baseGlobalConfig =
         (yaml.load(
-          await fs.readFile(globalPath, "utf8"),
+          await fs.promises.readFile(globalPath, "utf8"),
         ) as SfdxHardisConfig) || {};
     }
     // Root .sfdx-hardis.yml has priority over config/.sfdx-hardis.yml (except config/user)
-    if (await fs.pathExists(rootConfigPath)) {
+    if (await pathExists(rootConfigPath)) {
       rootConfig =
         (yaml.load(
-          await fs.readFile(rootConfigPath, "utf8"),
+          await fs.promises.readFile(rootConfigPath, "utf8"),
         ) as SfdxHardisConfig) || {};
     }
     globalConfig = { ...baseGlobalConfig, ...rootConfig };
-    if (branchPath && (await fs.pathExists(branchPath))) {
+    if (branchPath && (await pathExists(branchPath))) {
       branchConfig =
         (yaml.load(
-          await fs.readFile(branchPath, "utf8"),
+          await fs.promises.readFile(branchPath, "utf8"),
         ) as SfdxHardisConfig) || {};
     }
     // Only include allowed fields for the current scope
@@ -444,7 +456,7 @@ export class SfdxHardisConfigHelper {
     const rootConfigPath = path.join(this.workspaceRoot, ".sfdx-hardis.yml");
     const globalPath = path.join(this.workspaceRoot, "config/.sfdx-hardis.yml");
     // If root .sfdx-hardis.yml exists it has priority; write global config there
-    const rootConfigExists = await fs.pathExists(rootConfigPath);
+    const rootConfigExists = await pathExists(rootConfigPath);
     const effectiveGlobalPath = rootConfigExists ? rootConfigPath : globalPath;
     if (data.isBranch && data.branchName) {
       const branchPath = path.join(
@@ -452,14 +464,14 @@ export class SfdxHardisConfigHelper {
         `config/branches/.sfdx-hardis.${data.branchName}.yml`,
       );
       // Save only branch-allowed keys (diff from merged global config)
-      let baseGlobalConfig: SfdxHardisConfig = (await fs.pathExists(globalPath))
+      let baseGlobalConfig: SfdxHardisConfig = (await pathExists(globalPath))
         ? (yaml.load(
-            await fs.readFile(globalPath, "utf8"),
+            await fs.promises.readFile(globalPath, "utf8"),
           ) as SfdxHardisConfig) || {}
         : {};
       let rootConfig: SfdxHardisConfig = rootConfigExists
         ? (yaml.load(
-            await fs.readFile(rootConfigPath, "utf8"),
+            await fs.promises.readFile(rootConfigPath, "utf8"),
           ) as SfdxHardisConfig) || {}
         : {};
       const globalConfig: SfdxHardisConfig = {
@@ -478,17 +490,21 @@ export class SfdxHardisConfigHelper {
           branchOnly[key] = configWithProperTypes[key];
         }
       }
-      await fs.ensureDir(path.dirname(branchPath));
+      await fs.promises.mkdir(path.dirname(branchPath), { recursive: true });
       // Merge with existing branch config
-      if (await fs.pathExists(branchPath)) {
+      if (await pathExists(branchPath)) {
         const existingBranchConfig: SfdxHardisConfig =
           (yaml.load(
-            await fs.readFile(branchPath, "utf8"),
+            await fs.promises.readFile(branchPath, "utf8"),
           ) as SfdxHardisConfig) || {};
         Object.assign(existingBranchConfig, branchOnly);
-        await fs.writeFile(branchPath, yaml.dump(existingBranchConfig), "utf8");
+        await fs.promises.writeFile(
+          branchPath,
+          yaml.dump(existingBranchConfig),
+          "utf8",
+        );
       } else {
-        await fs.writeFile(branchPath, yaml.dump(branchOnly), "utf8");
+        await fs.promises.writeFile(branchPath, yaml.dump(branchOnly), "utf8");
       }
     } else {
       // Save only global-allowed keys
@@ -501,22 +517,28 @@ export class SfdxHardisConfigHelper {
           globalOnly[key] = configWithProperTypes[key];
         }
       }
-      await fs.ensureDir(path.dirname(effectiveGlobalPath));
+      await fs.promises.mkdir(path.dirname(effectiveGlobalPath), {
+        recursive: true,
+      });
       // Merge with existing global config (root file if present, otherwise config/)
-      if (await fs.pathExists(effectiveGlobalPath)) {
+      if (await pathExists(effectiveGlobalPath)) {
         const existingGlobalConfig: SfdxHardisConfig =
           (yaml.load(
-            await fs.readFile(effectiveGlobalPath, "utf8"),
+            await fs.promises.readFile(effectiveGlobalPath, "utf8"),
           ) as SfdxHardisConfig) || {};
         Object.assign(existingGlobalConfig, globalOnly);
-        await fs.writeFile(
+        await fs.promises.writeFile(
           effectiveGlobalPath,
           yaml.dump(existingGlobalConfig),
           "utf8",
         );
       } else {
         // If no existing global config, just write the new one
-        await fs.writeFile(effectiveGlobalPath, yaml.dump(globalOnly), "utf8");
+        await fs.promises.writeFile(
+          effectiveGlobalPath,
+          yaml.dump(globalOnly),
+          "utf8",
+        );
       }
     }
   }
@@ -528,8 +550,8 @@ export class SfdxHardisConfigHelper {
   async checkDuplicateConfigFiles(): Promise<void> {
     const rootConfigPath = path.join(this.workspaceRoot, ".sfdx-hardis.yml");
     const globalPath = path.join(this.workspaceRoot, "config/.sfdx-hardis.yml");
-    const rootExists = await fs.pathExists(rootConfigPath);
-    const configExists = await fs.pathExists(globalPath);
+    const rootExists = await pathExists(rootConfigPath);
+    const configExists = await pathExists(globalPath);
     if (!rootExists || !configExists) {
       return;
     }
@@ -547,14 +569,15 @@ export class SfdxHardisConfigHelper {
     // Merge config/.sfdx-hardis.yml into root .sfdx-hardis.yml (root takes priority)
     const rootConfig: SfdxHardisConfig =
       (yaml.load(
-        await fs.readFile(rootConfigPath, "utf8"),
+        await fs.promises.readFile(rootConfigPath, "utf8"),
       ) as SfdxHardisConfig) || {};
     const configFileConfig: SfdxHardisConfig =
-      (yaml.load(await fs.readFile(globalPath, "utf8")) as SfdxHardisConfig) ||
-      {};
+      (yaml.load(
+        await fs.promises.readFile(globalPath, "utf8"),
+      ) as SfdxHardisConfig) || {};
     const merged: SfdxHardisConfig = { ...configFileConfig, ...rootConfig };
-    await fs.writeFile(rootConfigPath, yaml.dump(merged), "utf8");
-    await fs.remove(globalPath);
+    await fs.promises.writeFile(rootConfigPath, yaml.dump(merged), "utf8");
+    await fs.promises.rm(globalPath, { recursive: true, force: true });
     vscode.window.showInformationMessage(t("duplicateConfigFilesMergeSuccess"));
   }
 

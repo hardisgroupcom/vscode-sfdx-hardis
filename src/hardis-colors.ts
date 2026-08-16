@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import * as fs from "fs-extra";
+import * as fs from "fs";
 import {
   execSfdxJson,
   getUsernameInstanceUrl,
@@ -82,13 +82,17 @@ export class HardisColors {
           ),
         );
         watcher.onDidCreate(async (uri) => {
-          const fileContent = await fs.readJSON(uri.fsPath);
+          const fileContent = JSON.parse(
+            await fs.promises.readFile(uri.fsPath, "utf8"),
+          );
           prevValues[uri.fsPath] = JSON.stringify(fileContent);
           await this.manageColor(uri.fsPath);
           HardisStatusProvider.refreshOrgRelatedUis();
         });
         watcher.onDidChange(async (uri) => {
-          const fileContent = await fs.readJSON(uri.fsPath);
+          const fileContent = JSON.parse(
+            await fs.promises.readFile(uri.fsPath, "utf8"),
+          );
           if (prevValues[uri.fsPath] !== JSON.stringify(fileContent)) {
             prevValues[uri.fsPath] = JSON.stringify(fileContent);
             await this.manageColor(uri.fsPath);
@@ -150,7 +154,7 @@ export class HardisColors {
 
   // Read file and check if it has to be colored
   async manageColor(file: string) {
-    const fileContent = await fs.readJSON(file);
+    const fileContent = JSON.parse(await fs.promises.readFile(file, "utf8"));
     const fileDefaultOrg =
       fileContent["target-org"] || fileContent["defaultusername"];
     if (fileDefaultOrg !== this.currentDefaultOrg) {

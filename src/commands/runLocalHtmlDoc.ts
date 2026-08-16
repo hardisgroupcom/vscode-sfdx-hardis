@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { Commands } from "../commands";
 import { getPythonCommand } from "../utils";
-import axios from "axios";
+import { ping } from "../utils/httpUtils";
 
 export async function registerRunLocalHtmlDocPages(commands: Commands) {
   const disposable = vscode.commands.registerCommand(
@@ -41,8 +41,7 @@ export async function registerRunLocalHtmlDocPages(commands: Commands) {
           return new Promise<void>((resolve, reject) => {
             let isResolved = false;
             const interval = setInterval(() => {
-              axios
-                .get("http://localhost:8000", { timeout: 2000 })
+              ping("http://localhost:8000", { timeoutMs: 2000 })
                 .then(() => {
                   if (!isResolved) {
                     isResolved = true;

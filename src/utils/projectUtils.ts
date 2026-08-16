@@ -1,9 +1,23 @@
 import * as vscode from "vscode";
 import * as path from "path";
-import fg from "fast-glob";
 import { getWorkspaceRoot, listSfdxProjectPackageDirectories } from "../utils";
 import { listMetadataTypes } from "./metadataList";
 import { t } from "../i18n/i18n";
+
+// VS Code's glob matcher (used by vscode.workspace.findFiles / RelativePattern) does not
+// normalize a leading "./" the way fast-glob used to, so a pattern like "./force-app/**/*.cls"
+// never matches. Normalize package directory segments before building glob patterns from them.
+export function normalizeGlobBase(p: string): string {
+  let normalized = (p || "").replace(/\\/g, "/").trim();
+  if (normalized === "." || normalized === "./") {
+    return "";
+  }
+  if (normalized.startsWith("./")) {
+    normalized = normalized.slice(2);
+  }
+  normalized = normalized.replace(/\/+$/, "");
+  return normalized;
+}
 
 export async function openMetadataFile(
   metadataType: string,
@@ -119,15 +133,19 @@ export async function getMetadataFilePath(
     for (const pkg of pkgDirs) {
       try {
         const dirName = mt.directoryName || "";
-        const baseGlob = path
-          .join(workspaceRoot, pkg, "**", dirName || "", "**", "*")
-          .replace(/\\/g, "/");
+        const relativeGlob = dirName ? `**/${dirName}/**/*` : "**/*";
+        const base = path.join(workspaceRoot, pkg);
 
-        const files: string[] = await fg(baseGlob, {
-          dot: true,
-          onlyFiles: true,
-          followSymbolicLinks: true,
-        }).catch(() => []);
+        let files: string[] = [];
+        try {
+          const uris = await vscode.workspace.findFiles(
+            new vscode.RelativePattern(base, relativeGlob),
+            null,
+          );
+          files = uris.map((uri) => uri.fsPath.replace(/\\/g, "/"));
+        } catch {
+          files = [];
+        }
 
         if (!files || files.length === 0) {
           continue;

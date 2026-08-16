@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import * as path from "path";
-import * as fs from "fs-extra";
+import * as fs from "fs";
 import { t } from "../i18n/i18n";
 
 export const sectionDefs = [
@@ -97,7 +97,9 @@ export async function getExtensionConfigSections(
   const packageJsonPath = path.join(extensionUri.fsPath, "package.json");
   let configProps: Record<string, any> = {};
   try {
-    const pkg = await fs.readJson(packageJsonPath);
+    const pkg = JSON.parse(
+      await fs.promises.readFile(packageJsonPath, "utf8"),
+    );
     configProps = pkg.contributes?.configuration?.properties || {};
   } catch {
     // fallback: no config
