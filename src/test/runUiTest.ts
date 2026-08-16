@@ -25,9 +25,13 @@ async function main() {
     "fixtures",
     "dummy-sfdx-project",
   );
-  const workDir = fs.mkdtempSync(
-    path.join(os.tmpdir(), "vscode-sfdx-hardis-uitest-"),
-  );
+  // VS Code creates a unix domain socket (IPC handle) inside --user-data-dir.
+  // Unix sockets are limited to ~103 chars: on macOS os.tmpdir() is the long
+  // /var/folders/<xx>/<hash>/T/ path, which makes the main process fail with
+  // "listen EINVAL". /tmp (a symlink to /private/tmp) is short and writable.
+  // Windows and Linux keep os.tmpdir().
+  const tmpBase = process.platform === "darwin" ? "/tmp" : os.tmpdir();
+  const workDir = fs.mkdtempSync(path.join(tmpBase, "sfh-uitest-"));
   const workspaceDir = path.join(workDir, "dummy-sfdx-project");
   fs.cpSync(fixtureSource, workspaceDir, { recursive: true });
 
