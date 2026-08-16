@@ -327,23 +327,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     // Options arrays depend on translations - init them after auto-translation load.
     this._initOptions();
     if (this.isEditMode && this.action) {
-      this.targetBranchesModeOverride = null;
-      this.editedAction = JSON.parse(JSON.stringify(this.action));
-      this._originalAction = JSON.parse(JSON.stringify(this.action));
-      // Ensure parameters object exists
-      if (!this.editedAction.parameters) {
-        this.editedAction.parameters = {};
-      }
-      // Set default type to "command" if not set
-      if (!this.editedAction.type) {
-        this.editedAction.type = "command";
-      }
-      // Match the sfdx-hardis CLI default so the toggle always shows what will
-      // actually happen instead of appearing off for an action that has no
-      // explicit value yet (ex: a newly created action)
-      this.editedAction.runOnlyOnceByOrg =
-        this.editedAction.runOnlyOnceByOrg ?? true;
-      this._normalizeEditedPackageXmlItems();
+      this._startEditingAction();
     } else if (this.action) {
       // Ensure action has parameters object for view mode
       if (!this.action.parameters) {
@@ -653,6 +637,15 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   }
 
   handleEdit() {
+    this._startEditingAction();
+    // Dispatch event to parent
+    this.dispatchEvent(new CustomEvent("edit"));
+  }
+
+  // Seeds the edit buffer from the displayed action, applying the same defaults
+  // the sfdx-hardis CLI applies so the form never shows an empty or off value
+  // for an action that simply has no explicit value yet (ex: a new action)
+  _startEditingAction() {
     this.targetBranchesModeOverride = null;
     this.editedAction = JSON.parse(JSON.stringify(this.action));
     this._originalAction = JSON.parse(JSON.stringify(this.action));
@@ -660,13 +653,13 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     if (!this.editedAction.parameters) {
       this.editedAction.parameters = {};
     }
-    // Match the sfdx-hardis CLI default so the toggle always shows what will
-    // actually happen instead of appearing off for an action that has no
-    // explicit value yet
-    this.editedAction.runOnlyOnceByOrg = this.editedAction.runOnlyOnceByOrg ?? true;
+    // Set default type to "command" if not set
+    if (!this.editedAction.type) {
+      this.editedAction.type = "command";
+    }
+    this.editedAction.runOnlyOnceByOrg =
+      this.editedAction.runOnlyOnceByOrg ?? true;
     this._normalizeEditedPackageXmlItems();
-    // Dispatch event to parent
-    this.dispatchEvent(new CustomEvent("edit"));
   }
 
   // Represent packageXmlItems as one-entry-per-line text while editing so the
