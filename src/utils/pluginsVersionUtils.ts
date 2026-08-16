@@ -2,21 +2,11 @@
 // how an installed sfdx plugin must be considered: locally developed, preview
 // (alpha/beta), or a standard install that may require an upgrade.
 
-// Matches ANSI color codes: the Salesforce CLI colorizes its output in some
+// Re-exported for convenience: the Salesforce CLI colorizes its output in some
 // environments even when it is not attached to a terminal, ex:
 //   sfdx-hardis \u001b[2m7.23.0\u001b[22m \u001b[2m(link) C:\git\sfdx-hardis\u001b[22m
-const ANSI_REGEX = new RegExp(
-  [
-    "[\\u001B\\u009B][[\\]()#;?]*",
-    "(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?",
-    "[0-9A-ORZcf-nqry=><]",
-  ].join(""),
-  "g",
-);
-
-export function stripAnsiCodes(str: string): string {
-  return (str || "").replace(ANSI_REGEX, "");
-}
+import { stripAnsiCodes } from "./ansiColors";
+export { stripAnsiCodes };
 
 /**
  * - `localdev`: installed with `sf plugins link` (developed locally)
