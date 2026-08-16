@@ -834,7 +834,9 @@ div.slds-scope[data-theme="dark"] {
 /* ------------------------------------------------------------------ */
 /* Solid badge + page-background ring so it stands out on any node color:
    light = deep blue pill, white numeral, white ring; dark = bright blue
-   pill, black numeral, black ring. */
+   pill, black numeral, black ring. The same values are also set as SVG
+   presentation attributes by _drawNodeCountBubble as a load-order fallback;
+   these token rules win when loaded and keep the badge theme-reactive. */
 .slds-scope[data-theme] .hardis-count-bubble rect {
   fill: var(--slds-g-color-palette-blue-40);
   stroke: var(--slds-g-color-neutral-base-100);
@@ -842,7 +844,7 @@ div.slds-scope[data-theme="dark"] {
 }
 .slds-scope[data-theme] .hardis-count-bubble text {
   fill: var(--slds-g-color-neutral-base-100);
-  font-size: 11px;
+  font-size: 14px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }

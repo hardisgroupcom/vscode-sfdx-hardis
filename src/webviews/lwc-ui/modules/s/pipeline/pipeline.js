@@ -2407,8 +2407,15 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       return;
     }
     const SVG_NS = "http://www.w3.org/2000/svg";
-    const height = 18;
-    const width = Math.max(height, 10 + 7 * String(count).length);
+    const height = 22;
+    const width = Math.max(height, 13 + 9 * String(count).length);
+    // Baseline colors set as presentation attributes so the badge is always
+    // legible even if the shared stylesheet is not loaded yet; the
+    // .hardis-count-bubble rules in global-theme.css use the same values via
+    // SLDS tokens and take precedence when present.
+    const isDark = this.colorTheme === "dark";
+    const pillFill = isDark ? "#1b96ff" : "#0b5cab";
+    const ringAndText = isDark ? "#000000" : "#ffffff";
     // Bubble centered on the node's top-right corner (coordinates are local
     // to the node group, which mermaid translates to the node center).
     const cornerX = box.x + box.width;
@@ -2421,11 +2428,17 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     pill.setAttribute("width", String(width));
     pill.setAttribute("height", String(height));
     pill.setAttribute("rx", String(height / 2));
+    pill.setAttribute("fill", pillFill);
+    pill.setAttribute("stroke", ringAndText);
+    pill.setAttribute("stroke-width", "2");
     const text = document.createElementNS(SVG_NS, "text");
     text.setAttribute("x", String(cornerX));
-    text.setAttribute("y", String(cornerY + 0.5));
+    text.setAttribute("y", String(cornerY + 1));
     text.setAttribute("text-anchor", "middle");
     text.setAttribute("dominant-baseline", "central");
+    text.setAttribute("fill", ringAndText);
+    text.setAttribute("font-size", "14");
+    text.setAttribute("font-weight", "700");
     text.textContent = count;
     bubble.appendChild(pill);
     bubble.appendChild(text);
