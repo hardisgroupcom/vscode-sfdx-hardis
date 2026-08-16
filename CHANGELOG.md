@@ -20,7 +20,7 @@
   - Command tabs of completed commands are now cleaned up in all languages (previously only when VS Code was in English)
 
 - Testing
-  - New automated UI tests launch a real VS Code with a sample SFDX project and a simulated Salesforce CLI, and verify startup and command-launch responsiveness on Windows and Linux at every change
+  - New automated UI tests launch a real VS Code with a sample SFDX project and a simulated Salesforce CLI, and verify startup and command-launch responsiveness on Windows, macOS and Linux at every change
 
 - DevOps Pipeline
   - **Update the Deployment Actions of your Pull Request** button at the end of **Save / Publish Task**, opening the DevOps Pipeline straight on the Deployment Actions of your pull request, instead of leaving you to find them yourself

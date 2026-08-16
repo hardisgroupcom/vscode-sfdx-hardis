@@ -60,7 +60,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
       - name: Checkout Code
@@ -95,13 +95,45 @@ jobs:
         if: runner.os == 'Linux'
         run: xvfb-run -a yarn test:ui
 
-      - name: Run UI Tests (Windows)
-        if: runner.os == 'Windows'
+      - name: Run UI Tests (Windows / macOS)
+        if: runner.os != 'Linux'
         run: yarn test:ui
 
   test-windows:
     name: Test Extension (Windows)
     runs-on: windows-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: "yarn"
+
+      - name: Install Dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Lint Code
+        run: yarn lint
+
+      - name: Compile TypeScript
+        run: yarn compile
+
+      - name: Run Tests
+        run: yarn test
+        env:
+          NODE_ENV: test
+
+  test-macos:
+    name: Test Extension (macOS)
+    runs-on: macos-latest
     permissions:
       contents: read
 
