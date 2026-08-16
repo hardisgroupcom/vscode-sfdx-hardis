@@ -2409,36 +2409,42 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     const SVG_NS = "http://www.w3.org/2000/svg";
     const height = 22;
     const width = Math.max(height, 13 + 9 * String(count).length);
-    // Baseline colors set as presentation attributes so the badge is always
-    // legible even if the shared stylesheet is not loaded yet; the
-    // .hardis-count-bubble rules in global-theme.css use the same values via
-    // SLDS tokens and take precedence when present.
+    // The badge is styled ENTIRELY inline (style attribute): inline styles
+    // beat every stylesheet, so a stale cached global-theme.css can never
+    // repaint it with outdated colors, and the numeral gets an explicit UI
+    // font instead of inheriting mermaid's default (trebuchet ms).
     const isDark = this.colorTheme === "dark";
     const pillFill = isDark ? "#1b96ff" : "#0b5cab";
     const ringAndText = isDark ? "#000000" : "#ffffff";
+    const fontFamily =
+      "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif";
     // Bubble centered on the node's top-right corner (coordinates are local
     // to the node group, which mermaid translates to the node center).
-    const cornerX = box.x + box.width;
-    const cornerY = box.y;
+    // Integer coordinates keep the ring and numeral crisp (no half-pixel
+    // anti-aliasing blur).
+    const cornerX = Math.round(box.x + box.width);
+    const cornerY = Math.round(box.y);
     const bubble = document.createElementNS(SVG_NS, "g");
     bubble.setAttribute("class", "hardis-count-bubble");
     const pill = document.createElementNS(SVG_NS, "rect");
-    pill.setAttribute("x", String(cornerX - width / 2));
+    pill.setAttribute("x", String(cornerX - Math.round(width / 2)));
     pill.setAttribute("y", String(cornerY - height / 2));
     pill.setAttribute("width", String(width));
     pill.setAttribute("height", String(height));
     pill.setAttribute("rx", String(height / 2));
-    pill.setAttribute("fill", pillFill);
-    pill.setAttribute("stroke", ringAndText);
-    pill.setAttribute("stroke-width", "2");
+    pill.setAttribute(
+      "style",
+      `fill:${pillFill};stroke:${ringAndText};stroke-width:2px;`,
+    );
     const text = document.createElementNS(SVG_NS, "text");
     text.setAttribute("x", String(cornerX));
     text.setAttribute("y", String(cornerY + 1));
     text.setAttribute("text-anchor", "middle");
     text.setAttribute("dominant-baseline", "central");
-    text.setAttribute("fill", ringAndText);
-    text.setAttribute("font-size", "14");
-    text.setAttribute("font-weight", "700");
+    text.setAttribute(
+      "style",
+      `fill:${ringAndText};font-family:${fontFamily};font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:0;`,
+    );
     text.textContent = count;
     bubble.appendChild(pill);
     bubble.appendChild(text);

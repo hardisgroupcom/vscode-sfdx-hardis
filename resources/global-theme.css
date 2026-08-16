@@ -827,27 +827,9 @@ div.slds-scope[data-theme="dark"] {
   }
 }
 
-/* ------------------------------------------------------------------ */
-/* Node count bubbles (pipeline mermaid diagram)                      */
-/* Notification-style counter drawn as SVG on a branch node's         */
-/* top-right corner by _drawNodeCountBubble (pipeline.js).            */
-/* ------------------------------------------------------------------ */
-/* Solid badge + page-background ring so it stands out on any node color:
-   light = deep blue pill, white numeral, white ring; dark = bright blue
-   pill, black numeral, black ring. The same values are also set as SVG
-   presentation attributes by _drawNodeCountBubble as a load-order fallback;
-   these token rules win when loaded and keep the badge theme-reactive. */
-.slds-scope[data-theme] .hardis-count-bubble rect {
-  fill: var(--slds-g-color-palette-blue-40);
-  stroke: var(--slds-g-color-neutral-base-100);
-  stroke-width: 2px;
-}
-.slds-scope[data-theme] .hardis-count-bubble text {
-  fill: var(--slds-g-color-neutral-base-100);
-  font-size: 14px;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
+/* Node count bubbles (pipeline mermaid diagram) are styled ENTIRELY inline
+   by _drawNodeCountBubble (pipeline.js) — deliberately no CSS rules here, so
+   a stale cached copy of this stylesheet can never repaint them. */
 
 /* ------------------------------------------------------------------ */
 /* Initials avatars (s-hardis-datatable avatarText cell type)         */

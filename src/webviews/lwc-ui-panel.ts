@@ -921,24 +921,33 @@ export class LwcUiPanel {
     );
 
     // Global theme stylesheet (built/copied to out/assets/styles/global-theme.css by the build)
-    const globalThemeVarsCssUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(
-        this.extensionUri,
-        "out",
-        "assets",
-        "styles",
-        "global-theme-variables.css",
-      ),
-    );
-    const globalThemeCssUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(
-        this.extensionUri,
-        "out",
-        "assets",
-        "styles",
-        "global-theme.css",
-      ),
-    );
+    // Cache-busting query: the webview service worker can keep serving a stale
+    // copy of these stylesheets across extension updates (and across rebuilds
+    // in the Extension Development Host), leaving panels styled with outdated
+    // rules. A per-panel-creation version forces a fresh fetch.
+    const stylesVersion = Date.now();
+    const globalThemeVarsCssUri = webview
+      .asWebviewUri(
+        vscode.Uri.joinPath(
+          this.extensionUri,
+          "out",
+          "assets",
+          "styles",
+          "global-theme-variables.css",
+        ),
+      )
+      .with({ query: `v=${stylesVersion}` });
+    const globalThemeCssUri = webview
+      .asWebviewUri(
+        vscode.Uri.joinPath(
+          this.extensionUri,
+          "out",
+          "assets",
+          "styles",
+          "global-theme.css",
+        ),
+      )
+      .with({ query: `v=${stylesVersion}` });
 
     // Determine theme based on configuration
     const config = vscode.workspace.getConfiguration("vsCodeSfdxHardis.theme");
