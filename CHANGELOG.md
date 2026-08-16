@@ -31,6 +31,9 @@
     - If the CLI crashes before connecting, the tab reports the failure with its error output instead of staying stuck
     - The "Initializing command" notification is no longer shown when the execution tab is already open, since it was redundant with it
     - Fixed a wrong "duplicate command" error when running a command again right after closing its execution tab
+  - New warning at startup when the Salesforce Extensions setting **Source Tracking: Enable Conflict Detection** is enabled: it constantly checks conflicts in the background and slows down the whole VS Code
+    - Click **Disable it** to turn it off right away, **Not now** to be asked again at the next startup, or **Never ask again** to never see the warning again
+    - The check runs after the startup, so it never delays it
   - Commands run in a terminal now start immediately: the terminal was previously created with a fixed 4-second wait before the command was typed
     - On Windows, commands now run in a Git Bash terminal automatically when Git Bash is installed, without requiring to change the default VS Code terminal
   - Commands clicked right after VS Code startup are no longer rejected with "not initialized yet": the communication server now starts immediately (previously after a fixed 5-second delay) and commands wait for it to be ready
@@ -78,6 +81,15 @@
 - Commands
   - Added a **Search** button in the Commands tree view header that opens a QuickPick listing commands from every category
     - The picker supports fuzzy filtering on each command's label, category, and tooltip
+
+- Dependencies
+  - Fixed the pre-release version of the extension asking to install the alpha version of the sfdx-hardis plugin even when an alpha, a beta, or a locally developed (linked) plugin was already installed
+    - A pre-release extension now accepts an alpha, a beta or a locally developed plugin, and a released extension accepts a published version or a locally developed plugin (it now asks to install the latest version when an alpha or a beta is installed)
+    - Applied both to the startup notification and to the **Setup** panel, which also displayed such a plugin as outdated because its version differs from the one published on npm
+    - A locally developed plugin is never proposed for upgrade anymore: reinstalling it from npm would break the local development setup (which is what happened when clicking the upgrade button)
+    - When a pre-release extension really needs a newer plugin, the message now asks for the **alpha or beta** version, instead of the alpha one only
+    - The **Setup** panel now indicates when a plugin is a locally developed or a preview (alpha/beta) version
+    - Installed plugins are now identified with `sf plugins --json`, which tells exactly how each plugin was installed, instead of reading the displayed text (that could be colorized, hiding the version and the alpha/beta/link markers)
 
 ## [7.18.0] 2026-07-26
 
