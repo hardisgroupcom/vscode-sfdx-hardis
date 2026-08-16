@@ -70,40 +70,45 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       initialWidth: 420,
       wrapText: true,
     },
-    // Jobs status column (emoji indicator) - clickable, uses PR webUrl but shows emoji as label
+    // Jobs status column: colored pill (dot + localized label), clickable to
+    // the CI job (or the PR page as fallback)
     {
       key: "status",
       label: "",
-      fieldName: "webUrl",
-      type: "url",
-      initialWidth: 32,
+      fieldName: "jobsStatusLabel",
+      type: "statusPill",
+      initialWidth: 110,
       wrapText: false,
       typeAttributes: {
-        label: { fieldName: "jobsStatusEmoji" },
-        target: "_blank",
+        label: { fieldName: "jobsStatusLabel" },
+        pillClass: { fieldName: "statusPillClass" },
+        url: { fieldName: "jobsStatusUrl" },
       },
-      cellAttributes: { class: "hardis-emoji-cell" },
     },
     {
       key: "author",
       label: "Author",
       fieldName: "authorLabel",
-      type: "text",
-      wrapText: true,
+      type: "avatarText",
+      wrapText: false,
+      typeAttributes: {
+        initials: { fieldName: "authorInitials" },
+        avatarClass: { fieldName: "authorAvatarClass" },
+      },
     },
     {
       key: "source",
       label: "Source",
       fieldName: "sourceBranch",
-      type: "text",
-      wrapText: true,
+      type: "branchChip",
+      wrapText: false,
     },
     {
       key: "target",
       label: "Target",
       fieldName: "targetBranch",
-      type: "text",
-      wrapText: true,
+      type: "branchChip",
+      wrapText: false,
     },
   ];
 
@@ -115,15 +120,15 @@ export default class Pipeline extends SharedMixin(LightningElement) {
           {
             key: "status",
             label: this.i18n.statusLabel,
-            fieldName: "jobsStatusUrl",
-            type: "url",
+            fieldName: "jobsStatusLabel",
+            type: "statusPill",
             typeAttributes: {
-              label: { fieldName: "jobsStatusDisplay" },
-              target: "_blank",
+              label: { fieldName: "jobsStatusLabel" },
+              pillClass: { fieldName: "statusPillClass" },
+              url: { fieldName: "jobsStatusUrl" },
             },
-            wrapText: true,
+            wrapText: false,
             initialWidth: 120,
-            cellAttributes: { class: "hardis-status-cell" },
           },
         ]
       : [];
@@ -133,7 +138,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         label: "#",
         fieldName: "number",
         type: "text",
-        initialWidth: 40,
+        initialWidth: 60,
         wrapText: true,
       },
       {
@@ -150,31 +155,36 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         key: "author",
         label: this.i18n.authorLabel,
         fieldName: "authorLabel",
-        type: "text",
-        wrapText: true,
+        type: "avatarText",
+        wrapText: false,
+        typeAttributes: {
+          initials: { fieldName: "authorInitials" },
+          avatarClass: { fieldName: "authorAvatarClass" },
+        },
       },
       {
         key: "mergeDate",
         label: this.i18n.mergedLabel,
         fieldName: "mergeDateFormatted",
         type: "text",
-        wrapText: true,
-        initialWidth: 100,
+        wrapText: false,
+        initialWidth: 130,
+        cellAttributes: { class: "hardis-date-cell" },
       },
       {
         key: "source",
         label: this.i18n.sourceLabel,
         fieldName: "sourceBranch",
-        type: "text",
-        wrapText: true,
+        type: "branchChip",
+        wrapText: false,
         initialWidth: 200,
       },
       {
         key: "target",
         label: this.i18n.targetLabel,
         fieldName: "targetBranch",
-        type: "text",
-        wrapText: true,
+        type: "branchChip",
+        wrapText: false,
       },
     ];
   }
@@ -875,17 +885,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       )
         ? key
         : "unknown";
-      // Add a SLDS-friendly emoji indicator column (quick, robust fallback)
-      const emojiMap = {
-        running: "⚙️",
-        pending: "⏳",
-        success: "✅",
-        failed: "❌",
-        unknown: "❔",
-      };
-      // Show emoji only (accessibility: we may add a visually-hidden label later if needed)
-      copy.jobsStatusEmoji = emojiMap[normalized] || emojiMap.unknown;
-      // Localized status label + combined display for the modal "Status" column
+      // Localized status label + pill CSS classes for the statusPill cell type
       const labelMap = {
         running: this.t("jobStatusRunning"),
         pending: this.t("jobStatusPending"),
@@ -894,7 +894,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         unknown: this.t("jobStatusUnknown"),
       };
       copy.jobsStatusLabel = labelMap[normalized] || labelMap.unknown;
-      copy.jobsStatusDisplay = `${copy.jobsStatusEmoji} ${copy.jobsStatusLabel}`;
+      copy.statusPillClass = `hardis-pill hardis-status-${normalized}`;
       // URL for the clickable job status: prefer the CI job URL, fall back to
       // the pull request page (mirrors the diagram link behavior).
       copy.jobsStatusUrl =
@@ -902,20 +902,58 @@ export default class Pipeline extends SharedMixin(LightningElement) {
           ? pr.jobs[0].webUrl
           : pr.webUrl || "";
 
-      // Format merge date for display
-      if (pr.mergeDate) {
-        try {
-          const date = new Date(pr.mergeDate);
-          copy.mergeDateFormatted = date.toLocaleString();
-        } catch (e) {
-          copy.mergeDateFormatted = pr.mergeDate;
-        }
-      } else {
-        copy.mergeDateFormatted = "";
-      }
+      // Initials avatar for the author column (avatarText cell type). The
+      // color variant is stable per author (hash of the name).
+      copy.authorInitials = this._getInitials(copy.authorLabel);
+      copy.authorAvatarClass = `hardis-avatar hardis-avatar-c${this._hashString(copy.authorLabel || "") % 6}`;
+
+      // Compact merge date: "Aug 15, 18:30" (adds the year when not current)
+      // so the column stays on a single line.
+      copy.mergeDateFormatted = this._formatCompactDate(pr.mergeDate);
 
       return copy;
     });
+  }
+
+  _getInitials(name) {
+    if (!name) {
+      return "?";
+    }
+    const words = name.trim().split(/\s+/).filter(Boolean);
+    if (words.length === 0) {
+      return "?";
+    }
+    if (words.length === 1) {
+      return words[0].slice(0, 2).toUpperCase();
+    }
+    return (words[0].charAt(0) + words[words.length - 1].charAt(0)).toUpperCase();
+  }
+
+  _hashString(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = (hash * 31 + str.charCodeAt(i)) | 0;
+    }
+    return Math.abs(hash);
+  }
+
+  _formatCompactDate(value) {
+    if (!value) {
+      return "";
+    }
+    try {
+      const date = new Date(value);
+      if (isNaN(date.getTime())) {
+        return value;
+      }
+      const sameYear = date.getFullYear() === new Date().getFullYear();
+      const options = sameYear
+        ? { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }
+        : { year: "numeric", month: "short", day: "numeric" };
+      return new Intl.DateTimeFormat(undefined, options).format(date);
+    } catch (e) {
+      return value;
+    }
   }
 
   connectedCallback() {
@@ -1191,7 +1229,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
   adjustPrColumns() {
     try {
-      const dt = this.template.querySelector("lightning-datatable");
+      const dt = this.template.querySelector("s-hardis-datatable");
       // fallback container
       const container =
         this.template.querySelector(".pipeline-card-spacing") ||
@@ -1214,8 +1252,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
 
       // Minimum widths
       const minNumber = 80;
-      const minStatus = 36;
-      const minAuthor = 140;
+      const minStatus = 110;
+      const minAuthor = 150;
       const minSource = 220;
       const minTarget = 140;
 
@@ -1225,7 +1263,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       // We'll compute float widths first, then convert to integers and distribute rounding
       const absMin = {
         number: 40,
-        status: 24,
+        status: 90,
         author: 80,
         source: 80,
         target: 60,
@@ -1341,8 +1379,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         const k = copy.key || copy.fieldName;
         if (k === "number") copy.initialWidth = numberW;
         else if (k === "title") copy.initialWidth = titleW;
-        else if (k === "status" || k === "jobsStatusEmoji")
-          copy.initialWidth = statusW;
+        else if (k === "status") copy.initialWidth = statusW;
         else if (k === "author") copy.initialWidth = authorW;
         else if (k === "source") copy.initialWidth = sourceW;
         else if (k === "target") copy.initialWidth = targetW;
@@ -1605,12 +1642,15 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       const label = edgeLabels[i];
       const path = edgePaths[i];
 
-      // Get the text content from the label (may be nested in foreignObject/div/span/p/a)
+      // Status is carried by the chip CSS classes emitted by the mermaid
+      // builder (hardis-status-*); keep the legacy emoji check as fallback.
       const labelText = label.textContent || "";
-
-      // Check for running (⚙️) or pending (⏳) emoji
-      const hasRunning = labelText.includes("⚙️");
-      const hasPending = labelText.includes("⏳");
+      const hasRunning =
+        !!label.querySelector(".hardis-status-running") ||
+        labelText.includes("⚙️");
+      const hasPending =
+        !!label.querySelector(".hardis-status-pending") ||
+        labelText.includes("⏳");
 
       if (hasRunning || hasPending) {
         // Apply the same animation class based on job status (running vs pending)
@@ -2418,7 +2458,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     // Single PR details are enriched with tickets / deployment actions, so keep
     // those tabs visible.
     this.isFeaturePrModal = false;
-    // Map through icons so the job status column (jobsStatusDisplay) is populated.
+    // Map through icons so the job status column (statusPill) is populated.
     this.modalPullRequests = this._mapPrsWithIcons([pr]);
 
     // Aggregate tickets from this single PR
@@ -2727,6 +2767,28 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       branch: this.modalBranchName,
       count,
     });
+  }
+
+  // Branch-mode modal header parts: "<PR label>s in" + branch chip + count
+  // badge (the single string form stays available through modalTitle).
+  get modalTitlePrefix() {
+    const prLabel =
+      this.prButtonInfo?.pullRequestLabel || this.i18n.pullRequestLabel;
+    return this.t("prModalTitlePrefix", { prLabel });
+  }
+
+  get modalPrCount() {
+    return this.modalPullRequests.length;
+  }
+
+  // Branch-mode modals use the chip + badge title layout; single-PR modals
+  // whose PR is not yet created (number === -1) fall back to the plain title.
+  get showBranchModalTitle() {
+    return this.modalMode !== "singlePR";
+  }
+
+  get showPlainModalTitle() {
+    return this.modalMode === "singlePR" && !this.isSinglePRMode;
   }
 
   get modalPrsTabLabel() {

@@ -709,3 +709,218 @@ div.slds-scope[data-theme="dark"] {
   border-color: var(--slds-g-color-neutral-base-30);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14);
 }
+
+/* ------------------------------------------------------------------ */
+/* Datatable polish (all webviews)                                    */
+/* Zebra striping + header treatment for lightning-datatable and the  */
+/* s-hardis-datatable extension. Semi-transparent blue tints so the   */
+/* stripes read correctly on both light and dark table backgrounds.   */
+/* ------------------------------------------------------------------ */
+.slds-scope[data-theme] lightning-datatable tbody tr:nth-child(even) > td,
+.slds-scope[data-theme] lightning-datatable tbody tr:nth-child(even) > th,
+.slds-scope[data-theme] s-hardis-datatable tbody tr:nth-child(even) > td,
+.slds-scope[data-theme] s-hardis-datatable tbody tr:nth-child(even) > th {
+  background-color: rgba(27, 150, 255, 0.05);
+}
+.slds-scope[data-theme] lightning-datatable .slds-table:not(.slds-no-row-hover) tbody tr:hover > td,
+.slds-scope[data-theme] lightning-datatable .slds-table:not(.slds-no-row-hover) tbody tr:hover > th,
+.slds-scope[data-theme] s-hardis-datatable .slds-table:not(.slds-no-row-hover) tbody tr:hover > td,
+.slds-scope[data-theme] s-hardis-datatable .slds-table:not(.slds-no-row-hover) tbody tr:hover > th {
+  background-color: rgba(27, 150, 255, 0.12);
+}
+/* Column headers: quiet uppercase labels, SLDS-report style */
+.slds-scope[data-theme] lightning-datatable thead th .slds-truncate,
+.slds-scope[data-theme] s-hardis-datatable thead th .slds-truncate {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--slds-g-color-neutral-base-30);
+}
+
+/* ------------------------------------------------------------------ */
+/* Status pills (s-hardis-datatable statusPill cell type + legends)   */
+/* Colored pill = tinted background + status dot + localized label.   */
+/* Semantic mapping: green = success, blue = running (animated dot),  */
+/* orange = pending, red = failed, neutral = unknown.                 */
+/* ------------------------------------------------------------------ */
+.slds-scope[data-theme] .hardis-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.5;
+  border-radius: 999px;
+  padding: 2px 10px;
+  text-decoration: none;
+  white-space: nowrap;
+  max-width: 100%;
+}
+.slds-scope[data-theme] a.hardis-pill:hover,
+.slds-scope[data-theme] a.hardis-pill:focus {
+  text-decoration: none;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+}
+.slds-scope[data-theme] .hardis-pill-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+.slds-scope[data-theme] .hardis-pill.hardis-status-success {
+  background: var(--slds-g-color-palette-green-90);
+  color: var(--slds-g-color-palette-green-30);
+}
+.slds-scope[data-theme] .hardis-pill.hardis-status-running {
+  background: var(--slds-g-color-palette-blue-90);
+  color: var(--slds-g-color-palette-blue-40);
+}
+.slds-scope[data-theme] .hardis-pill.hardis-status-pending {
+  background: var(--slds-g-color-palette-orange-90);
+  color: var(--slds-g-color-palette-orange-40);
+}
+.slds-scope[data-theme] .hardis-pill.hardis-status-failed {
+  background: var(--slds-g-color-palette-red-90);
+  color: var(--slds-g-color-palette-red-40);
+}
+.slds-scope[data-theme] .hardis-pill.hardis-status-unknown {
+  background: var(--slds-g-color-neutral-base-95);
+  color: var(--slds-g-color-neutral-base-30);
+}
+/* Standalone dots (diagram legend, mermaid feature nodes) */
+.slds-scope[data-theme] .hardis-pill-dot.hardis-status-success {
+  background: var(--slds-g-color-palette-green-50);
+}
+.slds-scope[data-theme] .hardis-pill-dot.hardis-status-running {
+  background: var(--slds-g-color-palette-blue-50);
+}
+.slds-scope[data-theme] .hardis-pill-dot.hardis-status-pending {
+  background: var(--slds-g-color-palette-orange-50);
+}
+.slds-scope[data-theme] .hardis-pill-dot.hardis-status-failed {
+  background: var(--slds-g-color-palette-red-50);
+}
+.slds-scope[data-theme] .hardis-pill-dot.hardis-status-unknown {
+  background: var(--slds-g-color-neutral-base-60);
+}
+/* Running status pulses gently (dot only, not the whole pill) */
+.slds-scope[data-theme] .hardis-pill.hardis-status-running .hardis-pill-dot,
+.slds-scope[data-theme] .hardis-pill-dot.hardis-status-running {
+  animation: hardis-dot-pulse 1.2s ease-in-out infinite;
+}
+@keyframes hardis-dot-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .slds-scope[data-theme] .hardis-pill.hardis-status-running .hardis-pill-dot,
+  .slds-scope[data-theme] .hardis-pill-dot.hardis-status-running {
+    animation: none;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Initials avatars (s-hardis-datatable avatarText cell type)         */
+/* 50-level palette tokens are theme-invariant, so white text stays   */
+/* readable in both themes. Color variant is a stable per-name hash.  */
+/* ------------------------------------------------------------------ */
+.slds-scope[data-theme] .hardis-cell-flex {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+}
+.slds-scope[data-theme] .hardis-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #ffffff;
+  flex-shrink: 0;
+  margin-right: 6px;
+}
+.slds-scope[data-theme] .hardis-avatar-c0 {
+  background: var(--slds-g-color-palette-blue-50);
+}
+.slds-scope[data-theme] .hardis-avatar-c1 {
+  background: var(--slds-g-color-palette-teal-50);
+}
+.slds-scope[data-theme] .hardis-avatar-c2 {
+  background: var(--slds-g-color-palette-purple-50);
+}
+.slds-scope[data-theme] .hardis-avatar-c3 {
+  background: var(--slds-g-color-palette-green-50);
+}
+.slds-scope[data-theme] .hardis-avatar-c4 {
+  background: var(--slds-g-color-palette-hot-orange-50);
+}
+.slds-scope[data-theme] .hardis-avatar-c5 {
+  background: var(--slds-g-color-palette-indigo-50);
+}
+.slds-scope[data-theme] .hardis-avatar-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ */
+/* Branch chips (s-hardis-datatable branchChip cell type + modals)    */
+/* Technical identifiers in a small monospace chip so they stop       */
+/* competing with human-language columns.                             */
+/* ------------------------------------------------------------------ */
+.slds-scope[data-theme] .hardis-branch-chip {
+  display: inline-block;
+  font-family: ui-monospace, "Cascadia Code", Consolas, Menlo, monospace;
+  font-size: 0.72rem;
+  background: var(--slds-g-color-neutral-base-95);
+  border: 1px solid var(--slds-g-color-neutral-base-80);
+  border-radius: 5px;
+  padding: 1px 7px;
+  color: var(--slds-g-color-neutral-base-30);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  vertical-align: middle;
+}
+
+/* Compact dates: single line, aligned digits */
+.slds-scope[data-theme] .hardis-date-cell {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ */
+/* Tinted green action button (release notes, retrieve...)            */
+/* Same recipe as the rf-type-* buttons: neutral SLDS button base +   */
+/* light-dark() palette tokens, so it stays readable in both themes   */
+/* (filled variant="success" buttons do not adapt to VS Code themes). */
+/* ------------------------------------------------------------------ */
+.slds-scope[data-theme] .hardis-btn-tinted-green .slds-button {
+  background: var(--slds-g-color-palette-green-90);
+  border-color: var(--slds-g-color-palette-green-40);
+  color: var(--slds-g-color-palette-green-30);
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease,
+    box-shadow 0.12s ease;
+}
+.slds-scope[data-theme] .hardis-btn-tinted-green .slds-button .slds-button__icon {
+  fill: currentColor;
+}
+.slds-scope[data-theme] .hardis-btn-tinted-green .slds-button:hover,
+.slds-scope[data-theme] .hardis-btn-tinted-green .slds-button:focus {
+  border-color: var(--slds-g-color-palette-green-30);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14);
+}

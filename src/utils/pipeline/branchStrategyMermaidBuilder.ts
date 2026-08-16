@@ -27,6 +27,15 @@ export interface FeatureBranchGroup {
 // ones are folded into a single "+N more" group node.
 export const DEFAULT_FEATURE_BRANCH_GROUP_THRESHOLD = 3;
 
+// Inline SVG icons used inside mermaid HTML labels. Attributes are
+// single-quoted because labels are emitted inside double-quoted mermaid
+// strings; fill='currentColor' makes the icons follow each node's text color
+// in both light and dark themes (replacing OS-dependent emoji glyphs).
+const BRANCH_ICON_SVG =
+  "<svg class='hardis-node-icon' viewBox='0 0 16 16' width='12' height='12' fill='currentColor' aria-hidden='true'><path d='M9.5 3.25a2.25 2.25 0 1 1 3 2.122V6A2.5 2.5 0 0 1 10 8.5H6a1 1 0 0 0-1 1v1.128a2.251 2.251 0 1 1-1.5 0V5.372a2.25 2.25 0 1 1 1.5 0v1.836A2.493 2.493 0 0 1 6 7h4a1 1 0 0 0 1-1v-.628A2.25 2.25 0 0 1 9.5 3.25Zm-6 0a.75.75 0 1 0 1.5 0 .75.75 0 0 0-1.5 0Zm8.25-.75a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5ZM4.25 12a.75.75 0 1 0 0 1.5.75.75 0 0 0 0-1.5Z'/></svg>";
+const CLOUD_ICON_SVG =
+  "<svg class='hardis-node-icon' viewBox='0 0 24 24' width='14' height='14' fill='currentColor' aria-hidden='true'><path d='M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z'/></svg>";
+
 export class BranchStrategyMermaidBuilder {
   private isAuthenticated: boolean = false;
   private gitProvider: GitProvider | null = null;
@@ -177,7 +186,7 @@ export class BranchStrategyMermaidBuilder {
         // Determine link label based on PR status
         let linkLabel: string;
         if (activePR) {
-          linkLabel = `#${activePR.number || activePR.id} ${this.getPrStatusEmoji(activePR.jobsStatus)}`;
+          linkLabel = this.buildPrChip(activePR);
         } else if (this.isAuthenticated && this.gitProvider) {
           // Generate "Create PR" link when authenticated and no PR exists
           const createPrUrl = this.gitProvider.getCreatePullRequestUrl(
@@ -185,7 +194,7 @@ export class BranchStrategyMermaidBuilder {
             mergeTarget,
           );
           if (createPrUrl) {
-            linkLabel = `<a href='${createPrUrl}' target='_blank' style='color:#0176D3;font-weight:bold;text-decoration:underline;'>${t("createPr")}</a>`;
+            linkLabel = `<a href='${createPrUrl}' target='_blank' class='hardis-pill hardis-chip hardis-chip-create' title='${t("createPr")}'>+ PR</a>`;
           } else {
             linkLabel = t("noPr");
           }
@@ -201,10 +210,15 @@ export class BranchStrategyMermaidBuilder {
           activePR: activePR,
         });
       }
+      const prCount =
+        branchAndOrg?.pullRequestsInBranchSinceLastMerge?.length || 0;
       const branchLabel =
-        branchAndOrg?.pullRequestsInBranchSinceLastMerge?.length > 0
-          ? `${branchAndOrg.branchName}<br/>(${branchAndOrg?.pullRequestsInBranchSinceLastMerge?.length})`
-          : branchAndOrg.branchName;
+        BRANCH_ICON_SVG +
+        " " +
+        this.escapeHtmlLabel(branchAndOrg.branchName) +
+        (prCount > 0
+          ? ` <span class='hardis-count-badge'>${prCount}</span>`
+          : "");
       return {
         name: branchAndOrg.branchName,
         nodeName: nodeName,
@@ -370,10 +384,17 @@ export class BranchStrategyMermaidBuilder {
     level: number,
   ): void {
     const nodeName = this.sanitizeNodeName(pullRequest.sourceBranch) + "Branch";
+    // Long feature branch names dictate the diagram layout: shorten them for
+    // display (the click tooltip still carries the full branch name) and show
+    // the PR job status as a small colored dot instead of an emoji.
+    const status = this.normalizeJobStatus(pullRequest.jobsStatus);
+    const featureLabel =
+      `<span class='hardis-pill-dot hardis-node-dot hardis-status-${status}'></span> ` +
+      this.escapeHtmlLabel(this.shortenBranchName(pullRequest.sourceBranch));
     this.gitBranches.push({
       name: pullRequest.sourceBranch,
       nodeName: nodeName,
-      label: pullRequest.sourceBranch,
+      label: featureLabel,
       class: "gitFeature",
       level: level,
       group: pullRequest.sourceBranch,
@@ -381,7 +402,7 @@ export class BranchStrategyMermaidBuilder {
     });
     const prLinkLabel =
       pullRequest.number || pullRequest.id
-        ? `#${pullRequest.number || pullRequest.id} ${this.getPrStatusEmoji(pullRequest.jobsStatus)}`
+        ? this.buildPrChip(pullRequest)
         : this.isAuthenticated
           ? t("noPr")
           : t("mergeLabel");
@@ -425,14 +446,14 @@ export class BranchStrategyMermaidBuilder {
       isFeatureGroup: true,
     });
     this.gitLinks.push({
-      // Base type so addLinks() renders the edge; forceAnimated flips it to the
-      // red animated variant (via addLinks) when a folded PR has a pending job.
+      // Base type so addLinks() renders the edge; jobsStatus drives the
+      // semantic (colored/animated) variant when a folded PR has an active job.
       source: groupNodeName,
       target: this.sanitizeNodeName(targetBranch) + "Branch",
       type: "gitFeatureMerge",
-      label: this.getPrStatusEmoji(aggregateStatus),
+      label: this.buildStatusChip(aggregateStatus),
       isFeatureGroup: true,
-      forceAnimated: hasPendingJob,
+      jobsStatus: aggregateStatus,
       groupNodeName: groupNodeName,
     });
     this.featureBranchGroups.push({
@@ -511,31 +532,16 @@ export class BranchStrategyMermaidBuilder {
 
         // Get job status info for this org
         const jobsStatus = branchAndOrg.jobsStatus || "unknown";
-        const jobStatusEmoji = this.getPrStatusEmoji(jobsStatus);
         const hasJobs = branchAndOrg.jobs && branchAndOrg.jobs.length > 0;
         const jobUrl = hasJobs ? branchAndOrg.jobs[0].webUrl : null;
 
-        // Determine deploy link type based on job status
-        let deployLinkType = "sfDeploy";
-        if (
-          hasJobs &&
-          jobUrl &&
-          (jobsStatus === "running" || jobsStatus === "pending")
-        ) {
-          deployLinkType = "sfDeployAnimated";
-        }
-
-        // Build deploy label with job status (simpler format for dashed arrows)
-        let deployLabel = "Deploy to Org";
-        if (hasJobs) {
-          deployLabel = `Deploy ${jobStatusEmoji}`;
-        }
-
+        // The label is built in addLinks(): a compact status chip when job
+        // info exists, the plain "Deployment" label otherwise.
         this.deployLinks.push({
           source: gitBranch.nodeName,
           target: nodeName,
-          type: deployLinkType,
-          label: deployLabel,
+          type: "sfDeploy",
+          label: t("deployment"),
           level: branchAndOrg.level,
           hasJobs: hasJobs,
           jobUrl: jobUrl,
@@ -578,14 +584,30 @@ export class BranchStrategyMermaidBuilder {
     // right like the parent "flowchart LR". Declaring "direction TB" turned the chain
     // vertical from mermaid 11.16 on, which started honoring it (11.15 ignored it).
     for (const gitBranch of this.gitBranches) {
-      // "+N more" group nodes use a stack icon to read as an aggregate.
-      const nodeIcon = gitBranch.class === "gitFeatureGroup" ? "🗂️" : "🌿";
-      this.mermaidLines.push(
-        this.indent(
-          `${gitBranch.nodeName}["${nodeIcon}${gitBranch.label}"]:::${gitBranch.class}`,
-          2,
-        ),
-      );
+      if (gitBranch.class === "gitFeatureGroup") {
+        // "+N more" group nodes use the stacked-rectangle shape (mermaid
+        // >= 11.3) so they read as an aggregate of several folded branches.
+        // The @{} node syntax has no ::: shorthand, so the class is assigned
+        // with a separate "class" statement.
+        this.mermaidLines.push(
+          this.indent(
+            `${gitBranch.nodeName}@{ shape: st-rect, label: "${gitBranch.label}" }`,
+            2,
+          ),
+        );
+        this.mermaidLines.push(
+          this.indent(`class ${gitBranch.nodeName} gitFeatureGroup`, 2),
+        );
+      } else {
+        // Rounded rectangle: SVG rects ignore border-radius from classDef, so
+        // rounding must come from the node shape itself.
+        this.mermaidLines.push(
+          this.indent(
+            `${gitBranch.nodeName}("${gitBranch.label}"):::${gitBranch.class}`,
+            2,
+          ),
+        );
+      }
     }
     this.mermaidLines.push(this.indent("end", 1));
     this.mermaidLines.push("");
@@ -602,7 +624,7 @@ export class BranchStrategyMermaidBuilder {
       this.mermaidLines.push(this.indent("direction TB", 2));
       for (const salesforceOrg of majorOrgs) {
         // Node click is handled in the pipeline webview to run sf org open with proper targeting.
-        const nodeLine = `${salesforceOrg.nodeName}(["☁️${salesforceOrg.label}"]):::${salesforceOrg.class}`;
+        const nodeLine = `${salesforceOrg.nodeName}(["${CLOUD_ICON_SVG} ${this.escapeHtmlLabel(salesforceOrg.label)}"]):::${salesforceOrg.class}`;
         this.mermaidLines.push(this.indent(nodeLine, 2));
       }
       this.mermaidLines.push(this.indent("end", 1));
@@ -633,7 +655,7 @@ export class BranchStrategyMermaidBuilder {
         for (const salesforceOrg of devOrgs) {
           this.mermaidLines.push(
             this.indent(
-              `${salesforceOrg.nodeName}(["☁️${salesforceOrg.label}"]):::${salesforceOrg.class}`,
+              `${salesforceOrg.nodeName}(["${CLOUD_ICON_SVG} ${this.escapeHtmlLabel(salesforceOrg.label)}"]):::${salesforceOrg.class}`,
               2,
             ),
           );
@@ -657,6 +679,14 @@ export class BranchStrategyMermaidBuilder {
       const classMatch = line.match(/:::([a-zA-Z0-9_-]+)/);
       if (classMatch) {
         usedClasses.add(classMatch[1]);
+      }
+      // Find class-statement usage: class NodeName className
+      // (used for @{}-shaped nodes, which have no ::: shorthand)
+      const classStmtMatch = line.match(
+        /^\s*class\s+[a-zA-Z0-9_-]+\s+([a-zA-Z0-9_-]+)\s*$/,
+      );
+      if (classStmtMatch) {
+        usedClasses.add(classStmtMatch[1]);
       }
       // Find style usage: style SubgraphName ...
       const styleMatch = line.match(/^\s*style\s+([a-zA-Z0-9_-]+)/);
@@ -704,16 +734,22 @@ export class BranchStrategyMermaidBuilder {
     let pos = 0;
     const positions: any = {};
     for (const link of allLinks) {
-      if (!positions[link.type]) {
-        positions[link.type] = [];
+      // renderType carries the status-specific variant (running/pending/failed)
+      // computed in addLinks(); fall back to the base type.
+      const styleType = link.renderType || link.type;
+      if (!positions[styleType]) {
+        positions[styleType] = [];
       }
-      positions[link.type].push(pos);
+      positions[styleType].push(pos);
       pos++;
     }
 
     const linksDef = this.listLinksDef();
     for (const key of Object.keys(positions)) {
       const styleDef = linksDef[key];
+      if (!styleDef) {
+        continue;
+      }
       this.mermaidLines.push(
         `linkStyle ${positions[key].join(",")} ${styleDef}`,
       );
@@ -729,49 +765,29 @@ export class BranchStrategyMermaidBuilder {
 
   private addLinks(links: any[]) {
     for (const link of links) {
-      if (link.type === "gitMerge") {
-        let label = link.label;
-        // If PR exists, make label clickable with markdown link syntax
-        if (link.activePR && link.activePR.webUrl) {
-          label = `<a href='${link.activePR.webUrl}' target='_blank' style='color:#0176D3;font-weight:bold;text-decoration:underline;'>${link.label}</a>`;
-          // Only use special link type for running/pending jobs
-          const jobStatus = link.activePR.jobsStatus || "unknown";
-          if (jobStatus === "running" || jobStatus === "pending") {
-            link.type = "gitMergeWithPRAnimated";
-          }
-          // For completed PRs (success/failed/unknown), keep gitMerge type (plain style)
-        }
-        this.mermaidLines.push(
-          this.indent(`${link.source} ==>|"${label}"| ${link.target}`, 1),
+      if (link.type === "gitMerge" || link.type === "gitFeatureMerge") {
+        const label = link.label;
+        // PR job status drives the semantic edge variant: blue animated for
+        // running, amber for pending, red for failed (see listLinksDef).
+        const jobStatus = this.normalizeJobStatus(
+          link.activePR ? link.activePR.jobsStatus : link.jobsStatus,
         );
-      } else if (link.type === "gitFeatureMerge") {
-        let label = link.label;
-        /* jscpd:ignore-start */
-        // If PR exists, make label clickable with markdown link syntax
-        if (link.activePR && link.activePR.webUrl) {
-          label = `<a href='${link.activePR.webUrl}' target='_blank' style='color:#0176D3;font-weight:bold;text-decoration:underline;'>${link.label}</a>`;
-          // Only use special link type for running/pending jobs
-          const jobStatus = link.activePR.jobsStatus || "unknown";
-          if (jobStatus === "running" || jobStatus === "pending") {
-            link.type = "gitFeatureMergeWithPRAnimated";
-          }
-          // For completed PRs (success/failed/unknown), keep gitFeatureMerge type (plain style)
-        }
-        /* jscpd:ignore-end */
-        // Aggregated "+N more" link: turn red/animated when a folded PR is pending
-        if (link.forceAnimated) {
-          link.type = "gitFeatureMergeWithPRAnimated";
-        }
+        link.renderType = this.statusRenderType(link.type, jobStatus);
+        const arrow = link.type === "gitMerge" ? "==>" : "-->";
         this.mermaidLines.push(
-          this.indent(`${link.source} -->|"${label}"| ${link.target}`, 1),
+          this.indent(`${link.source} ${arrow}|"${label}"| ${link.target}`, 1),
         );
-      } else if (link.type === "sfDeploy" || link.type === "sfDeployAnimated") {
-        // Make deployment links clickable if job URL exists
+      } else if (link.type === "sfDeploy") {
+        // Compact status chip, clickable to the CI job when a URL exists
         let label = link.label;
-        if (link.jobUrl) {
-          // Extract just the emoji from the label (e.g., "Deploy ✅" -> "✅")
-          const emoji = label.replace(/^Deploy\s+/, "");
-          label = `<a href='${link.jobUrl}' target='_blank' style='color:#0176D3;font-weight:bold;text-decoration:underline;'>${t("deployment")} ${emoji}</a>`;
+        if (link.hasJobs) {
+          const status = this.normalizeJobStatus(link.jobsStatus);
+          label = this.buildStatusChip(
+            status,
+            link.jobUrl,
+            `${t("deployment")} - ${status}`,
+          );
+          link.renderType = this.statusRenderType("sfDeploy", status);
         }
         this.mermaidLines.push(
           this.indent(`${link.source} -.->|"${label}"| ${link.target}`, 1),
@@ -785,96 +801,176 @@ export class BranchStrategyMermaidBuilder {
     this.mermaidLines.push("");
   }
 
+  /**
+   * Build the clickable chip shown on a PR merge edge: the PR number in a
+   * pill whose colored dot carries the job status (replaces emoji + inline
+   * styled underlined links; styling lives in pipeline.css, theme-aware).
+   */
+  private buildPrChip(pullRequest: PullRequest): string {
+    const status = this.normalizeJobStatus(pullRequest.jobsStatus);
+    const text = `#${pullRequest.number || pullRequest.id}`;
+    const title = this.escapeHtmlLabel(pullRequest.title || text);
+    if (pullRequest.webUrl) {
+      return `<a href='${pullRequest.webUrl}' target='_blank' class='hardis-pill hardis-chip hardis-status-${status}' title='${title}'>${text}</a>`;
+    }
+    return `<span class='hardis-pill hardis-chip hardis-status-${status}'>${text}</span>`;
+  }
+
+  /**
+   * Build a compact status chip (dot + glyph) for deploy links and aggregated
+   * "+N more" links, clickable when a job URL is available.
+   */
+  private buildStatusChip(
+    status: JobStatus,
+    url: string | null = null,
+    title: string = "",
+  ): string {
+    const normalized = this.normalizeJobStatus(status);
+    const glyphMap: Record<JobStatus, string> = {
+      running: "⟳",
+      pending: "…",
+      success: "✓",
+      failed: "✕",
+      unknown: "?",
+    };
+    const glyph = glyphMap[normalized];
+    const titleAttr = title ? ` title='${title}'` : "";
+    if (url) {
+      return `<a href='${url}' target='_blank' class='hardis-pill hardis-chip hardis-status-${normalized}'${titleAttr}>${glyph}</a>`;
+    }
+    return `<span class='hardis-pill hardis-chip hardis-status-${normalized}'${titleAttr}>${glyph}</span>`;
+  }
+
+  private normalizeJobStatus(status: any): JobStatus {
+    return ["running", "pending", "success", "failed"].includes(status)
+      ? status
+      : "unknown";
+  }
+
+  /**
+   * Map a base link type + job status to the linkStyle variant name emitted by
+   * listLinksDef (e.g. gitFeatureMerge + running -> gitFeatureMergeRunning).
+   * Success and unknown keep the base style.
+   */
+  private statusRenderType(baseType: string, status: JobStatus): string {
+    if (["running", "pending", "failed"].includes(status)) {
+      return baseType + status.charAt(0).toUpperCase() + status.slice(1);
+    }
+    return baseType;
+  }
+
+  /**
+   * Shorten long feature branch names for node labels: drop the common
+   * "feature/" prefix noise and middle-truncate. The full name stays available
+   * in the node click tooltip.
+   */
+  private shortenBranchName(branchName: string | undefined): string {
+    let short = (branchName || "").replace(/^feature\//, "");
+    if (short.length > 32) {
+      short = short.slice(0, 24) + "…" + short.slice(-6);
+    }
+    return short;
+  }
+
+  /** Minimal HTML escaping for text injected into mermaid HTML labels. */
+  private escapeHtmlLabel(text: string): string {
+    return (text || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
   listClassesAndStyles(): string[] {
-    // Enhanced SLDS: backgrounds for orgs/branches/subgraphs, bolder borders, rounded corners, SLDS font, and improved contrast
-    // Only use properties supported by Mermaid classDef/style syntax
+    // SLDS palette pairs (light / dark): branches in the blue family (navy for
+    // prod, cloud blue for majors, quiet cards for features), orgs as tinted
+    // pills (blue for sandboxes, green for production), subgraphs as hairline
+    // frames that step back behind the content.
+    // Only use properties supported by Mermaid classDef/style syntax; node
+    // rounding comes from the node shapes, not classDef (SVG ignores
+    // border-radius).
     const isDark = this.colorTheme === "dark";
 
     const classesAndStyles = isDark
       ? `
-  classDef salesforceDev fill:#2e2e2e,stroke:#1b96ff,stroke-width:2.5px,color:#d8e6fe,font-weight:500,border-radius:16px;
-  classDef salesforceMajor fill:#4f2100,stroke:#fcc003,stroke-width:2.5px,color:#f9e3b6,font-weight:900,border-radius:16px;
-  classDef salesforceProd fill:#023434,stroke:#04e1cb,stroke-width:2.5px,color:#acf3e4,font-weight:700,border-radius:16px;
-  classDef gitMajor fill:#032d60,stroke:#78b0fd,stroke-width:3px,color:#d8e6fe,font-weight:900,border-radius:16px;
-  classDef gitMain fill:#014486,stroke:#aacbff,stroke-width:3px,color:#d8e6fe,font-weight:900,border-radius:16px;
-  classDef gitFeature fill:#181818,stroke:#444,stroke-width:1.5px,color:#e5e5e5,font-weight:500,border-radius:16px;
-  classDef gitFeatureGroup fill:#1a2233,stroke:#78b0fd,stroke-width:2px,color:#d8e6fe,font-weight:700,border-radius:16px;
-  style GitBranches fill:#181818,color:#d8e6fe,stroke:#0176d3,stroke-width:2px;
-  style SalesforceOrgs fill:#181818,color:#acf3e4,stroke:#06a59a,stroke-width:2px;
-  style SalesforceDevOrgs fill:#181818,color:#d8e6fe,stroke:#0176d3,stroke-width:2px;
+  classDef salesforceDev fill:#1b232d,stroke:#3c7cb8,stroke-width:1.5px,color:#a9cff7,font-weight:500;
+  classDef salesforceMajor fill:#152b3f,stroke:#3c7cb8,stroke-width:1.5px,color:#a9cff7,font-weight:500;
+  classDef salesforceProd fill:#12301d,stroke:#3e9b58,stroke-width:2px,color:#a5e2b6,font-weight:600;
+  classDef gitMajor fill:#0b5cab,stroke:#3489db,stroke-width:1.5px,color:#eaf3ff,font-weight:600;
+  classDef gitMain fill:#1b96ff,stroke:#57a3fd,stroke-width:1.5px,color:#032d60,font-weight:700;
+  classDef gitFeature fill:#1b232d,stroke:#33414e,stroke-width:1.25px,color:#c4d2de,font-weight:400;
+  classDef gitFeatureGroup fill:#152b3f,stroke:#3489db,stroke-width:1.5px,stroke-dasharray:3 3,color:#a9cff7,font-weight:600;
+  style GitBranches fill:#161d25,color:#7a8b9c,stroke:#2b3642,stroke-width:1px;
+  style SalesforceOrgs fill:#161d25,color:#7a8b9c,stroke:#2b3642,stroke-width:1px;
+  style SalesforceDevOrgs fill:#161d25,color:#7a8b9c,stroke:#2b3642,stroke-width:1px;
   `
       : `
-  classDef salesforceDev fill:#F4F6F9,stroke:#0176D3,stroke-width:2.5px,color:#032D60,font-weight:500,border-radius:16px;
-  classDef salesforceMajor fill:#FFF6E3,stroke:#FFB75D,stroke-width:2.5px,color:#032D60,font-weight:900,border-radius:16px;
-  classDef salesforceProd fill:#E3FCEF,stroke:#04844B,stroke-width:2.5px,color:#032D60,font-weight:700,border-radius:16px;
-  classDef gitMajor fill:#4A9FD8,stroke:#032D60,stroke-width:3px,color:#fff,font-weight:900,border-radius:16px;
-  classDef gitMain fill:#0176D3,stroke:#032D60,stroke-width:3px,color:#fff,font-weight:900,border-radius:16px;
-  classDef gitFeature fill:#fff,stroke:#E5E5E5,stroke-width:1.5px,color:#3E3E3C,font-weight:500,border-radius:16px;
-  classDef gitFeatureGroup fill:#E8F0FE,stroke:#0176D3,stroke-width:2px,color:#032D60,font-weight:700,border-radius:16px;
-  style GitBranches fill:#F0F6FB,color:#032D60,stroke:#0176D3,stroke-width:2px;
-  style SalesforceOrgs fill:#F0F6FB,color:#032D60,stroke:#04844B,stroke-width:2px;
-  style SalesforceDevOrgs fill:#F0F6FB,color:#032D60,stroke:#0176D3,stroke-width:2px;
+  classDef salesforceDev fill:#f4f8fb,stroke:#67afe4,stroke-width:1.5px,color:#014486,font-weight:500;
+  classDef salesforceMajor fill:#eaf5fe,stroke:#67afe4,stroke-width:1.5px,color:#014486,font-weight:500;
+  classDef salesforceProd fill:#ebf7ee,stroke:#2e844a,stroke-width:2px,color:#1e5e37,font-weight:600;
+  classDef gitMajor fill:#0176d3,stroke:#0b5cab,stroke-width:1.5px,color:#ffffff,font-weight:600;
+  classDef gitMain fill:#032d60,stroke:#032d60,stroke-width:1.5px,color:#ffffff,font-weight:700;
+  classDef gitFeature fill:#ffffff,stroke:#d5dfe9,stroke-width:1.25px,color:#24435f,font-weight:400;
+  classDef gitFeatureGroup fill:#eaf5fe,stroke:#0176d3,stroke-width:1.5px,stroke-dasharray:3 3,color:#014486,font-weight:600;
+  style GitBranches fill:#f8fbfd,color:#5b6c7e,stroke:#dce5ee,stroke-width:1px;
+  style SalesforceOrgs fill:#f8fbfd,color:#5b6c7e,stroke:#dce5ee,stroke-width:1px;
+  style SalesforceDevOrgs fill:#f8fbfd,color:#5b6c7e,stroke:#dce5ee,stroke-width:1px;
   `;
     return classesAndStyles.split("\n");
   }
 
   private listLinksDef(): any {
-    // SLDS blue/green for connectors, thin lines, and more discrete (lighter) link labels
-    // Use a lighter color for label text (e.g., #B0B7BD), fully opaque for readability, and no background
-    // gitFeatureMerge uses dashed line and lighter color to distinguish from major branch merges
-    // gitMerge (major branch arrows) are always plain and thicker (3px)
-    // Animated variants: Set base stroke in red that CSS will animate
+    // Edge styles per link kind, plus semantic status variants generated for
+    // active CI jobs: blue = running (animated by pipeline.css), amber =
+    // pending, red = failed. Green stays reserved for successful deployments.
     const isDark = this.colorTheme === "dark";
 
-    return isDark
+    const baseDefs: Record<string, string> = isDark
       ? {
-          gitMerge: "stroke:#1b96ff,stroke-width:3px,color:#d8e6fe,opacity:1;",
-          gitMergeWithPRAnimated:
-            "stroke:#ff6b6b,stroke-width:3px,color:#feded8,font-weight:bold,opacity:1;",
+          gitMerge:
+            "stroke:#57a3fd,stroke-width:2.5px,color:#a9cff7,opacity:1;",
           gitFeatureMerge:
-            "stroke:#757575,stroke-width:1.5px,stroke-dasharray:5 5,color:#939393,opacity:1;",
-          gitFeatureMergeWithPRAnimated:
-            "stroke:#ff6b6b,stroke-width:2.5px,stroke-dasharray:5 5,color:#feded8,font-weight:bold,opacity:1;",
+            "stroke:#4a5a6b,stroke-width:1.25px,stroke-dasharray:6 4,color:#8fa1b3,opacity:1;",
           sfDeploy:
-            "stroke:#06a59a,stroke-width:1.5px,color:#939393,opacity:1;",
-          sfDeployAnimated:
-            "stroke:#ff6b6b,stroke-width:2px,color:#feded8,font-weight:bold,opacity:1;",
+            "stroke:#3e9b58,stroke-width:1.5px,color:#52c36e,opacity:1;",
           sfPushPull:
-            "stroke:#1b96ff,stroke-width:1.5px,color:#939393,opacity:1;",
+            "stroke:#57a3fd,stroke-width:1.5px,color:#8fa1b3,opacity:1;",
         }
       : {
-          gitMerge: "stroke:#0176D3,stroke-width:3px,color:#032D60,opacity:1;",
-          gitMergeWithPRAnimated:
-            "stroke:#e74c3c,stroke-width:3px,color:#032D60,font-weight:bold,opacity:1;",
+          gitMerge:
+            "stroke:#0176d3,stroke-width:2.5px,color:#032d60,opacity:1;",
           gitFeatureMerge:
-            "stroke:#B0B7BD,stroke-width:1.5px,stroke-dasharray:5 5,color:#B0B7BD,opacity:1;",
-          gitFeatureMergeWithPRAnimated:
-            "stroke:#e74c3c,stroke-width:2.5px,stroke-dasharray:5 5,color:#032D60,font-weight:bold,opacity:1;",
+            "stroke:#aebfce,stroke-width:1.25px,stroke-dasharray:6 4,color:#66788a,opacity:1;",
           sfDeploy:
-            "stroke:#04844B,stroke-width:1.5px,color:#B0B7BD,opacity:1;",
-          sfDeployAnimated:
-            "stroke:#e74c3c,stroke-width:2px,color:#032D60,font-weight:bold,opacity:1;",
+            "stroke:#2e844a,stroke-width:1.5px,color:#2e844a,opacity:1;",
           sfPushPull:
-            "stroke:#0176D3,stroke-width:1.5px,color:#B0B7BD,opacity:1;",
+            "stroke:#0176d3,stroke-width:1.5px,color:#66788a,opacity:1;",
         };
+
+    const statusColors: Record<string, string> = isDark
+      ? { Running: "#1b96ff", Pending: "#e2a336", Failed: "#f27065" }
+      : { Running: "#1b96ff", Pending: "#dd7a01", Failed: "#ba0517" };
+    const statusWidths: Record<string, string> = {
+      gitMerge: "2.5px",
+      gitFeatureMerge: "2px",
+      sfDeploy: "2px",
+    };
+
+    const defs: Record<string, string> = { ...baseDefs };
+    for (const baseType of Object.keys(statusWidths)) {
+      const dash =
+        baseType === "gitFeatureMerge" ? ",stroke-dasharray:6 4" : "";
+      for (const [statusSuffix, color] of Object.entries(statusColors)) {
+        defs[`${baseType}${statusSuffix}`] =
+          `stroke:${color},stroke-width:${statusWidths[baseType]}${dash},color:${color},opacity:1;`;
+      }
+    }
+    return defs;
   }
 
   private indent(str: string, number: number): string {
     return " ".repeat(number) + str;
-  }
-
-  private getPrStatusEmoji(status: JobStatus): string {
-    const emojiMap: Record<JobStatus, string> = {
-      running: "⚙️",
-      pending: "⏳",
-      success: "✅",
-      failed: "❌",
-      unknown: "❔",
-    };
-    if (status in emojiMap) {
-      return emojiMap[status];
-    }
-    return "❔";
   }
 
   /**

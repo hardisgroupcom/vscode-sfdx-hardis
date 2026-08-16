@@ -93,7 +93,7 @@
 }
 
 .command-icon-container.backup {
-  background: linear-gradient(135deg, #1589ee 0%, #005fb2 100%);
+  background: linear-gradient(135deg, #1b96ff 0%, #0b5cab 100%);
 }
 
 .command-icon-container.alerts {
@@ -101,7 +101,7 @@
 }
 
 .command-icon-container.audit {
-  background: linear-gradient(135deg, #9f4fea 0%, #7b2cbf 100%);
+  background: linear-gradient(135deg, #9050e9 0%, #7526e3 100%);
 }
 
 .command-icon-container.tests {
@@ -149,7 +149,7 @@
 }
 
 .command-icon-container.unused-metadata {
-  background: linear-gradient(135deg, #27ae60 0%, #1e8449 100%);
+  background: linear-gradient(135deg, #3ba755 0%, #194e31 100%);
 }
 
 .modal-command-display {

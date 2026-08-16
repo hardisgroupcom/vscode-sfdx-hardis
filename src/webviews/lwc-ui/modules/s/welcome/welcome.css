@@ -368,7 +368,7 @@
 }
 
 .quick-action-button.primary {
-    background: linear-gradient(135deg, #1589ee 0%, #005fb2 100%);
+    background: linear-gradient(135deg, #1b96ff 0%, #0b5cab 100%);
 }
 */
 
@@ -398,7 +398,7 @@
 .tool-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    border-color: #1589ee;
+    border-color: #0176d3;
 }
 */
 
@@ -479,7 +479,7 @@
     gap: 1.5rem;
     margin-bottom: 1.5rem;
     padding-bottom: 1rem;
-    border-bottom: 1px solid rgba(21, 137, 238, 0.2);
+    border-bottom: 1px solid rgba(27, 150, 255, 0.2);
 }
 
 .getting-started-icon-container {
@@ -506,7 +506,7 @@
 
 .getting-started-subtitle {
     font-size: 1rem;
-    color: #1589ee;
+    color: #0176d3;
     margin: 0;
     font-weight: 500;
 }
@@ -652,7 +652,7 @@
 }
 
 .cloudity-link {
-    color: #1589ee;
+    color: #0176d3;
     text-decoration: none;
     font-weight: 600;
 }
