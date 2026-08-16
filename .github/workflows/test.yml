@@ -61,6 +61,10 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
+    # The webpack build (LWC bundle) needs more than the default heap on the
+    # macOS arm64 runners
+    env:
+      NODE_OPTIONS: --max_old_space_size=4096
 
     steps:
       - name: Checkout Code

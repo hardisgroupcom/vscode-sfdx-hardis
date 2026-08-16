@@ -52,6 +52,51 @@ async function waitFor<T>(
   }
 }
 
+/**
+ * Triggers a command through the extension entry point (like a click in the
+ * commands tree) and returns the id of the command execution panel it opens,
+ * ignoring the panels that were already open.
+ */
+async function launchCommandAndWaitForPanel(
+  panelManager: any,
+  command: string,
+  label: string,
+): Promise<string> {
+  const knownPanels = new Set<string>(panelManager.getActivePanelIds());
+  void vscode.commands.executeCommand(
+    "vscode-sfdx-hardis.execute-command",
+    command,
+  );
+  return await waitFor(
+    () =>
+      panelManager
+        .getActivePanelIds()
+        .find(
+          (id: string) =>
+            id.startsWith("s-command-execution-") && !knownPanels.has(id),
+        ),
+    5000,
+    label,
+  );
+}
+
+/**
+ * Waits until the given command execution panel reaches the expected status.
+ */
+async function waitForPanelStatus(
+  panelManager: any,
+  panelId: string,
+  status: string,
+  timeoutMs: number,
+  label: string,
+): Promise<unknown> {
+  return await waitFor(
+    () => panelManager.getPanel(panelId)?.commandStatus === status,
+    timeoutMs,
+    label,
+  );
+}
+
 suite("Performance UI tests", function () {
   let api: any;
 
@@ -101,26 +146,14 @@ suite("Performance UI tests", function () {
 
   test("background command: execution panel opens instantly, then completes through the WebSocket protocol", async function () {
     const panelManager = api.getLwcPanelManager();
-    const knownPanels = new Set(panelManager.getActivePanelIds());
-
-    const clickTime = Date.now();
-    void vscode.commands.executeCommand(
-      "vscode-sfdx-hardis.execute-command",
-      "sf hardis:org:mock-background-run",
-    );
 
     // The dedicated tab must appear right at click time, NOT after the CLI
     // boot (pre-fix, the panel appeared only when the CLI connected, which
     // takes 10+ seconds with the real CLI)
-    const panelId = await waitFor(
-      () =>
-        panelManager
-          .getActivePanelIds()
-          .find(
-            (id: string) =>
-              id.startsWith("s-command-execution-") && !knownPanels.has(id),
-          ),
-      5000,
+    const clickTime = Date.now();
+    const panelId = await launchCommandAndWaitForPanel(
+      panelManager,
+      "sf hardis:org:mock-background-run",
       "command execution panel to open",
     );
     const panelOpenMs = Date.now() - clickTime;
@@ -132,11 +165,10 @@ suite("Performance UI tests", function () {
     // The mock CLI connects, is adopted (same context id passed through
     // SFDX_HARDIS_COMMAND_CONTEXT_ID), streams logs and closes: the SAME
     // panel must transition to completed
-    await waitFor(
-      () => {
-        const panel = panelManager.getPanel(panelId);
-        return panel && panel.commandStatus === "completed";
-      },
+    await waitForPanelStatus(
+      panelManager,
+      panelId,
+      "completed",
       60000,
       "command panel to complete via websocket protocol",
     );
@@ -163,20 +195,9 @@ suite("Performance UI tests", function () {
     // CLI boot: the panel stays in pending state during that window
     const command = "sf hardis:org:mock-slow-boot-run";
 
-    const known1 = new Set(panelManager.getActivePanelIds());
-    void vscode.commands.executeCommand(
-      "vscode-sfdx-hardis.execute-command",
+    const panelId1 = await launchCommandAndWaitForPanel(
+      panelManager,
       command,
-    );
-    const panelId1: string = await waitFor(
-      () =>
-        panelManager
-          .getActivePanelIds()
-          .find(
-            (id: string) =>
-              id.startsWith("s-command-execution-") && !known1.has(id),
-          ),
-      5000,
       "first slow-boot panel to open",
     );
     // User closes the tab while the CLI is still booting
@@ -184,27 +205,15 @@ suite("Performance UI tests", function () {
 
     // ...and immediately runs the same command again: it must NOT be blocked
     // by the duplicate-command detection (the first run was cancelled)
-    const known2 = new Set(panelManager.getActivePanelIds());
-    void vscode.commands.executeCommand(
-      "vscode-sfdx-hardis.execute-command",
+    const panelId2 = await launchCommandAndWaitForPanel(
+      panelManager,
       command,
-    );
-    const panelId2: string = await waitFor(
-      () =>
-        panelManager
-          .getActivePanelIds()
-          .find(
-            (id: string) =>
-              id.startsWith("s-command-execution-") && !known2.has(id),
-          ),
-      5000,
       "re-run panel to open right after cancelling the first run",
     );
-    await waitFor(
-      () => {
-        const panel = panelManager.getPanel(panelId2);
-        return panel && panel.commandStatus === "completed";
-      },
+    await waitForPanelStatus(
+      panelManager,
+      panelId2,
+      "completed",
       60000,
       "re-run to complete via the websocket protocol",
     );
@@ -222,25 +231,16 @@ suite("Performance UI tests", function () {
           entry.event === "cancelled",
       ).length;
 
-    const known1 = new Set(panelManager.getActivePanelIds());
-    void vscode.commands.executeCommand(
-      "vscode-sfdx-hardis.execute-command",
+    const panelId1 = await launchCommandAndWaitForPanel(
+      panelManager,
       command,
-    );
-    const panelId1: string = await waitFor(
-      () =>
-        panelManager
-          .getActivePanelIds()
-          .find(
-            (id: string) =>
-              id.startsWith("s-command-execution-") && !known1.has(id),
-          ),
-      5000,
       "first long-run panel to open",
     );
     // Wait until the CLI has connected and adopted the panel
-    await waitFor(
-      () => panelManager.getPanel(panelId1)?.commandStatus === "running",
+    await waitForPanelStatus(
+      panelManager,
+      panelId1,
+      "running",
       30000,
       "first long-run to be adopted (running)",
     );
@@ -248,20 +248,9 @@ suite("Performance UI tests", function () {
     panelManager.disposePanel(panelId1);
 
     // ...and immediately runs the same command again
-    const known2 = new Set(panelManager.getActivePanelIds());
-    void vscode.commands.executeCommand(
-      "vscode-sfdx-hardis.execute-command",
+    const panelId2 = await launchCommandAndWaitForPanel(
+      panelManager,
       command,
-    );
-    const panelId2: string = await waitFor(
-      () =>
-        panelManager
-          .getActivePanelIds()
-          .find(
-            (id: string) =>
-              id.startsWith("s-command-execution-") && !known2.has(id),
-          ),
-      5000,
       "re-run panel to open right after cancelling the running command",
     );
     // The first CLI must have been cancelled through the WebSocket protocol
@@ -271,8 +260,10 @@ suite("Performance UI tests", function () {
       "first long-run CLI to receive cancelCommand",
     );
     // The re-run must connect and run normally
-    await waitFor(
-      () => panelManager.getPanel(panelId2)?.commandStatus === "running",
+    await waitForPanelStatus(
+      panelManager,
+      panelId2,
+      "running",
       30000,
       "re-run to be adopted (running)",
     );
