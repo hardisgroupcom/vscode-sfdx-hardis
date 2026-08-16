@@ -10,6 +10,7 @@ import { t } from "./i18n/i18n";
 import { LwcPanelManager } from "./lwc-panel-manager";
 import { HardisStatusProvider } from "./hardis-status-provider";
 import { refreshDataWorkbenchPanel } from "./commands/showDataWorkbench";
+import { takePendingCommandPanel } from "./utils/pendingCommandPanels";
 
 const DEFAULT_PORT = parseInt(process.env.SFDX_HARDIS_WEBSOCKET_PORT || "2702");
 let globalWss: LocalWebSocketServer | null;
@@ -21,6 +22,7 @@ export class LocalWebSocketServer {
   private wss: WebSocketServer;
   private clients: any = {};
   private config: vscode.WorkspaceConfiguration;
+  private readyPromise: Promise<void> | null = null;
 
   constructor(context: vscode.ExtensionContext) {
     console.time("WebSocketServer_init");
@@ -36,7 +38,23 @@ export class LocalWebSocketServer {
     this.config = vscode.workspace.getConfiguration("vsCodeSfdxHardis");
   }
 
-  async start() {
+  start(): Promise<void> {
+    if (!this.readyPromise) {
+      this.readyPromise = this.startServer();
+    }
+    return this.readyPromise;
+  }
+
+  /**
+   * Resolves once the server is listening (websocketHostPort is set).
+   * Commands run in background mode await this instead of failing when
+   * they are launched right after activation.
+   */
+  whenReady(): Promise<void> {
+    return this.start();
+  }
+
+  private async startServer(): Promise<void> {
     let port = DEFAULT_PORT;
     if (port === 2702) {
       // Define random port if not forced by the user with env var SFDX_HARDIS_WEBSOCKET_PORT
@@ -45,10 +63,14 @@ export class LocalWebSocketServer {
     this.listen();
     //start our server
     console.time("WebSocketServer_listen");
-    this.server.listen(port, () => {
-      this.websocketHostPort = `localhost:${port}`;
-      Logger.log(`Data stream server started on port ${port}`);
-      console.timeEnd("WebSocketServer_listen");
+    await new Promise<void>((resolve, reject) => {
+      this.server.once("error", reject);
+      this.server.listen(port, () => {
+        this.websocketHostPort = `localhost:${port}`;
+        Logger.log(`Data stream server started on port ${port}`);
+        console.timeEnd("WebSocketServer_listen");
+        resolve();
+      });
     });
   }
 
@@ -77,8 +99,19 @@ export class LocalWebSocketServer {
         await this.sendCommandReady(ws);
         return;
       }
+      const pendingPanel = takePendingCommandPanel(
+        data.context?.id,
+        data.context?.command || null,
+      );
       // If the UI is configured to be hidden, do not proceed with command execution
       if (data?.uiConfig?.hide === true) {
+        // Drop the panel speculatively opened at click time, if any
+        if (pendingPanel) {
+          pendingPanel.onAdopted?.();
+          LwcPanelManager.getInstance(this.context).disposePanel(
+            pendingPanel.lwcId,
+          );
+        }
         await this.sendCommandReady(ws);
         return;
       }
@@ -89,20 +122,27 @@ export class LocalWebSocketServer {
       for (const panelId of activePanelIds) {
         if (panelId.startsWith("s-command-execution-")) {
           const panel = panelManager.getPanel(panelId);
-          if (panel && panel.getTitle && typeof panel.getTitle === "function") {
-            const title = panel.getTitle();
-            if (title && title.endsWith("- Completed")) {
-              panelManager.disposePanel(panelId);
-            }
+          if (panel && panel.commandStatus === "completed") {
+            panelManager.disposePanel(panelId);
           }
         }
       }
 
       this.clients[data.context.id] = { context: data.context, ws: ws };
 
-      // Create a new command execution panel for this command
+      // Adopt the panel opened at click time when the CLI generated its own
+      // context id (CLI versions that ignore SFDX_HARDIS_COMMAND_CONTEXT_ID):
+      // re-key it so getOrCreatePanel below reuses it instead of opening a
+      // second panel.
       const lwcId = `s-command-execution-${data.context.id}`;
+      if (pendingPanel) {
+        pendingPanel.onAdopted?.();
+        if (pendingPanel.lwcId !== lwcId) {
+          panelManager.rekeyPanel(pendingPanel.lwcId, lwcId);
+        }
+      }
       const panel = panelManager.getOrCreatePanel(lwcId, data.context);
+      panel.commandStatus = "running";
       this.clients[data.context.id].panel = panel;
       this.clients[data.context.id].lwcId = lwcId;
 
@@ -154,6 +194,12 @@ export class LocalWebSocketServer {
       if (clientData?.panel) {
         // Mark command as completed in the panel
         const success = data?.status !== "aborted" && data?.status !== "error";
+        clientData.panel.commandStatus =
+          data?.status === "aborted"
+            ? "aborted"
+            : data?.status === "error"
+              ? "error"
+              : "completed";
         const message: any = {
           type: "completeCommand",
           data: { success: success, status: data?.status },

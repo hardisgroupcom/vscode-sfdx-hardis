@@ -1,0 +1,4 @@
+#!/bin/sh
+# Mock `sf` CLI for UI tests (POSIX shells, including Git Bash on Windows)
+DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+exec node "$DIR/sf-mock.js" "$@"

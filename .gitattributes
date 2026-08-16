@@ -1,0 +1,4 @@
+# The sf CLI mock shim must keep LF line endings: it is executed by
+# bash/sh on Linux and Git Bash, which reject CRLF shebang scripts
+test/fixtures/sf-shim/sf text eol=lf
+test/fixtures/sf-shim/sf-mock.js text eol=lf

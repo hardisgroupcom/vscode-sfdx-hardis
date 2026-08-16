@@ -204,6 +204,7 @@
   "commandTitleCompleted": "{{commandName}} - Abgeschlossen",
   "commandTitleError": "{{commandName}} - Fehler",
   "commandTitleRunning": "{{commandName}} - Wird ausgeführt",
+  "commandTitleStarting": "{{commandName}} - Wird gestartet...",
   "commandType": "Befehl",
   "commercialUseAllowed": "Kommerzielle Nutzung erlaubt",
   "commitAndPushFile": "Commit & Push {{fileName}}",

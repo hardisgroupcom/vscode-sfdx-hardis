@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+- Performance
+  - Commands launched from the menu now open their execution tab **immediately** when clicked, instead of after the Salesforce CLI finished booting (which could take more than 10 seconds)
+    - The tab first shows the command as starting, then streams its logs as soon as the CLI is connected
+    - Closing the tab before the CLI is connected cancels the command
+    - If the CLI crashes before connecting, the tab reports the failure with its error output instead of staying stuck
+    - The "Initializing command" notification is no longer shown when the execution tab is already open, since it was redundant with it
+    - Fixed a wrong "duplicate command" error when running a command again right after closing its execution tab
+  - Commands run in a terminal now start immediately: the terminal was previously created with a fixed 4-second wait before the command was typed
+    - On Windows, commands now run in a Git Bash terminal automatically when Git Bash is installed, without requiring to change the default VS Code terminal
+  - Commands clicked right after VS Code startup are no longer rejected with "not initialized yet": the communication server now starts immediately (previously after a fixed 5-second delay) and commands wait for it to be ready
+  - Faster extension startup
+    - The Org and Dependencies panels now load independently, so each one displays its information as soon as it is available instead of waiting for the slowest of all startup checks
+    - Fixed the CLI results cache being wiped every time any file was created or renamed in the workspace, which caused the slow startup checks to run again several times a day (and could even reload the whole window)
+    - The extension code loaded at startup was reduced to a fraction of its previous size, the rest is now loaded only when actually used
+  - Re-running the same command from the menu no longer shows a wrong "duplicate command" warning when a language other than "auto" is selected
+  - Command tabs of completed commands are now cleaned up in all languages (previously only when VS Code was in English)
+
+- Testing
+  - New automated UI tests launch a real VS Code with a sample SFDX project and a simulated Salesforce CLI, and verify startup and command-launch responsiveness on Windows, macOS and Linux at every change
+
 - DevOps Pipeline
   - **Update the Deployment Actions of your Pull Request** button at the end of **Save / Publish Task**, opening the DevOps Pipeline straight on the Deployment Actions of your pull request, instead of leaving you to find them yourself
     - When the pull request is not created yet, the draft deployment actions of your current branch are displayed, so you can declare them right after saving your task

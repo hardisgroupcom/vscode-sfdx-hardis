@@ -47,8 +47,42 @@ export class GitProvider {
   // is still valid and the PR listing can be skipped. Same lifetime as above.
   protected goLivesCache: Map<string, GoLive[]> = new Map();
 
+  // Caches the "no provider detectable" result (no git repo, no origin remote,
+  // unknown host): without it, every call re-spawns `git remote -v`.
+  private static noProviderDetected = false;
+  // De-duplicates concurrent getInstance calls so detection + network
+  // initialization run only once.
+  private static instancePromise: Promise<GitProvider | null> | null = null;
+
   static async getInstance(reset = false): Promise<GitProvider | null> {
-    if (!this.instance || reset === true) {
+    if (reset === true) {
+      this.noProviderDetected = false;
+      this.instancePromise = null;
+    }
+    if (this.instance && reset !== true) {
+      return this.instance;
+    }
+    if (this.noProviderDetected && reset !== true) {
+      return null;
+    }
+    if (!this.instancePromise) {
+      this.instancePromise = this.buildInstance().then(
+        (instance) => {
+          this.instancePromise = null;
+          this.noProviderDetected = instance === null;
+          return instance;
+        },
+        (error) => {
+          this.instancePromise = null;
+          throw error;
+        },
+      );
+    }
+    return this.instancePromise;
+  }
+
+  private static async buildInstance(): Promise<GitProvider | null> {
+    {
       const gitInfo = await GitProvider.detectRepoInfo();
       if (!gitInfo) {
         return null;

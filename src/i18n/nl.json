@@ -204,6 +204,7 @@
   "commandTitleCompleted": "{{commandName}} - Voltooid",
   "commandTitleError": "{{commandName}} - Fout",
   "commandTitleRunning": "{{commandName}} - Bezig",
+  "commandTitleStarting": "{{commandName}} - Starten...",
   "commandType": "Opdracht",
   "commercialUseAllowed": "Commercieel gebruik toegestaan",
   "commitAndPushFile": "Commit & Push {{fileName}}",

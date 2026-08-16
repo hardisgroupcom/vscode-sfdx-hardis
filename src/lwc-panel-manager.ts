@@ -74,27 +74,53 @@ export class LwcPanelManager {
     // Store reference to the panel
     this.activePanels.set(lwcId, panel);
 
-    // Set up disposal handling
+    // Set up disposal handling.
+    // Use the panel's CURRENT id at disposal time: a pending command-execution
+    // panel can be rekeyed (see rekeyPanel) after creation.
     const originalDispose = panel.dispose.bind(panel);
     panel.dispose = () => {
+      const currentId = panel.getLwcId();
       // Call disposal callback if registered
-      const callback = this.disposalCallbacks.get(lwcId);
+      const callback = this.disposalCallbacks.get(currentId);
       if (callback) {
         try {
           callback();
         } catch (error) {
           Logger.log("Error in disposal callback:\n" + JSON.stringify(error));
         }
-        this.disposalCallbacks.delete(lwcId);
+        this.disposalCallbacks.delete(currentId);
       }
 
       // Clean up our references when panel is disposed
-      this.activePanels.delete(lwcId);
-      this.clearDisposeTimer(lwcId);
+      this.activePanels.delete(currentId);
+      this.clearDisposeTimer(currentId);
       // Call original dispose
       originalDispose();
     };
 
+    return panel;
+  }
+
+  /**
+   * Re-key an existing panel under a new LWC id.
+   * Used when a command-execution panel opened at click time (with a
+   * provisional id) is adopted by the CLI process once it connects with its
+   * own context id. Returns the panel, or null when the old id is unknown.
+   */
+  public rekeyPanel(oldLwcId: string, newLwcId: string): LwcUiPanel | null {
+    const panel = this.activePanels.get(oldLwcId);
+    if (!panel || panel.isDisposed() || oldLwcId === newLwcId) {
+      return panel && !panel.isDisposed() ? panel : null;
+    }
+    this.clearDisposeTimer(oldLwcId);
+    this.activePanels.delete(oldLwcId);
+    this.activePanels.set(newLwcId, panel);
+    const callback = this.disposalCallbacks.get(oldLwcId);
+    if (callback) {
+      this.disposalCallbacks.delete(oldLwcId);
+      this.disposalCallbacks.set(newLwcId, callback);
+    }
+    panel.setLwcId(newLwcId);
     return panel;
   }
 

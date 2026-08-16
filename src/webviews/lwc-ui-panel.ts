@@ -17,8 +17,18 @@ export class LwcUiPanel {
   private lwcId: string;
   private disposables: vscode.Disposable[] = [];
   private messageListeners: MessageListener[] = [];
+  // Listeners that survive clearExistingOnMessageListeners (panel reuse):
+  // e.g. the command-runner cancel wiring of command-execution panels
+  private persistentMessageListeners: MessageListener[] = [];
   private initializationData: any = null;
   private _isDisposed: boolean = false;
+  /**
+   * Lifecycle status of the command displayed by a command-execution panel.
+   * Kept as structured state so callers never have to parse the (localized)
+   * panel title to know whether a command is still running.
+   */
+  public commandStatus:
+    "pending" | "running" | "completed" | "error" | "aborted" | null = null;
 
   private constructor(
     panel: vscode.WebviewPanel,
@@ -124,6 +134,9 @@ export class LwcUiPanel {
    * @param title New title for the panel
    */
   public updateTitle(title: string): void {
+    if (this._isDisposed) {
+      return;
+    }
     this.panel.title = title;
   }
 
@@ -138,6 +151,18 @@ export class LwcUiPanel {
    */
   public getTitle(): string {
     return this.panel.title;
+  }
+
+  /**
+   * Current LWC id of this panel (can change when a pending command-execution
+   * panel is adopted by the CLI once it connects, see LwcPanelManager.rekeyPanel)
+   */
+  public getLwcId(): string {
+    return this.lwcId;
+  }
+
+  public setLwcId(lwcId: string): void {
+    this.lwcId = lwcId;
   }
 
   public setPanelTitleFromLwcId() {
@@ -192,6 +217,7 @@ export class LwcUiPanel {
 
     // Clear message listeners
     this.messageListeners = [];
+    this.persistentMessageListeners = [];
   }
 
   public isDisposed(): boolean {
@@ -211,6 +237,11 @@ export class LwcUiPanel {
    * @param data The data to send to the webview for initialization
    */
   public sendInitializationData(data: any): void {
+    // The panel can be closed by the user before the delayed initialization
+    // fires: accessing the webview of a disposed panel throws
+    if (this._isDisposed) {
+      return;
+    }
     const resolvedData = LwcUiPanel.resolveImagePathsInData(
       this.panel.webview,
       this.extensionUri,
@@ -249,6 +280,9 @@ export class LwcUiPanel {
    * @param message The message to send
    */
   public sendMessage(message: any): void {
+    if (this._isDisposed) {
+      return;
+    }
     this.panel.webview.postMessage(message);
   }
 
@@ -257,20 +291,29 @@ export class LwcUiPanel {
    * @param listener Function that will be called when a message is received
    * @returns Function to unregister the listener
    */
-  public onMessage(listener: MessageListener): () => void {
-    this.messageListeners.push(listener);
+  public onMessage(
+    listener: MessageListener,
+    persistent: boolean = false,
+  ): () => void {
+    const targetList = persistent
+      ? this.persistentMessageListeners
+      : this.messageListeners;
+    targetList.push(listener);
 
     // Return unsubscribe function
     return () => {
-      const index = this.messageListeners.indexOf(listener);
+      const index = targetList.indexOf(listener);
       if (index > -1) {
-        this.messageListeners.splice(index, 1);
+        targetList.splice(index, 1);
       }
     };
   }
 
   public clearExistingOnMessageListeners(): void {
-    // Clear listeners previously added with onMessage method
+    // Clear listeners previously added with onMessage method.
+    // Persistent listeners are kept: they belong to the panel lifecycle
+    // (e.g. cancel-on-close of command-execution panels), not to the LWC
+    // initialization that getOrCreatePanel is about to redo.
     this.messageListeners = [];
   }
 
@@ -771,15 +814,19 @@ export class LwcUiPanel {
     const messageType = message.type || "unknown";
     const data = message.data || message;
 
-    this.messageListeners.forEach((listener) => {
-      try {
-        listener(messageType, data);
-      } catch (error) {
-        Logger.log(
-          "Error in LWC UI message listener:\n" + JSON.stringify(error),
-        );
-      }
-    });
+    // Iterate over a copy: a listener that unsubscribes itself while being
+    // notified must not make the next listener be skipped
+    [...this.messageListeners, ...this.persistentMessageListeners].forEach(
+      (listener) => {
+        try {
+          listener(messageType, data);
+        } catch (error) {
+          Logger.log(
+            "Error in LWC UI message listener:\n" + JSON.stringify(error),
+          );
+        }
+      },
+    );
   }
 
   private update() {
@@ -916,6 +963,24 @@ export class LwcUiPanel {
       mermaidTheme.edgeLabelBackground = "rgba(77, 77, 77, 0.5)";
     }
 
+    // mermaid.min.js weighs several MB: only the pipeline panel renders
+    // mermaid diagrams, so other panels (including the auto-opened Welcome
+    // page) skip loading and initializing it entirely.
+    const needsMermaid = this.lwcId === "s-pipeline";
+    const mermaidScripts = needsMermaid
+      ? `<script src="${webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, "out", "webviews", "mermaid.min.js"))}"></script>
+        <script>
+            mermaid.initialize({
+              startOnLoad: false,
+              securityLevel: 'loose',
+              themeVariables: {
+                clusterBkg: "${mermaidTheme.clusterBkg}",
+                edgeLabelBackground: "${mermaidTheme.edgeLabelBackground}"
+              }
+            });
+        </script>`
+      : "";
+
     return `<!DOCTYPE html>
       <html lang="en">
       <head>
@@ -942,17 +1007,7 @@ export class LwcUiPanel {
           // Set SLDS icons path for LWC components
           window.SLDS_ICONS_PATH = "${sldsIconsUri}";
         </script>
-        <script src="${webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, "out", "webviews", "mermaid.min.js"))}"></script>
-        <script>
-            mermaid.initialize({
-              startOnLoad: false,
-              securityLevel: 'loose',
-              themeVariables: {
-                clusterBkg: "${mermaidTheme.clusterBkg}",
-                edgeLabelBackground: "${mermaidTheme.edgeLabelBackground}"
-              }
-            });
-        </script>
+        ${mermaidScripts}
         <script src="${scriptUri}"></script>
       </body>
       </html>`;

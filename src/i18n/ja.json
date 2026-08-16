@@ -204,6 +204,7 @@
   "commandTitleCompleted": "{{commandName}} - 完了",
   "commandTitleError": "{{commandName}} - エラー",
   "commandTitleRunning": "{{commandName}} - 実行中",
+  "commandTitleStarting": "{{commandName}} - 起動中...",
   "commandType": "コマンド",
   "commercialUseAllowed": "商用利用可",
   "commitAndPushFile": "{{fileName}} を commit & push",
