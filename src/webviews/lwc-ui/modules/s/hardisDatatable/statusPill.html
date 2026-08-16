@@ -1,15 +1,17 @@
 <template>
-    <template if:true={typeAttributes.url}>
-        <a
-            href={typeAttributes.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            class={typeAttributes.pillClass}
-            title={typeAttributes.label}
-        ><span class="hardis-pill-dot"></span>{typeAttributes.label}</a>
-    </template>
-    <template if:false={typeAttributes.url}>
-        <span class={typeAttributes.pillClass} title={typeAttributes.label}
-        ><span class="hardis-pill-dot"></span>{typeAttributes.label}</span>
+    <template if:true={typeAttributes.label}>
+        <template if:true={typeAttributes.url}>
+            <a
+                href={typeAttributes.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                class={typeAttributes.pillClass}
+                title={typeAttributes.label}
+            ><span class="hardis-pill-dot"></span>{typeAttributes.label}</a>
+        </template>
+        <template if:false={typeAttributes.url}>
+            <span class={typeAttributes.pillClass} title={typeAttributes.label}
+            ><span class="hardis-pill-dot"></span>{typeAttributes.label}</span>
+        </template>
     </template>
 </template>

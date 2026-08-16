@@ -18,7 +18,7 @@ export default class InstalledPackages extends SharedMixin(LightningElement) {
       {
         label: this.t("namespaceColumn"),
         fieldName: "SubscriberPackageNamespace",
-        type: "text",
+        type: "branchChip",
         sortable: false,
       },
       {

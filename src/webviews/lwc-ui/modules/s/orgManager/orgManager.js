@@ -59,7 +59,11 @@ export default class OrgManager extends SharedMixin(LightningElement) {
       {
         label: this.t("usernameLabel"),
         fieldName: "username",
-        type: "text",
+        type: "avatarText",
+        typeAttributes: {
+          initials: { fieldName: "usernameInitials" },
+          avatarClass: { fieldName: "usernameAvatarClass" },
+        },
         cellAttributes: { class: { fieldName: "rowClass" } },
       },
       {
@@ -79,15 +83,23 @@ export default class OrgManager extends SharedMixin(LightningElement) {
       {
         label: this.t("connectedLabel"),
         fieldName: "connectedLabel",
-        type: "text",
-        initialWidth: 140,
+        type: "statusPill",
+        typeAttributes: {
+          label: { fieldName: "connectedLabel" },
+          pillClass: { fieldName: "connectedPillClass" },
+        },
+        initialWidth: 150,
         cellAttributes: { class: { fieldName: "rowClass" } },
       },
       {
         label: this.t("roleLabel"),
         fieldName: "defaultLabel",
-        type: "text",
-        initialWidth: 100,
+        type: "statusPill",
+        typeAttributes: {
+          label: { fieldName: "defaultLabel" },
+          pillClass: { fieldName: "rolePillClass" },
+        },
+        initialWidth: 130,
         cellAttributes: { class: { fieldName: "rowClass" } },
       },
       {
@@ -123,6 +135,19 @@ export default class OrgManager extends SharedMixin(LightningElement) {
         .match(/connected|authorized/)
         ? this.t("connectedLabel")
         : this.t("disconnectedStatus"),
+      // Pill CSS class for the Connected column (statusPill cell type)
+      connectedPillClass: (o.connectedStatus || "")
+        .toString()
+        .toLowerCase()
+        .match(/connected|authorized/)
+        ? "hardis-pill hardis-status-success"
+        : "hardis-pill hardis-status-failed",
+      // Initials avatar for the username column (avatarText cell type). The
+      // color variant is stable per username (hash of the name).
+      usernameInitials: this._getUsernameInitials(
+        o.username || o.loginUrl || o.instanceUrl,
+      ),
+      usernameAvatarClass: `hardis-avatar hardis-avatar-c${this._hashString(o.username || o.loginUrl || o.instanceUrl || "") % 6}`,
       // Compute row actions for the Actions column: Open (connected), Reconnect (disconnected), Remove (always)
       rowActions: (() => {
         const isConnected = (o.connectedStatus || "")
@@ -229,6 +254,10 @@ export default class OrgManager extends SharedMixin(LightningElement) {
         : o.isDefaultDevHubUsername
           ? this.t("devHub")
           : "",
+      // Pill CSS class for the Role column (statusPill cell type)
+      rolePillClass: o.isDefaultUsername
+        ? "hardis-pill hardis-status-success"
+        : "hardis-pill hardis-status-unknown",
     }));
     // If a default org or a default dev hub exists, move them to the top of the list
     const prioritized = [];
@@ -351,7 +380,7 @@ export default class OrgManager extends SharedMixin(LightningElement) {
     // Try to gather usernames from tracked selection; if empty, fallback to the datatable's selected rows
     let usernames = (this.selectedRowKeys || []).slice();
     if (!usernames || usernames.length === 0) {
-      const table = this.template.querySelector("lightning-datatable");
+      const table = this.template.querySelector("s-hardis-datatable");
       if (table && typeof table.getSelectedRows === "function") {
         const rows = table.getSelectedRows() || [];
         usernames = rows.map((r) => r.username).filter(Boolean);
@@ -585,6 +614,31 @@ export default class OrgManager extends SharedMixin(LightningElement) {
     }
 
     return null; // No validation errors
+  }
+
+  // Derive two initials from a username (e.g. "nicolas.vuillamy@cloudity.com" -> "NV")
+  // for the avatarText cell type used in the username column.
+  _getUsernameInitials(username) {
+    if (!username) {
+      return "?";
+    }
+    const namePart = username.toString().split("@")[0];
+    const words = namePart.split(/[.\-_]+/).filter(Boolean);
+    if (words.length === 0) {
+      return namePart.slice(0, 2).toUpperCase();
+    }
+    if (words.length === 1) {
+      return words[0].slice(0, 2).toUpperCase();
+    }
+    return (words[0].charAt(0) + words[1].charAt(0)).toUpperCase();
+  }
+
+  _hashString(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = (hash * 31 + str.charCodeAt(i)) | 0;
+    }
+    return Math.abs(hash);
   }
 
   requestRunInternalCommand(internalCommand) {

@@ -15,6 +15,11 @@
     - Alternate row background colors and a hover highlight, in all tables of the extension
     - Job status displayed as a colored chip with its label, author shown with an initials avatar, source and target branches as compact monospace chips, and merge dates in a short one-line format
   - The pull requests modal got a design refresh: brand accent strip, branch name and pull request count displayed as chips in the title, and theme-aware Release Notes buttons (the previous green buttons could be hard to read in dark mode)
+  - The same design was applied to the tables and modals of the other panels
+    - Org Manager: the connection status is a green/red colored chip, the default org and Dev Hub roles are highlighted chips, and each username gets an initials avatar
+    - Metadata Retriever: "Last Updated By" shows an initials avatar, and update dates are aligned for easier scanning
+    - Installed Packages: package namespaces are displayed as compact monospace chips
+    - All dialog windows (Data Workbench, Files Workbench, Pipeline Config, Monitoring Config, Deployment Actions) open with the same brand accent strip as the pull requests modal
   - Quick action cards and other panels (Org Monitoring, Package XML, Documentation, Welcome, Setup, Monitoring Config, Metadata Retriever) now use the official Salesforce color palette for their icons and buttons
 
 - Performance

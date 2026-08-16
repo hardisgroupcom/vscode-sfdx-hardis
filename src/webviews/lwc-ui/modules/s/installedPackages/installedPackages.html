@@ -18,7 +18,7 @@
                     <p lwc:inner-html={packagesScratchOrgInfoHtml}></p>
                 </span>
             </div>
-            <lightning-datatable
+            <s-hardis-datatable
                 key-field="Id"
                 data={packages}
                 columns={columns}
@@ -29,7 +29,7 @@
                 oncellchange={handleDraftValuesChange}
                 hide-checkbox-column
                 class="slds-m-bottom_medium"
-            ></lightning-datatable>
+            ></s-hardis-datatable>
         </div>
     </lightning-card>
     </div>

@@ -34,7 +34,7 @@
                     <template if:true={isLoading}>
                         <lightning-spinner alternative-text={i18n.loadingSalesforceOrgsShort} size="medium"></lightning-spinner>
                     </template>
-                    <lightning-datatable
+                    <s-hardis-datatable
                         key-field="username"
                         data={orgs}
                         column-widths-mode="auto"
@@ -48,7 +48,7 @@
                         selected-rows={selectedRowKeys}
                         hide-checkbox-column={hasAliasChanges}
                         class="slds-m-bottom_medium"
-                    ></lightning-datatable>
+                    ></s-hardis-datatable>
                 </div>
             </template>
             

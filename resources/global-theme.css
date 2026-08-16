@@ -906,6 +906,48 @@ div.slds-scope[data-theme="dark"] {
 }
 
 /* ------------------------------------------------------------------ */
+/* Modal polish (all webviews)                                        */
+/* Brand accent strip on top of the modal container + optional title  */
+/* parts (chip / count badge). Add <div class="modal-accent-strip">   */
+/* as the first child of .slds-modal__container to opt in.            */
+/* ------------------------------------------------------------------ */
+.slds-scope[data-theme] .modal-accent-strip,
+.slds-scope .modal-accent-strip {
+  height: 4px;
+  flex-shrink: 0;
+  border-radius: 0.25rem 0.25rem 0 0;
+  background: linear-gradient(
+    90deg,
+    var(--slds-g-color-palette-blue-50),
+    var(--slds-g-color-palette-blue-60)
+  );
+}
+.slds-scope[data-theme] .modal-accent-strip + .slds-modal__header,
+.slds-scope .modal-accent-strip + .slds-modal__header {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+/* Modal title composed of several parts (text + chip + count badge) */
+.slds-scope[data-theme] .modal-title-parts,
+.slds-scope .modal-title-parts {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.slds-scope[data-theme] .modal-count-badge,
+.slds-scope .modal-count-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  border-radius: 999px;
+  padding: 1px 9px;
+  background: var(--slds-g-color-palette-blue-90);
+  color: var(--slds-g-color-palette-blue-30);
+}
+
+/* ------------------------------------------------------------------ */
 /* Tinted green action button (release notes, retrieve...)            */
 /* Same recipe as the rf-type-* buttons: neutral SLDS button base +   */
 /* light-dark() palette tokens, so it stays readable in both themes   */

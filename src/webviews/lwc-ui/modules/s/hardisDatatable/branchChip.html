@@ -1,3 +1,5 @@
 <template>
-    <span class="hardis-branch-chip" title={value}>{value}</span>
+    <template if:true={value}>
+        <span class="hardis-branch-chip" title={value}>{value}</span>
+    </template>
 </template>

@@ -434,45 +434,12 @@
     flex-direction: column !important;
 }
 
-/* Brand accent strip on top of the modal */
-.modal-accent-strip {
-    height: 4px;
-    flex-shrink: 0;
-    border-radius: 0.25rem 0.25rem 0 0;
-    background: linear-gradient(
-        90deg,
-        var(--slds-g-color-palette-blue-50),
-        var(--slds-g-color-palette-blue-60)
-    );
-}
-
-.slds-modal__container .slds-modal__header {
-    border-top-left-radius: 0;
-    border-top-right-radius: 0;
-}
-
-/* Modal title: "<PR label>s in" + branch chip + count badge */
-.modal-title-parts {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-}
+/* Modal accent strip, title parts and count badge are shared across all
+   webviews — styles live in resources/global-theme.css */
 
 .modal-branch-chip {
     font-size: 0.95rem;
     padding: 2px 10px;
-}
-
-.modal-count-badge {
-    font-size: 0.75rem;
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-    border-radius: 999px;
-    padding: 1px 9px;
-    background: var(--slds-g-color-palette-blue-90);
-    color: var(--slds-g-color-palette-blue-30);
 }
 
 /* Ensure modal content area is flexible and scrollable */

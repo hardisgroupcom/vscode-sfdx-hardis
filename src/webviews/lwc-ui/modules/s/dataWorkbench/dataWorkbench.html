@@ -461,7 +461,7 @@
                       ></lightning-button-icon>
                     </div>
                     <template if:true={hasExportedFiles}>
-                      <lightning-datatable
+                      <s-hardis-datatable
                         key-field="path"
                         data={exportedFilesForDisplay}
                         columns={exportedFilesColumns}
@@ -469,7 +469,7 @@
                         show-row-number-column
                         onrowaction={handleExportedFileAction}
                         class="exported-files-table"
-                      ></lightning-datatable>
+                      ></s-hardis-datatable>
                     </template>
                     <template if:false={hasExportedFiles}>
                       <div class="empty-section-message">
@@ -495,7 +495,7 @@
                       ></lightning-button-icon>
                     </div>
                     <template if:true={hasLogFiles}>
-                      <lightning-datatable
+                      <s-hardis-datatable
                         key-field="path"
                         data={logFilesForDisplay}
                         columns={logFilesColumns}
@@ -503,7 +503,7 @@
                         show-row-number-column
                         onrowaction={handleLogFileAction}
                         class="exported-files-table"
-                      ></lightning-datatable>
+                      ></s-hardis-datatable>
                     </template>
                     <template if:false={hasLogFiles}>
                       <div class="empty-section-message">
@@ -537,6 +537,7 @@
   <template if:true={showPropertiesModal}>
     <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
       <div class="slds-modal__container">
+        <div class="modal-accent-strip"></div>
         <header class="slds-modal__header">
           <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title={i18n.closeLabel} onclick={handleCancelProperties}>
             <lightning-icon icon-name="utility:close" alternative-text={i18n.closeLabel} size="small"></lightning-icon>
@@ -643,6 +644,7 @@
   <template if:true={showObjectModal}>
     <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
       <div class="slds-modal__container tabbed-modal-container">
+        <div class="modal-accent-strip"></div>
         <header class="slds-modal__header">
           <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title={i18n.closeLabel} onclick={handleCancelObject}>
             <lightning-icon icon-name="utility:close" alternative-text={i18n.closeLabel} size="small"></lightning-icon>
@@ -1222,6 +1224,7 @@
   <template if:true={showGlobalSettingsModal}>
     <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open slds-modal_large" aria-modal="true" aria-labelledby="global-settings-heading">
       <div class="slds-modal__container tabbed-modal-container">
+        <div class="modal-accent-strip"></div>
         <header class="slds-modal__header">
           <lightning-button-icon icon-name="utility:close" alternative-text={i18n.dwbClose} class="slds-modal__close" onclick={handleCancelGlobalSettings}></lightning-button-icon>
           <h2 id="global-settings-heading" class="slds-modal__title slds-hyphenate">{i18n.dwbGlobalSettingsTitle}</h2>

@@ -149,10 +149,14 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
     cols.push({
       label: this.t("lastUpdatedByLabel"),
       fieldName: "LastModifiedByName",
-      type: "text",
+      type: "avatarText",
       sortable: true,
       wrapText: true,
       initialWidth: 165,
+      typeAttributes: {
+        initials: { fieldName: "lastModifiedInitials" },
+        avatarClass: { fieldName: "lastModifiedAvatarClass" },
+      },
     });
 
     // Last Updated Date
@@ -169,6 +173,9 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
         minute: "2-digit",
       },
       initialWidth: 165,
+      cellAttributes: {
+        class: "hardis-date-cell",
+      },
     });
 
     // Local file existence column (centered) - only when the user enabled the toggle
@@ -1334,6 +1341,12 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
           icon = "🔴";
         }
 
+        // Handle both SourceMember format (LastModifiedBy.Name) and Metadata API format (lastModifiedByName)
+        const lastModifiedByName =
+          record.LastModifiedByName ||
+          (record.LastModifiedBy ? record.LastModifiedBy.Name : "") ||
+          "";
+
         return {
           MemberName: record.MemberName,
           MemberType: record.MemberType,
@@ -1341,11 +1354,14 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
           MemberTypeTitle: `View ${record.MemberType} documentation`,
           MemberNameTitle: `Open metadata for ${record.MemberType} ${record.MemberName}`,
           LastModifiedDate: record.LastModifiedDate,
-          // Handle both SourceMember format (LastModifiedBy.Name) and Metadata API format (lastModifiedByName)
-          LastModifiedByName:
-            record.LastModifiedByName ||
-            (record.LastModifiedBy ? record.LastModifiedBy.Name : "") ||
-            "",
+          LastModifiedByName: lastModifiedByName,
+          // Initials avatar for the "Last Updated By" column (avatarText cell type).
+          // The color variant is stable per name (hash of the name). Left empty when
+          // the name is unknown so the cell only shows the (empty) name text.
+          lastModifiedInitials: this._getLastModifiedInitials(lastModifiedByName),
+          lastModifiedAvatarClass: lastModifiedByName
+            ? `hardis-avatar hardis-avatar-c${this._hashString(lastModifiedByName) % 6}`
+            : "",
           uniqueKey: `${record.MemberType}::${record.MemberName}`,
           ChangeIcon: icon,
           // Local file indicator: show  when present; otherwise leave empty
@@ -1357,6 +1373,33 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
       this.metadata = [];
       this.filteredMetadata = [];
     }
+  }
+
+  // Initials for the avatarText cell type (Last Updated By column). Empty
+  // when the name is unknown so the cell only displays the name text.
+  _getLastModifiedInitials(name) {
+    if (!name) {
+      return "";
+    }
+    const words = name.trim().split(/\s+/).filter(Boolean);
+    if (words.length === 0) {
+      return "";
+    }
+    if (words.length === 1) {
+      return words[0].slice(0, 2).toUpperCase();
+    }
+    return (
+      words[0].charAt(0) + words[words.length - 1].charAt(0)
+    ).toUpperCase();
+  }
+
+  // Deterministic hash used to pick a stable avatar color variant per name.
+  _hashString(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = (hash * 31 + str.charCodeAt(i)) | 0;
+    }
+    return Math.abs(hash);
   }
 
   handleQueryError(data) {
