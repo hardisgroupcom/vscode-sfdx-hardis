@@ -218,9 +218,7 @@ function findPrePostCommandIndex(
   command: PrePostCommand,
   original?: Partial<PrePostCommand> | null,
 ): number {
-  let index = array.findIndex(
-    (cmd) => !!cmd.id && cmd.id === command.id,
-  );
+  let index = array.findIndex((cmd) => !!cmd.id && cmd.id === command.id);
   if (index >= 0) {
     return index;
   }
@@ -372,14 +370,11 @@ export async function listProjectApexTestClasses(): Promise<string[]> {
 
   const patterns = pkgDirs.map((pkgDir) => {
     const normalized = normalizeGlobBase(String(pkgDir || "."));
-    return normalized
-      ? `${normalized}/**/classes/*.cls`
-      : `**/classes/*.cls`;
+    return normalized ? `${normalized}/**/classes/*.cls` : `**/classes/*.cls`;
   });
   const combinedPattern =
     patterns.length > 1 ? `{${patterns.join(",")}}` : patterns[0];
-  const excludePattern =
-    "**/{node_modules,.git,dist,out,.sf,.sfdx,.vscode}/**";
+  const excludePattern = "**/{node_modules,.git,dist,out,.sf,.sfdx,.vscode}/**";
 
   const uris = await vscode.workspace.findFiles(
     new vscode.RelativePattern(workspaceRoot, combinedPattern),

@@ -55,7 +55,11 @@ suite("sortUtils Test Suite", () => {
   });
 
   test("sorts using a custom order array", () => {
-    const items = [{ skill: "power" }, { skill: "accuracy" }, { skill: "speed" }];
+    const items = [
+      { skill: "power" },
+      { skill: "accuracy" },
+      { skill: "speed" },
+    ];
     const sorted = sortArray(items, {
       by: ["skill"],
       order: ["skillOrder"],

@@ -11,7 +11,9 @@ suite("gitUrlUtils Test Suite", () => {
 
   test("converts an ssh:// remote to https", () => {
     assert.strictEqual(
-      gitRemoteToHttps("ssh://git@github.com/hardisgroupcom/vscode-sfdx-hardis.git"),
+      gitRemoteToHttps(
+        "ssh://git@github.com/hardisgroupcom/vscode-sfdx-hardis.git",
+      ),
       "https://github.com/hardisgroupcom/vscode-sfdx-hardis",
     );
   });
@@ -56,9 +58,6 @@ suite("gitUrlUtils Test Suite", () => {
   });
 
   test("returns an empty string for a UNC local path remote", () => {
-    assert.strictEqual(
-      gitRemoteToHttps("\\\\server\\share\\repo.git"),
-      "",
-    );
+    assert.strictEqual(gitRemoteToHttps("\\\\server\\share\\repo.git"), "");
   });
 });

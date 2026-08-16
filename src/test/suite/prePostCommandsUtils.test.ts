@@ -53,7 +53,12 @@ suite("prePostCommandsUtils Test Suite", () => {
     test("defaults a missing value to true when listing, matching the CLI default", async () => {
       writeActionsFile(workspaceRoot, 42, {
         commandsPreDeploy: [
-          { id: "a1", label: "No explicit value", type: "command", command: "echo hi" },
+          {
+            id: "a1",
+            label: "No explicit value",
+            type: "command",
+            command: "echo hi",
+          },
         ],
       });
 
@@ -166,10 +171,7 @@ suite("prePostCommandsUtils Test Suite", () => {
       assert.strictEqual(saved.commandsPreDeploy.length, 1);
       assert.strictEqual(saved.commandsPreDeploy[0].label, "New label");
       assert.strictEqual(saved.commandsPreDeploy[0].command, "echo new");
-      assert.strictEqual(
-        saved.commandsPreDeploy[0].id,
-        "freshly-generated-id",
-      );
+      assert.strictEqual(saved.commandsPreDeploy[0].id, "freshly-generated-id");
     });
 
     test("still appends a genuinely new action when no snapshot is provided", async () => {
@@ -205,7 +207,12 @@ suite("prePostCommandsUtils Test Suite", () => {
     test("updates in place when a second edit renames the entry again", async () => {
       writeActionsFile(workspaceRoot, -1, {
         commandsPreDeploy: [
-          { label: "Original", type: "command", command: "echo v1", context: "all" },
+          {
+            label: "Original",
+            type: "command",
+            command: "echo v1",
+            context: "all",
+          },
         ],
       });
 
@@ -220,7 +227,13 @@ suite("prePostCommandsUtils Test Suite", () => {
           when: "pre-deploy",
           context: "all",
         } as any,
-        { id: "", label: "Original", type: "command", command: "echo v1", when: "pre-deploy" },
+        {
+          id: "",
+          label: "Original",
+          type: "command",
+          command: "echo v1",
+          when: "pre-deploy",
+        },
         workspaceRoot,
       );
 

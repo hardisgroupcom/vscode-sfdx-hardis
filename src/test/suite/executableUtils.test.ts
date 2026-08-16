@@ -21,7 +21,10 @@ suite("executableUtils Test Suite", () => {
     const isWindows = process.platform === "win32";
     const fileName = isWindows ? "fake-tool.cmd" : "fake-tool";
     const filePath = path.join(tempDir, fileName);
-    fs.writeFileSync(filePath, isWindows ? "@echo off\r\n" : "#!/bin/sh\necho hi\n");
+    fs.writeFileSync(
+      filePath,
+      isWindows ? "@echo off\r\n" : "#!/bin/sh\necho hi\n",
+    );
     if (!isWindows) {
       fs.chmodSync(filePath, 0o755);
     }
@@ -46,7 +49,10 @@ suite("executableUtils Test Suite", () => {
     const isWindows = process.platform === "win32";
     const fileName = isWindows ? "quoted-tool.cmd" : "quoted-tool";
     const filePath = path.join(tempDir, fileName);
-    fs.writeFileSync(filePath, isWindows ? "@echo off\r\n" : "#!/bin/sh\necho hi\n");
+    fs.writeFileSync(
+      filePath,
+      isWindows ? "@echo off\r\n" : "#!/bin/sh\necho hi\n",
+    );
     if (!isWindows) {
       fs.chmodSync(filePath, 0o755);
     }

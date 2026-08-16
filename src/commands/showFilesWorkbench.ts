@@ -278,7 +278,9 @@ async function updateFilesWorkspace(data: any): Promise<void> {
   // If the name changed, rename the directory
   if (oldPath !== newPath && fs.existsSync(oldPath)) {
     if (fs.existsSync(newPath)) {
-      throw new Error(`Cannot rename files workspace: ${newPath} already exists`);
+      throw new Error(
+        `Cannot rename files workspace: ${newPath} already exists`,
+      );
     }
     await fs.promises.rename(oldPath, newPath);
   }

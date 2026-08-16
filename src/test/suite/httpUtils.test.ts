@@ -88,8 +88,6 @@ suite("httpUtils Test Suite", () => {
   });
 
   test("getText aborts with a timeout on a slow response", async () => {
-    await assert.rejects(() =>
-      getText(`${baseUrl}/slow`, { timeoutMs: 200 }),
-    );
+    await assert.rejects(() => getText(`${baseUrl}/slow`, { timeoutMs: 200 }));
   }).timeout(5000);
 });

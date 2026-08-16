@@ -97,9 +97,7 @@ export async function getExtensionConfigSections(
   const packageJsonPath = path.join(extensionUri.fsPath, "package.json");
   let configProps: Record<string, any> = {};
   try {
-    const pkg = JSON.parse(
-      await fs.promises.readFile(packageJsonPath, "utf8"),
-    );
+    const pkg = JSON.parse(await fs.promises.readFile(packageJsonPath, "utf8"));
     configProps = pkg.contributes?.configuration?.properties || {};
   } catch {
     // fallback: no config
