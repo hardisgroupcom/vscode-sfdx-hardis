@@ -2426,15 +2426,15 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     const SVG_NS = "http://www.w3.org/2000/svg";
     // Target ON-SCREEN size converted to SVG units: the whole SVG is scaled
     // down to fit the viewport, so the badge is drawn 1/scale larger to still
-    // measure ~20px on screen (clamped so it never becomes gigantic).
+    // measure ~17px on screen (clamped so it never becomes gigantic).
     const unit = 1 / Math.min(Math.max(svgScale || 1, 0.35), 1);
-    const height = Math.round(20 * unit);
-    const fontSize = Math.round(13 * unit);
+    const height = Math.round(17 * unit);
+    const fontSize = Math.round(11.5 * unit);
     const width = Math.max(
       height,
-      Math.round((11 + 8 * String(count).length) * unit),
+      Math.round((9 + 7 * String(count).length) * unit),
     );
-    const ringWidth = Math.max(1.5, 2 * unit);
+    const ringWidth = Math.max(1, 1.25 * unit);
     // The badge is styled ENTIRELY inline (style attribute), and every paint
     // property is set explicitly: mermaid compiles classDefs into
     // "#id .gitMajor>*{stroke:...!important}" rules that hit this group (a
@@ -2443,9 +2443,17 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     // unreadable. Inline styles also make the badge immune to stale cached
     // stylesheets, and the explicit font stack avoids mermaid's default
     // trebuchet ms.
+    // Look: white pill / navy numeral / blue hairline + soft shadow (light),
+    // dark surface pill / bright hairline (dark) - separates cleanly from
+    // both the node fill and the page background instead of competing with
+    // the node blues.
     const isDark = this.colorTheme === "dark";
-    const pillFill = isDark ? "#1b96ff" : "#0b5cab";
-    const ringAndText = isDark ? "#000000" : "#ffffff";
+    const pillFill = isDark ? "#101720" : "#ffffff";
+    const pillStroke = isDark ? "#57a3fd" : "#0176d3";
+    const numColor = isDark ? "#eaf3ff" : "#032d60";
+    const shadow = isDark
+      ? `drop-shadow(0 ${1 * unit}px ${1.5 * unit}px rgba(0,0,0,0.5))`
+      : `drop-shadow(0 ${1 * unit}px ${1.5 * unit}px rgba(3,45,96,0.35))`;
     const fontFamily =
       "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif";
     // Bubble centered on the node's top-right corner (coordinates are local
@@ -2465,7 +2473,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     pill.setAttribute("rx", String(height / 2));
     pill.setAttribute(
       "style",
-      `fill:${pillFill};stroke:${ringAndText};stroke-width:${ringWidth}px;stroke-dasharray:none;`,
+      `fill:${pillFill};stroke:${pillStroke};stroke-width:${ringWidth}px;stroke-dasharray:none;filter:${shadow};`,
     );
     const text = document.createElementNS(SVG_NS, "text");
     text.setAttribute("x", String(cornerX));
@@ -2474,7 +2482,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
     text.setAttribute("dominant-baseline", "central");
     text.setAttribute(
       "style",
-      `fill:${ringAndText};stroke:none;font-family:${fontFamily};font-size:${fontSize}px;font-weight:700;font-variant-numeric:tabular-nums;`,
+      `fill:${numColor};stroke:none;font-family:${fontFamily};font-size:${fontSize}px;font-weight:700;font-variant-numeric:tabular-nums;`,
     );
     text.textContent = count;
     bubble.appendChild(pill);
