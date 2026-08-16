@@ -6,7 +6,11 @@ import {
   getSfdxHardisInstallTag,
   getWorkspaceRoot,
   isExtensionPreRelease,
+  getInstalledPluginsInfo,
+  resolvePluginInstallKind,
+  stripAnsi,
 } from "../utils";
+import { mustUpgradeSfdxHardisPlugin } from "./pluginsVersionUtils";
 import { findExecutable } from "./executableUtils";
 import { isMergeDriverEnabled } from "./gitMergeDriverUtils";
 import { t } from "../i18n/i18n";
@@ -543,7 +547,11 @@ export class SetupHelper {
         output: true,
         spinner: false,
       });
-      let stdout = (res && res.stdout && res.stdout.toString()) || "";
+      // ANSI codes are stripped: some environments make the CLI colorize its
+      // output even when not in a terminal, which would break the parsing below
+      let stdout = stripAnsi(
+        (res && res.stdout && res.stdout.toString()) || "",
+      );
       // Remove trailing Uninstalled JIT section if present
       const uninstalledJitIndex = stdout.indexOf("Uninstalled JIT");
       if (uninstalledJitIndex > -1) {
@@ -562,13 +570,19 @@ export class SetupHelper {
       // so the whole line is required to detect local dev / alpha / beta installs
       const lineMatch = new RegExp(escapedName + "\\s+(.*)$", "m").exec(stdout);
       const installedVersionDetail = lineMatch ? lineMatch[1].trim() : "";
-      // Locally developed plugin (sf plugins link): reinstalling it would break
-      // the dev setup, so never propose an upgrade
-      const isLocalDevPlugin = /\(link\)/i.test(installedVersionDetail);
-      // Alpha or beta build: the user knowingly runs a preview version
-      const isPreviewPlugin = /\((?:alpha|beta)\)|-(?:alpha|beta)/i.test(
+      // Install kind (localdev / preview / standard): `sf plugins --json` is
+      // authoritative (explicit type and tag), the displayed line is a fallback
+      const pluginsInfo = await getInstalledPluginsInfo();
+      const installKind = resolvePluginInstallKind(
+        pluginName,
+        pluginsInfo,
         installedVersionDetail,
       );
+      // Locally developed plugin (sf plugins link): reinstalling it would break
+      // the dev setup, so never propose an upgrade
+      const isLocalDevPlugin = installKind === "localdev";
+      // Alpha or beta build: the user knowingly runs a preview version
+      const isPreviewPlugin = installKind === "preview";
       // Get latest from npm to detect upgrades
       let latestPluginVersion: string | null = null;
       try {
@@ -581,9 +595,17 @@ export class SetupHelper {
       if (pluginName === "sfdx-hardis" && installedVersion) {
         const minimal = RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION || null;
         const sfdxHardisTag = getSfdxHardisInstallTag();
+        // Same decision as the startup prompt: a locally developed, alpha or
+        // beta plugin is always accepted
+        const mustUpgrade = mustUpgradeSfdxHardisPlugin({
+          kind: installKind,
+          installedVersion,
+          isExtensionPreRelease: isExtensionPreRelease(),
+          minimalVersion: minimal,
+        });
         // When running a pre-release extension, require a preview version
         // (an alpha, a beta, or a locally developed plugin)
-        if (isExtensionPreRelease() && !isLocalDevPlugin && !isPreviewPlugin) {
+        if (mustUpgrade && isExtensionPreRelease()) {
           return {
             id: `sfplugin:${pluginName}`,
             label: pluginName,
@@ -597,13 +619,38 @@ export class SetupHelper {
             upgradeAvailable: true,
           };
         }
-        if (
-          minimal &&
-          minimal !== "beta" &&
-          !isExtensionPreRelease() &&
-          !isLocalDevPlugin &&
-          this.compareVersions(installedVersion, minimal) < 0
-        ) {
+        // Released extension: an alpha or a beta plugin must be replaced by the
+        // latest published version
+        if (mustUpgrade && !isExtensionPreRelease() && isPreviewPlugin) {
+          return {
+            id: `sfplugin:${pluginName}`,
+            label: pluginName,
+            installed: true,
+            version: installedVersion,
+            recommended: latestPluginVersion,
+            status: "error",
+            helpUrl: `https://github.com/hardisgroupcom/sfdx-hardis`,
+            message: t("sfdxHardisPreviewPluginOnStableMessage"),
+            installCommand: `sf plugins install ${pluginName}@latest`,
+            upgradeAvailable: true,
+          };
+        }
+        // A beta build is required (RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION = "beta")
+        if (mustUpgrade && minimal === "beta") {
+          return {
+            id: `sfplugin:${pluginName}`,
+            label: pluginName,
+            installed: true,
+            version: installedVersion,
+            recommended: "beta",
+            status: "error",
+            helpUrl: `https://github.com/hardisgroupcom/sfdx-hardis`,
+            message: t("sfdxHardisPreReleaseBetaMessage"),
+            installCommand: `sf plugins install ${pluginName}@beta`,
+            upgradeAvailable: true,
+          };
+        }
+        if (mustUpgrade && minimal && minimal !== "beta") {
           return {
             id: `sfplugin:${pluginName}`,
             label: pluginName,

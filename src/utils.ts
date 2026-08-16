@@ -12,6 +12,13 @@ import { getConfig } from "./utils/pipeline/sfdxHardisConfig";
 import { RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION } from "./constants";
 import { resetSfdxHardisConfigCache } from "./utils/sfdx-hardis-config-utils";
 import { getJson } from "./utils/httpUtils";
+import {
+  InstalledPluginInfo,
+  PluginInstallKind,
+  getPluginInstallKindFromInfo,
+  getPluginInstallKindFromText,
+  parsePluginsJson,
+} from "./utils/pluginsVersionUtils";
 
 // Cached result of isExtensionPreRelease(): the installed extension package
 // can not change while VS Code is running, so it is resolved only once
@@ -32,6 +39,49 @@ export function isExtensionPreRelease(): boolean {
   }
   extensionPreRelease = ext.packageJSON?.preview === true;
   return extensionPreRelease;
+}
+
+/**
+ * Installed plugins as reported by `sf plugins --json`, which is the
+ * authoritative source: the install type (`link` for locally developed
+ * plugins) and the install tag (`alpha` / `beta`) are explicit, instead of
+ * being guessed from the display format of `sf plugins`.
+ * Cached only a few minutes, so linking or installing a plugin is reflected
+ * quickly (the plain `sf plugins` output is cached one day for display).
+ */
+export async function getInstalledPluginsInfo(): Promise<
+  Record<string, InstalledPluginInfo>
+> {
+  try {
+    const res: any = await execCommand("sf plugins --json", {
+      output: true,
+      fail: false,
+      cacheSection: "app",
+      cacheExpiration: 1000 * 60 * 5, // 5 minutes
+    });
+    return parsePluginsJson((res?.stdout || "").toString());
+  } catch (e: any) {
+    Logger.log("Unable to list installed plugins as JSON: " + e?.message);
+    return {};
+  }
+}
+
+/**
+ * Kind of install of a plugin (localdev / preview / standard / missing),
+ * resolved from `sf plugins --json` when available, and from the `sf plugins`
+ * text output otherwise. `versionDetail` is everything displayed after the
+ * plugin name, ex: "7.23.0 (link) C:\git\sfdx-hardis".
+ */
+export function resolvePluginInstallKind(
+  pluginName: string,
+  pluginsInfo: Record<string, InstalledPluginInfo>,
+  versionDetail: string,
+): PluginInstallKind {
+  const info = pluginsInfo?.[pluginName];
+  if (info) {
+    return getPluginInstallKindFromInfo(info);
+  }
+  return getPluginInstallKindFromText(versionDetail);
 }
 
 // Returns the npm install tag to use for sfdx-hardis plugin

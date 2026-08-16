@@ -6,9 +6,16 @@ import {
   getWorkspaceRoot,
   isToolingCachePreloaded,
   isExtensionPreRelease,
+  getInstalledPluginsInfo,
+  resolvePluginInstallKind,
+  stripAnsi,
   resetCache,
   execCommandWithProgress,
 } from "./utils";
+import {
+  getPluginInstallKindFromText,
+  mustUpgradeSfdxHardisPlugin,
+} from "./utils/pluginsVersionUtils";
 import { Logger } from "./logger";
 import { ThemeUtils } from "./utils/themeUtils";
 import { t } from "./i18n/i18n";
@@ -50,6 +57,38 @@ let PLUGINS_SFDXHARDIS_PROMPT_SHOWN = false;
 let PLUGINS_AUTO_UPGRADE_STARTED = false;
 // Guard against concurrent background detail passes
 let PLUGINS_DETAIL_IN_FLIGHT = false;
+
+// Replaces the "(link) /path/to/local/clone" suffix displayed by `sf plugins`
+// with a short "(localdev)" marker, as the full path bloats the tree item label
+function buildLocalDevPluginLabel(label: string): string {
+  return /\(link\)/i.test(label)
+    ? label.replace(/\(link\).*$/i, "(localdev)")
+    : `${label} (localdev)`;
+}
+
+// An alpha/beta sfdx-hardis plugin is only accepted when the extension is a
+// pre-release, or when a beta build is explicitly recommended. Other plugins
+// are not concerned by this rule.
+function isPreviewPluginAccepted(pluginName: string): boolean {
+  return (
+    pluginName !== "sfdx-hardis" ||
+    isExtensionPreRelease() ||
+    RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION === "beta"
+  );
+}
+
+// Returns everything `sf plugins` displays after the plugin name, ex:
+// "7.23.0 (link) C:\git\sfdx-hardis" or "7.23.1-beta202608161651.0 (beta)"
+function extractPluginVersionDetail(
+  sfdxPlugins: string,
+  pluginName: string,
+  fallback: string | null = null,
+): string {
+  const lineMatch = new RegExp(`^\\s*${pluginName}\\s+(.*)$`, "m").exec(
+    sfdxPlugins || "",
+  );
+  return lineMatch ? lineMatch[1].trim() : fallback || "";
+}
 
 export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTreeItem> {
   protected themeUtils: ThemeUtils;
@@ -369,11 +408,15 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
       }
     }
 
-    // Get installed plugins output
-    let sfdxPlugins: string =
+    // Get installed plugins output. ANSI codes are stripped because some
+    // environments make the CLI colorize its output even when not in a
+    // terminal (ex: "sfdx-hardis [2m7.23.0[22m (link) ..."), which
+    // would break the version and install tag parsing below
+    let sfdxPlugins: string = stripAnsi(
       sfPluginsResult.status === "fulfilled"
         ? sfPluginsResult.value.stdout || ""
-        : "";
+        : "",
+    );
     // Remove everything after "Uninstalled JIT", including it
     const uninstalledJitIndex = sfdxPlugins.indexOf("Uninstalled JIT");
     if (uninstalledJitIndex > -1) {
@@ -405,17 +448,40 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
         "gm",
       );
       const versionMatches = [...sfdxPlugins.matchAll(regexVersion)];
+      const pluginVersionDetail =
+        versionMatches.length > 0 ? versionMatches[0][1] : "";
       if (versionMatches.length > 0) {
-        pluginLabel += ` v${versionMatches[0][1]}`;
+        pluginLabel += ` v${pluginVersionDetail}`;
       } else {
         pluginLabel += t("pluginMissingSuffix");
+      }
+      // Local dev and preview installs are known without any npm call, so they
+      // are already displayed as such before the phase 2 detail pass
+      let pluginTooltip = t("sfdxPluginLatestInstalled", {
+        plugin: plugin.name,
+      });
+      let pluginStatus = "dependency-ok";
+      const phase1Kind = getPluginInstallKindFromText(pluginVersionDetail);
+      if (phase1Kind === "localdev") {
+        pluginLabel = buildLocalDevPluginLabel(pluginLabel);
+        pluginTooltip = t("usingLocallyDevelopedPlugin", {
+          plugin: plugin.name,
+        });
+        pluginStatus = "dependency-local";
+      } else if (
+        phase1Kind === "preview" &&
+        isPreviewPluginAccepted(plugin.name)
+      ) {
+        pluginLabel = `${pluginLabel} ${t("pluginPreviewLabel")}`;
+        pluginTooltip = t("usingPreviewPlugin", { plugin: plugin.name });
+        pluginStatus = "dependency-preview";
       }
       phase1Items.push({
         id: `plugin-info-${plugin.name}`,
         label: pluginLabel,
         command: `echo "Nothing to do here 😁"`,
-        tooltip: t("sfdxPluginLatestInstalled", { plugin: plugin.name }),
-        status: "dependency-ok",
+        tooltip: pluginTooltip,
+        status: pluginStatus,
         helpUrl: plugin.helpUrl,
       });
     }
@@ -456,7 +522,7 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
     try {
       const items: any[] = [];
 
-      const [latestSfdxCliVersionResult, sfVersionResult] =
+      const [latestSfdxCliVersionResult, sfVersionResult, pluginsInfoResult] =
         await Promise.allSettled([
           getNpmLatestVersion("@salesforce/cli"),
           execCommand("sf --version", {
@@ -465,7 +531,12 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
             cacheSection: "app",
             cacheExpiration: 1000 * 60 * 60 * 24, // 1 day
           }),
+          // Authoritative install info (link / alpha / beta), short-cached so a
+          // freshly linked or installed plugin is taken into account quickly
+          getInstalledPluginsInfo(),
         ]);
+      const pluginsInfo =
+        pluginsInfoResult.status === "fulfilled" ? pluginsInfoResult.value : {};
 
       // getNpmLatestVersion never rejects; a null value means "unknown" (cold/offline)
       const latestSfdxCliVersion: string | null =
@@ -563,36 +634,27 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
           if (match && match[1]) {
             installedVersion = match[1];
           }
-          // `sf plugins` displays the install tag after the version number
-          // (ex: "sfdx-hardis 6.1.0 (link) C:\git\sfdx-hardis", "sfdx-hardis 6.1.0 (beta)"),
-          // so the whole line is required to detect local dev / alpha / beta installs
-          const pluginLineMatch = new RegExp(
-            `^\\s*${plugin.name} (.*)$`,
-            "m",
-          ).exec(sfdxPlugins);
-          const installedVersionDetail = pluginLineMatch
-            ? pluginLineMatch[1]
-            : installedVersion || "";
-          // Locally developed plugin (sf plugins link): reinstalling it would break
-          // the dev setup, so never prompt for an upgrade
-          const isLocalDevPlugin = /\(link\)/i.test(installedVersionDetail);
-          // Alpha or beta build: the user knowingly runs a preview version
-          const isPreviewPlugin = /\((?:alpha|beta)\)|-(?:alpha|beta)/i.test(
-            installedVersionDetail,
+          // Install kind (localdev / preview / standard): resolved from
+          // `sf plugins --json` when available, else from the displayed line
+          const pluginVersionDetail = extractPluginVersionDetail(
+            sfdxPlugins,
+            plugin.name,
+            installedVersion,
           );
-          const isPreviewExpected =
-            isExtensionPreRelease() ||
-            RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION === "beta";
-          // When a preview plugin is expected (pre-release extension or beta
-          // recommendation), any local / alpha / beta install is fine.
-          // Otherwise, only compare version numbers with the recommended one.
-          const mustUpgradePlugin = isPreviewExpected
-            ? !isLocalDevPlugin && !isPreviewPlugin
-            : !isLocalDevPlugin &&
-              this.compareVersions(
-                installedVersion || "",
-                RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION,
-              ) < 0;
+          const installKind = resolvePluginInstallKind(
+            plugin.name,
+            pluginsInfo,
+            pluginVersionDetail,
+          );
+          const mustUpgradePlugin = mustUpgradeSfdxHardisPlugin({
+            kind: installKind,
+            installedVersion,
+            isExtensionPreRelease: isExtensionPreRelease(),
+            minimalVersion: RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION,
+          });
+          Logger.log(
+            `[sfdx-hardis] plugin install kind: ${installKind} (v${installedVersion}) - upgrade prompt: ${mustUpgradePlugin}`,
+          );
           const sfdxHardisInstallTag = getSfdxHardisInstallTag();
           if (installedVersion && mustUpgradePlugin) {
             PLUGINS_SFDXHARDIS_PROMPT_SHOWN = true;
@@ -602,10 +664,14 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
               ? t("sfdxHardisPreReleaseAlphaMessage")
               : RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION === "beta"
                 ? t("sfdxHardisPreReleaseBetaMessage")
-                : t("sfdxHardisPluginOutdated", {
-                    version: installedVersion,
-                    versionToInstall,
-                  });
+                : // Released extension: an alpha or beta plugin must be
+                  // replaced by the latest published version
+                  installKind === "preview"
+                  ? t("sfdxHardisPreviewPluginOnStableMessage")
+                  : t("sfdxHardisPluginOutdated", {
+                      version: installedVersion,
+                      versionToInstall,
+                    });
             vscode.window
               .showErrorMessage(errorMessageForUSer, upgradeNowLabel)
               .then((selection) => {
@@ -638,12 +704,24 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
           "gm",
         );
         const versionMatches = [...sfdxPlugins.matchAll(regexVersion)];
+        const pluginVersionDetail =
+          versionMatches.length > 0 ? versionMatches[0][1] : "";
         if (versionMatches.length > 0) {
-          pluginLabel += ` v${versionMatches[0][1]}`;
+          pluginLabel += ` v${pluginVersionDetail}`;
         } else {
           pluginLabel += t("pluginMissingSuffix");
           isPluginMissing = true;
         }
+        const installKind = resolvePluginInstallKind(
+          plugin.name,
+          pluginsInfo,
+          pluginVersionDetail,
+        );
+        const isLocalDevPlugin = installKind === "localdev";
+        // A preview install that is not accepted (ex: alpha plugin with a
+        // released extension) is decorated as upgradable, like a standard one
+        const isPreviewPlugin =
+          installKind === "preview" && isPreviewPluginAccepted(plugin.name);
         const pluginItem = {
           id: `plugin-info-${plugin.name}`,
           label: pluginLabel,
@@ -652,48 +730,51 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
           status: "dependency-ok",
           helpUrl: plugin.helpUrl,
         };
-        // Only show upgrade decoration when we have a known latest version
+        // Local dev and preview installs must be detected whatever the npm
+        // latest version is: their version can be the same as the published
+        // one, and the latest version can be unknown (offline / cold cache)
+        if (isLocalDevPlugin) {
+          pluginItem.label = buildLocalDevPluginLabel(pluginItem.label);
+          pluginItem.status = "dependency-local";
+          pluginItem.tooltip = t("usingLocallyDevelopedPlugin", {
+            plugin: plugin.name,
+          });
+        } else if (isPreviewPlugin) {
+          pluginItem.label = `${pluginItem.label} ${previewLabel}`;
+          pluginItem.status = "dependency-preview";
+          pluginItem.tooltip = t("usingPreviewPlugin", { plugin: plugin.name });
+        }
+        // Only show upgrade decoration when we have a known latest version.
+        // A locally developed plugin is never upgradable: reinstalling it from
+        // npm would break the local development setup.
         if (
+          !isLocalDevPlugin &&
           latestPluginVersion !== null &&
           !sfdxPlugins.includes(`${plugin.name} ${latestPluginVersion}`) &&
           !sfdxPlugins.includes(
             `${(plugin as any).altName || "nope"} ${latestPluginVersion}`,
           )
         ) {
-          pluginItem.label =
-            pluginItem.label.includes("(beta)") ||
-            pluginItem.label.includes("(alpha)")
-              ? pluginItem.label + " " + previewLabel
-              : pluginItem.label.includes("(link)")
-                ? pluginItem.label.replace("(link)", "(localdev)")
-                : isPluginMissing
-                  ? pluginItem.label
-                  : pluginItem.label + upgradeAvailableText;
           const installTag =
             plugin.name === "sfdx-hardis"
               ? getSfdxHardisInstallTag()
               : "latest";
           pluginItem.command = `echo y|sf plugins:install ${plugin.name}@${installTag} && sf hardis:work:ws --event refreshPlugins`;
-          pluginItem.tooltip = t("clickToUpgradeSfdxPluginTo", {
-            plugin: plugin.name,
-            version: latestPluginVersion,
-          });
-          if (!pluginItem.label.includes("(localdev)")) {
+          // A preview install keeps its preview label, status and tooltip:
+          // it is not outdated, it is just not the version published on npm
+          if (!isPreviewPlugin) {
+            if (!isPluginMissing) {
+              pluginItem.label = pluginItem.label + upgradeAvailableText;
+            }
+            pluginItem.tooltip = t("clickToUpgradeSfdxPluginTo", {
+              plugin: plugin.name,
+              version: latestPluginVersion,
+            });
             pluginItem.status = isPluginMissing
               ? "dependency-missing"
-              : pluginItem.label.includes(previewLabel)
-                ? "dependency-preview"
-                : "dependency-warning";
-            if (!pluginItem.label.includes(previewLabel)) {
-              outdated.push(plugin);
-            }
+              : "dependency-warning";
+            outdated.push(plugin);
           }
-        }
-        if (pluginItem.label.includes("(localdev)")) {
-          pluginItem.status = "dependency-local";
-          pluginItem.tooltip = t("usingLocallyDevelopedPlugin", {
-            plugin: plugin.name,
-          });
         }
         items.push(pluginItem);
       });
