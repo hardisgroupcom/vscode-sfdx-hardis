@@ -647,6 +647,22 @@ div.slds-scope[data-theme="dark"] {
     color: #cbd5e1;
 }
 
+/* ------------------------------------------------------------------ */
+/* Tooltips (lightning-helptext + s-multiline-helptext)                */
+/* SLDS styles .slds-popover_tooltip from two tokens that both invert   */
+/* between themes: --slds-g-color-brand-base-20 for the bubble and      */
+/* --slds-g-color-neutral-base-100 for the text. In dark mode the text  */
+/* token resolves to #000, which rendered black text on the dark navy   */
+/* bubble. The text color is set by SLDS on .slds-popover__body itself, */
+/* so it cannot be fixed by coloring the bubble alone - pin the two     */
+/* documented tooltip styling hooks instead, so every tooltip keeps a   */
+/* dark bubble with light text in both themes.                          */
+/* ------------------------------------------------------------------ */
+.slds-scope[data-theme] {
+    --slds-c-tooltip-color-background: light-dark(#032d60, #0b2236);
+    --slds-c-tooltip-text-color: light-dark(#ffffff, #e6eef9);
+}
+
 .slds-scope[data-theme="dark"] .select-option-label {
     color: #ffffff;
 }
