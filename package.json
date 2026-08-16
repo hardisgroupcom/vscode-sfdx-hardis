@@ -666,6 +666,7 @@
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "test": "node ./out/test/runTest.js",
+    "test:ui": "node ./out/test/runUiTest.js",
     "vsix": "vsce package --allow-package-secrets github"
   },
   "devDependencies": {

@@ -377,6 +377,17 @@ export function activate(context: vscode.ExtensionContext) {
       Logger.log("Could not initialize telemetry reporter: " + e?.message);
     }
   }, 10000);
+
+  // Extension exports, used by UI integration tests to observe internal state
+  // (see src/test/ui). NOT a public API: shape may change at any time.
+  return {
+    commands,
+    hardisCommandsProvider,
+    hardisStatusProvider,
+    hardisPluginsProvider,
+    getLwcPanelManager: () => LwcPanelManager.getInstance(),
+    activationTimeSeconds,
+  };
 }
 
 // this method is called when your extension is deactivated

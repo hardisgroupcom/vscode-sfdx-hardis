@@ -51,6 +51,54 @@ jobs:
         env:
           NODE_ENV: test
 
+  ui-test:
+    name: UI Tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: "yarn"
+
+      - name: Install Dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Cache VS Code download
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        with:
+          path: .vscode-test
+          key: vscode-test-${{ runner.os }}
+
+      # Webview assets first (webpack), then tsc last so out/extension.js is
+      # the unbundled build (same module instances as the compiled tests)
+      - name: Build webview assets
+        run: yarn dev
+
+      - name: Compile TypeScript
+        run: yarn compile
+
+      - name: Run UI Tests (Linux)
+        if: runner.os == 'Linux'
+        run: xvfb-run -a yarn test:ui
+
+      - name: Run UI Tests (Windows)
+        if: runner.os == 'Windows'
+        run: yarn test:ui
+
   test-windows:
     name: Test Extension (Windows)
     runs-on: windows-latest
