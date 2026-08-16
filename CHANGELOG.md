@@ -7,6 +7,7 @@
     - The tab first shows the command as starting, then streams its logs as soon as the CLI is connected
     - Closing the tab before the CLI is connected cancels the command
     - If the CLI crashes before connecting, the tab reports the failure with its error output instead of staying stuck
+    - The "Initializing command" notification is no longer shown when the execution tab is already open, since it was redundant with it
   - Commands run in a terminal now start immediately: the terminal was previously created with a fixed 4-second wait before the command was typed
     - On Windows, commands now run in a Git Bash terminal automatically when Git Bash is installed, without requiring to change the default VS Code terminal
   - Commands clicked right after VS Code startup are no longer rejected with "not initialized yet": the communication server now starts immediately (previously after a fixed 5-second delay) and commands wait for it to be ready

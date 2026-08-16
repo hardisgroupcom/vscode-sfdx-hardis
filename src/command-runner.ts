@@ -635,75 +635,79 @@ export class CommandRunner {
 
     output.appendLine(`[Started] ${preprocessedCommand}`);
 
-    // Show a blue progress notification at the bottom right, with cancel support
+    // Show a blue progress notification at the bottom right, with cancel
+    // support. Skipped when a command execution panel was opened at click
+    // time: the panel already gives instant feedback and closing it cancels
+    // the command, so the notification would be redundant.
     let progressResolve: (() => void) | undefined;
     let progressClosed = false;
     let killed = false;
-    // Start the progress notification
-    let displayCommandForPopup = preprocessedCommand;
-    const wsIndex = displayCommandForPopup.indexOf("--websocket");
-    if (wsIndex !== -1) {
-      displayCommandForPopup = displayCommandForPopup
-        .substring(0, wsIndex)
-        .trim();
-    }
-    const skipAuthIndex = displayCommandForPopup.indexOf("--skipauth");
-    if (skipAuthIndex !== -1) {
-      displayCommandForPopup = displayCommandForPopup
-        .substring(0, skipAuthIndex)
-        .trim();
-    }
-    let displayPopupMessage = t("initializingCommand", {
-      command: displayCommandForPopup,
-    });
-    if (this.debugNodeJs) {
-      displayPopupMessage += " " + t("debugMode");
-    }
-    vscode.window.withProgress(
-      {
-        location: vscode.ProgressLocation.Notification,
-        title: displayPopupMessage,
-        cancellable: true,
-      },
-      (progress, token) =>
-        new Promise<void>((resolve) => {
-          progressResolve = () => {
-            if (!progressClosed) {
-              progressClosed = true;
-              resolve();
-            }
-          };
-          token.onCancellationRequested(() => {
-            if (!killed) {
-              killed = true;
-              if (childProcess && childProcess.pid) {
-                try {
-                  killProcessTree(childProcess.pid, "SIGTERM", (err) => {
-                    if (err) {
-                      output.appendLine(
-                        `[Cancelled by user] Error killing child process: ${err.message}`,
-                      );
-                    } else {
-                      output.appendLine(
-                        `[Cancelled by user] Successfully killed ${preprocessedCommand}`,
-                      );
-                    }
+    if (!pendingPanelLwcId) {
+      let displayCommandForPopup = preprocessedCommand;
+      const wsIndex = displayCommandForPopup.indexOf("--websocket");
+      if (wsIndex !== -1) {
+        displayCommandForPopup = displayCommandForPopup
+          .substring(0, wsIndex)
+          .trim();
+      }
+      const skipAuthIndex = displayCommandForPopup.indexOf("--skipauth");
+      if (skipAuthIndex !== -1) {
+        displayCommandForPopup = displayCommandForPopup
+          .substring(0, skipAuthIndex)
+          .trim();
+      }
+      let displayPopupMessage = t("initializingCommand", {
+        command: displayCommandForPopup,
+      });
+      if (this.debugNodeJs) {
+        displayPopupMessage += " " + t("debugMode");
+      }
+      vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Notification,
+          title: displayPopupMessage,
+          cancellable: true,
+        },
+        (progress, token) =>
+          new Promise<void>((resolve) => {
+            progressResolve = () => {
+              if (!progressClosed) {
+                progressClosed = true;
+                resolve();
+              }
+            };
+            token.onCancellationRequested(() => {
+              if (!killed) {
+                killed = true;
+                if (childProcess && childProcess.pid) {
+                  try {
+                    killProcessTree(childProcess.pid, "SIGTERM", (err) => {
+                      if (err) {
+                        output.appendLine(
+                          `[Cancelled by user] Error killing child process: ${err.message}`,
+                        );
+                      } else {
+                        output.appendLine(
+                          `[Cancelled by user] Successfully killed ${preprocessedCommand}`,
+                        );
+                      }
+                      progressResolve && progressResolve();
+                    });
+                  } catch (error: any) {
+                    output.appendLine(
+                      "[Cancelled by user] Error killing child process:" +
+                        error.message,
+                    );
                     progressResolve && progressResolve();
-                  });
-                } catch (error: any) {
-                  output.appendLine(
-                    "[Cancelled by user] Error killing child process:" +
-                      error.message,
-                  );
+                  }
+                } else {
                   progressResolve && progressResolve();
                 }
-              } else {
-                progressResolve && progressResolve();
               }
-            }
-          });
-        }),
-    );
+            });
+          }),
+      );
+    }
     function closeProgress() {
       if (progressResolve) {
         progressResolve();
