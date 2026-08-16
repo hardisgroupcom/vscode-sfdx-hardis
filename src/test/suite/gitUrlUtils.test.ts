@@ -44,4 +44,19 @@ suite("gitUrlUtils Test Suite", () => {
   test("returns an empty string for empty input", () => {
     assert.strictEqual(gitRemoteToHttps(""), "");
   });
+
+  test("returns an empty string for a Windows drive-letter local path remote", () => {
+    assert.strictEqual(gitRemoteToHttps("C:\\repos\\project.git"), "");
+  });
+
+  test("returns an empty string for a POSIX absolute local path remote", () => {
+    assert.strictEqual(gitRemoteToHttps("/srv/git/project.git"), "");
+  });
+
+  test("returns an empty string for a UNC local path remote", () => {
+    assert.strictEqual(
+      gitRemoteToHttps("\\\\server\\share\\repo.git"),
+      "",
+    );
+  });
 });

@@ -4,6 +4,21 @@ import { getWorkspaceRoot, listSfdxProjectPackageDirectories } from "../utils";
 import { listMetadataTypes } from "./metadataList";
 import { t } from "../i18n/i18n";
 
+// VS Code's glob matcher (used by vscode.workspace.findFiles / RelativePattern) does not
+// normalize a leading "./" the way fast-glob used to, so a pattern like "./force-app/**/*.cls"
+// never matches. Normalize package directory segments before building glob patterns from them.
+export function normalizeGlobBase(p: string): string {
+  let normalized = (p || "").replace(/\\/g, "/").trim();
+  if (normalized === "." || normalized === "./") {
+    return "";
+  }
+  if (normalized.startsWith("./")) {
+    normalized = normalized.slice(2);
+  }
+  normalized = normalized.replace(/\/+$/, "");
+  return normalized;
+}
+
 export async function openMetadataFile(
   metadataType: string,
   metadataName: string,

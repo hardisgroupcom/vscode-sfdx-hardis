@@ -41,4 +41,27 @@ suite("executableUtils Test Suite", () => {
     process.env.PATH = tempDir;
     await assert.rejects(() => findExecutable("this-tool-does-not-exist"));
   });
+
+  test("finds an executable when its PATH entry is wrapped in double quotes", async () => {
+    const isWindows = process.platform === "win32";
+    const fileName = isWindows ? "quoted-tool.cmd" : "quoted-tool";
+    const filePath = path.join(tempDir, fileName);
+    fs.writeFileSync(filePath, isWindows ? "@echo off\r\n" : "#!/bin/sh\necho hi\n");
+    if (!isWindows) {
+      fs.chmodSync(filePath, 0o755);
+    }
+    process.env.PATH = `"${tempDir}"${path.delimiter}${originalPath || ""}`;
+
+    if (isWindows) {
+      // node-which (and our replacement) strips surrounding double quotes from PATH
+      // entries only on win32, where a quoted PATH entry is a common pattern
+      // (e.g. `"C:\Program Files\sf\bin"`).
+      const found = await findExecutable("quoted-tool");
+      assert.strictEqual(found.toLowerCase(), filePath.toLowerCase());
+    } else {
+      // On POSIX, a literal '"' is not stripped from PATH entries (it could
+      // theoretically be a valid path character), so the quoted entry does not match.
+      await assert.rejects(() => findExecutable("quoted-tool"));
+    }
+  });
 });

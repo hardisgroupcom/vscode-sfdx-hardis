@@ -19,7 +19,7 @@ import {
   openMetadataPresetsConfigFile,
 } from "../utils/metadataPresets";
 import { t } from "../i18n/i18n";
-import { openMetadataFile } from "../utils/projectUtils";
+import { normalizeGlobBase, openMetadataFile } from "../utils/projectUtils";
 import * as path from "path";
 import * as fs from "fs";
 import { LwcUiPanel } from "../webviews/lwc-ui-panel";
@@ -2043,7 +2043,7 @@ async function expandWithMissingFolderItems(
         const leafName = segments[segments.length - 1];
         const patterns = packageDirs.map((pkgDir) =>
           [
-            pkgDir,
+            normalizeGlobBase(pkgDir),
             "**",
             mt.directoryName || "",
             ...segments,

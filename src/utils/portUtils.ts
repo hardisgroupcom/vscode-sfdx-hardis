@@ -20,6 +20,29 @@ function isPortFree(port: number): Promise<boolean> {
   });
 }
 
+// Asks the OS for an ephemeral port (equivalent to get-port's behavior when none of the
+// preferred ports are available): bind a server to port 0, read back the assigned port,
+// then close the server so the caller can bind its own server to it.
+function getEphemeralPort(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const probeServer = net.createServer();
+    probeServer.once("error", (err) => {
+      reject(err);
+    });
+    probeServer.once("listening", () => {
+      const address = probeServer.address();
+      probeServer.close(() => {
+        if (address && typeof address === "object") {
+          resolve(address.port);
+        } else {
+          reject(new Error("Unable to determine an ephemeral port"));
+        }
+      });
+    });
+    probeServer.listen(0);
+  });
+}
+
 export async function findAvailablePort(
   start: number,
   end: number,
@@ -29,7 +52,16 @@ export async function findAvailablePort(
       return port;
     }
   }
-  throw new Error(
-    `No available port found in range ${start}-${end}`,
-  );
+  // Every port in the preferred range is unusable: fall back to an OS-assigned
+  // ephemeral port instead of throwing, so callers still get a working port.
+  try {
+    return await getEphemeralPort();
+  } catch (err) {
+    throw new Error(
+      `No available port found in range ${start}-${end}: ${
+        err instanceof Error ? err.message : err
+      }`,
+      { cause: err },
+    );
+  }
 }

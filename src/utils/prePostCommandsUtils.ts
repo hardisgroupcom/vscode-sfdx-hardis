@@ -6,6 +6,7 @@ import * as vscode from "vscode";
 import { getWorkspaceRoot, listSfdxProjectPackageDirectories } from "../utils";
 import { CacheManager } from "./cache-manager";
 import { PullRequest } from "./gitProviders/types";
+import { normalizeGlobBase } from "./projectUtils";
 
 export interface PrePostCommand {
   id: string;
@@ -316,8 +317,10 @@ export async function listProjectApexTestClasses(): Promise<string[]> {
     Array.isArray(packageDirs) && packageDirs.length > 0 ? packageDirs : ["."];
 
   const patterns = pkgDirs.map((pkgDir) => {
-    const normalized = String(pkgDir || ".").replace(/\\/g, "/");
-    return `${normalized}/**/classes/*.cls`;
+    const normalized = normalizeGlobBase(String(pkgDir || "."));
+    return normalized
+      ? `${normalized}/**/classes/*.cls`
+      : `**/classes/*.cls`;
   });
   const combinedPattern =
     patterns.length > 1 ? `{${patterns.join(",")}}` : patterns[0];

@@ -4,6 +4,11 @@
 // - throw on non-2xx responses (fetch resolves normally on 4xx/5xx)
 // - a `timeoutMs` option backed by AbortSignal.timeout
 // - the thrown error carries the HTTP `status` so callers can inspect it if needed
+//
+// IMPORTANT: proxy (http.proxy) and corporate root certificate support for the global
+// `fetch` is provided by the VS Code extension host itself (`http.fetchAdditionalSupport`),
+// which is only available from VS Code >= 1.95. This is a runtime constraint that cannot be
+// expressed in this file, hence the `engines.vscode` floor set in package.json.
 
 export interface HttpRequestOptions {
   /** Aborts the request after the given number of milliseconds */

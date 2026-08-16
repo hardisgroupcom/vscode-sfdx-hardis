@@ -253,15 +253,33 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
         }
       }
       if (orgInfo.expirationDate) {
-        const daysBeforeExpiration = Math.floor(
-          (new Date(orgInfo.expirationDate).getTime() - Date.now()) /
-            86_400_000,
+        // orgInfo.expirationDate is a date-only string (YYYY-MM-DD) returned by the sf CLI.
+        // Parsing it with `new Date(str)` yields UTC midnight, which produces a wrong day
+        // diff for users in timezones west of UTC. Compute the day difference using local
+        // dates instead, matching the previous moment.js-based behavior.
+        const [expirationYear, expirationMonth, expirationDay] =
+          orgInfo.expirationDate.split("-").map(Number);
+        const expirationMidnight = new Date(
+          expirationYear,
+          expirationMonth - 1,
+          expirationDay,
+        ).getTime();
+        const now = new Date();
+        const todayMidnight = new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate(),
+        ).getTime();
+        const daysBeforeExpiration = Math.round(
+          (expirationMidnight - todayMidnight) / 86_400_000,
         );
         orgDetailItem.label += ` ${t("orgExpiresLabel", { expirationDate: orgInfo.expirationDate })}`;
         orgDetailItem.tooltip += t("orgExpiresInNDays", {
           days: daysBeforeExpiration,
         });
-        if (daysBeforeExpiration < 0) {
+        if (isNaN(daysBeforeExpiration)) {
+          // Unparseable expiration date: skip the expiration warning logic
+        } else if (daysBeforeExpiration < 0) {
           orgDetailItem.iconId = "org:expired";
           orgDetailItem.tooltip = t("orgExpired", {
             expirationDate: orgInfo.expirationDate,

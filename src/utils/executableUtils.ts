@@ -30,10 +30,22 @@ function isExecutableFile(candidatePath: string): boolean {
   }
 }
 
+function stripSurroundingQuotes(dir: string): string {
+  if (
+    process.platform === "win32" &&
+    dir.length >= 2 &&
+    dir.startsWith('"') &&
+    dir.endsWith('"')
+  ) {
+    return dir.slice(1, -1);
+  }
+  return dir;
+}
+
 export async function findExecutable(name: string): Promise<string> {
-  const pathDirs = (process.env.PATH || process.env.Path || "").split(
-    path.delimiter,
-  );
+  const pathDirs = (process.env.PATH || process.env.Path || "")
+    .split(path.delimiter)
+    .map(stripSurroundingQuotes);
   const isWindows = process.platform === "win32";
   // On Windows, an already-qualified name (with a known extension) is checked as-is;
   // otherwise every extension in PATHEXT is tried.
