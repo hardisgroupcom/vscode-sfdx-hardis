@@ -354,6 +354,19 @@ export function activate(context: vscode.ExtensionContext) {
   console.timeEnd("Hardis_Activate");
   const activationTimeSeconds = (Date.now() - timeInit) / 1000;
 
+  // Check for Salesforce Extensions settings killing the performances.
+  // Deferred and lazily imported: it must never delay the activation, and runs
+  // after the startup notifications so it does not compete with them.
+  setTimeout(() => {
+    import("./utils/salesforceSettingsCheck")
+      .then((mod) => mod.checkSalesforceConflictDetectionSetting(context))
+      .catch((e: any) =>
+        Logger.log(
+          "Could not check Salesforce Extensions settings: " + e?.message,
+        ),
+      );
+  }, 8000);
+
   // Anonymous telemetry respecting VsCode Guidelines -> https://code.visualstudio.com/api/extension-guides/telemetry
   // Deferred: applicationinsights/OpenTelemetry are among the heaviest modules
   // of the bundle and nothing needs telemetry during the first seconds.

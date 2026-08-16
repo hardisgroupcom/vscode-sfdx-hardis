@@ -27,3 +27,15 @@ export function grey(text: string): string {
 export function bold(text: string): string {
   return `${ANSI_BOLD_OPEN}${text}${ANSI_BOLD_CLOSE}`;
 }
+
+// Matches all ANSI escape sequences, so colorized command outputs can be
+// parsed (some environments make CLIs colorize even when not in a terminal)
+const ansiPattern = [
+  "[\\u001B\\u009B][[\\]()#;?]*(?:(?:(?:(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]+)*|[a-zA-Z\\d]+(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?\\u0007)",
+  "(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PR-TZcf-nq-uy=><~]))",
+].join("|");
+const ansiRegex = new RegExp(ansiPattern, "g");
+
+export function stripAnsiCodes(str: string): string {
+  return (str || "").replace(ansiRegex, "");
+}
