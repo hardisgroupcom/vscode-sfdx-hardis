@@ -373,6 +373,7 @@ export function registerShowPipeline(commands: Commands) {
           const updatedFile = await savePrePostCommand(
             data.prNumber,
             data.command,
+            data.originalCommand,
           );
           Logger.log(
             `Saved deployment action for PR #${data.prNumber}: ${JSON.stringify(
@@ -440,6 +441,13 @@ export function registerShowPipeline(commands: Commands) {
           const gitProvider = await GitProvider.getInstance();
           if (!gitProvider) {
             Logger.log("No Git provider available for getPrInfoForModal");
+            // Let the webview know the request failed so it can clear any state
+            // (ex: the tab a deep link asked to open) it was holding for the
+            // modal that will never open.
+            panel.sendMessage({
+              type: "returnGetPrInfoForModal",
+              data: null,
+            });
             return;
           }
           try {
@@ -451,12 +459,10 @@ export function registerShowPipeline(commands: Commands) {
               fetchDetails: true,
             });
             const prDetails = prList[0];
-            if (prDetails) {
-              panel.sendMessage({
-                type: "returnGetPrInfoForModal",
-                data: prDetails,
-              });
-            }
+            panel.sendMessage({
+              type: "returnGetPrInfoForModal",
+              data: prDetails || null,
+            });
           } catch (e) {
             const prLabel =
               pipelineProperties?.prButtonInfo?.pullRequestLabel ||
@@ -465,6 +471,10 @@ export function registerShowPipeline(commands: Commands) {
             vscode.window.showErrorMessage(
               t("errorGettingPrInfo", { prLabel }),
             );
+            panel.sendMessage({
+              type: "returnGetPrInfoForModal",
+              data: null,
+            });
           }
         }
         // Lazy-load the list of go-lives for a top branch (selector content only)

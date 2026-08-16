@@ -1268,6 +1268,7 @@
   "notDefined": "Nieokreślone",
   "notVisibleFromBranch": "{{value}} (niewidoczne z tej gałęzi git)",
   "notVisibleFromOrg": "{{value}} (niewidoczne z tej org)",
+  "notVisibleFromPipeline": "{{value}} (branch nie jest już w pipeline)",
   "objectFieldUsage": "Użycie pól obiektu",
   "objectFieldUsageDescription": "Analizuje użycie pól obiektu i generuje raport oczyszczający",
   "objectFieldUsageTooltip": "Analizuje użycie pól obiektu i generuje raport dokumentacyjny do podjęcia decyzji o oczyszczeniu",

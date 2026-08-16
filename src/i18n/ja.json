@@ -1274,6 +1274,7 @@
   "notDefined": "未定義",
   "notVisibleFromBranch": "{{value}} (この git branch からは表示されません)",
   "notVisibleFromOrg": "{{value}} (この組織からは表示されません)",
+  "notVisibleFromPipeline": "{{value}} (このブランチはパイプラインに存在しません)",
   "objectFieldUsage": "オブジェクト項目の使用状況",
   "objectFieldUsageDescription": "オブジェクト項目の使用状況を分析し、クリーンアップレポートを生成します",
   "objectFieldUsageTooltip": "オブジェクト項目の使用状況を分析し、クリーンアップ判断のためのドキュメントレポートを生成します",

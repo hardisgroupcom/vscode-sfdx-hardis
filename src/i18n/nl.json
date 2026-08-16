@@ -1274,6 +1274,7 @@
   "notDefined": "Niet gedefinieerd",
   "notVisibleFromBranch": "{{value}} (niet zichtbaar vanuit deze git branch)",
   "notVisibleFromOrg": "{{value}} (niet zichtbaar vanuit deze org)",
+  "notVisibleFromPipeline": "{{value}} (branch niet meer in de pipeline)",
   "objectFieldUsage": "Gebruik van objectvelden",
   "objectFieldUsageDescription": "Analyseer het gebruik van objectvelden en produceer een opruimrapport",
   "objectFieldUsageTooltip": "Analyseer het gebruik van objectvelden en produceer een documentatierapport voor opruimbeslissingen",

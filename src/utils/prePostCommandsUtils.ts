@@ -61,13 +61,15 @@ export type ActionResult = {
 
 export async function listPrePostCommandsForPullRequest(
   pr: PullRequest | undefined,
+  // Injectable for unit tests, which cannot rely on a real VS Code workspace
+  workspaceRootOverride?: string,
 ): Promise<PrePostCommand[]> {
   const commands: PrePostCommand[] = [];
   if (!pr || !pr.number) {
     return commands;
   }
   // Check if there is a .sfdx-hardis.PULL_REQUEST_ID.yml file in the PR
-  const workspaceRoot = getWorkspaceRoot();
+  const workspaceRoot = workspaceRootOverride ?? getWorkspaceRoot();
   const fileName =
     pr.number === -1
       ? ".sfdx-hardis.draft.yml"
@@ -142,8 +144,12 @@ function removePrCircularReferences(pr: PullRequest): PullRequest {
 }
 
 // Helper function to get PR config file path
-function getPrConfigFilePath(prNumber: number): string {
-  const workspaceRoot = getWorkspaceRoot();
+function getPrConfigFilePath(
+  prNumber: number,
+  // Injectable for unit tests, which cannot rely on a real VS Code workspace
+  workspaceRootOverride?: string,
+): string {
+  const workspaceRoot = workspaceRootOverride ?? getWorkspaceRoot();
   const fileName =
     prNumber === -1 ? ".sfdx-hardis.draft.yml" : `.sfdx-hardis.${prNumber}.yml`;
   return path.join(workspaceRoot, "scripts", "actions", fileName);
@@ -201,31 +207,79 @@ function validateConfigAndArray(
   return true;
 }
 
+// Locates the entry matching `command` inside `array`. Prefers matching by id
+// (the id it currently carries, then the id it had before the edit, in case a
+// fresh one was just generated), and falls back to a content match. The content
+// match is based on `original` (the action as it was BEFORE the current edit)
+// when available, so that renaming an action or changing its command still
+// matches the pre-existing entry instead of appearing as a new one.
+function findPrePostCommandIndex(
+  array: PrePostCommand[],
+  command: PrePostCommand,
+  original?: Partial<PrePostCommand> | null,
+): number {
+  let index = array.findIndex(
+    (cmd) => !!cmd.id && cmd.id === command.id,
+  );
+  if (index >= 0) {
+    return index;
+  }
+  if (original?.id) {
+    index = array.findIndex((cmd) => cmd.id === original.id);
+    if (index >= 0) {
+      return index;
+    }
+  }
+  // Actions written by hand in the YAML file have no id: match them on the
+  // content they had BEFORE this edit, so that editing one (including renaming
+  // it or changing its command) updates it rather than duplicating it
+  const contentReference = original ?? command;
+  return array.findIndex(
+    (cmd) =>
+      !cmd.id &&
+      cmd.label === contentReference.label &&
+      (cmd.type ?? "command") === (contentReference.type ?? "command") &&
+      cmd.command === contentReference.command,
+  );
+}
+
 export async function savePrePostCommand(
   prNumber: number,
   command: PrePostCommand,
+  originalCommand?: Partial<PrePostCommand> | null,
+  // Injectable for unit tests, which cannot rely on a real VS Code workspace
+  workspaceRootOverride?: string,
 ): Promise<string> {
-  const prConfigFileName = getPrConfigFilePath(prNumber);
+  const prConfigFileName = getPrConfigFilePath(prNumber, workspaceRootOverride);
   const prConfigParsed = await loadPrConfig(prConfigFileName);
 
   const targetArrayName = getTargetArrayName(command.when);
   ensureTargetArray(prConfigParsed, targetArrayName);
 
-  // Check if command with same id exists, replace it
-  let existingIndex = prConfigParsed[targetArrayName].findIndex(
-    (cmd: PrePostCommand) => cmd.id === command.id,
-  );
-  // Actions written by hand in the YAML file have no id: match them on their
-  // content instead, so that editing one updates it rather than duplicating it
-  if (existingIndex < 0) {
-    existingIndex = prConfigParsed[targetArrayName].findIndex(
-      (cmd: PrePostCommand) =>
-        !cmd.id &&
-        cmd.label === command.label &&
-        (cmd.type ?? "command") === (command.type ?? "command") &&
-        cmd.command === command.command,
+  // The action may have been moved between pre-deploy and post-deploy (the
+  // "when" field changed): look it up in the array it used to live in too, so it
+  // can be removed from there instead of ending up in both lists.
+  const originalWhen = originalCommand?.when;
+  const sourceArrayName = originalWhen
+    ? getTargetArrayName(originalWhen)
+    : null;
+  if (sourceArrayName && sourceArrayName !== targetArrayName) {
+    ensureTargetArray(prConfigParsed, sourceArrayName);
+    const sourceIndex = findPrePostCommandIndex(
+      prConfigParsed[sourceArrayName],
+      command,
+      originalCommand,
     );
+    if (sourceIndex >= 0) {
+      prConfigParsed[sourceArrayName].splice(sourceIndex, 1);
+    }
   }
+
+  const existingIndex = findPrePostCommandIndex(
+    prConfigParsed[targetArrayName],
+    command,
+    originalCommand,
+  );
   if (existingIndex >= 0) {
     prConfigParsed[targetArrayName][existingIndex] =
       normalizePrePostCommandToSave(command);

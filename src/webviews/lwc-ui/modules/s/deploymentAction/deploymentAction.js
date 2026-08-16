@@ -54,6 +54,12 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   @api communitiesLoading = false;
   @track editedAction = {};
   @track validationError = "";
+  // Snapshot of the action as it was BEFORE the current edit (label/type/command/
+  // when/id). Sent alongside the edited action so the extension can still find a
+  // hand-written (id-less) action after it has been renamed or its command
+  // changed, instead of matching on the already-edited values and appending a
+  // duplicate. Null for a brand new action.
+  _originalAction = null;
   // Target branches restriction mode picked in the selector. It has to be stored
   // aside from the action: right after picking "only these branches" or "all except
   // these branches", the matching list is still empty, so deriving the mode from the
@@ -323,6 +329,7 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     if (this.isEditMode && this.action) {
       this.targetBranchesModeOverride = null;
       this.editedAction = JSON.parse(JSON.stringify(this.action));
+      this._originalAction = JSON.parse(JSON.stringify(this.action));
       // Ensure parameters object exists
       if (!this.editedAction.parameters) {
         this.editedAction.parameters = {};
@@ -331,6 +338,11 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       if (!this.editedAction.type) {
         this.editedAction.type = "command";
       }
+      // Match the sfdx-hardis CLI default so the toggle always shows what will
+      // actually happen instead of appearing off for an action that has no
+      // explicit value yet (ex: a newly created action)
+      this.editedAction.runOnlyOnceByOrg =
+        this.editedAction.runOnlyOnceByOrg ?? true;
       this._normalizeEditedPackageXmlItems();
     } else if (this.action) {
       // Ensure action has parameters object for view mode
@@ -475,7 +487,20 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
       label: this.t("devSandboxesOption"),
       value: "dev-sandboxes",
     });
-    return options;
+    // A branch saved in the restriction list may no longer be part of the
+    // pipeline (renamed/removed major branch): keep it selectable and visible
+    // instead of silently dropping it the next time the action is saved.
+    const knownValues = new Set(options.map((option) => option.value));
+    const selectedValues = Array.isArray(this.selectedTargetBranches)
+      ? this.selectedTargetBranches
+      : [];
+    const staleOptions = selectedValues
+      .filter((value) => value && !knownValues.has(value))
+      .map((value) => ({
+        label: this.t("notVisibleFromPipeline", { value }),
+        value,
+      }));
+    return [...staleOptions, ...options];
   }
 
   get selectedTargetBranches() {
@@ -630,10 +655,15 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
   handleEdit() {
     this.targetBranchesModeOverride = null;
     this.editedAction = JSON.parse(JSON.stringify(this.action));
+    this._originalAction = JSON.parse(JSON.stringify(this.action));
     // Ensure parameters object exists
     if (!this.editedAction.parameters) {
       this.editedAction.parameters = {};
     }
+    // Match the sfdx-hardis CLI default so the toggle always shows what will
+    // actually happen instead of appearing off for an action that has no
+    // explicit value yet
+    this.editedAction.runOnlyOnceByOrg = this.editedAction.runOnlyOnceByOrg ?? true;
     this._normalizeEditedPackageXmlItems();
     // Dispatch event to parent
     this.dispatchEvent(new CustomEvent("edit"));
@@ -788,6 +818,23 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
     if (!this.editedAction.id) {
       this.editedAction.id = this._generateActionId();
     }
+    // Always write an explicit value: dropping it when unset/false would let the
+    // sfdx-hardis CLI default (true) silently take over, contradicting a toggle
+    // the user saw as off
+    this.editedAction.runOnlyOnceByOrg =
+      this.editedAction.runOnlyOnceByOrg === false ? false : true;
+    // includeTargetBranches and excludeTargetBranches are mutually exclusive: keep
+    // only the list matching the active mode so the saved YAML never contradicts
+    // what the editor displayed (ex: a leftover non-empty list from a mode that
+    // is no longer selected)
+    if (this.targetBranchesMode === "include") {
+      delete this.editedAction.excludeTargetBranches;
+    } else if (this.targetBranchesMode === "exclude") {
+      delete this.editedAction.includeTargetBranches;
+    } else {
+      delete this.editedAction.includeTargetBranches;
+      delete this.editedAction.excludeTargetBranches;
+    }
     // An empty restriction list means "all target orgs": do not leave an empty
     // includeTargetBranches / excludeTargetBranches behind in the configuration file
     ["includeTargetBranches", "excludeTargetBranches"].forEach((key) => {
@@ -808,10 +855,15 @@ export default class DeploymentAction extends SharedMixin(LightningElement) {
           this.editedAction.parameters.packageXmlItems,
         );
     }
-    // Dispatch save event to parent with edited action
+    // Dispatch save event to parent with the edited action and the pre-edit
+    // snapshot, so an id-less (hand-written) action can still be matched after
+    // being renamed instead of being duplicated
     this.dispatchEvent(
       new CustomEvent("save", {
-        detail: this.editedAction,
+        detail: {
+          action: this.editedAction,
+          originalAction: this._originalAction,
+        },
       }),
     );
   }

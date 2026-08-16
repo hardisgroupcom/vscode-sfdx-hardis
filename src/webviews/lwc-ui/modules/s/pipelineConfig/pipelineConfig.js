@@ -651,6 +651,10 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
       index >= 0
         ? JSON.parse(JSON.stringify(currentArray[index] || {}))
         : { id: "", label: "", type: null, command: "", parameters: {} };
+    // Match the sfdx-hardis CLI default so the toggle always shows what will
+    // actually happen instead of appearing off for an action that has no
+    // explicit value yet (ex: a newly created action, or one written by hand)
+    action.runOnlyOnceByOrg = action.runOnlyOnceByOrg ?? true;
     // The array an action is stored in is what defines when it runs
     action.when = this.deploymentActionKeys[key];
     this._deploymentActionKey = key;
@@ -667,7 +671,7 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
   }
 
   handleSaveDeploymentActionItem(event) {
-    const action = JSON.parse(JSON.stringify(event.detail));
+    const action = JSON.parse(JSON.stringify(event.detail.action));
     const sourceKey = this._deploymentActionKey;
     const editIndex = this._deploymentActionEditIndex;
     if (!sourceKey) {
