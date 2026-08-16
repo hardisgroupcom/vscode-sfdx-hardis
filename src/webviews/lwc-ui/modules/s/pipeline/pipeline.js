@@ -2407,8 +2407,8 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       return;
     }
     const SVG_NS = "http://www.w3.org/2000/svg";
-    const height = 15;
-    const width = Math.max(height, 9 + 6 * String(count).length);
+    const height = 18;
+    const width = Math.max(height, 10 + 7 * String(count).length);
     // Bubble centered on the node's top-right corner (coordinates are local
     // to the node group, which mermaid translates to the node center).
     const cornerX = box.x + box.width;
