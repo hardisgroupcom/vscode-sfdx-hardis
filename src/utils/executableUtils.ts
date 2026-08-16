@@ -42,7 +42,22 @@ function stripSurroundingQuotes(dir: string): string {
   return dir;
 }
 
+// Session-level memoization: the PATH scan below performs hundreds of
+// synchronous stat calls (PATH entries x PATHEXT on Windows) and executables
+// do not move during a VS Code session.
+const FOUND_EXECUTABLES: Map<string, string> = new Map();
+
 export async function findExecutable(name: string): Promise<string> {
+  const memoized = FOUND_EXECUTABLES.get(name);
+  if (memoized) {
+    return memoized;
+  }
+  const result = findExecutableSync(name);
+  FOUND_EXECUTABLES.set(name, result);
+  return result;
+}
+
+function findExecutableSync(name: string): string {
   const pathDirs = (process.env.PATH || process.env.Path || "")
     .split(path.delimiter)
     .map(stripSurroundingQuotes);

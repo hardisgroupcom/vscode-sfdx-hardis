@@ -19,6 +19,18 @@ export class LwcUiPanel {
   private messageListeners: MessageListener[] = [];
   private initializationData: any = null;
   private _isDisposed: boolean = false;
+  /**
+   * Lifecycle status of the command displayed by a command-execution panel.
+   * Kept as structured state so callers never have to parse the (localized)
+   * panel title to know whether a command is still running.
+   */
+  public commandStatus:
+    | "pending"
+    | "running"
+    | "completed"
+    | "error"
+    | "aborted"
+    | null = null;
 
   private constructor(
     panel: vscode.WebviewPanel,
@@ -138,6 +150,18 @@ export class LwcUiPanel {
    */
   public getTitle(): string {
     return this.panel.title;
+  }
+
+  /**
+   * Current LWC id of this panel (can change when a pending command-execution
+   * panel is adopted by the CLI once it connects, see LwcPanelManager.rekeyPanel)
+   */
+  public getLwcId(): string {
+    return this.lwcId;
+  }
+
+  public setLwcId(lwcId: string): void {
+    this.lwcId = lwcId;
   }
 
   public setPanelTitleFromLwcId() {
@@ -916,6 +940,24 @@ export class LwcUiPanel {
       mermaidTheme.edgeLabelBackground = "rgba(77, 77, 77, 0.5)";
     }
 
+    // mermaid.min.js weighs several MB: only the pipeline panel renders
+    // mermaid diagrams, so other panels (including the auto-opened Welcome
+    // page) skip loading and initializing it entirely.
+    const needsMermaid = this.lwcId === "s-pipeline";
+    const mermaidScripts = needsMermaid
+      ? `<script src="${webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, "out", "webviews", "mermaid.min.js"))}"></script>
+        <script>
+            mermaid.initialize({
+              startOnLoad: false,
+              securityLevel: 'loose',
+              themeVariables: {
+                clusterBkg: "${mermaidTheme.clusterBkg}",
+                edgeLabelBackground: "${mermaidTheme.edgeLabelBackground}"
+              }
+            });
+        </script>`
+      : "";
+
     return `<!DOCTYPE html>
       <html lang="en">
       <head>
@@ -942,17 +984,7 @@ export class LwcUiPanel {
           // Set SLDS icons path for LWC components
           window.SLDS_ICONS_PATH = "${sldsIconsUri}";
         </script>
-        <script src="${webview.asWebviewUri(vscode.Uri.joinPath(this.extensionUri, "out", "webviews", "mermaid.min.js"))}"></script>
-        <script>
-            mermaid.initialize({
-              startOnLoad: false,
-              securityLevel: 'loose',
-              themeVariables: {
-                clusterBkg: "${mermaidTheme.clusterBkg}",
-                edgeLabelBackground: "${mermaidTheme.edgeLabelBackground}"
-              }
-            });
-        </script>
+        ${mermaidScripts}
         <script src="${scriptUri}"></script>
       </body>
       </html>`;

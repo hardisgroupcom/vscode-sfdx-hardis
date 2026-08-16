@@ -5,7 +5,7 @@ import {
   getGitMenusItems,
   getGitParentBranch,
   getSfdxProjectJson,
-  isCachePreloaded,
+  isOrgCachePreloaded,
   isGitMenusItemsLoaded,
   resetCache,
   setGitMenusItems,
@@ -110,7 +110,7 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
 
   private async getOrgItems(options: any = {}): Promise<any[]> {
     const items: any = [];
-    if (!isCachePreloaded()) {
+    if (!isOrgCachePreloaded()) {
       items.push(
         options.devHub
           ? {
@@ -589,11 +589,21 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
               const parentLatestCommit = await git.revparse(
                 `origin/${parentGitBranch}`,
               );
-              // Check if parent branch has been updated since we created the branch
-              const gitDiff = await git.diff([
-                parentGitBranch || "",
-                `origin/${parentGitBranch}`,
-              ]);
+              // Check if parent branch has been updated since we created the
+              // branch. rev-list --count only counts commits: the previous
+              // git.diff materialized the entire textual diff between the two
+              // refs (potentially tens of MB on a Salesforce repo) although
+              // only a boolean is needed.
+              const parentUpdatedCommitCount = parseInt(
+                (
+                  await git.raw([
+                    "rev-list",
+                    "--count",
+                    `${parentGitBranch}..origin/${parentGitBranch}`,
+                  ])
+                ).trim(),
+                10,
+              );
               // Check if there is a commit in current branch containing the ref of the latest parent branch commit.
               // Limit to the 100 most recent commits so simple-git does not parse the full history on large repos.
               const currentBranchCommits = await git.log([
@@ -602,7 +612,7 @@ export class HardisStatusProvider implements vscode.TreeDataProvider<StatusTreeI
                 branchForFetch,
               ]);
               const mergeNeeded =
-                (gitDiff.length > 0 &&
+                (parentUpdatedCommitCount > 0 &&
                   currentBranchCommits?.all.length === 0) ||
                 (currentBranchCommits?.all &&
                   currentBranchCommits?.all.length > 0 &&

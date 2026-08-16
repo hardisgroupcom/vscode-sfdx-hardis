@@ -9,6 +9,9 @@ const extensionConfig = {
   output: {
     path: path.resolve(__dirname, "out"),
     filename: "extension.js",
+    // Lazy-loaded provider chunks (jira.js, azure-devops-node-api, octokit,
+    // gitbeaker, bitbucket, telemetry...) are emitted next to extension.js
+    chunkFilename: "extension-chunks/[name].js",
     libraryTarget: "commonjs2",
   },
   externals: {
@@ -17,6 +20,12 @@ const extensionConfig = {
   resolve: {
     extensions: [".ts", ".js"],
   },
+  plugins: [
+    // cosmiconfig lazily requires the full TypeScript compiler for
+    // `.config.ts` files. sfdx-hardis config files are only yml/yaml/json,
+    // so the compiler (~40% of the previous bundle) is excluded.
+    new webpack.IgnorePlugin({ resourceRegExp: /^typescript$/ }),
+  ],
   module: {
     rules: [
       // Prevent webpack from trying to parse TypeScript declaration files
@@ -32,6 +41,18 @@ const extensionConfig = {
         use: [
           {
             loader: "ts-loader",
+            options: {
+              compilerOptions: {
+                // Keep `await import()` as real dynamic imports so webpack
+                // code-splits heavy providers into lazy chunks instead of
+                // bundling them into the eagerly-parsed main file.
+                // (tsconfig.json stays commonjs for the tsc/test build.)
+                module: "es2020",
+                // module es2020 switches the default resolution to "classic":
+                // restore node_modules resolution
+                moduleResolution: "node",
+              },
+            },
           },
         ],
       },

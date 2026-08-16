@@ -46,7 +46,7 @@ export class CacheManager {
     await this.store.update(fullKey, entry);
     await this.trackKey(fullKey);
     const expiresInDaysHoursMinutes = this.buildHumanExpiry(expiresAt);
-    Logger.log(
+    Logger.logPerf(
       `Cache set for ${section}:${key} (expires in ${expiresInDaysHoursMinutes})`,
     );
   }
@@ -54,7 +54,6 @@ export class CacheManager {
   static get<T>(section: CacheSection, key: string): T | undefined {
     const fullKey = this.makeKey(section, key);
     const entry = this.store.get<CacheEntry<T>>(fullKey);
-    this.trackKey(fullKey);
     if (!entry) {
       return undefined;
     }
@@ -63,8 +62,10 @@ export class CacheManager {
       this.delete(section, key); // auto cleanup expired
       return undefined;
     }
+    // Hot path: keys are already tracked by set(); logging goes through
+    // logPerf so cache hits cost nothing when the debug setting is off
     const expiresInDaysHoursMinutes = this.buildHumanExpiry(entry.expiresAt);
-    Logger.log(
+    Logger.logPerf(
       `Cache hit for ${section}:${key} (expires in ${expiresInDaysHoursMinutes})`,
     );
     return entry.value;
