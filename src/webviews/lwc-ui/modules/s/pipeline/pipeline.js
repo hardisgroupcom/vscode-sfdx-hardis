@@ -2405,6 +2405,13 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   }
 
   handleReturnGetPrInfoForModal(pr) {
+    if (!pr) {
+      // The backend request failed (no git provider / error): the modal will not
+      // open, so drop the tab a deep link may have requested instead of letting
+      // it leak into the next successful modal open.
+      this._nextModalTab = null;
+      return;
+    }
     this.modalMode = "singlePR";
     this.modalBranchName = pr.sourceBranch || "";
     this.showJobStatusColumn = true;
@@ -2515,7 +2522,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   }
 
   handleSaveDeploymentAction(event) {
-    const action = event.detail;
+    const { action, originalAction } = event.detail;
     // Get PR number from the action
     const prNumber = action.pullRequest?.number;
     if (!prNumber) {
@@ -2600,6 +2607,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
       data: {
         prNumber: prNumber,
         command: JSON.parse(JSON.stringify(action)),
+        originalCommand: originalAction
+          ? JSON.parse(JSON.stringify(originalAction))
+          : null,
       },
     });
 
@@ -2809,6 +2819,9 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         when: null,
         command: "",
         parameters: {},
+        // Match the sfdx-hardis CLI default so the toggle shows what will
+        // actually happen instead of appearing off by default
+        runOnlyOnceByOrg: true,
         pullRequest: {
           number: pr.number,
           title: pr.title,

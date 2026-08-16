@@ -1,10 +1,12 @@
-import * as fs from "fs-extra";
+import { randomUUID } from "node:crypto";
+import * as fs from "fs";
 import * as yaml from "js-yaml";
 import * as path from "path";
-import fg from "fast-glob";
+import * as vscode from "vscode";
 import { getWorkspaceRoot, listSfdxProjectPackageDirectories } from "../utils";
 import { CacheManager } from "./cache-manager";
 import { PullRequest } from "./gitProviders/types";
+import { normalizeGlobBase } from "./projectUtils";
 
 export interface PrePostCommand {
   id: string;
@@ -59,13 +61,15 @@ export type ActionResult = {
 
 export async function listPrePostCommandsForPullRequest(
   pr: PullRequest | undefined,
+  // Injectable for unit tests, which cannot rely on a real VS Code workspace
+  workspaceRootOverride?: string,
 ): Promise<PrePostCommand[]> {
   const commands: PrePostCommand[] = [];
   if (!pr || !pr.number) {
     return commands;
   }
   // Check if there is a .sfdx-hardis.PULL_REQUEST_ID.yml file in the PR
-  const workspaceRoot = getWorkspaceRoot();
+  const workspaceRoot = workspaceRootOverride ?? getWorkspaceRoot();
   const fileName =
     pr.number === -1
       ? ".sfdx-hardis.draft.yml"
@@ -80,7 +84,7 @@ export async function listPrePostCommandsForPullRequest(
     return commands;
   }
   try {
-    const prConfig = await fs.readFile(prConfigFileName, "utf8");
+    const prConfig = await fs.promises.readFile(prConfigFileName, "utf8");
     const prConfigParsed = yaml.load(prConfig) as any;
     if (prConfigParsed) {
       // Extract commandsPreDeploy
@@ -140,8 +144,12 @@ function removePrCircularReferences(pr: PullRequest): PullRequest {
 }
 
 // Helper function to get PR config file path
-function getPrConfigFilePath(prNumber: number): string {
-  const workspaceRoot = getWorkspaceRoot();
+function getPrConfigFilePath(
+  prNumber: number,
+  // Injectable for unit tests, which cannot rely on a real VS Code workspace
+  workspaceRootOverride?: string,
+): string {
+  const workspaceRoot = workspaceRootOverride ?? getWorkspaceRoot();
   const fileName =
     prNumber === -1 ? ".sfdx-hardis.draft.yml" : `.sfdx-hardis.${prNumber}.yml`;
   return path.join(workspaceRoot, "scripts", "actions", fileName);
@@ -152,7 +160,7 @@ async function loadPrConfig(prConfigFileName: string): Promise<any> {
   if (!fs.existsSync(prConfigFileName)) {
     return {};
   }
-  const prConfig = await fs.readFile(prConfigFileName, "utf8");
+  const prConfig = await fs.promises.readFile(prConfigFileName, "utf8");
   const prConfigParsed = yaml.load(prConfig) as any;
   return prConfigParsed || {};
 }
@@ -163,8 +171,8 @@ async function savePrConfig(
   prConfigParsed: any,
 ): Promise<void> {
   const yamlContent = yaml.dump(prConfigParsed);
-  await fs.ensureDir(path.dirname(prConfigFileName));
-  await fs.writeFile(prConfigFileName, yamlContent, "utf8");
+  await fs.promises.mkdir(path.dirname(prConfigFileName), { recursive: true });
+  await fs.promises.writeFile(prConfigFileName, yamlContent, "utf8");
 }
 
 // Helper function to get target array name from when value
@@ -199,39 +207,84 @@ function validateConfigAndArray(
   return true;
 }
 
+// Locates the entry matching `command` inside `array`. Prefers matching by id
+// (the id it currently carries, then the id it had before the edit, in case a
+// fresh one was just generated), and falls back to a content match. The content
+// match is based on `original` (the action as it was BEFORE the current edit)
+// when available, so that renaming an action or changing its command still
+// matches the pre-existing entry instead of appearing as a new one.
+function findPrePostCommandIndex(
+  array: PrePostCommand[],
+  command: PrePostCommand,
+  original?: Partial<PrePostCommand> | null,
+): number {
+  let index = array.findIndex((cmd) => !!cmd.id && cmd.id === command.id);
+  if (index >= 0) {
+    return index;
+  }
+  if (original?.id) {
+    index = array.findIndex((cmd) => cmd.id === original.id);
+    if (index >= 0) {
+      return index;
+    }
+  }
+  // Actions written by hand in the YAML file have no id: match them on the
+  // content they had BEFORE this edit, so that editing one (including renaming
+  // it or changing its command) updates it rather than duplicating it
+  const contentReference = original ?? command;
+  return array.findIndex(
+    (cmd) =>
+      !cmd.id &&
+      cmd.label === contentReference.label &&
+      (cmd.type ?? "command") === (contentReference.type ?? "command") &&
+      cmd.command === contentReference.command,
+  );
+}
+
 export async function savePrePostCommand(
   prNumber: number,
   command: PrePostCommand,
+  originalCommand?: Partial<PrePostCommand> | null,
+  // Injectable for unit tests, which cannot rely on a real VS Code workspace
+  workspaceRootOverride?: string,
 ): Promise<string> {
-  const prConfigFileName = getPrConfigFilePath(prNumber);
+  const prConfigFileName = getPrConfigFilePath(prNumber, workspaceRootOverride);
   const prConfigParsed = await loadPrConfig(prConfigFileName);
 
   const targetArrayName = getTargetArrayName(command.when);
   ensureTargetArray(prConfigParsed, targetArrayName);
 
-  // Check if command with same id exists, replace it
-  let existingIndex = prConfigParsed[targetArrayName].findIndex(
-    (cmd: PrePostCommand) => cmd.id === command.id,
-  );
-  // Actions written by hand in the YAML file have no id: match them on their
-  // content instead, so that editing one updates it rather than duplicating it
-  if (existingIndex < 0) {
-    existingIndex = prConfigParsed[targetArrayName].findIndex(
-      (cmd: PrePostCommand) =>
-        !cmd.id &&
-        cmd.label === command.label &&
-        (cmd.type ?? "command") === (command.type ?? "command") &&
-        cmd.command === command.command,
+  // The action may have been moved between pre-deploy and post-deploy (the
+  // "when" field changed): look it up in the array it used to live in too, so it
+  // can be removed from there instead of ending up in both lists.
+  const originalWhen = originalCommand?.when;
+  const sourceArrayName = originalWhen
+    ? getTargetArrayName(originalWhen)
+    : null;
+  if (sourceArrayName && sourceArrayName !== targetArrayName) {
+    ensureTargetArray(prConfigParsed, sourceArrayName);
+    const sourceIndex = findPrePostCommandIndex(
+      prConfigParsed[sourceArrayName],
+      command,
+      originalCommand,
     );
+    if (sourceIndex >= 0) {
+      prConfigParsed[sourceArrayName].splice(sourceIndex, 1);
+    }
   }
+
+  const existingIndex = findPrePostCommandIndex(
+    prConfigParsed[targetArrayName],
+    command,
+    originalCommand,
+  );
   if (existingIndex >= 0) {
     prConfigParsed[targetArrayName][existingIndex] =
       normalizePrePostCommandToSave(command);
   } else {
     // If Id not set, generate a new one with uuid
     if (!command.id || command.id.trim() === "") {
-      const { v4: uuidv4 } = await import("uuid");
-      command.id = uuidv4();
+      command.id = randomUUID();
     }
     prConfigParsed[targetArrayName].push(
       normalizePrePostCommandToSave(command),
@@ -316,25 +369,18 @@ export async function listProjectApexTestClasses(): Promise<string[]> {
     Array.isArray(packageDirs) && packageDirs.length > 0 ? packageDirs : ["."];
 
   const patterns = pkgDirs.map((pkgDir) => {
-    const normalized = String(pkgDir || ".").replace(/\\/g, "/");
-    return `${normalized}/**/classes/*.cls`;
+    const normalized = normalizeGlobBase(String(pkgDir || "."));
+    return normalized ? `${normalized}/**/classes/*.cls` : `**/classes/*.cls`;
   });
+  const combinedPattern =
+    patterns.length > 1 ? `{${patterns.join(",")}}` : patterns[0];
+  const excludePattern = "**/{node_modules,.git,dist,out,.sf,.sfdx,.vscode}/**";
 
-  const files = await fg(patterns, {
-    cwd: workspaceRoot,
-    onlyFiles: true,
-    unique: true,
-    dot: false,
-    ignore: [
-      "**/node_modules/**",
-      "**/.git/**",
-      "**/dist/**",
-      "**/out/**",
-      "**/.sf/**",
-      "**/.sfdx/**",
-      "**/.vscode/**",
-    ],
-  });
+  const uris = await vscode.workspace.findFiles(
+    new vscode.RelativePattern(workspaceRoot, combinedPattern),
+    excludePattern,
+  );
+  const files = Array.from(new Set(uris.map((uri) => uri.fsPath)));
 
   const isTestRegex = /@istest\b/i;
   const found: string[] = [];
@@ -343,16 +389,13 @@ export async function listProjectApexTestClasses(): Promise<string[]> {
   for (let i = 0; i < files.length; i += APEX_TEST_READ_BATCH_SIZE) {
     const batch = files.slice(i, i + APEX_TEST_READ_BATCH_SIZE);
     const batchClassNames = await Promise.all(
-      batch.map(async (relFile) => {
+      batch.map(async (absFile) => {
         try {
-          const content = await fs.readFile(
-            path.join(workspaceRoot, relFile),
-            "utf8",
-          );
+          const content = await fs.promises.readFile(absFile, "utf8");
           if (!isTestRegex.test(content || "")) {
             return null;
           }
-          return path.basename(relFile, ".cls").trim() || null;
+          return path.basename(absFile, ".cls").trim() || null;
         } catch {
           // ignore file read errors
           return null;
@@ -460,7 +503,7 @@ export async function listProjectApexScripts(): Promise<
   const apexScriptsDir = path.join(workspaceRoot, "scripts", "apex");
   const options: { label: string; value: string }[] = [];
   if (fs.existsSync(apexScriptsDir)) {
-    const files = await fs.readdir(apexScriptsDir);
+    const files = await fs.promises.readdir(apexScriptsDir);
     for (const file of files) {
       if (file.endsWith(".apex")) {
         options.push({
@@ -481,17 +524,20 @@ export async function listProjectDataWorkspaces(): Promise<
   const options: { label: string; value: string }[] = [];
   // List all folders in data that contain an export.json
   if (fs.existsSync(sfdmuProjectsDir)) {
-    const items = await fs.readdir(sfdmuProjectsDir);
+    const items = await fs.promises.readdir(sfdmuProjectsDir);
     for (const item of items) {
       const itemPath = path.join(sfdmuProjectsDir, item);
       const exportJsonPath = path.join(itemPath, "export.json");
       if (
-        (await fs.stat(itemPath)).isDirectory() &&
+        (await fs.promises.stat(itemPath)).isDirectory() &&
         fs.existsSync(exportJsonPath)
       ) {
         let hardisLabel = "";
         try {
-          const jsonContent = await fs.readFile(exportJsonPath, "utf8");
+          const jsonContent = await fs.promises.readFile(
+            exportJsonPath,
+            "utf8",
+          );
           const parsed = JSON.parse(jsonContent);
           hardisLabel = parsed.sfdxHardisLabel || item;
         } catch {

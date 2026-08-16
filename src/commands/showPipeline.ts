@@ -21,7 +21,7 @@ import { handleDeploymentActionPickerMessage } from "../utils/pipeline/deploymen
 import { execCommandWithProgress, getWorkspaceRoot } from "../utils";
 import { t } from "../i18n/i18n";
 import path from "path";
-import fs from "fs-extra";
+import * as fs from "fs";
 import simpleGit from "simple-git";
 import { listAllOrgs } from "../utils/orgUtils";
 import { getChildBranchNames } from "../utils/orgConfigUtils";
@@ -373,6 +373,7 @@ export function registerShowPipeline(commands: Commands) {
           const updatedFile = await savePrePostCommand(
             data.prNumber,
             data.command,
+            data.originalCommand,
           );
           Logger.log(
             `Saved deployment action for PR #${data.prNumber}: ${JSON.stringify(
@@ -440,6 +441,13 @@ export function registerShowPipeline(commands: Commands) {
           const gitProvider = await GitProvider.getInstance();
           if (!gitProvider) {
             Logger.log("No Git provider available for getPrInfoForModal");
+            // Let the webview know the request failed so it can clear any state
+            // (ex: the tab a deep link asked to open) it was holding for the
+            // modal that will never open.
+            panel.sendMessage({
+              type: "returnGetPrInfoForModal",
+              data: null,
+            });
             return;
           }
           try {
@@ -451,12 +459,10 @@ export function registerShowPipeline(commands: Commands) {
               fetchDetails: true,
             });
             const prDetails = prList[0];
-            if (prDetails) {
-              panel.sendMessage({
-                type: "returnGetPrInfoForModal",
-                data: prDetails,
-              });
-            }
+            panel.sendMessage({
+              type: "returnGetPrInfoForModal",
+              data: prDetails || null,
+            });
           } catch (e) {
             const prLabel =
               pipelineProperties?.prButtonInfo?.pullRequestLabel ||
@@ -465,6 +471,10 @@ export function registerShowPipeline(commands: Commands) {
             vscode.window.showErrorMessage(
               t("errorGettingPrInfo", { prLabel }),
             );
+            panel.sendMessage({
+              type: "returnGetPrInfoForModal",
+              data: null,
+            });
           }
         }
         // Lazy-load the list of go-lives for a top branch (selector content only)
@@ -915,7 +925,10 @@ export function registerShowPipeline(commands: Commands) {
                   "actions",
                   `.sfdx-hardis.${prNumber}.yml`,
                 );
-                await fs.rename(prActionsFileDraft, prActionsFileNewName);
+                await fs.promises.rename(
+                  prActionsFileDraft,
+                  prActionsFileNewName,
+                );
                 const commitAndPushLabel = t("commitAndPushFile", {
                   fileName: `.sfdx-hardis.${prNumber}.yml`,
                 });

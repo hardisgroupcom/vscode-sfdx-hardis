@@ -1,4 +1,4 @@
-import sortArray from "sort-array";
+import { sortArray } from "../sortUtils";
 import { prettifyFieldName } from "../stringUtils";
 import { isMajorBranch, isPreprod, isProduction } from "../orgConfigUtils";
 import { PullRequest, JobStatus } from "../gitProviders/types";

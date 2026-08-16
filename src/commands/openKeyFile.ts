@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import * as fs from "fs-extra";
+import * as fs from "fs";
 import path from "path";
 import { getWorkspaceRoot } from "../utils";
 import { Commands } from "../commands";

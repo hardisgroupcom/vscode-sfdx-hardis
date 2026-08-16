@@ -10,10 +10,10 @@ getConfig(layer) returns:
 - project if layer is project
 */
 
-import axios from "axios";
-import c from "chalk";
+import { getText } from "../httpUtils";
+import * as c from "../ansiColors";
 import { cosmiconfig } from "cosmiconfig";
-import fs from "fs-extra";
+import * as fs from "fs";
 import * as yaml from "js-yaml";
 import * as os from "os";
 import * as path from "path";
@@ -136,16 +136,19 @@ async function loadFromRemoteConfigFile(url: string) {
   if (REMOTE_CONFIGS[url]) {
     return REMOTE_CONFIGS[url];
   }
-  const remoteConfigResp = await axios.get(url);
-  if (remoteConfigResp.status !== 200) {
+  let remoteConfigText: string;
+  try {
+    remoteConfigText = await getText(url);
+  } catch (e: any) {
     throw new Error(
       "[sfdx-hardis] Unable to read remote configuration file at " +
         url +
         "\n" +
-        JSON.stringify(remoteConfigResp),
+        (e?.message || e),
+      { cause: e },
     );
   }
-  const remoteConfig = yaml.load(remoteConfigResp.data);
+  const remoteConfig = yaml.load(remoteConfigText);
   REMOTE_CONFIGS[url] = remoteConfig;
   return remoteConfig;
 }
@@ -171,8 +174,8 @@ export async function setInConfigFile(
     doc = yaml.load(fs.readFileSync(configFile, "utf-8"));
   }
   doc = Object.assign(doc, propValues);
-  await fs.ensureDir(path.dirname(configFile));
-  await fs.writeFile(configFile, yaml.dump(doc));
+  await fs.promises.mkdir(path.dirname(configFile), { recursive: true });
+  await fs.promises.writeFile(configFile, yaml.dump(doc));
   if (explorer) {
     explorer.clearCaches();
   }

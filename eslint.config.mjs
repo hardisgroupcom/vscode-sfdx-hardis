@@ -36,6 +36,11 @@ export default [
         setImmediate: "readonly",
         clearImmediate: "readonly",
 
+        // Node.js 18+ / VS Code extension host built-in fetch API
+        fetch: "readonly",
+        Response: "readonly",
+        AbortSignal: "readonly",
+
         // VS Code extension globals
         Thenable: "readonly",
       },
@@ -131,6 +136,10 @@ export default [
         afterEach: "readonly",
         suite: "readonly",
         test: "readonly",
+        setup: "readonly",
+        teardown: "readonly",
+        suiteSetup: "readonly",
+        suiteTeardown: "readonly",
 
         // VS Code extension globals
         Thenable: "readonly",

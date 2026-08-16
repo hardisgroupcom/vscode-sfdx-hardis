@@ -11,6 +11,11 @@
   - New actions are now created with **Run only once by org** enabled, matching sfdx-hardis. Until now an action created here re-ran at every deployment to the same org
   - Removed the **Skip if deployment error** option, which sfdx-hardis now ignores: post-deployment actions are never run when the metadata deployment failed
   - Fixed editing a deployment action creating a copy of it instead of updating it: an action created from the panel had no identifier until the pipeline was reloaded, so every save appended a new entry to the configuration file
+    - Also fixed for actions written by hand in the configuration file: renaming one, or changing its command, no longer leaves the original entry behind as a duplicate
+    - Moving an action from pre-deployment to post-deployment (or the other way round) no longer leaves a copy of it in both lists
+  - Fixed a restriction list of target branches (included or excluded) sometimes staying in the configuration file after switching to another restriction mode, contradicting what the editor displayed
+  - A branch that was renamed or removed from the pipeline is now still shown in a deployment action's target orgs restriction instead of silently disappearing and being lost on the next save
+  - Fixed the pull request modal occasionally opening on the wrong tab after a previous attempt to load its details had failed
   - The pipeline no longer warns when no manual actions tracking file is configured, since manual actions are now declared in pull requests and ticked off in their comments
 
 - Pipeline Settings

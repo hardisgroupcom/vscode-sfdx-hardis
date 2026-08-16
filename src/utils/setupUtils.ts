@@ -7,7 +7,7 @@ import {
   getWorkspaceRoot,
   isExtensionPreRelease,
 } from "../utils";
-import which from "which";
+import { findExecutable } from "./executableUtils";
 import { isMergeDriverEnabled } from "./gitMergeDriverUtils";
 import { t } from "../i18n/i18n";
 import {
@@ -64,7 +64,7 @@ export function buildSfCliUpgradeCommand(
  */
 export async function resolveSfCliPath(): Promise<string> {
   try {
-    return await which("sf");
+    return await findExecutable("sf");
   } catch {
     return "missing";
   }
@@ -456,7 +456,7 @@ export class SetupHelper {
       // Run npm version lookup and path detection in parallel (both independent of each other)
       const [latestResult, sfdxPathResult] = await Promise.allSettled([
         getNpmLatestVersion("@salesforce/cli"),
-        which("sf"),
+        findExecutable("sf"),
       ]);
       const latest: string | null =
         latestResult.status === "fulfilled" ? latestResult.value : null;
