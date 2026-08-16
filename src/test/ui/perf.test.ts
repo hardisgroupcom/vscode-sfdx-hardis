@@ -180,9 +180,7 @@ suite("Performance UI tests", function () {
 
       const openedAt = await Promise.race([
         terminalOpened,
-        new Promise<number>((resolve) =>
-          setTimeout(() => resolve(-1), 10000),
-        ),
+        new Promise<number>((resolve) => setTimeout(() => resolve(-1), 10000)),
       ]);
       assert.ok(openedAt !== -1, "A terminal must be created for the command");
       const terminalDelayMs = openedAt - clickTime;

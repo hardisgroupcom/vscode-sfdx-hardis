@@ -25,12 +25,7 @@ export class LwcUiPanel {
    * panel title to know whether a command is still running.
    */
   public commandStatus:
-    | "pending"
-    | "running"
-    | "completed"
-    | "error"
-    | "aborted"
-    | null = null;
+    "pending" | "running" | "completed" | "error" | "aborted" | null = null;
 
   private constructor(
     panel: vscode.WebviewPanel,
