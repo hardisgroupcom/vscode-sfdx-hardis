@@ -14,12 +14,21 @@
 
 /* ---------- Hero band ---------- */
 
+/* No overflow:hidden here: the theme/language dropdowns in the toolbar must
+   be able to spill below the hero. The oversized decorative mark is clipped
+   by the dedicated .welcome-hero-bg layer instead. */
 .welcome-hero {
     position: relative;
-    overflow: hidden;
     background: linear-gradient(115deg, var(--slds-g-color-palette-cloud-blue-95), var(--slds-g-color-palette-violet-95) 70%);
     border-bottom: 1px solid var(--slds-g-color-neutral-base-90);
     margin-bottom: 1rem;
+}
+
+.welcome-hero-bg {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
 }
 
 .welcome-hero-mark {
@@ -28,7 +37,6 @@
     top: -30px;
     width: 360px;
     opacity: 0.08;
-    pointer-events: none;
 }
 
 .welcome-toolbar {
