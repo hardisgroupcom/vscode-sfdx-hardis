@@ -23,6 +23,14 @@
     - Widely used but replaceable packages (axios, moment, lodash, fs-extra, uuid, chalk, which…) were replaced by capabilities **already built into Node.js and VS Code**, with no change in behavior
 
 - **Look & Feel**
+  - The Welcome page was **fully redesigned**
+    - New branded header with the **sfdx-hardis wordmark** and the **Cloudity logo** linking to cloudity.com, plus the extension **version** and a **See what's new** link
+    - The most used features (**DevOps Pipeline**, **Org Monitoring**, **Documentation Workbench**) are now featured at the top, **visible without scrolling**
+    - A compact **3-step quick start** (connect your org, pick a feature, open the docs) replaces the tall Getting Started section
+    - Feature cards are grouped by task (**Essentials**, **Work with your org**, **Data & files**) with consistent Salesforce palette colors, and can be activated with the keyboard
+    - Open Source information and Cloudity guidance & support are merged into one compact footer with a **Star on GitHub** button
+    - The settings controls no longer float over the content: they sit in a single header toolbar, with **Extension settings** one click away
+  - Fix panels wrongly opening in **light mode inside a dark VS Code**: the extension theme now follows the VS Code theme by default (users who explicitly selected Light or Dark keep their choice)
   - The DevOps Pipeline diagram was **redesigned with the official Salesforce Lightning color palette**, in **light and dark themes**
     - CI job status is now **color-coded consistently everywhere**: **blue animated = running**, **orange = pending**, **red = failed**, **green = success** (previously running and pending showed as red, and failed jobs were not highlighted at all)
     - Branches, orgs and connectors now share **one consistent color family**, with rounded nodes, lighter frames around the Git Branches and Salesforce Orgs sections, **crisp vector icons** replacing the emoji that rendered differently on each operating system, and the same font as the rest of the panel
@@ -34,6 +42,9 @@
   - Quick action cards and other panels (Org Monitoring, Package XML, Documentation, Welcome, Setup, Monitoring Config, Metadata Retriever) now use the **official Salesforce color palette** for their icons and buttons, including the Release Notes buttons that could be **hard to read in dark mode**
   - Modals got a **design refresh** with a brand accent strip and chips in their title, in the Pull Requests modal (branch name and pull request count) as in all the other dialog windows (Data Workbench, Files Workbench, Pipeline Config, Monitoring Config, Deployment Actions)
   - Deployment action execution contexts were **renamed for clarity**: **"Validation and Deployment jobs"**, **"Validation job only"** and **"Deployment job only"** (previously "Check job" and "Process Deployment job"), in all languages
+
+- **Translations**
+  - Add missing translations in Italian, Polish, Portuguese (Brazil) and Spanish: some menu entries, tooltips and messages were displayed in English or as raw labels
 
 - **DevOps Pipeline**
   - **Deployment Actions are no longer in beta**: pre-deployment and post-deployment actions are now a **fully supported feature** of the DevOps Pipeline, and the beta label was removed from their tab

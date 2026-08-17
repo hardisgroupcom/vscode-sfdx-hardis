@@ -7,12 +7,32 @@ import {
   WEBSITE_URL,
   DOCSITE_URL,
   WEBSITE_CONTACT_FORM_URL,
+  EXTENSION_REPOSITORY_URL,
+  EXTENSION_CHANGELOG_URL,
 } from "../constants";
 import {
   loadAllCustomCommandGroups,
   isAllCustomCommandsLoaded,
   CustomCommandMenu,
 } from "../utils/sfdx-hardis-config-utils";
+
+const EXTENSION_ID = "NicolasVuillamy.vscode-sfdx-hardis";
+
+// Whitelist of navigation targets the Welcome LWC can request.
+// Keys are the card/button ids sent in the `navigateTo` message.
+export const WELCOME_NAVIGATION_TARGETS: Record<string, string> = {
+  dataWorkbench: "vscode-sfdx-hardis.showDataWorkbench",
+  documentationWorkbench: "vscode-sfdx-hardis.showDocumentationWorkbench",
+  extensionConfig: "vscode-sfdx-hardis.showExtensionConfig",
+  filesWorkbench: "vscode-sfdx-hardis.showFilesWorkbench",
+  installedPackages: "vscode-sfdx-hardis.showInstalledPackages",
+  metadataRetriever: "vscode-sfdx-hardis.showMetadataRetriever",
+  orgMonitoring: "vscode-sfdx-hardis.showOrgMonitoring",
+  orgsManager: "vscode-sfdx-hardis.openOrgsManager",
+  pipeline: "vscode-sfdx-hardis.showPipeline",
+  runAnonymousApex: "vscode-sfdx-hardis.runAnonymousApex",
+  setup: "vscode-sfdx-hardis.showSetup",
+};
 
 export function registerShowWelcome(command: Commands) {
   const disposable = vscode.commands.registerCommand(
@@ -28,6 +48,9 @@ export function registerShowWelcome(command: Commands) {
       const langSetting = config.get<string>("lang", "auto");
       const { colorTheme, colorContrast } =
         LwcPanelManager.resolveTheme(colorThemeConfig);
+      const extensionVersion =
+        vscode.extensions.getExtension(EXTENSION_ID)?.packageJSON?.version ??
+        "";
       let customMenus: CustomCommandMenu[] = [];
       const allCustomCommandsLoaded = isAllCustomCommandsLoaded();
       if (allCustomCommandsLoaded) {
@@ -49,6 +72,9 @@ export function registerShowWelcome(command: Commands) {
         docsiteUrl: DOCSITE_URL,
         contributersUrl: DOCSITE_URL + "/contributors/",
         contactFormUrl: WEBSITE_CONTACT_FORM_URL,
+        repositoryUrl: EXTENSION_REPOSITORY_URL,
+        whatsNewUrl: EXTENSION_CHANGELOG_URL,
+        extensionVersion: extensionVersion,
         imagePaths: {
           flagGlobe: ["icons", "flag-globe.svg"],
           flagDe: ["icons", "flag-de.svg"],
@@ -82,61 +108,12 @@ export function registerShowWelcome(command: Commands) {
       }
 
       // Handle messages from the Welcome panel
-      panel.onMessage(async (type: string, _data: any) => {
-        switch (type) {
-          case "navigateToOrgsManager":
-            vscode.commands.executeCommand(
-              "vscode-sfdx-hardis.openOrgsManager",
-            );
-            break;
-          case "navigateToPipeline":
-            vscode.commands.executeCommand("vscode-sfdx-hardis.showPipeline");
-            break;
-          case "navigateToMetadataRetriever":
-            vscode.commands.executeCommand(
-              "vscode-sfdx-hardis.showMetadataRetriever",
-            );
-            break;
-          case "navigateToFilesWorkbench":
-            vscode.commands.executeCommand(
-              "vscode-sfdx-hardis.showFilesWorkbench",
-            );
-            break;
-          case "navigateToDataWorkbench":
-            vscode.commands.executeCommand(
-              "vscode-sfdx-hardis.showDataWorkbench",
-            );
-            break;
-          case "navigateToOrgMonitoring":
-            vscode.commands.executeCommand(
-              "vscode-sfdx-hardis.showOrgMonitoring",
-            );
-            break;
-          case "navigateToExtensionConfig":
-            vscode.commands.executeCommand(
-              "vscode-sfdx-hardis.showExtensionConfig",
-            );
-            break;
-          case "navigateToInstalledPackages":
-            vscode.commands.executeCommand(
-              "vscode-sfdx-hardis.showInstalledPackages",
-            );
-            break;
-          case "navigateToDocumentationWorkbench":
-            vscode.commands.executeCommand(
-              "vscode-sfdx-hardis.showDocumentationWorkbench",
-            );
-            break;
-          case "navigateToSetup":
-            vscode.commands.executeCommand("vscode-sfdx-hardis.showSetup");
-            break;
-          case "navigateToRunAnonymousApex":
-            vscode.commands.executeCommand(
-              "vscode-sfdx-hardis.runAnonymousApex",
-            );
-            break;
-          default:
-            break;
+      panel.onMessage(async (type: string, data: any) => {
+        if (type === "navigateTo") {
+          const targetCommand = WELCOME_NAVIGATION_TARGETS[data?.target];
+          if (targetCommand) {
+            vscode.commands.executeCommand(targetCommand);
+          }
         }
       });
     },

@@ -986,3 +986,92 @@ div.slds-scope[data-theme="dark"] {
   border-color: var(--slds-g-color-palette-green-30);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14);
 }
+
+/* Blue-tinted neutral button (same recipe as .hardis-btn-tinted-green) */
+.slds-scope[data-theme] .hardis-btn-tinted-blue .slds-button {
+  background: var(--slds-g-color-palette-cloud-blue-90);
+  border-color: var(--slds-g-color-palette-cloud-blue-40);
+  color: var(--slds-g-color-palette-cloud-blue-30);
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease,
+    box-shadow 0.12s ease;
+}
+.slds-scope[data-theme] .hardis-btn-tinted-blue .slds-button .slds-button__icon {
+  fill: currentColor;
+}
+.slds-scope[data-theme] .hardis-btn-tinted-blue .slds-button:hover,
+.slds-scope[data-theme] .hardis-btn-tinted-blue .slds-button:focus {
+  border-color: var(--slds-g-color-palette-cloud-blue-30);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14);
+}
+
+/* sfdx-hardis brand gradient (official banner: cyan to violet), tuned per theme
+   so the start stays a vivid cyan on light backgrounds too */
+.slds-scope[data-theme] {
+  --hardis-brand-gradient-start: light-dark(#0aa2dd, #37bee8);
+  --hardis-brand-gradient-end: light-dark(#7b2ff7, #cb65ff);
+}
+
+/* Soft-tint icon tiles: tinted background + saturated icon of the same hue.
+   Auto light/dark through the palette tokens. Used by the Welcome page cards;
+   reuse for any feature/command tile instead of gradient icon containers. */
+.hardis-tile {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.hardis-tile.featured {
+  width: 46px;
+  height: 46px;
+}
+.hardis-tile.small {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+.hardis-tile svg {
+  fill: currentColor;
+}
+.hardis-tile lightning-icon {
+  --slds-c-icon-color-foreground: currentColor;
+  --slds-c-icon-color-foreground-default: currentColor;
+  background-color: transparent !important;
+  color: inherit !important;
+}
+.hardis-tile.cyan {
+  background: var(--slds-g-color-palette-cloud-blue-90);
+  color: var(--slds-g-color-palette-cloud-blue-40);
+}
+.hardis-tile.teal {
+  background: var(--slds-g-color-palette-teal-90);
+  color: var(--slds-g-color-palette-teal-40);
+}
+.hardis-tile.violet {
+  background: var(--slds-g-color-palette-violet-90);
+  color: var(--slds-g-color-palette-violet-40);
+}
+.hardis-tile.amber {
+  background: var(--slds-g-color-palette-orange-90);
+  color: var(--slds-g-color-palette-orange-40);
+}
+.hardis-tile.slate {
+  background: var(--slds-g-color-palette-neutral-90);
+  color: var(--slds-g-color-palette-neutral-30);
+}
+.hardis-tile.indigo {
+  background: var(--slds-g-color-palette-indigo-90);
+  color: var(--slds-g-color-palette-indigo-40);
+}
+.hardis-tile.pink {
+  background: var(--slds-g-color-palette-pink-90);
+  color: var(--slds-g-color-palette-pink-40);
+}
+.hardis-tile.green {
+  background: var(--slds-g-color-palette-green-90);
+  color: var(--slds-g-color-palette-green-40);
+}

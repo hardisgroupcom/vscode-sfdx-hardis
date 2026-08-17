@@ -1,0 +1,18 @@
+:host {
+    display: inline-flex;
+    line-height: 0;
+}
+
+.cloudity-logo {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.cloudity-logo-blue {
+    fill: var(--slds-g-color-palette-electric-blue-50);
+}
+
+.cloudity-logo-navy {
+    fill: var(--slds-g-color-palette-indigo-30);
+}

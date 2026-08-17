@@ -7,6 +7,10 @@ export const BANNER_IMAGE_URL = showBanner
   ? "https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/refs/heads/main/docs/assets/images/cloudity-banner.png"
   : false;
 export const DOCSITE_URL = "https://sfdx-hardis.cloudity.com";
+export const EXTENSION_REPOSITORY_URL =
+  "https://github.com/hardisgroupcom/vscode-sfdx-hardis";
+export const EXTENSION_CHANGELOG_URL =
+  EXTENSION_REPOSITORY_URL + "/blob/main/CHANGELOG.md";
 export const WEBSITE_URL = "https://www.cloudity.com?ref=sfdxhardis";
 export const WEBSITE_CONTACT_URL =
   "https://cloudity.com/contact-us/?ref=sfdxhardis";

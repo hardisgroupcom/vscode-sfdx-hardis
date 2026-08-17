@@ -309,6 +309,24 @@ export class LwcUiPanel {
     };
   }
 
+  /**
+   * Current initialization data of the panel (as sent to the LWC).
+   * Used by UI integration tests to assert on the data driving the webview.
+   */
+  public getInitializationData(): any {
+    return this.initializationData;
+  }
+
+  /**
+   * Inject a message as if it had been posted by the webview (LWC side).
+   * Used by UI integration tests to exercise the extension-side message
+   * handlers without a real user click inside the webview DOM.
+   */
+  public simulateWebviewMessage(message: any): void {
+    this.handleBuiltInMessages(message);
+    this.notifyMessageListeners(message);
+  }
+
   public clearExistingOnMessageListeners(): void {
     // Clear listeners previously added with onMessage method.
     // Persistent listeners are kept: they belong to the panel lifecycle
