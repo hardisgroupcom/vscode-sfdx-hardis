@@ -567,6 +567,9 @@ export class CommandRunner {
         const panel = panelManager.getOrCreatePanel(pendingPanelLwcId, {
           id: provisionalContextId,
           command: pendingCommandName,
+          // The CLI has not connected yet: the panel renders a "Starting"
+          // status until the websocket initializeCommand message arrives
+          pending: true,
         });
         panel.commandStatus = "pending";
         panel.updateTitle(

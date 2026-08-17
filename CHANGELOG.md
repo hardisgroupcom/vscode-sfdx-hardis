@@ -33,6 +33,13 @@
     - Find and run any sfdx-hardis command by name with the new **search button** in the header toolbar, or the **Search** link of the quick start's "Pick a feature" step
     - The same design is applied across the extension: **Org Monitoring**, the **DevOps Pipeline** quick action cards, the **Documentation Workbench**, the **AI Documentation configuration** and the **Monitoring Configuration** now share the Welcome page's sections, cards and colored icon tiles
     - Org Monitoring check cards are now **clickable directly** (with the keyboard too), replacing the Run button on each card
+  - The command execution tab was **fully redesigned** with the same look & feel
+    - Command steps are displayed as a **compact connected timeline** with colored status dots, expandable step details and per-step durations, replacing the tall stack of boxes (a whole run now fits on one screen)
+    - The header shows the command name with a **colored status pill** (Starting / Running / Completed / Failed), the **target org**, the elapsed time and a link to the log file
+    - When the command asks a question, it appears in a highlighted **"Waiting for your answer"** card: options are clickable cards, long choice lists are **searchable in place** (no more dropdown covering the validation buttons), and multi-selects show a live **"n of m selected"** counter with Select all / Show only selected shortcuts
+    - Answered questions collapse to a single line showing the **answer**, and can be expanded back to see the details
+    - Generated reports and actions are docked in a **bar at the bottom** of the tab, always visible without scrolling
+    - Result tables are now readable in **dark mode**, and the duplicated scrollbar on the right edge is gone
   - Fix panels wrongly opening in **light mode inside a dark VS Code**: the extension theme now follows the VS Code theme by default (users who explicitly selected Light or Dark keep their choice)
   - The DevOps Pipeline diagram was **redesigned with the official Salesforce Lightning color palette**, in **light and dark themes**
     - CI job status is now **color-coded consistently everywhere**: **blue animated = running**, **orange = pending**, **red = failed**, **green = success** (previously running and pending showed as red, and failed jobs were not highlighted at all)
