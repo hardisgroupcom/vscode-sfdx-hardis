@@ -184,7 +184,7 @@ Components extend `SharedMixin`. In templates use `{i18n.keyName}` for static la
 1. Add key to **all** locale files in `src/i18n/` (flat JSON, camelCase keys)
 2. Use `{{varName}}` for interpolation variables
 
-Key order is **case-sensitive ASCII sort** (JavaScript default `sort()`), not case-insensitive alphabetical - uppercase-first keys sort before lowercase ones. Find the real neighbouring keys in `en.json` before inserting, and verify with:
+Key order is **case-sensitive ASCII sort** (JavaScript default `sort()`), not case-insensitive alphabetical - uppercase-first keys sort before lowercase ones. Find the real neighboring keys in `en.json` before inserting, and verify with:
 
 ```bash
 node -e "const k=Object.keys(require('./src/i18n/en.json'));console.log(JSON.stringify(k)===JSON.stringify([...k].sort()))"
@@ -224,7 +224,8 @@ When writing translations, look at other translations in the same language file 
 Use `CacheManager` (backed by VS Code globalState) for expensive operations. `preLoadCache()` runs at startup.
 
 ### Performance (instant command tabs)
-- A command panel opens **immediately** when the user clicks, before the CLI answers. `command-runner.ts` creates the panel, generates a provisional context id, passes it to the CLI as `SFDX_HARDIS_COMMAND_CONTEXT_ID`, and registers it via `registerPendingCommandPanel()`. When the CLI connects, `hardis-websocket-server.ts` adopts that panel with `takePendingCommandPanel()` instead of creating a second one.
+- A command panel opens **immediately** when the user clicks, before the CLI answers. `command-runner.ts` creates the panel, generates a provisional context id, passes it to the CLI as `SFDX_HARDIS_COMMAND_CONTEXT_ID`, and registers it via `registerPendingCommandPanel()`.
+- When the CLI connects, `hardis-websocket-server.ts` adopts that pending panel with `takePendingCommandPanel()` instead of creating a second one.
 - **Track panel state with the `panel.commandStatus` flag** (`pending` / `running` / `completed` / `error`). Never infer state by parsing panel titles.
 - Long-running UI work must not block the panel opening: create the panel with `lwcManager.getOrCreatePanel(..., { loading: true })`, then push data in with a `loadAndPush()` call, and handle the LWC's `retryInit` message. Reference implementations: `src/commands/showDataWorkbench.ts`, `src/commands/showDocumentationWorkbench.ts`.
 - File watchers must use `.some()`, not `.filter()`, when they only need to know whether a match exists.

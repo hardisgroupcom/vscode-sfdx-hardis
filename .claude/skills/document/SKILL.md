@@ -56,7 +56,7 @@ Commands should link to the relevant page on `https://sfdx-hardis.cloudity.com/`
 
 1. Write English text in `src/i18n/en.json` first (source of truth)
 2. Add the same key with translated text to all other locale files (`fr.json`, `es.json`, `de.json`, `it.json`, `nl.json`, `ja.json`, `pl.json`, `pt-BR.json`)
-3. Keep flat JSON and camelCase keys. Order is **case-sensitive ASCII sort** (JavaScript default `sort()`), not case-insensitive alphabetical — uppercase-first keys sort before lowercase ones, so locate the real neighbouring keys in `en.json` before inserting into the 9 files. Verify with:
+3. Keep flat JSON and camelCase keys. Order is **case-sensitive ASCII sort** (JavaScript default `sort()`), not case-insensitive alphabetical — uppercase-first keys sort before lowercase ones, so locate the real neighboring keys in `en.json` before inserting into the 9 files. Verify with:
    ```bash
    node -e "const k=Object.keys(require('./src/i18n/en.json'));console.log(JSON.stringify(k)===JSON.stringify([...k].sort()))"
    ```
