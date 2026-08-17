@@ -280,7 +280,7 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
       titleSegments: this.parseTitleSegments(rawTitle),
       command: isCustom ? userEntry.command || "" : catalogEntry.command || "",
       iconName,
-      iconContainerClass: "command-icon-container " + colorClass,
+      iconContainerClass: "hardis-tile small " + colorClass,
       frequency: effectiveFrequency,
       frequencyOptions: this.makeOptions(frequencyOptions, effectiveFrequency),
       hasOverrides,
@@ -317,7 +317,7 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
       title,
       titleSegments: this.parseTitleSegments(rawTitle),
       iconName,
-      iconContainerClass: "command-icon-container " + colorClass,
+      iconContainerClass: "hardis-tile small " + colorClass,
       messaging: effective.messaging,
       email: effective.email,
       api: effective.api,
@@ -499,8 +499,7 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
         title: cat.title,
         description: cat.description || "",
         icon: catIcon,
-        iconContainerClass:
-          "command-icon-container command-icon-container--lg " + catColorClass,
+        iconContainerClass: "hardis-tile " + catColorClass,
         rows: catRows,
       });
     }
@@ -527,9 +526,7 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
         title: this.i18n.monitoringCustomCategory,
         description: "",
         icon: customIconData.icon,
-        iconContainerClass:
-          "command-icon-container command-icon-container--lg " +
-          customIconData.colorClass,
+        iconContainerClass: "hardis-tile " + customIconData.colorClass,
         rows: customRows,
       });
     }
@@ -552,9 +549,7 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
         description:
           this.i18n.monitoringStandaloneNotificationsDescription || "",
         icon: standaloneIconData.icon,
-        iconContainerClass:
-          "command-icon-container command-icon-container--lg " +
-          standaloneIconData.colorClass,
+        iconContainerClass: "hardis-tile " + standaloneIconData.colorClass,
         rows: standaloneRows,
         isStandaloneSection: true,
       });

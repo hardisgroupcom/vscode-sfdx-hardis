@@ -305,136 +305,21 @@
     text-decoration: underline;
 }
 
-/* ---------- Feature groups ---------- */
-
-.welcome-group-label {
-    font-size: 0.72rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    color: var(--slds-g-color-neutral-base-50);
-    margin: 1.1rem 0 0.6rem;
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-}
-
-.welcome-group-label::after {
-    content: "";
-    flex: 1;
-    height: 1px;
-    background: var(--slds-g-color-neutral-base-95);
-}
-
-.welcome-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 0.9rem;
-}
+/* ---------- Feature groups ----------
+   Group labels, grid and cards come from the shared kit in global-theme.css
+   (.hardis-group-label / .hardis-card-grid / .hardis-card). Only the
+   welcome-specific layout rule below lives here. */
 
 /* The featured essentials must stay on one row (above the fold) on any
    reasonable editor width; they only stack on really narrow panels */
-.welcome-group.featured .welcome-grid {
+.welcome-group.featured .hardis-card-grid {
     grid-template-columns: repeat(3, 1fr);
 }
 
 @media (max-width: 720px) {
-    .welcome-group.featured .welcome-grid {
+    .welcome-group.featured .hardis-card-grid {
         grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     }
-}
-
-.welcome-card {
-    background: var(--slds-g-color-neutral-base-100);
-    border: 1px solid var(--slds-g-color-neutral-base-90);
-    border-radius: 12px;
-    cursor: pointer;
-    position: relative;
-    overflow: hidden;
-    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-}
-
-.welcome-card:hover {
-    transform: translateY(-3px);
-    border-color: var(--slds-g-color-palette-cloud-blue-40);
-    box-shadow: var(--slds-g-shadow-3);
-}
-
-.welcome-card:focus-visible {
-    outline: 2px solid var(--slds-g-color-palette-cloud-blue-40);
-    outline-offset: 2px;
-}
-
-.welcome-card.featured {
-    padding: 1.15rem 1.25rem 1.1rem;
-}
-
-.welcome-card.featured::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, var(--hardis-brand-gradient-start), var(--hardis-brand-gradient-end));
-}
-
-.welcome-card.compact {
-    padding: 0.75rem 0.95rem;
-    gap: 0.3rem;
-}
-
-.welcome-card-head {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.welcome-card-title {
-    margin: 0;
-    letter-spacing: -0.01em;
-    color: var(--slds-g-color-neutral-base-10);
-}
-
-.welcome-card.featured .welcome-card-title {
-    font-size: 1.05rem;
-}
-
-.welcome-card.compact .welcome-card-title {
-    font-size: 0.9rem;
-}
-
-.welcome-card-desc {
-    margin: 0;
-    color: var(--slds-g-color-neutral-base-50);
-    line-height: 1.45;
-}
-
-.welcome-card.featured .welcome-card-desc {
-    font-size: 0.84rem;
-}
-
-.welcome-card.compact .welcome-card-desc {
-    font-size: 0.76rem;
-}
-
-.welcome-card-arrow {
-    position: absolute;
-    right: 0.9rem;
-    bottom: 0.65rem;
-    color: var(--slds-g-color-palette-cloud-blue-40);
-    font-size: 0.95rem;
-    opacity: 0;
-    transform: translateX(-4px);
-    transition: opacity 0.15s ease, transform 0.15s ease;
-}
-
-.welcome-card:hover .welcome-card-arrow,
-.welcome-card:focus-visible .welcome-card-arrow {
-    opacity: 1;
-    transform: translateX(0);
 }
 
 /* ---------- Footer band ---------- */

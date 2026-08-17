@@ -1024,6 +1024,9 @@ div.slds-scope[data-theme="dark"] {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  /* default (unknown hue): slate */
+  background: var(--slds-g-color-palette-neutral-90);
+  color: var(--slds-g-color-palette-neutral-30);
 }
 .hardis-tile.featured {
   width: 46px;
@@ -1043,35 +1046,206 @@ div.slds-scope[data-theme="dark"] {
   background-color: transparent !important;
   color: inherit !important;
 }
-.hardis-tile.cyan {
+/* Hue variants. The extra names are semantic aliases used by the command
+   catalogs and panels (colorClass values), so JS can keep sending its
+   category name and get a consistent palette hue. */
+.hardis-tile.cyan,
+.hardis-tile.backup,
+.hardis-tile.new-story,
+.hardis-tile.backpromote-action,
+.hardis-tile.salesforce {
   background: var(--slds-g-color-palette-cloud-blue-90);
   color: var(--slds-g-color-palette-cloud-blue-40);
 }
-.hardis-tile.teal {
+.hardis-tile.teal,
+.hardis-tile.connected-apps,
+.hardis-tile.pull-action,
+.hardis-tile.cloudflare {
   background: var(--slds-g-color-palette-teal-90);
   color: var(--slds-g-color-palette-teal-40);
 }
-.hardis-tile.violet {
+.hardis-tile.violet,
+.hardis-tile.audit,
+.hardis-tile.metadata-access,
+.hardis-tile.package-action,
+.hardis-tile.prompts {
   background: var(--slds-g-color-palette-violet-90);
   color: var(--slds-g-color-palette-violet-40);
 }
-.hardis-tile.amber {
+.hardis-tile.amber,
+.hardis-tile.limits,
+.hardis-tile.updates,
+.hardis-tile.apex,
+.hardis-tile.autofix-action {
   background: var(--slds-g-color-palette-orange-90);
   color: var(--slds-g-color-palette-orange-40);
 }
-.hardis-tile.slate {
+.hardis-tile.slate,
+.hardis-tile.legacy,
+.hardis-tile.local {
   background: var(--slds-g-color-palette-neutral-90);
   color: var(--slds-g-color-palette-neutral-30);
 }
-.hardis-tile.indigo {
+.hardis-tile.indigo,
+.hardis-tile.users,
+.hardis-tile.pr-action,
+.hardis-tile.confluence {
   background: var(--slds-g-color-palette-indigo-90);
   color: var(--slds-g-color-palette-indigo-40);
 }
-.hardis-tile.pink {
+.hardis-tile.pink,
+.hardis-tile.licenses {
   background: var(--slds-g-color-palette-pink-90);
   color: var(--slds-g-color-palette-pink-40);
 }
-.hardis-tile.green {
+.hardis-tile.green,
+.hardis-tile.tests,
+.hardis-tile.save-action,
+.hardis-tile.unused-metadata {
   background: var(--slds-g-color-palette-green-90);
   color: var(--slds-g-color-palette-green-40);
+}
+.hardis-tile.red,
+.hardis-tile.security,
+.hardis-tile.alerts {
+  background: var(--slds-g-color-palette-red-90);
+  color: var(--slds-g-color-palette-red-40);
+}
+
+/* ---- Section + card kit (Welcome-page design, reusable everywhere) ----
+   Anatomy:
+   <div class="hardis-group-label">Section name</div>
+   <p class="hardis-group-desc">Optional description</p>
+   <div class="hardis-card-grid">
+     <div class="hardis-card [clickable] [featured] [disabled]">
+       <div class="hardis-card-head">
+         <div class="hardis-tile small cyan"><lightning-icon .../></div>
+         <h3 class="hardis-card-title">Title</h3>
+       </div>
+       <p class="hardis-card-desc">Description</p>
+       <div class="hardis-card-actions">buttons…</div>   (button cards)
+       <div class="hardis-card-arrow">→</div>             (clickable cards)
+     </div>
+   </div> */
+
+.hardis-group-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--slds-g-color-neutral-base-50);
+  margin: 1.1rem 0 0.6rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.hardis-group-label::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--slds-g-color-neutral-base-95);
+}
+.hardis-group-desc {
+  margin: -0.3rem 0 0.6rem;
+  font-size: 0.8rem;
+  color: var(--slds-g-color-neutral-base-50);
+}
+
+.hardis-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.9rem;
+}
+.hardis-card-grid.single-column {
+  grid-template-columns: 1fr;
+}
+
+.hardis-card {
+  background: var(--slds-g-color-neutral-base-100);
+  border: 1px solid var(--slds-g-color-neutral-base-90);
+  border-radius: 12px;
+  padding: 0.75rem 0.95rem;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.hardis-card.clickable {
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.hardis-card.clickable:hover {
+  transform: translateY(-3px);
+  border-color: var(--slds-g-color-palette-cloud-blue-40);
+  box-shadow: var(--slds-g-shadow-3);
+}
+.hardis-card.clickable:focus-visible {
+  outline: 2px solid var(--slds-g-color-palette-cloud-blue-40);
+  outline-offset: 2px;
+}
+.hardis-card.disabled {
+  cursor: default;
+  opacity: 0.6;
+  pointer-events: none;
+}
+.hardis-card.featured {
+  padding: 1.15rem 1.25rem 1.1rem;
+  gap: 0.5rem;
+}
+.hardis-card.featured::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--hardis-brand-gradient-start), var(--hardis-brand-gradient-end));
+}
+
+.hardis-card-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.hardis-card-title {
+  margin: 0;
+  letter-spacing: -0.01em;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--slds-g-color-neutral-base-10);
+}
+.hardis-card.featured .hardis-card-title {
+  font-size: 1.05rem;
+}
+.hardis-card-desc {
+  margin: 0;
+  font-size: 0.76rem;
+  color: var(--slds-g-color-neutral-base-50);
+  line-height: 1.45;
+}
+.hardis-card.featured .hardis-card-desc {
+  font-size: 0.84rem;
+}
+.hardis-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: auto;
+  padding-top: 0.55rem;
+}
+.hardis-card-arrow {
+  position: absolute;
+  right: 0.9rem;
+  bottom: 0.65rem;
+  color: var(--slds-g-color-palette-cloud-blue-40);
+  font-size: 0.95rem;
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.hardis-card.clickable:hover .hardis-card-arrow,
+.hardis-card.clickable:focus-visible .hardis-card-arrow {
+  opacity: 1;
+  transform: translateX(0);
 }

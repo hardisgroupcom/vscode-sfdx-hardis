@@ -123,8 +123,8 @@
                 <!-- Feature groups -->
                 <template for:each={featureGroups} for:item="group">
                     <div key={group.id} class={group.groupClass}>
-                        <div class="welcome-group-label">{group.label}</div>
-                        <div class="welcome-grid">
+                        <div class="hardis-group-label">{group.label}</div>
+                        <div class="hardis-card-grid">
                             <template for:each={group.cards} for:item="card">
                                 <div key={card.id}
                                     class={card.cardClass}
@@ -134,14 +134,14 @@
                                     tabindex="0"
                                     onclick={handleCardClick}
                                     onkeydown={handleCardKeydown}>
-                                    <div class="welcome-card-head">
+                                    <div class="hardis-card-head">
                                         <div class={card.tileClass}>
                                             <lightning-icon icon-name={card.icon} size={card.iconSize}></lightning-icon>
                                         </div>
-                                        <h3 class="welcome-card-title">{card.title}</h3>
+                                        <h3 class="hardis-card-title">{card.title}</h3>
                                     </div>
-                                    <p class="welcome-card-desc">{card.description}</p>
-                                    <div class="welcome-card-arrow">→</div>
+                                    <p class="hardis-card-desc">{card.description}</p>
+                                    <div class="hardis-card-arrow">→</div>
                                 </div>
                             </template>
                         </div>
@@ -201,23 +201,23 @@
                     ></lightning-button>
                     <h2 class="welcome-custom-view-title">{activeCustomMenuLabel}</h2>
                 </div>
-                <div class="welcome-grid">
+                <div class="hardis-card-grid">
                     <template for:each={activeCustomMenuCommands} for:item="cmd">
                         <div key={cmd.id}
-                            class="welcome-card compact"
+                            class="hardis-card clickable"
                             data-command={cmd.command}
                             role="button"
                             tabindex="0"
                             onclick={executeCustomCommand}
                             onkeydown={handleCardKeydown}>
-                            <div class="welcome-card-head">
+                            <div class="hardis-card-head">
                                 <div class={cmd.welcomeIconClass}>
                                     <lightning-icon icon-name={cmd.sldsIcon} size="x-small"></lightning-icon>
                                 </div>
-                                <h3 class="welcome-card-title">{cmd.label}</h3>
+                                <h3 class="hardis-card-title">{cmd.label}</h3>
                             </div>
-                            <p class="welcome-card-desc">{cmd.tooltip}</p>
-                            <div class="welcome-card-arrow">→</div>
+                            <p class="hardis-card-desc">{cmd.tooltip}</p>
+                            <div class="hardis-card-arrow">→</div>
                         </div>
                     </template>
                 </div>

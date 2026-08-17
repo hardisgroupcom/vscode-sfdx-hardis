@@ -178,7 +178,10 @@ export default class Welcome extends SharedMixin(LightningElement) {
   normalizeMenu(menu) {
     const sourceType = menu?.sourceType || "custom";
     const iconClass =
-      sourceType === "plugin" ? "hardis-tile small pink" : "hardis-tile small indigo";
+      menu?.welcomeIconClass ||
+      (sourceType === "plugin"
+        ? "hardis-tile small pink"
+        : "hardis-tile small indigo");
     return {
       ...menu,
       sourceType,
@@ -192,7 +195,10 @@ export default class Welcome extends SharedMixin(LightningElement) {
   normalizeCommand(command, parentSourceType) {
     const sourceType = command?.sourceType || parentSourceType || "custom";
     const iconClass =
-      sourceType === "plugin" ? "hardis-tile small pink" : "hardis-tile small indigo";
+      command?.welcomeIconClass ||
+      (sourceType === "plugin"
+        ? "hardis-tile small pink"
+        : "hardis-tile small indigo");
     return {
       ...command,
       sourceType,
@@ -261,7 +267,7 @@ export default class Welcome extends SharedMixin(LightningElement) {
           title: menu.label,
           description: menu.description,
           tileClass: menu.welcomeIconClass,
-          cardClass: "welcome-card compact",
+          cardClass: "hardis-card clickable",
         })),
       });
     }
@@ -280,7 +286,9 @@ export default class Welcome extends SharedMixin(LightningElement) {
       tileClass: featured
         ? "hardis-tile featured " + card.hue
         : "hardis-tile small " + card.hue,
-      cardClass: featured ? "welcome-card featured" : "welcome-card compact",
+      cardClass: featured
+        ? "hardis-card featured clickable"
+        : "hardis-card clickable",
     };
   }
 
