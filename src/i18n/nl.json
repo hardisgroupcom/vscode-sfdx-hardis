@@ -365,7 +365,7 @@
   "deploymentActionMissingRequiredFields": "Vul alle verplichte velden in voordat je opslaat.",
   "deploymentActionSaved": "Implementatieactie opgeslagen voor {{prLabel}} #{{prNumber}}. Vergeet niet om {{updatedFile}} te committen en te pushen",
   "deploymentActionSavedDraft": "Implementatieactie opgeslagen in conceptbestand voor de toekomstige {{prLabel}}. Ze wordt gekoppeld aan de {{prLabel}} zodra deze is aangemaakt.",
-  "deploymentActionsTab": "Implementatieacties ({{count}}) (beta)",
+  "deploymentActionsTab": "Implementatieacties ({{count}})",
   "deploymentPackages": "Implementatiepakketten",
   "deploymentsAnalysis": "Implementatieanalyse",
   "deploymentsAnalysisDescription": "Analyseer metadata-implementaties en validaties in je org",

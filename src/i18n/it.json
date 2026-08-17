@@ -359,7 +359,7 @@
   "deploymentActionMissingRequiredFields": "Compila tutti i campi obbligatori prima di salvare.",
   "deploymentActionSaved": "Azione di deployment salvata per {{prLabel}} #{{prNumber}}. Non dimenticare di fare commit e push di {{updatedFile}}",
   "deploymentActionSavedDraft": "Azione di deployment salvata come bozza per il futuro {{prLabel}}. Verrà collegata al {{prLabel}} una volta creato.",
-  "deploymentActionsTab": "Azioni di deployment ({{count}}) (beta)",
+  "deploymentActionsTab": "Azioni di deployment ({{count}})",
   "deploymentPackages": "Package di deployment",
   "deploymentsAnalysis": "Analisi delle distribuzioni",
   "deploymentsAnalysisDescription": "Analizza le distribuzioni di metadati e le validazioni nella tua org",
