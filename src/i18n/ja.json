@@ -1619,6 +1619,7 @@
   "scheduleBatchType": "バッチをスケジュール",
   "scratchOrgCreationDefinitionFile": "スクラッチ組織作成定義ファイル",
   "scratchOrgsColumn": "スクラッチ組織",
+  "searchCommandsTooltip": "sfdx-hardis コマンドを検索",
   "searchInResults": "結果内を検索...",
   "searchMetadata": "メタデータを検索",
   "searchingMetadata": "メタデータを検索しています...",

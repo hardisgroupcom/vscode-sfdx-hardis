@@ -1619,6 +1619,7 @@
   "scheduleBatchType": "Schedule Batch",
   "scratchOrgCreationDefinitionFile": "Definitiebestand voor het aanmaken van scratch org",
   "scratchOrgsColumn": "Scratch Orgs",
+  "searchCommandsTooltip": "Zoek sfdx-hardis opdrachten",
   "searchInResults": "Zoeken in resultaten...",
   "searchMetadata": "Metadata zoeken",
   "searchingMetadata": "Metadata zoeken...",

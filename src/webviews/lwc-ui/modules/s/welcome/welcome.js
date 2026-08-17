@@ -449,6 +449,13 @@ export default class Welcome extends SharedMixin(LightningElement) {
     });
   }
 
+  navigateToSearchCommands() {
+    window.sendMessageToVSCode({
+      type: "navigateTo",
+      data: { target: "searchCommands" },
+    });
+  }
+
   // Quick action methods
   handleConnectToOrg() {
     window.sendMessageToVSCode({

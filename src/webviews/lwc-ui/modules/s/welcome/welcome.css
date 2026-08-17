@@ -58,11 +58,11 @@
     --slds-c-toggle-label-text-align: right;
 }
 
-.welcome-settings-button {
+.welcome-icon-button {
     color: var(--slds-g-color-neutral-base-30);
 }
 
-.welcome-settings-button lightning-icon {
+.welcome-icon-button lightning-icon {
     color: inherit !important;
     background-color: transparent !important;
 }

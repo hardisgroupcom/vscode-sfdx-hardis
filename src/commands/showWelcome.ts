@@ -31,6 +31,7 @@ export const WELCOME_NAVIGATION_TARGETS: Record<string, string> = {
   orgsManager: "vscode-sfdx-hardis.openOrgsManager",
   pipeline: "vscode-sfdx-hardis.showPipeline",
   runAnonymousApex: "vscode-sfdx-hardis.runAnonymousApex",
+  searchCommands: "vscode-sfdx-hardis.searchCommands",
   setup: "vscode-sfdx-hardis.showSetup",
 };
 

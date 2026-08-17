@@ -25,6 +25,9 @@
                             onchange={handleWelcomeSettingChange}
                             class="welcome-toggle"
                         ></lightning-input>
+                        <button class="icon-selector-button welcome-icon-button" title={i18n.searchCommandsTooltip} onclick={navigateToSearchCommands}>
+                            <lightning-icon icon-name="utility:search" size="x-small"></lightning-icon>
+                        </button>
                         <div class="icon-selector" title={i18n.langSelectTooltip}>
                             <button class="icon-selector-button" onclick={toggleLangDropdown}>
                                 <img class="icon-selector-img icon-selector-flag" src={currentLangFlagSrc} alt="">
@@ -55,7 +58,7 @@
                                 </div>
                             </template>
                         </div>
-                        <button class="icon-selector-button welcome-settings-button" title={i18n.extensionSettings} onclick={navigateToExtensionConfig}>
+                        <button class="icon-selector-button welcome-icon-button" title={i18n.extensionSettings} onclick={navigateToExtensionConfig}>
                             <lightning-icon icon-name="utility:settings" size="x-small"></lightning-icon>
                         </button>
                     </div>

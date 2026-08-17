@@ -30,6 +30,7 @@
     - Feature cards are grouped by task (**Essentials**, **Work with your org**, **Data & files**) with consistent Salesforce palette colors, and can be activated with the keyboard
     - Open Source information and Cloudity guidance & support are merged into one compact footer with a **Star on GitHub** button
     - The settings controls no longer float over the content: they sit in a single header toolbar, with **Extension settings** one click away
+    - A **search button** in the header toolbar lets you find and run any sfdx-hardis command by name
     - The same design is applied across the extension: **Org Monitoring**, the **DevOps Pipeline** quick action cards, the **Documentation Workbench**, the **AI Documentation configuration** and the **Monitoring Configuration** now share the Welcome page's sections, cards and colored icon tiles
     - Org Monitoring check cards are now **clickable directly** (with the keyboard too), replacing the Run button on each card
   - Fix panels wrongly opening in **light mode inside a dark VS Code**: the extension theme now follows the VS Code theme by default (users who explicitly selected Light or Dark keep their choice)

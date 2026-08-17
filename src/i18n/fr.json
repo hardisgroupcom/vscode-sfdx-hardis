@@ -1619,6 +1619,7 @@
   "scheduleBatchType": "Planifier un batch",
   "scratchOrgCreationDefinitionFile": "Fichier de définition de création de scratch org",
   "scratchOrgsColumn": "Scratch Orgs",
+  "searchCommandsTooltip": "Rechercher des commandes sfdx-hardis",
   "searchInResults": "Rechercher dans les résultats...",
   "searchMetadata": "Rechercher les métadonnées",
   "searchingMetadata": "Recherche de métadonnées...",
