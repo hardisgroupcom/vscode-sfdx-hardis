@@ -17,6 +17,13 @@ function loadTranslations(locale: string): Record<string, string> {
     if (fs.existsSync(outLocaleFile)) {
       return JSON.parse(fs.readFileSync(outLocaleFile, "utf-8"));
     }
+    // tsc layout (yarn compile overwrote the webpack bundle): this file runs
+    // as out/i18n/i18n.js, next to the JSON files copied by a previous
+    // webpack build.
+    const siblingLocaleFile = path.join(__dirname, `${locale}.json`);
+    if (fs.existsSync(siblingLocaleFile)) {
+      return JSON.parse(fs.readFileSync(siblingLocaleFile, "utf-8"));
+    }
     // Fallback: try src/i18n/ relative to out/
     const srcLocaleFile = path.join(
       __dirname,

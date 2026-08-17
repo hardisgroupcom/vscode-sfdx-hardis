@@ -1,28 +1,7 @@
 /* Org Monitoring Workbench Styles */
-
-/* Blue background for consistency with other panels */
-
-
-.command-icon-container.apex {
-    background: linear-gradient(135deg, #ff6b35 0%, #d4471b 100%);
-    box-shadow: 0 2px 6px rgba(255, 107, 53, 0.3);
-}
-
-.command-icon-container.connected-apps {
-    background: linear-gradient(135deg, #2980b9 0%, #1f618d 100%);
-    box-shadow: 0 2px 6px rgba(41, 128, 185, 0.3);
-}
-
-.command-icon-container.metadata-access {
-    background: linear-gradient(135deg, #8e44ad 0%, #6c3483 100%);
-    box-shadow: 0 2px 6px rgba(142, 68, 173, 0.3);
-}
-
-.command-icon-container.unused-metadata {
-    background: linear-gradient(135deg, #3ba755 0%, #194e31 100%);
-    box-shadow: 0 2px 6px rgba(59, 167, 85, 0.3);
-};
-
+/* Command sections and cards use the shared kit from global-theme.css
+   (.hardis-group-label / .hardis-group-desc / .hardis-card-grid /
+   .hardis-card / .hardis-tile). */
 
 /* Main container */
 .monitoring-container {
@@ -85,24 +64,6 @@
 /* Section Styling */
 .section {
     margin: 0 1rem 1.25rem 1rem;
-}
-
-.section-header {
-    margin-bottom: 1.25rem;
-    padding: 0 0.5rem;
-}
-
-.section-title {
-    font-size: 1.25rem;
-    font-weight: 600;
-    margin-bottom: 0.25rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.section-icon {
-    font-size: 1.125rem;
 }
 
 .section-subtitle {
@@ -239,7 +200,7 @@
 }
 .slds-scope[data-theme="light"] .instance-url-label {
     color: #181818;
-} 
+}
 .slds-scope[data-theme="dark"] .instance-url-label {
   color: #d4d4d4;
 }
@@ -265,172 +226,6 @@
 
 .status-button.primary {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-/* Commands Grid */
-.commands-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1.25rem;
-    margin: 0.5rem 0.5rem 0 0.5rem;
-    padding: 0 0.25rem;
-}
-
-.command-card {
-    border-radius: 8px;
-    padding: 1.25rem;
-    transition: all 0.2s ease;
-    min-height: 130px;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-.command-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    border-color: #0176d3;
-}
-
-.command-header {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 0.75rem;
-}
-
-.command-icon-container {
-    width: 36px;
-    height: 36px;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    color: white !important;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    transition: all 0.2s ease;
-}
-
-
-
-.command-icon-container:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
-}
-
-.command-icon-container.backup {
-    background: linear-gradient(135deg, #1b96ff 0%, #0b5cab 100%);
-    box-shadow: 0 2px 8px rgba(27, 150, 255, 0.3);
-}
-
-.command-icon-container.alerts {
-    background: linear-gradient(135deg, #ea001e 0%, #c23934 100%);
-    box-shadow: 0 2px 8px rgba(234, 0, 30, 0.3);
-}
-
-.command-icon-container.audit {
-    background: linear-gradient(135deg, #9050e9 0%, #7526e3 100%);
-    box-shadow: 0 2px 8px rgba(144, 80, 233, 0.3);
-}
-
-.command-icon-container.tests {
-    background: linear-gradient(135deg, #06a59a 0%, #045a55 100%);
-    box-shadow: 0 2px 8px rgba(6, 165, 154, 0.3);
-}
-
-.command-icon-container.limits {
-    background: linear-gradient(135deg, #ff6b35 0%, #d4471b 100%);
-    box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
-}
-
-.command-icon-container.updates {
-    background: linear-gradient(135deg, #ffb439 0%, #e6930f 100%);
-    box-shadow: 0 2px 8px rgba(255, 180, 57, 0.3);
-}
-
-.command-icon-container.security {
-    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-    box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
-}
-
-.command-icon-container.legacy {
-    background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
-    box-shadow: 0 2px 8px rgba(149, 165, 166, 0.3);
-}
-
-.command-icon-container.users {
-    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-    box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
-}
-
-.command-icon-container.licenses {
-    background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
-    box-shadow: 0 2px 8px rgba(243, 156, 18, 0.3);
-}
-
-.command-icon-container.apex {
-    background: linear-gradient(135deg, #ff6b35 0%, #d4471b 100%);
-    box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
-}
-
-.command-icon-container.connected-apps {
-    background: linear-gradient(135deg, #2980b9 0%, #1f618d 100%);
-    box-shadow: 0 2px 8px rgba(41, 128, 185, 0.3);
-}
-
-.command-icon-container.metadata-access {
-    background: linear-gradient(135deg, #8e44ad 0%, #6c3483 100%);
-    box-shadow: 0 2px 8px rgba(142, 68, 173, 0.3);
-}
-
-.command-icon-container.health {
-    background: linear-gradient(135deg, #1abc9c 0%, #13866f 100%);
-    box-shadow: 0 2px 8px rgba(26, 188, 156, 0.3);
-}
-
-.command-icon-container.unused-metadata {
-    background: linear-gradient(135deg, #3ba755 0%, #194e31 100%);
-    box-shadow: 0 2px 8px rgba(59, 167, 85, 0.3);
-}
-
-.command-title {
-    font-size: 1rem;
-    font-weight: 600;
-    margin: 0;
-}
-
-.command-description {
-    line-height: 1.3;
-    margin: 0 0 1rem 0;
-    flex-grow: 1;
-    font-size: 0.85rem;
-}
-
-.command-button {
-    border-radius: 6px;
-    font-weight: 500;
-    align-self: flex-start;
-}
-
-/* Quick Actions Grid */
-.quick-actions-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1rem;
-}
-
-.quick-action-button {
-    height: 3rem;
-    font-weight: 500;
-    border-radius: 6px;
-    transition: all 0.2s ease;
-}
-
-.quick-action-button:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 /* Documentation Section */
@@ -487,7 +282,7 @@
     .monitoring-container {
         padding: 1.5rem 0.75rem;
     }
-    
+
     .section {
         margin: 0 0.5rem 2rem 0.5rem;
     }
@@ -497,47 +292,23 @@
         text-align: center;
         gap: 1rem;
     }
-    
+
     .status-card {
         flex-direction: column;
         gap: 1rem;
         margin: 0.5rem 0.25rem 1rem 0.25rem;
     }
-    
+
     .header-title {
         font-size: 1.5rem;
     }
-    
+
     .status-actions {
         justify-content: center;
     }
-    
-    .commands-grid {
-        grid-template-columns: 1fr;
-        margin: 0.5rem 0.25rem 0 0.25rem;
-        padding: 0;
-    }
-    
-    .quick-actions-grid {
-        grid-template-columns: 1fr;
-    }
-    
+
     .docs-actions {
         flex-direction: column;
         align-items: center;
-    }
-}
-
-@media (max-width: 480px) {
-    .section-title {
-        font-size: 1.25rem;
-        flex-direction: column;
-        gap: 0.25rem;
-    }
-    
-    .command-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.75rem;
     }
 }

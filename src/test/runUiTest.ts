@@ -47,20 +47,24 @@ async function main() {
 
   // 3. Deterministic extension settings for the test workspace
   fs.mkdirSync(path.join(workspaceDir, ".vscode"), { recursive: true });
+  const workspaceSettings: Record<string, unknown> = {
+    "vsCodeSfdxHardis.showWelcomeAtStartup": false,
+    "vsCodeSfdxHardis.disableGitBashCheck": true,
+    "vsCodeSfdxHardis.disableVsCodeColors": true,
+    "vsCodeSfdxHardis.userInput": "ui-lwc",
+    "vsCodeSfdxHardis.userInputCommandLineIfLWC": "background",
+    "telemetry.telemetryLevel": "off",
+  };
+  // Visual QA runs (SFDX_HARDIS_VISUAL_SHOWCASE) can force a VS Code theme,
+  // e.g. SFDX_HARDIS_VISUAL_THEME=light to screenshot webviews in light mode
+  if (process.env.SFDX_HARDIS_VISUAL_THEME === "light") {
+    workspaceSettings["workbench.colorTheme"] = "Default Light Modern";
+  } else if (process.env.SFDX_HARDIS_VISUAL_THEME === "dark") {
+    workspaceSettings["workbench.colorTheme"] = "Default Dark Modern";
+  }
   fs.writeFileSync(
     path.join(workspaceDir, ".vscode", "settings.json"),
-    JSON.stringify(
-      {
-        "vsCodeSfdxHardis.showWelcomeAtStartup": false,
-        "vsCodeSfdxHardis.disableGitBashCheck": true,
-        "vsCodeSfdxHardis.disableVsCodeColors": true,
-        "vsCodeSfdxHardis.userInput": "ui-lwc",
-        "vsCodeSfdxHardis.userInputCommandLineIfLWC": "background",
-        "telemetry.telemetryLevel": "off",
-      },
-      null,
-      2,
-    ),
+    JSON.stringify(workspaceSettings, null, 2),
   );
 
   // 4. Prepare the sf CLI shim (mock) and its invocation log

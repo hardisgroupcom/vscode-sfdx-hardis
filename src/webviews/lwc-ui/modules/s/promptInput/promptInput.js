@@ -17,7 +17,6 @@ export default class PromptInput extends SharedMixin(LightningElement) {
   @track selectedOptionDescription = ""; // Description for selected option
   @track comboboxFilter = ""; // filter text for combobox when many options
   @track multiselectFilter = "";
-  @track comboboxFilterVisible = false;
   @track multiselectShowOnlySelected = false;
   @track isVisible = false;
   @track isSubmitting = false; // Track if submission is in progress
@@ -34,56 +33,14 @@ export default class PromptInput extends SharedMixin(LightningElement) {
     this.multiselectFilter = event.target.value || "";
   }
 
-  // Handler for combobox filter input
+  // Handler for the list select filter input
   handleComboboxFilterChange(event) {
     this.comboboxFilter = event.detail?.value ?? event.target?.value ?? "";
   }
 
-  // Toggle visibility of the combobox filter input
-  handleToggleComboboxFilter() {
-    // Toggle only if the feature is available
-    if (!this.showComboboxFilter) return;
-    this.comboboxFilterVisible = !this.comboboxFilterVisible;
-    // When hiding the filter, clear it so combobox shows all values
-    if (!this.comboboxFilterVisible) {
-      this.comboboxFilter = "";
-      return;
-    }
-
-    // When showing the filter, focus the input field. Lightning base components
-    // render native inputs inside their shadowRoot, so we try to find the
-    // inner <input> element after a short delay to ensure it is rendered.
-    setTimeout(() => {
-      try {
-        const filterHost = this.template.querySelector(
-          ".prompt-combobox-filter",
-        );
-        if (!filterHost) return;
-
-        // Prefer native input inside the component's shadowRoot
-        const nativeInput =
-          filterHost.shadowRoot && filterHost.shadowRoot.querySelector("input");
-
-        const inputToFocus = nativeInput || filterHost.querySelector("input");
-
-        if (inputToFocus && typeof inputToFocus.focus === "function") {
-          inputToFocus.focus();
-          if (typeof inputToFocus.select === "function") {
-            inputToFocus.select();
-          }
-        } else if (filterHost && typeof filterHost.focus === "function") {
-          // Fallback to host focus
-          filterHost.focus();
-        }
-      } catch (e) {
-        // Fail silently if focusing is not possible
-      }
-    }, 50);
-  }
-
-  // Handler for show only selected toggle
-  handleMultiselectShowOnlySelectedChange(event) {
-    this.multiselectShowOnlySelected = event.target.checked;
+  // Toggle "show only selected" filter (multiselect)
+  handleToggleShowOnlySelected() {
+    this.multiselectShowOnlySelected = !this.multiselectShowOnlySelected;
   }
 
   // Returns filtered options for multiselect
@@ -101,15 +58,6 @@ export default class PromptInput extends SharedMixin(LightningElement) {
       );
     }
     return options;
-  }
-
-  // Dynamically set card classes based on embedded property
-  get cardClass() {
-    return this.embedded ? "" : "slds-card slds-card_boundary";
-  }
-
-  get cardBodyClass() {
-    return this.embedded ? "" : "slds-card__body slds-card__body_inner";
   }
 
   connectedCallback() {
@@ -378,7 +326,6 @@ export default class PromptInput extends SharedMixin(LightningElement) {
     this._hasInitialScroll = false; // Reset scroll flag
     this.multiselectFilter = "";
     this.comboboxFilter = "";
-    this.comboboxFilterVisible = false;
     this.multiselectShowOnlySelected = false;
   }
 
@@ -402,7 +349,7 @@ export default class PromptInput extends SharedMixin(LightningElement) {
     );
   }
 
-  get isSelectWithCombobox() {
+  get isSelectWithList() {
     return (
       this.isSelectInput &&
       this.currentPrompt.choices &&
@@ -412,6 +359,11 @@ export default class PromptInput extends SharedMixin(LightningElement) {
 
   get isMultiselectInput() {
     return this.currentPrompt && this.currentPrompt.type === "multiselect";
+  }
+
+  // Both select variants answer on click, so they show no Validate button
+  get isClickToAnswerSelect() {
+    return this.isSelectWithButtons || this.isSelectWithList;
   }
 
   get promptMessage() {
@@ -425,34 +377,15 @@ export default class PromptInput extends SharedMixin(LightningElement) {
     return this.decodeHtmlEntities(placeholder);
   }
 
-  get comboboxPlaceholder() {
-    const placeholder = this.promptPlaceholder;
-    const base = placeholder || this.i18n.chooseAnOption;
+  // Visible choices count chip for the list select
+  get listCountLabel() {
     const count = (this.filteredComboboxOptions || []).length;
     const choiceWord =
       count === 1 ? this.i18n.choiceSingular : this.i18n.choicesPlural;
-    return `${base} (${count} ${choiceWord})`;
+    return `${count} ${choiceWord}`;
   }
 
-  // Dynamic label for combobox including visible choices count
-  get comboboxLabel() {
-    const count = (this.filteredComboboxOptions || []).length;
-    const choiceWord =
-      count === 1 ? this.i18n.choiceSingular : this.i18n.choicesPlural;
-    return `${this.i18n.selectAnOption} (${count} ${choiceWord})`;
-  }
-
-  // Whether to show the right-side filter input for combobox
-  get showComboboxFilter() {
-    // Show when there are more than 10 original choices
-    return (
-      this.currentPrompt &&
-      this.currentPrompt.choices &&
-      this.currentPrompt.choices.length > 5
-    );
-  }
-
-  // Filtered combobox options based on comboboxFilter text
+  // Filtered list options based on the filter text
   get filteredComboboxOptions() {
     const options = this.selectOptions || [];
     if (!this.comboboxFilter || this.comboboxFilter.trim().length === 0) {
@@ -464,6 +397,45 @@ export default class PromptInput extends SharedMixin(LightningElement) {
         (opt.label && opt.label.toLowerCase().includes(filter)) ||
         (opt.description && opt.description.toLowerCase().includes(filter)),
     );
+  }
+
+  // Filtered list options decorated for the template (emoji slot, selection state)
+  get filteredListOptions() {
+    return this.filteredComboboxOptions.map((opt) => {
+      const { emoji, labelClean } = this.extractLeadingEmoji(opt.label);
+      const selected = opt.value === this.selectedValue;
+      return {
+        ...opt,
+        emoji,
+        labelClean,
+        selected,
+        rowClass: "hardis-option-row" + (selected ? " selected" : ""),
+      };
+    });
+  }
+
+  // Radio-card options decorated for the template (emoji slot)
+  get selectOptionsDecorated() {
+    return this.selectOptions.map((opt) => {
+      const { emoji, labelClean } = this.extractLeadingEmoji(opt.label);
+      return { ...opt, emoji, labelClean };
+    });
+  }
+
+  // The CLI bakes emoji into some choice labels (✅ ❌ ☢️ ...): pull a leading
+  // emoji into a dedicated, consistently-sized slot instead of leaving it
+  // to distort the label typography.
+  extractLeadingEmoji(label) {
+    if (!label || typeof label !== "string") {
+      return { emoji: null, labelClean: label || "" };
+    }
+    const match = label.match(
+      /^((?:\p{Extended_Pictographic}|[☀-➿⬀-⯿])[️‍\p{Extended_Pictographic}]*)\s+(.+)$/u,
+    );
+    if (match) {
+      return { emoji: match[1], labelClean: match[2] };
+    }
+    return { emoji: null, labelClean: label };
   }
 
   get promptDescription() {
@@ -569,6 +541,7 @@ export default class PromptInput extends SharedMixin(LightningElement) {
         originalValue: choice.value,
         description: this.decodeHtmlEntities(choice.description || ""),
         checked: isChecked,
+        rowClass: "hardis-option-row" + (isChecked ? " selected" : ""),
       };
     });
   }
@@ -588,33 +561,39 @@ export default class PromptInput extends SharedMixin(LightningElement) {
     if (!this.currentPrompt || !this.currentPrompt.choices) return false;
     const totalChoices = this.currentPrompt.choices.length;
     const selectedCount = this.selectedValues.length;
-    const result = selectedCount === totalChoices && selectedCount > 0;
-
-    console.log("allItemsSelected getter called:", {
-      totalChoices,
-      selectedCount,
-      result,
-      selectedValues: this.selectedValues,
-    });
-
-    return result;
+    return selectedCount === totalChoices && selectedCount > 0;
   }
 
   get noItemsSelected() {
-    const result = this.selectedValues.length === 0;
-    console.log("noItemsSelected getter called:", {
-      selectedLength: this.selectedValues.length,
-      result,
-    });
-    return result;
+    return this.selectedValues.length === 0;
   }
 
   get showOnlySelectedLabel() {
-    const selectedCount = this.selectedValues.length;
-    if (selectedCount === 0) {
-      return "Show only selected";
+    if (this.multiselectShowOnlySelected) {
+      return this.i18n.showAllOptions;
     }
-    return `Show only ${selectedCount} selected`;
+    return this.i18n.showOnlySelected;
+  }
+
+  // "n of m selected" chip for multiselect prompts
+  get selectedCountLabel() {
+    const total =
+      (this.currentPrompt &&
+        this.currentPrompt.choices &&
+        this.currentPrompt.choices.length) ||
+      0;
+    return this.t("selectedCountOf", {
+      selected: this.selectedValues.length,
+      total: total,
+    });
+  }
+
+  // Validate button carries the selection count for multiselect prompts
+  get validateLabel() {
+    if (this.isMultiselectInput && this.selectedValues.length > 0) {
+      return this.t("validateCount", { count: this.selectedValues.length });
+    }
+    return this.i18n.validate;
   }
 
   handleInputChange(event) {
@@ -636,6 +615,16 @@ export default class PromptInput extends SharedMixin(LightningElement) {
           this.handleSubmit();
         }
         // If no option, do nothing
+        return;
+      }
+      if (this.isSelectWithList) {
+        // Enter answers with the option the filter narrowed down to; with
+        // several options still visible it does nothing (click decides)
+        const filtered = this.filteredComboboxOptions;
+        if (filtered.length === 1 && filtered[0].value) {
+          this.selectedValue = filtered[0].value;
+          this.handleSubmit();
+        }
         return;
       }
       // For text/number inputs, ensure we capture the current value before submitting
@@ -714,24 +703,6 @@ export default class PromptInput extends SharedMixin(LightningElement) {
     );
   }
 
-  handleComboboxClick(event) {
-    // Auto-scroll the combobox into view if it's near the bottom of the viewport
-    try {
-      const combobox = event.currentTarget;
-      if (combobox && combobox.getBoundingClientRect) {
-        const rect = combobox.getBoundingClientRect();
-        const viewportHeight =
-          window.innerHeight || document.documentElement.clientHeight;
-        // If the bottom of the combobox is below the viewport, scroll it into view
-        if (rect.bottom > viewportHeight - 40) {
-          combobox.scrollIntoView({ behavior: "smooth", block: "center" });
-        }
-      }
-    } catch (e) {
-      // Fail silently
-    }
-  }
-
   handleButtonSelect(event) {
     // Use currentTarget to get the button element, not the clicked child element
     const button = event.currentTarget;
@@ -758,16 +729,23 @@ export default class PromptInput extends SharedMixin(LightningElement) {
     }, 100);
   }
 
-  handleMultiselectChange(event) {
-    const value = event.target.value;
-    const isChecked = event.target.checked;
-
-    if (isChecked) {
-      this.selectedValues = [...this.selectedValues, value];
-    } else {
+  // Row click toggles the value (multiselect list rows)
+  handleMultiselectRowToggle(event) {
+    const value = event.currentTarget.dataset.value;
+    if (this.selectedValues.includes(value)) {
       this.selectedValues = this.selectedValues.filter((v) => v !== value);
+    } else {
+      this.selectedValues = [...this.selectedValues, value];
     }
     this.error = null;
+  }
+
+  // On option rows, Enter/Space must activate the row (native button click)
+  // without bubbling to the card-level handler that submits the prompt.
+  handleOptionRowKeydown(event) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.stopPropagation();
+    }
   }
 
   handleSelectAll() {
@@ -781,14 +759,8 @@ export default class PromptInput extends SharedMixin(LightningElement) {
   }
 
   handleUnselectAll() {
-    // Clear all selections with debugging
-    console.log("handleUnselectAll called, before:", this.selectedValues);
     this.selectedValues = [];
     this.error = null;
-    console.log("handleUnselectAll called, after:", this.selectedValues);
-
-    // Force reactivity by creating a new array reference
-    this.selectedValues = [...this.selectedValues];
   }
 
   handleSubmit() {
@@ -858,7 +830,9 @@ export default class PromptInput extends SharedMixin(LightningElement) {
       }
     } else if (this.isSelectInput) {
       if (!this.selectedValue || this.selectedValue === "") {
-        response[promptName] = "exitNow";
+        // Pressing Enter with nothing chosen must not silently cancel the
+        // command: surface a hint instead (Cancel/Esc still exits)
+        throw new Error(this.i18n.selectAnOption);
       } else {
         const originalValue = this.choiceValueMapping[this.selectedValue];
         response[promptName] = this.makeSafeValue(originalValue);

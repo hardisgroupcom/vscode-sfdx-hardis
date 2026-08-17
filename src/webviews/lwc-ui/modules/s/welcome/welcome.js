@@ -5,11 +5,98 @@
 import { LightningElement, api, track } from "lwc";
 import { SharedMixin } from "s/sharedMixin";
 
+// Built-in feature cards, rendered group by group.
+// "essentials" is the featured row (bigger cards, always above the fold).
+const FEATURE_CARDS = [
+  {
+    id: "pipeline",
+    icon: "utility:flow",
+    hue: "violet",
+    labelKey: "devOpsPipeline",
+    descriptionKey: "devOpsPipelineDescription",
+    group: "essentials",
+  },
+  {
+    id: "orgMonitoring",
+    icon: "utility:graph",
+    hue: "violet",
+    labelKey: "orgMonitoring",
+    descriptionKey: "orgMonitoringDescription",
+    group: "essentials",
+  },
+  {
+    id: "documentationWorkbench",
+    icon: "utility:knowledge_base",
+    hue: "amber",
+    labelKey: "documentationWorkbench",
+    descriptionKey: "documentationWorkbenchDescription",
+    group: "essentials",
+  },
+  {
+    id: "orgsManager",
+    icon: "utility:connected_apps",
+    hue: "cyan",
+    labelKey: "orgsManager",
+    descriptionKey: "orgsManagerDescription",
+    group: "org",
+  },
+  {
+    id: "metadataRetriever",
+    icon: "utility:download",
+    hue: "cyan",
+    labelKey: "metadataRetriever",
+    descriptionKey: "metadataRetrieverDescription",
+    group: "org",
+  },
+  {
+    id: "runAnonymousApex",
+    icon: "utility:apex",
+    hue: "cyan",
+    labelKey: "runAnonymousApex",
+    descriptionKey: "runAnonymousApexDescription",
+    group: "org",
+  },
+  {
+    id: "dataWorkbench",
+    icon: "utility:database",
+    hue: "teal",
+    labelKey: "dataWorkbench",
+    descriptionKey: "dataWorkbenchDescription",
+    group: "data",
+  },
+  {
+    id: "filesWorkbench",
+    icon: "utility:file",
+    hue: "teal",
+    labelKey: "filesWorkbench",
+    descriptionKey: "filesWorkbenchDescription",
+    group: "data",
+  },
+];
+
+const LANGUAGES = [
+  { code: "auto", flagKey: "flagGlobe", labelKey: "langVsCodeAuto" },
+  { code: "en", flagKey: "flagEn", labelKey: "langEnglish" },
+  { code: "fr", flagKey: "flagFr", labelKey: "langFrench" },
+  { code: "es", flagKey: "flagEs", labelKey: "langSpanish" },
+  { code: "de", flagKey: "flagDe", labelKey: "langGerman" },
+  { code: "nl", flagKey: "flagNl", labelKey: "langDutch" },
+  { code: "pl", flagKey: "flagPl", labelKey: "langPolish" },
+  { code: "ja", flagKey: "flagJa", labelKey: "langJapanese" },
+  { code: "pt-BR", flagKey: "flagPtBR", labelKey: "langPortugueseBrazil" },
+  { code: "it", flagKey: "flagIt", labelKey: "langItalian" },
+];
+
+const THEMES = [
+  { code: "auto", iconKey: "themeAuto", labelKey: "autoTheme" },
+  { code: "light", iconKey: "themeLight", labelKey: "lightTheme" },
+  { code: "dark", iconKey: "themeDark", labelKey: "darkTheme" },
+];
+
 export default class Welcome extends SharedMixin(LightningElement) {
   @track isLoading = false;
   @track showWelcomeAtStartup = true;
   @track colorThemeConfig = "auto";
-  @track themeVariants = { light: "neutral", dark: "neutral", auto: "brand" };
   @track langSetting = "auto";
   @track langDropdownOpen = false;
   @track themeDropdownOpen = false;
@@ -18,22 +105,20 @@ export default class Welcome extends SharedMixin(LightningElement) {
   @track docsiteUrl = "";
   @track contributersUrl = "";
   @track contactFormUrl = "";
+  @track repositoryUrl = "";
+  @track marketplaceUrl = "";
+  @track whatsNewUrl = "";
+  @track quickStartCollapsed = false;
+  @track extensionVersion = "";
   @track customMenus = [];
   @track activeCustomMenu = null;
 
-  @track setupHidden = false;
-  scrollThreshold = 100; // Hide toggle after scrolling 100px
-
   connectedCallback() {
     super.connectedCallback();
-    // Bind handler once so we can remove it later
-    this._boundHandleScroll = this.handleScroll.bind(this);
     this._boundHandleOutsideClick = this.handleOutsideClick.bind(this);
-    window.addEventListener("scroll", this._boundHandleScroll);
   }
 
   disconnectedCallback() {
-    window.removeEventListener("scroll", this._boundHandleScroll);
     document.removeEventListener("click", this._boundHandleOutsideClick);
   }
 
@@ -45,31 +130,16 @@ export default class Welcome extends SharedMixin(LightningElement) {
     }
   }
 
-  handleScroll() {
-    // hide the setup button areas when scrolling past threshold
-    const shouldHide = window.scrollY > this.scrollThreshold;
-    this.setupHidden = shouldHide;
-
-    const heroElements = this.template.querySelectorAll(
-      ".hero-settings, .hero-top-left",
-    );
-    heroElements.forEach((element) => {
-      element.classList.toggle("hidden", shouldHide);
-    });
-  }
-
   @api
   initialize(data) {
     console.log("Welcome component initialized:", data);
     this.isLoading = false;
 
-    // Initialize the setting value
     if (data && data.showWelcomeAtStartup !== undefined) {
       this.showWelcomeAtStartup = data.showWelcomeAtStartup;
     }
     if (data && data.colorThemeConfig) {
       this.colorThemeConfig = data.colorThemeConfig;
-      this.setColorThemeVariants(data.colorThemeConfig);
     }
     if (data && data.langSetting) {
       this.langSetting = data.langSetting;
@@ -89,6 +159,21 @@ export default class Welcome extends SharedMixin(LightningElement) {
     if (data && data.contactFormUrl) {
       this.contactFormUrl = data.contactFormUrl;
     }
+    if (data && data.repositoryUrl) {
+      this.repositoryUrl = data.repositoryUrl;
+    }
+    if (data && data.marketplaceUrl) {
+      this.marketplaceUrl = data.marketplaceUrl;
+    }
+    if (data && data.quickStartCollapsed === true) {
+      this.quickStartCollapsed = true;
+    }
+    if (data && data.whatsNewUrl) {
+      this.whatsNewUrl = data.whatsNewUrl;
+    }
+    if (data && data.extensionVersion) {
+      this.extensionVersion = data.extensionVersion;
+    }
     if (data && data.customMenus) {
       this.customMenus = this.normalizeMenus(data.customMenus);
     }
@@ -103,8 +188,8 @@ export default class Welcome extends SharedMixin(LightningElement) {
     const iconClass =
       menu?.welcomeIconClass ||
       (sourceType === "plugin"
-        ? "feature-icon-container orange"
-        : "feature-icon-container purple");
+        ? "hardis-tile small pink"
+        : "hardis-tile small indigo");
     return {
       ...menu,
       sourceType,
@@ -120,20 +205,13 @@ export default class Welcome extends SharedMixin(LightningElement) {
     const iconClass =
       command?.welcomeIconClass ||
       (sourceType === "plugin"
-        ? "feature-icon-container orange"
-        : "feature-icon-container purple");
+        ? "hardis-tile small pink"
+        : "hardis-tile small indigo");
     return {
       ...command,
       sourceType,
       welcomeIconClass: iconClass,
     };
-  }
-
-  setColorThemeVariants(colorThemeConfig) {
-    this.themeVariants.light =
-      colorThemeConfig === "light" ? "brand" : "neutral";
-    this.themeVariants.dark = colorThemeConfig === "dark" ? "brand" : "neutral";
-    this.themeVariants.auto = colorThemeConfig === "auto" ? "brand" : "neutral";
   }
 
   @api
@@ -142,10 +220,6 @@ export default class Welcome extends SharedMixin(LightningElement) {
     if (type === "updateCustomMenus") {
       this.customMenus = this.normalizeMenus(data || []);
     }
-  }
-
-  get hasCustomMenus() {
-    return this.customMenus && this.customMenus.length > 0;
   }
 
   get isHomeView() {
@@ -164,11 +238,90 @@ export default class Welcome extends SharedMixin(LightningElement) {
     return this.activeCustomMenu ? this.activeCustomMenu.commands || [] : [];
   }
 
-  navigateToCustomMenu(event) {
+  get versionLabel() {
+    return this.extensionVersion ? "v" + this.extensionVersion : "";
+  }
+
+  // Feature cards grouped for rendering: featured essentials first, then
+  // compact secondary groups, then custom menus from .sfdx-hardis.yml if any.
+  get featureGroups() {
+    const groups = [
+      {
+        id: "essentials",
+        label: this.t("welcomeEssentialsGroup"),
+        featured: true,
+      },
+      { id: "org", label: this.t("welcomeOrgGroup"), featured: false },
+      { id: "data", label: this.t("welcomeDataFilesGroup"), featured: false },
+    ].map((group) => ({
+      ...group,
+      groupClass: group.featured ? "welcome-group featured" : "welcome-group",
+      cards: FEATURE_CARDS.filter((card) => card.group === group.id).map(
+        (card) => this.buildCard(card, group.featured),
+      ),
+    }));
+    if (this.customMenus && this.customMenus.length > 0) {
+      groups.push({
+        id: "custom",
+        label: this.t("welcomeCustomMenusGroup"),
+        featured: false,
+        groupClass: "welcome-group",
+        cards: this.customMenus.map((menu) => ({
+          id: menu.id,
+          menuId: menu.id,
+          target: "",
+          icon: menu.sldsIcon,
+          iconSize: "x-small",
+          title: menu.label,
+          description: menu.description,
+          tileClass: menu.welcomeIconClass,
+          cardClass: "hardis-card clickable",
+        })),
+      });
+    }
+    return groups;
+  }
+
+  buildCard(card, featured) {
+    return {
+      id: card.id,
+      target: card.id,
+      menuId: "",
+      icon: card.icon,
+      iconSize: featured ? "small" : "x-small",
+      title: this.t(card.labelKey),
+      description: this.t(card.descriptionKey),
+      tileClass: featured
+        ? "hardis-tile featured " + card.hue
+        : "hardis-tile small " + card.hue,
+      cardClass: featured
+        ? "hardis-card featured clickable"
+        : "hardis-card clickable",
+    };
+  }
+
+  handleCardClick(event) {
     const menuId = event.currentTarget.dataset.menuId;
-    const menu = this.customMenus.find((m) => m.id === menuId);
-    if (menu) {
-      this.activeCustomMenu = menu;
+    if (menuId) {
+      const menu = this.customMenus.find((m) => m.id === menuId);
+      if (menu) {
+        this.activeCustomMenu = menu;
+      }
+      return;
+    }
+    const target = event.currentTarget.dataset.target;
+    if (target) {
+      window.sendMessageToVSCode({
+        type: "navigateTo",
+        data: { target: target },
+      });
+    }
+  }
+
+  handleCardKeydown(event) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      event.currentTarget.click();
     }
   }
 
@@ -200,65 +353,38 @@ export default class Welcome extends SharedMixin(LightningElement) {
   @api
   handleColorThemeMessage(type, data) {
     // Delegate to the SharedMixin's implementation
-    if (super.handleColorThemeMessage)
+    if (super.handleColorThemeMessage) {
       super.handleColorThemeMessage(type, data);
+    }
+  }
+
+  get langOptions() {
+    return LANGUAGES.map((lang) => ({
+      code: lang.code,
+      label: this.t(lang.labelKey),
+      flagSrc: this.getImageUrl(lang.flagKey, "flagGlobe"),
+    }));
+  }
+
+  get themeOptions() {
+    return THEMES.map((theme) => ({
+      code: theme.code,
+      label: this.t(theme.labelKey),
+      iconSrc: this.getImageUrl(theme.iconKey, "themeAuto"),
+    }));
   }
 
   get currentLangFlagSrc() {
-    const map = {
-      auto: "flagGlobe",
-      en: "flagEn",
-      fr: "flagFr",
-      es: "flagEs",
-      de: "flagDe",
-      ja: "flagJa",
-      nl: "flagNl",
-      pl: "flagPl",
-      "pt-BR": "flagPtBR",
-      it: "flagIt",
-    };
-    const key = map[this.langSetting] || "flagGlobe";
-    return this.getImageUrl(key, "flagGlobe");
+    const lang =
+      LANGUAGES.find((entry) => entry.code === this.langSetting) ||
+      LANGUAGES[0];
+    return this.getImageUrl(lang.flagKey, "flagGlobe");
   }
 
-  get flagGlobeSrc() {
-    return this.getImageUrl("flagGlobe");
-  }
-
-  get flagDeSrc() {
-    return this.getImageUrl("flagDe");
-  }
-
-  get flagEnSrc() {
-    return this.getImageUrl("flagEn");
-  }
-
-  get flagEsSrc() {
-    return this.getImageUrl("flagEs");
-  }
-
-  get flagFrSrc() {
-    return this.getImageUrl("flagFr");
-  }
-
-  get flagJaSrc() {
-    return this.getImageUrl("flagJa");
-  }
-
-  get flagNlSrc() {
-    return this.getImageUrl("flagNl");
-  }
-
-  get flagPlSrc() {
-    return this.getImageUrl("flagPl");
-  }
-
-  get flagPtBRSrc() {
-    return this.getImageUrl("flagPtBR");
-  }
-
-  get flagItSrc() {
-    return this.getImageUrl("flagIt");
+  get currentThemeIconSrc() {
+    const theme =
+      THEMES.find((entry) => entry.code === this.colorThemeConfig) || THEMES[0];
+    return this.getImageUrl(theme.iconKey, "themeAuto");
   }
 
   toggleLangDropdown(event) {
@@ -287,24 +413,6 @@ export default class Welcome extends SharedMixin(LightningElement) {
     }
   }
 
-  get currentThemeIconSrc() {
-    const map = { auto: "themeAuto", light: "themeLight", dark: "themeDark" };
-    const key = map[this.colorThemeConfig] || "themeAuto";
-    return this.getImageUrl(key, "themeAuto");
-  }
-
-  get themeAutoSrc() {
-    return this.getImageUrl("themeAuto");
-  }
-
-  get themeLightSrc() {
-    return this.getImageUrl("themeLight");
-  }
-
-  get themeDarkSrc() {
-    return this.getImageUrl("themeDark");
-  }
-
   handleLangChange(event) {
     const lang = event.currentTarget.dataset.lang;
     this.langSetting = lang;
@@ -320,64 +428,51 @@ export default class Welcome extends SharedMixin(LightningElement) {
     });
   }
 
-  // Navigation methods for major features
-  navigateToOrgsManager() {
+  handleThemeChange(event) {
+    const colorThemeConfig = event.currentTarget.dataset.theme;
+    this.colorThemeConfig = colorThemeConfig;
+    this.themeDropdownOpen = false;
+    this._syncOutsideClickListener();
+
     window.sendMessageToVSCode({
-      type: "navigateToOrgsManager",
+      type: "updateVsCodeSfdxHardisConfiguration",
+      data: {
+        configKey: "vsCodeSfdxHardis.theme.colorTheme",
+        value: colorThemeConfig,
+      },
     });
   }
 
   navigateToSetup() {
     window.sendMessageToVSCode({
-      type: "navigateToSetup",
-    });
-  }
-
-  navigateToPipeline() {
-    window.sendMessageToVSCode({
-      type: "navigateToPipeline",
-    });
-  }
-
-  navigateToMetadataRetriever() {
-    window.sendMessageToVSCode({
-      type: "navigateToMetadataRetriever",
-    });
-  }
-
-  navigateToFilesWorkbench() {
-    window.sendMessageToVSCode({
-      type: "navigateToFilesWorkbench",
-    });
-  }
-
-  navigateToDataWorkbench() {
-    window.sendMessageToVSCode({
-      type: "navigateToDataWorkbench",
-    });
-  }
-
-  navigateToOrgMonitoring() {
-    window.sendMessageToVSCode({
-      type: "navigateToOrgMonitoring",
-    });
-  }
-
-  navigateToDocumentationWorkbench() {
-    window.sendMessageToVSCode({
-      type: "navigateToDocumentationWorkbench",
+      type: "navigateTo",
+      data: { target: "setup" },
     });
   }
 
   navigateToExtensionConfig() {
     window.sendMessageToVSCode({
-      type: "navigateToExtensionConfig",
+      type: "navigateTo",
+      data: { target: "extensionConfig" },
     });
   }
 
-  navigateToRunAnonymousApex() {
+  navigateToSearchCommands() {
     window.sendMessageToVSCode({
-      type: "navigateToRunAnonymousApex",
+      type: "navigateTo",
+      data: { target: "searchCommands" },
+    });
+  }
+
+  get quickStartExpanded() {
+    return !this.quickStartCollapsed;
+  }
+
+  toggleQuickStart() {
+    this.quickStartCollapsed = !this.quickStartCollapsed;
+    window.sendMessageToVSCode({
+      type: "setQuickStartCollapsed",
+      data: { collapsed: this.quickStartCollapsed },
     });
   }
 
@@ -399,6 +494,27 @@ export default class Welcome extends SharedMixin(LightningElement) {
     });
   }
 
+  openRepository() {
+    window.sendMessageToVSCode({
+      type: "openExternal",
+      data: this.repositoryUrl,
+    });
+  }
+
+  openMarketplace() {
+    window.sendMessageToVSCode({
+      type: "openExternal",
+      data: this.marketplaceUrl,
+    });
+  }
+
+  openWhatsNew() {
+    window.sendMessageToVSCode({
+      type: "openExternal",
+      data: this.whatsNewUrl,
+    });
+  }
+
   openCloudityServices() {
     window.sendMessageToVSCode({
       type: "openExternal",
@@ -411,30 +527,11 @@ export default class Welcome extends SharedMixin(LightningElement) {
     const newValue = event.target.checked;
     this.showWelcomeAtStartup = newValue;
 
-    // Send message to VS Code to update the setting
     window.sendMessageToVSCode({
       type: "updateVsCodeSfdxHardisConfiguration",
       data: {
         configKey: "vsCodeSfdxHardis.showWelcomeAtStartup",
         value: newValue,
-      },
-    });
-  }
-
-  // Settings handler
-  handleThemeChange(event) {
-    const colorThemeConfig = event.currentTarget.dataset.theme;
-    this.colorThemeConfig = colorThemeConfig;
-    this.themeDropdownOpen = false;
-    this._syncOutsideClickListener();
-    this.setColorThemeVariants(colorThemeConfig);
-
-    // Send message to VS Code to update the setting
-    window.sendMessageToVSCode({
-      type: "updateVsCodeSfdxHardisConfiguration",
-      data: {
-        configKey: "vsCodeSfdxHardis.theme.colorTheme",
-        value: colorThemeConfig,
       },
     });
   }

@@ -1,6 +1,6 @@
 import * as assert from "assert";
-import * as fs from "fs";
 import * as vscode from "vscode";
+import { activateExtension, readMockLog, waitFor } from "./uiTestUtils";
 
 /**
  * UI integration tests focused on the performance issues reported by users:
@@ -12,45 +12,6 @@ import * as vscode from "vscode";
  * with a mocked `sf` CLI on the PATH (see test/fixtures/sf-shim) that answers
  * instantly and speaks the sfdx-hardis WebSocket protocol.
  */
-
-const EXTENSION_ID = "NicolasVuillamy.vscode-sfdx-hardis";
-
-interface MockInvocation {
-  time: number;
-  args: string[];
-  contextId: string | null;
-  event?: string;
-}
-
-function readMockLog(): MockInvocation[] {
-  const logFile = process.env.SF_MOCK_LOG || "";
-  if (!logFile || !fs.existsSync(logFile)) {
-    return [];
-  }
-  return fs
-    .readFileSync(logFile, "utf8")
-    .split("\n")
-    .filter((line) => line.trim().length > 0)
-    .map((line) => JSON.parse(line) as MockInvocation);
-}
-
-async function waitFor<T>(
-  producer: () => T | undefined | null | false,
-  timeoutMs: number,
-  label: string,
-): Promise<T> {
-  const start = Date.now();
-  for (;;) {
-    const value = producer();
-    if (value) {
-      return value;
-    }
-    if (Date.now() - start > timeoutMs) {
-      throw new Error(`Timeout (${timeoutMs}ms) waiting for: ${label}`);
-    }
-    await new Promise((resolve) => setTimeout(resolve, 100));
-  }
-}
 
 /**
  * Triggers a command through the extension entry point (like a click in the
@@ -101,10 +62,7 @@ suite("Performance UI tests", function () {
   let api: any;
 
   suiteSetup(async function () {
-    const extension = vscode.extensions.getExtension(EXTENSION_ID);
-    assert.ok(extension, `Extension ${EXTENSION_ID} not found`);
-    api = await extension!.activate();
-    assert.ok(api, "activate() must return the test API");
+    api = await activateExtension();
   });
 
   test("workspace is detected as an SFDX project", async function () {
