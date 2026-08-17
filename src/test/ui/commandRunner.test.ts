@@ -4,7 +4,7 @@ import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
 import * as vscode from "vscode";
-import { activateExtension, waitFor } from "./uiTestUtils";
+import { activateExtension, readMockLog, waitFor } from "./uiTestUtils";
 
 /**
  * UI integration tests for the command execution panel (Command Runner).
@@ -20,26 +20,6 @@ import { activateExtension, waitFor } from "./uiTestUtils";
  * multiselect shown, completed) into SFDX_HARDIS_VISUAL_SHOWCASE_DIR (defaults
  * to <tmp>/sfdx-hardis-visual). Combine with a slower pace if needed.
  */
-
-interface MockLogEntry {
-  time: number;
-  args: string[];
-  contextId: string | null;
-  event?: string;
-  promptName?: string;
-}
-
-function readMockLog(): MockLogEntry[] {
-  const logFile = process.env.SF_MOCK_LOG || "";
-  if (!logFile || !fs.existsSync(logFile)) {
-    return [];
-  }
-  return fs
-    .readFileSync(logFile, "utf8")
-    .split("\n")
-    .filter((line) => line.trim().length > 0)
-    .map((line) => JSON.parse(line) as MockLogEntry);
-}
 
 const VISUAL_MODE = process.env.SFDX_HARDIS_VISUAL_SHOWCASE === "true";
 

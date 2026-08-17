@@ -1,7 +1,6 @@
 import * as assert from "assert";
-import * as fs from "fs";
 import * as vscode from "vscode";
-import { activateExtension, waitFor } from "./uiTestUtils";
+import { activateExtension, readMockLog, waitFor } from "./uiTestUtils";
 
 /**
  * UI integration tests focused on the performance issues reported by users:
@@ -13,25 +12,6 @@ import { activateExtension, waitFor } from "./uiTestUtils";
  * with a mocked `sf` CLI on the PATH (see test/fixtures/sf-shim) that answers
  * instantly and speaks the sfdx-hardis WebSocket protocol.
  */
-
-interface MockInvocation {
-  time: number;
-  args: string[];
-  contextId: string | null;
-  event?: string;
-}
-
-function readMockLog(): MockInvocation[] {
-  const logFile = process.env.SF_MOCK_LOG || "";
-  if (!logFile || !fs.existsSync(logFile)) {
-    return [];
-  }
-  return fs
-    .readFileSync(logFile, "utf8")
-    .split("\n")
-    .filter((line) => line.trim().length > 0)
-    .map((line) => JSON.parse(line) as MockInvocation);
-}
 
 /**
  * Triggers a command through the extension entry point (like a click in the

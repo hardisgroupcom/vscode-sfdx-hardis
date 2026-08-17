@@ -1,4 +1,5 @@
 import * as assert from "assert";
+import * as fs from "fs";
 import * as vscode from "vscode";
 
 /**
@@ -38,4 +39,32 @@ export async function activateExtension(): Promise<any> {
   const api = await extension!.activate();
   assert.ok(api, "activate() must return the test API");
   return api;
+}
+
+/**
+ * One invocation of the mocked sf CLI (test/fixtures/sf-shim), as appended to
+ * the JSON-lines file pointed to by the SF_MOCK_LOG environment variable.
+ */
+export interface MockLogEntry {
+  time: number;
+  args: string[];
+  contextId: string | null;
+  event?: string;
+  promptName?: string;
+}
+
+/**
+ * Reads the mocked sf CLI invocation log, or returns an empty list when the
+ * log file is not set yet or does not exist.
+ */
+export function readMockLog(): MockLogEntry[] {
+  const logFile = process.env.SF_MOCK_LOG || "";
+  if (!logFile || !fs.existsSync(logFile)) {
+    return [];
+  }
+  return fs
+    .readFileSync(logFile, "utf8")
+    .split("\n")
+    .filter((line) => line.trim().length > 0)
+    .map((line) => JSON.parse(line) as MockLogEntry);
 }
