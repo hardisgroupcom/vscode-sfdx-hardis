@@ -98,7 +98,14 @@
         <div class="welcome-container">
             <!-- Home view -->
             <template lwc:if={isHomeView}>
-                <!-- Quick start strip -->
+                <!-- Quick start strip (collapsible, choice is persisted) -->
+                <template lwc:if={quickStartCollapsed}>
+                    <button class="welcome-quick-collapsed" onclick={toggleQuickStart} title={i18n.welcomeQuickShow}>
+                        <span>{i18n.welcomeQuickStartLabel}</span>
+                        <lightning-icon icon-name="utility:chevrondown" size="xx-small"></lightning-icon>
+                    </button>
+                </template>
+                <template lwc:if={quickStartExpanded}>
                 <div class="welcome-quick">
                     <div class="welcome-quick-step">
                         <span class="welcome-quick-num">1</span>
@@ -124,7 +131,11 @@
                         </div>
                         <a class="welcome-quick-action" onclick={openDocumentation}>{i18n.welcomeQuick3Action} <span class="welcome-arrow">→</span></a>
                     </div>
+                    <button class="welcome-quick-toggle" onclick={toggleQuickStart} title={i18n.welcomeQuickHide}>
+                        <lightning-icon icon-name="utility:chevronup" size="xx-small"></lightning-icon>
+                    </button>
                 </div>
+                </template>
 
                 <!-- Feature groups -->
                 <template for:each={featureGroups} for:item="group">

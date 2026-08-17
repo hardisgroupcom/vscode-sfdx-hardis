@@ -313,6 +313,54 @@
     text-decoration: underline;
 }
 
+/* Slim collapse handle at the right edge of the quick start strip */
+.welcome-quick-toggle {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    padding: 0 0.45rem;
+    border: none;
+    border-left: 1px solid var(--slds-g-color-neutral-base-95);
+    background: none;
+    cursor: pointer;
+    color: var(--slds-g-color-neutral-base-50);
+}
+
+.welcome-quick-toggle:hover {
+    color: var(--slds-g-color-neutral-base-10);
+    background: var(--slds-g-color-neutral-base-95);
+}
+
+/* Collapsed quick start: a single thin row that re-expands on click */
+.welcome-quick-collapsed {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.3rem 1.1rem;
+    background: var(--slds-g-color-neutral-base-100);
+    border: 1px solid var(--slds-g-color-neutral-base-90);
+    border-radius: 12px;
+    margin: 0 0 0.75rem;
+    cursor: pointer;
+    font-size: 0.78rem;
+    color: var(--slds-g-color-neutral-base-50);
+}
+
+.welcome-quick-collapsed:hover {
+    color: var(--slds-g-color-neutral-base-10);
+}
+
+.welcome-quick-collapsed lightning-icon {
+    margin-left: auto;
+}
+
+.welcome-quick-toggle lightning-icon,
+.welcome-quick-collapsed lightning-icon {
+    color: inherit !important;
+    background-color: transparent !important;
+}
+
 /* ---------- Feature groups ----------
    Group labels, grid and cards come from the shared kit in global-theme.css
    (.hardis-group-label / .hardis-card-grid / .hardis-card). Only the
@@ -454,6 +502,13 @@
     .welcome-quick-step + .welcome-quick-step {
         border-left: 0;
         border-top: 1px solid var(--slds-g-color-neutral-base-95);
+    }
+
+    .welcome-quick-toggle {
+        border-left: 0;
+        border-top: 1px solid var(--slds-g-color-neutral-base-95);
+        padding: 0.3rem 0;
+        justify-content: center;
     }
 
     .welcome-footer {

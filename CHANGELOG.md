@@ -26,7 +26,7 @@
   - The Welcome page was **fully redesigned**
     - New branded header with the **sfdx-hardis wordmark** and the **Cloudity logo** linking to cloudity.com, plus the extension **version** and a **See what's new** link
     - The most used features (**DevOps Pipeline**, **Org Monitoring**, **Documentation Workbench**) are now featured at the top, **visible without scrolling**
-    - A compact **3-step quick start** (connect your org, pick a feature, open the docs) replaces the tall Getting Started section
+    - A compact **3-step quick start** (connect your org, pick a feature, open the docs) replaces the tall Getting Started section, and can be **collapsed to a single line** for daily users (the choice is remembered)
     - Feature cards are grouped by task (**Essentials**, **Work with your org**, **Data & files**) with consistent Salesforce palette colors, and can be activated with the keyboard
     - Open Source information and Cloudity guidance & support are merged into one compact footer, with a **Star on GitHub** button leading to the sfdx-hardis project and a **Rate on Marketplace** button (pointing to Open VSX when running in a VS Code fork like VSCodium)
     - The settings controls no longer float over the content: they sit in a single header toolbar, with **Extension settings** one click away

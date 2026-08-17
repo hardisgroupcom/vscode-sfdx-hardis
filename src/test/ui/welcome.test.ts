@@ -1,6 +1,7 @@
 import * as assert from "assert";
 import * as vscode from "vscode";
 import { activateExtension, waitFor } from "./uiTestUtils";
+import { CacheManager } from "../../utils/cache-manager";
 
 /**
  * UI integration tests for the Welcome page (v8 design).
@@ -85,6 +86,54 @@ suite("Welcome page UI tests", function () {
       "extension config panel to open through navigateTo",
     );
     panelManager.disposePanel("s-extension-config");
+  });
+
+  test("quick start collapse choice is persisted across panel reopenings", async function () {
+    await vscode.commands.executeCommand("vscode-sfdx-hardis.showWelcome");
+    const welcomePanel = await waitFor(
+      () => panelManager.getPanel("s-welcome"),
+      10000,
+      "welcome panel to open",
+    );
+
+    welcomePanel.simulateWebviewMessage({
+      type: "setQuickStartCollapsed",
+      data: { collapsed: true },
+    });
+    // The preference write to globalState is asynchronous: poll it
+    await waitFor(
+      () =>
+        CacheManager.getPreference<boolean>("welcomeQuickStartCollapsed") ===
+        true,
+      5000,
+      "collapse preference to be persisted",
+    );
+
+    panelManager.disposePanel("s-welcome");
+    await vscode.commands.executeCommand("vscode-sfdx-hardis.showWelcome");
+    const reopenedPanel = await waitFor(
+      () => panelManager.getPanel("s-welcome"),
+      10000,
+      "welcome panel to reopen",
+    );
+    assert.strictEqual(
+      reopenedPanel.getInitializationData().quickStartCollapsed,
+      true,
+      "quick start must stay collapsed after the panel is reopened",
+    );
+
+    // Restore the default so other tests are not impacted
+    reopenedPanel.simulateWebviewMessage({
+      type: "setQuickStartCollapsed",
+      data: { collapsed: false },
+    });
+    await waitFor(
+      () =>
+        CacheManager.getPreference<boolean>("welcomeQuickStartCollapsed") ===
+        false,
+      5000,
+      "collapse preference to be restored",
+    );
   });
 
   test("navigateTo message ignores targets not in the whitelist", async function () {

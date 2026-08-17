@@ -75,6 +75,19 @@ export class CacheManager {
     return this.get(section, key) !== undefined;
   }
 
+  // ---- Persistent user preferences (no expiration) ----
+  // Stored outside the tracked cache keys so cache clears via delete()
+  // never reset a user choice.
+  private static PREF_PREFIX = "pref:";
+
+  static getPreference<T>(key: string): T | undefined {
+    return this.store.get<T>(this.PREF_PREFIX + key);
+  }
+
+  static async setPreference<T>(key: string, value: T): Promise<void> {
+    await this.store.update(this.PREF_PREFIX + key, value);
+  }
+
   static async delete(section?: CacheSection, key?: string): Promise<void> {
     const keys = this.store.get<string[]>(this.KEYS_INDEX) || [];
 

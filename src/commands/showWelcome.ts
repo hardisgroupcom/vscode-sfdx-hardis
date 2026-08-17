@@ -17,8 +17,10 @@ import {
   isAllCustomCommandsLoaded,
   CustomCommandMenu,
 } from "../utils/sfdx-hardis-config-utils";
+import { CacheManager } from "../utils/cache-manager";
 
 const EXTENSION_ID = "NicolasVuillamy.vscode-sfdx-hardis";
+const QUICK_START_COLLAPSED_PREF = "welcomeQuickStartCollapsed";
 
 // Whitelist of navigation targets the Welcome LWC can request.
 // Keys are the card/button ids sent in the `navigateTo` message.
@@ -85,6 +87,9 @@ export function registerShowWelcome(command: Commands) {
 
       const panel = lwcManager.getOrCreatePanel("s-welcome", {
         showWelcomeAtStartup: showWelcomeAtStartup,
+        quickStartCollapsed:
+          CacheManager.getPreference<boolean>(QUICK_START_COLLAPSED_PREF) ===
+          true,
         langSetting: langSetting,
         colorThemeConfig,
         colorTheme,
@@ -139,6 +144,12 @@ export function registerShowWelcome(command: Commands) {
           if (targetCommand) {
             vscode.commands.executeCommand(targetCommand);
           }
+        }
+        else if (type === "setQuickStartCollapsed") {
+          void CacheManager.setPreference(
+            QUICK_START_COLLAPSED_PREF,
+            data?.collapsed === true,
+          );
         }
       });
     },
