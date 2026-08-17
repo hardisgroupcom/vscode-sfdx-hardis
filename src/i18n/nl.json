@@ -1847,6 +1847,7 @@
   "welcomeQuick1Action": "Verbinden",
   "welcomeQuick1Desc": "Log met één klik in bij Salesforce",
   "welcomeQuick1Title": "Verbind je org",
+  "welcomeQuick2Action": "Zoeken",
   "welcomeQuick2Desc": "Alles hieronder werkt zonder code te schrijven",
   "welcomeQuick2Title": "Kies een functie",
   "welcomeQuick3Action": "Open docs",

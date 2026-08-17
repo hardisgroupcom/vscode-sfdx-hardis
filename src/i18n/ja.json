@@ -1847,6 +1847,7 @@
   "welcomeQuick1Action": "接続",
   "welcomeQuick1Desc": "ワンクリックで Salesforce に認証",
   "welcomeQuick1Title": "組織に接続",
+  "welcomeQuick2Action": "検索",
   "welcomeQuick2Desc": "以下の機能はすべてコード不要で使えます",
   "welcomeQuick2Title": "機能を選択",
   "welcomeQuick3Action": "ドキュメントを開く",

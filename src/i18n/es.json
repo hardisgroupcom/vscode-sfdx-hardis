@@ -1847,6 +1847,7 @@
   "welcomeQuick1Action": "Conectar",
   "welcomeQuick1Desc": "Autentíquese en Salesforce con un clic",
   "welcomeQuick1Title": "Conecte su org",
+  "welcomeQuick2Action": "Buscar",
   "welcomeQuick2Desc": "Todo lo siguiente funciona sin escribir código",
   "welcomeQuick2Title": "Elija una funcionalidad",
   "welcomeQuick3Action": "Abrir docs",
