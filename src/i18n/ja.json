@@ -1339,7 +1339,7 @@
   "orgMonitoringWorkbenchTooltip": "すべての監視ツールと診断機能を 1 か所に集約した 組織モニタリングワークベンチを開きます",
   "orgOperations": "組織操作",
   "orgsManager": "組織マネージャー",
-  "orgsManagerDescription": "すべての Salesforce 組織を管理し、新しい組織に接続し、環境をスムーズに切り替えます。",
+  "orgsManagerDescription": "すべての Salesforce 組織を管理し、新しい組織に接続し、環境を切り替え、Sandbox を更新します。",
   "orgsManagerTooltip": "Orgs Manager を開いて、新しい組織への接続、既存組織の切断、クリーンアップを行います",
   "other": "その他",
   "otherSection": "その他",

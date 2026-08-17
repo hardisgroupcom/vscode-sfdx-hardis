@@ -1339,7 +1339,7 @@
   "orgMonitoringWorkbenchTooltip": "Apri il workbench completo di monitoraggio org con tutti gli strumenti di monitoraggio e diagnostica in un unico posto",
   "orgOperations": "Operazioni org",
   "orgsManager": "Gestore org",
-  "orgsManagerDescription": "Gestisci tutte le tue org Salesforce, connettiti a nuove e passa tra ambienti in modo fluido.",
+  "orgsManagerDescription": "Gestisci le tue org Salesforce, connettiti a nuove, cambia ambiente e aggiorna le tue sandbox.",
   "orgsManagerTooltip": "Apri il Gestore org per connetterti a nuove org, disconnetterti da org esistenti ed effettuare pulizie",
   "other": "Altro",
   "otherSection": "Altro",

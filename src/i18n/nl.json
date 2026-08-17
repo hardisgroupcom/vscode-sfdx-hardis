@@ -1339,7 +1339,7 @@
   "orgMonitoringWorkbenchTooltip": "Open de uitgebreide Org Monitoring Workbench met alle monitoringtools en diagnostiek op één plek",
   "orgOperations": "Org-bewerkingen",
   "orgsManager": "Org Manager",
-  "orgsManagerDescription": "Beheer al je Salesforce orgs, maak verbinding met nieuwe en schakel naadloos tussen omgevingen.",
+  "orgsManagerDescription": "Beheer je Salesforce orgs, maak verbinding met nieuwe, wissel van omgeving en vernieuw je sandboxes.",
   "orgsManagerTooltip": "Open Org Manager om verbinding te maken met nieuwe orgs, bestaande orgs te verbreken en wat opruimwerk te doen",
   "other": "Overig",
   "otherSection": "Overig",

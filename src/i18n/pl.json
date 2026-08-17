@@ -1339,7 +1339,7 @@
   "orgMonitoringWorkbenchTooltip": "Otwórz kompleksowy panel roboczy monitorowania org ze wszystkimi narzędziami monitorowania i diagnostyki w jednym miejscu",
   "orgOperations": "Operacje org",
   "orgsManager": "Menedżer org",
-  "orgsManagerDescription": "Zarządzaj wszystkimi swoimi org Salesforce, łącz się z nowymi i płynnie przełączaj między środowiskami.",
+  "orgsManagerDescription": "Zarządzaj org Salesforce, łącz się z nowymi, przełączaj środowiska i odświeżaj sandboxy.",
   "orgsManagerTooltip": "Otwórz Menedżer org, aby łączyć się z nowymi org, rozłączać się z istniejącymi i porządkować",
   "other": "Inne",
   "otherSection": "Inne",
