@@ -169,12 +169,20 @@
                             <span class="welcome-badge">✓ {i18n.commercialUseAllowed}</span>
                         </div>
                         <p class="welcome-footer-text">{i18n.welcomeOpenSourceText}</p>
-                        <lightning-button
-                            variant="neutral"
-                            label={i18n.welcomeStarOnGitHub}
-                            icon-name="utility:favorite"
-                            onclick={openRepository}
-                        ></lightning-button>
+                        <div class="welcome-footer-actions">
+                            <lightning-button
+                                variant="neutral"
+                                label={i18n.welcomeStarOnGitHub}
+                                icon-name="utility:favorite"
+                                onclick={openRepository}
+                            ></lightning-button>
+                            <lightning-button
+                                variant="neutral"
+                                label={i18n.welcomeRateOnMarketplace}
+                                icon-name="utility:like"
+                                onclick={openMarketplace}
+                            ></lightning-button>
+                        </div>
                     </div>
                     <div class="welcome-footer-card">
                         <a class="welcome-footer-cloudity" href={websiteUrl} target="_blank" rel="noopener">

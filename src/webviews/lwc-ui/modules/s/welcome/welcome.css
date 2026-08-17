@@ -386,6 +386,12 @@
     line-height: 1.5;
 }
 
+.welcome-footer-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
 .welcome-footer-cloudity {
     display: flex;
     align-items: center;

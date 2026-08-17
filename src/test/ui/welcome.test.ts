@@ -39,12 +39,16 @@ suite("Welcome page UI tests", function () {
       (initData.contactFormUrl || "").includes("cloudity.com"),
       "contactFormUrl must point to cloudity.com",
     );
-    // Star on GitHub + See what's new links
+    // Star on GitHub + Rate on Marketplace + See what's new links
+    assert.match(
+      initData.repositoryUrl || "",
+      /github\.com\/hardisgroupcom\/sfdx-hardis\/?$/,
+      `repositoryUrl must point to the sfdx-hardis repository (got: ${initData.repositoryUrl})`,
+    );
     assert.ok(
-      (initData.repositoryUrl || "").includes(
-        "github.com/hardisgroupcom/vscode-sfdx-hardis",
-      ),
-      `repositoryUrl must point to the extension repository (got: ${initData.repositoryUrl})`,
+      (initData.marketplaceUrl || "").includes("marketplace.visualstudio.com") ||
+        (initData.marketplaceUrl || "").includes("open-vsx.org"),
+      `marketplaceUrl must point to the Visual Studio Marketplace or Open VSX (got: ${initData.marketplaceUrl})`,
     );
     assert.ok(
       (initData.whatsNewUrl || "").includes("CHANGELOG"),

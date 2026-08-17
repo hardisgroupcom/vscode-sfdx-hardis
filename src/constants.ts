@@ -11,6 +11,12 @@ export const EXTENSION_REPOSITORY_URL =
   "https://github.com/hardisgroupcom/vscode-sfdx-hardis";
 export const EXTENSION_CHANGELOG_URL =
   EXTENSION_REPOSITORY_URL + "/blob/main/CHANGELOG.md";
+export const SFDX_HARDIS_REPOSITORY_URL =
+  "https://github.com/hardisgroupcom/sfdx-hardis";
+export const EXTENSION_MARKETPLACE_URL =
+  "https://marketplace.visualstudio.com/items?itemName=NicolasVuillamy.vscode-sfdx-hardis&ssr=false#review-details";
+export const EXTENSION_OPENVSX_URL =
+  "https://open-vsx.org/extension/NicolasVuillamy/vscode-sfdx-hardis/reviews";
 export const WEBSITE_URL = "https://www.cloudity.com?ref=sfdxhardis";
 export const WEBSITE_CONTACT_URL =
   "https://cloudity.com/contact-us/?ref=sfdxhardis";

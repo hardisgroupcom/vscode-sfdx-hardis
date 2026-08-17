@@ -28,7 +28,7 @@
     - The most used features (**DevOps Pipeline**, **Org Monitoring**, **Documentation Workbench**) are now featured at the top, **visible without scrolling**
     - A compact **3-step quick start** (connect your org, pick a feature, open the docs) replaces the tall Getting Started section
     - Feature cards are grouped by task (**Essentials**, **Work with your org**, **Data & files**) with consistent Salesforce palette colors, and can be activated with the keyboard
-    - Open Source information and Cloudity guidance & support are merged into one compact footer with a **Star on GitHub** button
+    - Open Source information and Cloudity guidance & support are merged into one compact footer, with a **Star on GitHub** button leading to the sfdx-hardis project and a **Rate on Marketplace** button (pointing to Open VSX when running in a VS Code fork like VSCodium)
     - The settings controls no longer float over the content: they sit in a single header toolbar, with **Extension settings** one click away
     - Find and run any sfdx-hardis command by name with the new **search button** in the header toolbar, or the **Search** link of the quick start's "Pick a feature" step
     - The same design is applied across the extension: **Org Monitoring**, the **DevOps Pipeline** quick action cards, the **Documentation Workbench**, the **AI Documentation configuration** and the **Monitoring Configuration** now share the Welcome page's sections, cards and colored icon tiles

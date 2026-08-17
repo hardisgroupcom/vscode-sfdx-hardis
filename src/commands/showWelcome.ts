@@ -7,8 +7,10 @@ import {
   WEBSITE_URL,
   DOCSITE_URL,
   WEBSITE_CONTACT_FORM_URL,
-  EXTENSION_REPOSITORY_URL,
   EXTENSION_CHANGELOG_URL,
+  EXTENSION_MARKETPLACE_URL,
+  EXTENSION_OPENVSX_URL,
+  SFDX_HARDIS_REPOSITORY_URL,
 } from "../constants";
 import {
   loadAllCustomCommandGroups,
@@ -34,6 +36,27 @@ export const WELCOME_NAVIGATION_TARGETS: Record<string, string> = {
   searchCommands: "vscode-sfdx-hardis.searchCommands",
   setup: "vscode-sfdx-hardis.showSetup",
 };
+
+// VS Code forks (VSCodium, code-server, Gitpod, Theia…) ship extensions from
+// Open VSX instead of the Visual Studio Marketplace. There is no public API
+// exposing the gallery in use, so detect known forks by app name and default
+// to the Visual Studio Marketplace otherwise.
+export function getMarketplaceRatingUrl(): string {
+  const appName = (vscode.env.appName || "").toLowerCase();
+  const openVsxBasedApps = [
+    "vscodium",
+    "codium",
+    "code - oss",
+    "code-oss",
+    "code-server",
+    "gitpod",
+    "theia",
+  ];
+  if (openVsxBasedApps.some((name) => appName.includes(name))) {
+    return EXTENSION_OPENVSX_URL;
+  }
+  return EXTENSION_MARKETPLACE_URL;
+}
 
 export function registerShowWelcome(command: Commands) {
   const disposable = vscode.commands.registerCommand(
@@ -73,7 +96,8 @@ export function registerShowWelcome(command: Commands) {
         docsiteUrl: DOCSITE_URL,
         contributersUrl: DOCSITE_URL + "/contributors/",
         contactFormUrl: WEBSITE_CONTACT_FORM_URL,
-        repositoryUrl: EXTENSION_REPOSITORY_URL,
+        repositoryUrl: SFDX_HARDIS_REPOSITORY_URL,
+        marketplaceUrl: getMarketplaceRatingUrl(),
         whatsNewUrl: EXTENSION_CHANGELOG_URL,
         extensionVersion: extensionVersion,
         imagePaths: {
