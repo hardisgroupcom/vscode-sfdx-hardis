@@ -23,14 +23,16 @@ A matching **`design`** sub-agent is defined in `.claude/agents/design.md`. Pref
    - **New command**: Entry in `hardis-commands-provider.ts`, registration in `src/commands/`, icon in `themeUtils.ts`, i18n keys in all 9 locale files
    - **New LWC panel**: Component in `src/webviews/lwc-ui/modules/s/`, panel command in `src/commands/`, message protocol design
    - **New config field**: `CONFIGURABLE_FIELDS` + `SECTIONS` in `src/utils/pipeline/sfdxHardisConfigHelper.ts`, schema update
-   - **New provider integration**: Follow patterns in `src/utils/gitProviders/` or `src/utils/ticketProviders/` (interface + implementation)
+   - **New provider integration**: Follow patterns in `src/utils/gitProviders/` or `src/utils/ticketProviders/` (interface + implementation). Git and ticket providers share a unified UX: `promptForToken`, consistent failure guidance, a disconnect flag, clickable token-creation links and full scope hints — a new provider must match it, not invent its own flow.
+   - **New dependency**: don't. Check `httpUtils` / `executableUtils` / `portUtils` / `processUtils` first — the runtime dependency list was deliberately cut from 28 to 14.
 
 3. **Address key design decisions**:
    - **Execution mode**: Background (via `command-runner.ts` spawn) vs terminal vs LWC webview panel
    - **User input**: VS Code QuickPick/InputBox vs LWC prompt panel (via WebSocket)
    - **Data flow**: Direct CLI call vs cached result (`CacheManager`) vs WebSocket real-time
    - **i18n**: All user-facing strings need keys in all 9 locale files (`en`, `fr`, `es`, `de`, `it`, `nl`, `ja`, `pl`, `pt-BR`)
-   - **Styling**: SLDS classes only, no custom CSS unless SLDS cannot provide it
+   - **Styling**: reuse `resources/global-theme.css` classes and the shared UI kit (`.hardis-pill` + `.hardis-status-*` for statuses, `s-hardis-datatable` for tables, `.hardis-branch-chip` for technical ids, tinted-neutral buttons), then SLDS. Custom CSS only when neither covers it, and only with theme-aware tokens — webviews must render correctly in both dark and light VS Code themes. Full rules in `.claude/skills/implement/SKILL.md`.
+   - **Perceived performance**: panels must open instantly. Design data-heavy panels around a loading state + a later data push, never a blocking load before the panel appears.
 
 4. **Follow existing patterns**:
    - Commands use `sf hardis:category:action` format (modern CLI, never legacy `sfdx`)

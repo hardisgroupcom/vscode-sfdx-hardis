@@ -365,7 +365,7 @@
   "deploymentActionMissingRequiredFields": "保存する前に必須項目をすべて入力してください。",
   "deploymentActionSaved": "{{prLabel}} #{{prNumber}} のデプロイアクションを保存しました。{{updatedFile}} を commit して push するのを忘れないでください",
   "deploymentActionSavedDraft": "将来の {{prLabel}} 用のドラフトファイルにデプロイアクションを保存しました。作成されると {{prLabel}} に関連付けられます。",
-  "deploymentActionsTab": "デプロイアクション（{{count}}）（ベータ）",
+  "deploymentActionsTab": "デプロイアクション（{{count}}）",
   "deploymentPackages": "デプロイパッケージ",
   "deploymentsAnalysis": "デプロイメント分析",
   "deploymentsAnalysisDescription": "org 内のメタデータデプロイメントと検証を分析",

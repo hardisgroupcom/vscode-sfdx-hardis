@@ -365,7 +365,7 @@
   "deploymentActionMissingRequiredFields": "Complete todos los campos obligatorios antes de guardar.",
   "deploymentActionSaved": "Acción de despliegue guardada para {{prLabel}} #{{prNumber}}. No olvide hacer commit y push de {{updatedFile}}",
   "deploymentActionSavedDraft": "Acción de despliegue guardada en el archivo borrador para la futura {{prLabel}}. Se vinculará a la {{prLabel}} una vez creada.",
-  "deploymentActionsTab": "Acciones de despliegue ({{count}}) (beta)",
+  "deploymentActionsTab": "Acciones de despliegue ({{count}})",
   "deploymentPackages": "Packages de despliegue",
   "deploymentsAnalysis": "Análisis de implementaciones",
   "deploymentsAnalysisDescription": "Analizar implementaciones de metadatos y validaciones en su org",

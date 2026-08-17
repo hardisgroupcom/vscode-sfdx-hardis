@@ -27,7 +27,9 @@ A matching **`analyze`** sub-agent is defined in `.claude/agents/analyze.md`. Pr
    - Command execution: `src/command-runner.ts`
    - Tree views: `src/hardis-commands-provider.ts`, `src/hardis-status-provider.ts`, `src/hardis-plugins-provider.ts`
    - WebSocket: `src/hardis-websocket-server.ts`
-   - LWC panels: `src/webviews/lwc-ui-panel.ts`, `src/webviews/lwc-ui/modules/s/*/`
+   - LWC panels: `src/webviews/lwc-ui-panel.ts`, `src/lwc-panel-manager.ts`, `src/webviews/lwc-ui/modules/s/*/`
+   - Webview styling: `resources/global-theme.css`, `resources/global-theme-variables.css` (loaded on every panel; component `.css` files sit on top)
+   - DevOps Pipeline: `src/pipeline-data-provider.ts`, `src/utils/pipeline/*.ts`
    - Utilities: `src/utils.ts`, `src/utils/*.ts`
    - Config/pipeline: `src/utils/pipeline/*.ts`
    - Git/ticket providers: `src/utils/gitProviders/*.ts`, `src/utils/ticketProviders/*.ts`
@@ -76,6 +78,7 @@ Analysis tasks often have several valid angles. Don't guess silently — ask. Us
 - **WebSocket prompt handling**: The CLI sends prompts via WebSocket. Prompts have types: `select` (rendered as VS Code QuickPick) and `text` (rendered as VS Code InputBox).
 - **Pipeline PR/MR button**: Extension detects git provider and remote URL, calculates PR/MR page URL via `getPullRequestButtonInfo` utility, passes to pipeline LWC as `prButtonInfo` in initialization data.
 - **Command execution flow**: Extension opens command execution LWC panel -> streams log lines, subcommand events, completion status via messages -> LWC can send cancellation or user input back.
+- **Panel adoption (instant command tabs)**: `command-runner.ts` opens the panel *before* the CLI answers, generates a provisional context id, exports it to the CLI as `SFDX_HARDIS_COMMAND_CONTEXT_ID` and calls `registerPendingCommandPanel()` (`src/utils/pendingCommandPanels.ts`). When the CLI connects, `hardis-websocket-server.ts` adopts that panel via `takePendingCommandPanel()` instead of opening a second one; older CLIs that ignore the env var fall back to matching on command id. Panel lifecycle is carried by the `panel.commandStatus` flag (`pending`/`running`/`completed`/`error`) — never by the panel title.
 - **Security**: WebSocket commands are validated (must start with `sf hardis`, no `&&`). LWC-to-extension messages are sanitized; only whitelisted commands and URLs are allowed.
 
 ## Edge cases

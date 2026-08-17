@@ -108,6 +108,12 @@ else {
 - Use `sf` CLI commands (never legacy `sfdx`)
 - Use `Logger.log()` for diagnostic output, not bare `console.log`
 
+### Formatting — never run Prettier on LWC `.html` or `CHANGELOG.md`
+MegaLinter has HTML linting disabled, so Prettier is not the formatter of record for these files. Running it rewrites the whole file: a 20-line change becomes a 600-line diff that hides the real edit and blows up review. **Edit LWC templates and the changelog by hand.**
+
+### Dependencies — check for a built-in before adding one
+Runtime dependencies were deliberately reduced from 28 to 14. Before adding a package: HTTP goes through `src/utils/httpUtils.ts` (`getJson` / `getText` / `ping`, built on Node's `fetch`), binary lookup through `executableUtils.ts` (`findExecutable`), free ports through `portUtils.ts`, child processes through `processUtils.ts`. Keep `engines.vscode` at `^1.95` — it guarantees a Node runtime with proxy-aware `fetch`.
+
 ## TypeScript patterns (extension host)
 
 - Import `t` from `./i18n/i18n` for all user-facing strings
@@ -164,9 +170,12 @@ VS Code webviews render in BOTH dark and light themes. Hardcoded colors break on
 
 1. **Check `resources/global-theme.css` first.** Reusable, already-themed classes include:
    - **Page chrome**: `.header-section`, `.header-content` (+ `.no-bg`), `.header-text`, `.header-title` (+ `.single-line`), `.header-subtitle`.
-   - **Icon containers** with `.green`, `.teal`, `.gray`, `.blue`, `.purple`, `.orange`, `.yellow`, `.small` color variants: `.header-icon-container`, `.feature-icon-container`, `.icon-container`.
+   - **Surfaces**: `.panel-surface`, `.docs-section`, `.config-section`, `.setup-summary-card`, `.status-card` (+ `.summary`, `.installed`, `.not-installed`, `.cicd`), `.command-card`, `.pipeline-container`.
+   - **Icon containers** with `.green`, `.teal`, `.gray`, `.blue`, `.purple`, `.orange`, `.yellow`, `.small` color variants: `.header-icon-container`, `.feature-icon-container`, `.icon-container`. Status variants: `.status-icon-container` + `.info`, `.success`, `.warning`.
    - **Command icons** with category colors: `.command-icon-container` + one of `.backup`, `.audit`, `.tests`, `.limits`, `.updates`, `.security`, `.legacy`, `.users`, `.licenses`, `.apex`, `.connected-apps`, `.metadata-access`, `.unused-metadata`, `.new-story`, `.pull-action`, `.package-action`, `.save-action`.
-   - **Logs / answer / downloads / modals**: `.log-sections`, `.section-logs`, `.log-lines`, `.log-message`, `.log-timestamp`, `.log-icon`, `.answer-formatted`, `.download-panel`, `.select-option-desc`, `.submission-modal-backdrop`, `.submission-modal`.
+   - **Typography helpers**: `.section-title`, `.section-subtitle`, `.info-title`, `.info-label`, `.info-value`, `.type-name`, `.member-name`, `.empty-title`, `.empty-description`, `.error-description`, `.loading-text`, `.muted`.
+   - **Logs / answer / downloads / modals**: `.log-sections`, `.section-logs`, `.log-lines`, `.log-message`, `.log-timestamp`, `.log-icon`, `.log-container`, `.answer-formatted`, `.download-panel`, `.select-option-desc`, `.submission-modal-backdrop`, `.submission-modal`, `.modal-accent-strip`, `.modal-title-parts`, `.modal-count-badge`, `.tabbed-modal-container`, `.tabbed-modal-content`.
+   - **Shared SLDS UI kit** (added by the DevOps Pipeline restyle — use these for ANY status/identity/branch rendering, see next section): `.hardis-pill` + `.hardis-pill-dot`, `.hardis-status-{success,running,pending,failed,unknown}`, `.hardis-avatar` + `.hardis-avatar-c0`…`-c5` + `.hardis-avatar-name`, `.hardis-branch-chip`, `.hardis-date-cell`, `.hardis-cell-flex`, `.hardis-btn-tinted-green`, `.rf-type-action` / `.rf-type-report` / `.rf-type-doc`, `.slds-no-row-hover`.
    - If a class name already exists globally, NEVER redefine it in component CSS — the local rule will shadow the global one on specificity tie-breaking and silently break theming.
 
 2. **Then check SLDS classes**: `.slds-badge` (+ `_lightest`, `_inverse`), `.slds-text-color_*`, `.slds-text-heading_*`, `.slds-box`, `.slds-button`, `.slds-icon`, etc. Reference: <https://www.lightningdesignsystem.com/>.
@@ -186,14 +195,69 @@ VS Code webviews render in BOTH dark and light themes. Hardcoded colors break on
 - Inventing a new badge / pill / chip / button rule with hardcoded colors. SLDS or the global stylesheet already ships one.
 - Redefining a class name that already exists globally (e.g. `.header-icon-container.teal`, `.command-icon-container.audit`) — your rule wins on specificity tie-breaking and silently disables the theme-aware version.
 - "Just for now" hex colors with a TODO. There's no theme switch event — the bad render ships.
-- Some existing components (e.g. parts of `monitoringConfig.css`) already redefine global classes with hardcoded hex colors. Treat these as legacy bugs, not patterns — do not copy them.
+- **Copying an existing component's CSS.** Several component stylesheets still contain a lot of hardcoded colors — `welcome.css` (~71), `dataWorkbench.css` (~70), `filesWorkbench.css` (~65), `orgMonitoring.css` (~63), `packageXml.css` (~39), `pipeline.css` (~37), `setup.css` (~29), `monitoringConfig.css` (~20). These are **legacy bugs awaiting migration, not patterns**. Never use them as a reference; when you touch one of these files, prefer migrating the rules you touch to global/SLDS classes.
+
+Quick check on any CSS you wrote:
+
+```bash
+grep -nE "#[0-9a-fA-F]{3,8}\b|rgba?\(|font-family|font-weight: *[0-9]" src/webviews/lwc-ui/modules/s/<component>/<component>.css
+```
+
+#### Semantic status colors (always use the kit, never invent a mapping)
+
+The status palette is fixed project-wide: **green = success, blue = running (dot pulses), orange = pending, red = failed, neutral = unknown**.
+
+Render a status as a pill:
+
+```html
+<span class="hardis-pill hardis-status-success">
+  <span class="hardis-pill-dot"></span>Success
+</span>
+```
+
+- `.hardis-pill-dot` alone (with a `.hardis-status-*` class) is the standalone dot used in legends and mermaid nodes.
+- The running dot animation already honors `prefers-reduced-motion`. Don't re-add animations.
+- Never build a status color with `variant="success"` badges, custom hexes, or an ad-hoc red/green mapping.
+
+#### Tables: use `s-hardis-datatable`
+
+`src/webviews/lwc-ui/modules/s/hardisDatatable/` extends `lightning-datatable` with three shared cell types, already themed by `global-theme.css` (zebra striping, quiet uppercase headers, hover). Adopted by `pipeline`, `orgManager`, `metadataRetriever`, `dataWorkbench`, `installedPackages` — use it for any new table rather than a raw `lightning-datatable` or a hand-rolled `<table>`.
+
+| Cell type | Renders | `typeAttributes` |
+|-----------|---------|------------------|
+| `statusPill` | Status pill (dot + label), optionally linking to the CI job | `label`, `pillClass` (fully computed, e.g. `"hardis-pill hardis-status-success"`), `url` |
+| `avatarText` | Initials avatar circle + text | `initials`, `avatarClass` (computed color variant) |
+| `branchChip`  | Monospace chip for technical ids (git branches); full value on hover | none |
+
+Because LWC templates allow no expressions, `pillClass` / `avatarClass` must be **fully computed in JS** before reaching the template. Use `s/avatarUtils` (`getAvatarClass()`, `getInitials()`, `getUsernameInitials()`, `hashString()`) so the same person keeps the same initials and avatar color across every panel. Add `.slds-no-row-hover` on the table when rows aren't clickable.
+
+#### Buttons
+
+Only the **neutral** SLDS button variant adapts to VS Code themes. Filled `variant="success"` / `variant="brand"` buttons keep their Salesforce colors and render badly in webviews. For a colored action button, wrap a neutral button in a tinted class that recolors it with palette tokens — `.hardis-btn-tinted-green`, or the `.rf-type-action` / `.rf-type-report` / `.rf-type-doc` family. Follow the same recipe (palette-token background/border/color + `fill: currentColor` on the icon) if a new tint is genuinely needed, and put it in `global-theme.css`, not in a component.
+
+#### Stale stylesheets
+
+The webview service worker can keep serving an outdated copy of the global stylesheets across extension updates and Extension Development Host rebuilds. `lwc-ui-panel.ts` appends `?v=<Date.now()>` at panel creation to force a fresh fetch. **If a CSS change doesn't appear, close and reopen the panel before suspecting the rule.**
+
+#### SVG / mermaid (DevOps Pipeline diagram)
+
+The pipeline diagram is generated by `src/utils/pipeline/branchStrategyMermaidBuilder.ts` and post-processed in `pipeline.js`:
+
+- **Style injected SVG elements inline (`style` attribute), not via a stylesheet.** Mermaid compiles its `classDef`s into `#id .cls>*{stroke:...!important}` rules that hit any element you add to a node — without an explicit inline `stroke:none` your glyphs get outlined in the node border color. Inline styles are also immune to a stale cached stylesheet. `_drawNodeCountBubble()` is the reference implementation.
+- **Set every paint property explicitly**, including an explicit `font-family` (otherwise mermaid's default Trebuchet MS leaks in) and rounded/integer coordinates.
+- Node labels are HTML chips reusing `.hardis-pill` / `.hardis-status-*`, so status colors stay consistent with the tables.
+- Edge coloring goes through `link.renderType` (base type + status suffix) mapped to a `linkStyle` declaration; **`linkStyle` indexes follow link declaration order** — reorder links and you silently recolor the wrong edge.
+- Mermaid node names are sanitized (`sanitizeNodeName()`, e.g. `/` becomes `_`); never build a node id from a raw branch name.
 
 ## i18n checklist
 
 When adding user-facing strings:
 1. Add key to `src/i18n/en.json` (English, source of truth)
 2. Add same key to all other locale files: `fr.json`, `es.json`, `de.json`, `it.json`, `nl.json`, `ja.json`, `pl.json`, `pt-BR.json`
-3. Keep flat JSON structure, camelCase keys, alphabetical order
+3. Keep flat JSON structure and camelCase keys. Ordering is **case-sensitive ASCII sort** (JavaScript default `sort()`), not case-insensitive alphabetical — uppercase-first keys sort *before* lowercase ones. Locate the real neighboring keys in `en.json` first, then insert at the same position in all 9 files. Verify with:
+   ```bash
+   node -e "const k=Object.keys(require('./src/i18n/en.json'));console.log(JSON.stringify(k)===JSON.stringify([...k].sort()))"
+   ```
 4. Use `{{varName}}` for interpolation variables
 5. Preserve `{{varName}}` placeholders and `<br/>` tags exactly as-is in all languages
 6. Look at other translations in the same language file for terminology and style consistency
@@ -220,6 +284,14 @@ Command IDs, file paths, CSS classes, brand names (Salesforce, GitHub, SFDMU, Me
 2. Create `src/commands/show<Name>.ts` with register function using `LwcUiPanel.display()`
 3. Register in `src/commands.ts`
 4. Define message types for Extension-to-LWC communication
+5. **Never block the panel opening on data loading.** Create the panel immediately with `lwcManager.getOrCreatePanel("s-<name>", { loading: true })`, then feed it through a `loadAndPush()` function, and handle the LWC's `retryInit` message so the user can retry after a failure. The component itself handles three states (loading / loaded / error). Reference implementations: `src/commands/showDataWorkbench.ts`, `src/commands/showDocumentationWorkbench.ts`.
+6. For tabular data, use `s-hardis-datatable` with the shared cell types rather than a raw table.
+
+### Command panels and performance invariants
+- Command panels are created **before** the CLI answers. `command-runner.ts` generates a provisional context id, passes it to the CLI as the `SFDX_HARDIS_COMMAND_CONTEXT_ID` env var and calls `registerPendingCommandPanel()`; `hardis-websocket-server.ts` then adopts that panel via `takePendingCommandPanel()`. If you add a new way to launch a command, keep this handshake or the user gets a duplicate empty tab.
+- Track panel lifecycle with the **`panel.commandStatus`** flag (`pending` / `running` / `completed` / `error`). Never infer state by parsing panel titles.
+- File watchers: use `.some()` rather than `.filter()` when you only need existence.
+- **Load heavy providers with `await import(...)`, not a top-level import.** The extension bundle is built with `module: "es2020"` in `webpack.common.js` specifically so dynamic imports survive into real webpack chunks instead of being bundled into the eagerly-parsed main file. A static import of a heavy module silently undoes that and slows activation.
 
 ### Adding a new config field
 1. Add to `CONFIGURABLE_FIELDS` in `src/utils/pipeline/sfdxHardisConfigHelper.ts`
@@ -232,4 +304,6 @@ After implementing:
 1. `yarn lint` - Check for ESLint issues
 2. `yarn dev` or `yarn build` - Verify webpack compilation succeeds
 3. Test in VS Code Extension Development Host (F5)
-4. Confirm `CHANGELOG.md` has a user-friendly entry under `## Unreleased` (or that the change is internal-only and was intentionally skipped)
+4. For webview changes, check the panel in **both** dark and light VS Code themes
+5. For changes touching command launching, tree views or panels: `yarn dev && yarn compile && yarn test:ui` (build order matters)
+6. Confirm `CHANGELOG.md` has a user-friendly entry under `## Unreleased` (or that the change is internal-only and was intentionally skipped)

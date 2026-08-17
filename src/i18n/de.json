@@ -365,7 +365,7 @@
   "deploymentActionMissingRequiredFields": "Bitte füllen Sie vor dem Speichern alle Pflichtfelder aus.",
   "deploymentActionSaved": "Bereitstellungsaktion für {{prLabel}} #{{prNumber}} gespeichert. Vergessen Sie nicht, {{updatedFile}} zu committen und zu pushen",
   "deploymentActionSavedDraft": "Bereitstellungsaktion im Entwurf für den zukünftigen {{prLabel}} gespeichert. Sie wird mit dem {{prLabel}} verknüpft, sobald dieser erstellt wird.",
-  "deploymentActionsTab": "Bereitstellungsaktionen ({{count}}) (Beta)",
+  "deploymentActionsTab": "Bereitstellungsaktionen ({{count}})",
   "deploymentPackages": "Bereitstellungspakete",
   "deploymentsAnalysis": "Deployment-Analyse",
   "deploymentsAnalysisDescription": "Metadaten-Deployments und Validierungen in Ihrer Org analysieren",

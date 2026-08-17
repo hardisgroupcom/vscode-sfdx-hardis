@@ -365,7 +365,7 @@
   "deploymentActionMissingRequiredFields": "Please fill in all required fields before saving.",
   "deploymentActionSaved": "Deployment action saved for {{prLabel}} #{{prNumber}}. Don't forget to commit and push {{updatedFile}}",
   "deploymentActionSavedDraft": "Deployment action saved in draft file for the future {{prLabel}}. It will be linked to the {{prLabel}} once created.",
-  "deploymentActionsTab": "Deployment Actions ({{count}}) (beta)",
+  "deploymentActionsTab": "Deployment Actions ({{count}})",
   "deploymentPackages": "Deployment Packages",
   "deploymentsAnalysis": "Deployments Analysis",
   "deploymentsAnalysisDescription": "Analyze metadata deployments and validations in your org",

@@ -364,7 +364,7 @@
   "deploymentActionMissingRequiredFields": "Przed zapisaniem uzupełnij wszystkie pola wymagane.",
   "deploymentActionSaved": "Akcja wdrożenia zapisana dla {{prLabel}} #{{prNumber}}. Pamiętaj, żeby zcommitować i pushować {{updatedFile}}",
   "deploymentActionSavedDraft": "Akcja wdrożenia zapisana w pliku roboczym dla przyszłego {{prLabel}}. Zostanie powiązana z {{prLabel}} po jego utworzeniu.",
-  "deploymentActionsTab": "Akcje wdrożenia ({{count}}) (beta)",
+  "deploymentActionsTab": "Akcje wdrożenia ({{count}})",
   "deploymentPackages": "Pakiety wdrożenia",
   "deploymentsAnalysis": "Analiza wdrożeń",
   "deploymentsAnalysisDescription": "Analizuj wdrożenia metadata i walidacje w swoim orgu",

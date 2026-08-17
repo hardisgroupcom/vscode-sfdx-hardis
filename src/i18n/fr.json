@@ -365,7 +365,7 @@
   "deploymentActionMissingRequiredFields": "Veuillez renseigner tous les champs obligatoires avant d'enregistrer.",
   "deploymentActionSaved": "Action de déploiement enregistrée pour {{prLabel}} #{{prNumber}}. N'oubliez pas de committer et pousser {{updatedFile}}",
   "deploymentActionSavedDraft": "Action de déploiement enregistrée dans le fichier brouillon pour la future {{prLabel}}. Elle sera liée à la {{prLabel}} une fois créée.",
-  "deploymentActionsTab": "Actions de déploiement ({{count}}) (beta)",
+  "deploymentActionsTab": "Actions de déploiement ({{count}})",
   "deploymentPackages": "Packages de déploiement",
   "deploymentsAnalysis": "Analyse des déploiements",
   "deploymentsAnalysisDescription": "Analyser les déploiements de métadonnées et les validations dans votre org",
