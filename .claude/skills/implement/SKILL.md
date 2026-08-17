@@ -170,9 +170,10 @@ VS Code webviews render in BOTH dark and light themes. Hardcoded colors break on
 
 1. **Check `resources/global-theme.css` first.** Reusable, already-themed classes include:
    - **Page chrome**: `.header-section`, `.header-content` (+ `.no-bg`), `.header-text`, `.header-title` (+ `.single-line`), `.header-subtitle`.
-   - **Surfaces**: `.panel-surface`, `.docs-section`, `.config-section`, `.setup-summary-card`, `.status-card` (+ `.summary`, `.installed`, `.not-installed`, `.cicd`), `.command-card`, `.pipeline-container`.
-   - **Icon containers** with `.green`, `.teal`, `.gray`, `.blue`, `.purple`, `.orange`, `.yellow`, `.small` color variants: `.header-icon-container`, `.feature-icon-container`, `.icon-container`. Status variants: `.status-icon-container` + `.info`, `.success`, `.warning`.
-   - **Command icons** with category colors: `.command-icon-container` + one of `.backup`, `.audit`, `.tests`, `.limits`, `.updates`, `.security`, `.legacy`, `.users`, `.licenses`, `.apex`, `.connected-apps`, `.metadata-access`, `.unused-metadata`, `.new-story`, `.pull-action`, `.package-action`, `.save-action`.
+   - **Surfaces**: `.panel-surface`, `.docs-section`, `.config-section`, `.setup-summary-card`, `.status-card` (+ `.summary`, `.installed`, `.not-installed`, `.cicd`), `.pipeline-container`.
+   - **Section & card kit** (the v8 design system — see the dedicated section below): `.hardis-group-label`, `.hardis-group-desc`, `.hardis-card-grid` (+ `.single-column`), `.hardis-card` (+ `.clickable`, `.featured`, `.disabled`), `.hardis-card-head` / `-title` / `-desc` / `-actions` / `-arrow`, `.hardis-tile` (+ `.featured` / `.small` sizes and color hues).
+   - **Icon containers** (page headers and status cards only) with `.green`, `.teal`, `.gray`, `.blue`, `.purple`, `.orange`, `.yellow`, `.small` color variants: `.header-icon-container`, `.icon-container`. Status variants: `.status-icon-container` + `.info`, `.success`, `.warning`.
+   - **DEPRECATED — never use in panels**: `.command-card`, `.commands-grid`, `.command-icon-container.*`, `.feature-icon-container.*`. They are kept in global-theme.css only for user-provided `welcomeIconClass` values in `.sfdx-hardis.yml` (and setup.html's own status grid). New or modified panels must use the hardis-* section & card kit instead.
    - **Typography helpers**: `.section-title`, `.section-subtitle`, `.info-title`, `.info-label`, `.info-value`, `.type-name`, `.member-name`, `.empty-title`, `.empty-description`, `.error-description`, `.loading-text`, `.muted`.
    - **Logs / answer / downloads / modals**: `.log-sections`, `.section-logs`, `.log-lines`, `.log-message`, `.log-timestamp`, `.log-icon`, `.log-container`, `.answer-formatted`, `.download-panel`, `.select-option-desc`, `.submission-modal-backdrop`, `.submission-modal`, `.modal-accent-strip`, `.modal-title-parts`, `.modal-count-badge`, `.tabbed-modal-container`, `.tabbed-modal-content`.
    - **Shared SLDS UI kit** (added by the DevOps Pipeline restyle — use these for ANY status/identity/branch rendering, see next section): `.hardis-pill` + `.hardis-pill-dot`, `.hardis-status-{success,running,pending,failed,unknown}`, `.hardis-avatar` + `.hardis-avatar-c0`…`-c5` + `.hardis-avatar-name`, `.hardis-branch-chip`, `.hardis-date-cell`, `.hardis-cell-flex`, `.hardis-btn-tinted-green`, `.rf-type-action` / `.rf-type-report` / `.rf-type-doc`, `.slds-no-row-hover`.
@@ -193,15 +194,52 @@ VS Code webviews render in BOTH dark and light themes. Hardcoded colors break on
 #### What's NOT safe
 
 - Inventing a new badge / pill / chip / button rule with hardcoded colors. SLDS or the global stylesheet already ships one.
-- Redefining a class name that already exists globally (e.g. `.header-icon-container.teal`, `.command-icon-container.audit`) — your rule wins on specificity tie-breaking and silently disables the theme-aware version.
+- Redefining a class name that already exists globally (e.g. `.header-icon-container.teal`, `.hardis-card`, `.hardis-tile.violet`) — your rule wins on specificity tie-breaking and silently disables the theme-aware version.
 - "Just for now" hex colors with a TODO. There's no theme switch event — the bad render ships.
-- **Copying an existing component's CSS.** Several component stylesheets still contain a lot of hardcoded colors — `welcome.css` (~71), `dataWorkbench.css` (~70), `filesWorkbench.css` (~65), `orgMonitoring.css` (~63), `packageXml.css` (~39), `pipeline.css` (~37), `setup.css` (~29), `monitoringConfig.css` (~20). These are **legacy bugs awaiting migration, not patterns**. Never use them as a reference; when you touch one of these files, prefer migrating the rules you touch to global/SLDS classes.
+- **Copying an existing component's CSS.** Some component stylesheets still contain hardcoded colors — `dataWorkbench.css` (~70), `filesWorkbench.css` (~65), `packageXml.css` (~39), `setup.css` (~29), `orgMonitoring.css` (~18). These are **legacy bugs awaiting migration, not patterns**. Never use them as a reference; when you touch one of these files, prefer migrating the rules you touch to global/SLDS classes. (`welcome.css`, `pipeline.css`, `monitoringConfig.css` and the documentation panels were already migrated — use those as references instead.)
 
 Quick check on any CSS you wrote:
 
 ```bash
 grep -nE "#[0-9a-fA-F]{3,8}\b|rgba?\(|font-family|font-weight: *[0-9]" src/webviews/lwc-ui/modules/s/<component>/<component>.css
 ```
+
+#### Sections, cards and icon tiles (the hardis-* design kit)
+
+Any panel that presents a catalog of features, commands or actions uses the generic kit from `global-theme.css` (introduced by the v8 Welcome redesign, already applied to Welcome, Org Monitoring, the Pipeline workflow tab, both Documentation panels and Monitoring Config). Never rebuild sections/cards per panel.
+
+**Section**: an uppercase label with a rule line, plus an optional one-line description:
+
+```html
+<div class="hardis-group-label">{i18n.sectionTitle}</div>
+<p class="hardis-group-desc">{i18n.sectionDescription}</p>
+<div class="hardis-card-grid"> ... cards ... </div>
+```
+
+No emoji in section labels. `.hardis-card-grid` is a responsive `auto-fill minmax(280px, 1fr)` grid; add `.single-column` for a stacked list.
+
+**Card anatomy** (head = tile + title, then description, then optional actions):
+
+```html
+<div class="hardis-card clickable" role="button" tabindex="0"
+     data-command={row.command} onclick={handleRunCommand} onkeydown={handleCardKeydown}>
+  <div class="hardis-card-head">
+    <div class="hardis-tile small violet">
+      <lightning-icon icon-name="utility:shield" size="x-small"></lightning-icon>
+    </div>
+    <h3 class="hardis-card-title">{row.title}</h3>
+  </div>
+  <p class="hardis-card-desc">{row.description}</p>
+  <div class="hardis-card-arrow">→</div>
+</div>
+```
+
+- **Prefer the whole card being clickable over a per-card "Run"/"Open" button** — one obvious action per card = clickable card (`.clickable` + `role="button"` + `tabindex="0"` + `onkeydown` handler that clicks on Enter/Space + the `.hardis-card-arrow`). Keep a `.hardis-card-actions` row of buttons only when a card genuinely has several distinct actions (e.g. Documentation Workbench generate vs. deploy).
+- `.featured` makes the card bigger with a brand-gradient top edge (Welcome essentials row); `.disabled` greys it out and disables hover.
+- **Icon tiles**: `.hardis-tile` (+ size `.featured`/`.small`) with a hue class — real hues `cyan teal violet amber slate indigo pink green red` and semantic aliases matching catalog `colorClass` values (`backup`→cyan, `audit`→violet, `security`/`alerts`→red, `tests`→green, `apex`/`limits`→amber, `cloudflare`→teal, `confluence`→indigo, `prompts`→violet, …). Unknown hues fall back to slate. In JS, compose the class as `"hardis-tile small " + colorClass`.
+- **Never put `variant="inverse"` on a `lightning-icon` inside a `.hardis-tile`** — the tile is a soft tint, an inverse (white) icon becomes invisible in light mode. The tile colors the icon via `color: inherit`.
+- Because LWC templates allow no expressions, computed card/tile classes (`cardClass`, `tileClass`, disabled state) must be **fully computed in JS getters**.
+- Layout gotcha: a container with `overflow: hidden` (e.g. a hero band clipping a decorative background) will clip dropdowns/popovers opened inside it. Put the clipping on a dedicated `position:absolute; inset:0; overflow:hidden` background layer instead of the container itself.
 
 #### Semantic status colors (always use the kit, never invent a mapping)
 
