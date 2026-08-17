@@ -31,6 +31,7 @@
     - Open Source information and Cloudity guidance & support are merged into one compact footer with a **Star on GitHub** button
     - The settings controls no longer float over the content: they sit in a single header toolbar, with **Extension settings** one click away
     - The same design is applied across the extension: **Org Monitoring**, the **DevOps Pipeline** quick action cards, the **Documentation Workbench**, the **AI Documentation configuration** and the **Monitoring Configuration** now share the Welcome page's sections, cards and colored icon tiles
+    - Org Monitoring check cards are now **clickable directly** (with the keyboard too), replacing the Run button on each card
   - Fix panels wrongly opening in **light mode inside a dark VS Code**: the extension theme now follows the VS Code theme by default (users who explicitly selected Light or Dark keep their choice)
   - The DevOps Pipeline diagram was **redesigned with the official Salesforce Lightning color palette**, in **light and dark themes**
     - CI job status is now **color-coded consistently everywhere**: **blue animated = running**, **orange = pending**, **red = failed**, **green = success** (previously running and pending showed as red, and failed jobs were not highlighted at all)

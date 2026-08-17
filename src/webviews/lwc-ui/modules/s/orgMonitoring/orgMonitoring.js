@@ -436,6 +436,13 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
     });
   }
 
+  handleCardKeydown(event) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      event.currentTarget.click();
+    }
+  }
+
   openMonitoringDocs() {
     window.sendMessageToVSCode({
       type: "openExternal",
