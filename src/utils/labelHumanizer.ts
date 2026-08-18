@@ -71,7 +71,8 @@ function splitCamelCaseWords(key: string): string[] {
 
 /**
  * Humanizes a camelCase configuration key (or its last dot-separated segment)
- * into a sentence-case label, uppercasing known acronyms wherever they occur.
+ * into a sentence-case label, keeping known acronyms in upper case wherever
+ * they occur.
  */
 export function humanizeConfigKeyLabel(key: string): string {
   if (!key) {

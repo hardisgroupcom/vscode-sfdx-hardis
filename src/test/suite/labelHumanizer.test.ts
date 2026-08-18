@@ -9,7 +9,7 @@ suite("labelHumanizer Test Suite", () => {
     );
   });
 
-  test("uppercases acronyms found in the middle of a key", () => {
+  test("converts acronyms found in the middle of a key to upper case", () => {
     assert.strictEqual(
       humanizeConfigKeyLabel("ignoreSfdxCliRecommendedVersion"),
       "Ignore SFDX CLI recommended version",
