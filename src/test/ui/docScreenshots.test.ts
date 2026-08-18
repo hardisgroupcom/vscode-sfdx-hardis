@@ -199,8 +199,9 @@ async function shootPanel(
 
 /**
  * Records the window while `scenario` drives the UI, into
- * <OUT_DIR>/recordings/<name>/frame-NNNN.png. scripts/build-doc-images.py
- * assembles those frames into the animated GIF of the documentation.
+ * <OUT_DIR>/recordings/<name>/frame-NNNN.png. The animated GIFs of the
+ * documentation are recorded by hand (see docs/animated-gifs.md); these frames
+ * are only raw material for them.
  */
 async function record(
   name: string,

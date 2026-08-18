@@ -189,9 +189,13 @@ python scripts/build-doc-images.py
 Screenshots are always taken in **light theme** and in **English**, on the
 `test/fixtures/doc-screenshots-project` sample project served by the mocked
 Salesforce CLI (`test/fixtures/sf-shim/sf-mock.js`, profile `docs`). Panels are
-captured as full window PNGs, some scenarios are recorded as animated GIFs, and
-`scripts/build-doc-images.py` crops, annotates and renames them to the file
-names the documentation expects.
+captured as full window PNGs, and `scripts/build-doc-images.py` crops (some
+images show only the webview, others the whole window), annotates and renames
+them to the file names the documentation expects.
+
+The **animated GIFs are recorded by hand**: see
+[docs/animated-gifs.md](docs/animated-gifs.md) for the list, what each one must
+show, and the recording conventions.
 
 ### Manual Testing Checklist
 

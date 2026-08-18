@@ -41,9 +41,9 @@ def row_y(index):
     return int(round(FIRST_ROW_Y + ROW_HEIGHT * index))
 
 
-# --- Full window screenshots ------------------------------------------------
+# --- Panel screenshots ------------------------------------------------------
 # doc image name -> capture name
-FULL_SHOTS = {
+PANEL_SHOTS = {
     "welcome.png": "welcome",
     "data-workbench.png": "data-workbench",
     "files-workbench.png": "files-workbench",
@@ -55,6 +55,24 @@ FULL_SHOTS = {
     "ProductivityCommands.png": "command-runner-multiselect",
     "screenshot-work-save.png": "command-runner-completed",
     "command-runner.png": "command-runner-question",
+}
+
+# Width of the activity bar + side bar in a capture: the editor area (the
+# webview) starts right after the separator line at x=434.
+SIDE_BAR_WIDTH = 435
+
+# Images the documentation shows without the side bar, i.e. cropped to the
+# webview only. The others keep the whole window, because the side bar is part
+# of what they illustrate (the tree views, the menu entry to click).
+WEBVIEW_ONLY = {
+    "data-workbench.png",
+    "files-workbench.png",
+    "documentation-workbench.png",
+    "devops-pipeline.png",
+    "org-monitoring.png",
+    "dependencies-ok-ui.png",
+    "screenshot-work-save.png",
+    "command-runner.png",
 }
 
 # --- Crops of a single side bar row ----------------------------------------
@@ -86,25 +104,6 @@ BOX_CROPS = {
     "hardis-button.jpg": ("sidebar", (4, 304, 58, 358)),
     "dependencies-ok.jpg": ("sidebar-dependencies", (60, 99, 436, 462)),
 }
-
-# --- Animated recordings ----------------------------------------------------
-# doc image name -> recording folder under doc-screenshots/recordings
-RECORDINGS = {
-    "orgs-manager.gif": "orgs-manager",
-    "sfdx-hardis-pipeline-view.gif": "devops-pipeline",
-    "metadata-retriever.gif": "metadata-retriever",
-    "monitoring-config-2026.gif": "monitoring-config",
-    "project-documentation.gif": "documentation-workbench",
-    "extension-demo.gif": "welcome",
-    "new-user-story-2026.gif": "work-new",
-    "retrieve-and-commit-2026.gif": "work-save",
-    "save-publish-pr-2026.gif": "work-publish",
-}
-GIF_WIDTH = 1280
-GIF_FRAME_MS = 200
-# A scenario ends with a long motionless pause; capping how long a single frame
-# is displayed keeps the loop from freezing on it
-GIF_MAX_FRAME_MS = 2500
 
 RED = (215, 25, 30)
 WHITE = (255, 255, 255)
@@ -146,6 +145,11 @@ def save(image, target, dry_run):
         image.save(target, "PNG")
 
 
+def crop_to_webview(image):
+    """Keeps only the editor area of a capture (no activity bar, no side bar)."""
+    return image.crop((SIDE_BAR_WIDTH, 0, image.width, image.height))
+
+
 def crop_row(image, index, left=72, padding=14):
     """Crops one side bar row, trimming the empty space after the label."""
     center = row_y(index)
@@ -167,65 +171,6 @@ def crop_row(image, index, left=72, padding=14):
             right = min(band.width, x + padding)
             break
     return band.crop((0, 0, right, band.height))
-
-
-def build_gif(recording, target, dry_run):
-    """Assembles a recording (frame-NNNN.png) into an animated GIF.
-
-    Identical consecutive frames are merged into a single longer frame, which
-    is what keeps the file small: most of a scenario is the UI standing still.
-    """
-    folder = os.path.join(SHOTS_DIR, "recordings", recording)
-    if not os.path.isdir(folder):
-        return False
-    files = sorted(f for f in os.listdir(folder) if f.endswith(".png"))
-    if not files:
-        return False
-
-    rgb_frames, durations = [], []
-    previous_bytes = None
-    for name in files:
-        image = Image.open(os.path.join(folder, name)).convert("RGB")
-        if is_blank(image):
-            # A frame captured while the desktop was unavailable: drop it
-            # rather than letting a black flash into the animation
-            continue
-        image = image.resize(
-            (GIF_WIDTH, round(image.height * GIF_WIDTH / image.width)),
-            Image.LANCZOS,
-        )
-        raw = image.tobytes()
-        if raw == previous_bytes and durations:
-            durations[-1] += GIF_FRAME_MS
-            continue
-        previous_bytes = raw
-        rgb_frames.append(image)
-        durations.append(GIF_FRAME_MS)
-
-    durations = [min(duration, GIF_MAX_FRAME_MS) for duration in durations]
-
-    # One palette shared by every frame: GIF then stores only the rectangle
-    # that changed from one frame to the next, instead of a full key frame.
-    palette = rgb_frames[0].quantize(colors=128, method=Image.MEDIANCUT)
-    frames = [frame.quantize(palette=palette, dither=Image.NONE) for frame in rgb_frames]
-
-    print(
-        f"  {'(dry-run) ' if dry_run else ''}{os.path.basename(target)} "
-        f"{frames[0].size[0]}x{frames[0].size[1]} "
-        f"{len(frames)} frames (from {len(files)})"
-    )
-    if dry_run:
-        return True
-    frames[0].save(
-        target,
-        save_all=True,
-        append_images=frames[1:],
-        duration=durations,
-        loop=0,
-        optimize=True,
-        disposal=1,
-    )
-    return True
 
 
 def font(size):
@@ -296,9 +241,9 @@ def build_install_dependencies_highlight(welcome, target, dry_run):
 
 def build_dependencies_home_link(welcome, target, dry_run):
     """Welcome page (panel only) pointing at the Install Dependencies button."""
-    image = welcome.crop((437, 0, welcome.width, welcome.height))
+    image = crop_to_webview(welcome)
     draw = ImageDraw.Draw(image)
-    arrow(draw, (170, 330), (170, 105))
+    arrow(draw, (172, 330), (172, 105))
     save(image, target, dry_run)
 
 
@@ -313,12 +258,14 @@ def main():
 
     missing = []
 
-    print("Full window screenshots:")
-    for name, capture in FULL_SHOTS.items():
+    print("Panel screenshots:")
+    for name, capture in PANEL_SHOTS.items():
         image = load(capture)
         if image is None:
             missing.append(capture)
             continue
+        if name in WEBVIEW_ONLY:
+            image = crop_to_webview(image)
         save(image, os.path.join(args.docs_images, name), args.dry_run)
 
     print("Side bar row crops:")
@@ -352,13 +299,6 @@ def main():
             os.path.join(args.docs_images, "dependencies-home-link.png"),
             args.dry_run,
         )
-
-    print("Animated recordings:")
-    for name, recording in RECORDINGS.items():
-        if not build_gif(
-            recording, os.path.join(args.docs_images, name), args.dry_run
-        ):
-            missing.append(f"recordings/{recording}")
 
     if missing:
         print("\nMissing captures (run `yarn screenshots` first):")
