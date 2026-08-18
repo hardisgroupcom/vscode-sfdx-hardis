@@ -350,7 +350,13 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
           const showDocLink = hasDocUrl && !isArrayObject;
           // Arrays/objects need the full row width (chips, dual-listbox,
           // datatable) instead of the compact right-aligned control column.
-          const isWideControl = isArrayEnum || isArrayText || isArrayObject;
+          // Except when empty in view mode: a lone "Not defined" fits the
+          // right column like any scalar, keeping one value placement.
+          const hasArrayItems =
+            Array.isArray(valueDisplay) && valueDisplay.length > 0;
+          const isWideControl =
+            (isArrayEnum || isArrayText || isArrayObject) &&
+            (this.isEditMode || hasArrayItems);
           const fieldRowClass = isWideControl
             ? "hardis-field-row stacked"
             : "hardis-field-row";

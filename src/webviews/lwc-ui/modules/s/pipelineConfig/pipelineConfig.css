@@ -4,6 +4,14 @@
 	min-height: 100vh;
 }
 
+/* Cap each tab's settings list to a readable measure (same pattern as
+   extensionConfig's .ecfg-body) so right-aligned values stay within
+   eye-tracking distance of their labels on wide windows. */
+.pipeline-config-tab-body {
+	max-width: 900px;
+	margin: 0 auto;
+}
+
 /* Make lightning-datatable use full width of container (matching pipeline pattern) */
 lightning-datatable {
 	width: 100%;

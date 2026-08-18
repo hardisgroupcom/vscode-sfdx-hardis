@@ -40,7 +40,7 @@
           <lightning-tabset data-id="config-tabset" active-tab-value={activeTabValue}>
             <template for:each={configSections} for:item="section" for:index="index">
               <lightning-tab key={section.label} label={section.label} value={section.label} icon-name={section.iconName} icon-assistive-text={section.label}>
-                <div class="slds-p-around_medium">
+                <div class="slds-p-around_medium pipeline-config-tab-body">
                   <template if:true={section.description}>
                     <div class="slds-text-body_regular slds-text-color_weak slds-m-bottom_medium">
                       {section.description}

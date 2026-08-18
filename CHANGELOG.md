@@ -37,6 +37,9 @@
     - Org Monitoring check cards are now **clickable directly** (with the keyboard too), replacing the Run button on each card
   - **Every panel now has the same design**: the same header (icon, title, one-line description, actions on the right), the same content cards and the same buttons
   - In settings pages (Pipeline Settings, Extension Settings...), text fields, multi-line lists and dual selection lists now widen to use the available space, so long values like URLs or regular expressions stay fully visible, and dropdowns share a consistent width
+  - Pipeline Settings are now **easier to scan**
+    - Settings without a value show their **Not defined** mention in the same place as other values, instead of below the description
+    - The settings list keeps a **readable width** on large windows, so each value stays close to its label
     - Orgs Manager, Metadata Retriever, Installed Packages, Pipeline Settings, Extension Settings, package.xml and the Setup panel were rebuilt on the shared design, so no panel looks like a different product anymore
     - Panel titles are the feature name (**Metadata Retriever**, **Installed Packages**...) and every panel says in one line what it is for
     - **Colored buttons are readable in both themes**: the filled blue/red buttons of the workbenches (Export data, Delete data, Add Org, Install...) became tinted buttons that adapt to light and dark mode
