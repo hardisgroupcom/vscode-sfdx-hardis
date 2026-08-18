@@ -93,7 +93,8 @@ export default class HardisDatatable extends LightningDatatable {
 
   openCellContextMenu(x, y, value) {
     this.closeCellContextMenu();
-    const host = this.template && this.template.host ? this.template.host : null;
+    const host =
+      this.template && this.template.host ? this.template.host : null;
     const container =
       (host && host.closest && host.closest(".slds-scope")) || document.body;
     const translations =
