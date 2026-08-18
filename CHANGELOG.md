@@ -47,6 +47,8 @@
     - Answered questions collapse to a single line showing the **answer**, and can be expanded back to see the details
     - Generated reports and actions are docked in a **bar at the bottom** of the tab, always visible without scrolling
     - Result tables are now readable in **dark mode**, and the duplicated scrollbar on the right edge is gone
+    - Log lines carrying a **big JSON** (deployment results, API responses) or a **very long text** now display only their **beginning**: click them to see the **complete content** in a large window, that can be **copied** or **opened in a VS Code tab**
+    - Once a command is over, a **Run again** button in the header replays it with the same parameters, whether it succeeded or failed
   - Fix panels wrongly opening in **light mode inside a dark VS Code**: the extension theme now follows the VS Code theme by default (users who explicitly selected Light or Dark keep their choice)
   - The DevOps Pipeline diagram was **redesigned with the official Salesforce Lightning color palette**, in **light and dark themes**
     - CI job status is now **color-coded consistently everywhere**: **blue animated = running**, **orange = pending**, **red = failed**, **green = success** (previously running and pending showed as red, and failed jobs were not highlighted at all)
@@ -54,6 +56,7 @@
     - Pull requests, deployments and "Create PR" links are shown as small **colored chips** instead of emoji and underlined links, and each branch's open pull request counter is displayed as a **notification bubble** attached to the node's corner
     - Long feature branch names are **shortened** so the diagram stays compact (the full name remains visible on hover and in the pull request modal), the **"+N more"** folded branches are displayed as a stack of cards, and a **legend** below the diagram explains connectors and status colors
   - Fixed help tooltips that displayed black text on their dark blue background in **dark mode**, making them **nearly impossible to read**: their text is now light in dark mode, in every panel ([#2051](https://github.com/hardisgroupcom/sfdx-hardis/issues/2051))
+  - **Right-click any table cell** to copy its value (or the text you selected) to the clipboard
   - Tables are **easier to scan**, in **every panel**: alternate row background colors and a hover highlight, job status as a colored chip with its label, authors shown with an **initials avatar**, source and target branches as compact **monospace chips**, and dates in a short one-line format
     - Also applied to **Org Manager** (connection status as a green/red chip, default org and Dev Hub roles highlighted as chips), **Metadata Retriever** ("Last Updated By" avatar and aligned update dates) and **Installed Packages** (namespaces as monospace chips)
   - Quick action cards and other panels (Org Monitoring, Package XML, Documentation, Welcome, Setup, Monitoring Config, Metadata Retriever) now use the **official Salesforce color palette** for their icons and buttons, including the Release Notes buttons that could be **hard to read in dark mode**

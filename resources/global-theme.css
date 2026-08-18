@@ -1410,6 +1410,91 @@ lightning-helptext::part(icon) {
   overflow-x: auto;
 }
 
+/* --- Right click menu of s-hardis-datatable cells (built in JS, no template) --- */
+.slds-scope[data-theme] .hardis-context-menu {
+  position: fixed;
+  z-index: 9500;
+  min-width: 9rem;
+  padding: 0.25rem;
+  border: 1px solid var(--slds-g-color-neutral-base-80);
+  border-radius: 6px;
+  background: var(--slds-g-color-neutral-base-100);
+  box-shadow: var(--slds-g-shadow-3);
+}
+.slds-scope[data-theme] .hardis-context-menu-item {
+  display: block;
+  width: 100%;
+  padding: 0.35rem 0.6rem;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--slds-g-color-neutral-base-20);
+  font-size: 0.78rem;
+  text-align: left;
+  cursor: pointer;
+}
+.slds-scope[data-theme] .hardis-context-menu-item:hover,
+.slds-scope[data-theme] .hardis-context-menu-item:focus-visible {
+  background: var(--slds-g-color-neutral-base-95);
+}
+
+/* --- Big JSON or text payloads: preview in the timeline, full content in a modal --- */
+.slds-scope[data-theme] .hardis-content-preview {
+  margin: 0.25rem 0.75rem 0.5rem 0.3rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--slds-g-color-neutral-base-80);
+  border-radius: 6px;
+  background: var(--slds-g-color-neutral-base-95);
+  cursor: pointer;
+  max-width: 100%;
+  overflow: hidden;
+}
+.slds-scope[data-theme] .hardis-content-preview:hover,
+.slds-scope[data-theme] .hardis-content-preview:focus-visible {
+  border-color: var(--slds-g-color-palette-blue-50);
+}
+/* Text lines keep their beginning in the log line itself: only the link is displayed */
+.slds-scope[data-theme] .hardis-content-preview.link-only {
+  border: none;
+  background: none;
+  padding: 0.1rem 0;
+  margin: 0 0.75rem 0.35rem 0.3rem;
+}
+.slds-scope[data-theme] .hardis-content-preview-text {
+  margin: 0;
+  font-family: ui-monospace, "Cascadia Code", Consolas, Menlo, monospace;
+  font-size: 0.72rem;
+  color: var(--slds-g-color-neutral-base-30);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 7rem;
+  overflow: hidden;
+}
+.slds-scope[data-theme] .hardis-content-preview-more {
+  display: inline-block;
+  margin-top: 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--slds-g-color-palette-blue-40);
+}
+/* The content window uses most of the screen: a deployment result is long and wide */
+.slds-scope[data-theme] .hardis-content-modal .slds-modal__container {
+  width: 92vw;
+  max-width: 92vw;
+}
+.slds-scope[data-theme] .hardis-content-modal .slds-modal__content {
+  max-height: 78vh;
+}
+.slds-scope[data-theme] .hardis-content-modal-text {
+  margin: 0;
+  font-family: ui-monospace, "Cascadia Code", Consolas, Menlo, monospace;
+  font-size: 0.75rem;
+  color: var(--slds-g-color-neutral-base-20);
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow: auto;
+}
+
 /* --- Slim progress bar (progressStart/Step/End events) --- */
 .hardis-tl-progress {
   margin: 0.25rem 0.75rem 0.5rem 0.3rem;

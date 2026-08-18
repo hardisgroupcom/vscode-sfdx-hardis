@@ -381,6 +381,9 @@ export class LwcUiPanel {
         case "copyToClipboard":
           await this.handleCopyToClipboard(data);
           break;
+        case "openTextDocument":
+          await this.handleOpenTextDocument(data);
+          break;
       }
     } catch (error) {
       Logger.log(
@@ -399,8 +402,11 @@ export class LwcUiPanel {
       return;
     }
 
-    // Avoid accidental massive clipboard payloads
-    const clipped = text.length > 10000 ? text.slice(0, 10000) : text;
+    // Avoid accidental massive clipboard payloads, unless the caller copies a large content on purpose
+    const clipped =
+      data?.allowLarge !== true && text.length > 10000
+        ? text.slice(0, 10000)
+        : text;
     await vscode.env.clipboard.writeText(clipped);
     vscode.window.showInformationMessage(t("copiedToClipboard"));
 
@@ -409,6 +415,28 @@ export class LwcUiPanel {
       type: "copiedToClipboard",
       data: { length: clipped.length },
     });
+  }
+
+  /**
+   * Open a text content sent by the webview in a new untitled editor tab
+   * (used to display a complete JSON payload that is too big for the panel)
+   * @param data Object with 'content' and optional 'language' properties
+   */
+  private async handleOpenTextDocument(data: any): Promise<void> {
+    const content = typeof data?.content === "string" ? data.content : "";
+    if (content === "") {
+      return;
+    }
+    // Only editor languages this extension displays, to keep the webview -> extension contract narrow
+    const allowedLanguages = ["json", "plaintext", "xml", "apex", "log"];
+    const language = allowedLanguages.includes(data?.language)
+      ? data.language
+      : "plaintext";
+    const document = await vscode.workspace.openTextDocument({
+      content: content,
+      language: language,
+    });
+    await vscode.window.showTextDocument(document, { preview: false });
   }
 
   /**
