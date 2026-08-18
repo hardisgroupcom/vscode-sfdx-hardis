@@ -6,6 +6,48 @@ import { LightningElement, track, api } from "lwc";
 import { SharedMixin } from "s/sharedMixin";
 import PromptInput from "s/promptInput";
 
+// Header identity tile: hue + icon by command family (2nd command part,
+// e.g. "hardis:org:..." -> "org"). Hue names are the .hardis-tile aliases.
+const TILE_HUE_BY_FAMILY = {
+  org: "cyan",
+  auth: "teal",
+  doc: "violet",
+  project: "green",
+  source: "green",
+  deploy: "green",
+  work: "indigo",
+  data: "teal",
+  files: "teal",
+  package: "violet",
+  packagexml: "violet",
+  scratch: "cyan",
+  pool: "cyan",
+  monitor: "amber",
+  diagnose: "amber",
+  lint: "amber",
+  git: "indigo",
+  config: "slate",
+};
+const TILE_ICON_BY_FAMILY = {
+  org: "utility:salesforce1",
+  auth: "utility:lock",
+  doc: "utility:knowledge_base",
+  project: "utility:open_folder",
+  source: "utility:open_folder",
+  deploy: "utility:upload",
+  work: "utility:task",
+  data: "utility:database",
+  files: "utility:file",
+  package: "utility:package",
+  packagexml: "utility:package",
+  scratch: "utility:refresh",
+  pool: "utility:refresh",
+  monitor: "utility:metrics",
+  diagnose: "utility:metrics",
+  git: "utility:merge",
+  config: "utility:settings",
+};
+
 export default class CommandExecution extends SharedMixin(LightningElement) {
   // Track user-toggled expanded state for sections in simple mode
   userSectionExpandState = {}; // { [sectionId]: boolean }
@@ -18,11 +60,13 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
   @track commandContext = null;
   @track commandDocUrl = null;
   @track commandLogFile = null;
+  @track targetOrgUsername = null;
   @track reportFiles = []; // Track report files
   @track logLines = [];
   @track logSections = [];
   @track currentSection = null;
   @track isCompleted = false;
+  @track isStarting = false; // Panel opened but the CLI has not connected yet
   @track hasError = false;
   @track startTime = null;
   @track endTime = null;
@@ -48,16 +92,17 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
     if (typeof window !== "undefined") {
       window.commandExecutionComponent = this;
     }
-    // Handle scrolling state
+    // Handle scrolling state (only .log-container scrolls: header and the
+    // reports dock stay pinned)
     this.userScrolledUp = false;
     setTimeout(() => {
-      const rootContainer = this.template.querySelector(".command-execution");
-      if (rootContainer) {
-        rootContainer.addEventListener("scroll", () => {
+      const scrollContainer = this.template.querySelector(".log-container");
+      if (scrollContainer) {
+        scrollContainer.addEventListener("scroll", () => {
           const threshold = 500; // px, require user to scroll way up
           const distanceFromBottom =
-            rootContainer.scrollHeight -
-            (rootContainer.scrollTop + rootContainer.clientHeight);
+            scrollContainer.scrollHeight -
+            (scrollContainer.scrollTop + scrollContainer.clientHeight);
           // Only set userScrolledUp to true if user is more than threshold away from bottom
           this.userScrolledUp = distanceFromBottom > threshold;
         });
@@ -453,6 +498,10 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
     let context = data.context ? data.context : data;
     this.commandContext = context;
 
+    // Pending panels open before the CLI has connected: show a "Starting"
+    // status until the websocket initializeCommand message re-initializes
+    this.isStarting = context.pending === true;
+
     // Handle details mode initialization
     if (data.vsCodeSfdxHardisConfiguration) {
       const vscodeConfig = data.vsCodeSfdxHardisConfiguration;
@@ -480,6 +529,12 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
       this.commandLogFile = null;
     }
 
+    // Target org username (enriched by the extension: explicit --target-org
+    // from the command line, or the project default org)
+    if (context.targetOrgUsername) {
+      this.targetOrgUsername = context.targetOrgUsername;
+    }
+
     this.reportFiles = []; // Reset report files for new command
     this.logLines = [];
     this.logSections = [];
@@ -492,10 +547,10 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
     this.endTime = null;
     this.currentSubCommands = [];
 
-    // Add initial "Started" action log
+    // Add initial "Started" action log ("Starting" while the CLI boots)
     this.addLogLine({
       logType: "action",
-      message: this.t("commandStarted", {
+      message: this.t(this.isStarting ? "commandStarting" : "commandStarted", {
         command: context.command || this.i18n.sfdxHardisCommand,
       }),
       timestamp: this.startTime,
@@ -825,12 +880,6 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
   }
 
   startNewSection(actionLog) {
-    const iconInfo = this.getLogTypeIcon(
-      actionLog.logType,
-      actionLog.isQuestion,
-      actionLog.isAnswer,
-    );
-
     // Format message for multi-line and bullets
     const formattedMessage = this.formatMultiLineMessage(actionLog.message);
 
@@ -839,11 +888,7 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
       actionLog: {
         ...actionLog,
         formattedMessage: formattedMessage,
-        iconName: iconInfo.iconName,
-        iconVariant: iconInfo.variant,
-        useSpinner: this.shouldUseSpinner(actionLog),
         formattedTimestamp: this.formatTimestamp(actionLog.timestamp),
-        cssClass: this.getLogTypeClass(actionLog.logType),
       },
       logs: [],
       startTime: actionLog.timestamp,
@@ -918,21 +963,13 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
     this.scrollToBottom();
   }
 
-  // Build a formatted log entry from a raw log line: resolve its icon, spinner,
-  // timestamp, css class and formatted (multi-line) message.
+  // Build a formatted log entry from a raw log line: resolve its timestamp,
+  // css class and formatted (multi-line) message.
   _buildFormattedLog(logLine) {
-    const iconInfo = this.getLogTypeIcon(
-      logLine.logType,
-      logLine.isQuestion,
-      logLine.isAnswer,
-    );
     const formattedLog = {
       ...logLine,
-      iconName: iconInfo.iconName,
-      iconVariant: iconInfo.variant,
-      useSpinner: this.shouldUseSpinner(logLine),
       formattedTimestamp: this.formatTimestamp(logLine.timestamp),
-      cssClass: this.getLogTypeClass(logLine.logType),
+      cssClass: this.getLogLineClass(logLine),
       isSubCommand: logLine.isSubCommand || false,
       isRunning: logLine.isRunning || false,
       isQuery: logLine.isQuery || false,
@@ -1104,11 +1141,6 @@ ${resultMessage}`;
       );
 
       if (logIndex !== -1) {
-        const iconInfo = this.getLogTypeIcon(
-          newLogData.logType,
-          newLogData.isQuestion,
-          newLogData.isAnswer,
-        );
         const baseLog = {
           ...this.currentSection.logs[logIndex],
           ...newLogData,
@@ -1121,15 +1153,15 @@ ${resultMessage}`;
           ...baseLog,
           logType: newLogData.logType,
           message: newLogData.message,
+          formattedMessage: this.formatMultiLineMessage(newLogData.message),
           timestamp: newLogData.timestamp,
-          iconName: iconInfo.iconName,
-          iconVariant: iconInfo.variant,
-          useSpinner: this.shouldUseSpinner({
+          formattedTimestamp: this.formatTimestamp(newLogData.timestamp),
+          cssClass: this.getLogLineClass({
             ...baseLog,
+            logType: newLogData.logType,
+            isSubCommand: true,
             isRunning: isRunning,
           }),
-          formattedTimestamp: this.formatTimestamp(newLogData.timestamp),
-          cssClass: this.getLogTypeClass(newLogData.logType),
           isSubCommand: true,
           isRunning: isRunning,
         };
@@ -1163,28 +1195,26 @@ ${resultMessage}`;
     }
   }
 
-  completeOtherRunningInstances(completedCommand) {
+  completeOtherRunningInstances(completedLogLine) {
     // Extract command name from completion message
+    const message = (completedLogLine && completedLogLine.message) || "";
     let commandName = "";
-    if (completedCommand.includes("Completed: ")) {
-      commandName = completedCommand.replace("Completed: ", "").split(" ")[0];
+    if (message.includes("Completed: ")) {
+      commandName = message.replace("Completed: ", "").split(" ")[0];
     }
-
-    if (commandName) {
-      this.subCommands.forEach((subCommand, index) => {
-        if (
-          subCommand.name.startsWith(commandName) &&
-          subCommand.status === "running" &&
-          subCommand.name !== completedCommand.replace("Completed: ", "")
-        ) {
-          this.subCommands[index] = {
-            ...subCommand,
-            status: "completed",
-          };
-        }
-      });
-      this.subCommands = [...this.subCommands];
+    if (!commandName) {
+      return;
     }
+    this.currentSubCommands = this.currentSubCommands.map((subCmd) => {
+      if (
+        subCmd.command &&
+        subCmd.command.startsWith(commandName) &&
+        !subCmd.endTime
+      ) {
+        return { ...subCmd, endTime: new Date(), success: true };
+      }
+      return subCmd;
+    });
   }
 
   @api
@@ -1246,18 +1276,55 @@ ${resultMessage}`;
     }
   }
 
-  get commandTitle() {
-    if (!this.commandContext) {
+  // Raw command name for the header title (status lives in the pill, not here)
+  get commandName() {
+    if (!this.commandContext || !this.commandContext.command) {
       return this.i18n.commandExecution;
     }
+    return this.commandContext.command;
+  }
 
-    const command = this.commandContext.command || this.i18n.unknownCommand;
-    if (this.isCompleted) {
-      return this.hasError
-        ? this.t("commandTitleError", { commandName: command })
-        : this.t("commandTitleCompleted", { commandName: command });
+  // Status pill (hardis-pill kit): orange starting, blue running, green
+  // completed, red failed
+  get statusPillClass() {
+    if (!this.isCompleted) {
+      return this.isStarting
+        ? "hardis-pill hardis-status-pending"
+        : "hardis-pill hardis-status-running";
     }
-    return this.t("commandTitleRunning", { commandName: command });
+    return this.hasError
+      ? "hardis-pill hardis-status-failed"
+      : "hardis-pill hardis-status-success";
+  }
+
+  get statusPillLabel() {
+    if (!this.isCompleted) {
+      return this.isStarting
+        ? this.i18n.statusStartingLabel
+        : this.i18n.statusRunningLabel;
+    }
+    return this.hasError
+      ? this.i18n.statusFailedLabel
+      : this.i18n.statusCompletedLabel;
+  }
+
+  // Identity tile: hue + icon derived from the command family
+  get commandFamily() {
+    const cmd = (this.commandContext && this.commandContext.command) || "";
+    const parts = cmd.replace(/^sf\s+/, "").split(":");
+    if (parts.length > 1) {
+      return parts[1];
+    }
+    return parts[0] || "";
+  }
+
+  get commandTileClass() {
+    const hue = TILE_HUE_BY_FAMILY[this.commandFamily] || "slate";
+    return "hardis-tile small " + hue;
+  }
+
+  get commandTileIcon() {
+    return TILE_ICON_BY_FAMILY[this.commandFamily] || "utility:prompt";
   }
 
   get commandDuration() {
@@ -1273,46 +1340,6 @@ ${resultMessage}`;
       return "";
     }
     return this.t("durationLabel", { duration });
-  }
-
-  get statusIcon() {
-    if (!this.isCompleted) {
-      return null; // Will use spinner instead
-    }
-    return this.hasError
-      ? { iconName: "utility:error", variant: "error" }
-      : { iconName: "utility:success", variant: "success" };
-  }
-
-  get useSpinner() {
-    return !this.isCompleted;
-  }
-
-  get statusClass() {
-    if (!this.isCompleted) {
-      return "slds-text-color_weak";
-    }
-    return this.hasError ? "slds-text-color_error" : "slds-text-color_success";
-  }
-
-  get filteredLogLines() {
-    return this.logLines
-      .filter((log) => log.message.trim() !== "")
-      .map((log) => {
-        const iconInfo = this.getLogTypeIcon(
-          log.logType,
-          log.isQuestion,
-          log.isAnswer,
-        );
-        return {
-          ...log,
-          iconName: iconInfo.iconName,
-          iconVariant: iconInfo.variant,
-          useSpinner: this.shouldUseSpinner(log),
-          formattedTimestamp: this.formatTimestamp(log.timestamp),
-          cssClass: this.getLogTypeClass(log.logType),
-        };
-      });
   }
 
   get latestQuestionSectionId() {
@@ -1373,6 +1400,12 @@ ${resultMessage}`;
         };
       });
 
+      // Question waiting state drives node, expansion and the answer chip
+      const waitingOnThisQuestion =
+        section.isQuestion &&
+        this.isWaitingForAnswer &&
+        this.isLatestQuestionSection(section);
+
       // --- SIMPLE/ADVANCED LOGIC ---
       let isExpanded = section.isExpanded;
       // By default, question sections and progress sections are expanded, but user can collapse them
@@ -1381,8 +1414,16 @@ ${resultMessage}`;
       } else if (section.alwaysVisible) {
         // Sections explicitly flagged alwaysVisible stay open in both simple and advanced modes
         isExpanded = true;
-      } else if (section.isQuestion) {
+      } else if (section.hasError) {
+        // Sections containing an error stay open so the failure is visible
         isExpanded = true;
+      } else if (section.isQuestion) {
+        // Answered questions collapse to one row with a green answer chip;
+        // the question being asked stays expanded, and the last section
+        // reopens on completion so the final status line is visible
+        isExpanded =
+          waitingOnThisQuestion ||
+          (idx === lastSectionIdx && isCompletedOrAborted);
       } else if (isProgress) {
         // Progress sections are expanded when active, collapsed when ended (unless user manually toggled)
         isExpanded = section.isActive === true;
@@ -1402,14 +1443,8 @@ ${resultMessage}`;
         }
       }
 
-      // Chevron should reflect actual expansion state for all sections
-      const toggleIcon = isExpanded
-        ? "utility:chevronup"
-        : "utility:chevrondown";
-
       // Progress-specific properties
       let progressPercentage = 0;
-      let progressAnimationClass = "";
       let isIndeterminate = false;
       let progressStepText = "";
       let progressTimeEstimation = "";
@@ -1430,11 +1465,6 @@ ${resultMessage}`;
             ? this.t("progressElapsed", { elapsed })
             : "";
         }
-
-        // Add shine animation for active progress with known steps
-        if (section.isActive) {
-          progressAnimationClass = "animated-progress-bar is-active";
-        }
       } else if (isProgress && section.totalSteps === 0) {
         // If no total steps defined, show indeterminate progress
         // Show increasing progress based on steps taken, but cap at 90% for indeterminate feel
@@ -1447,9 +1477,6 @@ ${resultMessage}`;
             ? this.t("progressStepsCompleted", { current: section.currentStep })
             : this.i18n.progressStarting;
         isIndeterminate = true;
-        if (section.isActive) {
-          progressAnimationClass = "animated-progress-bar is-indeterminate";
-        }
         if (!section.isActive) {
           const elapsed = this.calculateSectionDuration(section);
           progressTimeEstimation = elapsed
@@ -1463,6 +1490,57 @@ ${resultMessage}`;
         : [];
       const diffFilesCount = isDiff ? (section.diffFiles || []).length : 0;
 
+      const hasLogs =
+        (section.logs && section.logs.length > 0) ||
+        (isProgress &&
+          section.progressLogs &&
+          section.progressLogs.length > 0) ||
+        (isDiff && diffFilesCount > 0);
+
+      // Timeline status node: state class + icon (running state draws a
+      // pure-CSS spinner arc instead of an icon)
+      let nodeState = "done";
+      let nodeIconName = "utility:check";
+      if (waitingOnThisQuestion) {
+        nodeState = "ask";
+        nodeIconName = "utility:questions_and_answers";
+      } else if (section.isQuestion) {
+        nodeState = "q";
+        nodeIconName = "utility:questions_and_answers";
+      } else if (section.hasError) {
+        nodeState = "fail";
+        nodeIconName = "utility:close";
+      } else if (section.isActive) {
+        nodeState = "running";
+        nodeIconName = null;
+      } else if (isDiff) {
+        nodeState = "info";
+        nodeIconName = "utility:changes";
+      }
+
+      // Short answer chip on answered question rows (full answer stays in
+      // the expandable children)
+      let answerChipText = null;
+      let answerChipTitle = null;
+      if (section.isQuestion && !waitingOnThisQuestion) {
+        const answerLog = (section.logs || []).find((log) => log.isAnswer);
+        if (answerLog && answerLog.message) {
+          const raw = String(answerLog.message).replace(/\s+/g, " ").trim();
+          // Strip decorations the CLI bakes into answers (✅, ❌, bullets...)
+          const cleaned = raw.replace(/^[^\p{L}\p{N}]+/u, "").trim() || raw;
+          answerChipTitle = cleaned;
+          answerChipText =
+            "✓ " + (cleaned.length > 48 ? cleaned.slice(0, 47) + "…" : cleaned);
+        }
+      }
+
+      // Right-aligned duration (regular ended steps only: progress shows its
+      // own elapsed time, questions show the answer chip instead)
+      let timeLabel = "";
+      if (isRegular && !section.isQuestion && section.endTime) {
+        timeLabel = this.calculateSectionDuration(section);
+      }
+
       return {
         ...section,
         logs,
@@ -1473,49 +1551,25 @@ ${resultMessage}`;
         diffFilesByType,
         diffFilesCount,
         progressPercentage,
-        progressAnimationClass,
         progressStepText,
         progressTimeEstimation,
+        progressFillClass:
+          "hardis-progress-fill" + (section.isActive ? " active" : ""),
+        progressFillStyle:
+          "width: " + Math.max(0, Math.min(100, progressPercentage)) + "%",
         isIndeterminate,
         duration: this.calculateSectionDuration(section),
-        toggleIcon,
-        sectionStatusIcon:
-          section.isQuestion && section.isActive
-            ? { iconName: "utility:questions_and_answers", variant: "warning" }
-            : section.isQuestion
-              ? {
-                  iconName: "utility:questions_and_answers",
-                  variant: "success",
-                }
-              : isProgress && section.isActive
-                ? { iconName: "utility:progress", variant: "brand" }
-                : section.hasError
-                  ? { iconName: "utility:error", variant: "error" }
-                  : section.isActive
-                    ? null
-                    : { iconName: "utility:success", variant: "success" },
-        sectionUseSpinner:
-          section.isActive ||
-          (section.isQuestion &&
-            this.isWaitingForAnswer &&
-            this.isLatestQuestionSection(section)),
-        sectionStatusClass: section.hasError
-          ? "slds-text-color_error"
-          : section.isActive
-            ? "slds-text-color_weak"
-            : "slds-text-color_success",
-        hasLogs:
-          (section.logs && section.logs.length > 0) ||
-          (isProgress &&
-            section.progressLogs &&
-            section.progressLogs.length > 0) ||
-          (isDiff && diffFilesCount > 0),
-        showToggle:
-          (section.logs && section.logs.length > 0) ||
-          (isProgress &&
-            section.progressLogs &&
-            section.progressLogs.length > 0) ||
-          (isDiff && diffFilesCount > 0),
+        itemClass: "hardis-tl-item" + (isExpanded && hasLogs ? " open" : ""),
+        nodeClass: "hardis-tl-node " + nodeState,
+        nodeIconName,
+        rowClass: "hardis-tl-row" + (hasLogs ? " expandable" : ""),
+        rowTabIndex: hasLogs ? "0" : "-1",
+        titleClass: "hardis-tl-title",
+        answerChipText,
+        answerChipTitle,
+        timeLabel,
+        showTime: !!timeLabel && timeLabel !== "0s",
+        hasLogs,
         isLatestQuestionSectionToHide: shouldHideLatest && isLatest,
       };
     });
@@ -1940,63 +1994,33 @@ ${resultMessage}`;
     return "log_" + Math.random().toString(36).substr(2, 9) + "_" + Date.now();
   }
 
-  getLogTypeClass(logType) {
+  // Compose the timeline log line class: base + semantic type accent, with
+  // monospace for technical lines (raw output, queries, sub-commands).
+  // All classes come from the Command Runner kit in global-theme.css.
+  getLogLineClass(logLine) {
+    const logType = logLine.logType || "log";
+    let cssClass = "hardis-logline";
+    if (logLine.isSubCommand) {
+      cssClass += logLine.isRunning ? " mono subcmd-running" : " mono subcmd";
+      return cssClass;
+    }
+    if (logType === "log" || logType === "other" || logType === "query") {
+      cssClass += " mono";
+    }
     switch (logType) {
       case "error":
-        return "log-error";
+        return cssClass + " type-error";
       case "warning":
-        return "log-warning";
+        return cssClass + " type-warning";
       case "success":
-        return "log-success";
+        return cssClass + " type-success";
       case "action":
-        return "log-action";
+        return cssClass + " type-action";
       case "query":
-        return "log-query";
-      case "log":
+        return cssClass + " type-query";
       default:
-        return "log-default";
+        return cssClass;
     }
-  }
-
-  getLogTypeIcon(logType, isQuestion = false, isAnswer = false) {
-    if (isQuestion) {
-      return { iconName: "utility:questions_and_answers", variant: "warning" };
-    }
-    if (isAnswer) {
-      return { iconName: "utility:answer", variant: "brand" };
-    }
-
-    switch (logType) {
-      case "error":
-        return { iconName: "utility:error", variant: "error" };
-      case "warning":
-        return { iconName: "utility:warning", variant: "warning" };
-      case "success":
-        return { iconName: "utility:success", variant: "success" };
-      case "action":
-        return { iconName: "utility:touch_action", variant: "brand" };
-      case "query":
-        return { iconName: "utility:database", variant: "brand" };
-      case "log":
-      default:
-        return { iconName: "utility:info", variant: "inverse" };
-    }
-  }
-
-  shouldUseSpinner(log) {
-    // Use spinner for running sub-commands
-    if (log.isSubCommand && log.isRunning) {
-      return true;
-    }
-    // Use spinner ONLY for the latest question that is waiting for an answer
-    if (
-      log.isQuestion &&
-      this.isWaitingForAnswer &&
-      log.id === this.latestQuestionId
-    ) {
-      return true;
-    }
-    return false;
   }
 
   isLatestQuestionSection(section) {
@@ -2137,31 +2161,55 @@ ${resultMessage}`;
     }
   }
 
+  // Keyboard toggle for expandable timeline rows (Enter/Space)
+  handleSectionKeydown(event) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      this.handleToggleSection(event);
+    }
+  }
+
   handleToggleSection(event) {
     const sectionId = event.currentTarget.dataset.sectionId;
     const section = this.logSections.find((s) => s.id === sectionId);
-    if (section) {
-      // In simple mode, track user toggles separately
-      if (this.detailsMode === "simple") {
-        const prev = this.userSectionExpandState[sectionId] || false;
-        this.userSectionExpandState = {
-          ...this.userSectionExpandState,
-          [sectionId]: !prev,
-        };
-      } else {
-        section.isExpanded = !section.isExpanded;
-      }
-      this.logSections = [...this.logSections];
+    if (!section) {
+      return;
     }
+    // Rows without children are not expandable
+    const hasLogs =
+      (section.logs && section.logs.length > 0) ||
+      (section.type === "progress" &&
+        section.progressLogs &&
+        section.progressLogs.length > 0) ||
+      (section.type === "diff" && (section.diffFiles || []).length > 0);
+    if (!hasLogs) {
+      return;
+    }
+    // The displayed expansion state is recomputed by logSectionsForDisplay
+    // (answered questions and ended progress collapse regardless of
+    // section.isExpanded), so toggle from what the user currently sees and
+    // record it in userSectionExpandState, which always wins over the rules
+    const displayedSection = this.logSectionsForDisplay.find(
+      (s) => s.id === sectionId,
+    );
+    const currentlyExpanded = displayedSection
+      ? displayedSection.isExpanded === true
+      : section.isExpanded === true;
+    this.userSectionExpandState = {
+      ...this.userSectionExpandState,
+      [sectionId]: !currentlyExpanded,
+    };
+    section.isExpanded = !currentlyExpanded;
+    this.logSections = [...this.logSections];
   }
 
   scrollToBottom() {
     // Only scroll if user has not scrolled up
     if (this.userScrolledUp) return;
     requestAnimationFrame(() => {
-      const rootContainer = this.template.querySelector(".command-execution");
-      if (rootContainer) {
-        rootContainer.scrollTop = rootContainer.scrollHeight;
+      const scrollContainer = this.template.querySelector(".log-container");
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
       }
     });
   }
@@ -2185,7 +2233,9 @@ ${resultMessage}`;
   }
 
   get reportFilesCount() {
-    return this.reportFiles ? this.reportFiles.length : 0;
+    // Count the rendered buttons: a CSV/XLSX pair grouped into one split
+    // button counts as one file, not two
+    return this.sortedReportFiles.length;
   }
 
   // Handler for the log file icon button

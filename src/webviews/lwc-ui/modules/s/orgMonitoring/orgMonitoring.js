@@ -169,7 +169,7 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
         description: entry.description || "",
         command: entry.command,
         iconName,
-        iconContainerClass: "command-icon-container " + colorClass,
+        iconContainerClass: "hardis-tile small " + colorClass,
       });
     }
 
@@ -196,7 +196,7 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
         command: extra.command,
         iconName: extra.icon || FALLBACK_ICON_NAME,
         iconContainerClass:
-          "command-icon-container " +
+          "hardis-tile small " +
           (extra.colorClass || this.colorClassForCategory(extra.category)),
       });
     }
@@ -434,6 +434,13 @@ export default class OrgMonitoring extends SharedMixin(LightningElement) {
       type: "runCommand",
       data: { command },
     });
+  }
+
+  handleCardKeydown(event) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      event.currentTarget.click();
+    }
   }
 
   openMonitoringDocs() {

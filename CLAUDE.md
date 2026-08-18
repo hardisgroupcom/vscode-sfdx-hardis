@@ -109,7 +109,12 @@ Hardcoded colors break one of the two themes, and there is no theme-switch event
 
 - **Never** write literal `#hex`, `rgb()`, `color: white`, `font-family`, or numeric `font-weight` in component CSS. Layout-only properties (`display`, `flex`, `gap`, `padding`, `margin`, `border-radius`, `overflow`) are always safe.
 - **Never redefine a class that already exists in `global-theme.css`** - the component rule wins on specificity tie-breaking and silently disables the theme-aware version.
-- **Buttons**: only the neutral SLDS variant is theme-aware. For a colored action button, tint a neutral button with palette tokens (`.hardis-btn-tinted-green`, `.rf-type-*`) - never `variant="success"`/`"brand"` filled buttons.
+- **Sections, cards & icon tiles**: any panel presenting a catalog of features/commands/actions uses the generic `hardis-*` kit from `global-theme.css`.
+  - The kit provides `.hardis-group-label`/`.hardis-group-desc` section labels, `.hardis-card-grid`, `.hardis-card` + `.clickable`/`.featured`/`.disabled`, `.hardis-card-head/-title/-desc/-actions/-arrow`, and `.hardis-tile` icon tiles with color hues and catalog `colorClass` aliases.
+  - Prefer a whole clickable card (`role="button"`, `tabindex="0"`, Enter/Space keydown handler, `.hardis-card-arrow`) over a per-card Run/Open button; keep an actions row only when a card has several distinct actions.
+  - Never use the deprecated `command-card`/`commands-grid`/`command-icon-container`/`feature-icon-container` classes in panels, and never put `variant="inverse"` on a `lightning-icon` inside a `.hardis-tile`.
+  - Full markup patterns in `.claude/skills/implement/SKILL.md`.
+- **Buttons**: only the neutral SLDS variant is theme-aware. For a colored action button, tint a neutral button with palette tokens (`.hardis-btn-tinted-green`, `.hardis-btn-tinted-blue`, `.rf-type-*`) - never `variant="success"`/`"brand"` filled buttons.
 - **Stale CSS**: the webview service worker can serve an outdated copy of these stylesheets across rebuilds. `lwc-ui-panel.ts` appends a `?v=<timestamp>` cache-buster at panel creation. If a CSS change does not show up, reopen the panel before debugging the rule.
 
 The full class inventory, the shared datatable cell types, and the SVG/mermaid styling rules are documented in `.claude/skills/implement/SKILL.md`.

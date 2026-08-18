@@ -1,7 +1,35 @@
+/* Layout only — all colors/typography come from global-theme.css
+   (Command Runner timeline kit) and SLDS. */
+
+.command-execution {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Single scroll container: only the timeline scrolls, header and the
+   reports dock stay pinned. */
+.log-container {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0.75rem 1.1rem;
+  scroll-behavior: smooth;
+}
+
+/* Embedded prompt spacing inside the timeline */
+.hardis-tl-prompt {
+  margin: 0.25rem 0.75rem 0.4rem 0.3rem;
+}
+
 /* Diff files section (org <-> local side-by-side diffs) */
 .diff-files-body {
   max-height: 50vh;
   overflow-y: auto;
+  padding-left: 1.05rem;
+  padding-top: 0.4rem;
+  padding-bottom: 0.4rem;
 }
 .diff-files-group-title {
   font-weight: 600;
@@ -29,110 +57,15 @@
   display: inline-block;
 }
 
-/* Flex container for report file buttons */
-.report-files-flex-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem 0.75rem; /* vertical and horizontal gap */
-  align-items: flex-start;
-}
-
-.report-file-btn-wrapper {
-  margin-bottom: 0.25rem;
-}
-
-.command-execution {
-  margin-bottom: 1rem;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  overflow-y: auto;
-  scroll-behavior: smooth;
-}
-
-.blue-back {
-	min-height: 100vh;
-}
-
-.slds-spinner_container {
-    background-color: transparent !important;
-}
-
-.log-container {
-  padding: 0.5rem;
-  font-size: 0.875rem;
-  line-height: 1.4;
-  flex: 1;
-  overflow-y: auto;
-  min-height: 200px;
-  scroll-behavior: smooth;
-  position: relative;
-}
-
-.log-container:focus {
-  outline: 2px solid #0176d3;
-  outline-offset: -2px;
-}
-
-.log-sections {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.log-section {
-  border-radius: 0.25rem;
-}
-
-.section-header {
-  cursor: pointer;
-  border-radius: 0.25rem;
-  transition: background-color 0.2s ease;
-}
-
-.section-title {
-  font-weight: 500;
-  font-size: 0.875rem;
-}
-
-.section-logs > div {
-  padding: 0.125rem 0.25rem;
-  border-radius: 0.125rem;
-  border-left: 3px solid transparent;
-  margin-bottom: 0.125rem;
-  font-size: 0.8125rem;
-}
-
-.log-lines {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.log-lines > div {
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.125rem;
-  border-left: 3px solid transparent;
-}
-
-/* Log type styling - managed in global-theme.css */
-
-.log-message {
-  word-break: break-word;
-  white-space: pre-wrap;
-}
-
 /* Copy token styling for <copy>...</copy> log segments */
 .copy-token {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
 }
-
 .copy-token__value {
   font-family: inherit;
 }
-
 .copy-token__icon {
   text-decoration: none;
   cursor: pointer;
@@ -140,106 +73,6 @@
   line-height: 1;
   opacity: 0.75;
 }
-
 .copy-token__icon:hover {
   opacity: 1;
 }
-
-.log-timestamp {
-  font-size: 0.75rem;
-  white-space: nowrap;
-}
-
-.log-icon {
-  margin-top: 0.125rem;
-}
-
-/* Progress section styles - managed in global-theme.css */
-
-/* Animated progress bar styles */
-.animated-progress-bar {
-  position: relative;
-  overflow: hidden;
-}
-
-/* Increase progress bar height */
-.animated-progress-bar lightning-progress-bar,
-.animated-progress-bar lightning-progress-bar::part(bar) {
-  height: 12px !important;
-  min-height: 12px !important;
-}
-
-/* Target the internal progress bar element for better height control */
-.animated-progress-bar lightning-progress-bar .slds-progress-bar,
-.animated-progress-bar lightning-progress-bar .slds-progress-bar__value {
-  height: 12px !important;
-  border-radius: 6px !important;
-}
-
-.animated-progress-bar.is-active::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, 
-    transparent 0%, 
-    rgba(255, 255, 255, 0.3) 40%, 
-    rgba(255, 255, 255, 0.6) 50%, 
-    rgba(255, 255, 255, 0.3) 60%, 
-    transparent 100%);
-  animation: progress-shine 2s ease-in-out infinite;
-}
-
-/* Alternative moving animation for indeterminate progress */
-.animated-progress-bar.is-indeterminate::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -30%;
-  width: 30%;
-  height: 100%;
-  background: linear-gradient(90deg, 
-    transparent 0%, 
-    rgba(1, 118, 211, 0.8) 50%, 
-    transparent 100%);
-  animation: progress-indeterminate 2s linear infinite;
-  border-radius: inherit;
-}
-
-/* Subtle background pulse for indeterminate */
-.animated-progress-bar.is-indeterminate {
-  animation: progress-background-pulse 3s ease-in-out infinite;
-}
-
-@keyframes progress-shine {
-  0% {
-    left: -100%;
-  }
-  50% {
-    left: 100%;
-  }
-  100% {
-    left: 100%;
-  }
-}
-
-@keyframes progress-indeterminate {
-  0% {
-    left: -30%;
-  }
-  100% {
-    left: 100%;
-  }
-}
-
-@keyframes progress-background-pulse {
-  0%, 100% {
-    background-color: rgba(1, 118, 211, 0.1);
-  }
-  50% {
-    background-color: rgba(1, 118, 211, 0.2);
-  }
-}
-

@@ -497,7 +497,7 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   }
 
   get currentPrCardClasses() {
-    return `command-card${this.hasCurrentBranchPullRequest ? "" : " disabled"}`;
+    return `hardis-card clickable${this.hasCurrentBranchPullRequest ? "" : " disabled"}`;
   }
 
   get mermaidViewportClass() {

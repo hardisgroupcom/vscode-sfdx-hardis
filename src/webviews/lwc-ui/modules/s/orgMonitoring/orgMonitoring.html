@@ -262,28 +262,26 @@
 
             <template for:each={filteredSections} for:item="section">
                 <div key={section.key} class="section">
-                    <div class="section-header">
-                        <h2 class="section-title"><span class="section-icon">{section.emoji}</span>{section.title}</h2>
-                        <p class="section-subtitle">{section.description}</p>
-                    </div>
-                    <div class="commands-grid">
+                    <div class="hardis-group-label">{section.title}</div>
+                    <p class="hardis-group-desc">{section.description}</p>
+                    <div class="hardis-card-grid">
                         <template for:each={section.rows} for:item="row">
-                            <div key={row.key} class="command-card">
-                                <div class="command-header">
+                            <div key={row.key}
+                                class="hardis-card clickable"
+                                title={i18n.runCommandLabel}
+                                data-command={row.command}
+                                role="button"
+                                tabindex="0"
+                                onclick={handleRunCommand}
+                                onkeydown={handleCardKeydown}>
+                                <div class="hardis-card-head">
                                     <div class={row.iconContainerClass}>
-                                        <lightning-icon icon-name={row.iconName} size="small" variant="inverse"></lightning-icon>
+                                        <lightning-icon icon-name={row.iconName} size="x-small"></lightning-icon>
                                     </div>
-                                    <h3 class="command-title">{row.title}</h3>
+                                    <h3 class="hardis-card-title">{row.title}</h3>
                                 </div>
-                                <p class="command-description">{row.description}</p>
-                                <lightning-button
-                                    variant="outline-brand"
-                                    label={i18n.runCommandLabel}
-                                    icon-name="utility:play"
-                                    data-command={row.command}
-                                    onclick={handleRunCommand}
-                                    class="command-button"
-                                ></lightning-button>
+                                <p class="hardis-card-desc">{row.description}</p>
+                                <div class="hardis-card-arrow">→</div>
                             </div>
                         </template>
                     </div>

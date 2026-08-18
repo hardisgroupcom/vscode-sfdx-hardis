@@ -198,71 +198,78 @@
         <lightning-card hide-header="true">
         <lightning-tabset class="pipeline-tabs">
             <lightning-tab label={i18n.projectContributionWorkflow} value="workflow" icon-name="utility:trail" icon-assistive-text={i18n.projectContributionWorkflow}>
-                <div class="commands-grid">
-                    <div class="command-card" onclick={handleNewUserStory}>
-                        <div class="command-header">
-                            <div class="command-icon-container new-story">
-                                <lightning-icon icon-name="utility:add" size="small" variant="inverse"></lightning-icon>
+                <div class="hardis-card-grid">
+                    <div class="hardis-card clickable" onclick={handleNewUserStory}>
+                        <div class="hardis-card-head">
+                            <div class="hardis-tile small new-story">
+                                <lightning-icon icon-name="utility:add" size="x-small"></lightning-icon>
                             </div>
-                            <h3 class="command-title">{i18n.newUserStory}</h3>
+                            <h3 class="hardis-card-title">{i18n.newUserStory}</h3>
                         </div>
-                        <p class="command-description">{i18n.newUserStoryDescription}</p>
+                        <p class="hardis-card-desc">{i18n.newUserStoryDescription}</p>
+                        <div class="hardis-card-arrow">→</div>
                     </div>
-                    <div class="command-card" onclick={handleOpenMetadataRetriever}>
-                        <div class="command-header">
-                            <div class="command-icon-container pull-action">
-                                <lightning-icon icon-name="utility:download" size="small" variant="inverse"></lightning-icon>
+                    <div class="hardis-card clickable" onclick={handleOpenMetadataRetriever}>
+                        <div class="hardis-card-head">
+                            <div class="hardis-tile small pull-action">
+                                <lightning-icon icon-name="utility:download" size="x-small"></lightning-icon>
                             </div>
-                            <h3 class="command-title">{i18n.commitChanges}</h3>
+                            <h3 class="hardis-card-title">{i18n.commitChanges}</h3>
                         </div>
-                        <p class="command-description">{i18n.commitChangesDescription}</p>
+                        <p class="hardis-card-desc">{i18n.commitChangesDescription}</p>
+                        <div class="hardis-card-arrow">→</div>
                     </div>
-                    <div class="command-card" onclick={handleShowInstalledPackages}>
-                        <div class="command-header">
-                            <div class="command-icon-container package-action">
-                                <lightning-icon icon-name="utility:package" size="small" variant="inverse"></lightning-icon>
+                    <div class="hardis-card clickable" onclick={handleShowInstalledPackages}>
+                        <div class="hardis-card-head">
+                            <div class="hardis-tile small package-action">
+                                <lightning-icon icon-name="utility:package" size="x-small"></lightning-icon>
                             </div>
-                            <h3 class="command-title">{i18n.managePackages}</h3>
+                            <h3 class="hardis-card-title">{i18n.managePackages}</h3>
                         </div>
-                        <p class="command-description">{i18n.managePackagesDescription}</p>
+                        <p class="hardis-card-desc">{i18n.managePackagesDescription}</p>
+                        <div class="hardis-card-arrow">→</div>
                     </div>
-                    <div class="command-card" onclick={handleSaveUserStory}>
-                        <div class="command-header">
-                            <div class="command-icon-container save-action">
-                                <lightning-icon icon-name="utility:upload" size="small" variant="inverse"></lightning-icon>
+                    <div class="hardis-card clickable" onclick={handleSaveUserStory}>
+                        <div class="hardis-card-head">
+                            <div class="hardis-tile small save-action">
+                                <lightning-icon icon-name="utility:upload" size="x-small"></lightning-icon>
                             </div>
-                            <h3 class="command-title">{i18n.savePublish}</h3>
+                            <h3 class="hardis-card-title">{i18n.savePublish}</h3>
                         </div>
-                        <p class="command-description">{i18n.savePublishDescription}</p>
+                        <p class="hardis-card-desc">{i18n.savePublishDescription}</p>
+                        <div class="hardis-card-arrow">→</div>
                     </div>
                     <div class={currentPrCardClasses} onclick={handleOpenCurrentPR}>
-                        <div class="command-header">
-                            <div class="command-icon-container pr-action">
-                                <lightning-icon icon-name="utility:topic2" size="small" variant="inverse"></lightning-icon>
+                        <div class="hardis-card-head">
+                            <div class="hardis-tile small pr-action">
+                                <lightning-icon icon-name="utility:topic2" size="x-small"></lightning-icon>
                             </div>
-                            <h3 class="command-title">{currentPRCardTitle}</h3>
+                            <h3 class="hardis-card-title">{currentPRCardTitle}</h3>
                         </div>
-                        <p class="command-description">{currentPRDescription}</p>
+                        <p class="hardis-card-desc">{currentPRDescription}</p>
+                        <div class="hardis-card-arrow">→</div>
                     </div>
                     <template if:true={hasAutoFixPullRequest}>
-                        <div class="command-card" onclick={handleOpenAutoFixPR}>
-                            <div class="command-header">
-                                <div class="command-icon-container autofix-action">
-                                    <lightning-icon icon-name="utility:task" size="small" variant="inverse"></lightning-icon>
+                        <div class="hardis-card clickable" onclick={handleOpenAutoFixPR}>
+                            <div class="hardis-card-head">
+                                <div class="hardis-tile small autofix-action">
+                                    <lightning-icon icon-name="utility:task" size="x-small"></lightning-icon>
                                 </div>
-                                <h3 class="command-title">{autoFixPRCardTitle}</h3>
+                                <h3 class="hardis-card-title">{autoFixPRCardTitle}</h3>
                             </div>
-                            <p class="command-description">{autoFixPRDescription}</p>
+                            <p class="hardis-card-desc">{autoFixPRDescription}</p>
+                        <div class="hardis-card-arrow">→</div>
                         </div>
                     </template>
-                    <div class="command-card" onclick={handleBackpromote}>
-                        <div class="command-header">
-                            <div class="command-icon-container backpromote-action">
-                                <lightning-icon icon-name="utility:merge" size="small" variant="inverse"></lightning-icon>
+                    <div class="hardis-card clickable" onclick={handleBackpromote}>
+                        <div class="hardis-card-head">
+                            <div class="hardis-tile small backpromote-action">
+                                <lightning-icon icon-name="utility:merge" size="x-small"></lightning-icon>
                             </div>
-                            <h3 class="command-title">{i18n.backpromote}</h3>
+                            <h3 class="hardis-card-title">{i18n.backpromote}</h3>
                         </div>
-                        <p class="command-description">{i18n.backpromoteDescription}</p>
+                        <p class="hardis-card-desc">{i18n.backpromoteDescription}</p>
+                        <div class="hardis-card-arrow">→</div>
                     </div>
                 </div>
             </lightning-tab>

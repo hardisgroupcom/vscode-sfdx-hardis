@@ -169,9 +169,52 @@ async function runHardisCommand(commandId) {
       }
     });
 
-    ws.on("open", () => {
+    // Showcase scenario: prompts are answered by the extension side, resolve
+    // the pending waiter when the response arrives
+    const promptWaiters = [];
+    ws.on("message", (raw) => {
+      try {
+        const data = JSON.parse(raw.toString());
+        if (data.event === "promptsResponse" && promptWaiters.length > 0) {
+          const waiter = promptWaiters.shift();
+          waiter(data.promptsResponse);
+        }
+      } catch {
+        // Ignore unparseable messages
+      }
+    });
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    const askPrompt = (prompt) => {
+      const responsePromise = new Promise((r) => promptWaiters.push(r));
+      send({ event: "prompts", prompts: [prompt] });
+      // Marker so tests can wait for the prompt before answering it
+      logInvocation({ event: "promptAsked", promptName: prompt.name });
+      return responsePromise;
+    };
+    const finish = () => {
+      send({ event: "closeClient", status: "success" });
+      setTimeout(() => {
+        clearTimeout(safetyTimeout);
+        try {
+          ws.close();
+        } catch {}
+        logInvocation({ event: "wsClosed" });
+        resolve(0);
+      }, 300);
+    };
+
+    ws.on("open", async () => {
       logInvocation({ event: "wsOpen" });
       send({ event: "initClient" });
+      if (commandId.includes("showcase")) {
+        // Rich scenario exercising the whole command panel protocol:
+        // sections, sub-commands, warning, table, question, progress,
+        // multiselect and report files
+        clearTimeout(safetyTimeout);
+        await runShowcaseScenario(send, askPrompt, sleep);
+        finish();
+        return;
+      }
       send({
         event: "commandLogLine",
         logType: "log",
@@ -188,17 +231,7 @@ async function runHardisCommand(commandId) {
         message: "Mock command completed",
       });
       // Leave a little time for the extension to process, then close
-      setTimeout(() => {
-        send({ event: "closeClient", status: "success" });
-        setTimeout(() => {
-          clearTimeout(safetyTimeout);
-          try {
-            ws.close();
-          } catch {}
-          logInvocation({ event: "wsClosed" });
-          resolve(0);
-        }, 300);
-      }, 500);
+      setTimeout(finish, 500);
     });
 
     ws.on("error", (err) => {
@@ -207,6 +240,191 @@ async function runHardisCommand(commandId) {
       resolve(0);
     });
   });
+}
+
+/**
+ * Streams a realistic sfdx-hardis command over the WebSocket protocol.
+ * Used by the command panel UI tests and for visual QA of the panel.
+ */
+async function runShowcaseScenario(send, askPrompt, sleep) {
+  const log = (logType, message, extra) =>
+    send({ event: "commandLogLine", logType, message, ...(extra || {}) });
+
+  log(
+    "action",
+    "This command will save information that must be restored after org refresh, in the following order:\n- Certificates\n- Custom Settings\n- Records\n- Connected Apps",
+  );
+  await sleep(80);
+  log("log", "Detected 4 item types to save before the refresh.");
+  log(
+    "action",
+    "Checking which Connected Apps can be converted to External Client Apps...",
+  );
+  send({
+    event: "commandSubCommandStart",
+    data: {
+      command: 'sf project generate --name "sfdx-hardis-blank-project"',
+      cwd: ".",
+    },
+  });
+  await sleep(350);
+  send({
+    event: "commandSubCommandEnd",
+    data: {
+      command: 'sf project generate --name "sfdx-hardis-blank-project"',
+      success: true,
+    },
+  });
+  log(
+    "warning",
+    "3 Connected App(s) have no matching External Client App. Since Spring '26, Connected Apps can not be re-created after a sandbox refresh, so they will probably be LOST after the refresh:",
+  );
+  log(
+    "table",
+    JSON.stringify([
+      {
+        name: "Amalto",
+        lastUpdatedDate: "2019-03-28 16:57",
+        lastUpdatedBy: "Salesforce Scheduled Jobs",
+      },
+      {
+        name: "Azure_Data_Factory",
+        lastUpdatedDate: "2025-10-13 11:13",
+        lastUpdatedBy: "Nicolas Vuillamy",
+      },
+      {
+        name: "CustomerInfoAPI",
+        lastUpdatedDate: "2023-04-12 10:12",
+        lastUpdatedBy: "User Integration",
+      },
+    ]),
+  );
+  await sleep(120);
+
+  // Question 1: simple yes/no select
+  log("action", "Do you want to set the selected org as your default org?", {
+    isQuestion: true,
+  });
+  await askPrompt({
+    name: "setDefault",
+    type: "select",
+    message: "Do you want to set the selected org as your default org?",
+    choices: [
+      {
+        title: "✅ Yes",
+        value: "yes",
+        description: "Use this org as the default org of the project",
+      },
+      {
+        title: "❌ No",
+        value: "no",
+        description: "Keep the current default org",
+      },
+    ],
+  });
+  log("log", "✅ Yes");
+  await sleep(100);
+
+  // Progress with known number of steps
+  send({
+    event: "progressStart",
+    title: "Describing 149 objects...",
+    totalSteps: 149,
+  });
+  for (let step = 1; step <= 149; step += 8) {
+    send({ event: "progressStep", step, totalSteps: 149 });
+    await sleep(35);
+  }
+  send({ event: "progressEnd", totalSteps: 149 });
+  log(
+    "log",
+    "Described 149 objects (115 excluded without local customizations).",
+  );
+  await sleep(100);
+
+  // Question 2: multiselect with many options
+  log("action", "Select the Custom Settings to retrieve", { isQuestion: true });
+  const customSettingsResponse = await askPrompt({
+    name: "customSettings",
+    type: "multiselect",
+    message: "Select the Custom Settings to retrieve",
+    choices: [
+      { title: "APITalenDev__c", value: "APITalenDev__c" },
+      { title: "APITalenProd__c", value: "APITalenProd__c" },
+      {
+        title: "Conga_Composer_Settings__c",
+        value: "Conga_Composer_Settings__c",
+        description: "APXTCFQ namespace",
+      },
+      { title: "AmaltoToAdresses__c", value: "AmaltoToAdresses__c" },
+      {
+        title: "Chargent_Settings__c",
+        value: "Chargent_Settings__c",
+        description: "ChargentBase namespace",
+      },
+      { title: "CybersourceSettings__c", value: "CybersourceSettings__c" },
+      {
+        title: "DefaultOrderItemValues__c",
+        value: "DefaultOrderItemValues__c",
+      },
+      { title: "Languages__c", value: "Languages__c" },
+    ],
+  });
+  // Echo the answer like the real CLI does
+  const selection =
+    (customSettingsResponse &&
+      customSettingsResponse[0] &&
+      customSettingsResponse[0].customSettings) ||
+    [];
+  log(
+    "log",
+    "☑ " +
+      (Array.isArray(selection) ? selection.join(", ") : String(selection)),
+  );
+  await sleep(100);
+
+  // Question 3: select with many options (rendered as a filterable list)
+  log(
+    "action",
+    "Please select the number of days in the past from today you want to detect suspicious setup activities",
+    { isQuestion: true },
+  );
+  const daysResponse = await askPrompt({
+    name: "auditDays",
+    type: "select",
+    message:
+      "Please select the number of days in the past from today you want to detect suspicious setup activities",
+    choices: [1, 2, 3, 4, 5, 6, 7, 14, 30, 60, 90, 180].map((days) => ({
+      title: String(days),
+      value: days,
+    })),
+  });
+  const daysSelected =
+    (daysResponse && daysResponse[0] && daysResponse[0].auditDays) || 30;
+  log("log", String(daysSelected));
+  await sleep(100);
+
+  // Report files + final status
+  send({
+    event: "reportFile",
+    file: "reports/data-dictionary.xlsx",
+    title: "Data dictionary (XLSX)",
+    type: "report",
+  });
+  send({
+    event: "reportFile",
+    file: "reports/data-dictionary.csv",
+    title: "Data dictionary (CSV)",
+    type: "report",
+  });
+  send({
+    event: "reportFile",
+    file: "https://sfdx-hardis.cloudity.com/hardis/org/refresh/before-refresh/",
+    title: "Command documentation",
+    type: "docUrl",
+  });
+  log("success", "Data dictionary generated for 34 objects.");
+  await sleep(200);
 }
 
 main().then(

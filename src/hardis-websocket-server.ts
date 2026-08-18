@@ -4,7 +4,11 @@ import { WebSocketServer } from "ws";
 import * as vscode from "vscode";
 import * as fs from "fs/promises";
 import * as path from "path";
-import { getWorkspaceRoot, stripAnsi } from "./utils";
+import {
+  getDefaultTargetOrgUsername,
+  getWorkspaceRoot,
+  stripAnsi,
+} from "./utils";
 import { Logger } from "./logger";
 import { t } from "./i18n/i18n";
 import { LwcPanelManager } from "./lwc-panel-manager";
@@ -180,6 +184,16 @@ export class LocalWebSocketServer {
       }
       if (data.commandLogFile) {
         initData.data.commandLogFile = data.commandLogFile;
+      }
+      // Enrich with the project default org so the panel header can show
+      // which org the command targets
+      try {
+        const targetOrgUsername = await getDefaultTargetOrgUsername();
+        if (targetOrgUsername) {
+          initData.data.targetOrgUsername = targetOrgUsername;
+        }
+      } catch {
+        // The target org chip is a nice-to-have: ignore resolution errors
       }
       panel.sendMessage(initData);
     }
