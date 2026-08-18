@@ -2,15 +2,15 @@
     <div class="slds-scope slds-theme_default blue-back" data-theme={colorTheme} data-contrast={colorContrast}>
         <div class="doc-container">
             <!-- Header -->
-            <div class="header-content">
-                <div class="header-icon-container teal">
-                    <lightning-icon icon-name="utility:archive" size="medium" variant="inverse"></lightning-icon>
+            <div class="hardis-page-head">
+                <div class="hardis-tile featured teal">
+                    <lightning-icon icon-name="utility:archive" size="medium"></lightning-icon>
                 </div>
-                <div class="header-text">
-                    <h1 class="header-title">{i18n.documentationWorkbenchTitle}</h1>
-                    <p class="header-subtitle">{i18n.documentationWorkbenchSubtitle}</p>
+                <div class="hardis-page-head-text">
+                    <h1 class="hardis-page-title">{i18n.documentationWorkbenchTitle}</h1>
+                    <p class="hardis-page-subtitle">{i18n.documentationWorkbenchSubtitle}</p>
                 </div>
-                <div class="header-actions">
+                <div class="hardis-page-head-actions">
                     <lightning-button
                         variant="neutral"
                         label={i18n.onlineHelp}
@@ -248,8 +248,8 @@
                         </div>
                     </div>
                     <div class="generate-actions">
-                        <lightning-button
-                            variant="brand"
+                        <lightning-button class="hardis-btn-tinted-blue"
+                            variant="neutral"
                             label={i18n.generateDocumentation}
                             icon-name="utility:archive"
                             onclick={handleGenerate}
@@ -280,7 +280,7 @@
                         </div>
                         <p class="hardis-card-desc">{i18n.deployToCloudflareDesc}</p>
                         <div class="hardis-card-actions">
-                            <lightning-button variant="brand" label={i18n.deployLabel} onclick={handleDeployCloudflare}></lightning-button>
+                            <lightning-button class="hardis-btn-tinted-blue" variant="neutral" label={i18n.deployLabel} onclick={handleDeployCloudflare}></lightning-button>
                         </div>
                     </div>
 
@@ -293,7 +293,7 @@
                         </div>
                         <p class="hardis-card-desc">{i18n.deployToConfluenceDesc}</p>
                         <div class="hardis-card-actions">
-                            <lightning-button variant="brand" label={i18n.deployLabel} onclick={handleDeployToConfluence}></lightning-button>
+                            <lightning-button class="hardis-btn-tinted-blue" variant="neutral" label={i18n.deployLabel} onclick={handleDeployToConfluence}></lightning-button>
                         </div>
                     </div>
 
@@ -306,7 +306,7 @@
                         </div>
                         <p class="hardis-card-desc" lwc:inner-html={deployToSalesforceDescHtml}></p>
                         <div class="hardis-card-actions">
-                            <lightning-button variant="brand" label={i18n.deployLabel} onclick={handleDeployToOrg}></lightning-button>
+                            <lightning-button class="hardis-btn-tinted-blue" variant="neutral" label={i18n.deployLabel} onclick={handleDeployToOrg}></lightning-button>
                         </div>
                     </div>
                 </div>
@@ -327,7 +327,7 @@
                         </div>
                         <p class="hardis-card-desc">{i18n.runLocalHtmlDocPagesDesc}</p>
                         <div class="hardis-card-actions">
-                            <lightning-button variant="brand" label={i18n.runLocallyButton} onclick={handleRunLocally}></lightning-button>
+                            <lightning-button class="hardis-btn-tinted-blue" variant="neutral" label={i18n.runLocallyButton} onclick={handleRunLocally}></lightning-button>
                         </div>
                     </div>
                 </div>

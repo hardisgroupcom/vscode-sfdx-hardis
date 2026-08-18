@@ -1,17 +1,22 @@
 <template>
     <div class="slds-scope slds-p-around_medium blue-back">
-    <lightning-card title={i18n.installedPackagesTitle}>
-        <div slot="actions" class="slds-float_right">
-            <lightning-button-group>
-                <lightning-button icon-name="utility:download" label={i18n.retrieveFromOrg} variant="brand" title={i18n.retrieveFromOrgTooltip} onclick={handleRetrieveFromOrg}></lightning-button>
-                <span class="slds-m-left_x-small"></span>
-                <lightning-button icon-name="utility:add" label={i18n.installNewPackage} variant="brand" title={i18n.installNewPackageTooltip} onclick={handleInstallNewPackage}></lightning-button>
-                <span class="slds-m-left_x-small"></span>
-                <lightning-button icon-name="utility:refresh" label={i18n.refreshLabel} title={i18n.refreshInstalledPackagesTooltip} onclick={handleRefresh}></lightning-button>
-            </lightning-button-group>
+    <div class="hardis-page-head">
+        <div class="hardis-tile featured violet">
+            <lightning-icon icon-name="utility:package" size="medium"></lightning-icon>
         </div>
+        <div class="hardis-page-head-text">
+            <h1 class="hardis-page-title">{i18n.installedPackagesTitle}</h1>
+            <p class="hardis-page-subtitle">{i18n.installedPackagesSubtitle}</p>
+        </div>
+        <div class="hardis-page-head-actions">
+            <lightning-button class="hardis-btn-tinted-blue" icon-name="utility:download" label={i18n.retrieveFromOrg} variant="neutral" title={i18n.retrieveFromOrgTooltip} onclick={handleRetrieveFromOrg}></lightning-button>
+            <lightning-button class="hardis-btn-tinted-blue" icon-name="utility:add" label={i18n.installNewPackage} variant="neutral" title={i18n.installNewPackageTooltip} onclick={handleInstallNewPackage}></lightning-button>
+            <lightning-button icon-name="utility:refresh" label={i18n.refreshLabel} title={i18n.refreshInstalledPackagesTooltip} onclick={handleRefresh}></lightning-button>
+        </div>
+    </div>
+    <div class="hardis-panel-body">
         <div class="slds-m-around_medium">
-            <div class="slds-notify slds-notify_alert slds-theme_info slds-theme_alert-texture slds-m-bottom_small" role="alert">
+            <div class="hardis-note slds-m-bottom_small" role="note">
                 <lightning-icon icon-name="utility:info" alternative-text="Info" size="small" class="slds-m-right_small"></lightning-icon>
                 <span>
                     <p lwc:inner-html={packagesDeploymentsInfoHtml}></p>
@@ -31,6 +36,6 @@
                 class="slds-m-bottom_medium"
             ></s-hardis-datatable>
         </div>
-    </lightning-card>
+    </div>
     </div>
 </template>

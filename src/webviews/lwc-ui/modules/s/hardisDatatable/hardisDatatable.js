@@ -15,6 +15,8 @@ import branchChip from "./branchChip.html";
  *   initials, avatarClass (computed CSS classes for the color variant).
  * - branchChip: monospace chip for technical identifiers such as git branch
  *   names; the full value is available on hover. No typeAttributes.
+ *
+ * A right click on a cell opens a small menu to copy its value to the clipboard.
  */
 export default class HardisDatatable extends LightningDatatable {
   static customTypes = {
@@ -34,4 +36,118 @@ export default class HardisDatatable extends LightningDatatable {
       typeAttributes: [],
     },
   };
+
+  connectedCallback() {
+    if (super.connectedCallback) {
+      super.connectedCallback();
+    }
+    this._onCellContextMenu = (event) => this.handleCellContextMenu(event);
+    this.addEventListener("contextmenu", this._onCellContextMenu);
+    // Hide the VS Code webview context menu items over the table, ours replaces them
+    this.setAttribute(
+      "data-vscode-context",
+      JSON.stringify({ preventDefaultContextMenuItems: true }),
+    );
+  }
+
+  disconnectedCallback() {
+    if (super.disconnectedCallback) {
+      super.disconnectedCallback();
+    }
+    this.removeEventListener("contextmenu", this._onCellContextMenu);
+    this.closeCellContextMenu();
+  }
+
+  // Right click on a cell: propose to copy its value instead of the browser menu
+  handleCellContextMenu(event) {
+    const value = this.getContextMenuValue(event);
+    if (!value) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    this.openCellContextMenu(event.clientX, event.clientY, value);
+  }
+
+  // Selected text if there is one, else the whole text of the right-clicked cell
+  getContextMenuValue(event) {
+    const selection =
+      typeof window !== "undefined" && window.getSelection
+        ? String(window.getSelection())
+        : "";
+    if (selection && selection.trim() !== "") {
+      return selection.trim();
+    }
+    const path =
+      event && typeof event.composedPath === "function"
+        ? event.composedPath()
+        : [];
+    for (const node of path) {
+      const tagName = node && node.tagName ? String(node.tagName) : "";
+      if (tagName === "TD" || tagName === "TH") {
+        return (node.innerText || node.textContent || "").trim();
+      }
+    }
+    return "";
+  }
+
+  openCellContextMenu(x, y, value) {
+    this.closeCellContextMenu();
+    const host = this.template && this.template.host ? this.template.host : null;
+    const container =
+      (host && host.closest && host.closest(".slds-scope")) || document.body;
+    const translations =
+      (typeof window !== "undefined" && window.__lwcTranslations) || {};
+
+    const menu = document.createElement("div");
+    menu.className = "hardis-context-menu";
+    menu.style.left = `${x}px`;
+    menu.style.top = `${y}px`;
+
+    const item = document.createElement("button");
+    item.type = "button";
+    item.className = "hardis-context-menu-item";
+    item.textContent = translations.copyValue || "Copy value";
+    item.addEventListener("click", () => {
+      this.copyValueToClipboard(value);
+      this.closeCellContextMenu();
+    });
+    menu.appendChild(item);
+    container.appendChild(menu);
+    this._cellContextMenu = menu;
+
+    // Any next interaction closes the menu
+    this._closeCellContextMenu = () => this.closeCellContextMenu();
+    setTimeout(() => {
+      document.addEventListener("click", this._closeCellContextMenu, {
+        once: true,
+      });
+      document.addEventListener("contextmenu", this._closeCellContextMenu, {
+        once: true,
+      });
+      document.addEventListener("keydown", this._closeCellContextMenu, {
+        once: true,
+      });
+    }, 0);
+  }
+
+  closeCellContextMenu() {
+    if (this._cellContextMenu && this._cellContextMenu.parentNode) {
+      this._cellContextMenu.parentNode.removeChild(this._cellContextMenu);
+    }
+    this._cellContextMenu = null;
+  }
+
+  copyValueToClipboard(value) {
+    if (typeof window !== "undefined" && window.sendMessageToVSCode) {
+      window.sendMessageToVSCode({
+        type: "copyToClipboard",
+        data: { text: value },
+      });
+      return;
+    }
+    if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(value);
+    }
+  }
 }

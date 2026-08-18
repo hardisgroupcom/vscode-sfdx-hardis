@@ -1,0 +1,16 @@
+{
+  "sfdxHardisLabel": "Users, roles & permission set assignments",
+  "sfdxHardisDescription": "Export and restore user setup after a sandbox refresh",
+  "objects": [
+    {
+      "query": "SELECT all FROM UserRole",
+      "operation": "Upsert",
+      "externalId": "DeveloperName"
+    },
+    {
+      "query": "SELECT all FROM PermissionSetAssignment",
+      "operation": "Insert",
+      "externalId": "Assignee.Username;PermissionSet.Name"
+    }
+  ]
+}

@@ -1,36 +1,36 @@
 <template>
   <div class="blue-back">
     <div class="slds-scope slds-p-around_small blue-back">
-      <div class="slds-grid slds-grid_align-spread slds-m-bottom_medium">
-        <div class="slds-col slds-size_4-of-12 slds-align-left">
+      <div class="hardis-page-head">
+        <div class="hardis-tile featured cyan">
+          <lightning-icon icon-name="utility:settings" size="medium"></lightning-icon>
+        </div>
+        <div class="hardis-page-head-text">
           <template if:true={isBranch}>
-            <span class="slds-text-heading_medium slds-text-title_bold">{i18n.pipelineSettingsForBranch} <b>{branchName}</b></span>
+            <h1 class="hardis-page-title">{i18n.pipelineSettingsForBranch} {branchName}</h1>
           </template>
           <template if:false={isBranch}>
-            <span class="slds-text-heading_medium slds-text-title_bold">{i18n.globalPipelineSettings}</span>
+            <h1 class="hardis-page-title">{i18n.globalPipelineSettings}</h1>
           </template>
+          <p class="hardis-page-subtitle">{i18n.pipelineSettingsSubtitle}</p>
         </div>
-        <div class="slds-col slds-size_4-of-12 slds-align-middle">
-          <div class="slds-form-element">
-            <lightning-combobox
-              name="configScope"
-              label={i18n.configurationScope}
-              variant="label-hidden"
-              value={selectedConfigScope}
-              placeholder={i18n.selectConfigurationScope}
-              options={configScopeOptions}
-              onchange={handleConfigScopeChange}
-              disabled={isEditMode}
-            ></lightning-combobox>
-          </div>
-        </div>
-        <div class="slds-col slds-size_4-of-12 slds-no-flex slds-align-middle" data-key="top-btn-group" style="text-align:right;">
+        <div class="hardis-page-head-actions">
+          <lightning-combobox
+            name="configScope"
+            label={i18n.configurationScope}
+            variant="label-hidden"
+            value={selectedConfigScope}
+            placeholder={i18n.selectConfigurationScope}
+            options={configScopeOptions}
+            onchange={handleConfigScopeChange}
+            disabled={isEditMode}
+          ></lightning-combobox>
           <template if:true={isEditMode}>
-            <lightning-button variant="brand" label={i18n.save} onclick={handleSave} class="slds-m-right_small" data-button="top"></lightning-button>
+            <lightning-button variant="neutral" label={i18n.save} onclick={handleSave} class="hardis-btn-tinted-blue" data-button="top"></lightning-button>
             <lightning-button variant="neutral" label={i18n.cancel} onclick={handleCancel} data-button="top"></lightning-button>
           </template>
           <template if:false={isEditMode}>
-            <lightning-button variant="brand" label={i18n.edit} onclick={handleEdit} data-button="top"></lightning-button>
+            <lightning-button class="hardis-btn-tinted-blue" variant="neutral" label={i18n.edit} onclick={handleEdit} data-button="top"></lightning-button>
           </template>
         </div>
       </div>
@@ -189,8 +189,8 @@
                               <!-- Add New Button (Edit mode only) -->
                               <template if:true={isEditMode}>
                                 <div class="add-button-container">
-                                  <lightning-button
-                                    variant="brand"
+                                  <lightning-button class="hardis-btn-tinted-blue"
+                                    variant="neutral"
                                     label={i18n.addNew}
                                     icon-name="utility:add"
                                     data-key={entry.key}
@@ -296,8 +296,8 @@
                                         data-key={entry.key}
                                         onclick={handleCancelArrayObjectForm}
                                       ></lightning-button>
-                                      <lightning-button
-                                        variant="brand"
+                                      <lightning-button class="hardis-btn-tinted-blue"
+                                        variant="neutral"
                                         label={i18n.save}
                                         data-key={entry.key}
                                         onclick={handleSaveArrayObjectItem}
@@ -491,11 +491,11 @@
       <!--
       <div class="slds-grid slds-grid_align-end slds-m-top_medium" data-key="bottom-btn-group">
         <template if:true={isEditMode}>
-          <lightning-button variant="brand" label="Save" onclick={handleSave} class="slds-m-right_small" data-button="bottom"></lightning-button>
+          <lightning-button variant="neutral" label="Save" onclick={handleSave} class="slds-m-right_small hardis-btn-tinted-blue" data-button="bottom"></lightning-button>
           <lightning-button variant="neutral" label="Cancel" onclick={handleCancel} data-button="bottom"></lightning-button>
         </template>
         <template if:false={isEditMode}>
-          <lightning-button variant="brand" label="Edit" onclick={handleEdit} data-button="bottom"></lightning-button>
+          <lightning-button class="hardis-btn-tinted-blue" variant="neutral" label="Edit" onclick={handleEdit} data-button="bottom"></lightning-button>
         </template>
       </div>
       -->

@@ -1,15 +1,15 @@
 <template>
     <div class="slds-scope blue-back">
         <div class="setup-container">
-            <div class="header-content">
-                <div class="header-icon-container teal">
-                    <lightning-icon icon-name="utility:setup" size="medium" variant="inverse"></lightning-icon>
+            <div class="hardis-page-head">
+                <div class="hardis-tile featured teal">
+                    <lightning-icon icon-name="utility:setup" size="medium"></lightning-icon>
                 </div>
-                <div class="header-text">
-                    <h1 class="header-title">{i18n.sfdxHardisSetup}</h1>
-                    <p class="header-subtitle">{i18n.checkAndInstallDependencies}</p>
+                <div class="hardis-page-head-text">
+                    <h1 class="hardis-page-title">{i18n.sfdxHardisSetup}</h1>
+                    <p class="hardis-page-subtitle">{i18n.checkAndInstallDependencies}</p>
                 </div>
-                <div class="header-actions">
+                <div class="hardis-page-head-actions">
                     <lightning-input
                         type="toggle"
                         label={i18n.autoUpdateDependencies}
@@ -22,72 +22,77 @@
             </div>
 
             <div class="section">
-                <!-- Top status card (mirrors orgMonitoring installed state style) -->
-                <div class="setup-summary-card">
-                    <div class="status-card summary">
-                        <div class={summaryIconContainerClass}>
-                        <template if:true={summaryChecking}>
-                            <div class="slds-is-relative spinner-wrapper" style="height: 2rem;">
-                                <s-spinner 
-                                    alternative-text="Loading..." 
-                                    size="small"
-                                    variant="brand">
-                                </s-spinner>
-                            </div>
-                        </template>
-                        <template if:false={summaryChecking}>
-                            <lightning-icon icon-name={summaryIconName} size="small" variant="inverse"></lightning-icon>
-                        </template>
+                <!-- Overall state of the dependencies -->
+                <div class="setup-summary">
+                    <div class={summaryCardClass}>
+                        <div class={summaryTileClass}>
+                            <template if:true={summaryChecking}>
+                                <div class="slds-is-relative spinner-wrapper" style="height: 2rem;">
+                                    <s-spinner
+                                        alternative-text="Loading..."
+                                        size="small">
+                                    </s-spinner>
+                                </div>
+                            </template>
+                            <template if:false={summaryChecking}>
+                                <lightning-icon icon-name={summaryIconName} size="small"></lightning-icon>
+                            </template>
                         </div>
-                        <div class="status-content">
-                            <h3 class="status-title">{i18n.dependenciesStatusSummary}</h3>
-                            <p class="status-description">{summaryMessage}</p>
+                        <div class="hardis-status-content">
+                            <h3 class="hardis-status-title">{i18n.dependenciesStatusSummary}</h3>
+                            <p class="hardis-status-desc">{summaryMessage}</p>
                         </div>
-                        <div class="status-actions">
+                        <div class="hardis-status-actions">
                             <template if:true={hasPendingActions}>
                                 <template if:false={summaryChecking}>
-                                    <lightning-button variant="brand" label={runButtonLabel} onclick={runPendingInstalls} class="status-button primary" disabled={runButtonDisabled}></lightning-button>
+                                    <lightning-button
+                                        variant="neutral"
+                                        class="hardis-btn-tinted-blue"
+                                        label={runButtonLabel}
+                                        onclick={runPendingInstalls}
+                                        disabled={runButtonDisabled}
+                                    ></lightning-button>
                                 </template>
                             </template>
                         </div>
                     </div>
                 </div>
-                <div class="commands-grid">
+
+                <div class="hardis-status-grid">
                     <template for:each={checks} for:item="chk">
                         <div key={chk.id} class={chk.cardClass}>
 
-                            <div class={chk.iconContainerClass}>
+                            <div class={chk.tileClass}>
                                 <template if:true={chk.isBusy}>
                                     <div class="slds-is-relative spinner-wrapper" style="height: 2rem;">
-                                        <s-spinner 
-                                            alternative-text="Loading..." 
-                                            size="small"
-                                            variant="brand">
+                                        <s-spinner
+                                            alternative-text="Loading..."
+                                            size="small">
                                         </s-spinner>
                                     </div>
                                 </template>
                                 <template if:false={chk.isBusy}>
-                                    <lightning-icon icon-name={chk.statusIcon} size="small" variant="inverse"></lightning-icon>
+                                    <lightning-icon icon-name={chk.statusIcon} size="small"></lightning-icon>
                                 </template>
                             </div>
 
-                            <div class="status-content">
-                                <h3 class="status-title">
-                                    <span class="status-label">{chk.label}</span>
-                                    <span class="status-version">{chk.version}</span>
+                            <div class="hardis-status-content">
+                                <h3 class="hardis-status-title">
+                                    <span>{chk.label}</span>
+                                    <span class="hardis-status-meta">{chk.version}</span>
                                 </h3>
-                                <p class="status-description">{chk.explanation}</p>
+                                <p class="hardis-status-desc">{chk.explanation}</p>
                                 <template if:true={chk.note}>
-                                    <p class="slds-text-body_small slds-text-color_weak slds-m-top_xx-small">{chk.note}</p>
+                                    <p class="hardis-status-desc">{chk.note}</p>
                                 </template>
                             </div>
 
-                            <div class="status-actions slds-grid slds-grid_vertical slds-grid_align-start">
+                            <div class="hardis-status-actions">
                                 <!-- Single unified button driven by controller-computed attributes -->
                                  <template if:false={chk.missingPrerequisitesText}>
                                     <lightning-button
-                                        class="status-button slds-m-bottom_xx-small"
-                                        variant={chk.buttonVariant}
+                                        class={chk.buttonClass}
+                                        variant="neutral"
                                         label={chk.buttonLabel}
                                         data-id={chk.id}
                                         data-action={chk.buttonAction}
@@ -96,8 +101,8 @@
                                     ></lightning-button>
                                     <template if:true={chk.showUninstallButton}>
                                         <lightning-button
-                                            class="status-button"
-                                            variant="destructive-text"
+                                            class="hardis-btn-tinted-red"
+                                            variant="neutral"
                                             label={chk.uninstallLabel}
                                             data-id={chk.id}
                                             onclick={handleUninstall}
@@ -106,7 +111,7 @@
                                 </template>
                                 <!-- show prereq hint only after we know the check completed and prerequisites are actually missing -->
                                 <template if:true={chk.missingPrerequisitesText}>
-                                    <p class="prereq-hint slds-text-color_error slds-m-top_xx-small">{i18n.requiresLabel}<br/>{chk.missingPrerequisitesText}</p>
+                                    <p class="hardis-status-desc slds-text-color_error">{i18n.requiresLabel}<br/>{chk.missingPrerequisitesText}</p>
                                 </template>
                             </div>
                         </div>

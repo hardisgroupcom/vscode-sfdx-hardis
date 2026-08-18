@@ -2,13 +2,13 @@
     <div class="slds-scope slds-theme_default blue-back">
         <div class="config-container">
             <!-- Header -->
-            <div class="header-content">
-                <div class="header-icon-container purple">
-                    <lightning-icon icon-name="utility:settings" size="medium" variant="inverse"></lightning-icon>
+            <div class="hardis-page-head">
+                <div class="hardis-tile featured violet">
+                    <lightning-icon icon-name="utility:settings" size="medium"></lightning-icon>
                 </div>
-                <div class="header-text">
-                    <h1 class="header-title">{i18n.documentationConfigTitle}</h1>
-                    <p class="header-subtitle">{i18n.documentationConfigSubtitle}</p>
+                <div class="hardis-page-head-text">
+                    <h1 class="hardis-page-title">{i18n.documentationConfigTitle}</h1>
+                    <p class="hardis-page-subtitle">{i18n.documentationConfigSubtitle}</p>
                 </div>
             </div>
 
@@ -42,7 +42,7 @@
                             </div>
                         </template>
                         <div class="hardis-card-actions">
-                            <lightning-button variant="brand" label={i18n.overrideLabel} onclick={handleOverridePrompts}></lightning-button>
+                            <lightning-button class="hardis-btn-tinted-blue" variant="neutral" label={i18n.overrideLabel} onclick={handleOverridePrompts}></lightning-button>
                         </div>
                     </div>
                 </div>

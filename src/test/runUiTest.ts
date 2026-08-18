@@ -18,12 +18,20 @@ async function main() {
   const extensionDevelopmentPath = path.resolve(__dirname, "../../");
   const extensionTestsPath = path.resolve(__dirname, "./ui/index");
 
-  // 1. Copy the dummy SFDX project fixture into a temp workspace
+  // Documentation screenshot mode: a richer fixture (SFDMU workspaces, major
+  // branch configs, several git branches) so every panel has realistic content
+  // to display, and only the docScreenshots suite runs.
+  const docScreenshots = process.env.SFDX_HARDIS_DOC_SCREENSHOTS === "true";
+
+  // 1. Copy the SFDX project fixture into a temp workspace
+  const fixtureName = docScreenshots
+    ? "doc-screenshots-project"
+    : "dummy-sfdx-project";
   const fixtureSource = path.join(
     extensionDevelopmentPath,
     "test",
     "fixtures",
-    "dummy-sfdx-project",
+    fixtureName,
   );
   // VS Code creates a unix domain socket (IPC handle) inside --user-data-dir.
   // Unix sockets are limited to ~103 chars: on macOS os.tmpdir() is the long
@@ -32,7 +40,12 @@ async function main() {
   // Windows and Linux keep os.tmpdir().
   const tmpBase = process.platform === "darwin" ? "/tmp" : os.tmpdir();
   const workDir = fs.mkdtempSync(path.join(tmpBase, "sfh-uitest-"));
-  const workspaceDir = path.join(workDir, "dummy-sfdx-project");
+  // The workspace folder name is the project name shown in the VS Code title
+  // bar, so the screenshot fixture uses a realistic one.
+  const workspaceDir = path.join(
+    workDir,
+    docScreenshots ? "MyCompany-CRM" : "dummy-sfdx-project",
+  );
   fs.cpSync(fixtureSource, workspaceDir, { recursive: true });
 
   // 2. Make it a git repository (several extension features probe git)
@@ -44,6 +57,22 @@ async function main() {
   git("checkout -b integration");
   git("add -A");
   git("commit -m init --no-gpg-sign");
+
+  if (docScreenshots) {
+    // Major branches + feature branches, so the pipeline diagram has something
+    // to draw. A fake "origin" remote makes the branches look tracked.
+    for (const branch of ["uat", "preprod", "main"]) {
+      git(`branch ${branch}`);
+    }
+    for (const branch of [
+      "features/dev/CRM-1042-account-hierarchy",
+      "features/config/CRM-1055-quote-approval-process",
+      "fixes/dev/CRM-1061-opportunity-trigger",
+    ]) {
+      git(`branch ${branch}`);
+    }
+    git("remote add origin https://github.com/mycompany/salesforce-crm.git");
+  }
 
   // 3. Deterministic extension settings for the test workspace
   fs.mkdirSync(path.join(workspaceDir, ".vscode"), { recursive: true });
@@ -62,18 +91,59 @@ async function main() {
   } else if (process.env.SFDX_HARDIS_VISUAL_THEME === "dark") {
     workspaceSettings["workbench.colorTheme"] = "Default Dark Modern";
   }
+  if (docScreenshots) {
+    // Documentation screenshots are always taken in light mode, English, with
+    // a clean chrome (no minimap, no breadcrumbs, no editor decorations).
+    // SFDX_HARDIS_DOC_SCREENSHOTS_THEME=dark switches to dark for design QA:
+    // every panel has to look right in both themes.
+    const darkQa = process.env.SFDX_HARDIS_DOC_SCREENSHOTS_THEME === "dark";
+    workspaceSettings["workbench.colorTheme"] = darkQa
+      ? "Default Dark Modern"
+      : "Default Light Modern";
+    workspaceSettings["vsCodeSfdxHardis.theme.colorTheme"] = darkQa
+      ? "dark"
+      : "light";
+    workspaceSettings["workbench.startupEditor"] = "none";
+    workspaceSettings["workbench.editor.showTabs"] = "multiple";
+    workspaceSettings["workbench.statusBar.visible"] = true;
+    workspaceSettings["breadcrumbs.enabled"] = false;
+    workspaceSettings["editor.minimap.enabled"] = false;
+    workspaceSettings["window.commandCenter"] = false;
+    workspaceSettings["workbench.layoutControl.enabled"] = false;
+    workspaceSettings["window.zoomLevel"] = 0;
+    workspaceSettings["update.showReleaseNotes"] = false;
+    // Stable title: it is both what the screenshots show and what the capture
+    // script matches on to find the window
+    workspaceSettings["window.title"] = "MyCompany-CRM";
+    workspaceSettings["workbench.secondarySideBar.defaultVisibility"] =
+      "hidden";
+    workspaceSettings["chat.commandCenter.enabled"] = false;
+    workspaceSettings["workbench.activityBar.location"] = "default";
+    workspaceSettings["workbench.tips.enabled"] = false;
+    workspaceSettings["git.openRepositoryInParentFolders"] = "never";
+    workspaceSettings["git.autofetch"] = false;
+    workspaceSettings["extensions.ignoreRecommendations"] = true;
+  }
   fs.writeFileSync(
     path.join(workspaceDir, ".vscode", "settings.json"),
     JSON.stringify(workspaceSettings, null, 2),
   );
 
   // 4. Prepare the sf CLI shim (mock) and its invocation log
-  const shimDir = path.join(
+  let shimDir = path.join(
     extensionDevelopmentPath,
     "test",
     "fixtures",
     "sf-shim",
   );
+  if (docScreenshots) {
+    // The Setup panel warns when `sf` does not look like an npm global install
+    // ("installed via the Salesforce native installer"). Serving the shim from
+    // a path containing "npm" keeps that note out of the screenshots.
+    const npmShimDir = path.join(workDir, "npm-global", "sf-shim");
+    fs.cpSync(shimDir, npmShimDir, { recursive: true });
+    shimDir = npmShimDir;
+  }
   if (process.platform !== "win32") {
     fs.chmodSync(path.join(shimDir, "sf"), 0o755);
   }
@@ -81,13 +151,44 @@ async function main() {
 
   const userDataDir = path.join(workDir, "user-data");
 
+  // Documentation screenshots run with their own extensions folder, seeded with
+  // a stub of the Salesforce Extension Pack so the Setup panel reports it as
+  // installed. It lives in the temp work dir because VS Code writes into it
+  // (it downloads the real pack when it can reach the marketplace).
+  const screenshotExtensionsDir = path.join(workDir, "extensions");
+  if (docScreenshots) {
+    fs.cpSync(
+      path.join(
+        extensionDevelopmentPath,
+        "test",
+        "fixtures",
+        "screenshot",
+        "extensions",
+      ),
+      screenshotExtensionsDir,
+      { recursive: true },
+    );
+  }
+
   try {
     await runTests({
       extensionDevelopmentPath,
       extensionTestsPath,
       launchArgs: [
         workspaceDir,
-        "--disable-extensions",
+        // Documentation screenshots need the Salesforce Extension Pack to look
+        // installed (Setup panel), so they load a dedicated extensions folder
+        // holding a stub of it instead of disabling extensions altogether.
+        ...(docScreenshots
+          ? [
+              `--extensions-dir=${screenshotExtensionsDir}`,
+              // Built-in Copilot would open a chat side bar over the panels
+              "--disable-extension=github.copilot",
+              "--disable-extension=github.copilot-chat",
+              "--disable-extension=GitHub.copilot",
+              "--disable-extension=GitHub.copilot-chat",
+            ]
+          : ["--disable-extensions"]),
         "--disable-workspace-trust",
         "--disable-gpu",
         `--user-data-dir=${userDataDir}`,
@@ -101,6 +202,25 @@ async function main() {
           "node_modules",
         ),
         VSCODE_SFDX_HARDIS_UI_TEST: "true",
+        ...(docScreenshots
+          ? {
+              SFDX_HARDIS_DOC_SCREENSHOTS: "true",
+              SFDX_HARDIS_DOC_SCREENSHOTS_DIR:
+                process.env.SFDX_HARDIS_DOC_SCREENSHOTS_DIR ||
+                path.join(extensionDevelopmentPath, "doc-screenshots"),
+              SFDX_HARDIS_DOC_SCREENSHOTS_ONLY:
+                process.env.SFDX_HARDIS_DOC_SCREENSHOTS_ONLY || "",
+              SF_MOCK_PROFILE: "docs",
+              SF_MOCK_DEPS_STATE: process.env.SF_MOCK_DEPS_STATE || "ok",
+              SF_MOCK_VERSIONS_FILE: process.env.SF_MOCK_VERSIONS_FILE || "",
+              // Screenshots must not depend on what npm answers today: the
+              // "latest version" cache is seeded by the suite instead, and an
+              // unroutable proxy makes every outbound HTTP call fail fast.
+              HTTP_PROXY: "http://127.0.0.1:9",
+              HTTPS_PROXY: "http://127.0.0.1:9",
+              NO_PROXY: "localhost,127.0.0.1",
+            }
+          : {}),
       },
     });
   } catch (err) {

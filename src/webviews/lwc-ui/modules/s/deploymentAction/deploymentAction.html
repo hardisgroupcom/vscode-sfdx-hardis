@@ -450,8 +450,8 @@
         </div>
         <footer class="slds-modal__footer">
           <template if:false={isEditMode}>
-            <lightning-button
-              variant="brand"
+            <lightning-button class="hardis-btn-tinted-blue"
+              variant="neutral"
               label={i18n.editLabel}
               onclick={handleEdit}
             ></lightning-button>
@@ -467,8 +467,8 @@
               label={i18n.cancelLabel}
               onclick={handleCancel}
             ></lightning-button>
-            <lightning-button
-              variant="brand"
+            <lightning-button class="hardis-btn-tinted-blue"
+              variant="neutral"
               label={i18n.saveLabel}
               onclick={handleSave}
             ></lightning-button>

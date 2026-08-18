@@ -48,6 +48,16 @@ const TILE_ICON_BY_FAMILY = {
   config: "utility:settings",
 };
 
+// A log line embedding a JSON payload longer than this is displayed as a preview,
+// with the complete content available in a modal
+const BIG_JSON_MIN_LENGTH = 600;
+const BIG_JSON_PREVIEW_LENGTH = 400;
+// Same for a plain text log line: above this size it would eat most of the panel
+const BIG_TEXT_MIN_LENGTH = 1000;
+const BIG_TEXT_MIN_LINES = 12;
+const BIG_TEXT_PREVIEW_LENGTH = 500;
+const BIG_TEXT_PREVIEW_LINES = 6;
+
 export default class CommandExecution extends SharedMixin(LightningElement) {
   // Track user-toggled expanded state for sections in simple mode
   userSectionExpandState = {}; // { [sectionId]: boolean }
@@ -78,7 +88,186 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
   @track currentProgressSection = null; // Track current progress section
   readyMessageSent = false;
   @track isInAutocloseList = false;
+  @track modalContent = null; // Complete content (JSON or text) displayed in the modal
+  @track modalLanguage = "plaintext";
   @track autocloseCommands = [];
+
+  // Detect a content too big to be displayed inline, and keep only its beginning in the log line
+  applyBigContentDetection(logLine) {
+    // Action logs become section titles, which have no room for a preview block
+    if (
+      !logLine ||
+      logLine.isQuestion ||
+      logLine.isAnswer ||
+      logLine.isTable ||
+      logLine.logType === "action"
+    ) {
+      return;
+    }
+    const bigJson = this.extractBigJson(logLine.message);
+    if (bigJson) {
+      logLine.hasBigContent = true;
+      logLine.bigContentFull = bigJson.json;
+      logLine.bigContentLanguage = "json";
+      logLine.bigContentPreview = bigJson.preview;
+      logLine.bigContentClass = "hardis-content-preview";
+      logLine.bigContentLabel = this.t("viewFullJson", {
+        size: this.formatByteSize(bigJson.json.length),
+      });
+      logLine.message = bigJson.prefix;
+      return;
+    }
+    // Copy markup must not be cut in the middle: such lines are left untouched
+    if (this.containsCopyMarkup(logLine.message)) {
+      return;
+    }
+    const bigText = this.extractBigText(logLine.message);
+    if (!bigText) {
+      return;
+    }
+    logLine.hasBigContent = true;
+    logLine.bigContentFull = bigText.full;
+    logLine.bigContentLanguage = "plaintext";
+    // The beginning of the text stays in the log line itself, with its usual styling
+    logLine.bigContentPreview = null;
+    logLine.bigContentClass = "hardis-content-preview link-only";
+    logLine.bigContentLabel = this.t("viewFullText", {
+      size: this.formatByteSize(bigText.full.length),
+    });
+    logLine.message = bigText.truncated;
+  }
+
+  // Return the pretty-printed JSON found in a message, or null when there is no big JSON in it
+  extractBigJson(message) {
+    if (typeof message !== "string" || message.length < BIG_JSON_MIN_LENGTH) {
+      return null;
+    }
+    const startIndex = message.search(/[[{]/);
+    const endIndex = Math.max(
+      message.lastIndexOf("}"),
+      message.lastIndexOf("]"),
+    );
+    if (startIndex === -1 || endIndex <= startIndex) {
+      return null;
+    }
+    const jsonPart = message.substring(startIndex, endIndex + 1);
+    if (jsonPart.length < BIG_JSON_MIN_LENGTH) {
+      return null;
+    }
+    let parsed = null;
+    try {
+      parsed = JSON.parse(jsonPart);
+    } catch (e) {
+      return null;
+    }
+    if (!parsed || typeof parsed !== "object") {
+      return null;
+    }
+    const pretty = JSON.stringify(parsed, null, 2);
+    const preview =
+      pretty.length > BIG_JSON_PREVIEW_LENGTH
+        ? pretty.substring(0, BIG_JSON_PREVIEW_LENGTH) + "\n..."
+        : pretty;
+    return {
+      prefix: message.substring(0, startIndex).trim(),
+      json: pretty,
+      preview,
+    };
+  }
+
+  // Return the beginning of a text too long or too tall for a single log line, or null
+  extractBigText(message) {
+    if (typeof message !== "string") {
+      return null;
+    }
+    const lines = message.split("\n");
+    if (
+      message.length < BIG_TEXT_MIN_LENGTH &&
+      lines.length < BIG_TEXT_MIN_LINES
+    ) {
+      return null;
+    }
+    let truncated = lines.slice(0, BIG_TEXT_PREVIEW_LINES).join("\n");
+    if (truncated.length > BIG_TEXT_PREVIEW_LENGTH) {
+      truncated = truncated.substring(0, BIG_TEXT_PREVIEW_LENGTH);
+    }
+    return { truncated: truncated.trimEnd() + " ...", full: message };
+  }
+
+  formatByteSize(length) {
+    if (length >= 1024 * 1024) {
+      return `${(length / (1024 * 1024)).toFixed(1)} MB`;
+    }
+    if (length >= 1024) {
+      return `${Math.round(length / 1024)} KB`;
+    }
+    return `${length} B`;
+  }
+
+  get isContentModalOpen() {
+    return !!this.modalContent;
+  }
+
+  get contentModalTitle() {
+    return this.modalLanguage === "json"
+      ? this.i18n.jsonContentTitle
+      : this.i18n.logContentTitle;
+  }
+
+  handleShowFullContent(event) {
+    event.stopPropagation();
+    const logId = event.currentTarget.dataset.logId;
+    const logLine = this.logLines.find((line) => line.id === logId);
+    if (logLine && logLine.bigContentFull) {
+      this.modalContent = logLine.bigContentFull;
+      this.modalLanguage = logLine.bigContentLanguage || "plaintext";
+    }
+  }
+
+  handleContentPreviewKeydown(event) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      this.handleShowFullContent(event);
+    }
+  }
+
+  handleCloseContentModal() {
+    this.modalContent = null;
+  }
+
+  handleCopyModalContent() {
+    // allowLarge: this content is copied on purpose, it must not be clipped
+    this.copyToClipboard(this.modalContent, true);
+  }
+
+  // Open the complete content in a new VS Code tab, where it can be searched and folded
+  handleOpenModalContentInVsCode() {
+    if (typeof window !== "undefined" && window.sendMessageToVSCode) {
+      window.sendMessageToVSCode({
+        type: "openTextDocument",
+        data: { content: this.modalContent, language: this.modalLanguage },
+      });
+    }
+  }
+
+  // Run the same command again, with the same parameters
+  get canRunAgain() {
+    return !!(
+      this.isCompleted &&
+      this.commandContext &&
+      this.commandContext.command
+    );
+  }
+
+  handleRunAgain() {
+    if (!this.canRunAgain) {
+      return;
+    }
+    window.sendMessageToVSCode({
+      type: "runCommand",
+      data: { command: this.commandContext.command },
+    });
+  }
 
   containsCopyMarkup(message) {
     return (
@@ -446,7 +635,7 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
     }
   }
 
-  async copyToClipboard(text) {
+  async copyToClipboard(text, allowLarge = false) {
     if (!text) {
       return;
     }
@@ -456,7 +645,7 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
       if (typeof window !== "undefined" && window.sendMessageToVSCode) {
         window.sendMessageToVSCode({
           type: "copyToClipboard",
-          data: { text },
+          data: { text, allowLarge },
         });
         return;
       }
@@ -821,6 +1010,9 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
       // Try to parse and prettify JSON answers
       logLine.formattedMessage = this.formatAnswerMessage(logLine.message);
     }
+
+    // Big payloads (deployment results, API responses, long texts) are collapsed to a preview
+    this.applyBigContentDetection(logLine);
 
     // If this is an action log and there's no active progress section, close current section and start a new one
     // Otherwise, treat action logs as regular log lines when progress is active

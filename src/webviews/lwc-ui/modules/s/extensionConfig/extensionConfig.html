@@ -1,17 +1,16 @@
 <template>
   <div class="slds-scope blue-back" data-theme={colorTheme} data-contrast={colorContrast}>
       <div class="slds-scope slds-p-around_small blue-back">
-          <div class="header-section">
-              <div class="header-content no-bg">
-                  <div class="header-icon-container gray">
-                      <lightning-icon icon-name="utility:settings" size="small" variant="inverse"></lightning-icon>
-                  </div>
-                  <div class="header-text">
-                      <h1 class="header-title single-line">{i18n.sfdxHardisSettings}</h1>
-                  </div>
-                  <div class="header-actions">
-                      <lightning-button variant="neutral" label={i18n.refreshLabel} onclick={handleRefresh} class="slds-m-top_medium"></lightning-button>
-                  </div>
+          <div class="hardis-page-head">
+              <div class="hardis-tile featured slate">
+                  <lightning-icon icon-name="utility:settings" size="medium"></lightning-icon>
+              </div>
+              <div class="hardis-page-head-text">
+                  <h1 class="hardis-page-title">{i18n.sfdxHardisSettings}</h1>
+                  <p class="hardis-page-subtitle">{i18n.extensionSettingsSubtitle}</p>
+              </div>
+              <div class="hardis-page-head-actions">
+                  <lightning-button variant="neutral" label={i18n.refreshLabel} onclick={handleRefresh}></lightning-button>
               </div>
           </div>
 

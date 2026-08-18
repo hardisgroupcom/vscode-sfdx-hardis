@@ -1,24 +1,14 @@
 <template>
   <div class="slds-scope slds-card blue-back" data-theme={colorTheme} data-contrast={colorContrast}>
-    <div class="slds-card__header slds-grid">
-      <header class="slds-media slds-media_center slds-has-flexi-truncate">
-        <div class="slds-media__figure">
-          <span class="slds-icon_container slds-icon-utility-database header-icon-container purple">
-            <lightning-icon icon-name="utility:database" alternative-text={i18n.dwbAltText} size="medium" variant="inverse"></lightning-icon>
-          </span>
-        </div>
-        <div class="slds-media__body">
-          <div class="slds-grid slds-grid_align-spread">
-            <h2 class="slds-card__header-title">
-              <span class="slds-text-heading_medium">{i18n.dwbTitle}</span>
-            </h2>
-          </div>
-          <p class="slds-text-body_small slds-line-height_reset">
-            {i18n.dwbDesc}
-          </p>
-        </div>
-      </header>
-      <div class="slds-no-flex slds-grid slds-grid_align-end slds-gutters_x-small">
+    <div class="hardis-page-head">
+      <div class="hardis-tile featured violet">
+        <lightning-icon icon-name="utility:database" alternative-text={i18n.dwbAltText} size="medium"></lightning-icon>
+      </div>
+      <div class="hardis-page-head-text">
+        <h1 class="hardis-page-title">{i18n.dwbTitle}</h1>
+        <p class="hardis-page-subtitle">{i18n.dwbDesc}</p>
+      </div>
+      <div class="hardis-page-head-actions">
         <lightning-button
           variant="neutral"
           label={i18n.dwbSfdmuDocLabel}
@@ -26,15 +16,13 @@
           icon-name="utility:new_window"
           onclick={handleOpenSfdmuDoc}
         ></lightning-button>
-        <span class="slds-m-left_small">
-        <lightning-button
-          variant="brand"
+        <lightning-button class="hardis-btn-tinted-blue"
+          variant="neutral"
           label={i18n.dwbCreateWorkspace}
           title={i18n.dwbCreateWorkspaceTooltip}
           icon-name="utility:add"
           onclick={handleCreateWorkspace}
         ></lightning-button>
-        </span>
       </div>
     </div>
 
@@ -72,9 +60,9 @@
               {i18n.dwbNoWorkspacesFoundDesc}
             </p>
             <lightning-button
-              variant="brand"
+              variant="neutral"
               label={i18n.dwbCreateFirstWorkspace}
-              class="slds-m-top_medium"
+              class="slds-m-top_medium hardis-btn-tinted-blue"
               onclick={handleCreateWorkspace}
             ></lightning-button>
           </div>
@@ -127,8 +115,8 @@
                   <div slot="actions">
                     <template if:true={showLargeActions}>
                       <div class="slds-show_large slds-grid">
-                        <lightning-button
-                          variant="brand"
+                        <lightning-button class="hardis-btn-tinted-blue"
+                          variant="neutral"
                           label={i18n.dwbExportData}
                           title={i18n.dwbExportDataTooltip}
                           icon-name="utility:download"
@@ -136,8 +124,8 @@
                           size="small"
                           onclick={handleExportData}
                         ></lightning-button>
-                        <lightning-button
-                          variant="brand"
+                        <lightning-button class="hardis-btn-tinted-blue"
+                          variant="neutral"
                           label={i18n.dwbImportData}
                           title={i18n.dwbImportDataTooltip}
                           icon-name="utility:upload"
@@ -145,8 +133,8 @@
                           size="small"
                           onclick={handleImportData}
                         ></lightning-button>
-                        <lightning-button
-                          variant="destructive"
+                        <lightning-button class="hardis-btn-tinted-red"
+                          variant="neutral"
                           label={i18n.dwbDeleteData}
                           title={i18n.dwbDeleteDataTooltip}
                           icon-name="utility:close"
@@ -628,8 +616,8 @@
             label={i18n.cancelLabel}
             onclick={handleCancelProperties}
           ></lightning-button>
-          <lightning-button
-            variant="brand"
+          <lightning-button class="hardis-btn-tinted-blue"
+            variant="neutral"
             label={savePropertiesButtonLabel}
             disabled={savePropertiesButtonDisabled}
             onclick={handleSaveProperties}
@@ -1183,8 +1171,8 @@
                     <div class="slds-form-element">
                       <label class="slds-form-element__label">&nbsp;</label>
                       <div class="slds-form-element__control">
-                        <lightning-button
-                          variant="destructive-text"
+                        <lightning-button class="hardis-btn-tinted-red"
+                          variant="neutral"
                           icon-name="utility:delete"
                           label={i18n.dwbMockRemoveField}
                           data-fieldindex={fieldIndex}
@@ -1208,8 +1196,8 @@
             label={i18n.dwbCancel}
             onclick={handleCancelObject}
           ></lightning-button>
-          <lightning-button
-            variant="brand"
+          <lightning-button class="hardis-btn-tinted-blue"
+            variant="neutral"
             label={saveObjectButtonLabel}
             disabled={saveObjectButtonDisabled}
             onclick={handleSaveObject}
@@ -1665,7 +1653,7 @@
         </div>
         <footer class="slds-modal__footer">
           <lightning-button variant="neutral" label={i18n.dwbCancel} onclick={handleCancelGlobalSettings}></lightning-button>
-          <lightning-button variant="brand" label={i18n.dwbSaveSettings} onclick={handleSaveGlobalSettings}></lightning-button>
+          <lightning-button class="hardis-btn-tinted-blue" variant="neutral" label={i18n.dwbSaveSettings} onclick={handleSaveGlobalSettings}></lightning-button>
         </footer>
       </div>
     </section>
