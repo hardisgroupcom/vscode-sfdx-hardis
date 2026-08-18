@@ -69,6 +69,7 @@
                                                               value={entry.valueEnum}
                                                               options={entry.optionsLwc}
                                                               onchange={handleSelectChange}
+                                                              label={entry.label}
                                                               variant="label-hidden"
                                                           ></lightning-combobox>
                                                       </template>
@@ -79,6 +80,7 @@
                                                               checked={entry.valueBoolean}
                                                               onchange={handleCheckboxChange}
                                                               oninput={handleCheckboxChange}
+                                                              label={entry.label}
                                                               variant="label-hidden"
                                                               message-toggle-active=""
                                                               message-toggle-inactive=""
@@ -90,6 +92,7 @@
                                                               name={entry.key}
                                                               value={entry.valueString}
                                                               onchange={handleTextChange}
+                                                              label={entry.label}
                                                               variant="label-hidden"
                                                           ></lightning-input>
                                                       </template>
@@ -99,6 +102,7 @@
                                                               name={entry.key}
                                                               value={entry.valueNumber}
                                                               onchange={handleNumberChange}
+                                                              label={entry.label}
                                                               variant="label-hidden"
                                                           ></lightning-input>
                                                       </template>
@@ -107,6 +111,7 @@
                                                               name={entry.key}
                                                               value={entry.valueArray}
                                                               onchange={handleTextareaChange}
+                                                              label={entry.label}
                                                               variant="label-hidden"
                                                               placeholder={i18n.enterOneItemPerLine}
                                                           ></lightning-textarea>

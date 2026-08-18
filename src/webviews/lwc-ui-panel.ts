@@ -61,12 +61,13 @@ export class LwcUiPanel {
       this.disposables,
     );
 
-    // Send initialization data to the webview after a short delay to ensure it's ready
-    if (this.initializationData) {
-      setTimeout(() => {
-        this.sendInitializationData(this.initializationData);
-      }, 100);
-    }
+    // Initialization data is NOT pushed on a timer here: a postMessage sent
+    // before the webview page finished loading is dropped by VS Code (panels
+    // then hung on their loading spinner forever on slow machines). The page
+    // announces itself with a "webviewReady" message once its LWC component
+    // is mounted (see handleBuiltInMessages), and the data is sent exactly
+    // once in response — the script URI is cache-busted, so the booting
+    // bundle always speaks this contract.
   }
 
   public static display(
@@ -956,9 +957,15 @@ export class LwcUiPanel {
 
   private getHtmlForWebview(webview: vscode.Webview) {
     // Get the local path to main script run in the webview, then convert it to a uri we can use in the webview.
-    const scriptUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this.extensionUri, "out", "webviews", "lwc-ui.js"),
-    );
+    // Cache-busted like the stylesheets below: the webview service worker can
+    // serve a stale bundle across extension updates, and the initialization
+    // contract (the page sends "webviewReady", the panel answers with the
+    // init data) requires the current bundle to be the one that boots.
+    const scriptUri = webview
+      .asWebviewUri(
+        vscode.Uri.joinPath(this.extensionUri, "out", "webviews", "lwc-ui.js"),
+      )
+      .with({ query: `v=${Date.now()}` });
 
     // Get path to SLDS CSS (copied by webpack)
     const sldsStylesUri = webview.asWebviewUri(

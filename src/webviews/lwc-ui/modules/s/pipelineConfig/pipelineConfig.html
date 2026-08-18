@@ -87,7 +87,8 @@
                               value={entry.valueEdit}
                               options={entry.optionsLwc}
                               onchange={handleInputChange}
-                              variant="label-hidden"
+                              label={entry.label}
+                            variant="label-hidden"
                             ></lightning-combobox>
                           </template>
                           <template if:true={entry.isArrayEnum}>
@@ -156,7 +157,8 @@
                                 value={entry.valueEditText}
                                 onchange={handleInputChange}
                                 rows="2"
-                                variant="label-hidden"
+                                label={entry.label}
+                            variant="label-hidden"
                               ></lightning-textarea>
                               <div class="slds-text-body_small slds-text-color_weak">{i18n.oneValuePerLine}</div>
                             </template>
@@ -226,7 +228,8 @@
                                             data-field-type="text"
                                             onchange={handleArrayObjectFormFieldChange}
                                             required={field.required}
-                                            variant="label-hidden"
+                                            label={field.label}
+                            variant="label-hidden"
                                           ></lightning-input>
                                           <template if:true={field.description}>
                                             <div class="slds-text-body_small slds-text-color_weak">{field.description}</div>
@@ -251,7 +254,8 @@
                                             data-field-type="enum"
                                             onchange={handleArrayObjectFormFieldChange}
                                             required={field.required}
-                                            variant="label-hidden"
+                                            label={field.label}
+                            variant="label-hidden"
                                           ></lightning-combobox>
                                           <template if:true={field.description}>
                                             <div class="slds-text-body_small slds-text-color_weak">{field.description}</div>
@@ -306,7 +310,8 @@
                               checked={entry.valueEdit}
                               onchange={handleInputChange}
                               oninput={handleInputChange}
-                              variant="label-hidden"
+                              label={entry.label}
+                            variant="label-hidden"
                               message-toggle-active=""
                               message-toggle-inactive=""
                             ></lightning-input>
@@ -317,7 +322,8 @@
                               data-key={entry.key}
                               value={entry.valueEdit}
                               onchange={handleInputChange}
-                              variant="label-hidden"
+                              label={entry.label}
+                            variant="label-hidden"
                             ></lightning-input>
                           </template>
                           <template if:true={entry.isNumber}>
@@ -326,7 +332,8 @@
                               data-key={entry.key}
                               value={entry.valueEdit}
                               onchange={handleInputChange}
-                              variant="label-hidden"
+                              label={entry.label}
+                            variant="label-hidden"
                             ></lightning-input>
                           </template>
                           <template if:true={entry.inherited}>
