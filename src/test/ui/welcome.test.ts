@@ -47,8 +47,9 @@ suite("Welcome page UI tests", function () {
       `repositoryUrl must point to the sfdx-hardis repository (got: ${initData.repositoryUrl})`,
     );
     assert.ok(
-      (initData.marketplaceUrl || "").includes("marketplace.visualstudio.com") ||
-        (initData.marketplaceUrl || "").includes("open-vsx.org"),
+      (initData.marketplaceUrl || "").includes(
+        "marketplace.visualstudio.com",
+      ) || (initData.marketplaceUrl || "").includes("open-vsx.org"),
       `marketplaceUrl must point to the Visual Studio Marketplace or Open VSX (got: ${initData.marketplaceUrl})`,
     );
     assert.ok(

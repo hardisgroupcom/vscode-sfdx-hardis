@@ -1559,8 +1559,7 @@ ${resultMessage}`;
           "width: " + Math.max(0, Math.min(100, progressPercentage)) + "%",
         isIndeterminate,
         duration: this.calculateSectionDuration(section),
-        itemClass:
-          "hardis-tl-item" + (isExpanded && hasLogs ? " open" : ""),
+        itemClass: "hardis-tl-item" + (isExpanded && hasLogs ? " open" : ""),
         nodeClass: "hardis-tl-node " + nodeState,
         nodeIconName,
         rowClass: "hardis-tl-row" + (hasLogs ? " expandable" : ""),

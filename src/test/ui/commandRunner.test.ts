@@ -47,7 +47,9 @@ function captureScreen(name: string): void {
     });
     console.log(`      [visual] captured ${file}`);
   } catch (error) {
-    console.log(`      [visual] screenshot failed: ${(error as Error).message}`);
+    console.log(
+      `      [visual] screenshot failed: ${(error as Error).message}`,
+    );
   }
 }
 

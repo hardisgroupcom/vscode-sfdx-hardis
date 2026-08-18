@@ -144,8 +144,7 @@ export function registerShowWelcome(command: Commands) {
           if (targetCommand) {
             vscode.commands.executeCommand(targetCommand);
           }
-        }
-        else if (type === "setQuickStartCollapsed") {
+        } else if (type === "setQuickStartCollapsed") {
           void CacheManager.setPreference(
             QUICK_START_COLLAPSED_PREF,
             data?.collapsed === true,

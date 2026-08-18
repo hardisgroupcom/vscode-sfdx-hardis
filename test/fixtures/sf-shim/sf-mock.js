@@ -256,15 +256,24 @@ async function runShowcaseScenario(send, askPrompt, sleep) {
   );
   await sleep(80);
   log("log", "Detected 4 item types to save before the refresh.");
-  log("action", "Checking which Connected Apps can be converted to External Client Apps...");
+  log(
+    "action",
+    "Checking which Connected Apps can be converted to External Client Apps...",
+  );
   send({
     event: "commandSubCommandStart",
-    data: { command: 'sf project generate --name "sfdx-hardis-blank-project"', cwd: "." },
+    data: {
+      command: 'sf project generate --name "sfdx-hardis-blank-project"',
+      cwd: ".",
+    },
   });
   await sleep(350);
   send({
     event: "commandSubCommandEnd",
-    data: { command: 'sf project generate --name "sfdx-hardis-blank-project"', success: true },
+    data: {
+      command: 'sf project generate --name "sfdx-hardis-blank-project"',
+      success: true,
+    },
   });
   log(
     "warning",
@@ -273,9 +282,21 @@ async function runShowcaseScenario(send, askPrompt, sleep) {
   log(
     "table",
     JSON.stringify([
-      { name: "Amalto", lastUpdatedDate: "2019-03-28 16:57", lastUpdatedBy: "Salesforce Scheduled Jobs" },
-      { name: "Azure_Data_Factory", lastUpdatedDate: "2025-10-13 11:13", lastUpdatedBy: "Nicolas Vuillamy" },
-      { name: "CustomerInfoAPI", lastUpdatedDate: "2023-04-12 10:12", lastUpdatedBy: "User Integration" },
+      {
+        name: "Amalto",
+        lastUpdatedDate: "2019-03-28 16:57",
+        lastUpdatedBy: "Salesforce Scheduled Jobs",
+      },
+      {
+        name: "Azure_Data_Factory",
+        lastUpdatedDate: "2025-10-13 11:13",
+        lastUpdatedBy: "Nicolas Vuillamy",
+      },
+      {
+        name: "CustomerInfoAPI",
+        lastUpdatedDate: "2023-04-12 10:12",
+        lastUpdatedBy: "User Integration",
+      },
     ]),
   );
   await sleep(120);
@@ -289,21 +310,36 @@ async function runShowcaseScenario(send, askPrompt, sleep) {
     type: "select",
     message: "Do you want to set the selected org as your default org?",
     choices: [
-      { title: "✅ Yes", value: "yes", description: "Use this org as the default org of the project" },
-      { title: "❌ No", value: "no", description: "Keep the current default org" },
+      {
+        title: "✅ Yes",
+        value: "yes",
+        description: "Use this org as the default org of the project",
+      },
+      {
+        title: "❌ No",
+        value: "no",
+        description: "Keep the current default org",
+      },
     ],
   });
   log("log", "✅ Yes");
   await sleep(100);
 
   // Progress with known number of steps
-  send({ event: "progressStart", title: "Describing 149 objects...", totalSteps: 149 });
+  send({
+    event: "progressStart",
+    title: "Describing 149 objects...",
+    totalSteps: 149,
+  });
   for (let step = 1; step <= 149; step += 8) {
     send({ event: "progressStep", step, totalSteps: 149 });
     await sleep(35);
   }
   send({ event: "progressEnd", totalSteps: 149 });
-  log("log", "Described 149 objects (115 excluded without local customizations).");
+  log(
+    "log",
+    "Described 149 objects (115 excluded without local customizations).",
+  );
   await sleep(100);
 
   // Question 2: multiselect with many options
@@ -315,11 +351,22 @@ async function runShowcaseScenario(send, askPrompt, sleep) {
     choices: [
       { title: "APITalenDev__c", value: "APITalenDev__c" },
       { title: "APITalenProd__c", value: "APITalenProd__c" },
-      { title: "Conga_Composer_Settings__c", value: "Conga_Composer_Settings__c", description: "APXTCFQ namespace" },
+      {
+        title: "Conga_Composer_Settings__c",
+        value: "Conga_Composer_Settings__c",
+        description: "APXTCFQ namespace",
+      },
       { title: "AmaltoToAdresses__c", value: "AmaltoToAdresses__c" },
-      { title: "Chargent_Settings__c", value: "Chargent_Settings__c", description: "ChargentBase namespace" },
+      {
+        title: "Chargent_Settings__c",
+        value: "Chargent_Settings__c",
+        description: "ChargentBase namespace",
+      },
       { title: "CybersourceSettings__c", value: "CybersourceSettings__c" },
-      { title: "DefaultOrderItemValues__c", value: "DefaultOrderItemValues__c" },
+      {
+        title: "DefaultOrderItemValues__c",
+        value: "DefaultOrderItemValues__c",
+      },
       { title: "Languages__c", value: "Languages__c" },
     ],
   });
@@ -329,7 +376,11 @@ async function runShowcaseScenario(send, askPrompt, sleep) {
       customSettingsResponse[0] &&
       customSettingsResponse[0].customSettings) ||
     [];
-  log("log", "☑ " + (Array.isArray(selection) ? selection.join(", ") : String(selection)));
+  log(
+    "log",
+    "☑ " +
+      (Array.isArray(selection) ? selection.join(", ") : String(selection)),
+  );
   await sleep(100);
 
   // Question 3: select with many options (rendered as a filterable list)
@@ -354,9 +405,24 @@ async function runShowcaseScenario(send, askPrompt, sleep) {
   await sleep(100);
 
   // Report files + final status
-  send({ event: "reportFile", file: "reports/data-dictionary.xlsx", title: "Data dictionary (XLSX)", type: "report" });
-  send({ event: "reportFile", file: "reports/data-dictionary.csv", title: "Data dictionary (CSV)", type: "report" });
-  send({ event: "reportFile", file: "https://sfdx-hardis.cloudity.com/hardis/org/refresh/before-refresh/", title: "Command documentation", type: "docUrl" });
+  send({
+    event: "reportFile",
+    file: "reports/data-dictionary.xlsx",
+    title: "Data dictionary (XLSX)",
+    type: "report",
+  });
+  send({
+    event: "reportFile",
+    file: "reports/data-dictionary.csv",
+    title: "Data dictionary (CSV)",
+    type: "report",
+  });
+  send({
+    event: "reportFile",
+    file: "https://sfdx-hardis.cloudity.com/hardis/org/refresh/before-refresh/",
+    title: "Command documentation",
+    type: "docUrl",
+  });
   log("success", "Data dictionary generated for 34 objects.");
   await sleep(200);
 }
