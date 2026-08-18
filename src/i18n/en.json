@@ -1523,6 +1523,7 @@
   "purgeProfilePermissionsTooltip": "Remove or mute Permission Sets attributes from selected Salesforce Profile metadata files and redeploy the cleaned profiles to the target org. Useful after a migration from Profile-based to PS-based permission management",
   "pushFromLocalFilesToSalesforceOrg": "Push from local files to Salesforce org",
   "pushToSalesforceOrgTooltip": "Propagates your local updates within Vs Code into your remote Salesforce scratch org",
+  "queryModeLabel": "Query mode",
   "queryProgressLabel": "Loading metadata… {{current}}/{{total}} ({{metadataType}} done)",
   "readOnlyBranchModeApexTests": "Read-only in branch mode. Open a single {{prLabel}} to edit.",
   "recentChangesLabel": "Recent Changes",

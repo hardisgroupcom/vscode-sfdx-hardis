@@ -18,6 +18,8 @@
           variant="label-hidden"
         ></lightning-combobox>
         <lightning-radio-group
+          label={i18n.queryModeLabel}
+          variant="label-hidden"
           options={queryModeOptions}
           value={queryMode}
           onchange={handleQueryModeChange}
@@ -258,6 +260,7 @@
             </div>
             <div class="slds-col slds-grow slds-p-left_small slds-p-right_small">
               <lightning-input
+                label={i18n.searchInResults}
                 value={searchTerm}
                 onchange={handleSearchChange}
                 placeholder={i18n.searchInResults}

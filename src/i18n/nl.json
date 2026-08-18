@@ -1523,6 +1523,7 @@
   "purgeProfilePermissionsTooltip": "Verwijdert of dempt machtigingsset-attributen uit geselecteerde Salesforce-profielmetadatabestanden en implementeert de opgeschoonde profielen opnieuw in de doelorg. Handig na een migratie van profielgebaseerd naar machtigingsset-gebaseerd rechtenbeheer",
   "pushFromLocalFilesToSalesforceOrg": "Push van lokale bestanden naar Salesforce org",
   "pushToSalesforceOrgTooltip": "Verspreidt je lokale updates in VS Code naar je externe Salesforce scratch org",
+  "queryModeLabel": "Querymodus",
   "queryProgressLabel": "Metadata laden… {{current}}/{{total}} ({{metadataType}} klaar)",
   "readOnlyBranchModeApexTests": "Alleen-lezen in branch modus. Open één {{prLabel}} om te bewerken.",
   "recentChangesLabel": "Recente wijzigingen",

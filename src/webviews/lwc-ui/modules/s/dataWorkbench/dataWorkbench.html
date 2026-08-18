@@ -529,6 +529,7 @@
               </label>
               <div class="slds-form-element__control slds-grid slds-grid_vertical-align-center">
                 <lightning-combobox
+                  label={i18n.workspaceTemplateLabel}
                   variant="label-hidden"
                   name="workspace-template"
                   value={selectedTemplateUrl}
@@ -551,6 +552,7 @@
             </label>
             <div class="slds-form-element__control">
               <lightning-input
+                label={i18n.dwbWorkspaceNameLabel}
                 variant="label-hidden"
                 type="text"
                 name="workspace-name"
@@ -569,6 +571,7 @@
             </label>
             <div class="slds-form-element__control">
               <lightning-input
+                label={i18n.dwbDisplayLabelLabel}
                 variant="label-hidden"
                 type="text"
                 name="workspace-label"
@@ -587,6 +590,7 @@
             </label>
             <div class="slds-form-element__control">
               <lightning-textarea
+                label={i18n.dwbDescriptionFieldLabel}
                 variant="label-hidden"
                 name="workspace-description"
                 placeholder={i18n.dwbDescriptionFieldPlaceholder}
@@ -637,6 +641,7 @@
             </label>
             <div class="slds-form-element__control">
               <lightning-textarea
+                label={i18n.dwbSoqlQuery}
                 variant="label-hidden"
                 name="soql-query"
                 placeholder="SELECT Id, Name FROM Account"
@@ -660,6 +665,7 @@
                 </label>
                 <div class="slds-form-element__control">
                   <lightning-combobox
+                    label={i18n.dwbOperation}
                     variant="label-hidden"
                     name="operation"
                     data-field="operation"
@@ -679,6 +685,7 @@
                 </label>
                 <div class="slds-form-element__control">
                   <lightning-input
+                    label={i18n.dwbExternalId}
                     variant="label-hidden"
                     type="text"
                     name="external-id"
@@ -701,6 +708,7 @@
                 </label>
                 <div class="slds-form-element__control">
                   <lightning-input
+                    label={i18n.dwbBulkApiBatchSize}
                     variant="label-hidden"
                     type="number"
                     name="bulk-api-batch-size"
@@ -720,6 +728,7 @@
                 </label>
                 <div class="slds-form-element__control">
                   <lightning-input
+                    label={i18n.dwbObjectLabel}
                     variant="label-hidden"
                     type="text"
                     name="object-name"
@@ -736,6 +745,7 @@
             <div class="slds-grid slds-grid_vertical-align-center">
               <div class="slds-no-flex">
                 <lightning-input
+                  label={i18n.dwbAllOrNoneToggle}
                   type="toggle"
                   variant="label-hidden"
                   name="all-or-none"
@@ -761,6 +771,7 @@
             <div class="slds-grid slds-grid_vertical-align-center">
               <div class="slds-no-flex">
                 <lightning-input
+                  label={i18n.dwbDeleteOldDataToggle}
                   type="toggle"
                   variant="label-hidden"
                   name="delete-old-data"
@@ -786,6 +797,7 @@
             <div class="slds-grid slds-grid_vertical-align-center">
               <div class="slds-no-flex">
                 <lightning-input
+                  label={i18n.dwbUseQueryAllToggle}
                   type="toggle"
                   variant="label-hidden"
                   name="use-query-all"
@@ -813,7 +825,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="master" aria-label={i18n.dwbMasterToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.master} data-field="master" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbMasterToggle} type="toggle" variant="label-hidden" name="master" aria-label={i18n.dwbMasterToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.master} data-field="master" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
                   </div>
                   <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbMasterToggle}</span>
@@ -824,7 +837,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="query-all-target" aria-label={i18n.dwbQueryAllTargetToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.queryAllTarget} data-field="queryAllTarget" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbQueryAllTargetToggle} type="toggle" variant="label-hidden" name="query-all-target" aria-label={i18n.dwbQueryAllTargetToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.queryAllTarget} data-field="queryAllTarget" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
                   </div>
                   <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbQueryAllTargetToggle}</span>
@@ -835,7 +849,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="use-source-csv" aria-label={i18n.dwbUseCsvSourceToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.useSourceCSVFile} data-field="useSourceCSVFile" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbUseCsvSourceToggle} type="toggle" variant="label-hidden" name="use-source-csv" aria-label={i18n.dwbUseCsvSourceToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.useSourceCSVFile} data-field="useSourceCSVFile" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
                   </div>
                   <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbUseCsvSourceToggle}</span>
@@ -849,7 +864,8 @@
                   <s-multiline-helptext content={i18n.dwbSourceRecordsFilterHelp}></s-multiline-helptext>
                 </label>
                 <div class="slds-form-element__control">
-                  <lightning-input variant="label-hidden" type="text" name="source-records-filter" placeholder="Name LIKE 'ACC_%'" data-field="sourceRecordsFilter" value={editingObject.sourceRecordsFilter} onchange={handleObjFieldChange}></lightning-input>
+                  <lightning-input
+  label={i18n.dwbSourceRecordsFilter} variant="label-hidden" type="text" name="source-records-filter" placeholder="Name LIKE 'ACC_%'" data-field="sourceRecordsFilter" value={editingObject.sourceRecordsFilter} onchange={handleObjFieldChange}></lightning-input>
                 </div>
               </div>
               <div class="slds-form-element slds-m-bottom_small">
@@ -858,7 +874,8 @@
                   <s-multiline-helptext content={i18n.dwbTargetRecordsFilterHelp}></s-multiline-helptext>
                 </label>
                 <div class="slds-form-element__control">
-                  <lightning-input variant="label-hidden" type="text" name="target-records-filter" placeholder="CreatedDate > LAST_N_DAYS:30" data-field="targetRecordsFilter" value={editingObject.targetRecordsFilter} onchange={handleObjFieldChange}></lightning-input>
+                  <lightning-input
+  label={i18n.dwbTargetRecordsFilter} variant="label-hidden" type="text" name="target-records-filter" placeholder="CreatedDate > LAST_N_DAYS:30" data-field="targetRecordsFilter" value={editingObject.targetRecordsFilter} onchange={handleObjFieldChange}></lightning-input>
                 </div>
               </div>
               </div>
@@ -869,7 +886,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="hard-delete" aria-label={i18n.dwbHardDeleteToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.hardDelete} data-field="hardDelete" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbHardDeleteToggle} type="toggle" variant="label-hidden" name="hard-delete" aria-label={i18n.dwbHardDeleteToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.hardDelete} data-field="hardDelete" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
                   </div>
                   <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbHardDeleteToggle}</span>
@@ -880,7 +898,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="delete-by-hierarchy" aria-label={i18n.dwbDeleteByHierarchyToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.deleteByHierarchy} data-field="deleteByHierarchy" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbDeleteByHierarchyToggle} type="toggle" variant="label-hidden" name="delete-by-hierarchy" aria-label={i18n.dwbDeleteByHierarchyToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.deleteByHierarchy} data-field="deleteByHierarchy" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
                   </div>
                   <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbDeleteByHierarchyToggle}</span>
@@ -891,7 +910,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="delete-from-source" aria-label={i18n.dwbDeleteFromSourceToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.deleteFromSource} data-field="deleteFromSource" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbDeleteFromSourceToggle} type="toggle" variant="label-hidden" name="delete-from-source" aria-label={i18n.dwbDeleteFromSourceToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.deleteFromSource} data-field="deleteFromSource" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
                   </div>
                   <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbDeleteFromSourceToggle}</span>
@@ -905,7 +925,8 @@
                   <s-multiline-helptext content={i18n.dwbDeleteQueryHelp}></s-multiline-helptext>
                 </label>
                 <div class="slds-form-element__control">
-                  <lightning-input variant="label-hidden" type="text" name="delete-query" placeholder="SELECT Id FROM Account WHERE IsDeleted = true" data-field="deleteQuery" value={editingObject.deleteQuery} onchange={handleObjFieldChange}></lightning-input>
+                  <lightning-input
+  label={i18n.dwbDeleteQuery} variant="label-hidden" type="text" name="delete-query" placeholder="SELECT Id FROM Account WHERE IsDeleted = true" data-field="deleteQuery" value={editingObject.deleteQuery} onchange={handleObjFieldChange}></lightning-input>
                 </div>
               </div>
               </div>
@@ -916,7 +937,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="excluded" aria-label={i18n.dwbExcludeToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.excluded} data-field="excluded" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbExcludeToggle} type="toggle" variant="label-hidden" name="excluded" aria-label={i18n.dwbExcludeToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.excluded} data-field="excluded" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
                   </div>
                   <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbExcludeToggle}</span>
@@ -927,7 +949,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="skip-existing" aria-label={i18n.dwbSkipExistingToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.skipExistingRecords} data-field="skipExistingRecords" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbSkipExistingToggle} type="toggle" variant="label-hidden" name="skip-existing" aria-label={i18n.dwbSkipExistingToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.skipExistingRecords} data-field="skipExistingRecords" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
                   </div>
                   <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbSkipExistingToggle}</span>
@@ -938,7 +961,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="skip-comparison" aria-label={i18n.dwbSkipComparisonToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.skipRecordsComparison} data-field="skipRecordsComparison" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbSkipComparisonToggle} type="toggle" variant="label-hidden" name="skip-comparison" aria-label={i18n.dwbSkipComparisonToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.skipRecordsComparison} data-field="skipRecordsComparison" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
                   </div>
                   <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbSkipComparisonToggle}</span>
@@ -959,7 +983,8 @@
                       <s-multiline-helptext content={i18n.dwbRestApiBatchSizeHelp}></s-multiline-helptext>
                     </label>
                     <div class="slds-form-element__control">
-                      <lightning-input variant="label-hidden" type="number" name="rest-api-batch-size" min="0" data-field="restApiBatchSize" value={editingObject.restApiBatchSize} onchange={handleObjBatchSizeChange}></lightning-input>
+                      <lightning-input
+  label={i18n.dwbRestApiBatchSize} variant="label-hidden" type="number" name="rest-api-batch-size" min="0" data-field="restApiBatchSize" value={editingObject.restApiBatchSize} onchange={handleObjBatchSizeChange}></lightning-input>
                     </div>
                   </div>
                 </div>
@@ -970,7 +995,8 @@
                       <s-multiline-helptext content={i18n.dwbParallelBulkJobsHelp}></s-multiline-helptext>
                     </label>
                     <div class="slds-form-element__control">
-                      <lightning-input variant="label-hidden" type="number" name="parallel-bulk-jobs" min="1" data-field="parallelBulkJobs" value={editingObject.parallelBulkJobs} onchange={handleObjBatchSizeChange}></lightning-input>
+                      <lightning-input
+  label={i18n.dwbParallelBulkJobs} variant="label-hidden" type="number" name="parallel-bulk-jobs" min="1" data-field="parallelBulkJobs" value={editingObject.parallelBulkJobs} onchange={handleObjBatchSizeChange}></lightning-input>
                     </div>
                   </div>
                 </div>
@@ -983,7 +1009,8 @@
                       <s-multiline-helptext content={i18n.dwbParallelRestJobsHelp}></s-multiline-helptext>
                     </label>
                     <div class="slds-form-element__control">
-                      <lightning-input variant="label-hidden" type="number" name="parallel-rest-jobs" min="1" data-field="parallelRestJobs" value={editingObject.parallelRestJobs} onchange={handleObjBatchSizeChange}></lightning-input>
+                      <lightning-input
+  label={i18n.dwbParallelRestJobs} variant="label-hidden" type="number" name="parallel-rest-jobs" min="1" data-field="parallelRestJobs" value={editingObject.parallelRestJobs} onchange={handleObjBatchSizeChange}></lightning-input>
                     </div>
                   </div>
                 </div>
@@ -992,7 +1019,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="always-rest" aria-label={i18n.dwbAlwaysRestToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.alwaysUseRestApi} data-field="alwaysUseRestApi" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbAlwaysRestToggle} type="toggle" variant="label-hidden" name="always-rest" aria-label={i18n.dwbAlwaysRestToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.alwaysUseRestApi} data-field="alwaysUseRestApi" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
                   </div>
                   <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbAlwaysRestToggle}</span>
@@ -1003,7 +1031,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="always-bulk" aria-label={i18n.dwbAlwaysBulkToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.alwaysUseBulkApi} data-field="alwaysUseBulkApi" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbAlwaysBulkToggle} type="toggle" variant="label-hidden" name="always-bulk" aria-label={i18n.dwbAlwaysBulkToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.alwaysUseBulkApi} data-field="alwaysUseBulkApi" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
                   </div>
                   <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbAlwaysBulkToggle}</span>
@@ -1014,7 +1043,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="always-bulk-update" aria-label={i18n.dwbAlwaysBulkUpdateToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.alwaysUseBulkApiToUpdateRecords} data-field="alwaysUseBulkApiToUpdateRecords" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbAlwaysBulkUpdateToggle} type="toggle" variant="label-hidden" name="always-bulk-update" aria-label={i18n.dwbAlwaysBulkUpdateToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.alwaysUseBulkApiToUpdateRecords} data-field="alwaysUseBulkApiToUpdateRecords" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
                   </div>
                   <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbAlwaysBulkUpdateToggle}</span>
@@ -1025,7 +1055,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="respect-order-delete" aria-label={i18n.dwbRespectOrderToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.respectOrderByOnDeleteRecords} data-field="respectOrderByOnDeleteRecords" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbRespectOrderToggle} type="toggle" variant="label-hidden" name="respect-order-delete" aria-label={i18n.dwbRespectOrderToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.respectOrderByOnDeleteRecords} data-field="respectOrderByOnDeleteRecords" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
                   </div>
                   <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbRespectOrderToggle}</span>
@@ -1041,7 +1072,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="use-field-mapping" aria-label={i18n.dwbFieldMappingToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.useFieldMapping} data-field="useFieldMapping" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbFieldMappingToggle} type="toggle" variant="label-hidden" name="use-field-mapping" aria-label={i18n.dwbFieldMappingToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.useFieldMapping} data-field="useFieldMapping" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
                   </div>
                   <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbFieldMappingToggle}</span>
@@ -1052,7 +1084,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="use-values-mapping" aria-label={i18n.dwbValuesMappingToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.useValuesMapping} data-field="useValuesMapping" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbValuesMappingToggle} type="toggle" variant="label-hidden" name="use-values-mapping" aria-label={i18n.dwbValuesMappingToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.useValuesMapping} data-field="useValuesMapping" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
                   </div>
                   <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbValuesMappingToggle}</span>
@@ -1066,7 +1099,8 @@
                   <s-multiline-helptext content={i18n.dwbExcludedFieldsHelp}></s-multiline-helptext>
                 </label>
                 <div class="slds-form-element__control">
-                  <lightning-input variant="label-hidden" type="text" name="excluded-fields" placeholder="Phone, Fax, Description" data-field="excludedFields" value={editingObjectExcludedFieldsString} onchange={handleObjArrayFieldChange}></lightning-input>
+                  <lightning-input
+  label={i18n.dwbExcludedFields} variant="label-hidden" type="text" name="excluded-fields" placeholder="Phone, Fax, Description" data-field="excludedFields" value={editingObjectExcludedFieldsString} onchange={handleObjArrayFieldChange}></lightning-input>
                 </div>
               </div>
               <div class="slds-form-element slds-m-bottom_small">
@@ -1075,7 +1109,8 @@
                   <s-multiline-helptext content={i18n.dwbExcludedFromUpdateFieldsHelp}></s-multiline-helptext>
                 </label>
                 <div class="slds-form-element__control">
-                  <lightning-input variant="label-hidden" type="text" name="excluded-from-update-fields" placeholder="CreatedDate, LastModifiedDate" data-field="excludedFromUpdateFields" value={editingObjectExcludedFromUpdateFieldsString} onchange={handleObjArrayFieldChange}></lightning-input>
+                  <lightning-input
+  label={i18n.dwbExcludedFromUpdateFields} variant="label-hidden" type="text" name="excluded-from-update-fields" placeholder="CreatedDate, LastModifiedDate" data-field="excludedFromUpdateFields" value={editingObjectExcludedFromUpdateFieldsString} onchange={handleObjArrayFieldChange}></lightning-input>
                 </div>
               </div>
               </div>
@@ -1087,6 +1122,7 @@
             <div class="slds-grid slds-grid_vertical-align-center">
               <div class="slds-no-flex">
                 <lightning-input
+                  label={i18n.dwbUpdateWithMockToggle}
                   type="toggle"
                   variant="label-hidden"
                   name="update-with-mock-data"
@@ -1125,7 +1161,8 @@
                     <div class="slds-form-element">
                       <label class="slds-form-element__label">{i18n.dwbMockFieldLabel}</label>
                       <div class="slds-form-element__control">
-                        <lightning-input variant="label-hidden" type="text" name="mock-field-name" placeholder="Email__c" data-fieldindex={fieldIndex} data-field="name" value={mockField.name} onchange={handleObjMockFieldChange}></lightning-input>
+                        <lightning-input
+  label={i18n.dwbMockFieldLabel} variant="label-hidden" type="text" name="mock-field-name" placeholder="Email__c" data-fieldindex={fieldIndex} data-field="name" value={mockField.name} onchange={handleObjMockFieldChange}></lightning-input>
                       </div>
                     </div>
                   </div>
@@ -1133,7 +1170,8 @@
                     <div class="slds-form-element">
                       <label class="slds-form-element__label">{i18n.dwbMockPatternLabel}</label>
                       <div class="slds-form-element__control">
-                        <lightning-combobox variant="label-hidden" name="mock-field-pattern" placeholder={i18n.dwbMockPatternPlaceholder} data-fieldindex={fieldIndex} data-field="pattern" value={mockField.pattern} options={mockPatternOptions} onchange={handleObjMockFieldChange}></lightning-combobox>
+                        <lightning-combobox
+  label={i18n.dwbMockPatternLabel} variant="label-hidden" name="mock-field-pattern" placeholder={i18n.dwbMockPatternPlaceholder} data-fieldindex={fieldIndex} data-field="pattern" value={mockField.pattern} options={mockPatternOptions} onchange={handleObjMockFieldChange}></lightning-combobox>
                       </div>
                     </div>
                   </div>
@@ -1141,7 +1179,8 @@
                     <div class="slds-form-element">
                       <label class="slds-form-element__label">{i18n.dwbMockLocaleLabel}</label>
                       <div class="slds-form-element__control">
-                        <lightning-input variant="label-hidden" type="text" name="mock-field-locale" placeholder="en_US" data-fieldindex={fieldIndex} data-field="locale" value={mockField.locale} onchange={handleObjMockFieldChange}></lightning-input>
+                        <lightning-input
+  label={i18n.dwbMockLocaleLabel} variant="label-hidden" type="text" name="mock-field-locale" placeholder="en_US" data-fieldindex={fieldIndex} data-field="locale" value={mockField.locale} onchange={handleObjMockFieldChange}></lightning-input>
                       </div>
                     </div>
                   </div>
@@ -1149,7 +1188,8 @@
                     <div class="slds-form-element">
                       <label class="slds-form-element__label">{i18n.dwbMockExcludedRegexLabel}</label>
                       <div class="slds-form-element__control">
-                        <lightning-input variant="label-hidden" type="text" name="mock-field-excluded-regex" placeholder="^Dummy.*$" data-fieldindex={fieldIndex} data-field="excludedRegex" value={mockField.excludedRegex} onchange={handleObjMockFieldChange}></lightning-input>
+                        <lightning-input
+  label={i18n.dwbMockExcludedRegexLabel} variant="label-hidden" type="text" name="mock-field-excluded-regex" placeholder="^Dummy.*$" data-fieldindex={fieldIndex} data-field="excludedRegex" value={mockField.excludedRegex} onchange={handleObjMockFieldChange}></lightning-input>
                       </div>
                     </div>
                   </div>
@@ -1217,7 +1257,8 @@
                       <s-multiline-helptext content={i18n.dwbGsApiVersionHelp}></s-multiline-helptext>
                     </label>
                     <div class="slds-form-element__control">
-                      <lightning-input variant="label-hidden" type="text" placeholder="62.0" data-field="apiVersion" value={editingScriptSettings.apiVersion} onchange={handleScriptSettingChange}></lightning-input>
+                      <lightning-input
+  label={i18n.dwbGsApiVersion} variant="label-hidden" type="text" placeholder="62.0" data-field="apiVersion" value={editingScriptSettings.apiVersion} onchange={handleScriptSettingChange}></lightning-input>
                     </div>
                   </div>
                 </div>
@@ -1226,7 +1267,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="gs-simulation-mode" aria-label={i18n.dwbGsSimulationToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.simulationMode} data-field="simulationMode" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbGsSimulationToggle} type="toggle" variant="label-hidden" name="gs-simulation-mode" aria-label={i18n.dwbGsSimulationToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.simulationMode} data-field="simulationMode" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
                   </div>
                   <div class="slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbGsSimulationToggle}</span>
@@ -1237,7 +1279,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="gs-all-or-none" aria-label={i18n.dwbGsAllOrNoneToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.allOrNone} data-field="allOrNone" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbGsAllOrNoneToggle} type="toggle" variant="label-hidden" name="gs-all-or-none" aria-label={i18n.dwbGsAllOrNoneToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.allOrNone} data-field="allOrNone" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
                   </div>
                   <div class="slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbGsAllOrNoneToggle}</span>
@@ -1248,7 +1291,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="gs-allow-field-truncation" aria-label={i18n.dwbGsAllowTruncationToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.allowFieldTruncation} data-field="allowFieldTruncation" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbGsAllowTruncationToggle} type="toggle" variant="label-hidden" name="gs-allow-field-truncation" aria-label={i18n.dwbGsAllowTruncationToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.allowFieldTruncation} data-field="allowFieldTruncation" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
                   </div>
                   <div class="slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbGsAllowTruncationToggle}</span>
@@ -1259,7 +1303,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="gs-keep-order" aria-label={i18n.dwbGsKeepOrderToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.keepObjectOrderWhileExecute} data-field="keepObjectOrderWhileExecute" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbGsKeepOrderToggle} type="toggle" variant="label-hidden" name="gs-keep-order" aria-label={i18n.dwbGsKeepOrderToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.keepObjectOrderWhileExecute} data-field="keepObjectOrderWhileExecute" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
                   </div>
                   <div class="slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbGsKeepOrderToggle}</span>
@@ -1280,7 +1325,8 @@
                       <s-multiline-helptext content={i18n.dwbGsBulkApiVersionHelp}></s-multiline-helptext>
                     </label>
                     <div class="slds-form-element__control">
-                      <lightning-combobox variant="label-hidden" name="gs-bulk-api-version" placeholder="Select version" data-field="bulkApiVersion" value={editingScriptSettings.bulkApiVersion} options={bulkApiVersionOptions} onchange={handleScriptSettingChange}></lightning-combobox>
+                      <lightning-combobox
+  label={i18n.dwbGsBulkApiVersion} variant="label-hidden" name="gs-bulk-api-version" placeholder="Select version" data-field="bulkApiVersion" value={editingScriptSettings.bulkApiVersion} options={bulkApiVersionOptions} onchange={handleScriptSettingChange}></lightning-combobox>
                     </div>
                   </div>
                 </div>
@@ -1291,7 +1337,8 @@
                       <s-multiline-helptext content={i18n.dwbGsConcurrencyModeHelp}></s-multiline-helptext>
                     </label>
                     <div class="slds-form-element__control">
-                      <lightning-combobox variant="label-hidden" name="gs-concurrency-mode" placeholder="Select mode" data-field="concurrencyMode" value={editingScriptSettings.concurrencyMode} options={concurrencyModeOptions} onchange={handleScriptSettingChange}></lightning-combobox>
+                      <lightning-combobox
+  label={i18n.dwbGsConcurrencyMode} variant="label-hidden" name="gs-concurrency-mode" placeholder="Select mode" data-field="concurrencyMode" value={editingScriptSettings.concurrencyMode} options={concurrencyModeOptions} onchange={handleScriptSettingChange}></lightning-combobox>
                     </div>
                   </div>
                 </div>
@@ -1304,7 +1351,8 @@
                       <s-multiline-helptext content={i18n.dwbGsBulkThresholdHelp}></s-multiline-helptext>
                     </label>
                     <div class="slds-form-element__control">
-                      <lightning-input variant="label-hidden" type="number" min="0" data-field="bulkThreshold" value={editingScriptSettings.bulkThreshold} onchange={handleScriptSettingNumberChange}></lightning-input>
+                      <lightning-input
+  label={i18n.dwbGsBulkThreshold} variant="label-hidden" type="number" min="0" data-field="bulkThreshold" value={editingScriptSettings.bulkThreshold} onchange={handleScriptSettingNumberChange}></lightning-input>
                     </div>
                   </div>
                 </div>
@@ -1315,7 +1363,8 @@
                       <s-multiline-helptext content={i18n.dwbGsQueryBulkThresholdHelp}></s-multiline-helptext>
                     </label>
                     <div class="slds-form-element__control">
-                      <lightning-input variant="label-hidden" type="number" min="0" data-field="queryBulkApiThreshold" value={editingScriptSettings.queryBulkApiThreshold} onchange={handleScriptSettingNumberChange}></lightning-input>
+                      <lightning-input
+  label={i18n.dwbGsQueryBulkThreshold} variant="label-hidden" type="number" min="0" data-field="queryBulkApiThreshold" value={editingScriptSettings.queryBulkApiThreshold} onchange={handleScriptSettingNumberChange}></lightning-input>
                     </div>
                   </div>
                 </div>
@@ -1328,7 +1377,8 @@
                       <s-multiline-helptext content={i18n.dwbGsBulkV1BatchSizeHelp}></s-multiline-helptext>
                     </label>
                     <div class="slds-form-element__control">
-                      <lightning-input variant="label-hidden" type="number" min="0" data-field="bulkApiV1BatchSize" value={editingScriptSettings.bulkApiV1BatchSize} onchange={handleScriptSettingNumberChange}></lightning-input>
+                      <lightning-input
+  label={i18n.dwbGsBulkV1BatchSize} variant="label-hidden" type="number" min="0" data-field="bulkApiV1BatchSize" value={editingScriptSettings.bulkApiV1BatchSize} onchange={handleScriptSettingNumberChange}></lightning-input>
                     </div>
                   </div>
                 </div>
@@ -1339,7 +1389,8 @@
                       <s-multiline-helptext content={i18n.dwbGsRestBatchSizeHelp}></s-multiline-helptext>
                     </label>
                     <div class="slds-form-element__control">
-                      <lightning-input variant="label-hidden" type="number" min="0" data-field="restApiBatchSize" value={editingScriptSettings.restApiBatchSize} onchange={handleScriptSettingNumberChange}></lightning-input>
+                      <lightning-input
+  label={i18n.dwbGsRestBatchSize} variant="label-hidden" type="number" min="0" data-field="restApiBatchSize" value={editingScriptSettings.restApiBatchSize} onchange={handleScriptSettingNumberChange}></lightning-input>
                     </div>
                   </div>
                 </div>
@@ -1347,7 +1398,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="gs-always-rest-update" aria-label={i18n.dwbGsAlwaysRestUpdateToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.alwaysUseRestApiToUpdateRecords} data-field="alwaysUseRestApiToUpdateRecords" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbGsAlwaysRestUpdateToggle} type="toggle" variant="label-hidden" name="gs-always-rest-update" aria-label={i18n.dwbGsAlwaysRestUpdateToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.alwaysUseRestApiToUpdateRecords} data-field="alwaysUseRestApiToUpdateRecords" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
                   </div>
                   <div class="slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbGsAlwaysRestUpdateToggle}</span>
@@ -1368,7 +1420,8 @@
                       <s-multiline-helptext content={i18n.dwbGsParallelBulkJobsHelp}></s-multiline-helptext>
                     </label>
                     <div class="slds-form-element__control">
-                      <lightning-input variant="label-hidden" type="number" min="1" data-field="parallelBulkJobs" value={editingScriptSettings.parallelBulkJobs} onchange={handleScriptSettingNumberChange}></lightning-input>
+                      <lightning-input
+  label={i18n.dwbGsParallelBulkJobs} variant="label-hidden" type="number" min="1" data-field="parallelBulkJobs" value={editingScriptSettings.parallelBulkJobs} onchange={handleScriptSettingNumberChange}></lightning-input>
                     </div>
                   </div>
                 </div>
@@ -1379,7 +1432,8 @@
                       <s-multiline-helptext content={i18n.dwbGsParallelRestJobsHelp}></s-multiline-helptext>
                     </label>
                     <div class="slds-form-element__control">
-                      <lightning-input variant="label-hidden" type="number" min="1" data-field="parallelRestJobs" value={editingScriptSettings.parallelRestJobs} onchange={handleScriptSettingNumberChange}></lightning-input>
+                      <lightning-input
+  label={i18n.dwbGsParallelRestJobs} variant="label-hidden" type="number" min="1" data-field="parallelRestJobs" value={editingScriptSettings.parallelRestJobs} onchange={handleScriptSettingNumberChange}></lightning-input>
                     </div>
                   </div>
                 </div>
@@ -1390,7 +1444,8 @@
                       <s-multiline-helptext content={i18n.dwbGsParallelBinaryDownloadsHelp}></s-multiline-helptext>
                     </label>
                     <div class="slds-form-element__control">
-                      <lightning-input variant="label-hidden" type="number" min="1" data-field="parallelBinaryDownloads" value={editingScriptSettings.parallelBinaryDownloads} onchange={handleScriptSettingNumberChange}></lightning-input>
+                      <lightning-input
+  label={i18n.dwbGsParallelBinaryDownloads} variant="label-hidden" type="number" min="1" data-field="parallelBinaryDownloads" value={editingScriptSettings.parallelBinaryDownloads} onchange={handleScriptSettingNumberChange}></lightning-input>
                     </div>
                   </div>
                 </div>
@@ -1403,7 +1458,8 @@
                       <s-multiline-helptext content={i18n.dwbGsPollingIntervalHelp}></s-multiline-helptext>
                     </label>
                     <div class="slds-form-element__control">
-                      <lightning-input variant="label-hidden" type="number" min="1000" data-field="pollingIntervalMs" value={editingScriptSettings.pollingIntervalMs} onchange={handleScriptSettingNumberChange}></lightning-input>
+                      <lightning-input
+  label={i18n.dwbGsPollingInterval} variant="label-hidden" type="number" min="1000" data-field="pollingIntervalMs" value={editingScriptSettings.pollingIntervalMs} onchange={handleScriptSettingNumberChange}></lightning-input>
                     </div>
                   </div>
                 </div>
@@ -1414,7 +1470,8 @@
                       <s-multiline-helptext content={i18n.dwbGsPollingQueryTimeoutHelp}></s-multiline-helptext>
                     </label>
                     <div class="slds-form-element__control">
-                      <lightning-input variant="label-hidden" type="number" min="0" data-field="pollingQueryTimeoutMs" value={editingScriptSettings.pollingQueryTimeoutMs} onchange={handleScriptSettingNumberChange}></lightning-input>
+                      <lightning-input
+  label={i18n.dwbGsPollingQueryTimeout} variant="label-hidden" type="number" min="0" data-field="pollingQueryTimeoutMs" value={editingScriptSettings.pollingQueryTimeoutMs} onchange={handleScriptSettingNumberChange}></lightning-input>
                     </div>
                   </div>
                 </div>
@@ -1427,7 +1484,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="gs-create-csv" aria-label={i18n.dwbGsCreateCsvToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.createTargetCSVFiles} data-field="createTargetCSVFiles" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbGsCreateCsvToggle} type="toggle" variant="label-hidden" name="gs-create-csv" aria-label={i18n.dwbGsCreateCsvToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.createTargetCSVFiles} data-field="createTargetCSVFiles" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
                   </div>
                   <div class="slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbGsCreateCsvToggle}</span>
@@ -1443,7 +1501,8 @@
                       <s-multiline-helptext content={i18n.dwbGsCsvDelimiterHelp}></s-multiline-helptext>
                     </label>
                     <div class="slds-form-element__control">
-                      <lightning-input variant="label-hidden" type="text" placeholder="," data-field="csvFileDelimiter" value={editingScriptSettings.csvFileDelimiter} onchange={handleScriptSettingChange}></lightning-input>
+                      <lightning-input
+  label={i18n.dwbGsCsvDelimiter} variant="label-hidden" type="text" placeholder="," data-field="csvFileDelimiter" value={editingScriptSettings.csvFileDelimiter} onchange={handleScriptSettingChange}></lightning-input>
                     </div>
                   </div>
                 </div>
@@ -1454,7 +1513,8 @@
                       <s-multiline-helptext content={i18n.dwbGsCsvEncodingHelp}></s-multiline-helptext>
                     </label>
                     <div class="slds-form-element__control">
-                      <lightning-combobox variant="label-hidden" name="gs-csv-encoding" placeholder="Select encoding" data-field="csvFileEncoding" value={editingScriptSettings.csvFileEncoding} options={csvEncodingOptions} onchange={handleScriptSettingChange}></lightning-combobox>
+                      <lightning-combobox
+  label={i18n.dwbGsCsvEncoding} variant="label-hidden" name="gs-csv-encoding" placeholder="Select encoding" data-field="csvFileEncoding" value={editingScriptSettings.csvFileEncoding} options={csvEncodingOptions} onchange={handleScriptSettingChange}></lightning-combobox>
                     </div>
                   </div>
                 </div>
@@ -1462,7 +1522,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="gs-csv-insert-nulls" aria-label={i18n.dwbGsCsvInsertNullsToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.csvInsertNulls} data-field="csvInsertNulls" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbGsCsvInsertNullsToggle} type="toggle" variant="label-hidden" name="gs-csv-insert-nulls" aria-label={i18n.dwbGsCsvInsertNullsToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.csvInsertNulls} data-field="csvInsertNulls" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
                   </div>
                   <div class="slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbGsCsvInsertNullsToggle}</span>
@@ -1473,7 +1534,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="gs-csv-european-date" aria-label={i18n.dwbGsCsvEuropeanDateToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.csvUseEuropeanDateFormat} data-field="csvUseEuropeanDateFormat" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbGsCsvEuropeanDateToggle} type="toggle" variant="label-hidden" name="gs-csv-european-date" aria-label={i18n.dwbGsCsvEuropeanDateToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.csvUseEuropeanDateFormat} data-field="csvUseEuropeanDateFormat" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
                   </div>
                   <div class="slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbGsCsvEuropeanDateToggle}</span>
@@ -1484,7 +1546,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="gs-csv-uppercase" aria-label={i18n.dwbGsCsvUppercaseToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.csvWriteUpperCaseHeaders} data-field="csvWriteUpperCaseHeaders" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbGsCsvUppercaseToggle} type="toggle" variant="label-hidden" name="gs-csv-uppercase" aria-label={i18n.dwbGsCsvUppercaseToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.csvWriteUpperCaseHeaders} data-field="csvWriteUpperCaseHeaders" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
                   </div>
                   <div class="slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbGsCsvUppercaseToggle}</span>
@@ -1495,7 +1558,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="gs-csv-utf8-bom" aria-label={i18n.dwbGsCsvUtf8BomToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.csvUseUtf8Bom} data-field="csvUseUtf8Bom" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbGsCsvUtf8BomToggle} type="toggle" variant="label-hidden" name="gs-csv-utf8-bom" aria-label={i18n.dwbGsCsvUtf8BomToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.csvUseUtf8Bom} data-field="csvUseUtf8Bom" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
                   </div>
                   <div class="slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbGsCsvUtf8BomToggle}</span>
@@ -1506,7 +1570,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="gs-csv-always-quoted" aria-label={i18n.dwbGsCsvAlwaysQuotedToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.csvAlwaysQuoted} data-field="csvAlwaysQuoted" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbGsCsvAlwaysQuotedToggle} type="toggle" variant="label-hidden" name="gs-csv-always-quoted" aria-label={i18n.dwbGsCsvAlwaysQuotedToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.csvAlwaysQuoted} data-field="csvAlwaysQuoted" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
                   </div>
                   <div class="slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbGsCsvAlwaysQuotedToggle}</span>
@@ -1517,7 +1582,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="gs-exclude-ids-csv" aria-label={i18n.dwbGsExcludeIdsCsvToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.excludeIdsFromCSVFiles} data-field="excludeIdsFromCSVFiles" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbGsExcludeIdsCsvToggle} type="toggle" variant="label-hidden" name="gs-exclude-ids-csv" aria-label={i18n.dwbGsExcludeIdsCsvToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.excludeIdsFromCSVFiles} data-field="excludeIdsFromCSVFiles" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
                   </div>
                   <div class="slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbGsExcludeIdsCsvToggle}</span>
@@ -1528,7 +1594,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="gs-import-csv-as-is" aria-label={i18n.dwbGsImportCsvAsIsToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.importCSVFilesAsIs} data-field="importCSVFilesAsIs" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbGsImportCsvAsIsToggle} type="toggle" variant="label-hidden" name="gs-import-csv-as-is" aria-label={i18n.dwbGsImportCsvAsIsToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.importCSVFilesAsIs} data-field="importCSVFilesAsIs" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
                   </div>
                   <div class="slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbGsImportCsvAsIsToggle}</span>
@@ -1539,7 +1606,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="gs-validate-csv-only" aria-label={i18n.dwbGsValidateCsvToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.validateCSVFilesOnly} data-field="validateCSVFilesOnly" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbGsValidateCsvToggle} type="toggle" variant="label-hidden" name="gs-validate-csv-only" aria-label={i18n.dwbGsValidateCsvToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.validateCSVFilesOnly} data-field="validateCSVFilesOnly" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
                   </div>
                   <div class="slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbGsValidateCsvToggle}</span>
@@ -1550,7 +1618,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="gs-separated-csv" aria-label={i18n.dwbGsSeparatedCsvToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.useSeparatedCSVFiles} data-field="useSeparatedCSVFiles" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbGsSeparatedCsvToggle} type="toggle" variant="label-hidden" name="gs-separated-csv" aria-label={i18n.dwbGsSeparatedCsvToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.useSeparatedCSVFiles} data-field="useSeparatedCSVFiles" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
                   </div>
                   <div class="slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbGsSeparatedCsvToggle}</span>
@@ -1571,7 +1640,8 @@
                       <s-multiline-helptext content={i18n.dwbGsBinaryDataCacheHelp}></s-multiline-helptext>
                     </label>
                     <div class="slds-form-element__control">
-                      <lightning-combobox variant="label-hidden" name="gs-binary-cache" placeholder="Select cache mode" data-field="binaryDataCache" value={editingScriptSettings.binaryDataCache} options={cacheOptions} onchange={handleScriptSettingChange}></lightning-combobox>
+                      <lightning-combobox
+  label={i18n.dwbGsBinaryDataCache} variant="label-hidden" name="gs-binary-cache" placeholder="Select cache mode" data-field="binaryDataCache" value={editingScriptSettings.binaryDataCache} options={cacheOptions} onchange={handleScriptSettingChange}></lightning-combobox>
                     </div>
                   </div>
                 </div>
@@ -1582,7 +1652,8 @@
                       <s-multiline-helptext content={i18n.dwbGsSourceRecordsCacheHelp}></s-multiline-helptext>
                     </label>
                     <div class="slds-form-element__control">
-                      <lightning-combobox variant="label-hidden" name="gs-source-cache" placeholder="Select cache mode" data-field="sourceRecordsCache" value={editingScriptSettings.sourceRecordsCache} options={cacheOptions} onchange={handleScriptSettingChange}></lightning-combobox>
+                      <lightning-combobox
+  label={i18n.dwbGsSourceRecordsCache} variant="label-hidden" name="gs-source-cache" placeholder="Select cache mode" data-field="sourceRecordsCache" value={editingScriptSettings.sourceRecordsCache} options={cacheOptions} onchange={handleScriptSettingChange}></lightning-combobox>
                     </div>
                   </div>
                 </div>
@@ -1595,7 +1666,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="gs-prompt-csv-issues" aria-label={i18n.dwbGsPromptCsvIssuesToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.promptOnIssuesInCSVFiles} data-field="promptOnIssuesInCSVFiles" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbGsPromptCsvIssuesToggle} type="toggle" variant="label-hidden" name="gs-prompt-csv-issues" aria-label={i18n.dwbGsPromptCsvIssuesToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.promptOnIssuesInCSVFiles} data-field="promptOnIssuesInCSVFiles" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
                   </div>
                   <div class="slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbGsPromptCsvIssuesToggle}</span>
@@ -1606,7 +1678,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="gs-prompt-missing-parents" aria-label={i18n.dwbGsPromptMissingParentsToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.promptOnMissingParentObjects} data-field="promptOnMissingParentObjects" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbGsPromptMissingParentsToggle} type="toggle" variant="label-hidden" name="gs-prompt-missing-parents" aria-label={i18n.dwbGsPromptMissingParentsToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.promptOnMissingParentObjects} data-field="promptOnMissingParentObjects" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
                   </div>
                   <div class="slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbGsPromptMissingParentsToggle}</span>
@@ -1620,7 +1693,8 @@
                   <s-multiline-helptext content={i18n.dwbGsExcludedObjectsHelp}></s-multiline-helptext>
                 </label>
                 <div class="slds-form-element__control">
-                  <lightning-input variant="label-hidden" type="text" placeholder="Task, Event" data-field="excludedObjects" value={editingScriptSettings.excludedObjects} onchange={handleScriptSettingChange}></lightning-input>
+                  <lightning-input
+  label={i18n.dwbGsExcludedObjects} variant="label-hidden" type="text" placeholder="Task, Event" data-field="excludedObjects" value={editingScriptSettings.excludedObjects} onchange={handleScriptSettingChange}></lightning-input>
                 </div>
               </div>
               <div class="slds-form-element slds-m-bottom_small">
@@ -1629,7 +1703,8 @@
                   <s-multiline-helptext content={i18n.dwbGsProxyUrlHelp}></s-multiline-helptext>
                 </label>
                 <div class="slds-form-element__control">
-                  <lightning-input variant="label-hidden" type="text" placeholder="http://proxy.example.com:8080" data-field="proxyUrl" value={editingScriptSettings.proxyUrl} onchange={handleScriptSettingChange}></lightning-input>
+                  <lightning-input
+  label={i18n.dwbGsProxyUrl} variant="label-hidden" type="text" placeholder="http://proxy.example.com:8080" data-field="proxyUrl" value={editingScriptSettings.proxyUrl} onchange={handleScriptSettingChange}></lightning-input>
                 </div>
               </div>
               </div>

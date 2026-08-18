@@ -1523,6 +1523,7 @@
   "purgeProfilePermissionsTooltip": "Supprime ou neutralise les attributs des Ensembles de Permissions dans les fichiers de métadonnées de Profils Salesforce sélectionnés, puis redéploie les profils nettoyés dans l'org cible. Utile après une migration de la gestion des permissions basée sur les Profils vers les Ensembles de Permissions",
   "pushFromLocalFilesToSalesforceOrg": "Pousser les fichiers locaux vers l'org Salesforce",
   "pushToSalesforceOrgTooltip": "Propager vos modifications locales dans VS Code vers votre scratch org Salesforce distante",
+  "queryModeLabel": "Mode de requête",
   "queryProgressLabel": "Chargement des métadonnées… {{current}}/{{total}} ({{metadataType}} terminé)",
   "readOnlyBranchModeApexTests": "Lecture seule en mode branche. Ouvrez une {{prLabel}} individuelle pour modifier.",
   "recentChangesLabel": "Modifications récentes",

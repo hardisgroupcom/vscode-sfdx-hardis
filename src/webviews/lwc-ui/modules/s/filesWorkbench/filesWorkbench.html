@@ -273,6 +273,7 @@
                 </label>
                 <div class="slds-form-element__control slds-grid slds-grid_vertical-align-center">
                   <lightning-combobox
+                    label={i18n.workspaceTemplateLabel}
                     variant="label-hidden"
                     name="workspace-template"
                     value={selectedTemplateUrl}
@@ -296,6 +297,7 @@
               </label>
               <div class="slds-form-element__control">
                 <lightning-input
+                  label={i18n.workspaceNameInputLabel}
                   variant="label-hidden"
                   type="text"
                   name="workspace-name"
@@ -314,6 +316,7 @@
               </label>
               <div class="slds-form-element__control">
                 <lightning-input
+                  label={i18n.displayLabelField}
                   variant="label-hidden"
                   type="text"
                   name="workspace-label"
@@ -332,6 +335,7 @@
               </label>
               <div class="slds-form-element__control">
                 <lightning-textarea
+                  label={i18n.descriptionFieldLabel}
                   variant="label-hidden"
                   name="workspace-description"
                   placeholder={i18n.descriptionFieldPlaceholder}
@@ -349,6 +353,7 @@
               </label>
               <div class="slds-form-element__control">
                 <lightning-textarea
+                  label={i18n.soqlQueryInputLabel}
                   variant="label-hidden"
                   name="soql-query"
                   placeholder="SELECT Id,Name FROM Opportunity"
@@ -368,6 +373,7 @@
                   </label>
                   <div class="slds-form-element__control">
                     <lightning-combobox
+                      label={i18n.fileTypesInputLabel}
                       variant="label-hidden"
                       name="file-types"
                       value={newWorkspace.fileTypes}
@@ -386,6 +392,7 @@
                   </label>
                   <div class="slds-form-element__control">
                     <lightning-input
+                      label={i18n.minFileSizeInputLabel}
                       variant="label-hidden"
                       type="number"
                       name="file-size-min"
@@ -408,6 +415,7 @@
                   </label>
                   <div class="slds-form-element__control">
                     <lightning-input
+                      label={i18n.folderNameFieldLabel}
                       variant="label-hidden"
                       type="text"
                       name="folder-field"
@@ -431,6 +439,7 @@
               </label>
               <div class="slds-form-element__control">
                 <lightning-combobox
+                  label={i18n.fileNameFormatLabel}
                   variant="label-hidden"
                   name="file-name-format"
                   value={newWorkspace.outputFileNameFormat}

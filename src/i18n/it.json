@@ -1523,6 +1523,7 @@
   "purgeProfilePermissionsTooltip": "Rimuove o disattiva gli attributi dei Set di Autorizzazioni dai file di metadati dei Profili Salesforce selezionati e ridistribuisce i profili puliti nell'org di destinazione. Utile dopo una migrazione dalla gestione dei permessi basata sui Profili ai Set di Autorizzazioni",
   "pushFromLocalFilesToSalesforceOrg": "Push dai file locali all'org Salesforce",
   "pushToSalesforceOrgTooltip": "Propaga i tuoi aggiornamenti locali in VS Code alla tua scratch org Salesforce remota",
+  "queryModeLabel": "Modalità di query",
   "queryProgressLabel": "Caricamento metadati… {{current}}/{{total}} ({{metadataType}} completato)",
   "readOnlyBranchModeApexTests": "Sola lettura in modalità branch. Apri una singola {{prLabel}} per modificare.",
   "recentChangesLabel": "Modifiche recenti",

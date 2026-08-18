@@ -1523,6 +1523,7 @@
   "purgeProfilePermissionsTooltip": "選択した Salesforce プロファイルのメタデータファイルから権限セット属性を削除またはミュートし、クリーンなプロファイルを対象組織に再デプロイします。プロファイルベースから権限セットベースの権限管理への移行後に有用です",
   "pushFromLocalFilesToSalesforceOrg": "ローカルファイルから Salesforce 組織へ push",
   "pushToSalesforceOrgTooltip": "Vs Code 内のローカル更新をリモートの Salesforce scratch org に反映します",
+  "queryModeLabel": "クエリモード",
   "queryProgressLabel": "メタデータを読み込み中… {{current}}/{{total}} ({{metadataType}} 完了)",
   "readOnlyBranchModeApexTests": "branch モードでは読み取り専用です。編集するには単一の {{prLabel}} を開いてください。",
   "recentChangesLabel": "最近の変更",

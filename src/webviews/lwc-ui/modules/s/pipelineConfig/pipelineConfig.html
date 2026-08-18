@@ -98,6 +98,8 @@
                               options={entry.optionsLwc}
                               onchange={handleInputChange}
                               label={i18n.selectValues}
+                              source-label={i18n.availableLabel}
+                              selected-label={i18n.selectedLabel}
                             ></lightning-dual-listbox>
                           </template>
                           <template if:true={entry.isApexTestsSelect}>

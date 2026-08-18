@@ -47,6 +47,7 @@
                   <s-multiline-helptext content={i18n.actionLabelHelp} class="slds-icon-text-info"></s-multiline-helptext>
                 </label>
                 <lightning-input
+                  label={i18n.actionLabelField}
                   value={displayedAction.label}
                   data-field="label"
                   onchange={handleFieldChange}
@@ -67,6 +68,7 @@
                   <s-multiline-helptext content={i18n.actionTypeHelp} class="slds-icon-text-info"></s-multiline-helptext>
                 </label>
                 <lightning-combobox
+                  label={i18n.actionTypeField}
                   value={displayedAction.type}
                   options={typeOptions}
                   data-field="type"
@@ -88,6 +90,7 @@
                   <s-multiline-helptext content={i18n.actionWhenHelp} class="slds-icon-text-info"></s-multiline-helptext>
                 </label>
                 <lightning-combobox
+                  label={i18n.actionWhenField}
                   value={displayedAction.when}
                   options={whenOptions}
                   data-field="when"
@@ -109,6 +112,7 @@
                   <s-multiline-helptext content={i18n.executionContextsHelp} class="slds-icon-text-info"></s-multiline-helptext>
                 </label>
                 <lightning-combobox
+                  label={i18n.executionContextsLabel}
                   value={displayedAction.context}
                   options={contextOptions}
                   data-field="context"
@@ -132,6 +136,7 @@
                     <s-multiline-helptext content={i18n.commandFieldHelp} class="slds-icon-text-info"></s-multiline-helptext>
                   </label>
                   <lightning-input
+                    label={i18n.commandField}
                     value={displayedAction.command}
                     data-field="command"
                     onchange={handleFieldChange}
@@ -156,6 +161,7 @@
                   <div style="display:flex;align-items:center;gap:0.5rem;">
                     <div style="flex:1;">
                       <lightning-combobox
+                        label={i18n.apexScriptLabel}
                         value={displayedAction.parameters.apexScript}
                         options={apexScriptOptions}
                         data-field="parameters.apexScript"
@@ -192,6 +198,7 @@
                   <div style="display:flex;align-items:center;gap:0.5rem;">
                     <div style="flex:1;">
                       <lightning-combobox
+                        label={i18n.sfdmuProjectPath}
                         value={displayedAction.parameters.sfdmuProject}
                         options={sfdmuWorkspaceOptions}
                         data-field="parameters.sfdmuProject"
@@ -226,6 +233,7 @@
                     <s-multiline-helptext content={i18n.communityNameHelp} class="slds-icon-text-info"></s-multiline-helptext>
                   </label>
                   <lightning-combobox
+                    label={i18n.communityNameLabel}
                     value={displayedAction.parameters.communityName}
                     options={communityOptions}
                     data-field="parameters.communityName"
@@ -250,6 +258,7 @@
                     <s-multiline-helptext content={i18n.scheduleBatchClassNameHelp} class="slds-icon-text-info"></s-multiline-helptext>
                   </label>
                   <lightning-combobox
+                    label={i18n.scheduleBatchClassNameLabel}
                     value={displayedAction.parameters.className}
                     options={schedulableClassOptions}
                     data-field="parameters.className"
@@ -274,6 +283,7 @@
                     <s-multiline-helptext content={i18n.scheduleBatchCronExpressionHelp} class="slds-icon-text-info"></s-multiline-helptext>
                   </label>
                   <lightning-input
+                    label={i18n.scheduleBatchCronExpressionLabel}
                     value={displayedAction.parameters.cronExpression}
                     data-field="parameters.cronExpression"
                     onchange={handleFieldChange}
@@ -297,6 +307,7 @@
                     <s-multiline-helptext content={i18n.scheduleBatchJobNameHelp} class="slds-icon-text-info"></s-multiline-helptext>
                   </label>
                   <lightning-input
+                    label={i18n.scheduleBatchJobNameLabel}
                     value={displayedAction.parameters.jobName}
                     data-field="parameters.jobName"
                     onchange={handleFieldChange}
@@ -318,6 +329,7 @@
                     <s-multiline-helptext content={i18n.instructionsHelp} class="slds-icon-text-info"></s-multiline-helptext>
                   </label>
                   <lightning-textarea
+                    label={i18n.instructionsLabel}
                     value={displayedAction.parameters.instructions}
                     data-field="parameters.instructions"
                     onchange={handleFieldChange}
@@ -341,6 +353,7 @@
                     <s-multiline-helptext content={i18n.packageXmlItemsHelp} class="slds-icon-text-info"></s-multiline-helptext>
                   </label>
                   <lightning-textarea
+                    label={i18n.packageXmlItemsLabel}
                     value={packageXmlItemsText}
                     data-field="parameters.packageXmlItems"
                     onchange={handleFieldChange}
@@ -408,6 +421,7 @@
                     <s-multiline-helptext content={i18n.executeWithCustomUsernameHelp} class="slds-icon-text-info"></s-multiline-helptext>
                   </label>
                   <lightning-input
+                    label={i18n.executeWithCustomUsername}
                     value={displayedAction.customUsername}
                     data-field="customUsername"
                     onchange={handleFieldChange}
@@ -426,6 +440,7 @@
                   <s-multiline-helptext content={i18n.targetBranchesHelp} class="slds-icon-text-info"></s-multiline-helptext>
                 </label>
                 <lightning-combobox
+                  label={i18n.targetBranchesLabel}
                   options={targetBranchesModeOptions}
                   value={targetBranchesMode}
                   onchange={handleTargetBranchesModeChange}
