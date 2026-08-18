@@ -201,7 +201,8 @@ export default class FilesWorkbench extends SharedMixin(LightningElement) {
     return this.workspaces
       .map((workspace) => {
         const isSelected = !!(
-          this.selectedWorkspace && this.selectedWorkspace.path === workspace.path
+          this.selectedWorkspace &&
+          this.selectedWorkspace.path === workspace.path
         );
         return {
           ...workspace,

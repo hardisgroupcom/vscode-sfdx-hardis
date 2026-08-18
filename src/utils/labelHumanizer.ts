@@ -18,7 +18,9 @@ const KNOWN_ACRONYMS = [
   "YAML",
 ];
 
-const ACRONYM_LOOKUP = new Set(KNOWN_ACRONYMS.map((acronym) => acronym.toUpperCase()));
+const ACRONYM_LOOKUP = new Set(
+  KNOWN_ACRONYMS.map((acronym) => acronym.toUpperCase()),
+);
 
 // Brand names keep their own capitalization anywhere in the label
 // (project convention: Salesforce, Git Bash, GitHub... are never lowercased).

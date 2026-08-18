@@ -549,7 +549,8 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
         description:
           this.i18n.monitoringStandaloneNotificationsDescription || "",
         icon: standaloneIconData.icon,
-        iconContainerClass: "hardis-tile small " + standaloneIconData.colorClass,
+        iconContainerClass:
+          "hardis-tile small " + standaloneIconData.colorClass,
         rows: standaloneRows,
         isStandaloneSection: true,
       });

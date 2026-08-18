@@ -32,11 +32,20 @@ suite("labelHumanizer Test Suite", () => {
   });
 
   test("keeps a trailing acronym uppercase even when the whole key is an acronym", () => {
-    assert.strictEqual(humanizeConfigKeyLabel("autoStartSalesforceCliMcp"), "Auto start Salesforce CLI MCP");
+    assert.strictEqual(
+      humanizeConfigKeyLabel("autoStartSalesforceCliMcp"),
+      "Auto start Salesforce CLI MCP",
+    );
   });
 
   test("keeps brand names capitalized anywhere in the label", () => {
-    assert.strictEqual(humanizeConfigKeyLabel("disableGitBashCheck"), "Disable Git Bash check");
-    assert.strictEqual(humanizeConfigKeyLabel("disableGitMergeRequiredCheck"), "Disable Git merge required check");
+    assert.strictEqual(
+      humanizeConfigKeyLabel("disableGitBashCheck"),
+      "Disable Git Bash check",
+    );
+    assert.strictEqual(
+      humanizeConfigKeyLabel("disableGitMergeRequiredCheck"),
+      "Disable Git merge required check",
+    );
   });
 });

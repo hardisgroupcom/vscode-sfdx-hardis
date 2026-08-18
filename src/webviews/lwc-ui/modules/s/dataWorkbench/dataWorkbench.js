@@ -387,7 +387,8 @@ export default class DataWorkbench extends SharedMixin(LightningElement) {
           count: workspace.objectsCount || 0,
         });
         const isSelected = !!(
-          this.selectedWorkspace && this.selectedWorkspace.path === workspace.path
+          this.selectedWorkspace &&
+          this.selectedWorkspace.path === workspace.path
         );
         return {
           ...workspace,

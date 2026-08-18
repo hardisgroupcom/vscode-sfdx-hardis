@@ -3,7 +3,10 @@ import { SharedMixin } from "s/sharedMixin";
 
 // Config keys that hold git branch names: rendered as monospace branch chips
 // instead of plain chips in the read-only view.
-const BRANCH_NAME_ARRAY_KEYS = new Set(["mergeTargets", "availableTargetBranches"]);
+const BRANCH_NAME_ARRAY_KEYS = new Set([
+  "mergeTargets",
+  "availableTargetBranches",
+]);
 // Text values starting with http(s) are rendered as a truncated clickable link.
 const URL_VALUE_REGEX = /^https?:\/\//i;
 // A section made only of these keys gets the compact "Salesforce Org" card
@@ -432,19 +435,13 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
         let salesforceOrgUsernameDisplay = "";
         if (isSalesforceOrgSection) {
           const instanceEntry = entries.find((e) => e.key === "instanceUrl");
-          const usernameEntry = entries.find(
-            (e) => e.key === "targetUsername",
-          );
-          salesforceOrgInstanceLabel = instanceEntry
-            ? instanceEntry.label
-            : "";
+          const usernameEntry = entries.find((e) => e.key === "targetUsername");
+          salesforceOrgInstanceLabel = instanceEntry ? instanceEntry.label : "";
           salesforceOrgInstanceDisplay =
             instanceEntry && instanceEntry.hasValue
               ? instanceEntry.value
               : this.i18n.notDefined;
-          salesforceOrgUsernameLabel = usernameEntry
-            ? usernameEntry.label
-            : "";
+          salesforceOrgUsernameLabel = usernameEntry ? usernameEntry.label : "";
           salesforceOrgUsernameDisplay =
             usernameEntry && usernameEntry.hasValue
               ? usernameEntry.value
