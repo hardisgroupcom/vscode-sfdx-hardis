@@ -376,6 +376,8 @@
                                   data={entry.arrayObjectDatatableData}
                                   column-widths-mode="auto"
                                   columns={entry.arrayObjectDatatableColumns}
+                                  data-key={entry.key}
+                                  onrowaction={handleArrayObjectRowAction}
                                   hide-checkbox-column
                                   class="slds-m-top_x-small"
                                 ></lightning-datatable>
@@ -446,7 +448,7 @@
     <template if:true={showDeploymentActionModal}>
       <s-deployment-action
           action={currentDeploymentAction}
-          is-edit-mode
+          is-edit-mode={deploymentActionModalEditMode}
           apex-scripts={projectApexScripts}
           sfdmu-workspaces={projectSfdmuWorkspaces}
           schedulable-classes={projectSchedulableClasses}

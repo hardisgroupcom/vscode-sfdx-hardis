@@ -1,5 +1,10 @@
 import { LightningElement, api, track } from "lwc";
 import { SharedMixin } from "s/sharedMixin";
+import {
+  getActionTypeLabel,
+  getActionTypeIconName,
+  getActionContextLabel,
+} from "s/deploymentActionUtils";
 
 // Config keys that hold git branch names: rendered as monospace branch chips
 // instead of plain chips in the read-only view.
@@ -45,6 +50,8 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
   // the action types, their parameters and the target orgs restriction
   @track showDeploymentActionModal = false;
   @track currentDeploymentAction = null;
+  // The modal opens read-only when the settings panel itself is in view mode
+  @track deploymentActionModalEditMode = false;
   @track projectApexScripts = [];
   @track projectSfdmuWorkspaces = [];
   @track projectSchedulableClasses = [];
@@ -740,6 +747,7 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
     this._deploymentActionKey = key;
     this._deploymentActionEditIndex = index;
     this.currentDeploymentAction = action;
+    this.deploymentActionModalEditMode = this.isEditMode;
     this.showDeploymentActionModal = true;
   }
 
@@ -756,6 +764,12 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
     const editIndex = this._deploymentActionEditIndex;
     if (!sourceKey) {
       return;
+    }
+    // The modal was opened read-only from the view mode, and its Edit button
+    // was used: switch the whole panel to edit mode so the change is kept and
+    // the Save / Cancel header buttons appear
+    if (!this.isEditMode) {
+      this.handleEdit();
     }
     // "when" can be changed in the modal, and it is also forced by some action
     // types (ex: schedule-batch is always post-deploy): the action then belongs
@@ -942,6 +956,13 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
     const index = row._index;
 
     switch (action.name) {
+      case "view_action":
+        // Click on the action label: open the full-detail modal (read-only in
+        // view mode, editable in edit mode)
+        if (this.deploymentActionKeys[key] !== undefined) {
+          this._openDeploymentActionModal(key, index);
+        }
+        break;
       case "move_up":
         if (row._canMoveUp) {
           let currentArray = [
@@ -1051,37 +1072,80 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
     this.arrayObjectEditorState = { ...this.arrayObjectEditorState };
   }
 
+  // Compact columns for the pre/post deployment actions tables: the label
+  // opens the full-detail modal, so the other action properties do not need
+  // their own column (same pattern as the DevOps Pipeline panel actions tab)
+  getDeploymentActionsDatatableColumns() {
+    return [
+      {
+        label: this.t("actionLabelField"),
+        fieldName: "_displayLabel",
+        type: "button",
+        typeAttributes: {
+          label: { fieldName: "_displayLabel" },
+          name: "view_action",
+          variant: "base",
+        },
+        wrapText: true,
+      },
+      {
+        label: this.t("typeLabel"),
+        fieldName: "_typeLabel",
+        type: "text",
+        cellAttributes: {
+          iconName: { fieldName: "_typeIconName" },
+          iconPosition: "left",
+        },
+        wrapText: true,
+        initialWidth: 190,
+      },
+      {
+        label: this.t("executionContextsLabel"),
+        fieldName: "_contextLabel",
+        type: "text",
+        wrapText: true,
+        initialWidth: 230,
+      },
+    ];
+  }
+
   // Helper to get datatable columns for array of objects
   getArrayObjectDatatableColumns(entry) {
     if (!entry || !entry.schemaItems || !entry.schemaItems.properties)
       return [];
+    const isDeploymentActions =
+      this.deploymentActionKeys[entry.key] !== undefined;
     const properties = entry.schemaItems.properties || {};
     const columns = [];
 
-    // Add columns for each property - let lightning-datatable handle auto-sizing
-    Object.keys(properties).forEach((fieldKey) => {
-      const fieldSchema = properties[fieldKey];
-      let columnType = "text";
+    if (isDeploymentActions) {
+      columns.push(...this.getDeploymentActionsDatatableColumns());
+    } else {
+      // Add columns for each property - let lightning-datatable handle auto-sizing
+      Object.keys(properties).forEach((fieldKey) => {
+        const fieldSchema = properties[fieldKey];
+        let columnType = "text";
 
-      // Determine column type based on schema
-      if (fieldSchema.type === "boolean") {
-        columnType = "boolean";
-      } else if (
-        fieldSchema.type === "number" ||
-        fieldSchema.type === "integer"
-      ) {
-        columnType = "number";
-      } else if (fieldSchema.type === "url") {
-        columnType = "url";
-      }
+        // Determine column type based on schema
+        if (fieldSchema.type === "boolean") {
+          columnType = "boolean";
+        } else if (
+          fieldSchema.type === "number" ||
+          fieldSchema.type === "integer"
+        ) {
+          columnType = "number";
+        } else if (fieldSchema.type === "url") {
+          columnType = "url";
+        }
 
-      columns.push({
-        label: fieldSchema.title || fieldKey,
-        fieldName: fieldKey,
-        type: columnType,
-        wrapText: columnType !== "boolean",
+        columns.push({
+          label: fieldSchema.title || fieldKey,
+          fieldName: fieldKey,
+          type: columnType,
+          wrapText: columnType !== "boolean",
+        });
       });
-    });
+    }
 
     // Add actions column only in edit mode
     if (entry.isEditMode) {
@@ -1117,6 +1181,9 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
   // Helper to get datatable data for array of objects
   getArrayObjectDatatableData(entry) {
     if (!entry || !entry.value || !Array.isArray(entry.value)) return [];
+    const isDeploymentActions =
+      this.deploymentActionKeys[entry.key] !== undefined;
+    const translate = (labelKey) => this.t(labelKey);
     return entry.value.map((obj, idx) => {
       // Convert object to include proper boolean values and metadata
       const rowData = { ...obj };
@@ -1129,6 +1196,19 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
             rowData[propKey] = Boolean(rowData[propKey]);
           }
         });
+      }
+
+      // Computed display fields for the compact deployment actions columns
+      if (isDeploymentActions) {
+        const typeCode = obj.type || "command";
+        rowData._displayLabel =
+          obj.label || obj.command || obj.id || this.t("unnamedAction");
+        rowData._typeLabel = getActionTypeLabel(typeCode, translate);
+        rowData._typeIconName = getActionTypeIconName(typeCode);
+        rowData._contextLabel = getActionContextLabel(
+          obj.context || "all",
+          translate,
+        );
       }
 
       return {

@@ -1224,6 +1224,40 @@ lightning-helptext::part(icon) {
   flex: 1 1 auto;
   min-width: 0;
 }
+/* Comboboxes keep a compact column but share one comfortable width instead
+   of shrink-wrapping to their current value ("Jira" -> an 80px stub). */
+.hardis-field-control > lightning-combobox {
+  min-width: 14rem;
+}
+/* Stacked rows (arrays: chips, textareas, dual-listbox, datatable) lay the
+   control under the label, spanning the full row: their form controls take
+   the whole line, pushing inline hints ("One value per line") below instead
+   of squeezing beside a 230px box. */
+.hardis-field-row.stacked {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+/* flex: 0 0 auto resets the text-entry stretch above (flex: 1 1 340px): in
+   the column direction that flex-basis becomes ~340px of HEIGHT, floating
+   the textarea in the middle of a tall empty block. */
+.hardis-field-row.stacked .hardis-field-control {
+  flex: 0 0 auto;
+  width: 100%;
+  max-width: 100%;
+  justify-content: flex-start;
+}
+.hardis-field-row.stacked .hardis-field-control > lightning-input,
+.hardis-field-row.stacked .hardis-field-control > lightning-textarea,
+.hardis-field-row.stacked .hardis-field-control > lightning-dual-listbox {
+  flex: 1 1 100%;
+  min-width: 0;
+}
+/* ...and the two dueling-list columns widen with the window (SLDS pins them
+   at a fixed 15rem) so long API names stay readable. */
+.hardis-field-row.stacked .hardis-field-control .slds-dueling-list__options {
+  width: clamp(15rem, 30vw, 26rem);
+}
 @media (max-width: 640px) {
   .hardis-field-row {
     flex-wrap: wrap;

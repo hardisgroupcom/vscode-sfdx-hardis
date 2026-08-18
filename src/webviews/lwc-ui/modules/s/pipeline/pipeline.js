@@ -5,6 +5,10 @@
 import { LightningElement, api, track } from "lwc";
 import { SharedMixin } from "s/sharedMixin";
 import { getAvatarClass, getInitials } from "s/avatarUtils";
+import {
+  getActionTypeLabel,
+  getActionTypeIconName,
+} from "s/deploymentActionUtils";
 
 export default class Pipeline extends SharedMixin(LightningElement) {
   @track prButtonInfo;
@@ -3077,28 +3081,10 @@ export default class Pipeline extends SharedMixin(LightningElement) {
   }
 
   _getActionTypeLabel(typeCode) {
-    const typeLabelByCode = {
-      command: this.i18n.commandType,
-      data: this.i18n.dataType,
-      apex: this.i18n.apexType,
-      "schedule-batch": this.i18n.scheduleBatchType,
-      "publish-community": this.i18n.publishCommunityType,
-      "remove-packagexml-items": this.i18n.removePackageXmlItemsType,
-      manual: this.i18n.manualType,
-    };
-    return typeLabelByCode[typeCode] || this.i18n.unknownLabel;
+    return getActionTypeLabel(typeCode, (labelKey) => this.t(labelKey));
   }
 
   _getActionTypeIconName(typeCode) {
-    const typeIconByCode = {
-      command: "utility:apex",
-      data: "utility:database",
-      apex: "utility:apex_alt",
-      "schedule-batch": "utility:event",
-      "publish-community": "utility:global",
-      "remove-packagexml-items": "utility:filterList",
-      manual: "utility:task",
-    };
-    return typeIconByCode[typeCode] || "utility:question";
+    return getActionTypeIconName(typeCode);
   }
 }

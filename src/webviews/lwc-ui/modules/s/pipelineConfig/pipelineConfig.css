@@ -16,19 +16,6 @@ lightning-datatable {
 	margin-top: 0.5rem;
 }
 
-/* Wide-control field rows (arrays, array-of-objects): the control needs the
-   full row width (chips wrap, dual-listbox, datatable) instead of the
-   compact right-aligned column used by simple scalar fields. */
-.hardis-field-row.stacked {
-	flex-direction: column;
-	align-items: stretch;
-}
-.hardis-field-row.stacked .hardis-field-control {
-	max-width: 100%;
-	justify-content: flex-start;
-	width: 100%;
-}
-
 /* Unset/empty value placeholder ("Not set") */
 .hardis-not-set {
 	font-style: italic;

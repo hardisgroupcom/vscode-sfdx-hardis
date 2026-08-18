@@ -36,7 +36,7 @@
     - The same design is applied across the extension: **Org Monitoring**, the **DevOps Pipeline** quick action cards, the **Documentation Workbench**, the **AI Documentation configuration** and the **Monitoring Configuration** now share the Welcome page's sections, cards and colored icon tiles
     - Org Monitoring check cards are now **clickable directly** (with the keyboard too), replacing the Run button on each card
   - **Every panel now has the same design**: the same header (icon, title, one-line description, actions on the right), the same content cards and the same buttons
-  - In settings pages (Pipeline Settings, Extension Settings...), text fields now widen to use the available space, so long values like URLs or regular expressions stay fully visible
+  - In settings pages (Pipeline Settings, Extension Settings...), text fields, multi-line lists and dual selection lists now widen to use the available space, so long values like URLs or regular expressions stay fully visible, and dropdowns share a consistent width
     - Orgs Manager, Metadata Retriever, Installed Packages, Pipeline Settings, Extension Settings, package.xml and the Setup panel were rebuilt on the shared design, so no panel looks like a different product anymore
     - Panel titles are the feature name (**Metadata Retriever**, **Installed Packages**...) and every panel says in one line what it is for
     - **Colored buttons are readable in both themes**: the filled blue/red buttons of the workbenches (Export data, Delete data, Add Org, Install...) became tinted buttons that adapt to light and dark mode
@@ -51,6 +51,7 @@
       - Git branch names are shown as **chips**, long URLs are **shortened** and open with one click, and unset values show "Not defined" instead of "None"
       - The **documentation link** of a setting sits right next to its name, replacing the identical Documentation button repeated on every row
       - The Salesforce Org tab of a branch's settings shows a **compact org summary card** instead of two sparse fields
+      - The **Pre-Post Deploy Commands** tables now show only each action's **label, type and execution context** instead of a cramped column per property: **click an action's label** to see and edit all its details in the same editor as the DevOps Pipeline panel
     - The **package.xml viewer**, **Monitoring Configuration**, **Documentation Workbench**, **Org Monitoring** documentation links and **Metadata Retriever** dialogs were aligned on the same section headers, cards and dialog style, with no change to their features
     - Fixed the **Language** tab of the Extension Settings, which showed the raw key `languageSection` instead of its name
     - Fixed texts that were **unreadable after switching between light and dark themes** in several panels

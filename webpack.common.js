@@ -151,16 +151,6 @@ const lwcWebviewConfig = {
     new webpack.ProvidePlugin({
       process: "process/browser.js",
     }),
-    // The webview UI runtime must behave identically in dev and prod builds:
-    // lightning-base-components guards dev-only assertions (e.g. the
-    // lightning-input "required label" assert) behind NODE_ENV checks, and a
-    // copy of those checks resolved through the process/browser shim (where
-    // NODE_ENV is undefined) THROWS at connectedCallback in dev bundles —
-    // crashing panels / unmounting fields in the Extension Development Host
-    // while the shipped extension works. Pin production for every copy.
-    new webpack.DefinePlugin({
-      "process.env.NODE_ENV": JSON.stringify("production"),
-    }),
     // Replace the gate stub that ships with lightning-base-components so that
     // all feature flags default to false (the intended off-platform fallback).
     // The original stub returns true for every gate, which enables features
