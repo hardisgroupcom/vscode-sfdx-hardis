@@ -21,6 +21,13 @@ export interface PendingCommandPanel {
   contextId: string;
   /** oclif command id, e.g. "hardis:org:diagnose:audittrail" (fallback matching) */
   commandId: string | null;
+  /**
+   * Full command line as requested by the user, e.g.
+   * "sf hardis:org:diagnose:audittrail --outputfile ./x.csv".
+   * The CLI only reports its oclif command id, so this is what lets the panel
+   * replay the command with its original arguments ("Run again" button).
+   */
+  commandLine?: string;
   createdAt: number;
   /** Called when the CLI adopts the panel, so click-time wiring can detach */
   onAdopted?: () => void;
@@ -40,6 +47,49 @@ export function extractCommandId(commandLine: string): string | null {
   const parts = commandLine.trim().split(/\s+/);
   if (parts[0] === "sf" && parts[1] && parts[1].startsWith("hardis")) {
     return parts[1];
+  }
+  return null;
+}
+
+/**
+ * Flags forcing the target org of a Salesforce CLI command, in the modern
+ * (`--target-org` / `-o`) and legacy (`--targetusername` / `-u`) notations.
+ */
+const TARGET_ORG_FLAGS = ["-o", "-u", "--target-org", "--targetusername"];
+
+/** Removes the surrounding quotes a shell argument may carry */
+function unquoteArg(value: string): string {
+  return value.replace(/^["']/, "").replace(/["']$/, "");
+}
+
+/**
+ * Extracts the org username (or alias) explicitly forced on a command line,
+ * e.g. `sf hardis:org:diagnose:audittrail --target-org my.user@org.com`.
+ * Handles both the space (`-u USER`) and the equal (`--target-org=USER`)
+ * notations, with or without quotes.
+ * Returns null when the command relies on the project default org.
+ */
+export function extractTargetOrgUsername(
+  commandLine: string | undefined | null,
+): string | null {
+  if (!commandLine) {
+    return null;
+  }
+  // Keep quoted values in a single token, so `--target-org "my org"` works
+  const tokens = commandLine.match(/(?:[^\s"']+|"[^"]*"|'[^']*')+/g) || [];
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i];
+    const equalPos = token.indexOf("=");
+    if (equalPos > 0 && TARGET_ORG_FLAGS.includes(token.slice(0, equalPos))) {
+      const value = unquoteArg(token.slice(equalPos + 1));
+      return value || null;
+    }
+    if (TARGET_ORG_FLAGS.includes(token)) {
+      const value = unquoteArg(tokens[i + 1] || "");
+      if (value && !value.startsWith("-")) {
+        return value;
+      }
+    }
   }
   return null;
 }

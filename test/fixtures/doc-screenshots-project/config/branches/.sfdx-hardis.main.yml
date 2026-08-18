@@ -1,0 +1,4 @@
+instanceUrl: https://mycompany.my.salesforce.com
+targetUsername: deploy.user@mycompany.com
+alias: PRODUCTION
+mergeTargets: []

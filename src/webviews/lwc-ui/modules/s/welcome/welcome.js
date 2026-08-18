@@ -274,12 +274,25 @@ export default class Welcome extends SharedMixin(LightningElement) {
           iconSize: "x-small",
           title: menu.label,
           description: menu.description,
-          tileClass: menu.welcomeIconClass,
+          tileClass: this.tileClassForHue(menu.welcomeIconClass),
           cardClass: "hardis-card clickable",
         })),
       });
     }
     return groups;
+  }
+
+  /**
+   * Tile class of a custom menu declared in .sfdx-hardis.yml. `welcomeIconClass`
+   * is a hue of the .hardis-tile kit (cyan, violet, amber…); older configs may
+   * still carry a full legacy class, so only its last word is kept.
+   */
+  tileClassForHue(welcomeIconClass) {
+    const hue = String(welcomeIconClass || "slate")
+      .trim()
+      .split(/\s+/)
+      .pop();
+    return `hardis-tile small ${hue}`;
   }
 
   buildCard(card, featured) {

@@ -302,10 +302,8 @@ function applyDefaultCommandIcons(
 ): CustomCommandMenu[] {
   const sourceLabel =
     sourceType === "plugin" ? t("pluginMenuLabel") : t("customMenuLabel");
-  const iconClass =
-    sourceType === "plugin"
-      ? "feature-icon-container orange"
-      : "feature-icon-container purple";
+  // Hue of the .hardis-tile shown on the Welcome page (global-theme.css kit)
+  const iconClass = sourceType === "plugin" ? "amber" : "violet";
   const iconColor = sourceType === "plugin" ? "charts.orange" : "charts.blue";
   return customCommands.map((menu) => ({
     ...menu,

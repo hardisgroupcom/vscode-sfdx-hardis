@@ -106,6 +106,7 @@ export default class DataWorkbench extends SharedMixin(LightningElement) {
           name: "open",
           variant: "base",
         },
+        cellAttributes: { class: "hardis-file-cell" },
       },
       {
         label: this.t("dwbColumnCreatedDate"),
@@ -139,11 +140,16 @@ export default class DataWorkbench extends SharedMixin(LightningElement) {
           name: "open",
           variant: "base",
         },
+        cellAttributes: { class: "hardis-file-cell" },
       },
       {
         label: this.t("dwbColumnLogType"),
-        fieldName: "logType",
-        type: "text",
+        fieldName: "logTypeLabel",
+        type: "statusPill",
+        typeAttributes: {
+          label: { fieldName: "logTypeLabel" },
+          pillClass: { fieldName: "logTypePillClass" },
+        },
       },
       {
         label: this.t("dwbColumnCreatedDate"),
@@ -370,21 +376,33 @@ export default class DataWorkbench extends SharedMixin(LightningElement) {
     return this.workspaces && this.workspaces.length > 0;
   }
 
+  get workspacesCount() {
+    return this.workspaces ? this.workspaces.length : 0;
+  }
+
   get workspacesForDisplay() {
     return this.workspaces
-      .map((workspace) => ({
-        ...workspace,
-        iconName: "standard:dataset",
-        hasDescription: !!workspace.description,
-        objectsCount: workspace.objectsCount || 0,
-        objectsCountLabel: this.t("dwbObjectsCount", {
+      .map((workspace) => {
+        const objectsCountLabel = this.t("dwbObjectsCount", {
           count: workspace.objectsCount || 0,
-        }),
-        operationsSummary: (workspace.objects || [])
-          .map((obj) => obj.operation || "Upsert")
-          .join(", "),
-        cssClass: this.getWorkspaceCssClass(workspace),
-      }))
+        });
+        const isSelected = !!(
+          this.selectedWorkspace &&
+          this.selectedWorkspace.path === workspace.path
+        );
+        return {
+          ...workspace,
+          hasDescription: !!workspace.description,
+          objectsCount: workspace.objectsCount || 0,
+          objectsCountLabel,
+          meta: `${workspace.name} · ${objectsCountLabel}`,
+          operationsSummary: (workspace.objects || [])
+            .map((obj) => obj.operation || "Upsert")
+            .join(", "),
+          cardClass: this.getWorkspaceCssClass(isSelected),
+          isSelected: isSelected ? "true" : "false",
+        };
+      })
       .sort((a, b) => {
         const labelA = (a.label || a.name || "").toLowerCase();
         const labelB = (b.label || b.name || "").toLowerCase();
@@ -394,11 +412,16 @@ export default class DataWorkbench extends SharedMixin(LightningElement) {
   // jscpd:ignore-end
 
   // jscpd:ignore-start
-  getWorkspaceCssClass(workspace) {
-    const baseClasses = "slds-box slds-box_x-small workspace-item";
-    const isSelected =
-      this.selectedWorkspace && this.selectedWorkspace.path === workspace.path;
+  getWorkspaceCssClass(isSelected) {
+    const baseClasses = "hardis-card clickable";
     return isSelected ? `${baseClasses} selected` : baseClasses;
+  }
+
+  handleCardKeydown(event) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      event.currentTarget.click();
+    }
   }
 
   // --- Properties modal computed ---
@@ -532,6 +555,7 @@ export default class DataWorkbench extends SharedMixin(LightningElement) {
       hasMasterFilter: coerceBoolean(obj.master, true) === false,
       hasBulkApiV1BatchSize: !!obj.bulkApiV1BatchSize,
       hasRestApiBatchSize: !!obj.restApiBatchSize,
+      operationPillClass: this.getOperationPillClass(obj.operation),
     }));
   }
 
@@ -541,6 +565,16 @@ export default class DataWorkbench extends SharedMixin(LightningElement) {
       this.selectedWorkspace.objects &&
       this.selectedWorkspace.objects.length > 0
     );
+  }
+
+  get selectedWorkspaceObjectsCount() {
+    return this.selectedWorkspace?.objects?.length || 0;
+  }
+
+  getOperationPillClass(operation) {
+    return operation === "Delete"
+      ? "hardis-pill hardis-status-failed"
+      : "hardis-pill hardis-status-info";
   }
 
   get operationOptions() {
@@ -585,6 +619,10 @@ export default class DataWorkbench extends SharedMixin(LightningElement) {
     return files.length > 0;
   }
 
+  get exportedFilesCount() {
+    return this.selectedWorkspace?.exportedFiles?.length || 0;
+  }
+
   // Add display labels (size / created / modified) to a list of files.
   _withFileDisplayLabels(files) {
     return (files || []).map((file) => ({
@@ -594,7 +632,32 @@ export default class DataWorkbench extends SharedMixin(LightningElement) {
       modifiedLabel: file.modified
         ? new Date(file.modified).toLocaleString()
         : "",
+      logTypeLabel: this.getLogTypeLabel(file.logType),
+      logTypePillClass: this.getLogTypePillClass(file.logType),
     }));
+  }
+
+  getLogTypeLabel(logType) {
+    switch (logType) {
+      case "source":
+        return this.t("sourceLabel");
+      case "target":
+        return this.t("targetLabel");
+      case "report":
+        return this.t("dwbLogTypeReport");
+      default:
+        return this.t("dwbLogTypeLog");
+    }
+  }
+
+  getLogTypePillClass(logType) {
+    if (logType === "source") {
+      return "hardis-pill hardis-status-info";
+    }
+    if (logType === "target") {
+      return "hardis-pill hardis-status-success";
+    }
+    return "hardis-pill hardis-status-unknown";
   }
 
   get exportedFilesForDisplay() {
@@ -604,6 +667,10 @@ export default class DataWorkbench extends SharedMixin(LightningElement) {
   get hasLogFiles() {
     const files = this.selectedWorkspace?.logFiles || [];
     return files.length > 0;
+  }
+
+  get logFilesCount() {
+    return this.selectedWorkspace?.logFiles?.length || 0;
   }
 
   get logFilesForDisplay() {
@@ -1516,10 +1583,5 @@ export default class DataWorkbench extends SharedMixin(LightningElement) {
     const field = event.currentTarget.dataset.field;
     const value = event.detail?.value ?? event.target.value;
     this.editingObject = { ...this.editingObject, [field]: value };
-  }
-
-  get objectsCountLabel() {
-    const count = this.selectedWorkspace?.objects?.length || 0;
-    return this.t("dwbObjectsTitle", { count });
   }
 }

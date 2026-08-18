@@ -191,6 +191,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       flushPendingMessages();
 
+      // Tell the extension the page is booted and the component is mounted:
+      // it re-sends the initialization data, covering the case where the
+      // initial "initialize" postMessage was dropped because it was sent
+      // before this page finished loading (slow machine / heavy startup).
+      window.sendMessageToVSCode({ type: "webviewReady", lwcId: lwcId });
+
       // Avoid flash of unthemed content by applying theme early
       if (initData?.colorTheme && element.handleColorThemeMessage) {
         element.handleColorThemeMessage("updateTheme", {

@@ -27,6 +27,243 @@ const path = require("path");
 
 const args = process.argv.slice(2);
 
+// ---------------------------------------------------------------------------
+// "docs" profile: realistic data used by the documentation screenshot harness
+// (SFDX_HARDIS_DOC_SCREENSHOTS / src/test/ui/docScreenshots.test.ts), so every
+// panel shows plausible content instead of an empty state.
+// ---------------------------------------------------------------------------
+const DOCS_PROFILE = process.env.SF_MOCK_PROFILE === "docs";
+// "ok" (everything installed and up to date) or "missing" (a plugin is absent
+// and another one is outdated), to screenshot both states of the Setup panel
+const DEPS_STATE = process.env.SF_MOCK_DEPS_STATE || "ok";
+
+// Versions reported by the mock. The screenshot driver
+// (scripts/take-doc-screenshots.js) overwrites them with the real npm "latest"
+// versions through SF_MOCK_VERSIONS_FILE, so the Setup panel shows every
+// dependency as up to date instead of "upgrade available".
+const DOCS_VERSIONS = {
+  "@salesforce/cli": "2.134.6",
+  "sfdx-hardis": "8.1.0",
+  "@salesforce/plugin-packaging": "2.27.17",
+  sfdmu: "5.6.4",
+  "sfdx-git-delta": "6.31.0",
+  "sf-git-merge-driver": "1.9.0",
+  node: "24.11.1",
+};
+if (process.env.SF_MOCK_VERSIONS_FILE) {
+  try {
+    Object.assign(
+      DOCS_VERSIONS,
+      JSON.parse(fs.readFileSync(process.env.SF_MOCK_VERSIONS_FILE, "utf8")),
+    );
+  } catch {
+    // Keep the defaults when the file is missing or unreadable
+  }
+}
+
+const DOCS_PLUGINS = [
+  "sfdx-hardis",
+  "@salesforce/plugin-packaging",
+  "sfdmu",
+  "sfdx-git-delta",
+  "sf-git-merge-driver",
+].map((name) => ({ name, version: DOCS_VERSIONS[name] }));
+
+function docsPlugins() {
+  if (DEPS_STATE === "missing") {
+    return DOCS_PLUGINS.filter((p) => p.name !== "sfdx-git-delta").map((p) =>
+      p.name === "sfdmu" ? { name: "sfdmu", version: "5.4.1" } : p,
+    );
+  }
+  return DOCS_PLUGINS;
+}
+
+const DOCS_ORGS = {
+  nonScratchOrgs: [
+    {
+      username: "deploy.user@mycompany.com",
+      alias: "PRODUCTION",
+      orgId: "00D3X0000008aBcUAI",
+      instanceUrl: "https://mycompany.my.salesforce.com",
+      instanceApiVersion: "66.0",
+      loginUrl: "https://login.salesforce.com",
+      connectedStatus: "Connected",
+      isDefaultUsername: false,
+      isSandbox: false,
+      isScratch: false,
+      isDevHub: true,
+      isDefaultDevHubUsername: true,
+    },
+    {
+      username: "deploy.user@mycompany.com.preprod",
+      alias: "PREPROD",
+      orgId: "00D5f0000012XyZEAU",
+      instanceUrl: "https://mycompany--preprod.sandbox.my.salesforce.com",
+      instanceApiVersion: "66.0",
+      loginUrl: "https://test.salesforce.com",
+      connectedStatus: "Connected",
+      isDefaultUsername: false,
+      isSandbox: true,
+      isScratch: false,
+    },
+    {
+      username: "deploy.user@mycompany.com.uat",
+      alias: "UAT",
+      orgId: "00D5f0000012XyaEAE",
+      instanceUrl: "https://mycompany--uat.sandbox.my.salesforce.com",
+      instanceApiVersion: "66.0",
+      loginUrl: "https://test.salesforce.com",
+      connectedStatus: "Connected",
+      isDefaultUsername: false,
+      isSandbox: true,
+      isScratch: false,
+    },
+    {
+      username: "deploy.user@mycompany.com.integ",
+      alias: "INTEGRATION",
+      orgId: "00D5f0000012XybEAE",
+      instanceUrl: "https://mycompany--integ.sandbox.my.salesforce.com",
+      instanceApiVersion: "66.0",
+      loginUrl: "https://test.salesforce.com",
+      connectedStatus: "Connected",
+      isDefaultUsername: true,
+      isSandbox: true,
+      isScratch: false,
+    },
+    {
+      username: "alex.martin@mycompany.com.dev",
+      alias: "DEV-Alex",
+      orgId: "00D5f0000012XycEAE",
+      instanceUrl: "https://mycompany--dev.sandbox.my.salesforce.com",
+      instanceApiVersion: "66.0",
+      loginUrl: "https://test.salesforce.com",
+      connectedStatus: "Connected",
+      isDefaultUsername: false,
+      isSandbox: true,
+      isScratch: false,
+    },
+    {
+      username: "sam.dubois@mycompany.com.dev2",
+      alias: "DEV-Sam",
+      orgId: "00D5f0000012XydEAE",
+      instanceUrl: "https://mycompany--dev2.sandbox.my.salesforce.com",
+      instanceApiVersion: "66.0",
+      loginUrl: "https://test.salesforce.com",
+      connectedStatus: "RefreshTokenAuthError",
+      isDefaultUsername: false,
+      isSandbox: true,
+      isScratch: false,
+    },
+  ],
+  scratchOrgs: [
+    {
+      username: "test-9k2mfhqz1x8s@example.com",
+      alias: "scratch-CRM-1042",
+      orgId: "00D5f0000012XyeEAE",
+      instanceUrl: "https://flow-power-3821-dev-ed.scratch.my.salesforce.com",
+      instanceApiVersion: "66.0",
+      connectedStatus: "Connected",
+      isScratch: true,
+      isSandbox: false,
+      status: "Active",
+      createdDate: "2026-08-04T09:12:00.000Z",
+      expirationDate: "2026-08-25",
+      devHubUsername: "deploy.user@mycompany.com",
+    },
+  ],
+};
+
+// A few metadata items per type, for the Metadata Retriever panel
+const DOCS_METADATA = {
+  ApexClass: [
+    "AccountTriggerHandler",
+    "AccountTriggerHandlerTest",
+    "OpportunityService",
+    "OpportunityServiceTest",
+    "QuoteApprovalController",
+    "InvoiceBatchScheduler",
+    "CaseAssignmentSelector",
+  ],
+  Flow: [
+    "Account_Hierarchy_Sync",
+    "Opportunity_Stage_Notification",
+    "Quote_Approval_Process",
+    "Case_Auto_Escalation",
+    "Lead_Conversion_Assistant",
+  ],
+  CustomObject: [
+    "Project__c",
+    "Milestone__c",
+    "Invoice__c",
+    "Account",
+    "Opportunity",
+    "Contact",
+  ],
+  PermissionSet: [
+    "CRM_Manager",
+    "CRM_Sales_User",
+    "Billing_Administrator",
+    "Service_Agent",
+  ],
+  Profile: ["System Administrator", "Sales User", "Service User"],
+  LightningComponentBundle: [
+    "accountHierarchyTree",
+    "quoteApprovalCard",
+    "invoiceSummary",
+  ],
+  CustomLabel: ["Quote_Approval_Required", "Invoice_Sent_Message"],
+  Layout: ["Account-Account Layout", "Opportunity-Sales Layout"],
+};
+
+// Recent changes of the org, as returned by the SourceMember tooling query
+// used by the "Recent Changes" mode of the Metadata Retriever
+const DOCS_SOURCE_MEMBERS = [
+  ["ApexClass", "OpportunityService", "Alex Martin", "modified"],
+  ["ApexClass", "QuoteApprovalController", "Alex Martin", "created"],
+  ["ApexClass", "InvoiceBatchScheduler", "Sam Dubois", "modified"],
+  ["Flow", "Quote_Approval_Process", "Sam Dubois", "created"],
+  ["Flow", "Account_Hierarchy_Sync", "Alex Martin", "modified"],
+  ["CustomField", "Opportunity.Approval_Status__c", "Sam Dubois", "created"],
+  ["CustomField", "Account.Segment__c", "Nicolas Vuillamy", "modified"],
+  ["PermissionSet", "CRM_Manager", "Nicolas Vuillamy", "modified"],
+  ["Layout", "Opportunity-Sales Layout", "Alex Martin", "modified"],
+  ["LightningComponentBundle", "quoteApprovalCard", "Sam Dubois", "created"],
+  ["CustomLabel", "Quote_Approval_Required", "Alex Martin", "created"],
+  ["ValidationRule", "Opportunity.Amount_Required", "Sam Dubois", "modified"],
+];
+
+function docsSourceMemberRecords() {
+  return DOCS_SOURCE_MEMBERS.map(([type, name, author, operation], index) => ({
+    attributes: { type: "SourceMember" },
+    MemberType: type,
+    MemberName: name,
+    LastModifiedDate: `2026-08-1${(index % 8) + 1}T0${(index % 9) + 1}:2${index % 9}:00.000+0000`,
+    LastModifiedBy: { Name: author },
+    IsNewMember: operation === "created",
+    IsDeleted: false,
+    IsNameObsolete: false,
+  }));
+}
+
+function docsMetadataFor(type) {
+  const names = DOCS_METADATA[type];
+  if (!names) {
+    return [];
+  }
+  return names.map((fullName, index) => ({
+    createdByName: index % 2 === 0 ? "Alex Martin" : "Sam Dubois",
+    createdDate: "2026-05-1" + (index % 9) + "T10:2" + (index % 9) + ":00.000Z",
+    fileName: type + "s/" + fullName,
+    fullName: fullName,
+    id: "0Ab5f00000" + String(index).padStart(6, "0"),
+    lastModifiedByName: index % 3 === 0 ? "Nicolas Vuillamy" : "Alex Martin",
+    lastModifiedDate:
+      "2026-08-0" + (index % 9) + "T14:1" + (index % 9) + ":00.000Z",
+    manageableState: "unmanaged",
+    type: type,
+  }));
+}
+
 function logInvocation(extra) {
   const logFile = process.env.SF_MOCK_LOG;
   if (!logFile) {
@@ -66,11 +303,23 @@ async function main() {
   const first = args[0] || "";
 
   if (first === "--version" || first === "version") {
-    console.log("@salesforce/cli/2.100.0 win32-x64 node-v20.0.0");
+    console.log(
+      DOCS_PROFILE
+        ? `@salesforce/cli/${DOCS_VERSIONS["@salesforce/cli"]} win32-x64 node-v${DOCS_VERSIONS.node}`
+        : "@salesforce/cli/2.100.0 win32-x64 node-v20.0.0",
+    );
     return 0;
   }
 
   if (first === "plugins") {
+    if (DOCS_PROFILE) {
+      const plugins = docsPlugins();
+      outputJsonIfRequested(
+        plugins.map((plugin) => ({ ...plugin, type: "user", tag: "latest" })),
+        plugins.map((plugin) => `${plugin.name} ${plugin.version}`).join("\n"),
+      );
+      return 0;
+    }
     outputJsonIfRequested(
       [{ name: "sfdx-hardis", version: "6.0.0", type: "user" }],
       "sfdx-hardis 6.0.0",
@@ -78,29 +327,135 @@ async function main() {
     return 0;
   }
 
+  if (first === "org" && args[1] === "list" && args[2] === "metadata") {
+    const typeIndex = args.indexOf("--metadata-type");
+    const type = typeIndex > -1 ? args[typeIndex + 1] : "";
+    outputJsonIfRequested(
+      { status: 0, result: DOCS_PROFILE ? docsMetadataFor(type) : [] },
+      "",
+    );
+    return 0;
+  }
+
+  if (first === "org" && args[1] === "list") {
+    outputJsonIfRequested(
+      { status: 0, result: DOCS_PROFILE ? DOCS_ORGS : {} },
+      "",
+    );
+    return 0;
+  }
+
   if (first === "org" && args[1] === "display") {
+    outputJsonIfRequested(
+      DOCS_PROFILE
+        ? {
+            status: 0,
+            result: {
+              id: "00D5f0000012XybEAE",
+              username: "deploy.user@mycompany.com.integ",
+              instanceUrl: "https://mycompany--integ.sandbox.my.salesforce.com",
+              apiVersion: "66.0",
+              connectedStatus: "Connected",
+              alias: "INTEGRATION",
+            },
+          }
+        : {
+            status: 0,
+            result: {
+              id: "00D000000000001EAA",
+              username: "test-user@example.com",
+              instanceUrl: "https://dummy-instance.my.salesforce.com",
+              apiVersion: "62.0",
+              connectedStatus: "Connected",
+              alias: "dummy-org",
+            },
+          },
+      DOCS_PROFILE
+        ? "deploy.user@mycompany.com.integ (Connected)"
+        : "test-user@example.com (Connected)",
+    );
+    return 0;
+  }
+
+  if (first === "data" && args[1] === "query") {
+    const query = args[args.indexOf("--query") + 1] || "";
+    const records =
+      DOCS_PROFILE && query.includes("FROM SourceMember")
+        ? docsSourceMemberRecords()
+        : [];
     outputJsonIfRequested(
       {
         status: 0,
-        result: {
-          id: "00D000000000001EAA",
-          username: "test-user@example.com",
-          instanceUrl: "https://dummy-instance.my.salesforce.com",
-          apiVersion: "62.0",
-          connectedStatus: "Connected",
-          alias: "dummy-org",
-        },
+        result: { totalSize: records.length, done: true, records },
       },
-      "test-user@example.com (Connected)",
+      "",
+    );
+    return 0;
+  }
+
+  if (first === "package" && args[1] === "installed") {
+    outputJsonIfRequested(
+      {
+        status: 0,
+        result: DOCS_PROFILE
+          ? [
+              {
+                Id: "0A35f000000TN2ACAW",
+                SubscriberPackageName: "Conga Composer",
+                SubscriberPackageNamespace: "APXTConga4",
+                SubscriberPackageVersionNumber: "8.187.0.1",
+                SubscriberPackageVersionName: "Conga Composer 8 Winter 26",
+              },
+              {
+                Id: "0A35f000000TN2BCAW",
+                SubscriberPackageName: "DocuSign eSignature",
+                SubscriberPackageNamespace: "dsfs",
+                SubscriberPackageVersionNumber: "7.6.0.1",
+                SubscriberPackageVersionName: "DocuSign for Salesforce",
+              },
+              {
+                Id: "0A35f000000TN2CCAW",
+                SubscriberPackageName: "MyCompany Core",
+                SubscriberPackageNamespace: "mcc",
+                SubscriberPackageVersionNumber: "2.14.0.3",
+                SubscriberPackageVersionName: "MyCompany Core 2.14",
+              },
+            ]
+          : [],
+      },
+      "",
     );
     return 0;
   }
 
   if (first === "config" && args[1] === "get") {
+    const configName = args[2] || "";
     outputJsonIfRequested(
-      { status: 0, result: [{ name: args[2] || "", value: null }] },
+      {
+        status: 0,
+        result: [
+          {
+            name: configName,
+            value:
+              DOCS_PROFILE && configName === "target-org"
+                ? "deploy.user@mycompany.com.integ"
+                : null,
+          },
+        ],
+      },
       "",
     );
+    return 0;
+  }
+
+  // Monitoring catalog: answered from a snapshot of the real
+  // `sf hardis:config:monitoring-defaults --json` payload, so the Org
+  // Monitoring and Monitoring Configuration panels show their full catalog
+  if (first === "hardis:config:monitoring-defaults" && DOCS_PROFILE) {
+    const catalog = JSON.parse(
+      fs.readFileSync(path.join(__dirname, "monitoring-defaults.json"), "utf8"),
+    );
+    outputJsonIfRequested({ status: 0, result: catalog }, "");
     return 0;
   }
 
@@ -212,6 +567,14 @@ async function runHardisCommand(commandId) {
         // multiselect and report files
         clearTimeout(safetyTimeout);
         await runShowcaseScenario(send, askPrompt, sleep);
+        finish();
+        return;
+      }
+      // Documentation recordings of the three CI/CD workflow commands
+      const docScenario = DOCS_SCENARIOS[commandId];
+      if (DOCS_PROFILE && docScenario) {
+        clearTimeout(safetyTimeout);
+        await docScenario(send, askPrompt, sleep);
         finish();
         return;
       }
@@ -426,6 +789,356 @@ async function runShowcaseScenario(send, askPrompt, sleep) {
   log("success", "Data dictionary generated for 34 objects.");
   await sleep(200);
 }
+
+/**
+ * Scenarios of the three CI/CD workflow commands, used by the documentation
+ * recordings (docs/assets/images/new-user-story-2026.gif and friends). They
+ * reproduce the log lines, questions and report files the real commands emit.
+ */
+const DOCS_SCENARIOS = {
+  "hardis:work:new": async (send, askPrompt, sleep) => {
+    const log = (logType, message, extra) =>
+      send({ event: "commandLogLine", logType, message, ...(extra || {}) });
+
+    log("action", "Creating a new User Story");
+    await sleep(150);
+    log(
+      "log",
+      "Current git repository: salesforce-crm (branch integration, up to date with origin).",
+    );
+    await sleep(150);
+
+    log("action", "Please select the project you are working on", {
+      isQuestion: true,
+    });
+    await askPrompt({
+      name: "project",
+      type: "select",
+      message: "Please select the project you are working on",
+      choices: [
+        {
+          title: "CRM",
+          value: "CRM",
+          description: "Customer Relationship Management",
+        },
+        {
+          title: "BILLING",
+          value: "BILLING",
+          description: "Billing & Invoicing",
+        },
+        { title: "SERVICE", value: "SERVICE", description: "Service Cloud" },
+      ],
+    });
+    log("log", "CRM");
+    await sleep(150);
+
+    log("action", "What is the type of the User Story you want to work on?", {
+      isQuestion: true,
+    });
+    await askPrompt({
+      name: "userStoryType",
+      type: "select",
+      message: "What is the type of the User Story you want to work on?",
+      choices: [
+        {
+          title: "🏗️ Configuration or development",
+          value: "features",
+          description: "New feature, enhancement or configuration change",
+        },
+        {
+          title: "🐞 Bug fix",
+          value: "fixes",
+          description: "Fix a defect found in an org",
+        },
+      ],
+    });
+    log("log", "🏗️ Configuration or development");
+    await sleep(150);
+
+    log("action", "What is the name of your User Story?", {
+      isQuestion: true,
+    });
+    await askPrompt({
+      name: "userStoryName",
+      type: "text",
+      message:
+        "What is the name of your User Story? (ex: CRM-1042 Account hierarchy)",
+    });
+    log("log", "CRM-1042 Account hierarchy");
+    await sleep(150);
+
+    log("action", "Which org do you want to work in?", { isQuestion: true });
+    await askPrompt({
+      name: "targetOrg",
+      type: "select",
+      message: "Which org do you want to work in?",
+      choices: [
+        {
+          title: "☁️ Use my sandbox DEV-Alex",
+          value: "sandbox",
+          description: "mycompany--dev.sandbox.my.salesforce.com",
+        },
+        {
+          title: "🧪 Create a new scratch org",
+          value: "scratch",
+          description: "A fresh scratch org created from the Dev Hub",
+        },
+        {
+          title: "🔗 Connect to another org",
+          value: "other",
+          description: "Authenticate to an org that is not in the list yet",
+        },
+      ],
+    });
+    log("log", "☁️ Use my sandbox DEV-Alex");
+    await sleep(200);
+
+    send({
+      event: "commandSubCommandStart",
+      data: {
+        command: "git checkout -b features/dev/CRM-1042-account-hierarchy",
+        cwd: ".",
+      },
+    });
+    await sleep(700);
+    send({
+      event: "commandSubCommandEnd",
+      data: {
+        command: "git checkout -b features/dev/CRM-1042-account-hierarchy",
+        success: true,
+      },
+    });
+    log(
+      "success",
+      "Created and checked out branch features/dev/CRM-1042-account-hierarchy",
+    );
+    await sleep(200);
+
+    send({
+      event: "progressStart",
+      title: "Resetting local source tracking...",
+      totalSteps: 40,
+    });
+    for (let step = 1; step <= 40; step += 4) {
+      send({ event: "progressStep", step, totalSteps: 40 });
+      await sleep(90);
+    }
+    send({ event: "progressEnd", totalSteps: 40 });
+    await sleep(200);
+
+    send({
+      event: "reportFile",
+      file: "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-create-new-task/",
+      title: "How to work on a User Story",
+      type: "docUrl",
+    });
+    log(
+      "success",
+      "You are now ready to work on User Story CRM-1042 Account hierarchy in org DEV-Alex 🚀",
+    );
+    await sleep(600);
+  },
+
+  "hardis:work:save": async (send, askPrompt, sleep) => {
+    const log = (logType, message, extra) =>
+      send({ event: "commandLogLine", logType, message, ...(extra || {}) });
+
+    log("action", "Saving your User Story");
+    await sleep(150);
+    log(
+      "log",
+      "Branch features/dev/CRM-1042-account-hierarchy, target branch integration.",
+    );
+
+    log("action", "Pulling the latest changes from your org...");
+    send({
+      event: "commandSubCommandStart",
+      data: { command: "sf project retrieve start", cwd: "." },
+    });
+    await sleep(900);
+    send({
+      event: "commandSubCommandEnd",
+      data: { command: "sf project retrieve start", success: true },
+    });
+    log(
+      "table",
+      JSON.stringify([
+        { type: "ApexClass", name: "OpportunityService", state: "Changed" },
+        { type: "Flow", name: "Account_Hierarchy_Sync", state: "Changed" },
+        {
+          type: "CustomField",
+          name: "Account.Segment__c",
+          state: "Created",
+        },
+        {
+          type: "PermissionSet",
+          name: "CRM_Manager",
+          state: "Changed",
+        },
+      ]),
+    );
+    await sleep(250);
+
+    log("action", "Do you confirm the updates you want to save?", {
+      isQuestion: true,
+    });
+    await askPrompt({
+      name: "confirmUpdates",
+      type: "select",
+      message: "Do you confirm the updates you want to save?",
+      choices: [
+        {
+          title: "😎 Yes, my commit(s) are ready!",
+          value: "yes",
+          description: "Continue with the files staged in the Source Control",
+        },
+        {
+          title: "🙋 Not yet, let me review my files",
+          value: "no",
+          description: "Stop here and come back later",
+        },
+      ],
+    });
+    log("log", "😎 Yes, my commit(s) are ready!");
+    await sleep(200);
+
+    log(
+      "action",
+      "Updating manifest/package.xml and manifest/destructiveChanges.xml using sfdx-git-delta...",
+    );
+    send({
+      event: "commandSubCommandStart",
+      data: {
+        command: "sf sgd:source:delta --to HEAD --from origin/integration",
+        cwd: ".",
+      },
+    });
+    await sleep(800);
+    send({
+      event: "commandSubCommandEnd",
+      data: {
+        command: "sf sgd:source:delta --to HEAD --from origin/integration",
+        success: true,
+      },
+    });
+    log("action", "Applying automated cleanings to the sources...");
+    send({
+      event: "progressStart",
+      title: "Cleaning 5 metadata types...",
+      totalSteps: 5,
+    });
+    for (let step = 1; step <= 5; step++) {
+      send({ event: "progressStep", step, totalSteps: 5 });
+      await sleep(280);
+    }
+    send({ event: "progressEnd", totalSteps: 5 });
+    log(
+      "success",
+      "Cleaned profiles, list views, destructive changes references and Flow positions.",
+    );
+    await sleep(250);
+
+    send({
+      event: "reportFile",
+      file: "manifest/package.xml",
+      title: "Git Delta package.xml (4)",
+      type: "report",
+    });
+    send({
+      event: "reportFile",
+      file: "https://sfdx-hardis.cloudity.com/salesforce-ci-cd-publish-task/",
+      title: "How to publish a User Story",
+      type: "docUrl",
+    });
+    log(
+      "success",
+      "Your User Story is saved. Commit and push your files, then publish them with Save / Publish User Story 🎉",
+    );
+    await sleep(600);
+  },
+
+  "hardis:work:publish": async (send, askPrompt, sleep) => {
+    const log = (logType, message, extra) =>
+      send({ event: "commandLogLine", logType, message, ...(extra || {}) });
+
+    log("action", "Publishing your User Story");
+    await sleep(150);
+    send({
+      event: "commandSubCommandStart",
+      data: {
+        command: "git push origin features/dev/CRM-1042-account-hierarchy",
+        cwd: ".",
+      },
+    });
+    await sleep(900);
+    send({
+      event: "commandSubCommandEnd",
+      data: {
+        command: "git push origin features/dev/CRM-1042-account-hierarchy",
+        success: true,
+      },
+    });
+    log("success", "Pushed 3 commits to origin.");
+    await sleep(200);
+
+    log("action", "Which branch do you want to merge your User Story into?", {
+      isQuestion: true,
+    });
+    await askPrompt({
+      name: "targetBranch",
+      type: "select",
+      message: "Which branch do you want to merge your User Story into?",
+      choices: [
+        {
+          title: "integration",
+          value: "integration",
+          description: "Integration sandbox (mycompany--integ)",
+        },
+        {
+          title: "uat",
+          value: "uat",
+          description: "User Acceptance Testing sandbox (mycompany--uat)",
+        },
+        {
+          title: "preprod",
+          value: "preprod",
+          description: "Pre-production sandbox (mycompany--preprod)",
+        },
+      ],
+    });
+    log("log", "integration");
+    await sleep(200);
+
+    log("action", "Creating the Pull Request on GitHub...");
+    send({
+      event: "progressStart",
+      title: "Collecting the User Story details...",
+      totalSteps: 20,
+    });
+    for (let step = 1; step <= 20; step += 2) {
+      send({ event: "progressStep", step, totalSteps: 20 });
+      await sleep(120);
+    }
+    send({ event: "progressEnd", totalSteps: 20 });
+    send({
+      event: "reportFile",
+      file: "https://github.com/mycompany/salesforce-crm/pull/128",
+      title: "Pull Request #128",
+      type: "docUrl",
+    });
+    send({
+      event: "reportFile",
+      file: "docs/user-stories/CRM-1042-account-hierarchy.md",
+      title: "User Story documentation",
+      type: "report",
+    });
+    log(
+      "success",
+      "Pull Request #128 created: CRM-1042 Account hierarchy -> integration 🚀",
+    );
+    await sleep(600);
+  },
+};
 
 main().then(
   (code) => process.exit(code),

@@ -219,6 +219,11 @@ export default [
         setInterval: "readonly",
         clearTimeout: "readonly",
         clearInterval: "readonly",
+
+        // Node.js 18+ built-in fetch API
+        fetch: "readonly",
+        Response: "readonly",
+        AbortSignal: "readonly",
       },
     },
     rules: {
@@ -268,11 +273,14 @@ export default [
       eqeqeq: "off",
       semi: "off",
       // Downgrade to warn with patterns matching the project convention
-      "no-unused-vars": ["warn", {
-        argsIgnorePattern: "^_",
-        varsIgnorePattern: "^_",
-        caughtErrors: "none",
-      }],
+      "no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+          caughtErrors: "none",
+        },
+      ],
       // Existing LWC code uses lexical declarations in switch cases
       "no-case-declarations": "off",
       // Existing LWC code has intermediate assignment patterns

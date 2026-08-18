@@ -31,7 +31,7 @@
         </header>
         <div class="slds-modal__content slds-p-around_medium">
           <template if:true={hasValidationError}>
-            <div class="slds-notify slds-notify_alert slds-theme_error slds-m-bottom_medium" role="alert">
+            <div class="hardis-note error slds-m-bottom_medium" role="alert">
               <span class="slds-assistive-text">{i18n.errorLabel}</span>
               <span>{validationError}</span>
             </div>
@@ -39,7 +39,7 @@
           <div class="slds-grid slds-wrap slds-gutters">
             <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
               <div class="slds-form-element">
-                <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                <label class="slds-form-element__label hardis-label-inline">
                   <span>
                     <abbr class="slds-required" title={i18n.requiredField}>*</abbr>
                     {i18n.actionLabelField}
@@ -47,6 +47,7 @@
                   <s-multiline-helptext content={i18n.actionLabelHelp} class="slds-icon-text-info"></s-multiline-helptext>
                 </label>
                 <lightning-input
+                  label={i18n.actionLabelField}
                   value={displayedAction.label}
                   data-field="label"
                   onchange={handleFieldChange}
@@ -59,7 +60,7 @@
 
             <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
               <div class="slds-form-element">
-                <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                <label class="slds-form-element__label hardis-label-inline">
                   <span>
                     <abbr class="slds-required" title={i18n.requiredField}>*</abbr>
                     {i18n.actionTypeField}
@@ -67,6 +68,7 @@
                   <s-multiline-helptext content={i18n.actionTypeHelp} class="slds-icon-text-info"></s-multiline-helptext>
                 </label>
                 <lightning-combobox
+                  label={i18n.actionTypeField}
                   value={displayedAction.type}
                   options={typeOptions}
                   data-field="type"
@@ -80,7 +82,7 @@
 
             <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
               <div class="slds-form-element">
-                <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                <label class="slds-form-element__label hardis-label-inline">
                   <span>
                     <abbr class="slds-required" title={i18n.requiredField}>*</abbr>
                     {i18n.actionWhenField}
@@ -88,6 +90,7 @@
                   <s-multiline-helptext content={i18n.actionWhenHelp} class="slds-icon-text-info"></s-multiline-helptext>
                 </label>
                 <lightning-combobox
+                  label={i18n.actionWhenField}
                   value={displayedAction.when}
                   options={whenOptions}
                   data-field="when"
@@ -101,7 +104,7 @@
 
             <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
               <div class="slds-form-element">
-                <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                <label class="slds-form-element__label hardis-label-inline">
                   <span>
                     <abbr class="slds-required" title={i18n.requiredField}>*</abbr>
                     {i18n.executionContextsLabel}
@@ -109,6 +112,7 @@
                   <s-multiline-helptext content={i18n.executionContextsHelp} class="slds-icon-text-info"></s-multiline-helptext>
                 </label>
                 <lightning-combobox
+                  label={i18n.executionContextsLabel}
                   value={displayedAction.context}
                   options={contextOptions}
                   data-field="context"
@@ -124,7 +128,7 @@
             <template if:true={showCommandField}>
               <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
                 <div class="slds-form-element">
-                  <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                  <label class="slds-form-element__label hardis-label-inline">
                     <span>
                       <abbr class="slds-required" title={i18n.requiredField}>*</abbr>
                       {i18n.commandField}
@@ -132,6 +136,7 @@
                     <s-multiline-helptext content={i18n.commandFieldHelp} class="slds-icon-text-info"></s-multiline-helptext>
                   </label>
                   <lightning-input
+                    label={i18n.commandField}
                     value={displayedAction.command}
                     data-field="command"
                     onchange={handleFieldChange}
@@ -146,7 +151,7 @@
             <template if:true={showApexScriptField}>
               <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
                 <div class="slds-form-element">
-                  <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                  <label class="slds-form-element__label hardis-label-inline">
                     <span>
                       <abbr class="slds-required" title={i18n.requiredField}>*</abbr>
                       {i18n.apexScriptLabel}
@@ -156,6 +161,7 @@
                   <div style="display:flex;align-items:center;gap:0.5rem;">
                     <div style="flex:1;">
                       <lightning-combobox
+                        label={i18n.apexScriptLabel}
                         value={displayedAction.parameters.apexScript}
                         options={apexScriptOptions}
                         data-field="parameters.apexScript"
@@ -182,7 +188,7 @@
             <template if:true={showSfdmuProjectField}>
               <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
                 <div class="slds-form-element">
-                  <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                  <label class="slds-form-element__label hardis-label-inline">
                     <span>
                       <abbr class="slds-required" title={i18n.requiredField}>*</abbr>
                       {i18n.sfdmuProjectPath}
@@ -192,6 +198,7 @@
                   <div style="display:flex;align-items:center;gap:0.5rem;">
                     <div style="flex:1;">
                       <lightning-combobox
+                        label={i18n.sfdmuProjectPath}
                         value={displayedAction.parameters.sfdmuProject}
                         options={sfdmuWorkspaceOptions}
                         data-field="parameters.sfdmuProject"
@@ -218,7 +225,7 @@
             <template if:true={showCommunityNameField}>
               <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
                 <div class="slds-form-element">
-                  <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                  <label class="slds-form-element__label hardis-label-inline">
                     <span>
                       <abbr class="slds-required" title={i18n.requiredField}>*</abbr>
                       {i18n.communityNameLabel}
@@ -226,6 +233,7 @@
                     <s-multiline-helptext content={i18n.communityNameHelp} class="slds-icon-text-info"></s-multiline-helptext>
                   </label>
                   <lightning-combobox
+                    label={i18n.communityNameLabel}
                     value={displayedAction.parameters.communityName}
                     options={communityOptions}
                     data-field="parameters.communityName"
@@ -242,7 +250,7 @@
             <template if:true={showScheduleBatchClassNameField}>
               <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
                 <div class="slds-form-element">
-                  <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                  <label class="slds-form-element__label hardis-label-inline">
                     <span>
                       <abbr class="slds-required" title={i18n.requiredField}>*</abbr>
                       {i18n.scheduleBatchClassNameLabel}
@@ -250,6 +258,7 @@
                     <s-multiline-helptext content={i18n.scheduleBatchClassNameHelp} class="slds-icon-text-info"></s-multiline-helptext>
                   </label>
                   <lightning-combobox
+                    label={i18n.scheduleBatchClassNameLabel}
                     value={displayedAction.parameters.className}
                     options={schedulableClassOptions}
                     data-field="parameters.className"
@@ -266,7 +275,7 @@
             <template if:true={showScheduleBatchCronExpressionField}>
               <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
                 <div class="slds-form-element">
-                  <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                  <label class="slds-form-element__label hardis-label-inline">
                     <span>
                       <abbr class="slds-required" title={i18n.requiredField}>*</abbr>
                       {i18n.scheduleBatchCronExpressionLabel}
@@ -274,6 +283,7 @@
                     <s-multiline-helptext content={i18n.scheduleBatchCronExpressionHelp} class="slds-icon-text-info"></s-multiline-helptext>
                   </label>
                   <lightning-input
+                    label={i18n.scheduleBatchCronExpressionLabel}
                     value={displayedAction.parameters.cronExpression}
                     data-field="parameters.cronExpression"
                     onchange={handleFieldChange}
@@ -292,11 +302,12 @@
             <template if:true={showScheduleBatchJobNameField}>
               <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
                 <div class="slds-form-element">
-                  <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                  <label class="slds-form-element__label hardis-label-inline">
                     <span>{i18n.scheduleBatchJobNameLabel}</span>
                     <s-multiline-helptext content={i18n.scheduleBatchJobNameHelp} class="slds-icon-text-info"></s-multiline-helptext>
                   </label>
                   <lightning-input
+                    label={i18n.scheduleBatchJobNameLabel}
                     value={displayedAction.parameters.jobName}
                     data-field="parameters.jobName"
                     onchange={handleFieldChange}
@@ -310,7 +321,7 @@
             <template if:true={showInstructionsField}>
               <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
                 <div class="slds-form-element">
-                  <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                  <label class="slds-form-element__label hardis-label-inline">
                     <span>
                       <abbr class="slds-required" title={i18n.requiredField}>*</abbr>
                       {i18n.instructionsLabel}
@@ -318,6 +329,7 @@
                     <s-multiline-helptext content={i18n.instructionsHelp} class="slds-icon-text-info"></s-multiline-helptext>
                   </label>
                   <lightning-textarea
+                    label={i18n.instructionsLabel}
                     value={displayedAction.parameters.instructions}
                     data-field="parameters.instructions"
                     onchange={handleFieldChange}
@@ -333,7 +345,7 @@
             <template if:true={showPackageXmlItemsField}>
               <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
                 <div class="slds-form-element">
-                  <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                  <label class="slds-form-element__label hardis-label-inline">
                     <span>
                       <abbr class="slds-required" title={i18n.requiredField}>*</abbr>
                       {i18n.packageXmlItemsLabel}
@@ -341,6 +353,7 @@
                     <s-multiline-helptext content={i18n.packageXmlItemsHelp} class="slds-icon-text-info"></s-multiline-helptext>
                   </label>
                   <lightning-textarea
+                    label={i18n.packageXmlItemsLabel}
                     value={packageXmlItemsText}
                     data-field="parameters.packageXmlItems"
                     onchange={handleFieldChange}
@@ -370,6 +383,8 @@
                     onchange={handleCheckboxChange}
                     disabled={isViewMode}
                     variant="label-hidden"
+                    message-toggle-active=""
+                    message-toggle-inactive=""
                   ></lightning-input>
                 </div>
               </div>
@@ -390,6 +405,8 @@
                     onchange={handleCheckboxChange}
                     disabled={isViewMode}
                     variant="label-hidden"
+                    message-toggle-active=""
+                    message-toggle-inactive=""
                   ></lightning-input>
                 </div>
               </div>
@@ -399,11 +416,12 @@
             <template if:true={showCustomUsernameField}>
               <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
                 <div class="slds-form-element">
-                  <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                  <label class="slds-form-element__label hardis-label-inline">
                     <span>{i18n.executeWithCustomUsername}</span>
                     <s-multiline-helptext content={i18n.executeWithCustomUsernameHelp} class="slds-icon-text-info"></s-multiline-helptext>
                   </label>
                   <lightning-input
+                    label={i18n.executeWithCustomUsername}
                     value={displayedAction.customUsername}
                     data-field="customUsername"
                     onchange={handleFieldChange}
@@ -417,11 +435,12 @@
             <!-- Restrict the action to some target orgs -->
             <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
               <div class="slds-form-element">
-                <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                <label class="slds-form-element__label hardis-label-inline">
                   <span>{i18n.targetBranchesLabel}</span>
                   <s-multiline-helptext content={i18n.targetBranchesHelp} class="slds-icon-text-info"></s-multiline-helptext>
                 </label>
                 <lightning-combobox
+                  label={i18n.targetBranchesLabel}
                   options={targetBranchesModeOptions}
                   value={targetBranchesMode}
                   onchange={handleTargetBranchesModeChange}
@@ -450,8 +469,8 @@
         </div>
         <footer class="slds-modal__footer">
           <template if:false={isEditMode}>
-            <lightning-button
-              variant="brand"
+            <lightning-button class="hardis-btn-tinted-blue"
+              variant="neutral"
               label={i18n.editLabel}
               onclick={handleEdit}
             ></lightning-button>
@@ -467,8 +486,8 @@
               label={i18n.cancelLabel}
               onclick={handleCancel}
             ></lightning-button>
-            <lightning-button
-              variant="brand"
+            <lightning-button class="hardis-btn-tinted-blue"
+              variant="neutral"
               label={i18n.saveLabel}
               onclick={handleSave}
             ></lightning-button>

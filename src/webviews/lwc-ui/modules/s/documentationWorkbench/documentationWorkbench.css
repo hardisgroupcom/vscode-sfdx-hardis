@@ -1,7 +1,6 @@
 /* Documentation Workbench Styles - consistent with setup & orgMonitoring panels */
 .blue-back {
     min-height: 100vh;
-    font-family: "Salesforce Sans", -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .doc-container {
@@ -10,119 +9,31 @@
     padding: 1rem 1rem;
 }
 
-/* Header */
-.header-content {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1rem 1.25rem;
-    border-radius: 10px;
-    margin-bottom: 1rem;
-}
-
-.header-icon-container {
-    width: 52px;
-    height: 52px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.header-text {
-    flex-grow: 1;
-}
-
-.header-title {
-    font-size: 1.35rem;
-    margin: 0;
-    font-weight: 700;
-}
-
-.header-subtitle {
-    margin: 0.15rem 0 0 0;
-    font-size: 0.92rem;
-}
-
-.header-actions {
-    margin-left: auto;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
 /* Sections */
 .section {
     margin-bottom: 1.25rem;
 }
 
-/* Generate options card */
-.generate-options-card {
-    border-radius: 10px;
-    padding: 1rem 1.25rem;
-}
-
-.options-grid {
+/* Generate options: two columns, each headed by its own hardis-group-label */
+.doc-options-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 1rem;
 }
 
-.options-column {
+.doc-options-column {
     display: flex;
     flex-direction: column;
 }
 
-.general-column, .include-column  {
-    background: var(--slds-g-color-info-base-95);
-    border: 1px solid var(--slds-g-color-info-base-80);
-    border-radius: 8px;
-    padding: 0.75rem 0.85rem;
-}
-
-.subsection-title {
-    margin: 0 0 0.15rem 0;
-    font-size: 0.95rem;
-    font-weight: 700;
-}
-
-.subsection-help {
-    margin: 0 0 0.5rem 0;
-    color: var(--slds-g-color-neutral-base-60);
-    font-size: 0.85rem;
-    line-height: 1.3;
-}
-
-.option-row {
+.doc-option-row {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
     margin-bottom: 0.6rem;
 }
 
-.option-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.5rem;
-    flex-direction: column;
-}
-
-.option-input {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-}
-
-.option-checkbox {
-    flex-shrink: 0;
-}
-
-.option-help {
-    color: var(--slds-g-color-neutral-base-60);
-    font-size: 0.85rem;
-    margin: 0;
-    line-height: 1.35;
-}
-
-.include-grid {
+.doc-include-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.5rem 0.75rem;
@@ -135,96 +46,14 @@
     align-items: center;
 }
 
-.options-note {
-    color: var(--slds-g-color-neutral-base-60);
-    font-size: 0.85rem;
-    margin: 0.75rem 0 0 0;
-    line-height: 1.4;
-}
-
-/* Commands grid */
-
-/* Config Section */
-.config-loading {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 1.5rem;
-    color: var(--slds-g-color-neutral-base-60);
-}
-
-.config-section {
-    border-radius: 10px;
-    padding: 1rem 1.25rem;
-    margin-bottom: 0.75rem;
-}
-
-.config-section-title {
-    font-size: 1rem;
-    font-weight: 700;
-    margin: 0 0 0.25rem 0;
-    color: var(--slds-g-color-palette-neutral-10);
-}
-
-.config-section-description {
-    color: var(--slds-g-color-neutral-base-60);
-    font-size: 0.85rem;
-    margin: 0 0 0.75rem 0;
-}
-
-.config-fields {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.75rem;
-}
-
-.config-field {
-    margin-bottom: 0.25rem;
-}
-
-.field-description {
-    color: var(--slds-g-color-neutral-base-60);
-    font-size: 0.78rem;
-    margin: 0.15rem 0 0 0;
-    line-height: 1.3;
-}
-
-.config-save-actions {
-    margin-top: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.save-feedback {
-    font-size: 0.9rem;
-    font-weight: 600;
-}
-
-.save-feedback.success {
-    color: #04844b;
-}
-
-.save-feedback.error {
-    color: #b91c1c;
-}
-
 /* Responsive */
 @media (max-width: 768px) {
-    .header-content {
-        flex-direction: column;
-        align-items: flex-start;
-    }
 
-    .config-fields {
+    .doc-options-grid {
         grid-template-columns: 1fr;
     }
 
-    .options-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .include-grid {
+    .doc-include-grid {
         grid-template-columns: 1fr;
     }
 }

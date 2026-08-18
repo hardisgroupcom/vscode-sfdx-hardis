@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import * as path from "path";
 import * as fs from "fs";
 import { t } from "../i18n/i18n";
+import { humanizeConfigKeyLabel } from "./labelHumanizer";
 
 export const sectionDefs = [
   {
@@ -114,11 +115,7 @@ export async function getExtensionConfigSections(
       const afterLastDot = key.lastIndexOf(".");
       const keyWithoutPrefix =
         afterLastDot >= 0 ? key.substring(afterLastDot + 1) : key;
-      const label =
-        prop.title ||
-        keyWithoutPrefix
-          .replace(/([A-Z])/g, " $1")
-          .replace(/^./, (s: string) => s.toUpperCase());
+      const label = prop.title || humanizeConfigKeyLabel(keyWithoutPrefix);
       return {
         key,
         label: label,

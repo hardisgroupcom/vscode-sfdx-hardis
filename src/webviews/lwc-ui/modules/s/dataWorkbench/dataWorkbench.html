@@ -1,24 +1,14 @@
 <template>
-  <div class="slds-scope slds-card blue-back" data-theme={colorTheme} data-contrast={colorContrast}>
-    <div class="slds-card__header slds-grid">
-      <header class="slds-media slds-media_center slds-has-flexi-truncate">
-        <div class="slds-media__figure">
-          <span class="slds-icon_container slds-icon-utility-database header-icon-container purple">
-            <lightning-icon icon-name="utility:database" alternative-text={i18n.dwbAltText} size="medium" variant="inverse"></lightning-icon>
-          </span>
-        </div>
-        <div class="slds-media__body">
-          <div class="slds-grid slds-grid_align-spread">
-            <h2 class="slds-card__header-title">
-              <span class="slds-text-heading_medium">{i18n.dwbTitle}</span>
-            </h2>
-          </div>
-          <p class="slds-text-body_small slds-line-height_reset">
-            {i18n.dwbDesc}
-          </p>
-        </div>
-      </header>
-      <div class="slds-no-flex slds-grid slds-grid_align-end slds-gutters_x-small">
+  <div class="slds-scope slds-card blue-back hardis-workbench" data-theme={colorTheme} data-contrast={colorContrast}>
+    <div class="hardis-page-head">
+      <div class="hardis-tile featured violet">
+        <lightning-icon icon-name="utility:database" alternative-text={i18n.dwbAltText} size="medium"></lightning-icon>
+      </div>
+      <div class="hardis-page-head-text">
+        <h1 class="hardis-page-title">{i18n.dwbTitle}</h1>
+        <p class="hardis-page-subtitle">{i18n.dwbDesc}</p>
+      </div>
+      <div class="hardis-page-head-actions">
         <lightning-button
           variant="neutral"
           label={i18n.dwbSfdmuDocLabel}
@@ -26,15 +16,13 @@
           icon-name="utility:new_window"
           onclick={handleOpenSfdmuDoc}
         ></lightning-button>
-        <span class="slds-m-left_small">
-        <lightning-button
-          variant="brand"
+        <lightning-button class="hardis-btn-tinted-blue"
+          variant="neutral"
           label={i18n.dwbCreateWorkspace}
           title={i18n.dwbCreateWorkspaceTooltip}
           icon-name="utility:add"
           onclick={handleCreateWorkspace}
         ></lightning-button>
-        </span>
       </div>
     </div>
 
@@ -54,7 +42,7 @@
     <template if:true={isReady}>
 
     <template if:true={isLoading}>
-      <div class="slds-card__body slds-card__body_inner">
+      <div class="hardis-panel-body">
         <div class="slds-text-align_center slds-p-around_large">
           <lightning-spinner alternative-text={i18n.dwbLoadingWorkspaces} size="medium"></lightning-spinner>
           <p class="slds-text-body_small slds-text-color_weak slds-m-top_small">{i18n.dwbLoadingWorkspaces}</p>
@@ -64,19 +52,21 @@
 
     <template if:false={isLoading}>
       <template if:false={hasWorkspaces}>
-        <div class="slds-card__body slds-card__body_inner">
-          <div class="slds-text-align_center slds-p-around_large">
-            <lightning-icon icon-name="utility:database" size="large" class="slds-text-color_weak"></lightning-icon>
-            <h3 class="slds-text-heading_medium slds-m-top_medium">{i18n.dwbNoWorkspacesFound}</h3>
-            <p class="slds-text-body_regular slds-text-color_weak slds-m-top_small">
-              {i18n.dwbNoWorkspacesFoundDesc}
-            </p>
-            <lightning-button
-              variant="brand"
-              label={i18n.dwbCreateFirstWorkspace}
-              class="slds-m-top_medium"
-              onclick={handleCreateWorkspace}
-            ></lightning-button>
+        <div class="hardis-panel-body">
+          <div class="hardis-empty">
+            <div class="hardis-tile featured violet">
+              <lightning-icon icon-name="utility:database" size="small"></lightning-icon>
+            </div>
+            <h3 class="hardis-empty-title">{i18n.dwbNoWorkspacesFound}</h3>
+            <p class="hardis-empty-desc">{i18n.dwbNoWorkspacesFoundDesc}</p>
+            <div class="hardis-empty-actions">
+              <lightning-button
+                variant="neutral"
+                label={i18n.dwbCreateFirstWorkspace}
+                class="hardis-btn-tinted-blue"
+                onclick={handleCreateWorkspace}
+              ></lightning-button>
+            </div>
           </div>
         </div>
       </template>
@@ -84,448 +74,432 @@
 
     <template if:false={isLoading}>
       <template if:true={hasWorkspaces}>
-        <div class="slds-card__body slds-card__body_inner">
-          <div class="slds-grid slds-gutters">
-            <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-3 slds-large-size_1-of-4 workspace-list-container">
-              <lightning-card title={i18n.dwbAvailableWorkspaces}>
-                <s-multiline-helptext slot="actions" content={i18n.dwbAvailableWorkspacesHelp}></s-multiline-helptext>
-                <div class="slds-card__body slds-card__body_inner">
-                  <div class="workspace-list">
-                    <template for:each={workspacesForDisplay} for:item="workspace">
-                      <div 
-                        key={workspace.path} 
-                        class={workspace.cssClass}
-                        data-path={workspace.path}
-                        onclick={handleWorkspaceSelect}
-                      >
-                        <div class="slds-media slds-media_small">
-                          <div class="slds-media__figure">
-                            <lightning-icon icon-name={workspace.iconName} size="small"></lightning-icon>
-                          </div>
-                          <div class="slds-media__body">
-                            <p class="slds-text-body_regular slds-truncate" title={workspace.label}>
-                              <strong>{workspace.label}</strong>
-                            </p>
-                            <p class="slds-text-body_small slds-text-color_weak slds-truncate" title={workspace.name}>
-                              {workspace.name}
-                            </p>
-                            <p class="slds-text-body_small slds-text-color_weak slds-truncate">
-                              {workspace.objectsCountLabel}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </template>
+        <div class="hardis-split">
+          <div class="hardis-panel-body hardis-split-rail">
+            <div class="hardis-group-label">
+              {i18n.dwbAvailableWorkspaces}
+              <span class="hardis-count-chip">{workspacesCount}</span>
+              <div class="hardis-group-actions">
+                <s-multiline-helptext content={i18n.dwbAvailableWorkspacesHelp}></s-multiline-helptext>
+              </div>
+            </div>
+            <div class="hardis-card-grid single-column">
+              <template for:each={workspacesForDisplay} for:item="workspace">
+                <div
+                  key={workspace.path}
+                  class={workspace.cardClass}
+                  role="button"
+                  tabindex="0"
+                  aria-pressed={workspace.isSelected}
+                  data-path={workspace.path}
+                  onclick={handleWorkspaceSelect}
+                  onkeydown={handleCardKeydown}
+                >
+                  <div class="hardis-card-head">
+                    <div class="hardis-tile small violet">
+                      <lightning-icon icon-name="utility:database" size="x-small"></lightning-icon>
+                    </div>
+                    <h3 class="hardis-card-title">{workspace.label}</h3>
+                  </div>
+                  <p class="hardis-card-desc">{workspace.meta}</p>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <div class="hardis-panel-body hardis-split-main">
+            <template if:true={selectedWorkspace}>
+              <div class="hardis-page-head flush">
+                <div class="hardis-page-head-text">
+                  <h2 class="hardis-page-title">{selectedWorkspace.label}</h2>
+                  <p class="hardis-page-subtitle">{selectedWorkspace.name}</p>
+                </div>
+                <div class="hardis-page-head-actions">
+                  <template if:true={showLargeActions}>
+                    <lightning-button class="hardis-btn-tinted-blue"
+                      variant="neutral"
+                      label={i18n.dwbExportData}
+                      title={i18n.dwbExportDataTooltip}
+                      icon-name="utility:download"
+                      icon-position="left"
+                      onclick={handleExportData}
+                    ></lightning-button>
+                    <lightning-button class="hardis-btn-tinted-blue"
+                      variant="neutral"
+                      label={i18n.dwbImportData}
+                      title={i18n.dwbImportDataTooltip}
+                      icon-name="utility:upload"
+                      icon-position="left"
+                      onclick={handleImportData}
+                    ></lightning-button>
+                    <lightning-button class="hardis-btn-tinted-red"
+                      variant="neutral"
+                      label={i18n.dwbDeleteData}
+                      title={i18n.dwbDeleteDataTooltip}
+                      icon-name="utility:close"
+                      icon-position="left"
+                      onclick={handleDeleteData}
+                    ></lightning-button>
+                  </template>
+                  <template if:false={showLargeActions}>
+                    <lightning-button-menu
+                      alternative-text={i18n.dwbWorkspaceActions}
+                      menu-alignment="right"
+                      variant="border-filled"
+                      icon-name="utility:down"
+                    >
+                      <lightning-menu-item
+                        value="export"
+                        label={i18n.dwbExportDataMenu}
+                        icon-name="utility:download"
+                        onclick={handleExportData}
+                      ></lightning-menu-item>
+                      <lightning-menu-item
+                        value="import"
+                        label={i18n.dwbImportDataMenu}
+                        icon-name="utility:upload"
+                        onclick={handleImportData}
+                      ></lightning-menu-item>
+                      <lightning-menu-item
+                        value="deleteData"
+                        label={i18n.dwbDeleteDataMenu}
+                        icon-name="utility:close"
+                        onclick={handleDeleteData}
+                      ></lightning-menu-item>
+                    </lightning-button-menu>
+                  </template>
+                </div>
+              </div>
+
+              <!-- Section: Workspace Properties -->
+              <div class="hardis-group-label">
+                {i18n.dwbProperties}
+                <div class="hardis-group-actions">
+                  <lightning-button
+                    variant="neutral"
+                    label={i18n.dwbEditProperties}
+                    title={i18n.dwbEditPropertiesTooltip}
+                    icon-name="utility:edit"
+                    onclick={handleEditProperties}
+                  ></lightning-button>
+                  <lightning-button
+                    variant="neutral"
+                    label={i18n.dwbOpenFolder}
+                    title={i18n.dwbOpenFolderTooltip}
+                    icon-name="utility:open_folder"
+                    onclick={handleOpenFolder}
+                  ></lightning-button>
+                  <lightning-button
+                    variant="neutral"
+                    label={i18n.dwbOpenExportJson}
+                    title={i18n.dwbOpenExportJsonTooltip}
+                    icon-name="utility:open"
+                    onclick={handleConfigureWorkspace}
+                  ></lightning-button>
+                  <lightning-button
+                    variant="neutral"
+                    class="hardis-btn-tinted-red"
+                    label={i18n.dwbDeleteWorkspace}
+                    title={i18n.dwbDeleteWorkspaceTooltip}
+                    icon-name="utility:delete"
+                    data-path={selectedWorkspace.path}
+                    onclick={handleDeleteWorkspace}
+                  ></lightning-button>
+                </div>
+              </div>
+              <template if:true={selectedWorkspaceHasDescription}>
+                <div class="hardis-prop-grid">
+                  <div class="hardis-prop">
+                    <div class="hardis-prop-key">{i18n.dwbDescriptionLabel}</div>
+                    <div class="hardis-prop-value">{selectedWorkspace.description}</div>
                   </div>
                 </div>
-              </lightning-card>
-            </div>
+              </template>
 
-            <div class="slds-col slds-size_1-of-2 slds-medium-size_2-of-3 slds-large-size_3-of-4 workspace-detail-container">
-              <template if:true={selectedWorkspace}>
-                <lightning-card title={selectedWorkspace.label}>
-                  <div slot="actions">
-                    <template if:true={showLargeActions}>
-                      <div class="slds-show_large slds-grid">
-                        <lightning-button
-                          variant="brand"
-                          label={i18n.dwbExportData}
-                          title={i18n.dwbExportDataTooltip}
-                          icon-name="utility:download"
-                          icon-position="left"
-                          size="small"
-                          onclick={handleExportData}
-                        ></lightning-button>
-                        <lightning-button
-                          variant="brand"
-                          label={i18n.dwbImportData}
-                          title={i18n.dwbImportDataTooltip}
-                          icon-name="utility:upload"
-                          icon-position="left"
-                          size="small"
-                          onclick={handleImportData}
-                        ></lightning-button>
-                        <lightning-button
-                          variant="destructive"
-                          label={i18n.dwbDeleteData}
-                          title={i18n.dwbDeleteDataTooltip}
-                          icon-name="utility:close"
-                          icon-position="left"
-                          size="small"
-                          onclick={handleDeleteData}
-                        ></lightning-button>
-                      </div>
-                    </template>
+              <!-- Section: Global Settings -->
+              <div class="hardis-group-label">
+                {i18n.dwbGlobalSettings}
+                <div class="hardis-group-actions">
+                  <lightning-button
+                    variant="neutral"
+                    label={i18n.dwbEditGlobalSettings}
+                    title={i18n.dwbEditGlobalSettingsTooltip}
+                    icon-name="utility:settings"
+                    onclick={handleEditGlobalSettings}
+                  ></lightning-button>
+                </div>
+              </div>
+              <template if:true={hasScriptSettings}>
+                <div class="hardis-chip-row">
+                  <template if:true={ssHasApiVersion}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeApiVersion}>API: {ssApiVersion}</span>
+                  </template>
+                  <template if:true={ssSimulationMode}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeSimulationMode}>{i18n.dwbBadgeSimulationModeLabel}</span>
+                  </template>
+                  <template if:true={ssAllOrNone}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeAllOrNone}>{i18n.dwbBadgeAllOrNoneLabel}</span>
+                  </template>
+                  <template if:true={ssAllowFieldTruncation}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeAllowTruncation}>{i18n.dwbBadgeAllowTruncationLabel}</span>
+                  </template>
+                  <template if:true={ssKeepObjectOrder}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeKeepOrder}>{i18n.dwbBadgeKeepOrderLabel}</span>
+                  </template>
+                  <template if:true={ssHasBulkApiVersion}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeBulkApiVersion}>Bulk API: {ssBulkApiVersion}</span>
+                  </template>
+                  <template if:true={ssHasConcurrencyMode}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeConcurrencyMode}>Concurrency: {ssConcurrencyMode}</span>
+                  </template>
+                  <template if:true={ssHasBulkThreshold}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeBulkThreshold}>Bulk Threshold: {ssBulkThreshold}</span>
+                  </template>
+                  <template if:true={ssHasQueryBulkApiThreshold}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeQueryBulkThreshold}>Query Bulk Threshold: {ssQueryBulkApiThreshold}</span>
+                  </template>
+                  <template if:true={ssHasBulkApiV1BatchSize}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeBulkBatchSize}>Bulk Batch: {ssBulkApiV1BatchSize}</span>
+                  </template>
+                  <template if:true={ssHasRestApiBatchSize}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeRestBatchSize}>REST Batch: {ssRestApiBatchSize}</span>
+                  </template>
+                  <template if:true={ssAlwaysUseRestApiToUpdateRecords}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeRestUpdates}>{i18n.dwbBadgeRestUpdatesLabel}</span>
+                  </template>
+                  <template if:true={ssHasParallelBulkJobs}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeParallelBulk}>Parallel Bulk: {ssParallelBulkJobs}</span>
+                  </template>
+                  <template if:true={ssHasParallelRestJobs}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeParallelRest}>Parallel REST: {ssParallelRestJobs}</span>
+                  </template>
+                  <template if:true={ssHasParallelBinaryDownloads}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeParallelBinary}>Parallel Binary: {ssParallelBinaryDownloads}</span>
+                  </template>
+                  <template if:true={ssCreateTargetCSVFiles}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeTargetCsv}>{i18n.dwbBadgeTargetCsvLabel}</span>
+                  </template>
+                  <template if:true={ssCsvInsertNulls}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeCsvNulls}>{i18n.dwbBadgeCsvNullsLabel}</span>
+                  </template>
+                  <template if:true={ssCsvUseEuropeanDateFormat}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeEuDates}>{i18n.dwbBadgeEuDatesLabel}</span>
+                  </template>
+                  <template if:true={ssHasCsvFileEncoding}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeCsvEncoding}>Encoding: {ssCsvFileEncoding}</span>
+                  </template>
+                  <template if:true={ssHasBinaryDataCache}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeBinaryCache}>Binary Cache: {ssBinaryDataCache}</span>
+                  </template>
+                  <template if:true={ssHasSourceRecordsCache}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeSourceCache}>Source Cache: {ssSourceRecordsCache}</span>
+                  </template>
+                  <template if:true={ssHasExcludedObjects}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeExcludedObjects}>Excluded: {ssExcludedObjects}</span>
+                  </template>
+                  <template if:true={ssHasProxyUrl}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeProxy}>{i18n.dwbBadgeProxyLabel}</span>
+                  </template>
+                </div>
+              </template>
+              <template if:false={hasScriptSettings}>
+                <div class="hardis-note">
+                  <lightning-icon icon-name="utility:info" size="x-small"></lightning-icon>
+                  <p>{i18n.dwbNoGlobalSettings}</p>
+                </div>
+              </template>
 
-                    <template if:false={showLargeActions}>
-                      <div class="slds-hide_large">
-                        <lightning-button-menu
-                          alternative-text={i18n.dwbWorkspaceActions}
-                          menu-alignment="right"
-                          variant="border-filled"
-                          icon-name="utility:down"
-                        >
-                          <lightning-menu-item
-                            value="export"
-                            label={i18n.dwbExportDataMenu}
-                            icon-name="utility:download"
-                            onclick={handleExportData}
-                          ></lightning-menu-item>
-                          <lightning-menu-item
-                            value="import"
-                            label={i18n.dwbImportDataMenu}
-                            icon-name="utility:upload"
-                            onclick={handleImportData}
-                          ></lightning-menu-item>
-                          <lightning-menu-item
-                            value="deleteData"
-                            label={i18n.dwbDeleteDataMenu}
-                            icon-name="utility:close"
-                            onclick={handleDeleteData}
-                          ></lightning-menu-item>
-                        </lightning-button-menu>
-                      </div>
-                    </template>
-                  </div>
-
-                  <!-- Section: Workspace Properties & Global Settings -->
-                  <div class="detail-section">
-                    <div class="section-header">
-                      <div class="section-header-left">
-                        <lightning-icon icon-name="utility:info_alt" size="xx-small" class="slds-m-right_x-small"></lightning-icon>
-                        <h3 class="slds-text-title_caps">{i18n.dwbProperties}</h3>
-                      </div>
-                      <div class="section-header-right">
-                        <lightning-button-icon
-                          icon-name="utility:edit"
-                          alternative-text={i18n.dwbEditProperties}
-                          title={i18n.dwbEditPropertiesTooltip}
-                          size="small"
-                          onclick={handleEditProperties}
-                        ></lightning-button-icon>
-                        <lightning-button-icon
-                          icon-name="utility:open_folder"
-                          alternative-text={i18n.dwbOpenFolder}
-                          title={i18n.dwbOpenFolderTooltip}
-                          size="small"
-                          onclick={handleOpenFolder}
-                        ></lightning-button-icon>
-                        <lightning-button-icon
-                          icon-name="utility:open"
-                          alternative-text={i18n.dwbOpenExportJson}
-                          title={i18n.dwbOpenExportJsonTooltip}
-                          size="small"
-                          onclick={handleConfigureWorkspace}
-                        ></lightning-button-icon>
-                        <lightning-button-icon
-                          icon-name="utility:delete"
-                          alternative-text={i18n.dwbDeleteWorkspace}
-                          title={i18n.dwbDeleteWorkspaceTooltip}
-                          variant="bare-destructive"
-                          size="small"
-                          data-path={selectedWorkspace.path}
-                          onclick={handleDeleteWorkspace}
-                        ></lightning-button-icon>
-                      </div>
-                    </div>
-                    <div class="properties-grid">
-                      <div class="property-item">
-                        <span class="property-label">{i18n.dwbFolderLabel}</span>
-                        <span class="property-value">{selectedWorkspace.name}</span>
-                      </div>
-                      <template if:true={selectedWorkspaceHasDescription}>
-                        <div class="property-item property-item_full">
-                          <span class="property-label">{i18n.dwbDescriptionLabel}</span>
-                          <span class="property-value">{selectedWorkspace.description}</span>
+              <!-- Section: Objects -->
+              <div class="hardis-group-label">
+                {i18n.objectsLabel}
+                <span class="hardis-count-chip">{selectedWorkspaceObjectsCount}</span>
+                <div class="hardis-group-actions">
+                  <lightning-button
+                    variant="neutral"
+                    class="hardis-btn-tinted-blue"
+                    label={i18n.dwbAddObject}
+                    title={i18n.dwbAddObjectTooltip}
+                    icon-name="utility:add"
+                    onclick={handleAddObject}
+                  ></lightning-button>
+                </div>
+              </div>
+              <template if:true={hasSelectedWorkspaceObjects}>
+                <div class="hardis-card-grid single-column">
+                  <template for:each={selectedWorkspaceObjectsForDisplay} for:item="obj">
+                    <div key={obj.displayIndex} class="hardis-card">
+                      <div class="hardis-card-head">
+                        <div class="hardis-tile small violet">
+                          <lightning-icon icon-name="utility:sobject" size="x-small"></lightning-icon>
                         </div>
-                      </template>
+                        <div class="dwb-obj-title-row">
+                          <h3 class="hardis-card-title">{obj.objectName}</h3>
+                          <span class={obj.operationPillClass}><span class="hardis-pill-dot"></span>{obj.operation}</span>
+                        </div>
+                        <div class="dwb-obj-actions">
+                          <lightning-button
+                            variant="neutral"
+                            label={i18n.dwbEditObject}
+                            icon-name="utility:edit"
+                            data-index={obj.index}
+                            onclick={handleEditObject}
+                          ></lightning-button>
+                          <lightning-button
+                            variant="neutral"
+                            class="hardis-btn-tinted-red"
+                            label={i18n.dwbDeleteObject}
+                            icon-name="utility:delete"
+                            data-index={obj.index}
+                            onclick={handleDeleteObject}
+                          ></lightning-button>
+                        </div>
+                      </div>
+                      <div class="hardis-prop-value mono dwb-obj-query" title={obj.query}>{obj.query}</div>
+                      <div class="hardis-chip-row">
+                        <template if:true={obj.externalId}>
+                          <span class="hardis-chip">{i18n.dwbObjBadgeExternalId}: {obj.externalId}</span>
+                        </template>
+                        <template if:true={obj.isExcluded}>
+                          <span class="hardis-chip" title={i18n.dwbObjBadgeExcluded}>{i18n.dwbObjBadgeExcludedLabel}</span>
+                        </template>
+                        <template if:true={obj.deleteOldData}>
+                          <span class="hardis-chip" title={i18n.dwbObjBadgeDeleteOldData}>{i18n.dwbObjBadgeDeleteOldDataLabel}</span>
+                        </template>
+                        <template if:true={obj.hasHardDelete}>
+                          <span class="hardis-chip" title={i18n.dwbObjBadgeHardDelete}>{i18n.dwbObjBadgeHardDeleteLabel}</span>
+                        </template>
+                        <template if:true={obj.hasDeleteByHierarchy}>
+                          <span class="hardis-chip" title={i18n.dwbObjBadgeDeleteHierarchy}>{i18n.dwbObjBadgeDeleteHierarchyLabel}</span>
+                        </template>
+                        <template if:true={obj.hasDeleteFromSource}>
+                          <span class="hardis-chip" title={i18n.dwbObjBadgeDeleteSource}>{i18n.dwbObjBadgeDeleteSourceLabel}</span>
+                        </template>
+                        <template if:true={obj.useQueryAll}>
+                          <span class="hardis-chip" title={i18n.dwbObjBadgeUseQueryAll}>{i18n.dwbObjBadgeUseQueryAllLabel}</span>
+                        </template>
+                        <template if:true={obj.hasQueryAllTarget}>
+                          <span class="hardis-chip" title={i18n.dwbObjBadgeQueryAllTarget}>{i18n.dwbObjBadgeQueryAllTargetLabel}</span>
+                        </template>
+                        <template if:true={obj.allOrNone}>
+                          <span class="hardis-chip" title={i18n.dwbObjBadgeAllOrNone}>{i18n.dwbObjBadgeAllOrNoneLabel}</span>
+                        </template>
+                        <template if:true={obj.hasSkipExistingRecords}>
+                          <span class="hardis-chip" title={i18n.dwbObjBadgeSkipExisting}>{i18n.dwbObjBadgeSkipExistingLabel}</span>
+                        </template>
+                        <template if:true={obj.hasUseFieldMapping}>
+                          <span class="hardis-chip" title={i18n.dwbObjBadgeFieldMapping}>{i18n.dwbObjBadgeFieldMappingLabel}</span>
+                        </template>
+                        <template if:true={obj.hasUseValuesMapping}>
+                          <span class="hardis-chip" title={i18n.dwbObjBadgeValuesMapping}>{i18n.dwbObjBadgeValuesMappingLabel}</span>
+                        </template>
+                        <template if:true={obj.hasUseSourceCSVFile}>
+                          <span class="hardis-chip" title={i18n.dwbObjBadgeCsvSource}>{i18n.dwbObjBadgeCsvSourceLabel}</span>
+                        </template>
+                        <template if:true={obj.hasMasterFilter}>
+                          <span class="hardis-chip" title={i18n.dwbObjBadgeMasterFiltered}>{i18n.dwbObjBadgeMasterFilteredLabel}</span>
+                        </template>
+                        <template if:true={obj.updateWithMockData}>
+                          <span class="hardis-chip" title={i18n.dwbObjBadgeMockData}>{i18n.dwbObjBadgeMockDataLabel}</span>
+                        </template>
+                        <template if:true={obj.hasMockFields}>
+                          <span class="hardis-chip">{obj.mockFieldsCountLabel}</span>
+                        </template>
+                        <template if:true={obj.hasBulkApiV1BatchSize}>
+                          <span class="hardis-chip">{i18n.dwbObjBadgeBulkBatch}: {obj.bulkApiV1BatchSize}</span>
+                        </template>
+                        <template if:true={obj.hasRestApiBatchSize}>
+                          <span class="hardis-chip">{i18n.dwbObjBadgeRestBatch}: {obj.restApiBatchSize}</span>
+                        </template>
+                      </div>
                     </div>
-                    <div class="slds-p-horizontal_small slds-p-bottom_x-small">
-                      <span class="property-label">{i18n.dwbGlobalSettings}</span>
-                    </div>
-                    <template if:true={hasScriptSettings}>
-                      <div class="object-badges slds-p-horizontal_small slds-p-bottom_small">
-                        <template if:true={ssHasApiVersion}>
-                          <span class="slds-badge object-badge" title={i18n.dwbBadgeApiVersion}>API: {ssApiVersion}</span>
-                        </template>
-                        <template if:true={ssSimulationMode}>
-                          <span class="slds-badge slds-badge_warning object-badge" title={i18n.dwbBadgeSimulationMode}>{i18n.dwbBadgeSimulationModeLabel}</span>
-                        </template>
-                        <template if:true={ssAllOrNone}>
-                          <span class="slds-badge slds-badge_success object-badge" title={i18n.dwbBadgeAllOrNone}>{i18n.dwbBadgeAllOrNoneLabel}</span>
-                        </template>
-                        <template if:true={ssAllowFieldTruncation}>
-                          <span class="slds-badge object-badge" title={i18n.dwbBadgeAllowTruncation}>{i18n.dwbBadgeAllowTruncationLabel}</span>
-                        </template>
-                        <template if:true={ssKeepObjectOrder}>
-                          <span class="slds-badge object-badge" title={i18n.dwbBadgeKeepOrder}>{i18n.dwbBadgeKeepOrderLabel}</span>
-                        </template>
-                        <template if:true={ssHasBulkApiVersion}>
-                          <span class="slds-badge object-badge" title={i18n.dwbBadgeBulkApiVersion}>Bulk API: {ssBulkApiVersion}</span>
-                        </template>
-                        <template if:true={ssHasConcurrencyMode}>
-                          <span class="slds-badge object-badge" title={i18n.dwbBadgeConcurrencyMode}>Concurrency: {ssConcurrencyMode}</span>
-                        </template>
-                        <template if:true={ssHasBulkThreshold}>
-                          <span class="slds-badge object-badge" title={i18n.dwbBadgeBulkThreshold}>Bulk Threshold: {ssBulkThreshold}</span>
-                        </template>
-                        <template if:true={ssHasQueryBulkApiThreshold}>
-                          <span class="slds-badge object-badge" title={i18n.dwbBadgeQueryBulkThreshold}>Query Bulk Threshold: {ssQueryBulkApiThreshold}</span>
-                        </template>
-                        <template if:true={ssHasBulkApiV1BatchSize}>
-                          <span class="slds-badge object-badge" title={i18n.dwbBadgeBulkBatchSize}>Bulk Batch: {ssBulkApiV1BatchSize}</span>
-                        </template>
-                        <template if:true={ssHasRestApiBatchSize}>
-                          <span class="slds-badge object-badge" title={i18n.dwbBadgeRestBatchSize}>REST Batch: {ssRestApiBatchSize}</span>
-                        </template>
-                        <template if:true={ssAlwaysUseRestApiToUpdateRecords}>
-                          <span class="slds-badge object-badge" title={i18n.dwbBadgeRestUpdates}>{i18n.dwbBadgeRestUpdatesLabel}</span>
-                        </template>
-                        <template if:true={ssHasParallelBulkJobs}>
-                          <span class="slds-badge object-badge" title={i18n.dwbBadgeParallelBulk}>Parallel Bulk: {ssParallelBulkJobs}</span>
-                        </template>
-                        <template if:true={ssHasParallelRestJobs}>
-                          <span class="slds-badge object-badge" title={i18n.dwbBadgeParallelRest}>Parallel REST: {ssParallelRestJobs}</span>
-                        </template>
-                        <template if:true={ssHasParallelBinaryDownloads}>
-                          <span class="slds-badge object-badge" title={i18n.dwbBadgeParallelBinary}>Parallel Binary: {ssParallelBinaryDownloads}</span>
-                        </template>
-                        <template if:true={ssCreateTargetCSVFiles}>
-                          <span class="slds-badge slds-badge_success object-badge" title={i18n.dwbBadgeTargetCsv}>{i18n.dwbBadgeTargetCsvLabel}</span>
-                        </template>
-                        <template if:true={ssCsvInsertNulls}>
-                          <span class="slds-badge object-badge" title={i18n.dwbBadgeCsvNulls}>{i18n.dwbBadgeCsvNullsLabel}</span>
-                        </template>
-                        <template if:true={ssCsvUseEuropeanDateFormat}>
-                          <span class="slds-badge object-badge" title={i18n.dwbBadgeEuDates}>{i18n.dwbBadgeEuDatesLabel}</span>
-                        </template>
-                        <template if:true={ssHasCsvFileEncoding}>
-                          <span class="slds-badge object-badge" title={i18n.dwbBadgeCsvEncoding}>Encoding: {ssCsvFileEncoding}</span>
-                        </template>
-                        <template if:true={ssHasBinaryDataCache}>
-                          <span class="slds-badge object-badge" title={i18n.dwbBadgeBinaryCache}>Binary Cache: {ssBinaryDataCache}</span>
-                        </template>
-                        <template if:true={ssHasSourceRecordsCache}>
-                          <span class="slds-badge object-badge" title={i18n.dwbBadgeSourceCache}>Source Cache: {ssSourceRecordsCache}</span>
-                        </template>
-                        <template if:true={ssHasExcludedObjects}>
-                          <span class="slds-badge slds-badge_warning object-badge" title={i18n.dwbBadgeExcludedObjects}>Excluded: {ssExcludedObjects}</span>
-                        </template>
-                        <template if:true={ssHasProxyUrl}>
-                          <span class="slds-badge object-badge" title={i18n.dwbBadgeProxy}>{i18n.dwbBadgeProxyLabel}</span>
-                        </template>
-                      </div>
-                    </template>
-                    <template if:false={hasScriptSettings}>
-                      <div class="slds-p-horizontal_small slds-p-bottom_small">
-                        <p class="slds-text-body_small slds-text-color_weak">{i18n.dwbNoGlobalSettings}</p>
-                      </div>
-                    </template>
-                    <div class="slds-p-horizontal_small slds-p-bottom_small">
-                      <lightning-button
-                        variant="neutral"
-                        label={i18n.dwbEditGlobalSettings}
-                        icon-name="utility:settings"
-                        onclick={handleEditGlobalSettings}
-                        title={i18n.dwbEditGlobalSettingsTooltip}
-                      ></lightning-button>
-                    </div>
-                  </div>
-
-                  <!-- Section: Objects -->
-                  <div class="detail-section">
-                    <div class="section-header">
-                      <div class="section-header-left">
-                        <lightning-icon icon-name="utility:sobject" size="xx-small" class="slds-m-right_x-small"></lightning-icon>
-                        <h3 class="slds-text-title_caps">{objectsCountLabel}</h3>
-                      </div>
-                      <lightning-button
-                        variant="neutral"
-                        label={i18n.dwbAddObject}
-                        icon-name="utility:add"
-                        onclick={handleAddObject}
-                        title={i18n.dwbAddObjectTooltip}
-                      ></lightning-button>
-                    </div>
-                    <template if:true={hasSelectedWorkspaceObjects}>
-                      <div class="objects-grid">
-                        <template for:each={selectedWorkspaceObjectsForDisplay} for:item="obj">
-                          <div key={obj.displayIndex} class="object-card">
-                            <div class="object-card-header">
-                              <div class="object-card-title">
-                                <span class="slds-badge slds-badge_inverse object-operation-badge">{obj.operation}</span>
-                                <span class="object-name">{obj.objectName}</span>
-                              </div>
-                              <div class="object-actions">
-                                <lightning-button-icon
-                                  icon-name="utility:edit"
-                                  alternative-text={i18n.dwbEditObject}
-                                  title={i18n.dwbEditObject}
-                                  size="small"
-                                  data-index={obj.index}
-                                  onclick={handleEditObject}
-                                ></lightning-button-icon>
-                                <lightning-button-icon
-                                  icon-name="utility:delete"
-                                  alternative-text={i18n.dwbDeleteObject}
-                                  title={i18n.dwbDeleteObject}
-                                  size="small"
-                                  variant="bare-destructive"
-                                  data-index={obj.index}
-                                  onclick={handleDeleteObject}
-                                ></lightning-button-icon>
-                              </div>
-                            </div>
-                            <p class="object-query" title={obj.query}>{obj.query}</p>
-                            <div class="object-badges">
-                              <template if:true={obj.externalId}>
-                                <span class="slds-badge object-badge">{i18n.dwbObjBadgeExternalId}: {obj.externalId}</span>
-                              </template>
-                              <template if:true={obj.isExcluded}>
-                                <span class="slds-badge slds-badge_warning object-badge" title={i18n.dwbObjBadgeExcluded}>{i18n.dwbObjBadgeExcludedLabel}</span>
-                              </template>
-                              <template if:true={obj.deleteOldData}>
-                                <span class="slds-badge slds-badge_success object-badge" title={i18n.dwbObjBadgeDeleteOldData}>{i18n.dwbObjBadgeDeleteOldDataLabel}</span>
-                              </template>
-                              <template if:true={obj.hasHardDelete}>
-                                <span class="slds-badge slds-badge_success object-badge" title={i18n.dwbObjBadgeHardDelete}>{i18n.dwbObjBadgeHardDeleteLabel}</span>
-                              </template>
-                              <template if:true={obj.hasDeleteByHierarchy}>
-                                <span class="slds-badge slds-badge_success object-badge" title={i18n.dwbObjBadgeDeleteHierarchy}>{i18n.dwbObjBadgeDeleteHierarchyLabel}</span>
-                              </template>
-                              <template if:true={obj.hasDeleteFromSource}>
-                                <span class="slds-badge slds-badge_success object-badge" title={i18n.dwbObjBadgeDeleteSource}>{i18n.dwbObjBadgeDeleteSourceLabel}</span>
-                              </template>
-                              <template if:true={obj.useQueryAll}>
-                                <span class="slds-badge slds-badge_success object-badge" title={i18n.dwbObjBadgeUseQueryAll}>{i18n.dwbObjBadgeUseQueryAllLabel}</span>
-                              </template>
-                              <template if:true={obj.hasQueryAllTarget}>
-                                <span class="slds-badge slds-badge_success object-badge" title={i18n.dwbObjBadgeQueryAllTarget}>{i18n.dwbObjBadgeQueryAllTargetLabel}</span>
-                              </template>
-                              <template if:true={obj.allOrNone}>
-                                <span class="slds-badge slds-badge_success object-badge" title={i18n.dwbObjBadgeAllOrNone}>{i18n.dwbObjBadgeAllOrNoneLabel}</span>
-                              </template>
-                              <template if:true={obj.hasSkipExistingRecords}>
-                                <span class="slds-badge object-badge" title={i18n.dwbObjBadgeSkipExisting}>{i18n.dwbObjBadgeSkipExistingLabel}</span>
-                              </template>
-                              <template if:true={obj.hasUseFieldMapping}>
-                                <span class="slds-badge object-badge" title={i18n.dwbObjBadgeFieldMapping}>{i18n.dwbObjBadgeFieldMappingLabel}</span>
-                              </template>
-                              <template if:true={obj.hasUseValuesMapping}>
-                                <span class="slds-badge object-badge" title={i18n.dwbObjBadgeValuesMapping}>{i18n.dwbObjBadgeValuesMappingLabel}</span>
-                              </template>
-                              <template if:true={obj.hasUseSourceCSVFile}>
-                                <span class="slds-badge object-badge" title={i18n.dwbObjBadgeCsvSource}>{i18n.dwbObjBadgeCsvSourceLabel}</span>
-                              </template>
-                              <template if:true={obj.hasMasterFilter}>
-                                <span class="slds-badge object-badge" title={i18n.dwbObjBadgeMasterFiltered}>{i18n.dwbObjBadgeMasterFilteredLabel}</span>
-                              </template>
-                              <template if:true={obj.updateWithMockData}>
-                                <span class="slds-badge slds-badge_success object-badge" title={i18n.dwbObjBadgeMockData}>{i18n.dwbObjBadgeMockDataLabel}</span>
-                              </template>
-                              <template if:true={obj.hasMockFields}>
-                                <span class="slds-badge object-badge">{obj.mockFieldsCountLabel}</span>
-                              </template>
-                              <template if:true={obj.hasBulkApiV1BatchSize}>
-                                <span class="slds-badge object-badge">{i18n.dwbObjBadgeBulkBatch}: {obj.bulkApiV1BatchSize}</span>
-                              </template>
-                              <template if:true={obj.hasRestApiBatchSize}>
-                                <span class="slds-badge object-badge">{i18n.dwbObjBadgeRestBatch}: {obj.restApiBatchSize}</span>
-                              </template>
-                            </div>
-                          </div>
-                        </template>
-                      </div>
-                    </template>
-                    <template if:false={hasSelectedWorkspaceObjects}>
-                      <div class="empty-section-message">
-                        <lightning-icon icon-name="utility:info" size="x-small" class="slds-m-right_x-small"></lightning-icon>
-                        <span>{i18n.dwbNoObjectsConfigured}</span>
-                      </div>
-                    </template>
-                  </div>
-
-                  <!-- Section: Exported Files -->
-                  <div class="detail-section">
-                    <div class="section-header">
-                      <div class="section-header-left">
-                        <lightning-icon icon-name="utility:file" size="xx-small" class="slds-m-right_x-small"></lightning-icon>
-                        <h3 class="slds-text-title_caps">{i18n.dwbExportedFiles}</h3>
-                      </div>
-                      <lightning-button-icon
-                        icon-name="utility:refresh"
-                        alternative-text={i18n.dwbRefreshExportedFiles}
-                        title={i18n.dwbRefreshExportedFiles}
-                        size="small"
-                        onclick={handleRefreshExportedFiles}
-                      ></lightning-button-icon>
-                    </div>
-                    <template if:true={hasExportedFiles}>
-                      <s-hardis-datatable
-                        key-field="path"
-                        data={exportedFilesForDisplay}
-                        columns={exportedFilesColumns}
-                        hide-checkbox-column
-                        show-row-number-column
-                        onrowaction={handleExportedFileAction}
-                        class="exported-files-table"
-                      ></s-hardis-datatable>
-                    </template>
-                    <template if:false={hasExportedFiles}>
-                      <div class="empty-section-message">
-                        <lightning-icon icon-name="utility:info" size="x-small" class="slds-m-right_x-small"></lightning-icon>
-                        <span>{i18n.dwbNoExportedFiles}</span>
-                      </div>
-                    </template>
-                  </div>
-
-                  <!-- Section: Logs -->
-                  <div class="detail-section">
-                    <div class="section-header">
-                      <div class="section-header-left">
-                        <lightning-icon icon-name="utility:text_template" size="xx-small" class="slds-m-right_x-small"></lightning-icon>
-                        <h3 class="slds-text-title_caps">{i18n.dwbLogs}</h3>
-                      </div>
-                      <lightning-button-icon
-                        icon-name="utility:refresh"
-                        alternative-text={i18n.dwbRefreshLogs}
-                        title={i18n.dwbRefreshLogs}
-                        size="small"
-                        onclick={handleRefreshExportedFiles}
-                      ></lightning-button-icon>
-                    </div>
-                    <template if:true={hasLogFiles}>
-                      <s-hardis-datatable
-                        key-field="path"
-                        data={logFilesForDisplay}
-                        columns={logFilesColumns}
-                        hide-checkbox-column
-                        show-row-number-column
-                        onrowaction={handleLogFileAction}
-                        class="exported-files-table"
-                      ></s-hardis-datatable>
-                    </template>
-                    <template if:false={hasLogFiles}>
-                      <div class="empty-section-message">
-                        <lightning-icon icon-name="utility:info" size="x-small" class="slds-m-right_x-small"></lightning-icon>
-                        <span>{i18n.dwbNoLogFiles}</span>
-                      </div>
-                    </template>
-                  </div>
-                </lightning-card>
+                  </template>
+                </div>
               </template>
-              <template if:false={selectedWorkspace}>
-                <lightning-card title={i18n.dwbWorkspaceActions}>
-                  <div class="slds-text-align_center slds-p-around_large">
-                    <lightning-icon icon-name="utility:touch_action" size="large" class="slds-text-color_weak"></lightning-icon>
-                    <h3 class="slds-text-heading_medium slds-m-top_medium">{i18n.dwbSelectWorkspace}</h3>
-                    <p class="slds-text-body_regular slds-text-color_weak slds-m-top_small">
-                      {i18n.dwbSelectWorkspaceDesc}
-                    </p>
-                  </div>
-                </lightning-card>
+              <template if:false={hasSelectedWorkspaceObjects}>
+                <div class="hardis-note">
+                  <lightning-icon icon-name="utility:info" size="x-small"></lightning-icon>
+                  <p>{i18n.dwbNoObjectsConfigured}</p>
+                </div>
               </template>
-            </div>
+
+              <!-- Section: Exported Files -->
+              <div class="hardis-group-label">
+                {i18n.dwbExportedFiles}
+                <template if:true={hasExportedFiles}>
+                  <span class="hardis-count-chip">{exportedFilesCount}</span>
+                </template>
+                <div class="hardis-group-actions">
+                  <lightning-button
+                    variant="neutral"
+                    label={i18n.dwbRefreshExportedFiles}
+                    title={i18n.dwbRefreshExportedFiles}
+                    icon-name="utility:refresh"
+                    onclick={handleRefreshExportedFiles}
+                  ></lightning-button>
+                </div>
+              </div>
+              <template if:true={hasExportedFiles}>
+                <s-hardis-datatable
+                  key-field="path"
+                  data={exportedFilesForDisplay}
+                  columns={exportedFilesColumns}
+                  hide-checkbox-column
+                  show-row-number-column
+                  onrowaction={handleExportedFileAction}
+                  class="exported-files-table"
+                ></s-hardis-datatable>
+              </template>
+              <template if:false={hasExportedFiles}>
+                <div class="hardis-note">
+                  <lightning-icon icon-name="utility:info" size="x-small"></lightning-icon>
+                  <p>{i18n.dwbNoExportedFiles}</p>
+                </div>
+              </template>
+
+              <!-- Section: Logs -->
+              <div class="hardis-group-label">
+                {i18n.dwbLogs}
+                <template if:true={hasLogFiles}>
+                  <span class="hardis-count-chip">{logFilesCount}</span>
+                </template>
+                <div class="hardis-group-actions">
+                  <lightning-button
+                    variant="neutral"
+                    label={i18n.dwbRefreshLogs}
+                    title={i18n.dwbRefreshLogs}
+                    icon-name="utility:refresh"
+                    onclick={handleRefreshExportedFiles}
+                  ></lightning-button>
+                </div>
+              </div>
+              <template if:true={hasLogFiles}>
+                <s-hardis-datatable
+                  key-field="path"
+                  data={logFilesForDisplay}
+                  columns={logFilesColumns}
+                  hide-checkbox-column
+                  show-row-number-column
+                  onrowaction={handleLogFileAction}
+                  class="exported-files-table"
+                ></s-hardis-datatable>
+              </template>
+              <template if:false={hasLogFiles}>
+                <div class="hardis-note">
+                  <lightning-icon icon-name="utility:info" size="x-small"></lightning-icon>
+                  <p>{i18n.dwbNoLogFiles}</p>
+                </div>
+              </template>
+            </template>
+
+            <template if:false={selectedWorkspace}>
+              <div class="hardis-empty">
+                <div class="hardis-tile featured violet">
+                  <lightning-icon icon-name="utility:touch_action" size="small"></lightning-icon>
+                </div>
+                <h3 class="hardis-empty-title">{i18n.dwbSelectWorkspace}</h3>
+                <p class="hardis-empty-desc">{i18n.dwbSelectWorkspaceDesc}</p>
+              </div>
+            </template>
           </div>
         </div>
       </template>
@@ -555,6 +529,7 @@
               </label>
               <div class="slds-form-element__control slds-grid slds-grid_vertical-align-center">
                 <lightning-combobox
+                  label={i18n.workspaceTemplateLabel}
                   variant="label-hidden"
                   name="workspace-template"
                   value={selectedTemplateUrl}
@@ -577,6 +552,7 @@
             </label>
             <div class="slds-form-element__control">
               <lightning-input
+                label={i18n.dwbWorkspaceNameLabel}
                 variant="label-hidden"
                 type="text"
                 name="workspace-name"
@@ -595,6 +571,7 @@
             </label>
             <div class="slds-form-element__control">
               <lightning-input
+                label={i18n.dwbDisplayLabelLabel}
                 variant="label-hidden"
                 type="text"
                 name="workspace-label"
@@ -613,6 +590,7 @@
             </label>
             <div class="slds-form-element__control">
               <lightning-textarea
+                label={i18n.dwbDescriptionFieldLabel}
                 variant="label-hidden"
                 name="workspace-description"
                 placeholder={i18n.dwbDescriptionFieldPlaceholder}
@@ -628,8 +606,8 @@
             label={i18n.cancelLabel}
             onclick={handleCancelProperties}
           ></lightning-button>
-          <lightning-button
-            variant="brand"
+          <lightning-button class="hardis-btn-tinted-blue"
+            variant="neutral"
             label={savePropertiesButtonLabel}
             disabled={savePropertiesButtonDisabled}
             onclick={handleSaveProperties}
@@ -663,6 +641,7 @@
             </label>
             <div class="slds-form-element__control">
               <lightning-textarea
+                label={i18n.dwbSoqlQuery}
                 variant="label-hidden"
                 name="soql-query"
                 placeholder="SELECT Id, Name FROM Account"
@@ -686,6 +665,7 @@
                 </label>
                 <div class="slds-form-element__control">
                   <lightning-combobox
+                    label={i18n.dwbOperation}
                     variant="label-hidden"
                     name="operation"
                     data-field="operation"
@@ -705,6 +685,7 @@
                 </label>
                 <div class="slds-form-element__control">
                   <lightning-input
+                    label={i18n.dwbExternalId}
                     variant="label-hidden"
                     type="text"
                     name="external-id"
@@ -727,6 +708,7 @@
                 </label>
                 <div class="slds-form-element__control">
                   <lightning-input
+                    label={i18n.dwbBulkApiBatchSize}
                     variant="label-hidden"
                     type="number"
                     name="bulk-api-batch-size"
@@ -746,6 +728,7 @@
                 </label>
                 <div class="slds-form-element__control">
                   <lightning-input
+                    label={i18n.dwbObjectLabel}
                     variant="label-hidden"
                     type="text"
                     name="object-name"
@@ -762,6 +745,7 @@
             <div class="slds-grid slds-grid_vertical-align-center">
               <div class="slds-no-flex">
                 <lightning-input
+                  label={i18n.dwbAllOrNoneToggle}
                   type="toggle"
                   variant="label-hidden"
                   name="all-or-none"
@@ -787,6 +771,7 @@
             <div class="slds-grid slds-grid_vertical-align-center">
               <div class="slds-no-flex">
                 <lightning-input
+                  label={i18n.dwbDeleteOldDataToggle}
                   type="toggle"
                   variant="label-hidden"
                   name="delete-old-data"
@@ -812,6 +797,7 @@
             <div class="slds-grid slds-grid_vertical-align-center">
               <div class="slds-no-flex">
                 <lightning-input
+                  label={i18n.dwbUseQueryAllToggle}
                   type="toggle"
                   variant="label-hidden"
                   name="use-query-all"
@@ -839,7 +825,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="master" aria-label={i18n.dwbMasterToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.master} data-field="master" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbMasterToggle} type="toggle" variant="label-hidden" name="master" aria-label={i18n.dwbMasterToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.master} data-field="master" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
                   </div>
                   <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbMasterToggle}</span>
@@ -850,7 +837,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="query-all-target" aria-label={i18n.dwbQueryAllTargetToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.queryAllTarget} data-field="queryAllTarget" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbQueryAllTargetToggle} type="toggle" variant="label-hidden" name="query-all-target" aria-label={i18n.dwbQueryAllTargetToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.queryAllTarget} data-field="queryAllTarget" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
                   </div>
                   <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbQueryAllTargetToggle}</span>
@@ -861,7 +849,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="use-source-csv" aria-label={i18n.dwbUseCsvSourceToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.useSourceCSVFile} data-field="useSourceCSVFile" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbUseCsvSourceToggle} type="toggle" variant="label-hidden" name="use-source-csv" aria-label={i18n.dwbUseCsvSourceToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.useSourceCSVFile} data-field="useSourceCSVFile" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
                   </div>
                   <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbUseCsvSourceToggle}</span>
@@ -875,7 +864,8 @@
                   <s-multiline-helptext content={i18n.dwbSourceRecordsFilterHelp}></s-multiline-helptext>
                 </label>
                 <div class="slds-form-element__control">
-                  <lightning-input variant="label-hidden" type="text" name="source-records-filter" placeholder="Name LIKE 'ACC_%'" data-field="sourceRecordsFilter" value={editingObject.sourceRecordsFilter} onchange={handleObjFieldChange}></lightning-input>
+                  <lightning-input
+  label={i18n.dwbSourceRecordsFilter} variant="label-hidden" type="text" name="source-records-filter" placeholder="Name LIKE 'ACC_%'" data-field="sourceRecordsFilter" value={editingObject.sourceRecordsFilter} onchange={handleObjFieldChange}></lightning-input>
                 </div>
               </div>
               <div class="slds-form-element slds-m-bottom_small">
@@ -884,7 +874,8 @@
                   <s-multiline-helptext content={i18n.dwbTargetRecordsFilterHelp}></s-multiline-helptext>
                 </label>
                 <div class="slds-form-element__control">
-                  <lightning-input variant="label-hidden" type="text" name="target-records-filter" placeholder="CreatedDate > LAST_N_DAYS:30" data-field="targetRecordsFilter" value={editingObject.targetRecordsFilter} onchange={handleObjFieldChange}></lightning-input>
+                  <lightning-input
+  label={i18n.dwbTargetRecordsFilter} variant="label-hidden" type="text" name="target-records-filter" placeholder="CreatedDate > LAST_N_DAYS:30" data-field="targetRecordsFilter" value={editingObject.targetRecordsFilter} onchange={handleObjFieldChange}></lightning-input>
                 </div>
               </div>
               </div>
@@ -895,7 +886,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="hard-delete" aria-label={i18n.dwbHardDeleteToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.hardDelete} data-field="hardDelete" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbHardDeleteToggle} type="toggle" variant="label-hidden" name="hard-delete" aria-label={i18n.dwbHardDeleteToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.hardDelete} data-field="hardDelete" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
                   </div>
                   <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbHardDeleteToggle}</span>
@@ -906,7 +898,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="delete-by-hierarchy" aria-label={i18n.dwbDeleteByHierarchyToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.deleteByHierarchy} data-field="deleteByHierarchy" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbDeleteByHierarchyToggle} type="toggle" variant="label-hidden" name="delete-by-hierarchy" aria-label={i18n.dwbDeleteByHierarchyToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.deleteByHierarchy} data-field="deleteByHierarchy" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
                   </div>
                   <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbDeleteByHierarchyToggle}</span>
@@ -917,7 +910,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="delete-from-source" aria-label={i18n.dwbDeleteFromSourceToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.deleteFromSource} data-field="deleteFromSource" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbDeleteFromSourceToggle} type="toggle" variant="label-hidden" name="delete-from-source" aria-label={i18n.dwbDeleteFromSourceToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.deleteFromSource} data-field="deleteFromSource" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
                   </div>
                   <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbDeleteFromSourceToggle}</span>
@@ -931,7 +925,8 @@
                   <s-multiline-helptext content={i18n.dwbDeleteQueryHelp}></s-multiline-helptext>
                 </label>
                 <div class="slds-form-element__control">
-                  <lightning-input variant="label-hidden" type="text" name="delete-query" placeholder="SELECT Id FROM Account WHERE IsDeleted = true" data-field="deleteQuery" value={editingObject.deleteQuery} onchange={handleObjFieldChange}></lightning-input>
+                  <lightning-input
+  label={i18n.dwbDeleteQuery} variant="label-hidden" type="text" name="delete-query" placeholder="SELECT Id FROM Account WHERE IsDeleted = true" data-field="deleteQuery" value={editingObject.deleteQuery} onchange={handleObjFieldChange}></lightning-input>
                 </div>
               </div>
               </div>
@@ -942,7 +937,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="excluded" aria-label={i18n.dwbExcludeToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.excluded} data-field="excluded" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbExcludeToggle} type="toggle" variant="label-hidden" name="excluded" aria-label={i18n.dwbExcludeToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.excluded} data-field="excluded" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
                   </div>
                   <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbExcludeToggle}</span>
@@ -953,7 +949,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="skip-existing" aria-label={i18n.dwbSkipExistingToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.skipExistingRecords} data-field="skipExistingRecords" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbSkipExistingToggle} type="toggle" variant="label-hidden" name="skip-existing" aria-label={i18n.dwbSkipExistingToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.skipExistingRecords} data-field="skipExistingRecords" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
                   </div>
                   <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbSkipExistingToggle}</span>
@@ -964,7 +961,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="skip-comparison" aria-label={i18n.dwbSkipComparisonToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.skipRecordsComparison} data-field="skipRecordsComparison" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbSkipComparisonToggle} type="toggle" variant="label-hidden" name="skip-comparison" aria-label={i18n.dwbSkipComparisonToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.skipRecordsComparison} data-field="skipRecordsComparison" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
                   </div>
                   <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbSkipComparisonToggle}</span>
@@ -985,7 +983,8 @@
                       <s-multiline-helptext content={i18n.dwbRestApiBatchSizeHelp}></s-multiline-helptext>
                     </label>
                     <div class="slds-form-element__control">
-                      <lightning-input variant="label-hidden" type="number" name="rest-api-batch-size" min="0" data-field="restApiBatchSize" value={editingObject.restApiBatchSize} onchange={handleObjBatchSizeChange}></lightning-input>
+                      <lightning-input
+  label={i18n.dwbRestApiBatchSize} variant="label-hidden" type="number" name="rest-api-batch-size" min="0" data-field="restApiBatchSize" value={editingObject.restApiBatchSize} onchange={handleObjBatchSizeChange}></lightning-input>
                     </div>
                   </div>
                 </div>
@@ -996,7 +995,8 @@
                       <s-multiline-helptext content={i18n.dwbParallelBulkJobsHelp}></s-multiline-helptext>
                     </label>
                     <div class="slds-form-element__control">
-                      <lightning-input variant="label-hidden" type="number" name="parallel-bulk-jobs" min="1" data-field="parallelBulkJobs" value={editingObject.parallelBulkJobs} onchange={handleObjBatchSizeChange}></lightning-input>
+                      <lightning-input
+  label={i18n.dwbParallelBulkJobs} variant="label-hidden" type="number" name="parallel-bulk-jobs" min="1" data-field="parallelBulkJobs" value={editingObject.parallelBulkJobs} onchange={handleObjBatchSizeChange}></lightning-input>
                     </div>
                   </div>
                 </div>
@@ -1009,7 +1009,8 @@
                       <s-multiline-helptext content={i18n.dwbParallelRestJobsHelp}></s-multiline-helptext>
                     </label>
                     <div class="slds-form-element__control">
-                      <lightning-input variant="label-hidden" type="number" name="parallel-rest-jobs" min="1" data-field="parallelRestJobs" value={editingObject.parallelRestJobs} onchange={handleObjBatchSizeChange}></lightning-input>
+                      <lightning-input
+  label={i18n.dwbParallelRestJobs} variant="label-hidden" type="number" name="parallel-rest-jobs" min="1" data-field="parallelRestJobs" value={editingObject.parallelRestJobs} onchange={handleObjBatchSizeChange}></lightning-input>
                     </div>
                   </div>
                 </div>
@@ -1018,7 +1019,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="always-rest" aria-label={i18n.dwbAlwaysRestToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.alwaysUseRestApi} data-field="alwaysUseRestApi" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbAlwaysRestToggle} type="toggle" variant="label-hidden" name="always-rest" aria-label={i18n.dwbAlwaysRestToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.alwaysUseRestApi} data-field="alwaysUseRestApi" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
                   </div>
                   <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbAlwaysRestToggle}</span>
@@ -1029,7 +1031,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="always-bulk" aria-label={i18n.dwbAlwaysBulkToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.alwaysUseBulkApi} data-field="alwaysUseBulkApi" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbAlwaysBulkToggle} type="toggle" variant="label-hidden" name="always-bulk" aria-label={i18n.dwbAlwaysBulkToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.alwaysUseBulkApi} data-field="alwaysUseBulkApi" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
                   </div>
                   <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbAlwaysBulkToggle}</span>
@@ -1040,7 +1043,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="always-bulk-update" aria-label={i18n.dwbAlwaysBulkUpdateToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.alwaysUseBulkApiToUpdateRecords} data-field="alwaysUseBulkApiToUpdateRecords" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbAlwaysBulkUpdateToggle} type="toggle" variant="label-hidden" name="always-bulk-update" aria-label={i18n.dwbAlwaysBulkUpdateToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.alwaysUseBulkApiToUpdateRecords} data-field="alwaysUseBulkApiToUpdateRecords" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
                   </div>
                   <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbAlwaysBulkUpdateToggle}</span>
@@ -1051,7 +1055,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="respect-order-delete" aria-label={i18n.dwbRespectOrderToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.respectOrderByOnDeleteRecords} data-field="respectOrderByOnDeleteRecords" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbRespectOrderToggle} type="toggle" variant="label-hidden" name="respect-order-delete" aria-label={i18n.dwbRespectOrderToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.respectOrderByOnDeleteRecords} data-field="respectOrderByOnDeleteRecords" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
                   </div>
                   <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbRespectOrderToggle}</span>
@@ -1067,7 +1072,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="use-field-mapping" aria-label={i18n.dwbFieldMappingToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.useFieldMapping} data-field="useFieldMapping" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbFieldMappingToggle} type="toggle" variant="label-hidden" name="use-field-mapping" aria-label={i18n.dwbFieldMappingToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.useFieldMapping} data-field="useFieldMapping" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
                   </div>
                   <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbFieldMappingToggle}</span>
@@ -1078,7 +1084,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="use-values-mapping" aria-label={i18n.dwbValuesMappingToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.useValuesMapping} data-field="useValuesMapping" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbValuesMappingToggle} type="toggle" variant="label-hidden" name="use-values-mapping" aria-label={i18n.dwbValuesMappingToggle} message-toggle-active="" message-toggle-inactive="" checked={editingObject.useValuesMapping} data-field="useValuesMapping" onclick={handleObjToggleChange} onchange={handleObjToggleChange}></lightning-input>
                   </div>
                   <div class="slds-grid slds-grid_vertical-align-center slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbValuesMappingToggle}</span>
@@ -1092,7 +1099,8 @@
                   <s-multiline-helptext content={i18n.dwbExcludedFieldsHelp}></s-multiline-helptext>
                 </label>
                 <div class="slds-form-element__control">
-                  <lightning-input variant="label-hidden" type="text" name="excluded-fields" placeholder="Phone, Fax, Description" data-field="excludedFields" value={editingObjectExcludedFieldsString} onchange={handleObjArrayFieldChange}></lightning-input>
+                  <lightning-input
+  label={i18n.dwbExcludedFields} variant="label-hidden" type="text" name="excluded-fields" placeholder="Phone, Fax, Description" data-field="excludedFields" value={editingObjectExcludedFieldsString} onchange={handleObjArrayFieldChange}></lightning-input>
                 </div>
               </div>
               <div class="slds-form-element slds-m-bottom_small">
@@ -1101,7 +1109,8 @@
                   <s-multiline-helptext content={i18n.dwbExcludedFromUpdateFieldsHelp}></s-multiline-helptext>
                 </label>
                 <div class="slds-form-element__control">
-                  <lightning-input variant="label-hidden" type="text" name="excluded-from-update-fields" placeholder="CreatedDate, LastModifiedDate" data-field="excludedFromUpdateFields" value={editingObjectExcludedFromUpdateFieldsString} onchange={handleObjArrayFieldChange}></lightning-input>
+                  <lightning-input
+  label={i18n.dwbExcludedFromUpdateFields} variant="label-hidden" type="text" name="excluded-from-update-fields" placeholder="CreatedDate, LastModifiedDate" data-field="excludedFromUpdateFields" value={editingObjectExcludedFromUpdateFieldsString} onchange={handleObjArrayFieldChange}></lightning-input>
                 </div>
               </div>
               </div>
@@ -1113,6 +1122,7 @@
             <div class="slds-grid slds-grid_vertical-align-center">
               <div class="slds-no-flex">
                 <lightning-input
+                  label={i18n.dwbUpdateWithMockToggle}
                   type="toggle"
                   variant="label-hidden"
                   name="update-with-mock-data"
@@ -1151,7 +1161,8 @@
                     <div class="slds-form-element">
                       <label class="slds-form-element__label">{i18n.dwbMockFieldLabel}</label>
                       <div class="slds-form-element__control">
-                        <lightning-input variant="label-hidden" type="text" name="mock-field-name" placeholder="Email__c" data-fieldindex={fieldIndex} data-field="name" value={mockField.name} onchange={handleObjMockFieldChange}></lightning-input>
+                        <lightning-input
+  label={i18n.dwbMockFieldLabel} variant="label-hidden" type="text" name="mock-field-name" placeholder="Email__c" data-fieldindex={fieldIndex} data-field="name" value={mockField.name} onchange={handleObjMockFieldChange}></lightning-input>
                       </div>
                     </div>
                   </div>
@@ -1159,7 +1170,8 @@
                     <div class="slds-form-element">
                       <label class="slds-form-element__label">{i18n.dwbMockPatternLabel}</label>
                       <div class="slds-form-element__control">
-                        <lightning-combobox variant="label-hidden" name="mock-field-pattern" placeholder={i18n.dwbMockPatternPlaceholder} data-fieldindex={fieldIndex} data-field="pattern" value={mockField.pattern} options={mockPatternOptions} onchange={handleObjMockFieldChange}></lightning-combobox>
+                        <lightning-combobox
+  label={i18n.dwbMockPatternLabel} variant="label-hidden" name="mock-field-pattern" placeholder={i18n.dwbMockPatternPlaceholder} data-fieldindex={fieldIndex} data-field="pattern" value={mockField.pattern} options={mockPatternOptions} onchange={handleObjMockFieldChange}></lightning-combobox>
                       </div>
                     </div>
                   </div>
@@ -1167,7 +1179,8 @@
                     <div class="slds-form-element">
                       <label class="slds-form-element__label">{i18n.dwbMockLocaleLabel}</label>
                       <div class="slds-form-element__control">
-                        <lightning-input variant="label-hidden" type="text" name="mock-field-locale" placeholder="en_US" data-fieldindex={fieldIndex} data-field="locale" value={mockField.locale} onchange={handleObjMockFieldChange}></lightning-input>
+                        <lightning-input
+  label={i18n.dwbMockLocaleLabel} variant="label-hidden" type="text" name="mock-field-locale" placeholder="en_US" data-fieldindex={fieldIndex} data-field="locale" value={mockField.locale} onchange={handleObjMockFieldChange}></lightning-input>
                       </div>
                     </div>
                   </div>
@@ -1175,7 +1188,8 @@
                     <div class="slds-form-element">
                       <label class="slds-form-element__label">{i18n.dwbMockExcludedRegexLabel}</label>
                       <div class="slds-form-element__control">
-                        <lightning-input variant="label-hidden" type="text" name="mock-field-excluded-regex" placeholder="^Dummy.*$" data-fieldindex={fieldIndex} data-field="excludedRegex" value={mockField.excludedRegex} onchange={handleObjMockFieldChange}></lightning-input>
+                        <lightning-input
+  label={i18n.dwbMockExcludedRegexLabel} variant="label-hidden" type="text" name="mock-field-excluded-regex" placeholder="^Dummy.*$" data-fieldindex={fieldIndex} data-field="excludedRegex" value={mockField.excludedRegex} onchange={handleObjMockFieldChange}></lightning-input>
                       </div>
                     </div>
                   </div>
@@ -1183,8 +1197,8 @@
                     <div class="slds-form-element">
                       <label class="slds-form-element__label">&nbsp;</label>
                       <div class="slds-form-element__control">
-                        <lightning-button
-                          variant="destructive-text"
+                        <lightning-button class="hardis-btn-tinted-red"
+                          variant="neutral"
                           icon-name="utility:delete"
                           label={i18n.dwbMockRemoveField}
                           data-fieldindex={fieldIndex}
@@ -1208,8 +1222,8 @@
             label={i18n.dwbCancel}
             onclick={handleCancelObject}
           ></lightning-button>
-          <lightning-button
-            variant="brand"
+          <lightning-button class="hardis-btn-tinted-blue"
+            variant="neutral"
             label={saveObjectButtonLabel}
             disabled={saveObjectButtonDisabled}
             onclick={handleSaveObject}
@@ -1243,7 +1257,8 @@
                       <s-multiline-helptext content={i18n.dwbGsApiVersionHelp}></s-multiline-helptext>
                     </label>
                     <div class="slds-form-element__control">
-                      <lightning-input variant="label-hidden" type="text" placeholder="62.0" data-field="apiVersion" value={editingScriptSettings.apiVersion} onchange={handleScriptSettingChange}></lightning-input>
+                      <lightning-input
+  label={i18n.dwbGsApiVersion} variant="label-hidden" type="text" placeholder="62.0" data-field="apiVersion" value={editingScriptSettings.apiVersion} onchange={handleScriptSettingChange}></lightning-input>
                     </div>
                   </div>
                 </div>
@@ -1252,7 +1267,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="gs-simulation-mode" aria-label={i18n.dwbGsSimulationToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.simulationMode} data-field="simulationMode" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbGsSimulationToggle} type="toggle" variant="label-hidden" name="gs-simulation-mode" aria-label={i18n.dwbGsSimulationToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.simulationMode} data-field="simulationMode" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
                   </div>
                   <div class="slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbGsSimulationToggle}</span>
@@ -1263,7 +1279,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="gs-all-or-none" aria-label={i18n.dwbGsAllOrNoneToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.allOrNone} data-field="allOrNone" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbGsAllOrNoneToggle} type="toggle" variant="label-hidden" name="gs-all-or-none" aria-label={i18n.dwbGsAllOrNoneToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.allOrNone} data-field="allOrNone" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
                   </div>
                   <div class="slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbGsAllOrNoneToggle}</span>
@@ -1274,7 +1291,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="gs-allow-field-truncation" aria-label={i18n.dwbGsAllowTruncationToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.allowFieldTruncation} data-field="allowFieldTruncation" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbGsAllowTruncationToggle} type="toggle" variant="label-hidden" name="gs-allow-field-truncation" aria-label={i18n.dwbGsAllowTruncationToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.allowFieldTruncation} data-field="allowFieldTruncation" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
                   </div>
                   <div class="slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbGsAllowTruncationToggle}</span>
@@ -1285,7 +1303,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="gs-keep-order" aria-label={i18n.dwbGsKeepOrderToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.keepObjectOrderWhileExecute} data-field="keepObjectOrderWhileExecute" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbGsKeepOrderToggle} type="toggle" variant="label-hidden" name="gs-keep-order" aria-label={i18n.dwbGsKeepOrderToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.keepObjectOrderWhileExecute} data-field="keepObjectOrderWhileExecute" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
                   </div>
                   <div class="slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbGsKeepOrderToggle}</span>
@@ -1306,7 +1325,8 @@
                       <s-multiline-helptext content={i18n.dwbGsBulkApiVersionHelp}></s-multiline-helptext>
                     </label>
                     <div class="slds-form-element__control">
-                      <lightning-combobox variant="label-hidden" name="gs-bulk-api-version" placeholder="Select version" data-field="bulkApiVersion" value={editingScriptSettings.bulkApiVersion} options={bulkApiVersionOptions} onchange={handleScriptSettingChange}></lightning-combobox>
+                      <lightning-combobox
+  label={i18n.dwbGsBulkApiVersion} variant="label-hidden" name="gs-bulk-api-version" placeholder="Select version" data-field="bulkApiVersion" value={editingScriptSettings.bulkApiVersion} options={bulkApiVersionOptions} onchange={handleScriptSettingChange}></lightning-combobox>
                     </div>
                   </div>
                 </div>
@@ -1317,7 +1337,8 @@
                       <s-multiline-helptext content={i18n.dwbGsConcurrencyModeHelp}></s-multiline-helptext>
                     </label>
                     <div class="slds-form-element__control">
-                      <lightning-combobox variant="label-hidden" name="gs-concurrency-mode" placeholder="Select mode" data-field="concurrencyMode" value={editingScriptSettings.concurrencyMode} options={concurrencyModeOptions} onchange={handleScriptSettingChange}></lightning-combobox>
+                      <lightning-combobox
+  label={i18n.dwbGsConcurrencyMode} variant="label-hidden" name="gs-concurrency-mode" placeholder="Select mode" data-field="concurrencyMode" value={editingScriptSettings.concurrencyMode} options={concurrencyModeOptions} onchange={handleScriptSettingChange}></lightning-combobox>
                     </div>
                   </div>
                 </div>
@@ -1330,7 +1351,8 @@
                       <s-multiline-helptext content={i18n.dwbGsBulkThresholdHelp}></s-multiline-helptext>
                     </label>
                     <div class="slds-form-element__control">
-                      <lightning-input variant="label-hidden" type="number" min="0" data-field="bulkThreshold" value={editingScriptSettings.bulkThreshold} onchange={handleScriptSettingNumberChange}></lightning-input>
+                      <lightning-input
+  label={i18n.dwbGsBulkThreshold} variant="label-hidden" type="number" min="0" data-field="bulkThreshold" value={editingScriptSettings.bulkThreshold} onchange={handleScriptSettingNumberChange}></lightning-input>
                     </div>
                   </div>
                 </div>
@@ -1341,7 +1363,8 @@
                       <s-multiline-helptext content={i18n.dwbGsQueryBulkThresholdHelp}></s-multiline-helptext>
                     </label>
                     <div class="slds-form-element__control">
-                      <lightning-input variant="label-hidden" type="number" min="0" data-field="queryBulkApiThreshold" value={editingScriptSettings.queryBulkApiThreshold} onchange={handleScriptSettingNumberChange}></lightning-input>
+                      <lightning-input
+  label={i18n.dwbGsQueryBulkThreshold} variant="label-hidden" type="number" min="0" data-field="queryBulkApiThreshold" value={editingScriptSettings.queryBulkApiThreshold} onchange={handleScriptSettingNumberChange}></lightning-input>
                     </div>
                   </div>
                 </div>
@@ -1354,7 +1377,8 @@
                       <s-multiline-helptext content={i18n.dwbGsBulkV1BatchSizeHelp}></s-multiline-helptext>
                     </label>
                     <div class="slds-form-element__control">
-                      <lightning-input variant="label-hidden" type="number" min="0" data-field="bulkApiV1BatchSize" value={editingScriptSettings.bulkApiV1BatchSize} onchange={handleScriptSettingNumberChange}></lightning-input>
+                      <lightning-input
+  label={i18n.dwbGsBulkV1BatchSize} variant="label-hidden" type="number" min="0" data-field="bulkApiV1BatchSize" value={editingScriptSettings.bulkApiV1BatchSize} onchange={handleScriptSettingNumberChange}></lightning-input>
                     </div>
                   </div>
                 </div>
@@ -1365,7 +1389,8 @@
                       <s-multiline-helptext content={i18n.dwbGsRestBatchSizeHelp}></s-multiline-helptext>
                     </label>
                     <div class="slds-form-element__control">
-                      <lightning-input variant="label-hidden" type="number" min="0" data-field="restApiBatchSize" value={editingScriptSettings.restApiBatchSize} onchange={handleScriptSettingNumberChange}></lightning-input>
+                      <lightning-input
+  label={i18n.dwbGsRestBatchSize} variant="label-hidden" type="number" min="0" data-field="restApiBatchSize" value={editingScriptSettings.restApiBatchSize} onchange={handleScriptSettingNumberChange}></lightning-input>
                     </div>
                   </div>
                 </div>
@@ -1373,7 +1398,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="gs-always-rest-update" aria-label={i18n.dwbGsAlwaysRestUpdateToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.alwaysUseRestApiToUpdateRecords} data-field="alwaysUseRestApiToUpdateRecords" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbGsAlwaysRestUpdateToggle} type="toggle" variant="label-hidden" name="gs-always-rest-update" aria-label={i18n.dwbGsAlwaysRestUpdateToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.alwaysUseRestApiToUpdateRecords} data-field="alwaysUseRestApiToUpdateRecords" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
                   </div>
                   <div class="slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbGsAlwaysRestUpdateToggle}</span>
@@ -1394,7 +1420,8 @@
                       <s-multiline-helptext content={i18n.dwbGsParallelBulkJobsHelp}></s-multiline-helptext>
                     </label>
                     <div class="slds-form-element__control">
-                      <lightning-input variant="label-hidden" type="number" min="1" data-field="parallelBulkJobs" value={editingScriptSettings.parallelBulkJobs} onchange={handleScriptSettingNumberChange}></lightning-input>
+                      <lightning-input
+  label={i18n.dwbGsParallelBulkJobs} variant="label-hidden" type="number" min="1" data-field="parallelBulkJobs" value={editingScriptSettings.parallelBulkJobs} onchange={handleScriptSettingNumberChange}></lightning-input>
                     </div>
                   </div>
                 </div>
@@ -1405,7 +1432,8 @@
                       <s-multiline-helptext content={i18n.dwbGsParallelRestJobsHelp}></s-multiline-helptext>
                     </label>
                     <div class="slds-form-element__control">
-                      <lightning-input variant="label-hidden" type="number" min="1" data-field="parallelRestJobs" value={editingScriptSettings.parallelRestJobs} onchange={handleScriptSettingNumberChange}></lightning-input>
+                      <lightning-input
+  label={i18n.dwbGsParallelRestJobs} variant="label-hidden" type="number" min="1" data-field="parallelRestJobs" value={editingScriptSettings.parallelRestJobs} onchange={handleScriptSettingNumberChange}></lightning-input>
                     </div>
                   </div>
                 </div>
@@ -1416,7 +1444,8 @@
                       <s-multiline-helptext content={i18n.dwbGsParallelBinaryDownloadsHelp}></s-multiline-helptext>
                     </label>
                     <div class="slds-form-element__control">
-                      <lightning-input variant="label-hidden" type="number" min="1" data-field="parallelBinaryDownloads" value={editingScriptSettings.parallelBinaryDownloads} onchange={handleScriptSettingNumberChange}></lightning-input>
+                      <lightning-input
+  label={i18n.dwbGsParallelBinaryDownloads} variant="label-hidden" type="number" min="1" data-field="parallelBinaryDownloads" value={editingScriptSettings.parallelBinaryDownloads} onchange={handleScriptSettingNumberChange}></lightning-input>
                     </div>
                   </div>
                 </div>
@@ -1429,7 +1458,8 @@
                       <s-multiline-helptext content={i18n.dwbGsPollingIntervalHelp}></s-multiline-helptext>
                     </label>
                     <div class="slds-form-element__control">
-                      <lightning-input variant="label-hidden" type="number" min="1000" data-field="pollingIntervalMs" value={editingScriptSettings.pollingIntervalMs} onchange={handleScriptSettingNumberChange}></lightning-input>
+                      <lightning-input
+  label={i18n.dwbGsPollingInterval} variant="label-hidden" type="number" min="1000" data-field="pollingIntervalMs" value={editingScriptSettings.pollingIntervalMs} onchange={handleScriptSettingNumberChange}></lightning-input>
                     </div>
                   </div>
                 </div>
@@ -1440,7 +1470,8 @@
                       <s-multiline-helptext content={i18n.dwbGsPollingQueryTimeoutHelp}></s-multiline-helptext>
                     </label>
                     <div class="slds-form-element__control">
-                      <lightning-input variant="label-hidden" type="number" min="0" data-field="pollingQueryTimeoutMs" value={editingScriptSettings.pollingQueryTimeoutMs} onchange={handleScriptSettingNumberChange}></lightning-input>
+                      <lightning-input
+  label={i18n.dwbGsPollingQueryTimeout} variant="label-hidden" type="number" min="0" data-field="pollingQueryTimeoutMs" value={editingScriptSettings.pollingQueryTimeoutMs} onchange={handleScriptSettingNumberChange}></lightning-input>
                     </div>
                   </div>
                 </div>
@@ -1453,7 +1484,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="gs-create-csv" aria-label={i18n.dwbGsCreateCsvToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.createTargetCSVFiles} data-field="createTargetCSVFiles" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbGsCreateCsvToggle} type="toggle" variant="label-hidden" name="gs-create-csv" aria-label={i18n.dwbGsCreateCsvToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.createTargetCSVFiles} data-field="createTargetCSVFiles" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
                   </div>
                   <div class="slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbGsCreateCsvToggle}</span>
@@ -1469,7 +1501,8 @@
                       <s-multiline-helptext content={i18n.dwbGsCsvDelimiterHelp}></s-multiline-helptext>
                     </label>
                     <div class="slds-form-element__control">
-                      <lightning-input variant="label-hidden" type="text" placeholder="," data-field="csvFileDelimiter" value={editingScriptSettings.csvFileDelimiter} onchange={handleScriptSettingChange}></lightning-input>
+                      <lightning-input
+  label={i18n.dwbGsCsvDelimiter} variant="label-hidden" type="text" placeholder="," data-field="csvFileDelimiter" value={editingScriptSettings.csvFileDelimiter} onchange={handleScriptSettingChange}></lightning-input>
                     </div>
                   </div>
                 </div>
@@ -1480,7 +1513,8 @@
                       <s-multiline-helptext content={i18n.dwbGsCsvEncodingHelp}></s-multiline-helptext>
                     </label>
                     <div class="slds-form-element__control">
-                      <lightning-combobox variant="label-hidden" name="gs-csv-encoding" placeholder="Select encoding" data-field="csvFileEncoding" value={editingScriptSettings.csvFileEncoding} options={csvEncodingOptions} onchange={handleScriptSettingChange}></lightning-combobox>
+                      <lightning-combobox
+  label={i18n.dwbGsCsvEncoding} variant="label-hidden" name="gs-csv-encoding" placeholder="Select encoding" data-field="csvFileEncoding" value={editingScriptSettings.csvFileEncoding} options={csvEncodingOptions} onchange={handleScriptSettingChange}></lightning-combobox>
                     </div>
                   </div>
                 </div>
@@ -1488,7 +1522,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="gs-csv-insert-nulls" aria-label={i18n.dwbGsCsvInsertNullsToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.csvInsertNulls} data-field="csvInsertNulls" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbGsCsvInsertNullsToggle} type="toggle" variant="label-hidden" name="gs-csv-insert-nulls" aria-label={i18n.dwbGsCsvInsertNullsToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.csvInsertNulls} data-field="csvInsertNulls" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
                   </div>
                   <div class="slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbGsCsvInsertNullsToggle}</span>
@@ -1499,7 +1534,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="gs-csv-european-date" aria-label={i18n.dwbGsCsvEuropeanDateToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.csvUseEuropeanDateFormat} data-field="csvUseEuropeanDateFormat" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbGsCsvEuropeanDateToggle} type="toggle" variant="label-hidden" name="gs-csv-european-date" aria-label={i18n.dwbGsCsvEuropeanDateToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.csvUseEuropeanDateFormat} data-field="csvUseEuropeanDateFormat" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
                   </div>
                   <div class="slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbGsCsvEuropeanDateToggle}</span>
@@ -1510,7 +1546,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="gs-csv-uppercase" aria-label={i18n.dwbGsCsvUppercaseToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.csvWriteUpperCaseHeaders} data-field="csvWriteUpperCaseHeaders" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbGsCsvUppercaseToggle} type="toggle" variant="label-hidden" name="gs-csv-uppercase" aria-label={i18n.dwbGsCsvUppercaseToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.csvWriteUpperCaseHeaders} data-field="csvWriteUpperCaseHeaders" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
                   </div>
                   <div class="slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbGsCsvUppercaseToggle}</span>
@@ -1521,7 +1558,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="gs-csv-utf8-bom" aria-label={i18n.dwbGsCsvUtf8BomToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.csvUseUtf8Bom} data-field="csvUseUtf8Bom" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbGsCsvUtf8BomToggle} type="toggle" variant="label-hidden" name="gs-csv-utf8-bom" aria-label={i18n.dwbGsCsvUtf8BomToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.csvUseUtf8Bom} data-field="csvUseUtf8Bom" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
                   </div>
                   <div class="slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbGsCsvUtf8BomToggle}</span>
@@ -1532,7 +1570,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="gs-csv-always-quoted" aria-label={i18n.dwbGsCsvAlwaysQuotedToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.csvAlwaysQuoted} data-field="csvAlwaysQuoted" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbGsCsvAlwaysQuotedToggle} type="toggle" variant="label-hidden" name="gs-csv-always-quoted" aria-label={i18n.dwbGsCsvAlwaysQuotedToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.csvAlwaysQuoted} data-field="csvAlwaysQuoted" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
                   </div>
                   <div class="slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbGsCsvAlwaysQuotedToggle}</span>
@@ -1543,7 +1582,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="gs-exclude-ids-csv" aria-label={i18n.dwbGsExcludeIdsCsvToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.excludeIdsFromCSVFiles} data-field="excludeIdsFromCSVFiles" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbGsExcludeIdsCsvToggle} type="toggle" variant="label-hidden" name="gs-exclude-ids-csv" aria-label={i18n.dwbGsExcludeIdsCsvToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.excludeIdsFromCSVFiles} data-field="excludeIdsFromCSVFiles" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
                   </div>
                   <div class="slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbGsExcludeIdsCsvToggle}</span>
@@ -1554,7 +1594,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="gs-import-csv-as-is" aria-label={i18n.dwbGsImportCsvAsIsToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.importCSVFilesAsIs} data-field="importCSVFilesAsIs" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbGsImportCsvAsIsToggle} type="toggle" variant="label-hidden" name="gs-import-csv-as-is" aria-label={i18n.dwbGsImportCsvAsIsToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.importCSVFilesAsIs} data-field="importCSVFilesAsIs" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
                   </div>
                   <div class="slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbGsImportCsvAsIsToggle}</span>
@@ -1565,7 +1606,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="gs-validate-csv-only" aria-label={i18n.dwbGsValidateCsvToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.validateCSVFilesOnly} data-field="validateCSVFilesOnly" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbGsValidateCsvToggle} type="toggle" variant="label-hidden" name="gs-validate-csv-only" aria-label={i18n.dwbGsValidateCsvToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.validateCSVFilesOnly} data-field="validateCSVFilesOnly" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
                   </div>
                   <div class="slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbGsValidateCsvToggle}</span>
@@ -1576,7 +1618,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="gs-separated-csv" aria-label={i18n.dwbGsSeparatedCsvToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.useSeparatedCSVFiles} data-field="useSeparatedCSVFiles" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbGsSeparatedCsvToggle} type="toggle" variant="label-hidden" name="gs-separated-csv" aria-label={i18n.dwbGsSeparatedCsvToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.useSeparatedCSVFiles} data-field="useSeparatedCSVFiles" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
                   </div>
                   <div class="slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbGsSeparatedCsvToggle}</span>
@@ -1597,7 +1640,8 @@
                       <s-multiline-helptext content={i18n.dwbGsBinaryDataCacheHelp}></s-multiline-helptext>
                     </label>
                     <div class="slds-form-element__control">
-                      <lightning-combobox variant="label-hidden" name="gs-binary-cache" placeholder="Select cache mode" data-field="binaryDataCache" value={editingScriptSettings.binaryDataCache} options={cacheOptions} onchange={handleScriptSettingChange}></lightning-combobox>
+                      <lightning-combobox
+  label={i18n.dwbGsBinaryDataCache} variant="label-hidden" name="gs-binary-cache" placeholder="Select cache mode" data-field="binaryDataCache" value={editingScriptSettings.binaryDataCache} options={cacheOptions} onchange={handleScriptSettingChange}></lightning-combobox>
                     </div>
                   </div>
                 </div>
@@ -1608,7 +1652,8 @@
                       <s-multiline-helptext content={i18n.dwbGsSourceRecordsCacheHelp}></s-multiline-helptext>
                     </label>
                     <div class="slds-form-element__control">
-                      <lightning-combobox variant="label-hidden" name="gs-source-cache" placeholder="Select cache mode" data-field="sourceRecordsCache" value={editingScriptSettings.sourceRecordsCache} options={cacheOptions} onchange={handleScriptSettingChange}></lightning-combobox>
+                      <lightning-combobox
+  label={i18n.dwbGsSourceRecordsCache} variant="label-hidden" name="gs-source-cache" placeholder="Select cache mode" data-field="sourceRecordsCache" value={editingScriptSettings.sourceRecordsCache} options={cacheOptions} onchange={handleScriptSettingChange}></lightning-combobox>
                     </div>
                   </div>
                 </div>
@@ -1621,7 +1666,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="gs-prompt-csv-issues" aria-label={i18n.dwbGsPromptCsvIssuesToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.promptOnIssuesInCSVFiles} data-field="promptOnIssuesInCSVFiles" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbGsPromptCsvIssuesToggle} type="toggle" variant="label-hidden" name="gs-prompt-csv-issues" aria-label={i18n.dwbGsPromptCsvIssuesToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.promptOnIssuesInCSVFiles} data-field="promptOnIssuesInCSVFiles" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
                   </div>
                   <div class="slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbGsPromptCsvIssuesToggle}</span>
@@ -1632,7 +1678,8 @@
               <div class="slds-form-element slds-m-bottom_small">
                 <div class="slds-grid slds-grid_vertical-align-center">
                   <div class="slds-no-flex">
-                    <lightning-input type="toggle" variant="label-hidden" name="gs-prompt-missing-parents" aria-label={i18n.dwbGsPromptMissingParentsToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.promptOnMissingParentObjects} data-field="promptOnMissingParentObjects" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
+                    <lightning-input
+  label={i18n.dwbGsPromptMissingParentsToggle} type="toggle" variant="label-hidden" name="gs-prompt-missing-parents" aria-label={i18n.dwbGsPromptMissingParentsToggle} message-toggle-active="" message-toggle-inactive="" checked={editingScriptSettings.promptOnMissingParentObjects} data-field="promptOnMissingParentObjects" onclick={handleScriptSettingToggle} onchange={handleScriptSettingToggle}></lightning-input>
                   </div>
                   <div class="slds-m-left_small">
                     <span class="slds-text-body_regular">{i18n.dwbGsPromptMissingParentsToggle}</span>
@@ -1646,7 +1693,8 @@
                   <s-multiline-helptext content={i18n.dwbGsExcludedObjectsHelp}></s-multiline-helptext>
                 </label>
                 <div class="slds-form-element__control">
-                  <lightning-input variant="label-hidden" type="text" placeholder="Task, Event" data-field="excludedObjects" value={editingScriptSettings.excludedObjects} onchange={handleScriptSettingChange}></lightning-input>
+                  <lightning-input
+  label={i18n.dwbGsExcludedObjects} variant="label-hidden" type="text" placeholder="Task, Event" data-field="excludedObjects" value={editingScriptSettings.excludedObjects} onchange={handleScriptSettingChange}></lightning-input>
                 </div>
               </div>
               <div class="slds-form-element slds-m-bottom_small">
@@ -1655,7 +1703,8 @@
                   <s-multiline-helptext content={i18n.dwbGsProxyUrlHelp}></s-multiline-helptext>
                 </label>
                 <div class="slds-form-element__control">
-                  <lightning-input variant="label-hidden" type="text" placeholder="http://proxy.example.com:8080" data-field="proxyUrl" value={editingScriptSettings.proxyUrl} onchange={handleScriptSettingChange}></lightning-input>
+                  <lightning-input
+  label={i18n.dwbGsProxyUrl} variant="label-hidden" type="text" placeholder="http://proxy.example.com:8080" data-field="proxyUrl" value={editingScriptSettings.proxyUrl} onchange={handleScriptSettingChange}></lightning-input>
                 </div>
               </div>
               </div>
@@ -1665,7 +1714,7 @@
         </div>
         <footer class="slds-modal__footer">
           <lightning-button variant="neutral" label={i18n.dwbCancel} onclick={handleCancelGlobalSettings}></lightning-button>
-          <lightning-button variant="brand" label={i18n.dwbSaveSettings} onclick={handleSaveGlobalSettings}></lightning-button>
+          <lightning-button class="hardis-btn-tinted-blue" variant="neutral" label={i18n.dwbSaveSettings} onclick={handleSaveGlobalSettings}></lightning-button>
         </footer>
       </div>
     </section>

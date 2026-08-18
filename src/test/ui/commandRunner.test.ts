@@ -3,8 +3,12 @@ import { execFileSync } from "child_process";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
-import * as vscode from "vscode";
-import { activateExtension, readMockLog, waitFor } from "./uiTestUtils";
+import {
+  activateExtension,
+  readMockLog,
+  runCommandAndWaitForPanel,
+  waitFor,
+} from "./uiTestUtils";
 
 /**
  * UI integration tests for the command execution panel (Command Runner).
@@ -81,23 +85,12 @@ suite("Command Runner UI tests", function () {
 
   test("showcase command streams the full protocol (sections, sub-commands, table, prompts, progress, reports) and completes", async function () {
     const panelManager = api.getLwcPanelManager();
-    const knownPanels = new Set<string>(panelManager.getActivePanelIds());
     const mockLogStart = readMockLog().length;
 
-    void vscode.commands.executeCommand(
-      "vscode-sfdx-hardis.execute-command",
+    const panelId = await runCommandAndWaitForPanel(
+      panelManager,
       "sf hardis:org:mock-showcase",
-    );
-    const panelId: string = await waitFor(
-      () =>
-        panelManager
-          .getActivePanelIds()
-          .find(
-            (id: string) =>
-              id.startsWith("s-command-execution-") && !knownPanels.has(id),
-          ),
       10000,
-      "showcase command execution panel to open",
     );
 
     const newEntries = () => readMockLog().slice(mockLogStart);

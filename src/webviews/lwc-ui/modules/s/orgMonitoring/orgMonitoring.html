@@ -2,36 +2,34 @@
     <div class="slds-scope blue-back">
         <div class="monitoring-container">
             <!-- Header Section -->
-            <div class="header-section">
-                <div class="header-content">
-                    <div class="header-icon-container teal">
-                        <lightning-icon icon-name="utility:graph" size="medium" variant="inverse"></lightning-icon>
-                    </div>
-                    <div class="header-text">
-                        <h1 class="header-title">{i18n.orgMonitoringWorkbench}</h1>
-                        <p class="header-subtitle">{i18n.monitorOrgDescription}</p>
-                    </div>
-                    <div class="header-actions">
-                        <template if:true={showFilter}>
-                            <lightning-input
-                                type="search"
-                                variant="label-hidden"
-                                placeholder={i18n.filterMonitoringCommands}
-                                value={filterText}
-                                onchange={handleFilterChange}
-                                oninput={handleFilterChange}
-                                class="filter-input"
-                            ></lightning-input>
-                        </template>
-                        <lightning-button
-                            variant="neutral"
-                            label={i18n.refreshLabel}
-                            title={i18n.checkInstallationStatusAgain}
-                            onclick={checkInstallationStatus}
-                            icon-name="utility:refresh"
-                            class="status-button"
-                        ></lightning-button>
-                    </div>
+            <div class="hardis-page-head">
+                <div class="hardis-tile featured teal">
+                    <lightning-icon icon-name="utility:graph" size="medium"></lightning-icon>
+                </div>
+                <div class="hardis-page-head-text">
+                    <h1 class="hardis-page-title">{i18n.orgMonitoringWorkbench}</h1>
+                    <p class="hardis-page-subtitle">{i18n.monitorOrgDescription}</p>
+                </div>
+                <div class="hardis-page-head-actions">
+                    <template if:true={showFilter}>
+                        <lightning-input
+                            label={i18n.filterMonitoringCommands}
+                            type="search"
+                            variant="label-hidden"
+                            placeholder={i18n.filterMonitoringCommands}
+                            value={filterText}
+                            onchange={handleFilterChange}
+                            oninput={handleFilterChange}
+                            class="filter-input"
+                        ></lightning-input>
+                    </template>
+                    <lightning-button
+                        variant="neutral"
+                        label={i18n.refreshLabel}
+                        title={i18n.checkInstallationStatusAgain}
+                        onclick={checkInstallationStatus}
+                        icon-name="utility:refresh"
+                    ></lightning-button>
                 </div>
             </div>
 
@@ -39,21 +37,21 @@
             <div class="section">
                 <template if:true={isInstalled}>
                     <!-- Installed State -->
-                    <div class="status-card installed">
-                        <div class="status-icon-container success">
-                            <lightning-icon icon-name="utility:success" size="small" variant="inverse"></lightning-icon>
+                    <div class="hardis-status-card ok">
+                        <div class="hardis-tile green">
+                            <lightning-icon icon-name="utility:success" size="small"></lightning-icon>
                         </div>
-                        <div class="status-content">
+                        <div class="hardis-status-content">
                             <div class="status-header">
                                 <div class="status-heading">
-                                    <h3 class="status-title">{i18n.orgMonitoringIsInstalled}</h3>
-                                    <p class="status-description">{i18n.orgMonitoringConfigActive}</p>
+                                    <h3 class="hardis-status-title">{i18n.orgMonitoringIsInstalled}</h3>
+                                    <p class="hardis-status-desc">{i18n.orgMonitoringConfigActive}</p>
                                 </div>
                                 <div class="status-actions auth-actions">
                                     <lightning-button-group>
-                                        <lightning-button
+                                        <lightning-button class="hardis-btn-tinted-blue"
                                             label={i18n.editMonitoringConfig}
-                                            variant="brand"
+                                            variant="neutral"
                                             icon-name="utility:settings"
                                             title={i18n.editMonitoringConfigTooltip}
                                             onclick={openMonitoringConfig}>
@@ -131,7 +129,7 @@
                             </div>
                             <template if:true={instanceUrl}>
                                 <div class="instance-url-row">
-                                    <span class="instance-url-label">{i18n.monitoredOrgLabel}</span>
+                                    <span class="slds-text-title_bold instance-url-label">{i18n.monitoredOrgLabel}</span>
                                     <lightning-button
                                         variant="base"
                                         label={instanceUrl}
@@ -150,24 +148,24 @@
                         <!-- Not Installed State -->
                         <template if:true={isCiCdRepo}>
                             <!-- CI/CD repo: informational card -->
-                            <div class="status-card cicd">
-                                <div class="status-icon-container info">
-                                    <lightning-icon icon-name="utility:info" size="small" variant="inverse"></lightning-icon>
+                            <div class="hardis-status-card info">
+                                <div class="hardis-tile cyan">
+                                    <lightning-icon icon-name="utility:info" size="small"></lightning-icon>
                                 </div>
-                                <div class="status-content">
-                                    <h3 class="status-title">{i18n.orgMonitoringNotPresentCiCd}</h3>
-                                    <p class="status-description">
+                                <div class="hardis-status-content">
+                                    <h3 class="hardis-status-title">{i18n.orgMonitoringNotPresentCiCd}</h3>
+                                    <p class="hardis-status-desc">
                                         {i18n.orgMonitoringNotPresentCiCdDescription}
                                     </p>
                                     <template if:true={monitoringRepository}>
                                         <div class="status-actions">
                                             <lightning-button
-                                                variant="brand"
+                                                variant="neutral"
                                                 label={i18n.openMonitoringRepository}
                                                 title={i18n.openMonitoringRepositoryTooltip}
                                                 onclick={openMonitoringRepository}
                                                 icon-name="utility:new_window"
-                                                class="status-button"
+                                                class="hardis-btn-tinted-blue"
                                             ></lightning-button>
                                             <lightning-button
                                                 variant="neutral"
@@ -175,7 +173,6 @@
                                                 title={i18n.learnMoreTooltip}
                                                 onclick={learnMore}
                                                 icon-name="utility:info"
-                                                class="status-button"
                                             ></lightning-button>
                                         </div>
                                     </template>
@@ -187,7 +184,6 @@
                                                 title={i18n.learnMoreTooltip}
                                                 onclick={learnMore}
                                                 icon-name="utility:info"
-                                                class="status-button"
                                             ></lightning-button>
                                         </div>
                                     </template>
@@ -195,23 +191,23 @@
                             </div>
                         </template>
                         <template if:false={isCiCdRepo}>
-                            <div class="status-card not-installed">
-                                <div class="status-icon-container warning">
-                                    <lightning-icon icon-name="utility:warning" size="small" variant="inverse"></lightning-icon>
+                            <div class="hardis-status-card warning">
+                                <div class="hardis-tile amber">
+                                    <lightning-icon icon-name="utility:warning" size="small"></lightning-icon>
                                 </div>
-                                <div class="status-content">
-                                    <h3 class="status-title">{i18n.orgMonitoringNotInstalled}</h3>
-                                    <p class="status-description">
+                                <div class="hardis-status-content">
+                                    <h3 class="hardis-status-title">{i18n.orgMonitoringNotInstalled}</h3>
+                                    <p class="hardis-status-desc">
                                         {i18n.orgMonitoringNotInstalledDescription}
                                     </p>
                                     <div class="status-actions">
                                         <lightning-button
-                                            variant="brand"
+                                            variant="neutral"
                                             label={i18n.installOrgMonitoring}
                                             title={i18n.installOrgMonitoringTooltip}
                                             onclick={installOrgMonitoring}
                                             icon-name="utility:download"
-                                            class="status-button primary"
+                                            class="hardis-btn-tinted-blue"
                                         ></lightning-button>
                                         <lightning-button
                                             variant="neutral"
@@ -219,7 +215,6 @@
                                             title={i18n.learnMoreTooltip}
                                             onclick={learnMore}
                                             icon-name="utility:info"
-                                            class="status-button"
                                         ></lightning-button>
                                     </div>
                                 </div>
@@ -234,8 +229,7 @@
                     <div class="slds-is-relative spinner-wrapper" style="height: 6rem;">
                         <s-spinner
                             alternative-text={i18n.loadingMonitoringConfig}
-                            size="medium"
-                            variant="brand">
+                            size="medium">
                         </s-spinner>
                     </div>
                 </div>
@@ -243,12 +237,12 @@
 
             <template if:true={hasNoCatalog}>
                 <div class="section">
-                    <div class="status-card not-installed">
-                        <div class="status-icon-container warning">
-                            <lightning-icon icon-name="utility:warning" size="small" variant="inverse"></lightning-icon>
+                    <div class="hardis-status-card warning">
+                        <div class="hardis-tile amber">
+                            <lightning-icon icon-name="utility:warning" size="small"></lightning-icon>
                         </div>
-                        <div class="status-content">
-                            <h3 class="status-title">{i18n.monitoringConfigCatalogUnavailable}</h3>
+                        <div class="hardis-status-content">
+                            <h3 class="hardis-status-title">{i18n.monitoringConfigCatalogUnavailable}</h3>
                         </div>
                     </div>
                 </div>
@@ -289,31 +283,27 @@
             </template>
 
             <!-- Documentation Section -->
-            <div class="docs-section">
-                <div class="docs-content">
-                    <div class="docs-header">
-                        <span class="docs-icon">📚</span>
-                        <h3 class="docs-title">{i18n.learnMore}</h3>
+            <div class="hardis-card featured monitoring-docs-card">
+                <div class="hardis-card-head">
+                    <div class="hardis-tile featured indigo">
+                        <lightning-icon icon-name="utility:knowledge_base" size="medium"></lightning-icon>
                     </div>
-                    <p class="docs-text">
-                        {i18n.learnMoreDocDescription}
-                    </p>
-                    <div class="docs-actions">
-                        <lightning-button
-                            variant="neutral"
-                            label={i18n.monitoringDocumentation}
-                            icon-name="utility:new_window"
-                            onclick={openMonitoringDocs}
-                            class="docs-button"
-                        ></lightning-button>
-                        <lightning-button
-                            variant="neutral"
-                            label={i18n.setupGuide}
-                            icon-name="utility:setup"
-                            onclick={openSetupGuide}
-                            class="docs-button"
-                        ></lightning-button>
-                    </div>
+                    <h3 class="hardis-card-title">{i18n.learnMore}</h3>
+                </div>
+                <p class="hardis-card-desc">{i18n.learnMoreDocDescription}</p>
+                <div class="hardis-card-actions">
+                    <lightning-button class="hardis-btn-tinted-blue"
+                        variant="neutral"
+                        label={i18n.monitoringDocumentation}
+                        icon-name="utility:new_window"
+                        onclick={openMonitoringDocs}
+                    ></lightning-button>
+                    <lightning-button class="hardis-btn-tinted-blue"
+                        variant="neutral"
+                        label={i18n.setupGuide}
+                        icon-name="utility:setup"
+                        onclick={openSetupGuide}
+                    ></lightning-button>
                 </div>
             </div>
         </div>

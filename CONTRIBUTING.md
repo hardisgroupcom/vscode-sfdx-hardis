@@ -165,7 +165,37 @@ yarn test
 
 # Run tests in watch mode
 yarn test:watch
+
+# Run the UI integration tests (real VS Code + mocked sf CLI)
+yarn dev && yarn compile && yarn test:ui
 ```
+
+### Regenerating the documentation screenshots
+
+Every screenshot of the extension used by the documentation is produced by the
+same harness, so the images of a redesign can be refreshed in one command
+(Windows only, as the capture goes through PowerShell):
+
+```bash
+yarn dev && yarn compile   # in this order: the UI tests need both builds
+yarn screenshots           # captures every panel into doc-screenshots/
+yarn screenshots welcome,setup            # only some of them
+SF_MOCK_DEPS_STATE=missing yarn screenshots setup   # Setup panel with missing dependencies
+
+# Copy them into the documentation of the sibling sfdx-hardis repository
+python scripts/build-doc-images.py
+```
+
+Screenshots are always taken in **light theme** and in **English**, on the
+`test/fixtures/doc-screenshots-project` sample project served by the mocked
+Salesforce CLI (`test/fixtures/sf-shim/sf-mock.js`, profile `docs`). Panels are
+captured as full window PNGs, and `scripts/build-doc-images.py` crops (some
+images show only the webview, others the whole window), annotates and renames
+them to the file names the documentation expects.
+
+The **animated GIFs are recorded by hand**: see
+[docs/animated-gifs.md](docs/animated-gifs.md) for the list, what each one must
+show, and the recording conventions.
 
 ### Manual Testing Checklist
 

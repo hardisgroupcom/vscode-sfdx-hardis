@@ -1,0 +1,1077 @@
+{
+  "monitoringCommands": [
+    {
+      "key": "AUDIT_TRAIL",
+      "title": "Detect **suspect setup actions** in major org",
+      "description": "Inspects the Setup Audit Trail and flags configuration changes that fall outside the allow list, helping spot risky or unexpected admin activity.",
+      "category": "orgActivity",
+      "icon": "utility:shield",
+      "colorClass": "audit",
+      "command": "sf hardis:org:diagnose:audittrail",
+      "frequency": "daily",
+      "notificationTypes": ["AUDIT_TRAIL"]
+    },
+    {
+      "key": "LEGACY_API",
+      "title": "Detect calls to **deprecated API versions**",
+      "description": "Lists API clients calling Salesforce on deprecated API versions so they can be migrated before Salesforce retires them.",
+      "category": "orgActivity",
+      "icon": "utility:deprecate",
+      "colorClass": "legacy",
+      "command": "sf hardis:org:diagnose:legacyapi",
+      "frequency": "daily",
+      "notificationTypes": ["LEGACY_API"]
+    },
+    {
+      "key": "ORG_LIMITS",
+      "title": "Detect if **org limits** are close to be reached",
+      "description": "Checks Salesforce org limits (storage, API requests, async jobs, etc.) and warns when usage gets close to the cap.",
+      "category": "orgInfo",
+      "icon": "utility:metrics",
+      "colorClass": "limits",
+      "command": "sf hardis:org:monitor:limits",
+      "frequency": "daily",
+      "notificationTypes": ["ORG_LIMITS"]
+    },
+    {
+      "key": "APEX_FLEX_QUEUE",
+      "title": "Detect **Apex flex queue backlog**",
+      "description": "Monitors the AsyncApexJob Holding queue and alerts when the number of pending batch jobs crosses a threshold.",
+      "category": "orgActivity",
+      "icon": "utility:queue",
+      "colorClass": "tests",
+      "command": "sf hardis:org:diagnose:flex-queue",
+      "frequency": "daily",
+      "notificationTypes": ["APEX_FLEX_QUEUE"]
+    },
+    {
+      "key": "APEX_FLOW_ERRORS",
+      "title": "Detect **Apex and Flow errors**",
+      "description": "Aggregates recent Apex exceptions and Flow run failures from the org and reports the count and most recent occurrences.",
+      "category": "orgActivity",
+      "icon": "utility:warning",
+      "colorClass": "alerts",
+      "command": "sf hardis:org:monitor:errors",
+      "frequency": "daily",
+      "notificationTypes": ["APEX_ERROR", "FLOW_ERROR"]
+    },
+    {
+      "key": "AGENT_TESTS",
+      "title": "Agent tests",
+      "description": "Run all Agentforce agent tests (AiEvaluationDefinition) in the org and report pass / fail results for each test case.",
+      "category": "apexTestsSecurity",
+      "icon": "utility:einstein",
+      "colorClass": "tests",
+      "command": "sf hardis:org:test:agents",
+      "frequency": "weekly",
+      "notificationTypes": ["AGENT_TESTS"]
+    },
+    {
+      "key": "UNSECURED_CONNECTED_APPS",
+      "title": "Detect **unsecured Connected Apps** in an org",
+      "description": "Lists Connected Apps whose OAuth policies do not require explicit user approval, surfacing potential SSO and authorization risks.",
+      "category": "apexTestsSecurity",
+      "icon": "utility:lock",
+      "colorClass": "security",
+      "command": "sf hardis:org:diagnose:unsecure-connected-apps",
+      "frequency": "daily",
+      "notificationTypes": ["UNSECURED_CONNECTED_APPS"]
+    },
+    {
+      "key": "MFA_CONFIG",
+      "title": "Detect **MFA configuration gaps** in the org",
+      "description": "Audits org-wide MFA enforcement, MFA-bypass permission usage, privileged user coverage, SSO presence, and recent non-MFA direct UI logins.",
+      "category": "apexTestsSecurity",
+      "icon": "utility:shield",
+      "colorClass": "security",
+      "command": "sf hardis:org:diagnose:mfa",
+      "frequency": "weekly",
+      "notificationTypes": ["MFA_CONFIG"]
+    },
+    {
+      "key": "DANGEROUS_PERMISSIONS",
+      "title": "Audit **dangerous permissions** granted through Profiles and Permission Sets",
+      "description": "Lists dangerous permissions (Modify All Data, Author Apex, Manage Users, View All Data...) granted through Profiles, Permission Sets and Permission Set Groups, and which active users hold them.",
+      "category": "apexTestsSecurity",
+      "icon": "utility:lock",
+      "colorClass": "security",
+      "command": "sf hardis:org:diagnose:unsecure-permissions",
+      "frequency": "off",
+      "notificationTypes": ["DANGEROUS_PERMISSIONS"]
+    },
+    {
+      "key": "DEPLOYMENTS",
+      "title": "Analyze **metadata deployments and validations**",
+      "description": "Summarizes metadata deployments and validations performed against the org during the configured period, with success / failure counts.",
+      "category": "orgActivity",
+      "icon": "utility:upload",
+      "colorClass": "audit",
+      "command": "sf hardis:org:diagnose:deployments --period weekly",
+      "frequency": "daily",
+      "notificationTypes": ["DEPLOYMENTS"]
+    },
+    {
+      "key": "LICENSES",
+      "title": "Extract **licenses** information",
+      "description": "Reports the current allocation, used count, and remaining seats for every license type in the org.",
+      "category": "licensesPackages",
+      "icon": "utility:identity",
+      "colorClass": "licenses",
+      "command": "sf hardis:org:diagnose:licenses",
+      "frequency": "weekly",
+      "notificationTypes": ["LICENSES"]
+    },
+    {
+      "key": "LINT_ACCESS",
+      "title": "Detect **custom elements with no access rights** defined in permission sets",
+      "description": "Finds custom fields, objects, Apex classes and other elements that have no access defined in any Profile or Permission Set.",
+      "category": "technicalDebt",
+      "icon": "utility:key",
+      "colorClass": "metadata-access",
+      "command": "sf hardis:lint:access",
+      "frequency": "weekly",
+      "notificationTypes": ["LINT_ACCESS"]
+    },
+    {
+      "key": "UNUSED_LICENSES",
+      "title": "Detect **permission set licenses** that are assigned to users that do not need them",
+      "description": "Identifies Permission Set Licenses assigned to users who do not actually use any of the features they grant, so seats can be reclaimed.",
+      "category": "licensesPackages",
+      "icon": "utility:identity",
+      "colorClass": "licenses",
+      "command": "sf hardis:org:diagnose:unusedlicenses",
+      "frequency": "weekly",
+      "notificationTypes": ["UNUSED_LICENSES"]
+    },
+    {
+      "key": "UNUSED_USERS",
+      "title": "Detect **active users without recent logins** (All licenses, 6 months)",
+      "description": "Lists active users (all licenses) who have not logged in for at least 6 months, surfacing candidates for deactivation.",
+      "category": "userActivity",
+      "icon": "utility:logout",
+      "colorClass": "users",
+      "command": "sf hardis:org:diagnose:unusedusers --licensetypes all --days 180",
+      "frequency": "weekly",
+      "notificationTypes": ["UNUSED_USERS"]
+    },
+    {
+      "key": "UNUSED_USERS_CRM_6_MONTHS",
+      "title": "Detect **active users without recent logins** (CRM, 6 months)",
+      "description": "Lists active users holding a CRM license who have not logged in for at least 6 months.",
+      "category": "userActivity",
+      "icon": "utility:logout",
+      "colorClass": "users",
+      "command": "sf hardis:org:diagnose:unusedusers --licensetypes all-crm --days 180",
+      "frequency": "weekly",
+      "notificationTypes": ["UNUSED_USERS_CRM_6_MONTHS"]
+    },
+    {
+      "key": "UNUSED_USERS_EXPERIENCE_6_MONTHS",
+      "title": "Detect **active users without recent logins** (Experience, 6 months)",
+      "description": "Lists active Experience Cloud users who have not logged in for at least 6 months.",
+      "category": "userActivity",
+      "icon": "utility:logout",
+      "colorClass": "users",
+      "command": "sf hardis:org:diagnose:unusedusers --licensetypes experience --days 180",
+      "frequency": "weekly",
+      "notificationTypes": ["UNUSED_USERS_EXPERIENCE_6_MONTHS"]
+    },
+    {
+      "key": "ACTIVE_USERS_CRM_WEEKLY",
+      "title": "Detect **active users with recent logins** (CRM, 1 week)",
+      "description": "Reports the count of CRM users who logged in over the past week, a useful indicator for adoption metrics.",
+      "category": "userActivity",
+      "icon": "utility:user",
+      "colorClass": "tests",
+      "command": "sf hardis:org:diagnose:unusedusers --returnactiveusers --licensetypes all-crm --days 7",
+      "frequency": "weekly",
+      "notificationTypes": ["ACTIVE_USERS_CRM_WEEKLY"]
+    },
+    {
+      "key": "ACTIVE_USERS_EXPERIENCE_MONTHLY",
+      "title": "Detect **active users with recent logins** (Experience, 1 month)",
+      "description": "Reports the count of Experience Cloud users who logged in over the past month.",
+      "category": "userActivity",
+      "icon": "utility:user",
+      "colorClass": "tests",
+      "command": "sf hardis:org:diagnose:unusedusers --returnactiveusers --licensetypes experience --days 30",
+      "frequency": "weekly",
+      "notificationTypes": ["ACTIVE_USERS_EXPERIENCE_MONTHLY"]
+    },
+    {
+      "key": "RELEASE_UPDATES",
+      "title": "Gather warnings about **incoming and overdue Release Updates**",
+      "description": "Surfaces Salesforce Release Updates that are due soon or overdue, with the actions required to comply.",
+      "category": "orgInfo",
+      "icon": "utility:date_time",
+      "colorClass": "updates",
+      "command": "sf hardis:org:diagnose:releaseupdates",
+      "frequency": "weekly",
+      "notificationTypes": ["RELEASE_UPDATES"]
+    },
+    {
+      "key": "ORG_INFO",
+      "title": "Get **org info** + SF instance info + next major upgrade date",
+      "description": "Captures the org edition, instance name, API version and the date of the next scheduled Salesforce upgrade.",
+      "category": "orgInfo",
+      "icon": "utility:info",
+      "colorClass": "health",
+      "command": "sf hardis:org:diagnose:instanceupgrade",
+      "frequency": "weekly",
+      "notificationTypes": ["ORG_INFO"]
+    },
+    {
+      "key": "ORG_HEALTH_CHECK",
+      "title": "Run **Salesforce Security Health Check**",
+      "description": "Runs the Salesforce Security Health Check and reports the score plus the most severe findings.",
+      "category": "apexTestsSecurity",
+      "icon": "utility:heart",
+      "colorClass": "health",
+      "command": "sf hardis:org:monitor:health-check",
+      "frequency": "weekly",
+      "notificationTypes": ["ORG_HEALTH_CHECK"]
+    },
+    {
+      "key": "UNUSED_METADATAS",
+      "title": "Detect **custom labels and custom permissions** that are not in use",
+      "description": "Finds Custom Labels and Custom Permissions that are not referenced anywhere in the metadata, so they can be safely removed.",
+      "category": "technicalDebt",
+      "icon": "utility:settings",
+      "colorClass": "unused-metadata",
+      "command": "sf hardis:lint:unusedmetadatas",
+      "frequency": "weekly",
+      "notificationTypes": ["UNUSED_METADATAS"]
+    },
+    {
+      "key": "UNUSED_APEX_CLASSES",
+      "title": "Detect **unused Apex classes** in an org",
+      "description": "Identifies Apex classes that are not invoked from any trigger, controller, Flow, Process Builder, or scheduled job.",
+      "category": "technicalDebt",
+      "icon": "utility:apex",
+      "colorClass": "apex",
+      "command": "sf hardis:org:diagnose:unused-apex-classes",
+      "frequency": "weekly",
+      "notificationTypes": ["UNUSED_APEX_CLASSES"]
+    },
+    {
+      "key": "APEX_API_VERSION",
+      "title": "Detect **Apex classes and triggers with deprecated API version**",
+      "description": "Lists Apex classes and triggers whose API version is below the supported floor and should be upgraded.",
+      "category": "technicalDebt",
+      "icon": "utility:apex",
+      "colorClass": "legacy",
+      "command": "sf hardis:org:diagnose:apex-api-version",
+      "frequency": "weekly",
+      "notificationTypes": ["APEX_API_VERSION"]
+    },
+    {
+      "key": "CONNECTED_APPS",
+      "title": "Detect **unused Connected Apps** in an org",
+      "description": "Lists Connected Apps that have not been used recently, surfacing candidates for cleanup.",
+      "category": "technicalDebt",
+      "icon": "utility:apps",
+      "colorClass": "connected-apps",
+      "command": "sf hardis:org:diagnose:unused-connected-apps",
+      "frequency": "weekly",
+      "notificationTypes": ["CONNECTED_APPS"]
+    },
+    {
+      "key": "METADATA_STATUS",
+      "title": "Detect **inactive metadata**",
+      "description": "Reports metadata components (Flows, Validation Rules, etc.) that are inactive in the org and may be safe to remove.",
+      "category": "technicalDebt",
+      "icon": "utility:settings",
+      "colorClass": "legacy",
+      "command": "sf hardis:lint:metadatastatus",
+      "frequency": "weekly",
+      "notificationTypes": ["METADATA_STATUS"]
+    },
+    {
+      "key": "MISSING_ATTRIBUTES",
+      "title": "Detect **missing description** on custom field",
+      "description": "Finds custom fields that are missing a description, helping enforce documentation standards across the project.",
+      "category": "technicalDebt",
+      "icon": "utility:question",
+      "colorClass": "metadata-access",
+      "command": "sf hardis:lint:missingattributes",
+      "frequency": "weekly",
+      "notificationTypes": ["MISSING_ATTRIBUTES"]
+    },
+    {
+      "key": "UNDERUSED_PERMSETS",
+      "title": "Detect **underused permission sets**",
+      "description": "Identifies Permission Sets assigned to a small number of users, often a sign they can be merged or retired.",
+      "category": "licensesPackages",
+      "icon": "utility:key",
+      "colorClass": "licenses",
+      "command": "sf hardis:org:diagnose:underusedpermsets",
+      "frequency": "weekly",
+      "notificationTypes": ["UNDERUSED_PERMSETS"]
+    },
+    {
+      "key": "MINIMAL_PERMSETS",
+      "title": "Detect **permission sets with minimal permissions** in project",
+      "description": "Finds Permission Sets that grant almost no permissions and are likely placeholders or leftover artifacts.",
+      "category": "licensesPackages",
+      "icon": "utility:key",
+      "colorClass": "metadata-access",
+      "command": "sf hardis:org:diagnose:minimalpermsets",
+      "frequency": "weekly",
+      "notificationTypes": ["MINIMAL_PERMSETS"]
+    },
+    {
+      "key": "USAGE_ENTITLEMENTS",
+      "title": "Detect **usage-based entitlements** consumed faster than their period allows",
+      "description": "Reads contractual consumption meters and projects end-of-period usage, so overages surface before the invoice.",
+      "category": "licensesPackages",
+      "icon": "utility:currency",
+      "colorClass": "licenses",
+      "command": "sf hardis:org:diagnose:usage-entitlements",
+      "frequency": "daily",
+      "notificationTypes": ["USAGE_ENTITLEMENTS"]
+    },
+    {
+      "key": "CONSUMPTION_ALERTS",
+      "title": "Report active **utilization alerts** raised by Salesforce",
+      "description": "Lists consumption and license utilization alerts Salesforce raised on the org.",
+      "category": "licensesPackages",
+      "icon": "utility:notification",
+      "colorClass": "licenses",
+      "command": "sf hardis:org:diagnose:consumption-alerts",
+      "frequency": "daily",
+      "notificationTypes": ["CONSUMPTION_ALERTS"]
+    },
+    {
+      "key": "AI_USAGE",
+      "title": "Track **Agentforce and Data 360 credit** consumption",
+      "description": "Breaks down generative AI and Data 360 credit usage by agent and action. Needs Data 360.",
+      "category": "licensesPackages",
+      "icon": "utility:einstein",
+      "colorClass": "licenses",
+      "command": "sf hardis:org:diagnose:ai-usage",
+      "frequency": "weekly",
+      "notificationTypes": ["AI_USAGE"]
+    }
+  ],
+  "notificationConfig": [
+    {
+      "key": "AUDIT_TRAIL",
+      "title": "Detect **suspect setup actions** in major org",
+      "description": "Inspects the Setup Audit Trail and flags configuration changes that fall outside the allow list, helping spot risky or unexpected admin activity.",
+      "category": "orgActivity",
+      "icon": "utility:shield",
+      "colorClass": "audit",
+      "notifications": {
+        "messaging": "warning",
+        "email": "off",
+        "api": "log"
+      },
+      "availableThresholds": ["warning", "log", "off"]
+    },
+    {
+      "key": "LEGACY_API",
+      "title": "Detect calls to **deprecated API versions**",
+      "description": "Lists API clients calling Salesforce on deprecated API versions so they can be migrated before Salesforce retires them.",
+      "category": "orgActivity",
+      "icon": "utility:deprecate",
+      "colorClass": "legacy",
+      "notifications": {
+        "messaging": "error",
+        "email": "error",
+        "api": "log"
+      },
+      "availableThresholds": ["error", "log", "off"]
+    },
+    {
+      "key": "APEX_FLEX_QUEUE",
+      "title": "Detect **Apex flex queue backlog**",
+      "description": "Monitors the AsyncApexJob Holding queue and alerts when the number of pending batch jobs crosses a threshold.",
+      "category": "orgActivity",
+      "icon": "utility:queue",
+      "colorClass": "tests",
+      "notifications": {
+        "messaging": "warning",
+        "email": "off",
+        "api": "log"
+      },
+      "availableThresholds": ["warning", "log", "off"]
+    },
+    {
+      "key": "APEX_ERROR",
+      "title": "**Apex runtime errors**",
+      "description": "Per-error breakdown emitted by the APEX_FLOW_ERRORS monitoring command for Apex exceptions specifically.",
+      "category": "orgActivity",
+      "icon": "utility:bug",
+      "colorClass": "alerts",
+      "notifications": {
+        "messaging": "error",
+        "email": "error",
+        "api": "log"
+      },
+      "availableThresholds": ["error", "success", "log", "off"]
+    },
+    {
+      "key": "FLOW_ERROR",
+      "title": "**Flow runtime errors**",
+      "description": "Per-error breakdown emitted by the APEX_FLOW_ERRORS monitoring command for Flow failures specifically.",
+      "category": "orgActivity",
+      "icon": "utility:flow",
+      "colorClass": "alerts",
+      "notifications": {
+        "messaging": "error",
+        "email": "error",
+        "api": "log"
+      },
+      "availableThresholds": ["error", "success", "log", "off"]
+    },
+    {
+      "key": "BACKUP",
+      "title": "**Metadata backup**",
+      "description": "Notification emitted after a metadata backup run, summarizing what changed since the previous backup.",
+      "category": "orgActivity",
+      "icon": "utility:archive",
+      "colorClass": "backup",
+      "notifications": {
+        "messaging": "info",
+        "email": "off",
+        "api": "log"
+      },
+      "availableThresholds": ["info", "log", "off"]
+    },
+    {
+      "key": "DEPLOYMENT",
+      "title": "**Deployment** result",
+      "description": "Posted after a metadata deployment from a major branch to a major org, with status, deployed components, and Apex test results.",
+      "category": "orgActivity",
+      "icon": "utility:upload",
+      "colorClass": "audit",
+      "notifications": {
+        "messaging": "log",
+        "email": "warning",
+        "api": "log"
+      },
+      "availableThresholds": [
+        "critical",
+        "error",
+        "warning",
+        "info",
+        "success",
+        "log",
+        "off"
+      ]
+    },
+    {
+      "key": "DEPLOYMENTS",
+      "title": "Analyze **metadata deployments and validations**",
+      "description": "Summarizes metadata deployments and validations performed against the org during the configured period, with success / failure counts.",
+      "category": "orgActivity",
+      "icon": "utility:upload",
+      "colorClass": "audit",
+      "notifications": {
+        "messaging": "warning",
+        "email": "warning",
+        "api": "log"
+      },
+      "availableThresholds": ["warning", "log", "off"]
+    },
+    {
+      "key": "ACTIVE_USERS",
+      "title": "**Active users** summary",
+      "description": "Generic notification published by the unusedusers command when the active-users mode is used.",
+      "category": "userActivity",
+      "icon": "utility:user",
+      "colorClass": "users",
+      "notifications": {
+        "messaging": "off",
+        "email": "off",
+        "api": "log"
+      },
+      "availableThresholds": ["log", "off"]
+    },
+    {
+      "key": "ACTIVE_USERS_CRM_WEEKLY",
+      "title": "Detect **active users with recent logins** (CRM, 1 week)",
+      "description": "Reports the count of CRM users who logged in over the past week, a useful indicator for adoption metrics.",
+      "category": "userActivity",
+      "icon": "utility:user",
+      "colorClass": "tests",
+      "notifications": {
+        "messaging": "off",
+        "email": "off",
+        "api": "log"
+      },
+      "availableThresholds": ["log", "off"]
+    },
+    {
+      "key": "ACTIVE_USERS_EXPERIENCE_MONTHLY",
+      "title": "Detect **active users with recent logins** (Experience, 1 month)",
+      "description": "Reports the count of Experience Cloud users who logged in over the past month.",
+      "category": "userActivity",
+      "icon": "utility:user",
+      "colorClass": "tests",
+      "notifications": {
+        "messaging": "off",
+        "email": "off",
+        "api": "log"
+      },
+      "availableThresholds": ["log", "off"]
+    },
+    {
+      "key": "UNUSED_USERS",
+      "title": "Detect **active users without recent logins** (All licenses, 6 months)",
+      "description": "Lists active users (all licenses) who have not logged in for at least 6 months, surfacing candidates for deactivation.",
+      "category": "userActivity",
+      "icon": "utility:logout",
+      "colorClass": "users",
+      "notifications": {
+        "messaging": "off",
+        "email": "off",
+        "api": "log"
+      },
+      "availableThresholds": ["log", "off"]
+    },
+    {
+      "key": "UNUSED_USERS_CRM_6_MONTHS",
+      "title": "Detect **active users without recent logins** (CRM, 6 months)",
+      "description": "Lists active users holding a CRM license who have not logged in for at least 6 months.",
+      "category": "userActivity",
+      "icon": "utility:logout",
+      "colorClass": "users",
+      "notifications": {
+        "messaging": "off",
+        "email": "off",
+        "api": "log"
+      },
+      "availableThresholds": ["log", "off"]
+    },
+    {
+      "key": "UNUSED_USERS_EXPERIENCE_6_MONTHS",
+      "title": "Detect **active users without recent logins** (Experience, 6 months)",
+      "description": "Lists active Experience Cloud users who have not logged in for at least 6 months.",
+      "category": "userActivity",
+      "icon": "utility:logout",
+      "colorClass": "users",
+      "notifications": {
+        "messaging": "off",
+        "email": "off",
+        "api": "log"
+      },
+      "availableThresholds": ["log", "off"]
+    },
+    {
+      "key": "APEX_TESTS",
+      "title": "**Apex tests** run results",
+      "description": "Notification posted after running Apex tests, with pass / fail counts and coverage percentage.",
+      "category": "apexTestsSecurity",
+      "icon": "utility:check",
+      "colorClass": "tests",
+      "notifications": {
+        "messaging": "error",
+        "email": "error",
+        "api": "log"
+      },
+      "availableThresholds": ["error", "log", "off"]
+    },
+    {
+      "key": "AGENT_TESTS",
+      "title": "**Agentforce agent tests** run results",
+      "description": "Notification posted after running Agentforce agent tests, with per-test-case and per-assertion pass / fail results.",
+      "category": "apexTestsSecurity",
+      "icon": "utility:einstein",
+      "colorClass": "tests",
+      "notifications": {
+        "messaging": "error",
+        "email": "error",
+        "api": "log"
+      },
+      "availableThresholds": ["error", "log", "off"]
+    },
+    {
+      "key": "ORG_HEALTH_CHECK",
+      "title": "Run **Salesforce Security Health Check**",
+      "description": "Runs the Salesforce Security Health Check and reports the score plus the most severe findings.",
+      "category": "apexTestsSecurity",
+      "icon": "utility:heart",
+      "colorClass": "health",
+      "notifications": {
+        "messaging": "warning",
+        "email": "error",
+        "api": "log"
+      },
+      "availableThresholds": ["error", "warning", "success", "log", "off"]
+    },
+    {
+      "key": "UNSECURED_CONNECTED_APPS",
+      "title": "Detect **unsecured Connected Apps** in an org",
+      "description": "Lists Connected Apps whose OAuth policies do not require explicit user approval, surfacing potential SSO and authorization risks.",
+      "category": "apexTestsSecurity",
+      "icon": "utility:lock",
+      "colorClass": "security",
+      "notifications": {
+        "messaging": "error",
+        "email": "error",
+        "api": "log"
+      },
+      "availableThresholds": ["error", "log", "off"]
+    },
+    {
+      "key": "SECURITY_KEY_UNLINK",
+      "title": "Detect **security key / passkey (MFA) unlink** operations on users",
+      "description": "Notifies when MFA methods (security key / passkey) are unlinked from users",
+      "category": "apexTestsSecurity",
+      "icon": "utility:key",
+      "colorClass": "security",
+      "notifications": {
+        "messaging": "warning",
+        "email": "warning",
+        "api": "log"
+      },
+      "availableThresholds": ["error", "warning", "log", "off"]
+    },
+    {
+      "key": "MFA_CONFIG",
+      "title": "Detect **MFA configuration gaps** in the org",
+      "description": "Audits org-wide MFA enforcement, MFA-bypass permission usage, privileged user coverage, SSO presence, and recent non-MFA direct UI logins.",
+      "category": "apexTestsSecurity",
+      "icon": "utility:shield",
+      "colorClass": "security",
+      "notifications": {
+        "messaging": "warning",
+        "email": "error",
+        "api": "log"
+      },
+      "availableThresholds": ["error", "warning", "log", "off"]
+    },
+    {
+      "key": "DANGEROUS_PERMISSIONS",
+      "title": "Audit **dangerous permissions** granted through Profiles and Permission Sets",
+      "description": "Lists dangerous permissions (Modify All Data, Author Apex, Manage Users, View All Data...) granted through Profiles, Permission Sets and Permission Set Groups, and which active users hold them.",
+      "category": "apexTestsSecurity",
+      "icon": "utility:lock",
+      "colorClass": "security",
+      "notifications": {
+        "messaging": "warning",
+        "email": "error",
+        "api": "log"
+      },
+      "availableThresholds": ["error", "warning", "log", "off"]
+    },
+    {
+      "key": "ORG_LIMITS",
+      "title": "Detect if **org limits** are close to be reached",
+      "description": "Checks Salesforce org limits (storage, API requests, async jobs, etc.) and warns when usage gets close to the cap.",
+      "category": "orgInfo",
+      "icon": "utility:metrics",
+      "colorClass": "limits",
+      "notifications": {
+        "messaging": "warning",
+        "email": "error",
+        "api": "log"
+      },
+      "availableThresholds": ["error", "warning", "log", "off"]
+    },
+    {
+      "key": "RELEASE_UPDATES",
+      "title": "Gather warnings about **incoming and overdue Release Updates**",
+      "description": "Surfaces Salesforce Release Updates that are due soon or overdue, with the actions required to comply.",
+      "category": "orgInfo",
+      "icon": "utility:date_time",
+      "colorClass": "updates",
+      "notifications": {
+        "messaging": "warning",
+        "email": "warning",
+        "api": "log"
+      },
+      "availableThresholds": ["warning", "log", "off"]
+    },
+    {
+      "key": "ORG_INFO",
+      "title": "Get **org info** + SF instance info + next major upgrade date",
+      "description": "Captures the org edition, instance name, API version and the date of the next scheduled Salesforce upgrade.",
+      "category": "orgInfo",
+      "icon": "utility:info",
+      "colorClass": "health",
+      "notifications": {
+        "messaging": "off",
+        "email": "off",
+        "api": "log"
+      },
+      "availableThresholds": ["log", "off"]
+    },
+    {
+      "key": "APEX_API_VERSION",
+      "title": "Detect **Apex classes and triggers with deprecated API version**",
+      "description": "Lists Apex classes and triggers whose API version is below the supported floor and should be upgraded.",
+      "category": "technicalDebt",
+      "icon": "utility:apex",
+      "colorClass": "legacy",
+      "notifications": {
+        "messaging": "warning",
+        "email": "off",
+        "api": "log"
+      },
+      "availableThresholds": ["warning", "log", "off"]
+    },
+    {
+      "key": "CONNECTED_APPS",
+      "title": "Detect **unused Connected Apps** in an org",
+      "description": "Lists Connected Apps that have not been used recently, surfacing candidates for cleanup.",
+      "category": "technicalDebt",
+      "icon": "utility:apps",
+      "colorClass": "connected-apps",
+      "notifications": {
+        "messaging": "warning",
+        "email": "warning",
+        "api": "log"
+      },
+      "availableThresholds": ["warning", "log", "off"]
+    },
+    {
+      "key": "LINT_ACCESS",
+      "title": "Detect **custom elements with no access rights** defined in permission sets",
+      "description": "Finds custom fields, objects, Apex classes and other elements that have no access defined in any Profile or Permission Set.",
+      "category": "technicalDebt",
+      "icon": "utility:key",
+      "colorClass": "metadata-access",
+      "notifications": {
+        "messaging": "warning",
+        "email": "off",
+        "api": "log"
+      },
+      "availableThresholds": ["warning", "log", "off"]
+    },
+    {
+      "key": "METADATA_STATUS",
+      "title": "Detect **inactive metadata**",
+      "description": "Reports metadata components (Flows, Validation Rules, etc.) that are inactive in the org and may be safe to remove.",
+      "category": "technicalDebt",
+      "icon": "utility:settings",
+      "colorClass": "legacy",
+      "notifications": {
+        "messaging": "warning",
+        "email": "warning",
+        "api": "log"
+      },
+      "availableThresholds": ["warning", "log", "off"]
+    },
+    {
+      "key": "MISSING_ATTRIBUTES",
+      "title": "Detect **missing description** on custom field",
+      "description": "Finds custom fields that are missing a description, helping enforce documentation standards across the project.",
+      "category": "technicalDebt",
+      "icon": "utility:question",
+      "colorClass": "metadata-access",
+      "notifications": {
+        "messaging": "warning",
+        "email": "warning",
+        "api": "log"
+      },
+      "availableThresholds": ["warning", "log", "off"]
+    },
+    {
+      "key": "UNUSED_APEX_CLASSES",
+      "title": "Detect **unused Apex classes** in an org",
+      "description": "Identifies Apex classes that are not invoked from any trigger, controller, Flow, Process Builder, or scheduled job.",
+      "category": "technicalDebt",
+      "icon": "utility:apex",
+      "colorClass": "apex",
+      "notifications": {
+        "messaging": "warning",
+        "email": "warning",
+        "api": "log"
+      },
+      "availableThresholds": ["warning", "log", "off"]
+    },
+    {
+      "key": "UNUSED_METADATAS",
+      "title": "Detect **custom labels and custom permissions** that are not in use",
+      "description": "Finds Custom Labels and Custom Permissions that are not referenced anywhere in the metadata, so they can be safely removed.",
+      "category": "technicalDebt",
+      "icon": "utility:settings",
+      "colorClass": "unused-metadata",
+      "notifications": {
+        "messaging": "warning",
+        "email": "warning",
+        "api": "log"
+      },
+      "availableThresholds": ["warning", "log", "off"]
+    },
+    {
+      "key": "LICENSES",
+      "title": "Extract **licenses** information",
+      "description": "Reports the current allocation, used count, and remaining seats for every license type in the org.",
+      "category": "licensesPackages",
+      "icon": "utility:identity",
+      "colorClass": "licenses",
+      "notifications": {
+        "messaging": "off",
+        "email": "off",
+        "api": "log"
+      },
+      "availableThresholds": ["log", "off"]
+    },
+    {
+      "key": "UNUSED_LICENSES",
+      "title": "Detect **permission set licenses** that are assigned to users that do not need them",
+      "description": "Identifies Permission Set Licenses assigned to users who do not actually use any of the features they grant, so seats can be reclaimed.",
+      "category": "licensesPackages",
+      "icon": "utility:identity",
+      "colorClass": "licenses",
+      "notifications": {
+        "messaging": "warning",
+        "email": "warning",
+        "api": "log"
+      },
+      "availableThresholds": ["warning", "log", "off"]
+    },
+    {
+      "key": "UNDERUSED_PERMSETS",
+      "title": "Detect **underused permission sets**",
+      "description": "Identifies Permission Sets assigned to a small number of users, often a sign they can be merged or retired.",
+      "category": "licensesPackages",
+      "icon": "utility:key",
+      "colorClass": "licenses",
+      "notifications": {
+        "messaging": "warning",
+        "email": "warning",
+        "api": "log"
+      },
+      "availableThresholds": ["warning", "log", "off"]
+    },
+    {
+      "key": "MINIMAL_PERMSETS",
+      "title": "Detect **permission sets with minimal permissions** in project",
+      "description": "Finds Permission Sets that grant almost no permissions and are likely placeholders or leftover artifacts.",
+      "category": "licensesPackages",
+      "icon": "utility:key",
+      "colorClass": "metadata-access",
+      "notifications": {
+        "messaging": "warning",
+        "email": "warning",
+        "api": "log"
+      },
+      "availableThresholds": ["error", "warning", "log", "off"]
+    },
+    {
+      "key": "USAGE_ENTITLEMENTS",
+      "title": "Detect **usage-based entitlements** consumed faster than their period allows",
+      "description": "Reads contractual consumption meters and projects end-of-period usage, so overages surface before the invoice.",
+      "category": "licensesPackages",
+      "icon": "utility:currency",
+      "colorClass": "licenses",
+      "notifications": {
+        "messaging": "warning",
+        "email": "error",
+        "api": "log"
+      },
+      "availableThresholds": [
+        "critical",
+        "error",
+        "warning",
+        "success",
+        "log",
+        "off"
+      ]
+    },
+    {
+      "key": "CONSUMPTION_ALERTS",
+      "title": "Report active **utilization alerts** raised by Salesforce",
+      "description": "Lists consumption and license utilization alerts Salesforce raised on the org.",
+      "category": "licensesPackages",
+      "icon": "utility:notification",
+      "colorClass": "licenses",
+      "notifications": {
+        "messaging": "warning",
+        "email": "error",
+        "api": "log"
+      },
+      "availableThresholds": ["critical", "error", "warning", "log", "off"]
+    },
+    {
+      "key": "AI_USAGE",
+      "title": "Track **Agentforce and Data 360 credit** consumption",
+      "description": "Breaks down generative AI and Data 360 credit usage by agent and action. Needs Data 360.",
+      "category": "licensesPackages",
+      "icon": "utility:einstein",
+      "colorClass": "licenses",
+      "notifications": {
+        "messaging": "warning",
+        "email": "off",
+        "api": "log"
+      },
+      "availableThresholds": ["warning", "log", "off"]
+    },
+    {
+      "key": "AGENTFORCE_CONVERSATIONS",
+      "title": "**Agentforce conversations** export",
+      "description": "Notification emitted after exporting Agentforce conversation transcripts from Data Cloud.",
+      "category": "other",
+      "icon": "utility:einstein",
+      "colorClass": "tests",
+      "notifications": {
+        "messaging": "off",
+        "email": "off",
+        "api": "log"
+      },
+      "availableThresholds": ["log", "off"]
+    },
+    {
+      "key": "AGENTFORCE_FEEDBACK",
+      "title": "**Agentforce feedback** export",
+      "description": "Notification emitted after exporting user feedback collected by Agentforce agents.",
+      "category": "other",
+      "icon": "utility:like",
+      "colorClass": "tests",
+      "notifications": {
+        "messaging": "warning",
+        "email": "warning",
+        "api": "log"
+      },
+      "availableThresholds": ["warning", "log", "off"]
+    },
+    {
+      "key": "DORA_REPORT",
+      "title": "**DORA metrics** report",
+      "description": "DORA metrics (lead time, deploy frequency, change failure rate, MTTR) computed from the project's git history and deployments.",
+      "category": "other",
+      "icon": "utility:trending",
+      "colorClass": "health",
+      "notifications": {
+        "messaging": "info",
+        "email": "info",
+        "api": "log"
+      },
+      "availableThresholds": ["warning", "info", "success", "log", "off"]
+    },
+    {
+      "key": "MONITORING_SUMMARY",
+      "title": "**Monitoring executive summary**",
+      "description": "Consolidated AI-generated summary of all monitoring notifications emitted during a monitor:all run.",
+      "category": "other",
+      "icon": "utility:summarydetail",
+      "colorClass": "backup",
+      "notifications": {
+        "messaging": "info",
+        "email": "info",
+        "api": "log"
+      },
+      "availableThresholds": ["info", "log", "off"]
+    },
+    {
+      "key": "RELEASE_NOTES",
+      "title": "**Release notes** generated",
+      "description": "Notification emitted when project release notes have been generated from recent commits.",
+      "category": "other",
+      "icon": "utility:note",
+      "colorClass": "updates",
+      "notifications": {
+        "messaging": "info",
+        "email": "info",
+        "api": "log"
+      },
+      "availableThresholds": [
+        "critical",
+        "error",
+        "warning",
+        "info",
+        "success",
+        "log",
+        "off"
+      ]
+    },
+    {
+      "key": "SERVICENOW_REPORT",
+      "title": "**ServiceNow** report",
+      "description": "Notification published by the ServiceNow integration after pulling and processing tickets relevant to the project.",
+      "category": "other",
+      "icon": "utility:case",
+      "colorClass": "backup",
+      "notifications": {
+        "messaging": "off",
+        "email": "off",
+        "api": "log"
+      },
+      "availableThresholds": ["log", "off"]
+    }
+  ],
+  "categories": [
+    {
+      "key": "orgActivity",
+      "title": "Org Activity",
+      "description": "Monitor metadata backup, errors, audit trail and deployments",
+      "order": 1,
+      "icon": "utility:refresh",
+      "colorClass": "tests"
+    },
+    {
+      "key": "apexTestsSecurity",
+      "title": "Apex Tests & Security",
+      "description": "Run Apex tests and monitor security indicators",
+      "order": 2,
+      "icon": "utility:shield",
+      "colorClass": "security"
+    },
+    {
+      "key": "userActivity",
+      "title": "User Activity",
+      "description": "Monitor active and inactive users in your org",
+      "order": 3,
+      "icon": "utility:user",
+      "colorClass": "users"
+    },
+    {
+      "key": "technicalDebt",
+      "title": "Technical Debt",
+      "description": "Detect unused, inactive or undocumented metadata",
+      "order": 4,
+      "icon": "utility:warning",
+      "colorClass": "limits"
+    },
+    {
+      "key": "orgInfo",
+      "title": "Org Info",
+      "description": "Monitor release updates and org instance information",
+      "order": 5,
+      "icon": "utility:info",
+      "colorClass": "health"
+    },
+    {
+      "key": "licensesPackages",
+      "title": "Licenses & Packages",
+      "description": "Track license usage and installed packages",
+      "order": 6,
+      "icon": "utility:package",
+      "colorClass": "licenses"
+    },
+    {
+      "key": "other",
+      "title": "Other",
+      "description": "Reports, integrations and other notification types",
+      "order": 7,
+      "icon": "utility:apps",
+      "colorClass": "legacy"
+    }
+  ],
+  "options": {
+    "frequencies": ["daily", "weekly", "biweekly", "monthly", "off"],
+    "frequencyDays": [
+      "monday",
+      "tuesday",
+      "wednesday",
+      "thursday",
+      "friday",
+      "saturday",
+      "sunday"
+    ],
+    "thresholds": [
+      "critical",
+      "error",
+      "warning",
+      "info",
+      "success",
+      "log",
+      "off"
+    ],
+    "channels": ["messaging", "email", "api"]
+  }
+}
