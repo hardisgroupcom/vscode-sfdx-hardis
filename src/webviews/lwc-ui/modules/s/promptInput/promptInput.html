@@ -17,7 +17,7 @@
             <!-- Error Message -->
             <template if:true={error}>
                 <div class="slds-m-bottom_small">
-                    <div class="slds-notify slds-notify_alert slds-theme_error" role="alert">
+                    <div class="hardis-note error" role="alert">
                         <span class="slds-assistive-text">{i18n.errorLabel}</span>
                         <span>{error}</span>
                     </div>
@@ -215,8 +215,7 @@
         <div class="slds-p-around_large slds-align_absolute-center">
             <lightning-spinner
                 alternative-text="Submitting response..."
-                size="medium"
-                variant="brand">
+                size="medium">
             </lightning-spinner>
         </div>
     </template>

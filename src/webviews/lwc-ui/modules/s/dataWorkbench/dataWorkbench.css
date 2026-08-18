@@ -1,263 +1,89 @@
-/* Reuse Files Workbench styling for consistent layout */
-.slds-button_stretch {
-  width: 100%;
-}
-
-.slds-grid .slds-button_stretch {
-  display: block;
-}
-
+/* Layout: the panel background stretches the full viewport height. */
 .blue-back {
   min-height: 100vh;
-  height: 100vh;
-  margin: 0;
-  padding: 0;
+}
+
+/* Two-column workbench layout: workspace rail + selected workspace detail. */
+.dwb-layout {
   display: flex;
-  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
 }
 
-.workspace-item {
-  cursor: pointer;
-  transition: all 0.2s ease;
-  margin-bottom: 0.5rem !important;
-  position: relative;
-  z-index: 1;
+.dwb-rail {
+  flex: 0 0 300px;
+  min-width: 260px;
 }
 
-.workspace-item:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  z-index: 10;
-}
-
-.workspace-item.selected {
-  border-width: 2px;
-  box-shadow: 0 1px 2px rgba(1, 118, 211, 0.1);
-}
-
-
-.workspace-list {
-  height: calc(100vh - 200px);
-  min-height: 300px;
-  max-height: calc(100vh - 150px);
-  overflow-y: auto;
-  scrollbar-width: thin;
-}
-
-.workspace-list-container lightning-card,
-.workspace-detail-container lightning-card {
-  --slds-c-card-radius-border: 0.75rem;
-  border-radius: 0.75rem;
-  overflow: hidden;
-}
-
-.workspace-list::-webkit-scrollbar {
-  width: 8px;
-}
-
-.workspace-list::-webkit-scrollbar-track {
-  border-radius: 4px;
-}
-
-.workspace-list::-webkit-scrollbar-thumb {
-  border-radius: 4px;
-}
-
-.workspace-item .slds-media__body p {
-  margin: 0;
-  line-height: 1.4;
-}
-
-.workspace-item .slds-media__body .slds-text-body_regular {
-  margin-bottom: 0.25rem;
-}
-
-.workspace-item .slds-media__body .slds-text-body_small {
-  margin-bottom: 0.125rem;
-}
-
-.workspace-item .slds-media__body .slds-text-body_small:last-child {
-  margin-bottom: 0;
-}
-
-.workspace-name-text {
-  font-style: italic;
-  font-size: 0.75rem;
-}
-
-.workspace-folder-name {
-  padding: 0.125rem 0.25rem;
-  border-radius: 0.25rem;
-  display: inline-flex;
-  align-items: center;
-  font-size: 0.75rem;
-  margin-top: 0.25rem;
-}
-
-.workspace-folder-name strong {
-  font-weight: 600;
-}
-
-
-.slds-grid_vertical-align-center {
-  align-items: center;
-}
-
-.object-actions {
-  display: flex;
-  gap: 0.25rem;
-  align-items: center;
-  flex-shrink: 0;
-}
-
-/* Detail sections */
-.detail-section {
-  border: 1px solid var(--slds-g-color-border-base-1);
-  border-radius: 0.25rem;
-  background: var(--slds-g-color-neutral-base-100);
-  margin-bottom: 0.75rem;
-  overflow: hidden;
-}
-
-.section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.5rem 0.75rem;
-  background: var(--slds-g-color-neutral-base-95);
-  border-bottom: 1px solid var(--slds-g-color-border-base-1);
-  min-height: 2.25rem;
-}
-
-.section-header-left {
-  display: flex;
-  align-items: center;
-}
-
-.section-header-left h3 {
-  margin: 0;
-  letter-spacing: 0.05em;
-  font-size: 0.7rem;
-}
-
-.section-header-right {
-  display: flex;
-  gap: 0.25rem;
-  align-items: center;
-}
-
-/* Properties grid */
-.properties-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0;
-  padding: 0.5rem 0.75rem;
-}
-
-.property-item {
-  display: flex;
-  flex-direction: column;
-  padding: 0.35rem 0;
-}
-
-.property-item_full {
-  grid-column: 1 / -1;
-}
-
-.property-label {
-  font-size: 0.7rem;
-  color: var(--slds-g-color-neutral-base-30);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  margin-bottom: 0.125rem;
-}
-
-.property-value {
-  font-size: 0.8125rem;
-  color: var(--slds-g-color-text-default);
-  word-break: break-word;
-}
-
-/* Objects grid */
-.objects-grid {
-  padding: 0.5rem 0.75rem;
-}
-
-.object-card {
-  border: 1px solid var(--slds-g-color-border-base-1);
-  border-radius: 0.25rem;
-  padding: 0.5rem 0.75rem;
-  margin-bottom: 0.5rem;
-  background: var(--slds-g-color-neutral-base-100);
-  transition: box-shadow 0.15s ease;
-}
-
-.object-card:last-child {
-  margin-bottom: 0;
-}
-
-.object-card:hover {
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-}
-
-.object-card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.25rem;
-}
-
-.object-card-title {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+.dwb-main {
+  flex: 1 1 auto;
   min-width: 0;
 }
 
-.object-operation-badge {
-  flex-shrink: 0;
-  font-size: 0.65rem;
+@media (max-width: 900px) {
+  .dwb-layout {
+    flex-direction: column;
+  }
+
+  .dwb-rail {
+    flex: 1 1 auto;
+    width: 100%;
+  }
 }
 
-.object-name {
-  font-weight: 600;
-  font-size: 0.8125rem;
-  color: var(--slds-g-color-text-default);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.object-query {
-  font-size: 0.75rem;
-  color: var(--slds-g-color-neutral-base-30);
-  font-family: var(--vscode-editor-font-family, 'Menlo', 'Consolas', 'Courier New', monospace);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin: 0 0 0.35rem 0;
-  padding: 0.2rem 0.35rem;
-  background: var(--slds-g-color-neutral-base-95);
-  border-radius: 0.125rem;
-}
-
-.object-badges {
+/* Chip rows used for global settings and per-object facts. */
+.dwb-chip-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.25rem;
+  gap: 0.4rem;
+  margin: 0.4rem 0 1.1rem;
 }
 
-.object-badge {
-  font-size: 0.65rem !important;
-}
-
-/* Empty state */
-.empty-section-message {
+/* Object card head: title + operation pill grow, actions stay right-aligned. */
+.dwb-obj-title-row {
+  flex: 1 1 auto;
+  min-width: 0;
   display: flex;
   align-items: center;
-  padding: 0.75rem;
-  color: var(--slds-g-color-neutral-base-30);
-  font-size: 0.8125rem;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.dwb-obj-actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+/* SOQL query preview: one-line, horizontally scrollable, monospace via the
+   shared .hardis-prop-value.mono class (font comes from that global rule). */
+.dwb-obj-query {
+  white-space: nowrap;
+  overflow-x: auto;
+  padding: 0.3rem 0.5rem;
+  background: var(--slds-g-color-neutral-base-95);
+  border-radius: 6px;
+  margin: 0.35rem 0 0.6rem;
+}
+
+/* File name cells in the Exported Files / Logs tables: keep on one line,
+   use the editor font so paths/filenames read as technical identifiers. */
+.dwb-file-cell {
+  white-space: nowrap;
+  font-family: var(--vscode-editor-font-family, "Menlo", "Consolas", "Courier New", monospace);
+  font-size: 0.8rem;
+}
+
+.exported-files-table {
+  --slds-c-table-cell-spacing-inline-start: 0.5rem;
+  --slds-c-table-cell-spacing-inline-end: 0.5rem;
+  width: 100%;
+}
+
+/* --- Form / modal layout tweaks (Properties, Object editor, Global settings) --- */
+.slds-grid_vertical-align-center {
+  align-items: center;
 }
 
 .slds-grid_vertical-align-center lightning-input {
@@ -333,283 +159,37 @@ button[disabled="true"] {
 
 .slds-modal__content::-webkit-scrollbar-track {
   border-radius: 4px;
+  background: var(--slds-g-color-neutral-base-95);
 }
 
 .slds-modal__content::-webkit-scrollbar-thumb {
   border-radius: 4px;
+  background: var(--slds-g-color-neutral-base-80);
+  border-color: var(--slds-g-color-neutral-base-90);
 }
 
-
-
-.slds-list_horizontal dt {
-  margin-right: 0.5rem;
-  font-weight: 600;
-  flex-basis: 30%;
-  min-width: 120px;
-}
-
-.slds-list_horizontal dd {
-  margin-right: 1rem;
-  margin-bottom: 0.5rem;
-  flex-basis: 70%;
-}
-
-
-.slds-card__header .slds-media__body .slds-grid {
-  width: 100%;
-  align-items: flex-start;
-}
-
-.slds-card__header .slds-media__body h2 {
-  margin: 0;
-}
-
-lightning-button-menu {
-  position: relative;
-  z-index: 1000;
-}
-
-.workspace-item lightning-button-menu {
-  position: relative;
-}
-
-.workspace-item .slds-dropdown {
-  position: absolute !important;
-  top: 100% !important;
-  right: 0 !important;
-  left: auto !important;
-  transform: none !important;
-  margin-top: 0.25rem !important;
-  z-index: 9999 !important;
-  min-width: 120px;
-}
-
-.workspace-item .slds-dropdown,
-.workspace-item .slds-dropdown-trigger {
-  isolation: isolate;
-}
-
-.workspace-item {
-  contain: none !important;
-}
-
-.workspace-item .slds-dropdown .slds-dropdown__item {
-  padding: 0.5rem 0.75rem;
-  border: none;
-  background: transparent;
-  width: 100%;
-  text-align: left;
-  cursor: pointer;
-}
-
-
-.workspace-item {
-  position: relative;
-  overflow: visible !important;
-}
-
-.workspace-item lightning-button-menu {
-  position: static;
-}
-
-.slds-dropdown_right {
-  transform: translateX(-100%);
-}
-
-.slds-show_large {
-  display: flex !important;
-}
-
-.slds-hide_large {
-  display: none !important;
-}
-
-@media (max-width: 1024px) {
-  .slds-show_large {
-    display: none !important;
-  }
-  
-  .slds-hide_large {
-    display: flex !important;
-  }
-}
-
-.slds-card [slot="actions"] {
-  flex-shrink: 0;
-  min-width: 0;
-  overflow: visible;
-}
-
-.slds-show_large.slds-grid {
-  display: flex !important;
-  flex-wrap: nowrap;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.slds-show_large lightning-button {
-  flex-shrink: 0;
-  min-width: auto;
-  margin: 0;
-}
-
-.slds-show_large.slds-gutters_small > * {
-  padding: 0;
-}
-
-.slds-show_large lightning-button {
-  flex-shrink: 0;
-  min-width: auto;
-}
-
-.slds-show_large .slds-grid {
-  flex-wrap: nowrap;
-  align-items: center;
-}
-
-.slds-card [slot="actions"] {
-  flex-shrink: 0;
-  min-width: 0;
+.slds-modal__content::-webkit-scrollbar-thumb:hover {
+  background: var(--slds-g-color-neutral-base-50);
 }
 
 @media (max-width: 768px) {
-  .slds-grid.slds-gutters > .slds-col {
-    width: 100%;
-    margin-bottom: 1rem;
-  }
-  
   .slds-modal__container {
     width: 95%;
     max-width: none;
     max-height: 95vh;
   }
-  
+
   .slds-modal__content {
     max-height: 75vh;
   }
-  
+
   .slds-form-element__label {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.25rem;
   }
-  
+
   .slds-form-element__label s-multiline-helptext {
     margin-left: 0;
   }
-  
-  .workspace-list {
-    height: calc(50vh - 100px);
-    min-height: 200px;
-  }
-  
-  .slds-card {
-    height: auto;
-  }
-  
-  .workspace-list-container {
-    height: auto;
-  }
-}
-
-.exported-files-list {
-  list-style: none;
-  padding-left: 0;
-  margin: 0;
-}
-
-.exported-file-row {
-  padding-bottom: 0.35rem;
-}
-
-.exported-file-row:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-
-.exported-files-table {
-  --slds-c-table-cell-spacing-inline-start: 0.5rem;
-  --slds-c-table-cell-spacing-inline-end: 0.5rem;
-  width: 100%;
-}
-
-
-.slds-badge_warning {
-  background-color: var(--slds-g-color-palette-orange-90);
-  color: var(--slds-g-color-palette-orange-30);
-}
-
-/* Theme-aware colors: one rule per element, palette tokens do the light/dark
-   switch through light-dark() (see resources/global-theme-variables.css).
-   Never duplicate a rule per [data-theme]: that is what these tokens avoid. */
-.workspace-item {
-  border-color: var(--slds-g-color-neutral-base-90);
-}
-
-.workspace-item:hover {
-  background-color: var(--slds-g-color-neutral-base-95);
-  border-color: var(--slds-g-color-palette-cloud-blue-40);
-}
-
-.workspace-item.selected {
-  background-color: var(--slds-g-color-palette-cloud-blue-90);
-  border-color: var(--slds-g-color-palette-cloud-blue-40);
-}
-
-.workspace-item.selected .slds-media__body strong,
-.workspace-folder-name lightning-icon {
-  color: var(--slds-g-color-palette-cloud-blue-30);
-}
-
-.workspace-name-text {
-  color: var(--slds-g-color-neutral-base-10);
-}
-
-.workspace-folder-name {
-  color: var(--slds-g-color-neutral-base-10);
-  background-color: var(--slds-g-color-neutral-base-95);
-  border-color: var(--slds-g-color-neutral-base-90);
-}
-
-.workspace-list::-webkit-scrollbar-track,
-.slds-modal__content::-webkit-scrollbar-track {
-  background: var(--slds-g-color-neutral-base-95);
-}
-
-.workspace-list::-webkit-scrollbar-thumb,
-.slds-modal__content::-webkit-scrollbar-thumb {
-  background: var(--slds-g-color-neutral-base-80);
-  border-color: var(--slds-g-color-neutral-base-90);
-}
-
-.workspace-list::-webkit-scrollbar-thumb:hover,
-.slds-modal__content::-webkit-scrollbar-thumb:hover {
-  background: var(--slds-g-color-neutral-base-50);
-}
-
-.slds-box.slds-theme_shade {
-  background-color: var(--slds-g-color-neutral-base-95);
-  border-color: var(--slds-g-color-neutral-base-90);
-}
-
-.workspace-item .slds-dropdown {
-  border-color: var(--slds-g-color-neutral-base-90);
-  background: var(--slds-g-color-neutral-base-100);
-}
-
-.workspace-item .slds-dropdown .slds-dropdown__item {
-  color: var(--slds-g-color-neutral-base-10);
-}
-
-.workspace-item .slds-dropdown .slds-dropdown__item:hover {
-  background-color: var(--slds-g-color-neutral-base-95);
-}
-
-.exported-file-row {
-  border-bottom-color: var(--slds-g-color-neutral-base-90);
-}
-
-.slds-col,
-.slds-col .slds-text-color_weak {
-  background: transparent !important;
 }

@@ -112,7 +112,7 @@
 
 .provider-button:hover {
     transform: translateY(-2px) scale(1.03);
-    box-shadow: 0 6px 14px rgba(0,0,0,0.08);
+    box-shadow: var(--hardis-shadow-md);
 }
 
 .provider-button img.provider-icon {
@@ -210,11 +210,6 @@
     padding: 1px 8px;
     line-height: 1.5;
     cursor: pointer;
-}
-
-.slds-scope[data-theme] .hardis-chip-create {
-    background: var(--slds-g-color-palette-blue-90);
-    color: var(--slds-g-color-palette-blue-40);
 }
 
 /* Inline SVG icons inside node labels follow the node text color */

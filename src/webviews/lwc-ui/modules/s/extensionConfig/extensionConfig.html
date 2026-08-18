@@ -39,7 +39,7 @@
           <div class="slds-p-horizontal_small">
               <template if:false={loading}>
                   <template if:true={sections}>
-                      <lightning-card hide-header="true" label={i18n.extensionConfig}>
+                      <div class="hardis-panel-body">
                           <lightning-tabset active-tab-value={activeTabValue}>
                               <template for:each={sections} for:item="section" for:index="index">
                                   <lightning-tab key={section.value} value={section.value} label={section.label} icon-name={section.iconName}>
@@ -50,99 +50,67 @@
                                               </div>
                                           </template>
                                           <template for:each={section.entries} for:item="entry">
-                                              <div key={entry.key} class="slds-m-bottom_medium">
-                                                  <div class="slds-grid slds-gutters">
-                                                      <div class="slds-col slds-size_12-of-12">
-                                                          <template if:true={entry.isEnum}>
-                                                              <div class="slds-form-element slds-m-bottom_xx-small">
-                                                                  <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
-                                                                      <span>{entry.label}</span>
-                                                                      <template if:true={entry.description}>
-                                                                          <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
-                                                                      </template>
-                                                                  </label>
-                                                                  <lightning-combobox
-                                                                      name={entry.key}
-                                                                      value={entry.valueEnum}
-                                                                      options={entry.optionsLwc}
-                                                                      onchange={handleSelectChange}
-                                                                      variant="label-hidden"
-                                                                  ></lightning-combobox>
-                                                              </div>
-                                                          </template>
-                                                          <template if:true={entry.isBoolean}>
-                                                              <div class="slds-form-element slds-m-bottom_xx-small">
-                                                                  <label class="slds-form-element__label" style="display:block;">
-                                                                      {entry.label}
-                                                                      <template if:true={entry.description}>
-                                                                          <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
-                                                                      </template>
-                                                                  </label>
-                                                                  <lightning-input
-                                                                      type="toggle"
-                                                                      name={entry.key}
-                                                                      checked={entry.valueBoolean}
-                                                                      onchange={handleCheckboxChange}
-                                                                      oninput={handleCheckboxChange}
-                                                                      class="slds-m-bottom_xx-small"
-                                                                      variant="label-hidden"
-                                                                      message-toggle-active=""
-                                                                      message-toggle-inactive=""
-                                                                  ></lightning-input>
-                                                              </div>
-                                                          </template>
-                                                          <template if:true={entry.isString}>
-                                                              <div class="slds-form-element slds-m-bottom_xx-small">
-                                                                  <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
-                                                                      <span>{entry.label}</span>
-                                                                      <template if:true={entry.description}>
-                                                                          <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
-                                                                      </template>
-                                                                  </label>
-                                                                  <lightning-input
-                                                                      type="text"
-                                                                      name={entry.key}
-                                                                      value={entry.valueString}
-                                                                      onchange={handleTextChange}
-                                                                      variant="label-hidden"
-                                                                  ></lightning-input>
-                                                              </div>
-                                                          </template>
-                                                          <template if:true={entry.isNumber}>
-                                                              <div class="slds-form-element slds-m-bottom_xx-small">
-                                                                  <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
-                                                                      <span>{entry.label}</span>
-                                                                      <template if:true={entry.description}>
-                                                                          <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
-                                                                      </template>
-                                                                  </label>
-                                                                  <lightning-input
-                                                                      type="number"
-                                                                      name={entry.key}
-                                                                      value={entry.valueNumber}
-                                                                      onchange={handleNumberChange}
-                                                                      variant="label-hidden"
-                                                                  ></lightning-input>
-                                                              </div>
-                                                          </template>
-                                                          <template if:true={entry.isArray}>
-                                                              <div class="slds-form-element slds-m-bottom_xx-small">
-                                                                  <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
-                                                                      <span>{entry.label}</span>
-                                                                      <template if:true={entry.description}>
-                                                                          <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
-                                                                      </template>
-                                                                  </label>
-                                                                  <lightning-textarea
-                                                                      name={entry.key}
-                                                                      value={entry.valueArray}
-                                                                      onchange={handleTextareaChange}
-                                                                      variant="label-hidden"
-                                                                      placeholder={i18n.enterOneItemPerLine}
-                                                                  ></lightning-textarea>
-                                                              </div>
+                                              <div key={entry.key} class="hardis-field-row">
+                                                  <div class="hardis-field-text">
+                                                      <div class="hardis-field-label">
+                                                          <span>{entry.label}</span>
+                                                          <template if:true={entry.isMultilineHelp}>
+                                                              <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
                                                           </template>
                                                       </div>
+                                                      <template if:true={entry.helpFirstLine}>
+                                                          <div class="hardis-field-help">{entry.helpFirstLine}</div>
+                                                      </template>
+                                                  </div>
+                                                  <div class="hardis-field-control">
+                                                      <template if:true={entry.isEnum}>
+                                                          <lightning-combobox
+                                                              name={entry.key}
+                                                              value={entry.valueEnum}
+                                                              options={entry.optionsLwc}
+                                                              onchange={handleSelectChange}
+                                                              variant="label-hidden"
+                                                          ></lightning-combobox>
+                                                      </template>
+                                                      <template if:true={entry.isBoolean}>
+                                                          <lightning-input
+                                                              type="toggle"
+                                                              name={entry.key}
+                                                              checked={entry.valueBoolean}
+                                                              onchange={handleCheckboxChange}
+                                                              oninput={handleCheckboxChange}
+                                                              variant="label-hidden"
+                                                              message-toggle-active=""
+                                                              message-toggle-inactive=""
+                                                          ></lightning-input>
+                                                      </template>
+                                                      <template if:true={entry.isString}>
+                                                          <lightning-input
+                                                              type="text"
+                                                              name={entry.key}
+                                                              value={entry.valueString}
+                                                              onchange={handleTextChange}
+                                                              variant="label-hidden"
+                                                          ></lightning-input>
+                                                      </template>
+                                                      <template if:true={entry.isNumber}>
+                                                          <lightning-input
+                                                              type="number"
+                                                              name={entry.key}
+                                                              value={entry.valueNumber}
+                                                              onchange={handleNumberChange}
+                                                              variant="label-hidden"
+                                                          ></lightning-input>
+                                                      </template>
+                                                      <template if:true={entry.isArray}>
+                                                          <lightning-textarea
+                                                              name={entry.key}
+                                                              value={entry.valueArray}
+                                                              onchange={handleTextareaChange}
+                                                              variant="label-hidden"
+                                                              placeholder={i18n.enterOneItemPerLine}
+                                                          ></lightning-textarea>
+                                                      </template>
                                                   </div>
                                               </div>
                                           </template>
@@ -150,7 +118,7 @@
                                   </lightning-tab>
                               </template>
                           </lightning-tabset>
-                      </lightning-card>
+                      </div>
                   </template>
               </template>
           </div>

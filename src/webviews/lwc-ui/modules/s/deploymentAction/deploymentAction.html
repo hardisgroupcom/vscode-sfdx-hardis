@@ -31,7 +31,7 @@
         </header>
         <div class="slds-modal__content slds-p-around_medium">
           <template if:true={hasValidationError}>
-            <div class="slds-notify slds-notify_alert slds-theme_error slds-m-bottom_medium" role="alert">
+            <div class="hardis-note error slds-m-bottom_medium" role="alert">
               <span class="slds-assistive-text">{i18n.errorLabel}</span>
               <span>{validationError}</span>
             </div>
@@ -39,7 +39,7 @@
           <div class="slds-grid slds-wrap slds-gutters">
             <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
               <div class="slds-form-element">
-                <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                <label class="slds-form-element__label hardis-label-inline">
                   <span>
                     <abbr class="slds-required" title={i18n.requiredField}>*</abbr>
                     {i18n.actionLabelField}
@@ -59,7 +59,7 @@
 
             <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
               <div class="slds-form-element">
-                <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                <label class="slds-form-element__label hardis-label-inline">
                   <span>
                     <abbr class="slds-required" title={i18n.requiredField}>*</abbr>
                     {i18n.actionTypeField}
@@ -80,7 +80,7 @@
 
             <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
               <div class="slds-form-element">
-                <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                <label class="slds-form-element__label hardis-label-inline">
                   <span>
                     <abbr class="slds-required" title={i18n.requiredField}>*</abbr>
                     {i18n.actionWhenField}
@@ -101,7 +101,7 @@
 
             <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
               <div class="slds-form-element">
-                <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                <label class="slds-form-element__label hardis-label-inline">
                   <span>
                     <abbr class="slds-required" title={i18n.requiredField}>*</abbr>
                     {i18n.executionContextsLabel}
@@ -124,7 +124,7 @@
             <template if:true={showCommandField}>
               <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
                 <div class="slds-form-element">
-                  <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                  <label class="slds-form-element__label hardis-label-inline">
                     <span>
                       <abbr class="slds-required" title={i18n.requiredField}>*</abbr>
                       {i18n.commandField}
@@ -146,7 +146,7 @@
             <template if:true={showApexScriptField}>
               <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
                 <div class="slds-form-element">
-                  <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                  <label class="slds-form-element__label hardis-label-inline">
                     <span>
                       <abbr class="slds-required" title={i18n.requiredField}>*</abbr>
                       {i18n.apexScriptLabel}
@@ -182,7 +182,7 @@
             <template if:true={showSfdmuProjectField}>
               <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
                 <div class="slds-form-element">
-                  <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                  <label class="slds-form-element__label hardis-label-inline">
                     <span>
                       <abbr class="slds-required" title={i18n.requiredField}>*</abbr>
                       {i18n.sfdmuProjectPath}
@@ -218,7 +218,7 @@
             <template if:true={showCommunityNameField}>
               <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
                 <div class="slds-form-element">
-                  <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                  <label class="slds-form-element__label hardis-label-inline">
                     <span>
                       <abbr class="slds-required" title={i18n.requiredField}>*</abbr>
                       {i18n.communityNameLabel}
@@ -242,7 +242,7 @@
             <template if:true={showScheduleBatchClassNameField}>
               <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
                 <div class="slds-form-element">
-                  <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                  <label class="slds-form-element__label hardis-label-inline">
                     <span>
                       <abbr class="slds-required" title={i18n.requiredField}>*</abbr>
                       {i18n.scheduleBatchClassNameLabel}
@@ -266,7 +266,7 @@
             <template if:true={showScheduleBatchCronExpressionField}>
               <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
                 <div class="slds-form-element">
-                  <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                  <label class="slds-form-element__label hardis-label-inline">
                     <span>
                       <abbr class="slds-required" title={i18n.requiredField}>*</abbr>
                       {i18n.scheduleBatchCronExpressionLabel}
@@ -292,7 +292,7 @@
             <template if:true={showScheduleBatchJobNameField}>
               <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
                 <div class="slds-form-element">
-                  <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                  <label class="slds-form-element__label hardis-label-inline">
                     <span>{i18n.scheduleBatchJobNameLabel}</span>
                     <s-multiline-helptext content={i18n.scheduleBatchJobNameHelp} class="slds-icon-text-info"></s-multiline-helptext>
                   </label>
@@ -310,7 +310,7 @@
             <template if:true={showInstructionsField}>
               <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
                 <div class="slds-form-element">
-                  <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                  <label class="slds-form-element__label hardis-label-inline">
                     <span>
                       <abbr class="slds-required" title={i18n.requiredField}>*</abbr>
                       {i18n.instructionsLabel}
@@ -333,7 +333,7 @@
             <template if:true={showPackageXmlItemsField}>
               <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
                 <div class="slds-form-element">
-                  <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                  <label class="slds-form-element__label hardis-label-inline">
                     <span>
                       <abbr class="slds-required" title={i18n.requiredField}>*</abbr>
                       {i18n.packageXmlItemsLabel}
@@ -403,7 +403,7 @@
             <template if:true={showCustomUsernameField}>
               <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
                 <div class="slds-form-element">
-                  <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                  <label class="slds-form-element__label hardis-label-inline">
                     <span>{i18n.executeWithCustomUsername}</span>
                     <s-multiline-helptext content={i18n.executeWithCustomUsernameHelp} class="slds-icon-text-info"></s-multiline-helptext>
                   </label>
@@ -421,7 +421,7 @@
             <!-- Restrict the action to some target orgs -->
             <div class="slds-col slds-size_1-of-3 slds-m-bottom_small">
               <div class="slds-form-element">
-                <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
+                <label class="slds-form-element__label hardis-label-inline">
                   <span>{i18n.targetBranchesLabel}</span>
                   <s-multiline-helptext content={i18n.targetBranchesHelp} class="slds-icon-text-info"></s-multiline-helptext>
                 </label>

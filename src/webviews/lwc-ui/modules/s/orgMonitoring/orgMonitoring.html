@@ -232,8 +232,7 @@
                     <div class="slds-is-relative spinner-wrapper" style="height: 6rem;">
                         <s-spinner
                             alternative-text={i18n.loadingMonitoringConfig}
-                            size="medium"
-                            variant="brand">
+                            size="medium">
                         </s-spinner>
                     </div>
                 </div>
@@ -287,31 +286,27 @@
             </template>
 
             <!-- Documentation Section -->
-            <div class="docs-section">
-                <div class="docs-content">
-                    <div class="docs-header">
-                        <span class="docs-icon">📚</span>
-                        <h3 class="docs-title">{i18n.learnMore}</h3>
+            <div class="hardis-card featured monitoring-docs-card">
+                <div class="hardis-card-head">
+                    <div class="hardis-tile featured indigo">
+                        <lightning-icon icon-name="utility:knowledge_base" size="medium"></lightning-icon>
                     </div>
-                    <p class="docs-text">
-                        {i18n.learnMoreDocDescription}
-                    </p>
-                    <div class="docs-actions">
-                        <lightning-button
-                            variant="neutral"
-                            label={i18n.monitoringDocumentation}
-                            icon-name="utility:new_window"
-                            onclick={openMonitoringDocs}
-                            class="docs-button"
-                        ></lightning-button>
-                        <lightning-button
-                            variant="neutral"
-                            label={i18n.setupGuide}
-                            icon-name="utility:setup"
-                            onclick={openSetupGuide}
-                            class="docs-button"
-                        ></lightning-button>
-                    </div>
+                    <h3 class="hardis-card-title">{i18n.learnMore}</h3>
+                </div>
+                <p class="hardis-card-desc">{i18n.learnMoreDocDescription}</p>
+                <div class="hardis-card-actions">
+                    <lightning-button class="hardis-btn-tinted-blue"
+                        variant="neutral"
+                        label={i18n.monitoringDocumentation}
+                        icon-name="utility:new_window"
+                        onclick={openMonitoringDocs}
+                    ></lightning-button>
+                    <lightning-button class="hardis-btn-tinted-blue"
+                        variant="neutral"
+                        label={i18n.setupGuide}
+                        icon-name="utility:setup"
+                        onclick={openSetupGuide}
+                    ></lightning-button>
                 </div>
             </div>
         </div>

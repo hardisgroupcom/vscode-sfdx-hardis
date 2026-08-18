@@ -37,7 +37,7 @@
 
     <!-- Loading State -->
     <template if:true={isLoading}>
-      <div class="slds-card__body slds-card__body_inner">
+      <div class="hardis-panel-body">
         <div class="slds-text-align_center slds-p-around_large">
           <lightning-spinner alternative-text={i18n.loadingWorkspaces} size="medium"></lightning-spinner>
           <p class="slds-text-body_small slds-text-color_weak slds-m-top_small">{i18n.loadingWorkspaces}</p>
@@ -48,19 +48,21 @@
     <!-- No Workspaces State -->
     <template if:false={isLoading}>
       <template if:false={hasWorkspaces}>
-        <div class="slds-card__body slds-card__body_inner">
-          <div class="slds-text-align_center slds-p-around_large">
-            <lightning-icon icon-name="utility:file" size="large" class="slds-text-color_weak"></lightning-icon>
-            <h3 class="slds-text-heading_medium slds-m-top_medium">{i18n.noWorkspacesFound}</h3>
-            <p class="slds-text-body_regular slds-text-color_weak slds-m-top_small">
-              {i18n.noWorkspacesFoundDesc}
-            </p>
-            <lightning-button
-              variant="neutral"
-              label={i18n.createFirstWorkspace}
-              class="slds-m-top_medium hardis-btn-tinted-blue"
-              onclick={handleCreateWorkspace}
-            ></lightning-button>
+        <div class="hardis-panel-body">
+          <div class="hardis-empty">
+            <div class="hardis-tile featured amber">
+              <lightning-icon icon-name="utility:file" size="small"></lightning-icon>
+            </div>
+            <h3 class="hardis-empty-title">{i18n.noWorkspacesFound}</h3>
+            <p class="hardis-empty-desc">{i18n.noWorkspacesFoundDesc}</p>
+            <div class="hardis-empty-actions">
+              <lightning-button
+                variant="neutral"
+                label={i18n.createFirstWorkspace}
+                class="hardis-btn-tinted-blue"
+                onclick={handleCreateWorkspace}
+              ></lightning-button>
+            </div>
           </div>
         </div>
       </template>
@@ -69,202 +71,179 @@
     <!-- Workspaces List -->
     <template if:false={isLoading}>
       <template if:true={hasWorkspaces}>
-        <div class="slds-card__body slds-card__body_inner">
-          <!-- Two Column Layout -->
-          <div class="slds-grid slds-gutters">
-            <!-- Left Column: Workspaces List -->
-            <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-3 slds-large-size_1-of-4 workspace-list-container">
-              <lightning-card title={i18n.availableWorkspacesTitle}>
-                <s-multiline-helptext slot="actions" content={i18n.availableWorkspacesHelp}></s-multiline-helptext>
-                <div class="slds-card__body slds-card__body_inner">
-                  <div class="workspace-list">
-                    <template for:each={workspacesForDisplay} for:item="workspace">
-                      <div 
-                        key={workspace.path} 
-                        class={workspace.cssClass}
-                        data-path={workspace.path}
-                        onclick={handleWorkspaceSelect}
-                      >
-                        <div class="slds-media slds-media_small">
-                          <div class="slds-media__figure">
-                            <lightning-icon icon-name={workspace.iconName} size="small"></lightning-icon>
-                          </div>
-                          <div class="slds-media__body">
-                            <p class="slds-text-body_regular slds-truncate" title={workspace.label}>
-                              <strong>{workspace.label}</strong>
-                            </p>
-                            <p class="slds-text-body_small slds-text-color_weak slds-truncate" title={workspace.name}>
-                              {workspace.name}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </template>
+        <div class="dwb-layout">
+          <!-- Left: Workspaces List -->
+          <div class="hardis-panel-body dwb-rail">
+            <div class="hardis-group-label">
+              {i18n.availableWorkspacesTitle}
+              <span class="hardis-count-chip">{workspacesCount}</span>
+              <div class="hardis-group-actions">
+                <s-multiline-helptext content={i18n.availableWorkspacesHelp}></s-multiline-helptext>
+              </div>
+            </div>
+            <div class="hardis-card-grid single-column">
+              <template for:each={workspacesForDisplay} for:item="workspace">
+                <div
+                  key={workspace.path}
+                  class={workspace.cardClass}
+                  role="button"
+                  tabindex="0"
+                  aria-pressed={workspace.isSelected}
+                  data-path={workspace.path}
+                  onclick={handleWorkspaceSelect}
+                  onkeydown={handleCardKeydown}
+                >
+                  <div class="hardis-card-head">
+                    <div class="hardis-tile small amber">
+                      <lightning-icon icon-name="utility:file" size="x-small"></lightning-icon>
+                    </div>
+                    <h3 class="hardis-card-title">{workspace.label}</h3>
                   </div>
+                  <p class="hardis-card-desc">{workspace.name}</p>
                 </div>
-              </lightning-card>
-            </div>
-
-            <!-- Right Column: Selected Workspace Actions -->
-            <div class="slds-col slds-size_1-of-2 slds-medium-size_2-of-3 slds-large-size_3-of-4 workspace-detail-container">
-              <template if:true={selectedWorkspace}>
-                <lightning-card title={selectedWorkspace.label}>
-                  <!-- Card Actions Slot -->
-                  <div slot="actions">
-                    <!-- Horizontal Buttons - Rendered only when showLargeActions is true -->
-                    <template if:true={showLargeActions}>
-                      <div class="slds-show_large slds-grid">
-                        <lightning-button class="hardis-btn-tinted-blue"
-                          variant="neutral"
-                          label={i18n.exportFilesLabel}
-                          title={i18n.exportFilesTooltip}
-                          icon-name="utility:download"
-                          icon-position="left"
-                          size="small"
-                          onclick={handleExportFiles}
-                        ></lightning-button>
-                        <lightning-button class="hardis-btn-tinted-blue"
-                          variant="neutral"
-                          label={i18n.importFilesLabel}
-                          title={i18n.importFilesTooltip}
-                          icon-name="utility:upload"
-                          icon-position="left"
-                          size="small"
-                          onclick={handleImportFiles}
-                        ></lightning-button>
-                      </div>
-                    </template>
-
-                    <!-- Dropdown Menu - Rendered only when showLargeActions is false -->
-                    <template if:false={showLargeActions}>
-                      <div class="slds-hide_large">
-                        <lightning-button-menu
-                          alternative-text={i18n.workspaceActionsMenu}
-                          menu-alignment="right"
-                          variant="border-filled"
-                          icon-name="utility:down"
-                        >
-                          <lightning-menu-item
-                            value="export"
-                            label={i18n.exportFilesMenu}
-                            icon-name="utility:download"
-                            onclick={handleExportFiles}
-                          ></lightning-menu-item>
-                          <lightning-menu-item
-                            value="import"
-                            label={i18n.importFilesMenu}
-                            icon-name="utility:upload"
-                            onclick={handleImportFiles}
-                          ></lightning-menu-item>
-                        </lightning-button-menu>
-                      </div>
-                    </template>
-                  </div>
-
-                  <!-- Section: Workspace Properties -->
-                  <div class="detail-section">
-                    <div class="section-header">
-                      <div class="section-header-left">
-                        <lightning-icon icon-name="utility:info_alt" size="xx-small" class="slds-m-right_x-small"></lightning-icon>
-                        <h3 class="slds-text-title_caps">{i18n.configSummaryTitle}</h3>
-                      </div>
-                      <div class="section-header-right">
-                        <lightning-button-icon
-                          icon-name="utility:open_folder"
-                          alternative-text={i18n.openFolderInExplorer}
-                          title={i18n.clickToOpenFolder}
-                          size="small"
-                          onclick={handleOpenFolder}
-                        ></lightning-button-icon>
-                        <lightning-button-icon
-                          icon-name="utility:edit"
-                          alternative-text={i18n.editWorkspaceTooltip}
-                          title={i18n.editWorkspaceTooltip}
-                          size="small"
-                          data-path={selectedWorkspace.path}
-                          onclick={handleEditWorkspace}
-                        ></lightning-button-icon>
-                        <lightning-button-icon
-                          icon-name="utility:delete"
-                          alternative-text={i18n.deleteWorkspaceTooltip}
-                          title={i18n.deleteWorkspaceTooltip}
-                          size="small"
-                          variant="bare-destructive"
-                          data-path={selectedWorkspace.path}
-                          onclick={handleDeleteWorkspace}
-                        ></lightning-button-icon>
-                      </div>
-                    </div>
-                    <div class="properties-grid">
-                      <div class="property-item">
-                        <span class="property-label">{i18n.workspaceNameField}</span>
-                        <span class="property-value">{selectedWorkspace.name}</span>
-                      </div>
-                      <div class="property-item">
-                        <span class="property-label">{i18n.fileTypesField}</span>
-                        <span class="property-value">{selectedWorkspace.fileTypes}</span>
-                      </div>
-                      <div class="property-item property-item_full">
-                        <span class="property-label">{i18n.pathLabel}</span>
-                        <span class="property-value">{selectedWorkspace.path}</span>
-                      </div>
-                      <template if:true={selectedWorkspaceHasDescription}>
-                        <div class="property-item property-item_full">
-                          <span class="property-label">{i18n.descriptionField}</span>
-                          <span class="property-value">{selectedWorkspace.description}</span>
-                        </div>
-                      </template>
-                      <div class="property-item">
-                        <span class="property-label">{i18n.soqlQueryField}</span>
-                        <span class="property-value">{selectedWorkspace.soqlQuery}</span>
-                      </div>
-                      <div class="property-item">
-                        <span class="property-label">{i18n.minFileSizeField}</span>
-                        <span class="property-value">{selectedWorkspace.fileSizeMin}</span>
-                      </div>
-                      <div class="property-item">
-                        <span class="property-label">{i18n.folderFieldLabel}</span>
-                        <span class="property-value">{selectedWorkspace.outputFolderNameField}</span>
-                      </div>
-                      <div class="property-item">
-                        <span class="property-label">{i18n.fileNameFormatField}</span>
-                        <span class="property-value">{selectedWorkspace.outputFileNameFormat}</span>
-                      </div>
-                    </div>
-                    <div class="slds-p-horizontal_small slds-p-bottom_small">
-                      <div class="object-badges">
-                        <span class="slds-badge object-badge" title={i18n.overwriteParentRecordsField}>
-                          {i18n.overwriteParentRecordsField} {selectedOverwriteParentRecordsLabel}
-                        </span>
-                        <span class="slds-badge object-badge" title={i18n.overwriteFilesField}>
-                          {i18n.overwriteFilesField} {selectedOverwriteFilesLabel}
-                        </span>
-                        <template if:true={selectedWorkspace.exportedFilesCount}>
-                          <span
-                            class="slds-badge object-badge exported-files-clickable"
-                            onclick={handleOpenFolder}
-                            title={i18n.clickToOpenFolder}
-                          >
-                            {exportedFilesCountLabel}
-                          </span>
-                        </template>
-                      </div>
-                    </div>
-                  </div>
-                </lightning-card>
-              </template>
-              <template if:false={selectedWorkspace}>
-                <lightning-card title={i18n.workspaceActionsTitle}>
-                  <div class="slds-text-align_center slds-p-around_large">
-                    <lightning-icon icon-name="utility:touch_action" size="large" class="slds-text-color_weak"></lightning-icon>
-                    <h3 class="slds-text-heading_medium slds-m-top_medium">{i18n.selectAWorkspace}</h3>
-                    <p class="slds-text-body_regular slds-text-color_weak slds-m-top_small">
-                      {i18n.selectWorkspaceDesc}
-                    </p>
-                  </div>
-                </lightning-card>
               </template>
             </div>
+          </div>
+
+          <!-- Right: Selected Workspace -->
+          <div class="hardis-panel-body dwb-main">
+            <template if:true={selectedWorkspace}>
+              <div class="hardis-page-head flush">
+                <div class="hardis-page-head-text">
+                  <h2 class="hardis-page-title">{selectedWorkspace.label}</h2>
+                  <p class="hardis-page-subtitle">{selectedWorkspace.name}</p>
+                </div>
+                <div class="hardis-page-head-actions">
+                  <template if:true={showLargeActions}>
+                    <lightning-button class="hardis-btn-tinted-blue"
+                      variant="neutral"
+                      label={i18n.exportFilesLabel}
+                      title={i18n.exportFilesTooltip}
+                      icon-name="utility:download"
+                      icon-position="left"
+                      onclick={handleExportFiles}
+                    ></lightning-button>
+                    <lightning-button class="hardis-btn-tinted-blue"
+                      variant="neutral"
+                      label={i18n.importFilesLabel}
+                      title={i18n.importFilesTooltip}
+                      icon-name="utility:upload"
+                      icon-position="left"
+                      onclick={handleImportFiles}
+                    ></lightning-button>
+                  </template>
+                  <template if:false={showLargeActions}>
+                    <lightning-button-menu
+                      alternative-text={i18n.workspaceActionsMenu}
+                      menu-alignment="right"
+                      variant="border-filled"
+                      icon-name="utility:down"
+                    >
+                      <lightning-menu-item
+                        value="export"
+                        label={i18n.exportFilesMenu}
+                        icon-name="utility:download"
+                        onclick={handleExportFiles}
+                      ></lightning-menu-item>
+                      <lightning-menu-item
+                        value="import"
+                        label={i18n.importFilesMenu}
+                        icon-name="utility:upload"
+                        onclick={handleImportFiles}
+                      ></lightning-menu-item>
+                    </lightning-button-menu>
+                  </template>
+                </div>
+              </div>
+
+              <!-- Section: Configuration Summary -->
+              <div class="hardis-group-label">
+                {i18n.configSummaryTitle}
+                <div class="hardis-group-actions">
+                  <lightning-button
+                    variant="neutral"
+                    label={i18n.openFolderInExplorer}
+                    title={i18n.clickToOpenFolder}
+                    icon-name="utility:open_folder"
+                    onclick={handleOpenFolder}
+                  ></lightning-button>
+                  <lightning-button
+                    variant="neutral"
+                    label={i18n.editWorkspaceTooltip}
+                    title={i18n.editWorkspaceTooltip}
+                    icon-name="utility:edit"
+                    data-path={selectedWorkspace.path}
+                    onclick={handleEditWorkspace}
+                  ></lightning-button>
+                  <lightning-button
+                    variant="neutral"
+                    class="hardis-btn-tinted-red"
+                    label={i18n.deleteWorkspaceTooltip}
+                    title={i18n.deleteWorkspaceTooltip}
+                    icon-name="utility:delete"
+                    data-path={selectedWorkspace.path}
+                    onclick={handleDeleteWorkspace}
+                  ></lightning-button>
+                </div>
+              </div>
+              <div class="hardis-prop-grid">
+                <div class="hardis-prop">
+                  <div class="hardis-prop-key">{i18n.fileTypesField}</div>
+                  <div class="hardis-prop-value">{selectedWorkspace.fileTypes}</div>
+                </div>
+                <div class="hardis-prop">
+                  <div class="hardis-prop-key">{i18n.pathLabel}</div>
+                  <div class="hardis-prop-value mono">{selectedWorkspace.path}</div>
+                </div>
+                <template if:true={selectedWorkspaceHasDescription}>
+                  <div class="hardis-prop">
+                    <div class="hardis-prop-key">{i18n.descriptionField}</div>
+                    <div class="hardis-prop-value">{selectedWorkspace.description}</div>
+                  </div>
+                </template>
+                <div class="hardis-prop">
+                  <div class="hardis-prop-key">{i18n.soqlQueryField}</div>
+                  <div class="hardis-prop-value mono">{selectedWorkspace.soqlQuery}</div>
+                </div>
+                <div class="hardis-prop">
+                  <div class="hardis-prop-key">{i18n.minFileSizeField}</div>
+                  <div class="hardis-prop-value">{selectedWorkspace.fileSizeMin}</div>
+                </div>
+                <div class="hardis-prop">
+                  <div class="hardis-prop-key">{i18n.folderFieldLabel}</div>
+                  <div class="hardis-prop-value">{selectedWorkspace.outputFolderNameField}</div>
+                </div>
+                <div class="hardis-prop">
+                  <div class="hardis-prop-key">{i18n.fileNameFormatField}</div>
+                  <div class="hardis-prop-value">{selectedWorkspace.outputFileNameFormat}</div>
+                </div>
+              </div>
+              <div class="dwb-chip-row">
+                <span class="hardis-chip" title={i18n.overwriteParentRecordsField}>
+                  {i18n.overwriteParentRecordsField} {selectedOverwriteParentRecordsLabel}
+                </span>
+                <span class="hardis-chip" title={i18n.overwriteFilesField}>
+                  {i18n.overwriteFilesField} {selectedOverwriteFilesLabel}
+                </span>
+                <template if:true={selectedWorkspace.exportedFilesCount}>
+                  <button
+                    class="hardis-chip hardis-chip-link"
+                    onclick={handleOpenFolder}
+                    title={i18n.clickToOpenFolder}
+                  >{exportedFilesCountLabel}</button>
+                </template>
+              </div>
+            </template>
+
+            <template if:false={selectedWorkspace}>
+              <div class="hardis-empty">
+                <div class="hardis-tile featured amber">
+                  <lightning-icon icon-name="utility:touch_action" size="small"></lightning-icon>
+                </div>
+                <h3 class="hardis-empty-title">{i18n.selectAWorkspace}</h3>
+                <p class="hardis-empty-desc">{i18n.selectWorkspaceDesc}</p>
+              </div>
+            </template>
           </div>
         </div>
       </template>

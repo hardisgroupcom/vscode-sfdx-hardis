@@ -38,6 +38,17 @@
     - Panel titles are the feature name (**Metadata Retriever**, **Installed Packages**...) and every panel says in one line what it is for
     - **Colored buttons are readable in both themes**: the filled blue/red buttons of the workbenches (Export data, Delete data, Add Org, Install...) became tinted buttons that adapt to light and dark mode
     - The Setup panel dependency cards, the Org Monitoring installation banner and the Installed Packages information banner use the same status colors as the rest of the extension
+    - The **Data Import/Export Workbench** and the **Files Import/Export Workbench** were rebuilt on the shared design
+      - Workspaces are picked from a **clean selectable list**, and the gray all-caps section bars were replaced by the shared section headers with **labeled buttons** instead of anonymous icon squares
+      - Workspace settings and object options are summarized as **readable chips**, each data object shows its operation as a **colored tag** with its query on one line, and the exported files / logs tables mark **source, target and log files with colored tags**
+      - Empty screens (no workspace yet, no workspace selected) now explain what to do next with **one clear action**, fixing a broken white banner in the Files Workbench empty screen
+    - **Extension Settings** are now readable: real setting names (e.g. "User input command line if LWC" instead of "User Input Command Line If L W C") and each setting's **description always visible** under its name instead of hidden behind a hover icon
+    - **Pipeline Settings** got a clearer read-only view
+      - Options now show a clear **Enabled / Disabled** badge instead of a grayed-out switch that looked broken
+      - Git branch names are shown as **chips**, long URLs are **shortened** and open with one click, and unset values show "Not defined" instead of "None"
+      - The **documentation link** of a setting sits right next to its name, replacing the identical Documentation button repeated on every row
+      - The Salesforce Org tab of a branch's settings shows a **compact org summary card** instead of two sparse fields
+    - The **package.xml viewer**, **Monitoring Configuration**, **Documentation Workbench**, **Org Monitoring** documentation links and **Metadata Retriever** dialogs were aligned on the same section headers, cards and dialog style, with no change to their features
     - Fixed the **Language** tab of the Extension Settings, which showed the raw key `languageSection` instead of its name
     - Under the hood, panels no longer carry their own colors: **all the hardcoded colors, duplicated dark/light rules and font overrides were removed** from the panel stylesheets, which is what made some texts unreadable when switching theme
     - **Switches** are displayed the same way everywhere: the *Active / Inactive* label below them is gone, as it broke the alignment with the neighboring buttons and fields

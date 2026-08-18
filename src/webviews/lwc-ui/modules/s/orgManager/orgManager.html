@@ -53,8 +53,8 @@
             
             <!-- Validation errors display -->
             <template if:true={hasValidationErrors}>
-                <div class="slds-notify slds-notify_alert slds-alert_error slds-m-top_medium" role="alert">
-                    <div class="slds-notify__content">
+                <div class="hardis-note error slds-m-top_medium" role="alert">
+                    <div>
                         <h2 class="slds-text-heading_small">{i18n.aliasValidationErrors}</h2>
                         <ul class="slds-list_dotted slds-m-top_small">
                             <template for:each={validationErrors} for:item="error">

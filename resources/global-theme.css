@@ -618,6 +618,11 @@ lightning-helptext::part(icon) {
 .slds-scope[data-theme] {
   --hardis-brand-gradient-start: light-dark(#0aa2dd, #37bee8);
   --hardis-brand-gradient-end: light-dark(#7b2ff7, #cb65ff);
+  /* Elevation tokens: the only box-shadows allowed in component CSS.
+     Dark theme needs a stronger alpha to read against near-black surfaces. */
+  --hardis-shadow-sm: 0 1px 3px light-dark(rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.45));
+  --hardis-shadow-md: 0 4px 12px light-dark(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.5));
+  --hardis-shadow-lg: 0 10px 30px light-dark(rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.6));
 }
 
 /* Soft-tint icon tiles: tinted background + saturated icon of the same hue.
@@ -1052,6 +1057,163 @@ lightning-helptext::part(icon) {
 .hardis-card.clickable:focus-visible .hardis-card-arrow {
   opacity: 1;
   transform: translateX(0);
+}
+
+/* Selection state for card lists (workspace rails, pickable catalogs).
+   Accent inset + tinted surface; pair with aria-pressed/aria-selected. */
+.hardis-card.selected {
+  border-color: var(--slds-g-color-palette-cloud-blue-40);
+  background: var(--slds-g-color-palette-cloud-blue-95);
+  box-shadow: inset 3px 0 0 var(--slds-g-color-palette-cloud-blue-40);
+}
+
+/* Right-aligned action slot inside a .hardis-group-label: small LABELED
+   buttons (never icon-only gray squares). The ::after hairline keeps its
+   place between the label text and the actions through flex order. */
+.hardis-group-label::after {
+  order: 1;
+}
+.hardis-group-actions {
+  order: 2;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 400;
+}
+
+/* ---- Prop grid: definition list as a responsive grid ------------------
+   Anatomy:
+   <div class="hardis-prop-grid">
+     <div class="hardis-prop">
+       <div class="hardis-prop-key">Folder field</div>
+       <div class="hardis-prop-value mono">APXTConga4__Key__c</div>
+     </div>
+   </div>
+   Replaces the private .properties-grid / .info-grid kits. */
+.hardis-prop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 0.7rem 1.6rem;
+}
+.hardis-prop-key {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--slds-g-color-neutral-base-50);
+}
+.hardis-prop-value {
+  font-size: 0.85rem;
+  color: var(--slds-g-color-neutral-base-10);
+  margin-top: 1px;
+  overflow-wrap: anywhere;
+}
+.hardis-prop-value.mono {
+  font-family: ui-monospace, "Cascadia Code", Consolas, Menlo, monospace;
+  font-size: 0.76rem;
+}
+
+/* ---- Field row: one setting = name + visible help left, control right --
+   Anatomy:
+   <div class="hardis-field-row">
+     <div class="hardis-field-text">
+       <div class="hardis-field-label">Name <a class="hardis-textlink">Docs</a></div>
+       <div class="hardis-field-help">One-line description, always visible.</div>
+     </div>
+     <div class="hardis-field-control">input / toggle / pill / chips</div>
+   </div>
+   The VS Code settings pattern; replaces inline-styled labels + hidden
+   info bubbles. In read-only views the control is a pill/chip/link. */
+.hardis-field-row {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 0.7rem 0.15rem;
+  border-bottom: 1px solid var(--slds-g-color-neutral-base-95);
+}
+.hardis-field-row:last-child {
+  border-bottom: none;
+}
+.hardis-field-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.hardis-field-label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--slds-g-color-neutral-base-10);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.hardis-field-help {
+  font-size: 0.76rem;
+  color: var(--slds-g-color-neutral-base-50);
+  margin-top: 1px;
+  max-width: 62ch;
+}
+/* Inline flex label: SLDS form label + trailing helptext icon on one line.
+   Replaces the copy-pasted style="display:flex;align-items:center;gap:.25rem". */
+.hardis-label-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.hardis-field-control {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  max-width: min(50%, 340px);
+}
+@media (max-width: 640px) {
+  .hardis-field-row {
+    flex-wrap: wrap;
+  }
+  .hardis-field-control {
+    max-width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+/* ---- Empty state: featured tile + title + one sentence + one action ---
+   Anatomy:
+   <div class="hardis-empty">
+     <div class="hardis-tile featured amber">…icon…</div>
+     <h3 class="hardis-empty-title">No workspaces yet</h3>
+     <p class="hardis-empty-desc">What a workspace is, in one sentence.</p>
+     <div class="hardis-empty-actions">primary button</div>
+   </div> */
+.hardis-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.6rem;
+  padding: 2rem 1.25rem;
+}
+.hardis-empty-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--slds-g-color-neutral-base-10);
+}
+.hardis-empty-desc {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--slds-g-color-neutral-base-50);
+  max-width: 44ch;
+}
+.hardis-empty-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
 }
 
 /* ==================================================================== */

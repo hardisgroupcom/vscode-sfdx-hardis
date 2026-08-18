@@ -1,38 +1,23 @@
 .monitoring-config-container {
   padding: 1rem;
-}
+}
 
+/* Category wrapper: kept for the stacking context (z-index) so an open
+   lightning-combobox dropdown always renders above the following category's
+   table instead of being clipped by it. Header chrome now uses the shared
+   .hardis-group-label / .hardis-group-desc classes from global-theme.css. */
 .category-section {
   margin-bottom: 2rem;
   position: relative;
 }
 
-.category-header {
-  margin-bottom: 0.5rem;
-  padding-bottom: 0.375rem;
-  border-bottom: 2px solid var(--slds-g-color-palette-teal-40);
+.monitoring-add-form .hardis-field-control {
+  max-width: none;
+  flex: 1 1 auto;
 }
 
-.category-title {
-  margin: 0;
-  font-weight: 700;
-}
-
-.category-description {
-  margin: 0.25rem 0 0;
-  background: transparent;
-  color: inherit;
-}
-
-.category-header-content {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.category-header-text {
-  flex: 1;
-  min-width: 0;
+.monitoring-add-form-actions {
+  justify-content: flex-end;
 }
 
 .modal-command-display {
@@ -40,10 +25,6 @@
   border-radius: 0.25rem;
   background-color: var(--slds-g-color-neutral-base-95);
   word-break: break-all;
-}
-
-.custom-form {
-  background-color: var(--slds-g-color-neutral-base-95);
 }
 
 .monitoring-table {
@@ -65,12 +46,6 @@
 
 .monitoring-table col.monitoring-col-actions {
   width: 4rem;
-}
-
-.monitoring-table thead th {
-  font-size: 0.75rem;
-  letter-spacing: 0.0625rem;
-  font-weight: 700;
 }
 
 .monitoring-table th,

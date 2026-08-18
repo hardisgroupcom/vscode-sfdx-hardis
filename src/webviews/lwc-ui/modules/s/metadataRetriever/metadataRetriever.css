@@ -41,50 +41,20 @@
   }
 }
 
-/* Easter egg modal (obfuscated selectors) */
-[data-feature] {
-  position: fixed;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10000;
+/* Easter egg modal: standard slds-modal chrome (see s/deploymentAction).
+   Only the content layout below is specific to this panel. */
+.retrieve-feature-content {
+  max-height: 810px;
+  overflow-y: auto;
 }
-[data-feature-backdrop] {
-  position: absolute;
-  inset: 0;
-  background: var(--slds-g-color-neutral-base-95);
-}
-[data-feature-content] {
-  position: relative;
-  padding: 20px;
-  border-radius: 8px;
-  min-width: 280px;
-  max-width: 90vw;
-  max-height: 810px; 
-  overflow-y: auto;  
-  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
-  z-index: 10001;
-  text-align: center;
-  background: var(--slds-g-color-neutral-base-100)
-}
-[data-feature-content] img {
-  width: auto;  
+.retrieve-feature-img {
+  width: auto;
   height: auto;
-  max-height: 400px;  
+  max-height: 400px;
   max-width: 100%;
-  object-fit: contain; 
+  object-fit: contain;
   display: block;
   margin: 0 auto 12px;
-}
-[data-feature-close] {
-  position: absolute;
-  right: 8px;
-  top: 8px;
-  background: transparent;
-  border: none;
-  font-size: 20px;
-  cursor: pointer;
 }
 .blue-back {
 	min-height: 100vh;
@@ -96,11 +66,6 @@
 }
 
 /* Compact layout */
-lightning-card {
-  --slds-c-card-spacing-block-start: 0.5rem;
-  --slds-c-card-spacing-block-end: 0.5rem;
-}
-
 lightning-input,
 lightning-combobox {
   margin-bottom: 0;

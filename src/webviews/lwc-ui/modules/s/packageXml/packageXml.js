@@ -573,6 +573,28 @@ export default class PackageXml extends SharedMixin(LightningElement) {
     this.editMode = !!event.target?.checked;
   }
 
+  handleTypeHeaderKeydown(event) {
+    if (event.target !== event.currentTarget) {
+      return;
+    }
+    if (event.key !== "Enter" && event.key !== " ") {
+      return;
+    }
+    event.preventDefault();
+    this.toggleTypeExpansion(event);
+  }
+
+  handleMemberKeydown(event) {
+    if (event.target !== event.currentTarget) {
+      return;
+    }
+    if (event.key !== "Enter" && event.key !== " ") {
+      return;
+    }
+    event.preventDefault();
+    this.openMember(event);
+  }
+
   toggleTypeExpansion(event) {
     const typeName = event.currentTarget.dataset.typeName;
     if (!typeName || !this.packageData?.types) return;
