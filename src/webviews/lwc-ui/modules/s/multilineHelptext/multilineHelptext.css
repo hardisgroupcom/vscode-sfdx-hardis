@@ -24,9 +24,9 @@
    global-theme.css for anything SLDS colors itself. */
 .multiline-helptext-popover {
     position: absolute;
-    background: var(--slds-c-tooltip-color-background, #032d60);
-    color: var(--slds-c-tooltip-text-color, #fff);
-    border: 1px solid light-dark(transparent, rgba(255, 255, 255, 0.06));
+    background: var(--slds-c-tooltip-color-background);
+    color: var(--slds-c-tooltip-text-color);
+    border: 1px solid var(--slds-g-color-neutral-base-90);
     border-radius: 8px;
     box-shadow: light-dark(0 2px 8px rgba(0, 0, 0, 0.13), 0 6px 18px rgba(0, 0, 0, 0.6));
     padding: 0.5rem;
@@ -42,11 +42,11 @@
 }
 
 .multiline-helptext-popover a {
-    color: light-dark(#87ceeb, #7fc7ff);
+    color: var(--slds-g-color-palette-cloud-blue-40);
 }
 
 .multiline-helptext-popover a:hover {
-    color: light-dark(#b0e0e6, #bde8ff);
+    color: var(--slds-g-color-palette-cloud-blue-80);
 }
 
 /* Horizontal positioning */

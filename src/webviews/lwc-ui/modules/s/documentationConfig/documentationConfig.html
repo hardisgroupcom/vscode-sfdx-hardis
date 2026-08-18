@@ -2,50 +2,47 @@
     <div class="slds-scope slds-theme_default blue-back">
         <div class="config-container">
             <!-- Header -->
-            <div class="header-content">
-                <div class="header-icon-container purple">
-                    <lightning-icon icon-name="utility:settings" size="medium" variant="inverse"></lightning-icon>
+            <div class="hardis-page-head">
+                <div class="hardis-tile featured violet">
+                    <lightning-icon icon-name="utility:settings" size="medium"></lightning-icon>
                 </div>
-                <div class="header-text">
-                    <h1 class="header-title">{i18n.documentationConfigTitle}</h1>
-                    <p class="header-subtitle">{i18n.documentationConfigSubtitle}</p>
+                <div class="hardis-page-head-text">
+                    <h1 class="hardis-page-title">{i18n.documentationConfigTitle}</h1>
+                    <p class="hardis-page-subtitle">{i18n.documentationConfigSubtitle}</p>
                 </div>
             </div>
 
             <!-- Prompt Templates Section -->
             <div class="section">
-                <h2 class="section-title">
-                    <lightning-icon icon-name="utility:note" size="x-small" class="section-icon"></lightning-icon>
-                    {i18n.promptTemplatesSection}
-                </h2>
-                <p class="section-description">{i18n.promptTemplatesSectionDesc}</p>
+                <div class="hardis-group-label">{i18n.promptTemplatesSection}</div>
+                <p class="hardis-group-desc">{i18n.promptTemplatesSectionDesc}</p>
 
-                <div class="commands-grid">
-                    <div class="command-card">
-                        <div class="command-icon-container prompts">
-                            <lightning-icon icon-name="utility:edit" size="small" variant="inverse"></lightning-icon>
+                <div class="hardis-card-grid single-column">
+                    <div class="hardis-card">
+                        <div class="hardis-card-head">
+                            <div class="hardis-tile small prompts">
+                                <lightning-icon icon-name="utility:edit" size="x-small"></lightning-icon>
+                            </div>
+                            <h3 class="hardis-card-title">{i18n.overridePromptTemplates}</h3>
                         </div>
-                        <div class="command-content">
-                            <h3 class="command-title">{i18n.overridePromptTemplates}</h3>
-                            <p class="command-description">{i18n.overridePromptTemplatesDesc}</p>
-                            <template if:true={hasLocalPromptTemplates}>
-                                <div class="command-options">
-                                    <lightning-input
-                                        type="checkbox"
-                                        label={i18n.overwriteLocalTemplates}
-                                        checked={overwriteLocalTemplates}
-                                        onchange={handleOverwriteLocalTemplatesChange}
-                                    ></lightning-input>
-                                    <lightning-button
-                                        variant="neutral"
-                                        label={i18n.showLabel}
-                                        onclick={handleShowPromptTemplates}
-                                    ></lightning-button>
-                                </div>
-                            </template>
-                        </div>
-                        <div class="command-actions">
-                            <lightning-button variant="brand" label={i18n.overrideLabel} onclick={handleOverridePrompts}></lightning-button>
+                        <p class="hardis-card-desc">{i18n.overridePromptTemplatesDesc}</p>
+                        <template if:true={hasLocalPromptTemplates}>
+                            <div class="command-options">
+                                <lightning-input
+                                    type="checkbox"
+                                    label={i18n.overwriteLocalTemplates}
+                                    checked={overwriteLocalTemplates}
+                                    onchange={handleOverwriteLocalTemplatesChange}
+                                ></lightning-input>
+                                <lightning-button
+                                    variant="neutral"
+                                    label={i18n.showLabel}
+                                    onclick={handleShowPromptTemplates}
+                                ></lightning-button>
+                            </div>
+                        </template>
+                        <div class="hardis-card-actions">
+                            <lightning-button class="hardis-btn-tinted-blue" variant="neutral" label={i18n.overrideLabel} onclick={handleOverridePrompts}></lightning-button>
                         </div>
                     </div>
                 </div>
@@ -53,15 +50,12 @@
 
             <!-- AI & Documentation Configuration Section -->
             <div class="section">
-                <h2 class="section-title">
-                    <lightning-icon icon-name="utility:magicwand" size="x-small" class="section-icon"></lightning-icon>
-                    {i18n.aiDocConfigSection}
-                </h2>
-                <p class="section-description" lwc:inner-html={aiDocConfigSectionDescHtml}></p>
+                <div class="hardis-group-label">{i18n.aiDocConfigSection}</div>
+                <p class="hardis-group-desc" lwc:inner-html={aiDocConfigSectionDescHtml}></p>
 
                 <template if:true={configLoading}>
                     <div class="config-loading">
-                        <s-spinner alternative-text={i18n.loadingConfiguration} size="small" variant="brand"></s-spinner>
+                        <s-spinner alternative-text={i18n.loadingConfiguration} size="small"></s-spinner>
                         <p>{i18n.loadingConfiguration}</p>
                     </div>
                 </template>
@@ -131,6 +125,7 @@
                                                             </template>
                                                         </label>
                                                         <lightning-combobox
+                                                            label={field.title}
                                                             name={field.key}
                                                             value={field.value}
                                                             options={field.options}
@@ -146,12 +141,15 @@
                                                             </template>
                                                         </label>
                                                         <lightning-input
+                                                            label={field.title}
                                                             type="toggle"
                                                             name={field.key}
                                                             checked={field.value}
                                                             onchange={handleConfigFieldChange}
                                                             data-key={field.key}
                                                             variant="label-hidden"
+                                                            message-toggle-active=""
+                                                            message-toggle-inactive=""
                                                         ></lightning-input>
                                                     </template>
                                                     <template if:true={field.isEnum}>
@@ -162,6 +160,7 @@
                                                             </template>
                                                         </label>
                                                         <lightning-combobox
+                                                            label={field.title}
                                                             name={field.key}
                                                             value={field.value}
                                                             options={field.options}
@@ -178,6 +177,7 @@
                                                             </template>
                                                         </label>
                                                         <lightning-input
+                                                            label={field.title}
                                                             type="text"
                                                             name={field.key}
                                                             value={field.value}
@@ -195,6 +195,7 @@
                                                             </template>
                                                         </label>
                                                         <lightning-input
+                                                            label={field.title}
                                                             type="number"
                                                             name={field.key}
                                                             value={field.value}

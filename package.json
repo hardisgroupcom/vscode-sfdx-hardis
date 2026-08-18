@@ -144,7 +144,7 @@
         },
         "vsCodeSfdxHardis.theme.colorTheme": {
           "type": "string",
-          "default": "light",
+          "default": "auto",
           "enum": [
             "auto",
             "light",
@@ -667,6 +667,7 @@
     "lint:fix": "eslint src --fix",
     "test": "node ./out/test/runTest.js",
     "test:ui": "node ./out/test/runUiTest.js",
+    "screenshots": "node ./scripts/take-doc-screenshots.js",
     "vsix": "vsce package --allow-package-secrets github"
   },
   "devDependencies": {

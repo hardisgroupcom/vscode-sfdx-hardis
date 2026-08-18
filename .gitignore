@@ -11,3 +11,6 @@ megalinter-reports/
 .sfdx/
 hardis-report/
 config/user/
+
+# Output of the documentation screenshot harness (yarn screenshots)
+doc-screenshots/

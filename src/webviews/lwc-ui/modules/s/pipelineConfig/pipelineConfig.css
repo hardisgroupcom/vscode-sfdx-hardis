@@ -4,33 +4,17 @@
 	min-height: 100vh;
 }
 
-.slds-badge {
-	font-size: 11px;
-	padding: 0 6px;
-	border-radius: 6px;
-}
-.slds-text-title_bold {
-	font-weight: 600;
-}
-.slds-align_absolute-center {
-	align-items: center;
-}
-
-/* Lighter blue for readonly (disabled) and checked toggles */
-.slds-checkbox_toggle input[type='checkbox'][disabled][checked] + .slds-checkbox_faux {
-	background: #B3D6F6 !important;
-	border-color: #B3D6F6 !important;
+/* Cap each tab's settings list to a readable measure (same pattern as
+   extensionConfig's .ecfg-body) so right-aligned values stay within
+   eye-tracking distance of their labels on wide windows. */
+.pipeline-config-tab-body {
+	max-width: 900px;
+	margin: 0 auto;
 }
 
 /* Make lightning-datatable use full width of container (matching pipeline pattern) */
 lightning-datatable {
 	width: 100%;
-}
-
-/* Full width for array object columns */
-.slds-grid .slds-col:only-child {
-	width: 100%;
-	max-width: 100%;
 }
 
 /* Center the Add New button */
@@ -40,30 +24,16 @@ lightning-datatable {
 	margin-top: 0.5rem;
 }
 
-/* Light theme (explicit) */
-.slds-scope[data-theme] .slds-badge {
-	background: rgba(0, 0, 0, 0.04);
-	color: #181818;
+/* Unset/empty value placeholder ("Not set") */
+.hardis-not-set {
+	font-style: italic;
 }
 
-.slds-scope[data-theme] .slds-text-title_bold {
-	color: #181818;
-}
-
-.slds-scope[data-theme] lightning-datatable {
-	color: #181818;
-}
-
-/* Dark theme overrides (component-scoped) */
-.blue-back[data-theme="dark"] .slds-badge {
-	background: rgba(255,255,255,0.04);
-	color: #cfe6ff;
-}
-
-.blue-back[data-theme="dark"] .slds-text-title_bold {
-	color: #e6eef9;
-}
-
-.blue-back[data-theme="dark"] lightning-datatable {
-	color: #dbefff;
+/* Truncated clickable URL value, full URL available in the title attribute */
+.hardis-url-link {
+	display: inline-block;
+	max-width: 260px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	vertical-align: bottom;
 }

@@ -2,52 +2,56 @@
     <div class="slds-scope blue-back">
         <div class="monitoring-config-container">
             <!-- Header -->
-            <div class="header-section">
-                <div class="header-content">
-                    <div class="header-icon-container teal">
-                        <lightning-icon icon-name="utility:settings" size="medium" variant="inverse"></lightning-icon>
-                    </div>
-                    <div class="header-text">
-                        <h1 class="header-title">{i18n.monitoringConfigWorkbench}</h1>
-                        <p class="header-subtitle">{i18n.monitoringConfigDescription}</p>
-                    </div>
-                    <div class="header-actions">
-                        <lightning-button-group>
-                            <lightning-button
-                                label={i18n.addCustomCommand}
-                                variant="brand"
-                                icon-name="utility:add"
-                                onclick={handleOpenCustomForm}>
-                            </lightning-button>
-                            <lightning-button-menu
-                                label={i18n.copyFromBranch}
-                                icon-name="utility:copy"
-                                variant="border"
-                                alternative-text={i18n.copyFromBranch}
-                                disabled={noBranches}
-                                onselect={handleCopyBranchSelect}>
-                                <template for:each={branchOptions} for:item="branchOpt">
-                                    <lightning-menu-item key={branchOpt.value} value={branchOpt.value} label={branchOpt.label}></lightning-menu-item>
-                                </template>
-                            </lightning-button-menu>
-                            <lightning-button
-                                label={i18n.documentation}
-                                variant="neutral"
-                                icon-name="utility:help"
-                                onclick={handleOpenDocs}>
-                            </lightning-button>
-                        </lightning-button-group>
-                    </div>
+            <div class="hardis-page-head">
+                <div class="hardis-tile featured teal">
+                    <lightning-icon icon-name="utility:settings" size="medium"></lightning-icon>
+                </div>
+                <div class="hardis-page-head-text">
+                    <h1 class="hardis-page-title">{i18n.monitoringConfigWorkbench}</h1>
+                    <p class="hardis-page-subtitle">{i18n.monitoringConfigDescription}</p>
+                </div>
+                <div class="hardis-page-head-actions">
+                    <lightning-button-group>
+                        <lightning-button class="hardis-btn-tinted-blue"
+                            label={i18n.addCustomCommand}
+                            variant="neutral"
+                            icon-name="utility:add"
+                            onclick={handleOpenCustomForm}>
+                        </lightning-button>
+                        <lightning-button-menu
+                            label={i18n.copyFromBranch}
+                            icon-name="utility:copy"
+                            variant="border"
+                            alternative-text={i18n.copyFromBranch}
+                            disabled={noBranches}
+                            onselect={handleCopyBranchSelect}>
+                            <template for:each={branchOptions} for:item="branchOpt">
+                                <lightning-menu-item key={branchOpt.value} value={branchOpt.value} label={branchOpt.label}></lightning-menu-item>
+                            </template>
+                        </lightning-button-menu>
+                        <lightning-button
+                            label={i18n.documentation}
+                            variant="neutral"
+                            icon-name="utility:help"
+                            onclick={handleOpenDocs}>
+                        </lightning-button>
+                    </lightning-button-group>
                 </div>
             </div>
 
             <!-- Add Custom Command form -->
             <template if:true={customFormOpen}>
-                <div class="custom-form slds-box slds-m-bottom_medium">
-                    <h3 class="slds-text-heading_small slds-m-bottom_small">{i18n.addCustomCommand}</h3>
-                    <div class="slds-grid slds-gutters slds-wrap">
-                        <div class="slds-col slds-size_1-of-4">
+                <div class="hardis-card monitoring-add-form slds-m-bottom_medium">
+                    <div class="hardis-card-head">
+                        <h3 class="hardis-card-title">{i18n.addCustomCommand}</h3>
+                    </div>
+                    <div class="hardis-field-row">
+                        <div class="hardis-field-text">
+                            <div class="hardis-field-label">{i18n.customCommandKey}</div>
+                        </div>
+                        <div class="hardis-field-control">
                             <lightning-input
+                                variant="label-hidden"
                                 label={i18n.customCommandKey}
                                 data-field="key"
                                 value={customRowDraft.key}
@@ -55,16 +59,28 @@
                                 required>
                             </lightning-input>
                         </div>
-                        <div class="slds-col slds-size_1-of-4">
+                    </div>
+                    <div class="hardis-field-row">
+                        <div class="hardis-field-text">
+                            <div class="hardis-field-label">{i18n.customCommandTitle}</div>
+                        </div>
+                        <div class="hardis-field-control">
                             <lightning-input
+                                variant="label-hidden"
                                 label={i18n.customCommandTitle}
                                 data-field="title"
                                 value={customRowDraft.title}
                                 onchange={handleCustomFieldChange}>
                             </lightning-input>
                         </div>
-                        <div class="slds-col slds-size_2-of-4">
+                    </div>
+                    <div class="hardis-field-row">
+                        <div class="hardis-field-text">
+                            <div class="hardis-field-label">{i18n.customCommandCommand}</div>
+                        </div>
+                        <div class="hardis-field-control">
                             <lightning-input
+                                variant="label-hidden"
                                 label={i18n.customCommandCommand}
                                 placeholder="sf hardis:org:..."
                                 data-field="command"
@@ -73,8 +89,14 @@
                                 required>
                             </lightning-input>
                         </div>
-                        <div class="slds-col slds-size_1-of-4 slds-m-top_small">
+                    </div>
+                    <div class="hardis-field-row">
+                        <div class="hardis-field-text">
+                            <div class="hardis-field-label">{i18n.frequencyLabel}</div>
+                        </div>
+                        <div class="hardis-field-control">
                             <lightning-combobox
+                                variant="label-hidden"
                                 label={i18n.frequencyLabel}
                                 data-field="frequency"
                                 value={customRowDraft.frequency}
@@ -83,15 +105,14 @@
                             </lightning-combobox>
                         </div>
                     </div>
-                    <div class="slds-m-top_medium slds-text-align_right">
+                    <div class="hardis-card-actions monitoring-add-form-actions">
                         <lightning-button
                             variant="neutral"
                             label={i18n.cancelLabel}
-                            onclick={handleCustomFormCancel}
-                            class="slds-m-right_small">
+                            onclick={handleCustomFormCancel}>
                         </lightning-button>
-                        <lightning-button
-                            variant="brand"
+                        <lightning-button class="hardis-btn-tinted-blue"
+                            variant="neutral"
                             label={i18n.addLabel}
                             disabled={customFormSaveDisabled}
                             onclick={handleCustomFormSave}>
@@ -103,19 +124,15 @@
             <!-- Category tables -->
             <template for:each={rowsByCategory} for:item="category">
                 <div key={category.key} class="category-section" style={category.sectionStyle}>
-                    <div class="category-header">
-                        <div class="category-header-content">
-                            <div class={category.iconContainerClass}>
-                                <lightning-icon icon-name={category.icon} size="small" variant="inverse"></lightning-icon>
-                            </div>
-                            <div class="category-header-text">
-                                <h2 class="category-title slds-text-heading_small">{category.title}</h2>
-                                <template if:true={category.description}>
-                                    <p class="category-description slds-text-body_small">{category.description}</p>
-                                </template>
-                            </div>
+                    <div class="hardis-group-label">
+                        <div class={category.iconContainerClass}>
+                            <lightning-icon icon-name={category.icon} size="small"></lightning-icon>
                         </div>
+                        <span>{category.title}</span>
                     </div>
+                    <template if:true={category.description}>
+                        <p class="hardis-group-desc">{category.description}</p>
+                    </template>
                     <table class="slds-table slds-table_bordered slds-table_cell-buffer slds-table_fixed-layout monitoring-table">
                         <colgroup>
                             <col class="monitoring-col-command">
@@ -127,22 +144,22 @@
                         </colgroup>
                         <thead>
                             <tr class="slds-line-height_reset">
-                                <th class="slds-text-title_caps monitoring-col-command" scope="col">
+                                <th class="monitoring-col-command" scope="col">
                                     <div class="slds-truncate" title={i18n.commandColumn}>{i18n.commandColumn}</div>
                                 </th>
-                                <th class="slds-text-title_caps monitoring-col-frequency" scope="col">
+                                <th class="monitoring-col-frequency" scope="col">
                                     <div class="slds-truncate" title={i18n.frequencyLabel}>{i18n.frequencyLabel}</div>
                                 </th>
-                                <th class="slds-text-title_caps monitoring-col-channel" scope="col">
+                                <th class="monitoring-col-channel" scope="col">
                                     <div class="slds-truncate" title={i18n.channelMessaging}>{i18n.channelMessaging}</div>
                                 </th>
-                                <th class="slds-text-title_caps monitoring-col-channel" scope="col">
+                                <th class="monitoring-col-channel" scope="col">
                                     <div class="slds-truncate" title={i18n.channelEmail}>{i18n.channelEmail}</div>
                                 </th>
-                                <th class="slds-text-title_caps monitoring-col-channel" scope="col">
+                                <th class="monitoring-col-channel" scope="col">
                                     <div class="slds-truncate" title={i18n.channelApi}>{i18n.channelApi}</div>
                                 </th>
-                                <th class="slds-text-title_caps monitoring-col-actions" scope="col">
+                                <th class="monitoring-col-actions" scope="col">
                                     <div class="slds-assistive-text">{i18n.actionsLabel}</div>
                                 </th>
                             </tr>
@@ -158,7 +175,7 @@
                                                 <th scope="row">
                                                     <div class="monitoring-row-title">
                                                         <div class={row.iconContainerClass}>
-                                                            <lightning-icon icon-name={row.iconName} size="x-small" variant="inverse"></lightning-icon>
+                                                            <lightning-icon icon-name={row.iconName} size="x-small"></lightning-icon>
                                                         </div>
                                                         <span class="monitoring-row-title-text slds-truncate" title={row.title}>
                                                             <template for:each={row.titleSegments} for:item="mseg">
@@ -256,7 +273,7 @@
                                                 <th scope="row">
                                                     <div class="monitoring-row-title">
                                                         <div class={row.iconContainerClass}>
-                                                            <lightning-icon icon-name={row.iconName} size="x-small" variant="inverse"></lightning-icon>
+                                                            <lightning-icon icon-name={row.iconName} size="x-small"></lightning-icon>
                                                         </div>
                                                         <span class="monitoring-row-title-text slds-truncate" title={row.title}>
                                                             <template for:each={row.titleSegments} for:item="seg">
@@ -323,7 +340,7 @@
                                                     <div class="monitoring-row-title monitoring-row-title--indent">
                                                         <span class="monitoring-row-child-bullet slds-text-color_weak" aria-hidden="true">↳</span>
                                                         <div class={child.iconContainerClass}>
-                                                            <lightning-icon icon-name={child.iconName} size="x-small" variant="inverse"></lightning-icon>
+                                                            <lightning-icon icon-name={child.iconName} size="x-small"></lightning-icon>
                                                         </div>
                                                         <span class="monitoring-row-title-text slds-truncate" title={child.title}>
                                                             <template for:each={child.titleSegments} for:item="cseg">
@@ -404,7 +421,7 @@
                                             <th scope="row">
                                                 <div class="monitoring-row-title">
                                                     <div class={row.iconContainerClass}>
-                                                        <lightning-icon icon-name={row.iconName} size="x-small" variant="inverse"></lightning-icon>
+                                                        <lightning-icon icon-name={row.iconName} size="x-small"></lightning-icon>
                                                     </div>
                                                     <span class="monitoring-row-title-text slds-truncate" title={row.title}>
                                                         <template for:each={row.titleSegments} for:item="sseg">
@@ -491,7 +508,7 @@
                         <div class="modal-accent-strip"></div>
                         <header class="slds-modal__header">
                             <button class="slds-button slds-button_icon slds-modal__close" title="Close" onclick={handleModalCancel}>
-                                <lightning-icon icon-name="utility:close" size="small" variant="inverse"></lightning-icon>
+                                <lightning-icon icon-name="utility:close" size="small"></lightning-icon>
                                 <span class="slds-assistive-text">{i18n.closeLabel}</span>
                             </button>
                             <h2 class="slds-modal__title slds-hyphenate">{i18n.detailsLabel}: {modalEntry.title}</h2>
@@ -591,8 +608,8 @@
                                 onclick={handleModalCancel}
                                 class="slds-m-right_small">
                             </lightning-button>
-                            <lightning-button
-                                variant="brand"
+                            <lightning-button class="hardis-btn-tinted-blue"
+                                variant="neutral"
                                 label={i18n.applyLabel}
                                 onclick={handleModalSave}>
                             </lightning-button>

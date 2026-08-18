@@ -1,0 +1,5 @@
+instanceUrl: https://mycompany--uat.sandbox.my.salesforce.com
+targetUsername: deploy.user@mycompany.com.uat
+alias: UAT
+mergeTargets:
+  - preprod

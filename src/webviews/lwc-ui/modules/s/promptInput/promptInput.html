@@ -1,310 +1,215 @@
 <template>
     <template if:true={isVisible}>
-        <div class="slds-scope slds-p-around_medium" onkeydown={handleKeyDown}>
-            <div class={cardClass}>
-                <div class={cardBodyClass}>
-                    <!-- Prompt Message -->
-                    <div class="slds-m-bottom_medium slds-p-bottom_small slds-border_bottom">
-                        <div class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center">
-                            <div class="slds-col">
-                                <div class="slds-media slds-media_center">
-                                    <div class="slds-media__figure">
-                                        <lightning-icon 
-                                            icon-name="utility:questions_and_answers"
-                                            variant="warning"
-                                            size="x-small">
-                                        </lightning-icon>
-                                    </div>
-                                    <div class="slds-media__body">
-                                        <span class="slds-text-heading_small slds-text-color_default prompt-message-content"></span>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- Help text icon for description -->
-                            <template if:true={promptDescription}>
-                                <div class="slds-col slds-no-flex">
-                                    <lightning-helptext content={promptDescription}></lightning-helptext>
-                                </div>
-                            </template>
-                        </div>
+        <div class="slds-scope hardis-prompt-card" onkeydown={handleKeyDown}>
+            <!-- "The CLI is waiting for you" eyebrow -->
+            <div class="hardis-prompt-eyebrow">
+                <span class="hardis-pill-dot"></span>{i18n.waitingForYourAnswer}
+            </div>
+
+            <!-- Prompt message -->
+            <div class="hardis-prompt-head">
+                <div class="hardis-prompt-q prompt-message-content"></div>
+                <template if:true={promptDescription}>
+                    <lightning-helptext content={promptDescription}></lightning-helptext>
+                </template>
+            </div>
+
+            <!-- Error Message -->
+            <template if:true={error}>
+                <div class="slds-m-bottom_small">
+                    <div class="hardis-note error" role="alert">
+                        <span class="slds-assistive-text">{i18n.errorLabel}</span>
+                        <span>{error}</span>
                     </div>
+                </div>
+            </template>
 
-                    <!-- Error Message -->
-                    <template if:true={error}>
-                        <div class="slds-m-bottom_medium">
-                            <div class="slds-notify slds-notify_alert slds-theme_error" role="alert">
-                                <span class="slds-assistive-text">{i18n.errorLabel}</span>
-                                <span>{error}</span>
-                            </div>
-                        </div>
-                    </template>
+            <!-- Text Input -->
+            <template if:true={isTextInput}>
+                <div class="slds-m-bottom_small">
+                    <lightning-input
+                        type="text"
+                        label={i18n.yourInput}
+                        placeholder={promptPlaceholder}
+                        value={inputValue}
+                        onchange={handleInputChange}
+                        oninput={handleInputChange}
+                        onkeydown={handleKeyDown}>
+                    </lightning-input>
+                </div>
+            </template>
 
-                    <!-- Text Input -->
-                    <template if:true={isTextInput}>
-                        <div class="slds-m-bottom_medium">
-                            <lightning-input
-                                type="text"
-                                label={i18n.yourInput}
-                                placeholder={promptPlaceholder}
-                                value={inputValue}
-                                onchange={handleInputChange}
-                                oninput={handleInputChange}
-                                onkeydown={handleKeyDown}>
-                            </lightning-input>
-                        </div>
-                    </template>
+            <!-- Number Input -->
+            <template if:true={isNumberInput}>
+                <div class="slds-m-bottom_small">
+                    <lightning-input
+                        type="number"
+                        label={i18n.yourInput}
+                        placeholder={promptPlaceholder}
+                        value={inputValue}
+                        step={numberStep}
+                        onchange={handleInputChange}
+                        oninput={handleInputChange}
+                        onkeydown={handleKeyDown}>
+                    </lightning-input>
+                </div>
+            </template>
 
-                    <!-- Number Input -->
-                    <template if:true={isNumberInput}>
-                        <div class="slds-m-bottom_medium">
-                            <lightning-input
-                                type="number"
-                                label={i18n.yourInput}
-                                placeholder={promptPlaceholder}
-                                value={inputValue}
-                                step={numberStep}
-                                onchange={handleInputChange}
-                                oninput={handleInputChange}
-                                onkeydown={handleKeyDown}>
-                            </lightning-input>
-                        </div>
-                    </template>
-
-                    <!-- Select Input with Buttons (5 or fewer choices) -->
-                    <template if:true={isSelectWithButtons}>
-                        <div class="slds-m-bottom_medium">
-                            <div class="slds-grid slds-wrap slds-gutters_small select-options-btn-row">
-                                <template for:each={selectOptions} for:item="option">
-                                    <div key={option.value} class="slds-col slds-size_1-of-1 slds-m-bottom_x-small">
-                                        <button
-                                            type="button"
-                                            data-value={option.value}
-                                            onclick={handleButtonSelect}
-                                            onkeydown={handleKeyDown}
-                                            class="slds-button slds-button_outline-brand select-option-button">
-                                            <div class="select-option-content">
-                                                <div class="select-option-label">{option.label}</div>
-                                                <template if:true={option.description}>
-                                                    <div class="select-option-desc">{option.description}</div>
-                                                </template>
-                                            </div>
-                                        </button>
-                                    </div>
+            <!-- Select with radio-cards (5 or fewer choices, click = answer) -->
+            <template if:true={isSelectWithButtons}>
+                <div class="slds-m-bottom_x-small">
+                    <template for:each={selectOptionsDecorated} for:item="option">
+                        <button
+                            key={option.value}
+                            type="button"
+                            class="hardis-option-card select-option-button"
+                            data-value={option.value}
+                            onclick={handleButtonSelect}
+                            onkeydown={handleKeyDown}>
+                            <template if:true={option.emoji}>
+                                <span class="hardis-option-emoji" aria-hidden="true">{option.emoji}</span>
+                            </template>
+                            <span class="hardis-option-main">
+                                <span class="hardis-option-label">{option.labelClean}</span>
+                                <template if:true={option.description}>
+                                    <span class="hardis-option-desc">{option.description}</span>
                                 </template>
-                            </div>
-                            <!-- Display description for selected option -->
-                            <template if:true={selectedOptionDescription}>
-                                <div class="slds-box slds-box_x-small slds-theme_shade slds-m-top_small">
-                                    <div class="slds-text-body_small">{selectedOptionDescription}</div>
-                                </div>
-                            </template>
-                        </div>
-                    </template>
-
-                    <!-- Select Input with Combobox (more than 5 choices) -->
-                    <template if:true={isSelectWithCombobox}>
-                        <div class="slds-m-bottom_medium">
-                            <!-- When many options are available we show a small toggle button to show/hide a filter input on the right -->
-                            <template if:true={showComboboxFilter}>
-                                <div class="slds-grid slds-grid_vertical-align-center">
-                                    <div class="slds-col">
-                                        <lightning-combobox
-                                            label={comboboxLabel}
-                                            placeholder={comboboxPlaceholder}
-                                            options={filteredComboboxOptions}
-                                            value={selectedValue}
-                                            onchange={handleSelectChange}
-                                            onselect={handleSelectChange}
-                                            onclick={handleComboboxClick}
-                                            onkeydown={handleKeyDown}
-                                            class="prompt-combobox">
-                                        </lightning-combobox>
-                                    </div>
-                                    <div class="slds-col slds-no-flex slds-p-left_small slds-grid slds-grid_vertical-align-center slds-grid_align-end">
-                                        <!-- When filter is hidden show a small icon button to reveal it -->
-                                        <template if:false={comboboxFilterVisible}>
-                                                <lightning-button-icon
-                                                    class="combobox-filter-toggle"
-                                                    icon-name="utility:filterList"
-                                                alternative-text={i18n.showFilter}
-                                                    onclick={handleToggleComboboxFilter}
-                                                    variant="bare"
-                                                    size="medium">
-                                                </lightning-button-icon>
-                                        </template>
-                                        <!-- When filter is visible show the search input -->
-                                        <template if:true={comboboxFilterVisible}>
-                                            <lightning-input
-                                                type="search"
-                                                placeholder={i18n.filterOptions}
-                                                value={comboboxFilter}
-                                                onchange={handleComboboxFilterChange}
-                                                oninput={handleComboboxFilterChange}
-                                                class="prompt-combobox-filter"
-                                                style="min-width: 180px; max-width: 250px;"
-                                                aria-label="Filter options">
-                                            </lightning-input>
-                                                <lightning-button-icon
-                                                    class="combobox-filter-toggle slds-m-left_x-small"
-                                                    icon-name="utility:close"
-                                                alternative-text={i18n.hideFilter}
-                                                    onclick={handleToggleComboboxFilter}
-                                                    variant="bare"
-                                                    size="medium">
-                                                </lightning-button-icon>
-                                        </template>
-                                    </div>
-                                </div>
-                            </template>
-                            <template if:false={showComboboxFilter}>
-                                <lightning-combobox
-                                    label={comboboxLabel}
-                                    placeholder={comboboxPlaceholder}
-                                    options={filteredComboboxOptions}
-                                    value={selectedValue}
-                                    onchange={handleSelectChange}
-                                    onselect={handleSelectChange}
-                                    onclick={handleComboboxClick}
-                                    onkeydown={handleKeyDown}
-                                    class="prompt-combobox">
-                                </lightning-combobox>
-                            </template>
-
-                            <!-- Display description for selected option -->
-                            <template if:true={selectedOptionDescription}>
-                                <div class="slds-m-top_small">
-                                    <div class="slds-text-body_small slds-text-color_weak">{selectedOptionDescription}</div>
-                                </div>
-                            </template>
-                        </div>
-                    </template>
-
-                    <!-- Multiselect Input -->
-                    <template if:true={isMultiselectInput}>
-                        <div class="slds-m-bottom_medium">
-                            <fieldset class="slds-form-element">
-                                <!-- Filter and show selected controls -->
-                                <div class="slds-m-bottom_small slds-grid slds-gutters_small slds-grid_vertical-align-center">
-                                    <div class="slds-col slds-size_2-of-6">
-                                        <lightning-input
-                                            type="search"
-                                            placeholder={i18n.typeToFilter}
-                                            value={multiselectFilter}
-                                            onchange={handleMultiselectFilterChange}
-                                            class="slds-m-bottom_none"
-                                            style="min-width: 180px; max-width: 250px;"
-                                        ></lightning-input>
-                                    </div>
-                                    <div class="slds-col slds-size_2-of-6 slds-p-left_medium slds-p-right_medium">
-                                        <div class="slds-grid slds-grid_vertical-align-center slds-grid_align-center">
-                                            <label class="slds-form-element__label slds-m-right_small" style="white-space:nowrap;" for="showOnlySelectedToggle">{showOnlySelectedLabel}</label>
-                                            <lightning-input
-                                                type="toggle"
-                                                checked={multiselectShowOnlySelected}
-                                                onchange={handleMultiselectShowOnlySelectedChange}
-                                                class="slds-m-bottom_none"
-                                                variant="label-hidden"
-                                                name="showOnlySelectedToggle"
-                                                aria-label="Show only selected"
-                                            ></lightning-input>
-                                        </div>
-                                    </div>
-                                    <div class="slds-col slds-size_2-of-6 slds-grid slds-grid_align-end slds-grid_vertical-align-center">
-                                        <div class="slds-button-group" role="group">
-                                            <lightning-button
-                                                variant="neutral"
-                                                label={i18n.selectAll}
-                                                size="small"
-                                                icon-name="utility:check"
-                                                disabled={allItemsSelected}
-                                                onclick={handleSelectAll}>
-                                            </lightning-button>
-                                            <lightning-button
-                                                variant="neutral"
-                                                label={i18n.unselectAll}
-                                                size="small"
-                                                icon-name="utility:clear"
-                                                disabled={noItemsSelected}
-                                                onclick={handleUnselectAll}>
-                                            </lightning-button>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="slds-form-element__control multiselect-options-list">
-                                    <template for:each={filteredMultiselectOptions} for:item="option">
-                                        <div key={option.value} class="slds-m-bottom_small">
-                                            <lightning-input
-                                                type="checkbox"
-                                                label={option.label}
-                                                value={option.value}
-                                                checked={option.checked}
-                                                onchange={handleMultiselectChange}
-                                                onkeydown={handleKeyDown}>
-                                            </lightning-input>
-                                            <template if:true={option.description}>
-                                                <div class="slds-text-body_small slds-text-color_weak slds-m-left_large slds-m-top_x-small">
-                                                    {option.description}
-                                                </div>
-                                            </template>
-                                        </div>
-                                    </template>
-                                </div>
-                            </fieldset>
-                        </div>
-                    </template>
-
-                    <!-- Action Buttons (hidden for button select since buttons auto-submit) -->
-                    <template if:false={isSelectWithButtons}>
-                        <div class="slds-border_top slds-p-top_medium slds-grid slds-grid_align-spread slds-grid_vertical-align-center">
-                            <div class="slds-col">
-                                <div class="slds-text-body_small slds-text-color_weak">
-                                    {i18n.pressEnterToValidate}
-                                </div>
-                            </div>
-                            <div class="slds-col slds-no-flex">
-                                <div class="slds-button-group" role="group">
-                                    <lightning-button
-                                        data-id="cancelBtn"
-                                        variant="neutral"
-                                        label={i18n.cancel}
-                                        tabindex="-1"
-                                        icon-name="utility:close"
-                                        onclick={handleCancel}
-                                        class="slds-m-right_medium">
-                                    </lightning-button>
-                                    <lightning-button
-                                        variant="brand"
-                                        label={i18n.validate}
-                                        tabindex="0"
-                                        icon-name="utility:check"
-                                        onclick={handleSubmit}>
-                                    </lightning-button>
-                                </div>
-                            </div>
-                        </div>
-                    </template>
-
-                    <!-- Cancel button only for button select -->
-                    <template if:true={isSelectWithButtons}>
-                        <div class="slds-border_top slds-p-top_medium slds-grid slds-grid_align-spread slds-grid_vertical-align-center">
-                            <div class="slds-col">
-                                <div class="slds-text-body_small slds-text-color_weak">
-                                    {i18n.clickOptionToSelect}
-                                </div>
-                            </div>
-                            <div class="slds-col slds-no-flex">
-                                <lightning-button
-                                    data-id="cancelBtn"
-                                    variant="neutral"
-                                    label={i18n.cancel}
-                                    icon-name="utility:close"
-                                    onclick={handleCancel}>
-                                </lightning-button>
-                            </div>
-                        </div>
+                            </span>
+                        </button>
                     </template>
                 </div>
-            </div>
+            </template>
+
+            <!-- Select from a scrollable, filterable list (more than 5 choices) -->
+            <template if:true={isSelectWithList}>
+                <div class="slds-m-bottom_x-small">
+                    <div class="hardis-prompt-tools">
+                        <lightning-input
+                            label={i18n.filterOptions}
+                            type="search"
+                            variant="label-hidden"
+                            placeholder={i18n.typeToFilter}
+                            value={comboboxFilter}
+                            onchange={handleComboboxFilterChange}
+                            oninput={handleComboboxFilterChange}
+                            class="hardis-prompt-filter"
+                            aria-label={i18n.filterOptions}>
+                        </lightning-input>
+                        <span class="hardis-count-chip">{listCountLabel}</span>
+                    </div>
+                    <div class="hardis-option-list" role="listbox">
+                        <template for:each={filteredListOptions} for:item="option">
+                            <button
+                                key={option.value}
+                                type="button"
+                                class={option.rowClass}
+                                data-value={option.value}
+                                role="option"
+                                aria-selected={option.selected}
+                                onclick={handleButtonSelect}
+                                onkeydown={handleOptionRowKeydown}>
+                                <template if:true={option.emoji}>
+                                    <span class="hardis-option-emoji" aria-hidden="true">{option.emoji}</span>
+                                </template>
+                                <span class="hardis-option-main">
+                                    <span class="hardis-option-label">{option.labelClean}</span>
+                                    <template if:true={option.description}>
+                                        <span class="hardis-option-desc">{option.description}</span>
+                                    </template>
+                                </span>
+                            </button>
+                        </template>
+                    </div>
+                </div>
+            </template>
+
+            <!-- Multiselect: filter + count + select all/clear, then checkbox rows -->
+            <template if:true={isMultiselectInput}>
+                <div class="slds-m-bottom_x-small">
+                    <div class="hardis-prompt-tools">
+                        <lightning-input
+                            label={i18n.filterOptions}
+                            type="search"
+                            variant="label-hidden"
+                            placeholder={i18n.typeToFilter}
+                            value={multiselectFilter}
+                            onchange={handleMultiselectFilterChange}
+                            oninput={handleMultiselectFilterChange}
+                            class="hardis-prompt-filter"
+                            aria-label={i18n.filterOptions}>
+                        </lightning-input>
+                        <span class="hardis-count-chip">{selectedCountLabel}</span>
+                        <button type="button" class="hardis-textlink" onclick={handleSelectAll} disabled={allItemsSelected}>{i18n.selectAll}</button>
+                        <button type="button" class="hardis-textlink" onclick={handleUnselectAll} disabled={noItemsSelected}>{i18n.unselectAll}</button>
+                        <button type="button" class="hardis-textlink" onclick={handleToggleShowOnlySelected}>{showOnlySelectedLabel}</button>
+                    </div>
+                    <div class="hardis-option-list" role="listbox" aria-multiselectable="true">
+                        <template for:each={filteredMultiselectOptions} for:item="option">
+                            <button
+                                key={option.value}
+                                type="button"
+                                class={option.rowClass}
+                                data-value={option.value}
+                                role="option"
+                                aria-selected={option.checked}
+                                onclick={handleMultiselectRowToggle}
+                                onkeydown={handleOptionRowKeydown}>
+                                <span class="hardis-check">
+                                    <lightning-icon icon-name="utility:check" size="xx-small"></lightning-icon>
+                                </span>
+                                <span class="hardis-option-main">
+                                    <span class="hardis-option-label">{option.label}</span>
+                                    <template if:true={option.description}>
+                                        <span class="hardis-option-desc">{option.description}</span>
+                                    </template>
+                                </span>
+                            </button>
+                        </template>
+                    </div>
+                </div>
+            </template>
+
+            <!-- Footer: keyboard hint + actions -->
+            <template if:false={isClickToAnswerSelect}>
+                <div class="hardis-prompt-foot">
+                    <span>{i18n.pressEnterToValidate}</span>
+                    <div class="hardis-prompt-foot-actions">
+                        <lightning-button
+                            data-id="cancelBtn"
+                            variant="neutral"
+                            label={i18n.cancel}
+                            tabindex="-1"
+                            icon-name="utility:close"
+                            onclick={handleCancel}>
+                        </lightning-button>
+                        <span class="hardis-btn-tinted-blue">
+                            <lightning-button
+                                variant="neutral"
+                                label={validateLabel}
+                                tabindex="0"
+                                icon-name="utility:check"
+                                onclick={handleSubmit}>
+                            </lightning-button>
+                        </span>
+                    </div>
+                </div>
+            </template>
+
+            <!-- Cancel-only footer for click-to-answer selects -->
+            <template if:true={isClickToAnswerSelect}>
+                <div class="hardis-prompt-foot">
+                    <span>{i18n.clickOptionToSelect}</span>
+                    <div class="hardis-prompt-foot-actions">
+                        <lightning-button
+                            data-id="cancelBtn"
+                            variant="neutral"
+                            label={i18n.cancel}
+                            icon-name="utility:close"
+                            onclick={handleCancel}>
+                        </lightning-button>
+                    </div>
+                </div>
+            </template>
         </div>
     </template>
     <!-- Simple submission spinner -->
@@ -312,8 +217,7 @@
         <div class="slds-p-around_large slds-align_absolute-center">
             <lightning-spinner
                 alternative-text="Submitting response..."
-                size="medium"
-                variant="brand">
+                size="medium">
             </lightning-spinner>
         </div>
     </template>

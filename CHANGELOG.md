@@ -2,94 +2,138 @@
 
 ## Unreleased
 
-- Look & Feel
-  - The DevOps Pipeline diagram was redesigned with the official Salesforce Lightning color palette, in light and dark themes
-    - Branches, orgs and connectors now share one consistent color family, with rounded nodes and lighter frames around the Git Branches and Salesforce Orgs sections
-    - CI job status is now color-coded consistently everywhere: blue animated = running, orange = pending, red = failed, green = success (previously running and pending showed as red, and failed jobs were not highlighted at all)
-    - Long feature branch names are shortened in the diagram so it stays compact (the full name remains visible on hover and in the pull request modal)
-    - Pull requests, deployments and "Create PR" links are shown as small colored chips instead of emoji and underlined links, and each branch's open pull request counter is displayed as a notification bubble attached to the node's corner
-    - Branch and org icons are now crisp vector icons that match the theme, replacing emoji that rendered differently on each operating system
-    - The "+N more" folded feature branches are displayed as a stack of cards, and a legend below the diagram explains connectors and status colors
-    - The diagram text now uses the same font as the rest of the panel
-  - Pull request tables are easier to scan
-    - Alternate row background colors and a hover highlight, in all tables of the extension
-    - Job status displayed as a colored chip with its label, author shown with an initials avatar, source and target branches as compact monospace chips, and merge dates in a short one-line format
-  - The pull requests modal got a design refresh: brand accent strip, branch name and pull request count displayed as chips in the title, and theme-aware Release Notes buttons (the previous green buttons could be hard to read in dark mode)
-  - The same design was applied to the tables and modals of the other panels
-    - Org Manager: the connection status is a green/red colored chip, the default org and Dev Hub roles are highlighted chips, and each username gets an initials avatar
-    - Metadata Retriever: "Last Updated By" shows an initials avatar, and update dates are aligned for easier scanning
-    - Installed Packages: package namespaces are displayed as compact monospace chips
-    - All dialog windows (Data Workbench, Files Workbench, Pipeline Config, Monitoring Config, Deployment Actions) open with the same brand accent strip as the pull requests modal
-  - Quick action cards and other panels (Org Monitoring, Package XML, Documentation, Welcome, Setup, Monitoring Config, Metadata Retriever) now use the official Salesforce color palette for their icons and buttons
-  - Deployment action execution contexts were renamed for clarity: "Validation and Deployment jobs", "Validation job only" and "Deployment job only" (previously "Check job" and "Process Deployment job"), in all languages
-  - Fix help tooltips that displayed black text on their dark blue background in dark mode, making them nearly impossible to read: their text is now light in dark mode, in every panel ([#2051](https://github.com/hardisgroupcom/sfdx-hardis/issues/2051))
-
-- Performance
-  - Commands launched from the menu now open their execution tab **immediately** when clicked, instead of after the Salesforce CLI finished booting (which could take more than 10 seconds)
-    - The tab first shows the command as starting, then streams its logs as soon as the CLI is connected
-    - Closing the tab before the CLI is connected cancels the command
-    - If the CLI crashes before connecting, the tab reports the failure with its error output instead of staying stuck
-    - The "Initializing command" notification is no longer shown when the execution tab is already open, since it was redundant with it
-    - Fixed a wrong "duplicate command" error when running a command again right after closing its execution tab
-  - New warning at startup when the Salesforce Extensions setting **Source Tracking: Enable Conflict Detection** is enabled: it constantly checks conflicts in the background and slows down the whole VS Code
+- **Performance**
+  - Commands launched from the menu now open their execution tab **immediately** when clicked, instead of after the Salesforce CLI finished booting (which could take **more than 10 seconds**)
+    - The tab first shows the command as starting, then **streams its logs** as soon as the CLI is connected
+    - Closing the tab before the CLI is connected **cancels the command**, and a CLI that crashes before connecting now **reports the failure** with its error output instead of leaving the tab stuck
+  - **Faster extension startup**
+    - The Org and Dependencies panels now **load independently**, so each one displays its information as soon as it is available instead of waiting for the slowest of all startup checks
+    - Fixed the slow startup checks **running again several times a day** (and sometimes **reloading the whole window**) after any file was created or renamed in the workspace
+  - New warning at startup when the Salesforce Extensions setting **Source Tracking: Enable Conflict Detection** is enabled: it constantly checks conflicts in the background and **slows down the whole VS Code**
     - Click **Disable it** to turn it off right away, **Not now** to be asked again at the next startup, or **Never ask again** to never see the warning again
-    - The check runs after the startup, so it never delays it
-  - Commands run in a terminal now start immediately: the terminal was previously created with a fixed 4-second wait before the command was typed
-    - On Windows, commands now run in a Git Bash terminal automatically when Git Bash is installed, without requiring to change the default VS Code terminal
-  - Commands clicked right after VS Code startup are no longer rejected with "not initialized yet": the communication server now starts immediately (previously after a fixed 5-second delay) and commands wait for it to be ready
-  - Faster extension startup
-    - The Org and Dependencies panels now load independently, so each one displays its information as soon as it is available instead of waiting for the slowest of all startup checks
-    - Fixed the CLI results cache being wiped every time any file was created or renamed in the workspace, which caused the slow startup checks to run again several times a day (and could even reload the whole window)
-    - The extension code loaded at startup was reduced to a fraction of its previous size, the rest is now loaded only when actually used
-  - Re-running the same command from the menu no longer shows a wrong "duplicate command" warning when a language other than "auto" is selected
-  - Command tabs of completed commands are now cleaned up in all languages (previously only when VS Code was in English)
+  - Commands run in a terminal now **start immediately**
+    - On **Windows**, commands now run in a **Git Bash** terminal automatically when Git Bash is installed, without requiring to change the default VS Code terminal
+  - Commands clicked right after VS Code startup are **no longer rejected** with "not initialized yet"
+  - Panels **no longer stay stuck on their loading spinner** (or open empty) when VS Code is slow to start them, and an unexpected display error now shows a message with a **Try again** button instead of an endless spinner
+  - **Pipeline Settings now load without an internet connection**
+  - Fixed a wrong **"duplicate command"** error when running a command again right after closing its execution tab, or when a language other than "auto" is selected
+  - Command tabs of completed commands are now cleaned up in **all languages** (previously only when VS Code was in English)
+  - The "Initializing command" notification is no longer shown when the execution tab is already open, since it was redundant with it
 
-- Testing
-  - New automated UI tests launch a real VS Code with a sample SFDX project and a simulated Salesforce CLI, and verify startup and command-launch responsiveness on Windows, macOS and Linux at every change
+- **Security**
+  - The extension now depends on **half as many third-party packages**: its direct runtime dependencies went from **28 down to 14**, and the complete set of packages installed with them from **327 down to 287**, reducing the **supply chain attack surface** and the risk of being impacted by a compromised or vulnerable package
+    - Widely used but replaceable packages (axios, moment, lodash, fs-extra, uuid, chalk, which…) were replaced by capabilities **already built into Node.js and VS Code**, with no change in behavior
 
-- DevOps Pipeline
-  - **Update the Deployment Actions of your Pull Request** button at the end of **Save / Publish Task**, opening the DevOps Pipeline straight on the Deployment Actions of your pull request, instead of leaving you to find them yourself
-    - When the pull request is not created yet, the draft deployment actions of your current branch are displayed, so you can declare them right after saving your task
+- **Look & Feel**
+  - The Welcome page was **fully redesigned**
+    - New branded header with the **sfdx-hardis wordmark** and the **Cloudity logo** linking to cloudity.com, plus the extension **version** and a **See what's new** link
+    - The most used features (**DevOps Pipeline**, **Org Monitoring**, **Documentation Workbench**) are now featured at the top, **visible without scrolling**
+    - A compact **3-step quick start** (connect your org, pick a feature, open the docs) replaces the tall Getting Started section, and can be **collapsed to a single line** for daily users (the choice is remembered)
+    - Feature cards are grouped by task (**Essentials**, **Work with your org**, **Data & files**) with consistent Salesforce palette colors, and can be activated with the keyboard
+    - Open Source information and Cloudity guidance & support are merged into one compact footer, with a **Star on GitHub** button leading to the sfdx-hardis project and a **Rate on Marketplace** button (pointing to Open VSX when running in a VS Code fork like VSCodium)
+    - The settings controls no longer float over the content: they sit in a single header toolbar, with **Extension settings** one click away
+    - Find and run any sfdx-hardis command by name with the new **search button** in the header toolbar, or the **Search** link of the quick start's "Pick a feature" step
+    - The same design is applied across the extension: **Org Monitoring**, the **DevOps Pipeline** quick action cards, the **Documentation Workbench**, the **AI Documentation configuration** and the **Monitoring Configuration** now share the Welcome page's sections, cards and colored icon tiles
+    - Org Monitoring check cards are now **clickable directly** (with the keyboard too), replacing the Run button on each card
+  - **Every panel now has the same design**: the same header (icon, title, one-line description, actions on the right), the same content cards and the same buttons
+  - In settings pages (Pipeline Settings, Extension Settings...), text fields, multi-line lists and dual selection lists now widen to use the available space, so long values like URLs or regular expressions stay fully visible, and dropdowns share a consistent width
+  - Pipeline Settings are now **easier to scan**
+    - Settings without a value show their **Not defined** mention in the same place as other values, instead of below the description
+    - The settings list keeps a **readable width** on large windows, so each value stays close to its label
+    - Orgs Manager, Metadata Retriever, Installed Packages, Pipeline Settings, Extension Settings, package.xml and the Setup panel were rebuilt on the shared design, so no panel looks like a different product anymore
+    - Panel titles are the feature name (**Metadata Retriever**, **Installed Packages**...) and every panel says in one line what it is for
+    - **Colored buttons are readable in both themes**: the filled blue/red buttons of the workbenches (Export data, Delete data, Add Org, Install...) became tinted buttons that adapt to light and dark mode
+    - The Setup panel dependency cards, the Org Monitoring installation banner and the Installed Packages information banner use the same status colors as the rest of the extension
+    - The **Data Import/Export Workbench** and the **Files Import/Export Workbench** were rebuilt on the shared design
+      - Workspaces are picked from a **clean selectable list**, and the gray all-caps section bars were replaced by the shared section headers with **labeled buttons** instead of anonymous icon squares
+      - Workspace settings and object options are summarized as **readable chips**, each data object shows its operation as a **colored tag** with its query on one line, and the exported files / logs tables mark **source, target and log files with colored tags**
+      - Empty screens (no workspace yet, no workspace selected) now explain what to do next with **one clear action**, fixing a broken white banner in the Files Workbench empty screen
+    - **Extension Settings** are now readable: real setting names (e.g. "User input command line if LWC" instead of "User Input Command Line If L W C") and each setting's **description always visible** under its name instead of hidden behind a hover icon
+    - **Pipeline Settings** got a clearer read-only view
+      - Options now show a clear **Enabled / Disabled** badge instead of a grayed-out switch that looked broken
+      - Git branch names are shown as **chips**, long URLs are **shortened** and open with one click, and unset values show "Not defined" instead of "None"
+      - The **documentation link** of a setting sits right next to its name, replacing the identical Documentation button repeated on every row
+      - The Salesforce Org tab of a branch's settings shows a **compact org summary card** instead of two sparse fields
+      - The **Pre-Post Deploy Commands** tables now show only each action's **label, type and execution context** instead of a cramped column per property: **click an action's label** to see and edit all its details in the same editor as the DevOps Pipeline panel
+    - The **package.xml viewer**, **Monitoring Configuration**, **Documentation Workbench**, **Org Monitoring** documentation links and **Metadata Retriever** dialogs were aligned on the same section headers, cards and dialog style, with no change to their features
+    - Fixed the **Language** tab of the Extension Settings, which showed the raw key `languageSection` instead of its name
+    - Fixed texts that were **unreadable after switching between light and dark themes** in several panels
+    - **Switches** are displayed the same way everywhere: the *Active / Inactive* label below them is gone, as it broke the alignment with the neighboring buttons and fields
+  - The command execution tab was **fully redesigned** with the same look & feel
+    - Command steps are displayed as a **compact connected timeline** with colored status dots, expandable step details and per-step durations, replacing the tall stack of boxes (a whole run now fits on one screen)
+      - A command reporting its progress out of **100 steps** is displayed as a **percentage** ("42% complete") instead of a step counter
+    - The header shows the command name with a **colored status pill** (Starting / Running / Completed / Failed), the **target org**, the elapsed time and a link to the log file
+      - When the command is run on a **specific org** (`--target-org`, `--targetusername`, `-u`, `-o`), the header shows **that org** instead of the default org of the project
+    - When the command asks a question, it appears in a highlighted **"Waiting for your answer"** card: options are clickable cards, long choice lists are **searchable in place** (no more dropdown covering the validation buttons), and multi-selects show a live **"n of m selected"** counter with Select all / Show only selected shortcuts
+    - Answered questions collapse to a single line showing the **answer**, and can be expanded back to see the details
+    - Generated reports and actions are docked in a **bar at the bottom** of the tab, always visible without scrolling
+    - Result tables are now readable in **dark mode**, and the duplicated scrollbar on the right edge is gone
+    - Log lines carrying a **big JSON** (deployment results, API responses) or a **very long text** now display only their **beginning**: click them to see the **complete content** in a large window, that can be **copied** or **opened in a VS Code tab**
+    - Once a command is over, a **Run again** button in the header replays it with the same parameters, whether it succeeded or failed
+  - Fix panels wrongly opening in **light mode inside a dark VS Code**: the extension theme now follows the VS Code theme by default (users who explicitly selected Light or Dark keep their choice)
+  - The DevOps Pipeline diagram was **redesigned with the official Salesforce Lightning color palette**, in **light and dark themes**
+    - CI job status is now **color-coded consistently everywhere**: **blue animated = running**, **orange = pending**, **red = failed**, **green = success** (previously running and pending showed as red, and failed jobs were not highlighted at all)
+    - Branches, orgs and connectors now share **one consistent color family**, with rounded nodes, lighter frames around the Git Branches and Salesforce Orgs sections, **crisp vector icons** replacing the emoji that rendered differently on each operating system, and the same font as the rest of the panel
+    - Pull requests, deployments and "Create PR" links are shown as small **colored chips** instead of emoji and underlined links, and each branch's open pull request counter is displayed as a **notification bubble** attached to the node's corner
+    - Long feature branch names are **shortened** so the diagram stays compact (the full name remains visible on hover and in the pull request modal), the **"+N more"** folded branches are displayed as a stack of cards, and a **legend** below the diagram explains connectors and status colors
+  - Fixed help tooltips that displayed black text on their dark blue background in **dark mode**, making them **nearly impossible to read**: their text is now light in dark mode, in every panel ([#2051](https://github.com/hardisgroupcom/sfdx-hardis/issues/2051))
+  - **Right-click any table cell** to copy its value (or the text you selected) to the clipboard
+  - Tables are **easier to scan**, in **every panel**: alternate row background colors and a hover highlight, job status as a colored chip with its label, authors shown with an **initials avatar**, source and target branches as compact **monospace chips**, and dates in a short one-line format
+    - Also applied to **Org Manager** (connection status as a green/red chip, default org and Dev Hub roles highlighted as chips), **Metadata Retriever** ("Last Updated By" avatar and aligned update dates) and **Installed Packages** (namespaces as monospace chips)
+  - Quick action cards and other panels (Org Monitoring, Package XML, Documentation, Welcome, Setup, Monitoring Config, Metadata Retriever) now use the **official Salesforce color palette** for their icons and buttons, including the Release Notes buttons that could be **hard to read in dark mode**
+  - Modals got a **design refresh** with a brand accent strip and chips in their title, in the Pull Requests modal (branch name and pull request count) as in all the other dialog windows (Data Workbench, Files Workbench, Pipeline Config, Monitoring Config, Deployment Actions)
+  - Deployment action execution contexts were **renamed for clarity**: **"Validation and Deployment jobs"**, **"Validation job only"** and **"Deployment job only"** (previously "Check job" and "Process Deployment job"), in all languages
+
+- **Translations**
+  - Add missing translations in Italian, Polish, Portuguese (Brazil) and Spanish: some menu entries, tooltips and messages were displayed in English or as raw labels
+
+- **DevOps Pipeline**
+  - **Deployment Actions are no longer in beta**: pre-deployment and post-deployment actions are now a **fully supported feature** of the DevOps Pipeline, and the beta label was removed from their tab
+  - New **Update the Deployment Actions of your Pull Request** button at the end of **Save / Publish Task**, opening the DevOps Pipeline straight on the deployment actions of your pull request, instead of leaving you to find them yourself
+    - When the pull request is not created yet, the **draft deployment actions** of your current branch are displayed, so you can declare them right after saving your task
     - When no pull request can be found, the DevOps Pipeline simply opens on its home view
-  - Deployment actions can now be **restricted to some target orgs**: choose to run an action everywhere, only on some major branches, or everywhere except a few
+  - Deployment actions can now be **restricted to some target orgs**: choose to run an action **everywhere**, **only on some major branches**, or **everywhere except a few**
     - Select **Developer sandboxes** to target the orgs that have no branch configuration file
-  - New actions are now created with **Run only once by org** enabled, matching sfdx-hardis. Until now an action created here re-ran at every deployment to the same org
-  - Removed the **Skip if deployment error** option, which sfdx-hardis now ignores: post-deployment actions are never run when the metadata deployment failed
-  - Fixed editing a deployment action creating a copy of it instead of updating it: an action created from the panel had no identifier until the pipeline was reloaded, so every save appended a new entry to the configuration file
-    - Also fixed for actions written by hand in the configuration file: renaming one, or changing its command, no longer leaves the original entry behind as a duplicate
-    - Moving an action from pre-deployment to post-deployment (or the other way round) no longer leaves a copy of it in both lists
-  - Fixed a restriction list of target branches (included or excluded) sometimes staying in the configuration file after switching to another restriction mode, contradicting what the editor displayed
-  - A branch that was renamed or removed from the pipeline is now still shown in a deployment action's target orgs restriction instead of silently disappearing and being lost on the next save
-  - Fixed the pull request modal occasionally opening on the wrong tab after a previous attempt to load its details had failed
-  - The pipeline no longer warns when no manual actions tracking file is configured, since manual actions are now declared in pull requests and ticked off in their comments
+  - New actions are now created with **Run only once by org** enabled, matching sfdx-hardis. Until now an action created here **re-ran at every deployment** to the same org
+  - Removed the **Skip if deployment error** option, which sfdx-hardis now ignores: post-deployment actions are **never run** when the metadata deployment failed
+  - Fixed editing a deployment action **creating a copy** of it instead of updating it
+    - Also fixed for actions **written by hand** in the configuration file: renaming one, or changing its command, no longer leaves the original entry behind as a duplicate
+    - Moving an action from **pre-deployment to post-deployment** (or the other way round) no longer leaves a copy of it in both lists
+  - A branch that was **renamed or removed** from the pipeline is now still shown in a deployment action's target orgs restriction, instead of silently disappearing and being lost on the next save
+  - Fixed a **restriction list of target branches** (included or excluded) sometimes staying in the configuration file after switching to another restriction mode, contradicting what the editor displayed
+  - Fixed the pull request modal occasionally **opening on the wrong tab** after a previous attempt to load its details had failed
+  - The pipeline **no longer warns** when no manual actions tracking file is configured, since manual actions are now declared in pull requests and ticked off in their comments
 
-- Pipeline Settings
-  - New settings for Flow deletion in destructive changes: **Flow Delete Interviews** (in the Danger Zone), **Flow Delete Max Attempts** and **Flow Delete Retry Delay**
+- **Commands**
+  - Added **7 commands** to the Commands panel: **MFA Readiness**, **Unsecure Permissions**, **Usage-Based Entitlements**, **Consumption Alerts**, **AI Credit Usage**, **Run Agentforce Tests** and **Data Dictionary**
+  - New **Search** button in the Commands panel header, opening a picker that lists commands from **every category** and filters on their label, category and tooltip **as you type**
+
+- **Pipeline Settings**
+  - Global and branch deployment actions are now edited with the **same editor as the one of the DevOps Pipeline**, instead of a reduced form that offered only the text and toggle fields of an action
+    - Gives access to the **action types and their parameters** (Apex script, SFDMU workspace, Apex class to schedule, community to publish, package.xml items to remove) and to the **Target orgs** restriction, none of which could be set from the settings
+    - Changing **When** moves the action between the pre-deployment and the post-deployment list, including when the action type imposes it (ex: a scheduled batch always runs after the deployment)
+  - New settings for **Flow deletion in destructive changes**: **Flow Delete Interviews** (in the Danger Zone), **Flow Delete Max Attempts** and **Flow Delete Retry Delay**
   - New **Translate deployment notification messages** setting
   - Fixed **Branch-scoped custom Package-No-Overwrite path**, which never appeared in the settings
   - Deployment actions edited from the settings no longer offer the obsolete **Skip if deploy error** option
-  - Global and branch deployment actions are now edited with the **same editor as the one of the DevOps Pipeline**, instead of a reduced form that offered only the text and toggle fields of an action
-    - Gives access to the action types and their parameters (Apex script, SFDMU workspace, Apex class to schedule, community to publish, package.xml items to remove) and to the **Target orgs** restriction, none of which could be set from the settings
-    - Changing **When** moves the action between the pre-deployment and the post-deployment list, including when the action type imposes it (ex: a scheduled batch always runs after the deployment)
 
-- Command results
-  - The buttons displayed at the end of a command now keep the order the command sent them in, so its main action stays the first one (ex: **Create Pull Request** at the end of **Save / Publish Task**, which was pushed behind the other buttons)
-
-- Commands
-  - Added 7 commands to the Commands panel: **MFA Readiness**, **Unsecure Permissions**, **Usage-Based Entitlements**, **Consumption Alerts**, **AI Credit Usage**, **Run Agentforce Tests** and **Data Dictionary**
-
-- Commands
-  - Added a **Search** button in the Commands tree view header that opens a QuickPick listing commands from every category
-    - The picker supports fuzzy filtering on each command's label, category, and tooltip
-
-- Dependencies
-  - Fixed the pre-release version of the extension asking to install the alpha version of the sfdx-hardis plugin even when an alpha, a beta, or a locally developed (linked) plugin was already installed
+- **Dependencies**
+  - Fixed the **pre-release** version of the extension asking to install the **alpha** version of the sfdx-hardis plugin even when an alpha, a beta, or a **locally developed (linked)** plugin was already installed
     - A pre-release extension now accepts an alpha, a beta or a locally developed plugin, and a released extension accepts a published version or a locally developed plugin (it now asks to install the latest version when an alpha or a beta is installed)
-    - Applied both to the startup notification and to the **Setup** panel, which also displayed such a plugin as outdated because its version differs from the one published on npm
-    - A locally developed plugin is never proposed for upgrade anymore: reinstalling it from npm would break the local development setup (which is what happened when clicking the upgrade button)
+    - A locally developed plugin is **never proposed for upgrade** anymore: reinstalling it from npm would break the local development setup (which is what happened when clicking the upgrade button)
+    - Applied both to the startup notification and to the **Setup** panel, which also displayed such a plugin as **outdated** because its version differs from the one published on npm
+    - The **Setup** panel now indicates when a plugin is a **locally developed** or a **preview (alpha/beta)** version
     - When a pre-release extension really needs a newer plugin, the message now asks for the **alpha or beta** version, instead of the alpha one only
-    - The **Setup** panel now indicates when a plugin is a locally developed or a preview (alpha/beta) version
-    - Installed plugins are now identified with `sf plugins --json`, which tells exactly how each plugin was installed, instead of reading the displayed text (that could be colorized, hiding the version and the alpha/beta/link markers)
+
+- **Details**
+  - The buttons displayed at the end of a command now **keep the order** the command sent them in, so its main action **stays the first one** (ex: **Create Pull Request** at the end of **Save / Publish Task**)
+
+- **Under the hood**
+  - New **automated UI tests** launch a real VS Code with a sample SFDX project and a simulated Salesforce CLI, and verify startup and command-launch responsiveness on **Windows, macOS and Linux** at every change
+  - The extension code loaded at startup was reduced to **a fraction of its previous size**, the rest is now loaded only when actually used
+  - Installed plugins are now identified with `sf plugins --json`, which tells exactly how each plugin was installed, instead of reading the displayed text (that could be colorized, hiding the version and the alpha/beta/link markers)
+  - All the **screenshots of the documentation** are regenerated with the new design (and are now regenerated automatically, so they will no longer drift from the real product)
+  - The extension package no longer ships **15 MB of obsolete images** (old menu screenshots and demo animation) that nothing displayed anymore
 
 ## [7.18.0] 2026-07-26
 

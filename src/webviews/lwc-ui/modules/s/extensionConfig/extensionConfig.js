@@ -59,6 +59,12 @@ export default class ExtensionConfig extends SharedMixin(LightningElement) {
           const arrayValue = Array.isArray(entry.value) ? entry.value : [];
           valueArray = arrayValue.join("\n");
         }
+        // The field row always shows a one-line help text; the info bubble
+        // is only kept for descriptions that are genuinely long/multi-line,
+        // so it can still surface the full text (e.g. a doc link on its own line).
+        const description = entry.description || "";
+        const isMultilineHelp = description.includes("\n");
+        const helpFirstLine = description.split(/\r?\n/)[0] || "";
         return {
           ...entry,
           valueString,
@@ -72,6 +78,8 @@ export default class ExtensionConfig extends SharedMixin(LightningElement) {
           isEnum,
           isArray,
           isNumber,
+          isMultilineHelp,
+          helpFirstLine,
         };
       }),
     }));

@@ -61,12 +61,13 @@ export class LwcUiPanel {
       this.disposables,
     );
 
-    // Send initialization data to the webview after a short delay to ensure it's ready
-    if (this.initializationData) {
-      setTimeout(() => {
-        this.sendInitializationData(this.initializationData);
-      }, 100);
-    }
+    // Initialization data is NOT pushed on a timer here: a postMessage sent
+    // before the webview page finished loading is dropped by VS Code (panels
+    // then hung on their loading spinner forever on slow machines). The page
+    // announces itself with a "webviewReady" message once its LWC component
+    // is mounted (see handleBuiltInMessages), and the data is sent exactly
+    // once in response — the script URI is cache-busted, so the booting
+    // bundle always speaks this contract.
   }
 
   public static display(
@@ -309,6 +310,24 @@ export class LwcUiPanel {
     };
   }
 
+  /**
+   * Current initialization data of the panel (as sent to the LWC).
+   * Used by UI integration tests to assert on the data driving the webview.
+   */
+  public getInitializationData(): any {
+    return this.initializationData;
+  }
+
+  /**
+   * Inject a message as if it had been posted by the webview (LWC side).
+   * Used by UI integration tests to exercise the extension-side message
+   * handlers without a real user click inside the webview DOM.
+   */
+  public simulateWebviewMessage(message: any): void {
+    this.handleBuiltInMessages(message);
+    this.notifyMessageListeners(message);
+  }
+
   public clearExistingOnMessageListeners(): void {
     // Clear listeners previously added with onMessage method.
     // Persistent listeners are kept: they belong to the panel lifecycle
@@ -327,6 +346,23 @@ export class LwcUiPanel {
 
     try {
       switch (messageType) {
+        case "webviewReady":
+          // The webview page finished booting and mounted its LWC component:
+          // deliver the initialization data (posting it earlier would be
+          // dropped by VS Code, which previously left panels on their
+          // loading spinner forever on slow machines).
+          // Command-execution panels are excluded once their command has
+          // advanced past "pending": the CLI may already have streamed
+          // initializeCommand/addLogLine while the page was booting, and
+          // commandExecution.initialize() would wipe that live state with
+          // the stale click-time snapshot.
+          if (
+            this.initializationData &&
+            (this.commandStatus === null || this.commandStatus === "pending")
+          ) {
+            this.sendInitializationData(this.initializationData);
+          }
+          break;
         case "checkFileExists":
           await this.handleFileExistsCheck(data.filePath, data.fileType);
           break;
@@ -363,6 +399,9 @@ export class LwcUiPanel {
         case "copyToClipboard":
           await this.handleCopyToClipboard(data);
           break;
+        case "openTextDocument":
+          await this.handleOpenTextDocument(data);
+          break;
       }
     } catch (error) {
       Logger.log(
@@ -381,8 +420,11 @@ export class LwcUiPanel {
       return;
     }
 
-    // Avoid accidental massive clipboard payloads
-    const clipped = text.length > 10000 ? text.slice(0, 10000) : text;
+    // Avoid accidental massive clipboard payloads, unless the caller copies a large content on purpose
+    const clipped =
+      data?.allowLarge !== true && text.length > 10000
+        ? text.slice(0, 10000)
+        : text;
     await vscode.env.clipboard.writeText(clipped);
     vscode.window.showInformationMessage(t("copiedToClipboard"));
 
@@ -391,6 +433,28 @@ export class LwcUiPanel {
       type: "copiedToClipboard",
       data: { length: clipped.length },
     });
+  }
+
+  /**
+   * Open a text content sent by the webview in a new untitled editor tab
+   * (used to display a complete JSON payload that is too big for the panel)
+   * @param data Object with 'content' and optional 'language' properties
+   */
+  private async handleOpenTextDocument(data: any): Promise<void> {
+    const content = typeof data?.content === "string" ? data.content : "";
+    if (content === "") {
+      return;
+    }
+    // Only editor languages this extension displays, to keep the webview -> extension contract narrow
+    const allowedLanguages = ["json", "plaintext", "xml", "apex", "log"];
+    const language = allowedLanguages.includes(data?.language)
+      ? data.language
+      : "plaintext";
+    const document = await vscode.workspace.openTextDocument({
+      content: content,
+      language: language,
+    });
+    await vscode.window.showTextDocument(document, { preview: false });
   }
 
   /**
@@ -900,9 +964,15 @@ export class LwcUiPanel {
 
   private getHtmlForWebview(webview: vscode.Webview) {
     // Get the local path to main script run in the webview, then convert it to a uri we can use in the webview.
-    const scriptUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this.extensionUri, "out", "webviews", "lwc-ui.js"),
-    );
+    // Cache-busted like the stylesheets below: the webview service worker can
+    // serve a stale bundle across extension updates, and the initialization
+    // contract (the page sends "webviewReady", the panel answers with the
+    // init data) requires the current bundle to be the one that boots.
+    const scriptUri = webview
+      .asWebviewUri(
+        vscode.Uri.joinPath(this.extensionUri, "out", "webviews", "lwc-ui.js"),
+      )
+      .with({ query: `v=${Date.now()}` });
 
     // Get path to SLDS CSS (copied by webpack)
     const sldsStylesUri = webview.asWebviewUri(

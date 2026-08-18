@@ -21,6 +21,7 @@ import {
 } from "./utils/providerCredentials";
 import {
   extractCommandId,
+  extractTargetOrgUsername,
   generateProvisionalContextId,
   registerPendingCommandPanel,
   removePendingCommandPanel,
@@ -567,6 +568,15 @@ export class CommandRunner {
         const panel = panelManager.getOrCreatePanel(pendingPanelLwcId, {
           id: provisionalContextId,
           command: pendingCommandName,
+          commandLine: sfdxHardisCommand.trim(),
+          // Org forced on the command line: displayed right away, without
+          // waiting for the CLI. When there is none, the WebSocket server
+          // completes the context with the project default org.
+          targetOrgUsername:
+            extractTargetOrgUsername(preprocessedCommand) || undefined,
+          // The CLI has not connected yet: the panel renders a "Starting"
+          // status until the websocket initializeCommand message arrives
+          pending: true,
         });
         panel.commandStatus = "pending";
         panel.updateTitle(
@@ -576,6 +586,9 @@ export class CommandRunner {
           lwcId: pendingPanelLwcId,
           contextId: provisionalContextId,
           commandId,
+          // Command as requested by the user (before --skipauth/--websocket are
+          // appended): the panel replays exactly this on "Run again"
+          commandLine: sfdxHardisCommand.trim(),
           createdAt: Date.now(),
           onAdopted: () => {
             pendingPanelAdopted = true;

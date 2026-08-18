@@ -17,12 +17,14 @@ The full procedure lives in `.claude/skills/test/SKILL.md`. **Read it first**, t
 - `yarn test` — run the VS Code extension test suite (`@vscode/test-electron`).
 - `yarn lint` — ESLint only.
 - `yarn compile` — `tsc` only.
+- `yarn dev && yarn compile && yarn test:ui` — UI integration tests (real VS Code + mocked `sf` CLI). **Build order matters**: webview bundle first, then `tsc`.
 - Quick verification without the full suite: `yarn lint && yarn dev`.
 
 ### Writing tests
 - Mocha (`describe`/`it`/`before`/`after`/`beforeEach`/`afterEach`); the full `vscode` API is available inside the Extension Development Host.
-- New test files: `src/test/suite/*.test.ts`. Follow `src/test/suite/extension.test.ts`.
-- For new LWC features, add integration tests simulating webview interaction and verifying extension-host communication.
+- New unit/extension tests: `src/test/suite/*.test.ts`. Follow `src/test/suite/extension.test.ts`. Prefer extracting logic into a pure `src/utils/` helper and testing it there.
+- New UI tests: `src/test/ui/*.test.ts`, driven by `src/test/runUiTest.ts` against the `test/fixtures/dummy-sfdx-project` fixture and the `test/fixtures/sf-shim` mock CLI. Settings written from a UI test need the **Workspace** target.
+- For new LWC features and anything touching command launching, panels or tree views, add a UI test rather than only a unit test.
 
 ### Manual checklist
 - Test webviews in both light and dark themes, and with different org colors.

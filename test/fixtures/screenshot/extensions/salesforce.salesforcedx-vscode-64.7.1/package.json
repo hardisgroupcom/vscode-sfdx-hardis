@@ -1,0 +1,15 @@
+{
+  "name": "salesforcedx-vscode",
+  "displayName": "Salesforce Extension Pack",
+  "description": "Stub of the Salesforce Extension Pack, so the Setup panel of the documentation screenshot harness reports it as installed even when the real one cannot be downloaded. Contributes nothing.",
+  "publisher": "salesforce",
+  "version": "64.7.1",
+  "license": "BSD-3-Clause",
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "contributes": {}
+}

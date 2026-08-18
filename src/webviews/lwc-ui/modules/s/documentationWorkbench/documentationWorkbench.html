@@ -1,16 +1,16 @@
 <template>
-    <div class="slds-scope slds-theme_default blue-back" data-theme={colorTheme} data-contrast={colorContrast}>
+    <div class="slds-scope blue-back" data-theme={colorTheme} data-contrast={colorContrast}>
         <div class="doc-container">
             <!-- Header -->
-            <div class="header-content">
-                <div class="header-icon-container teal">
-                    <lightning-icon icon-name="utility:archive" size="medium" variant="inverse"></lightning-icon>
+            <div class="hardis-page-head">
+                <div class="hardis-tile featured teal">
+                    <lightning-icon icon-name="utility:archive" size="medium"></lightning-icon>
                 </div>
-                <div class="header-text">
-                    <h1 class="header-title">{i18n.documentationWorkbenchTitle}</h1>
-                    <p class="header-subtitle">{i18n.documentationWorkbenchSubtitle}</p>
+                <div class="hardis-page-head-text">
+                    <h1 class="hardis-page-title">{i18n.documentationWorkbenchTitle}</h1>
+                    <p class="hardis-page-subtitle">{i18n.documentationWorkbenchSubtitle}</p>
                 </div>
-                <div class="header-actions">
+                <div class="hardis-page-head-actions">
                     <lightning-button
                         variant="neutral"
                         label={i18n.onlineHelp}
@@ -37,222 +37,154 @@
 
             <!-- Generate Documentation Section -->
             <div class="section">
-                <h2 class="section-title">
-                    <lightning-icon icon-name="utility:archive" size="x-small" class="section-icon"></lightning-icon>
-                    {i18n.generateDocumentationSection}
-                </h2>
-                <p class="section-description">{i18n.generateDocumentationSectionDesc}</p>
+                <div class="hardis-group-label">{i18n.generateDocumentationSection}</div>
+                <p class="hardis-group-desc">{i18n.generateDocumentationSectionDesc}</p>
 
-                <div class="generate-options-card panel-surface">
-                    <div class="options-grid">
-                        <div class="options-column general-column">
-                            <h3 class="subsection-title">{i18n.formatsAndHistory}</h3>
-                            <p class="subsection-help">{i18n.formatsAndHistoryHelp}</p>
-                            <div class="option-row">
-                                <div class="option-item">
-                                    <div class="option-input">
-                                        <lightning-input
-                                            type="checkbox"
-                                            label={i18n.generateMarkdown}
-                                            checked
-                                            disabled
-                                            class="option-checkbox"
-                                        ></lightning-input>
-                                        <s-multiline-helptext content={i18n.generateMarkdownHelp}></s-multiline-helptext>
-                                    </div>
-                                </div>
+                <div class="hardis-panel-body">
+                    <div class="doc-options-grid">
+                        <div class="doc-options-column">
+                            <div class="hardis-group-label">{i18n.formatsAndHistory}</div>
+                            <p class="hardis-group-desc">{i18n.formatsAndHistoryHelp}</p>
+                            <div class="doc-option-row">
+                                <lightning-input
+                                    type="checkbox"
+                                    label={i18n.generateMarkdown}
+                                    checked
+                                    disabled
+                                ></lightning-input>
+                                <s-multiline-helptext content={i18n.generateMarkdownHelp}></s-multiline-helptext>
                             </div>
-                            <div class="option-row">
-                                <div class="option-item">
-                                    <div class="option-input">
-                                        <lightning-input
-                                            type="checkbox"
-                                            label={i18n.withFlowHistory}
-                                            name="withHistory"
-                                            checked={withHistory}
-                                            onchange={handleOptionChange}
-                                            class="option-checkbox"
-                                        ></lightning-input>
-                                        <s-multiline-helptext content={i18n.withFlowHistoryHelp}></s-multiline-helptext>
-                                    </div>
-                                </div>
+                            <div class="doc-option-row">
+                                <lightning-input
+                                    type="checkbox"
+                                    label={i18n.withFlowHistory}
+                                    name="withHistory"
+                                    checked={withHistory}
+                                    onchange={handleOptionChange}
+                                ></lightning-input>
+                                <s-multiline-helptext content={i18n.withFlowHistoryHelp}></s-multiline-helptext>
                             </div>
-                            <div class="option-row">
-                                <div class="option-item">
-                                    <div class="option-input">
-                                        <lightning-input
-                                            type="checkbox"
-                                            label={i18n.generatePdf}
-                                            name="generatePdf"
-                                            checked={generatePdf}
-                                            onchange={handleOptionChange}
-                                            class="option-checkbox"
-                                        ></lightning-input>
-                                        <s-multiline-helptext content={i18n.generatePdfHelp}></s-multiline-helptext>
-                                    </div>
-                                </div>
+                            <div class="doc-option-row">
+                                <lightning-input
+                                    type="checkbox"
+                                    label={i18n.generatePdf}
+                                    name="generatePdf"
+                                    checked={generatePdf}
+                                    onchange={handleOptionChange}
+                                ></lightning-input>
+                                <s-multiline-helptext content={i18n.generatePdfHelp}></s-multiline-helptext>
                             </div>
-                            <div class="option-row">
-                                <div class="option-item">
-                                    <div class="option-input">
-                                        <lightning-input
-                                            type="checkbox"
-                                            label={i18n.generateExcel}
-                                            name="generateExcel"
-                                            checked={generateExcel}
-                                            onchange={handleOptionChange}
-                                            class="option-checkbox"
-                                        ></lightning-input>
-                                        <s-multiline-helptext content={i18n.generateExcelHelp}></s-multiline-helptext>
-                                    </div>
-                                </div>
+                            <div class="doc-option-row">
+                                <lightning-input
+                                    type="checkbox"
+                                    label={i18n.generateExcel}
+                                    name="generateExcel"
+                                    checked={generateExcel}
+                                    onchange={handleOptionChange}
+                                ></lightning-input>
+                                <s-multiline-helptext content={i18n.generateExcelHelp}></s-multiline-helptext>
                             </div>
-                            <div class="option-row">
-                                <div class="option-item">
-                                    <div class="option-input">
-                                        <lightning-combobox
-                                            label={i18n.docLanguageLabel}
-                                            name="docLanguage"
-                                            value={docLanguage}
-                                            options={languageOptions}
-                                            onchange={handleLanguageChange}
-                                            class="option-checkbox"
-                                        ></lightning-combobox>
-                                        <s-multiline-helptext content={i18n.docLanguageHelp}></s-multiline-helptext>
-                                    </div>
-                                </div>
+                            <div class="doc-option-row">
+                                <lightning-combobox
+                                    label={i18n.docLanguageLabel}
+                                    name="docLanguage"
+                                    value={docLanguage}
+                                    options={languageOptions}
+                                    onchange={handleLanguageChange}
+                                ></lightning-combobox>
+                                <s-multiline-helptext content={i18n.docLanguageHelp}></s-multiline-helptext>
                             </div>
                         </div>
-                        <div class="options-column include-column">
-                            <h3 class="subsection-title">{i18n.includeSection}</h3>
-                            <p class="subsection-help">{i18n.includeSectionHelp}</p>
-                            <div class="include-grid">
-                                <div class="option-row">
-                                    <div class="option-item">
-                                        <div class="option-input">
-                                            <lightning-input
-                                                type="checkbox"
-                                                label={i18n.objectsLabel}
-                                                name="generateObjectsDoc"
-                                                checked={generateObjectsDoc}
-                                                onchange={handleOptionChange}
-                                                class="option-checkbox"
-                                            ></lightning-input>
-                                            <s-multiline-helptext content={i18n.objectsDocHelp}></s-multiline-helptext>
-                                        </div>
-                                    </div>
+                        <div class="doc-options-column">
+                            <div class="hardis-group-label">{i18n.includeSection}</div>
+                            <p class="hardis-group-desc">{i18n.includeSectionHelp}</p>
+                            <div class="doc-include-grid">
+                                <div class="doc-option-row">
+                                    <lightning-input
+                                        type="checkbox"
+                                        label={i18n.objectsLabel}
+                                        name="generateObjectsDoc"
+                                        checked={generateObjectsDoc}
+                                        onchange={handleOptionChange}
+                                    ></lightning-input>
+                                    <s-multiline-helptext content={i18n.objectsDocHelp}></s-multiline-helptext>
                                 </div>
-                                <div class="option-row">
-                                    <div class="option-item">
-                                        <div class="option-input">
-                                            <lightning-input
-                                                type="checkbox"
-                                                label={i18n.flowsAndProcessBuilders}
-                                                name="generateFlowDoc"
-                                                checked={generateFlowDoc}
-                                                onchange={handleOptionChange}
-                                                class="option-checkbox"
-                                            ></lightning-input>
-                                            <s-multiline-helptext content={i18n.flowsDocHelp}></s-multiline-helptext>
-                                        </div>
-                                    </div>
+                                <div class="doc-option-row">
+                                    <lightning-input
+                                        type="checkbox"
+                                        label={i18n.flowsAndProcessBuilders}
+                                        name="generateFlowDoc"
+                                        checked={generateFlowDoc}
+                                        onchange={handleOptionChange}
+                                    ></lightning-input>
+                                    <s-multiline-helptext content={i18n.flowsDocHelp}></s-multiline-helptext>
                                 </div>
-                                <div class="option-row">
-                                    <div class="option-item">
-                                        <div class="option-input">
-                                            <lightning-input
-                                                type="checkbox"
-                                                label={i18n.profilesAndPermissions}
-                                                name="generateProfilesDoc"
-                                                checked={generateProfilesDoc}
-                                                onchange={handleOptionChange}
-                                                class="option-checkbox"
-                                            ></lightning-input>
-                                            <s-multiline-helptext content={i18n.profilesDocHelp}></s-multiline-helptext>
-                                        </div>
-                                    </div>
+                                <div class="doc-option-row">
+                                    <lightning-input
+                                        type="checkbox"
+                                        label={i18n.profilesAndPermissions}
+                                        name="generateProfilesDoc"
+                                        checked={generateProfilesDoc}
+                                        onchange={handleOptionChange}
+                                    ></lightning-input>
+                                    <s-multiline-helptext content={i18n.profilesDocHelp}></s-multiline-helptext>
                                 </div>
-                                <div class="option-row">
-                                    <div class="option-item">
-                                        <div class="option-input">
-                                            <lightning-input
-                                                type="checkbox"
-                                                label={i18n.automationsLabel}
-                                                name="generateAutomationsDoc"
-                                                checked={generateAutomationsDoc}
-                                                onchange={handleOptionChange}
-                                                class="option-checkbox"
-                                            ></lightning-input>
-                                            <s-multiline-helptext content={i18n.automationsDocHelp}></s-multiline-helptext>
-                                        </div>
-                                    </div>
+                                <div class="doc-option-row">
+                                    <lightning-input
+                                        type="checkbox"
+                                        label={i18n.automationsLabel}
+                                        name="generateAutomationsDoc"
+                                        checked={generateAutomationsDoc}
+                                        onchange={handleOptionChange}
+                                    ></lightning-input>
+                                    <s-multiline-helptext content={i18n.automationsDocHelp}></s-multiline-helptext>
                                 </div>
-                                <div class="option-row">
-                                    <div class="option-item">
-                                        <div class="option-input">
-                                            <lightning-input
-                                                type="checkbox"
-                                                label={i18n.lightningPages}
-                                                name="generatePagesDoc"
-                                                checked={generatePagesDoc}
-                                                onchange={handleOptionChange}
-                                                class="option-checkbox"
-                                            ></lightning-input>
-                                            <s-multiline-helptext content={i18n.pagesDocHelp}></s-multiline-helptext>
-                                        </div>
-                                    </div>
+                                <div class="doc-option-row">
+                                    <lightning-input
+                                        type="checkbox"
+                                        label={i18n.lightningPages}
+                                        name="generatePagesDoc"
+                                        checked={generatePagesDoc}
+                                        onchange={handleOptionChange}
+                                    ></lightning-input>
+                                    <s-multiline-helptext content={i18n.pagesDocHelp}></s-multiline-helptext>
                                 </div>
-                                <div class="option-row">
-                                    <div class="option-item">
-                                        <div class="option-input">
-                                            <lightning-input
-                                                type="checkbox"
-                                                label={i18n.apexLabel}
-                                                name="generateApexDoc"
-                                                checked={generateApexDoc}
-                                                onchange={handleOptionChange}
-                                                class="option-checkbox"
-                                            ></lightning-input>
-                                            <s-multiline-helptext content={i18n.apexDocHelp}></s-multiline-helptext>
-                                        </div>
-                                    </div>
+                                <div class="doc-option-row">
+                                    <lightning-input
+                                        type="checkbox"
+                                        label={i18n.apexLabel}
+                                        name="generateApexDoc"
+                                        checked={generateApexDoc}
+                                        onchange={handleOptionChange}
+                                    ></lightning-input>
+                                    <s-multiline-helptext content={i18n.apexDocHelp}></s-multiline-helptext>
                                 </div>
-                                <div class="option-row">
-                                    <div class="option-item">
-                                        <div class="option-input">
-                                            <lightning-input
-                                                type="checkbox"
-                                                label={i18n.lightningWebComponents}
-                                                name="generateLwcDoc"
-                                                checked={generateLwcDoc}
-                                                onchange={handleOptionChange}
-                                                class="option-checkbox"
-                                            ></lightning-input>
-                                            <s-multiline-helptext content={i18n.lwcDocHelp}></s-multiline-helptext>
-                                        </div>
-                                    </div>
+                                <div class="doc-option-row">
+                                    <lightning-input
+                                        type="checkbox"
+                                        label={i18n.lightningWebComponents}
+                                        name="generateLwcDoc"
+                                        checked={generateLwcDoc}
+                                        onchange={handleOptionChange}
+                                    ></lightning-input>
+                                    <s-multiline-helptext content={i18n.lwcDocHelp}></s-multiline-helptext>
                                 </div>
-                                <div class="option-row">
-                                    <div class="option-item">
-                                        <div class="option-input">
-                                            <lightning-input
-                                                type="checkbox"
-                                                label={i18n.installedPackagesLabel}
-                                                name="generatePackagesDoc"
-                                                checked={generatePackagesDoc}
-                                                onchange={handleOptionChange}
-                                                class="option-checkbox"
-                                            ></lightning-input>
-                                            <s-multiline-helptext content={i18n.packagesDocHelp}></s-multiline-helptext>
-                                        </div>
-                                    </div>
+                                <div class="doc-option-row">
+                                    <lightning-input
+                                        type="checkbox"
+                                        label={i18n.installedPackagesLabel}
+                                        name="generatePackagesDoc"
+                                        checked={generatePackagesDoc}
+                                        onchange={handleOptionChange}
+                                    ></lightning-input>
+                                    <s-multiline-helptext content={i18n.packagesDocHelp}></s-multiline-helptext>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="generate-actions">
-                        <lightning-button
-                            variant="brand"
+                        <lightning-button class="hardis-btn-tinted-blue"
+                            variant="neutral"
                             label={i18n.generateDocumentation}
                             icon-name="utility:archive"
                             onclick={handleGenerate}
@@ -264,55 +196,55 @@
                             onclick={handleMoreOptions}
                         ></lightning-button>
                     </div>
-                    <p class="options-note">{i18n.moreOptionsNote}</p>
+                    <div class="hardis-note slds-m-top_small" role="note">
+                        <lightning-icon icon-name="utility:info" size="x-small"></lightning-icon>
+                        <span>{i18n.moreOptionsNote}</span>
+                    </div>
                 </div>
             </div>
 
             <!-- Deploy Section -->
             <div class="section">
-                <h2 class="section-title">
-                    <lightning-icon icon-name="utility:upload" size="x-small" class="section-icon"></lightning-icon>
-                    {i18n.deployDocumentationSection}
-                </h2>
-                <p class="section-description">{i18n.deployDocumentationSectionDesc}</p>
+                <div class="hardis-group-label">{i18n.deployDocumentationSection}</div>
+                <p class="hardis-group-desc">{i18n.deployDocumentationSectionDesc}</p>
 
-                <div class="commands-grid">
-                    <div class="command-card">
-                        <div class="command-icon-container cloudflare">
-                            <lightning-icon icon-name="utility:world" size="small" variant="inverse"></lightning-icon>
+                <div class="hardis-card-grid">
+                    <div class="hardis-card">
+                        <div class="hardis-card-head">
+                            <div class="hardis-tile small cloudflare">
+                                <lightning-icon icon-name="utility:world" size="x-small"></lightning-icon>
+                            </div>
+                            <h3 class="hardis-card-title">{i18n.deployToCloudflare}</h3>
                         </div>
-                        <div class="command-content">
-                            <h3 class="command-title">{i18n.deployToCloudflare}</h3>
-                            <p class="command-description">{i18n.deployToCloudflareDesc}</p>
-                        </div>
-                        <div class="command-actions">
-                            <lightning-button variant="brand" label={i18n.deployLabel} onclick={handleDeployCloudflare}></lightning-button>
+                        <p class="hardis-card-desc">{i18n.deployToCloudflareDesc}</p>
+                        <div class="hardis-card-actions">
+                            <lightning-button class="hardis-btn-tinted-blue" variant="neutral" label={i18n.deployLabel} onclick={handleDeployCloudflare}></lightning-button>
                         </div>
                     </div>
 
-                    <div class="command-card">
-                        <div class="command-icon-container confluence">
-                            <lightning-icon icon-name="utility:connected_apps" size="small" variant="inverse"></lightning-icon>
+                    <div class="hardis-card">
+                        <div class="hardis-card-head">
+                            <div class="hardis-tile small confluence">
+                                <lightning-icon icon-name="utility:connected_apps" size="x-small"></lightning-icon>
+                            </div>
+                            <h3 class="hardis-card-title">{i18n.deployToConfluence}</h3>
                         </div>
-                        <div class="command-content">
-                            <h3 class="command-title">{i18n.deployToConfluence}</h3>
-                            <p class="command-description">{i18n.deployToConfluenceDesc}</p>
-                        </div>
-                        <div class="command-actions">
-                            <lightning-button variant="brand" label={i18n.deployLabel} onclick={handleDeployToConfluence}></lightning-button>
+                        <p class="hardis-card-desc">{i18n.deployToConfluenceDesc}</p>
+                        <div class="hardis-card-actions">
+                            <lightning-button class="hardis-btn-tinted-blue" variant="neutral" label={i18n.deployLabel} onclick={handleDeployToConfluence}></lightning-button>
                         </div>
                     </div>
 
-                    <div class="command-card">
-                        <div class="command-icon-container salesforce">
-                            <lightning-icon icon-name="utility:salesforce1" size="small" variant="inverse"></lightning-icon>
+                    <div class="hardis-card">
+                        <div class="hardis-card-head">
+                            <div class="hardis-tile small salesforce">
+                                <lightning-icon icon-name="utility:salesforce1" size="x-small"></lightning-icon>
+                            </div>
+                            <h3 class="hardis-card-title">{i18n.deployToSalesforce}</h3>
                         </div>
-                        <div class="command-content">
-                            <h3 class="command-title">{i18n.deployToSalesforce}</h3>
-                            <p class="command-description" lwc:inner-html={deployToSalesforceDescHtml}></p>
-                        </div>
-                        <div class="command-actions">
-                            <lightning-button variant="brand" label={i18n.deployLabel} onclick={handleDeployToOrg}></lightning-button>
+                        <p class="hardis-card-desc" lwc:inner-html={deployToSalesforceDescHtml}></p>
+                        <div class="hardis-card-actions">
+                            <lightning-button class="hardis-btn-tinted-blue" variant="neutral" label={i18n.deployLabel} onclick={handleDeployToOrg}></lightning-button>
                         </div>
                     </div>
                 </div>
@@ -320,23 +252,20 @@
 
             <!-- Run Locally Section -->
             <div class="section">
-                <h2 class="section-title">
-                    <lightning-icon icon-name="utility:desktop" size="x-small" class="section-icon"></lightning-icon>
-                    {i18n.runLocallySection}
-                </h2>
-                <p class="section-description">{i18n.runLocallySectionDesc}</p>
+                <div class="hardis-group-label">{i18n.runLocallySection}</div>
+                <p class="hardis-group-desc">{i18n.runLocallySectionDesc}</p>
 
-                <div class="commands-grid single-column">
-                    <div class="command-card">
-                        <div class="command-icon-container local">
-                            <lightning-icon icon-name="utility:play" size="small" variant="inverse"></lightning-icon>
+                <div class="hardis-card-grid single-column">
+                    <div class="hardis-card">
+                        <div class="hardis-card-head">
+                            <div class="hardis-tile small local">
+                                <lightning-icon icon-name="utility:play" size="x-small"></lightning-icon>
+                            </div>
+                            <h3 class="hardis-card-title">{i18n.runLocalHtmlDocPages}</h3>
                         </div>
-                        <div class="command-content">
-                            <h3 class="command-title">{i18n.runLocalHtmlDocPages}</h3>
-                            <p class="command-description">{i18n.runLocalHtmlDocPagesDesc}</p>
-                        </div>
-                        <div class="command-actions">
-                            <lightning-button variant="brand" label={i18n.runLocallyButton} onclick={handleRunLocally}></lightning-button>
+                        <p class="hardis-card-desc">{i18n.runLocalHtmlDocPagesDesc}</p>
+                        <div class="hardis-card-actions">
+                            <lightning-button class="hardis-btn-tinted-blue" variant="neutral" label={i18n.runLocallyButton} onclick={handleRunLocally}></lightning-button>
                         </div>
                     </div>
                 </div>

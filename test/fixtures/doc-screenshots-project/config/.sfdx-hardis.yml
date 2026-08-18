@@ -1,0 +1,56 @@
+projectName: MyCompany-CRM
+developmentBranch: integration
+defaultBranch: main
+instanceUrl: https://mycompany.my.salesforce.com
+availableTargetBranches:
+  - integration
+  - uat
+  - preprod
+  - main
+availableProjects:
+  - CRM,Customer Relationship Management
+  - BILLING,Billing & Invoicing
+  - SERVICE,Service Cloud
+installedPackages:
+  - Id: 0A35f000000TN2ACAW
+    SubscriberPackageId: 033w0000000gYbxAAE
+    SubscriberPackageName: Conga Composer
+    SubscriberPackageNamespace: APXTConga4
+    SubscriberPackageVersionId: 04t1t0000037BgHAAU
+    SubscriberPackageVersionName: Conga Composer 8 Winter 26
+    SubscriberPackageVersionNumber: 8.187.0.1
+    installOnScratchOrgs: true
+    installDuringDeployments: true
+  - Id: 0A35f000000TN2BCAW
+    SubscriberPackageId: 033A0000000TXX1IAO
+    SubscriberPackageName: DocuSign eSignature
+    SubscriberPackageNamespace: dsfs
+    SubscriberPackageVersionId: 04t4W000002GJHnQAO
+    SubscriberPackageVersionName: DocuSign for Salesforce
+    SubscriberPackageVersionNumber: 7.6.0.1
+    installOnScratchOrgs: true
+    installDuringDeployments: false
+  - Id: 0A35f000000TN2CCAW
+    SubscriberPackageId: 033Kj000000TrGyIAK
+    SubscriberPackageName: MyCompany Core
+    SubscriberPackageNamespace: mcc
+    SubscriberPackageVersionId: 04tKj000000UbNlIAK
+    SubscriberPackageVersionName: MyCompany Core 2.14
+    SubscriberPackageVersionNumber: 2.14.0.3
+    installOnScratchOrgs: true
+    installDuringDeployments: true
+customCommands: []
+monitoringCommands: []
+autoCleanTypes:
+  - checkPermissions
+  - destructivechanges
+  - datadotcom
+  - minimizeProfiles
+  - listViewsMine
+useDeltaDeployment: true
+useSmartDeploymentTests: true
+apexTestsMinCoverageOrgWide: 80
+manualActionsFileUrl: https://mycompany.sharepoint.com/sites/crm/ManualActions.xlsx
+orgAuthenticationMode: encryptedCert
+allowedOrgTypes:
+  - sandbox

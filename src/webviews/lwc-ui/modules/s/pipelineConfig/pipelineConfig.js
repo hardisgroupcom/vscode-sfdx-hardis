@@ -1,5 +1,22 @@
 import { LightningElement, api, track } from "lwc";
 import { SharedMixin } from "s/sharedMixin";
+import {
+  getActionTypeLabel,
+  getActionTypeIconName,
+  getActionContextLabel,
+} from "s/deploymentActionUtils";
+
+// Config keys that hold git branch names: rendered as monospace branch chips
+// instead of plain chips in the read-only view.
+const BRANCH_NAME_ARRAY_KEYS = new Set([
+  "mergeTargets",
+  "availableTargetBranches",
+]);
+// Text values starting with http(s) are rendered as a truncated clickable link.
+const URL_VALUE_REGEX = /^https?:\/\//i;
+// A section made only of these keys gets the compact "Salesforce Org" card
+// layout in read-only mode instead of a list of field rows.
+const SALESFORCE_ORG_KEYS = ["instanceUrl", "targetUsername"];
 
 /**
  * LWC to display and edit .sfdx-hardis.yml configuration (global or branch-scoped)
@@ -33,6 +50,8 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
   // the action types, their parameters and the target orgs restriction
   @track showDeploymentActionModal = false;
   @track currentDeploymentAction = null;
+  // The modal opens read-only when the settings panel itself is in view mode
+  @track deploymentActionModalEditMode = false;
   @track projectApexScripts = [];
   @track projectSfdmuWorkspaces = [];
   @track projectSchedulableClasses = [];
@@ -304,12 +323,51 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
             valueEdit.length > 0;
           const isDeploymentActions =
             isArrayObject && this.deploymentActionKeys[key] !== undefined;
+          // The field row always shows a one-line help text; the info bubble
+          // is only kept for descriptions that are genuinely long/multi-line,
+          // so it can still surface the full text.
+          const isMultilineHelp = description.includes("\n");
+          const helpFirstLine = description.split(/\r?\n/)[0] || "";
+          // Read-only rendering helpers: booleans become a status pill (never
+          // a disabled toggle), git-branch arrays get monospace branch chips,
+          // http(s) text values become a truncated clickable link.
+          const booleanPillClass = value
+            ? "hardis-pill hardis-status-success"
+            : "hardis-pill hardis-status-unknown";
+          const booleanPillLabel = value
+            ? this.i18n.enabledLabel
+            : this.i18n.disabledLabel;
+          const isUrlValue =
+            isText &&
+            typeof value === "string" &&
+            URL_VALUE_REGEX.test(value.trim());
+          const isBranchArrayValue = BRANCH_NAME_ARRAY_KEYS.has(key);
+          const arrayChipClass = isBranchArrayValue
+            ? "hardis-branch-chip"
+            : "hardis-chip";
+          // Doc links move inline in the field label; array-of-object fields
+          // never carried one (they use their own datatable/modal editor).
+          const showDocLink = hasDocUrl && !isArrayObject;
+          // Arrays/objects need the full row width (chips, dual-listbox,
+          // datatable) instead of the compact right-aligned control column.
+          // Except when empty in view mode: a lone "Not defined" fits the
+          // right column like any scalar, keeping one value placement.
+          const hasArrayItems =
+            Array.isArray(valueDisplay) && valueDisplay.length > 0;
+          const isWideControl =
+            (isArrayEnum || isArrayText || isArrayObject) &&
+            (this.isEditMode || hasArrayItems);
+          const fieldRowClass = isWideControl
+            ? "hardis-field-row stacked"
+            : "hardis-field-row";
           entries.push({
             key,
             isDeploymentActions,
             isGenericArrayObject: isArrayObject && !isDeploymentActions,
             label,
             description,
+            isMultilineHelp,
+            helpFirstLine,
             value,
             valueDisplay,
             valueEdit,
@@ -330,9 +388,14 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
             optionsLwc,
             docUrl,
             hasDocUrl,
-            columnClass: isArrayObject
-              ? "slds-col"
-              : "slds-col slds-size_9-of-12",
+            showDocLink,
+            booleanPillClass,
+            booleanPillLabel,
+            isUrlValue,
+            isBranchArrayValue,
+            arrayChipClass,
+            isWideControl,
+            fieldRowClass,
             hasArrayEnumValues:
               isArrayEnum &&
               Array.isArray(valueDisplay) &&
@@ -373,11 +436,41 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
               : [],
           });
         }
+        // A branch section made only of the Salesforce Org fields (Instance
+        // URL + Target Username) gets a single summary card in read-only
+        // mode instead of two sparse field rows.
+        const isSalesforceOrgSection =
+          entries.length > 0 &&
+          entries.every((entry) => SALESFORCE_ORG_KEYS.includes(entry.key));
+        let salesforceOrgInstanceLabel = "";
+        let salesforceOrgInstanceDisplay = "";
+        let salesforceOrgUsernameLabel = "";
+        let salesforceOrgUsernameDisplay = "";
+        if (isSalesforceOrgSection) {
+          const instanceEntry = entries.find((e) => e.key === "instanceUrl");
+          const usernameEntry = entries.find((e) => e.key === "targetUsername");
+          salesforceOrgInstanceLabel = instanceEntry ? instanceEntry.label : "";
+          salesforceOrgInstanceDisplay =
+            instanceEntry && instanceEntry.hasValue
+              ? instanceEntry.value
+              : this.i18n.notDefined;
+          salesforceOrgUsernameLabel = usernameEntry ? usernameEntry.label : "";
+          salesforceOrgUsernameDisplay =
+            usernameEntry && usernameEntry.hasValue
+              ? usernameEntry.value
+              : this.i18n.notDefined;
+        }
         return {
           label: section.label,
           iconName: section.iconName || "utility:settings",
           description: section.description,
           entries,
+          isSalesforceOrgSectionReadOnly:
+            isSalesforceOrgSection && !this.isEditMode,
+          salesforceOrgInstanceLabel,
+          salesforceOrgInstanceDisplay,
+          salesforceOrgUsernameLabel,
+          salesforceOrgUsernameDisplay,
         };
       })
       .filter((section) => section.entries.length > 0);
@@ -660,6 +753,7 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
     this._deploymentActionKey = key;
     this._deploymentActionEditIndex = index;
     this.currentDeploymentAction = action;
+    this.deploymentActionModalEditMode = this.isEditMode;
     this.showDeploymentActionModal = true;
   }
 
@@ -676,6 +770,12 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
     const editIndex = this._deploymentActionEditIndex;
     if (!sourceKey) {
       return;
+    }
+    // The modal was opened read-only from the view mode, and its Edit button
+    // was used: switch the whole panel to edit mode so the change is kept and
+    // the Save / Cancel header buttons appear
+    if (!this.isEditMode) {
+      this.handleEdit();
     }
     // "when" can be changed in the modal, and it is also forced by some action
     // types (ex: schedule-batch is always post-deploy): the action then belongs
@@ -862,6 +962,13 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
     const index = row._index;
 
     switch (action.name) {
+      case "view_action":
+        // Click on the action label: open the full-detail modal (read-only in
+        // view mode, editable in edit mode)
+        if (this.deploymentActionKeys[key] !== undefined) {
+          this._openDeploymentActionModal(key, index);
+        }
+        break;
       case "move_up":
         if (row._canMoveUp) {
           let currentArray = [
@@ -971,37 +1078,80 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
     this.arrayObjectEditorState = { ...this.arrayObjectEditorState };
   }
 
+  // Compact columns for the pre/post deployment actions tables: the label
+  // opens the full-detail modal, so the other action properties do not need
+  // their own column (same pattern as the DevOps Pipeline panel actions tab)
+  getDeploymentActionsDatatableColumns() {
+    return [
+      {
+        label: this.t("actionLabelField"),
+        fieldName: "_displayLabel",
+        type: "button",
+        typeAttributes: {
+          label: { fieldName: "_displayLabel" },
+          name: "view_action",
+          variant: "base",
+        },
+        wrapText: true,
+      },
+      {
+        label: this.t("typeLabel"),
+        fieldName: "_typeLabel",
+        type: "text",
+        cellAttributes: {
+          iconName: { fieldName: "_typeIconName" },
+          iconPosition: "left",
+        },
+        wrapText: true,
+        initialWidth: 190,
+      },
+      {
+        label: this.t("executionContextsLabel"),
+        fieldName: "_contextLabel",
+        type: "text",
+        wrapText: true,
+        initialWidth: 230,
+      },
+    ];
+  }
+
   // Helper to get datatable columns for array of objects
   getArrayObjectDatatableColumns(entry) {
     if (!entry || !entry.schemaItems || !entry.schemaItems.properties)
       return [];
+    const isDeploymentActions =
+      this.deploymentActionKeys[entry.key] !== undefined;
     const properties = entry.schemaItems.properties || {};
     const columns = [];
 
-    // Add columns for each property - let lightning-datatable handle auto-sizing
-    Object.keys(properties).forEach((fieldKey) => {
-      const fieldSchema = properties[fieldKey];
-      let columnType = "text";
+    if (isDeploymentActions) {
+      columns.push(...this.getDeploymentActionsDatatableColumns());
+    } else {
+      // Add columns for each property - let lightning-datatable handle auto-sizing
+      Object.keys(properties).forEach((fieldKey) => {
+        const fieldSchema = properties[fieldKey];
+        let columnType = "text";
 
-      // Determine column type based on schema
-      if (fieldSchema.type === "boolean") {
-        columnType = "boolean";
-      } else if (
-        fieldSchema.type === "number" ||
-        fieldSchema.type === "integer"
-      ) {
-        columnType = "number";
-      } else if (fieldSchema.type === "url") {
-        columnType = "url";
-      }
+        // Determine column type based on schema
+        if (fieldSchema.type === "boolean") {
+          columnType = "boolean";
+        } else if (
+          fieldSchema.type === "number" ||
+          fieldSchema.type === "integer"
+        ) {
+          columnType = "number";
+        } else if (fieldSchema.type === "url") {
+          columnType = "url";
+        }
 
-      columns.push({
-        label: fieldSchema.title || fieldKey,
-        fieldName: fieldKey,
-        type: columnType,
-        wrapText: columnType !== "boolean",
+        columns.push({
+          label: fieldSchema.title || fieldKey,
+          fieldName: fieldKey,
+          type: columnType,
+          wrapText: columnType !== "boolean",
+        });
       });
-    });
+    }
 
     // Add actions column only in edit mode
     if (entry.isEditMode) {
@@ -1037,6 +1187,9 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
   // Helper to get datatable data for array of objects
   getArrayObjectDatatableData(entry) {
     if (!entry || !entry.value || !Array.isArray(entry.value)) return [];
+    const isDeploymentActions =
+      this.deploymentActionKeys[entry.key] !== undefined;
+    const translate = (labelKey) => this.t(labelKey);
     return entry.value.map((obj, idx) => {
       // Convert object to include proper boolean values and metadata
       const rowData = { ...obj };
@@ -1049,6 +1202,19 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
             rowData[propKey] = Boolean(rowData[propKey]);
           }
         });
+      }
+
+      // Computed display fields for the compact deployment actions columns
+      if (isDeploymentActions) {
+        const typeCode = obj.type || "command";
+        rowData._displayLabel =
+          obj.label || obj.command || obj.id || this.t("unnamedAction");
+        rowData._typeLabel = getActionTypeLabel(typeCode, translate);
+        rowData._typeIconName = getActionTypeIconName(typeCode);
+        rowData._contextLabel = getActionContextLabel(
+          obj.context || "all",
+          translate,
+        );
       }
 
       return {

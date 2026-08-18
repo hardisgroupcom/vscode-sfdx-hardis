@@ -573,6 +573,28 @@ export default class PackageXml extends SharedMixin(LightningElement) {
     this.editMode = !!event.target?.checked;
   }
 
+  handleTypeHeaderKeydown(event) {
+    if (event.target !== event.currentTarget) {
+      return;
+    }
+    if (event.key !== "Enter" && event.key !== " ") {
+      return;
+    }
+    event.preventDefault();
+    this.toggleTypeExpansion(event);
+  }
+
+  handleMemberKeydown(event) {
+    if (event.target !== event.currentTarget) {
+      return;
+    }
+    if (event.key !== "Enter" && event.key !== " ") {
+      return;
+    }
+    event.preventDefault();
+    this.openMember(event);
+  }
+
   toggleTypeExpansion(event) {
     const typeName = event.currentTarget.dataset.typeName;
     if (!typeName || !this.packageData?.types) return;
@@ -662,6 +684,9 @@ export default class PackageXml extends SharedMixin(LightningElement) {
   openMetadataDocumentation(event) {
     try {
       event.preventDefault();
+      // The icon sits inside the clickable type header: without this, the
+      // click also toggles the section's expansion.
+      event.stopPropagation();
       const typeName = event.currentTarget?.dataset?.typeName || null;
       if (!typeName) return;
       const docUrl = `${METADATA_DOC_BASE_URL}${typeName}`;

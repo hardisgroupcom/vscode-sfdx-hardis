@@ -1,0 +1,5 @@
+instanceUrl: https://mycompany--preprod.sandbox.my.salesforce.com
+targetUsername: deploy.user@mycompany.com.preprod
+alias: PREPROD
+mergeTargets:
+  - main

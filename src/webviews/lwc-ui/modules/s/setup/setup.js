@@ -1,6 +1,16 @@
 import { LightningElement, api, track } from "lwc";
 import { SharedMixin } from "s/sharedMixin";
 
+// Status of a dependency -> hue of its .hardis-tile, so the accent of the card
+// and the color of its icon always tell the same story (global-theme.css kit)
+const STATE_TILE_HUE = {
+  ok: "green",
+  warning: "amber",
+  error: "red",
+  info: "cyan",
+  neutral: "slate",
+};
+
 export default class Setup extends SharedMixin(LightningElement) {
   @track checks = [];
   @track summaryMessage = "";
@@ -266,7 +276,7 @@ export default class Setup extends SharedMixin(LightningElement) {
       this.summaryClass = "info";
       this._summaryChecking = true;
       this._summaryIconName = "utility:sync";
-      this._summaryIconContainer = "status-icon-container neutral";
+      this._summaryState = "neutral";
     } else {
       if (anyChecking) {
         this.summaryMessage = this.t("checkInProgress");
@@ -288,16 +298,16 @@ export default class Setup extends SharedMixin(LightningElement) {
       // Choose summary icon based on highest-priority state (checking > missing > outdated > ok)
       if (anyChecking) {
         this._summaryIconName = "utility:sync"; // spinner will be shown in template when checking
-        this._summaryIconContainer = "status-icon-container checking";
+        this._summaryState = "neutral";
       } else if (anyMissing) {
         this._summaryIconName = "utility:error";
-        this._summaryIconContainer = "status-icon-container error";
+        this._summaryState = "error";
       } else if (anyOutdated) {
         this._summaryIconName = "utility:warning";
-        this._summaryIconContainer = "status-icon-container warning";
+        this._summaryState = "warning";
       } else {
         this._summaryIconName = "utility:check";
-        this._summaryIconContainer = "status-icon-container success";
+        this._summaryState = "ok";
       }
     }
 
@@ -324,36 +334,33 @@ export default class Setup extends SharedMixin(LightningElement) {
       const status = c.status || "";
       const busy = c.checking || c.installing || c.uninstalling;
       let statusIcon = busy ? "utility:sync" : "utility:info";
-      let cardClass = busy ? "status-card checking" : "status-card";
-      let iconContainerClass = busy
-        ? "status-icon-container checking"
-        : "status-icon-container neutral";
+      let state = "neutral";
       if (!busy) {
         switch (status) {
           case "ok":
             statusIcon = "utility:check";
-            cardClass = "status-card installed ok";
-            iconContainerClass = "status-icon-container success";
+            state = "ok";
             break;
           case "outdated":
             statusIcon = "utility:warning";
-            cardClass = "status-card installed outdated warning";
-            iconContainerClass = "status-icon-container warning";
+            state = "warning";
             break;
           case "missing":
             statusIcon = "utility:error";
-            cardClass = "status-card not-installed error";
-            iconContainerClass = "status-icon-container error";
+            state = "error";
             break;
           case "error":
             statusIcon = "utility:ban";
-            cardClass = "status-card not-installed critical";
-            iconContainerClass = "status-icon-container critical";
+            state = "error";
         }
       }
+      const cardClass = `hardis-status-card ${state}`;
+      const tileClass = `hardis-tile ${STATE_TILE_HUE[state] || "slate"}`;
 
       let buttonLabel = "ERROR: BUG IN CODE";
-      let buttonVariant = "error";
+      // Colors always come from a tint class on a neutral button: filled SLDS
+      // variants are unreadable in one of the two VS Code themes
+      let buttonTint = "";
       let buttonAction = "error";
       let buttonDisabled = false;
 
@@ -365,30 +372,27 @@ export default class Setup extends SharedMixin(LightningElement) {
         } else {
           buttonLabel = this.t("checking");
         }
-        buttonVariant = "neutral";
-        ((buttonAction = ""), (buttonDisabled = true));
+        buttonAction = "";
+        buttonDisabled = true;
       } else if (status === "outdated") {
         buttonLabel = this.t("upgradeLabel");
-        buttonVariant = "brand";
-        buttonAction = "install";
-        if (c.id === "node") {
-          buttonAction = "instructions";
-        }
+        buttonTint = "hardis-btn-tinted-amber";
+        buttonAction = c.id === "node" ? "instructions" : "install";
       } else if (status === "ok") {
         buttonLabel = this.t("recheck");
-        buttonVariant = "neutral";
         buttonAction = "recheck";
       } else if (status === "missing") {
         buttonLabel = c.installable
           ? this.t("installLabel")
           : this.t("installInstructions");
-        buttonVariant = "brand";
+        buttonTint = "hardis-btn-tinted-blue";
         buttonAction = c.installable ? "install" : "instructions";
       } else if (status === "error") {
         buttonLabel = this.t("fixInstructions");
-        buttonVariant = "brand";
+        buttonTint = "hardis-btn-tinted-blue";
         buttonAction = "instructions";
       }
+      const buttonClass = buttonTint;
 
       // Uninstall button is offered for non-recommended plugins that are
       // currently installed (status "ok", "outdated", or "error" with a known
@@ -404,9 +408,9 @@ export default class Setup extends SharedMixin(LightningElement) {
         isBusy: busy,
         statusIcon,
         cardClass,
-        iconContainerClass,
+        tileClass,
         buttonLabel,
-        buttonVariant,
+        buttonClass,
         buttonAction,
         buttonDisabled,
         showUninstallButton,
@@ -428,9 +432,17 @@ export default class Setup extends SharedMixin(LightningElement) {
     return this._summaryIconName || "utility:setup";
   }
 
-  // Container class for the icon in the summary card
-  get summaryIconContainerClass() {
-    return this._summaryIconContainer || "status-icon-container info";
+  // State of the summary card, shared by its accent and its tile
+  get summaryState() {
+    return this._summaryState || "info";
+  }
+
+  get summaryCardClass() {
+    return `hardis-status-card ${this.summaryState}`;
+  }
+
+  get summaryTileClass() {
+    return `hardis-tile ${STATE_TILE_HUE[this.summaryState] || "slate"}`;
   }
 
   // boolean flag used by template to hide summary button while checks are running

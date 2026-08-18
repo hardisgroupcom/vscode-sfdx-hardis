@@ -1,0 +1,11 @@
+{
+  "sfdxHardisLabel": "Opportunity quotes (PDF)",
+  "sfdxHardisDescription": "Download signed quotes attached to closed-won opportunities",
+  "soqlQuery": "SELECT Id, Name FROM Opportunity WHERE StageName = 'Closed Won'",
+  "fileTypes": "pdf",
+  "fileSizeMin": 10,
+  "outputFolderNameField": "Name",
+  "outputFileNameFormat": "title",
+  "overwriteParentRecords": false,
+  "overwriteFiles": false
+}

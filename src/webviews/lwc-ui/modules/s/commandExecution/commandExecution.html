@@ -1,555 +1,367 @@
 <template>
-  <div class="slds-scope slds-theme_default command-execution slds-card blue-back" style="height: 100vh; display: flex; flex-direction: column;">
-    <!-- Header -->
-    <div class="slds-card__header" style="flex-shrink: 0;">
-      <div class="slds-media slds-media_center slds-has-flexi-truncate">
-        <div class="slds-media__figure" style="width: 2rem;">
-          <template if:true={useSpinner}>
-            <div class="slds-is-relative" style="height: 2rem;">
-              <lightning-spinner 
-                alternative-text="Loading..." 
-                size="small"
-                variant="brand">
-              </lightning-spinner>
-            </div>
-          </template>
-          <template if:false={useSpinner}>
-            <template if:true={statusIcon}>
-              <lightning-icon 
-                icon-name={statusIcon.iconName}
-                variant={statusIcon.variant}
-                size="small">
-              </lightning-icon>
-            </template>
-          </template>
+  <div class="slds-scope command-execution" data-theme={colorTheme} data-contrast={colorContrast}>
+    <!-- Header: identity tile + command name + status pill + meta chips + toolbar -->
+    <div class="hardis-cmd-head">
+      <div class={commandTileClass}>
+        <lightning-icon icon-name={commandTileIcon} size="x-small"></lightning-icon>
+      </div>
+      <div class="hardis-cmd-head-main">
+        <div class="hardis-cmd-title-row">
+          <span class="hardis-cmd-title" title={commandName}>{commandName}</span>
+          <span class={statusPillClass}>
+            <span class="hardis-pill-dot"></span>{statusPillLabel}
+          </span>
         </div>
-        <div class="slds-media__body">
-          <h2 class="slds-card__header-title" style="display: flex; align-items: center; gap: 0.5rem;">
-            <span class="slds-text-heading_small">{commandTitle}</span>
-            <template if:true={commandLogFile}>
-              <lightning-button-icon
-                icon-name="utility:description"
-                variant="bare"
-                alternative-text={i18n.openCommandLogFile}
-                title={i18n.openCommandLogFile}
-                onclick={handleOpenCommandLogFile}
-                class="slds-m-left_xx-small"
-              ></lightning-button-icon>
-            </template>
-          </h2>
+        <div class="hardis-cmd-meta">
           <template if:true={commandDuration}>
-            <p class="slds-text-body_small">
-              {commandDurationLabel}
-            </p>
+            <span class="hardis-chip" title={commandDurationLabel}>
+              <lightning-icon icon-name="utility:clock" size="xx-small"></lightning-icon>
+              {commandDuration}
+            </span>
+          </template>
+          <template if:true={targetOrgUsername}>
+            <span class="hardis-chip" title={i18n.targetOrgTooltip}>
+              <lightning-icon icon-name="utility:salesforce1" size="xx-small"></lightning-icon>
+              {targetOrgUsername}
+            </span>
+          </template>
+          <template if:true={commandLogFile}>
+            <button class="hardis-chip hardis-chip-link" onclick={handleOpenCommandLogFile} title={i18n.openCommandLogFile}>
+              <lightning-icon icon-name="utility:description" size="xx-small"></lightning-icon>
+              {i18n.logFileLabel}
+            </button>
           </template>
         </div>
-        <div class="slds-media__figure slds-media__figure_reverse">
-          <div style="display: flex; align-items: flex-start; gap: 1.5rem;">
-            <!-- Auto-close toggle -->
-            <lightning-input
-              type="toggle"
-              label={i18n.autoCloseLabel}
-              checked={isInAutocloseList}
-              onchange={handleToggleAutoclose}
-              title={i18n.autoCloseTooltip}
-              style="margin-top:0.125rem;"
-            ></lightning-input>
-            <!-- Toggle for Simple/Advanced -->
-            <lightning-input
-              type="toggle"
-              label={i18n.advancedDetails}
-              checked={isAdvancedMode}
-              onchange={handleToggleDetailsMode}
-              class="details-toggle"
-              title={i18n.advancedDetailsTooltip}
-              style="margin-top:0.125rem;"
-            ></lightning-input>
-            <!-- Documentation button -->
-            <template if:true={hasDocumentation}>
-              <lightning-button
-                variant="neutral"
-                label={i18n.documentation}
-                icon-name="utility:info"
-                onclick={handleOpenDocumentation}
-                title={i18n.openCommandDocumentation}>
-              </lightning-button>
-            </template>
-          </div>
-        </div>
+      </div>
+      <div class="hardis-cmd-actions">
+        <!-- Run the same command again, once it is over (whatever its status) -->
+        <template if:true={canRunAgain}>
+          <lightning-button
+            class="hardis-btn-tinted-blue"
+            label={i18n.runAgain}
+            icon-name="utility:refresh"
+            title={i18n.runAgainTooltip}
+            onclick={handleRunAgain}
+          ></lightning-button>
+        </template>
+        <!-- Auto-close toggle -->
+        <lightning-input
+          type="toggle"
+          label={i18n.autoCloseLabel}
+          checked={isInAutocloseList}
+          onchange={handleToggleAutoclose}
+          title={i18n.autoCloseTooltip}
+          message-toggle-active=""
+          message-toggle-inactive=""
+        ></lightning-input>
+        <!-- Toggle for Simple/Advanced -->
+        <lightning-input
+          type="toggle"
+          label={i18n.advancedDetails}
+          checked={isAdvancedMode}
+          onchange={handleToggleDetailsMode}
+          title={i18n.advancedDetailsTooltip}
+          message-toggle-active=""
+          message-toggle-inactive=""
+        ></lightning-input>
+        <!-- Documentation button -->
+        <template if:true={hasDocumentation}>
+          <lightning-button-icon
+            icon-name="utility:info"
+            variant="border-filled"
+            alternative-text={i18n.documentation}
+            title={i18n.openCommandDocumentation}
+            onclick={handleOpenDocumentation}
+          ></lightning-button-icon>
+        </template>
       </div>
     </div>
 
-    <!-- Log container -->
-    <div class="slds-card__body slds-card__body_inner" style="flex: 1; display: flex; flex-direction: column;">
-      <div class="log-container slds-scrollable_y" tabindex="0" role="log" aria-live="polite" aria-label="Command execution logs" onclick={handleLogContainerClick}>
-        <template if:true={logSectionsForDisplay.length}>
-          <div class="log-sections">
-            <template for:each={logSectionsForDisplay} for:item="section">
-                <template if:false={section.isLatestQuestionSectionToHide}>
-                  <!-- Progress Section -->
-                  <template if:true={section.isProgress}>
-                    <div key={section.id} class="log-section progress-section slds-box slds-box_x-small slds-m-bottom_x-small">
-                      <!-- Progress section header -->
-                      <div class="section-header slds-p-around_x-small" data-section-id={section.id} onclick={handleToggleSection}>
-                        <div class="slds-media slds-media_top">
-                          <div class="slds-media__figure" style="width: 1rem;">
-                            <template if:true={section.sectionUseSpinner}>
-                              <div class="slds-is-relative" style="height: 1rem;">
-                                <lightning-spinner 
-                                  alternative-text="Progress..." 
-                                  size="x-small"
-                                  variant="brand">
-                                </lightning-spinner>
-                              </div>
-                            </template>
-                            <template if:false={section.sectionUseSpinner}>
-                              <template if:true={section.sectionStatusIcon}>
-                                <lightning-icon 
-                                  icon-name={section.sectionStatusIcon.iconName}
-                                  variant={section.sectionStatusIcon.variant}
-                                  size="x-small">
-                                </lightning-icon>
-                              </template>
-                            </template>
-                          </div>
-                          <div class="slds-media__body">
-                            <div class="slds-grid">
-                              <div class="slds-col slds-size_1-of-1">
-                                <div class="section-title slds-text-body_regular slds-text-color_default">
-                                  {section.title}
-                                </div>
-                                <!-- Progress Bar -->
-                                <div class="slds-m-top_xx-small">
-                                  <div class={section.progressAnimationClass}>
-                                    <lightning-progress-bar 
-                                      value={section.progressPercentage}
-                                      size="large">
-                                    </lightning-progress-bar>
-                                  </div>
-                                  <div class="slds-grid slds-grid_align-spread slds-text-body_small slds-text-color_weak slds-m-top_xx-small">
-                                    <div class="slds-col">
-                                      <template if:true={section.progressStepText}>
-                                        {section.progressStepText}
-                                        <template if:true={section.progressPercentage}>
-                                          &nbsp;({section.progressPercentage}%)
-                                        </template>
-                                      </template>
-                                    </div>
-                                    <div class="slds-col slds-text-align_right">
-                                      <template if:true={section.progressTimeEstimation}>
-                                        <span class="slds-text-color_weak" title="Estimated time remaining based on average step duration">
-                                          {section.progressTimeEstimation}
-                                        </span>
-                                      </template>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          <div class="slds-media__figure slds-media__figure_reverse">
-                            <template if:true={section.hasLogs}>
-                              <lightning-icon
-                                  icon-name={section.toggleIcon}
-                                  size="x-small"
-                                  alternative-text="Toggle Section"
-                                  variant="brand"
-                                  data-section-id={section.id}>
-                              </lightning-icon>
-                            </template>
-                            <template if:false={section.hasLogs}>
-                                <div style="width: 0.75rem;">&nbsp;</div>
-                            </template>
-                          </div>
-                        </div>
-                      </div>
-
-                      <!-- Progress section logs (latest 5) -->
-                      <template if:true={section.isExpanded}>
-                        <template if:true={section.hasLogs}>
-                          <div class="section-logs slds-m-top_x-small slds-m-left_medium slds-m-right_x-small slds-m-bottom_x-small">
-                            <template for:each={section.progressLogs} for:item="logLine">
-                              <div key={logLine.id} class={logLine.cssClass} data-log-type={logLine.logType} data-is-subcommand={logLine.isSubCommand} data-is-running={logLine.isRunning}>
-                                <div class="slds-media slds-media_top">
-                                  <div class="slds-media__figure" style="width: 0.75rem;">
-                                    <template if:true={logLine.useSpinner}>
-                                      <div class="slds-is-relative" style="height: 0.75rem;">
-                                        <lightning-spinner 
-                                          alternative-text="Running..." 
-                                          size="xx-small"
-                                          variant="brand">
-                                        </lightning-spinner>
-                                      </div>
-                                    </template>
-                                    <template if:false={logLine.useSpinner}>
-                                      <lightning-icon 
-                                        icon-name={logLine.iconName}
-                                        variant={logLine.iconVariant}
-                                        size="xx-small">
-                                      </lightning-icon>
-                                    </template>
-                                  </div>
-                                  <div class="slds-media__body">
-                                    <div class="slds-grid">
-                                      <div class="slds-col slds-size_11-of-12">
-                                          <div class="log-message">
-                                              <template if:true={logLine.formattedMessage}>
-                                                  <lightning-formatted-rich-text 
-                                                      value={logLine.formattedMessage}
-                                                      disable-linkify="true">
-                                                  </lightning-formatted-rich-text>
-                                              </template>
-                                              <template if:false={logLine.formattedMessage}>
-                                                  {logLine.message}
-                                              </template>
-                                          </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            </template>
-                          </div>
-                        </template>
-                      </template>
-                    </div>
+    <!-- Scrollable timeline -->
+    <div class="log-container" tabindex="0" role="log" aria-live="polite" aria-label="Command execution logs" onclick={handleLogContainerClick}>
+      <template if:true={logSectionsForDisplay.length}>
+        <div class="hardis-tl">
+          <template for:each={logSectionsForDisplay} for:item="section">
+            <template if:false={section.isLatestQuestionSectionToHide}>
+              <div key={section.id} class={section.itemClass}>
+                <!-- Status node -->
+                <div class={section.nodeClass}>
+                  <template if:true={section.nodeIconName}>
+                    <lightning-icon icon-name={section.nodeIconName} size="xx-small"></lightning-icon>
                   </template>
-                  
-                  <!-- Diff Files Section (org vs local side-by-side diffs) -->
-                  <template if:true={section.isDiff}>
-                    <div key={section.id} class="log-section slds-box slds-box_x-small slds-m-bottom_x-small">
-                      <!-- Section header (collapsible) -->
-                      <div class="section-header slds-p-around_x-small" data-section-id={section.id} onclick={handleToggleSection}>
-                        <div class="slds-media slds-media_top">
-                          <div class="slds-media__figure" style="width: 1rem;">
-                            <lightning-icon
-                              icon-name="utility:changes"
-                              variant="brand"
-                              size="x-small">
-                            </lightning-icon>
-                          </div>
-                          <div class="slds-media__body">
-                            <div class="slds-grid">
-                              <div class="slds-col slds-size_10-of-12">
-                                <div class="section-title slds-text-body_regular slds-text-color_default" title={i18n.diffFilesSectionTooltip}>
-                                  {i18n.diffFilesSectionTitle}
-                                </div>
-                              </div>
-                              <div class="slds-col slds-size_2-of-12 slds-text-align_right">
-                                <div class="section-timestamp slds-text-body_small slds-text-color_weak">
-                                  {section.diffFilesCount}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          <div class="slds-media__figure slds-media__figure_reverse">
-                            <lightning-icon
-                              icon-name={section.toggleIcon}
-                              size="x-small"
-                              alternative-text="Toggle Section"
-                              variant="brand"
-                              data-section-id={section.id}>
-                            </lightning-icon>
-                          </div>
-                        </div>
-                      </div>
-                      <!-- Section body (hidden when collapsed, scrollable when many files) -->
-                      <template if:true={section.isExpanded}>
-                        <div class="section-logs diff-files-body slds-m-top_x-small slds-m-left_medium slds-m-right_x-small slds-m-bottom_x-small">
-                          <template for:each={section.diffFilesByType} for:item="group">
-                            <div key={group.type} class="diff-files-group slds-m-bottom_small">
-                              <div class="diff-files-group-title slds-text-title_caps slds-m-bottom_xx-small">
-                                {group.type} ({group.count})
-                              </div>
-                              <ul class="diff-files-list">
-                                <template for:each={group.files} for:item="file">
-                                  <li key={file.id} class="diff-file-row">
-                                    <a href="javascript:void(0);"
-                                       class="diff-file-link"
-                                       data-diff-id={file.id}
-                                       onclick={handleOpenDiffFile}
-                                       title={file.title}>
-                                      <lightning-icon icon-name={file.statusIcon}
-                                                      variant={file.statusVariant}
-                                                      size="xx-small"
-                                                      alternative-text={file.statusLabel}>
-                                      </lightning-icon>
-                                      <span class="diff-file-status-label slds-m-left_xx-small">{file.statusLabel}</span>
-                                      <span class="diff-file-name slds-m-left_x-small">{file.metadataName}</span>
-                                    </a>
-                                  </li>
-                                </template>
-                              </ul>
-                            </div>
-                          </template>
-                        </div>
-                      </template>
-                    </div>
-                  </template>
+                </div>
 
-                  <!-- Regular Section -->
-                  <template if:true={section.isRegular}>
-                  <div key={section.id} class="log-section slds-box slds-box_x-small slds-m-bottom_x-small">
-                  <!-- Section header (always expanded, no toggle) -->
-                  <div class="section-header slds-p-around_x-small" data-section-id={section.id} onclick={handleToggleSection}>
-                    <div class="slds-media slds-media_top">
-                      <div class="slds-media__figure" style="width: 1rem;">
-                        <template if:true={section.sectionUseSpinner}>
-                          <div class="slds-is-relative" style="height: 1rem;">
-                            <lightning-spinner 
-                              alternative-text="Running..." 
-                              size="x-small"
-                              variant="brand">
-                            </lightning-spinner>
-                          </div>
-                        </template>
-                        <template if:false={section.sectionUseSpinner}>
-                          <template if:true={section.sectionStatusIcon}>
-                            <lightning-icon 
-                              icon-name={section.sectionStatusIcon.iconName}
-                              variant={section.sectionStatusIcon.variant}
-                              size="x-small">
-                            </lightning-icon>
-                          </template>
-                        </template>
-                      </div>
-                      <div class="slds-media__body">
-                        <div class="slds-grid">
-                          <div class="slds-col slds-size_10-of-12">
-                            <div class="section-title slds-text-body_regular slds-text-color_default">
-                              <template if:true={section.actionLog.formattedMessage}>
-                                <lightning-formatted-rich-text 
-                                  value={section.actionLog.formattedMessage}
-                                  disable-linkify="true">
-                                </lightning-formatted-rich-text>
-                              </template>
-                              <template if:false={section.actionLog.formattedMessage}>
-                                {section.actionLog.message}
-                              </template>
-                            </div>
-                          </div>
-                          <!-- Timestamp removed -->
-                        </div>
-                      </div>
-                      <div class="slds-media__figure slds-media__figure_reverse">
-                        <template if:true={section.hasLogs}>
-                          <lightning-icon
-                              icon-name={section.toggleIcon}
-                              size="x-small"
-                              alternative-text="Toggle Section"
-                              variant="brand"
-                              data-section-id={section.id}>
-                          </lightning-icon>
-                        </template>
-                        <template if:false={section.hasLogs}>
-                            <div style="width: 0.75rem;">&nbsp;</div>
-                        </template>
-                      </div>
+                <!-- Progress section -->
+                <template if:true={section.isProgress}>
+                  <div class={section.rowClass} data-section-id={section.id} onclick={handleToggleSection} onkeydown={handleSectionKeydown} role="button" tabindex={section.rowTabIndex}>
+                    <span class="hardis-tl-title">{section.title}</span>
+                    <span class="hardis-tl-fill"></span>
+                    <template if:true={section.showTime}>
+                      <span class="hardis-tl-time">{section.timeLabel}</span>
+                    </template>
+                    <template if:true={section.hasLogs}>
+                      <lightning-icon class="hardis-tl-chev" icon-name="utility:chevronright" size="xx-small"></lightning-icon>
+                    </template>
+                  </div>
+                  <div class="hardis-tl-progress">
+                    <div class="hardis-progress-track">
+                      <div class={section.progressFillClass} style={section.progressFillStyle}></div>
+                    </div>
+                    <div class="hardis-progress-meta">
+                      <span>{section.progressStepText}</span>
+                      <template if:true={section.progressTimeEstimation}>
+                        <span>{section.progressTimeEstimation}</span>
+                      </template>
                     </div>
                   </div>
-
-                  <!-- Section logs (always expanded) -->
                   <template if:true={section.isExpanded}>
                     <template if:true={section.hasLogs}>
-                      <div class="section-logs slds-m-top_x-small slds-m-left_medium slds-m-right_x-small slds-m-bottom_x-small">
-                      <template for:each={section.logs} for:item="logLine">
-                        <template if:true={logLine.isTable}>
-                          <div key={logLine.id} style="padding-top: 0; padding-bottom: 0.5rem;">
-                            <template lwc:if={logLine.tableLog}>
-                              <div class="slds-scrollable_x" style="max-width: 100%; color: black;">
-                                <lightning-datatable
+                      <div class="hardis-tl-logs">
+                        <template for:each={section.progressLogs} for:item="logLine">
+                          <div key={logLine.id} class={logLine.cssClass}>
+                            <template if:true={logLine.formattedMessage}>
+                              <lightning-formatted-rich-text value={logLine.formattedMessage} disable-linkify="true"></lightning-formatted-rich-text>
+                            </template>
+                            <template if:false={logLine.formattedMessage}>
+                              <span class="log-message">{logLine.message}</span>
+                            </template>
+                            <template if:true={logLine.hasBigContent}>
+                              <div class={logLine.bigContentClass} data-log-id={logLine.id} role="button" tabindex="0" title={i18n.viewFullContentTooltip} onclick={handleShowFullContent} onkeydown={handleContentPreviewKeydown}>
+                                <template if:true={logLine.bigContentPreview}>
+                                  <pre class="hardis-content-preview-text">{logLine.bigContentPreview}</pre>
+                                </template>
+                                <span class="hardis-content-preview-more">{logLine.bigContentLabel}</span>
+                              </div>
+                            </template>
+                          </div>
+                        </template>
+                      </div>
+                    </template>
+                  </template>
+                </template>
+
+                <!-- Diff Files section (org vs local side-by-side diffs) -->
+                <template if:true={section.isDiff}>
+                  <div class={section.rowClass} data-section-id={section.id} onclick={handleToggleSection} onkeydown={handleSectionKeydown} role="button" tabindex={section.rowTabIndex} title={i18n.diffFilesSectionTooltip}>
+                    <span class="hardis-tl-title">{i18n.diffFilesSectionTitle}</span>
+                    <span class="hardis-tl-fill"></span>
+                    <span class="hardis-tl-time">{section.diffFilesCount}</span>
+                    <lightning-icon class="hardis-tl-chev" icon-name="utility:chevronright" size="xx-small"></lightning-icon>
+                  </div>
+                  <template if:true={section.isExpanded}>
+                    <div class="hardis-tl-logs diff-files-body">
+                      <template for:each={section.diffFilesByType} for:item="group">
+                        <div key={group.type} class="diff-files-group slds-m-bottom_small">
+                          <div class="diff-files-group-title slds-text-title_caps slds-m-bottom_xx-small">
+                            {group.type} ({group.count})
+                          </div>
+                          <ul class="diff-files-list">
+                            <template for:each={group.files} for:item="file">
+                              <li key={file.id} class="diff-file-row">
+                                <a href="javascript:void(0);"
+                                   class="diff-file-link"
+                                   data-diff-id={file.id}
+                                   onclick={handleOpenDiffFile}
+                                   title={file.title}>
+                                  <lightning-icon icon-name={file.statusIcon}
+                                                  variant={file.statusVariant}
+                                                  size="xx-small"
+                                                  alternative-text={file.statusLabel}>
+                                  </lightning-icon>
+                                  <span class="diff-file-status-label slds-m-left_xx-small">{file.statusLabel}</span>
+                                  <span class="diff-file-name slds-m-left_x-small">{file.metadataName}</span>
+                                </a>
+                              </li>
+                            </template>
+                          </ul>
+                        </div>
+                      </template>
+                    </div>
+                  </template>
+                </template>
+
+                <!-- Regular section -->
+                <template if:true={section.isRegular}>
+                  <div class={section.rowClass} data-section-id={section.id} onclick={handleToggleSection} onkeydown={handleSectionKeydown} role="button" tabindex={section.rowTabIndex}>
+                    <span class={section.titleClass}>
+                      <template if:true={section.actionLog.formattedMessage}>
+                        <lightning-formatted-rich-text value={section.actionLog.formattedMessage} disable-linkify="true"></lightning-formatted-rich-text>
+                      </template>
+                      <template if:false={section.actionLog.formattedMessage}>
+                        {section.actionLog.message}
+                      </template>
+                    </span>
+                    <template if:true={section.answerChipText}>
+                      <span class="hardis-tl-answer" title={section.answerChipTitle}>{section.answerChipText}</span>
+                    </template>
+                    <span class="hardis-tl-fill"></span>
+                    <template if:true={section.showTime}>
+                      <span class="hardis-tl-time">{section.timeLabel}</span>
+                    </template>
+                    <template if:true={section.hasLogs}>
+                      <lightning-icon class="hardis-tl-chev" icon-name="utility:chevronright" size="xx-small"></lightning-icon>
+                    </template>
+                  </div>
+
+                  <template if:true={section.isExpanded}>
+                    <template if:true={section.hasLogs}>
+                      <div class="hardis-tl-logs">
+                        <template for:each={section.logs} for:item="logLine">
+                          <template if:true={logLine.isTable}>
+                            <div key={logLine.id} class="hardis-tl-block">
+                              <template lwc:if={logLine.tableLog}>
+                                <s-hardis-datatable
                                   key-field="id"
                                   data={logLine.tableRows}
                                   column-widths-mode="auto"
                                   columns={logLine.tableLog.columns}
                                   hide-checkbox-column
-                                >
-                                </lightning-datatable>
-                              </div>
-                              <template if:true={logLine.tableTruncatedMessage}>
-                                <div class="slds-text-color_weak slds-p-vertical_x-small slds-text-align_center" style="font-style:italic;">
-                                  {logLine.tableTruncatedMessage}
-                                </div>
-                              </template>
-                              <template lwc:if={logLine.tableShowMoreButton}>
-                                <div class="slds-m-top_x-small slds-align_absolute-center">
-                                  <lightning-button
-                                    label={i18n.seeMore}
-                                    variant="neutral"
-                                    data-table-id={logLine.id}
-                                    onclick={handleSeeMoreTable}
-                                    class="slds-m-top_x-small">
-                                  </lightning-button>
-                                </div>
-                              </template>
-                            </template>
-                          </div>
-                        </template>
-                        <template if:false={logLine.isTable}>
-                          <div key={logLine.id} class={logLine.cssClass} data-log-type={logLine.logType} data-is-subcommand={logLine.isSubCommand} data-is-running={logLine.isRunning}>
-                            <div class="slds-media slds-media_top">
-                              <div class="slds-media__figure" style="width: 0.75rem;">
-                                <template if:true={logLine.useSpinner}>
-                                  <div class="slds-is-relative" style="height: 0.75rem;">
-                                    <lightning-spinner 
-                                      alternative-text="Running..." 
-                                      size="xx-small"
-                                      variant="brand">
-                                    </lightning-spinner>
+                                ></s-hardis-datatable>
+                                <template if:true={logLine.tableTruncatedMessage}>
+                                  <div class="slds-text-color_weak slds-p-vertical_x-small slds-text-align_center" style="font-style:italic;">
+                                    {logLine.tableTruncatedMessage}
                                   </div>
                                 </template>
-                                <template if:false={logLine.useSpinner}>
-                                  <template if:true={logLine.isQuestion}>
-                                    <div class="slds-icon_container slds-icon_container_circle slds-icon_container--brand" title="Question">
-                                      <lightning-icon 
-                                        icon-name="utility:questions_and_answers"
-                                        variant="inverse"
-                                        size="xx-small">
-                                      </lightning-icon>
-                                    </div>
-                                  </template>
-                                  <template if:false={logLine.isQuestion}>
-                                    <lightning-icon 
-                                      icon-name={logLine.iconName}
-                                      variant={logLine.iconVariant}
-                                      size="xx-small">
-                                    </lightning-icon>
-                                  </template>
-                                </template>
-                              </div>
-                              <div class="slds-media__body">
-                                <div class="slds-grid">
-                                  <div class="slds-col slds-size_11-of-12">
-                                      <div class="log-message">
-                                          <template if:true={logLine.formattedMessage}>
-                                              <lightning-formatted-rich-text 
-                                                  value={logLine.formattedMessage}
-                                                  disable-linkify="true">
-                                              </lightning-formatted-rich-text>
-                                          </template>
-                                          <template if:false={logLine.formattedMessage}>
-                                              {logLine.message}
-                                          </template>
-                                      </div>
+                                <template lwc:if={logLine.tableShowMoreButton}>
+                                  <div class="slds-m-top_x-small slds-align_absolute-center">
+                                    <lightning-button
+                                      label={i18n.seeMore}
+                                      variant="neutral"
+                                      data-table-id={logLine.id}
+                                      onclick={handleSeeMoreTable}
+                                    ></lightning-button>
                                   </div>
-                                  <!-- Timestamp removed -->
-                                </div>
-                              </div>
+                                </template>
+                              </template>
                             </div>
-                          </div>
+                          </template>
+                          <template if:false={logLine.isTable}>
+                            <div key={logLine.id} class={logLine.cssClass}>
+                              <template if:true={logLine.formattedMessage}>
+                                <lightning-formatted-rich-text value={logLine.formattedMessage} disable-linkify="true"></lightning-formatted-rich-text>
+                              </template>
+                              <template if:false={logLine.formattedMessage}>
+                                <span class="log-message">{logLine.message}</span>
+                              </template>
+                              <template if:true={logLine.hasBigContent}>
+                                <div class={logLine.bigContentClass} data-log-id={logLine.id} role="button" tabindex="0" title={i18n.viewFullContentTooltip} onclick={handleShowFullContent} onkeydown={handleContentPreviewKeydown}>
+                                  <template if:true={logLine.bigContentPreview}>
+                                    <pre class="hardis-content-preview-text">{logLine.bigContentPreview}</pre>
+                                  </template>
+                                  <span class="hardis-content-preview-more">{logLine.bigContentLabel}</span>
+                                </div>
+                              </template>
+                            </div>
+                          </template>
                         </template>
-                      </template>
-                    </div>
+                      </div>
+                    </template>
                   </template>
                 </template>
-                    </div>
-                  </template>
-                </template>
+              </div>
             </template>
-              <!-- Embedded PromptInput for in-panel prompts -->
-              <template if:true={showEmbeddedPrompt}>
-                <div class="log-section slds-box slds-box_x-small slds-m-bottom_x-small">
-                  <s-prompt-input prompt-data={embeddedPromptData} embedded="true" onsubmit={handleEmbeddedPromptSubmit} onexit={handleEmbeddedPromptExit}></s-prompt-input>
-                </div>
-              </template>
-            </div>
           </template>
-          
-          <template if:false={logSectionsForDisplay.length}>
-            <div class="slds-text-align_center slds-p-around_medium">
-              <p class="slds-text-body_regular slds-text-color_weak">
-                {i18n.noLogsAvailableYet}
-              </p>
+
+          <!-- Embedded PromptInput for in-panel prompts -->
+          <template if:true={showEmbeddedPrompt}>
+            <div class="hardis-tl-item">
+              <div class="hardis-tl-node ask">
+                <lightning-icon icon-name="utility:questions_and_answers" size="xx-small"></lightning-icon>
+              </div>
+              <div class="hardis-tl-prompt">
+                <s-prompt-input prompt-data={embeddedPromptData} embedded="true" onsubmit={handleEmbeddedPromptSubmit} onexit={handleEmbeddedPromptExit}></s-prompt-input>
+              </div>
             </div>
           </template>
         </div>
-        
-        <!-- Report Files/Actions/Links Section -->
-        <template if:true={hasReportFiles}>
-          <div class="log-section slds-box slds-box_x-small slds-m-bottom_x-small">
-            <!-- Section header -->
-            <div class="section-header slds-p-around_x-small">
-              <div class="slds-media slds-media_center">
-                <div class="slds-media__figure" style="width: 1rem;">
-                  <lightning-icon 
-                    icon-name="utility:file"
-                    variant="brand"
-                    size="x-small">
-                  </lightning-icon>
-                </div>
-                <div class="slds-media__body">
-                  <div class="slds-grid">
-                    <div class="slds-col slds-size_10-of-12">
-                      <div class="section-title slds-text-body_regular slds-text-color_default">
-                        {reportFilesSectionTitle}
-                      </div>
-                    </div>
-                    <div class="slds-col slds-size_2-of-12 slds-text-align_right">
-                      <div class="section-timestamp slds-text-body_small slds-text-color_weak">
-                        {reportFilesCount}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+      </template>
 
-            <!-- Report files & actions content -->
-            <div class="section-logs slds-m-top_x-small slds-m-left_medium slds-m-right_x-small slds-m-bottom_x-small">
-              <div class="report-files-flex-container">
-                <template for:each={sortedReportFiles} for:item="reportFile">
-                  <div key={reportFile.id} class={reportFile.wrapperClass}>
-                    <!-- Regular button for single files -->
-                    <template if:false={reportFile.isDropdown}>
-                      <lightning-button
-                        variant={reportFile.buttonVariant}
-                        label={reportFile.title}
-                        icon-name={reportFile.iconName}
-                        icon-position="left"
-                        data-file-path={reportFile.file}
-                        onclick={handleOpenReportFile}
-                        title={reportFile.title}
-                      ></lightning-button>
-                    </template>
+      <template if:false={logSectionsForDisplay.length}>
+        <div class="slds-text-align_center slds-p-around_medium">
+          <p class="slds-text-body_regular slds-text-color_weak">
+            {i18n.noLogsAvailableYet}
+          </p>
+        </div>
+      </template>
+    </div>
 
-                    <!-- Native SLDS split button: primary action + format/actions menu -->
-                    <template if:true={reportFile.isDropdown}>
-                      <lightning-button-group>
-                        <lightning-button
-                          label={reportFile.title}
-                          variant={reportFile.buttonVariant}
-                          icon-name={reportFile.iconName}
-                          icon-position="left"
-                          onclick={handleDropdownMainButtonClick}
-                          data-report-id={reportFile.id}
-                          title={reportFile.title}
-                        ></lightning-button>
-                        <lightning-button-menu
-                          variant={reportFile.menuVariant}
-                          menu-alignment="bottom-right"
-                          alternative-text={i18n.moreOptions}
-                          title={i18n.moreOptions}
-                          data-report-id={reportFile.id}
-                          onselect={handleReportMenuSelect}
-                        >
-                          <template for:each={reportFile.dropdownOptions} for:item="option">
-                            <lightning-menu-item
-                              key={option.format}
-                              value={option.format}
-                              label={option.label}
-                              prefix-icon-name={option.iconName}
-                            ></lightning-menu-item>
-                          </template>
-                        </lightning-button-menu>
-                      </lightning-button-group>
-                    </template>
-                  </div>
-                </template>
-              </div>
-            </div>
+    <!-- Reports dock: pinned under the timeline, visible without scrolling -->
+    <template if:true={hasReportFiles}>
+      <div class="hardis-reports-bar">
+        <span class="hardis-reports-label">{reportFilesSectionTitle} · {reportFilesCount}</span>
+        <template for:each={sortedReportFiles} for:item="reportFile">
+          <div key={reportFile.id} class={reportFile.wrapperClass}>
+            <!-- Regular button for single files -->
+            <template if:false={reportFile.isDropdown}>
+              <lightning-button
+                variant={reportFile.buttonVariant}
+                label={reportFile.title}
+                icon-name={reportFile.iconName}
+                icon-position="left"
+                data-file-path={reportFile.file}
+                onclick={handleOpenReportFile}
+                title={reportFile.title}
+              ></lightning-button>
+            </template>
+
+            <!-- Native SLDS split button: primary action + format/actions menu -->
+            <template if:true={reportFile.isDropdown}>
+              <lightning-button-group>
+                <lightning-button
+                  label={reportFile.title}
+                  variant={reportFile.buttonVariant}
+                  icon-name={reportFile.iconName}
+                  icon-position="left"
+                  onclick={handleDropdownMainButtonClick}
+                  data-report-id={reportFile.id}
+                  title={reportFile.title}
+                ></lightning-button>
+                <lightning-button-menu
+                  variant={reportFile.menuVariant}
+                  menu-alignment="bottom-right"
+                  alternative-text={i18n.moreOptions}
+                  title={i18n.moreOptions}
+                  data-report-id={reportFile.id}
+                  onselect={handleReportMenuSelect}
+                >
+                  <template for:each={reportFile.dropdownOptions} for:item="option">
+                    <lightning-menu-item
+                      key={option.format}
+                      value={option.format}
+                      label={option.label}
+                      prefix-icon-name={option.iconName}
+                    ></lightning-menu-item>
+                  </template>
+                </lightning-button-menu>
+              </lightning-button-group>
+            </template>
           </div>
         </template>
       </div>
-    </div>
+    </template>
 
+    <!-- Full content modal: displays the complete JSON or text of a truncated log line -->
+    <template if:true={isContentModalOpen}>
+      <section role="dialog" tabindex="-1" class="slds-modal slds-modal_large slds-fade-in-open hardis-content-modal" aria-modal="true">
+        <div class="slds-modal__container">
+          <header class="slds-modal__header">
+            <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title={i18n.closeLabel} onclick={handleCloseContentModal}>
+              <lightning-icon icon-name="utility:close" alternative-text={i18n.closeLabel} size="small"></lightning-icon>
+              <span class="slds-assistive-text">{i18n.closeLabel}</span>
+            </button>
+            <h2 class="slds-modal__title slds-hyphenate">{contentModalTitle}</h2>
+          </header>
+          <div class="slds-modal__content slds-p-around_medium">
+            <pre class="hardis-content-modal-text">{modalContent}</pre>
+          </div>
+          <footer class="slds-modal__footer">
+            <lightning-button class="hardis-btn-tinted-blue" label={i18n.openWithVsCode} icon-name="utility:new_window" onclick={handleOpenModalContentInVsCode}></lightning-button>
+            <lightning-button class="slds-m-left_x-small" label={i18n.copyContentLabel} icon-name="utility:copy" onclick={handleCopyModalContent}></lightning-button>
+            <lightning-button class="slds-m-left_x-small" label={i18n.closeLabel} onclick={handleCloseContentModal}></lightning-button>
+          </footer>
+        </div>
+      </section>
+      <div class="slds-backdrop slds-backdrop_open"></div>
+    </template>
+  </div>
 </template>

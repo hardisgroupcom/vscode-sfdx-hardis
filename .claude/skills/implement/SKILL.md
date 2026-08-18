@@ -108,6 +108,12 @@ else {
 - Use `sf` CLI commands (never legacy `sfdx`)
 - Use `Logger.log()` for diagnostic output, not bare `console.log`
 
+### Formatting — never run Prettier on LWC `.html` or `CHANGELOG.md`
+MegaLinter has HTML linting disabled, so Prettier is not the formatter of record for these files. Running it rewrites the whole file: a 20-line change becomes a 600-line diff that hides the real edit and blows up review. **Edit LWC templates and the changelog by hand.**
+
+### Dependencies — check for a built-in before adding one
+Runtime dependencies were deliberately reduced from 28 to 14. Before adding a package: HTTP goes through `src/utils/httpUtils.ts` (`getJson` / `getText` / `ping`, built on Node's `fetch`), binary lookup through `executableUtils.ts` (`findExecutable`), free ports through `portUtils.ts`, child processes through `processUtils.ts`. Keep `engines.vscode` at `^1.95` — it guarantees a Node runtime with proxy-aware `fetch`.
+
 ## TypeScript patterns (extension host)
 
 - Import `t` from `./i18n/i18n` for all user-facing strings
@@ -162,11 +168,28 @@ VS Code webviews render in BOTH dark and light themes. Hardcoded colors break on
 
 #### Lookup order before writing any new CSS rule
 
-1. **Check `resources/global-theme.css` first.** Reusable, already-themed classes include:
-   - **Page chrome**: `.header-section`, `.header-content` (+ `.no-bg`), `.header-text`, `.header-title` (+ `.single-line`), `.header-subtitle`.
-   - **Icon containers** with `.green`, `.teal`, `.gray`, `.blue`, `.purple`, `.orange`, `.yellow`, `.small` color variants: `.header-icon-container`, `.feature-icon-container`, `.icon-container`.
-   - **Command icons** with category colors: `.command-icon-container` + one of `.backup`, `.audit`, `.tests`, `.limits`, `.updates`, `.security`, `.legacy`, `.users`, `.licenses`, `.apex`, `.connected-apps`, `.metadata-access`, `.unused-metadata`, `.new-story`, `.pull-action`, `.package-action`, `.save-action`.
-   - **Logs / answer / downloads / modals**: `.log-sections`, `.section-logs`, `.log-lines`, `.log-message`, `.log-timestamp`, `.log-icon`, `.answer-formatted`, `.download-panel`, `.select-option-desc`, `.submission-modal-backdrop`, `.submission-modal`.
+1. **Check `resources/global-theme.css` first.** Every panel is built out of these kits — there is no per-panel header, card or button styling any more:
+   - **Page header kit** (the first thing in EVERY panel): `.hardis-page-head` (+ `.flush` when the panel already sits in a card) > `.hardis-tile featured <hue>` + `.hardis-page-head-text` > `.hardis-page-title` / `.hardis-page-subtitle`, then `.hardis-page-head-actions` for the buttons.
+   - **Surfaces**: `.hardis-panel-body` (the card that holds a panel's content — replaces `<lightning-card>`), `.panel-surface`, `.docs-section`, `.config-section`, `.pipeline-container`.
+   - **Status card kit** (one thing + its state + its action): `.hardis-status-grid` (+ `.single-column`) > `.hardis-status-card` (+ state `ok` / `warning` / `error` / `info`) > `.hardis-tile <hue>` + `.hardis-status-content` > `.hardis-status-title` (+ `.hardis-status-meta`) / `.hardis-status-desc`, then `.hardis-status-actions`.
+   - **Callouts**: `.hardis-note` (+ `.warning` / `.error` / `.success`) for an inline info block. Never the SLDS `slds-notify_alert` textures: they are a flat dark band in both themes.
+   - **Section & card kit** (catalogs of features/commands — see the dedicated section below): `.hardis-group-label`, `.hardis-group-desc`, `.hardis-card-grid` (+ `.single-column`), `.hardis-card` (+ `.clickable`, `.featured`, `.disabled`), `.hardis-card-head` / `-title` / `-desc` / `-actions` / `-arrow`, `.hardis-tile` (+ `.featured` / `.small` sizes and color hues).
+   - **Tinted buttons** (the only way to color a button): `.hardis-btn-tinted-blue` (primary), `-green` (positive), `-red` (destructive), `-amber` (needs attention), plus the `.rf-type-action` / `.rf-type-report` / `.rf-type-doc` family in the command runner.
+   - **Prop grid** (read-only key/value summaries — replaces private `.properties-grid` / `.info-grid` kits): `.hardis-prop-grid` > `.hardis-prop` > `.hardis-prop-key` / `.hardis-prop-value` (+ `.mono` for queries, fields, paths).
+   - **Field rows** (one setting per row, VS Code-settings style): `.hardis-field-row` > `.hardis-field-text` (`.hardis-field-label` + always-visible `.hardis-field-help`) + `.hardis-field-control`. In read-only views the control renders as a `.hardis-pill` (booleans: Enabled/Disabled), `.hardis-chip`/`.hardis-branch-chip` row (lists), truncated `.hardis-textlink` (URLs) or muted italic "Not set" — never a disabled toggle. In edit views, controls holding a free-text/number input or a textarea auto-stretch into the row's free space (kit `:has()` rule, capped at `min(65%, 640px)`) while toggles/buttons stay compact and comboboxes keep one uniform 14rem-min column; in `.stacked` rows (arrays) form controls span the full line and dueling-list columns widen with the window - never re-add per-component width rules for this. Doc links go inline in the label as a small `.hardis-textlink`, never a button column. `.hardis-label-inline` is the flex label + helptext-icon one-liner for SLDS form labels.
+   - **Selection state**: `.hardis-card.selected` for pickable card lists (workspace rails) — accent inset + tinted surface.
+   - **Group label actions**: `.hardis-group-actions` inside a `.hardis-group-label` — small LABELED buttons right of the hairline (never icon-only gray squares).
+   - **Empty states**: `.hardis-empty` > `.hardis-tile.featured.<hue>` + `.hardis-empty-title` / `.hardis-empty-desc` / `.hardis-empty-actions` (one primary action).
+   - **Split layout** (rail of selectable cards + detail pane): `.hardis-split` > `.hardis-split-rail` / `.hardis-split-main` (stacks under 900px); `.hardis-chip-row` for wrapping fact-chip runs; workbench roots carry `.hardis-workbench` to opt into the shared form/modal polish.
+   - **Datatable cell classes live in global-theme.css, never in component CSS**: synthetic-shadow scoping prevents a component stylesheet from reaching cells inside `s-hardis-datatable` — the rule compiles scoped and silently never matches (`.hardis-date-cell`, `.hardis-file-cell` are the precedents).
+   - **Pills**: `.hardis-status-info` is the STATIC blue pill for facts (operation types, file roles); `.hardis-status-running` pulses its dot and is reserved for genuinely in-progress activity.
+   - **Before deleting a "dead" CSS class, grep .js and .ts too** — some classes are composed in JavaScript/TypeScript (`branchStrategyMermaidBuilder.ts` emits `.hardis-chip-create`; datatable `cellAttributes` compose cell classes).
+   - **Elevation**: `--hardis-shadow-sm` / `-md` / `-lg` tokens — the only box-shadows allowed in component CSS (theme-aware alphas; never raw `rgba()` shadows).
+   - **Typography helpers**: `.section-title`, `.section-subtitle`, `.info-title`, `.info-label`, `.info-value`, `.type-name`, `.member-name`, `.empty-title`, `.empty-description`, `.error-description`, `.loading-text`, `.muted`.
+   - **Logs / modals**: `.log-message`, `.log-container`, `.modal-accent-strip`, `.modal-title-parts`, `.modal-count-badge`, `.tabbed-modal-container`, `.tabbed-modal-content`.
+   - **Command Runner timeline kit** (command execution tab + prompts, reusable for any step/run rendering): header bar `.hardis-cmd-head` / `-head-main` / `-title-row` / `-title` / `-meta` / `-actions`, meta chips `.hardis-chip` (+ `.hardis-chip-link`), timeline `.hardis-tl` > `.hardis-tl-item` (+ `.open`) with `.hardis-tl-node` (+ status `done` / `fail` / `q` / `ask` / `running` / `info` — running draws a pure-CSS spinner arc), rows `.hardis-tl-row` (+ `.expandable`) / `.hardis-tl-title` / `.hardis-tl-fill` / `.hardis-tl-time` / `.hardis-tl-chev` / `.hardis-tl-answer`, children `.hardis-tl-logs` > `.hardis-logline` (+ `.mono`, `.type-{error,warning,success,action,query}`, `.subcmd`, `.subcmd-running`), rich blocks `.hardis-tl-block`, progress `.hardis-tl-progress` / `.hardis-progress-track` / `.hardis-progress-fill` (+ `.active`) / `.hardis-progress-meta`, prompt card `.hardis-prompt-card` / `-eyebrow` / `-head` / `-q` / `-tools` / `-filter` / `-foot` / `-foot-actions`, options `.hardis-option-card` / `-row` (+ `.selected`) / `-emoji` / `-main` / `-label` / `-desc` / `.hardis-option-list` / `.hardis-check`, helpers `.hardis-count-chip` / `.hardis-textlink`, reports dock `.hardis-reports-bar` / `.hardis-reports-label`.
+   - **Shared SLDS UI kit** (any status/identity/branch rendering, see below): `.hardis-pill` + `.hardis-pill-dot`, `.hardis-status-{success,running,pending,failed,unknown}`, `.hardis-avatar` + `.hardis-avatar-c0`…`-c5` + `.hardis-avatar-name`, `.hardis-branch-chip`, `.hardis-date-cell`, `.hardis-cell-flex`, `.slds-no-row-hover`.
+   - **Removed on purpose** (do not reintroduce): `.header-section` / `.header-content` / `.header-title` / `.header-subtitle` / `.header-icon-container`, `.status-card` / `.status-icon-container`, `.command-card` / `.commands-grid` / `.command-icon-container` / `.feature-icon-container`. They were gradient-filled boxes with white icons and hardcoded hexes; the kits above replaced all of them.
    - If a class name already exists globally, NEVER redefine it in component CSS — the local rule will shadow the global one on specificity tie-breaking and silently break theming.
 
 2. **Then check SLDS classes**: `.slds-badge` (+ `_lightest`, `_inverse`), `.slds-text-color_*`, `.slds-text-heading_*`, `.slds-box`, `.slds-button`, `.slds-icon`, etc. Reference: <https://www.lightningdesignsystem.com/>.
@@ -184,16 +207,146 @@ VS Code webviews render in BOTH dark and light themes. Hardcoded colors break on
 #### What's NOT safe
 
 - Inventing a new badge / pill / chip / button rule with hardcoded colors. SLDS or the global stylesheet already ships one.
-- Redefining a class name that already exists globally (e.g. `.header-icon-container.teal`, `.command-icon-container.audit`) — your rule wins on specificity tie-breaking and silently disables the theme-aware version.
+- Redefining a class name that already exists globally (e.g. `.hardis-page-head`, `.hardis-card`, `.hardis-tile.violet`) — your rule wins on specificity tie-breaking and silently disables the theme-aware version.
 - "Just for now" hex colors with a TODO. There's no theme switch event — the bad render ships.
-- Some existing components (e.g. parts of `monitoringConfig.css`) already redefine global classes with hardcoded hex colors. Treat these as legacy bugs, not patterns — do not copy them.
+- **Duplicating a rule per theme** (`.slds-scope[data-theme="light"] .x { … }` + `.slds-scope[data-theme="dark"] .x { … }`). The palette tokens already switch through `light-dark()`: write ONE rule with tokens. No component stylesheet contains a `[data-theme]` selector or a hardcoded color any more — the whole set was migrated, so a new one is a regression, not a pattern to copy.
+
+Quick check on any CSS you wrote:
+
+```bash
+grep -nE "#[0-9a-fA-F]{3,8}\b|rgba?\(|font-family|font-weight: *[0-9]" src/webviews/lwc-ui/modules/s/<component>/<component>.css
+```
+
+#### Every panel is built the same way (unified layout)
+
+A panel is: **page header → panel body / sections → cards**. There is no per-panel variation left; a new panel that invents its own header or card is a design regression.
+
+```html
+<div class="slds-scope blue-back">
+  <div class="hardis-page-head">
+    <div class="hardis-tile featured cyan">
+      <lightning-icon icon-name="utility:package" size="medium"></lightning-icon>
+    </div>
+    <div class="hardis-page-head-text">
+      <h1 class="hardis-page-title">{i18n.panelTitle}</h1>
+      <p class="hardis-page-subtitle">{i18n.panelSubtitle}</p>
+    </div>
+    <div class="hardis-page-head-actions">
+      <lightning-button variant="neutral" label={i18n.refreshLabel} onclick={handleRefresh}></lightning-button>
+      <lightning-button variant="neutral" class="hardis-btn-tinted-blue" label={i18n.primaryAction} onclick={handlePrimary}></lightning-button>
+    </div>
+  </div>
+
+  <div class="hardis-panel-body">… table, form or content …</div>
+</div>
+```
+
+- The **title is the feature name only** (`Metadata Retriever`, not `Sfdx-Hardis Metadata Retriever`), and always has a one-line subtitle saying what the panel is for. Both are i18n keys, in all 9 locales.
+- The tile hue identifies the panel and matches its Welcome card: Orgs Manager/pipeline/package.xml = `cyan`, Setup/Documentation = `teal`, Metadata Retriever = `green`, Data Workbench/Installed Packages = `violet`, Files Workbench = `amber`, Extension Settings = `slate`.
+- `<lightning-card>` is **not** used for panel chrome any more (its header/footer fight the kit): a section is a `.hardis-panel-body`, a header is a `.hardis-page-head`.
+- The actions of the header are ordered secondary → primary, the primary one being the only tinted button.
+
+#### Sections, cards and icon tiles (the hardis-* design kit)
+
+Any panel that presents a catalog of features, commands or actions uses the generic kit from `global-theme.css` (introduced by the v8 Welcome redesign, already applied to Welcome, Org Monitoring, the Pipeline workflow tab, both Documentation panels and Monitoring Config). Never rebuild sections/cards per panel.
+
+**Section**: an uppercase label with a rule line, plus an optional one-line description:
+
+```html
+<div class="hardis-group-label">{i18n.sectionTitle}</div>
+<p class="hardis-group-desc">{i18n.sectionDescription}</p>
+<div class="hardis-card-grid"> ... cards ... </div>
+```
+
+No emoji in section labels. `.hardis-card-grid` is a responsive `auto-fill minmax(280px, 1fr)` grid; add `.single-column` for a stacked list.
+
+**Card anatomy** (head = tile + title, then description, then optional actions):
+
+```html
+<div class="hardis-card clickable" role="button" tabindex="0"
+     data-command={row.command} onclick={handleRunCommand} onkeydown={handleCardKeydown}>
+  <div class="hardis-card-head">
+    <div class="hardis-tile small violet">
+      <lightning-icon icon-name="utility:shield" size="x-small"></lightning-icon>
+    </div>
+    <h3 class="hardis-card-title">{row.title}</h3>
+  </div>
+  <p class="hardis-card-desc">{row.description}</p>
+  <div class="hardis-card-arrow">→</div>
+</div>
+```
+
+- **Prefer the whole card being clickable over a per-card "Run"/"Open" button** — one obvious action per card = clickable card (`.clickable` + `role="button"` + `tabindex="0"` + `onkeydown` handler that clicks on Enter/Space + the `.hardis-card-arrow`). Keep a `.hardis-card-actions` row of buttons only when a card genuinely has several distinct actions (e.g. Documentation Workbench generate vs. deploy).
+- `.featured` makes the card bigger with a brand-gradient top edge (Welcome essentials row); `.disabled` greys it out and disables hover.
+- **Icon tiles**: `.hardis-tile` (+ size `.featured`/`.small`) with a hue class — real hues `cyan teal violet amber slate indigo pink green red` and semantic aliases matching catalog `colorClass` values (`backup`→cyan, `audit`→violet, `security`/`alerts`→red, `tests`→green, `apex`/`limits`→amber, `cloudflare`→teal, `confluence`→indigo, `prompts`→violet, …). Unknown hues fall back to slate. In JS, compose the class as `"hardis-tile small " + colorClass`.
+- **Never put `variant="inverse"` on a `lightning-icon` inside a `.hardis-tile`** — the tile is a soft tint, an inverse (white) icon becomes invisible in light mode. The tile colors the icon via `color: inherit`.
+- Because LWC templates allow no expressions, computed card/tile classes (`cardClass`, `tileClass`, disabled state) must be **fully computed in JS getters**.
+- Layout gotcha: a container with `overflow: hidden` (e.g. a hero band clipping a decorative background) will clip dropdowns/popovers opened inside it. Put the clipping on a dedicated `position:absolute; inset:0; overflow:hidden` background layer instead of the container itself.
+
+#### Semantic status colors (always use the kit, never invent a mapping)
+
+The status palette is fixed project-wide: **green = success, blue = running (dot pulses), orange = pending, red = failed, neutral = unknown**.
+
+Render a status as a pill:
+
+```html
+<span class="hardis-pill hardis-status-success">
+  <span class="hardis-pill-dot"></span>Success
+</span>
+```
+
+- `.hardis-pill-dot` alone (with a `.hardis-status-*` class) is the standalone dot used in legends and mermaid nodes.
+- The running dot animation already honors `prefers-reduced-motion`. Don't re-add animations.
+- Never build a status color with `variant="success"` badges, custom hexes, or an ad-hoc red/green mapping.
+
+#### Tables: use `s-hardis-datatable`
+
+`src/webviews/lwc-ui/modules/s/hardisDatatable/` extends `lightning-datatable` with three shared cell types, already themed by `global-theme.css` (zebra striping, quiet uppercase headers, hover). Adopted by `pipeline`, `orgManager`, `metadataRetriever`, `dataWorkbench`, `installedPackages` — use it for any new table rather than a raw `lightning-datatable` or a hand-rolled `<table>`.
+
+| Cell type | Renders | `typeAttributes` |
+|-----------|---------|------------------|
+| `statusPill` | Status pill (dot + label), optionally linking to the CI job | `label`, `pillClass` (fully computed, e.g. `"hardis-pill hardis-status-success"`), `url` |
+| `avatarText` | Initials avatar circle + text | `initials`, `avatarClass` (computed color variant) |
+| `branchChip`  | Monospace chip for technical ids (git branches); full value on hover | none |
+
+Because LWC templates allow no expressions, `pillClass` / `avatarClass` must be **fully computed in JS** before reaching the template. Use `s/avatarUtils` (`getAvatarClass()`, `getInitials()`, `getUsernameInitials()`, `hashString()`) so the same person keeps the same initials and avatar color across every panel. Add `.slds-no-row-hover` on the table when rows aren't clickable.
+
+#### Buttons
+
+Only the **neutral** SLDS button variant adapts to VS Code themes. Filled variants (`variant="brand"`, `"success"`, `"destructive"`, `"brand-outline"`, `"destructive-text"`) hardcode their own background and text color and are unreadable in one of the two themes — **there is none left in the codebase, do not add one**.
+
+A colored button is a neutral button plus a tint class:
+
+```html
+<lightning-button variant="neutral" class="hardis-btn-tinted-blue" label={i18n.save} onclick={handleSave}></lightning-button>
+<button class="slds-button slds-button_neutral hardis-btn-tinted-red" onclick={handleDelete}>{i18n.delete}</button>
+```
+
+`blue` = primary action, `green` = positive/confirm, `red` = destructive, `amber` = needs attention; everything else stays a plain neutral button. If a new tint is genuinely needed, follow the same recipe (palette-token background/border/color + `fill: currentColor` on the icon) and put it in `global-theme.css`, never in a component.
+
+#### Stale stylesheets
+
+The webview service worker can keep serving an outdated copy of the global stylesheets across extension updates and Extension Development Host rebuilds. `lwc-ui-panel.ts` appends `?v=<Date.now()>` at panel creation to force a fresh fetch. **If a CSS change doesn't appear, close and reopen the panel before suspecting the rule.**
+
+#### SVG / mermaid (DevOps Pipeline diagram)
+
+The pipeline diagram is generated by `src/utils/pipeline/branchStrategyMermaidBuilder.ts` and post-processed in `pipeline.js`:
+
+- **Style injected SVG elements inline (`style` attribute), not via a stylesheet.** Mermaid compiles its `classDef`s into `#id .cls>*{stroke:...!important}` rules that hit any element you add to a node — without an explicit inline `stroke:none` your glyphs get outlined in the node border color. Inline styles are also immune to a stale cached stylesheet. `_drawNodeCountBubble()` is the reference implementation.
+- **Set every paint property explicitly**, including an explicit `font-family` (otherwise mermaid's default Trebuchet MS leaks in) and rounded/integer coordinates.
+- Node labels are HTML chips reusing `.hardis-pill` / `.hardis-status-*`, so status colors stay consistent with the tables.
+- Edge coloring goes through `link.renderType` (base type + status suffix) mapped to a `linkStyle` declaration; **`linkStyle` indexes follow link declaration order** — reorder links and you silently recolor the wrong edge.
+- Mermaid node names are sanitized (`sanitizeNodeName()`, e.g. `/` becomes `_`); never build a node id from a raw branch name.
 
 ## i18n checklist
 
 When adding user-facing strings:
 1. Add key to `src/i18n/en.json` (English, source of truth)
 2. Add same key to all other locale files: `fr.json`, `es.json`, `de.json`, `it.json`, `nl.json`, `ja.json`, `pl.json`, `pt-BR.json`
-3. Keep flat JSON structure, camelCase keys, alphabetical order
+3. Keep flat JSON structure and camelCase keys. Ordering is **case-sensitive ASCII sort** (JavaScript default `sort()`), not case-insensitive alphabetical — uppercase-first keys sort *before* lowercase ones. Locate the real neighboring keys in `en.json` first, then insert at the same position in all 9 files. Verify with:
+   ```bash
+   node -e "const k=Object.keys(require('./src/i18n/en.json'));console.log(JSON.stringify(k)===JSON.stringify([...k].sort()))"
+   ```
 4. Use `{{varName}}` for interpolation variables
 5. Preserve `{{varName}}` placeholders and `<br/>` tags exactly as-is in all languages
 6. Look at other translations in the same language file for terminology and style consistency
@@ -220,6 +373,14 @@ Command IDs, file paths, CSS classes, brand names (Salesforce, GitHub, SFDMU, Me
 2. Create `src/commands/show<Name>.ts` with register function using `LwcUiPanel.display()`
 3. Register in `src/commands.ts`
 4. Define message types for Extension-to-LWC communication
+5. **Never block the panel opening on data loading.** Create the panel immediately with `lwcManager.getOrCreatePanel("s-<name>", { loading: true })`, then feed it through a `loadAndPush()` function, and handle the LWC's `retryInit` message so the user can retry after a failure. The component itself handles three states (loading / loaded / error). Reference implementations: `src/commands/showDataWorkbench.ts`, `src/commands/showDocumentationWorkbench.ts`.
+6. For tabular data, use `s-hardis-datatable` with the shared cell types rather than a raw table.
+
+### Command panels and performance invariants
+- Command panels are created **before** the CLI answers. `command-runner.ts` generates a provisional context id, passes it to the CLI as the `SFDX_HARDIS_COMMAND_CONTEXT_ID` env var and calls `registerPendingCommandPanel()`; `hardis-websocket-server.ts` then adopts that panel via `takePendingCommandPanel()`. If you add a new way to launch a command, keep this handshake or the user gets a duplicate empty tab.
+- Track panel lifecycle with the **`panel.commandStatus`** flag (`pending` / `running` / `completed` / `error`). Never infer state by parsing panel titles.
+- File watchers: use `.some()` rather than `.filter()` when you only need existence.
+- **Load heavy providers with `await import(...)`, not a top-level import.** The extension bundle is built with `module: "es2020"` in `webpack.common.js` specifically so dynamic imports survive into real webpack chunks instead of being bundled into the eagerly-parsed main file. A static import of a heavy module silently undoes that and slows activation.
 
 ### Adding a new config field
 1. Add to `CONFIGURABLE_FIELDS` in `src/utils/pipeline/sfdxHardisConfigHelper.ts`
@@ -232,4 +393,6 @@ After implementing:
 1. `yarn lint` - Check for ESLint issues
 2. `yarn dev` or `yarn build` - Verify webpack compilation succeeds
 3. Test in VS Code Extension Development Host (F5)
-4. Confirm `CHANGELOG.md` has a user-friendly entry under `## Unreleased` (or that the change is internal-only and was intentionally skipped)
+4. For webview changes, check the panel in **both** dark and light VS Code themes
+5. For changes touching command launching, tree views or panels: `yarn dev && yarn compile && yarn test:ui` (build order matters)
+6. Confirm `CHANGELOG.md` has a user-friendly entry under `## Unreleased` (or that the change is internal-only and was intentionally skipped)
