@@ -347,12 +347,19 @@ export class LwcUiPanel {
     try {
       switch (messageType) {
         case "webviewReady":
-          // The webview page finished booting and mounted its LWC component.
-          // Re-send the initialization data: a postMessage sent before the
-          // page was loaded (the 100ms fast-path below) can be dropped by
-          // VS Code, which previously left panels on their loading spinner
-          // forever on slow machines. "initialize" is idempotent.
-          if (this.initializationData) {
+          // The webview page finished booting and mounted its LWC component:
+          // deliver the initialization data (posting it earlier would be
+          // dropped by VS Code, which previously left panels on their
+          // loading spinner forever on slow machines).
+          // Command-execution panels are excluded once their command has
+          // advanced past "pending": the CLI may already have streamed
+          // initializeCommand/addLogLine while the page was booting, and
+          // commandExecution.initialize() would wipe that live state with
+          // the stale click-time snapshot.
+          if (
+            this.initializationData &&
+            (this.commandStatus === null || this.commandStatus === "pending")
+          ) {
             this.sendInitializationData(this.initializationData);
           }
           break;

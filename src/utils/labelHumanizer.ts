@@ -20,6 +20,24 @@ const KNOWN_ACRONYMS = [
 
 const ACRONYM_LOOKUP = new Set(KNOWN_ACRONYMS.map((acronym) => acronym.toUpperCase()));
 
+// Brand names keep their own capitalization anywhere in the label
+// (project convention: Salesforce, Git Bash, GitHub... are never lowercased).
+const BRAND_WORDS: Record<string, string> = {
+  salesforce: "Salesforce",
+  git: "Git",
+  bash: "Bash",
+  github: "GitHub",
+  gitlab: "GitLab",
+  bitbucket: "Bitbucket",
+  azure: "Azure",
+  jira: "Jira",
+  grafana: "Grafana",
+  sfdmu: "SFDMU",
+  mermaid: "Mermaid",
+  cloudflare: "Cloudflare",
+  confluence: "Confluence",
+};
+
 /**
  * Splits a camelCase (or PascalCase) identifier into its constituent words,
  * keeping consecutive uppercase letters (acronyms) grouped together, e.g.
@@ -66,6 +84,9 @@ export function humanizeConfigKeyLabel(key: string): string {
         return word.toUpperCase();
       }
       const lower = word.toLowerCase();
+      if (BRAND_WORDS[lower]) {
+        return BRAND_WORDS[lower];
+      }
       if (index === 0) {
         return lower.charAt(0).toUpperCase() + lower.slice(1);
       }

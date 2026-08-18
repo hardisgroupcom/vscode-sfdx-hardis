@@ -102,10 +102,6 @@
   min-width: 0;
 }
 
-.monitoring-row-title-bold {
-  font-weight: 700;
-}
-
 .monitoring-row-actions {
   text-align: center;
   white-space: nowrap;

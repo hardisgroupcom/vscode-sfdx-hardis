@@ -233,7 +233,7 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
       segments.push({
         idx: idx++,
         text: match[1],
-        cssClass: "monitoring-row-title-segment monitoring-row-title-bold",
+        cssClass: "monitoring-row-title-segment slds-text-title_bold",
       });
       lastIndex = regex.lastIndex;
     }

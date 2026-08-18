@@ -684,6 +684,9 @@ export default class PackageXml extends SharedMixin(LightningElement) {
   openMetadataDocumentation(event) {
     try {
       event.preventDefault();
+      // The icon sits inside the clickable type header: without this, the
+      // click also toggles the section's expansion.
+      event.stopPropagation();
       const typeName = event.currentTarget?.dataset?.typeName || null;
       if (!typeName) return;
       const docUrl = `${METADATA_DOC_BASE_URL}${typeName}`;

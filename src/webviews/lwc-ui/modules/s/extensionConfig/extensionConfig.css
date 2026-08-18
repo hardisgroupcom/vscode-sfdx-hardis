@@ -1,6 +1,6 @@
 /* Cap the settings list to a readable measure instead of stretching
    field rows across the full panel width. */
-.hardis-panel-body {
+.ecfg-body {
     max-width: 860px;
     margin: 0 auto;
 }

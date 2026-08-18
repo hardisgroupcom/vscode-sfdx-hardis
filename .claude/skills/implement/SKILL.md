@@ -180,6 +180,10 @@ VS Code webviews render in BOTH dark and light themes. Hardcoded colors break on
    - **Selection state**: `.hardis-card.selected` for pickable card lists (workspace rails) — accent inset + tinted surface.
    - **Group label actions**: `.hardis-group-actions` inside a `.hardis-group-label` — small LABELED buttons right of the hairline (never icon-only gray squares).
    - **Empty states**: `.hardis-empty` > `.hardis-tile.featured.<hue>` + `.hardis-empty-title` / `.hardis-empty-desc` / `.hardis-empty-actions` (one primary action).
+   - **Split layout** (rail of selectable cards + detail pane): `.hardis-split` > `.hardis-split-rail` / `.hardis-split-main` (stacks under 900px); `.hardis-chip-row` for wrapping fact-chip runs; workbench roots carry `.hardis-workbench` to opt into the shared form/modal polish.
+   - **Datatable cell classes live in global-theme.css, never in component CSS**: synthetic-shadow scoping prevents a component stylesheet from reaching cells inside `s-hardis-datatable` — the rule compiles scoped and silently never matches (`.hardis-date-cell`, `.hardis-file-cell` are the precedents).
+   - **Pills**: `.hardis-status-info` is the STATIC blue pill for facts (operation types, file roles); `.hardis-status-running` pulses its dot and is reserved for genuinely in-progress activity.
+   - **Before deleting a "dead" CSS class, grep .js and .ts too** — some classes are composed in JavaScript/TypeScript (`branchStrategyMermaidBuilder.ts` emits `.hardis-chip-create`; datatable `cellAttributes` compose cell classes).
    - **Elevation**: `--hardis-shadow-sm` / `-md` / `-lg` tokens — the only box-shadows allowed in component CSS (theme-aware alphas; never raw `rgba()` shadows).
    - **Typography helpers**: `.section-title`, `.section-subtitle`, `.info-title`, `.info-label`, `.info-value`, `.type-name`, `.member-name`, `.empty-title`, `.empty-description`, `.error-description`, `.loading-text`, `.muted`.
    - **Logs / modals**: `.log-message`, `.log-container`, `.modal-accent-strip`, `.modal-title-parts`, `.modal-count-badge`, `.tabbed-modal-container`, `.tabbed-modal-content`.

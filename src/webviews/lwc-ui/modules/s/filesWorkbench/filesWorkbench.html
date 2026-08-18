@@ -1,5 +1,5 @@
 <template>
-  <div class="slds-scope slds-card blue-back" data-theme={colorTheme} data-contrast={colorContrast}>
+  <div class="slds-scope slds-card blue-back hardis-workbench" data-theme={colorTheme} data-contrast={colorContrast}>
     <!-- Header -->
     <div class="hardis-page-head">
       <div class="hardis-tile featured amber">
@@ -71,9 +71,9 @@
     <!-- Workspaces List -->
     <template if:false={isLoading}>
       <template if:true={hasWorkspaces}>
-        <div class="dwb-layout">
+        <div class="hardis-split">
           <!-- Left: Workspaces List -->
-          <div class="hardis-panel-body dwb-rail">
+          <div class="hardis-panel-body hardis-split-rail">
             <div class="hardis-group-label">
               {i18n.availableWorkspacesTitle}
               <span class="hardis-count-chip">{workspacesCount}</span>
@@ -106,7 +106,7 @@
           </div>
 
           <!-- Right: Selected Workspace -->
-          <div class="hardis-panel-body dwb-main">
+          <div class="hardis-panel-body hardis-split-main">
             <template if:true={selectedWorkspace}>
               <div class="hardis-page-head flush">
                 <div class="hardis-page-head-text">
@@ -218,7 +218,7 @@
                   <div class="hardis-prop-value">{selectedWorkspace.outputFileNameFormat}</div>
                 </div>
               </div>
-              <div class="dwb-chip-row">
+              <div class="hardis-chip-row">
                 <span class="hardis-chip" title={i18n.overwriteParentRecordsField}>
                   {i18n.overwriteParentRecordsField} {selectedOverwriteParentRecordsLabel}
                 </span>

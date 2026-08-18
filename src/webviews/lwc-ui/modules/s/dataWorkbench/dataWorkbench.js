@@ -106,7 +106,7 @@ export default class DataWorkbench extends SharedMixin(LightningElement) {
           name: "open",
           variant: "base",
         },
-        cellAttributes: { class: "dwb-file-cell" },
+        cellAttributes: { class: "hardis-file-cell" },
       },
       {
         label: this.t("dwbColumnCreatedDate"),
@@ -140,7 +140,7 @@ export default class DataWorkbench extends SharedMixin(LightningElement) {
           name: "open",
           variant: "base",
         },
-        cellAttributes: { class: "dwb-file-cell" },
+        cellAttributes: { class: "hardis-file-cell" },
       },
       {
         label: this.t("dwbColumnLogType"),
@@ -573,7 +573,7 @@ export default class DataWorkbench extends SharedMixin(LightningElement) {
   getOperationPillClass(operation) {
     return operation === "Delete"
       ? "hardis-pill hardis-status-failed"
-      : "hardis-pill hardis-status-running";
+      : "hardis-pill hardis-status-info";
   }
 
   get operationOptions() {
@@ -651,7 +651,7 @@ export default class DataWorkbench extends SharedMixin(LightningElement) {
 
   getLogTypePillClass(logType) {
     if (logType === "source") {
-      return "hardis-pill hardis-status-running";
+      return "hardis-pill hardis-status-info";
     }
     if (logType === "target") {
       return "hardis-pill hardis-status-success";

@@ -39,7 +39,7 @@
           <div class="slds-p-horizontal_small">
               <template if:false={loading}>
                   <template if:true={sections}>
-                      <div class="hardis-panel-body">
+                      <div class="hardis-panel-body ecfg-body">
                           <lightning-tabset active-tab-value={activeTabValue}>
                               <template for:each={sections} for:item="section" for:index="index">
                                   <lightning-tab key={section.value} value={section.value} label={section.label} icon-name={section.iconName}>

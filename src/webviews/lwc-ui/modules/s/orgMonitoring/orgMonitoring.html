@@ -28,7 +28,6 @@
                         title={i18n.checkInstallationStatusAgain}
                         onclick={checkInstallationStatus}
                         icon-name="utility:refresh"
-                        class="status-button"
                     ></lightning-button>
                 </div>
             </div>
@@ -129,7 +128,7 @@
                             </div>
                             <template if:true={instanceUrl}>
                                 <div class="instance-url-row">
-                                    <span class="instance-url-label">{i18n.monitoredOrgLabel}</span>
+                                    <span class="slds-text-title_bold instance-url-label">{i18n.monitoredOrgLabel}</span>
                                     <lightning-button
                                         variant="base"
                                         label={instanceUrl}
@@ -165,7 +164,7 @@
                                                 title={i18n.openMonitoringRepositoryTooltip}
                                                 onclick={openMonitoringRepository}
                                                 icon-name="utility:new_window"
-                                                class="status-button hardis-btn-tinted-blue"
+                                                class="hardis-btn-tinted-blue"
                                             ></lightning-button>
                                             <lightning-button
                                                 variant="neutral"
@@ -173,7 +172,6 @@
                                                 title={i18n.learnMoreTooltip}
                                                 onclick={learnMore}
                                                 icon-name="utility:info"
-                                                class="status-button"
                                             ></lightning-button>
                                         </div>
                                     </template>
@@ -185,7 +183,6 @@
                                                 title={i18n.learnMoreTooltip}
                                                 onclick={learnMore}
                                                 icon-name="utility:info"
-                                                class="status-button"
                                             ></lightning-button>
                                         </div>
                                     </template>
@@ -209,7 +206,7 @@
                                             title={i18n.installOrgMonitoringTooltip}
                                             onclick={installOrgMonitoring}
                                             icon-name="utility:download"
-                                            class="status-button primary hardis-btn-tinted-blue"
+                                            class="hardis-btn-tinted-blue"
                                         ></lightning-button>
                                         <lightning-button
                                             variant="neutral"
@@ -217,7 +214,6 @@
                                             title={i18n.learnMoreTooltip}
                                             onclick={learnMore}
                                             icon-name="utility:info"
-                                            class="status-button"
                                         ></lightning-button>
                                     </div>
                                 </div>

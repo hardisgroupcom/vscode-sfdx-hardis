@@ -1,5 +1,5 @@
 <template>
-  <div class="slds-scope slds-card blue-back" data-theme={colorTheme} data-contrast={colorContrast}>
+  <div class="slds-scope slds-card blue-back hardis-workbench" data-theme={colorTheme} data-contrast={colorContrast}>
     <div class="hardis-page-head">
       <div class="hardis-tile featured violet">
         <lightning-icon icon-name="utility:database" alternative-text={i18n.dwbAltText} size="medium"></lightning-icon>
@@ -74,8 +74,8 @@
 
     <template if:false={isLoading}>
       <template if:true={hasWorkspaces}>
-        <div class="dwb-layout">
-          <div class="hardis-panel-body dwb-rail">
+        <div class="hardis-split">
+          <div class="hardis-panel-body hardis-split-rail">
             <div class="hardis-group-label">
               {i18n.dwbAvailableWorkspaces}
               <span class="hardis-count-chip">{workspacesCount}</span>
@@ -107,7 +107,7 @@
             </div>
           </div>
 
-          <div class="hardis-panel-body dwb-main">
+          <div class="hardis-panel-body hardis-split-main">
             <template if:true={selectedWorkspace}>
               <div class="hardis-page-head flush">
                 <div class="hardis-page-head-text">
@@ -230,7 +230,7 @@
                 </div>
               </div>
               <template if:true={hasScriptSettings}>
-                <div class="dwb-chip-row">
+                <div class="hardis-chip-row">
                   <template if:true={ssHasApiVersion}>
                     <span class="hardis-chip" title={i18n.dwbBadgeApiVersion}>API: {ssApiVersion}</span>
                   </template>
@@ -355,7 +355,7 @@
                         </div>
                       </div>
                       <div class="hardis-prop-value mono dwb-obj-query" title={obj.query}>{obj.query}</div>
-                      <div class="dwb-chip-row">
+                      <div class="hardis-chip-row">
                         <template if:true={obj.externalId}>
                           <span class="hardis-chip">{i18n.dwbObjBadgeExternalId}: {obj.externalId}</span>
                         </template>
