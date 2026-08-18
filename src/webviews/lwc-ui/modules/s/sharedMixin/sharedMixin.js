@@ -152,4 +152,13 @@ export const SharedMixin = (BaseClass) =>
         this.loadError = data.loadError || null;
       }
     }
+
+    // A render error in a child component would otherwise abort the re-render
+    // and leave the previous DOM (often the loading spinner) on screen with no
+    // feedback: surface the error state (message + Try again) instead.
+    errorCallback(error, stack) {
+      console.error("LWC component error:", error, stack);
+      this.loadError = (error && error.message) || String(error);
+      this.loading = false;
+    }
   };

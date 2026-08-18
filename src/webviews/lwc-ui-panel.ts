@@ -345,6 +345,16 @@ export class LwcUiPanel {
 
     try {
       switch (messageType) {
+        case "webviewReady":
+          // The webview page finished booting and mounted its LWC component.
+          // Re-send the initialization data: a postMessage sent before the
+          // page was loaded (the 100ms fast-path below) can be dropped by
+          // VS Code, which previously left panels on their loading spinner
+          // forever on slow machines. "initialize" is idempotent.
+          if (this.initializationData) {
+            this.sendInitializationData(this.initializationData);
+          }
+          break;
         case "checkFileExists":
           await this.handleFileExistsCheck(data.filePath, data.fileType);
           break;

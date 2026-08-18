@@ -1082,6 +1082,14 @@ lightning-helptext::part(icon) {
   letter-spacing: normal;
   font-weight: 400;
 }
+/* Buttons in a group-label action slot are compact: one text line, small type,
+   reduced height — they annotate a section, they are not the page actions. */
+.hardis-group-actions .slds-button {
+  font-size: 0.74rem;
+  line-height: 1.65rem;
+  padding: 0 0.6rem;
+  white-space: nowrap;
+}
 
 /* ---- Prop grid: definition list as a responsive grid ------------------
    Anatomy:

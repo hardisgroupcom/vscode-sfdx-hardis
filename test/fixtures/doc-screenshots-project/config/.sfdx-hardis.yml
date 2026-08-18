@@ -49,3 +49,8 @@ autoCleanTypes:
   - listViewsMine
 useDeltaDeployment: true
 useSmartDeploymentTests: true
+apexTestsMinCoverageOrgWide: 80
+manualActionsFileUrl: https://mycompany.sharepoint.com/sites/crm/ManualActions.xlsx
+orgAuthenticationMode: encryptedCert
+allowedOrgTypes:
+  - sandbox

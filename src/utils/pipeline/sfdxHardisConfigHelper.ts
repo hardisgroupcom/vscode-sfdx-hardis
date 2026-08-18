@@ -239,15 +239,24 @@ export class SfdxHardisConfigHelper {
   ];
   static readonly REMOTE_SCHEMA_URL =
     "https://raw.githubusercontent.com/hardisgroupcom/sfdx-hardis/main/config/sfdx-hardis.jsonschema.json";
-  // Always resolve to the resources directory, compatible with both Node and Webpack
+  // Always resolve to the resources directory. __dirname differs per build:
+  // webpack bundle -> out/ ; tsc build (tests, F5 dev host) -> out/utils/pipeline ;
+  // so several relative candidates are probed. Without this, the tsc layouts
+  // found no local schema and the panel silently depended on the remote fetch
+  // (blank Pipeline Settings when offline or in the UI-test harness).
   static readonly LOCAL_SCHEMA_PATH = (() => {
-    // Try to resolve in out/resources (webpacked/prod) first
-    let candidate = path.resolve(
-      __dirname,
-      "./resources/sfdx-hardis.jsonschema.json",
-    );
-    if (fs.existsSync(candidate)) {
-      return candidate;
+    const candidates = [
+      // webpack bundle: out/extension.js -> out/resources/
+      path.resolve(__dirname, "./resources/sfdx-hardis.jsonschema.json"),
+      // tsc build: out/utils/pipeline -> out/resources/ (webpack asset copy)
+      path.resolve(__dirname, "../../resources/sfdx-hardis.jsonschema.json"),
+      // tsc build without a prior webpack run: repo root resources/
+      path.resolve(__dirname, "../../../resources/sfdx-hardis.jsonschema.json"),
+    ];
+    for (const candidate of candidates) {
+      if (fs.existsSync(candidate)) {
+        return candidate;
+      }
     }
     // Fallback: try require.resolve (may work in some node/webpack setups)
     try {

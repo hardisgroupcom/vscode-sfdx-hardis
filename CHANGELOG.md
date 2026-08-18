@@ -14,6 +14,8 @@
   - Commands run in a terminal now **start immediately**
     - On **Windows**, commands now run in a **Git Bash** terminal automatically when Git Bash is installed, without requiring to change the default VS Code terminal
   - Commands clicked right after VS Code startup are **no longer rejected** with "not initialized yet"
+  - Panels **no longer stay stuck on their loading spinner** (or open empty) when VS Code is slow to start them: their content is now delivered again as soon as the panel is ready, and an unexpected display error now shows a message with a **Try again** button instead of an endless spinner
+  - **Pipeline Settings now load without an internet connection**: the configuration reference shipped with the extension is used when the online one cannot be fetched
   - Fixed a wrong **"duplicate command"** error when running a command again right after closing its execution tab, or when a language other than "auto" is selected
   - Command tabs of completed commands are now cleaned up in **all languages** (previously only when VS Code was in English)
   - The "Initializing command" notification is no longer shown when the execution tab is already open, since it was redundant with it
