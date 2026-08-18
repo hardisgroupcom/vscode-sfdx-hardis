@@ -1492,6 +1492,7 @@
   "profilesAndPermissions": "Perfis e Permissões",
   "profilesDocHelp": "Gerar documentação de Perfis, Conjuntos de Permissões, Grupos de Conjuntos de Permissões e Funções.",
   "progressElapsed": "Decorrido: {{elapsed}}",
+  "progressPercentComplete": "{{percent}}% concluído",
   "progressStarting": "Iniciando...",
   "progressStepsCompleted": "{{current}} etapas concluídas",
   "progressStepsOf": "{{current}} de {{total}} etapas",

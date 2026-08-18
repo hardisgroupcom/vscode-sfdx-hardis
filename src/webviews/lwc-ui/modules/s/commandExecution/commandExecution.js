@@ -57,6 +57,9 @@ const BIG_TEXT_MIN_LENGTH = 1000;
 const BIG_TEXT_MIN_LINES = 12;
 const BIG_TEXT_PREVIEW_LENGTH = 500;
 const BIG_TEXT_PREVIEW_LINES = 6;
+// A progress reporting exactly 100 steps is a percentage, not a step counter:
+// it is displayed as "42% complete" instead of "42 of 100 steps"
+const PERCENT_TOTAL_STEPS = 100;
 
 export default class CommandExecution extends SharedMixin(LightningElement) {
   // Track user-toggled expanded state for sections in simple mode
@@ -1664,10 +1667,15 @@ ${resultMessage}`;
         progressPercentage = Math.round(
           (section.currentStep / section.totalSteps) * 100,
         );
-        progressStepText = this.t("progressStepsOf", {
-          current: section.currentStep,
-          total: section.totalSteps,
-        });
+        progressStepText =
+          section.totalSteps === PERCENT_TOTAL_STEPS
+            ? this.t("progressPercentComplete", {
+                percent: progressPercentage,
+              })
+            : this.t("progressStepsOf", {
+                current: section.currentStep,
+                total: section.totalSteps,
+              });
         if (section.isActive) {
           progressTimeEstimation = section.estimatedRemainingTime || "";
         } else {

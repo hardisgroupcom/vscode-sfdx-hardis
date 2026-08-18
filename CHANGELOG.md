@@ -43,6 +43,7 @@
     - **Switches** are displayed the same way everywhere: the *Active / Inactive* label below them is gone, as it broke the alignment with the neighboring buttons and fields
   - The command execution tab was **fully redesigned** with the same look & feel
     - Command steps are displayed as a **compact connected timeline** with colored status dots, expandable step details and per-step durations, replacing the tall stack of boxes (a whole run now fits on one screen)
+      - A command reporting its progress out of **100 steps** is displayed as a **percentage** ("42% complete") instead of a step counter
     - The header shows the command name with a **colored status pill** (Starting / Running / Completed / Failed), the **target org**, the elapsed time and a link to the log file
     - When the command asks a question, it appears in a highlighted **"Waiting for your answer"** card: options are clickable cards, long choice lists are **searchable in place** (no more dropdown covering the validation buttons), and multi-selects show a live **"n of m selected"** counter with Select all / Show only selected shortcuts
     - Answered questions collapse to a single line showing the **answer**, and can be expanded back to see the details

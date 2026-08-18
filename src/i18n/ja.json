@@ -1492,6 +1492,7 @@
   "profilesAndPermissions": "プロファイルと権限",
   "profilesDocHelp": "プロファイル、権限セット、権限セットグループ、ロールのドキュメントを生成します。",
   "progressElapsed": "経過時間: {{elapsed}}",
+  "progressPercentComplete": "{{percent}}% 完了",
   "progressStarting": "開始中...",
   "progressStepsCompleted": "{{current}} ステップ完了",
   "progressStepsOf": "{{total}} ステップ中 {{current}}",

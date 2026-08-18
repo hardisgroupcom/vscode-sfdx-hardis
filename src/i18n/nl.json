@@ -1492,6 +1492,7 @@
   "profilesAndPermissions": "Profielen & Machtigingen",
   "profilesDocHelp": "Genereer documentatie voor profielen, Machtigingensets, Machtigingensetgroepen en rollen.",
   "progressElapsed": "Verstreken: {{elapsed}}",
+  "progressPercentComplete": "{{percent}}% voltooid",
   "progressStarting": "Starten...",
   "progressStepsCompleted": "{{current}} stappen voltooid",
   "progressStepsOf": "{{current}} van {{total}} stappen",

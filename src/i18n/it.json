@@ -1492,6 +1492,7 @@
   "profilesAndPermissions": "Profili e permessi",
   "profilesDocHelp": "Genera la documentazione di Profili, Permission Set, Gruppi di Permission Set e Ruoli.",
   "progressElapsed": "Tempo trascorso: {{elapsed}}",
+  "progressPercentComplete": "{{percent}}% completato",
   "progressStarting": "Avvio in corso...",
   "progressStepsCompleted": "{{current}} passi completati",
   "progressStepsOf": "{{current}} di {{total}} passi",
