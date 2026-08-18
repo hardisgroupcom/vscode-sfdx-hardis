@@ -123,7 +123,12 @@ async function main() {
   );
 
   // 4. Prepare the sf CLI shim (mock) and its invocation log
-  let shimDir = path.join(extensionDevelopmentPath, "test", "fixtures", "sf-shim");
+  let shimDir = path.join(
+    extensionDevelopmentPath,
+    "test",
+    "fixtures",
+    "sf-shim",
+  );
   if (docScreenshots) {
     // The Setup panel warns when `sf` does not look like an npm global install
     // ("installed via the Salesforce native installer"). Serving the shim from
@@ -200,8 +205,7 @@ async function main() {
                 process.env.SFDX_HARDIS_DOC_SCREENSHOTS_ONLY || "",
               SF_MOCK_PROFILE: "docs",
               SF_MOCK_DEPS_STATE: process.env.SF_MOCK_DEPS_STATE || "ok",
-              SF_MOCK_VERSIONS_FILE:
-                process.env.SF_MOCK_VERSIONS_FILE || "",
+              SF_MOCK_VERSIONS_FILE: process.env.SF_MOCK_VERSIONS_FILE || "",
               // Screenshots must not depend on what npm answers today: the
               // "latest version" cache is seeded by the suite instead, and an
               // unroutable proxy makes every outbound HTTP call fail fast.

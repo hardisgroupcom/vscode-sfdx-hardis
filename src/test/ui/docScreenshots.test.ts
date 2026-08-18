@@ -2,9 +2,13 @@ import { execFileSync, spawn } from "child_process";
 import * as fs from "fs";
 import * as path from "path";
 import * as vscode from "vscode";
-import { activateExtension, readMockLog, waitFor } from "./uiTestUtils";
+import {
+  activateExtension,
+  readMockLog,
+  runCommandAndWaitForPanel,
+  waitFor,
+} from "./uiTestUtils";
 import { CacheManager } from "../../utils/cache-manager";
-
 
 /**
  * Documentation screenshot harness.
@@ -37,10 +41,7 @@ const ONLY = (process.env.SFDX_HARDIS_DOC_SCREENSHOTS_ONLY || "")
   .split(",")
   .map((name) => name.trim())
   .filter((name) => name.length > 0);
-const SCRIPT_DIR = path.resolve(
-  __dirname,
-  "../../../test/fixtures/screenshot",
-);
+const SCRIPT_DIR = path.resolve(__dirname, "../../../test/fixtures/screenshot");
 const CAPTURE_SCRIPT = path.join(SCRIPT_DIR, "capture-window.ps1");
 const CLICK_SCRIPT = path.join(SCRIPT_DIR, "click-window.ps1");
 const RECORD_SCRIPT = path.join(SCRIPT_DIR, "record-window.ps1");
@@ -230,8 +231,11 @@ async function record(
       "-CropTop",
       String(TITLE_BAR_HEIGHT),
     ],
-    { stdio: "ignore", detached: false },
+    { stdio: ["ignore", "pipe", "pipe"], detached: false },
   );
+  let recorderOutput = "";
+  recorder.stdout?.on("data", (chunk) => (recorderOutput += chunk.toString()));
+  recorder.stderr?.on("data", (chunk) => (recorderOutput += chunk.toString()));
   const finished = new Promise<void>((resolve) => recorder.on("exit", resolve));
   // Toasts (extension activation warnings, upgrade prompts) can pop up in the
   // middle of a scenario: keep dismissing them while recording
@@ -246,7 +250,9 @@ async function record(
     clearInterval(toastCleaner);
   }
   const frames = fs.readdirSync(outDir).filter((f) => f.endsWith(".png"));
-  console.log(`      [rec] ${name}: ${frames.length} frames`);
+  console.log(
+    `      [rec] ${name}: ${frames.length} frames ${recorderOutput.trim()}`,
+  );
 }
 
 /**
@@ -460,22 +466,10 @@ suite("Documentation screenshots", function () {
     }
     await vscode.commands.executeCommand("workbench.action.closeAllEditors");
     await sleep(400);
-    const knownPanels = new Set<string>(panelManager.getActivePanelIds());
     const mockLogStart = readMockLog().length;
-    void vscode.commands.executeCommand(
-      "vscode-sfdx-hardis.execute-command",
+    const panelId = await runCommandAndWaitForPanel(
+      panelManager,
       "sf hardis:org:mock-showcase",
-    );
-    const panelId: string = await waitFor(
-      () =>
-        panelManager
-          .getActivePanelIds()
-          .find(
-            (id: string) =>
-              id.startsWith("s-command-execution-") && !knownPanels.has(id),
-          ),
-      20000,
-      "command execution panel to open",
     );
     const panel = panelManager.getPanel(panelId);
     const asked = (promptName: string) =>
@@ -675,24 +669,9 @@ suite("Documentation screenshots", function () {
   ): Promise<void> {
     await vscode.commands.executeCommand("workbench.action.closeAllEditors");
     await sleep(400);
-    const knownPanels = new Set<string>(panelManager.getActivePanelIds());
     const mockLogStart = readMockLog().length;
     await record(name, seconds, async () => {
-      void vscode.commands.executeCommand(
-        "vscode-sfdx-hardis.execute-command",
-        command,
-      );
-      const panelId: string = await waitFor(
-        () =>
-          panelManager
-            .getActivePanelIds()
-            .find(
-              (id: string) =>
-                id.startsWith("s-command-execution-") && !knownPanels.has(id),
-            ),
-        20000,
-        `${command} panel to open`,
-      );
+      const panelId = await runCommandAndWaitForPanel(panelManager, command);
       const panel = panelManager.getPanel(panelId);
       for (const answer of answers) {
         await waitFor(
@@ -813,6 +792,4 @@ suite("Documentation screenshots", function () {
     await click(130, 362); // STATUS: expand
     await click(130, 664); // DEPENDENCIES: expand
   });
-
-
 });

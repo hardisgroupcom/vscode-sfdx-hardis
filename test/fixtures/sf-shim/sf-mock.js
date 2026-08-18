@@ -227,12 +227,7 @@ const DOCS_SOURCE_MEMBERS = [
   ["CustomField", "Account.Segment__c", "Nicolas Vuillamy", "modified"],
   ["PermissionSet", "CRM_Manager", "Nicolas Vuillamy", "modified"],
   ["Layout", "Opportunity-Sales Layout", "Alex Martin", "modified"],
-  [
-    "LightningComponentBundle",
-    "quoteApprovalCard",
-    "Sam Dubois",
-    "created",
-  ],
+  ["LightningComponentBundle", "quoteApprovalCard", "Sam Dubois", "created"],
   ["CustomLabel", "Quote_Approval_Required", "Alex Martin", "created"],
   ["ValidationRule", "Opportunity.Amount_Required", "Sam Dubois", "modified"],
 ];
@@ -321,9 +316,7 @@ async function main() {
       const plugins = docsPlugins();
       outputJsonIfRequested(
         plugins.map((plugin) => ({ ...plugin, type: "user", tag: "latest" })),
-        plugins
-          .map((plugin) => `${plugin.name} ${plugin.version}`)
-          .join("\n"),
+        plugins.map((plugin) => `${plugin.name} ${plugin.version}`).join("\n"),
       );
       return 0;
     }
@@ -360,8 +353,7 @@ async function main() {
             result: {
               id: "00D5f0000012XybEAE",
               username: "deploy.user@mycompany.com.integ",
-              instanceUrl:
-                "https://mycompany--integ.sandbox.my.salesforce.com",
+              instanceUrl: "https://mycompany--integ.sandbox.my.salesforce.com",
               apiVersion: "66.0",
               connectedStatus: "Connected",
               alias: "INTEGRATION",
@@ -461,10 +453,7 @@ async function main() {
   // Monitoring and Monitoring Configuration panels show their full catalog
   if (first === "hardis:config:monitoring-defaults" && DOCS_PROFILE) {
     const catalog = JSON.parse(
-      fs.readFileSync(
-        path.join(__dirname, "monitoring-defaults.json"),
-        "utf8",
-      ),
+      fs.readFileSync(path.join(__dirname, "monitoring-defaults.json"), "utf8"),
     );
     outputJsonIfRequested({ status: 0, result: catalog }, "");
     return 0;
@@ -1019,7 +1008,10 @@ const DOCS_SCENARIOS = {
     );
     send({
       event: "commandSubCommandStart",
-      data: { command: "sf sgd:source:delta --to HEAD --from origin/integration", cwd: "." },
+      data: {
+        command: "sf sgd:source:delta --to HEAD --from origin/integration",
+        cwd: ".",
+      },
     });
     await sleep(800);
     send({

@@ -25,37 +25,10 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+. (Join-Path $PSScriptRoot "window-common.ps1")
 
-Add-Type -TypeDefinition @'
-using System;
-using System.Runtime.InteropServices;
-
-public class SfhRecord {
-  [StructLayout(LayoutKind.Sequential)]
-  public struct RECT { public int Left, Top, Right, Bottom; }
-
-  [DllImport("user32.dll")] public static extern bool SetProcessDPIAware();
-  [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr hWnd, out RECT lpRect);
-  [DllImport("dwmapi.dll")] public static extern int DwmGetWindowAttribute(IntPtr hWnd, int attr, out RECT value, int size);
-  public const int DWMWA_EXTENDED_FRAME_BOUNDS = 9;
-}
-'@
-
-[void][SfhRecord]::SetProcessDPIAware()
-Add-Type -AssemblyName System.Windows.Forms, System.Drawing
-
-$proc = Get-Process |
-  Where-Object { $_.MainWindowHandle -ne 0 -and $_.MainWindowTitle -like "*$TitleMatch*" } |
-  Select-Object -First 1
-if (-not $proc) {
-  throw "No window matching '$TitleMatch' was found"
-}
-$hwnd = $proc.MainWindowHandle
-
-$rect = New-Object SfhRecord+RECT
-if ([SfhRecord]::DwmGetWindowAttribute($hwnd, [SfhRecord]::DWMWA_EXTENDED_FRAME_BOUNDS, [ref]$rect, 16) -ne 0) {
-  [void][SfhRecord]::GetWindowRect($hwnd, [ref]$rect)
-}
+$hwnd = Get-SfhWindow -TitleMatch $TitleMatch
+$rect = Get-SfhWindowRect -Hwnd $hwnd
 $left = $rect.Left
 $top = $rect.Top + $CropTop
 $width = $rect.Right - $rect.Left
@@ -74,12 +47,20 @@ $bmp = New-Object System.Drawing.Bitmap $width, $height
 $g = [System.Drawing.Graphics]::FromImage($bmp)
 $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
+$skipped = 0
 for ($i = 1; $i -le $frameCount; $i++) {
-  $g.CopyFromScreen($left, $top, 0, 0, $bmp.Size)
-  $bmp.Save(
-    (Join-Path $OutDir ("frame-{0:D4}.png" -f $i)),
-    [System.Drawing.Imaging.ImageFormat]::Png
-  )
+  # CopyFromScreen throws when the desktop is momentarily unavailable (window
+  # being activated, session locking): skip that frame rather than stopping
+  try {
+    $g.CopyFromScreen($left, $top, 0, 0, $bmp.Size)
+    $bmp.Save(
+      (Join-Path $OutDir ("frame-{0:D4}.png" -f $i)),
+      [System.Drawing.Imaging.ImageFormat]::Png
+    )
+  }
+  catch {
+    $skipped++
+  }
   $due = $i * $interval
   $wait = $due - $stopwatch.ElapsedMilliseconds
   if ($wait -gt 0) {
@@ -89,4 +70,4 @@ for ($i = 1; $i -le $frameCount; $i++) {
 
 $g.Dispose()
 $bmp.Dispose()
-Write-Output "recorded $frameCount frames in $OutDir"
+Write-Output "recorded $($frameCount - $skipped)/$frameCount frames in $OutDir"

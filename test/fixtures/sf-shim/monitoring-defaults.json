@@ -9,9 +9,7 @@
       "colorClass": "audit",
       "command": "sf hardis:org:diagnose:audittrail",
       "frequency": "daily",
-      "notificationTypes": [
-        "AUDIT_TRAIL"
-      ]
+      "notificationTypes": ["AUDIT_TRAIL"]
     },
     {
       "key": "LEGACY_API",
@@ -22,9 +20,7 @@
       "colorClass": "legacy",
       "command": "sf hardis:org:diagnose:legacyapi",
       "frequency": "daily",
-      "notificationTypes": [
-        "LEGACY_API"
-      ]
+      "notificationTypes": ["LEGACY_API"]
     },
     {
       "key": "ORG_LIMITS",
@@ -35,9 +31,7 @@
       "colorClass": "limits",
       "command": "sf hardis:org:monitor:limits",
       "frequency": "daily",
-      "notificationTypes": [
-        "ORG_LIMITS"
-      ]
+      "notificationTypes": ["ORG_LIMITS"]
     },
     {
       "key": "APEX_FLEX_QUEUE",
@@ -48,9 +42,7 @@
       "colorClass": "tests",
       "command": "sf hardis:org:diagnose:flex-queue",
       "frequency": "daily",
-      "notificationTypes": [
-        "APEX_FLEX_QUEUE"
-      ]
+      "notificationTypes": ["APEX_FLEX_QUEUE"]
     },
     {
       "key": "APEX_FLOW_ERRORS",
@@ -61,10 +53,7 @@
       "colorClass": "alerts",
       "command": "sf hardis:org:monitor:errors",
       "frequency": "daily",
-      "notificationTypes": [
-        "APEX_ERROR",
-        "FLOW_ERROR"
-      ]
+      "notificationTypes": ["APEX_ERROR", "FLOW_ERROR"]
     },
     {
       "key": "AGENT_TESTS",
@@ -75,9 +64,7 @@
       "colorClass": "tests",
       "command": "sf hardis:org:test:agents",
       "frequency": "weekly",
-      "notificationTypes": [
-        "AGENT_TESTS"
-      ]
+      "notificationTypes": ["AGENT_TESTS"]
     },
     {
       "key": "UNSECURED_CONNECTED_APPS",
@@ -88,9 +75,7 @@
       "colorClass": "security",
       "command": "sf hardis:org:diagnose:unsecure-connected-apps",
       "frequency": "daily",
-      "notificationTypes": [
-        "UNSECURED_CONNECTED_APPS"
-      ]
+      "notificationTypes": ["UNSECURED_CONNECTED_APPS"]
     },
     {
       "key": "MFA_CONFIG",
@@ -101,9 +86,7 @@
       "colorClass": "security",
       "command": "sf hardis:org:diagnose:mfa",
       "frequency": "weekly",
-      "notificationTypes": [
-        "MFA_CONFIG"
-      ]
+      "notificationTypes": ["MFA_CONFIG"]
     },
     {
       "key": "DANGEROUS_PERMISSIONS",
@@ -114,9 +97,7 @@
       "colorClass": "security",
       "command": "sf hardis:org:diagnose:unsecure-permissions",
       "frequency": "off",
-      "notificationTypes": [
-        "DANGEROUS_PERMISSIONS"
-      ]
+      "notificationTypes": ["DANGEROUS_PERMISSIONS"]
     },
     {
       "key": "DEPLOYMENTS",
@@ -127,9 +108,7 @@
       "colorClass": "audit",
       "command": "sf hardis:org:diagnose:deployments --period weekly",
       "frequency": "daily",
-      "notificationTypes": [
-        "DEPLOYMENTS"
-      ]
+      "notificationTypes": ["DEPLOYMENTS"]
     },
     {
       "key": "LICENSES",
@@ -140,9 +119,7 @@
       "colorClass": "licenses",
       "command": "sf hardis:org:diagnose:licenses",
       "frequency": "weekly",
-      "notificationTypes": [
-        "LICENSES"
-      ]
+      "notificationTypes": ["LICENSES"]
     },
     {
       "key": "LINT_ACCESS",
@@ -153,9 +130,7 @@
       "colorClass": "metadata-access",
       "command": "sf hardis:lint:access",
       "frequency": "weekly",
-      "notificationTypes": [
-        "LINT_ACCESS"
-      ]
+      "notificationTypes": ["LINT_ACCESS"]
     },
     {
       "key": "UNUSED_LICENSES",
@@ -166,9 +141,7 @@
       "colorClass": "licenses",
       "command": "sf hardis:org:diagnose:unusedlicenses",
       "frequency": "weekly",
-      "notificationTypes": [
-        "UNUSED_LICENSES"
-      ]
+      "notificationTypes": ["UNUSED_LICENSES"]
     },
     {
       "key": "UNUSED_USERS",
@@ -179,9 +152,7 @@
       "colorClass": "users",
       "command": "sf hardis:org:diagnose:unusedusers --licensetypes all --days 180",
       "frequency": "weekly",
-      "notificationTypes": [
-        "UNUSED_USERS"
-      ]
+      "notificationTypes": ["UNUSED_USERS"]
     },
     {
       "key": "UNUSED_USERS_CRM_6_MONTHS",
@@ -192,9 +163,7 @@
       "colorClass": "users",
       "command": "sf hardis:org:diagnose:unusedusers --licensetypes all-crm --days 180",
       "frequency": "weekly",
-      "notificationTypes": [
-        "UNUSED_USERS_CRM_6_MONTHS"
-      ]
+      "notificationTypes": ["UNUSED_USERS_CRM_6_MONTHS"]
     },
     {
       "key": "UNUSED_USERS_EXPERIENCE_6_MONTHS",
@@ -205,9 +174,7 @@
       "colorClass": "users",
       "command": "sf hardis:org:diagnose:unusedusers --licensetypes experience --days 180",
       "frequency": "weekly",
-      "notificationTypes": [
-        "UNUSED_USERS_EXPERIENCE_6_MONTHS"
-      ]
+      "notificationTypes": ["UNUSED_USERS_EXPERIENCE_6_MONTHS"]
     },
     {
       "key": "ACTIVE_USERS_CRM_WEEKLY",
@@ -218,9 +185,7 @@
       "colorClass": "tests",
       "command": "sf hardis:org:diagnose:unusedusers --returnactiveusers --licensetypes all-crm --days 7",
       "frequency": "weekly",
-      "notificationTypes": [
-        "ACTIVE_USERS_CRM_WEEKLY"
-      ]
+      "notificationTypes": ["ACTIVE_USERS_CRM_WEEKLY"]
     },
     {
       "key": "ACTIVE_USERS_EXPERIENCE_MONTHLY",
@@ -231,9 +196,7 @@
       "colorClass": "tests",
       "command": "sf hardis:org:diagnose:unusedusers --returnactiveusers --licensetypes experience --days 30",
       "frequency": "weekly",
-      "notificationTypes": [
-        "ACTIVE_USERS_EXPERIENCE_MONTHLY"
-      ]
+      "notificationTypes": ["ACTIVE_USERS_EXPERIENCE_MONTHLY"]
     },
     {
       "key": "RELEASE_UPDATES",
@@ -244,9 +207,7 @@
       "colorClass": "updates",
       "command": "sf hardis:org:diagnose:releaseupdates",
       "frequency": "weekly",
-      "notificationTypes": [
-        "RELEASE_UPDATES"
-      ]
+      "notificationTypes": ["RELEASE_UPDATES"]
     },
     {
       "key": "ORG_INFO",
@@ -257,9 +218,7 @@
       "colorClass": "health",
       "command": "sf hardis:org:diagnose:instanceupgrade",
       "frequency": "weekly",
-      "notificationTypes": [
-        "ORG_INFO"
-      ]
+      "notificationTypes": ["ORG_INFO"]
     },
     {
       "key": "ORG_HEALTH_CHECK",
@@ -270,9 +229,7 @@
       "colorClass": "health",
       "command": "sf hardis:org:monitor:health-check",
       "frequency": "weekly",
-      "notificationTypes": [
-        "ORG_HEALTH_CHECK"
-      ]
+      "notificationTypes": ["ORG_HEALTH_CHECK"]
     },
     {
       "key": "UNUSED_METADATAS",
@@ -283,9 +240,7 @@
       "colorClass": "unused-metadata",
       "command": "sf hardis:lint:unusedmetadatas",
       "frequency": "weekly",
-      "notificationTypes": [
-        "UNUSED_METADATAS"
-      ]
+      "notificationTypes": ["UNUSED_METADATAS"]
     },
     {
       "key": "UNUSED_APEX_CLASSES",
@@ -296,9 +251,7 @@
       "colorClass": "apex",
       "command": "sf hardis:org:diagnose:unused-apex-classes",
       "frequency": "weekly",
-      "notificationTypes": [
-        "UNUSED_APEX_CLASSES"
-      ]
+      "notificationTypes": ["UNUSED_APEX_CLASSES"]
     },
     {
       "key": "APEX_API_VERSION",
@@ -309,9 +262,7 @@
       "colorClass": "legacy",
       "command": "sf hardis:org:diagnose:apex-api-version",
       "frequency": "weekly",
-      "notificationTypes": [
-        "APEX_API_VERSION"
-      ]
+      "notificationTypes": ["APEX_API_VERSION"]
     },
     {
       "key": "CONNECTED_APPS",
@@ -322,9 +273,7 @@
       "colorClass": "connected-apps",
       "command": "sf hardis:org:diagnose:unused-connected-apps",
       "frequency": "weekly",
-      "notificationTypes": [
-        "CONNECTED_APPS"
-      ]
+      "notificationTypes": ["CONNECTED_APPS"]
     },
     {
       "key": "METADATA_STATUS",
@@ -335,9 +284,7 @@
       "colorClass": "legacy",
       "command": "sf hardis:lint:metadatastatus",
       "frequency": "weekly",
-      "notificationTypes": [
-        "METADATA_STATUS"
-      ]
+      "notificationTypes": ["METADATA_STATUS"]
     },
     {
       "key": "MISSING_ATTRIBUTES",
@@ -348,9 +295,7 @@
       "colorClass": "metadata-access",
       "command": "sf hardis:lint:missingattributes",
       "frequency": "weekly",
-      "notificationTypes": [
-        "MISSING_ATTRIBUTES"
-      ]
+      "notificationTypes": ["MISSING_ATTRIBUTES"]
     },
     {
       "key": "UNDERUSED_PERMSETS",
@@ -361,9 +306,7 @@
       "colorClass": "licenses",
       "command": "sf hardis:org:diagnose:underusedpermsets",
       "frequency": "weekly",
-      "notificationTypes": [
-        "UNDERUSED_PERMSETS"
-      ]
+      "notificationTypes": ["UNDERUSED_PERMSETS"]
     },
     {
       "key": "MINIMAL_PERMSETS",
@@ -374,9 +317,7 @@
       "colorClass": "metadata-access",
       "command": "sf hardis:org:diagnose:minimalpermsets",
       "frequency": "weekly",
-      "notificationTypes": [
-        "MINIMAL_PERMSETS"
-      ]
+      "notificationTypes": ["MINIMAL_PERMSETS"]
     },
     {
       "key": "USAGE_ENTITLEMENTS",
@@ -387,9 +328,7 @@
       "colorClass": "licenses",
       "command": "sf hardis:org:diagnose:usage-entitlements",
       "frequency": "daily",
-      "notificationTypes": [
-        "USAGE_ENTITLEMENTS"
-      ]
+      "notificationTypes": ["USAGE_ENTITLEMENTS"]
     },
     {
       "key": "CONSUMPTION_ALERTS",
@@ -400,9 +339,7 @@
       "colorClass": "licenses",
       "command": "sf hardis:org:diagnose:consumption-alerts",
       "frequency": "daily",
-      "notificationTypes": [
-        "CONSUMPTION_ALERTS"
-      ]
+      "notificationTypes": ["CONSUMPTION_ALERTS"]
     },
     {
       "key": "AI_USAGE",
@@ -413,9 +350,7 @@
       "colorClass": "licenses",
       "command": "sf hardis:org:diagnose:ai-usage",
       "frequency": "weekly",
-      "notificationTypes": [
-        "AI_USAGE"
-      ]
+      "notificationTypes": ["AI_USAGE"]
     }
   ],
   "notificationConfig": [
@@ -431,11 +366,7 @@
         "email": "off",
         "api": "log"
       },
-      "availableThresholds": [
-        "warning",
-        "log",
-        "off"
-      ]
+      "availableThresholds": ["warning", "log", "off"]
     },
     {
       "key": "LEGACY_API",
@@ -449,11 +380,7 @@
         "email": "error",
         "api": "log"
       },
-      "availableThresholds": [
-        "error",
-        "log",
-        "off"
-      ]
+      "availableThresholds": ["error", "log", "off"]
     },
     {
       "key": "APEX_FLEX_QUEUE",
@@ -467,11 +394,7 @@
         "email": "off",
         "api": "log"
       },
-      "availableThresholds": [
-        "warning",
-        "log",
-        "off"
-      ]
+      "availableThresholds": ["warning", "log", "off"]
     },
     {
       "key": "APEX_ERROR",
@@ -485,12 +408,7 @@
         "email": "error",
         "api": "log"
       },
-      "availableThresholds": [
-        "error",
-        "success",
-        "log",
-        "off"
-      ]
+      "availableThresholds": ["error", "success", "log", "off"]
     },
     {
       "key": "FLOW_ERROR",
@@ -504,12 +422,7 @@
         "email": "error",
         "api": "log"
       },
-      "availableThresholds": [
-        "error",
-        "success",
-        "log",
-        "off"
-      ]
+      "availableThresholds": ["error", "success", "log", "off"]
     },
     {
       "key": "BACKUP",
@@ -523,11 +436,7 @@
         "email": "off",
         "api": "log"
       },
-      "availableThresholds": [
-        "info",
-        "log",
-        "off"
-      ]
+      "availableThresholds": ["info", "log", "off"]
     },
     {
       "key": "DEPLOYMENT",
@@ -563,11 +472,7 @@
         "email": "warning",
         "api": "log"
       },
-      "availableThresholds": [
-        "warning",
-        "log",
-        "off"
-      ]
+      "availableThresholds": ["warning", "log", "off"]
     },
     {
       "key": "ACTIVE_USERS",
@@ -581,10 +486,7 @@
         "email": "off",
         "api": "log"
       },
-      "availableThresholds": [
-        "log",
-        "off"
-      ]
+      "availableThresholds": ["log", "off"]
     },
     {
       "key": "ACTIVE_USERS_CRM_WEEKLY",
@@ -598,10 +500,7 @@
         "email": "off",
         "api": "log"
       },
-      "availableThresholds": [
-        "log",
-        "off"
-      ]
+      "availableThresholds": ["log", "off"]
     },
     {
       "key": "ACTIVE_USERS_EXPERIENCE_MONTHLY",
@@ -615,10 +514,7 @@
         "email": "off",
         "api": "log"
       },
-      "availableThresholds": [
-        "log",
-        "off"
-      ]
+      "availableThresholds": ["log", "off"]
     },
     {
       "key": "UNUSED_USERS",
@@ -632,10 +528,7 @@
         "email": "off",
         "api": "log"
       },
-      "availableThresholds": [
-        "log",
-        "off"
-      ]
+      "availableThresholds": ["log", "off"]
     },
     {
       "key": "UNUSED_USERS_CRM_6_MONTHS",
@@ -649,10 +542,7 @@
         "email": "off",
         "api": "log"
       },
-      "availableThresholds": [
-        "log",
-        "off"
-      ]
+      "availableThresholds": ["log", "off"]
     },
     {
       "key": "UNUSED_USERS_EXPERIENCE_6_MONTHS",
@@ -666,10 +556,7 @@
         "email": "off",
         "api": "log"
       },
-      "availableThresholds": [
-        "log",
-        "off"
-      ]
+      "availableThresholds": ["log", "off"]
     },
     {
       "key": "APEX_TESTS",
@@ -683,11 +570,7 @@
         "email": "error",
         "api": "log"
       },
-      "availableThresholds": [
-        "error",
-        "log",
-        "off"
-      ]
+      "availableThresholds": ["error", "log", "off"]
     },
     {
       "key": "AGENT_TESTS",
@@ -701,11 +584,7 @@
         "email": "error",
         "api": "log"
       },
-      "availableThresholds": [
-        "error",
-        "log",
-        "off"
-      ]
+      "availableThresholds": ["error", "log", "off"]
     },
     {
       "key": "ORG_HEALTH_CHECK",
@@ -719,13 +598,7 @@
         "email": "error",
         "api": "log"
       },
-      "availableThresholds": [
-        "error",
-        "warning",
-        "success",
-        "log",
-        "off"
-      ]
+      "availableThresholds": ["error", "warning", "success", "log", "off"]
     },
     {
       "key": "UNSECURED_CONNECTED_APPS",
@@ -739,11 +612,7 @@
         "email": "error",
         "api": "log"
       },
-      "availableThresholds": [
-        "error",
-        "log",
-        "off"
-      ]
+      "availableThresholds": ["error", "log", "off"]
     },
     {
       "key": "SECURITY_KEY_UNLINK",
@@ -757,12 +626,7 @@
         "email": "warning",
         "api": "log"
       },
-      "availableThresholds": [
-        "error",
-        "warning",
-        "log",
-        "off"
-      ]
+      "availableThresholds": ["error", "warning", "log", "off"]
     },
     {
       "key": "MFA_CONFIG",
@@ -776,12 +640,7 @@
         "email": "error",
         "api": "log"
       },
-      "availableThresholds": [
-        "error",
-        "warning",
-        "log",
-        "off"
-      ]
+      "availableThresholds": ["error", "warning", "log", "off"]
     },
     {
       "key": "DANGEROUS_PERMISSIONS",
@@ -795,12 +654,7 @@
         "email": "error",
         "api": "log"
       },
-      "availableThresholds": [
-        "error",
-        "warning",
-        "log",
-        "off"
-      ]
+      "availableThresholds": ["error", "warning", "log", "off"]
     },
     {
       "key": "ORG_LIMITS",
@@ -814,12 +668,7 @@
         "email": "error",
         "api": "log"
       },
-      "availableThresholds": [
-        "error",
-        "warning",
-        "log",
-        "off"
-      ]
+      "availableThresholds": ["error", "warning", "log", "off"]
     },
     {
       "key": "RELEASE_UPDATES",
@@ -833,11 +682,7 @@
         "email": "warning",
         "api": "log"
       },
-      "availableThresholds": [
-        "warning",
-        "log",
-        "off"
-      ]
+      "availableThresholds": ["warning", "log", "off"]
     },
     {
       "key": "ORG_INFO",
@@ -851,10 +696,7 @@
         "email": "off",
         "api": "log"
       },
-      "availableThresholds": [
-        "log",
-        "off"
-      ]
+      "availableThresholds": ["log", "off"]
     },
     {
       "key": "APEX_API_VERSION",
@@ -868,11 +710,7 @@
         "email": "off",
         "api": "log"
       },
-      "availableThresholds": [
-        "warning",
-        "log",
-        "off"
-      ]
+      "availableThresholds": ["warning", "log", "off"]
     },
     {
       "key": "CONNECTED_APPS",
@@ -886,11 +724,7 @@
         "email": "warning",
         "api": "log"
       },
-      "availableThresholds": [
-        "warning",
-        "log",
-        "off"
-      ]
+      "availableThresholds": ["warning", "log", "off"]
     },
     {
       "key": "LINT_ACCESS",
@@ -904,11 +738,7 @@
         "email": "off",
         "api": "log"
       },
-      "availableThresholds": [
-        "warning",
-        "log",
-        "off"
-      ]
+      "availableThresholds": ["warning", "log", "off"]
     },
     {
       "key": "METADATA_STATUS",
@@ -922,11 +752,7 @@
         "email": "warning",
         "api": "log"
       },
-      "availableThresholds": [
-        "warning",
-        "log",
-        "off"
-      ]
+      "availableThresholds": ["warning", "log", "off"]
     },
     {
       "key": "MISSING_ATTRIBUTES",
@@ -940,11 +766,7 @@
         "email": "warning",
         "api": "log"
       },
-      "availableThresholds": [
-        "warning",
-        "log",
-        "off"
-      ]
+      "availableThresholds": ["warning", "log", "off"]
     },
     {
       "key": "UNUSED_APEX_CLASSES",
@@ -958,11 +780,7 @@
         "email": "warning",
         "api": "log"
       },
-      "availableThresholds": [
-        "warning",
-        "log",
-        "off"
-      ]
+      "availableThresholds": ["warning", "log", "off"]
     },
     {
       "key": "UNUSED_METADATAS",
@@ -976,11 +794,7 @@
         "email": "warning",
         "api": "log"
       },
-      "availableThresholds": [
-        "warning",
-        "log",
-        "off"
-      ]
+      "availableThresholds": ["warning", "log", "off"]
     },
     {
       "key": "LICENSES",
@@ -994,10 +808,7 @@
         "email": "off",
         "api": "log"
       },
-      "availableThresholds": [
-        "log",
-        "off"
-      ]
+      "availableThresholds": ["log", "off"]
     },
     {
       "key": "UNUSED_LICENSES",
@@ -1011,11 +822,7 @@
         "email": "warning",
         "api": "log"
       },
-      "availableThresholds": [
-        "warning",
-        "log",
-        "off"
-      ]
+      "availableThresholds": ["warning", "log", "off"]
     },
     {
       "key": "UNDERUSED_PERMSETS",
@@ -1029,11 +836,7 @@
         "email": "warning",
         "api": "log"
       },
-      "availableThresholds": [
-        "warning",
-        "log",
-        "off"
-      ]
+      "availableThresholds": ["warning", "log", "off"]
     },
     {
       "key": "MINIMAL_PERMSETS",
@@ -1047,12 +850,7 @@
         "email": "warning",
         "api": "log"
       },
-      "availableThresholds": [
-        "error",
-        "warning",
-        "log",
-        "off"
-      ]
+      "availableThresholds": ["error", "warning", "log", "off"]
     },
     {
       "key": "USAGE_ENTITLEMENTS",
@@ -1087,13 +885,7 @@
         "email": "error",
         "api": "log"
       },
-      "availableThresholds": [
-        "critical",
-        "error",
-        "warning",
-        "log",
-        "off"
-      ]
+      "availableThresholds": ["critical", "error", "warning", "log", "off"]
     },
     {
       "key": "AI_USAGE",
@@ -1107,11 +899,7 @@
         "email": "off",
         "api": "log"
       },
-      "availableThresholds": [
-        "warning",
-        "log",
-        "off"
-      ]
+      "availableThresholds": ["warning", "log", "off"]
     },
     {
       "key": "AGENTFORCE_CONVERSATIONS",
@@ -1125,10 +913,7 @@
         "email": "off",
         "api": "log"
       },
-      "availableThresholds": [
-        "log",
-        "off"
-      ]
+      "availableThresholds": ["log", "off"]
     },
     {
       "key": "AGENTFORCE_FEEDBACK",
@@ -1142,11 +927,7 @@
         "email": "warning",
         "api": "log"
       },
-      "availableThresholds": [
-        "warning",
-        "log",
-        "off"
-      ]
+      "availableThresholds": ["warning", "log", "off"]
     },
     {
       "key": "DORA_REPORT",
@@ -1160,13 +941,7 @@
         "email": "info",
         "api": "log"
       },
-      "availableThresholds": [
-        "warning",
-        "info",
-        "success",
-        "log",
-        "off"
-      ]
+      "availableThresholds": ["warning", "info", "success", "log", "off"]
     },
     {
       "key": "MONITORING_SUMMARY",
@@ -1180,11 +955,7 @@
         "email": "info",
         "api": "log"
       },
-      "availableThresholds": [
-        "info",
-        "log",
-        "off"
-      ]
+      "availableThresholds": ["info", "log", "off"]
     },
     {
       "key": "RELEASE_NOTES",
@@ -1220,10 +991,7 @@
         "email": "off",
         "api": "log"
       },
-      "availableThresholds": [
-        "log",
-        "off"
-      ]
+      "availableThresholds": ["log", "off"]
     }
   ],
   "categories": [
@@ -1285,13 +1053,7 @@
     }
   ],
   "options": {
-    "frequencies": [
-      "daily",
-      "weekly",
-      "biweekly",
-      "monthly",
-      "off"
-    ],
+    "frequencies": ["daily", "weekly", "biweekly", "monthly", "off"],
     "frequencyDays": [
       "monday",
       "tuesday",
@@ -1310,10 +1072,6 @@
       "log",
       "off"
     ],
-    "channels": [
-      "messaging",
-      "email",
-      "api"
-    ]
+    "channels": ["messaging", "email", "api"]
   }
 }

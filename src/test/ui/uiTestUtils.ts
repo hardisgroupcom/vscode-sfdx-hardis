@@ -42,6 +42,34 @@ export async function activateExtension(): Promise<any> {
 }
 
 /**
+ * Runs a sfdx-hardis command in background mode and returns the id of the
+ * command execution panel it opens. The panel id is not predictable (it holds
+ * the command context id), so it is identified as the one that appeared.
+ */
+export async function runCommandAndWaitForPanel(
+  panelManager: any,
+  command: string,
+  timeoutMs = 20000,
+): Promise<string> {
+  const knownPanels = new Set<string>(panelManager.getActivePanelIds());
+  void vscode.commands.executeCommand(
+    "vscode-sfdx-hardis.execute-command",
+    command,
+  );
+  return await waitFor(
+    () =>
+      panelManager
+        .getActivePanelIds()
+        .find(
+          (id: string) =>
+            id.startsWith("s-command-execution-") && !knownPanels.has(id),
+        ),
+    timeoutMs,
+    `command execution panel of ${command} to open`,
+  );
+}
+
+/**
  * One invocation of the mocked sf CLI (test/fixtures/sf-shim), as appended to
  * the JSON-lines file pointed to by the SF_MOCK_LOG environment variable.
  */

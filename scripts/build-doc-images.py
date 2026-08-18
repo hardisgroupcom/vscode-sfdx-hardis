@@ -17,11 +17,10 @@ Requires Pillow (`pip install pillow`).
 
 import argparse
 import os
-import shutil
 import sys
 
 try:
-    from PIL import Image, ImageDraw, ImageFont
+    from PIL import Image, ImageDraw, ImageFont, ImageStat
 except ImportError:  # pragma: no cover
     sys.exit("Pillow is required: pip install pillow")
 
@@ -115,7 +114,23 @@ def load(capture):
     path = os.path.join(SHOTS_DIR, capture + ".png")
     if not os.path.exists(path):
         return None
-    return Image.open(path).convert("RGB")
+    image = Image.open(path).convert("RGB")
+    if is_blank(image):
+        sys.exit(
+            f"{path} is blank: the session was probably locked while capturing. "
+            "Unlock it and run `yarn screenshots` again."
+        )
+    return image
+
+
+def is_blank(image):
+    """True when a capture holds no visible content (locked session, black screen).
+
+    A locked session yields an almost entirely black frame, which still has a
+    few bright pixels: the average brightness is what separates it from a real
+    screenshot of the light theme.
+    """
+    return ImageStat.Stat(image.convert("L")).mean[0] < 24
 
 
 def save(image, target, dry_run):
@@ -171,6 +186,10 @@ def build_gif(recording, target, dry_run):
     previous_bytes = None
     for name in files:
         image = Image.open(os.path.join(folder, name)).convert("RGB")
+        if is_blank(image):
+            # A frame captured while the desktop was unavailable: drop it
+            # rather than letting a black flash into the animation
+            continue
         image = image.resize(
             (GIF_WIDTH, round(image.height * GIF_WIDTH / image.width)),
             Image.LANCZOS,
