@@ -104,6 +104,37 @@ function capture(
 }
 
 /**
+ * Captures the window once the panel stopped changing.
+ *
+ * Panels finish rendering asynchronously (the pipeline builds its mermaid
+ * diagram, tables paint their rows), and a fixed wait either captures a
+ * spinner or wastes time. Capturing twice and comparing the bytes is what
+ * tells that the panel is actually done.
+ */
+async function captureStable(
+  name: string,
+  options: { attempts?: number; intervalMs?: number } = {},
+): Promise<void> {
+  const attempts = options.attempts ?? 8;
+  const intervalMs = options.intervalMs ?? 1200;
+  const file = path.join(OUT_DIR, `${name}.png`);
+  let previous: Buffer | null = null;
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    capture(name);
+    if (process.platform !== "win32" || !fs.existsSync(file)) {
+      return;
+    }
+    const current = fs.readFileSync(file);
+    if (previous && current.equals(previous)) {
+      return;
+    }
+    previous = current;
+    await sleep(intervalMs);
+  }
+  console.log(`      [shot] ${name}: still animating after ${attempts} tries`);
+}
+
+/**
  * Clicks inside the webview, in the coordinate system of the captured PNG.
  * Some panel states (selected workspace, active tab, expanded section) live in
  * the LWC and can only be reached with a real click.
@@ -193,7 +224,7 @@ async function shootPanel(
   if (options.clicks?.length) {
     await cleanChrome();
   }
-  capture(options.name);
+  await captureStable(options.name);
   return panel;
 }
 
@@ -348,7 +379,7 @@ suite("Documentation screenshots", function () {
     );
     await sleep(3000);
     await cleanChrome();
-    capture("sidebar");
+    await captureStable("sidebar");
   });
 
   // The CI/CD guides illustrate their steps with a crop of a single menu entry
@@ -388,7 +419,9 @@ suite("Documentation screenshots", function () {
       name: "devops-pipeline",
       command: "vscode-sfdx-hardis.showPipeline",
       lwcId: "s-pipeline",
-      settleMs: 6000,
+      // The mermaid bundle is loaded and the diagram built after the panel
+      // opens: captureStable() then waits for the SVG to actually be painted
+      settleMs: 9000,
     });
   });
 
@@ -762,7 +795,7 @@ suite("Documentation screenshots", function () {
     await click(130, 57); // COMMANDS header: collapse
     await click(130, 85); // STATUS header (moved up): collapse
     await cleanChrome();
-    capture("sidebar-dependencies");
+    await captureStable("sidebar-dependencies");
     // Restore the default side bar layout for the next screenshots
     await click(130, 85); // STATUS: expand
     await click(130, 57); // COMMANDS: expand
