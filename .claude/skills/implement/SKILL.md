@@ -168,16 +168,18 @@ VS Code webviews render in BOTH dark and light themes. Hardcoded colors break on
 
 #### Lookup order before writing any new CSS rule
 
-1. **Check `resources/global-theme.css` first.** Reusable, already-themed classes include:
-   - **Page chrome**: `.header-section`, `.header-content` (+ `.no-bg`), `.header-text`, `.header-title` (+ `.single-line`), `.header-subtitle`.
-   - **Surfaces**: `.panel-surface`, `.docs-section`, `.config-section`, `.setup-summary-card`, `.status-card` (+ `.summary`, `.installed`, `.not-installed`, `.cicd`), `.pipeline-container`.
-   - **Section & card kit** (the v8 design system — see the dedicated section below): `.hardis-group-label`, `.hardis-group-desc`, `.hardis-card-grid` (+ `.single-column`), `.hardis-card` (+ `.clickable`, `.featured`, `.disabled`), `.hardis-card-head` / `-title` / `-desc` / `-actions` / `-arrow`, `.hardis-tile` (+ `.featured` / `.small` sizes and color hues).
-   - **Icon containers** (page headers and status cards only) with `.green`, `.teal`, `.gray`, `.blue`, `.purple`, `.orange`, `.yellow`, `.small` color variants: `.header-icon-container`, `.icon-container`. Status variants: `.status-icon-container` + `.info`, `.success`, `.warning`.
-   - **DEPRECATED — never use in panels**: `.command-card`, `.commands-grid`, `.command-icon-container.*`, `.feature-icon-container.*`. They are kept in global-theme.css only for user-provided `welcomeIconClass` values in `.sfdx-hardis.yml` (and setup.html's own status grid). New or modified panels must use the hardis-* section & card kit instead.
+1. **Check `resources/global-theme.css` first.** Every panel is built out of these kits — there is no per-panel header, card or button styling any more:
+   - **Page header kit** (the first thing in EVERY panel): `.hardis-page-head` (+ `.flush` when the panel already sits in a card) > `.hardis-tile featured <hue>` + `.hardis-page-head-text` > `.hardis-page-title` / `.hardis-page-subtitle`, then `.hardis-page-head-actions` for the buttons.
+   - **Surfaces**: `.hardis-panel-body` (the card that holds a panel's content — replaces `<lightning-card>`), `.panel-surface`, `.docs-section`, `.config-section`, `.pipeline-container`.
+   - **Status card kit** (one thing + its state + its action): `.hardis-status-grid` (+ `.single-column`) > `.hardis-status-card` (+ state `ok` / `warning` / `error` / `info`) > `.hardis-tile <hue>` + `.hardis-status-content` > `.hardis-status-title` (+ `.hardis-status-meta`) / `.hardis-status-desc`, then `.hardis-status-actions`.
+   - **Callouts**: `.hardis-note` (+ `.warning` / `.error` / `.success`) for an inline info block. Never the SLDS `slds-notify_alert` textures: they are a flat dark band in both themes.
+   - **Section & card kit** (catalogs of features/commands — see the dedicated section below): `.hardis-group-label`, `.hardis-group-desc`, `.hardis-card-grid` (+ `.single-column`), `.hardis-card` (+ `.clickable`, `.featured`, `.disabled`), `.hardis-card-head` / `-title` / `-desc` / `-actions` / `-arrow`, `.hardis-tile` (+ `.featured` / `.small` sizes and color hues).
+   - **Tinted buttons** (the only way to color a button): `.hardis-btn-tinted-blue` (primary), `-green` (positive), `-red` (destructive), `-amber` (needs attention), plus the `.rf-type-action` / `.rf-type-report` / `.rf-type-doc` family in the command runner.
    - **Typography helpers**: `.section-title`, `.section-subtitle`, `.info-title`, `.info-label`, `.info-value`, `.type-name`, `.member-name`, `.empty-title`, `.empty-description`, `.error-description`, `.loading-text`, `.muted`.
    - **Logs / modals**: `.log-message`, `.log-container`, `.modal-accent-strip`, `.modal-title-parts`, `.modal-count-badge`, `.tabbed-modal-container`, `.tabbed-modal-content`.
    - **Command Runner timeline kit** (command execution tab + prompts, reusable for any step/run rendering): header bar `.hardis-cmd-head` / `-head-main` / `-title-row` / `-title` / `-meta` / `-actions`, meta chips `.hardis-chip` (+ `.hardis-chip-link`), timeline `.hardis-tl` > `.hardis-tl-item` (+ `.open`) with `.hardis-tl-node` (+ status `done` / `fail` / `q` / `ask` / `running` / `info` — running draws a pure-CSS spinner arc), rows `.hardis-tl-row` (+ `.expandable`) / `.hardis-tl-title` / `.hardis-tl-fill` / `.hardis-tl-time` / `.hardis-tl-chev` / `.hardis-tl-answer`, children `.hardis-tl-logs` > `.hardis-logline` (+ `.mono`, `.type-{error,warning,success,action,query}`, `.subcmd`, `.subcmd-running`), rich blocks `.hardis-tl-block`, progress `.hardis-tl-progress` / `.hardis-progress-track` / `.hardis-progress-fill` (+ `.active`) / `.hardis-progress-meta`, prompt card `.hardis-prompt-card` / `-eyebrow` / `-head` / `-q` / `-tools` / `-filter` / `-foot` / `-foot-actions`, options `.hardis-option-card` / `-row` (+ `.selected`) / `-emoji` / `-main` / `-label` / `-desc` / `.hardis-option-list` / `.hardis-check`, helpers `.hardis-count-chip` / `.hardis-textlink`, reports dock `.hardis-reports-bar` / `.hardis-reports-label`.
-   - **Shared SLDS UI kit** (added by the DevOps Pipeline restyle — use these for ANY status/identity/branch rendering, see next section): `.hardis-pill` + `.hardis-pill-dot`, `.hardis-status-{success,running,pending,failed,unknown}`, `.hardis-avatar` + `.hardis-avatar-c0`…`-c5` + `.hardis-avatar-name`, `.hardis-branch-chip`, `.hardis-date-cell`, `.hardis-cell-flex`, `.hardis-btn-tinted-green`, `.rf-type-action` / `.rf-type-report` / `.rf-type-doc`, `.slds-no-row-hover`.
+   - **Shared SLDS UI kit** (any status/identity/branch rendering, see below): `.hardis-pill` + `.hardis-pill-dot`, `.hardis-status-{success,running,pending,failed,unknown}`, `.hardis-avatar` + `.hardis-avatar-c0`…`-c5` + `.hardis-avatar-name`, `.hardis-branch-chip`, `.hardis-date-cell`, `.hardis-cell-flex`, `.slds-no-row-hover`.
+   - **Removed on purpose** (do not reintroduce): `.header-section` / `.header-content` / `.header-title` / `.header-subtitle` / `.header-icon-container`, `.status-card` / `.status-icon-container`, `.command-card` / `.commands-grid` / `.command-icon-container` / `.feature-icon-container`. They were gradient-filled boxes with white icons and hardcoded hexes; the kits above replaced all of them.
    - If a class name already exists globally, NEVER redefine it in component CSS — the local rule will shadow the global one on specificity tie-breaking and silently break theming.
 
 2. **Then check SLDS classes**: `.slds-badge` (+ `_lightest`, `_inverse`), `.slds-text-color_*`, `.slds-text-heading_*`, `.slds-box`, `.slds-button`, `.slds-icon`, etc. Reference: <https://www.lightningdesignsystem.com/>.
@@ -195,15 +197,44 @@ VS Code webviews render in BOTH dark and light themes. Hardcoded colors break on
 #### What's NOT safe
 
 - Inventing a new badge / pill / chip / button rule with hardcoded colors. SLDS or the global stylesheet already ships one.
-- Redefining a class name that already exists globally (e.g. `.header-icon-container.teal`, `.hardis-card`, `.hardis-tile.violet`) — your rule wins on specificity tie-breaking and silently disables the theme-aware version.
+- Redefining a class name that already exists globally (e.g. `.hardis-page-head`, `.hardis-card`, `.hardis-tile.violet`) — your rule wins on specificity tie-breaking and silently disables the theme-aware version.
 - "Just for now" hex colors with a TODO. There's no theme switch event — the bad render ships.
-- **Copying an existing component's CSS.** Some component stylesheets still contain hardcoded colors — `dataWorkbench.css` (~70), `filesWorkbench.css` (~65), `packageXml.css` (~39), `setup.css` (~29), `orgMonitoring.css` (~18). These are **legacy bugs awaiting migration, not patterns**. Never use them as a reference; when you touch one of these files, prefer migrating the rules you touch to global/SLDS classes. (`welcome.css`, `pipeline.css`, `monitoringConfig.css` and the documentation panels were already migrated — use those as references instead.)
+- **Duplicating a rule per theme** (`.slds-scope[data-theme="light"] .x { … }` + `.slds-scope[data-theme="dark"] .x { … }`). The palette tokens already switch through `light-dark()`: write ONE rule with tokens. No component stylesheet contains a `[data-theme]` selector or a hardcoded color any more — the whole set was migrated, so a new one is a regression, not a pattern to copy.
 
 Quick check on any CSS you wrote:
 
 ```bash
 grep -nE "#[0-9a-fA-F]{3,8}\b|rgba?\(|font-family|font-weight: *[0-9]" src/webviews/lwc-ui/modules/s/<component>/<component>.css
 ```
+
+#### Every panel is built the same way (unified layout)
+
+A panel is: **page header → panel body / sections → cards**. There is no per-panel variation left; a new panel that invents its own header or card is a design regression.
+
+```html
+<div class="slds-scope blue-back">
+  <div class="hardis-page-head">
+    <div class="hardis-tile featured cyan">
+      <lightning-icon icon-name="utility:package" size="medium"></lightning-icon>
+    </div>
+    <div class="hardis-page-head-text">
+      <h1 class="hardis-page-title">{i18n.panelTitle}</h1>
+      <p class="hardis-page-subtitle">{i18n.panelSubtitle}</p>
+    </div>
+    <div class="hardis-page-head-actions">
+      <lightning-button variant="neutral" label={i18n.refreshLabel} onclick={handleRefresh}></lightning-button>
+      <lightning-button variant="neutral" class="hardis-btn-tinted-blue" label={i18n.primaryAction} onclick={handlePrimary}></lightning-button>
+    </div>
+  </div>
+
+  <div class="hardis-panel-body">… table, form or content …</div>
+</div>
+```
+
+- The **title is the feature name only** (`Metadata Retriever`, not `Sfdx-Hardis Metadata Retriever`), and always has a one-line subtitle saying what the panel is for. Both are i18n keys, in all 9 locales.
+- The tile hue identifies the panel and matches its Welcome card: Orgs Manager/pipeline/package.xml = `cyan`, Setup/Documentation = `teal`, Metadata Retriever = `green`, Data Workbench/Installed Packages = `violet`, Files Workbench = `amber`, Extension Settings = `slate`.
+- `<lightning-card>` is **not** used for panel chrome any more (its header/footer fight the kit): a section is a `.hardis-panel-body`, a header is a `.hardis-page-head`.
+- The actions of the header are ordered secondary → primary, the primary one being the only tinted button.
 
 #### Sections, cards and icon tiles (the hardis-* design kit)
 
@@ -272,7 +303,16 @@ Because LWC templates allow no expressions, `pillClass` / `avatarClass` must be 
 
 #### Buttons
 
-Only the **neutral** SLDS button variant adapts to VS Code themes. Filled `variant="success"` / `variant="brand"` buttons keep their Salesforce colors and render badly in webviews. For a colored action button, wrap a neutral button in a tinted class that recolors it with palette tokens — `.hardis-btn-tinted-green`, or the `.rf-type-action` / `.rf-type-report` / `.rf-type-doc` family. Follow the same recipe (palette-token background/border/color + `fill: currentColor` on the icon) if a new tint is genuinely needed, and put it in `global-theme.css`, not in a component.
+Only the **neutral** SLDS button variant adapts to VS Code themes. Filled variants (`variant="brand"`, `"success"`, `"destructive"`, `"brand-outline"`, `"destructive-text"`) hardcode their own background and text color and are unreadable in one of the two themes — **there is none left in the codebase, do not add one**.
+
+A colored button is a neutral button plus a tint class:
+
+```html
+<lightning-button variant="neutral" class="hardis-btn-tinted-blue" label={i18n.save} onclick={handleSave}></lightning-button>
+<button class="slds-button slds-button_neutral hardis-btn-tinted-red" onclick={handleDelete}>{i18n.delete}</button>
+```
+
+`blue` = primary action, `green` = positive/confirm, `red` = destructive, `amber` = needs attention; everything else stays a plain neutral button. If a new tint is genuinely needed, follow the same recipe (palette-token background/border/color + `fill: currentColor` on the icon) and put it in `global-theme.css`, never in a component.
 
 #### Stale stylesheets
 

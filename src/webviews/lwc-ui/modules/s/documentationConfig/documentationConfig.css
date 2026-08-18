@@ -1,61 +1,19 @@
 /* Documentation Configuration Styles */
 .blue-back {
-    background: linear-gradient(135deg, #f8f9ff 0%, #e8f4fd 100%);
+    background: linear-gradient(135deg, var(--slds-g-color-neutral-base-95) 0%, var(--slds-g-color-palette-cloud-blue-90) 100%);
     min-height: 100vh;
-    font-family: "Salesforce Sans", -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .config-container {
     max-width: 1200px;
     margin: 0 auto;
     padding: 1rem 1rem;
-}
-
-/* Header */
-.header-content {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1rem 1.25rem;
-    border-radius: 10px;
-    margin-bottom: 1rem;
-}
-
-.header-icon-container {
-    width: 52px;
-    height: 52px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.header-text {
-    flex-grow: 1;
-}
-
-.header-title {
-    font-size: 1.35rem;
-    margin: 0;
-    font-weight: 700;
-}
-
-.header-subtitle {
-    margin: 0.15rem 0 0 0;
-    font-size: 0.92rem;
-}
+}
 
 /* Sections */
 .section {
     margin-bottom: 1.25rem;
 }
-
-
-
-
-
-
 
 /* Options card */
 .options-card {
@@ -78,29 +36,12 @@
 }
 
 .option-help {
-    color: #9ca3af;
+    color: var(--slds-g-color-neutral-base-50);
     font-size: 0.85rem;
     margin: 0;
 }
 
 /* Commands grid */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 .command-options {
     display: flex;
@@ -187,17 +128,11 @@ lightning-input {
 }
 
 /* Responsive */
-@media (max-width: 768px) {
-    .header-content {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
+@media (max-width: 768px) {
 
     .config-fields {
         grid-template-columns: 1fr;
     }
-
 
     .field-label-with-help {
         flex-direction: column;

@@ -38,38 +38,15 @@ $hwnd = Get-SfhWindow -TitleMatch $TitleMatch
 Set-SfhForeground -Hwnd $hwnd -Maximize:$Maximize
 $rect = Get-SfhWindowRect -Hwnd $hwnd
 
-$left = $rect.Left + $CropLeft
-$top = $rect.Top + $CropTop
-$width = ($rect.Right - $rect.Left) - $CropLeft - $CropRight
-$height = ($rect.Bottom - $rect.Top) - $CropTop - $CropBottom
-if ($width -le 0 -or $height -le 0) {
-  throw "Invalid capture size ${width}x${height}"
-}
-
 $dir = Split-Path -Parent $OutFile
 if ($dir -and -not (Test-Path $dir)) {
   New-Item -ItemType Directory -Force -Path $dir | Out-Null
 }
 
-$bmp = New-Object System.Drawing.Bitmap $width, $height
-$g = [System.Drawing.Graphics]::FromImage($bmp)
-# CopyFromScreen throws while the desktop is unavailable (window being
-# activated, session locking): retry a few times before giving up
-$captured = $false
-for ($attempt = 1; $attempt -le 3 -and -not $captured; $attempt++) {
-  try {
-    $g.CopyFromScreen($left, $top, 0, 0, $bmp.Size)
-    $captured = $true
-  }
-  catch {
-    Start-Sleep -Milliseconds 600
-  }
-}
-$g.Dispose()
-if (-not $captured) {
-  $bmp.Dispose()
-  throw "Screen capture failed: is the session locked?"
-}
+$bmp = Get-SfhWindowBitmap -Hwnd $hwnd -Rect $rect `
+  -CropTop $CropTop -CropLeft $CropLeft -CropRight $CropRight -CropBottom $CropBottom
+$width = $bmp.Width
+$height = $bmp.Height
 $bmp.Save($OutFile, [System.Drawing.Imaging.ImageFormat]::Png)
 $bmp.Dispose()
 

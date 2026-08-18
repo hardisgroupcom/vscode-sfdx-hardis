@@ -93,9 +93,16 @@ async function main() {
   }
   if (docScreenshots) {
     // Documentation screenshots are always taken in light mode, English, with
-    // a clean chrome (no minimap, no breadcrumbs, no editor decorations)
-    workspaceSettings["workbench.colorTheme"] = "Default Light Modern";
-    workspaceSettings["vsCodeSfdxHardis.theme.colorTheme"] = "light";
+    // a clean chrome (no minimap, no breadcrumbs, no editor decorations).
+    // SFDX_HARDIS_DOC_SCREENSHOTS_THEME=dark switches to dark for design QA:
+    // every panel has to look right in both themes.
+    const darkQa = process.env.SFDX_HARDIS_DOC_SCREENSHOTS_THEME === "dark";
+    workspaceSettings["workbench.colorTheme"] = darkQa
+      ? "Default Dark Modern"
+      : "Default Light Modern";
+    workspaceSettings["vsCodeSfdxHardis.theme.colorTheme"] = darkQa
+      ? "dark"
+      : "light";
     workspaceSettings["workbench.startupEditor"] = "none";
     workspaceSettings["workbench.editor.showTabs"] = "multiple";
     workspaceSettings["workbench.statusBar.visible"] = true;

@@ -1,56 +1,13 @@
 /* Documentation Workbench Styles - consistent with setup & orgMonitoring panels */
 .blue-back {
     min-height: 100vh;
-    font-family: "Salesforce Sans", -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .doc-container {
     max-width: 1200px;
     margin: 0 auto;
     padding: 1rem 1rem;
-}
-
-/* Header */
-.header-content {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    padding: 1rem 1.25rem;
-    border-radius: 10px;
-    margin-bottom: 1rem;
-}
-
-.header-icon-container {
-    width: 52px;
-    height: 52px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.header-text {
-    flex-grow: 1;
-}
-
-.header-title {
-    font-size: 1.35rem;
-    margin: 0;
-    font-weight: 700;
-}
-
-.header-subtitle {
-    margin: 0.15rem 0 0 0;
-    font-size: 0.92rem;
-}
-
-.header-actions {
-    margin-left: auto;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
+}
 
 /* Sections */
 .section {
@@ -202,19 +159,15 @@
 }
 
 .save-feedback.success {
-    color: #04844b;
+    color: var(--slds-g-color-palette-green-40);
 }
 
 .save-feedback.error {
-    color: #b91c1c;
+    color: var(--slds-g-color-palette-red-30);
 }
 
 /* Responsive */
-@media (max-width: 768px) {
-    .header-content {
-        flex-direction: column;
-        align-items: flex-start;
-    }
+@media (max-width: 768px) {
 
     .config-fields {
         grid-template-columns: 1fr;

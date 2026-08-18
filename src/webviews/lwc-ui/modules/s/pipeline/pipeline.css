@@ -5,12 +5,6 @@
     min-height: 150px;
 }
 
-.pipeline-card-title {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
 .cloudity-title-logo-button {
     padding: 0;
     background: none;
@@ -26,10 +20,13 @@
 }
 
 .cloudity-title-logo {
-    height: 1.25rem;
-    width: auto;
+    width: 26px;
     flex-shrink: 0;
-    vertical-align: middle;
+}
+
+/* The brand tile hosts the Cloudity mark instead of an icon */
+.pipeline-brand-tile {
+    background: var(--slds-g-color-neutral-base-95);
 }
 
 .pipeline-loading-overlay {
@@ -78,7 +75,6 @@
 }
 
 .blue-back {
-    font-family: "Salesforce Sans", -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 /* Workflow quick-action cards use the shared kit from global-theme.css (.hardis-card-grid / .hardis-card / .hardis-tile). Cards inside this tab keep a small extra margin. */
@@ -355,29 +351,12 @@
    THEME-AWARE COLOR DEFINITIONS
    ======================================== */
 
-/* Light Mode Colors */
-.slds-scope[data-theme="light"] .pipeline-container {
-    background: white;
+/* Surfaces: palette tokens already switch light/dark on their own */
+.pipeline-container {
+    background: var(--slds-g-color-neutral-base-100);
 }
 
-.slds-scope[data-theme="light"] .pipeline-loading-overlay {
-    background-color: rgba(243, 243, 243, 0.7);
-}
-
-.slds-scope[data-theme="light"] .blue-back {
-    background: linear-gradient(135deg, #f8f9ff 0%, #e8f4fd 100%);
-}
-
-/* Dark Mode Colors */
-.slds-scope[data-theme="dark"] .pipeline-container {
-    background: #252526;
-}
-
-.slds-scope[data-theme="dark"] .pipeline-loading-overlay {
-    background-color: rgba(37, 37, 38, 0.7);
-}
-
-.slds-scope[data-theme="dark"] .blue-back {
-    background: linear-gradient(135deg, #121217 0%, #17171b 100%);
+.pipeline-loading-overlay {
+    background-color: var(--slds-g-color-neutral-base-95);
 }
 

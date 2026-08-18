@@ -1,27 +1,17 @@
 <template>
   <div class="slds-scope slds-card blue-back" data-theme={colorTheme} data-contrast={colorContrast}>
     <!-- Header -->
-    <div class="slds-card__header slds-grid">
-      <header class="slds-media slds-media_center slds-has-flexi-truncate">
-        <div class="slds-media__figure">
-          <span class="slds-icon_container slds-icon-standard-file header-icon-container orange">
-            <lightning-icon icon-name="standard:file" alternative-text={i18n.filesLabel} size="large"></lightning-icon>
-          </span>
-        </div>
-        <div class="slds-media__body">
-          <div class="slds-grid slds-grid_align-spread">
-            <h2 class="slds-card__header-title">
-              <span class="slds-text-heading_medium">{i18n.filesWorkbenchTitle}</span>
-            </h2>
-          </div>
-          <p class="slds-text-body_small slds-line-height_reset">
-            {i18n.filesWorkbenchDesc}
-          </p>
-        </div>
-      </header>
-      <div class="slds-no-flex">
-        <lightning-button
-          variant="brand"
+    <div class="hardis-page-head">
+      <div class="hardis-tile featured amber">
+        <lightning-icon icon-name="utility:file" alternative-text={i18n.filesLabel} size="medium"></lightning-icon>
+      </div>
+      <div class="hardis-page-head-text">
+        <h1 class="hardis-page-title">{i18n.filesWorkbenchTitle}</h1>
+        <p class="hardis-page-subtitle">{i18n.filesWorkbenchDesc}</p>
+      </div>
+      <div class="hardis-page-head-actions">
+        <lightning-button class="hardis-btn-tinted-blue"
+          variant="neutral"
           label={i18n.createWorkspaceLabel}
           title={i18n.createWorkspaceTooltip}
           icon-name="utility:add"
@@ -66,9 +56,9 @@
               {i18n.noWorkspacesFoundDesc}
             </p>
             <lightning-button
-              variant="brand"
+              variant="neutral"
               label={i18n.createFirstWorkspace}
-              class="slds-m-top_medium"
+              class="slds-m-top_medium hardis-btn-tinted-blue"
               onclick={handleCreateWorkspace}
             ></lightning-button>
           </div>
@@ -124,8 +114,8 @@
                     <!-- Horizontal Buttons - Rendered only when showLargeActions is true -->
                     <template if:true={showLargeActions}>
                       <div class="slds-show_large slds-grid">
-                        <lightning-button
-                          variant="brand"
+                        <lightning-button class="hardis-btn-tinted-blue"
+                          variant="neutral"
                           label={i18n.exportFilesLabel}
                           title={i18n.exportFilesTooltip}
                           icon-name="utility:download"
@@ -133,8 +123,8 @@
                           size="small"
                           onclick={handleExportFiles}
                         ></lightning-button>
-                        <lightning-button
-                          variant="brand"
+                        <lightning-button class="hardis-btn-tinted-blue"
+                          variant="neutral"
                           label={i18n.importFilesLabel}
                           title={i18n.importFilesTooltip}
                           icon-name="utility:upload"
@@ -506,8 +496,8 @@
               label={i18n.cancelLabel}
               onclick={handleCancel}
             ></lightning-button>
-            <lightning-button
-              variant="brand"
+            <lightning-button class="hardis-btn-tinted-blue"
+              variant="neutral"
               label={saveButtonLabel}
               disabled={saveButtonDisabled}
               onclick={handleSave}

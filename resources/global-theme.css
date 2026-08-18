@@ -47,11 +47,6 @@ div.slds-scope[data-theme="dark"] {
 .slds-scope[data-theme] .panel-surface,
 .slds-scope[data-theme] .docs-section,
 .slds-scope[data-theme] .config-section,
-.slds-scope[data-theme] .header-content,
-.slds-scope[data-theme] .setup-summary-card,
-.slds-scope[data-theme] .status-card,
-.slds-scope[data-theme] .status-card.summary,
-.slds-scope[data-theme] .command-card,
 .slds-scope[data-theme] .pipeline-container,
 .slds-scope[data-theme] .slds-modal__header,
 .slds-scope[data-theme] .slds-modal__footer,
@@ -101,125 +96,9 @@ div.slds-scope[data-theme="dark"] {
   flex: 1 1 auto !important;
   position: relative !important;
 }
-/* Header Section */
-.header-section {
-    margin-bottom: 2rem;
-}
-
-.header-content {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.5rem 0.75rem; /* smaller header padding */
-    background: var(--slds-g-color-neutral-base-100);
-    border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-    border: 1px solid var(--slds-g-color-neutral-base-90);
-    margin-bottom: 0.6rem; /* reduce space below header */
-}
-.header-content.no-bg {
-    background: transparent !important;
-    box-shadow: none;
-    border: none;
-    padding: 0.5rem 0.25rem;
-    margin-bottom: 0;
-}
-
-.header-text {
-    flex-grow: 1;
-}
-
-.header-title {
-    font-size: 1.5rem;
-    font-weight: 700;
-    margin: 0 0 0.25rem 0;
-    line-height: 1.2;
-    padding-left: 1rem;
-}
-.header-title.single-line {
-    margin-top: .9rem;
-}
-.header-content .header-title.single-line {
-    margin-top: .5rem;
-}
-
-.header-subtitle {
-    font-size: 0.9rem;
-    margin: 0;
-    line-height: 1.3;
-    padding-left: 1rem;
-}
-.header-content .header-title,
-.header-content .header-subtitle {
-    padding-left: 0;
-}
-
-@media (max-width: 768px) {    
-    .header-content {
-        flex-direction: column;
-        text-align: center;
-    }
-    /* .header-content { padding: 0.75rem; gap: 0.75rem; margin: 0 } */
-}
-
-.header-icon-container {
-    width: 56px;
-    height: 56px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--slds-g-color-neutral-base-100) !important;
-    flex-shrink: 0;
-}
-
-.header-icon-container.small {
-    width: 30px;
-    height: 30px;
-    border-radius: 5px;
-}
-.header-icon-container, .feature-icon-container, .icon-container {
-    background: linear-gradient(135deg, #706e6b 0%, #514f4d 100%);
-    box-shadow: 0 3px 10px rgba(112, 110, 107, 0.25);
-    border: 2px solid rgba(255, 255, 255, 0.2);
-}
-.header-icon-container.green, .feature-icon-container.green, .icon-container.green {
-    background: linear-gradient(135deg, var(--slds-g-color-palette-green-60) 0%, var(--slds-g-color-palette-green-40) 100%);
-    /* background: linear-gradient(135deg, #06a59a 0%, #045a55 100%); */
-    box-shadow: 0 2px 8px rgba(84, 164, 166, 0.25);
-}
-.header-icon-container.teal, .feature-icon-container.teal, .icon-container.teal {
-    background: linear-gradient(135deg, var(--slds-g-color-palette-teal-60) 0%, var(--slds-g-color-palette-teal-40) 100%);
-    box-shadow: 0 2px 8px rgba(80, 185, 187, 0.25);
-}
-.header-icon-container.gray, .feature-icon-container.gray, .icon-container.gray {
-    background: linear-gradient(135deg, var(--slds-g-color-palette-neutral-60) 0%, var(--slds-g-color-palette-neutral-40) 100%);
-    box-shadow: 0 3px 10px rgba(112, 110, 107, 0.25);
-}
-.header-icon-container.blue, .feature-icon-container.blue, .icon-container.blue {
-    background: linear-gradient(135deg, var(--slds-g-color-palette-electric-blue-60) 0%, var(--slds-g-color-palette-electric-blue-40) 100%);
-    box-shadow: 0 3px 10px rgba(21, 137, 238, 0.25);
-}
-.header-icon-container.purple, .feature-icon-container.purple, .icon-container.purple {
-    background: linear-gradient(135deg, var(--slds-g-color-palette-purple-60) 0%, var(--slds-g-color-palette-purple-30) 100%);
-    box-shadow: 0 3px 10px rgba(159, 79, 234, 0.25);
-}
-.header-icon-container.orange, .feature-icon-container.orange, .icon-container.orange {
-    background: linear-gradient(135deg, var(--slds-g-color-palette-hot-orange-70) 0%, var(--slds-g-color-palette-hot-orange-50) 100%);
-    box-shadow: 0 3px 10px rgba(255, 107, 53, 0.25);
-}
-.header-icon-container.yellow, .feature-icon-container.yellow, .icon-container.yellow {
-    background: linear-gradient(135deg, var(--slds-g-color-palette-yellow-80) 0%, var(--slds-g-color-palette-yellow-50) 100%);
-    box-shadow: 0 3px 10px rgba(255, 180, 57, 0.25);
-}
-.header-icon-container lightning-icon {
-    background-color: transparent !important;
-}
-
 /* Titles and subtle text */
 .slds-scope[data-theme] .title,
 .slds-scope[data-theme] .section-title,
-.slds-scope[data-theme] .header-title,
 .slds-scope[data-theme] .command-title,
 .slds-scope[data-theme] .status-title,
 .slds-scope[data-theme] .slds-card__header-title,
@@ -243,7 +122,6 @@ div.slds-scope[data-theme="dark"] {
 
 .slds-scope[data-theme="light"] .muted,
 .slds-scope[data-theme="light"] .section-subtitle,
-.slds-scope[data-theme="light"] .header-subtitle,
 .slds-scope[data-theme="light"] .docs-text,
 .slds-scope[data-theme="light"] .slds-form-element__label,
 .slds-scope[data-theme="light"] .slds-tabs_default__item,
@@ -258,7 +136,6 @@ div.slds-scope[data-theme="dark"] {
 
 .slds-scope[data-theme="dark"] .muted,
 .slds-scope[data-theme="dark"] .section-subtitle,
-.slds-scope[data-theme="dark"] .header-subtitle,
 .slds-scope[data-theme="dark"] .docs-text,
 .slds-scope[data-theme="dark"] .slds-form-element__label,
 .slds-scope[data-theme="dark"] .slds-tabs_default__item,
@@ -305,78 +182,17 @@ div.slds-scope[data-theme="dark"] {
 .slds-scope[data-theme="dark"] .log-container::-webkit-scrollbar-thumb { background: #3a3a3a; border-radius: 4px; }
 .slds-scope[data-theme="dark"] .log-container::-webkit-scrollbar-thumb:hover { background: #505050; }
 
-/* --- Semantic accents for Org Monitoring (and reusable elsewhere) --- */
-
-/* Header icon uses brand gradient */
-/*
-.slds-scope[data-theme="light"] .header-icon-container {
-  background: linear-gradient(135deg, #54a4a6 0%, #026d71 100%);
-  border-color: rgba(255, 255, 255, 0.2);
-}
-.slds-scope[data-theme="dark"] .header-icon-container {
-  background: linear-gradient(135deg, #54a4a6 0%, #026d71 100%);
-  border-color: rgba(255, 255, 255, 0.2);
-}
-  */
-
-/* Status card left accents */
-.slds-scope[data-theme="light"] .status-card.installed { border-left-color: #04844b; }
-.slds-scope[data-theme="dark"] .status-card.installed { border-left-color: #27ae60; }
-
-.slds-scope[data-theme="light"] .status-card.not-installed { border-left-color: #ff6b35; }
-.slds-scope[data-theme="dark"] .status-card.not-installed { border-left-color: #ff6b35; }
-
-.slds-scope[data-theme="light"] .status-card.cicd { border-left-color: var(--slds-g-color-palette-electric-blue-50); }
-.slds-scope[data-theme="dark"] .status-card.cicd { border-left-color: var(--slds-g-color-palette-electric-blue-50); }
-
-/* Status icon containers */
-.slds-scope .status-icon-container.info { background: linear-gradient(135deg, var(--slds-g-color-palette-electric-blue-50) 0%, var(--slds-g-color-palette-electric-blue-40) 100%); }
-.slds-scope .status-icon-container.success { background: linear-gradient(135deg, #04844b 0%, #037837 100%); }
-.slds-scope .status-icon-container.warning { background: linear-gradient(135deg, #ff6b35 0%, #d4471b 100%); }
-.slds-scope .status-icon-container,
-.slds-scope .status-icon-container.info,
-.slds-scope .status-icon-container.success,
-.slds-scope .status-icon-container.warning {
-  color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.3);
-}
-
-/* Command card icon accents */
-.slds-scope .command-icon-container.backup { background: linear-gradient(135deg, var(--slds-g-color-palette-electric-blue-50) 0%, var(--slds-g-color-palette-electric-blue-40) 100%); }
-.slds-scope .command-icon-container.audit { background: linear-gradient(135deg, var(--slds-g-color-palette-purple-40) 0%, var(--slds-g-color-palette-purple-30) 100%); }
-.slds-scope .command-icon-container.tests { background: linear-gradient(135deg, #06a59a 0%, #045a55 100%); }
-.slds-scope .command-icon-container.limits { background: linear-gradient(135deg, #ff6b35 0%, #d4471b 100%); }
-.slds-scope .command-icon-container.updates { background: linear-gradient(135deg, #ffb439 0%, #e6930f 100%); }
-.slds-scope .command-icon-container.security { background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); }
-.slds-scope .command-icon-container.legacy { background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%); }
-.slds-scope .command-icon-container.users { background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); }
-.slds-scope .command-icon-container.licenses { background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); }
-.slds-scope .command-icon-container.apex { background: linear-gradient(135deg, #ff6b35 0%, #d4471b 100%); }
-.slds-scope .command-icon-container.connected-apps { background: linear-gradient(135deg, #2980b9 0%, #1f618d 100%); }
-.slds-scope .command-icon-container.metadata-access { background: linear-gradient(135deg, #8e44ad 0%, #6c3483 100%); }
-.slds-scope .command-icon-container.unused-metadata { background: linear-gradient(135deg, #27ae60 0%, #1e8449 100%); }
-.slds-scope .command-icon-container { color: #ffffff; border-color: rgba(255, 255, 255, 0.2); }
-
-/* Pipeline icon accents */
-.slds-scope .command-icon-container.new-story { background: linear-gradient(135deg, var(--slds-g-color-palette-electric-blue-50) 0%, var(--slds-g-color-palette-electric-blue-40) 100%); }
-.slds-scope .command-icon-container.pull-action { background: linear-gradient(135deg, #06a59a 0%, #045a55 100%); }
-.slds-scope .command-icon-container.package-action { background: linear-gradient(135deg, var(--slds-g-color-palette-purple-40) 0%, var(--slds-g-color-palette-purple-30) 100%); }
-.slds-scope .command-icon-container.save-action { background: linear-gradient(135deg, #27ae60 0%, #1e8449 100%); }
-
 /* Additional command execution structural styles */
 .log-message {
   word-break: break-word;
   white-space: pre-wrap;
 }
 
-.slds-scope[data-theme="dark"] lightning-input,
-.slds-scope[data-theme="dark"] lightning-combobox {
-    color: #e6eef9;
-}
-
-.slds-scope[data-theme="dark"] lightning-helptext,
-.slds-scope[data-theme="dark"] lightning-helptext::part(icon) {
-    color: #cbd5e1;
+lightning-input,
+lightning-combobox,
+lightning-helptext,
+lightning-helptext::part(icon) {
+    color: var(--slds-g-color-neutral-base-10);
 }
 
 /* ------------------------------------------------------------------ */
@@ -692,12 +508,22 @@ div.slds-scope[data-theme="dark"] {
 }
 
 /* ------------------------------------------------------------------ */
-/* Tinted green action button (release notes, retrieve...)            */
-/* Same recipe as the rf-type-* buttons: neutral SLDS button base +   */
-/* light-dark() palette tokens, so it stays readable in both themes   */
-/* (filled variant="success" buttons do not adapt to VS Code themes). */
+/* Tinted action buttons                                              */
+/*                                                                    */
+/* The ONLY way to give a button a color in this extension. Filled    */
+/* SLDS variants (brand / success / destructive) hardcode their own   */
+/* background and text color, so they are unreadable in one of the    */
+/* two VS Code themes. A tinted button is a neutral SLDS button whose */
+/* surface, border and label come from light-dark() palette tokens.   */
+/*                                                                    */
+/*   <lightning-button variant="neutral" class="hardis-btn-tinted-blue">
+/*   <button class="slds-button slds-button_neutral hardis-btn-tinted-blue">
+/*                                                                    */
+/* blue = primary action, green = positive/confirm, red = destructive,*/
+/* amber = caution. Everything else stays a plain neutral button.     */
 /* ------------------------------------------------------------------ */
-.slds-scope[data-theme] .hardis-btn-tinted-green .slds-button {
+.slds-scope[data-theme] .hardis-btn-tinted-green .slds-button,
+.slds-scope[data-theme] .slds-button.hardis-btn-tinted-green {
   background: var(--slds-g-color-palette-green-90);
   border-color: var(--slds-g-color-palette-green-40);
   color: var(--slds-g-color-palette-green-30);
@@ -706,17 +532,21 @@ div.slds-scope[data-theme="dark"] {
     border-color 0.12s ease,
     box-shadow 0.12s ease;
 }
-.slds-scope[data-theme] .hardis-btn-tinted-green .slds-button .slds-button__icon {
+.slds-scope[data-theme] .hardis-btn-tinted-green .slds-button .slds-button__icon,
+.slds-scope[data-theme] .slds-button.hardis-btn-tinted-green .slds-button__icon {
   fill: currentColor;
 }
 .slds-scope[data-theme] .hardis-btn-tinted-green .slds-button:hover,
-.slds-scope[data-theme] .hardis-btn-tinted-green .slds-button:focus {
+.slds-scope[data-theme] .hardis-btn-tinted-green .slds-button:focus,
+.slds-scope[data-theme] .slds-button.hardis-btn-tinted-green:hover,
+.slds-scope[data-theme] .slds-button.hardis-btn-tinted-green:focus {
   border-color: var(--slds-g-color-palette-green-30);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14);
 }
 
-/* Blue-tinted neutral button (same recipe as .hardis-btn-tinted-green) */
-.slds-scope[data-theme] .hardis-btn-tinted-blue .slds-button {
+/* Blue-tinted neutral button: the primary action of a panel */
+.slds-scope[data-theme] .hardis-btn-tinted-blue .slds-button,
+.slds-scope[data-theme] .slds-button.hardis-btn-tinted-blue {
   background: var(--slds-g-color-palette-cloud-blue-90);
   border-color: var(--slds-g-color-palette-cloud-blue-40);
   color: var(--slds-g-color-palette-cloud-blue-30);
@@ -725,12 +555,61 @@ div.slds-scope[data-theme="dark"] {
     border-color 0.12s ease,
     box-shadow 0.12s ease;
 }
-.slds-scope[data-theme] .hardis-btn-tinted-blue .slds-button .slds-button__icon {
+.slds-scope[data-theme] .hardis-btn-tinted-blue .slds-button .slds-button__icon,
+.slds-scope[data-theme] .slds-button.hardis-btn-tinted-blue .slds-button__icon {
   fill: currentColor;
 }
 .slds-scope[data-theme] .hardis-btn-tinted-blue .slds-button:hover,
-.slds-scope[data-theme] .hardis-btn-tinted-blue .slds-button:focus {
+.slds-scope[data-theme] .hardis-btn-tinted-blue .slds-button:focus,
+.slds-scope[data-theme] .slds-button.hardis-btn-tinted-blue:hover,
+.slds-scope[data-theme] .slds-button.hardis-btn-tinted-blue:focus {
   border-color: var(--slds-g-color-palette-cloud-blue-30);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14);
+}
+
+/* Red-tinted neutral button: destructive action (delete, forget, remove) */
+.slds-scope[data-theme] .hardis-btn-tinted-red .slds-button,
+.slds-scope[data-theme] .slds-button.hardis-btn-tinted-red {
+  background: var(--slds-g-color-palette-red-90);
+  border-color: var(--slds-g-color-palette-red-40);
+  color: var(--slds-g-color-palette-red-30);
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease,
+    box-shadow 0.12s ease;
+}
+.slds-scope[data-theme] .hardis-btn-tinted-red .slds-button .slds-button__icon,
+.slds-scope[data-theme] .slds-button.hardis-btn-tinted-red .slds-button__icon {
+  fill: currentColor;
+}
+.slds-scope[data-theme] .hardis-btn-tinted-red .slds-button:hover,
+.slds-scope[data-theme] .hardis-btn-tinted-red .slds-button:focus,
+.slds-scope[data-theme] .slds-button.hardis-btn-tinted-red:hover,
+.slds-scope[data-theme] .slds-button.hardis-btn-tinted-red:focus {
+  border-color: var(--slds-g-color-palette-red-30);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14);
+}
+
+/* Amber-tinted neutral button: action that needs attention (upgrade, fix) */
+.slds-scope[data-theme] .hardis-btn-tinted-amber .slds-button,
+.slds-scope[data-theme] .slds-button.hardis-btn-tinted-amber {
+  background: var(--slds-g-color-palette-orange-90);
+  border-color: var(--slds-g-color-palette-orange-40);
+  color: var(--slds-g-color-palette-orange-30);
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease,
+    box-shadow 0.12s ease;
+}
+.slds-scope[data-theme] .hardis-btn-tinted-amber .slds-button .slds-button__icon,
+.slds-scope[data-theme] .slds-button.hardis-btn-tinted-amber .slds-button__icon {
+  fill: currentColor;
+}
+.slds-scope[data-theme] .hardis-btn-tinted-amber .slds-button:hover,
+.slds-scope[data-theme] .hardis-btn-tinted-amber .slds-button:focus,
+.slds-scope[data-theme] .slds-button.hardis-btn-tinted-amber:hover,
+.slds-scope[data-theme] .slds-button.hardis-btn-tinted-amber:focus {
+  border-color: var(--slds-g-color-palette-orange-30);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14);
 }
 
@@ -838,6 +717,203 @@ div.slds-scope[data-theme="dark"] {
 .hardis-tile.alerts {
   background: var(--slds-g-color-palette-red-90);
   color: var(--slds-g-color-palette-red-40);
+}
+
+/* ---- Page header kit (every panel starts with the same header) --------
+   Anatomy:
+   <div class="hardis-page-head">
+     <div class="hardis-tile featured cyan"><lightning-icon .../></div>
+     <div class="hardis-page-head-text">
+       <h1 class="hardis-page-title">Panel name</h1>
+       <p class="hardis-page-subtitle">What the panel is for</p>
+     </div>
+     <div class="hardis-page-head-actions">buttons…</div>
+   </div>
+   Never rebuild a panel header with custom classes: the tile hue is the only
+   thing that changes from one panel to the next. */
+
+.hardis-page-head {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.8rem 1rem;
+  margin-bottom: 1rem;
+  background: var(--slds-g-color-neutral-base-100);
+  border: 1px solid var(--slds-g-color-neutral-base-90);
+  border-radius: 12px;
+}
+.hardis-page-head.flush {
+  /* Header of a panel that already sits inside a card / modal */
+  background: transparent;
+  border: none;
+  padding: 0.25rem 0;
+}
+.hardis-page-head-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.hardis-page-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: var(--slds-g-color-neutral-base-10);
+}
+.hardis-page-subtitle {
+  margin: 0.15rem 0 0;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  color: var(--slds-g-color-neutral-base-50);
+}
+.hardis-page-head-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+@media (max-width: 768px) {
+  .hardis-page-head {
+    flex-wrap: wrap;
+  }
+  .hardis-page-head-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+/* Inline note / callout inside a panel. Replaces the SLDS alert bars, whose
+   "texture" themes are a flat dark band in both VS Code themes. */
+.hardis-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  background: var(--slds-g-color-palette-cloud-blue-90);
+  border: 1px solid var(--slds-g-color-palette-cloud-blue-40);
+  color: var(--slds-g-color-palette-cloud-blue-30);
+}
+.hardis-note.warning {
+  background: var(--slds-g-color-palette-orange-90);
+  border-color: var(--slds-g-color-palette-orange-40);
+  color: var(--slds-g-color-palette-orange-30);
+}
+.hardis-note.error {
+  background: var(--slds-g-color-palette-red-90);
+  border-color: var(--slds-g-color-palette-red-40);
+  color: var(--slds-g-color-palette-red-30);
+}
+.hardis-note.success {
+  background: var(--slds-g-color-palette-green-90);
+  border-color: var(--slds-g-color-palette-green-40);
+  color: var(--slds-g-color-palette-green-30);
+}
+.hardis-note p {
+  margin: 0;
+}
+.hardis-note lightning-icon {
+  --slds-c-icon-color-foreground: currentColor;
+  --slds-c-icon-color-foreground-default: currentColor;
+  color: inherit !important;
+  flex-shrink: 0;
+}
+
+/* Panel body: the surface that holds the content of a panel under its header.
+   Replaces <lightning-card>, whose header/footer chrome we never use. */
+.hardis-panel-body {
+  background: var(--slds-g-color-neutral-base-100);
+  border: 1px solid var(--slds-g-color-neutral-base-90);
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+}
+.hardis-panel-body + .hardis-panel-body {
+  margin-top: 0.9rem;
+}
+
+/* ---- Status card kit (a row of "one thing + its state + its action") --
+   Anatomy:
+   <div class="hardis-status-grid">
+     <div class="hardis-status-card ok">
+       <div class="hardis-tile green"><lightning-icon .../></div>
+       <div class="hardis-status-content">
+         <h3 class="hardis-status-title">Name <span class="hardis-status-meta">1.2.3</span></h3>
+         <p class="hardis-status-desc">What it is</p>
+       </div>
+       <div class="hardis-status-actions">buttons…</div>
+     </div>
+   </div>
+   States: ok / warning / error / info / (none) — they only color the left
+   accent, the tile carries the same meaning through its hue. */
+
+.hardis-status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 430px), 1fr));
+  gap: 0.65rem;
+}
+.hardis-status-grid.single-column {
+  grid-template-columns: 1fr;
+}
+.hardis-status-card {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.7rem 0.9rem;
+  background: var(--slds-g-color-neutral-base-100);
+  border: 1px solid var(--slds-g-color-neutral-base-90);
+  border-left: 4px solid var(--slds-g-color-neutral-base-80);
+  border-radius: 10px;
+}
+.hardis-status-card.ok {
+  border-left-color: var(--slds-g-color-palette-green-40);
+}
+.hardis-status-card.warning {
+  border-left-color: var(--slds-g-color-palette-orange-40);
+}
+.hardis-status-card.error {
+  border-left-color: var(--slds-g-color-palette-red-40);
+}
+.hardis-status-card.info {
+  border-left-color: var(--slds-g-color-palette-cloud-blue-40);
+}
+.hardis-status-content {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.hardis-status-title {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--slds-g-color-neutral-base-10);
+}
+.hardis-status-meta {
+  font-size: 0.82rem;
+  font-weight: 400;
+  color: var(--slds-g-color-neutral-base-50);
+}
+.hardis-status-desc {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: var(--slds-g-color-neutral-base-50);
+}
+.hardis-status-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.35rem;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 /* ---- Section + card kit (Welcome-page design, reusable everywhere) ----

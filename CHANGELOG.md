@@ -33,6 +33,13 @@
     - Find and run any sfdx-hardis command by name with the new **search button** in the header toolbar, or the **Search** link of the quick start's "Pick a feature" step
     - The same design is applied across the extension: **Org Monitoring**, the **DevOps Pipeline** quick action cards, the **Documentation Workbench**, the **AI Documentation configuration** and the **Monitoring Configuration** now share the Welcome page's sections, cards and colored icon tiles
     - Org Monitoring check cards are now **clickable directly** (with the keyboard too), replacing the Run button on each card
+  - **Every panel now has the same design**: the same header (icon, title, one-line description, actions on the right), the same content cards and the same buttons
+    - Orgs Manager, Metadata Retriever, Installed Packages, Pipeline Settings, Extension Settings, package.xml and the Setup panel were rebuilt on the shared design, so no panel looks like a different product anymore
+    - Panel titles are the feature name (**Metadata Retriever**, **Installed Packages**...) and every panel says in one line what it is for
+    - **Colored buttons are readable in both themes**: the filled blue/red buttons of the workbenches (Export data, Delete data, Add Org, Install...) became tinted buttons that adapt to light and dark mode
+    - The Setup panel dependency cards, the Org Monitoring installation banner and the Installed Packages information banner use the same status colors as the rest of the extension
+    - Fixed the **Language** tab of the Extension Settings, which showed the raw key `languageSection` instead of its name
+    - Under the hood, panels no longer carry their own colors: **all the hardcoded colors, duplicated dark/light rules and font overrides were removed** from the panel stylesheets, which is what made some texts unreadable when switching theme
   - The command execution tab was **fully redesigned** with the same look & feel
     - Command steps are displayed as a **compact connected timeline** with colored status dots, expandable step details and per-step durations, replacing the tall stack of boxes (a whole run now fits on one screen)
     - The header shows the command name with a **colored status pill** (Starting / Running / Completed / Failed), the **target org**, the elapsed time and a link to the log file

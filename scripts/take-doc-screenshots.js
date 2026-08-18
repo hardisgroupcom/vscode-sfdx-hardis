@@ -121,7 +121,26 @@ function withReleaseFlavor(run) {
   }
 }
 
+/**
+ * The harness needs `out/extension.js` to be the tsc build: the suite imports
+ * extension modules directly, and only that build shares their instances with
+ * the running extension. `yarn dev` (webpack) writes the same file, so compile
+ * again here rather than relying on the order of the last two builds.
+ */
+function compileSources() {
+  const result = spawnSync(
+    process.execPath,
+    [require.resolve("typescript/bin/tsc"), "-p", "./"],
+    { cwd: repoRoot, stdio: "inherit" },
+  );
+  if (result.status !== 0) {
+    console.error("TypeScript compilation failed");
+    process.exit(result.status || 1);
+  }
+}
+
 async function main() {
+  compileSources();
   const versions = await fetchLatestVersions();
   const versionsFile = path.join(
     fs.mkdtempSync(path.join(os.tmpdir(), "sfh-shot-")),

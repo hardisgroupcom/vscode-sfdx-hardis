@@ -29,10 +29,6 @@ $ErrorActionPreference = "Stop"
 
 $hwnd = Get-SfhWindow -TitleMatch $TitleMatch
 $rect = Get-SfhWindowRect -Hwnd $hwnd
-$left = $rect.Left
-$top = $rect.Top + $CropTop
-$width = $rect.Right - $rect.Left
-$height = ($rect.Bottom - $rect.Top) - $CropTop
 
 if (Test-Path $OutDir) {
   Remove-Item -Path (Join-Path $OutDir "*.png") -Force -ErrorAction SilentlyContinue
@@ -43,20 +39,19 @@ else {
 
 $frameCount = [int]([math]::Round($Seconds * $Fps))
 $interval = [int]([math]::Round(1000 / $Fps))
-$bmp = New-Object System.Drawing.Bitmap $width, $height
-$g = [System.Drawing.Graphics]::FromImage($bmp)
 $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
 
 $skipped = 0
 for ($i = 1; $i -le $frameCount; $i++) {
-  # CopyFromScreen throws when the desktop is momentarily unavailable (window
-  # being activated, session locking): skip that frame rather than stopping
+  # A frame can fail when the window is being activated: skip it rather than
+  # stopping the whole recording
   try {
-    $g.CopyFromScreen($left, $top, 0, 0, $bmp.Size)
+    $bmp = Get-SfhWindowBitmap -Hwnd $hwnd -Rect $rect -CropTop $CropTop
     $bmp.Save(
       (Join-Path $OutDir ("frame-{0:D4}.png" -f $i)),
       [System.Drawing.Imaging.ImageFormat]::Png
     )
+    $bmp.Dispose()
   }
   catch {
     $skipped++
@@ -68,6 +63,4 @@ for ($i = 1; $i -le $frameCount; $i++) {
   }
 }
 
-$g.Dispose()
-$bmp.Dispose()
 Write-Output "recorded $($frameCount - $skipped)/$frameCount frames in $OutDir"

@@ -18,8 +18,8 @@
 
 /* Lighter blue for readonly (disabled) and checked toggles */
 .slds-checkbox_toggle input[type='checkbox'][disabled][checked] + .slds-checkbox_faux {
-	background: #B3D6F6 !important;
-	border-color: #B3D6F6 !important;
+	background: var(--slds-g-color-palette-cloud-blue-80) !important;
+	border-color: var(--slds-g-color-palette-cloud-blue-80) !important;
 }
 
 /* Make lightning-datatable use full width of container (matching pipeline pattern) */
@@ -42,28 +42,28 @@ lightning-datatable {
 
 /* Light theme (explicit) */
 .slds-scope[data-theme] .slds-badge {
-	background: rgba(0, 0, 0, 0.04);
-	color: #181818;
+	background: var(--slds-g-color-neutral-base-95);
+	color: var(--slds-g-color-neutral-base-10);
 }
 
 .slds-scope[data-theme] .slds-text-title_bold {
-	color: #181818;
+	color: var(--slds-g-color-neutral-base-10);
 }
 
 .slds-scope[data-theme] lightning-datatable {
-	color: #181818;
+	color: var(--slds-g-color-neutral-base-10);
 }
 
 /* Dark theme overrides (component-scoped) */
-.blue-back[data-theme="dark"] .slds-badge {
-	background: rgba(255,255,255,0.04);
-	color: #cfe6ff;
+.blue-back .slds-badge {
+	background: var(--slds-g-color-neutral-base-95);
+	color: var(--slds-g-color-palette-cloud-blue-80);
 }
 
-.blue-back[data-theme="dark"] .slds-text-title_bold {
-	color: #e6eef9;
+.blue-back .slds-text-title_bold {
+	color: var(--slds-g-color-neutral-base-10);
 }
 
-.blue-back[data-theme="dark"] lightning-datatable {
-	color: #dbefff;
+.blue-back lightning-datatable {
+	color: var(--slds-g-color-palette-cloud-blue-90);
 }

@@ -3,9 +3,7 @@
 /* Blue background for consistency with other panels */
 .slds-scope {
     min-height: 100vh;
-    font-family: "Salesforce Sans", -apple-system, BlinkMacSystemFont, sans-serif;
 }
-
 
 /* Main container */
 .package-container {
@@ -14,88 +12,10 @@
     padding: 0.75rem;
 }
 
-/* Header Section */
-.header-section {
-    margin-bottom: 0.4rem;
-    /* FIXME */
-    gap: 0.75rem;
-    padding: 0.75rem;
-}
-
-.header-content {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    padding: 0.75rem;
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
-    border: 1px solid #e8e8e8;
-}
-
-.header-top {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-.header-icon-container {
-    width: 56px;
-    height: 56px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
 /* simplified header icon spacing */
 .header-icon {
     margin-right: 0.75rem;
     flex-shrink: 0;
-}
-
-/* Dynamic header colors based on package type */
-/*
-.header-icon-container[data-package-type="deploy"] {
-    background: linear-gradient(135deg, #3ba755 0%, #194e31 100%);
-}
-
-.header-icon-container[data-package-type="retrieve"] {
-    background: linear-gradient(135deg, #1b96ff 0%, #0b5cab 100%);
-}
-
-.header-icon-container[data-package-type="destructive"] {
-    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-}
-
-.header-icon-container[data-package-type="skip"] {
-    background: linear-gradient(135deg, #f39c12 0%, #d68910 100%);
-}
-
-.header-icon-container[data-package-type="manifest"] {
-    background: linear-gradient(135deg, #9050e9 0%, #7526e3 100%);
-}
-    */
-
-.header-title {
-    font-size: 1.25rem;
-    font-weight: 700;
-    margin: 0 0 0.25rem 0;
-    line-height: 1.15;
-}
-.header-subtitle {
-    font-size: 0.9rem;
-    margin: 0;
-    line-height: 1.25;
-}
-
-.header-actions {
-    display: flex;
-    gap: 1rem;
-    flex-shrink: 0;
-    margin-left: auto;
-    align-items: center;
 }
 
 .header-stats {
@@ -156,7 +76,6 @@
     justify-content: center;
     flex-shrink: 0;
 }
-
 
 .error-content {
     flex-grow: 1;
@@ -261,7 +180,7 @@
     background: white;
     border-radius: 8px;
     padding: 1rem;
-    border: 1px solid #eaeaea;
+    border: 1px solid var(--slds-g-color-neutral-base-90);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
@@ -295,7 +214,7 @@
 .info-value {
     font-size: 1rem;
     font-weight: 600;
-    color: #181818;
+    color: var(--slds-g-color-neutral-base-10);
 }
 
 .types-container {
@@ -371,10 +290,9 @@
 
 .type-count {
     font-size: 0.78rem;
-    color: #8b949e; /* muted */
+    color: var(--slds-g-color-neutral-base-50); /* muted */
     margin: 0;
 }
-
 
 .type-icon {
     margin-right: 0.75rem;
@@ -402,7 +320,7 @@
 /* Type Members */
 .type-members {
     padding: 0 0.9rem 0.85rem 0.9rem;
-    border-top: 1px solid #f1f1f1;
+    border-top: 1px solid var(--slds-g-color-neutral-base-95);
 }
 
 .type-members-actions {
@@ -477,7 +395,7 @@
 }
 
 .member-doc-icon {
-    color: #0176d3;
+    color: var(--slds-g-color-palette-cloud-blue-30);
     cursor: pointer;
 }
 
@@ -489,11 +407,11 @@
 }
 
 .icon-button {
-    color: #c23934; /* Salesforce red to emphasize destructive action */
+    color: var(--slds-g-color-palette-red-40); /* Salesforce red to emphasize destructive action */
 }
 
 .icon-button:hover {
-    color: #9b1b13;
+    color: var(--slds-g-color-palette-red-30);
 }
 
 .mutating-overlay {
@@ -502,7 +420,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(255, 255, 255, 0.6);
+    background: var(--slds-g-color-neutral-base-95);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -515,7 +433,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.35);
+    background: var(--slds-g-color-neutral-base-95);
     z-index: 20;
 }
 
@@ -524,7 +442,7 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: #fff;
+    background: var(--slds-g-color-neutral-base-100);
     border-radius: 8px;
     padding: 1rem;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
@@ -581,16 +499,6 @@
         padding: 1rem;
     }
     
-    .header-content {
-        flex-direction: column;
-        gap: 1rem;
-    }
-    
-    .header-actions {
-        width: 100%;
-        justify-content: center;
-    }
-    
     .info-grid {
         grid-template-columns: 1fr;
     }
@@ -607,80 +515,38 @@
         align-items: flex-start;
         gap: 0.5rem;
     }
-    
-    .header-actions {
-        flex-direction: column;
-    }
 }
 
-
-.slds-scope[data-theme="light"] .header-content,
-.slds-scope[data-theme="light"] .info-card,
-.slds-scope[data-theme="light"] .type-card,
-.slds-scope[data-theme="light"] .member-item,
-.slds-scope[data-theme="light"] .error-card {
-    background: #ffffff;
-    border: 1px solid #e5e5e5;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-    color: #181818;
+/* Theme-aware surfaces and text: palette tokens switch light/dark on their
+   own, so there is one rule per element instead of one per theme. */
+.info-card,
+.type-card,
+.member-item,
+.error-card {
+    background: var(--slds-g-color-neutral-base-100);
+    border: 1px solid var(--slds-g-color-neutral-base-90);
+    color: var(--slds-g-color-neutral-base-10);
 }
 
-.slds-scope[data-theme="light"] .header-title,
-.slds-scope[data-theme="light"] .info-title,
-.slds-scope[data-theme="light"] .info-value,
-.slds-scope[data-theme="light"] .type-name,
-.slds-scope[data-theme="light"] .member-name,
-.slds-scope[data-theme="light"] .empty-title {
-    color: #181818;
+.info-title,
+.info-value,
+.type-name,
+.member-name,
+.empty-title {
+    color: var(--slds-g-color-neutral-base-10);
 }
 
-.slds-scope[data-theme="light"] .header-icon-container {
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
-    border: 2px solid rgba(255, 255, 255, 0.16);
+.info-label,
+.empty-description,
+.section-subtitle {
+    color: var(--slds-g-color-neutral-base-50);
 }
 
-.slds-scope[data-theme="light"] .header-subtitle,
-.slds-scope[data-theme="light"] .info-label,
-.slds-scope[data-theme="light"] .empty-description,
-.slds-scope[data-theme="light"] .section-subtitle {
-    color: #706e6b;
-}
-.slds-scope[data-theme="light"] .member-item:hover {
-    background: #e8f4fd;
-    border-color: #0176d3;
-    transform: translateX(4px);
+.member-item:hover {
+    background: var(--slds-g-color-palette-cloud-blue-90);
+    border-color: var(--slds-g-color-palette-cloud-blue-40);
 }
 
-.slds-scope[data-theme="dark"] .header-content,
-.slds-scope[data-theme="dark"] .info-card,
-.slds-scope[data-theme="dark"] .type-card,
-.slds-scope[data-theme="dark"] .member-item,
-.slds-scope[data-theme="dark"] .error-card {
-    background: #071428;
-    border: 1px solid rgba(255,255,255,0.04);
-    box-shadow: 0 6px 18px rgba(0,0,0,0.6);
-    color: #dbefff;
-}
-
-
-
-.slds-scope[data-theme="dark"] .header-icon-container {
-    box-shadow: 0 6px 18px rgba(0,0,0,0.6);
-    border: 1px solid rgba(255,255,255,0.04);
-}
-
-.slds-scope[data-theme="dark"] .header-subtitle,
-.slds-scope[data-theme="dark"] .info-label,
-.slds-scope[data-theme="dark"] .empty-description,
-.slds-scope[data-theme="dark"] .section-subtitle {
-    color: #9fb0cc;
-}
-
-.slds-scope[data-theme="dark"] .member-item:hover {
-    background: rgba(255,255,255,0.02);
-    border-color: rgba(62,166,255,0.08);
-    transform: translateX(0);
-}
 /* Icon container to allow colored backgrounds per metadata type.
     Per-type color tokens were removed to avoid empty rulesets. If
     future per-type backgrounds are required, add a concrete rule

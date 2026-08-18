@@ -267,21 +267,30 @@ async function seedNpmVersionCache(): Promise<void> {
   }
   const versions = JSON.parse(fs.readFileSync(versionsFile, "utf8"));
   const ONE_DAY_MS = 1000 * 60 * 60 * 24;
-  for (const [packageName, version] of Object.entries(versions)) {
-    if (packageName === "node") {
-      continue;
+  try {
+    for (const [packageName, version] of Object.entries(versions)) {
+      if (packageName === "node") {
+        continue;
+      }
+      await CacheManager.set(
+        "app",
+        `npmLatest:${packageName}`,
+        version,
+        ONE_DAY_MS * 7,
+      );
+      await CacheManager.set(
+        "app",
+        `npmLatestFresh:${packageName}`,
+        true,
+        ONE_DAY_MS,
+      );
     }
-    await CacheManager.set(
-      "app",
-      `npmLatest:${packageName}`,
-      version,
-      ONE_DAY_MS * 7,
-    );
-    await CacheManager.set(
-      "app",
-      `npmLatestFresh:${packageName}`,
-      true,
-      ONE_DAY_MS,
+  } catch (error) {
+    // Only possible when out/extension.js is the webpack bundle, which owns
+    // its own copy of CacheManager. Outbound HTTP is blocked anyway, so the
+    // panels simply show no "latest version" instead of a wrong one.
+    console.log(
+      `      [shot] npm version cache not seeded: ${(error as Error).message}`,
     );
   }
 }
@@ -399,7 +408,7 @@ suite("Documentation screenshots", function () {
       lwcId: "s-metadata-retriever",
       settleMs: 5000,
       // "Search Metadata": the panel opens on an empty state
-      clicks: [{ x: 551, y: 257 }],
+      clicks: [{ x: 571, y: 301 }],
     });
   });
 
@@ -410,7 +419,7 @@ suite("Documentation screenshots", function () {
       lwcId: "s-data-workbench",
       settleMs: 3500,
       // Select the first SFDMU workspace, else the panel shows its empty state
-      clicks: [{ x: 625, y: 260 }],
+      clicks: [{ x: 625, y: 272 }],
     });
   });
 
@@ -421,7 +430,7 @@ suite("Documentation screenshots", function () {
       lwcId: "s-files-workbench",
       settleMs: 3500,
       // Select the first files workspace, else the panel shows its empty state
-      clicks: [{ x: 625, y: 248 }],
+      clicks: [{ x: 625, y: 272 }],
     });
   });
 
@@ -599,7 +608,7 @@ suite("Documentation screenshots", function () {
       settleMs: 4000,
     });
     await record("metadata-retriever", 18, async () => {
-      await click(551, 257); // Search Metadata
+      await click(571, 301); // Search Metadata
       await sleep(3000);
       await click(476, 428); // select the first result
       await sleep(1200);
