@@ -9,7 +9,7 @@
             <p class="hardis-page-subtitle">{i18n.orgsManagerSubtitle}</p>
         </div>
         <div class="hardis-page-head-actions">
-            <lightning-input type="toggle" label={i18n.viewAllOrgs} title={i18n.viewAllOrgs} checked={viewAll} onchange={handleViewAllToggle}></lightning-input>
+            <lightning-input type="toggle" label={i18n.viewAllOrgs} title={i18n.viewAllOrgs} checked={viewAll} onchange={handleViewAllToggle} message-toggle-active="" message-toggle-inactive=""></lightning-input>
             <lightning-button icon-name="utility:refresh" label={i18n.refreshLabel} title={i18n.refreshOrgsListTooltip} onclick={handleRefresh}></lightning-button>
             <lightning-button icon-name="utility:add" label={i18n.addOrg} title={i18n.connectToExistingOrgs} variant="neutral" class="hardis-btn-tinted-blue" onclick={handleConnect}></lightning-button>
             <template if:true={hasRecommended}>

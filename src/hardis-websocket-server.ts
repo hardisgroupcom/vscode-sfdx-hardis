@@ -185,6 +185,12 @@ export class LocalWebSocketServer {
       if (data.commandLogFile) {
         initData.data.commandLogFile = data.commandLogFile;
       }
+      // The CLI only knows its oclif command id ("hardis:org:diagnose:audittrail"):
+      // send back the full command line the extension started, so "Run again"
+      // replays it with its original arguments
+      if (pendingPanel?.commandLine) {
+        initData.data.commandLine = pendingPanel.commandLine;
+      }
       // Enrich with the project default org so the panel header can show
       // which org the command targets
       try {

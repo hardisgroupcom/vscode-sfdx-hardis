@@ -252,20 +252,39 @@ export default class CommandExecution extends SharedMixin(LightningElement) {
 
   // Run the same command again, with the same parameters
   get canRunAgain() {
-    return !!(
-      this.isCompleted &&
-      this.commandContext &&
-      this.commandContext.command
-    );
+    return !!(this.isCompleted && this.runAgainCommand);
+  }
+
+  /**
+   * Command line to replay. The extension sends the full command line it
+   * started (commandLine), while the CLI only reports its oclif command id
+   * ("hardis:org:refresh:after-refresh") when the command was launched outside
+   * of the extension: prefix it with "sf " so it is a runnable command.
+   */
+  get runAgainCommand() {
+    const context = this.commandContext;
+    if (!context) {
+      return "";
+    }
+    const commandLine = (context.commandLine || "").trim();
+    if (commandLine) {
+      return commandLine;
+    }
+    const commandId = (context.command || "").trim();
+    if (!commandId) {
+      return "";
+    }
+    return commandId.startsWith("sf ") ? commandId : `sf ${commandId}`;
   }
 
   handleRunAgain() {
-    if (!this.canRunAgain) {
+    const command = this.runAgainCommand;
+    if (!this.isCompleted || !command) {
       return;
     }
     window.sendMessageToVSCode({
       type: "runCommand",
-      data: { command: this.commandContext.command },
+      data: { command },
     });
   }
 

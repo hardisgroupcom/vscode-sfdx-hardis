@@ -40,6 +40,7 @@
     - The Setup panel dependency cards, the Org Monitoring installation banner and the Installed Packages information banner use the same status colors as the rest of the extension
     - Fixed the **Language** tab of the Extension Settings, which showed the raw key `languageSection` instead of its name
     - Under the hood, panels no longer carry their own colors: **all the hardcoded colors, duplicated dark/light rules and font overrides were removed** from the panel stylesheets, which is what made some texts unreadable when switching theme
+    - **Switches** are displayed the same way everywhere: the *Active / Inactive* label below them is gone, as it broke the alignment with the neighboring buttons and fields
   - The command execution tab was **fully redesigned** with the same look & feel
     - Command steps are displayed as a **compact connected timeline** with colored status dots, expandable step details and per-step durations, replacing the tall stack of boxes (a whole run now fits on one screen)
     - The header shows the command name with a **colored status pill** (Starting / Running / Completed / Failed), the **target org**, the elapsed time and a link to the log file

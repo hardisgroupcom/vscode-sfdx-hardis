@@ -567,6 +567,7 @@ export class CommandRunner {
         const panel = panelManager.getOrCreatePanel(pendingPanelLwcId, {
           id: provisionalContextId,
           command: pendingCommandName,
+          commandLine: sfdxHardisCommand.trim(),
           // The CLI has not connected yet: the panel renders a "Starting"
           // status until the websocket initializeCommand message arrives
           pending: true,
@@ -579,6 +580,9 @@ export class CommandRunner {
           lwcId: pendingPanelLwcId,
           contextId: provisionalContextId,
           commandId,
+          // Command as requested by the user (before --skipauth/--websocket are
+          // appended): the panel replays exactly this on "Run again"
+          commandLine: sfdxHardisCommand.trim(),
           createdAt: Date.now(),
           onAdopted: () => {
             pendingPanelAdopted = true;

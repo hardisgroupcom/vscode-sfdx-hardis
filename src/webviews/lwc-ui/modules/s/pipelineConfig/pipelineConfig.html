@@ -281,6 +281,8 @@
                                               data-field-name={field.key}
                                               data-field-type="boolean"
                                               onchange={handleArrayObjectFormFieldChange}
+                                              message-toggle-active=""
+                                              message-toggle-inactive=""
                                             ></lightning-input>
                                             <template if:true={field.description}>
                                               <div class="slds-text-body_small slds-text-color_weak">{field.description}</div>
@@ -326,6 +328,8 @@
                                 oninput={handleInputChange}
                                 class="slds-m-bottom_xx-small"
                                 variant="label-hidden"
+                                message-toggle-active=""
+                                message-toggle-inactive=""
                               ></lightning-input>
                             </div>
                           </template>
@@ -382,6 +386,8 @@
                                 disabled
                                 class="slds-m-bottom_xx-small"
                                 variant="label-hidden"
+                                message-toggle-active=""
+                                message-toggle-inactive=""
                               ></lightning-input>
                             </div>
                           </template>

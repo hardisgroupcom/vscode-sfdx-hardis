@@ -21,6 +21,13 @@ export interface PendingCommandPanel {
   contextId: string;
   /** oclif command id, e.g. "hardis:org:diagnose:audittrail" (fallback matching) */
   commandId: string | null;
+  /**
+   * Full command line as requested by the user, e.g.
+   * "sf hardis:org:diagnose:audittrail --outputfile ./x.csv".
+   * The CLI only reports its oclif command id, so this is what lets the panel
+   * replay the command with its original arguments ("Run again" button).
+   */
+  commandLine?: string;
   createdAt: number;
   /** Called when the CLI adopts the panel, so click-time wiring can detach */
   onAdopted?: () => void;
