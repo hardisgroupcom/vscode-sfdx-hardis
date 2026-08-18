@@ -233,7 +233,7 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
       segments.push({
         idx: idx++,
         text: match[1],
-        cssClass: "monitoring-row-title-segment monitoring-row-title-bold",
+        cssClass: "monitoring-row-title-segment slds-text-title_bold",
       });
       lastIndex = regex.lastIndex;
     }
@@ -499,7 +499,7 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
         title: cat.title,
         description: cat.description || "",
         icon: catIcon,
-        iconContainerClass: "hardis-tile " + catColorClass,
+        iconContainerClass: "hardis-tile small " + catColorClass,
         rows: catRows,
       });
     }
@@ -526,7 +526,7 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
         title: this.i18n.monitoringCustomCategory,
         description: "",
         icon: customIconData.icon,
-        iconContainerClass: "hardis-tile " + customIconData.colorClass,
+        iconContainerClass: "hardis-tile small " + customIconData.colorClass,
         rows: customRows,
       });
     }
@@ -549,7 +549,7 @@ export default class MonitoringConfig extends SharedMixin(LightningElement) {
         description:
           this.i18n.monitoringStandaloneNotificationsDescription || "",
         icon: standaloneIconData.icon,
-        iconContainerClass: "hardis-tile " + standaloneIconData.colorClass,
+        iconContainerClass: "hardis-tile small " + standaloneIconData.colorClass,
         rows: standaloneRows,
         isStandaloneSection: true,
       });

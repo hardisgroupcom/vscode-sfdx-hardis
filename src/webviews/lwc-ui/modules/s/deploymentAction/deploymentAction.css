@@ -3,8 +3,8 @@
 }
 
 .slds-text-font_monospace {
-  font-family: 'Courier New', Courier, monospace;
-  background-color: #f3f3f3;
+  font-family: var(--vscode-editor-font-family, 'Menlo', 'Consolas', 'Courier New', monospace);
+  background-color: var(--slds-g-color-neutral-base-95);
   padding: 0.25rem 0.5rem;
   border-radius: 0.25rem;
   display: inline-block;

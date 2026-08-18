@@ -1,6 +1,15 @@
 import { LightningElement, api, track } from "lwc";
 import { SharedMixin } from "s/sharedMixin";
 
+// Config keys that hold git branch names: rendered as monospace branch chips
+// instead of plain chips in the read-only view.
+const BRANCH_NAME_ARRAY_KEYS = new Set(["mergeTargets", "availableTargetBranches"]);
+// Text values starting with http(s) are rendered as a truncated clickable link.
+const URL_VALUE_REGEX = /^https?:\/\//i;
+// A section made only of these keys gets the compact "Salesforce Org" card
+// layout in read-only mode instead of a list of field rows.
+const SALESFORCE_ORG_KEYS = ["instanceUrl", "targetUsername"];
+
 /**
  * LWC to display and edit .sfdx-hardis.yml configuration (global or branch-scoped)
  * Props:
@@ -304,12 +313,45 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
             valueEdit.length > 0;
           const isDeploymentActions =
             isArrayObject && this.deploymentActionKeys[key] !== undefined;
+          // The field row always shows a one-line help text; the info bubble
+          // is only kept for descriptions that are genuinely long/multi-line,
+          // so it can still surface the full text.
+          const isMultilineHelp = description.includes("\n");
+          const helpFirstLine = description.split(/\r?\n/)[0] || "";
+          // Read-only rendering helpers: booleans become a status pill (never
+          // a disabled toggle), git-branch arrays get monospace branch chips,
+          // http(s) text values become a truncated clickable link.
+          const booleanPillClass = value
+            ? "hardis-pill hardis-status-success"
+            : "hardis-pill hardis-status-unknown";
+          const booleanPillLabel = value
+            ? this.i18n.enabledLabel
+            : this.i18n.disabledLabel;
+          const isUrlValue =
+            isText &&
+            typeof value === "string" &&
+            URL_VALUE_REGEX.test(value.trim());
+          const isBranchArrayValue = BRANCH_NAME_ARRAY_KEYS.has(key);
+          const arrayChipClass = isBranchArrayValue
+            ? "hardis-branch-chip"
+            : "hardis-chip";
+          // Doc links move inline in the field label; array-of-object fields
+          // never carried one (they use their own datatable/modal editor).
+          const showDocLink = hasDocUrl && !isArrayObject;
+          // Arrays/objects need the full row width (chips, dual-listbox,
+          // datatable) instead of the compact right-aligned control column.
+          const isWideControl = isArrayEnum || isArrayText || isArrayObject;
+          const fieldRowClass = isWideControl
+            ? "hardis-field-row stacked"
+            : "hardis-field-row";
           entries.push({
             key,
             isDeploymentActions,
             isGenericArrayObject: isArrayObject && !isDeploymentActions,
             label,
             description,
+            isMultilineHelp,
+            helpFirstLine,
             value,
             valueDisplay,
             valueEdit,
@@ -330,9 +372,14 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
             optionsLwc,
             docUrl,
             hasDocUrl,
-            columnClass: isArrayObject
-              ? "slds-col"
-              : "slds-col slds-size_9-of-12",
+            showDocLink,
+            booleanPillClass,
+            booleanPillLabel,
+            isUrlValue,
+            isBranchArrayValue,
+            arrayChipClass,
+            isWideControl,
+            fieldRowClass,
             hasArrayEnumValues:
               isArrayEnum &&
               Array.isArray(valueDisplay) &&
@@ -373,11 +420,47 @@ export default class PipelineConfig extends SharedMixin(LightningElement) {
               : [],
           });
         }
+        // A branch section made only of the Salesforce Org fields (Instance
+        // URL + Target Username) gets a single summary card in read-only
+        // mode instead of two sparse field rows.
+        const isSalesforceOrgSection =
+          entries.length > 0 &&
+          entries.every((entry) => SALESFORCE_ORG_KEYS.includes(entry.key));
+        let salesforceOrgInstanceLabel = "";
+        let salesforceOrgInstanceDisplay = "";
+        let salesforceOrgUsernameLabel = "";
+        let salesforceOrgUsernameDisplay = "";
+        if (isSalesforceOrgSection) {
+          const instanceEntry = entries.find((e) => e.key === "instanceUrl");
+          const usernameEntry = entries.find(
+            (e) => e.key === "targetUsername",
+          );
+          salesforceOrgInstanceLabel = instanceEntry
+            ? instanceEntry.label
+            : "";
+          salesforceOrgInstanceDisplay =
+            instanceEntry && instanceEntry.hasValue
+              ? instanceEntry.value
+              : this.i18n.notDefined;
+          salesforceOrgUsernameLabel = usernameEntry
+            ? usernameEntry.label
+            : "";
+          salesforceOrgUsernameDisplay =
+            usernameEntry && usernameEntry.hasValue
+              ? usernameEntry.value
+              : this.i18n.notDefined;
+        }
         return {
           label: section.label,
           iconName: section.iconName || "utility:settings",
           description: section.description,
           entries,
+          isSalesforceOrgSectionReadOnly:
+            isSalesforceOrgSection && !this.isEditMode,
+          salesforceOrgInstanceLabel,
+          salesforceOrgInstanceDisplay,
+          salesforceOrgUsernameLabel,
+          salesforceOrgUsernameDisplay,
         };
       })
       .filter((section) => section.entries.length > 0);

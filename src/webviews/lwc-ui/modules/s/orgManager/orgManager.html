@@ -1,27 +1,26 @@
 <template>
     <div class="slds-scope slds-theme_default slds-p-around_medium blue-back">
-    <lightning-card>
-        <span slot="title" class="org-manager-card-title">
-            <lightning-icon icon-name="utility:connected_apps" size="medium" variant="inverse" class="org-manager-title-icon"></lightning-icon>
-            {i18n.salesforceOrgsManager}
-        </span>
-        <div slot="actions" class="slds-float_right">
-            <lightning-button-group>
-                <lightning-input type="toggle" label={i18n.viewAllOrgs} title={i18n.viewAllOrgs} checked={viewAll} onchange={handleViewAllToggle}></lightning-input>
-                <span class="slds-m-left_x-small"></span>
-                <lightning-button icon-name="utility:refresh" label={i18n.refreshLabel} title={i18n.refreshOrgsListTooltip} onclick={handleRefresh}></lightning-button>
-                <span class="slds-m-left_x-small"></span>
-                <lightning-button icon-name="utility:add" label={i18n.addOrg} title={i18n.connectToExistingOrgs} variant="brand" onclick={handleConnect}></lightning-button>
-                <span class="slds-m-left_x-small"></span>
-                <template if:true={hasRecommended}>
-                    <lightning-button icon-name="utility:recycle_bin_full" label={i18n.removeRecommendedLabel} variant="destructive" title={i18n.removeRecommendedOrgsTooltip} onclick={handleRemoveRecommended}></lightning-button>
-                </template>
-                <span class="slds-m-left_x-small"></span>
-                <template if:true={hasSelection}>
-                    <lightning-button icon-name="utility:delete" label={i18n.forgetSelectedLabel} variant="destructive" title={i18n.forgetSelectedOrgsTooltip} onclick={handleForgetSelected}></lightning-button>
-                </template>
-            </lightning-button-group>
+    <div class="hardis-page-head">
+        <div class="hardis-tile featured cyan">
+            <lightning-icon icon-name="utility:connected_apps" size="medium"></lightning-icon>
         </div>
+        <div class="hardis-page-head-text">
+            <h1 class="hardis-page-title">{i18n.salesforceOrgsManager}</h1>
+            <p class="hardis-page-subtitle">{i18n.orgsManagerSubtitle}</p>
+        </div>
+        <div class="hardis-page-head-actions">
+            <lightning-input type="toggle" label={i18n.viewAllOrgs} title={i18n.viewAllOrgs} checked={viewAll} onchange={handleViewAllToggle} message-toggle-active="" message-toggle-inactive=""></lightning-input>
+            <lightning-button icon-name="utility:refresh" label={i18n.refreshLabel} title={i18n.refreshOrgsListTooltip} onclick={handleRefresh}></lightning-button>
+            <lightning-button icon-name="utility:add" label={i18n.addOrg} title={i18n.connectToExistingOrgs} variant="neutral" class="hardis-btn-tinted-blue" onclick={handleConnect}></lightning-button>
+            <template if:true={hasRecommended}>
+                <lightning-button icon-name="utility:recycle_bin_full" label={i18n.removeRecommendedLabel} variant="neutral" class="hardis-btn-tinted-red" title={i18n.removeRecommendedOrgsTooltip} onclick={handleRemoveRecommended}></lightning-button>
+            </template>
+            <template if:true={hasSelection}>
+                <lightning-button icon-name="utility:delete" label={i18n.forgetSelectedLabel} variant="neutral" class="hardis-btn-tinted-red" title={i18n.forgetSelectedOrgsTooltip} onclick={handleForgetSelected}></lightning-button>
+            </template>
+        </div>
+    </div>
+    <div class="hardis-panel-body">
         <div class="slds-m-around_medium">
             <template if:true={isInitialLoading}>
                 <div class="slds-text-align_center slds-p-around_large slds-is-relative org-manager-initial-loading">
@@ -54,8 +53,8 @@
             
             <!-- Validation errors display -->
             <template if:true={hasValidationErrors}>
-                <div class="slds-notify slds-notify_alert slds-alert_error slds-m-top_medium" role="alert">
-                    <div class="slds-notify__content">
+                <div class="hardis-note error slds-m-top_medium" role="alert">
+                    <div>
                         <h2 class="slds-text-heading_small">{i18n.aliasValidationErrors}</h2>
                         <ul class="slds-list_dotted slds-m-top_small">
                             <template for:each={validationErrors} for:item="error">
@@ -68,6 +67,6 @@
                 </div>
             </template>
         </div>
-    </lightning-card>
+    </div>
     </div>
 </template>

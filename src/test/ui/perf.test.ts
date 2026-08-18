@@ -1,6 +1,11 @@
 import * as assert from "assert";
 import * as vscode from "vscode";
-import { activateExtension, readMockLog, waitFor } from "./uiTestUtils";
+import {
+  activateExtension,
+  readMockLog,
+  runCommandAndWaitForPanel,
+  waitFor,
+} from "./uiTestUtils";
 
 /**
  * UI integration tests focused on the performance issues reported by users:
@@ -12,34 +17,6 @@ import { activateExtension, readMockLog, waitFor } from "./uiTestUtils";
  * with a mocked `sf` CLI on the PATH (see test/fixtures/sf-shim) that answers
  * instantly and speaks the sfdx-hardis WebSocket protocol.
  */
-
-/**
- * Triggers a command through the extension entry point (like a click in the
- * commands tree) and returns the id of the command execution panel it opens,
- * ignoring the panels that were already open.
- */
-async function launchCommandAndWaitForPanel(
-  panelManager: any,
-  command: string,
-  label: string,
-): Promise<string> {
-  const knownPanels = new Set<string>(panelManager.getActivePanelIds());
-  void vscode.commands.executeCommand(
-    "vscode-sfdx-hardis.execute-command",
-    command,
-  );
-  return await waitFor(
-    () =>
-      panelManager
-        .getActivePanelIds()
-        .find(
-          (id: string) =>
-            id.startsWith("s-command-execution-") && !knownPanels.has(id),
-        ),
-    5000,
-    label,
-  );
-}
 
 /**
  * Waits until the given command execution panel reaches the expected status.
@@ -109,10 +86,10 @@ suite("Performance UI tests", function () {
     // boot (pre-fix, the panel appeared only when the CLI connected, which
     // takes 10+ seconds with the real CLI)
     const clickTime = Date.now();
-    const panelId = await launchCommandAndWaitForPanel(
+    const panelId = await runCommandAndWaitForPanel(
       panelManager,
       "sf hardis:org:mock-background-run",
-      "command execution panel to open",
+      5000,
     );
     const panelOpenMs = Date.now() - clickTime;
     assert.ok(
@@ -153,20 +130,20 @@ suite("Performance UI tests", function () {
     // CLI boot: the panel stays in pending state during that window
     const command = "sf hardis:org:mock-slow-boot-run";
 
-    const panelId1 = await launchCommandAndWaitForPanel(
+    const panelId1 = await runCommandAndWaitForPanel(
       panelManager,
       command,
-      "first slow-boot panel to open",
+      5000,
     );
     // User closes the tab while the CLI is still booting
     panelManager.disposePanel(panelId1);
 
     // ...and immediately runs the same command again: it must NOT be blocked
     // by the duplicate-command detection (the first run was cancelled)
-    const panelId2 = await launchCommandAndWaitForPanel(
+    const panelId2 = await runCommandAndWaitForPanel(
       panelManager,
       command,
-      "re-run panel to open right after cancelling the first run",
+      5000,
     );
     await waitForPanelStatus(
       panelManager,
@@ -189,10 +166,10 @@ suite("Performance UI tests", function () {
           entry.event === "cancelled",
       ).length;
 
-    const panelId1 = await launchCommandAndWaitForPanel(
+    const panelId1 = await runCommandAndWaitForPanel(
       panelManager,
       command,
-      "first long-run panel to open",
+      5000,
     );
     // Wait until the CLI has connected and adopted the panel
     await waitForPanelStatus(
@@ -206,10 +183,10 @@ suite("Performance UI tests", function () {
     panelManager.disposePanel(panelId1);
 
     // ...and immediately runs the same command again
-    const panelId2 = await launchCommandAndWaitForPanel(
+    const panelId2 = await runCommandAndWaitForPanel(
       panelManager,
       command,
-      "re-run panel to open right after cancelling the running command",
+      5000,
     );
     // The first CLI must have been cancelled through the WebSocket protocol
     await waitFor(

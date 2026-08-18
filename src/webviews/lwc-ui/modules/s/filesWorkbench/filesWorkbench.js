@@ -193,21 +193,24 @@ export default class FilesWorkbench extends SharedMixin(LightningElement) {
     return this.workspaces && this.workspaces.length > 0;
   }
 
+  get workspacesCount() {
+    return this.workspaces ? this.workspaces.length : 0;
+  }
+
   get workspacesForDisplay() {
     return this.workspaces
-      .map((workspace) => ({
-        ...workspace,
-        iconName: "standard:file",
-        hasDescription: !!workspace.description,
-        overwriteParentRecords: workspace.overwriteParentRecords
-          ? this.t("yesLabel")
-          : this.t("noLabel"),
-        overwriteFiles: workspace.overwriteFiles
-          ? this.t("yesLabel")
-          : this.t("noLabel"),
-        exportedFilesCount: workspace.exportedFilesCount || null,
-        cssClass: this.getWorkspaceCssClass(workspace),
-      }))
+      .map((workspace) => {
+        const isSelected = !!(
+          this.selectedWorkspace && this.selectedWorkspace.path === workspace.path
+        );
+        return {
+          ...workspace,
+          hasDescription: !!workspace.description,
+          exportedFilesCount: workspace.exportedFilesCount || null,
+          cardClass: this.getWorkspaceCssClass(isSelected),
+          isSelected: isSelected ? "true" : "false",
+        };
+      })
       .sort((a, b) => {
         // Sort by label first, then by name as fallback
         const labelA = (a.label || a.name || "").toLowerCase();
@@ -216,11 +219,16 @@ export default class FilesWorkbench extends SharedMixin(LightningElement) {
       });
   }
 
-  getWorkspaceCssClass(workspace) {
-    const baseClasses = "slds-box slds-box_x-small workspace-item";
-    const isSelected =
-      this.selectedWorkspace && this.selectedWorkspace.path === workspace.path;
+  getWorkspaceCssClass(isSelected) {
+    const baseClasses = "hardis-card clickable";
     return isSelected ? `${baseClasses} selected` : baseClasses;
+  }
+
+  handleCardKeydown(event) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      event.currentTarget.click();
+    }
   }
 
   get isCreateMode() {

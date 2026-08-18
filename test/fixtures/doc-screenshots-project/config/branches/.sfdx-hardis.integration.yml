@@ -1,0 +1,5 @@
+instanceUrl: https://mycompany--integ.sandbox.my.salesforce.com
+targetUsername: deploy.user@mycompany.com.integ
+alias: INTEGRATION
+mergeTargets:
+  - uat

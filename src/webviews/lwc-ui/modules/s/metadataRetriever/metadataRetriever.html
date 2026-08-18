@@ -1,33 +1,31 @@
 <template>
   <div class="slds-p-around_x-small blue-back">
-    <lightning-card title={i18n.metadataRetrieverTitle} icon-name="custom:custom63">
-      <!-- Selected Org and Query Mode in Card Header -->
-      <div slot="actions" class="slds-grid slds-grid_align-end slds-gutters_small slds-grid_vertical-align-start">
-        <div class="slds-col slds-no-flex slds-align-top">
-          <fieldset class="slds-form-element" role="group" aria-label={i18n.selectedOrgLabel}>
-            <legend class="slds-form-element__legend slds-form-element__label" part=""></legend>
-            <div class="slds-form-element__control">
-              <lightning-combobox
-                label={i18n.selectedOrgLabel}
-                value={selectedOrg}
-                options={orgOptions}
-                onchange={handleOrgChange}
-                required
-                variant="label-hidden"
-              ></lightning-combobox>
-            </div>
-          </fieldset>
-        </div>
-        <div class="slds-col slds-no-flex slds-align-top">
-          <lightning-radio-group
-            options={queryModeOptions}
-            value={queryMode}
-            onchange={handleQueryModeChange}
-            type="button"
-          ></lightning-radio-group>
-        </div>
+    <div class="hardis-page-head">
+      <div class="hardis-tile featured green">
+        <lightning-icon icon-name="utility:package" size="medium"></lightning-icon>
       </div>
-
+      <div class="hardis-page-head-text">
+        <h1 class="hardis-page-title">{i18n.metadataRetrieverTitle}</h1>
+        <p class="hardis-page-subtitle">{i18n.metadataRetrieverSubtitle}</p>
+      </div>
+      <div class="hardis-page-head-actions">
+        <lightning-combobox
+          label={i18n.selectedOrgLabel}
+          value={selectedOrg}
+          options={orgOptions}
+          onchange={handleOrgChange}
+          required
+          variant="label-hidden"
+        ></lightning-combobox>
+        <lightning-radio-group
+          options={queryModeOptions}
+          value={queryMode}
+          onchange={handleQueryModeChange}
+          type="button"
+        ></lightning-radio-group>
+      </div>
+    </div>
+    <div class="hardis-panel-body">
       <!-- Panel-level three-state body switch -->
       <template if:true={isPanelLoading}>
         <div class="slds-is-relative slds-p-vertical_large slds-text-align_center">
@@ -144,12 +142,12 @@
         <div class="slds-m-top_x-small slds-grid slds-grid_vertical-align-center slds-grid_align-spread">
           <div class="slds-col">
             <lightning-button
-              variant="brand"
+              variant="neutral"
               label={i18n.searchMetadata}
               icon-name="utility:search"
               onclick={handleSearch}
               disabled={cannotSearch}
-              class="slds-m-right_small"
+              class="slds-m-right_small hardis-btn-tinted-blue"
               size="small"
             ></lightning-button>
             <lightning-button
@@ -188,6 +186,8 @@
                 onchange={handleUseCrudApiChange}
                 variant="standard"
                 title={useCrudApiTooltip}
+                message-toggle-active=""
+                message-toggle-inactive=""
               ></lightning-input>
               <lightning-input
                 type="toggle"
@@ -198,6 +198,8 @@
                 variant="standard"
                 disabled={checkLocalDisabled}
                 title={checkLocalTooltip}
+                message-toggle-active=""
+                message-toggle-inactive=""
               ></lightning-input>
             </div>
           </div>
@@ -205,9 +207,8 @@
 
         <!-- CRUD API deployability notice (shown only when Full metadata is on) -->
         <template if:true={useCrudApi}>
-          <div class="slds-m-top_x-small slds-notify slds-notify_alert slds-alert_warning" role="alert">
-            <span class="slds-assistive-text">warning</span>
-            <lightning-icon icon-name="utility:warning" size="x-small" variant="inverse" class="slds-m-right_x-small"></lightning-icon>
+          <div class="hardis-note warning slds-m-top_x-small" role="alert">
+            <lightning-icon icon-name="utility:warning" size="x-small"></lightning-icon>
             <span>{i18n.useCrudApiWarning}</span>
           </div>
         </template>
@@ -229,9 +230,8 @@
       <!-- Error Message -->
       <template if:true={hasError}>
         <div class="slds-p-around_small">
-          <div class="slds-notify slds-notify_alert slds-alert_error" role="alert">
-            <span class="slds-assistive-text">error</span>
-            <lightning-icon icon-name="utility:error" size="x-small" variant="inverse" class="slds-m-right_x-small"></lightning-icon>
+          <div class="hardis-note error" role="alert">
+            <lightning-icon icon-name="utility:error" size="x-small"></lightning-icon>
             <h2>{error}</h2>
           </div>
         </div>
@@ -321,17 +321,23 @@
 
       <!-- Hidden feature modal (obfuscated identifiers) -->
       <template if:true={showFeature}>
-        <section role="dialog" tabindex="-1" data-feature data-feature-id={featureId} aria-modal="true">
-          <div data-feature-backdrop class="slds-backdrop" onclick={hideFeature}></div>
-          <div data-feature-content>
-            <button data-feature-close onclick={hideFeature} title={i18n.closeLabel}>×</button>
-            <div data-feature-body>
-              <img src={imgFeatureLogo} alt="" />
-              <h2>I am also very impatient to meet you again ❤️</h2>
+        <section role="dialog" tabindex="-1" aria-modal="true" data-feature-id={featureId} class="slds-modal slds-fade-in-open">
+          <div class="slds-modal__container">
+            <div class="modal-accent-strip"></div>
+            <header class="slds-modal__header">
+              <button class="slds-button slds-button_icon slds-modal__close" title={i18n.closeLabel} onclick={hideFeature}>
+                <lightning-icon icon-name="utility:close" size="small" alternative-text={i18n.closeLabel}></lightning-icon>
+                <span class="slds-assistive-text">{i18n.closeLabel}</span>
+              </button>
+              <h2 class="slds-modal__title slds-hyphenate">I am also very impatient to meet you again ❤️</h2>
+            </header>
+            <div class="slds-modal__content slds-p-around_medium slds-text-align_center retrieve-feature-content">
+              <img src={imgFeatureLogo} alt="" class="retrieve-feature-img" />
               <p>{featureText}</p>
             </div>
           </div>
         </section>
+        <div class="slds-backdrop slds-backdrop_open" onclick={hideFeature}></div>
       </template>
 
       <!-- No Results Message -->
@@ -347,6 +353,6 @@
       </template>
 
       </template><!-- end isPanelReady -->
-    </lightning-card>
+    </div>
   </div>
 </template>

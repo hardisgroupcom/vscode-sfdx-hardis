@@ -14,6 +14,8 @@
   - Commands run in a terminal now **start immediately**
     - On **Windows**, commands now run in a **Git Bash** terminal automatically when Git Bash is installed, without requiring to change the default VS Code terminal
   - Commands clicked right after VS Code startup are **no longer rejected** with "not initialized yet"
+  - Panels **no longer stay stuck on their loading spinner** (or open empty) when VS Code is slow to start them, and an unexpected display error now shows a message with a **Try again** button instead of an endless spinner
+  - **Pipeline Settings now load without an internet connection**
   - Fixed a wrong **"duplicate command"** error when running a command again right after closing its execution tab, or when a language other than "auto" is selected
   - Command tabs of completed commands are now cleaned up in **all languages** (previously only when VS Code was in English)
   - The "Initializing command" notification is no longer shown when the execution tab is already open, since it was redundant with it
@@ -33,13 +35,36 @@
     - Find and run any sfdx-hardis command by name with the new **search button** in the header toolbar, or the **Search** link of the quick start's "Pick a feature" step
     - The same design is applied across the extension: **Org Monitoring**, the **DevOps Pipeline** quick action cards, the **Documentation Workbench**, the **AI Documentation configuration** and the **Monitoring Configuration** now share the Welcome page's sections, cards and colored icon tiles
     - Org Monitoring check cards are now **clickable directly** (with the keyboard too), replacing the Run button on each card
+  - **Every panel now has the same design**: the same header (icon, title, one-line description, actions on the right), the same content cards and the same buttons
+    - Orgs Manager, Metadata Retriever, Installed Packages, Pipeline Settings, Extension Settings, package.xml and the Setup panel were rebuilt on the shared design, so no panel looks like a different product anymore
+    - Panel titles are the feature name (**Metadata Retriever**, **Installed Packages**...) and every panel says in one line what it is for
+    - **Colored buttons are readable in both themes**: the filled blue/red buttons of the workbenches (Export data, Delete data, Add Org, Install...) became tinted buttons that adapt to light and dark mode
+    - The Setup panel dependency cards, the Org Monitoring installation banner and the Installed Packages information banner use the same status colors as the rest of the extension
+    - The **Data Import/Export Workbench** and the **Files Import/Export Workbench** were rebuilt on the shared design
+      - Workspaces are picked from a **clean selectable list**, and the gray all-caps section bars were replaced by the shared section headers with **labeled buttons** instead of anonymous icon squares
+      - Workspace settings and object options are summarized as **readable chips**, each data object shows its operation as a **colored tag** with its query on one line, and the exported files / logs tables mark **source, target and log files with colored tags**
+      - Empty screens (no workspace yet, no workspace selected) now explain what to do next with **one clear action**, fixing a broken white banner in the Files Workbench empty screen
+    - **Extension Settings** are now readable: real setting names (e.g. "User input command line if LWC" instead of "User Input Command Line If L W C") and each setting's **description always visible** under its name instead of hidden behind a hover icon
+    - **Pipeline Settings** got a clearer read-only view
+      - Options now show a clear **Enabled / Disabled** badge instead of a grayed-out switch that looked broken
+      - Git branch names are shown as **chips**, long URLs are **shortened** and open with one click, and unset values show "Not defined" instead of "None"
+      - The **documentation link** of a setting sits right next to its name, replacing the identical Documentation button repeated on every row
+      - The Salesforce Org tab of a branch's settings shows a **compact org summary card** instead of two sparse fields
+    - The **package.xml viewer**, **Monitoring Configuration**, **Documentation Workbench**, **Org Monitoring** documentation links and **Metadata Retriever** dialogs were aligned on the same section headers, cards and dialog style, with no change to their features
+    - Fixed the **Language** tab of the Extension Settings, which showed the raw key `languageSection` instead of its name
+    - Fixed texts that were **unreadable after switching between light and dark themes** in several panels
+    - **Switches** are displayed the same way everywhere: the *Active / Inactive* label below them is gone, as it broke the alignment with the neighboring buttons and fields
   - The command execution tab was **fully redesigned** with the same look & feel
     - Command steps are displayed as a **compact connected timeline** with colored status dots, expandable step details and per-step durations, replacing the tall stack of boxes (a whole run now fits on one screen)
+      - A command reporting its progress out of **100 steps** is displayed as a **percentage** ("42% complete") instead of a step counter
     - The header shows the command name with a **colored status pill** (Starting / Running / Completed / Failed), the **target org**, the elapsed time and a link to the log file
+      - When the command is run on a **specific org** (`--target-org`, `--targetusername`, `-u`, `-o`), the header shows **that org** instead of the default org of the project
     - When the command asks a question, it appears in a highlighted **"Waiting for your answer"** card: options are clickable cards, long choice lists are **searchable in place** (no more dropdown covering the validation buttons), and multi-selects show a live **"n of m selected"** counter with Select all / Show only selected shortcuts
     - Answered questions collapse to a single line showing the **answer**, and can be expanded back to see the details
     - Generated reports and actions are docked in a **bar at the bottom** of the tab, always visible without scrolling
     - Result tables are now readable in **dark mode**, and the duplicated scrollbar on the right edge is gone
+    - Log lines carrying a **big JSON** (deployment results, API responses) or a **very long text** now display only their **beginning**: click them to see the **complete content** in a large window, that can be **copied** or **opened in a VS Code tab**
+    - Once a command is over, a **Run again** button in the header replays it with the same parameters, whether it succeeded or failed
   - Fix panels wrongly opening in **light mode inside a dark VS Code**: the extension theme now follows the VS Code theme by default (users who explicitly selected Light or Dark keep their choice)
   - The DevOps Pipeline diagram was **redesigned with the official Salesforce Lightning color palette**, in **light and dark themes**
     - CI job status is now **color-coded consistently everywhere**: **blue animated = running**, **orange = pending**, **red = failed**, **green = success** (previously running and pending showed as red, and failed jobs were not highlighted at all)
@@ -47,6 +72,7 @@
     - Pull requests, deployments and "Create PR" links are shown as small **colored chips** instead of emoji and underlined links, and each branch's open pull request counter is displayed as a **notification bubble** attached to the node's corner
     - Long feature branch names are **shortened** so the diagram stays compact (the full name remains visible on hover and in the pull request modal), the **"+N more"** folded branches are displayed as a stack of cards, and a **legend** below the diagram explains connectors and status colors
   - Fixed help tooltips that displayed black text on their dark blue background in **dark mode**, making them **nearly impossible to read**: their text is now light in dark mode, in every panel ([#2051](https://github.com/hardisgroupcom/sfdx-hardis/issues/2051))
+  - **Right-click any table cell** to copy its value (or the text you selected) to the clipboard
   - Tables are **easier to scan**, in **every panel**: alternate row background colors and a hover highlight, job status as a colored chip with its label, authors shown with an **initials avatar**, source and target branches as compact **monospace chips**, and dates in a short one-line format
     - Also applied to **Org Manager** (connection status as a green/red chip, default org and Dev Hub roles highlighted as chips), **Metadata Retriever** ("Last Updated By" avatar and aligned update dates) and **Installed Packages** (namespaces as monospace chips)
   - Quick action cards and other panels (Org Monitoring, Package XML, Documentation, Welcome, Setup, Monitoring Config, Metadata Retriever) now use the **official Salesforce color palette** for their icons and buttons, including the Release Notes buttons that could be **hard to read in dark mode**
@@ -101,6 +127,8 @@
   - New **automated UI tests** launch a real VS Code with a sample SFDX project and a simulated Salesforce CLI, and verify startup and command-launch responsiveness on **Windows, macOS and Linux** at every change
   - The extension code loaded at startup was reduced to **a fraction of its previous size**, the rest is now loaded only when actually used
   - Installed plugins are now identified with `sf plugins --json`, which tells exactly how each plugin was installed, instead of reading the displayed text (that could be colorized, hiding the version and the alpha/beta/link markers)
+  - All the **screenshots of the documentation** are regenerated with the new design (and are now regenerated automatically, so they will no longer drift from the real product)
+  - The extension package no longer ships **15 MB of obsolete images** (old menu screenshots and demo animation) that nothing displayed anymore
 
 ## [7.18.0] 2026-07-26
 

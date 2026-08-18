@@ -1,42 +1,42 @@
 <template>
   <div class="blue-back">
     <div class="slds-scope slds-p-around_small blue-back">
-      <div class="slds-grid slds-grid_align-spread slds-m-bottom_medium">
-        <div class="slds-col slds-size_4-of-12 slds-align-left">
+      <div class="hardis-page-head">
+        <div class="hardis-tile featured cyan">
+          <lightning-icon icon-name="utility:settings" size="medium"></lightning-icon>
+        </div>
+        <div class="hardis-page-head-text">
           <template if:true={isBranch}>
-            <span class="slds-text-heading_medium slds-text-title_bold">{i18n.pipelineSettingsForBranch} <b>{branchName}</b></span>
+            <h1 class="hardis-page-title">{i18n.pipelineSettingsForBranch} {branchName}</h1>
           </template>
           <template if:false={isBranch}>
-            <span class="slds-text-heading_medium slds-text-title_bold">{i18n.globalPipelineSettings}</span>
+            <h1 class="hardis-page-title">{i18n.globalPipelineSettings}</h1>
           </template>
+          <p class="hardis-page-subtitle">{i18n.pipelineSettingsSubtitle}</p>
         </div>
-        <div class="slds-col slds-size_4-of-12 slds-align-middle">
-          <div class="slds-form-element">
-            <lightning-combobox
-              name="configScope"
-              label={i18n.configurationScope}
-              variant="label-hidden"
-              value={selectedConfigScope}
-              placeholder={i18n.selectConfigurationScope}
-              options={configScopeOptions}
-              onchange={handleConfigScopeChange}
-              disabled={isEditMode}
-            ></lightning-combobox>
-          </div>
-        </div>
-        <div class="slds-col slds-size_4-of-12 slds-no-flex slds-align-middle" data-key="top-btn-group" style="text-align:right;">
+        <div class="hardis-page-head-actions">
+          <lightning-combobox
+            name="configScope"
+            label={i18n.configurationScope}
+            variant="label-hidden"
+            value={selectedConfigScope}
+            placeholder={i18n.selectConfigurationScope}
+            options={configScopeOptions}
+            onchange={handleConfigScopeChange}
+            disabled={isEditMode}
+          ></lightning-combobox>
           <template if:true={isEditMode}>
-            <lightning-button variant="brand" label={i18n.save} onclick={handleSave} class="slds-m-right_small" data-button="top"></lightning-button>
+            <lightning-button variant="neutral" label={i18n.save} onclick={handleSave} class="hardis-btn-tinted-blue" data-button="top"></lightning-button>
             <lightning-button variant="neutral" label={i18n.cancel} onclick={handleCancel} data-button="top"></lightning-button>
           </template>
           <template if:false={isEditMode}>
-            <lightning-button variant="brand" label={i18n.edit} onclick={handleEdit} data-button="top"></lightning-button>
+            <lightning-button class="hardis-btn-tinted-blue" variant="neutral" label={i18n.edit} onclick={handleEdit} data-button="top"></lightning-button>
           </template>
         </div>
       </div>
     <div class="slds-p-horizontal_small">
       <template if:true={configSections}>
-        <lightning-card hide-header="true" label={i18n.pipelineConfig}>
+        <div class="hardis-panel-body">
           <lightning-tabset data-id="config-tabset" active-tab-value={activeTabValue}>
             <template for:each={configSections} for:item="section" for:index="index">
               <lightning-tab key={section.label} label={section.label} value={section.label} icon-name={section.iconName} icon-assistive-text={section.label}>
@@ -46,456 +46,395 @@
                       {section.description}
                     </div>
                   </template>
-                <template for:each={section.entries} for:item="entry">
-                  <div key={entry.key} class="slds-m-bottom_medium">
-                    <div class="slds-grid slds-gutters">
-                      <div class={entry.columnClass}>
+
+                  <!-- Sparse branch-only "Salesforce Org" tab: one summary card instead of two field rows -->
+                  <template if:true={section.isSalesforceOrgSectionReadOnly}>
+                    <div class="hardis-status-grid single-column">
+                      <div class="hardis-status-card info">
+                        <div class="hardis-tile salesforce">
+                          <lightning-icon icon-name="utility:salesforce1" size="small"></lightning-icon>
+                        </div>
+                        <div class="hardis-status-content">
+                          <h3 class="hardis-status-title">{section.salesforceOrgInstanceLabel}: {section.salesforceOrgInstanceDisplay}</h3>
+                          <p class="hardis-status-desc">{section.salesforceOrgUsernameLabel}: {section.salesforceOrgUsernameDisplay}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </template>
+
+                  <template if:false={section.isSalesforceOrgSectionReadOnly}>
+                  <template for:each={section.entries} for:item="entry">
+                    <div key={entry.key} class={entry.fieldRowClass}>
+                      <div class="hardis-field-text">
+                        <div class="hardis-field-label">
+                          <span>{entry.label}</span>
+                          <template if:true={entry.isMultilineHelp}>
+                            <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
+                          </template>
+                          <template if:true={entry.showDocLink}>
+                            <button type="button" class="hardis-textlink" onclick={handleOpenDocUrl} data-doc-url={entry.docUrl}>{i18n.docsLabel} ↗</button>
+                          </template>
+                        </div>
+                        <template if:true={entry.helpFirstLine}>
+                          <div class="hardis-field-help">{entry.helpFirstLine}</div>
+                        </template>
+                      </div>
+                      <div class="hardis-field-control">
                         <template if:true={isEditMode}>
                           <template if:true={entry.isEnum}>
-                            <div class="slds-form-element slds-m-bottom_xx-small">
-                              <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
-                                <span>{entry.label}</span>
-                                <template if:true={entry.description}>
-                                  <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
-                                </template>
-                              </label>
-                              <lightning-combobox
-                                data-key={entry.key}
-                                value={entry.valueEdit}
-                                options={entry.optionsLwc}
-                                onchange={handleInputChange}
-                                variant="label-hidden"
-                              ></lightning-combobox>
-                            </div>
+                            <lightning-combobox
+                              data-key={entry.key}
+                              value={entry.valueEdit}
+                              options={entry.optionsLwc}
+                              onchange={handleInputChange}
+                              label={entry.label}
+                            variant="label-hidden"
+                            ></lightning-combobox>
                           </template>
                           <template if:true={entry.isArrayEnum}>
-                            <div class="slds-form-element slds-m-bottom_xx-small">
-                              <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
-                                <span>{entry.label}</span>
-                                <template if:true={entry.description}>
-                                  <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
-                                </template>
-                              </label>
-                              <lightning-dual-listbox
-                                data-key={entry.key}
-                                value={entry.valueEdit}
-                                options={entry.optionsLwc}
-                                onchange={handleInputChange}
-                                label={i18n.selectValues}
-                              ></lightning-dual-listbox>
-                            </div>
+                            <lightning-dual-listbox
+                              data-key={entry.key}
+                              value={entry.valueEdit}
+                              options={entry.optionsLwc}
+                              onchange={handleInputChange}
+                              label={i18n.selectValues}
+                            ></lightning-dual-listbox>
                           </template>
                           <template if:true={entry.isApexTestsSelect}>
-                            <div class="slds-form-element slds-m-bottom_xx-small">
-                              <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
-                                <span>{entry.label}</span>
-                                <template if:true={entry.description}>
-                                  <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
-                                </template>
-                              </label>
-                              <template if:true={isApexTestsFieldViewMode}>
-                                <div class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center slds-m-bottom_x-small">
-                                  <div class="slds-text-body_small slds-text-color_weak">
-                                    {i18n.selectedLabel} {entry.valueEdit.length}
-                                  </div>
-                                  <lightning-button
-                                    variant="neutral"
-                                    label={i18n.edit}
-                                    onclick={handleEditApexTestsField}
-                                    size="small"
-                                  ></lightning-button>
+                            <template if:true={isApexTestsFieldViewMode}>
+                              <div class="slds-grid slds-grid_align-spread slds-grid_vertical-align-center slds-m-bottom_x-small">
+                                <div class="slds-text-body_small slds-text-color_weak">
+                                  {i18n.selectedLabel} {entry.valueEdit.length}
                                 </div>
-                                <template if:true={entry.hasApexTestsSelected}>
-                                  <ul class="slds-list_dotted slds-m-left_medium">
-                                    <template for:each={entry.valueEdit} for:item="item">
-                                      <li key={item}>{item}</li>
-                                    </template>
-                                  </ul>
-                                </template>
-                                <template if:false={entry.hasApexTestsSelected}>
-                                  <span class="slds-text-color_weak">{i18n.noneLabel}</span>
-                                </template>
-                              </template>
-
-                              <template if:true={isApexTestsFieldEditMode}>
-                                <s-apex-tests-select
-                                  data-key={entry.key}
-                                  value={entry.valueEdit}
-                                  available-classes={availableApexTestClasses}
-                                  translations={translations}
-                                  onchange={handleApexTestsSelectChange}
-                                ></s-apex-tests-select>
-                                <div class="slds-m-top_small">
-                                  <lightning-button
-                                    variant="neutral"
-                                    label={i18n.done}
-                                    onclick={handleDoneApexTestsField}
-                                    size="small"
-                                  ></lightning-button>
-                                  <lightning-button
-                                    class="slds-m-left_small"
-                                    variant="neutral"
-                                    label={i18n.cancel}
-                                    onclick={handleCancelApexTestsField}
-                                    size="small"
-                                  ></lightning-button>
-                                </div>
-                              </template>
-                            </div>
-                          </template>
-                          <template if:true={entry.isArrayText}>
-                            <template if:false={entry.isApexTestsSelect}>
-                              <div class="slds-form-element slds-m-bottom_xx-small">
-                                <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
-                                  <span>{entry.label}</span>
-                                  <template if:true={entry.description}>
-                                    <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
+                                <lightning-button
+                                  variant="neutral"
+                                  label={i18n.edit}
+                                  onclick={handleEditApexTestsField}
+                                  size="small"
+                                ></lightning-button>
+                              </div>
+                              <template if:true={entry.hasApexTestsSelected}>
+                                <ul class="slds-list_dotted slds-m-left_medium">
+                                  <template for:each={entry.valueEdit} for:item="item">
+                                    <li key={item}>{item}</li>
                                   </template>
-                                </label>
-                                <lightning-textarea
-                                  data-key={entry.key}
-                                  value={entry.valueEditText}
-                                  onchange={handleInputChange}
-                                  rows="2"
-                                  variant="label-hidden"
-                                ></lightning-textarea>
-                                <div class="slds-text-body_small slds-text-color_weak">{i18n.oneValuePerLine}</div>
+                                </ul>
+                              </template>
+                              <template if:false={entry.hasApexTestsSelected}>
+                                <span class="slds-text-color_weak">{i18n.noneLabel}</span>
+                              </template>
+                            </template>
+
+                            <template if:true={isApexTestsFieldEditMode}>
+                              <s-apex-tests-select
+                                data-key={entry.key}
+                                value={entry.valueEdit}
+                                available-classes={availableApexTestClasses}
+                                translations={translations}
+                                onchange={handleApexTestsSelectChange}
+                              ></s-apex-tests-select>
+                              <div class="slds-m-top_small">
+                                <lightning-button
+                                  variant="neutral"
+                                  label={i18n.done}
+                                  onclick={handleDoneApexTestsField}
+                                  size="small"
+                                ></lightning-button>
+                                <lightning-button
+                                  class="slds-m-left_small"
+                                  variant="neutral"
+                                  label={i18n.cancel}
+                                  onclick={handleCancelApexTestsField}
+                                  size="small"
+                                ></lightning-button>
                               </div>
                             </template>
                           </template>
+                          <template if:true={entry.isArrayText}>
+                            <template if:false={entry.isApexTestsSelect}>
+                              <lightning-textarea
+                                data-key={entry.key}
+                                value={entry.valueEditText}
+                                onchange={handleInputChange}
+                                rows="2"
+                                label={entry.label}
+                            variant="label-hidden"
+                              ></lightning-textarea>
+                              <div class="slds-text-body_small slds-text-color_weak">{i18n.oneValuePerLine}</div>
+                            </template>
+                          </template>
                           <template if:true={entry.isArrayObject}>
-                            <div class="slds-form-element slds-m-bottom_xx-small">
-                              <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
-                                <span>{entry.label}</span>
-                                <template if:true={entry.description}>
-                                  <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
+                            <!-- Display existing items as datatable -->
+                            <template if:true={entry.hasArrayObjectValues}>
+                              <lightning-datatable
+                                key-field="_index"
+                                data={entry.arrayObjectDatatableData}
+                                column-widths-mode="auto"
+                                columns={entry.arrayObjectDatatableColumns}
+                                data-key={entry.key}
+                                onrowaction={handleArrayObjectRowAction}
+                                hide-checkbox-column
+                                class="slds-m-bottom_medium"
+                              ></lightning-datatable>
+                            </template>
+
+                            <!-- Add New Button (Edit mode only) -->
+                            <div class="add-button-container">
+                              <lightning-button class="hardis-btn-tinted-blue"
+                                variant="neutral"
+                                label={i18n.addNew}
+                                icon-name="utility:add"
+                                data-key={entry.key}
+                                onclick={handleAddArrayObjectItem}
+                              ></lightning-button>
+                            </div>
+
+                            <!-- Modal for adding/editing item (deployment actions use s-deployment-action instead) -->
+                            <template if:true={entry.isGenericArrayObject}>
+                            <template if:true={entry.arrayObjectEditorOpen}>
+                              <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
+                                <div class="slds-modal__container">
+                                  <div class="modal-accent-strip"></div>
+                                  <header class="slds-modal__header">
+                                    <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title={i18n.close} data-key={entry.key} onclick={handleCancelArrayObjectForm}>
+                                      <lightning-icon icon-name="utility:close" alternative-text={i18n.close} size="small"></lightning-icon>
+                                      <span class="slds-assistive-text">{i18n.close}</span>
+                                    </button>
+                                    <h2 class="slds-modal__title slds-hyphenate">
+                                      <template if:true={entry.arrayObjectEditIndex}>
+                                        {i18n.editItem}
+                                      </template>
+                                      <template if:false={entry.arrayObjectEditIndex}>
+                                        {i18n.addNewItem}
+                                      </template>
+                                    </h2>
+                                  </header>
+                                  <div class="slds-modal__content slds-p-around_medium">
+                                    <template for:each={entry.arrayObjectFormFields} for:item="field">
+                                      <template if:true={field.isText}>
+                                        <div key={field.key} class="slds-form-element slds-m-bottom_small">
+                                          <label class="slds-form-element__label">
+                                            <span>{field.label}</span>
+                                            <template if:true={field.required}>
+                                              <abbr class="slds-required" title="required">*</abbr>
+                                            </template>
+                                          </label>
+                                          <lightning-input
+                                            type="text"
+                                            value={field.value}
+                                            placeholder={field.placeholder}
+                                            data-key={entry.key}
+                                            data-field-name={field.key}
+                                            data-field-type="text"
+                                            onchange={handleArrayObjectFormFieldChange}
+                                            required={field.required}
+                                            label={field.label}
+                            variant="label-hidden"
+                                          ></lightning-input>
+                                          <template if:true={field.description}>
+                                            <div class="slds-text-body_small slds-text-color_weak">{field.description}</div>
+                                          </template>
+                                        </div>
+                                      </template>
+
+                                      <template if:true={field.isEnum}>
+                                        <div key={field.key} class="slds-form-element slds-m-bottom_small">
+                                          <label class="slds-form-element__label">
+                                            <span>{field.label}</span>
+                                            <template if:true={field.required}>
+                                              <abbr class="slds-required" title="required">*</abbr>
+                                            </template>
+                                          </label>
+                                          <lightning-combobox
+                                            value={field.value}
+                                            placeholder={field.placeholder}
+                                            options={field.options}
+                                            data-key={entry.key}
+                                            data-field-name={field.key}
+                                            data-field-type="enum"
+                                            onchange={handleArrayObjectFormFieldChange}
+                                            required={field.required}
+                                            label={field.label}
+                            variant="label-hidden"
+                                          ></lightning-combobox>
+                                          <template if:true={field.description}>
+                                            <div class="slds-text-body_small slds-text-color_weak">{field.description}</div>
+                                          </template>
+                                        </div>
+                                      </template>
+
+                                      <template if:true={field.isBoolean}>
+                                        <div key={field.key} class="slds-form-element slds-m-bottom_small">
+                                          <lightning-input
+                                            type="toggle"
+                                            label={field.label}
+                                            checked={field.value}
+                                            data-key={entry.key}
+                                            data-field-name={field.key}
+                                            data-field-type="boolean"
+                                            onchange={handleArrayObjectFormFieldChange}
+                                            message-toggle-active=""
+                                            message-toggle-inactive=""
+                                          ></lightning-input>
+                                          <template if:true={field.description}>
+                                            <div class="slds-text-body_small slds-text-color_weak">{field.description}</div>
+                                          </template>
+                                        </div>
+                                      </template>
+                                    </template>
+                                  </div>
+                                  <footer class="slds-modal__footer">
+                                    <lightning-button
+                                      variant="neutral"
+                                      label={i18n.cancel}
+                                      data-key={entry.key}
+                                      onclick={handleCancelArrayObjectForm}
+                                    ></lightning-button>
+                                    <lightning-button class="hardis-btn-tinted-blue"
+                                      variant="neutral"
+                                      label={i18n.save}
+                                      data-key={entry.key}
+                                      onclick={handleSaveArrayObjectItem}
+                                    ></lightning-button>
+                                  </footer>
+                                </div>
+                              </section>
+                              <div class="slds-backdrop slds-backdrop_open"></div>
+                            </template>
+                            </template>
+                          </template>
+                          <template if:true={entry.isBoolean}>
+                            <lightning-input
+                              type="toggle"
+                              data-key={entry.key}
+                              checked={entry.valueEdit}
+                              onchange={handleInputChange}
+                              oninput={handleInputChange}
+                              label={entry.label}
+                            variant="label-hidden"
+                              message-toggle-active=""
+                              message-toggle-inactive=""
+                            ></lightning-input>
+                          </template>
+                          <template if:true={entry.isText}>
+                            <lightning-input
+                              type="text"
+                              data-key={entry.key}
+                              value={entry.valueEdit}
+                              onchange={handleInputChange}
+                              label={entry.label}
+                            variant="label-hidden"
+                            ></lightning-input>
+                          </template>
+                          <template if:true={entry.isNumber}>
+                            <lightning-input
+                              type="number"
+                              data-key={entry.key}
+                              value={entry.valueEdit}
+                              onchange={handleInputChange}
+                              label={entry.label}
+                            variant="label-hidden"
+                            ></lightning-input>
+                          </template>
+                          <template if:true={entry.inherited}>
+                            <div class="hardis-field-help">{i18n.globalValueLabel} {entry.globalValue}</div>
+                          </template>
+                        </template>
+                        <template if:false={isEditMode}>
+                          <template if:true={entry.isBoolean}>
+                            <span class={entry.booleanPillClass}>
+                              <span class="hardis-pill-dot"></span>{entry.booleanPillLabel}
+                            </span>
+                          </template>
+                          <template if:false={entry.isBoolean}>
+                            <template if:true={entry.isArrayEnum}>
+                              <template if:true={entry.hasArrayEnumValues}>
+                                <template for:each={entry.valueDisplay} for:item="item">
+                                  <span key={item} class={entry.arrayChipClass}>{item}</span>
                                 </template>
-                              </label>
-                              
-                              <!-- Display existing items as datatable -->
+                              </template>
+                              <template if:false={entry.hasArrayEnumValues}>
+                                <span class="slds-text-color_weak hardis-not-set">{i18n.notDefined}</span>
+                              </template>
+                            </template>
+                            <template if:true={entry.isArrayText}>
+                              <template if:true={entry.hasArrayTextValues}>
+                                <template for:each={entry.valueDisplay} for:item="item">
+                                  <span key={item} class={entry.arrayChipClass}>{item}</span>
+                                </template>
+                              </template>
+                              <template if:false={entry.hasArrayTextValues}>
+                                <span class="slds-text-color_weak hardis-not-set">{i18n.notDefined}</span>
+                              </template>
+                            </template>
+                            <template if:true={entry.isArrayObject}>
                               <template if:true={entry.hasArrayObjectValues}>
                                 <lightning-datatable
                                   key-field="_index"
                                   data={entry.arrayObjectDatatableData}
                                   column-widths-mode="auto"
                                   columns={entry.arrayObjectDatatableColumns}
-                                  data-key={entry.key}
-                                  onrowaction={handleArrayObjectRowAction}
                                   hide-checkbox-column
-                                  class="slds-m-bottom_medium"
+                                  class="slds-m-top_x-small"
                                 ></lightning-datatable>
                               </template>
-                              
-                              <!-- Add New Button (Edit mode only) -->
-                              <template if:true={isEditMode}>
-                                <div class="add-button-container">
-                                  <lightning-button
-                                    variant="brand"
-                                    label={i18n.addNew}
-                                    icon-name="utility:add"
-                                    data-key={entry.key}
-                                    onclick={handleAddArrayObjectItem}
-                                  ></lightning-button>
-                                </div>
+                              <template if:false={entry.hasArrayObjectValues}>
+                                <span class="slds-text-color_weak hardis-not-set">{i18n.notDefined}</span>
                               </template>
-                              
-                              <!-- Modal for adding/editing item (deployment actions use s-deployment-action instead) -->
-                              <template if:true={entry.isGenericArrayObject}>
-                              <template if:true={entry.arrayObjectEditorOpen}>
-                                <section role="dialog" tabindex="-1" class="slds-modal slds-fade-in-open">
-                                  <div class="slds-modal__container">
-                                    <div class="modal-accent-strip"></div>
-                                    <header class="slds-modal__header">
-                                      <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title={i18n.close} data-key={entry.key} onclick={handleCancelArrayObjectForm}>
-                                        <lightning-icon icon-name="utility:close" alternative-text={i18n.close} size="small"></lightning-icon>
-                                        <span class="slds-assistive-text">{i18n.close}</span>
-                                      </button>
-                                      <h2 class="slds-modal__title slds-hyphenate">
-                                        <template if:true={entry.arrayObjectEditIndex}>
-                                          {i18n.editItem}
-                                        </template>
-                                        <template if:false={entry.arrayObjectEditIndex}>
-                                          {i18n.addNewItem}
-                                        </template>
-                                      </h2>
-                                    </header>
-                                    <div class="slds-modal__content slds-p-around_medium">
-                                      <template for:each={entry.arrayObjectFormFields} for:item="field">
-                                        <template if:true={field.isText}>
-                                          <div key={field.key} class="slds-form-element slds-m-bottom_small">
-                                            <label class="slds-form-element__label">
-                                              <span>{field.label}</span>
-                                              <template if:true={field.required}>
-                                                <abbr class="slds-required" title="required">*</abbr>
-                                              </template>
-                                            </label>
-                                            <lightning-input
-                                              type="text"
-                                              value={field.value}
-                                              placeholder={field.placeholder}
-                                              data-key={entry.key}
-                                              data-field-name={field.key}
-                                              data-field-type="text"
-                                              onchange={handleArrayObjectFormFieldChange}
-                                              required={field.required}
-                                              variant="label-hidden"
-                                            ></lightning-input>
-                                            <template if:true={field.description}>
-                                              <div class="slds-text-body_small slds-text-color_weak">{field.description}</div>
-                                            </template>
-                                          </div>
-                                        </template>
-                                        
-                                        <template if:true={field.isEnum}>
-                                          <div key={field.key} class="slds-form-element slds-m-bottom_small">
-                                            <label class="slds-form-element__label">
-                                              <span>{field.label}</span>
-                                              <template if:true={field.required}>
-                                                <abbr class="slds-required" title="required">*</abbr>
-                                              </template>
-                                            </label>
-                                            <lightning-combobox
-                                              value={field.value}
-                                              placeholder={field.placeholder}
-                                              options={field.options}
-                                              data-key={entry.key}
-                                              data-field-name={field.key}
-                                              data-field-type="enum"
-                                              onchange={handleArrayObjectFormFieldChange}
-                                              required={field.required}
-                                              variant="label-hidden"
-                                            ></lightning-combobox>
-                                            <template if:true={field.description}>
-                                              <div class="slds-text-body_small slds-text-color_weak">{field.description}</div>
-                                            </template>
-                                          </div>
-                                        </template>
-                                        
-                                        <template if:true={field.isBoolean}>
-                                          <div key={field.key} class="slds-form-element slds-m-bottom_small">
-                                            <lightning-input
-                                              type="toggle"
-                                              label={field.label}
-                                              checked={field.value}
-                                              data-key={entry.key}
-                                              data-field-name={field.key}
-                                              data-field-type="boolean"
-                                              onchange={handleArrayObjectFormFieldChange}
-                                            ></lightning-input>
-                                            <template if:true={field.description}>
-                                              <div class="slds-text-body_small slds-text-color_weak">{field.description}</div>
-                                            </template>
-                                          </div>
-                                        </template>
-                                      </template>
-                                    </div>
-                                    <footer class="slds-modal__footer">
-                                      <lightning-button
-                                        variant="neutral"
-                                        label={i18n.cancel}
-                                        data-key={entry.key}
-                                        onclick={handleCancelArrayObjectForm}
-                                      ></lightning-button>
-                                      <lightning-button
-                                        variant="brand"
-                                        label={i18n.save}
-                                        data-key={entry.key}
-                                        onclick={handleSaveArrayObjectItem}
-                                      ></lightning-button>
-                                    </footer>
-                                  </div>
-                                </section>
-                                <div class="slds-backdrop slds-backdrop_open"></div>
+                            </template>
+                            <template if:true={entry.isEnum}>
+                              <template if:true={entry.value}>
+                                <span class="slds-text-color_weak">{entry.valueDisplay}</span>
                               </template>
+                              <template if:false={entry.value}>
+                                <span class="slds-text-color_weak hardis-not-set">{i18n.notDefined}</span>
                               </template>
-                            </div>
-                          </template>
-                          <template if:true={entry.isBoolean}>
-                            <div class="slds-form-element slds-m-bottom_xx-small">
-                              <label class="slds-form-element__label" style="display:block;">
-                                {entry.label}
-                                <template if:true={entry.description}>
-                                  <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
+                            </template>
+                            <template if:true={entry.isText}>
+                              <template if:true={entry.hasValue}>
+                                <template if:true={entry.isUrlValue}>
+                                  <button type="button" class="hardis-textlink hardis-url-link" title={entry.value} onclick={handleOpenDocUrl} data-doc-url={entry.value}>{entry.value}</button>
                                 </template>
-                              </label>
-                              <lightning-input
-                                type="toggle"
-                                data-key={entry.key}
-                                checked={entry.valueEdit}
-                                onchange={handleInputChange}
-                                oninput={handleInputChange}
-                                class="slds-m-bottom_xx-small"
-                                variant="label-hidden"
-                              ></lightning-input>
-                            </div>
-                          </template>
-                          <template if:true={entry.isText}>
-                            <div class="slds-form-element slds-m-bottom_xx-small">
-                              <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
-                                <span>{entry.label}</span>
-                                <template if:true={entry.description}>
-                                  <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
-                                </template>
-                              </label>
-                              <lightning-input
-                                type="text"
-                                data-key={entry.key}
-                                value={entry.valueEdit}
-                                onchange={handleInputChange}
-                                variant="label-hidden"
-                              ></lightning-input>
-                            </div>
-                          </template>
-                          <template if:true={entry.isNumber}>
-                            <div class="slds-form-element slds-m-bottom_xx-small">
-                              <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
-                                <span>{entry.label}</span>
-                                <template if:true={entry.description}>
-                                  <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
-                                </template>
-                              </label>
-                              <lightning-input
-                                type="number"
-                                data-key={entry.key}
-                                value={entry.valueEdit}
-                                onchange={handleInputChange}
-                                variant="label-hidden"
-                              ></lightning-input>
-                            </div>
-                          </template>
-                          <template if:true={entry.inherited}>
-                            <div class="slds-text-color_weak slds-text-body_small">{i18n.globalValueLabel} {entry.globalValue}</div>
-                          </template>
-                        </template>
-                        <template if:false={isEditMode}>
-                          <template if:true={entry.isBoolean}>
-                            <div class="slds-form-element slds-m-bottom_xx-small">
-                              <label class="slds-form-element__label" style="display:block;">
-                                {entry.label}
-                                <template if:true={entry.description}>
-                                  <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
-                                </template>
-                              </label>
-                              <lightning-input
-                                type="toggle"
-                                checked={entry.value}
-                                disabled
-                                class="slds-m-bottom_xx-small"
-                                variant="label-hidden"
-                              ></lightning-input>
-                            </div>
-                          </template>
-                          <template if:false={entry.isBoolean}>
-                            <div class="slds-form-element slds-m-bottom_xx-small">
-                              <label class="slds-form-element__label" style="display:flex;align-items:center;gap:0.25rem;">
-                                <span>{entry.label}</span>
-                                <template if:true={entry.description}>
-                                  <s-multiline-helptext content={entry.description} class="slds-icon-text-info"></s-multiline-helptext>
-                                </template>
-                              </label>
-                              <template if:true={entry.isArrayEnum}>
-                                <template if:true={entry.hasArrayEnumValues}>
-                                  <ul class="slds-list_dotted slds-m-left_medium">
-                                    <template for:each={entry.valueDisplay} for:item="item">
-                                      <li key={item}>{item}</li>
-                                    </template>
-                                  </ul>
-                                </template>
-                                <template if:false={entry.hasArrayEnumValues}>
-                                  <span class="slds-text-color_weak">{i18n.noneLabel}</span>
-                                </template>
-                              </template>
-                              <template if:true={entry.isArrayText}>
-                                <template if:true={entry.hasArrayTextValues}>
-                                  <ul class="slds-list_dotted slds-m-left_medium">
-                                    <template for:each={entry.valueDisplay} for:item="item">
-                                      <li key={item}>{item}</li>
-                                    </template>
-                                  </ul>
-                                </template>
-                                <template if:false={entry.hasArrayTextValues}>
-                                  <span class="slds-text-color_weak">{i18n.noneLabel}</span>
-                                </template>
-                              </template>
-                              <template if:true={entry.isArrayObject}>
-                                <template if:true={entry.hasArrayObjectValues}>
-                                  <lightning-datatable
-                                    key-field="_index"
-                                    data={entry.arrayObjectDatatableData}
-                                    column-widths-mode="auto"
-                                    columns={entry.arrayObjectDatatableColumns}
-                                    hide-checkbox-column
-                                    class="slds-m-top_x-small"
-                                  ></lightning-datatable>
-                                </template>
-                                <template if:false={entry.hasArrayObjectValues}>
-                                  <span class="slds-text-color_weak">{i18n.noneLabel}</span>
-                                </template>
-                              </template>
-                              <template if:true={entry.isEnum}>
-                                <template if:true={entry.value}>
-                                  <span class="slds-text-color_weak">{entry.valueDisplay}</span>
-                                </template>
-                                <template if:false={entry.value}>
-                                  <span class="slds-text-color_weak">{i18n.noneLabel}</span>
-                                </template>
-                              </template>
-                              <template if:true={entry.isText}>
-                                <template if:true={entry.hasValue}>
+                                <template if:false={entry.isUrlValue}>
                                   <span class="slds-text-color_weak">{entry.value}</span>
                                 </template>
-                                <template if:false={entry.hasValue}>
-                                  <span class="slds-text-color_weak">{i18n.noneLabel}</span>
-                                </template>
                               </template>
-                              <template if:true={entry.isNumber}>
-                                <template if:true={entry.hasValue}>
-                                  <span class="slds-text-color_weak">{entry.value}</span>
-                                </template>
-                                <template if:false={entry.hasValue}>
-                                  <span class="slds-text-color_weak">{i18n.noneLabel}</span>
-                                </template>
+                              <template if:false={entry.hasValue}>
+                                <span class="slds-text-color_weak hardis-not-set">{i18n.notDefined}</span>
                               </template>
-                            </div>
+                            </template>
+                            <template if:true={entry.isNumber}>
+                              <template if:true={entry.hasValue}>
+                                <span class="slds-text-color_weak">{entry.value}</span>
+                              </template>
+                              <template if:false={entry.hasValue}>
+                                <span class="slds-text-color_weak hardis-not-set">{i18n.notDefined}</span>
+                              </template>
+                            </template>
                           </template>
                           <template if:true={entry.inherited}>
-                            <span class="slds-badge slds-theme_info slds-m-left_x-small" title={i18n.inheritedFromGlobalConfig}>{i18n.inherited}</span>
+                            <span class="hardis-chip" title={i18n.inheritedFromGlobalConfig}>{i18n.inherited}</span>
                           </template>
                         </template>
                       </div>
-                      <template if:false={entry.isArrayObject}>
-                        <div class="slds-col slds-size_3-of-12 slds-text-align_right">
-                          <template if:true={entry.hasDocUrl}>
-                            <lightning-button
-                              variant="neutral"
-                              label={i18n.documentationLabel}
-                              icon-name="utility:link"
-                              icon-position="left"
-                              onclick={handleOpenDocUrl}
-                              data-doc-url={entry.docUrl}
-                              size="small"
-                            ></lightning-button>
-                          </template>
-                        </div>
-                      </template>
                     </div>
-                  </div>
-                </template>
-              </div>
-            </lightning-tab>
-          </template>
-        </lightning-tabset>
-        </lightning-card>
+                  </template>
+                  </template>
+                </div>
+              </lightning-tab>
+            </template>
+          </lightning-tabset>
+        </div>
       </template>
       </div>
       <!--
       <div class="slds-grid slds-grid_align-end slds-m-top_medium" data-key="bottom-btn-group">
         <template if:true={isEditMode}>
-          <lightning-button variant="brand" label="Save" onclick={handleSave} class="slds-m-right_small" data-button="bottom"></lightning-button>
+          <lightning-button variant="neutral" label="Save" onclick={handleSave} class="slds-m-right_small hardis-btn-tinted-blue" data-button="bottom"></lightning-button>
           <lightning-button variant="neutral" label="Cancel" onclick={handleCancel} data-button="bottom"></lightning-button>
         </template>
         <template if:false={isEditMode}>
-          <lightning-button variant="brand" label="Edit" onclick={handleEdit} data-button="bottom"></lightning-button>
+          <lightning-button class="hardis-btn-tinted-blue" variant="neutral" label="Edit" onclick={handleEdit} data-button="bottom"></lightning-button>
         </template>
       </div>
       -->

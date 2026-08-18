@@ -47,11 +47,6 @@ div.slds-scope[data-theme="dark"] {
 .slds-scope[data-theme] .panel-surface,
 .slds-scope[data-theme] .docs-section,
 .slds-scope[data-theme] .config-section,
-.slds-scope[data-theme] .header-content,
-.slds-scope[data-theme] .setup-summary-card,
-.slds-scope[data-theme] .status-card,
-.slds-scope[data-theme] .status-card.summary,
-.slds-scope[data-theme] .command-card,
 .slds-scope[data-theme] .pipeline-container,
 .slds-scope[data-theme] .slds-modal__header,
 .slds-scope[data-theme] .slds-modal__footer,
@@ -101,125 +96,9 @@ div.slds-scope[data-theme="dark"] {
   flex: 1 1 auto !important;
   position: relative !important;
 }
-/* Header Section */
-.header-section {
-    margin-bottom: 2rem;
-}
-
-.header-content {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.5rem 0.75rem; /* smaller header padding */
-    background: var(--slds-g-color-neutral-base-100);
-    border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-    border: 1px solid var(--slds-g-color-neutral-base-90);
-    margin-bottom: 0.6rem; /* reduce space below header */
-}
-.header-content.no-bg {
-    background: transparent !important;
-    box-shadow: none;
-    border: none;
-    padding: 0.5rem 0.25rem;
-    margin-bottom: 0;
-}
-
-.header-text {
-    flex-grow: 1;
-}
-
-.header-title {
-    font-size: 1.5rem;
-    font-weight: 700;
-    margin: 0 0 0.25rem 0;
-    line-height: 1.2;
-    padding-left: 1rem;
-}
-.header-title.single-line {
-    margin-top: .9rem;
-}
-.header-content .header-title.single-line {
-    margin-top: .5rem;
-}
-
-.header-subtitle {
-    font-size: 0.9rem;
-    margin: 0;
-    line-height: 1.3;
-    padding-left: 1rem;
-}
-.header-content .header-title,
-.header-content .header-subtitle {
-    padding-left: 0;
-}
-
-@media (max-width: 768px) {    
-    .header-content {
-        flex-direction: column;
-        text-align: center;
-    }
-    /* .header-content { padding: 0.75rem; gap: 0.75rem; margin: 0 } */
-}
-
-.header-icon-container {
-    width: 56px;
-    height: 56px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--slds-g-color-neutral-base-100) !important;
-    flex-shrink: 0;
-}
-
-.header-icon-container.small {
-    width: 30px;
-    height: 30px;
-    border-radius: 5px;
-}
-.header-icon-container, .feature-icon-container, .icon-container {
-    background: linear-gradient(135deg, #706e6b 0%, #514f4d 100%);
-    box-shadow: 0 3px 10px rgba(112, 110, 107, 0.25);
-    border: 2px solid rgba(255, 255, 255, 0.2);
-}
-.header-icon-container.green, .feature-icon-container.green, .icon-container.green {
-    background: linear-gradient(135deg, var(--slds-g-color-palette-green-60) 0%, var(--slds-g-color-palette-green-40) 100%);
-    /* background: linear-gradient(135deg, #06a59a 0%, #045a55 100%); */
-    box-shadow: 0 2px 8px rgba(84, 164, 166, 0.25);
-}
-.header-icon-container.teal, .feature-icon-container.teal, .icon-container.teal {
-    background: linear-gradient(135deg, var(--slds-g-color-palette-teal-60) 0%, var(--slds-g-color-palette-teal-40) 100%);
-    box-shadow: 0 2px 8px rgba(80, 185, 187, 0.25);
-}
-.header-icon-container.gray, .feature-icon-container.gray, .icon-container.gray {
-    background: linear-gradient(135deg, var(--slds-g-color-palette-neutral-60) 0%, var(--slds-g-color-palette-neutral-40) 100%);
-    box-shadow: 0 3px 10px rgba(112, 110, 107, 0.25);
-}
-.header-icon-container.blue, .feature-icon-container.blue, .icon-container.blue {
-    background: linear-gradient(135deg, var(--slds-g-color-palette-electric-blue-60) 0%, var(--slds-g-color-palette-electric-blue-40) 100%);
-    box-shadow: 0 3px 10px rgba(21, 137, 238, 0.25);
-}
-.header-icon-container.purple, .feature-icon-container.purple, .icon-container.purple {
-    background: linear-gradient(135deg, var(--slds-g-color-palette-purple-60) 0%, var(--slds-g-color-palette-purple-30) 100%);
-    box-shadow: 0 3px 10px rgba(159, 79, 234, 0.25);
-}
-.header-icon-container.orange, .feature-icon-container.orange, .icon-container.orange {
-    background: linear-gradient(135deg, var(--slds-g-color-palette-hot-orange-70) 0%, var(--slds-g-color-palette-hot-orange-50) 100%);
-    box-shadow: 0 3px 10px rgba(255, 107, 53, 0.25);
-}
-.header-icon-container.yellow, .feature-icon-container.yellow, .icon-container.yellow {
-    background: linear-gradient(135deg, var(--slds-g-color-palette-yellow-80) 0%, var(--slds-g-color-palette-yellow-50) 100%);
-    box-shadow: 0 3px 10px rgba(255, 180, 57, 0.25);
-}
-.header-icon-container lightning-icon {
-    background-color: transparent !important;
-}
-
 /* Titles and subtle text */
 .slds-scope[data-theme] .title,
 .slds-scope[data-theme] .section-title,
-.slds-scope[data-theme] .header-title,
 .slds-scope[data-theme] .command-title,
 .slds-scope[data-theme] .status-title,
 .slds-scope[data-theme] .slds-card__header-title,
@@ -243,7 +122,6 @@ div.slds-scope[data-theme="dark"] {
 
 .slds-scope[data-theme="light"] .muted,
 .slds-scope[data-theme="light"] .section-subtitle,
-.slds-scope[data-theme="light"] .header-subtitle,
 .slds-scope[data-theme="light"] .docs-text,
 .slds-scope[data-theme="light"] .slds-form-element__label,
 .slds-scope[data-theme="light"] .slds-tabs_default__item,
@@ -258,7 +136,6 @@ div.slds-scope[data-theme="dark"] {
 
 .slds-scope[data-theme="dark"] .muted,
 .slds-scope[data-theme="dark"] .section-subtitle,
-.slds-scope[data-theme="dark"] .header-subtitle,
 .slds-scope[data-theme="dark"] .docs-text,
 .slds-scope[data-theme="dark"] .slds-form-element__label,
 .slds-scope[data-theme="dark"] .slds-tabs_default__item,
@@ -305,78 +182,17 @@ div.slds-scope[data-theme="dark"] {
 .slds-scope[data-theme="dark"] .log-container::-webkit-scrollbar-thumb { background: #3a3a3a; border-radius: 4px; }
 .slds-scope[data-theme="dark"] .log-container::-webkit-scrollbar-thumb:hover { background: #505050; }
 
-/* --- Semantic accents for Org Monitoring (and reusable elsewhere) --- */
-
-/* Header icon uses brand gradient */
-/*
-.slds-scope[data-theme="light"] .header-icon-container {
-  background: linear-gradient(135deg, #54a4a6 0%, #026d71 100%);
-  border-color: rgba(255, 255, 255, 0.2);
-}
-.slds-scope[data-theme="dark"] .header-icon-container {
-  background: linear-gradient(135deg, #54a4a6 0%, #026d71 100%);
-  border-color: rgba(255, 255, 255, 0.2);
-}
-  */
-
-/* Status card left accents */
-.slds-scope[data-theme="light"] .status-card.installed { border-left-color: #04844b; }
-.slds-scope[data-theme="dark"] .status-card.installed { border-left-color: #27ae60; }
-
-.slds-scope[data-theme="light"] .status-card.not-installed { border-left-color: #ff6b35; }
-.slds-scope[data-theme="dark"] .status-card.not-installed { border-left-color: #ff6b35; }
-
-.slds-scope[data-theme="light"] .status-card.cicd { border-left-color: var(--slds-g-color-palette-electric-blue-50); }
-.slds-scope[data-theme="dark"] .status-card.cicd { border-left-color: var(--slds-g-color-palette-electric-blue-50); }
-
-/* Status icon containers */
-.slds-scope .status-icon-container.info { background: linear-gradient(135deg, var(--slds-g-color-palette-electric-blue-50) 0%, var(--slds-g-color-palette-electric-blue-40) 100%); }
-.slds-scope .status-icon-container.success { background: linear-gradient(135deg, #04844b 0%, #037837 100%); }
-.slds-scope .status-icon-container.warning { background: linear-gradient(135deg, #ff6b35 0%, #d4471b 100%); }
-.slds-scope .status-icon-container,
-.slds-scope .status-icon-container.info,
-.slds-scope .status-icon-container.success,
-.slds-scope .status-icon-container.warning {
-  color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.3);
-}
-
-/* Command card icon accents */
-.slds-scope .command-icon-container.backup { background: linear-gradient(135deg, var(--slds-g-color-palette-electric-blue-50) 0%, var(--slds-g-color-palette-electric-blue-40) 100%); }
-.slds-scope .command-icon-container.audit { background: linear-gradient(135deg, var(--slds-g-color-palette-purple-40) 0%, var(--slds-g-color-palette-purple-30) 100%); }
-.slds-scope .command-icon-container.tests { background: linear-gradient(135deg, #06a59a 0%, #045a55 100%); }
-.slds-scope .command-icon-container.limits { background: linear-gradient(135deg, #ff6b35 0%, #d4471b 100%); }
-.slds-scope .command-icon-container.updates { background: linear-gradient(135deg, #ffb439 0%, #e6930f 100%); }
-.slds-scope .command-icon-container.security { background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); }
-.slds-scope .command-icon-container.legacy { background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%); }
-.slds-scope .command-icon-container.users { background: linear-gradient(135deg, #3498db 0%, #2980b9 100%); }
-.slds-scope .command-icon-container.licenses { background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%); }
-.slds-scope .command-icon-container.apex { background: linear-gradient(135deg, #ff6b35 0%, #d4471b 100%); }
-.slds-scope .command-icon-container.connected-apps { background: linear-gradient(135deg, #2980b9 0%, #1f618d 100%); }
-.slds-scope .command-icon-container.metadata-access { background: linear-gradient(135deg, #8e44ad 0%, #6c3483 100%); }
-.slds-scope .command-icon-container.unused-metadata { background: linear-gradient(135deg, #27ae60 0%, #1e8449 100%); }
-.slds-scope .command-icon-container { color: #ffffff; border-color: rgba(255, 255, 255, 0.2); }
-
-/* Pipeline icon accents */
-.slds-scope .command-icon-container.new-story { background: linear-gradient(135deg, var(--slds-g-color-palette-electric-blue-50) 0%, var(--slds-g-color-palette-electric-blue-40) 100%); }
-.slds-scope .command-icon-container.pull-action { background: linear-gradient(135deg, #06a59a 0%, #045a55 100%); }
-.slds-scope .command-icon-container.package-action { background: linear-gradient(135deg, var(--slds-g-color-palette-purple-40) 0%, var(--slds-g-color-palette-purple-30) 100%); }
-.slds-scope .command-icon-container.save-action { background: linear-gradient(135deg, #27ae60 0%, #1e8449 100%); }
-
 /* Additional command execution structural styles */
 .log-message {
   word-break: break-word;
   white-space: pre-wrap;
 }
 
-.slds-scope[data-theme="dark"] lightning-input,
-.slds-scope[data-theme="dark"] lightning-combobox {
-    color: #e6eef9;
-}
-
-.slds-scope[data-theme="dark"] lightning-helptext,
-.slds-scope[data-theme="dark"] lightning-helptext::part(icon) {
-    color: #cbd5e1;
+lightning-input,
+lightning-combobox,
+lightning-helptext,
+lightning-helptext::part(icon) {
+    color: var(--slds-g-color-neutral-base-10);
 }
 
 /* ------------------------------------------------------------------ */
@@ -534,6 +350,16 @@ div.slds-scope[data-theme="dark"] {
   background: var(--slds-g-color-neutral-base-95);
   color: var(--slds-g-color-neutral-base-30);
 }
+/* Static informational pill: same blue family as "running" but WITHOUT the
+   pulsing dot animation. Use for facts (operation types, file roles...);
+   hardis-status-running is reserved for genuinely in-progress activity. */
+.slds-scope[data-theme] .hardis-pill.hardis-status-info {
+  background: var(--slds-g-color-palette-blue-90);
+  color: var(--slds-g-color-palette-blue-40);
+}
+.slds-scope[data-theme] .hardis-pill-dot.hardis-status-info {
+  background: var(--slds-g-color-palette-blue-50);
+}
 /* Standalone dots (diagram legend, mermaid feature nodes) */
 .slds-scope[data-theme] .hardis-pill-dot.hardis-status-success {
   background: var(--slds-g-color-palette-green-50);
@@ -649,6 +475,23 @@ div.slds-scope[data-theme="dark"] {
   white-space: nowrap;
 }
 
+/* File/path cells in datatables: one line, editor-style monospace. Lives here
+   (not in component CSS) because synthetic-shadow scoping prevents a
+   component's stylesheet from reaching cells inside s-hardis-datatable. */
+.slds-scope[data-theme] .hardis-file-cell {
+  white-space: nowrap;
+  font-family: ui-monospace, "Cascadia Code", Consolas, Menlo, monospace;
+  font-size: 0.8rem;
+}
+
+/* "+ PR" call-to-action chip emitted by branchStrategyMermaidBuilder.ts in
+   the DevOps Pipeline diagram (the class is composed in TypeScript — do not
+   delete as unused based on an HTML-only search). */
+.slds-scope[data-theme] .hardis-chip-create {
+  background: var(--slds-g-color-palette-blue-90);
+  color: var(--slds-g-color-palette-blue-40);
+}
+
 /* ------------------------------------------------------------------ */
 /* Modal polish (all webviews)                                        */
 /* Brand accent strip on top of the modal container + optional title  */
@@ -692,12 +535,22 @@ div.slds-scope[data-theme="dark"] {
 }
 
 /* ------------------------------------------------------------------ */
-/* Tinted green action button (release notes, retrieve...)            */
-/* Same recipe as the rf-type-* buttons: neutral SLDS button base +   */
-/* light-dark() palette tokens, so it stays readable in both themes   */
-/* (filled variant="success" buttons do not adapt to VS Code themes). */
+/* Tinted action buttons                                              */
+/*                                                                    */
+/* The ONLY way to give a button a color in this extension. Filled    */
+/* SLDS variants (brand / success / destructive) hardcode their own   */
+/* background and text color, so they are unreadable in one of the    */
+/* two VS Code themes. A tinted button is a neutral SLDS button whose */
+/* surface, border and label come from light-dark() palette tokens.   */
+/*                                                                    */
+/*   <lightning-button variant="neutral" class="hardis-btn-tinted-blue">
+/*   <button class="slds-button slds-button_neutral hardis-btn-tinted-blue">
+/*                                                                    */
+/* blue = primary action, green = positive/confirm, red = destructive,*/
+/* amber = caution. Everything else stays a plain neutral button.     */
 /* ------------------------------------------------------------------ */
-.slds-scope[data-theme] .hardis-btn-tinted-green .slds-button {
+.slds-scope[data-theme] .hardis-btn-tinted-green .slds-button,
+.slds-scope[data-theme] .slds-button.hardis-btn-tinted-green {
   background: var(--slds-g-color-palette-green-90);
   border-color: var(--slds-g-color-palette-green-40);
   color: var(--slds-g-color-palette-green-30);
@@ -706,17 +559,21 @@ div.slds-scope[data-theme="dark"] {
     border-color 0.12s ease,
     box-shadow 0.12s ease;
 }
-.slds-scope[data-theme] .hardis-btn-tinted-green .slds-button .slds-button__icon {
+.slds-scope[data-theme] .hardis-btn-tinted-green .slds-button .slds-button__icon,
+.slds-scope[data-theme] .slds-button.hardis-btn-tinted-green .slds-button__icon {
   fill: currentColor;
 }
 .slds-scope[data-theme] .hardis-btn-tinted-green .slds-button:hover,
-.slds-scope[data-theme] .hardis-btn-tinted-green .slds-button:focus {
+.slds-scope[data-theme] .hardis-btn-tinted-green .slds-button:focus,
+.slds-scope[data-theme] .slds-button.hardis-btn-tinted-green:hover,
+.slds-scope[data-theme] .slds-button.hardis-btn-tinted-green:focus {
   border-color: var(--slds-g-color-palette-green-30);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14);
 }
 
-/* Blue-tinted neutral button (same recipe as .hardis-btn-tinted-green) */
-.slds-scope[data-theme] .hardis-btn-tinted-blue .slds-button {
+/* Blue-tinted neutral button: the primary action of a panel */
+.slds-scope[data-theme] .hardis-btn-tinted-blue .slds-button,
+.slds-scope[data-theme] .slds-button.hardis-btn-tinted-blue {
   background: var(--slds-g-color-palette-cloud-blue-90);
   border-color: var(--slds-g-color-palette-cloud-blue-40);
   color: var(--slds-g-color-palette-cloud-blue-30);
@@ -725,12 +582,61 @@ div.slds-scope[data-theme="dark"] {
     border-color 0.12s ease,
     box-shadow 0.12s ease;
 }
-.slds-scope[data-theme] .hardis-btn-tinted-blue .slds-button .slds-button__icon {
+.slds-scope[data-theme] .hardis-btn-tinted-blue .slds-button .slds-button__icon,
+.slds-scope[data-theme] .slds-button.hardis-btn-tinted-blue .slds-button__icon {
   fill: currentColor;
 }
 .slds-scope[data-theme] .hardis-btn-tinted-blue .slds-button:hover,
-.slds-scope[data-theme] .hardis-btn-tinted-blue .slds-button:focus {
+.slds-scope[data-theme] .hardis-btn-tinted-blue .slds-button:focus,
+.slds-scope[data-theme] .slds-button.hardis-btn-tinted-blue:hover,
+.slds-scope[data-theme] .slds-button.hardis-btn-tinted-blue:focus {
   border-color: var(--slds-g-color-palette-cloud-blue-30);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14);
+}
+
+/* Red-tinted neutral button: destructive action (delete, forget, remove) */
+.slds-scope[data-theme] .hardis-btn-tinted-red .slds-button,
+.slds-scope[data-theme] .slds-button.hardis-btn-tinted-red {
+  background: var(--slds-g-color-palette-red-90);
+  border-color: var(--slds-g-color-palette-red-40);
+  color: var(--slds-g-color-palette-red-30);
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease,
+    box-shadow 0.12s ease;
+}
+.slds-scope[data-theme] .hardis-btn-tinted-red .slds-button .slds-button__icon,
+.slds-scope[data-theme] .slds-button.hardis-btn-tinted-red .slds-button__icon {
+  fill: currentColor;
+}
+.slds-scope[data-theme] .hardis-btn-tinted-red .slds-button:hover,
+.slds-scope[data-theme] .hardis-btn-tinted-red .slds-button:focus,
+.slds-scope[data-theme] .slds-button.hardis-btn-tinted-red:hover,
+.slds-scope[data-theme] .slds-button.hardis-btn-tinted-red:focus {
+  border-color: var(--slds-g-color-palette-red-30);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14);
+}
+
+/* Amber-tinted neutral button: action that needs attention (upgrade, fix) */
+.slds-scope[data-theme] .hardis-btn-tinted-amber .slds-button,
+.slds-scope[data-theme] .slds-button.hardis-btn-tinted-amber {
+  background: var(--slds-g-color-palette-orange-90);
+  border-color: var(--slds-g-color-palette-orange-40);
+  color: var(--slds-g-color-palette-orange-30);
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease,
+    box-shadow 0.12s ease;
+}
+.slds-scope[data-theme] .hardis-btn-tinted-amber .slds-button .slds-button__icon,
+.slds-scope[data-theme] .slds-button.hardis-btn-tinted-amber .slds-button__icon {
+  fill: currentColor;
+}
+.slds-scope[data-theme] .hardis-btn-tinted-amber .slds-button:hover,
+.slds-scope[data-theme] .hardis-btn-tinted-amber .slds-button:focus,
+.slds-scope[data-theme] .slds-button.hardis-btn-tinted-amber:hover,
+.slds-scope[data-theme] .slds-button.hardis-btn-tinted-amber:focus {
+  border-color: var(--slds-g-color-palette-orange-30);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.14);
 }
 
@@ -739,6 +645,11 @@ div.slds-scope[data-theme="dark"] {
 .slds-scope[data-theme] {
   --hardis-brand-gradient-start: light-dark(#0aa2dd, #37bee8);
   --hardis-brand-gradient-end: light-dark(#7b2ff7, #cb65ff);
+  /* Elevation tokens: the only box-shadows allowed in component CSS.
+     Dark theme needs a stronger alpha to read against near-black surfaces. */
+  --hardis-shadow-sm: 0 1px 3px light-dark(rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.45));
+  --hardis-shadow-md: 0 4px 12px light-dark(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.5));
+  --hardis-shadow-lg: 0 10px 30px light-dark(rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.6));
 }
 
 /* Soft-tint icon tiles: tinted background + saturated icon of the same hue.
@@ -838,6 +749,203 @@ div.slds-scope[data-theme="dark"] {
 .hardis-tile.alerts {
   background: var(--slds-g-color-palette-red-90);
   color: var(--slds-g-color-palette-red-40);
+}
+
+/* ---- Page header kit (every panel starts with the same header) --------
+   Anatomy:
+   <div class="hardis-page-head">
+     <div class="hardis-tile featured cyan"><lightning-icon .../></div>
+     <div class="hardis-page-head-text">
+       <h1 class="hardis-page-title">Panel name</h1>
+       <p class="hardis-page-subtitle">What the panel is for</p>
+     </div>
+     <div class="hardis-page-head-actions">buttons…</div>
+   </div>
+   Never rebuild a panel header with custom classes: the tile hue is the only
+   thing that changes from one panel to the next. */
+
+.hardis-page-head {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.8rem 1rem;
+  margin-bottom: 1rem;
+  background: var(--slds-g-color-neutral-base-100);
+  border: 1px solid var(--slds-g-color-neutral-base-90);
+  border-radius: 12px;
+}
+.hardis-page-head.flush {
+  /* Header of a panel that already sits inside a card / modal */
+  background: transparent;
+  border: none;
+  padding: 0.25rem 0;
+}
+.hardis-page-head-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.hardis-page-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: var(--slds-g-color-neutral-base-10);
+}
+.hardis-page-subtitle {
+  margin: 0.15rem 0 0;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  color: var(--slds-g-color-neutral-base-50);
+}
+.hardis-page-head-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+@media (max-width: 768px) {
+  .hardis-page-head {
+    flex-wrap: wrap;
+  }
+  .hardis-page-head-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+/* Inline note / callout inside a panel. Replaces the SLDS alert bars, whose
+   "texture" themes are a flat dark band in both VS Code themes. */
+.hardis-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.6rem 0.8rem;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  background: var(--slds-g-color-palette-cloud-blue-90);
+  border: 1px solid var(--slds-g-color-palette-cloud-blue-40);
+  color: var(--slds-g-color-palette-cloud-blue-30);
+}
+.hardis-note.warning {
+  background: var(--slds-g-color-palette-orange-90);
+  border-color: var(--slds-g-color-palette-orange-40);
+  color: var(--slds-g-color-palette-orange-30);
+}
+.hardis-note.error {
+  background: var(--slds-g-color-palette-red-90);
+  border-color: var(--slds-g-color-palette-red-40);
+  color: var(--slds-g-color-palette-red-30);
+}
+.hardis-note.success {
+  background: var(--slds-g-color-palette-green-90);
+  border-color: var(--slds-g-color-palette-green-40);
+  color: var(--slds-g-color-palette-green-30);
+}
+.hardis-note p {
+  margin: 0;
+}
+.hardis-note lightning-icon {
+  --slds-c-icon-color-foreground: currentColor;
+  --slds-c-icon-color-foreground-default: currentColor;
+  color: inherit !important;
+  flex-shrink: 0;
+}
+
+/* Panel body: the surface that holds the content of a panel under its header.
+   Replaces <lightning-card>, whose header/footer chrome we never use. */
+.hardis-panel-body {
+  background: var(--slds-g-color-neutral-base-100);
+  border: 1px solid var(--slds-g-color-neutral-base-90);
+  border-radius: 12px;
+  padding: 0.9rem 1rem;
+}
+.hardis-panel-body + .hardis-panel-body {
+  margin-top: 0.9rem;
+}
+
+/* ---- Status card kit (a row of "one thing + its state + its action") --
+   Anatomy:
+   <div class="hardis-status-grid">
+     <div class="hardis-status-card ok">
+       <div class="hardis-tile green"><lightning-icon .../></div>
+       <div class="hardis-status-content">
+         <h3 class="hardis-status-title">Name <span class="hardis-status-meta">1.2.3</span></h3>
+         <p class="hardis-status-desc">What it is</p>
+       </div>
+       <div class="hardis-status-actions">buttons…</div>
+     </div>
+   </div>
+   States: ok / warning / error / info / (none) — they only color the left
+   accent, the tile carries the same meaning through its hue. */
+
+.hardis-status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 430px), 1fr));
+  gap: 0.65rem;
+}
+.hardis-status-grid.single-column {
+  grid-template-columns: 1fr;
+}
+.hardis-status-card {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.7rem 0.9rem;
+  background: var(--slds-g-color-neutral-base-100);
+  border: 1px solid var(--slds-g-color-neutral-base-90);
+  border-left: 4px solid var(--slds-g-color-neutral-base-80);
+  border-radius: 10px;
+}
+.hardis-status-card.ok {
+  border-left-color: var(--slds-g-color-palette-green-40);
+}
+.hardis-status-card.warning {
+  border-left-color: var(--slds-g-color-palette-orange-40);
+}
+.hardis-status-card.error {
+  border-left-color: var(--slds-g-color-palette-red-40);
+}
+.hardis-status-card.info {
+  border-left-color: var(--slds-g-color-palette-cloud-blue-40);
+}
+.hardis-status-content {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.hardis-status-title {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--slds-g-color-neutral-base-10);
+}
+.hardis-status-meta {
+  font-size: 0.82rem;
+  font-weight: 400;
+  color: var(--slds-g-color-neutral-base-50);
+}
+.hardis-status-desc {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.35;
+  color: var(--slds-g-color-neutral-base-50);
+}
+.hardis-status-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.35rem;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 /* ---- Section + card kit (Welcome-page design, reusable everywhere) ----
@@ -976,6 +1084,303 @@ div.slds-scope[data-theme="dark"] {
 .hardis-card.clickable:focus-visible .hardis-card-arrow {
   opacity: 1;
   transform: translateX(0);
+}
+
+/* Selection state for card lists (workspace rails, pickable catalogs).
+   Accent inset + tinted surface; pair with aria-pressed/aria-selected. */
+.hardis-card.selected {
+  border-color: var(--slds-g-color-palette-cloud-blue-40);
+  background: var(--slds-g-color-palette-cloud-blue-95);
+  box-shadow: inset 3px 0 0 var(--slds-g-color-palette-cloud-blue-40);
+}
+
+/* Right-aligned action slot inside a .hardis-group-label: small LABELED
+   buttons (never icon-only gray squares). The ::after hairline keeps its
+   place between the label text and the actions through flex order. */
+.hardis-group-label::after {
+  order: 1;
+}
+.hardis-group-actions {
+  order: 2;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 400;
+}
+/* Buttons in a group-label action slot are compact: one text line, small type,
+   reduced height — they annotate a section, they are not the page actions. */
+.hardis-group-actions .slds-button {
+  font-size: 0.74rem;
+  line-height: 1.65rem;
+  padding: 0 0.6rem;
+  white-space: nowrap;
+}
+
+/* ---- Prop grid: definition list as a responsive grid ------------------
+   Anatomy:
+   <div class="hardis-prop-grid">
+     <div class="hardis-prop">
+       <div class="hardis-prop-key">Folder field</div>
+       <div class="hardis-prop-value mono">APXTConga4__Key__c</div>
+     </div>
+   </div>
+   Replaces the private .properties-grid / .info-grid kits. */
+.hardis-prop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 0.7rem 1.6rem;
+}
+.hardis-prop-key {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--slds-g-color-neutral-base-50);
+}
+.hardis-prop-value {
+  font-size: 0.85rem;
+  color: var(--slds-g-color-neutral-base-10);
+  margin-top: 1px;
+  overflow-wrap: anywhere;
+}
+.hardis-prop-value.mono {
+  font-family: ui-monospace, "Cascadia Code", Consolas, Menlo, monospace;
+  font-size: 0.76rem;
+}
+
+/* ---- Field row: one setting = name + visible help left, control right --
+   Anatomy:
+   <div class="hardis-field-row">
+     <div class="hardis-field-text">
+       <div class="hardis-field-label">Name <a class="hardis-textlink">Docs</a></div>
+       <div class="hardis-field-help">One-line description, always visible.</div>
+     </div>
+     <div class="hardis-field-control">input / toggle / pill / chips</div>
+   </div>
+   The VS Code settings pattern; replaces inline-styled labels + hidden
+   info bubbles. In read-only views the control is a pill/chip/link. */
+.hardis-field-row {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 0.7rem 0.15rem;
+  border-bottom: 1px solid var(--slds-g-color-neutral-base-95);
+}
+.hardis-field-row:last-child {
+  border-bottom: none;
+}
+.hardis-field-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.hardis-field-label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--slds-g-color-neutral-base-10);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.hardis-field-help {
+  font-size: 0.76rem;
+  color: var(--slds-g-color-neutral-base-50);
+  margin-top: 1px;
+  max-width: 62ch;
+}
+/* Inline flex label: SLDS form label + trailing helptext icon on one line.
+   Replaces the copy-pasted style="display:flex;align-items:center;gap:.25rem". */
+.hardis-label-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.hardis-field-control {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  max-width: min(50%, 340px);
+}
+@media (max-width: 640px) {
+  .hardis-field-row {
+    flex-wrap: wrap;
+  }
+  .hardis-field-control {
+    max-width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+/* ---- Empty state: featured tile + title + one sentence + one action ---
+   Anatomy:
+   <div class="hardis-empty">
+     <div class="hardis-tile featured amber">…icon…</div>
+     <h3 class="hardis-empty-title">No workspaces yet</h3>
+     <p class="hardis-empty-desc">What a workspace is, in one sentence.</p>
+     <div class="hardis-empty-actions">primary button</div>
+   </div> */
+.hardis-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.6rem;
+  padding: 2rem 1.25rem;
+}
+.hardis-empty-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--slds-g-color-neutral-base-10);
+}
+.hardis-empty-desc {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--slds-g-color-neutral-base-50);
+  max-width: 44ch;
+}
+.hardis-empty-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+/* ---- Split layout: selectable rail + detail pane (workbenches) --------
+   Anatomy:
+   <div class="hardis-split">
+     <div class="hardis-panel-body hardis-split-rail">…card list…</div>
+     <div class="hardis-panel-body hardis-split-main">…detail…</div>
+   </div>
+   Stacks vertically under 900px. */
+.hardis-split {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+.hardis-split-rail {
+  flex: 0 0 300px;
+  min-width: 260px;
+}
+.hardis-split-main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+@media (max-width: 900px) {
+  .hardis-split {
+    flex-direction: column;
+  }
+  .hardis-split-rail {
+    flex: 1 1 auto;
+    width: 100%;
+  }
+}
+
+/* Chip row: a wrapping run of .hardis-chip facts under a title or query. */
+.hardis-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.4rem 0 0.2rem;
+}
+
+/* ---- Workbench form & modal polish (scoped: root carries .hardis-workbench)
+   Shared by the Data and Files Import/Export Workbenches — previously two
+   verbatim copies in their component stylesheets. Scoped under the marker
+   class so the generic slds-* selectors do not leak into other panels. */
+.hardis-workbench .slds-grid_vertical-align-center {
+  align-items: center;
+}
+.hardis-workbench .slds-grid_vertical-align-center lightning-input {
+  margin-bottom: 0;
+}
+.hardis-workbench .slds-grid_vertical-align-center s-multiline-helptext {
+  flex-shrink: 0;
+  align-self: center;
+}
+.hardis-workbench fieldset .slds-form-element .slds-grid {
+  min-height: 2.5rem;
+  align-items: center;
+}
+.hardis-workbench .slds-form-element {
+  margin-bottom: 1rem;
+}
+.hardis-workbench .slds-modal__content .slds-form-element {
+  margin-bottom: 0.75rem;
+}
+.hardis-workbench .slds-modal__content .slds-p-around_medium {
+  padding: 1rem;
+}
+.hardis-workbench .slds-modal__content .slds-grid.slds-gutters {
+  margin-bottom: 0.5rem;
+}
+.hardis-workbench .slds-modal__content .slds-form-element .slds-grid {
+  margin-bottom: 0.5rem;
+}
+.hardis-workbench .slds-form-element__label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.hardis-workbench .slds-form-element__label s-multiline-helptext {
+  margin-left: auto;
+}
+.hardis-workbench .slds-grid.slds-grid_align-spread s-multiline-helptext {
+  margin-left: auto;
+}
+.hardis-workbench button[disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.hardis-workbench .slds-modal__container {
+  max-width: 90%;
+  width: 800px;
+  max-height: 90vh;
+  height: auto;
+}
+.hardis-workbench .slds-modal__content {
+  max-height: 60vh;
+  height: auto;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.hardis-workbench .slds-modal__content::-webkit-scrollbar {
+  width: 8px;
+}
+.hardis-workbench .slds-modal__content::-webkit-scrollbar-track {
+  border-radius: 4px;
+  background: var(--slds-g-color-neutral-base-95);
+}
+.hardis-workbench .slds-modal__content::-webkit-scrollbar-thumb {
+  border-radius: 4px;
+  background: var(--slds-g-color-neutral-base-80);
+  border-color: var(--slds-g-color-neutral-base-90);
+}
+.hardis-workbench .slds-modal__content::-webkit-scrollbar-thumb:hover {
+  background: var(--slds-g-color-neutral-base-50);
+}
+@media (max-width: 768px) {
+  .hardis-workbench .slds-modal__container {
+    width: 95%;
+    max-width: none;
+    max-height: 95vh;
+  }
+  .hardis-workbench .slds-modal__content {
+    max-height: 75vh;
+  }
+  .hardis-workbench .slds-form-element__label {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+  .hardis-workbench .slds-form-element__label s-multiline-helptext {
+    margin-left: 0;
+  }
 }
 
 /* ==================================================================== */
@@ -1332,6 +1737,91 @@ div.slds-scope[data-theme="dark"] {
   margin: 0.25rem 0.75rem 0.5rem 0.3rem;
   max-width: 100%;
   overflow-x: auto;
+}
+
+/* --- Right click menu of s-hardis-datatable cells (built in JS, no template) --- */
+.slds-scope[data-theme] .hardis-context-menu {
+  position: fixed;
+  z-index: 9500;
+  min-width: 9rem;
+  padding: 0.25rem;
+  border: 1px solid var(--slds-g-color-neutral-base-80);
+  border-radius: 6px;
+  background: var(--slds-g-color-neutral-base-100);
+  box-shadow: var(--slds-g-shadow-3);
+}
+.slds-scope[data-theme] .hardis-context-menu-item {
+  display: block;
+  width: 100%;
+  padding: 0.35rem 0.6rem;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--slds-g-color-neutral-base-20);
+  font-size: 0.78rem;
+  text-align: left;
+  cursor: pointer;
+}
+.slds-scope[data-theme] .hardis-context-menu-item:hover,
+.slds-scope[data-theme] .hardis-context-menu-item:focus-visible {
+  background: var(--slds-g-color-neutral-base-95);
+}
+
+/* --- Big JSON or text payloads: preview in the timeline, full content in a modal --- */
+.slds-scope[data-theme] .hardis-content-preview {
+  margin: 0.25rem 0.75rem 0.5rem 0.3rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--slds-g-color-neutral-base-80);
+  border-radius: 6px;
+  background: var(--slds-g-color-neutral-base-95);
+  cursor: pointer;
+  max-width: 100%;
+  overflow: hidden;
+}
+.slds-scope[data-theme] .hardis-content-preview:hover,
+.slds-scope[data-theme] .hardis-content-preview:focus-visible {
+  border-color: var(--slds-g-color-palette-blue-50);
+}
+/* Text lines keep their beginning in the log line itself: only the link is displayed */
+.slds-scope[data-theme] .hardis-content-preview.link-only {
+  border: none;
+  background: none;
+  padding: 0.1rem 0;
+  margin: 0 0.75rem 0.35rem 0.3rem;
+}
+.slds-scope[data-theme] .hardis-content-preview-text {
+  margin: 0;
+  font-family: ui-monospace, "Cascadia Code", Consolas, Menlo, monospace;
+  font-size: 0.72rem;
+  color: var(--slds-g-color-neutral-base-30);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 7rem;
+  overflow: hidden;
+}
+.slds-scope[data-theme] .hardis-content-preview-more {
+  display: inline-block;
+  margin-top: 0.3rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--slds-g-color-palette-blue-40);
+}
+/* The content window uses most of the screen: a deployment result is long and wide */
+.slds-scope[data-theme] .hardis-content-modal .slds-modal__container {
+  width: 92vw;
+  max-width: 92vw;
+}
+.slds-scope[data-theme] .hardis-content-modal .slds-modal__content {
+  max-height: 78vh;
+}
+.slds-scope[data-theme] .hardis-content-modal-text {
+  margin: 0;
+  font-family: ui-monospace, "Cascadia Code", Consolas, Menlo, monospace;
+  font-size: 0.75rem;
+  color: var(--slds-g-color-neutral-base-20);
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow: auto;
 }
 
 /* --- Slim progress bar (progressStart/Step/End events) --- */

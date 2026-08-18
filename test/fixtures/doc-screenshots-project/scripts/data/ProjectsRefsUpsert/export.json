@@ -1,0 +1,23 @@
+{
+  "sfdxHardisLabel": "Project reference data",
+  "sfdxHardisDescription": "Upsert reference Projects, Milestones and their related Contacts between orgs",
+  "objects": [
+    {
+      "query": "SELECT all FROM Project__c",
+      "operation": "Upsert",
+      "externalId": "Name;Account__r.Name",
+      "allOrNone": true
+    },
+    {
+      "query": "SELECT all FROM Milestone__c WHERE IsActive__c = true",
+      "operation": "Upsert",
+      "externalId": "Name;Project__r.Name",
+      "allOrNone": true
+    },
+    {
+      "query": "SELECT all FROM Contact",
+      "operation": "Readonly",
+      "externalId": "Email"
+    }
+  ]
+}

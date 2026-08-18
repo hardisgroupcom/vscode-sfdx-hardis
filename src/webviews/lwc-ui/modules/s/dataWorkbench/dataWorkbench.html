@@ -1,24 +1,14 @@
 <template>
-  <div class="slds-scope slds-card blue-back" data-theme={colorTheme} data-contrast={colorContrast}>
-    <div class="slds-card__header slds-grid">
-      <header class="slds-media slds-media_center slds-has-flexi-truncate">
-        <div class="slds-media__figure">
-          <span class="slds-icon_container slds-icon-utility-database header-icon-container purple">
-            <lightning-icon icon-name="utility:database" alternative-text={i18n.dwbAltText} size="medium" variant="inverse"></lightning-icon>
-          </span>
-        </div>
-        <div class="slds-media__body">
-          <div class="slds-grid slds-grid_align-spread">
-            <h2 class="slds-card__header-title">
-              <span class="slds-text-heading_medium">{i18n.dwbTitle}</span>
-            </h2>
-          </div>
-          <p class="slds-text-body_small slds-line-height_reset">
-            {i18n.dwbDesc}
-          </p>
-        </div>
-      </header>
-      <div class="slds-no-flex slds-grid slds-grid_align-end slds-gutters_x-small">
+  <div class="slds-scope slds-card blue-back hardis-workbench" data-theme={colorTheme} data-contrast={colorContrast}>
+    <div class="hardis-page-head">
+      <div class="hardis-tile featured violet">
+        <lightning-icon icon-name="utility:database" alternative-text={i18n.dwbAltText} size="medium"></lightning-icon>
+      </div>
+      <div class="hardis-page-head-text">
+        <h1 class="hardis-page-title">{i18n.dwbTitle}</h1>
+        <p class="hardis-page-subtitle">{i18n.dwbDesc}</p>
+      </div>
+      <div class="hardis-page-head-actions">
         <lightning-button
           variant="neutral"
           label={i18n.dwbSfdmuDocLabel}
@@ -26,15 +16,13 @@
           icon-name="utility:new_window"
           onclick={handleOpenSfdmuDoc}
         ></lightning-button>
-        <span class="slds-m-left_small">
-        <lightning-button
-          variant="brand"
+        <lightning-button class="hardis-btn-tinted-blue"
+          variant="neutral"
           label={i18n.dwbCreateWorkspace}
           title={i18n.dwbCreateWorkspaceTooltip}
           icon-name="utility:add"
           onclick={handleCreateWorkspace}
         ></lightning-button>
-        </span>
       </div>
     </div>
 
@@ -54,7 +42,7 @@
     <template if:true={isReady}>
 
     <template if:true={isLoading}>
-      <div class="slds-card__body slds-card__body_inner">
+      <div class="hardis-panel-body">
         <div class="slds-text-align_center slds-p-around_large">
           <lightning-spinner alternative-text={i18n.dwbLoadingWorkspaces} size="medium"></lightning-spinner>
           <p class="slds-text-body_small slds-text-color_weak slds-m-top_small">{i18n.dwbLoadingWorkspaces}</p>
@@ -64,19 +52,21 @@
 
     <template if:false={isLoading}>
       <template if:false={hasWorkspaces}>
-        <div class="slds-card__body slds-card__body_inner">
-          <div class="slds-text-align_center slds-p-around_large">
-            <lightning-icon icon-name="utility:database" size="large" class="slds-text-color_weak"></lightning-icon>
-            <h3 class="slds-text-heading_medium slds-m-top_medium">{i18n.dwbNoWorkspacesFound}</h3>
-            <p class="slds-text-body_regular slds-text-color_weak slds-m-top_small">
-              {i18n.dwbNoWorkspacesFoundDesc}
-            </p>
-            <lightning-button
-              variant="brand"
-              label={i18n.dwbCreateFirstWorkspace}
-              class="slds-m-top_medium"
-              onclick={handleCreateWorkspace}
-            ></lightning-button>
+        <div class="hardis-panel-body">
+          <div class="hardis-empty">
+            <div class="hardis-tile featured violet">
+              <lightning-icon icon-name="utility:database" size="small"></lightning-icon>
+            </div>
+            <h3 class="hardis-empty-title">{i18n.dwbNoWorkspacesFound}</h3>
+            <p class="hardis-empty-desc">{i18n.dwbNoWorkspacesFoundDesc}</p>
+            <div class="hardis-empty-actions">
+              <lightning-button
+                variant="neutral"
+                label={i18n.dwbCreateFirstWorkspace}
+                class="hardis-btn-tinted-blue"
+                onclick={handleCreateWorkspace}
+              ></lightning-button>
+            </div>
           </div>
         </div>
       </template>
@@ -84,448 +74,432 @@
 
     <template if:false={isLoading}>
       <template if:true={hasWorkspaces}>
-        <div class="slds-card__body slds-card__body_inner">
-          <div class="slds-grid slds-gutters">
-            <div class="slds-col slds-size_1-of-2 slds-medium-size_1-of-3 slds-large-size_1-of-4 workspace-list-container">
-              <lightning-card title={i18n.dwbAvailableWorkspaces}>
-                <s-multiline-helptext slot="actions" content={i18n.dwbAvailableWorkspacesHelp}></s-multiline-helptext>
-                <div class="slds-card__body slds-card__body_inner">
-                  <div class="workspace-list">
-                    <template for:each={workspacesForDisplay} for:item="workspace">
-                      <div 
-                        key={workspace.path} 
-                        class={workspace.cssClass}
-                        data-path={workspace.path}
-                        onclick={handleWorkspaceSelect}
-                      >
-                        <div class="slds-media slds-media_small">
-                          <div class="slds-media__figure">
-                            <lightning-icon icon-name={workspace.iconName} size="small"></lightning-icon>
-                          </div>
-                          <div class="slds-media__body">
-                            <p class="slds-text-body_regular slds-truncate" title={workspace.label}>
-                              <strong>{workspace.label}</strong>
-                            </p>
-                            <p class="slds-text-body_small slds-text-color_weak slds-truncate" title={workspace.name}>
-                              {workspace.name}
-                            </p>
-                            <p class="slds-text-body_small slds-text-color_weak slds-truncate">
-                              {workspace.objectsCountLabel}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </template>
+        <div class="hardis-split">
+          <div class="hardis-panel-body hardis-split-rail">
+            <div class="hardis-group-label">
+              {i18n.dwbAvailableWorkspaces}
+              <span class="hardis-count-chip">{workspacesCount}</span>
+              <div class="hardis-group-actions">
+                <s-multiline-helptext content={i18n.dwbAvailableWorkspacesHelp}></s-multiline-helptext>
+              </div>
+            </div>
+            <div class="hardis-card-grid single-column">
+              <template for:each={workspacesForDisplay} for:item="workspace">
+                <div
+                  key={workspace.path}
+                  class={workspace.cardClass}
+                  role="button"
+                  tabindex="0"
+                  aria-pressed={workspace.isSelected}
+                  data-path={workspace.path}
+                  onclick={handleWorkspaceSelect}
+                  onkeydown={handleCardKeydown}
+                >
+                  <div class="hardis-card-head">
+                    <div class="hardis-tile small violet">
+                      <lightning-icon icon-name="utility:database" size="x-small"></lightning-icon>
+                    </div>
+                    <h3 class="hardis-card-title">{workspace.label}</h3>
+                  </div>
+                  <p class="hardis-card-desc">{workspace.meta}</p>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <div class="hardis-panel-body hardis-split-main">
+            <template if:true={selectedWorkspace}>
+              <div class="hardis-page-head flush">
+                <div class="hardis-page-head-text">
+                  <h2 class="hardis-page-title">{selectedWorkspace.label}</h2>
+                  <p class="hardis-page-subtitle">{selectedWorkspace.name}</p>
+                </div>
+                <div class="hardis-page-head-actions">
+                  <template if:true={showLargeActions}>
+                    <lightning-button class="hardis-btn-tinted-blue"
+                      variant="neutral"
+                      label={i18n.dwbExportData}
+                      title={i18n.dwbExportDataTooltip}
+                      icon-name="utility:download"
+                      icon-position="left"
+                      onclick={handleExportData}
+                    ></lightning-button>
+                    <lightning-button class="hardis-btn-tinted-blue"
+                      variant="neutral"
+                      label={i18n.dwbImportData}
+                      title={i18n.dwbImportDataTooltip}
+                      icon-name="utility:upload"
+                      icon-position="left"
+                      onclick={handleImportData}
+                    ></lightning-button>
+                    <lightning-button class="hardis-btn-tinted-red"
+                      variant="neutral"
+                      label={i18n.dwbDeleteData}
+                      title={i18n.dwbDeleteDataTooltip}
+                      icon-name="utility:close"
+                      icon-position="left"
+                      onclick={handleDeleteData}
+                    ></lightning-button>
+                  </template>
+                  <template if:false={showLargeActions}>
+                    <lightning-button-menu
+                      alternative-text={i18n.dwbWorkspaceActions}
+                      menu-alignment="right"
+                      variant="border-filled"
+                      icon-name="utility:down"
+                    >
+                      <lightning-menu-item
+                        value="export"
+                        label={i18n.dwbExportDataMenu}
+                        icon-name="utility:download"
+                        onclick={handleExportData}
+                      ></lightning-menu-item>
+                      <lightning-menu-item
+                        value="import"
+                        label={i18n.dwbImportDataMenu}
+                        icon-name="utility:upload"
+                        onclick={handleImportData}
+                      ></lightning-menu-item>
+                      <lightning-menu-item
+                        value="deleteData"
+                        label={i18n.dwbDeleteDataMenu}
+                        icon-name="utility:close"
+                        onclick={handleDeleteData}
+                      ></lightning-menu-item>
+                    </lightning-button-menu>
+                  </template>
+                </div>
+              </div>
+
+              <!-- Section: Workspace Properties -->
+              <div class="hardis-group-label">
+                {i18n.dwbProperties}
+                <div class="hardis-group-actions">
+                  <lightning-button
+                    variant="neutral"
+                    label={i18n.dwbEditProperties}
+                    title={i18n.dwbEditPropertiesTooltip}
+                    icon-name="utility:edit"
+                    onclick={handleEditProperties}
+                  ></lightning-button>
+                  <lightning-button
+                    variant="neutral"
+                    label={i18n.dwbOpenFolder}
+                    title={i18n.dwbOpenFolderTooltip}
+                    icon-name="utility:open_folder"
+                    onclick={handleOpenFolder}
+                  ></lightning-button>
+                  <lightning-button
+                    variant="neutral"
+                    label={i18n.dwbOpenExportJson}
+                    title={i18n.dwbOpenExportJsonTooltip}
+                    icon-name="utility:open"
+                    onclick={handleConfigureWorkspace}
+                  ></lightning-button>
+                  <lightning-button
+                    variant="neutral"
+                    class="hardis-btn-tinted-red"
+                    label={i18n.dwbDeleteWorkspace}
+                    title={i18n.dwbDeleteWorkspaceTooltip}
+                    icon-name="utility:delete"
+                    data-path={selectedWorkspace.path}
+                    onclick={handleDeleteWorkspace}
+                  ></lightning-button>
+                </div>
+              </div>
+              <template if:true={selectedWorkspaceHasDescription}>
+                <div class="hardis-prop-grid">
+                  <div class="hardis-prop">
+                    <div class="hardis-prop-key">{i18n.dwbDescriptionLabel}</div>
+                    <div class="hardis-prop-value">{selectedWorkspace.description}</div>
                   </div>
                 </div>
-              </lightning-card>
-            </div>
+              </template>
 
-            <div class="slds-col slds-size_1-of-2 slds-medium-size_2-of-3 slds-large-size_3-of-4 workspace-detail-container">
-              <template if:true={selectedWorkspace}>
-                <lightning-card title={selectedWorkspace.label}>
-                  <div slot="actions">
-                    <template if:true={showLargeActions}>
-                      <div class="slds-show_large slds-grid">
-                        <lightning-button
-                          variant="brand"
-                          label={i18n.dwbExportData}
-                          title={i18n.dwbExportDataTooltip}
-                          icon-name="utility:download"
-                          icon-position="left"
-                          size="small"
-                          onclick={handleExportData}
-                        ></lightning-button>
-                        <lightning-button
-                          variant="brand"
-                          label={i18n.dwbImportData}
-                          title={i18n.dwbImportDataTooltip}
-                          icon-name="utility:upload"
-                          icon-position="left"
-                          size="small"
-                          onclick={handleImportData}
-                        ></lightning-button>
-                        <lightning-button
-                          variant="destructive"
-                          label={i18n.dwbDeleteData}
-                          title={i18n.dwbDeleteDataTooltip}
-                          icon-name="utility:close"
-                          icon-position="left"
-                          size="small"
-                          onclick={handleDeleteData}
-                        ></lightning-button>
-                      </div>
-                    </template>
+              <!-- Section: Global Settings -->
+              <div class="hardis-group-label">
+                {i18n.dwbGlobalSettings}
+                <div class="hardis-group-actions">
+                  <lightning-button
+                    variant="neutral"
+                    label={i18n.dwbEditGlobalSettings}
+                    title={i18n.dwbEditGlobalSettingsTooltip}
+                    icon-name="utility:settings"
+                    onclick={handleEditGlobalSettings}
+                  ></lightning-button>
+                </div>
+              </div>
+              <template if:true={hasScriptSettings}>
+                <div class="hardis-chip-row">
+                  <template if:true={ssHasApiVersion}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeApiVersion}>API: {ssApiVersion}</span>
+                  </template>
+                  <template if:true={ssSimulationMode}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeSimulationMode}>{i18n.dwbBadgeSimulationModeLabel}</span>
+                  </template>
+                  <template if:true={ssAllOrNone}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeAllOrNone}>{i18n.dwbBadgeAllOrNoneLabel}</span>
+                  </template>
+                  <template if:true={ssAllowFieldTruncation}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeAllowTruncation}>{i18n.dwbBadgeAllowTruncationLabel}</span>
+                  </template>
+                  <template if:true={ssKeepObjectOrder}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeKeepOrder}>{i18n.dwbBadgeKeepOrderLabel}</span>
+                  </template>
+                  <template if:true={ssHasBulkApiVersion}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeBulkApiVersion}>Bulk API: {ssBulkApiVersion}</span>
+                  </template>
+                  <template if:true={ssHasConcurrencyMode}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeConcurrencyMode}>Concurrency: {ssConcurrencyMode}</span>
+                  </template>
+                  <template if:true={ssHasBulkThreshold}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeBulkThreshold}>Bulk Threshold: {ssBulkThreshold}</span>
+                  </template>
+                  <template if:true={ssHasQueryBulkApiThreshold}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeQueryBulkThreshold}>Query Bulk Threshold: {ssQueryBulkApiThreshold}</span>
+                  </template>
+                  <template if:true={ssHasBulkApiV1BatchSize}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeBulkBatchSize}>Bulk Batch: {ssBulkApiV1BatchSize}</span>
+                  </template>
+                  <template if:true={ssHasRestApiBatchSize}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeRestBatchSize}>REST Batch: {ssRestApiBatchSize}</span>
+                  </template>
+                  <template if:true={ssAlwaysUseRestApiToUpdateRecords}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeRestUpdates}>{i18n.dwbBadgeRestUpdatesLabel}</span>
+                  </template>
+                  <template if:true={ssHasParallelBulkJobs}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeParallelBulk}>Parallel Bulk: {ssParallelBulkJobs}</span>
+                  </template>
+                  <template if:true={ssHasParallelRestJobs}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeParallelRest}>Parallel REST: {ssParallelRestJobs}</span>
+                  </template>
+                  <template if:true={ssHasParallelBinaryDownloads}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeParallelBinary}>Parallel Binary: {ssParallelBinaryDownloads}</span>
+                  </template>
+                  <template if:true={ssCreateTargetCSVFiles}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeTargetCsv}>{i18n.dwbBadgeTargetCsvLabel}</span>
+                  </template>
+                  <template if:true={ssCsvInsertNulls}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeCsvNulls}>{i18n.dwbBadgeCsvNullsLabel}</span>
+                  </template>
+                  <template if:true={ssCsvUseEuropeanDateFormat}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeEuDates}>{i18n.dwbBadgeEuDatesLabel}</span>
+                  </template>
+                  <template if:true={ssHasCsvFileEncoding}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeCsvEncoding}>Encoding: {ssCsvFileEncoding}</span>
+                  </template>
+                  <template if:true={ssHasBinaryDataCache}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeBinaryCache}>Binary Cache: {ssBinaryDataCache}</span>
+                  </template>
+                  <template if:true={ssHasSourceRecordsCache}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeSourceCache}>Source Cache: {ssSourceRecordsCache}</span>
+                  </template>
+                  <template if:true={ssHasExcludedObjects}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeExcludedObjects}>Excluded: {ssExcludedObjects}</span>
+                  </template>
+                  <template if:true={ssHasProxyUrl}>
+                    <span class="hardis-chip" title={i18n.dwbBadgeProxy}>{i18n.dwbBadgeProxyLabel}</span>
+                  </template>
+                </div>
+              </template>
+              <template if:false={hasScriptSettings}>
+                <div class="hardis-note">
+                  <lightning-icon icon-name="utility:info" size="x-small"></lightning-icon>
+                  <p>{i18n.dwbNoGlobalSettings}</p>
+                </div>
+              </template>
 
-                    <template if:false={showLargeActions}>
-                      <div class="slds-hide_large">
-                        <lightning-button-menu
-                          alternative-text={i18n.dwbWorkspaceActions}
-                          menu-alignment="right"
-                          variant="border-filled"
-                          icon-name="utility:down"
-                        >
-                          <lightning-menu-item
-                            value="export"
-                            label={i18n.dwbExportDataMenu}
-                            icon-name="utility:download"
-                            onclick={handleExportData}
-                          ></lightning-menu-item>
-                          <lightning-menu-item
-                            value="import"
-                            label={i18n.dwbImportDataMenu}
-                            icon-name="utility:upload"
-                            onclick={handleImportData}
-                          ></lightning-menu-item>
-                          <lightning-menu-item
-                            value="deleteData"
-                            label={i18n.dwbDeleteDataMenu}
-                            icon-name="utility:close"
-                            onclick={handleDeleteData}
-                          ></lightning-menu-item>
-                        </lightning-button-menu>
-                      </div>
-                    </template>
-                  </div>
-
-                  <!-- Section: Workspace Properties & Global Settings -->
-                  <div class="detail-section">
-                    <div class="section-header">
-                      <div class="section-header-left">
-                        <lightning-icon icon-name="utility:info_alt" size="xx-small" class="slds-m-right_x-small"></lightning-icon>
-                        <h3 class="slds-text-title_caps">{i18n.dwbProperties}</h3>
-                      </div>
-                      <div class="section-header-right">
-                        <lightning-button-icon
-                          icon-name="utility:edit"
-                          alternative-text={i18n.dwbEditProperties}
-                          title={i18n.dwbEditPropertiesTooltip}
-                          size="small"
-                          onclick={handleEditProperties}
-                        ></lightning-button-icon>
-                        <lightning-button-icon
-                          icon-name="utility:open_folder"
-                          alternative-text={i18n.dwbOpenFolder}
-                          title={i18n.dwbOpenFolderTooltip}
-                          size="small"
-                          onclick={handleOpenFolder}
-                        ></lightning-button-icon>
-                        <lightning-button-icon
-                          icon-name="utility:open"
-                          alternative-text={i18n.dwbOpenExportJson}
-                          title={i18n.dwbOpenExportJsonTooltip}
-                          size="small"
-                          onclick={handleConfigureWorkspace}
-                        ></lightning-button-icon>
-                        <lightning-button-icon
-                          icon-name="utility:delete"
-                          alternative-text={i18n.dwbDeleteWorkspace}
-                          title={i18n.dwbDeleteWorkspaceTooltip}
-                          variant="bare-destructive"
-                          size="small"
-                          data-path={selectedWorkspace.path}
-                          onclick={handleDeleteWorkspace}
-                        ></lightning-button-icon>
-                      </div>
-                    </div>
-                    <div class="properties-grid">
-                      <div class="property-item">
-                        <span class="property-label">{i18n.dwbFolderLabel}</span>
-                        <span class="property-value">{selectedWorkspace.name}</span>
-                      </div>
-                      <template if:true={selectedWorkspaceHasDescription}>
-                        <div class="property-item property-item_full">
-                          <span class="property-label">{i18n.dwbDescriptionLabel}</span>
-                          <span class="property-value">{selectedWorkspace.description}</span>
+              <!-- Section: Objects -->
+              <div class="hardis-group-label">
+                {i18n.objectsLabel}
+                <span class="hardis-count-chip">{selectedWorkspaceObjectsCount}</span>
+                <div class="hardis-group-actions">
+                  <lightning-button
+                    variant="neutral"
+                    class="hardis-btn-tinted-blue"
+                    label={i18n.dwbAddObject}
+                    title={i18n.dwbAddObjectTooltip}
+                    icon-name="utility:add"
+                    onclick={handleAddObject}
+                  ></lightning-button>
+                </div>
+              </div>
+              <template if:true={hasSelectedWorkspaceObjects}>
+                <div class="hardis-card-grid single-column">
+                  <template for:each={selectedWorkspaceObjectsForDisplay} for:item="obj">
+                    <div key={obj.displayIndex} class="hardis-card">
+                      <div class="hardis-card-head">
+                        <div class="hardis-tile small violet">
+                          <lightning-icon icon-name="utility:sobject" size="x-small"></lightning-icon>
                         </div>
-                      </template>
+                        <div class="dwb-obj-title-row">
+                          <h3 class="hardis-card-title">{obj.objectName}</h3>
+                          <span class={obj.operationPillClass}><span class="hardis-pill-dot"></span>{obj.operation}</span>
+                        </div>
+                        <div class="dwb-obj-actions">
+                          <lightning-button
+                            variant="neutral"
+                            label={i18n.dwbEditObject}
+                            icon-name="utility:edit"
+                            data-index={obj.index}
+                            onclick={handleEditObject}
+                          ></lightning-button>
+                          <lightning-button
+                            variant="neutral"
+                            class="hardis-btn-tinted-red"
+                            label={i18n.dwbDeleteObject}
+                            icon-name="utility:delete"
+                            data-index={obj.index}
+                            onclick={handleDeleteObject}
+                          ></lightning-button>
+                        </div>
+                      </div>
+                      <div class="hardis-prop-value mono dwb-obj-query" title={obj.query}>{obj.query}</div>
+                      <div class="hardis-chip-row">
+                        <template if:true={obj.externalId}>
+                          <span class="hardis-chip">{i18n.dwbObjBadgeExternalId}: {obj.externalId}</span>
+                        </template>
+                        <template if:true={obj.isExcluded}>
+                          <span class="hardis-chip" title={i18n.dwbObjBadgeExcluded}>{i18n.dwbObjBadgeExcludedLabel}</span>
+                        </template>
+                        <template if:true={obj.deleteOldData}>
+                          <span class="hardis-chip" title={i18n.dwbObjBadgeDeleteOldData}>{i18n.dwbObjBadgeDeleteOldDataLabel}</span>
+                        </template>
+                        <template if:true={obj.hasHardDelete}>
+                          <span class="hardis-chip" title={i18n.dwbObjBadgeHardDelete}>{i18n.dwbObjBadgeHardDeleteLabel}</span>
+                        </template>
+                        <template if:true={obj.hasDeleteByHierarchy}>
+                          <span class="hardis-chip" title={i18n.dwbObjBadgeDeleteHierarchy}>{i18n.dwbObjBadgeDeleteHierarchyLabel}</span>
+                        </template>
+                        <template if:true={obj.hasDeleteFromSource}>
+                          <span class="hardis-chip" title={i18n.dwbObjBadgeDeleteSource}>{i18n.dwbObjBadgeDeleteSourceLabel}</span>
+                        </template>
+                        <template if:true={obj.useQueryAll}>
+                          <span class="hardis-chip" title={i18n.dwbObjBadgeUseQueryAll}>{i18n.dwbObjBadgeUseQueryAllLabel}</span>
+                        </template>
+                        <template if:true={obj.hasQueryAllTarget}>
+                          <span class="hardis-chip" title={i18n.dwbObjBadgeQueryAllTarget}>{i18n.dwbObjBadgeQueryAllTargetLabel}</span>
+                        </template>
+                        <template if:true={obj.allOrNone}>
+                          <span class="hardis-chip" title={i18n.dwbObjBadgeAllOrNone}>{i18n.dwbObjBadgeAllOrNoneLabel}</span>
+                        </template>
+                        <template if:true={obj.hasSkipExistingRecords}>
+                          <span class="hardis-chip" title={i18n.dwbObjBadgeSkipExisting}>{i18n.dwbObjBadgeSkipExistingLabel}</span>
+                        </template>
+                        <template if:true={obj.hasUseFieldMapping}>
+                          <span class="hardis-chip" title={i18n.dwbObjBadgeFieldMapping}>{i18n.dwbObjBadgeFieldMappingLabel}</span>
+                        </template>
+                        <template if:true={obj.hasUseValuesMapping}>
+                          <span class="hardis-chip" title={i18n.dwbObjBadgeValuesMapping}>{i18n.dwbObjBadgeValuesMappingLabel}</span>
+                        </template>
+                        <template if:true={obj.hasUseSourceCSVFile}>
+                          <span class="hardis-chip" title={i18n.dwbObjBadgeCsvSource}>{i18n.dwbObjBadgeCsvSourceLabel}</span>
+                        </template>
+                        <template if:true={obj.hasMasterFilter}>
+                          <span class="hardis-chip" title={i18n.dwbObjBadgeMasterFiltered}>{i18n.dwbObjBadgeMasterFilteredLabel}</span>
+                        </template>
+                        <template if:true={obj.updateWithMockData}>
+                          <span class="hardis-chip" title={i18n.dwbObjBadgeMockData}>{i18n.dwbObjBadgeMockDataLabel}</span>
+                        </template>
+                        <template if:true={obj.hasMockFields}>
+                          <span class="hardis-chip">{obj.mockFieldsCountLabel}</span>
+                        </template>
+                        <template if:true={obj.hasBulkApiV1BatchSize}>
+                          <span class="hardis-chip">{i18n.dwbObjBadgeBulkBatch}: {obj.bulkApiV1BatchSize}</span>
+                        </template>
+                        <template if:true={obj.hasRestApiBatchSize}>
+                          <span class="hardis-chip">{i18n.dwbObjBadgeRestBatch}: {obj.restApiBatchSize}</span>
+                        </template>
+                      </div>
                     </div>
-                    <div class="slds-p-horizontal_small slds-p-bottom_x-small">
-                      <span class="property-label">{i18n.dwbGlobalSettings}</span>
-                    </div>
-                    <template if:true={hasScriptSettings}>
-                      <div class="object-badges slds-p-horizontal_small slds-p-bottom_small">
-                        <template if:true={ssHasApiVersion}>
-                          <span class="slds-badge object-badge" title={i18n.dwbBadgeApiVersion}>API: {ssApiVersion}</span>
-                        </template>
-                        <template if:true={ssSimulationMode}>
-                          <span class="slds-badge slds-badge_warning object-badge" title={i18n.dwbBadgeSimulationMode}>{i18n.dwbBadgeSimulationModeLabel}</span>
-                        </template>
-                        <template if:true={ssAllOrNone}>
-                          <span class="slds-badge slds-badge_success object-badge" title={i18n.dwbBadgeAllOrNone}>{i18n.dwbBadgeAllOrNoneLabel}</span>
-                        </template>
-                        <template if:true={ssAllowFieldTruncation}>
-                          <span class="slds-badge object-badge" title={i18n.dwbBadgeAllowTruncation}>{i18n.dwbBadgeAllowTruncationLabel}</span>
-                        </template>
-                        <template if:true={ssKeepObjectOrder}>
-                          <span class="slds-badge object-badge" title={i18n.dwbBadgeKeepOrder}>{i18n.dwbBadgeKeepOrderLabel}</span>
-                        </template>
-                        <template if:true={ssHasBulkApiVersion}>
-                          <span class="slds-badge object-badge" title={i18n.dwbBadgeBulkApiVersion}>Bulk API: {ssBulkApiVersion}</span>
-                        </template>
-                        <template if:true={ssHasConcurrencyMode}>
-                          <span class="slds-badge object-badge" title={i18n.dwbBadgeConcurrencyMode}>Concurrency: {ssConcurrencyMode}</span>
-                        </template>
-                        <template if:true={ssHasBulkThreshold}>
-                          <span class="slds-badge object-badge" title={i18n.dwbBadgeBulkThreshold}>Bulk Threshold: {ssBulkThreshold}</span>
-                        </template>
-                        <template if:true={ssHasQueryBulkApiThreshold}>
-                          <span class="slds-badge object-badge" title={i18n.dwbBadgeQueryBulkThreshold}>Query Bulk Threshold: {ssQueryBulkApiThreshold}</span>
-                        </template>
-                        <template if:true={ssHasBulkApiV1BatchSize}>
-                          <span class="slds-badge object-badge" title={i18n.dwbBadgeBulkBatchSize}>Bulk Batch: {ssBulkApiV1BatchSize}</span>
-                        </template>
-                        <template if:true={ssHasRestApiBatchSize}>
-                          <span class="slds-badge object-badge" title={i18n.dwbBadgeRestBatchSize}>REST Batch: {ssRestApiBatchSize}</span>
-                        </template>
-                        <template if:true={ssAlwaysUseRestApiToUpdateRecords}>
-                          <span class="slds-badge object-badge" title={i18n.dwbBadgeRestUpdates}>{i18n.dwbBadgeRestUpdatesLabel}</span>
-                        </template>
-                        <template if:true={ssHasParallelBulkJobs}>
-                          <span class="slds-badge object-badge" title={i18n.dwbBadgeParallelBulk}>Parallel Bulk: {ssParallelBulkJobs}</span>
-                        </template>
-                        <template if:true={ssHasParallelRestJobs}>
-                          <span class="slds-badge object-badge" title={i18n.dwbBadgeParallelRest}>Parallel REST: {ssParallelRestJobs}</span>
-                        </template>
-                        <template if:true={ssHasParallelBinaryDownloads}>
-                          <span class="slds-badge object-badge" title={i18n.dwbBadgeParallelBinary}>Parallel Binary: {ssParallelBinaryDownloads}</span>
-                        </template>
-                        <template if:true={ssCreateTargetCSVFiles}>
-                          <span class="slds-badge slds-badge_success object-badge" title={i18n.dwbBadgeTargetCsv}>{i18n.dwbBadgeTargetCsvLabel}</span>
-                        </template>
-                        <template if:true={ssCsvInsertNulls}>
-                          <span class="slds-badge object-badge" title={i18n.dwbBadgeCsvNulls}>{i18n.dwbBadgeCsvNullsLabel}</span>
-                        </template>
-                        <template if:true={ssCsvUseEuropeanDateFormat}>
-                          <span class="slds-badge object-badge" title={i18n.dwbBadgeEuDates}>{i18n.dwbBadgeEuDatesLabel}</span>
-                        </template>
-                        <template if:true={ssHasCsvFileEncoding}>
-                          <span class="slds-badge object-badge" title={i18n.dwbBadgeCsvEncoding}>Encoding: {ssCsvFileEncoding}</span>
-                        </template>
-                        <template if:true={ssHasBinaryDataCache}>
-                          <span class="slds-badge object-badge" title={i18n.dwbBadgeBinaryCache}>Binary Cache: {ssBinaryDataCache}</span>
-                        </template>
-                        <template if:true={ssHasSourceRecordsCache}>
-                          <span class="slds-badge object-badge" title={i18n.dwbBadgeSourceCache}>Source Cache: {ssSourceRecordsCache}</span>
-                        </template>
-                        <template if:true={ssHasExcludedObjects}>
-                          <span class="slds-badge slds-badge_warning object-badge" title={i18n.dwbBadgeExcludedObjects}>Excluded: {ssExcludedObjects}</span>
-                        </template>
-                        <template if:true={ssHasProxyUrl}>
-                          <span class="slds-badge object-badge" title={i18n.dwbBadgeProxy}>{i18n.dwbBadgeProxyLabel}</span>
-                        </template>
-                      </div>
-                    </template>
-                    <template if:false={hasScriptSettings}>
-                      <div class="slds-p-horizontal_small slds-p-bottom_small">
-                        <p class="slds-text-body_small slds-text-color_weak">{i18n.dwbNoGlobalSettings}</p>
-                      </div>
-                    </template>
-                    <div class="slds-p-horizontal_small slds-p-bottom_small">
-                      <lightning-button
-                        variant="neutral"
-                        label={i18n.dwbEditGlobalSettings}
-                        icon-name="utility:settings"
-                        onclick={handleEditGlobalSettings}
-                        title={i18n.dwbEditGlobalSettingsTooltip}
-                      ></lightning-button>
-                    </div>
-                  </div>
-
-                  <!-- Section: Objects -->
-                  <div class="detail-section">
-                    <div class="section-header">
-                      <div class="section-header-left">
-                        <lightning-icon icon-name="utility:sobject" size="xx-small" class="slds-m-right_x-small"></lightning-icon>
-                        <h3 class="slds-text-title_caps">{objectsCountLabel}</h3>
-                      </div>
-                      <lightning-button
-                        variant="neutral"
-                        label={i18n.dwbAddObject}
-                        icon-name="utility:add"
-                        onclick={handleAddObject}
-                        title={i18n.dwbAddObjectTooltip}
-                      ></lightning-button>
-                    </div>
-                    <template if:true={hasSelectedWorkspaceObjects}>
-                      <div class="objects-grid">
-                        <template for:each={selectedWorkspaceObjectsForDisplay} for:item="obj">
-                          <div key={obj.displayIndex} class="object-card">
-                            <div class="object-card-header">
-                              <div class="object-card-title">
-                                <span class="slds-badge slds-badge_inverse object-operation-badge">{obj.operation}</span>
-                                <span class="object-name">{obj.objectName}</span>
-                              </div>
-                              <div class="object-actions">
-                                <lightning-button-icon
-                                  icon-name="utility:edit"
-                                  alternative-text={i18n.dwbEditObject}
-                                  title={i18n.dwbEditObject}
-                                  size="small"
-                                  data-index={obj.index}
-                                  onclick={handleEditObject}
-                                ></lightning-button-icon>
-                                <lightning-button-icon
-                                  icon-name="utility:delete"
-                                  alternative-text={i18n.dwbDeleteObject}
-                                  title={i18n.dwbDeleteObject}
-                                  size="small"
-                                  variant="bare-destructive"
-                                  data-index={obj.index}
-                                  onclick={handleDeleteObject}
-                                ></lightning-button-icon>
-                              </div>
-                            </div>
-                            <p class="object-query" title={obj.query}>{obj.query}</p>
-                            <div class="object-badges">
-                              <template if:true={obj.externalId}>
-                                <span class="slds-badge object-badge">{i18n.dwbObjBadgeExternalId}: {obj.externalId}</span>
-                              </template>
-                              <template if:true={obj.isExcluded}>
-                                <span class="slds-badge slds-badge_warning object-badge" title={i18n.dwbObjBadgeExcluded}>{i18n.dwbObjBadgeExcludedLabel}</span>
-                              </template>
-                              <template if:true={obj.deleteOldData}>
-                                <span class="slds-badge slds-badge_success object-badge" title={i18n.dwbObjBadgeDeleteOldData}>{i18n.dwbObjBadgeDeleteOldDataLabel}</span>
-                              </template>
-                              <template if:true={obj.hasHardDelete}>
-                                <span class="slds-badge slds-badge_success object-badge" title={i18n.dwbObjBadgeHardDelete}>{i18n.dwbObjBadgeHardDeleteLabel}</span>
-                              </template>
-                              <template if:true={obj.hasDeleteByHierarchy}>
-                                <span class="slds-badge slds-badge_success object-badge" title={i18n.dwbObjBadgeDeleteHierarchy}>{i18n.dwbObjBadgeDeleteHierarchyLabel}</span>
-                              </template>
-                              <template if:true={obj.hasDeleteFromSource}>
-                                <span class="slds-badge slds-badge_success object-badge" title={i18n.dwbObjBadgeDeleteSource}>{i18n.dwbObjBadgeDeleteSourceLabel}</span>
-                              </template>
-                              <template if:true={obj.useQueryAll}>
-                                <span class="slds-badge slds-badge_success object-badge" title={i18n.dwbObjBadgeUseQueryAll}>{i18n.dwbObjBadgeUseQueryAllLabel}</span>
-                              </template>
-                              <template if:true={obj.hasQueryAllTarget}>
-                                <span class="slds-badge slds-badge_success object-badge" title={i18n.dwbObjBadgeQueryAllTarget}>{i18n.dwbObjBadgeQueryAllTargetLabel}</span>
-                              </template>
-                              <template if:true={obj.allOrNone}>
-                                <span class="slds-badge slds-badge_success object-badge" title={i18n.dwbObjBadgeAllOrNone}>{i18n.dwbObjBadgeAllOrNoneLabel}</span>
-                              </template>
-                              <template if:true={obj.hasSkipExistingRecords}>
-                                <span class="slds-badge object-badge" title={i18n.dwbObjBadgeSkipExisting}>{i18n.dwbObjBadgeSkipExistingLabel}</span>
-                              </template>
-                              <template if:true={obj.hasUseFieldMapping}>
-                                <span class="slds-badge object-badge" title={i18n.dwbObjBadgeFieldMapping}>{i18n.dwbObjBadgeFieldMappingLabel}</span>
-                              </template>
-                              <template if:true={obj.hasUseValuesMapping}>
-                                <span class="slds-badge object-badge" title={i18n.dwbObjBadgeValuesMapping}>{i18n.dwbObjBadgeValuesMappingLabel}</span>
-                              </template>
-                              <template if:true={obj.hasUseSourceCSVFile}>
-                                <span class="slds-badge object-badge" title={i18n.dwbObjBadgeCsvSource}>{i18n.dwbObjBadgeCsvSourceLabel}</span>
-                              </template>
-                              <template if:true={obj.hasMasterFilter}>
-                                <span class="slds-badge object-badge" title={i18n.dwbObjBadgeMasterFiltered}>{i18n.dwbObjBadgeMasterFilteredLabel}</span>
-                              </template>
-                              <template if:true={obj.updateWithMockData}>
-                                <span class="slds-badge slds-badge_success object-badge" title={i18n.dwbObjBadgeMockData}>{i18n.dwbObjBadgeMockDataLabel}</span>
-                              </template>
-                              <template if:true={obj.hasMockFields}>
-                                <span class="slds-badge object-badge">{obj.mockFieldsCountLabel}</span>
-                              </template>
-                              <template if:true={obj.hasBulkApiV1BatchSize}>
-                                <span class="slds-badge object-badge">{i18n.dwbObjBadgeBulkBatch}: {obj.bulkApiV1BatchSize}</span>
-                              </template>
-                              <template if:true={obj.hasRestApiBatchSize}>
-                                <span class="slds-badge object-badge">{i18n.dwbObjBadgeRestBatch}: {obj.restApiBatchSize}</span>
-                              </template>
-                            </div>
-                          </div>
-                        </template>
-                      </div>
-                    </template>
-                    <template if:false={hasSelectedWorkspaceObjects}>
-                      <div class="empty-section-message">
-                        <lightning-icon icon-name="utility:info" size="x-small" class="slds-m-right_x-small"></lightning-icon>
-                        <span>{i18n.dwbNoObjectsConfigured}</span>
-                      </div>
-                    </template>
-                  </div>
-
-                  <!-- Section: Exported Files -->
-                  <div class="detail-section">
-                    <div class="section-header">
-                      <div class="section-header-left">
-                        <lightning-icon icon-name="utility:file" size="xx-small" class="slds-m-right_x-small"></lightning-icon>
-                        <h3 class="slds-text-title_caps">{i18n.dwbExportedFiles}</h3>
-                      </div>
-                      <lightning-button-icon
-                        icon-name="utility:refresh"
-                        alternative-text={i18n.dwbRefreshExportedFiles}
-                        title={i18n.dwbRefreshExportedFiles}
-                        size="small"
-                        onclick={handleRefreshExportedFiles}
-                      ></lightning-button-icon>
-                    </div>
-                    <template if:true={hasExportedFiles}>
-                      <s-hardis-datatable
-                        key-field="path"
-                        data={exportedFilesForDisplay}
-                        columns={exportedFilesColumns}
-                        hide-checkbox-column
-                        show-row-number-column
-                        onrowaction={handleExportedFileAction}
-                        class="exported-files-table"
-                      ></s-hardis-datatable>
-                    </template>
-                    <template if:false={hasExportedFiles}>
-                      <div class="empty-section-message">
-                        <lightning-icon icon-name="utility:info" size="x-small" class="slds-m-right_x-small"></lightning-icon>
-                        <span>{i18n.dwbNoExportedFiles}</span>
-                      </div>
-                    </template>
-                  </div>
-
-                  <!-- Section: Logs -->
-                  <div class="detail-section">
-                    <div class="section-header">
-                      <div class="section-header-left">
-                        <lightning-icon icon-name="utility:text_template" size="xx-small" class="slds-m-right_x-small"></lightning-icon>
-                        <h3 class="slds-text-title_caps">{i18n.dwbLogs}</h3>
-                      </div>
-                      <lightning-button-icon
-                        icon-name="utility:refresh"
-                        alternative-text={i18n.dwbRefreshLogs}
-                        title={i18n.dwbRefreshLogs}
-                        size="small"
-                        onclick={handleRefreshExportedFiles}
-                      ></lightning-button-icon>
-                    </div>
-                    <template if:true={hasLogFiles}>
-                      <s-hardis-datatable
-                        key-field="path"
-                        data={logFilesForDisplay}
-                        columns={logFilesColumns}
-                        hide-checkbox-column
-                        show-row-number-column
-                        onrowaction={handleLogFileAction}
-                        class="exported-files-table"
-                      ></s-hardis-datatable>
-                    </template>
-                    <template if:false={hasLogFiles}>
-                      <div class="empty-section-message">
-                        <lightning-icon icon-name="utility:info" size="x-small" class="slds-m-right_x-small"></lightning-icon>
-                        <span>{i18n.dwbNoLogFiles}</span>
-                      </div>
-                    </template>
-                  </div>
-                </lightning-card>
+                  </template>
+                </div>
               </template>
-              <template if:false={selectedWorkspace}>
-                <lightning-card title={i18n.dwbWorkspaceActions}>
-                  <div class="slds-text-align_center slds-p-around_large">
-                    <lightning-icon icon-name="utility:touch_action" size="large" class="slds-text-color_weak"></lightning-icon>
-                    <h3 class="slds-text-heading_medium slds-m-top_medium">{i18n.dwbSelectWorkspace}</h3>
-                    <p class="slds-text-body_regular slds-text-color_weak slds-m-top_small">
-                      {i18n.dwbSelectWorkspaceDesc}
-                    </p>
-                  </div>
-                </lightning-card>
+              <template if:false={hasSelectedWorkspaceObjects}>
+                <div class="hardis-note">
+                  <lightning-icon icon-name="utility:info" size="x-small"></lightning-icon>
+                  <p>{i18n.dwbNoObjectsConfigured}</p>
+                </div>
               </template>
-            </div>
+
+              <!-- Section: Exported Files -->
+              <div class="hardis-group-label">
+                {i18n.dwbExportedFiles}
+                <template if:true={hasExportedFiles}>
+                  <span class="hardis-count-chip">{exportedFilesCount}</span>
+                </template>
+                <div class="hardis-group-actions">
+                  <lightning-button
+                    variant="neutral"
+                    label={i18n.dwbRefreshExportedFiles}
+                    title={i18n.dwbRefreshExportedFiles}
+                    icon-name="utility:refresh"
+                    onclick={handleRefreshExportedFiles}
+                  ></lightning-button>
+                </div>
+              </div>
+              <template if:true={hasExportedFiles}>
+                <s-hardis-datatable
+                  key-field="path"
+                  data={exportedFilesForDisplay}
+                  columns={exportedFilesColumns}
+                  hide-checkbox-column
+                  show-row-number-column
+                  onrowaction={handleExportedFileAction}
+                  class="exported-files-table"
+                ></s-hardis-datatable>
+              </template>
+              <template if:false={hasExportedFiles}>
+                <div class="hardis-note">
+                  <lightning-icon icon-name="utility:info" size="x-small"></lightning-icon>
+                  <p>{i18n.dwbNoExportedFiles}</p>
+                </div>
+              </template>
+
+              <!-- Section: Logs -->
+              <div class="hardis-group-label">
+                {i18n.dwbLogs}
+                <template if:true={hasLogFiles}>
+                  <span class="hardis-count-chip">{logFilesCount}</span>
+                </template>
+                <div class="hardis-group-actions">
+                  <lightning-button
+                    variant="neutral"
+                    label={i18n.dwbRefreshLogs}
+                    title={i18n.dwbRefreshLogs}
+                    icon-name="utility:refresh"
+                    onclick={handleRefreshExportedFiles}
+                  ></lightning-button>
+                </div>
+              </div>
+              <template if:true={hasLogFiles}>
+                <s-hardis-datatable
+                  key-field="path"
+                  data={logFilesForDisplay}
+                  columns={logFilesColumns}
+                  hide-checkbox-column
+                  show-row-number-column
+                  onrowaction={handleLogFileAction}
+                  class="exported-files-table"
+                ></s-hardis-datatable>
+              </template>
+              <template if:false={hasLogFiles}>
+                <div class="hardis-note">
+                  <lightning-icon icon-name="utility:info" size="x-small"></lightning-icon>
+                  <p>{i18n.dwbNoLogFiles}</p>
+                </div>
+              </template>
+            </template>
+
+            <template if:false={selectedWorkspace}>
+              <div class="hardis-empty">
+                <div class="hardis-tile featured violet">
+                  <lightning-icon icon-name="utility:touch_action" size="small"></lightning-icon>
+                </div>
+                <h3 class="hardis-empty-title">{i18n.dwbSelectWorkspace}</h3>
+                <p class="hardis-empty-desc">{i18n.dwbSelectWorkspaceDesc}</p>
+              </div>
+            </template>
           </div>
         </div>
       </template>
@@ -628,8 +602,8 @@
             label={i18n.cancelLabel}
             onclick={handleCancelProperties}
           ></lightning-button>
-          <lightning-button
-            variant="brand"
+          <lightning-button class="hardis-btn-tinted-blue"
+            variant="neutral"
             label={savePropertiesButtonLabel}
             disabled={savePropertiesButtonDisabled}
             onclick={handleSaveProperties}
@@ -1183,8 +1157,8 @@
                     <div class="slds-form-element">
                       <label class="slds-form-element__label">&nbsp;</label>
                       <div class="slds-form-element__control">
-                        <lightning-button
-                          variant="destructive-text"
+                        <lightning-button class="hardis-btn-tinted-red"
+                          variant="neutral"
                           icon-name="utility:delete"
                           label={i18n.dwbMockRemoveField}
                           data-fieldindex={fieldIndex}
@@ -1208,8 +1182,8 @@
             label={i18n.dwbCancel}
             onclick={handleCancelObject}
           ></lightning-button>
-          <lightning-button
-            variant="brand"
+          <lightning-button class="hardis-btn-tinted-blue"
+            variant="neutral"
             label={saveObjectButtonLabel}
             disabled={saveObjectButtonDisabled}
             onclick={handleSaveObject}
@@ -1665,7 +1639,7 @@
         </div>
         <footer class="slds-modal__footer">
           <lightning-button variant="neutral" label={i18n.dwbCancel} onclick={handleCancelGlobalSettings}></lightning-button>
-          <lightning-button variant="brand" label={i18n.dwbSaveSettings} onclick={handleSaveGlobalSettings}></lightning-button>
+          <lightning-button class="hardis-btn-tinted-blue" variant="neutral" label={i18n.dwbSaveSettings} onclick={handleSaveGlobalSettings}></lightning-button>
         </footer>
       </div>
     </section>
