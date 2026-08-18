@@ -14,7 +14,10 @@ import { t } from "./i18n/i18n";
 import { LwcPanelManager } from "./lwc-panel-manager";
 import { HardisStatusProvider } from "./hardis-status-provider";
 import { refreshDataWorkbenchPanel } from "./commands/showDataWorkbench";
-import { takePendingCommandPanel } from "./utils/pendingCommandPanels";
+import {
+  extractTargetOrgUsername,
+  takePendingCommandPanel,
+} from "./utils/pendingCommandPanels";
 
 const DEFAULT_PORT = parseInt(process.env.SFDX_HARDIS_WEBSOCKET_PORT || "2702");
 let globalWss: LocalWebSocketServer | null;
@@ -191,10 +194,15 @@ export class LocalWebSocketServer {
       if (pendingPanel?.commandLine) {
         initData.data.commandLine = pendingPanel.commandLine;
       }
-      // Enrich with the project default org so the panel header can show
-      // which org the command targets
+      // Enrich with the org the command targets, so the panel header shows it:
+      // an org forced with --target-org/-o/--targetusername/-u on the command
+      // line wins over the project default org
       try {
-        const targetOrgUsername = await getDefaultTargetOrgUsername();
+        const commandLine =
+          pendingPanel?.commandLine || data.context?.commandLine;
+        const targetOrgUsername =
+          extractTargetOrgUsername(commandLine) ||
+          (await getDefaultTargetOrgUsername());
         if (targetOrgUsername) {
           initData.data.targetOrgUsername = targetOrgUsername;
         }

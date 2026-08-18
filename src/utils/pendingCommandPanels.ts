@@ -51,6 +51,49 @@ export function extractCommandId(commandLine: string): string | null {
   return null;
 }
 
+/**
+ * Flags forcing the target org of a Salesforce CLI command, in the modern
+ * (`--target-org` / `-o`) and legacy (`--targetusername` / `-u`) notations.
+ */
+const TARGET_ORG_FLAGS = ["-o", "-u", "--target-org", "--targetusername"];
+
+/** Removes the surrounding quotes a shell argument may carry */
+function unquoteArg(value: string): string {
+  return value.replace(/^["']/, "").replace(/["']$/, "");
+}
+
+/**
+ * Extracts the org username (or alias) explicitly forced on a command line,
+ * e.g. `sf hardis:org:diagnose:audittrail --target-org my.user@org.com`.
+ * Handles both the space (`-u USER`) and the equal (`--target-org=USER`)
+ * notations, with or without quotes.
+ * Returns null when the command relies on the project default org.
+ */
+export function extractTargetOrgUsername(
+  commandLine: string | undefined | null,
+): string | null {
+  if (!commandLine) {
+    return null;
+  }
+  // Keep quoted values in a single token, so `--target-org "my org"` works
+  const tokens = commandLine.match(/(?:[^\s"']+|"[^"]*"|'[^']*')+/g) || [];
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i];
+    const equalPos = token.indexOf("=");
+    if (equalPos > 0 && TARGET_ORG_FLAGS.includes(token.slice(0, equalPos))) {
+      const value = unquoteArg(token.slice(equalPos + 1));
+      return value || null;
+    }
+    if (TARGET_ORG_FLAGS.includes(token)) {
+      const value = unquoteArg(tokens[i + 1] || "");
+      if (value && !value.startsWith("-")) {
+        return value;
+      }
+    }
+  }
+  return null;
+}
+
 export function registerPendingCommandPanel(entry: PendingCommandPanel): void {
   pendingPanels.push(entry);
 }

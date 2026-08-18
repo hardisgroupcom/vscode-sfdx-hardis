@@ -45,6 +45,7 @@
     - Command steps are displayed as a **compact connected timeline** with colored status dots, expandable step details and per-step durations, replacing the tall stack of boxes (a whole run now fits on one screen)
       - A command reporting its progress out of **100 steps** is displayed as a **percentage** ("42% complete") instead of a step counter
     - The header shows the command name with a **colored status pill** (Starting / Running / Completed / Failed), the **target org**, the elapsed time and a link to the log file
+      - When the command is run on a **specific org** (`--target-org`, `--targetusername`, `-u`, `-o`), the header shows **that org** instead of the default org of the project
     - When the command asks a question, it appears in a highlighted **"Waiting for your answer"** card: options are clickable cards, long choice lists are **searchable in place** (no more dropdown covering the validation buttons), and multi-selects show a live **"n of m selected"** counter with Select all / Show only selected shortcuts
     - Answered questions collapse to a single line showing the **answer**, and can be expanded back to see the details
     - Generated reports and actions are docked in a **bar at the bottom** of the tab, always visible without scrolling
