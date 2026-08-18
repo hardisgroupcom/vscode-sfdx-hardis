@@ -14,8 +14,8 @@
   - Commands run in a terminal now **start immediately**
     - On **Windows**, commands now run in a **Git Bash** terminal automatically when Git Bash is installed, without requiring to change the default VS Code terminal
   - Commands clicked right after VS Code startup are **no longer rejected** with "not initialized yet"
-  - Panels **no longer stay stuck on their loading spinner** (or open empty) when VS Code is slow to start them: their content is now delivered again as soon as the panel is ready, and an unexpected display error now shows a message with a **Try again** button instead of an endless spinner
-  - **Pipeline Settings now load without an internet connection**: the configuration reference shipped with the extension is used when the online one cannot be fetched
+  - Panels **no longer stay stuck on their loading spinner** (or open empty) when VS Code is slow to start them, and an unexpected display error now shows a message with a **Try again** button instead of an endless spinner
+  - **Pipeline Settings now load without an internet connection**
   - Fixed a wrong **"duplicate command"** error when running a command again right after closing its execution tab, or when a language other than "auto" is selected
   - Command tabs of completed commands are now cleaned up in **all languages** (previously only when VS Code was in English)
   - The "Initializing command" notification is no longer shown when the execution tab is already open, since it was redundant with it
@@ -52,7 +52,7 @@
       - The Salesforce Org tab of a branch's settings shows a **compact org summary card** instead of two sparse fields
     - The **package.xml viewer**, **Monitoring Configuration**, **Documentation Workbench**, **Org Monitoring** documentation links and **Metadata Retriever** dialogs were aligned on the same section headers, cards and dialog style, with no change to their features
     - Fixed the **Language** tab of the Extension Settings, which showed the raw key `languageSection` instead of its name
-    - Under the hood, panels no longer carry their own colors: **all the hardcoded colors, duplicated dark/light rules and font overrides were removed** from the panel stylesheets, which is what made some texts unreadable when switching theme
+    - Fixed texts that were **unreadable after switching between light and dark themes** in several panels
     - **Switches** are displayed the same way everywhere: the *Active / Inactive* label below them is gone, as it broke the alignment with the neighboring buttons and fields
   - The command execution tab was **fully redesigned** with the same look & feel
     - Command steps are displayed as a **compact connected timeline** with colored status dots, expandable step details and per-step durations, replacing the tall stack of boxes (a whole run now fits on one screen)
@@ -127,7 +127,7 @@
   - New **automated UI tests** launch a real VS Code with a sample SFDX project and a simulated Salesforce CLI, and verify startup and command-launch responsiveness on **Windows, macOS and Linux** at every change
   - The extension code loaded at startup was reduced to **a fraction of its previous size**, the rest is now loaded only when actually used
   - Installed plugins are now identified with `sf plugins --json`, which tells exactly how each plugin was installed, instead of reading the displayed text (that could be colorized, hiding the version and the alpha/beta/link markers)
-  - All the **screenshots of the documentation** are regenerated with the new design, and can now be regenerated in one command (`yarn screenshots`): a real VS Code is driven automatically over a sample project with a simulated Salesforce CLI, and every panel is captured in light theme and in English
+  - All the **screenshots of the documentation** are regenerated with the new design (and are now regenerated automatically, so they will no longer drift from the real product)
   - The extension package no longer ships **15 MB of obsolete images** (old menu screenshots and demo animation) that nothing displayed anymore
 
 ## [7.18.0] 2026-07-26
