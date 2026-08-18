@@ -1206,6 +1206,24 @@ lightning-helptext::part(icon) {
   gap: 0.5rem;
   max-width: min(50%, 340px);
 }
+
+/* Text-entry controls (free-text / number / URL inputs, textareas) stretch
+   into the row's free space instead of shrinking to the browser's
+   ~20-character intrinsic input width, so long values (URLs, regexes,
+   one-per-line lists) stay readable. Comboboxes render a readonly
+   input[role="combobox"] and stay compact, like toggles, checkboxes and
+   buttons. :where() keeps specificity at a single class so component
+   overrides (.stacked rows, add-form full-width controls) still win. */
+.hardis-field-control:where(:has(input:is([type="text"], [type="number"], [type="url"], [type="email"], [type="password"], [type="tel"], [type="search"]):not([role="combobox"]))),
+.hardis-field-control:where(:has(textarea)) {
+  flex: 1 1 340px;
+  max-width: min(65%, 640px);
+}
+.hardis-field-control > lightning-input,
+.hardis-field-control > lightning-textarea {
+  flex: 1 1 auto;
+  min-width: 0;
+}
 @media (max-width: 640px) {
   .hardis-field-row {
     flex-wrap: wrap;
