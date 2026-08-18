@@ -101,6 +101,8 @@
   - New **automated UI tests** launch a real VS Code with a sample SFDX project and a simulated Salesforce CLI, and verify startup and command-launch responsiveness on **Windows, macOS and Linux** at every change
   - The extension code loaded at startup was reduced to **a fraction of its previous size**, the rest is now loaded only when actually used
   - Installed plugins are now identified with `sf plugins --json`, which tells exactly how each plugin was installed, instead of reading the displayed text (that could be colorized, hiding the version and the alpha/beta/link markers)
+  - All the **screenshots and animations of the documentation** are regenerated with the new design, and can now be regenerated in one command (`yarn screenshots`): a real VS Code is driven automatically over a sample project with a simulated Salesforce CLI, and every panel is captured or recorded in light theme and in English
+  - The extension package no longer ships **15 MB of obsolete images** (old menu screenshots and demo animation) that nothing displayed anymore
 
 ## [7.18.0] 2026-07-26
 

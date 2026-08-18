@@ -22,10 +22,13 @@ yarn lint:fix             # ESLint auto-fix
 yarn compile              # TypeScript compilation (tsc, used for tests)
 yarn test                 # Run unit/extension tests (requires prior compile: yarn pretest)
 yarn test:ui              # Run UI integration tests (real VS Code + mocked sf CLI)
+yarn screenshots          # Regenerate the documentation screenshots (Windows)
 yarn vsix                 # Package as .vsix for distribution
 ```
 
 `yarn test:ui` requires the webview bundle AND the compiled sources, in this order: `yarn dev` (webpack: webviews + assets) **then** `yarn compile` (tsc: `out/extension.js` + `out/test`).
+
+`yarn screenshots` drives the same harness in "documentation screenshot" mode: it opens every LWC panel over `test/fixtures/doc-screenshots-project` in light theme and English, captures full-window PNGs (and animated GIF recordings) into `doc-screenshots/`, then `python scripts/build-doc-images.py` crops, annotates and copies them into the sibling `sfdx-hardis/docs/assets/images` folder. See CONTRIBUTING.md.
 
 ### Prebuild steps (run automatically before `yarn build`)
 - `yarn sync:schema` - Syncs JSON schema from remote
