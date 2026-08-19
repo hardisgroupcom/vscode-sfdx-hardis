@@ -2771,7 +2771,11 @@ export default class Pipeline extends SharedMixin(LightningElement) {
         when: whenLabel,
         whenCode: when,
         typeCode: typeCode,
-        ...this._actionDisplayFields(typeCode, when, this._modalPrAuthorLabel()),
+        ...this._actionDisplayFields(
+          typeCode,
+          when,
+          this._modalPrAuthorLabel(),
+        ),
         prLabel: `#${prNumber} - ${action.pullRequest?.title || ""}`,
         prWebUrl: action.pullRequest?.webUrl || "",
         prNumber: prNumber,

@@ -110,7 +110,10 @@ suite("Datatable colored pills contract", () => {
   });
 
   test("pipeline settings deployment action rows compute their pill fields", () => {
-    const pipelineConfig = readModuleFile("pipelineConfig", "pipelineConfig.js");
+    const pipelineConfig = readModuleFile(
+      "pipelineConfig",
+      "pipelineConfig.js",
+    );
     for (const field of ["_typePillClass", "_contextPillClass"]) {
       assert.match(
         pipelineConfig,

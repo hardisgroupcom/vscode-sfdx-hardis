@@ -322,13 +322,25 @@ const METADATA_TYPE_PATTERNS = [
   [/^(Wave|Analytic|Report|Dashboard|Discovery|Insights)/, "analytics"],
   [/^(Profile|Permission|Sharing|Muting|Territory|User)/, "security"],
   [/(Permission|SharingRules)$/, "security"],
-  [/^(Workflow|Flow|Approval|Assignment|Escalation|Duplicate|Matching)/, "automation"],
+  [
+    /^(Workflow|Flow|Approval|Assignment|Escalation|Duplicate|Matching)/,
+    "automation",
+  ],
   [/Rule(s)?$/, "automation"],
   [/^(Lightning|Aura|Path|Custom(Application|Tab)|App|Branding|Theme)/, "ui"],
   [/Layout$/, "ui"],
-  [/^(Community|Network|Experience|Site|Portal|Audience|Moderation|Keyword|Managed)/, "experience"],
-  [/^(Connected|Auth|External|Platform|Cors|Csp|Certificate|Api|Saml|Named|Remote)/, "integration"],
-  [/^(Custom(Object|Field|Metadata|Label)|Record|Global|Standard|Field|List|Business|Data)/, "data"],
+  [
+    /^(Community|Network|Experience|Site|Portal|Audience|Moderation|Keyword|Managed)/,
+    "experience",
+  ],
+  [
+    /^(Connected|Auth|External|Platform|Cors|Csp|Certificate|Api|Saml|Named|Remote)/,
+    "integration",
+  ],
+  [
+    /^(Custom(Object|Field|Metadata|Label)|Record|Global|Standard|Field|List|Business|Data)/,
+    "data",
+  ],
 ];
 
 /**
