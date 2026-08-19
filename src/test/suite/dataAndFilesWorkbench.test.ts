@@ -1,6 +1,5 @@
 import * as assert from "assert";
-import * as fs from "fs";
-import * as path from "path";
+import { readModuleFile } from "./lwcSourceUtils";
 
 /**
  * Contract tests for the Data Import/Export Workbench and Files Import/Export
@@ -14,26 +13,13 @@ import * as path from "path";
  *    template) and reflected in the class returned for the selected card
  */
 
-const REPO_ROOT = path.join(__dirname, "..", "..", "..");
-const MODULES_DIR = path.join(
-  REPO_ROOT,
-  "src",
-  "webviews",
-  "lwc-ui",
-  "modules",
-  "s",
-);
-
 const PANELS = [
   { name: "dataWorkbench", tile: "violet" },
   { name: "filesWorkbench", tile: "amber" },
 ];
 
 function readComponentFile(panel: string, ext: "html" | "js"): string {
-  return fs.readFileSync(
-    path.join(MODULES_DIR, panel, `${panel}.${ext}`),
-    "utf8",
-  );
+  return readModuleFile(panel, `${panel}.${ext}`);
 }
 
 suite("Data / Files Workbench workspace-selection contract", () => {

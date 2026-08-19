@@ -1,6 +1,7 @@
 import * as assert from "assert";
 import * as fs from "fs";
 import * as path from "path";
+import { MODULES_DIR, REPO_ROOT, readModuleFile } from "./lwcSourceUtils";
 
 /**
  * Contract tests for the colored pills displayed in the datatables
@@ -14,20 +15,6 @@ import * as path from "path";
  *  - each column bound to a pill field is fed by a row property that the
  *    component actually computes (a typo would render colorless pills)
  */
-
-const REPO_ROOT = path.join(__dirname, "..", "..", "..");
-const MODULES_DIR = path.join(
-  REPO_ROOT,
-  "src",
-  "webviews",
-  "lwc-ui",
-  "modules",
-  "s",
-);
-
-function readModuleFile(module: string, file: string): string {
-  return fs.readFileSync(path.join(MODULES_DIR, module, file), "utf8");
-}
 
 suite("Datatable colored pills contract", () => {
   const globalTheme = fs.readFileSync(
