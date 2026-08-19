@@ -170,11 +170,11 @@ suite("Welcome page contracts", () => {
       "The 'upgrades required' state must stay visually distinct (amber tint)",
     );
     // "All up to date" and "checking" must remain discrete: nothing needs the
-    // user's attention, so no colour should compete with the rest of the page.
+    // user's attention, so no color should compete with the rest of the page.
     for (const tint of ["green", "blue", "red"]) {
       assert.ok(
         !getter.includes(`hardis-btn-tinted-${tint}`),
-        `The dependencies button must not use the ${tint} tint: only the actionable state is coloured`,
+        `The dependencies button must not use the ${tint} tint: only the actionable state is colored`,
       );
     }
   });

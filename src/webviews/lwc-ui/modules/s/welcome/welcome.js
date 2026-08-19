@@ -534,7 +534,7 @@ export default class Welcome extends SharedMixin(LightningElement) {
   get dependenciesButtonClass() {
     // Only the actionable state is tinted. "All up to date" and "checking" stay
     // visually discrete on purpose: nothing needs the user's attention there,
-    // so colouring them would compete with the rest of the Welcome page.
+    // so coloring them would compete with the rest of the Welcome page.
     if (this.isDependenciesUpgradesRequired) {
       return "hardis-btn-tinted-amber";
     }
