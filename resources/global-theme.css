@@ -397,6 +397,126 @@ lightning-helptext::part(icon) {
   }
 }
 
+/* ------------------------------------------------------------------ */
+/* Categorical pill hues (s-hardis-datatable typePill cell type)      */
+/* Same shape as the status pills above, but the hue carries a        */
+/* CATEGORY instead of a state: deployment action type, ticket        */
+/* status, metadata type family... Hue names mirror the .hardis-tile  */
+/* variants so a category keeps the same color across the panels.     */
+/* Applied as "hardis-pill hardis-hue-<name>" (see s/pillUtils).      */
+/* ------------------------------------------------------------------ */
+.slds-scope[data-theme] .hardis-pill.hardis-hue-blue {
+  background: var(--slds-g-color-palette-blue-90);
+  color: var(--slds-g-color-palette-blue-40);
+}
+.slds-scope[data-theme] .hardis-pill.hardis-hue-cyan {
+  background: var(--slds-g-color-palette-cloud-blue-90);
+  color: var(--slds-g-color-palette-cloud-blue-40);
+}
+.slds-scope[data-theme] .hardis-pill.hardis-hue-teal {
+  background: var(--slds-g-color-palette-teal-90);
+  color: var(--slds-g-color-palette-teal-40);
+}
+.slds-scope[data-theme] .hardis-pill.hardis-hue-green {
+  background: var(--slds-g-color-palette-green-90);
+  color: var(--slds-g-color-palette-green-40);
+}
+.slds-scope[data-theme] .hardis-pill.hardis-hue-indigo {
+  background: var(--slds-g-color-palette-indigo-90);
+  color: var(--slds-g-color-palette-indigo-40);
+}
+.slds-scope[data-theme] .hardis-pill.hardis-hue-violet {
+  background: var(--slds-g-color-palette-violet-90);
+  color: var(--slds-g-color-palette-violet-40);
+}
+.slds-scope[data-theme] .hardis-pill.hardis-hue-purple {
+  background: var(--slds-g-color-palette-purple-90);
+  color: var(--slds-g-color-palette-purple-40);
+}
+.slds-scope[data-theme] .hardis-pill.hardis-hue-pink {
+  background: var(--slds-g-color-palette-pink-90);
+  color: var(--slds-g-color-palette-pink-40);
+}
+.slds-scope[data-theme] .hardis-pill.hardis-hue-amber {
+  background: var(--slds-g-color-palette-orange-90);
+  color: var(--slds-g-color-palette-orange-40);
+}
+.slds-scope[data-theme] .hardis-pill.hardis-hue-red {
+  background: var(--slds-g-color-palette-red-90);
+  color: var(--slds-g-color-palette-red-40);
+}
+.slds-scope[data-theme] .hardis-pill.hardis-hue-slate {
+  background: var(--slds-g-color-palette-neutral-90);
+  color: var(--slds-g-color-palette-neutral-30);
+}
+
+/* Leading icon of a typePill: inherits the pill text color instead of the
+   default SLDS icon color, so it stays readable in both themes. */
+.slds-scope[data-theme] .hardis-pill-icon {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  --slds-c-icon-color-foreground: currentColor;
+  --slds-c-icon-color-foreground-default: currentColor;
+}
+.slds-scope[data-theme] .hardis-pill-icon svg {
+  width: 0.8rem;
+  height: 0.8rem;
+  fill: currentColor;
+}
+/* The label of a pill cell may be long (metadata type names): keep the pill
+   on one line and ellipsize inside it rather than growing the row. */
+.slds-scope[data-theme] .hardis-pill-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ */
+/* Row markers (datatable cellAttributes iconName + class)             */
+/* A colored SLDS icon in front of a cell value replaces the emoji     */
+/* that rendered differently on each operating system. Declared here   */
+/* (not in a component stylesheet) because the icon is rendered inside */
+/* the datatable, out of reach of the panel's scoped styles.           */
+/* ------------------------------------------------------------------ */
+.slds-scope[data-theme] .hardis-op-created svg {
+  fill: var(--slds-g-color-palette-green-50);
+}
+.slds-scope[data-theme] .hardis-op-modified svg {
+  fill: var(--slds-g-color-palette-orange-50);
+}
+.slds-scope[data-theme] .hardis-op-deleted svg {
+  fill: var(--slds-g-color-palette-red-50);
+}
+.slds-scope[data-theme] .hardis-op-local-yes svg {
+  fill: var(--slds-g-color-palette-green-50);
+}
+.slds-scope[data-theme] .hardis-op-local-no svg {
+  fill: var(--slds-g-color-palette-red-50);
+}
+
+/* Compact legend explaining the markers / colors of a table or diagram.
+   <div class="hardis-legend">
+     <span class="hardis-legend-item"><lightning-icon .../>Created</span> ... */
+.slds-scope[data-theme] .hardis-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.9rem;
+  font-size: 0.72rem;
+  color: var(--slds-g-color-neutral-base-30);
+}
+.slds-scope[data-theme] .hardis-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  white-space: nowrap;
+}
+.slds-scope[data-theme] .hardis-legend-item svg {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
 /* Node count bubbles (pipeline mermaid diagram) are styled ENTIRELY inline
    by _drawNodeCountBubble (pipeline.js) — deliberately no CSS rules here, so
    a stale cached copy of this stylesheet can never repaint them. */

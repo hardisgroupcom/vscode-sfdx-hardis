@@ -80,6 +80,15 @@
   - **Right-click any table cell** to copy its value (or the text you selected) to the clipboard
   - Tables are **easier to scan**, in **every panel**: alternate row background colors and a hover highlight, job status as a colored chip with its label, authors shown with an **initials avatar**, source and target branches as compact **monospace chips**, and dates in a short one-line format
     - Also applied to **Org Manager** (connection status as a green/red chip, default org and Dev Hub roles highlighted as chips), **Metadata Retriever** ("Last Updated By" avatar and aligned update dates) and **Installed Packages** (namespaces as monospace chips)
+    - The remaining tabs of the **Pull Requests modal** follow the same rules
+      - **Tickets**: the ticket status is a **colored pill** (green when done, blue while in progress, orange while waiting, red when blocked or rejected) and its author is shown with an **initials avatar**, like in the Pull Requests tab
+      - **Deployment Actions**: the action type and its **Pre-Deploy / Post-Deploy** moment are **colored pills**, and the author of the pull request carrying each action is shown with an initials avatar
+      - **Apex Tests**: test class names are displayed as **monospace chips**, like the branch names of the Pull Requests tab
+    - The **Pre-Post Deploy Commands** tables of the Pipeline Settings show the action type and its execution context with the **same colored pills**, so an action looks the same wherever it is displayed
+    - The last tables that were left out (Pull Requests modal, Pipeline Settings) now also have the **alternate row colors**, the hover highlight and the **right-click to copy a value**
+    - In the **Metadata Retriever**, the metadata type is now a **colored pill** whose color tells its family apart at a glance (Apex, user interface, automation, data model, security, integration, analytics, experience sites, settings), and it still links to the type documentation
+      - The narrow emoji column telling whether a component was **created, modified or deleted** is gone: the information moved **in front of the component name** as a colored icon, explained by a small legend next to the result count, which leaves the table one column wider and readable
+      - The **Local** column check mark and the created/modified/deleted markers are now real icons instead of emoji, which rendered differently on each operating system
   - Quick action cards and other panels (Org Monitoring, Package XML, Documentation, Welcome, Setup, Monitoring Config, Metadata Retriever) now use the **official Salesforce color palette** for their icons and buttons, including the Release Notes buttons that could be **hard to read in dark mode**
   - Modals got a **design refresh** with a brand accent strip and chips in their title, in the Pull Requests modal (branch name and pull request count) as in all the other dialog windows (Data Workbench, Files Workbench, Pipeline Config, Monitoring Config, Deployment Actions)
   - Deployment action execution contexts were **renamed for clarity**: **"Validation and Deployment jobs"**, **"Validation job only"** and **"Deployment job only"** (previously "Check job" and "Process Deployment job"), in all languages
@@ -118,6 +127,11 @@
   - Deployment actions edited from the settings no longer offer the obsolete **Skip if deploy error** option
 
 - **Dependencies**
+  - The Welcome page now shows your setup status at a glance
+    - The **Install Dependencies** button turns into a live status: checking, the number of updates needed, or a confirmation that everything is up to date, and always opens the Setup panel when clicked
+    - The button is only highlighted when something actually needs your attention, and stays discreet once everything is up to date
+    - When Git, the Salesforce CLI, Node.js, the sfdx-hardis plugin or the Salesforce Extension Pack is completely missing, a **welcome popup** explains that these tools are required before using the extension, lists what is missing with a short explanation of each, and offers a single button to open the Setup panel (shown once per VS Code session)
+  - The **Install Dependencies** panel now displays a **loading spinner** while the dependency checks are running, instead of an empty page
   - Fixed the **pre-release** version of the extension asking to install the **alpha** version of the sfdx-hardis plugin even when an alpha, a beta, or a **locally developed (linked)** plugin was already installed
     - A pre-release extension now accepts an alpha, a beta or a locally developed plugin, and a released extension accepts a published version or a locally developed plugin (it now asks to install the latest version when an alpha or a beta is installed)
     - A locally developed plugin is **never proposed for upgrade** anymore: reinstalling it from npm would break the local development setup (which is what happened when clicking the upgrade button)

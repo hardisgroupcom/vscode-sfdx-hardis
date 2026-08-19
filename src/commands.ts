@@ -33,6 +33,7 @@ import { registerShowDocumentationWorkbench } from "./commands/showDocumentation
 import { t } from "./i18n/i18n";
 import { refreshAllRefreshableUis } from "./utils/uiUtils";
 import { ThemeUtils } from "./utils/themeUtils";
+import { refreshDependenciesStatus } from "./utils/dependenciesStatus";
 
 export class Commands {
   public readonly extensionUri: vscode.Uri;
@@ -200,6 +201,9 @@ export class Commands {
             type: "refresh",
           });
         }
+        // Recompute the Welcome page dependencies aggregate (button + missing
+        // prerequisites modal) and push it if the panel is open
+        await refreshDependenciesStatus();
       },
     );
     this.disposables.push(disposable);

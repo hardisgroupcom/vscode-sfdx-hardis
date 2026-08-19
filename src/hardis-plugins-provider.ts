@@ -22,10 +22,12 @@ import { t } from "./i18n/i18n";
 import {
   SetupHelper,
   buildSfCliUpgradeCommand,
+  getSalesforceExtensionPackStatus,
   isNativeSfCliInstall,
   resolveSfCliPath,
 } from "./utils/setupUtils";
 import { isMergeDriverEnabled } from "./utils/gitMergeDriverUtils";
+import { applyPluginsDetailPassInfo } from "./utils/dependenciesStatus";
 import {
   NODE_JS_MINIMUM_VERSION,
   RECOMMENDED_MINIMAL_SFDX_HARDIS_VERSION,
@@ -519,6 +521,15 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
     sfdxCliVersion: string,
     legacySfdx: boolean,
   ): Promise<void> {
+    // Snapshot consumed by the dependencies aggregate (src/utils/dependenciesStatus.ts)
+    // in the `finally` block below, so it can be enriched with information only
+    // available once this detail pass has run (real outdated plugins count, sf CLI /
+    // sfdx-hardis missing detection that does not depend on the npm "latest version"
+    // cache being warm). Hoisted here so it survives into `finally` on both the
+    // success and error paths.
+    let outdatedPluginsCountForAggregate = 0;
+    let sfCliMissingForAggregate = false;
+    let sfdxHardisMissingForAggregate = false;
     try {
       const items: any[] = [];
 
@@ -590,6 +601,9 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
       const upgradeAvailableText = t("upgradeAvailableSuffix");
       // Resolve `sf` path once for upgrade command and bulk upgrade prefix
       const sfdxPath = await resolveSfCliPath();
+      // Genuinely missing sf CLI (findExecutable could not locate it), independent
+      // of whatever the (possibly stale/empty) `sf --version` cache says
+      sfCliMissingForAggregate = sfdxPath === "missing";
       // Only compare versions when we have a known target; skip if latest is unknown
       if (
         recommendedSfdxCliVersion !== null &&
@@ -711,6 +725,12 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
         } else {
           pluginLabel += t("pluginMissingSuffix");
           isPluginMissing = true;
+          // Detected independently of whether the npm "latest version" cache is
+          // warm (unlike the `outdated` array below), so the dependencies
+          // aggregate never wrongly reports sfdx-hardis as up to date
+          if (plugin.name === "sfdx-hardis") {
+            sfdxHardisMissingForAggregate = true;
+          }
         }
         const installKind = resolvePluginInstallKind(
           plugin.name,
@@ -863,6 +883,7 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
         a.label > b.label ? 1 : -1,
       );
       PLUGINS_DETAIL_LOADED = true;
+      outdatedPluginsCountForAggregate = outdated.length;
     } catch (e) {
       Logger.log(
         "[vscode-sfdx-hardis] runPluginsDetailPass failed: " + String(e),
@@ -878,6 +899,14 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
       PLUGINS_DETAIL_LOADED = true;
     } finally {
       PLUGINS_DETAIL_IN_FLIGHT = false;
+      // Enrich the Welcome page dependencies aggregate with the richer info only
+      // available now (real outdated plugins count, sf CLI / sfdx-hardis missing
+      // detection independent of the npm "latest version" cache)
+      applyPluginsDetailPassInfo({
+        outdatedPluginsCount: outdatedPluginsCountForAggregate,
+        sfCliMissing: sfCliMissingForAggregate,
+        sfdxHardisMissing: sfdxHardisMissingForAggregate,
+      });
       // Fire refresh so the final decorated rows replace the placeholders
       vscode.commands.executeCommand(
         "vscode-sfdx-hardis.refreshPluginsView",
@@ -998,13 +1027,12 @@ export class HardisPluginsProvider implements vscode.TreeDataProvider<StatusTree
         tooltip: t("dependencyInstalled", { name: extension.label }),
         status: "dependency-ok",
       };
-      let extInstance = vscode.extensions.getExtension(extension.id);
-      if (!extInstance && extension.id === "salesforce.salesforcedx-vscode") {
-        extInstance = vscode.extensions.getExtension(
-          "salesforce.salesforcedx-vscode-expanded",
-        );
-      }
-      if (!extInstance) {
+      // Cached for 30 days once found installed (see getSalesforceExtensionPackStatus)
+      const extInstalled =
+        extension.id === "salesforce.salesforcedx-vscode"
+          ? getSalesforceExtensionPackStatus().installed
+          : !!vscode.extensions.getExtension(extension.id);
+      if (!extInstalled) {
         const installExtensionLabel = t("installVsCodeExtension", {
           name: extension.label,
         });

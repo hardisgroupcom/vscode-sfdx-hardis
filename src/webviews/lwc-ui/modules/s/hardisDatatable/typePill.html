@@ -1,0 +1,40 @@
+<template>
+    <template if:true={typeAttributes.label}>
+        <template if:true={typeAttributes.url}>
+            <a
+                href={typeAttributes.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                class={typeAttributes.pillClass}
+                title={typeAttributes.tooltip}
+            >
+                <template if:true={typeAttributes.iconName}>
+                    <lightning-icon
+                        class="hardis-pill-icon"
+                        icon-name={typeAttributes.iconName}
+                        size="xx-small"
+                    ></lightning-icon>
+                </template>
+                <template if:false={typeAttributes.iconName}>
+                    <span class="hardis-pill-dot"></span>
+                </template>
+                <span class="hardis-pill-label">{typeAttributes.label}</span>
+            </a>
+        </template>
+        <template if:false={typeAttributes.url}>
+            <span class={typeAttributes.pillClass} title={typeAttributes.tooltip}>
+                <template if:true={typeAttributes.iconName}>
+                    <lightning-icon
+                        class="hardis-pill-icon"
+                        icon-name={typeAttributes.iconName}
+                        size="xx-small"
+                    ></lightning-icon>
+                </template>
+                <template if:false={typeAttributes.iconName}>
+                    <span class="hardis-pill-dot"></span>
+                </template>
+                <span class="hardis-pill-label">{typeAttributes.label}</span>
+            </span>
+        </template>
+    </template>
+</template>
