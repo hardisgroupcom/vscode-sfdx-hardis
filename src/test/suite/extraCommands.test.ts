@@ -4,9 +4,45 @@ import * as path from "path";
 import { ExtraCommands } from "../../utils/extraCommands";
 import { REPO_ROOT } from "./lwcSourceUtils";
 
-const EN_TRANSLATIONS: Record<string, string> = JSON.parse(
-  fs.readFileSync(path.join(REPO_ROOT, "src", "i18n", "en.json"), "utf8"),
+const LOCALES = ["en", "fr", "es", "de", "it", "nl", "ja", "pl", "pt-BR"];
+
+const EXTRA_COMMANDS_SOURCE = fs.readFileSync(
+  path.join(REPO_ROOT, "src", "utils", "extraCommands.ts"),
+  "utf8",
 );
+
+function loadLocale(locale: string): Record<string, string> {
+  return JSON.parse(
+    fs.readFileSync(
+      path.join(REPO_ROOT, "src", "i18n", `${locale}.json`),
+      "utf8",
+    ),
+  );
+}
+
+/**
+ * Extracts the i18n keys used by each catalog entry, from the sources.
+ *
+ * The i18n contract is checked on the sources and not on the runtime output of t():
+ * the locale files are copied to out/i18n by webpack, so a tsc-only run (as in CI)
+ * has no translation loaded and t() falls back to returning the key itself. Reading
+ * the sources makes the check independent from the build steps that ran before.
+ */
+function extractCommandI18nKeys(): {
+  id: string;
+  labelKey: string;
+  tooltipKey: string;
+}[] {
+  return [
+    ...EXTRA_COMMANDS_SOURCE.matchAll(
+      /id:\s*"([^"]+)",\s*label:\s*t\("([a-zA-Z0-9_]+)"\),\s*tooltip:\s*t\("([a-zA-Z0-9_]+)"\),/g,
+    ),
+  ].map((match) => ({
+    id: match[1],
+    labelKey: match[2],
+    tooltipKey: match[3],
+  }));
+}
 
 suite("extraCommands Test Suite", () => {
   test("catalog is not empty", () => {
@@ -28,8 +64,7 @@ suite("extraCommands Test Suite", () => {
     }
   });
 
-  test("all commands have translated label and tooltip", () => {
-    const translatedValues = Object.values(EN_TRANSLATIONS);
+  test("all commands have a label and a tooltip", () => {
     for (const command of ExtraCommands.getCommands()) {
       assert.ok(
         command.label.length > 0 && command.label !== command.id,
@@ -39,14 +74,47 @@ suite("extraCommands Test Suite", () => {
         command.tooltip.length > 0 && command.tooltip !== command.label,
         `Missing tooltip for ${command.id}`,
       );
-      // Labels and tooltips must come from the i18n files, not from raw strings
-      assert.ok(
-        translatedValues.includes(command.label),
-        `Label of ${command.id} is not defined in en.json`,
+    }
+  });
+
+  test("all commands build their label and tooltip with t()", () => {
+    const commandKeys = extractCommandI18nKeys();
+    const catalogIds = ExtraCommands.getCommands().map((command) => command.id);
+    // Every entry must declare label: t("key") and tooltip: t("key"), never raw strings
+    assert.deepStrictEqual(
+      commandKeys.map((commandKey) => commandKey.id),
+      catalogIds,
+      "Some catalog entries do not use t() for their label and tooltip",
+    );
+    for (const commandKey of commandKeys) {
+      assert.notStrictEqual(
+        commandKey.labelKey,
+        commandKey.tooltipKey,
+        `Label and tooltip of ${commandKey.id} use the same i18n key`,
       );
-      assert.ok(
-        translatedValues.includes(command.tooltip),
-        `Tooltip of ${command.id} is not defined in en.json`,
+    }
+  });
+
+  test("all i18n keys of the catalog are defined in the 9 locales", () => {
+    const usedKeys = extractCommandI18nKeys().flatMap((commandKey) => [
+      commandKey.labelKey,
+      commandKey.tooltipKey,
+    ]);
+    assert.ok(
+      usedKeys.length > 0,
+      "No i18n key extracted from extraCommands.ts",
+    );
+    for (const locale of LOCALES) {
+      const translations = loadLocale(locale);
+      const missingKeys = usedKeys.filter(
+        (key) =>
+          typeof translations[key] !== "string" ||
+          translations[key].trim() === "",
+      );
+      assert.deepStrictEqual(
+        missingKeys,
+        [],
+        `Missing translations in ${locale}.json for the extra commands catalog`,
       );
     }
   });
@@ -114,7 +182,7 @@ suite("extraCommands Test Suite", () => {
     assert.ok(!remaining.some((command) => command.id === promoted.id));
     // Same command line with flags added by the menu entry
     remaining = ExtraCommands.getCommandsNotAlreadyListed([
-      `${promoted.command} --someflag value`,
+      `${promoted.command} --some-flag value`,
     ]);
     assert.strictEqual(remaining.length, all.length - 1);
     // Unrelated command lines change nothing
