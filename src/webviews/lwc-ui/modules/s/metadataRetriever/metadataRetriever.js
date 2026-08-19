@@ -18,6 +18,47 @@ const METADATA_DOC_BASE_URL =
 // a single metadata type selection.
 const PRESET_VALUE_PREFIX = "preset::";
 
+// Change operation of a component in "Recent Changes" mode, displayed as a
+// colored icon in front of the metadata name (hues in global-theme.css).
+const OPERATION_MARKERS = {
+  created: {
+    iconName: "utility:add",
+    cellClass: "hardis-op-created",
+    labelKey: "operationCreated",
+  },
+  modified: {
+    iconName: "utility:edit",
+    cellClass: "hardis-op-modified",
+    labelKey: "operationModified",
+  },
+  updated: {
+    iconName: "utility:edit",
+    cellClass: "hardis-op-modified",
+    labelKey: "operationModified",
+  },
+  deleted: {
+    iconName: "utility:delete",
+    cellClass: "hardis-op-deleted",
+    labelKey: "operationDeleted",
+  },
+};
+
+// "All Metadata" mode has no change operation to display
+const NO_OPERATION_MARKER = { iconName: "", cellClass: "", labelKey: "" };
+
+// "Local" column marker: a green check when the component already exists in
+// the local project, a red cross when it is known to be missing, nothing when
+// the local files were not checked.
+function localFileMarker(localFileExists) {
+  if (localFileExists === true) {
+    return { iconName: "utility:check", cellClass: "hardis-op-local-yes" };
+  }
+  if (localFileExists === false) {
+    return { iconName: "utility:close", cellClass: "hardis-op-local-no" };
+  }
+  return { iconName: "", cellClass: "" };
+}
+
 export default class MetadataRetriever extends SharedMixin(LightningElement) {
   // Panel-level loading state (true until init data arrives from backend)
   @track panelLoading = true;
@@ -99,20 +140,6 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
     // Build columns step by step so we can insert the Change icon column
     const cols = [];
 
-    // If in Recent Changes mode, insert change icon column after Metadata Name
-    if (this.isRecentChangesMode) {
-      // Emoji column for change operation (created/modified/deleted)
-      cols.push({
-        label: this.t("operationColumn"),
-        fieldName: "ChangeIcon",
-        type: "text",
-        cellAttributes: {
-          alignment: "center",
-        },
-        initialWidth: 30,
-      });
-    }
-
     // Metadata Type, as a colored pill linking to the type documentation.
     // The hue groups the types by family (Apex, UI, automation, data model,
     // security, integration, analytics, experience, settings) so a long
@@ -132,7 +159,9 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
       },
     });
 
-    // Metadata Name
+    // Metadata Name. In Recent Changes mode the name carries the change
+    // operation as a colored icon (created / modified / deleted), instead of
+    // an extra emoji column competing with the metadata type pill.
     cols.push({
       label: this.t("metadataNameLabel"),
       fieldName: "MemberName",
@@ -147,7 +176,10 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
       },
       cellAttributes: {
         alignment: "left",
-        class: "metadata-name-button",
+        class: { fieldName: "OperationCellClass" },
+        iconName: { fieldName: "OperationIconName" },
+        iconPosition: "left",
+        iconAlternativeText: { fieldName: "OperationLabel" },
       },
     });
 
@@ -192,8 +224,10 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
         type: "text",
         cellAttributes: {
           alignment: "center",
+          class: { fieldName: "LocalFileCellClass" },
+          iconName: { fieldName: "LocalFileIconName" },
         },
-        initialWidth: 30,
+        initialWidth: 60,
       });
     }
 
@@ -951,7 +985,7 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
         metadata: this.selectedRows.map((row) => ({
           memberType: row.MemberType,
           memberName: row.MemberName,
-          deleted: row.ChangeIcon === "🔴",
+          deleted: row.IsDeleted === true,
         })),
       },
     });
@@ -1167,7 +1201,7 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
         useCrudApi: this.useCrudApi,
         memberType: row.MemberType,
         memberName: row.MemberName,
-        deleted: row.ChangeIcon === "🔴",
+        deleted: row.IsDeleted === true,
       },
     });
   }
@@ -1220,7 +1254,12 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
       if (updates.has(key)) {
         const exists = updates.get(key);
         changed = true;
-        return { ...row, LocalFileIcon: exists === true ? "✅" : "❌" };
+        const marker = localFileMarker(exists === true);
+        return {
+          ...row,
+          LocalFileIconName: marker.iconName,
+          LocalFileCellClass: marker.cellClass,
+        };
       }
       return row;
     });
@@ -1337,15 +1376,12 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
     if (data && data.records && Array.isArray(data.records)) {
       // Transform records - handle both SourceMember (nested) and Metadata API (flat) formats
       this.metadata = data.records.map((record) => {
-        // Use Operation from backend (created/modified/deleted) - guaranteed to be set
+        // Operation set by the backend in "Recent Changes" mode
+        // (created/modified/deleted). Absent in "All Metadata" mode, where the
+        // name then simply carries no operation icon.
         const opVal = (record.Operation || "").toString().toLowerCase();
-        // Map operation to colored emoji: created -> green, modified -> yellow, deleted -> red
-        let icon = "🟡"; // default = modified
-        if (opVal === "created") {
-          icon = "🟢";
-        } else if (opVal === "deleted") {
-          icon = "🔴";
-        }
+        const operation = OPERATION_MARKERS[opVal] || NO_OPERATION_MARKER;
+        const localFile = localFileMarker(record.LocalFileExists);
 
         // Handle both SourceMember format (LastModifiedBy.Name) and Metadata API format (lastModifiedByName)
         const lastModifiedByName =
@@ -1371,9 +1407,17 @@ export default class MetadataRetriever extends SharedMixin(LightningElement) {
             ? getAvatarClass(lastModifiedByName)
             : "",
           uniqueKey: `${record.MemberType}::${record.MemberName}`,
-          ChangeIcon: icon,
-          // Local file indicator: show  when present; otherwise leave empty
-          LocalFileIcon: record.LocalFileExists === true ? "✔️" : "",
+          // Change operation, shown as a colored icon in front of the name
+          OperationIconName: operation.iconName,
+          OperationCellClass: `metadata-name-button ${operation.cellClass}`,
+          OperationLabel: operation.labelKey ? this.t(operation.labelKey) : "",
+          // True for a component deleted in the org: the retrieval has to
+          // delete the local file instead of downloading it
+          IsDeleted: opVal === "deleted",
+          // Local file indicator (only filled when the user checks local files)
+          LocalFileIcon: "",
+          LocalFileIconName: localFile.iconName,
+          LocalFileCellClass: localFile.cellClass,
         };
       });
       this.applyFilters();

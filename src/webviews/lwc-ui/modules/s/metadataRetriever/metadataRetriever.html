@@ -258,6 +258,23 @@
                 {resultsFoundLabel}
               </span>
             </div>
+            <!-- Legend of the change operation icons shown in front of each
+                 metadata name (Recent Changes mode only) -->
+            <template if:true={isRecentChangesMode}>
+              <div class="slds-col slds-no-flex slds-p-left_medium">
+                <div class="hardis-legend">
+                  <span class="hardis-legend-item hardis-op-created">
+                    <lightning-icon icon-name="utility:add" size="xx-small"></lightning-icon>{i18n.operationCreated}
+                  </span>
+                  <span class="hardis-legend-item hardis-op-modified">
+                    <lightning-icon icon-name="utility:edit" size="xx-small"></lightning-icon>{i18n.operationModified}
+                  </span>
+                  <span class="hardis-legend-item hardis-op-deleted">
+                    <lightning-icon icon-name="utility:delete" size="xx-small"></lightning-icon>{i18n.operationDeleted}
+                  </span>
+                </div>
+              </div>
+            </template>
             <div class="slds-col slds-grow slds-p-left_small slds-p-right_small">
               <lightning-input
                 label={i18n.searchInResults}

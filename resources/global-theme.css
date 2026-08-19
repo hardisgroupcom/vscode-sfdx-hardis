@@ -472,6 +472,51 @@ lightning-helptext::part(icon) {
   white-space: nowrap;
 }
 
+/* ------------------------------------------------------------------ */
+/* Row markers (datatable cellAttributes iconName + class)             */
+/* A colored SLDS icon in front of a cell value replaces the emoji     */
+/* that rendered differently on each operating system. Declared here   */
+/* (not in a component stylesheet) because the icon is rendered inside */
+/* the datatable, out of reach of the panel's scoped styles.           */
+/* ------------------------------------------------------------------ */
+.slds-scope[data-theme] .hardis-op-created svg {
+  fill: var(--slds-g-color-palette-green-50);
+}
+.slds-scope[data-theme] .hardis-op-modified svg {
+  fill: var(--slds-g-color-palette-orange-50);
+}
+.slds-scope[data-theme] .hardis-op-deleted svg {
+  fill: var(--slds-g-color-palette-red-50);
+}
+.slds-scope[data-theme] .hardis-op-local-yes svg {
+  fill: var(--slds-g-color-palette-green-50);
+}
+.slds-scope[data-theme] .hardis-op-local-no svg {
+  fill: var(--slds-g-color-palette-red-50);
+}
+
+/* Compact legend explaining the markers / colors of a table or diagram.
+   <div class="hardis-legend">
+     <span class="hardis-legend-item"><lightning-icon .../>Created</span> ... */
+.slds-scope[data-theme] .hardis-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.9rem;
+  font-size: 0.72rem;
+  color: var(--slds-g-color-neutral-base-30);
+}
+.slds-scope[data-theme] .hardis-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  white-space: nowrap;
+}
+.slds-scope[data-theme] .hardis-legend-item svg {
+  width: 0.75rem;
+  height: 0.75rem;
+}
+
 /* Node count bubbles (pipeline mermaid diagram) are styled ENTIRELY inline
    by _drawNodeCountBubble (pipeline.js) — deliberately no CSS rules here, so
    a stale cached copy of this stylesheet can never repaint them. */

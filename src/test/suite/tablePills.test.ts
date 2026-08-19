@@ -139,6 +139,43 @@ suite("Datatable colored pills contract", () => {
     }
   });
 
+  test("metadata retriever marks the change operation with icons, not emoji", () => {
+    const retriever = readModuleFile(
+      "metadataRetriever",
+      "metadataRetriever.js",
+    );
+    // The created/modified/deleted marker moved in front of the metadata name
+    assert.doesNotMatch(
+      retriever,
+      /ChangeIcon/,
+      "the standalone emoji operation column should be gone",
+    );
+    assert.match(
+      retriever,
+      /iconName:\s*\{\s*fieldName:\s*"OperationIconName"\s*\}/,
+      "the metadata name column should carry the operation icon",
+    );
+    // Deleted rows drive the retrieval behavior: the flag must be a real
+    // boolean, never a comparison against a rendered emoji
+    assert.match(
+      retriever,
+      /IsDeleted:\s/,
+      "rows should expose an explicit IsDeleted flag",
+    );
+    for (const cssClass of [
+      "hardis-op-created",
+      "hardis-op-modified",
+      "hardis-op-deleted",
+      "hardis-op-local-yes",
+      "hardis-op-local-no",
+    ]) {
+      assert.ok(
+        globalTheme.includes(`.${cssClass} svg {`),
+        `global-theme.css should color the ${cssClass} marker icon`,
+      );
+    }
+  });
+
   test("metadata retriever computes the pill class of each metadata type", () => {
     const retriever = readModuleFile(
       "metadataRetriever",
